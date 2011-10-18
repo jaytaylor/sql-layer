@@ -38,7 +38,7 @@ import com.akiban.server.expression.std.VariableExpression;
 
 import java.util.*;
 
-final class OperatorStoreMaintenancePlan {
+final class OperatorStoreMaintenance {
 
     public Operator rootOperator(OperatorStoreGIHandler.Action action) {
         switch (action) {
@@ -62,9 +62,9 @@ final class OperatorStoreMaintenancePlan {
         }
     }
 
-    public OperatorStoreMaintenancePlan(BranchTables branchTables,
-                                        GroupIndex groupIndex,
-                                        UserTableRowType rowType)
+    public OperatorStoreMaintenance(BranchTables branchTables,
+                                    GroupIndex groupIndex,
+                                    UserTableRowType rowType)
     {
         PlanCreationStruct plan = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType, true);
         this.storePlan = plan.rootOperator;

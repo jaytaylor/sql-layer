@@ -313,7 +313,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 if (groupIndex.isUnique()) {
                     throw new UnsupportedUniqueGroupIndexException (groupIndex.getIndexName().getName());
                 }
-                OperatorStoreMaintenancePlan plan = groupIndexCreationPlan(
+                OperatorStoreMaintenance plan = groupIndexCreationPlan(
                         ais,
                         groupIndex,
                         adapter.schema().userTableRowType(userTable)
@@ -336,7 +336,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 }
 
                 ArrayBindings bindings = new ArrayBindings(1);
-                bindings.set(OperatorStoreMaintenancePlan.HKEY_BINDING_POSITION, persistitHKey);
+                bindings.set(OperatorStoreMaintenance.HKEY_BINDING_POSITION, persistitHKey);
 
                 // Copy the values into the array bindings
                 ToObjectValueTarget target = new ToObjectValueTarget();
@@ -385,7 +385,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
     }
 
-    private OperatorStoreMaintenancePlan groupIndexCreationPlan(
+    private OperatorStoreMaintenance groupIndexCreationPlan(
             AkibanInformationSchema ais, GroupIndex groupIndex, UserTableRowType rowType
     ) {
         return OperatorStoreMaintenancePlans.forAis(ais).forRowType(groupIndex, rowType);
