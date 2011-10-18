@@ -175,16 +175,10 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
                 right.accept(v) &&
                 (joinConditions != null)) {
                 if (v instanceof ExpressionRewriteVisitor) {
-                    for (int i = 0; i < joinConditions.size(); i++) {
-                        joinConditions.set(i, (ConditionExpression)joinConditions.get(i).accept((ExpressionRewriteVisitor)v));
-                    }
+                    joinConditions.accept((ExpressionRewriteVisitor)v);
                 }
                 else if (v instanceof ExpressionVisitor) {
-                    for (ConditionExpression condition : joinConditions) {
-                        if (!condition.accept((ExpressionVisitor)v)) {
-                            break;
-                        }
-                    }
+                    joinConditions.accept((ExpressionVisitor)v);
                 }
             }
         }

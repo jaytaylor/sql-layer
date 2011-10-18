@@ -27,6 +27,7 @@ import com.akiban.server.PersistitValueValueTarget;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.std.LiteralExpression;
+import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
@@ -37,6 +38,10 @@ import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.ArrayList;
+import java.util.List;
+
 public class Sorter
 {
     public Sorter(PersistitAdapter adapter, Cursor input, RowType rowType, API.Ordering ordering, Bindings bindings)
@@ -46,7 +51,8 @@ public class Sorter
         this.rowType = rowType;
         this.ordering = ordering.copy();
         this.bindings = bindings;
-        this.exchange = adapter.takeExchangeForSorting();
+        this.exchange = adapter.takeExchangeForSorting
+            (new SortTreeLink(SORT_TREE_NAME_PREFIX + SORTER_ID_GENERATOR.getAndIncrement()));
         this.key = exchange.getKey();
         this.keyTarget = new PersistitKeyValueTarget();
         this.keyTarget.attach(this.key);
@@ -55,10 +61,23 @@ public class Sorter
         this.valueTarget.attach(this.value);
         this.rowFields = rowType.nFields();
         this.fieldTypes = new AkType[this.rowFields];
+        for (int i = 0; i < rowFields; i++) {
+            fieldTypes[i] = rowType.typeAt(i);
+        }
         // Append a count field as a sort key, to ensure key uniqueness for Persisit. By setting
         // the ascending flag equal to that of some other sort field, we don't change an all-ASC or all-DESC sort
         // into a less efficient mixed-mode sort.
         this.ordering.append(DUMMY_EXPRESSION, ordering.ascending(0));
+        int nsort = this.ordering.sortFields();
+        this.evaluations = new ArrayList<ExpressionEvaluation>(nsort);
+        this.orderingTypes = new AkType[nsort];
+        for (int i = 0; i < nsort; i++) {
+            orderingTypes[i] = this.ordering.type(i);
+            ExpressionEvaluation evaluation = this.ordering.expression(i).evaluation();
+            evaluation.of(adapter);
+            evaluation.of(bindings);
+            evaluations.add(evaluation);
+        }
     }
 
     public Cursor sort() throws PersistitException
@@ -69,17 +88,21 @@ public class Sorter
 
     void close()
     {
-        try {
-            exchange.removeAll();
-        } catch (PersistitException e) {
-            throw new PersistitAdapterException(e);
+        if (exchange != null) {
+            try {
+                exchange.removeTree();
+            } catch (PersistitException e) {
+                throw new PersistitAdapterException(e);
+            } finally {
+                // Don't return the exchange. TreeServiceImpl caches it for the tree, and we're done with the tree.
+                // THIS CAUSES A LEAK OF EXCHANGES: adapter.returnExchange(exchange);
+                exchange = null;
+            }
         }
-        adapter.returnExchange(exchange);
     }
 
     private void loadTree() throws PersistitException
     {
-        exchange.removeAll(); // In case cleanup was somehow avoided on previous sort.
         try {
             Row row;
             while ((row = input.next()) != null) {
@@ -92,9 +115,6 @@ public class Sorter
             LOG.error("Caught exception while loading tree for sort", e);
             exchange.removeAll();
             throw e;
-        } finally {
-            exchange.getValue().setStreamMode(false);
-            adapter.returnExchange(exchange);
         }
     }
 
@@ -109,6 +129,7 @@ public class Sorter
                 allAscending = false;
             }
         }
+        exchange.clear();
         SortCursor cursor = allAscending ? new SortCursorAscending(this) :
                             allDescending ? new SortCursorDescending(this) : new SortCursorMixedOrder(this);
         cursor.open(bindings);
@@ -120,12 +141,10 @@ public class Sorter
         key.clear();
         int sortFields = ordering.sortFields() - 1; // Don't include the artificial count field
         for (int i = 0; i < sortFields; i++) {
-            ExpressionEvaluation evaluation = ordering.evaluation(i);
+            ExpressionEvaluation evaluation = evaluations.get(i);
             evaluation.of(row);
             ValueSource keySource = evaluation.eval();
-            // TODO: When ordering has server expressions instead of qp expressions: ordering.type(i));
-            // TODO: Or even better: fieldTypes[i]
-            keyTarget.expectingType(keySource.getConversionType());
+            keyTarget.expectingType(orderingTypes[i]);
             Converters.convert(keySource, keyTarget);
         }
         key.append(rowCount++);
@@ -137,9 +156,6 @@ public class Sorter
         value.setStreamMode(true);
         for (int i = 0; i < rowFields; i++) {
             ValueSource field = row.eval(i);
-            if (fieldTypes[i] == null) {
-                fieldTypes[i] = field.getConversionType();
-            }
             valueTarget.expectingType(fieldTypes[i]);
             Converters.convert(field, valueTarget);
         }
@@ -149,6 +165,8 @@ public class Sorter
 
     private static final Logger LOG = LoggerFactory.getLogger(Sorter.class);
     private static final Expression DUMMY_EXPRESSION = LiteralExpression.forNull();
+    private static final String SORT_TREE_NAME_PREFIX = "sort.";
+    private static final AtomicLong SORTER_ID_GENERATOR = new AtomicLong(0);
 
     // Object state
 
@@ -156,14 +174,14 @@ public class Sorter
     final Cursor input;
     final RowType rowType;
     final API.Ordering ordering;
+    final List<ExpressionEvaluation> evaluations;
     final Bindings bindings;
-    final Exchange exchange;
     final Key key;
     final Value value;
     final PersistitKeyValueTarget keyTarget;
     final PersistitValueValueTarget valueTarget;
     final int rowFields;
-    // TODO: Horrible hack. When we switch from qp.Expression to server.Expression, use Expression.valueType()
-    final AkType fieldTypes[];
+    final AkType fieldTypes[], orderingTypes[];
+    Exchange exchange;
     long rowCount = 0;
 }

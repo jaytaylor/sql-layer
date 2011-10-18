@@ -28,12 +28,10 @@ import java.util.List;
 
 public final class NotExpression extends AbstractUnaryExpression {
 
-    @Scalar("not") public static final ExpressionComposer COMPOSER = new ExpressionComposer() {
+    @Scalar("not") public static final ExpressionComposer COMPOSER = new UnaryComposer() {
         @Override
-        public Expression compose(List<? extends Expression> arguments) {
-            if (arguments.size() != 0)
-                throw new IllegalArgumentException("NOT must take exactly one argument: " + arguments);
-            return new NotExpression(arguments.get(0));
+        protected Expression compose(Expression argument) {
+            return new NotExpression(argument);
         }
     };
 

@@ -12,6 +12,8 @@ case-1: CASE statement
 
 cast-1: explicit CAST
 
+cast-2: non-booleans as condition
+
 date-time-1: date/time function
 
 delete-1: delete without conditions

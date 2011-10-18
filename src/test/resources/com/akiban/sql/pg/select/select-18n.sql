@@ -1,0 +1,1 @@
+select name from customers WHERE 0 ORDER BY name

@@ -16,7 +16,6 @@
 package com.akiban.qp.rowtype;
 
 
-import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.util.ArgumentValidation;
 
@@ -47,20 +46,30 @@ public class TypeComposition
                     }
                 }
                 if (ancestor) {
-                    // Find rootmost table in that
-                    UserTable thatRoot = that.tables.iterator().next();
-                    while (thatRoot.parentTable() != null && that.tables.contains(thatRoot.parentTable())) {
-                        thatRoot = thatRoot.parentTable();
-                    }
-                    // this is an ancestor of that if that's rootmost table has an ancestor in this.
-                    UserTable thatAncestor = thatRoot;
-                    ancestor = Boolean.FALSE;
-                    while (thatAncestor != null && !ancestor) {
-                        thatAncestor = thatAncestor.parentTable();
-                        ancestor = this.tables.contains(thatAncestor);
-                    }
+                    ancestor = levelsApart(that) > 0;
                 }
                 ancestorOf.put(that.rowType, ancestor);
+            }
+        }
+        return ancestor;
+    }
+
+    /**
+     * Indicates whether this is a parentof that: this is not identical to that, and:
+     * - the tables comprising this and that are disjoint, and
+     * - the rootmost table's parent is among the tables of this.
+     * @param that
+     * @return true if this is an ancestor of that, false otherwise.
+     */
+    public boolean isParentOf(TypeComposition that)
+    {
+        boolean ancestor;
+        if (this == that) {
+            ancestor = false;
+        } else {
+            ancestor = isAncestorOf(that);
+            if (ancestor) {
+                ancestor = levelsApart(that) > 0;
             }
         }
         return ancestor;
@@ -82,6 +91,29 @@ public class TypeComposition
         ArgumentValidation.notEmpty("tables", tables);
         this.rowType = rowType;
         this.tables = Collections.unmodifiableSet(new HashSet<UserTable>(tables));
+    }
+
+    // For use by this class
+
+    // If this is an ancestor of that, then the return value is the number of generations separating the two.
+    // (parent = 1). If this is not an ancestor of that, return -1.
+    public int levelsApart(TypeComposition that)
+    {
+        // Find rootmost table in that
+        UserTable thatRoot = that.tables.iterator().next();
+        while (thatRoot.parentTable() != null && that.tables.contains(thatRoot.parentTable())) {
+            thatRoot = thatRoot.parentTable();
+        }
+        // this is an ancestor of that if that's rootmost table has an ancestor in this.
+        int generationsApart = 0;
+        UserTable thatAncestor = thatRoot;
+        boolean ancestor = false;
+        while (thatAncestor != null && !ancestor) {
+            thatAncestor = thatAncestor.parentTable();
+            ancestor = this.tables.contains(thatAncestor);
+            generationsApart++;
+        }
+        return ancestor ? generationsApart : -1;
     }
 
     // Object state

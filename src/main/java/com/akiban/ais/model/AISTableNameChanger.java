@@ -15,6 +15,9 @@
 
 package com.akiban.ais.model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class AISTableNameChanger {
     public AISTableNameChanger(UserTable table)
     {
@@ -38,16 +41,32 @@ public class AISTableNameChanger {
     }
 
     public void doChange() {
-        table.getAIS().removeTable(table.getName());
+        AkibanInformationSchema ais = table.getAIS();
+        ais.removeTable(table.getName());
         TableName newName = new TableName(newSchemaName, newTableName);
 
-        // Index is the only object that refers to a table by name (in its own name)
-        for(Index index : table.getIndexesIncludingInternal()) {
+        // Fix indexes because index names incorporate table name
+        for (Index index : table.getIndexesIncludingInternal()) {
             index.setIndexName(new IndexName(newName, index.getIndexName().getName()));
         }
-
+        // Join names too. Copy the joins because ais.getJoins() will be updated inside the loop
+        NameGenerator nameGenerator = new DefaultNameGenerator();
+        for (Join join : new ArrayList<Join>(ais.getJoins().values())) {
+            if (join.getParent().getName().equals(table.getName())) {
+                String newJoinName = nameGenerator.generateJoinName(newName,
+                                                                    join.getChild().getName(),
+                                                                    join.getJoinColumns());
+                join.replaceName(newJoinName);
+            } else if (join.getChild().getName().equals(table.getName())) {
+                String newJoinName = nameGenerator.generateJoinName(join.getParent().getName(),
+                                                                    newName,
+                                                                    join.getJoinColumns());
+                join.replaceName(newJoinName);
+            }
+        }
+        // Rename the table and put back in AIS
         table.setTableName(newName);
-        table.getAIS().addUserTable(table);
+        ais.addUserTable(table);
     }
 
 

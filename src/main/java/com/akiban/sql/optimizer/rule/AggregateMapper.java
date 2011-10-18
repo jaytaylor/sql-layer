@@ -41,16 +41,20 @@ public class AggregateMapper extends BaseRule
 
     @Override
     public void apply(PlanContext plan) {
-        Collector c = new Collector();
-        plan.getPlan().accept(c);
-        for (AggregateSource source : c.found) {
+        List<AggregateSource> sources = new AggregateSourceFinder().find(plan.getPlan());
+        for (AggregateSource source : sources) {
             Mapper m = new Mapper(source);
             m.remap(source);
         }
     }
 
-    static class Collector implements PlanVisitor, ExpressionVisitor {
-        List<AggregateSource> found = new ArrayList<AggregateSource>();
+    static class AggregateSourceFinder implements PlanVisitor, ExpressionVisitor {
+        List<AggregateSource> result = new ArrayList<AggregateSource>();
+
+        public List<AggregateSource> find(PlanNode root) {
+            root.accept(this);
+            return result;
+        }
 
         @Override
         public boolean visitEnter(PlanNode n) {
@@ -63,7 +67,7 @@ public class AggregateMapper extends BaseRule
         @Override
         public boolean visit(PlanNode n) {
             if (n instanceof AggregateSource)
-                found.add((AggregateSource)n);
+                result.add((AggregateSource)n);
             return true;
         }
 
@@ -111,6 +115,9 @@ public class AggregateMapper extends BaseRule
                 }
                 else if (n instanceof Project) {
                     remap(((Project)n).getFields());
+                }
+                else if (n instanceof Limit) {
+                    // Understood not but mapped.
                 }
                 else
                     break;

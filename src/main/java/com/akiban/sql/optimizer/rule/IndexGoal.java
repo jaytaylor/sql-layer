@@ -230,6 +230,12 @@ public class IndexGoal implements Comparator<IndexScan>
             int idx = 0;
             for (OrderByExpression targetColumn : ordering.getOrderBy()) {
                 ExpressionNode targetExpression = targetColumn.getExpression();
+                if (targetExpression.isColumn() &&
+                    (grouping != null)) {
+                    if (((ColumnExpression)targetExpression).getTable() == grouping) {
+                        targetExpression = grouping.getField(((ColumnExpression)targetExpression).getPosition());
+                    }
+                }
                 OrderByExpression indexColumn = null;
                 if (idx < indexOrdering.size())
                     indexColumn = indexOrdering.get(idx);
@@ -452,6 +458,8 @@ public class IndexGoal implements Comparator<IndexScan>
         private RequiredColumns requiredColumns;
         private Map<PlanNode,Boolean> excludedPlanNodes;
         private Map<ExpressionNode,Boolean> excludedExpressions;
+        private Stack<Boolean> excludeNodeStack = new Stack<Boolean>();
+        private boolean excludeNode = false;
         private int excludeDepth = 0;
 
         public RequiredColumnsFiller(RequiredColumns requiredColumns) {
@@ -472,14 +480,16 @@ public class IndexGoal implements Comparator<IndexScan>
 
         @Override
         public boolean visitEnter(PlanNode n) {
-            if (exclude(n))
-                excludeDepth++;
+            // Input nodes are called within the context of their output.
+            // We want to know whether just this node is excluded, not
+            // it and all its inputs.
+            excludeNodeStack.push(excludeNode);
+            excludeNode = exclude(n);
             return visit(n);
         }
         @Override
         public boolean visitLeave(PlanNode n) {
-            if (exclude(n))
-                excludeDepth--;
+            excludeNode = excludeNodeStack.pop();
             return true;
         }
         @Override
@@ -489,19 +499,19 @@ public class IndexGoal implements Comparator<IndexScan>
 
         @Override
         public boolean visitEnter(ExpressionNode n) {
-            if (exclude(n))
+            if (!excludeNode && exclude(n))
                 excludeDepth++;
             return visit(n);
         }
         @Override
         public boolean visitLeave(ExpressionNode n) {
-            if (exclude(n))
+            if (!excludeNode && exclude(n))
                 excludeDepth--;
             return true;
         }
         @Override
         public boolean visit(ExpressionNode n) {
-            if (excludeDepth == 0) {
+            if (!excludeNode && (excludeDepth == 0)) {
                 if (n instanceof ColumnExpression)
                     requiredColumns.require((ColumnExpression)n);
             }

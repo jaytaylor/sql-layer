@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.akiban.ais.io.AISTarget;
@@ -154,6 +155,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     private static final String TREE_NAME_SEPARATOR = "$$";
 
+    private static final AtomicInteger indexCounter = new AtomicInteger(0);
+
     private interface AISChangeCallback {
         public void beforeCommit(Exchange schemaExchange, TreeService treeService);
     }
@@ -181,7 +184,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return group.getName() + TREE_NAME_SEPARATOR +
                iName.getSchemaName() + TREE_NAME_SEPARATOR +
                iName.getTableName() + TREE_NAME_SEPARATOR +
-               iName.getName();
+               iName.getName() + TREE_NAME_SEPARATOR +
+               indexCounter.getAndIncrement(); // Ensure uniqueness when tables are copied, (e.g. rename, alter table).
     }
 
     /**

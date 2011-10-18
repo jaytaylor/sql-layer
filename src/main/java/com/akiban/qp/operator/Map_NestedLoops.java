@@ -118,6 +118,7 @@ class Map_NestedLoops extends Operator
         {
             this.bindings = bindings;
             this.outerInput.open(bindings);
+            this.closed = false;
         }
 
         @Override
@@ -168,7 +169,9 @@ class Map_NestedLoops extends Operator
             } else {
                 this.outerJoinRowEvaluations = new ArrayList<ExpressionEvaluation>();
                 for (Expression outerJoinRowExpression : outerJoinRowExpressions) {
-                    outerJoinRowEvaluations.add(outerJoinRowExpression.evaluation());
+                    ExpressionEvaluation eval = outerJoinRowExpression.evaluation();
+                    eval.of(adapter);
+                    outerJoinRowEvaluations.add(eval);
                 }
             }
         }
@@ -207,7 +210,7 @@ class Map_NestedLoops extends Operator
         private void closeOuter()
         {
             outerRow.release();
-            outerRow.release();
+            outerJoinRow.release();
             outerInput.close();
         }
 

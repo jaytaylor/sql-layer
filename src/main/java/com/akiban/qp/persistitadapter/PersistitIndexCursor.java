@@ -75,7 +75,9 @@ class PersistitIndexCursor implements Cursor
         } catch (PersistitException e) {
             throw new StoreAdapterRuntimeException(e);
         }
-        return exchange == null ? null : row.get();
+        PersistitIndexRow next = exchange == null ? null : row.get();
+        assert (next == null) == (exchange == null);
+        return next;
     }
 
     @Override

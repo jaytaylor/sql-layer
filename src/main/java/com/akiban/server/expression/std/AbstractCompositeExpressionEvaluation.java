@@ -16,6 +16,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.ExpressionEvaluation;
 
@@ -38,6 +39,13 @@ public abstract class AbstractCompositeExpressionEvaluation implements Expressio
     public void of(Bindings bindings) {
         for (ExpressionEvaluation child : children) {
             child.of(bindings);
+        }
+    }
+
+    @Override
+    public void of(StoreAdapter adapter) {
+        for (ExpressionEvaluation child : children) {
+            child.of(adapter);
         }
     }
 

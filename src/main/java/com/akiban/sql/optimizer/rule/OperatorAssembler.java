@@ -18,10 +18,10 @@ package com.akiban.sql.optimizer.rule;
 import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.row.BindableRow;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.expression.std.LiteralExpression;
 
-import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.server.expression.Expression;
@@ -36,20 +36,16 @@ import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ParameterNode;
 
-import com.akiban.qp.operator.UndefBindings;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.*;
 
-import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.expression.UnboundExpressions;
-
-import com.akiban.server.aggregation.Aggregator;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
@@ -242,6 +238,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleProject((Project)node);
             else if (node instanceof ExpressionsSource)
                 return assembleExpressionsSource((ExpressionsSource)node);
+            else if (node instanceof NullSource)
+                return assembleNullSource((NullSource)node);
             else
                 throw new UnsupportedSQLException("Plan node " + node, null);
         }
@@ -269,19 +267,22 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleExpressionsSource(ExpressionsSource expressionsSource) {
             RowStream stream = new RowStream();
             stream.rowType = valuesRowType(expressionsSource.getFieldTypes());
-            List<Row> rows = new ArrayList<Row>(expressionsSource.getExpressions().size());
+            List<BindableRow> bindableRows = new ArrayList<BindableRow>();
             for (List<ExpressionNode> exprs : expressionsSource.getExpressions()) {
                 List<Expression> expressions = new ArrayList<Expression>(exprs.size());
                 for (ExpressionNode expr : exprs) {
                     expressions.add(assembleExpression(expr, stream.fieldOffsets));
                 }
-                rows.add(new ExpressionRow(stream.rowType, UndefBindings.only(),
-                                           expressions));
+                bindableRows.add(BindableRow.of(stream.rowType, expressions));
             }
-            stream.operator = API.valuesScan_Default(rows, stream.rowType);
+            stream.operator = API.valuesScan_Default(bindableRows, stream.rowType);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(expressionsSource, 
                                                                stream.rowType);
             return stream;
+        }
+
+        protected RowStream assembleNullSource(NullSource node) {
+            return assembleExpressionsSource(new ExpressionsSource(Collections.<List<ExpressionNode>>emptyList()));
         }
 
         protected RowStream assembleSelect(Select select) {
@@ -473,41 +474,21 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleAggregateSource(AggregateSource aggregateSource) {
             RowStream stream = assembleStream(aggregateSource.getInput());
-            int nkeys = aggregateSource.getGroupBy().size();
-            int naggs = aggregateSource.getAggregates().size();
+            int nkeys = aggregateSource.getNGroupBy();
             // TODO: Temporary until aggregate_Partial fully functional.
-            if ((nkeys == 0) && (naggs == 1)) {
-                AggregateFunctionExpression aggr1 = 
-                    aggregateSource.getAggregates().get(0);
-                if ((aggr1.getOperand() == null) &&
-                    (aggr1.getFunction().equals("COUNT"))) {
-                    stream.operator = API.count_Default(stream.operator, stream.rowType);
-                    stream.rowType = stream.operator.rowType();
-                    stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource, 
-                                                                       stream.rowType);
-                    return stream;
-                }
+            if (!aggregateSource.isProjectSplitOff()) {
+                assert ((nkeys == 0) &&
+                        (aggregateSource.getNAggregates() == 1));
+                stream.operator = API.count_Default(stream.operator, stream.rowType);
+                stream.rowType = stream.operator.rowType();
+                stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource, 
+                                                                   stream.rowType);
+                return stream;
             }
-            List<Expression> expressions = new ArrayList<Expression>(nkeys + naggs);
-            List<String> aggregatorNames = new ArrayList<String>(naggs);
-            for (ExpressionNode groupBy : aggregateSource.getGroupBy()) {
-                expressions.add(assembleExpression(groupBy, stream.fieldOffsets));
-            }
-            for (AggregateFunctionExpression aggr : aggregateSource.getAggregates()) {
-                // Should have been split up by now.
-                assert !aggr.isDistinct();
-                Expression operand;
-                if (aggr.getOperand() != null)
-                  operand = assembleExpression(aggr.getOperand(), stream.fieldOffsets);
-                else
-                  operand = Expressions.literal(1L); // Anything non-null will do.
-                expressions.add(operand);
-                aggregatorNames.add(aggr.getFunction());
-            }
-            stream.operator = API.project_Default(stream.operator, stream.rowType, 
-                                                  expressions);
-            stream.rowType = stream.operator.rowType();
-            switch (aggregateSource.getImplementation()) {
+            AggregateSource.Implementation impl = aggregateSource.getImplementation();
+            if (impl == null)
+              impl = AggregateSource.Implementation.SORT;
+            switch (impl) {
             case PRESORTED:
             case UNGROUPED:
                 break;
@@ -524,7 +505,7 @@ public class OperatorAssembler extends BaseRule
             }
             stream.operator = API.aggregate_Partial(stream.operator, nkeys,
                                                     rulesContext.getAggregatorRegistry(),
-                                                    aggregatorNames);
+                                                    aggregateSource.getAggregateFunctions());
             stream.rowType = stream.operator.rowType();
             stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource,
                                                                stream.rowType);
@@ -684,15 +665,18 @@ public class OperatorAssembler extends BaseRule
                 Expression[] lowKeys = null, highKeys = null;
                 boolean lowInc = false, highInc = false;
                 int lidx = kidx, hidx = kidx;
-                if (lowComparand != null) {
+                if ((lidx > 0) || (lowComparand != null)) {
                     lowKeys = keys;
-                    if (highComparand != null) {
+                    lowInc = true;
+                    if ((hidx > 0) || (highComparand != null)) {
                         highKeys = new Expression[nkeys];
-                        System.arraycopy(keys, 0, highKeys, 0, kidx);
+                        highInc = true;
+                        System.arraycopy(keys, 0, highKeys, 0, nkeys);
                     }
                 }
-                else if (highComparand != null) {
+                else if ((hidx > 0) || (highComparand != null)) {
                     highKeys = keys;
+                    highInc = true;
                 }
                 if (lowComparand != null) {
                     lowKeys[lidx++] = assembleExpression(lowComparand, fieldOffsets);

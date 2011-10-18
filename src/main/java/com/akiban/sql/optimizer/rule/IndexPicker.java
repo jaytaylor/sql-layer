@@ -143,7 +143,10 @@ public class IndexPicker extends BaseRule
                     if (grouping != null) {
                         List<ExpressionNode> groupBy = grouping.getGroupBy();
                         for (OrderByExpression orderBy : ordering.getOrderBy()) {
-                            if (!groupBy.contains(orderBy.getExpression())) {
+                            ExpressionNode orderByExpr = orderBy.getExpression();
+                            if (!((orderByExpr.isColumn() &&
+                                   (((ColumnExpression)orderByExpr).getTable() == grouping)) ||
+                                  groupBy.contains(orderByExpr))) {
                                 ordering = null;
                                 break;
                             }
@@ -268,7 +271,7 @@ public class IndexPicker extends BaseRule
             IndexScan lindex = pickBestIndex(left, lgoal);
             boundTables.remove(right);
             
-            if (lindex == null) 
+            if ((lindex == null) || !lindex.hasConditions())
                 return false;
 
             boolean found = false;

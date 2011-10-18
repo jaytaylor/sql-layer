@@ -26,7 +26,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.aggregation.Aggregator;
 import com.akiban.server.aggregation.AggregatorFactory;
 import com.akiban.server.error.InconvertibleTypesException;
-import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
@@ -39,7 +38,6 @@ import org.junit.Test;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
@@ -48,7 +46,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
-public final class AggregateOperatorTest {
+public final class Aggregate_PartialTest {
 
     @Test
     public void simpleNoGroupBy() {
@@ -62,7 +60,7 @@ public final class AggregateOperatorTest {
         Deque<Row> expected = new RowsBuilder(AkType.VARCHAR)
                 .row("1, 2, 3")
                 .rows();
-        check(plan, expected);
+        OperatorTestHelper.check(plan, expected);
     }
 
     @Test
@@ -80,7 +78,31 @@ public final class AggregateOperatorTest {
                 .row(2L, "12")
                 .row(3L, "13")
                 .rows();
-        check(plan, expected);
+        OperatorTestHelper.check(plan, expected);
+    }
+
+    /**
+     * Situation like <tt>SELECT name FROM customers GROUP BY name</tt>. In this case, all of the columns are
+     * GROUP BY, and there's no aggregator.
+     */
+    @Test
+    public void groupByWithoutAggregators() {
+        TestOperator input = new TestOperator(new RowsBuilder(AkType.LONG)
+                .row(1L)
+                .row(1L)
+                .row(2L)
+                .row(3L)
+                .row(1L)
+        );
+        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
+        Operator plan = new Aggregate_Partial(input, 1, Collections.<AggregatorFactory>emptyList(), rowType);
+        Deque<Row> expected = new RowsBuilder(AkType.LONG)
+                .row(1L)
+                .row(2L)
+                .row(3L)
+                .row(1L)
+                .rows();
+        OperatorTestHelper.check(plan, expected);
     }
 
     @Test
@@ -106,7 +128,7 @@ public final class AggregateOperatorTest {
                 .row(null, "13, 14")
                 .row(1L, "15, 16")
                 .rows();
-        check(plan, expected);
+        OperatorTestHelper.check(plan, expected);
     }
 
     @Test
@@ -126,27 +148,27 @@ public final class AggregateOperatorTest {
                 .row(2L, "bravo", "4")
                 .row(2L, "charlie", "5")
                 .rows();
-        check(plan, expected);
-    }
-
-    @Test
-    public void noInputRowsWithGroupBy() {
-        TestOperator input = new TestOperator(new RowsBuilder(AkType.LONG));
-        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
-        Operator plan = new Aggregate_Partial(input, 0, Collections.singletonList(TEST_AGGREGATOR), rowType);
-        Deque<Row> expected = new RowsBuilder(AkType.VARCHAR)
-                .row(ValueHolder.holdingNull())
-                .rows();
-        check(plan, expected);
+        OperatorTestHelper.check(plan, expected);
     }
 
     @Test
     public void noInputRowsNoGroupBy() {
+        TestOperator input = new TestOperator(new RowsBuilder(AkType.LONG));
+        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
+        Operator plan = new Aggregate_Partial(input, 0, Collections.singletonList(TEST_AGGREGATOR), rowType);
+        Deque<Row> expected = new RowsBuilder(AkType.VARCHAR)
+                .row(new ValueHolder(AkType.VARCHAR, EMPTY))
+                .rows();
+        OperatorTestHelper.check(plan, expected);
+    }
+
+    @Test
+    public void noInputRowsWithGroupBy() {
         TestOperator input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.LONG));
         AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType());
         Operator plan = new Aggregate_Partial(input, 1, Collections.singletonList(TEST_AGGREGATOR), rowType);
         Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR).rows();
-        check(plan, expected);
+        OperatorTestHelper.check(plan, expected);
     }
 
     @Test
@@ -190,7 +212,7 @@ public final class AggregateOperatorTest {
         Collections.swap(expectedFull, 2, 3);
 
         // Finally, check
-        check(plan, expectedFull);
+        OperatorTestHelper.check(plan, expectedFull);
     }
 
     @Test(expected = InconvertibleTypesException.class)
@@ -205,7 +227,7 @@ public final class AggregateOperatorTest {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        execute(plan);
+        OperatorTestHelper.execute(plan);
     }
 
     @Test(expected = NullPointerException.class)
@@ -280,41 +302,6 @@ public final class AggregateOperatorTest {
         new Aggregate_Partial(input, 2, Collections.singletonList(TEST_AGGREGATOR), rowType);
     }
 
-    private static void check(Operator plan, Collection<Row> expecteds) {
-        List<Row> actuals = execute(plan);
-        if (expecteds.size() != actuals.size()) {
-            assertEquals("output", Strings.join(expecteds), Strings.join(actuals));
-            assertEquals("size (expecteds=" + expecteds+", actuals=" + actuals + ')', expecteds.size(), actuals.size());
-        }
-        int rowCount = 0;
-        try {
-            Iterator<Row> expectedsIter = expecteds.iterator();
-            for (Row actual : actuals) {
-                Row expected = expectedsIter.next();
-                for (int i = 0; i < plan.rowType().nFields(); ++i) {
-                    ValueHolder actualHolder = new ValueHolder(actual.eval(i));
-                    ValueHolder expectedHolder = new ValueHolder(expected.eval(i));
-
-                    if (!expectedHolder.equals(actualHolder)) {
-                        assertEquals(
-                                String.format("row[%d] field[%d]", rowCount, i),
-                                str(expecteds),
-                                str(actuals)
-                        );
-                        assertEquals(String.format("row[%d] field[%d]", rowCount, i), expectedHolder, actualHolder);
-                        throw new AssertionError("should have failed by now!");
-                    }
-                }
-                ++rowCount;
-            }
-        }
-        finally {
-            for (Row actual : actuals) {
-                actual.release();
-            }
-        }
-    }
-
     private static <R extends Row,C extends Collection<? super Row>>
     C shuffle(Collection<? extends R> first, Collection<? extends R> second, C output)
     {
@@ -335,25 +322,6 @@ public final class AggregateOperatorTest {
         return output;
     }
 
-    private static String str(Collection<? extends Row> rows) {
-        return Strings.join(rows);
-    }
-
-    private static List<Row> execute(Operator plan) {
-        List<Row> rows = new ArrayList<Row>();
-        Cursor cursor = plan.cursor(ADAPTER);
-        cursor.open(UndefBindings.only());
-        try {
-            for(Row row = cursor.next(); row != null; row = cursor.next()) {
-                row.acquire();
-                rows.add(row);
-            }
-            return rows;
-        } finally {
-            cursor.close();
-        }
-    }
-
     private ValueHolder wrapBytes(int... bytes) {
         byte[] asBytes = new byte[bytes.length];
         for (int i=0; i < bytes.length; ++i) {
@@ -369,7 +337,7 @@ public final class AggregateOperatorTest {
 
     // const
 
-    private static final TestAdapter ADAPTER = new TestAdapter();
+    private static final String EMPTY = "empty";
     private static final AggregatorFactory TEST_AGGREGATOR = new AggregatorFactory() {
         @Override
         public Aggregator get() {
@@ -406,61 +374,11 @@ public final class AggregateOperatorTest {
             Converters.convert(new ValueHolder(AkType.VARCHAR, asString), output);
         }
 
+        @Override
+        public ValueSource emptyValue() {
+            return new ValueHolder(AkType.VARCHAR, EMPTY);
+        }
+
         private StringBuilder result = new StringBuilder();
-    }
-
-    private static class TestAdapter extends StoreAdapter
-    {
-        @Override
-        public GroupCursor newGroupCursor(GroupTable groupTable)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange, UserTable innerJoinUntil)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public HKey newHKey(RowType rowType)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void updateRow(Row oldRow, Row newRow, Bindings bindings)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void writeRow(Row newRow, Bindings bindings)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void deleteRow(Row oldRow, Bindings bindings)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Cursor sort(Cursor input, RowType rowType, API.Ordering ordering, Bindings bindings)
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void checkQueryCancelation()
-        {
-        }
-
-        public TestAdapter()
-        {
-            super(null);
-        }
     }
 }

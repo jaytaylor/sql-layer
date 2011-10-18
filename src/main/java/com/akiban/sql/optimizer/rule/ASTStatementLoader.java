@@ -406,6 +406,9 @@ public class ASTStatementLoader extends BaseRule
             return conditions;
         }
 
+        /** Fill the given list with conditions from given AST node.
+         * Takes a list because BETWEEN generates <em>two</em> conditions.
+         */
         protected void addCondition(List<ConditionExpression> conditions, 
                                     ValueNode condition)
                 throws StandardException {
@@ -459,6 +462,11 @@ public class ASTStatementLoader extends BaseRule
                                      (UnaryOperatorNode)condition);
                 break;
 
+            case NodeTypes.IS_NODE:
+                addIsCondition(conditions,
+                               (IsNode)condition);
+                break;
+
             case NodeTypes.OR_NODE:
             case NodeTypes.AND_NODE:
             case NodeTypes.NOT_NODE:
@@ -473,6 +481,12 @@ public class ASTStatementLoader extends BaseRule
                                                            new BooleanConstantExpression(Boolean.TRUE),
                                                            condition.getType(), condition));
                 }
+                break;
+            case NodeTypes.CAST_NODE:
+                assert condition.getType().getTypeId().isBooleanTypeId();
+                conditions.add(new BooleanCastExpression(toExpression(((CastNode)condition)
+                                                                      .getCastOperand()),
+                                                         condition.getType(), condition));
                 break;
             case NodeTypes.JAVA_TO_SQL_VALUE_NODE:
                 conditions.add((ConditionExpression)
@@ -702,6 +716,27 @@ public class ASTStatementLoader extends BaseRule
                                                  ternary.getType(), ternary));
         }
 
+        protected void addIsCondition(List<ConditionExpression> conditions,
+                                      IsNode is)
+                throws StandardException {
+            List<ExpressionNode> operands = new ArrayList<ExpressionNode>(1);
+            operands.add(toExpression(is.getLeftOperand()));
+            String function;
+            if (((Boolean)((ConstantNode)is.getRightOperand()).getValue()).booleanValue())
+                function = "isTrue";
+            else
+                function = "isFalse";
+            FunctionCondition cond = new FunctionCondition(function, operands,
+                                                           is.getType(), is);
+            if (is.isNegated()) {
+                List<ConditionExpression> noperands = new ArrayList<ConditionExpression>(1);
+                noperands.add(cond);
+                cond = new LogicalFunctionCondition("not", noperands,
+                                                    is.getType(), is);
+            }
+            conditions.add(cond);
+        }
+
         protected void addLogicalFunctionCondition(List<ConditionExpression> conditions, 
                                                    ValueNode condition) 
                 throws StandardException {
@@ -747,6 +782,34 @@ public class ASTStatementLoader extends BaseRule
                 throw new UnsupportedSQLException("Unsuported condition", condition);
             conditions.add(new LogicalFunctionCondition(functionName, operands,
                                                         condition.getType(), condition));
+        }
+
+        /** Is this a boolean condition used as a normal value? */
+        protected boolean isConditionExpression(ValueNode value)
+                throws StandardException {
+            switch (value.getNodeType()) {
+            case NodeTypes.BINARY_EQUALS_OPERATOR_NODE:
+            case NodeTypes.BINARY_GREATER_THAN_OPERATOR_NODE:
+            case NodeTypes.BINARY_GREATER_EQUALS_OPERATOR_NODE:
+            case NodeTypes.BINARY_LESS_THAN_OPERATOR_NODE:
+            case NodeTypes.BINARY_LESS_EQUALS_OPERATOR_NODE:
+            case NodeTypes.BINARY_NOT_EQUALS_OPERATOR_NODE:
+            case NodeTypes.BETWEEN_OPERATOR_NODE:
+            case NodeTypes.IN_LIST_OPERATOR_NODE:
+            case NodeTypes.LIKE_OPERATOR_NODE:
+            case NodeTypes.IS_NULL_NODE:
+            case NodeTypes.IS_NOT_NULL_NODE:
+            case NodeTypes.IS_NODE:
+            case NodeTypes.OR_NODE:
+            case NodeTypes.AND_NODE:
+            case NodeTypes.NOT_NODE:
+                return true;
+            case NodeTypes.SUBQUERY_NODE:
+                return (((SubqueryNode)value).getSubqueryType() != 
+                        SubqueryNode.SubqueryType.EXPRESSION);
+            default:
+                return false;
+            }
         }
 
         /** Get given condition as a single node. */
@@ -899,6 +962,9 @@ public class ASTStatementLoader extends BaseRule
                                                        aggregateNode.isDistinct(),
                                                        type, valueNode);
             }
+            else if (isConditionExpression(valueNode)) {
+                return toCondition(valueNode);
+            }
             else if (valueNode instanceof UnaryOperatorNode) {
                 UnaryOperatorNode unary = (UnaryOperatorNode)valueNode;
                 List<ExpressionNode> operands = new ArrayList<ExpressionNode>(1);
@@ -910,8 +976,24 @@ public class ASTStatementLoader extends BaseRule
             else if (valueNode instanceof BinaryOperatorNode) {
                 BinaryOperatorNode binary = (BinaryOperatorNode)valueNode;
                 List<ExpressionNode> operands = new ArrayList<ExpressionNode>(2);
-                operands.add(toExpression(binary.getLeftOperand()));
-                operands.add(toExpression(binary.getRightOperand()));
+                int nodeType = valueNode.getNodeType();
+                switch (nodeType) {
+                case NodeTypes.CONCATENATION_OPERATOR_NODE:
+                    // Operator is binary but function is nary: collapse.
+                    while (true) {
+                        operands.add(toExpression(binary.getLeftOperand()));
+                        ValueNode right = binary.getRightOperand();
+                        if (right.getNodeType() != nodeType) {
+                            operands.add(toExpression(right));
+                            break;
+                        }
+                        binary = (BinaryOperatorNode)right;
+                    }
+                    break;
+                default:
+                    operands.add(toExpression(binary.getLeftOperand()));
+                    operands.add(toExpression(binary.getRightOperand()));
+                }
                 return new FunctionExpression(binary.getMethodName(),
                                               operands,
                                               binary.getType(), binary);
@@ -969,7 +1051,7 @@ public class ASTStatementLoader extends BaseRule
             }
             else if (valueNode instanceof ConditionalNode) {
                 ConditionalNode cond = (ConditionalNode)valueNode;
-                return new IfElseExpression(toCondition(cond.getTestCondition()),
+                return new IfElseExpression(toConditions(cond.getTestCondition()),
                                             toExpression(cond.getThenNode()),
                                             toExpression(cond.getElseNode()),
                                             cond.getType(), cond);
