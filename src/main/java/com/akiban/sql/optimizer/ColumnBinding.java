@@ -62,6 +62,10 @@ public class ColumnBinding
         return resultColumn;
     }
 
+    public boolean isNullable() {
+        return nullable;
+    }
+
     public DataTypeDescriptor getType() throws StandardException {
         if (resultColumn != null) {
             return resultColumn.getType();

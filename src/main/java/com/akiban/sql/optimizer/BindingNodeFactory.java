@@ -97,13 +97,15 @@ public class BindingNodeFactory extends NodeFactory
                     newFromTable = oldFromTable; // Not cloned in this subtree.
                 ResultColumn oldResultColumn = cb.getResultColumn();
                 if (oldResultColumn == null) {
-                    userData = new ColumnBinding(newFromTable, cb.getColumn());
+                    userData = new ColumnBinding(newFromTable,
+                                                 cb.getColumn(), cb.isNullable());
                 }
                 else {
                     ResultColumn newResultColumn = (ResultColumn)nodeMap.get(oldResultColumn);
                     if (newResultColumn == null)
                         newResultColumn = oldResultColumn;
-                    userData = new ColumnBinding(newFromTable, newResultColumn);
+                    userData = new ColumnBinding(newFromTable, newResultColumn, 
+                                                 cb.isNullable());
                 }
             }
             else {
