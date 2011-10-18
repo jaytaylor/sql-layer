@@ -16,27 +16,57 @@
 package com.akiban.server.test.it.keyupdate;
 
 import com.akiban.ais.model.Index;
+import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Test;
 
 public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
 
     @Test
     public void placeholderNoOrphan() {
+        final NewRow r1, r2;
         groupIndex("name_when", "c.name, o.when");
         writeRows(
-                createNewRow(o, 10L, 1L, "01-01-2001")
+                r1 = createNewRow(c, 1L, "Bergy")
+        );
+        checkIndex("name_when");
+        writeRows(
+                r2 = createNewRow(o, 10L, 1L, "01-01-2001")
+        );
+        checkIndex(
+                "name_when",
+                "Bergy, 01-01-2001, 1, 10 => " + depthOf(o)
+        );
+        deleteRow(r2);
+        checkIndex("name_when");
+        deleteRow(r1);
+        checkIndex("name_when");
+    }
+
+    @Test
+    public void placeholderWithOrphan() {
+        final NewRow r1, r2;
+        groupIndex("name_when", "c.name, o.when");
+        writeRows(
+                r1 = createNewRow(o, 10L, 1L, "01-01-2001")
         );
         checkIndex(
                 "name_when",
                 "null, 01-01-2001, 1, 10 => " + depthOf(o)
         );
         writeRows(
-                createNewRow(c, 1L, "Bergy")
+                r2 = createNewRow(c, 1L, "Bergy")
         );
         checkIndex(
                 "name_when",
                 "Bergy, 01-01-2001, 1, 10 => " + depthOf(o)
         );
+        deleteRow(r2);
+        checkIndex(
+                "name_when",
+                "null, 01-01-2001, 1, 10 => " + depthOf(o)
+        );
+        deleteRow(r1);
+        checkIndex("name_when");
     }
 
     public GroupIndexRjUpdateIT() {

@@ -19,6 +19,7 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.store.IndexRecordVisitor;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.Strings;
@@ -95,6 +96,10 @@ public abstract class GIUpdateITBase extends ITBase {
     String depthOf(int tableId) {
         UserTable userTable = ddl().getAIS(session()).getUserTable(tableId);
         return String.format("%d (Integer)", userTable.getDepth());
+    }
+
+    void deleteRow(NewRow row) {
+        dml().deleteRow(session(), row);
     }
 
     void groupIndex(String indexName, String tableColumnPairs) {

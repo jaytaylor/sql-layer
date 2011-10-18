@@ -22,7 +22,7 @@ import org.junit.Test;
 public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
     @Test
-    public void leftGIPlaceholderNoOrphan() {
+    public void placeholderNoOrphan() {
         groupIndex("name_when", "c.name, o.when");
         writeRows(
                 createNewRow(c, 1L, "Bergy")
@@ -41,7 +41,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
     }
 
     @Test
-    public void leftGIPlaceholderWithOrphan() {
+    public void placeholderWithOrphan() {
         groupIndex("name_when", "c.name, o.when");
         writeRows(
                 createNewRow(o, 10L, 1L, "01-01-2001")
