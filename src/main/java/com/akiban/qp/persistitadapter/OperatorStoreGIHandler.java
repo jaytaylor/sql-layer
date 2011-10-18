@@ -35,7 +35,6 @@ class OperatorStoreGIHandler {
 
     public void handleRow(GroupIndex groupIndex, Row row, Action action)
     {
-        assert Action.BULK_ADD.equals(action) == (sourceTable==null) : null;
         GroupIndexPosition sourceRowPosition = positionWithinBranch(groupIndex, sourceTable);
         if (sourceRowPosition.equals(GroupIndexPosition.BELOW_SEGMENT)) { // asserts sourceRowPosition != null :-)
             return; // nothing to do
@@ -47,10 +46,6 @@ class OperatorStoreGIHandler {
         target.attach(key);
         IndexRowComposition irc = groupIndex.indexRowComposition();
 
-        // nullPoint is the point at which we should stop nulling hkey values; needs a better name.
-        // This is the last index of the hkey component that should be nulled.
-        int nullPoint = -1;
-
         for(int i=0, LEN = irc.getLength(); i < LEN; ++i) {
             assert irc.isInRowData(i);
             assert ! irc.isInHKey(i);
@@ -60,15 +55,6 @@ class OperatorStoreGIHandler {
 
             ValueSource source = row.eval(flattenedIndex);
             Converters.convert(source, target.expectingType(column));
-
-            boolean isHKeyComponent = i+1 > groupIndex.getColumns().size();
-            if (sourceRowPosition.isAboveSegment() && isHKeyComponent && column.getTable().equals(sourceTable)) {
-                nullPoint = i;
-            }
-        }
-
-        if (!Action.BULK_ADD.equals(action) && sourceRowPosition.isAboveSegment() && nullPoint < 0) {
-            return;
         }
 
         // Description of group index entry values:
@@ -83,10 +69,6 @@ class OperatorStoreGIHandler {
         exchange.getValue().put(rightmostTableDepth);
 
         switch (action) {
-        case BULK_ADD:
-            assert nullPoint < 0 : nullPoint;
-            storeExchange(groupIndex, exchange);
-            break;
         case STORE:
             storeExchange(groupIndex, exchange);
             break;
@@ -177,26 +159,6 @@ class OperatorStoreGIHandler {
         }
     }
 
-    private boolean nullOutHKey(int nullPoint, GroupIndex groupIndex, Row row, Key key) {
-        if (nullPoint < 0) {
-            return false;
-        }
-        key.setDepth(nullPoint);
-        IndexRowComposition irc = groupIndex.indexRowComposition();
-        for (int i = groupIndex.getColumns().size(), LEN=irc.getLength(); i < LEN; ++i) {
-            if (i <= nullPoint) {
-                key.append(null);
-            }
-            else {
-                final int flattenedIndex = irc.getFieldPosition(i);
-                Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
-                ValueSource source = row.eval(flattenedIndex);
-                Converters.convert(source, target.expectingType(column));
-            }
-        }
-        return true;
-    }
-
     private OperatorStoreGIHandler(PersistitAdapter adapter, UserTable sourceTable) {
         this.adapter = adapter;
         this.sourceTable = sourceTable;
@@ -220,12 +182,7 @@ class OperatorStoreGIHandler {
         ABOVE_SEGMENT,
         BELOW_SEGMENT,
         WITHIN_SEGMENT
-        ;
-
-        public boolean isAboveSegment() { // more readable shorthand
-            return this == ABOVE_SEGMENT;
-        }
     }
 
-    static enum Action {STORE, DELETE, BULK_ADD }
+    static enum Action {STORE, DELETE }
 }

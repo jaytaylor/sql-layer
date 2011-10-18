@@ -98,7 +98,6 @@ final class OperatorStoreMaintenance {
     private Operator rootOperator(OperatorStoreGIHandler.Action action) {
         switch (action) {
         case STORE:
-        case BULK_ADD:
             return storePlan;
         case DELETE:
             return deletePlan;
@@ -109,7 +108,6 @@ final class OperatorStoreMaintenance {
     private boolean usePKs(OperatorStoreGIHandler.Action action) {
         switch (action) {
         case STORE:
-        case BULK_ADD:
             return usePksStore;
         case DELETE:
             return usePksDelete;
@@ -137,20 +135,6 @@ final class OperatorStoreMaintenance {
     private final boolean usePksStore;
     private final boolean usePksDelete;
     private final UserTableRowType rowType;
-
-    // for use by unit tests
-    static PlanCreationStruct createGroupIndexMaintenancePlan(
-            Schema schema,
-            GroupIndex groupIndex,
-            UserTableRowType rowType)
-    {
-        return createGroupIndexMaintenancePlan(
-                new BranchTables(schema, groupIndex),
-                groupIndex,
-                rowType,
-                true // TODO
-        );
-    }
 
     enum Relationship {
         PARENT, ID, CHILD

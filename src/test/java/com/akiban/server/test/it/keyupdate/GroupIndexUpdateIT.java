@@ -220,28 +220,6 @@ public final class GroupIndexUpdateIT extends ITBase {
         );
     }
 
-    @Test(expected = UnsupportedUniqueGroupIndexException.class)
-    public void uniqueGI() {
-        try {
-            createGroupIndex(groupName, "name_when_sku", true, "c.name, o.when, i.sku");
-        } catch (UnsupportedOperationException e) {
-            // irrelevant
-        }
-        try {
-            writeRows(
-                    createNewRow(c, 1L, "Horton")
-            );
-        } catch (final Exception e) {
-            for (Throwable cause = e; cause != null; cause = cause.getCause()) {
-                if (cause instanceof UnsupportedUniqueGroupIndexException) {
-                    throw (UnsupportedUniqueGroupIndexException)cause;
-                }
-            }
-            throw new RuntimeException(e);
-        }
-        fail("expected an exception of some sort");
-    }
-
     @Test
     public void ihIndexNoOrphans() {
         String indexName = "sku_handling-instructions";

@@ -242,7 +242,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                     plan,
                     UndefBindings.only(),
                     OperatorStoreGIHandler.forBuilding(adapter),
-                    OperatorStoreGIHandler.Action.BULK_ADD
+                    OperatorStoreGIHandler.Action.STORE
             );
         }
     }
