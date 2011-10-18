@@ -64,12 +64,27 @@ public abstract class GIUpdateITBase extends ITBase {
         groupName = null;
     }
 
-    void checkIndex(String groupIndexName, String... expected) {
-        GroupIndex groupIndex = ddl().getAIS(session()).getGroup(groupName).getIndex(groupIndexName);
+    void writeAndCheck(NewRow row, String... expectedGiEntries) {
+        writeRows(row);
+        checkIndex(groupIndexName, expectedGiEntries);
+    }
+
+    void deleteAndCheck(NewRow row, String... expectedGiEntries) {
+        dml().deleteRow(session(), row);
+        checkIndex(groupIndexName, expectedGiEntries);
+    }
+
+    void updateAndCheck(NewRow oldRow, NewRow newRow, String... expectedGiEntries) {
+        dml().updateRow(session(), oldRow, newRow, null);
+        checkIndex(groupIndexName, expectedGiEntries);
+    }
+
+    void checkIndex(String indexName, String... expected) {
+        GroupIndex groupIndex = ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
         checkIndex(groupIndex, expected);
     }
 
-    void checkIndex(GroupIndex groupIndex, String... expected) {
+    private void checkIndex(GroupIndex groupIndex, String... expected) {
         final StringsIndexScanner scanner;
         try {
             scanner= persistitStore().traverse(session(), groupIndex, new StringsIndexScanner());
@@ -98,12 +113,13 @@ public abstract class GIUpdateITBase extends ITBase {
         return String.format("%d (Integer)", userTable.getDepth());
     }
 
-    void deleteRow(NewRow row) {
-        dml().deleteRow(session(), row);
+    String groupIndex(String indexName, String tableColumnPairs) {
+        createGroupIndex(groupName, indexName, tableColumnPairs, joinType);
+        return indexName;
     }
 
-    void groupIndex(String indexName, String tableColumnPairs) {
-        createGroupIndex(groupName, indexName, tableColumnPairs, joinType);
+    String groupIndex(String tableColumnPairs) {
+        return groupIndex(groupIndexName, tableColumnPairs);
     }
 
     GIUpdateITBase(Index.JoinType joinType) {
@@ -111,6 +127,7 @@ public abstract class GIUpdateITBase extends ITBase {
     }
 
     private final Index.JoinType joinType;
+    private final String groupIndexName = "test_gi";
 
     String groupName;
     Integer c;

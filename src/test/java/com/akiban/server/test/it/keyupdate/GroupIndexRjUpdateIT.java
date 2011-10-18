@@ -24,49 +24,35 @@ public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
     @Test
     public void placeholderNoOrphan() {
         final NewRow r1, r2;
-        groupIndex("name_when", "c.name, o.when");
-        writeRows(
+        groupIndex("c.name, o.when");
+        writeAndCheck(
                 r1 = createNewRow(c, 1L, "Bergy")
         );
-        checkIndex("name_when");
-        writeRows(
-                r2 = createNewRow(o, 10L, 1L, "01-01-2001")
-        );
-        checkIndex(
-                "name_when",
+        writeAndCheck(
+                r2 = createNewRow(o, 10L, 1L, "01-01-2001"),
                 "Bergy, 01-01-2001, 1, 10 => " + depthOf(o)
         );
-        deleteRow(r2);
-        checkIndex("name_when");
-        deleteRow(r1);
-        checkIndex("name_when");
+        deleteAndCheck(r2);
+        deleteAndCheck(r1);
     }
 
     @Test
     public void placeholderWithOrphan() {
         final NewRow r1, r2;
-        groupIndex("name_when", "c.name, o.when");
-        writeRows(
-                r1 = createNewRow(o, 10L, 1L, "01-01-2001")
-        );
-        checkIndex(
-                "name_when",
+        groupIndex("c.name, o.when");
+        writeAndCheck(
+                r1 = createNewRow(o, 10L, 1L, "01-01-2001"),
                 "null, 01-01-2001, 1, 10 => " + depthOf(o)
         );
-        writeRows(
-                r2 = createNewRow(c, 1L, "Bergy")
-        );
-        checkIndex(
-                "name_when",
+        writeAndCheck(
+                r2 = createNewRow(c, 1L, "Bergy"),
                 "Bergy, 01-01-2001, 1, 10 => " + depthOf(o)
         );
-        deleteRow(r2);
-        checkIndex(
-                "name_when",
+        deleteAndCheck(
+                r2,
                 "null, 01-01-2001, 1, 10 => " + depthOf(o)
         );
-        deleteRow(r1);
-        checkIndex("name_when");
+        deleteAndCheck(r1);
     }
 
     public GroupIndexRjUpdateIT() {
