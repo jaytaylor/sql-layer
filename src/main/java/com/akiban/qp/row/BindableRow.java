@@ -20,8 +20,11 @@ import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.types.ValueSource;
 import com.akiban.util.ArgumentValidation;
 
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 public abstract class BindableRow {
@@ -34,12 +37,8 @@ public abstract class BindableRow {
             if (!expression.isConstant())
                 return new BindingExpressions(rowType, expressions);
         }
-        // all expressions are const; put them into a ValuesHolderRow
-        ValuesHolderRow holderRow = new ValuesHolderRow(rowType);
-        int i = 0;
-        for (Expression expression : expressions) {
-            holderRow.holderAt(i++).copyFrom(expression.evaluation().eval());
-        }
+        // all expressions are const; put them into a ImmutableRow
+        ImmutableRow holderRow = new ImmutableRow(rowType, new ExpressionEvaluator(expressions));
         return new Delegating(holderRow);
     }
 
@@ -52,11 +51,7 @@ public abstract class BindableRow {
     public abstract Row bind(Bindings bindings, StoreAdapter adapter);
 
     private static Row strictCopy(Row input) {
-        ValuesHolderRow copy = new ValuesHolderRow(input.rowType());
-        for (int i=0; i < input.rowType().nFields(); ++i) {
-            copy.holderAt(i).copyFrom(input.eval(i));
-        }
-        return copy;
+        return new ImmutableRow(input.rowType(), new RowCopier(input));
     }
 
     // nested classes
@@ -87,6 +82,57 @@ public abstract class BindableRow {
 
         private final List<? extends Expression> expressions;
         private final RowType rowType;
+    }
+
+    private static class RowCopier implements Iterator<ValueSource> {
+
+        @Override
+        public boolean hasNext() {
+            return i < sourceRow.rowType().nFields();
+        }
+
+        @Override
+        public ValueSource next() {
+            return sourceRow.eval(i++);
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+
+        private RowCopier(Row sourceRow) {
+            this.sourceRow = sourceRow;
+        }
+
+        private final Row sourceRow;
+        private int i = 0;
+    }
+
+    private static class ExpressionEvaluator implements Iterator<ValueSource> {
+
+        @Override
+        public boolean hasNext() {
+            return expressions.hasNext();
+        }
+
+        @Override
+        public ValueSource next() {
+            Expression expression = expressions.next();
+            assert expression.isConstant() : "not constant: " + expression;
+            return expression.evaluation().eval();
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+
+        private ExpressionEvaluator(Collection<? extends Expression> expressions) {
+            this.expressions = expressions.iterator();
+        }
+
+        private final Iterator<? extends Expression> expressions;
     }
 
     private static class Delegating extends BindableRow {
