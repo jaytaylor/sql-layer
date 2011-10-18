@@ -25,9 +25,11 @@ public class TableBinding
 {
     private Table table;
     private GroupBinding groupBinding;
+    private boolean nullable;
         
-    public TableBinding(Table table) {
+    public TableBinding(Table table, boolean nullable) {
         this.table = table;
+        this.nullable = nullable;
     }
 
     public TableBinding(TableBinding other) {
@@ -37,6 +39,10 @@ public class TableBinding
 
     public Table getTable() {
         return table;
+    }
+
+    public boolean isNullable() {
+        return nullable;
     }
 
     public String toString() {

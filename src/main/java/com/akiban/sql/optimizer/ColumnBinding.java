@@ -36,14 +36,18 @@ public class ColumnBinding
     private FromTable fromTable;
     private Column column;
     private ResultColumn resultColumn;
+    private boolean nullable;
         
-    public ColumnBinding(FromTable fromTable, Column column) {
+    public ColumnBinding(FromTable fromTable, Column column, boolean nullable) {
         this.fromTable = fromTable;
         this.column = column;
+        this.nullable = nullable;
     }
-    public ColumnBinding(FromTable fromTable, ResultColumn resultColumn) {
+    public ColumnBinding(FromTable fromTable, ResultColumn resultColumn, 
+                         boolean nullable) {
         this.fromTable = fromTable;
         this.resultColumn = resultColumn;
+        this.nullable = nullable;
     }
 
     public FromTable getFromTable() {
@@ -67,7 +71,7 @@ public class ColumnBinding
             TypeId typeId = TypeId.getBuiltInTypeId(aisType.name().toUpperCase());
             if (typeId == null)
                 typeId = TypeId.getSQLTypeForJavaType(aisType.name());
-            boolean nullable = column.getNullable();
+            boolean nullable = this.nullable || column.getNullable();
             switch (aisType.nTypeParameters()) {
             case 0:
                 return new DataTypeDescriptor(typeId, nullable);

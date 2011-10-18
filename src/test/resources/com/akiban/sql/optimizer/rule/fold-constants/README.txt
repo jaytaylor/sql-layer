@@ -23,6 +23,8 @@ impossible-in: Condition built from IN cannot possibly be true.
 
 impossible-is-null: A NOT NULL column cannot satisfy IS NULL.
 
+possible-is-null: A NOT NULL column on an outer join can.
+
 in-duplicates: IN list with duplicate literals.
 
 in-expressions: IN list with expressions.
