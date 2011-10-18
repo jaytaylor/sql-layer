@@ -250,7 +250,7 @@ public class OperatorAssembler extends BaseRule
             stream.operator = API.indexScan_Default(indexRowType, 
                                                     indexScan.isReverseScan(),
                                                     assembleIndexKeyRange(indexScan, null),
-                                                    tableRowType(indexScan.getLeafMostTable()));
+                                                    tableRowType(indexScan.getLeafMostInnerTable()));
             stream.rowType = indexRowType;
             stream.fieldOffsets = new IndexFieldOffsets(indexScan, indexRowType);
             return stream;
