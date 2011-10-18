@@ -1,3 +1,9 @@
+akiban-server (0.8.0) natty; urgency=low
+
+  * Puck release.
+
+ -- Akiban Build User <build@akiban.com>  Mon, 17 Oct 2011 13:51:34 -0700
+
 akiban-server (0.7.2) natty; urgency=low
 
   * Development Release.
