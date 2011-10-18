@@ -34,7 +34,7 @@ import static org.junit.Assert.assertEquals;
 public abstract class GIUpdateITBase extends ITBase {
 
     @Before
-    public void createTables() {
+    public final void createTables() {
         c = createTable(SCHEMA, "c", "cid int key, name varchar(32)");
         o = createTable(SCHEMA, "o", "oid int key, c_id int, when varchar(32)", akibanFK("c_id", "c", "cid") );
         i = createTable(SCHEMA, "i", "iid int key, o_id int, sku int", akibanFK("o_id", "o", "oid") );
@@ -44,7 +44,7 @@ public abstract class GIUpdateITBase extends ITBase {
     }
 
     @After
-    public void forgetTables() throws PersistitException {
+    public final void forgetTables() throws PersistitException {
         dml().truncateTable(session(), a);
         dml().truncateTable(session(), i);
         dml().truncateTable(session(), o);

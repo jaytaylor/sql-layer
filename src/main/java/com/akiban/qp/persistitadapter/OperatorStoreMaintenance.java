@@ -17,6 +17,7 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.TableIndex;
@@ -170,12 +171,21 @@ final class OperatorStoreMaintenance {
             // incoming row is above the GI, so look downward
             scanFrom = Relationship.CHILD;
         }
-        else {
+        else if (groupIndex.getJoinType() == Index.JoinType.LEFT) {
             // incoming row is within the GI; look rootward, and search on the row's FK.
             int indexWithinGI = branchTables.fromRootMost().indexOf(rowType) - 1;
             scanFrom = indexWithinGI < 0
                     ? Relationship.ID
                     : Relationship.PARENT;
+        }
+        else if (groupIndex.getJoinType() == Index.JoinType.RIGHT) {
+            int indexWithinGI = branchTables.fromRootMost().indexOf(rowType) + 1;
+            scanFrom = indexWithinGI < branchTables.fromRootMost().size()
+                    ? Relationship.CHILD
+                    : Relationship.ID;
+        }
+        else {
+            throw new AssertionError(groupIndex + " has join " + groupIndex.getJoinType());
         }
 
 
@@ -235,6 +245,7 @@ final class OperatorStoreMaintenance {
         EnumSet<API.FlattenOption> options = EnumSet.noneOf(API.FlattenOption.class);
         int innerAtDepth = branchTables.rootMost().userTable().getDepth() - 1;
         boolean useLeft = innerAtDepth == -1; // if the branch segment's root is the group root, use LEFT from the start
+        API.JoinType withinBranchJoin = operatorJoinType(groupIndex);
         for (UserTableRowType branchRowType : branchTables.fromRoot()) {
             if (parentRowType == null) {
                 parentRowType = branchRowType;
@@ -246,7 +257,7 @@ final class OperatorStoreMaintenance {
                 // * an incoming O should not keep/record anything
                 // * an incoming I should keep/record CO left join rows
                 // * an incoming H should keep/record COI left join rows
-                if (branchRowType.equals(rowType) && API.JoinType.LEFT_JOIN.equals(joinType) ) {
+                if (branchRowType.equals(rowType) && withinBranchJoin.equals(joinType) ) {
                     result.flattenedParentRowType = parentRowType;
                     options.add(API.FlattenOption.KEEP_PARENT);
                 }
@@ -257,12 +268,24 @@ final class OperatorStoreMaintenance {
             if (branchRowType.userTable().getDepth() == innerAtDepth) {
                 useLeft = true;
             } else if (useLeft) {
-                joinType = API.JoinType.LEFT_JOIN;
-                options.add(API.FlattenOption.LEFT_JOIN_SHORTENS_HKEY);
+                joinType = withinBranchJoin;
+                if (joinType == API.JoinType.LEFT_JOIN)
+                    options.add(API.FlattenOption.LEFT_JOIN_SHORTENS_HKEY);
             }
         }
         result.rootOperator = plan;
         return result;
+    }
+
+    private static API.JoinType operatorJoinType(Index index) {
+        switch (index.getJoinType()) {
+        case LEFT:
+            return API.JoinType.LEFT_JOIN;
+        case RIGHT:
+            return API.JoinType.RIGHT_JOIN;
+        default:
+            throw new AssertionError(index.getJoinType().name());
+        }
     }
 
     /**

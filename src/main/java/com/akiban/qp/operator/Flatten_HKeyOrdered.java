@@ -119,7 +119,7 @@ class Flatten_HKeyOrdered extends Operator
         this.keepChild = options.contains(KEEP_CHILD);
         this.leftJoinShortensHKey = options.contains(LEFT_JOIN_SHORTENS_HKEY);
         if (this.leftJoinShortensHKey) {
-            ArgumentValidation.isTrue("flags contains LEFT_JOIN_SHORTENS_HKEY but not LEFT_JOIN", leftJoin);
+            ArgumentValidation.isTrue("flags contains LEFT_JOIN_SHORTENS_HKEY but not LEFT_JOIN", leftJoin || rightJoin);
         }
         List<HKeySegment> childHKeySegments = childType.hKey().segments();
         HKeySegment lastChildHKeySegment = childHKeySegments.get(childHKeySegments.size() - 1);

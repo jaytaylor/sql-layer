@@ -15,5 +15,27 @@
 
 package com.akiban.server.test.it.keyupdate;
 
-public final class GroupIndexRjUpdateIT {
+import com.akiban.ais.model.Index;
+import org.junit.Test;
+
+public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
+
+    @Test
+    public void leftGIPlaceholderNoOrphan() {
+        createGroupIndex(groupName, "name_when", "c.name, o.when", Index.JoinType.RIGHT);
+        writeRows(
+                createNewRow(o, 10L, 1L, "01-01-2001")
+        );
+        checkIndex(
+                "name_when",
+                "null, 01-01-2001, 1, 10 => " + depthOf(o)
+        );
+        writeRows(
+                createNewRow(c, 1L, "Bergy")
+        );
+        checkIndex(
+                "name_when",
+                "Bergy, 01-01-2001, 1, 10 => " + depthOf(o)
+        );
+    }
 }

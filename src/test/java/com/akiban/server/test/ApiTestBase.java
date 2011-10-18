@@ -312,11 +312,20 @@ public class ApiTestBase {
         return createGroupIndex(groupName, indexName, false, tableColumnPairs);
     }
 
-    protected final GroupIndex createGroupIndex(String groupName, String indexName, boolean unique, String tableColumnPairs)
+    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs, Index.JoinType joinType)
+    throws InvalidOperationException {
+        return createGroupIndex(groupName, indexName, false, tableColumnPairs, joinType);
+    }
+
+    protected final GroupIndex createGroupIndex(String groupName, String indexName, boolean unique, String tableColumnPairs) {
+        return createGroupIndex(groupName, indexName, unique, tableColumnPairs, Index.JoinType.LEFT);
+    }
+
+    protected final GroupIndex createGroupIndex(String groupName, String indexName, boolean unique, String tableColumnPairs, Index.JoinType joinType)
             throws InvalidOperationException {
         AkibanInformationSchema ais = ddl().getAIS(session());
         final Index index;
-        index = GroupIndexCreator.createIndex(ais, groupName, indexName, unique, tableColumnPairs);
+        index = GroupIndexCreator.createIndex(ais, groupName, indexName, unique, tableColumnPairs, joinType);
         ddl().createIndexes(session(), Collections.singleton(index));
         return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
     }
