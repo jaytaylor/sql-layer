@@ -57,10 +57,10 @@ public final class RowsBuilder {
         return row(holders);
     }
 
-    public RowsBuilder row(ValueHolder... values) {
+    public RowsBuilder row(ValueSource... values) {
         ArgumentValidation.isEQ("values.length", values.length, types.length);
         for (int i=0; i < values.length; ++i) {
-            ValueHolder value = values[i];
+            ValueSource value = values[i];
             AkType valueType = value.getConversionType();
             AkType requiredType = types[i];
             if (valueType != AkType.NULL && valueType != requiredType) {
@@ -129,12 +129,12 @@ public final class RowsBuilder {
             return Strings.join(values, ", ");
         }
 
-        private InternalRow(RowType rowType, List<ValueHolder> values) {
+        private InternalRow(RowType rowType, List<? extends ValueSource> values) {
             this.rowType = rowType;
-            this.values = new ArrayList<ValueHolder>(values);
+            this.values = new ArrayList<ValueSource>(values);
         }
 
         private final RowType rowType;
-        private final List<ValueHolder> values;
+        private final List<ValueSource> values;
     }
 }
