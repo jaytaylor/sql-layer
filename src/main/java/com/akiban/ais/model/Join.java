@@ -244,6 +244,11 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
         traversePreOrder(visitor);
     }
 
+    public void replaceName(String newName)
+    {
+        joinName = newName;
+    }
+
     private Join(AkibanInformationSchema ais, String joinName, UserTable parent, UserTable child)
     {
         ais.checkMutability();

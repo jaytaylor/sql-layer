@@ -1,3 +1,7 @@
+case-1: CASE condition already worked out.
+
+case-2: CASE only partially worked out.
+
 counts: COUNT(NOT NULL column) turns into COUNT(*) but not NULL.
 
 extra-true: true conditions are ignored in WHERE clause.
@@ -30,6 +34,8 @@ in-non-top-level: IN list inside complex condition.
 in-nulls: IN list with nulls.
 
 in-singleton: IN list with single value after folding.
+
+is-conditions: IS TRUE / FALSE / NULL.
 
 logical-functions: NOT TRUE is FALSE, TRUE AND X is X, FALSE AND X is FALSE, 
                    X OR FALSE is X.
