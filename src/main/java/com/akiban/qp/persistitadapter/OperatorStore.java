@@ -56,7 +56,6 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.google.inject.Inject;
 import com.persistit.Exchange;
-import com.persistit.Key;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
@@ -65,7 +64,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static com.akiban.qp.operator.API.ancestorLookup_Default;
 import static com.akiban.qp.operator.API.indexScan_Default;
@@ -250,8 +248,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                     plan,
                     UndefBindings.only(),
                     OperatorStoreGIHandler.forBuilding(adapter),
-                    OperatorStoreGIHandler.Action.BULK_ADD,
-                    null
+                    OperatorStoreGIHandler.Action.BULK_ADD
             );
         }
     }
@@ -357,17 +354,12 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                         planOperator,
                         bindings,
                         handler,
-                        action,
-                        plan
+                        action
                 );
             }
         } finally {
             adapter.returnExchange(hEx);
         }
-    }
-
-    public static void coih() {
-
     }
 
     private void runMaintenancePlan(
@@ -376,8 +368,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             Operator rootOperator,
             Bindings bindings,
             OperatorStoreGIHandler handler,
-            OperatorStoreGIHandler.Action action,
-            OperatorStoreMaintenancePlan maintenancePlan
+            OperatorStoreGIHandler.Action action
     )
     {
         Cursor cursor = API.cursor(rootOperator, adapter);
@@ -416,7 +407,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     // object state
     private final TreeService treeService;
     private final AisHolder aisHolder;
-    private final CountingHook countingHook = new CountingHook();
 
     // consts
 
@@ -474,26 +464,5 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             }
             return PersistitGroupRow.newPersistitGroupRow(adapter, newRow.toRowData());
         }
-    }
-
-    private static class CountingHook implements OperatorStoreGIHandler.GIHandlerHook {
-        @Override
-        public void storeHook(GroupIndex groupIndex, Key key, Object value) {
-            stores.incrementAndGet();
-        }
-
-        @Override
-        public void removeHook(GroupIndex groupIndex, Key key) {
-            removes.incrementAndGet();
-        }
-
-        public String report() {
-            long storesLocal = stores.getAndSet(0);
-            long removesLocal = removes.getAndSet(0);
-            return "stored " + storesLocal + ", removed " + removesLocal;
-        }
-
-        private final AtomicLong stores = new AtomicLong();
-        private final AtomicLong removes = new AtomicLong();
     }
 }
