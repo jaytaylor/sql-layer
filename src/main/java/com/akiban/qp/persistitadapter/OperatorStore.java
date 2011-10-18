@@ -16,11 +16,9 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.exec.UpdatePlannable;
@@ -34,10 +32,8 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDataExtractor;
-import com.akiban.server.rowdata.RowDataValueSource;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.ConstantColumnSelector;
@@ -45,7 +41,6 @@ import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.NoRowsUpdatedException;
 import com.akiban.server.error.TooManyRowsUpdatedException;
-import com.akiban.server.error.UnsupportedUniqueGroupIndexException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.AisHolder;
@@ -53,7 +48,6 @@ import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.conversion.Converters;
 import com.google.inject.Inject;
 import com.persistit.Exchange;
 import com.persistit.Transaction;
@@ -294,11 +288,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             PersistitHKey persistitHKey = new PersistitHKey(adapter, userTable.hKey());
             persistitHKey.copyFrom(hEx.getKey());
 
-            UserTable rowDataUTable = ais.getUserTable(rowData.getRowDefId());
-
-
-
-
             Collection<GroupIndex> branchIndexes = new ArrayList<GroupIndex>();
             for (GroupIndex groupIndex : userTable.getGroup().getIndexes()) {
                 if (groupIndex.leafMostTable().isDescendantOf(userTable)) {
@@ -307,19 +296,13 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             }
 
             for (GroupIndex groupIndex : optionallyOrderGroupIndexes(branchIndexes)) {
-
-                // TODO: Can this be removed as it is a AISValidation check (i.e. no AIS will 
-                // have this condition.)
-                if (groupIndex.isUnique()) {
-                    throw new UnsupportedUniqueGroupIndexException (groupIndex.getIndexName().getName());
-                }
+                assert !groupIndex.isUnique() : "unique GI: " + groupIndex;
                 OperatorStoreMaintenance plan = groupIndexCreationPlan(
                         ais,
                         groupIndex,
                         adapter.schema().userTableRowType(userTable)
                 );
-                if (!plan.isNoop(action))
-                    plan.run(action, persistitHKey, rowData, adapter, handler);
+                plan.run(action, persistitHKey, rowData, adapter, handler);
             }
         } finally {
             adapter.returnExchange(hEx);

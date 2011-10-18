@@ -49,13 +49,11 @@ import java.util.*;
 
 final class OperatorStoreMaintenance {
 
-    public boolean isNoop(OperatorStoreGIHandler.Action action) {
-        return rootOperator(action) == null;
-    }
-
     public void run(OperatorStoreGIHandler.Action action, PersistitHKey hKey, RowData forRow, StoreAdapter adapter, OperatorStoreGIHandler handler) {
-        Bindings bindings = new ArrayBindings(1);
         Operator planOperator = rootOperator(action);
+        if (planOperator == null)
+            return;
+        Bindings bindings = new ArrayBindings(1);
         final List<Column> lookupCols;
         UserTable userTable = rowType.userTable();
         if (usePKs(action)) {
