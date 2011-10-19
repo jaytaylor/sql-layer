@@ -23,6 +23,8 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.extract.BooleanExtractor;
+import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.BoolValueSource;
 
 public final class AnySubqueryExpression extends SubqueryExpression {
@@ -58,16 +60,18 @@ public final class AnySubqueryExpression extends SubqueryExpression {
         public ValueSource doEval() {
             expressionEvaluation.of(bindings());
             Boolean result = Boolean.FALSE;
+            BooleanExtractor extractor = Extractors.getBooleanExtractor();
             while (true) {
                 Row row = next();
                 if (row == null) break;
                 expressionEvaluation.of(row);
-                ValueSource source = expressionEvaluation.eval();
-                if (source.isNull())
-                    result = null;
-                else if (source.getBool()) {
-                    result = Boolean.TRUE;
+                Boolean value = extractor.getBoolean(expressionEvaluation.eval(), null);
+                if (value == Boolean.TRUE) {
+                    result = value;
                     break;
+                }
+                else if (value == null) {
+                    result = value;
                 }
             }
             return BoolValueSource.of(result);
