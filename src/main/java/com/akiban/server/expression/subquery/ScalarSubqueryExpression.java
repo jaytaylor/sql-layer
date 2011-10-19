@@ -24,7 +24,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.BoolValueSource;
+import com.akiban.server.types.util.ValueHolder;
 
 public final class ScalarSubqueryExpression extends SubqueryExpression {
 
@@ -62,9 +62,10 @@ public final class ScalarSubqueryExpression extends SubqueryExpression {
                 return NullValueSource.only();
             expressionEvaluation.of(bindings());
             expressionEvaluation.of(row);
-            ValueSource result = expressionEvaluation.eval();
-            // TODO: Is it legit to close it and still hang on to result?
-            return result;
+            // Return a copy of the value evaluated right now, rather
+            // than holding on to the row from the subquery cursor
+            // that's about to be closed.
+            return new ValueHolder(expressionEvaluation.eval());
         }
 
         private InnerEvaluation(Operator subquery,
