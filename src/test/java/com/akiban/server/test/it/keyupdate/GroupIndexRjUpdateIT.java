@@ -55,6 +55,74 @@ public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
         deleteAndCheck(r1);
     }
 
+    @Test
+    public void coiNoOrphan() {
+        groupIndex("c.name, o.when, i.sku");
+
+        writeAndCheck(
+                createNewRow(c, 1L, "Horton")
+        );
+        writeAndCheck(
+                createNewRow(o, 11L, 1L, "01-01-2001")
+        );
+        writeAndCheck(
+                createNewRow(i, 101L, 11L, 1111),
+                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i)
+        );
+        writeAndCheck(
+                createNewRow(i, 102L, 11L, 2222),
+                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i),
+                "Horton, 01-01-2001, 2222, 1, 11, 102 => " + depthOf(i)
+        );
+        writeAndCheck(
+                createNewRow(i, 103L, 11L, 3333),
+                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i),
+                "Horton, 01-01-2001, 2222, 1, 11, 102 => " + depthOf(i),
+                "Horton, 01-01-2001, 3333, 1, 11, 103 => " + depthOf(i)
+        );
+        writeAndCheck(
+                createNewRow(o, 12L, 1L, "02-02-2002"),
+                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i),
+                "Horton, 01-01-2001, 2222, 1, 11, 102 => " + depthOf(i),
+                "Horton, 01-01-2001, 3333, 1, 11, 103 => " + depthOf(i)
+        );
+
+        writeAndCheck(createNewRow(a, 10001L, 1L, "Causeway"),
+                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i),
+                "Horton, 01-01-2001, 2222, 1, 11, 102 => " + depthOf(i),
+                "Horton, 01-01-2001, 3333, 1, 11, 103 => " + depthOf(i)
+        );
+
+
+        // update parent
+        updateAndCheck(
+                createNewRow(o, 11L, 1L, "01-01-2001"),
+                createNewRow(o, 11L, 1L, "01-01-1999"), // party!
+                "Horton, 01-01-1999, 1111, 1, 11, 101 => " + depthOf(i),
+                "Horton, 01-01-1999, 2222, 1, 11, 102 => " + depthOf(i),
+                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + depthOf(i)
+        );
+        // update child
+        updateAndCheck(
+                createNewRow(i, 102L, 11L, 2222),
+                createNewRow(i, 102L, 11L, 2442),
+                "Horton, 01-01-1999, 1111, 1, 11, 101 => " + depthOf(i),
+                "Horton, 01-01-1999, 2442, 1, 11, 102 => " + depthOf(i),
+                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + depthOf(i)
+        );
+
+        // delete order
+        deleteAndCheck(
+                createNewRow(o, 11L, 1L, "01-01-1999"),
+                "Horton, null, 1111, null, 11, 101 => " + depthOf(i),
+                "Horton, null, 3333, null, 11, 103 => " + depthOf(i)
+        );
+        // delete item
+        deleteAndCheck(
+                createNewRow(i, 102L, 11L, 222211)
+        );
+    }
+
     public GroupIndexRjUpdateIT() {
         super(Index.JoinType.RIGHT);
     }
