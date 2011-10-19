@@ -31,7 +31,7 @@ public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
         );
         writeAndCheck(
                 r2 = createNewRow(o, 10L, 1L, "01-01-2001"),
-                "Bergy, 01-01-2001, 1, 10 => " + depthOf(o)
+                "Bergy, 01-01-2001, 1, 10 => " + depthFrom(o)
         );
         deleteAndCheck(r2);
         deleteAndCheck(r1);
@@ -43,15 +43,15 @@ public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
         groupIndex("c.name, o.when");
         writeAndCheck(
                 r1 = createNewRow(o, 10L, 1L, "01-01-2001"),
-                "null, 01-01-2001, 1, 10 => " + depthOf(o)
+                "null, 01-01-2001, 1, 10 => " + depthFrom(o)
         );
         writeAndCheck(
                 r2 = createNewRow(c, 1L, "Bergy"),
-                "Bergy, 01-01-2001, 1, 10 => " + depthOf(o)
+                "Bergy, 01-01-2001, 1, 10 => " + depthFrom(o)
         );
         deleteAndCheck(
                 r2,
-                "null, 01-01-2001, 1, 10 => " + depthOf(o)
+                "null, 01-01-2001, 1, 10 => " + depthFrom(o)
         );
         deleteAndCheck(r1);
     }
@@ -69,30 +69,30 @@ public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
         );
         writeAndCheck(
                 createNewRow(i, 101L, 11L, 1111),
-                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i)
+                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthFrom(i)
         );
         writeAndCheck(
                 createNewRow(i, 102L, 11L, 2222),
-                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i),
-                "Horton, 01-01-2001, 2222, 1, 11, 102 => " + depthOf(i)
+                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthFrom(i),
+                "Horton, 01-01-2001, 2222, 1, 11, 102 => " + depthFrom(i)
         );
         writeAndCheck(
                 createNewRow(i, 103L, 11L, 3333),
-                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i),
-                "Horton, 01-01-2001, 2222, 1, 11, 102 => " + depthOf(i),
-                "Horton, 01-01-2001, 3333, 1, 11, 103 => " + depthOf(i)
+                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthFrom(i),
+                "Horton, 01-01-2001, 2222, 1, 11, 102 => " + depthFrom(i),
+                "Horton, 01-01-2001, 3333, 1, 11, 103 => " + depthFrom(i)
         );
         writeAndCheck(
                 createNewRow(o, 12L, 1L, "02-02-2002"),
-                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i),
-                "Horton, 01-01-2001, 2222, 1, 11, 102 => " + depthOf(i),
-                "Horton, 01-01-2001, 3333, 1, 11, 103 => " + depthOf(i)
+                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthFrom(i),
+                "Horton, 01-01-2001, 2222, 1, 11, 102 => " + depthFrom(i),
+                "Horton, 01-01-2001, 3333, 1, 11, 103 => " + depthFrom(i)
         );
 
         writeAndCheck(createNewRow(a, 10001L, 1L, "Causeway"),
-                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i),
-                "Horton, 01-01-2001, 2222, 1, 11, 102 => " + depthOf(i),
-                "Horton, 01-01-2001, 3333, 1, 11, 103 => " + depthOf(i)
+                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthFrom(i),
+                "Horton, 01-01-2001, 2222, 1, 11, 102 => " + depthFrom(i),
+                "Horton, 01-01-2001, 3333, 1, 11, 103 => " + depthFrom(i)
         );
 
 
@@ -100,24 +100,24 @@ public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
         updateAndCheck(
                 createNewRow(o, 11L, 1L, "01-01-2001"),
                 createNewRow(o, 11L, 1L, "01-01-1999"), // party!
-                "Horton, 01-01-1999, 1111, 1, 11, 101 => " + depthOf(i),
-                "Horton, 01-01-1999, 2222, 1, 11, 102 => " + depthOf(i),
-                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + depthOf(i)
+                "Horton, 01-01-1999, 1111, 1, 11, 101 => " + depthFrom(i),
+                "Horton, 01-01-1999, 2222, 1, 11, 102 => " + depthFrom(i),
+                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + depthFrom(i)
         );
         // update child
         updateAndCheck(
                 createNewRow(i, 102L, 11L, 2222),
                 createNewRow(i, 102L, 11L, 2442),
-                "Horton, 01-01-1999, 1111, 1, 11, 101 => " + depthOf(i),
-                "Horton, 01-01-1999, 2442, 1, 11, 102 => " + depthOf(i),
-                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + depthOf(i)
+                "Horton, 01-01-1999, 1111, 1, 11, 101 => " + depthFrom(i),
+                "Horton, 01-01-1999, 2442, 1, 11, 102 => " + depthFrom(i),
+                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + depthFrom(i)
         );
 
         // delete order
         deleteAndCheck(
                 createNewRow(o, 11L, 1L, "01-01-1999"),
-                "Horton, null, 1111, null, 11, 101 => " + depthOf(i),
-                "Horton, null, 3333, null, 11, 103 => " + depthOf(i)
+                "Horton, null, 1111, null, 11, 101 => " + depthFrom(i),
+                "Horton, null, 3333, null, 11, 103 => " + depthFrom(i)
         );
         // delete item
         deleteAndCheck(
@@ -134,7 +134,7 @@ public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
         );
         groupIndex("name_when_sku", "c.name, o.when, i.sku");
         checkIndex("name_when_sku",
-                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i)
+                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthFrom(i)
         );
     }
 
@@ -146,7 +146,7 @@ public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
         );
         groupIndex("name_when_sku", "c.name, o.when, i.sku");
         checkIndex("name_when_sku",
-                "null, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i)
+                "null, 01-01-2001, 1111, 1, 11, 101 => " + depthFrom(i)
         );
     }
 
@@ -158,7 +158,7 @@ public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
         );
         groupIndex("when_sku","o.when, i.sku");
         checkIndex("when_sku",
-                "01-01-2001, 1111, 1, 11, 101 => " + depthOf(i)
+                "01-01-2001, 1111, 1, 11, 101 => " + depthFrom(i)
         );
     }
 
@@ -171,17 +171,17 @@ public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
                 createNewRow(i, 101L, 11L, 1111),
                 createNewRow(h, 1001L, 101L, "handle with care")
         );
-        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001 => " + depthOf(h));
+        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001 => " + depthFrom(h));
 
         // delete from root on up
         dml().deleteRow(session(), createNewRow(c, 1L, "Horton"));
-        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001 => " + depthOf(h));
+        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001 => " + depthFrom(h));
 
-        dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001 => " + depthOf(h)));
-        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001 => " + depthOf(h));
+        dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001 => " + depthFrom(h)));
+        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001 => " + depthFrom(h));
 
         dml().deleteRow(session(), createNewRow(i, 101L, 11L, 1111));
-        checkIndex(indexName, "null, handle with care, null, null, 101, 1001 => " + depthOf(h));
+        checkIndex(indexName, "null, handle with care, null, null, 101, 1001 => " + depthFrom(h));
 
         dml().deleteRow(session(), createNewRow(h, 1001L, 101L, "handle with care"));
         checkIndex(indexName);
@@ -195,18 +195,18 @@ public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
                 createNewRow(h, 1001L, 101L, "handle with care")
         );
         checkIndex(indexName,
-                "1111, handle with care, null, 11, 101, 1001 => " + depthOf(h)
+                "1111, handle with care, null, 11, 101, 1001 => " + depthFrom(h)
         );
 
         // bring an o that adopts the i
         final NewRow oRow;
         writeAndCheck(
                 oRow = createNewRow(o, 11L, 1L, "01-01-2001"),
-                "1111, handle with care, 1, 11, 101, 1001 => " + depthOf(h)
+                "1111, handle with care, 1, 11, 101, 1001 => " + depthFrom(h)
         );
         deleteAndCheck(
                 oRow,
-                "1111, handle with care, null, 11, 101, 1001 => " + depthOf(h)
+                "1111, handle with care, null, 11, 101, 1001 => " + depthFrom(h)
         );
     }
 
@@ -219,19 +219,19 @@ public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
                 createNewRow(h, 1001L, 101L, "handle with care")
         );
         checkIndex(indexName,
-                "1111, handle with care, null, 11, 101, 1001 => " + depthOf(h)
+                "1111, handle with care, null, 11, 101, 1001 => " + depthFrom(h)
         );
 
         // bring an o that adopts the i
         dml().writeRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
         checkIndex(indexName,
-                "1111, handle with care, 1, 11, 101, 1001 => " + depthOf(h)
+                "1111, handle with care, 1, 11, 101, 1001 => " + depthFrom(h)
         );
     }
     @Test
     public void updateModifiesHKeyWithinBranch() {
         // branch is I-H, we're modifying the hkey of an H
-        String indexName = groupIndex("i.sku, h.handling_instructions");
+        groupIndex("i.sku, h.handling_instructions");
         writeAndCheck(createNewRow(c, 1L, "Horton"));
 
         writeAndCheck(createNewRow(o, 11L, 1L, "01-01-2001"));
@@ -240,30 +240,30 @@ public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
 
         writeAndCheck(
                 createNewRow(h, 1001L, 101L, "don't break"),
-                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h)
+                "1111, don't break, 1, 11, 101, 1001 => " + depthFrom(h)
         );
 
         writeAndCheck(
                 createNewRow(c, 2L, "David"),
-                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h)
+                "1111, don't break, 1, 11, 101, 1001 => " + depthFrom(h)
         );
 
         writeAndCheck(
                 createNewRow(o, 12L, 2L, "02-02-2002"),
-                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h)
+                "1111, don't break, 1, 11, 101, 1001 => " + depthFrom(h)
         );
 
         writeAndCheck(
                 createNewRow(h, 1002L, 102L, "do break"),
-                "null, do break, null, null, 102, 1002 => " + depthOf(h),
-                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h)
+                "null, do break, null, null, 102, 1002 => " + depthFrom(h),
+                "1111, don't break, 1, 11, 101, 1001 => " + depthFrom(h)
         );
 
         updateAndCheck(
                 createNewRow(i, 101L, 11L, "1111"),
                 createNewRow(i, 102L, 12L, "2222"),
-                "null, don't break, null, null, 101, 1001 => " + depthOf(h),
-                "2222, do break, 2, 12, 102, 1002 => " + depthOf(h)
+                "null, don't break, null, null, 101, 1001 => " + depthFrom(h),
+                "2222, do break, 2, 12, 102, 1002 => " + depthFrom(h)
         );
     }
 

@@ -108,7 +108,12 @@ public abstract class GIUpdateITBase extends ITBase {
         }
     }
 
-    String depthOf(int tableId) {
+    String depthUntil(int tableId) {
+        UserTable userTable = ddl().getAIS(session()).getUserTable(tableId);
+        return String.format("%d (Integer)", userTable.getDepth());
+    }
+
+    String depthFrom(int tableId) {
         UserTable userTable = ddl().getAIS(session()).getUserTable(tableId);
         return String.format("%d (Integer)", userTable.getDepth());
     }
