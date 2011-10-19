@@ -55,8 +55,7 @@ public final class AnySubqueryExpression extends SubqueryExpression {
 
     private static final class InnerEvaluation extends SubqueryExpressionEvaluation {
         @Override
-        public ValueSource eval() {
-            open();
+        public ValueSource doEval() {
             expressionEvaluation.of(bindings());
             Boolean result = Boolean.FALSE;
             while (true) {
@@ -71,7 +70,6 @@ public final class AnySubqueryExpression extends SubqueryExpression {
                     break;
                 }
             }
-            close();
             return BoolValueSource.of(result);
         }
 

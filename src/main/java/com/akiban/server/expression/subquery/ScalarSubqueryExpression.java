@@ -56,8 +56,7 @@ public final class ScalarSubqueryExpression extends SubqueryExpression {
 
     private static final class InnerEvaluation extends SubqueryExpressionEvaluation {
         @Override
-        public ValueSource eval() {
-            open();
+        public ValueSource doEval() {
             Row row = next();
             if (row == null)
                 return NullValueSource.only();
@@ -65,7 +64,6 @@ public final class ScalarSubqueryExpression extends SubqueryExpression {
             expressionEvaluation.of(row);
             ValueSource result = expressionEvaluation.eval();
             // TODO: Is it legit to close it and still hang on to result?
-            close();
             return result;
         }
 

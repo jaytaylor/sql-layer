@@ -48,10 +48,8 @@ public final class ExistsSubqueryExpression extends SubqueryExpression {
                                  
     private static final class InnerEvaluation extends SubqueryExpressionEvaluation {
         @Override
-        public ValueSource eval() {
-            open();
+        public ValueSource doEval() {
             boolean empty = (next() == null);
-            close();
             return BoolValueSource.of(!empty);
         }
 

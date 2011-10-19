@@ -24,6 +24,7 @@ import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.types.ValueSource;
 
 public abstract class SubqueryExpressionEvaluation implements ExpressionEvaluation {
 
@@ -48,6 +49,18 @@ public abstract class SubqueryExpressionEvaluation implements ExpressionEvaluati
         outerRow = row;
     }
 
+    @Override
+    public final ValueSource eval() {
+        bindings.set(bindingPosition, outerRow);
+        cursor.open(bindings);
+        try {
+            return doEval();
+        }
+        finally {
+            cursor.close();
+        }
+    }
+
     // Shareable interface
 
     @Override
@@ -67,13 +80,10 @@ public abstract class SubqueryExpressionEvaluation implements ExpressionEvaluati
 
     // for use by subclasses
 
+    protected abstract ValueSource doEval();
+
     protected Bindings bindings() {
         return bindings;
-    }
-
-    protected void open() {
-        bindings.set(bindingPosition, outerRow);
-        cursor.open(bindings);
     }
 
     protected Row next() {
@@ -84,10 +94,6 @@ public abstract class SubqueryExpressionEvaluation implements ExpressionEvaluati
                                                " != " + row.rowType());
         }
         return row;
-    }
-
-    protected void close() {
-        cursor.close();
     }
 
     protected SubqueryExpressionEvaluation(Operator subquery,
