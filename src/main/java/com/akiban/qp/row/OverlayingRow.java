@@ -47,6 +47,11 @@ public final class OverlayingRow extends AbstractRow {
     }
 
     @Override
+    public boolean containsRealRowOf(RowType rowType) {
+        return underlying.containsRealRowOf(rowType);
+    }
+
+    @Override
     public RowType rowType() {
         return underlying.rowType();
     }

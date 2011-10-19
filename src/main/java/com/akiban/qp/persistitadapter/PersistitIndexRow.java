@@ -74,6 +74,11 @@ public class PersistitIndexRow extends AbstractRow
         return hKey;
     }
 
+    @Override
+    public boolean containsRealRowOf(RowType rowType) {
+        throw new UnsupportedOperationException();
+    }
+
     // For use by OperatorIT
     public PersistitIndexRow(PersistitAdapter adapter, IndexRowType indexRowType, Object... values) throws PersistitException
     {

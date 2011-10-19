@@ -129,6 +129,11 @@ public final class RowsBuilder {
             return Strings.join(values, ", ");
         }
 
+        @Override
+        public boolean containsRealRowOf(RowType rowType) {
+            throw new UnsupportedOperationException();
+        }
+
         private InternalRow(RowType rowType, List<ValueHolder> values) {
             this.rowType = rowType;
             this.values = new ArrayList<ValueHolder>(values);

@@ -67,6 +67,11 @@ public class ExpressionRow extends AbstractRow
     }
 
     @Override
+    public boolean containsRealRowOf(RowType rowType) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public void release() {
     }
 

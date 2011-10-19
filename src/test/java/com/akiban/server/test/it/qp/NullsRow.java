@@ -36,6 +36,11 @@ public final class NullsRow extends AbstractRow {
         return NullValueSource.only();
     }
 
+    @Override
+    public boolean containsRealRowOf(RowType rowType) {
+        throw new UnsupportedOperationException();
+    }
+
     public NullsRow(RowType rowType) {
         this.rowType = rowType;
     }

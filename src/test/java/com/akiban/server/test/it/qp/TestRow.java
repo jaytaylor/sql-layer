@@ -43,6 +43,11 @@ public class TestRow extends AbstractRow
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public boolean containsRealRowOf(RowType rowType) {
+        throw new UnsupportedOperationException();
+    }
+
     // TestRow interface
 
     public TestRow(RowType rowType, Object[] fields, String hKeyString)

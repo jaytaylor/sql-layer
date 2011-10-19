@@ -24,6 +24,7 @@ public interface RowBase extends BoundExpressions
     RowType rowType();
     HKey hKey();
     boolean ancestorOf(RowBase that);
+    boolean containsRealRowOf(RowType rowType);
     int runId();
     void runId(int runId);
     Row subRow(RowType subRowType);

@@ -48,6 +48,11 @@ public class ValuesRow extends AbstractRow
         return null;
     }
 
+    @Override
+    public boolean containsRealRowOf(RowType rowType) {
+        throw new UnsupportedOperationException();
+    }
+
     // ValuesRow interface
 
     public ValuesRow(RowType rowType, Object[] values)

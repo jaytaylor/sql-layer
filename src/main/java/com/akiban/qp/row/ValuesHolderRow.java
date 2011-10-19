@@ -54,6 +54,11 @@ public class ValuesHolderRow extends AbstractRow {
         return value;
     }
 
+    @Override
+    public boolean containsRealRowOf(RowType rowType) {
+        throw new UnsupportedOperationException();
+    }
+
     public ValuesHolderRow(RowType rowType) {
         this.rowType = rowType;
         values = new ArrayList<ValueHolder>();

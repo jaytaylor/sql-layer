@@ -70,6 +70,11 @@ public class ProjectedRow extends AbstractRow
         return null;
     }
 
+    @Override
+    public boolean containsRealRowOf(RowType rowType) {
+        return row.containsRealRowOf(rowType);
+    }
+
     // AbstractRow interface
 
 

@@ -72,6 +72,11 @@ public class NewRowBackedIndexRow implements RowBase
     }
 
     @Override
+    public boolean containsRealRowOf(RowType rowType) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public int runId() {
         return runId;
     }

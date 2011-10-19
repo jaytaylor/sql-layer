@@ -51,6 +51,11 @@ public class FlattenedRow extends AbstractRow
     }
 
     @Override
+    public boolean containsRealRowOf(RowType rowType) {
+        return containRealRowOf(parenth, childh, rowType);
+    }
+
+    @Override
     public HKey hKey()
     {
         return hKey;

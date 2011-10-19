@@ -56,6 +56,11 @@ public class PersistitGroupRow extends AbstractRow
         return valueSource;
     }
 
+    @Override
+    public boolean containsRealRowOf(RowType rowType) {
+        throw new UnsupportedOperationException();
+    }
+
     public PersistitHKey hKey()
     {
         return currentHKey;

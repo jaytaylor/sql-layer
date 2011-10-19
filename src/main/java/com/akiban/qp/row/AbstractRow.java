@@ -18,6 +18,7 @@ package com.akiban.qp.row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.Quote;
 import com.akiban.util.AkibanAppender;
+import com.akiban.util.ShareHolder;
 
 public abstract class AbstractRow implements Row
 {
@@ -98,6 +99,17 @@ public abstract class AbstractRow implements Row
     protected void afterRelease() {}
     protected void beforeAcquire() {}
 
+    protected static boolean containRealRowOf(
+            ShareHolder<? extends Row> one,
+            ShareHolder<? extends Row> two,
+            RowType rowType
+    ) {
+        return     (one.isHolding() && one.get().rowType() == rowType)
+                || (two.isHolding() && two.get().rowType() == rowType)
+                || (one.isHolding() && one.get().containsRealRowOf(rowType))
+                || (two.isHolding() && two.get().containsRealRowOf(rowType))
+                ;
+    }
     // Object state
 
     private int references = 0;
