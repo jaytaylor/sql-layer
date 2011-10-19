@@ -17,6 +17,7 @@ package com.akiban.server.test.it.keyupdate;
 
 import com.akiban.ais.model.Index;
 import com.akiban.server.api.dml.scan.NewRow;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
@@ -55,6 +56,7 @@ public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
         deleteAndCheck(r1);
     }
 
+    @Ignore("bug 877656")
     @Test
     public void coiNoOrphan() {
         groupIndex("c.name, o.when, i.sku");
@@ -120,6 +122,148 @@ public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
         // delete item
         deleteAndCheck(
                 createNewRow(i, 102L, 11L, 222211)
+        );
+    }
+
+    @Test
+    public void createGIOnFullyPopulatedTables() {
+        writeRows(
+                createNewRow(c, 1L, "Horton"),
+                createNewRow(o, 11L, 1L, "01-01-2001"),
+                createNewRow(i, 101L, 11L, 1111)
+        );
+        groupIndex("name_when_sku", "c.name, o.when, i.sku");
+        checkIndex("name_when_sku",
+                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i)
+        );
+    }
+
+    @Test
+    public void createGIOnPartiallyPopulatedTablesFromLeaf() {
+        writeRows(
+                createNewRow(o, 11L, 1L, "01-01-2001"),
+                createNewRow(i, 101L, 11L, 1111)
+        );
+        groupIndex("name_when_sku", "c.name, o.when, i.sku");
+        checkIndex("name_when_sku",
+                "null, 01-01-2001, 1111, 1, 11, 101 => " + depthOf(i)
+        );
+    }
+
+    @Test
+    public void createGiOnPartiallyPopulatedTablesFromMiddle() {
+        writeRows(
+                createNewRow(o, 11L, 1L, "01-01-2001"),
+                createNewRow(i, 101L, 11L, 1111)
+        );
+        groupIndex("when_sku","o.when, i.sku");
+        checkIndex("when_sku",
+                "01-01-2001, 1111, 1, 11, 101 => " + depthOf(i)
+        );
+    }
+
+    @Test
+    public void ihIndexNoOrphans() {
+        String indexName = groupIndex("i.sku, h.handling_instructions");
+        writeRows(
+                createNewRow(c, 1L, "Horton"),
+                createNewRow(o, 11L, 1L, "01-01-2001"),
+                createNewRow(i, 101L, 11L, 1111),
+                createNewRow(h, 1001L, 101L, "handle with care")
+        );
+        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001 => " + depthOf(h));
+
+        // delete from root on up
+        dml().deleteRow(session(), createNewRow(c, 1L, "Horton"));
+        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001 => " + depthOf(h));
+
+        dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001 => " + depthOf(h)));
+        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001 => " + depthOf(h));
+
+        dml().deleteRow(session(), createNewRow(i, 101L, 11L, 1111));
+        checkIndex(indexName, "null, handle with care, null, null, 101, 1001 => " + depthOf(h));
+
+        dml().deleteRow(session(), createNewRow(h, 1001L, 101L, "handle with care"));
+        checkIndex(indexName);
+    }
+
+    @Test
+    public void adoptionChangesHKeyNoCustomer() {
+        String indexName = groupIndex("i.sku, h.handling_instructions");
+        writeRows(
+                createNewRow(i, 101L, 11L, 1111),
+                createNewRow(h, 1001L, 101L, "handle with care")
+        );
+        checkIndex(indexName,
+                "1111, handle with care, null, 11, 101, 1001 => " + depthOf(h)
+        );
+
+        // bring an o that adopts the i
+        final NewRow oRow;
+        writeAndCheck(
+                oRow = createNewRow(o, 11L, 1L, "01-01-2001"),
+                "1111, handle with care, 1, 11, 101, 1001 => " + depthOf(h)
+        );
+        deleteAndCheck(
+                oRow,
+                "1111, handle with care, null, 11, 101, 1001 => " + depthOf(h)
+        );
+    }
+
+    @Test
+    public void adoptionChangesHKeyWithC() {
+        String indexName = groupIndex("i.sku, h.handling_instructions");
+        writeRows(
+                createNewRow(c, 1L, "Horton"),
+                createNewRow(i, 101L, 11L, 1111),
+                createNewRow(h, 1001L, 101L, "handle with care")
+        );
+        checkIndex(indexName,
+                "1111, handle with care, null, 11, 101, 1001 => " + depthOf(h)
+        );
+
+        // bring an o that adopts the i
+        dml().writeRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
+        checkIndex(indexName,
+                "1111, handle with care, 1, 11, 101, 1001 => " + depthOf(h)
+        );
+    }
+    @Test
+    public void updateModifiesHKeyWithinBranch() {
+        // branch is I-H, we're modifying the hkey of an H
+        String indexName = groupIndex("i.sku, h.handling_instructions");
+        writeAndCheck(createNewRow(c, 1L, "Horton"));
+
+        writeAndCheck(createNewRow(o, 11L, 1L, "01-01-2001"));
+
+        writeAndCheck(createNewRow(i, 101L, 11L, "1111"));
+
+        writeAndCheck(
+                createNewRow(h, 1001L, 101L, "don't break"),
+                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h)
+        );
+
+        writeAndCheck(
+                createNewRow(c, 2L, "David"),
+                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h)
+        );
+
+        writeAndCheck(
+                createNewRow(o, 12L, 2L, "02-02-2002"),
+                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h)
+        );
+
+        writeAndCheck(
+                createNewRow(h, 1002L, 102L, "do break"),
+                "null, do break, null, null, 102, 1002 => " + depthOf(h),
+                "1111, don't break, 1, 11, 101, 1001 => " + depthOf(h)
+        );
+
+        updateAndCheck(
+                createNewRow(i, 101L, 11L, "1111"),
+                createNewRow(i, 102L, 12L, "2222"),
+                "null, don't break, null, null, 101, 1001 => " + depthOf(h),
+                "2222, do break, 2, 12, 102, 1002 => " + depthOf(h)
         );
     }
 

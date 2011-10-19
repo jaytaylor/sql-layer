@@ -534,7 +534,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
                 "6666, don't break, 6, 66, 666, 1001 => " + depthOf(h)
         );
     }
-// TODO I have updated up to here
+
     @Test
     public void updateOrphansHKeyDirectlyAboveBranch() {
         // branch is I-H, we're modifying the hkey of an I

@@ -71,6 +71,17 @@ final class OperatorStoreMaintenancePlans {
         RowType parentRowType = null;
         API.JoinType joinType = API.JoinType.RIGHT_JOIN;
         EnumSet<API.FlattenOption> flattenOptions = EnumSet.noneOf(API.FlattenOption.class);
+        final API.JoinType withinGIJoin;
+        switch (groupIndex.getJoinType()) {
+        case LEFT:
+            withinGIJoin = API.JoinType.LEFT_JOIN;
+            break;
+        case RIGHT:
+            withinGIJoin = API.JoinType.RIGHT_JOIN;
+            break;
+        default:
+            throw new AssertionError(groupIndex.getJoinType().name());
+        }
         for (RowType branchRowType : branchTables.fromRoot()) {
             if (parentRowType == null) {
                 parentRowType = branchRowType;
@@ -80,8 +91,9 @@ final class OperatorStoreMaintenancePlans {
                 parentRowType = plan.rowType();
             }
             if (branchRowType.equals(branchTables.rootMost())) {
-                joinType = API.JoinType.LEFT_JOIN;
-                flattenOptions.add(API.FlattenOption.LEFT_JOIN_SHORTENS_HKEY);
+                joinType = withinGIJoin;
+                if (joinType == API.JoinType.LEFT_JOIN)
+                    flattenOptions.add(API.FlattenOption.LEFT_JOIN_SHORTENS_HKEY);
             }
         }
 
