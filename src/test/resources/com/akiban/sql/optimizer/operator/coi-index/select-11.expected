@@ -1,0 +1,10 @@
+PhysicalSelect[name:varchar(32)[VARCHAR], value:DATE]
+  Map_NestedLoops
+    project([Field(0), Field(1)])
+      Aggregation(GROUP BY 1 field, then: [MAX])
+        project([Field(1), Field(2)])
+          AncestorLookup_Default(Index(user.orders.__akiban_fk_0[IndexColumn(cid)]) -> [user.orders])
+            IndexScan_Default(Index(user.orders.__akiban_fk_0[IndexColumn(cid)]) (,))
+    project([Field(1), Bound(0,Field(1))])
+      AncestorLookup_Default(Index(user.customers.PRIMARY[IndexColumn(cid)]) -> [user.customers])
+        IndexScan_Default(Index(user.customers.PRIMARY[IndexColumn(cid)]) (>=UnboundExpressions[Bound(0,Field(0))],<=UnboundExpressions[Bound(0,Field(0))]))
