@@ -360,7 +360,7 @@ public class IndexGoal implements Comparator<IndexScan>
         IndexScan bestIndex = null;
         if (!groupOnly) {
             for (TableIndex index : table.getTable().getTable().getIndexes()) {
-                IndexScan candidate = new IndexScan(index, table, table);
+                IndexScan candidate = new IndexScan(index, table, table, table);
                 bestIndex = betterIndex(bestIndex, candidate);
             }
         }
@@ -374,13 +374,16 @@ public class IndexGoal implements Comparator<IndexScan>
                 // The root must be present, since the index does not
                 // contain orphans.
                 TableSource rootTable = table;
+                TableSource leafRequired = null;
                 while (rootTable != null) {
+                    if ((leafRequired == null) && rootTable.isRequired())
+                        leafRequired = rootTable;
                     if (index.rootMostTable() == rootTable.getTable().getTable())
                         break;
                     rootTable = rootTable.getParentTable();
                 }
-                if (rootTable == null) continue;
-                IndexScan candidate = new IndexScan(index, table, rootTable);
+                if ((rootTable == null) || (leafRequired == null)) continue;
+                IndexScan candidate = new IndexScan(index, rootTable, leafRequired, table);
                 bestIndex = betterIndex(bestIndex, candidate);
             
             }

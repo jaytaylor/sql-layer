@@ -34,7 +34,9 @@ select-7: index one branch, product both
 
 select-8: constant in select list
 
-select-9: LEFT join group index
+select-9: LEFT join from table index
+
+select-9g: LEFT join covering group index
 
 select-10: group index for condition and ordering
 

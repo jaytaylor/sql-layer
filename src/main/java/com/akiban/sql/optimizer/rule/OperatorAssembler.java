@@ -249,7 +249,7 @@ public class OperatorAssembler extends BaseRule
             stream.operator = API.indexScan_Default(indexRowType, 
                                                     indexScan.isReverseScan(),
                                                     assembleIndexKeyRange(indexScan, null),
-                                                    tableRowType(indexScan.getLeafMostTable()));
+                                                    tableRowType(indexScan.getLeafMostInnerTable()));
             stream.rowType = indexRowType;
             stream.fieldOffsets = new IndexFieldOffsets(indexScan, indexRowType);
             return stream;
@@ -484,7 +484,10 @@ public class OperatorAssembler extends BaseRule
                                                                    stream.rowType);
                 return stream;
             }
-            switch (aggregateSource.getImplementation()) {
+            AggregateSource.Implementation impl = aggregateSource.getImplementation();
+            if (impl == null)
+              impl = AggregateSource.Implementation.SORT;
+            switch (impl) {
             case PRESORTED:
             case UNGROUPED:
                 break;

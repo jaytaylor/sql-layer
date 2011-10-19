@@ -109,7 +109,7 @@ public class TableName implements Serializable, Comparable<TableName>
      * @param unlessSchema if matches this TableName's schema, print only the table's escaped name (not fully qualified)
      * @return the builder you passed in
      */
-    public StringBuilder escape(StringBuilder builder, String unlessSchema) {
+    private StringBuilder escape(StringBuilder builder, String unlessSchema) {
         if (unlessSchema == null || (!schemaName.equals(unlessSchema))) {
             if (needsEscaping(schemaName)) {
                 escape(schemaName, builder);
@@ -131,15 +131,6 @@ public class TableName implements Serializable, Comparable<TableName>
     }
 
     /**
-     * Shorthand for passing <tt>null</tt> as the second argument in {@link #escape(StringBuilder,String)}.
-     * @param builder builder to write to
-     * @return the builder you pass in
-     */
-    public StringBuilder escape(StringBuilder builder) {
-        return escape(builder, null);
-    }
-
-    /**
      * Prints this table's escaped, fully qualified name.
      * @return the escaped, fully qualified name
      */
@@ -158,7 +149,7 @@ public class TableName implements Serializable, Comparable<TableName>
         return escape(new StringBuilder(), unlessSchema).toString();
     }
 
-    public static boolean needsEscaping(String name) {
+    private static boolean needsEscaping(String name) {
         char[] chars = new char[ name.length() ];
         name.getChars(0, name.length(), chars, 0);
         for (char c : chars) {
@@ -169,7 +160,7 @@ public class TableName implements Serializable, Comparable<TableName>
         return false;
     }
 
-    public static StringBuilder escape(String name, StringBuilder out) {
+    private static StringBuilder escape(String name, StringBuilder out) {
         out.append('`').append(name.replace("`", "``")).append('`');
         return out;
     }
