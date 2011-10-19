@@ -30,8 +30,6 @@ public abstract class SubqueryExpressionEvaluation implements ExpressionEvaluati
 
     @Override
     public void of(StoreAdapter adapter) {
-        // TODO: This is a wrapping cursor. Is that all right? 
-        // Need protected access for Operator.cursor().
         this.cursor = API.cursor(subquery, adapter);
     }
 
