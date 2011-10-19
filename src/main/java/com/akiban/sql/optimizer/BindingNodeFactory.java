@@ -104,8 +104,7 @@ public class BindingNodeFactory extends NodeFactory
                     ResultColumn newResultColumn = (ResultColumn)nodeMap.get(oldResultColumn);
                     if (newResultColumn == null)
                         newResultColumn = oldResultColumn;
-                    userData = new ColumnBinding(newFromTable, newResultColumn, 
-                                                 cb.isNullable());
+                    userData = new ColumnBinding(newFromTable, newResultColumn);
                 }
             }
             else {

@@ -43,11 +43,9 @@ public class ColumnBinding
         this.column = column;
         this.nullable = nullable;
     }
-    public ColumnBinding(FromTable fromTable, ResultColumn resultColumn, 
-                         boolean nullable) {
+    public ColumnBinding(FromTable fromTable, ResultColumn resultColumn) {
         this.fromTable = fromTable;
         this.resultColumn = resultColumn;
-        this.nullable = nullable;
     }
 
     public FromTable getFromTable() {
@@ -58,12 +56,13 @@ public class ColumnBinding
         return column;
     }
 
-    public ResultColumn getResultColumn() {
-        return resultColumn;
-    }
-
+    /** Is the column nullable by virtue of its table being in an outer join? */
     public boolean isNullable() {
         return nullable;
+    }
+
+    public ResultColumn getResultColumn() {
+        return resultColumn;
     }
 
     public DataTypeDescriptor getType() throws StandardException {

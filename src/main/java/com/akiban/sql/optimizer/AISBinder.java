@@ -549,7 +549,7 @@ public class AISBinder implements Visitor
                     if (resultColumns != null) {
                         ResultColumn resultColumn = resultColumns.getResultColumn(columnName);
                         if (resultColumn != null) {
-                            columnBinding = new ColumnBinding(null, resultColumn, true);
+                            columnBinding = new ColumnBinding(null, resultColumn);
                         }
                     }
                 }
@@ -624,7 +624,7 @@ public class AISBinder implements Visitor
             ResultColumn resultColumn = columns.getResultColumn(columnName);
             if (resultColumn == null)
                 return null;
-            return new ColumnBinding(fromTable, resultColumn, true);
+            return new ColumnBinding(fromTable, resultColumn);
         }
         else if (fromTable instanceof JoinNode) {
             JoinNode joinNode = (JoinNode)fromTable;
@@ -880,7 +880,7 @@ public class AISBinder implements Visitor
                 Column column = table.getColumn(columnName);
                 if (column == null)
                     throw new NoSuchColumnException (columnName);
-                ColumnBinding columnBinding = new ColumnBinding(null, column, true);
+                ColumnBinding columnBinding = new ColumnBinding(null, column, false);
                 columnReference.setUserData(columnBinding);
             }
         }
