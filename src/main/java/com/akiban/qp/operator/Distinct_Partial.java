@@ -23,7 +23,7 @@ import com.akiban.util.ShareHolder;
 
 import java.util.*;
 
-class Distinct_Default extends Operator
+class Distinct_Partial extends Operator
 {
     // Object interface
 
@@ -66,9 +66,9 @@ class Distinct_Default extends Operator
         return describePlan(inputOperator);
     }
 
-    // Distinct_Default interface
+    // Distinct_Partial interface
 
-    public Distinct_Default(Operator inputOperator, RowType distinctType)
+    public Distinct_Partial(Operator inputOperator, RowType distinctType)
     {
         ArgumentValidation.notNull("distinctType", distinctType);
         this.inputOperator = inputOperator;
@@ -134,6 +134,7 @@ class Distinct_Default extends Operator
             }
             for (int i = 0; i < nfields; i++) {
                 if (i == nvalid) {
+                    assert currentRow.isHolding();
                     if (currentValues[i] == null)
                         currentValues[i] = new ValueHolder();
                     currentValues[i].copyFrom(currentRow.get().eval(i));
@@ -150,7 +151,8 @@ class Distinct_Default extends Operator
                     currentValues[i] = inputValues[i];
                     inputValues[i] = temp;
                     nvalid = i + 1;
-                    if (currentRow.isHolding())
+                    if (i < nfields - 1)
+                        // Might need later fields.
                         currentRow.hold(inputRow);
                     return true;
                 }

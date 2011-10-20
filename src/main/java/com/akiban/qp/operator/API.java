@@ -283,9 +283,9 @@ public class API
 
     // Distinct
 
-    public static Operator distinct_Default(Operator input, RowType distinctType)
+    public static Operator distinct_Partial(Operator input, RowType distinctType)
     {
-        return new Distinct_Default(input, distinctType);
+        return new Distinct_Partial(input, distinctType);
     }
 
     // Map

@@ -30,7 +30,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Deque;
 
-public class Distinct_DefaultTest {
+public class Distinct_PartialTest {
 
     @Test
     public void testDistinct() {
@@ -44,7 +44,7 @@ public class Distinct_DefaultTest {
             .row(3L,"def",(Long)null)
             .row(1L,"abc",0L)
         );
-        Operator plan = distinct_Default(input, input.rowType());
+        Operator plan = distinct_Partial(input, input.rowType());
         Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR, AkType.LONG)
             .row(1L,"abc",0L)
             .row(2L,"abc",0L)
