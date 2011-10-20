@@ -23,6 +23,7 @@ import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.ais.model.AkibanInformationSchema;
 
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.util.SchemaCache;
 
 import java.util.List;
 
@@ -37,7 +38,7 @@ public class SchemaRulesContext extends RulesContext
                               ExpressionRegistry expressionRegistry, AggregatorRegistry aggregatorRegistry,
                               List<BaseRule> rules) {
         super(rules);
-        schema = new Schema(ais);
+        schema = SchemaCache.globalSchema(ais);
         this.aggregatorRegistry = aggregatorRegistry;
         this.expressionRegistry = expressionRegistry;
     }
