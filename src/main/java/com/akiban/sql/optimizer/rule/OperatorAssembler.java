@@ -492,15 +492,9 @@ public class OperatorAssembler extends BaseRule
             case UNGROUPED:
                 break;
             default:
-                {
-                    // TODO: Could pre-aggregate now in PREAGGREGATE_RESORT case.
-                    API.Ordering ordering = API.ordering();
-                    for (int i = 0; i < nkeys; i++) {
-                        ordering.append(Expressions.field(stream.rowType, i), true);
-                    }
-                    stream.operator = API.sort_Tree(stream.operator, stream.rowType, 
-                                                    ordering);
-                }
+                // TODO: Could pre-aggregate now in PREAGGREGATE_RESORT case.
+                assembleSort(stream, nkeys, aggregateSource.getInput());
+                break;
             }
             stream.operator = API.aggregate_Partial(stream.operator, nkeys,
                                                     rulesContext.getAggregatorRegistry(),
@@ -513,14 +507,9 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleDistinct(Distinct distinct) {
             RowStream stream = assembleStream(distinct.getInput());
-            stream.operator = API.aggregate_Partial(stream.operator,
-                                                    stream.rowType.nFields(),
-                                                    null,
-                                                    Collections.<String>emptyList());
-            // TODO: Probably want separate Distinct operator so that
-            // row type does not change.
-            stream.rowType = stream.operator.rowType();
-            stream.fieldOffsets = null;
+            // TODO: Could track already sorted by all fields.
+            assembleSort(stream, stream.rowType.nFields(), distinct.getInput());
+            stream.operator = API.distinct_Partial(stream.operator, stream.rowType);
             return stream;
         }
 
@@ -534,22 +523,36 @@ public class OperatorAssembler extends BaseRule
                                                    stream.fieldOffsets),
                                 orderBy.isAscending());
             }
+            assembleSort(stream, ordering, sort.getInput(), sort.getOutput());
+            return stream;
+        }
+
+        protected void assembleSort(RowStream stream, API.Ordering ordering,
+                                    PlanNode input, PlanNode output) {
             int maxrows = -1;
-            if (sort.getOutput() instanceof Limit) {
-                Limit limit = (Limit)sort.getOutput();
+            if (output instanceof Limit) {
+                Limit limit = (Limit)output;
                 if (!limit.isOffsetParameter() && !limit.isLimitParameter()) {
                     maxrows = limit.getOffset() + limit.getLimit();
                 }
             }
-            else {
-                // TODO: Also if input is VALUES, whose size we know in advance.
+            else if (input instanceof ExpressionsSource) {
+                ExpressionsSource expressionsSource = (ExpressionsSource)input;
+                maxrows = expressionsSource.getExpressions().size();
             }
             if ((maxrows >= 0) && (maxrows <= INSERTION_SORT_MAX_LIMIT))
                 stream.operator = API.sort_InsertionLimited(stream.operator, stream.rowType,
                                                             ordering, maxrows);
             else
                 stream.operator = API.sort_Tree(stream.operator, stream.rowType, ordering);
-            return stream;
+        }
+
+        protected void assembleSort(RowStream stream, int nkeys, PlanNode input) {
+            API.Ordering ordering = API.ordering();
+            for (int i = 0; i < nkeys; i++) {
+                ordering.append(Expressions.field(stream.rowType, i), true);
+            }
+            assembleSort(stream, ordering, input, null);
         }
 
         protected RowStream assembleLimit(Limit limit) {
