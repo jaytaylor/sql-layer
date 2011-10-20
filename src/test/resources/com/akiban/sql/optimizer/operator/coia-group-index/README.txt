@@ -21,3 +21,5 @@ select-7oo: ordering group index with left join at leaf
 select-7ooo: ordering group index with left joins along
 
 select-14: IN using index
+
+select-14p: IN using index with parameters
