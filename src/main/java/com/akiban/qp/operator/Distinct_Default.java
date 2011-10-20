@@ -1,0 +1,170 @@
+/**
+ * Copyright (C) 2011 Akiban Technologies Inc.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License, version 3,
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses.
+ */
+
+package com.akiban.qp.operator;
+
+import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types.util.ValueHolder;
+import com.akiban.util.ArgumentValidation;
+import com.akiban.util.ShareHolder;
+
+import java.util.*;
+
+class Distinct_Default extends Operator
+{
+    // Object interface
+
+    @Override
+    public String toString()
+    {
+        return String.format("%s(%s)", getClass().getSimpleName(), distinctType);
+    }
+
+    // Operator interface
+
+    @Override
+    public List<Operator> getInputOperators()
+    {
+        return Collections.singletonList(inputOperator);
+    }
+
+    @Override
+    protected Cursor cursor(StoreAdapter adapter)
+    {
+        return new Execution(adapter, inputOperator.cursor(adapter));
+    }
+
+    @Override
+    public RowType rowType()
+    {
+        return distinctType;
+    }
+
+    @Override
+    public void findDerivedTypes(Set<RowType> derivedTypes)
+    {
+        inputOperator.findDerivedTypes(derivedTypes);
+        derivedTypes.add(distinctType);
+    }
+
+    @Override
+    public String describePlan()
+    {
+        return describePlan(inputOperator);
+    }
+
+    // Distinct_Default interface
+
+    public Distinct_Default(Operator inputOperator, RowType distinctType)
+    {
+        ArgumentValidation.notNull("distinctType", distinctType);
+        this.inputOperator = inputOperator;
+        this.distinctType = distinctType;
+    }
+
+    // Object state
+
+    private final Operator inputOperator;
+    private final RowType distinctType;
+
+    // Inner classes
+
+    private class Execution implements Cursor
+    {
+        // Cursor interface
+
+        @Override
+        public void open(Bindings bindings)
+        {
+            input.open(bindings);
+            nvalid = 0;
+        }
+
+        @Override
+        public Row next()
+        {
+            adapter.checkQueryCancelation();
+            Row row;
+            while ((row = input.next()) != null) {
+                assert row.rowType() == distinctType : row;
+                if (isDistinct(row)) 
+                    break;
+            }
+            return row;
+        }
+
+        @Override
+        public void close()
+        {
+            input.close();
+            currentRow.release();
+        }
+
+        // Execution interface
+
+        Execution(StoreAdapter adapter, Cursor input)
+        {
+            this.adapter = adapter;
+            this.input = input;
+
+            nfields = distinctType.nFields();
+            currentValues = new ValueHolder[nfields];
+            inputValues = new ValueHolder[nfields];
+        }
+
+        private boolean isDistinct(Row inputRow) 
+        {
+            if ((nvalid == 0) && currentRow.isEmpty()) {
+                // Very first row.
+                currentRow.hold(inputRow);
+                return true;
+            }
+            for (int i = 0; i < nfields; i++) {
+                if (i == nvalid) {
+                    if (currentValues[i] == null)
+                        currentValues[i] = new ValueHolder();
+                    currentValues[i].copyFrom(currentRow.get().eval(i));
+                    nvalid++;
+                    if (nvalid == nfields)
+                        // Once we have copies of all fields, don't need row any more.
+                        currentRow.release();
+                }
+                if (inputValues[i] == null)
+                    inputValues[i] = new ValueHolder();
+                inputValues[i].copyFrom(inputRow.eval(i));
+                if (!currentValues[i].equals(inputValues[i])) {
+                    ValueHolder temp = currentValues[i];
+                    currentValues[i] = inputValues[i];
+                    inputValues[i] = temp;
+                    nvalid = i + 1;
+                    if (currentRow.isHolding())
+                        currentRow.hold(inputRow);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        // Object state
+
+        private final StoreAdapter adapter;
+        private final Cursor input;
+        private final ShareHolder<Row> currentRow = new ShareHolder<Row>();
+        private final int nfields;
+        private int nvalid;
+        private final ValueHolder[] currentValues, inputValues;
+    }
+}

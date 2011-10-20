@@ -281,6 +281,13 @@ public class API
         return new Ordering();
     }
 
+    // Distinct
+
+    public static Operator distinct_Default(Operator input, RowType distinctType)
+    {
+        return new Distinct_Default(input, distinctType);
+    }
+
     // Map
 
     public static Operator map_NestedLoops(Operator outerInput,
