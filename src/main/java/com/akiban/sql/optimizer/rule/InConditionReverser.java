@@ -94,9 +94,7 @@ public class InConditionReverser extends BaseRule
         }
 
         public boolean canReverse(JoinNode join) {
-            // TODO: Until we have a Distinct operator, cannot do the
-            // not-yet-distinct case.
-            return distinct;
+            return true;
         }
 
         public void beforeReverse(JoinNode join) {

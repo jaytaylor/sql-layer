@@ -93,7 +93,19 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource
     
     @Override
     public String summaryString() {
-        return super.summaryString() + expressions;
+        StringBuilder str = new StringBuilder(super.summaryString());
+        str.append("(");
+        str.append(expressions);
+        if (distinctState != null) {
+            switch (distinctState) {
+            case NEED_DISTINCT:
+                str.append(", ");
+                str.append(distinctState);
+                break;
+            }
+        }
+        str.append(")");
+        return str.toString();
     }
 
     @Override

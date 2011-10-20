@@ -19,6 +19,7 @@ import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
@@ -277,6 +278,11 @@ public class OperatorAssembler extends BaseRule
             stream.operator = API.valuesScan_Default(bindableRows, stream.rowType);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(expressionsSource, 
                                                                stream.rowType);
+            if (expressionsSource.getDistinctState() == DistinctState.NEED_DISTINCT) {
+                // Add Sort (usually _InsertionLimited) and Distinct.
+                assembleSort(stream, stream.rowType.nFields(), expressionsSource);
+                stream.operator = API.distinct_Partial(stream.operator, stream.rowType);
+            }
             return stream;
         }
 
