@@ -60,6 +60,12 @@ public class InConditionReverser extends BaseRule
             return;
         Project project = (Project)input;
         input = project.getInput();
+        boolean distinctMarker = false;
+        if (input instanceof Distinct) {
+            Distinct distinct = (Distinct)input;
+            distinctMarker = true;
+            input = distinct.getInput();
+        }
         ConditionList conds = null;
         if (input instanceof Select) {
             Select cselect = (Select)input;
@@ -93,6 +99,12 @@ public class InConditionReverser extends BaseRule
                 break;
             }
         }
+        else if (distinctMarker) {
+            // TODO: This is until we have enough CBO to compare the
+            // cost of Distinct with the effectiveness of the reversed
+            // index.
+            join.setReverseHook(new ReverseHook(true));
+        }
     }
     
     static class ReverseHook implements JoinReverseHook {
@@ -108,8 +120,14 @@ public class InConditionReverser extends BaseRule
 
         public void beforeReverse(JoinNode join) {
             if (!distinct) {
-                ExpressionsSource values = (ExpressionsSource)join.getRight();
-                values.setDistinctState(DistinctState.NEED_DISTINCT);
+                Joinable right = join.getRight();
+                if (right instanceof ExpressionsSource) {
+                    ExpressionsSource values = (ExpressionsSource)right;
+                    values.setDistinctState(DistinctState.NEED_DISTINCT);
+                }
+                else {
+                    // TODO: ...
+                }
             }
             join.setJoinType(JoinType.INNER);
         }
