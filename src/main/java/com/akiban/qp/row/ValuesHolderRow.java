@@ -15,7 +15,7 @@
 
 package com.akiban.qp.row;
 
-import com.akiban.qp.rowtype.AggregatedRowType;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
@@ -52,11 +52,6 @@ public class ValuesHolderRow extends AbstractRow {
             throw new IllegalStateException("value at index " + i + " was never set");
         }
         return value;
-    }
-
-    @Override
-    public boolean containsRealRowOf(RowType rowType) {
-        throw new UnsupportedOperationException();
     }
 
     public ValuesHolderRow(RowType rowType) {

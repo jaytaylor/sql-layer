@@ -15,6 +15,7 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.rowdata.FieldDef;
@@ -54,11 +55,6 @@ public class PersistitGroupRow extends AbstractRow
         RowData rowData = rowData();
         valueSource.bind(fieldDef, rowData);
         return valueSource;
-    }
-
-    @Override
-    public boolean containsRealRowOf(RowType rowType) {
-        throw new UnsupportedOperationException();
     }
 
     public PersistitHKey hKey()

@@ -17,6 +17,7 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -72,11 +73,6 @@ public class PersistitIndexRow extends AbstractRow
     public HKey hKey()
     {
         return hKey;
-    }
-
-    @Override
-    public boolean containsRealRowOf(RowType rowType) {
-        throw new UnsupportedOperationException();
     }
 
     // For use by OperatorIT

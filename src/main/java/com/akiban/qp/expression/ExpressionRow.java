@@ -18,6 +18,7 @@ package com.akiban.qp.expression;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.HKey;
@@ -64,11 +65,6 @@ public class ExpressionRow extends AbstractRow
     @Override
     public HKey hKey() {
         throw new UnsupportedOperationException();        
-    }
-
-    @Override
-    public boolean containsRealRowOf(RowType rowType) {
-        throw new UnsupportedOperationException();
     }
 
     @Override

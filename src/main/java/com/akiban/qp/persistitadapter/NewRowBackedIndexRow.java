@@ -16,6 +16,7 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.TableIndex;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -62,17 +63,17 @@ public class NewRowBackedIndexRow implements RowBase
     }
 
     @Override
+    public boolean containsRealRowOf(UserTable userTable) {
+        return false;
+    }
+
+    @Override
     public HKey hKey() {
         throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean ancestorOf(RowBase that) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public boolean containsRealRowOf(RowType rowType) {
         throw new UnsupportedOperationException();
     }
 

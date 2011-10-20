@@ -15,6 +15,7 @@
 
 package com.akiban.qp.row;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.Quote;
 import com.akiban.util.AkibanAppender;
@@ -34,6 +35,11 @@ public abstract class AbstractRow implements Row
     public final boolean ancestorOf(RowBase that)
     {
         return this.hKey().prefixOf(that.hKey());
+    }
+
+    @Override
+    public boolean containsRealRowOf(UserTable userTable) {
+        return false;
     }
 
     @Override
@@ -102,10 +108,10 @@ public abstract class AbstractRow implements Row
     protected static boolean containRealRowOf(
             ShareHolder<? extends Row> one,
             ShareHolder<? extends Row> two,
-            RowType rowType
+            UserTable rowType
     ) {
-        return     (one.isHolding() && one.get().rowType() == rowType)
-                || (two.isHolding() && two.get().rowType() == rowType)
+        return     (one.isHolding() && one.get().rowType().hasUserTable() && one.get().rowType().userTable() == rowType)
+                || (two.isHolding() && two.get().rowType().hasUserTable() && two.get().rowType().userTable() == rowType)
                 || (one.isHolding() && one.get().containsRealRowOf(rowType))
                 || (two.isHolding() && two.get().containsRealRowOf(rowType))
                 ;

@@ -14,6 +14,7 @@
  */
 package com.akiban.server.test.it.qp;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.RowType;
@@ -34,11 +35,6 @@ public final class NullsRow extends AbstractRow {
     @Override
     public ValueSource eval(int index) {
         return NullValueSource.only();
-    }
-
-    @Override
-    public boolean containsRealRowOf(RowType rowType) {
-        throw new UnsupportedOperationException();
     }
 
     public NullsRow(RowType rowType) {

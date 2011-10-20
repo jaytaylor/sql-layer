@@ -15,6 +15,7 @@
 
 package com.akiban.server.test.it.keyupdate;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
@@ -29,7 +30,9 @@ import org.junit.Before;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -60,6 +63,7 @@ public abstract class GIUpdateITBase extends ITBase {
         c = null;
         o = null;
         i = null;
+        h = null;
         a = null;
         groupName = null;
     }
@@ -108,14 +112,35 @@ public abstract class GIUpdateITBase extends ITBase {
         }
     }
 
-    String depthUntil(int tableId) {
-        UserTable userTable = ddl().getAIS(session()).getUserTable(tableId);
-        return String.format("%d (Integer)", userTable.getDepth());
+    String containing(String indexName, int firstTableId, int... tableIds) {
+        Set<UserTable> containingTables = new HashSet<UserTable>();
+        AkibanInformationSchema ais = ddl().getAIS(session());
+        containingTables.add(ais.getUserTable(firstTableId));
+        for (int tableId : tableIds) {
+            containingTables.add(ais.getUserTable(tableId));
+        }
+        GroupIndex groupIndex = ais.getGroup(groupName).getIndex(indexName);
+        if (groupIndex == null)
+            throw new RuntimeException("group index undefined: " + indexName);
+        long result = 0;
+        int giValueIndex = 0;
+        for(UserTable table = groupIndex.leafMostTable();
+            table != groupIndex.rootMostTable().parentTable();
+            table = table.parentTable())
+        {
+            if (containingTables.remove(table)) {
+                result |= ONE << giValueIndex;
+            }
+            ++giValueIndex;
+        }
+        if (!containingTables.isEmpty())
+            throw new RuntimeException("tables specified not in the branch: " + containingTables);
+        assert Long.bitCount(result) == tableIds.length + 1;
+        return Long.toBinaryString(result) + " (Long)";
     }
 
-    String depthFrom(int tableId) {
-        UserTable userTable = ddl().getAIS(session()).getUserTable(tableId);
-        return String.format("%d (Integer)", userTable.getDepth());
+    String containing( int firstTableId, int... tableIds) {
+        return containing(groupIndexName, firstTableId, tableIds);
     }
 
     String groupIndex(String indexName, String tableColumnPairs) {
@@ -131,6 +156,19 @@ public abstract class GIUpdateITBase extends ITBase {
         this.joinType = joinType;
     }
 
+    private static int one() {
+//        // The JIT should recognize that 0.999... == 1 and optimize this loop, but it seems to spin for a while.
+//        // I should probably use a StringBuilder instead of creating a new String each time, that might fix this?
+//        String nines = "0.9";
+//        while(true) {
+//            BigDecimal asBigDecimal = new BigDecimal(nines);
+//            if (asBigDecimal.equals(BigDecimal.ONE))
+//                return asBigDecimal.intValue();
+//            nines += '9';
+//        }
+        return 1;
+    }
+
     private final Index.JoinType joinType;
     private final String groupIndexName = "test_gi";
 
@@ -144,6 +182,7 @@ public abstract class GIUpdateITBase extends ITBase {
     // consts
 
     private static final String SCHEMA = "coia";
+    private final int ONE = one(); // prevents javac from inlining the 1 literal
 
     // nested class
 
@@ -153,9 +192,21 @@ public abstract class GIUpdateITBase extends ITBase {
 
         @Override
         public void visit(List<?> key, Object value) {
-            String asString = (value == null)
-                    ? String.format("%s => null", key)
-                    : String.format("%s => %s (%s)", key, value, value.getClass().getSimpleName());
+            final String asString;
+            if (value == null) {
+                asString = String.format("%s => null", key);
+            }
+            else {
+                final String className;
+                if (value instanceof Long) {
+                    value = Long.toBinaryString((Long)value);
+                    className = "Long";
+                }
+                else {
+                    className = value.getClass().getSimpleName();
+                }
+                asString = String.format("%s => %s (%s)", key, value, className);
+            }
             _strings.add(asString);
         }
 

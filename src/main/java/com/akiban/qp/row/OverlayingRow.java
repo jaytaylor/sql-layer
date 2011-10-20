@@ -15,11 +15,11 @@
 
 package com.akiban.qp.row;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.util.ValueHolder;
-import com.akiban.util.Undef;
 
 public final class OverlayingRow extends AbstractRow {
     private final Row underlying;
@@ -47,8 +47,8 @@ public final class OverlayingRow extends AbstractRow {
     }
 
     @Override
-    public boolean containsRealRowOf(RowType rowType) {
-        return underlying.containsRealRowOf(rowType);
+    public boolean containsRealRowOf(UserTable userTable) {
+        return underlying.containsRealRowOf(userTable);
     }
 
     @Override

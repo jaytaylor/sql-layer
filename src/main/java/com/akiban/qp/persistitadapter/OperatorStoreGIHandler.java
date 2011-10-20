@@ -64,9 +64,9 @@ class OperatorStoreGIHandler {
         // If you then give that order an item with a null sku, the index key will still be
         // (null, <date>, <hkey) but its value will be depth(i) == 2.
         // This depth is stored as an int (we don't anticipate any group branches with depth > 2^31-1).
-        int rightmostTableDepth = depthFromHKey(groupIndex, row);
+        long realTablesMap = realTablesMap(groupIndex, row);
         exchange.getValue().clear();
-        exchange.getValue().put(rightmostTableDepth);
+        exchange.getValue().put(realTablesMap);
 
         switch (action) {
         case STORE:
@@ -121,21 +121,19 @@ class OperatorStoreGIHandler {
         }
     }
 
-    private static int depthFromHKey(GroupIndex groupIndex, Row row) {
-        final int targetSegments = row.hKey().segments();
-        for(UserTable table=groupIndex.leafMostTable(), END=groupIndex.rootMostTable().parentTable();
+    private static long realTablesMap(GroupIndex groupIndex, Row row) {
+        long result = 0;
+         int indexFromEnd = 0;
+         for(UserTable table=groupIndex.leafMostTable(), END=groupIndex.rootMostTable().parentTable();
                 !(table == null || table.equals(END));
                 table = table.parentTable()
         ){
-            if (table.hKey().segments().size() == targetSegments) {
-                return table.getDepth();
+            if (row.containsRealRowOf(table)) {
+                result |= 1 << indexFromEnd;
             }
+            ++indexFromEnd;
         }
-        throw new AssertionError(
-                String.format("couldn't find a table with %d segments for row %s (hkey=%s) in group index %s",
-                        targetSegments, row, row.hKey(), groupIndex
-                )
-        );
+        return result;
     }
 
     private static GroupIndexPosition positionWithinBranch(GroupIndex groupIndex, UserTable table) {

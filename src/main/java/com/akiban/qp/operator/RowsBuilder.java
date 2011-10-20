@@ -15,6 +15,7 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
@@ -127,11 +128,6 @@ public final class RowsBuilder {
         @Override
         public String toString() {
             return Strings.join(values, ", ");
-        }
-
-        @Override
-        public boolean containsRealRowOf(RowType rowType) {
-            throw new UnsupportedOperationException();
         }
 
         private InternalRow(RowType rowType, List<ValueHolder> values) {

@@ -15,8 +15,8 @@
 
 package com.akiban.qp.row;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.types.ValueSource;
 
 public class ValuesRow extends AbstractRow
@@ -46,11 +46,6 @@ public class ValuesRow extends AbstractRow
     public HKey hKey()
     {
         return null;
-    }
-
-    @Override
-    public boolean containsRealRowOf(RowType rowType) {
-        throw new UnsupportedOperationException();
     }
 
     // ValuesRow interface
