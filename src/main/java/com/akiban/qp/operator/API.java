@@ -226,6 +226,13 @@ public class API
 
     public static Operator indexScan_Default(IndexRowType indexType,
                                              IndexKeyRange indexKeyRange,
+                                             Ordering ordering)
+    {
+        return new IndexScan_Default(indexType, indexKeyRange, ordering, indexType.tableType());
+    }
+
+    public static Operator indexScan_Default(IndexRowType indexType,
+                                             IndexKeyRange indexKeyRange,
                                              Ordering ordering,
                                              UserTableRowType innerJoinUntilRowType)
     {

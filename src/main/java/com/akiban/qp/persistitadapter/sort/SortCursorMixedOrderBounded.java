@@ -36,7 +36,7 @@ class SortCursorMixedOrderBounded extends SortCursorMixedOrder
         RowBase lo = keyRange.lo().boundExpressions(bindings);
         RowBase hi = keyRange.hi().boundExpressions(bindings);
         // Set lo and hi bounds for each key segment
-        int fields = scanStates.length;
+        int fields = scanStates.size();
         for (int f = 0; f < fields; f++) {
             scanState(f).setRange(lo.eval(f), hi.eval(f));
         }
@@ -60,6 +60,6 @@ class SortCursorMixedOrderBounded extends SortCursorMixedOrder
 
     private MixedOrderScanStateBounded scanState(int field)
     {
-        return (MixedOrderScanStateBounded) scanStates[field];
+        return (MixedOrderScanStateBounded) scanStates.get(field);
     }
 }
