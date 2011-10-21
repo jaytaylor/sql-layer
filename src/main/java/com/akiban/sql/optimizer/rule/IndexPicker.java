@@ -80,6 +80,10 @@ public class IndexPicker extends BaseRule
         }
 
         protected void pickIndex(TableJoins tableJoins) {
+            if (tableJoins.getScan() != null) 
+                // This can happen if a subquery source gets replaced
+                // by ordinary joins that then get dealt with.
+                return;
             // Goal is to get all the tables joined right here. Others
             // in the group may come via XxxLookup in a nested
             // loop. Can only consider table indexes on the inner
@@ -222,6 +226,8 @@ public class IndexPicker extends BaseRule
                 tryReverse = join.getReverseHook().canReverse(join);
                 if (!tryReverse) {
                     join.getReverseHook().didNotReverse(join);
+                    left = join.getLeft();
+                    right = join.getRight();
                 }
             }
 
