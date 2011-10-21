@@ -35,9 +35,7 @@ class IndexScan_Default extends Operator
         str.append(" ").append(indexKeyRange);
         if (reverse)
             str.append(" reverse");
-        if (innerJoinUntilRowType.userTable() != index.leafMostTable())
-            str.append(" INNER JOIN thru ")
-               .append(innerJoinUntilRowType.userTable().getName().getTableName());
+        str.append(scanSelector.describe());
         str.append(")");
         return str.toString();
     }

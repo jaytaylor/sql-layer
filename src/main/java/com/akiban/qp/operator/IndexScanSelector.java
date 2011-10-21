@@ -45,13 +45,19 @@ public abstract class IndexScanSelector {
                 if (required.equals(rootmost))
                     break;
             }
-            return new SelectiveGiSelector((GroupIndex)index, requiredTables);
+            final String description;
+            description = leafmostRequired != index.leafMostTable()
+                    ? " INNER JOIN thru " + leafmostRequired.getName().getTableName()
+                    : "";
+            return new SelectiveGiSelector((GroupIndex)index, requiredTables, description);
         }
     }
 
     private IndexScanSelector() {}
 
     private static final IndexScanSelector ALLOW_ALL = new AllSelector();
+
+    public abstract String describe();
 
     private static class SelectiveGiSelector extends IndexScanSelector {
         @Override
@@ -64,12 +70,18 @@ public abstract class IndexScanSelector {
             return (map & requiredMap) == requiredMap;
         }
 
-        private SelectiveGiSelector(GroupIndex index, Collection<? extends UserTable> tables) {
+        @Override
+        public String describe() {
+            return description;
+        }
+
+        private SelectiveGiSelector(GroupIndex index, Collection<? extends UserTable> tables, String description) {
             long tmpMap = 0;
             for (UserTable table : tables) {
                 tmpMap |= (1 << distanceFromLeaf(index, table));
             }
             requiredMap = tmpMap;
+            this.description = description;
         }
 
         private long distanceFromLeaf(GroupIndex index, UserTable table) {
@@ -77,6 +89,7 @@ public abstract class IndexScanSelector {
         }
 
         private final long requiredMap;
+        private final String description;
     }
 
     private static class AllSelector extends IndexScanSelector {
@@ -88,6 +101,11 @@ public abstract class IndexScanSelector {
         @Override
         public boolean matches(long map) {
             return true;
+        }
+
+        @Override
+        public String describe() {
+            return "";
         }
     }
 }
