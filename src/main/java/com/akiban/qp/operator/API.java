@@ -16,12 +16,10 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.row.Row;
+import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -30,7 +28,6 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.aggregation.Aggregators;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 
 import java.util.*;
@@ -141,7 +138,7 @@ public class API
         return groupScan_Default(groupTable, limit, hKeyBindingPosition, deep, null, null);
     }
 
-    public static Operator valuesScan_Default (Collection<? extends Row> rows, RowType rowType)
+    public static Operator valuesScan_Default (Collection<? extends BindableRow> rows, RowType rowType)
     {
         return new ValuesScan_Default (rows, rowType);
     }
@@ -393,12 +390,11 @@ public class API
 
         public int sortFields()
         {
-            return evaluations.size();
+            return expressions.size();
         }
 
-        public ExpressionEvaluation evaluation(int i)
-        {
-            return expressions.get(i).evaluation();
+        public Expression expression(int i) {
+            return expressions.get(i);
         }
 
         public AkType type(int i)
@@ -414,7 +410,6 @@ public class API
         public void append(Expression expression, boolean ascending)
         {
             expressions.add(expression);
-            evaluations.add(expression.evaluation());
             directions.add(ascending);
         }
 
@@ -422,14 +417,12 @@ public class API
         {
             Ordering copy = new Ordering();
             copy.expressions.addAll(expressions);
-            copy.evaluations.addAll(evaluations);
             copy.directions.addAll(directions);
             return copy;
         }
 
         private final List<com.akiban.server.expression.Expression> expressions =
             new ArrayList<com.akiban.server.expression.Expression>();
-        private final List<ExpressionEvaluation> evaluations = new ArrayList<ExpressionEvaluation>();
         private final List<Boolean> directions = new ArrayList<Boolean>(); // true: ascending, false: descending
     }
 

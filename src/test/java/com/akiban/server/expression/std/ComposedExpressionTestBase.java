@@ -16,6 +16,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.operator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;
@@ -255,6 +256,10 @@ public abstract class ComposedExpressionTestBase {
         @Override
         public void of(Bindings bindings) {
             missingRequirements.remove(ExpressionAttribute.NEEDS_BINDINGS);
+        }
+
+        @Override
+        public void of(StoreAdapter adapter) {
         }
 
         @Override

@@ -30,7 +30,16 @@ class IndexScan_Default extends Operator
     @Override
     public String toString()
     {
-        return String.format("%s(%s %s%s)", getClass().getSimpleName(), index, indexKeyRange, reverse ? " reverse" : "");
+        StringBuilder str = new StringBuilder(getClass().getSimpleName());
+        str.append("(").append(index);
+        str.append(" ").append(indexKeyRange);
+        if (reverse)
+            str.append(" reverse");
+        if (innerJoinUntilRowType.userTable() != index.leafMostTable())
+            str.append(" INNER JOIN thru ")
+               .append(innerJoinUntilRowType.userTable().getName().getTableName());
+        str.append(")");
+        return str.toString();
     }
 
     // Operator interface

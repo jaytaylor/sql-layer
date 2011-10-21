@@ -16,6 +16,7 @@
 package com.akiban.server.expression;
 
 import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.Shareable;
@@ -71,10 +72,16 @@ public interface ExpressionEvaluation extends Shareable {
     void of(Row row);
 
     /**
-     * Bindds this evaluation to a Bindings
+     * Binds this evaluation to a Bindings
      * @param bindings the bindings to be evaluated against
      */
     void of(Bindings bindings);
+
+    /**
+     * Binds this evaluation to a StoreAdapter
+     * @param adapter the adapter to use to access storage
+     */
+    void of(StoreAdapter adapter);
 
     /**
      * Gets a ValueSource that represents this evaluation. The returned ValueSource is mutable, and may change

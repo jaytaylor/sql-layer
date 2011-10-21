@@ -21,6 +21,7 @@ import static com.akiban.qp.operator.API.update_Default;
 import static com.akiban.qp.operator.API.valuesScan_Default;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.HashMap;
@@ -31,7 +32,7 @@ import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.UndefBindings;
+import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.rowtype.ValuesRowType;
@@ -145,18 +146,15 @@ public class CUDCompiler_Old {
 
     private static Operator values_Default(OperatorCompiler_Old compiler, SimplifiedTableStatement stmt) {
 
-        List<List<SimpleExpression>>values = stmt.getValues();
-        Deque<ExpressionRow> exprRowList = new ArrayDeque<ExpressionRow>(values.size());
+        List<List<SimpleExpression>> values = stmt.getValues();
         
         // Using valuesRowType, not UserTableRowType here because values may not be in 
         // same number or order as user table columns. Re-order and fill will be done 
         // during execution.
 
         // TODO fix this once the new Expressions are plugged in; they'll give the correct type per row
-        AkType[] types = new AkType[values.get(0).size()];
-        Arrays.fill(types, AkType.NULL);
-        ValuesRowType rowType = compiler.valuesRowType(types);
-
+        ValuesRowType rowType = null;// compiler.valuesRowType(types);
+        List<BindableRow> bindableRows = new ArrayList<BindableRow>();
         for (List<SimpleExpression> row : values) {
             Expression[] expressions = new Expression[row.size()];
             int i = 0;
@@ -164,9 +162,16 @@ public class CUDCompiler_Old {
                 expressions[i] = expr.generateExpression(stmt.getFieldOffset());
                 i++;
             }
-            exprRowList.add(new ExpressionRow(rowType, UndefBindings.only(), Arrays.asList(expressions)));
+            if (rowType == null) {
+                AkType[] types = new AkType[expressions.length];
+                for (int typeIndex=0; typeIndex < types.length; ++typeIndex) {
+                    types[typeIndex] = expressions[typeIndex].valueType();
+                }
+                rowType = compiler.valuesRowType(types);
+            }
+            bindableRows.add(BindableRow.of(rowType, Arrays.asList(expressions)));
         }
-        return valuesScan_Default (exprRowList, rowType);
+        return valuesScan_Default(bindableRows, rowType);
         
     }
 

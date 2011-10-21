@@ -271,7 +271,7 @@ public class IndexPicker extends BaseRule
             IndexScan lindex = pickBestIndex(left, lgoal);
             boundTables.remove(right);
             
-            if (lindex == null) 
+            if ((lindex == null) || !lindex.hasConditions())
                 return false;
 
             boolean found = false;
@@ -385,8 +385,8 @@ public class IndexPicker extends BaseRule
             }
             if (!subqueries.empty() &&
                 (n instanceof ColumnSource)) {
-                assert subqueries.peek().tablesDefined.add((ColumnSource)n) :
-                    "Table defined more than once";
+                boolean added = subqueries.peek().tablesDefined.add((ColumnSource)n);
+                assert added : "Table defined more than once";
             }
             return true;
         }

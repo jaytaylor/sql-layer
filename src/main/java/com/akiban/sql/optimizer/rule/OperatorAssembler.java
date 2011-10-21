@@ -17,15 +17,6 @@ package com.akiban.sql.optimizer.rule;
 
 import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 
-import com.akiban.qp.operator.Operator;
-import com.akiban.server.expression.std.Expressions;
-import com.akiban.server.expression.std.LiteralExpression;
-
-import com.akiban.server.aggregation.AggregatorRegistry;
-import com.akiban.server.error.UnsupportedSQLException;
-
-import com.akiban.server.expression.Expression;
-import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
@@ -36,20 +27,29 @@ import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ParameterNode;
 
-import com.akiban.qp.operator.UndefBindings;
-import com.akiban.qp.operator.API;
+import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.error.UnsupportedSQLException;
+
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.expression.std.LiteralExpression;
+import com.akiban.server.expression.subquery.AnySubqueryExpression;
+import com.akiban.server.expression.subquery.ExistsSubqueryExpression;
+import com.akiban.server.expression.subquery.ScalarSubqueryExpression;
+import com.akiban.server.types.AkType;
+
 import com.akiban.qp.exec.UpdatePlannable;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.UpdateFunction;
+import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.*;
 
-import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.expression.UnboundExpressions;
-
-import com.akiban.server.aggregation.Aggregator;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
@@ -76,7 +76,7 @@ public class OperatorAssembler extends BaseRule
         new Assembler(plan).apply();
     }
 
-    static class Assembler {
+    static class Assembler implements SubqueryOperatorAssembler {
         private PlanContext planContext;
         private SchemaRulesContext rulesContext;
         private Schema schema;
@@ -198,11 +198,6 @@ public class OperatorAssembler extends BaseRule
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 
-        protected Operator assembleSubquery(Subquery subquery) {
-            RowStream stream = assembleQuery(subquery.getQuery());
-            return stream.operator;
-        }
-
         // Assemble the top-level query. If there is a ResultSet at
         // the top, it is not handled here, since its meaning is
         // different for the different statement types.
@@ -242,6 +237,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleProject((Project)node);
             else if (node instanceof ExpressionsSource)
                 return assembleExpressionsSource((ExpressionsSource)node);
+            else if (node instanceof SubquerySource)
+                return assembleSubquerySource((SubquerySource)node);
             else if (node instanceof NullSource)
                 return assembleNullSource((NullSource)node);
             else
@@ -254,7 +251,7 @@ public class OperatorAssembler extends BaseRule
             stream.operator = API.indexScan_Default(indexRowType, 
                                                     indexScan.isReverseScan(),
                                                     assembleIndexKeyRange(indexScan, null),
-                                                    tableRowType(indexScan.getLeafMostTable()));
+                                                    tableRowType(indexScan.getLeafMostInnerTable()));
             stream.rowType = indexRowType;
             stream.fieldOffsets = new IndexFieldOffsets(indexScan, indexRowType);
             return stream;
@@ -271,17 +268,26 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleExpressionsSource(ExpressionsSource expressionsSource) {
             RowStream stream = new RowStream();
             stream.rowType = valuesRowType(expressionsSource.getFieldTypes());
-            List<Row> rows = new ArrayList<Row>(expressionsSource.getExpressions().size());
+            List<BindableRow> bindableRows = new ArrayList<BindableRow>();
             for (List<ExpressionNode> exprs : expressionsSource.getExpressions()) {
                 List<Expression> expressions = new ArrayList<Expression>(exprs.size());
                 for (ExpressionNode expr : exprs) {
                     expressions.add(assembleExpression(expr, stream.fieldOffsets));
                 }
-                rows.add(new ExpressionRow(stream.rowType, UndefBindings.only(),
-                                           expressions));
+                bindableRows.add(BindableRow.of(stream.rowType, expressions));
             }
-            stream.operator = API.valuesScan_Default(rows, stream.rowType);
+            stream.operator = API.valuesScan_Default(bindableRows, stream.rowType);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(expressionsSource, 
+                                                               stream.rowType);
+            return stream;
+        }
+
+        protected RowStream assembleSubquerySource(SubquerySource subquerySource) {
+            PlanNode subquery = subquerySource.getSubquery().getQuery();
+            if (subquery instanceof ResultSet)
+                subquery = ((ResultSet)subquery).getInput();
+            RowStream stream = assembleStream(subquery);
+            stream.fieldOffsets = new ColumnSourceFieldOffsets(subquerySource, 
                                                                stream.rowType);
             return stream;
         }
@@ -490,7 +496,10 @@ public class OperatorAssembler extends BaseRule
                                                                    stream.rowType);
                 return stream;
             }
-            switch (aggregateSource.getImplementation()) {
+            AggregateSource.Implementation impl = aggregateSource.getImplementation();
+            if (impl == null)
+              impl = AggregateSource.Implementation.SORT;
+            switch (impl) {
             case PRESORTED:
             case UNGROUPED:
                 break;
@@ -606,14 +615,63 @@ public class OperatorAssembler extends BaseRule
         protected Expression assembleExpression(ExpressionNode expr,
                                                 ColumnExpressionToIndex fieldOffsets) {
             ColumnExpressionContext context = getColumnExpressionContext(fieldOffsets);
-            if (expr instanceof SubqueryExpression) { 
-                SubqueryExpression sexpr = (SubqueryExpression)expr;
-                Operator subquery = assembleSubquery(sexpr.getSubquery());
-                return expressionAssembler.assembleSubqueryExpression(sexpr, 
-                                                                      context, 
-                                                                      subquery);
+            return expressionAssembler.assembleExpression(expr, context, this);
+        }
+
+        @Override
+        // Called back to deal with subqueries.
+        public Expression assembleSubqueryExpression(SubqueryExpression sexpr) {
+            ColumnExpressionToIndex fieldOffsets = columnBoundRows.current;
+            RowType outerRowType = null;
+            if (fieldOffsets != null)
+                outerRowType = fieldOffsets.getRowType();
+            pushBoundRow(fieldOffsets);
+            PlanNode subquery = sexpr.getSubquery().getQuery();
+            ExpressionNode expression = null;
+            if ((sexpr instanceof AnyCondition) ||
+                (sexpr instanceof SubqueryValueExpression)) {
+                if (subquery instanceof ResultSet)
+                    subquery = ((ResultSet)subquery).getInput();
+                if (!(subquery instanceof Project))
+                    throw new AkibanInternalException("subquery does not have project");
+                Project project = (Project)subquery;
+                subquery = project.getInput();
+                expression = project.getFields().get(0);
             }
-            return expressionAssembler.assembleExpression(expr, context);
+            RowStream stream = assembleQuery(subquery);
+            Expression innerExpression = null;
+            if (expression != null)
+                innerExpression = assembleExpression(expression, stream.fieldOffsets);
+            Expression result = assembleSubqueryExpression(sexpr, 
+                                                           stream.operator,
+                                                           innerExpression,
+                                                           outerRowType,
+                                                           stream.rowType,
+                                                           currentBindingPosition());
+            popBoundRow();
+            columnBoundRows.current = fieldOffsets;
+            return result;
+        }
+
+        protected Expression assembleSubqueryExpression(SubqueryExpression sexpr,
+                                                        Operator operator,
+                                                        Expression innerExpression,
+                                                        RowType outerRowType,
+                                                        RowType innerRowType,
+                                                        int bindingPosition) {
+            if (sexpr instanceof ExistsCondition)
+                return new ExistsSubqueryExpression(operator, outerRowType,
+                                                    innerRowType, bindingPosition);
+            else if (sexpr instanceof AnyCondition)
+                return new AnySubqueryExpression(operator, innerExpression,
+                                                 outerRowType, innerRowType,
+                                                 bindingPosition);
+            else if (sexpr instanceof SubqueryValueExpression)
+                return new ScalarSubqueryExpression(operator, innerExpression,
+                                                    outerRowType, innerRowType,
+                                                    bindingPosition);
+            else
+                throw new UnsupportedSQLException("Unknown subquery", sexpr.getSQLsource());
         }
 
         // Get a list of result columns based on ResultSet expression names.

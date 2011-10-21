@@ -23,21 +23,20 @@ import com.akiban.sql.parser.ValueNode;
  */
 public class IfElseExpression extends BaseExpression
 {
-    // TODO: Make this ConditionList. Need parser to put into CNF.
-    private ConditionExpression testCondition;
+    private ConditionList testConditions;
     private ExpressionNode thenExpression, elseExpression;
     
-    public IfElseExpression(ConditionExpression testCondition,
+    public IfElseExpression(ConditionList testConditions,
                             ExpressionNode thenExpression, ExpressionNode elseExpression,
                             DataTypeDescriptor sqlType, ValueNode sqlSource) {
         super(sqlType, sqlSource);
-        this.testCondition = testCondition;
+        this.testConditions = testConditions;
         this.thenExpression = thenExpression;
         this.elseExpression = elseExpression;
     }
 
-    public ConditionExpression getTestCondition() {
-        return testCondition;
+    public ConditionList getTestConditions() {
+        return testConditions;
     }
     public ExpressionNode getThenExpression() {
         return thenExpression;
@@ -46,18 +45,24 @@ public class IfElseExpression extends BaseExpression
         return elseExpression;
     }
 
+    /** Get the single condition (after compaction). */
+    public ConditionExpression getTestCondition() {
+        assert (testConditions.size() == 1);
+        return testConditions.get(0);
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof IfElseExpression)) return false;
         IfElseExpression other = (IfElseExpression)obj;
-        return (testCondition.equals(other.testCondition) &&
+        return (testConditions.equals(other.testConditions) &&
                 thenExpression.equals(other.thenExpression) &&
                 elseExpression.equals(other.elseExpression));
     }
 
     @Override
     public int hashCode() {
-        int hash = testCondition.hashCode();
+        int hash = testConditions.hashCode();
         hash += thenExpression.hashCode();
         hash += elseExpression.hashCode();
         return hash;
@@ -66,7 +71,7 @@ public class IfElseExpression extends BaseExpression
     @Override
     public boolean accept(ExpressionVisitor v) {
         if (v.visitEnter(this)) {
-            if (testCondition.accept(v) &&
+            if (testConditions.accept(v) &&
                 thenExpression.accept(v))
                 elseExpression.accept(v);
         }
@@ -80,7 +85,7 @@ public class IfElseExpression extends BaseExpression
             ExpressionNode result = v.visit(this);
             if (result != this) return result;
         }
-        testCondition = (ConditionExpression)testCondition.accept(v);
+        testConditions.accept(v);
         thenExpression = thenExpression.accept(v);
         elseExpression = elseExpression.accept(v);
         return (childrenFirst) ? v.visit(this) : this;
@@ -89,7 +94,7 @@ public class IfElseExpression extends BaseExpression
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder("IF(");
-        str.append(testCondition);
+        str.append(testConditions);
         str.append(", ");
         str.append(thenExpression);
         str.append(", ");
@@ -101,7 +106,7 @@ public class IfElseExpression extends BaseExpression
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
-        testCondition = (ConditionExpression)testCondition.duplicate(map);
+        testConditions = testConditions.duplicate(map);
         thenExpression = (ExpressionNode)thenExpression.duplicate(map);
         elseExpression = (ExpressionNode)elseExpression.duplicate(map);
     }

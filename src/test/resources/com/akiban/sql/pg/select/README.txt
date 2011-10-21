@@ -34,7 +34,9 @@ select-7: index one branch, product both
 
 select-8: constant in select list
 
-select-9: LEFT join group index
+select-9: LEFT join from table index
+
+select-9g: LEFT join covering group index
 
 select-10: group index for condition and ordering
 
@@ -61,6 +63,14 @@ select-18a: int (1) as boolean in WHERE
 select-18n: int (0) as boolean in WHERE
 
 select-19: group index with one inequality
+
+select-20: IN with parameter
+
+select-21: subquery for value
+
+select-22: EXISTS as expression (extra OR prevents unnesting)
+
+select-23: IN / ANY as expression
 
 types: select all typed fields
 
