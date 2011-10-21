@@ -122,7 +122,6 @@ class Distinct_Partial extends Operator
 
             nfields = distinctType.nFields();
             currentValues = new ValueHolder[nfields];
-            inputValues = new ValueHolder[nfields];
         }
 
         private boolean isDistinct(Row inputRow) 
@@ -143,13 +142,9 @@ class Distinct_Partial extends Operator
                         // Once we have copies of all fields, don't need row any more.
                         currentRow.release();
                 }
-                if (inputValues[i] == null)
-                    inputValues[i] = new ValueHolder();
-                inputValues[i].copyFrom(inputRow.eval(i));
-                if (!currentValues[i].equals(inputValues[i])) {
-                    ValueHolder temp = currentValues[i];
-                    currentValues[i] = inputValues[i];
-                    inputValues[i] = temp;
+                ValueHolder inputValue = new ValueHolder(inputRow.eval(i));
+                if (!currentValues[i].equals(inputValue)) {
+                    currentValues[i] = inputValue;
                     nvalid = i + 1;
                     if (i < nfields - 1)
                         // Might need later fields.
@@ -167,6 +162,6 @@ class Distinct_Partial extends Operator
         private final ShareHolder<Row> currentRow = new ShareHolder<Row>();
         private final int nfields;
         private int nvalid;
-        private final ValueHolder[] currentValues, inputValues;
+        private final ValueHolder[] currentValues;
     }
 }
