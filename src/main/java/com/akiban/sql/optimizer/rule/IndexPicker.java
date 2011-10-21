@@ -220,6 +220,9 @@ public class IndexPicker extends BaseRule
             }
             else {
                 tryReverse = join.getReverseHook().canReverse(join);
+                if (!tryReverse) {
+                    join.getReverseHook().didNotReverse(join);
+                }
             }
 
             if (tryReverse) {
@@ -265,6 +268,9 @@ public class IndexPicker extends BaseRule
                 lgoal = rgoal;
                 lindex = rindex;
             }
+            else if (join.getReverseHook() != null) {
+                join.getReverseHook().didNotReverse(join);
+            }
             // Commit to the left choice and redo the right with it bound.
             pickedIndex(left, lgoal, lindex);
             pickIndexes(right);
@@ -291,8 +297,12 @@ public class IndexPicker extends BaseRule
                     found = true;
                 }
             }
-            if (!found) 
+            if (!found) {
+                if (join.getReverseHook() != null) {
+                    join.getReverseHook().didNotReverse(join);
+                }
                 return false;
+            }
             
             // Put the VALUES outside and commit to that in the simple case.
             join.reverse();

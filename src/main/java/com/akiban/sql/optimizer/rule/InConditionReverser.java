@@ -115,24 +115,28 @@ public class InConditionReverser extends BaseRule
             switch (distinct) {
             case DISTINCT:
             case DISTINCT_WITH_NULL:
-                join.setReverseHook(new ReverseHook(true));
+                join.setReverseHook(new ReverseHook(true, true));
                 break;
             case HAS_PARAMETERS:
-                join.setReverseHook(new ReverseHook(false));
+                join.setReverseHook(new ReverseHook(true, false));
                 break;
             }
+        }
+        else {
+            join.setReverseHook(new ReverseHook(false, false));
         }
     }
     
     static class ReverseHook implements JoinReverseHook {
-        private boolean distinct;
+        private boolean reversible, distinct;
 
-        public ReverseHook(boolean distinct) {
+        public ReverseHook(boolean reversible, boolean distinct) {
+            this.reversible = reversible;
             this.distinct = distinct;
         }
 
         public boolean canReverse(JoinNode join) {
-            return true;
+            return reversible;
         }
 
         public void beforeReverse(JoinNode join) {
@@ -148,6 +152,39 @@ public class InConditionReverser extends BaseRule
                 }
             }
             join.setJoinType(JoinType.INNER);
+        }
+
+        public void didNotReverse(JoinNode join) {
+            Joinable right = join.getRight();
+            if (right instanceof SubquerySource) {
+                // Undo part of what we did above. Specifically,
+                // splice out the SubquerySource, Subquery, Project
+                // and move any Select up into the join conditions.
+                // Not semantically necessary, but putting more of the
+                // conditions together helps with the changes of being
+                // able to use a group index.
+                PlanNode input = ((SubquerySource)right).getSubquery().getInput();
+                if (!(input instanceof Project))
+                    return;
+                Project project = (Project)input;
+                input = project.getInput();
+                Select select = null;
+                if (input instanceof Select) {
+                    select = (Select)input;
+                    input = select.getInput();
+                }
+                if (!(input instanceof Joinable))
+                    return;
+                ConditionList conds = join.getJoinConditions();
+                ConditionExpression cond = conds.get(0);
+                if (!(cond instanceof ComparisonCondition))
+                    return;
+                ComparisonCondition ccond = (ComparisonCondition)cond;
+                ccond.setRight(project.getFields().get(0));
+                if (select != null)
+                    conds.addAll(select.getConditions());
+                join.replaceInput(right, input);
+            }
         }
     }
 
