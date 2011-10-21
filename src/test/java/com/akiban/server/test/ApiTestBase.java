@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -50,6 +51,7 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.types.extract.ConverterTestUtils;
 import com.akiban.server.util.GroupIndexCreator;
 import com.akiban.util.Strings;
+import com.akiban.util.TapReport;
 import com.akiban.util.Undef;
 import junit.framework.Assert;
 
@@ -90,7 +92,14 @@ import com.akiban.server.service.session.Session;
  * various convenience testing methods.</p>
  */
 public class ApiTestBase {
+    private static final String TAPS = System.getProperty("it.taps");
     protected final static Object UNDEF = Undef.only();
+    private static final Comparator<? super TapReport> TAP_REPORT_COMPARATOR = new Comparator<TapReport>() {
+        @Override
+        public int compare(TapReport o1, TapReport o2) {
+            return o1.getName().compareTo(o2.getName());
+        }
+    };
 
     public static class ListRowOutput implements RowOutput {
         private final List<NewRow> rows = new ArrayList<NewRow>();
@@ -146,6 +155,10 @@ public class ApiTestBase {
             sm.startServices();
             session = sm.getSessionService().createSession();
             testServicesStarted = true;
+            if (TAPS != null) {
+                sm.getStatisticsService().reset(TAPS);
+                sm.getStatisticsService().setEnabled(TAPS, true);
+            }
         } catch (Exception e) {
             handleStartupFailure(e);
         }
@@ -174,6 +187,23 @@ public class ApiTestBase {
     public final void stopTestServices() throws Exception {
         if (!testServicesStarted) {
             return;
+        }
+        if (TAPS != null) {
+            TapReport[] reports = sm.getStatisticsService().getReport(TAPS);
+            Arrays.sort(reports, TAP_REPORT_COMPARATOR);
+            for (TapReport report : reports) {
+                long totalNanos = report.getCumulativeTime();
+                double totalSecs = ((double) totalNanos) / 1000000000.0d;
+                double secsPer = totalSecs / report.getOutCount();
+                System.err.printf("%s:\t in=%d out=%d time=%.2f sec (%d nanos, %.5f sec per out)%n",
+                        report.getName(),
+                        report.getInCount(),
+                        report.getOutCount(),
+                        totalSecs,
+                        totalNanos,
+                        secsPer
+                );
+            }
         }
         String openCursorsMessage = null;
         if (sm.serviceIsStarted(DXLService.class)) {

@@ -371,12 +371,12 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     // consts
 
     private static final int MAX_RETRIES = 10;
-    private static final Tap.InOutTap INSERT_TOTAL = Tap.createTimer("INSERT_TOTAL");
-    private static final Tap.InOutTap UPDATE_TOTAL = Tap.createTimer("UPDATE_TOTAL");
-    private static final Tap.InOutTap DELETE_TOTAL = Tap.createTimer("DELETE_TOTAL");
-    private static final Tap.InOutTap INSERT_MAINTENANCE = Tap.createTimer("INSERT_MAINTENANCE");
-    private static final Tap.InOutTap UPDATE_MAINTENANCE = Tap.createTimer("UPDATE_MAINTENANCE");
-    private static final Tap.InOutTap DELETE_MAINTENANCE = Tap.createTimer("DELETE_MAINTENANCE");
+    private static final Tap.InOutTap INSERT_TOTAL = Tap.createTimer("write: write_total");
+    private static final Tap.InOutTap UPDATE_TOTAL = Tap.createTimer("write: update_total");
+    private static final Tap.InOutTap DELETE_TOTAL = Tap.createTimer("write: delete_total");
+    private static final Tap.InOutTap INSERT_MAINTENANCE = Tap.createTimer("write: write_maintenance");
+    private static final Tap.InOutTap UPDATE_MAINTENANCE = Tap.createTimer("write: update_maintenance");
+    private static final Tap.InOutTap DELETE_MAINTENANCE = Tap.createTimer("write: delete_maintenance");
 
 
     // nested classes
