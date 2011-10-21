@@ -21,6 +21,7 @@ import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 import com.akiban.sql.optimizer.plan.JoinNode.JoinReverseHook;
 import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import org.slf4j.Logger;
@@ -56,31 +57,16 @@ public class InConditionReverser extends BaseRule
             return;
         Subquery subquery = any.getSubquery();
         PlanNode input = subquery.getInput();
-        if (!(input instanceof Project))
-            return;
         Project project = (Project)input;
         input = project.getInput();
-        boolean distinctMarker = false;
-        if (input instanceof Distinct) {
-            Distinct distinct = (Distinct)input;
-            distinctMarker = true;
-            input = distinct.getInput();
-        }
-        ConditionList conds = null;
-        if (input instanceof Select) {
-            Select cselect = (Select)input;
-            conds = cselect.getConditions();
-            input = cselect.getInput();
-        }
         if (!(input instanceof Joinable))
             return;
-        if (conds == null)
-            conds = new ConditionList(1);
         // The ANY condition becomes the join condition for an
         // EXISTS-like semi-join with its source.
-        ConditionExpression cond = (ConditionExpression)project.getFields().get(0);
-        conds.add(cond);
         JoinNode join = new JoinNode((Joinable)sinput, (Joinable)input, JoinType.SEMI);
+        ConditionExpression cond = (ConditionExpression)project.getFields().get(0);
+        ConditionList conds = new ConditionList(1);
+        conds.add(cond);
         join.setJoinConditions(conds);
         select.getConditions().remove(any);
         select.replaceInput(sinput, join);
@@ -98,12 +84,6 @@ public class InConditionReverser extends BaseRule
                 join.setReverseHook(new ReverseHook(false));
                 break;
             }
-        }
-        else if (distinctMarker) {
-            // TODO: This is until we have enough CBO to compare the
-            // cost of Distinct with the effectiveness of the reversed
-            // index.
-            join.setReverseHook(new ReverseHook(true));
         }
     }
     
@@ -126,7 +106,8 @@ public class InConditionReverser extends BaseRule
                     values.setDistinctState(DistinctState.NEED_DISTINCT);
                 }
                 else {
-                    // TODO: ...
+                    throw new AkibanInternalException("Could not make distinct " + 
+                                                      right);
                 }
             }
             join.setJoinType(JoinType.INNER);
