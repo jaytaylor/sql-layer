@@ -131,6 +131,7 @@ class Distinct_Partial extends Operator
                 currentRow.hold(inputRow);
                 return true;
             }
+            ValueHolder inputValue = new ValueHolder();
             for (int i = 0; i < nfields; i++) {
                 if (i == nvalid) {
                     assert currentRow.isHolding();
@@ -142,7 +143,7 @@ class Distinct_Partial extends Operator
                         // Once we have copies of all fields, don't need row any more.
                         currentRow.release();
                 }
-                ValueHolder inputValue = new ValueHolder(inputRow.eval(i));
+                inputValue.copyFrom(inputRow.eval(i));
                 if (!currentValues[i].equals(inputValue)) {
                     currentValues[i] = inputValue;
                     nvalid = i + 1;
