@@ -51,20 +51,57 @@ public class InConditionReverser extends BaseRule
         }
     }
 
+    /** Convert an IN / ANY to a EXISTS-like semi-join.
+     * The ANY condition becomes the join condition.
+     * If possible, the RHS is a {@link ColumnSource} and the join is
+     * reversible.
+     * @see IndexPicker#pickIndexesTableValues.
+     */
     public void convert(Select select, AnyCondition any) {
         PlanNode sinput = select.getInput();
         if (!(sinput instanceof Joinable))
             return;
         Subquery subquery = any.getSubquery();
         PlanNode input = subquery.getInput();
+        if (!(input instanceof Project))
+            return;
         Project project = (Project)input;
         input = project.getInput();
-        if (!(input instanceof Joinable))
-            return;
-        // The ANY condition becomes the join condition for an
-        // EXISTS-like semi-join with its source.
+        List<ExpressionNode> projectFields = project.getFields();
+        ConditionExpression cond = (ConditionExpression)projectFields.get(0);
+        make_column_source:
+        if (!((input instanceof Joinable) && (input instanceof ColumnSource))) {
+            SubqueryBoundTables sbt = new SubqueryBoundTables(input);
+            // TODO: This will need extending to support row constructor IN.
+            // Probably will be an AND or maybe something with a ConditionList.
+            if (cond instanceof ComparisonCondition) {
+                ComparisonCondition ccond = (ComparisonCondition)cond;
+                ExpressionNode cleft = ccond.getLeft();
+                ExpressionNode cright = ccond.getRight();
+                if (sbt.freeOfTables(cleft) && sbt.onlyHasTables(cright)) {
+                    // Clean split in table references.  Join with
+                    // derived table whose columns are the RHS of the
+                    // ANY comparisons, which then references that
+                    // table instead. That way the table works if put
+                    // on the outer side of a nested loop join as
+                    // well.
+                    projectFields.clear();
+                    projectFields.add(cright);
+                    SubquerySource ssource = new SubquerySource(new Subquery(project),
+                                                                "ANY");
+                    ccond.setRight(new ColumnExpression(ssource,
+                                                        projectFields.size() - 1,
+                                                        cright.getSQLtype(),
+                                                        cright.getAkType(),
+                                                        cright.getSQLsource()));
+                    input = ssource;
+                    break make_column_source;
+                }
+            }
+            if (!(input instanceof Joinable))
+                return;
+        }
         JoinNode join = new JoinNode((Joinable)sinput, (Joinable)input, JoinType.SEMI);
-        ConditionExpression cond = (ConditionExpression)project.getFields().get(0);
         ConditionList conds = new ConditionList(1);
         conds.add(cond);
         join.setJoinConditions(conds);
@@ -187,6 +224,74 @@ public class InConditionReverser extends BaseRule
 
         @Override
         public boolean visit(ExpressionNode n) {
+            return true;
+        }
+    }
+
+    static class SubqueryBoundTables  implements PlanVisitor, ExpressionVisitor {
+        private Set<ColumnSource> insideTables = new HashSet<ColumnSource>();
+
+        private static enum State { TABLES, FREE, ONLY };
+        private State state;
+
+        public SubqueryBoundTables(PlanNode n) {
+            state = State.TABLES;
+            n.accept(this);
+        }
+
+        public boolean freeOfTables(ExpressionNode n) {
+            state = State.FREE;
+            return n.accept(this);
+        }
+
+        public boolean onlyHasTables(ExpressionNode n) {
+            state = State.ONLY;
+            return n.accept(this);
+        }
+
+        @Override
+        public boolean visitEnter(PlanNode n) {
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(PlanNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visit(PlanNode n) {
+            if ((state == State.TABLES) &&
+                (n instanceof ColumnSource))
+                insideTables.add((ColumnSource)n);
+            return true;
+        }
+
+        @Override
+        public boolean visitEnter(ExpressionNode n) {
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(ExpressionNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visit(ExpressionNode n) {
+            if (n instanceof ColumnExpression) {
+                ColumnSource table = ((ColumnExpression)n).getTable();
+                switch (state) {
+                case FREE:
+                    if (insideTables.contains(table))
+                        return false;
+                    break;
+                case ONLY:
+                    if (!insideTables.contains(table))
+                        return false;
+                    break;
+                }
+            }
             return true;
         }
     }

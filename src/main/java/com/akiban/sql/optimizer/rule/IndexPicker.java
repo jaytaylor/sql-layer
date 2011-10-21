@@ -260,7 +260,7 @@ public class IndexPicker extends BaseRule
             return true;
         }
 
-        // Pick indexes for table and VALUES (or generally not tables).
+        // Pick indexes for table and VALUES (or generally a non-table ColumnSource).
         // Put the VALUES outside if the join condition ends up indexed.
         protected boolean pickIndexesTableValues(JoinNode join) {
             TableJoins left = leftOfValues(join);
