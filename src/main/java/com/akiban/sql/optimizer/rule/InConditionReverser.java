@@ -67,6 +67,17 @@ public class InConditionReverser extends BaseRule
             return;
         Project project = (Project)input;
         input = project.getInput();
+        // TODO: DISTINCT does not matter inside an ANY. So
+        // effectively this is a hint, enabling reversal in the
+        // absence of CBO. Could splice it out when kept on the
+        // inside.
+        boolean hasDistinct = false;
+        if (input instanceof ResultSet)
+            input = ((ResultSet)input).getInput();
+        if (input instanceof Distinct) {
+            input = ((Distinct)input).getInput();
+            hasDistinct = true;
+        }
         List<ExpressionNode> projectFields = project.getFields();
         ConditionExpression cond = (ConditionExpression)projectFields.get(0);
         make_column_source:
@@ -123,7 +134,7 @@ public class InConditionReverser extends BaseRule
             }
         }
         else {
-            join.setReverseHook(new ReverseHook(false, false));
+            join.setReverseHook(new ReverseHook(hasDistinct, hasDistinct));
         }
     }
     
