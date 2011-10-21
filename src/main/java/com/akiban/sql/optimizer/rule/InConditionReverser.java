@@ -63,21 +63,18 @@ public class InConditionReverser extends BaseRule
             return;
         Subquery subquery = any.getSubquery();
         PlanNode input = subquery.getInput();
-        if (!(input instanceof Project))
-            return;
-        Project project = (Project)input;
-        input = project.getInput();
         // TODO: DISTINCT does not matter inside an ANY. So
         // effectively this is a hint, enabling reversal in the
-        // absence of CBO. Could splice it out when kept on the
-        // inside.
+        // absence of CBO.
         boolean hasDistinct = false;
-        if (input instanceof ResultSet)
-            input = ((ResultSet)input).getInput();
         if (input instanceof Distinct) {
             input = ((Distinct)input).getInput();
             hasDistinct = true;
         }
+        if (!(input instanceof Project))
+            return;
+        Project project = (Project)input;
+        input = project.getInput();
         List<ExpressionNode> projectFields = project.getFields();
         ConditionExpression cond = (ConditionExpression)projectFields.get(0);
         make_column_source:
@@ -134,7 +131,7 @@ public class InConditionReverser extends BaseRule
             }
         }
         else {
-            join.setReverseHook(new ReverseHook(hasDistinct, hasDistinct));
+            join.setReverseHook(new ReverseHook(hasDistinct, false));
         }
     }
     
@@ -156,6 +153,11 @@ public class InConditionReverser extends BaseRule
                 if (right instanceof ExpressionsSource) {
                     ExpressionsSource values = (ExpressionsSource)right;
                     values.setDistinctState(DistinctState.NEED_DISTINCT);
+                }
+                else if (right instanceof SubquerySource) {
+                    Subquery subquery = ((SubquerySource)right).getSubquery();
+                    PlanNode input = subquery.getInput();
+                    subquery.replaceInput(input, new Distinct(input));
                 }
                 else {
                     throw new AkibanInternalException("Could not make distinct " + 

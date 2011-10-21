@@ -1,0 +1,9 @@
+PhysicalSelect[iid:int[INT], oid:int[INT], sku:varchar(32)[VARCHAR], quan:int[INT]]
+  Map_NestedLoops
+    Distinct_Partial(project([Field(0)]))
+      project([Field(0)])
+        Select_HKeyOrdered(Index(.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]), Field(1) > Literal(2011-01-01))
+          IndexScan_Default(Index(.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]) (,))
+    project([Field(0), Field(1), Field(2), Field(3)])
+      AncestorLookup_Default(Index(user.items.sku[IndexColumn(sku)]) -> [user.items])
+        IndexScan_Default(Index(user.items.sku[IndexColumn(sku)]) (>=UnboundExpressions[Bound(0,Field(0))],<=UnboundExpressions[Bound(0,Field(0))]))
