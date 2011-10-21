@@ -16,6 +16,8 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.IndexKeyRange;
@@ -225,7 +227,8 @@ public class API
                                                      IndexKeyRange indexKeyRange,
                                                      UserTableRowType innerJoinUntilRowType)
     {
-        return new IndexScan_Default(indexType, reverse, indexKeyRange, innerJoinUntilRowType);
+        IndexScanSelector selector = IndexScanSelector.innerUntil(indexType.index(), innerJoinUntilRowType.userTable());
+        return new IndexScan_Default(indexType, reverse, indexKeyRange, selector);
     }
 
     // Select
