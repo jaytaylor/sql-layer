@@ -237,6 +237,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleProject((Project)node);
             else if (node instanceof ExpressionsSource)
                 return assembleExpressionsSource((ExpressionsSource)node);
+            else if (node instanceof SubquerySource)
+                return assembleSubquerySource((SubquerySource)node);
             else if (node instanceof NullSource)
                 return assembleNullSource((NullSource)node);
             else
@@ -276,6 +278,16 @@ public class OperatorAssembler extends BaseRule
             }
             stream.operator = API.valuesScan_Default(bindableRows, stream.rowType);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(expressionsSource, 
+                                                               stream.rowType);
+            return stream;
+        }
+
+        protected RowStream assembleSubquerySource(SubquerySource subquerySource) {
+            PlanNode subquery = subquerySource.getSubquery().getQuery();
+            if (subquery instanceof ResultSet)
+                subquery = ((ResultSet)subquery).getInput();
+            RowStream stream = assembleStream(subquery);
+            stream.fieldOffsets = new ColumnSourceFieldOffsets(subquerySource, 
                                                                stream.rowType);
             return stream;
         }
