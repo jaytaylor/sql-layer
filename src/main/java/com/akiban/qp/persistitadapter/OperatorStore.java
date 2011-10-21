@@ -48,6 +48,7 @@ import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
+import com.akiban.util.Tap;
 import com.google.inject.Inject;
 import com.persistit.Exchange;
 import com.persistit.Transaction;
@@ -69,6 +70,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     @Override
     public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector) throws PersistitException
     {
+        UPDATE_TOTAL.in();
         PersistitStore persistitStore = getPersistitStore();
         AkibanInformationSchema ais = persistitStore.getRowDefCache().ais();
 
@@ -106,6 +108,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         Transaction transaction = treeService.getTransaction(session);
         for(int retryCount=0; ; ++retryCount) {
             try {
+                UPDATE_MAINTENANCE.in();
                 transaction.begin();
 
                 maintainGroupIndexes(
@@ -140,15 +143,19 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 }
             } finally {
                 transaction.end();
+                UPDATE_MAINTENANCE.out();
             }
         }
+        UPDATE_TOTAL.out();
     }
 
     @Override
     public void writeRow(Session session, RowData rowData) throws PersistitException {
+        INSERT_TOTAL.in();
         Transaction transaction = treeService.getTransaction(session);
         for(int retryCount=0; ; ++retryCount) {
             try {
+                INSERT_MAINTENANCE.in();
                 transaction.begin();
 
                 AkibanInformationSchema ais = aisHolder.getAis();
@@ -174,15 +181,19 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 }
             } finally {
                 transaction.end();
+                INSERT_MAINTENANCE.out();
             }
         }
+        INSERT_TOTAL.out();
     }
 
     @Override
     public void deleteRow(Session session, RowData rowData) throws PersistitException {
+        DELETE_TOTAL.in();
         Transaction transaction = treeService.getTransaction(session);
         for(int retryCount=0; ; ++retryCount) {
             try {
+                DELETE_MAINTENANCE.in();
                 transaction.begin();
                 AkibanInformationSchema ais = aisHolder.getAis();
                 PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), treeService, session);
@@ -208,8 +219,10 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 }
             } finally {
                 transaction.end();
+                DELETE_MAINTENANCE.out();
             }
         }
+        DELETE_TOTAL.out();
     }
 
     @Override
@@ -358,6 +371,13 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     // consts
 
     private static final int MAX_RETRIES = 10;
+    private static final Tap.InOutTap INSERT_TOTAL = Tap.createTimer("INSERT_TOTAL");
+    private static final Tap.InOutTap UPDATE_TOTAL = Tap.createTimer("UPDATE_TOTAL");
+    private static final Tap.InOutTap DELETE_TOTAL = Tap.createTimer("DELETE_TOTAL");
+    private static final Tap.InOutTap INSERT_MAINTENANCE = Tap.createTimer("INSERT_MAINTENANCE");
+    private static final Tap.InOutTap UPDATE_MAINTENANCE = Tap.createTimer("UPDATE_MAINTENANCE");
+    private static final Tap.InOutTap DELETE_MAINTENANCE = Tap.createTimer("DELETE_MAINTENANCE");
+
 
     // nested classes
 
