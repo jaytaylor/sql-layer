@@ -1,0 +1,8 @@
+PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE]]
+  Distinct_Partial(project([Field(1), Field(4)]))
+    Sort_Tree(project([Field(1), Field(4)]))
+      project([Field(1), Field(4)])
+        Filter_Default([flatten(flatten(user.customers, user.orders), user.items)])
+          Flatten_HKeyOrdered(flatten(user.customers, user.orders) INNER user.items)
+            Flatten_HKeyOrdered(user.customers INNER user.orders)
+              GroupScan_Default(full scan on _akiban_customers NO LIMIT)

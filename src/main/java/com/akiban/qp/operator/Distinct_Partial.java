@@ -122,7 +122,6 @@ class Distinct_Partial extends Operator
 
             nfields = distinctType.nFields();
             currentValues = new ValueHolder[nfields];
-            inputValues = new ValueHolder[nfields];
         }
 
         private boolean isDistinct(Row inputRow) 
@@ -132,6 +131,7 @@ class Distinct_Partial extends Operator
                 currentRow.hold(inputRow);
                 return true;
             }
+            ValueHolder inputValue = new ValueHolder();
             for (int i = 0; i < nfields; i++) {
                 if (i == nvalid) {
                     assert currentRow.isHolding();
@@ -143,13 +143,9 @@ class Distinct_Partial extends Operator
                         // Once we have copies of all fields, don't need row any more.
                         currentRow.release();
                 }
-                if (inputValues[i] == null)
-                    inputValues[i] = new ValueHolder();
-                inputValues[i].copyFrom(inputRow.eval(i));
-                if (!currentValues[i].equals(inputValues[i])) {
-                    ValueHolder temp = currentValues[i];
-                    currentValues[i] = inputValues[i];
-                    inputValues[i] = temp;
+                inputValue.copyFrom(inputRow.eval(i));
+                if (!currentValues[i].equals(inputValue)) {
+                    currentValues[i] = inputValue;
                     nvalid = i + 1;
                     if (i < nfields - 1)
                         // Might need later fields.
@@ -166,7 +162,9 @@ class Distinct_Partial extends Operator
         private final Cursor input;
         private final ShareHolder<Row> currentRow = new ShareHolder<Row>();
         private final int nfields;
+        // currentValues contains copies of the first nvalid of currentRow's fields,
+        // filled as needed.
         private int nvalid;
-        private final ValueHolder[] currentValues, inputValues;
+        private final ValueHolder[] currentValues;
     }
 }

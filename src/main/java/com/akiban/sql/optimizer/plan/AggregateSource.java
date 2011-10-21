@@ -29,7 +29,7 @@ import java.util.ArrayList;
 public class AggregateSource extends BasePlanWithInput implements ColumnSource
 {
     public static enum Implementation {
-        PRESORTED, PREAGGREGATE_RESORT, SORT, HASH, UNGROUPED
+        PRESORTED, PREAGGREGATE_RESORT, SORT, HASH, TREE, UNGROUPED
     }
 
     private boolean projectSplitOff;

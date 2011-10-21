@@ -525,8 +525,16 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleDistinct(Distinct distinct) {
             RowStream stream = assembleStream(distinct.getInput());
-            // TODO: Could track already sorted by all fields.
-            assembleSort(stream, stream.rowType.nFields(), distinct.getInput());
+            Distinct.Implementation impl = distinct.getImplementation();
+            if (impl == null)
+              impl = Distinct.Implementation.SORT;
+            switch (impl) {
+            case PRESORTED:
+                break;
+            default:
+                assembleSort(stream, stream.rowType.nFields(), distinct.getInput());
+                break;
+            }
             stream.operator = API.distinct_Partial(stream.operator, stream.rowType);
             return stream;
         }
@@ -535,11 +543,23 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleSort(Sort sort) {
             RowStream stream = assembleStream(sort.getInput());
+            List<ExpressionNode> projects = null;
+            if ((stream.fieldOffsets == null) &&
+                (sort.getInput() instanceof Project))
+                // Cf. comment in assembleProject().
+                projects = ((Project)sort.getInput()).getFields();
             API.Ordering ordering = API.ordering();
             for (OrderByExpression orderBy : sort.getOrderBy()) {
-                ordering.append(assembleExpression(orderBy.getExpression(),
-                                                   stream.fieldOffsets),
-                                orderBy.isAscending());
+                Expression expr = null;
+                if (projects != null) {
+                    int idx = projects.indexOf(orderBy.getExpression());
+                    if (idx >= 0)
+                        expr = Expressions.field(stream.rowType, idx);
+                }
+                if (expr == null)
+                    expr = assembleExpression(orderBy.getExpression(), 
+                                              stream.fieldOffsets);
+                ordering.append(expr, orderBy.isAscending());
             }
             assembleSort(stream, ordering, sort.getInput(), sort.getOutput());
             return stream;
