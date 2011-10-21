@@ -26,6 +26,8 @@ select-14p: IN using index with parameters
 
 select-15: IN SELECT using group index in inner loop
 
+select-15d: IN SELECT using group index in outer loop (via DISTINCT)
+
 select-16: DISTINCT
 
 select-16s: DISTINCT with ORDER BY using Sort
