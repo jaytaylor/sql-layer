@@ -120,14 +120,15 @@ final class OperatorStoreMaintenance {
                                     GroupIndex groupIndex,
                                     UserTableRowType rowType)
     {
-        PlanCreationStruct plan = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType, true);
-        this.storePlan = plan.rootOperator;
-        this.usePksStore = plan.usePKs;
+        PlanCreationStruct storePlan = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType, true);
+        this.storePlan = storePlan.rootOperator;
+        this.usePksStore = storePlan.usePKs;
+        PlanCreationStruct deletePlan = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType, false);
+        this.deletePlan = deletePlan.rootOperator;
+        this.usePksDelete = deletePlan.usePKs;
+
         this.rowType = rowType;
         this.groupIndex = groupIndex;
-        plan = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType, false);
-        this.deletePlan = plan.rootOperator;
-        this.usePksDelete = plan.usePKs;
     }
 
     private final Operator storePlan;
@@ -215,11 +216,7 @@ final class OperatorStoreMaintenance {
         }
 
         result.usePKs = usePKs;
-
         UserTable startFrom = startFromRowType.userTable();
-//        TableIndex startIndex = scanPK
-//                ? startFrom.getPrimaryKey().getIndex()
-//                : fkIndex(startFromRowType.userTable(), rowType.userTable());
         List<Expression> pkExpressions = new ArrayList<Expression>(startFromIndex.getColumns().size());
         for (int i=0; i < startFrom.getPrimaryKey().getColumns().size(); ++i) {
             int fieldPos = i + 1; // position 0 is already claimed in OperatorStore
@@ -231,43 +228,37 @@ final class OperatorStoreMaintenance {
         IndexBound bound = new IndexBound(unboundExpressions, ConstantColumnSelector.ALL_ON);
         IndexKeyRange range = new IndexKeyRange(bound, true, bound, true);
 
-        // "boilerplate"
+        // the scan, main table and flattens
 
         Operator plan;
         IndexRowType pkRowType = schema.indexRowType(startFromIndex);
         plan = API.indexScan_Default(pkRowType, false, range);
-        UserTableRowType branchFrom;
-        branchFrom = branchTables.allTablesForBranch.get(0);
-        plan = API.branchLookup_Default(plan, startFrom.getGroup().getGroupTable(), pkRowType, branchFrom, API.LookupOption.DISCARD_INPUT);
+        plan = API.branchLookup_Default(
+                plan,
+                startFrom.getGroup().getGroupTable(),
+                pkRowType,
+                branchTables.allTablesForBranch.get(0),
+                API.LookupOption.DISCARD_INPUT
+        );
+
+        // RIGHT JOIN until the GI, and then the GI's join types
 
         RowType parentRowType = null;
         API.JoinType joinType = API.JoinType.RIGHT_JOIN;
-        EnumSet<API.FlattenOption> options = EnumSet.noneOf(API.FlattenOption.class);
-        int innerAtDepth = branchTables.rootMost().userTable().getDepth() - 1;
-        boolean useLeft = innerAtDepth == -1; // if the branch segment's root is the group root, use LEFT from the start
+        int branchStartDepth = branchTables.rootMost().userTable().getDepth() - 1;
+        boolean withinBranch = branchStartDepth == -1;
         API.JoinType withinBranchJoin = operatorJoinType(groupIndex);
         for (UserTableRowType branchRowType : branchTables.fromRoot()) {
             if (parentRowType == null) {
                 parentRowType = branchRowType;
             }
             else {
-                // when we hit the left join of <previous stuff> to <the incoming row>, keep the <previous stuff>
-                // row, and record its type.
-                // For instance, in a COIH schema, with a GI on OIH:
-                // * an incoming O should not keep/record anything
-                // * an incoming I should keep/record CO left join rows
-                // * an incoming H should keep/record COI left join rows
-                if (branchRowType.equals(rowType) && withinBranchJoin.equals(joinType) ) {
-                    result.flattenedParentRowType = parentRowType;
-                    options.add(API.FlattenOption.KEEP_PARENT);
-                }
-                plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType, options);
+                plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType);
                 parentRowType = plan.rowType();
-                options.remove(API.FlattenOption.KEEP_PARENT);
             }
-            if (branchRowType.userTable().getDepth() == innerAtDepth) {
-                useLeft = true;
-            } else if (useLeft) {
+            if (branchRowType.userTable().getDepth() == branchStartDepth) {
+                withinBranch = true;
+            } else if (withinBranch) {
                 joinType = withinBranchJoin;
             }
         }
@@ -367,7 +358,6 @@ final class OperatorStoreMaintenance {
 
     static class PlanCreationStruct {
         public Operator rootOperator;
-        public RowType flattenedParentRowType;
         public boolean usePKs;
     }
 }

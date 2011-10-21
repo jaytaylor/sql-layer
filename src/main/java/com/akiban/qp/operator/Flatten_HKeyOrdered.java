@@ -100,7 +100,7 @@ class Flatten_HKeyOrdered extends Operator
                                RowType parentType,
                                RowType childType,
                                API.JoinType joinType,
-                               EnumSet<API.FlattenOption> options)
+                               Set<API.FlattenOption> options)
     {
         ArgumentValidation.notNull("parentType", parentType);
         ArgumentValidation.notNull("childType", childType);

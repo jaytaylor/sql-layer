@@ -74,7 +74,7 @@ public class API
                                                        RowType childType,
                                                        JoinType joinType)
     {
-        return flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, EnumSet.noneOf(FlattenOption.class));
+        return flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, NO_FLATTEN_OPTIONS);
     }
 
     public static Operator flatten_HKeyOrdered(Operator inputOperator,
@@ -100,7 +100,7 @@ public class API
                                                        RowType parentType,
                                                        RowType childType,
                                                        JoinType joinType,
-                                                       EnumSet<FlattenOption> flags)
+                                                       Set<FlattenOption> flags)
     {
         return new Flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, flags);
     }
@@ -345,6 +345,8 @@ public class API
         // if all they need is the wrapped cursor, create it directly
         return new TopLevelWrappingCursor(root.cursor(adapter));
     }
+
+    private static final EnumSet<FlattenOption> NO_FLATTEN_OPTIONS = EnumSet.noneOf(FlattenOption.class);
 
     // Options
 
