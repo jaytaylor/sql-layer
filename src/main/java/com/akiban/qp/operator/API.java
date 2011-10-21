@@ -359,8 +359,7 @@ public class API
 
     public static enum FlattenOption {
         KEEP_PARENT,
-        KEEP_CHILD,
-        LEFT_JOIN_SHORTENS_HKEY
+        KEEP_CHILD
     }
 
     // Lookup flags

@@ -269,8 +269,6 @@ final class OperatorStoreMaintenance {
                 useLeft = true;
             } else if (useLeft) {
                 joinType = withinBranchJoin;
-                if (joinType == API.JoinType.LEFT_JOIN)
-                    options.add(API.FlattenOption.LEFT_JOIN_SHORTENS_HKEY);
             }
         }
         result.rootOperator = plan;

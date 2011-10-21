@@ -92,8 +92,6 @@ final class OperatorStoreMaintenancePlans {
             }
             if (branchRowType.equals(branchTables.rootMost())) {
                 joinType = withinGIJoin;
-                if (joinType == API.JoinType.LEFT_JOIN)
-                    flattenOptions.add(API.FlattenOption.LEFT_JOIN_SHORTENS_HKEY);
             }
         }
 
