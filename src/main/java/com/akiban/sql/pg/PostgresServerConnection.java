@@ -371,8 +371,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
         updateAIS();
 
-        PostgresStatement pstmt = null;
-        if (statementCache != null)
+        PostgresStatement pstmt = PostgresLoadablePlan.statement(server, sql, ais);
+        if (pstmt == null && statementCache != null)
             pstmt = statementCache.get(sql);
         if (pstmt == null) {
             for (PostgresStatementParser parser : unparsedGenerators) {

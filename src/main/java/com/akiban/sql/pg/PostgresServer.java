@@ -15,12 +15,16 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.qp.loadableplan.LoadablePlan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -45,6 +49,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     private boolean listening = false;
     private Map<Integer,PostgresServerConnection> connections =
         new HashMap<Integer,PostgresServerConnection>();
+    private Map<String, LoadablePlan> loadablePlans = new HashMap<String, LoadablePlan>();
     private Thread thread;
     private final AtomicBoolean instrumentationEnabled = new AtomicBoolean(false);
 
@@ -171,6 +176,10 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         return statementCache;
     }
 
+    public LoadablePlan loadablePlan(String className) {
+        return loadablePlans.get(className);
+    }
+
     /** This is the version for use by connections. */
     // TODO: This could create a new one if we didn't want to share them.
     public PostgresStatementCache getStatementCache(int generation) {
@@ -275,5 +284,28 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     public long getTotalEventTime(int sessionId, String eventName) {
         return getConnection(sessionId).getSessionTracer().getTotalEventTime(eventName);
     }
-    
+
+    @Override
+    public String loadPlan(String jarFilePath, String className) {
+        String status;
+        try {
+            File jarFile = new File(jarFilePath);
+            if (!jarFile.isAbsolute()) {
+                throw new IOException(String.format("jar file name does not specify an absolute path: %s",
+                                                    jarFilePath));
+            }
+            URL url = new URL(String.format("file://%s", jarFilePath));
+            URLClassLoader classLoader = new URLClassLoader(new URL[]{url});
+            Class klass = classLoader.loadClass(className);
+            LoadablePlan loadablePlan = (LoadablePlan) klass.newInstance();
+            LoadablePlan previousPlan = loadablePlans.put(loadablePlan.name(), loadablePlan);
+            status = String.format("%s %s -> %s",
+                                   (previousPlan == null ? "Loaded" : "Reloaded"),
+                                   loadablePlan.name(),
+                                   className);
+        } catch (Exception e) {
+            status = e.toString();
+        }
+        return status;
+    }
 }
