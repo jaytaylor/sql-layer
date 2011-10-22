@@ -75,7 +75,7 @@ final class Aggregate_Partial extends Operator
                 inputOperator,
                 inputsIndex,
                 aggregatorFactories,
-                inputOperator.rowType().schema().newAggregateType(inputOperator.rowType())
+                inputOperator.rowType().schema().newAggregateType(inputOperator.rowType(), aggregatorFactories)
         );
     }
 

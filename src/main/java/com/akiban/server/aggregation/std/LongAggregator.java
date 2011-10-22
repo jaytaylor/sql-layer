@@ -40,6 +40,11 @@ public final class LongAggregator implements Aggregator {
             }
 
             @Override
+            public AkType overrideType() {
+                return null;
+            }
+
+            @Override
             public String toString() {
                 return name;
             }
@@ -52,6 +57,11 @@ public final class LongAggregator implements Aggregator {
             @Override
             public Aggregator get() {
                 return new LongAggregator(maxProcessor, type);
+            }
+
+            @Override
+            public AkType overrideType() {
+                return null;
             }
 
             @Override

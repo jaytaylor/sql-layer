@@ -144,6 +144,10 @@ public final class FunctionsRegistryImplTest {
         public Aggregator get() {
             throw new UnsupportedOperationException();
         }
+        @Override
+        public AkType overrideType() {
+            return null;
+        }
     };
 
     // nested classes

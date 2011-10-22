@@ -89,6 +89,11 @@ public final class CountAggregator implements Aggregator {
         }
 
         @Override
+        public AkType overrideType() {
+            return AkType.LONG;
+        }
+
+        @Override
         public String toString() {
             return name;
         }
