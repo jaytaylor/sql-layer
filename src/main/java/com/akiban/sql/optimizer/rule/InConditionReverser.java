@@ -317,20 +317,26 @@ public class InConditionReverser extends BaseRule
 
         private static enum State { TABLES, FREE, ONLY };
         private State state;
+        private boolean found;
 
         public SubqueryBoundTables(PlanNode n) {
             state = State.TABLES;
+            found = false;
             n.accept(this);
         }
 
         public boolean freeOfTables(ExpressionNode n) {
             state = State.FREE;
-            return n.accept(this);
+            found = false;
+            n.accept(this);
+            return !found;
         }
 
         public boolean onlyHasTables(ExpressionNode n) {
             state = State.ONLY;
-            return n.accept(this);
+            found = false;
+            n.accept(this);
+            return !found;
         }
 
         @Override
@@ -340,7 +346,7 @@ public class InConditionReverser extends BaseRule
 
         @Override
         public boolean visitLeave(PlanNode n) {
-            return true;
+            return !found;
         }
 
         @Override
@@ -348,7 +354,7 @@ public class InConditionReverser extends BaseRule
             if ((state == State.TABLES) &&
                 (n instanceof ColumnSource))
                 insideTables.add((ColumnSource)n);
-            return true;
+            return !found;
         }
 
         @Override
@@ -358,7 +364,7 @@ public class InConditionReverser extends BaseRule
 
         @Override
         public boolean visitLeave(ExpressionNode n) {
-            return true;
+            return !found;
         }
 
         @Override
@@ -368,15 +374,15 @@ public class InConditionReverser extends BaseRule
                 switch (state) {
                 case FREE:
                     if (insideTables.contains(table))
-                        return false;
+                        found = true;
                     break;
                 case ONLY:
                     if (!insideTables.contains(table))
-                        return false;
+                        found = true;
                     break;
                 }
             }
-            return true;
+            return !found;
         }
     }
 
