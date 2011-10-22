@@ -54,13 +54,14 @@ public class InConditionReverser extends BaseRule
     /** Convert an IN / ANY to a EXISTS-like semi-join.
      * The ANY condition becomes the join condition.
      * If possible, the RHS is a {@link ColumnSource} and the join is
-     * reversible.
+     * reversible. This requires knowing that it is distinct or how to make it so.
      * @see IndexPicker#pickIndexesTableValues.
      */
     public void convert(Select select, AnyCondition any) {
         PlanNode sinput = select.getInput();
         if (!(sinput instanceof Joinable))
             return;
+        Joinable selectInput = (Joinable)sinput;
         Subquery subquery = any.getSubquery();
         PlanNode input = subquery.getInput();
         // TODO: DISTINCT does not matter inside an ANY. So
@@ -76,63 +77,96 @@ public class InConditionReverser extends BaseRule
         Project project = (Project)input;
         input = project.getInput();
         List<ExpressionNode> projectFields = project.getFields();
-        ConditionExpression cond = (ConditionExpression)projectFields.get(0);
-        make_column_source:
-        if (!((input instanceof Joinable) && (input instanceof ColumnSource))) {
-            SubqueryBoundTables sbt = new SubqueryBoundTables(input);
-            // TODO: This will need extending to support row constructor IN.
-            // Probably will be an AND or maybe something with a ConditionList.
-            if (cond instanceof ComparisonCondition) {
-                ComparisonCondition ccond = (ComparisonCondition)cond;
-                ExpressionNode cleft = ccond.getLeft();
-                ExpressionNode cright = ccond.getRight();
-                if (sbt.freeOfTables(cleft) && sbt.onlyHasTables(cright)) {
-                    // Clean split in table references.  Join with
-                    // derived table whose columns are the RHS of the
-                    // ANY comparisons, which then references that
-                    // table instead. That way the table works if put
-                    // on the outer side of a nested loop join as
-                    // well.
-                    projectFields.clear();
-                    projectFields.add(cright);
-                    SubquerySource ssource = new SubquerySource(new Subquery(project),
-                                                                "ANY");
-                    ccond.setRight(new ColumnExpression(ssource,
-                                                        projectFields.size() - 1,
-                                                        cright.getSQLtype(),
-                                                        cright.getAkType(),
-                                                        cright.getSQLsource()));
-                    input = ssource;
-                    break make_column_source;
-                }
-            }
-            if (!(input instanceof Joinable))
-                return;
+        ConditionList joinConditions = new ConditionList(projectFields.size());
+        // TODO: Right now, always one condition.  For row constructor
+        // IN, will it be like this or an AND or even something with a
+        // ConditionList?
+        for (ExpressionNode cexpr : projectFields) {
+            joinConditions.add((ConditionExpression)cexpr);
         }
-        JoinNode join = new JoinNode((Joinable)sinput, (Joinable)input, JoinType.SEMI);
-        ConditionList conds = new ConditionList(1);
-        conds.add(cond);
-        join.setJoinConditions(conds);
-        select.getConditions().remove(any);
-        select.replaceInput(sinput, join);
         if (input instanceof ExpressionsSource) {
+            ExpressionsSource expressionsSource = (ExpressionsSource)input;
             // If the source was VALUES, see if it's distinct. If so,
             // we can possibly reverse the join and benefit from an
             // index.
-            DistinctState distinct = ((ExpressionsSource)input).getDistinctState();
+            ReverseHook reverseHook = null;
+            DistinctState distinct = expressionsSource.getDistinctState();
             switch (distinct) {
             case DISTINCT:
             case DISTINCT_WITH_NULL:
-                join.setReverseHook(new ReverseHook(true, true));
+                reverseHook = new ReverseHook(true, true);
                 break;
             case HAS_PARAMETERS:
-                join.setReverseHook(new ReverseHook(true, false));
+                reverseHook = new ReverseHook(true, false);
                 break;
             }
+            convertToSemiJoin(select, any, selectInput, expressionsSource,
+                              joinConditions, reverseHook);
+            return;
         }
-        else {
-            join.setReverseHook(new ReverseHook(hasDistinct, false));
+        if (convertToSubquerySource(select, any, selectInput, input,
+                                    project, projectFields, 
+                                    joinConditions, hasDistinct))
+            return;
+        if (input instanceof Select) {
+            Select inselect = (Select)input;
+            joinConditions.addAll(inselect.getConditions());
+            input = inselect.getInput();
         }
+        if (input instanceof Joinable) {
+            convertToSemiJoin(select, any, selectInput, (Joinable)input,
+                              joinConditions, null);
+            return;
+        }
+    }
+        
+    protected boolean convertToSubquerySource(Select select, AnyCondition any, 
+                                              Joinable selectInput, PlanNode input,
+                                              Project project, List<ExpressionNode> projectFields,
+                                              ConditionList joinConditions, 
+                                              boolean hasDistinct) {
+        SubqueryBoundTables sbt = new SubqueryBoundTables(input);
+        for (ConditionExpression cond : joinConditions) {
+            if (!(cond instanceof ComparisonCondition))
+                return false;
+            ComparisonCondition ccond = (ComparisonCondition)cond;
+            if (!(sbt.freeOfTables(ccond.getLeft()) && 
+                  sbt.onlyHasTables(ccond.getRight())))
+                return false;
+        }
+        // Clean split in table references.  Join with derived table
+        // whose columns are the RHS of the ANY comparisons, which
+        // then references that table instead. That way the table
+        // works if put on the outer side of a nested loop join as
+        // well. If it stays on the inside, the subquery will be
+        // elided later.
+        SubquerySource subquerySource = new SubquerySource(new Subquery(project), "ANY");
+        projectFields.clear();
+        for (ConditionExpression cond : joinConditions) {
+            ComparisonCondition ccond = (ComparisonCondition)cond;
+            ExpressionNode cright = ccond.getRight();
+            projectFields.add(cright);
+            ccond.setRight(new ColumnExpression(subquerySource,
+                                                projectFields.size() - 1,
+                                                cright.getSQLtype(),
+                                                cright.getAkType(),
+                                                cright.getSQLsource()));
+        }
+        convertToSemiJoin(select, any, selectInput, subquerySource,
+                          joinConditions, new ReverseHook(hasDistinct, false));
+        return true;
+    }
+
+    protected void convertToSemiJoin(Select select, AnyCondition any,
+                                     Joinable selectInput, Joinable semiInput,
+                                     ConditionList joinConditions, 
+                                     ReverseHook reverseHook) {
+        JoinNode join = new JoinNode(selectInput, semiInput, JoinType.SEMI);
+        join.setJoinConditions(joinConditions);
+        select.getConditions().remove(any);
+        select.replaceInput(selectInput, join);
+        if (reverseHook != null)
+            join.setReverseHook(reverseHook);
     }
     
     static class ReverseHook implements JoinReverseHook {
