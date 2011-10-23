@@ -265,7 +265,8 @@ public class GroupJoinFinder extends BaseRule
     protected void findGroupJoins(List<JoinIsland> islands) {
         for (JoinIsland island : islands) {
             List<TableGroupJoin> whereJoins = new ArrayList<TableGroupJoin>();
-            findGroupJoins(island.root, null, island.whereConditions, whereJoins);
+            findGroupJoins(island.root, new Stack<JoinNode>(), 
+                           island.whereConditions, whereJoins);
             island.whereJoins = whereJoins;
         }
         for (JoinIsland island : islands) {
@@ -273,33 +274,50 @@ public class GroupJoinFinder extends BaseRule
         }
     }
 
-    protected void findGroupJoins(Joinable joinable, JoinNode output,
+    protected void findGroupJoins(Joinable joinable, 
+                                  Stack<JoinNode> outputJoins,
                                   ConditionList whereConditions,
                                   List<TableGroupJoin> whereJoins) {
         if (joinable.isTable()) {
             TableSource table = (TableSource)joinable;
-            ConditionList conditions = null;
-            if (output != null)
-                conditions = output.getJoinConditions();
-            if ((conditions != null) && conditions.isEmpty())
-                conditions = null;
-            if (conditions == null)
-                conditions = whereConditions;
-            TableGroupJoin tableJoin = findParentJoin(table, conditions);
-            if (tableJoin != null) {
-                if (conditions == whereConditions)
-                    whereJoins.add(tableJoin); // Position after reordering.
-                else
+            for (int i = outputJoins.size() - 1; i >= 0; i--) {
+                JoinNode output = outputJoins.get(i);
+                ConditionList conditions = output.getJoinConditions();
+                TableGroupJoin tableJoin = findParentJoin(table, conditions);
+                if (tableJoin != null) {
                     output.setGroupJoin(tableJoin);
+                    return;
+                }
+            }
+            TableGroupJoin tableJoin = findParentJoin(table, whereConditions);
+            if (tableJoin != null) {
+                whereJoins.add(tableJoin); // Position after reordering.
+                return;
             }
         }
         else if (joinable.isJoin()) {
             JoinNode join = (JoinNode)joinable;
             Joinable right = join.getRight();
-            if (!join.isInnerJoin())
-                whereConditions = null;
-            findGroupJoins(join.getLeft(), join, whereConditions, whereJoins);
-            findGroupJoins(join.getRight(), join, whereConditions, whereJoins);
+            outputJoins.push(join);
+            if (join.isInnerJoin()) {
+                findGroupJoins(join.getLeft(), outputJoins, whereConditions, whereJoins);
+                findGroupJoins(join.getRight(), outputJoins, whereConditions, whereJoins);
+            }
+            else {
+                Stack<JoinNode> singleJoin = new Stack<JoinNode>();
+                singleJoin.push(join);
+                // In a LEFT OUTER JOIN, the outer half is allowed to
+                // take from higher conditions.
+                if (join.getJoinType() == JoinType.LEFT)
+                    findGroupJoins(join.getLeft(), outputJoins, whereConditions, whereJoins);
+                else
+                    findGroupJoins(join.getLeft(), singleJoin, null, null);
+                if (join.getJoinType() == JoinType.RIGHT)
+                    findGroupJoins(join.getRight(), outputJoins, whereConditions, whereJoins);
+                else
+                    findGroupJoins(join.getRight(), singleJoin, null, null);
+            }
+            outputJoins.pop();
         }
     }
 
@@ -307,7 +325,7 @@ public class GroupJoinFinder extends BaseRule
     // parent join for the given table.
     protected TableGroupJoin findParentJoin(TableSource childTable,
                                             ConditionList conditions) {
-        if (conditions == null) return null;
+        if ((conditions == null) || conditions.isEmpty()) return null;
         TableNode childNode = childTable.getTable();
         Join groupJoin = childNode.getTable().getParentJoin();
         if (groupJoin == null) return null;
