@@ -72,6 +72,8 @@ select-22: EXISTS as expression (extra OR prevents unnesting)
 
 select-23: IN / ANY as expression
 
+select-24: RIGHT join
+
 types: select all typed fields
 
 types_a_date: match literal

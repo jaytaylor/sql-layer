@@ -21,6 +21,10 @@ order-covering: Index for ordering also covering. No lookups.
 
 order-only: Index for ordering only.
 
+right-inner: RIGHT expressed as LEFT
+
+right-right: RIGHT join down.
+
 side-branch: Index on one branch and all results from another branch,
              including an ancestor of the index.
 
