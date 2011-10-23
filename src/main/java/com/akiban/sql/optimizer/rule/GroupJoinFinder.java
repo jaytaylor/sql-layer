@@ -201,6 +201,8 @@ public class GroupJoinFinder extends BaseRule
         }
         else if (joinable.isJoin()) {
             JoinNode join = (JoinNode)joinable;
+            join.setLeft(reorderJoins(join.getLeft()));
+            join.setRight(reorderJoins(join.getRight()));
             if (compareJoinables(join.getLeft(), join.getRight()) > 0)
                 join.reverse();
         }
