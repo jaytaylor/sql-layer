@@ -575,12 +575,12 @@ public class GroupJoinFinder extends BaseRule
         Group g2 = singleGroup(j2);
         if (g1 == null) {
             if (g2 != null)
-                return +1;
+                return -1;
             else
                 return 0;
         }
         else if (g2 == null)
-            return -1;
+            return +1;
         if (g1 != g2)
             return g1.getName().compareTo(g2.getName());
         int[] range1 = ordinalRange(j1);
