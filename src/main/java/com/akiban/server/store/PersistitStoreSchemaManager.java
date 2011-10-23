@@ -407,7 +407,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     schemaName = indexName.getSchemaName();
                     Integer newId = SchemaDefToAis.findMaxIndexIDInGroup(newAIS, newGroup) + 1;
                     newIndex = GroupIndex.create(newAIS, newGroup, indexName.getName(), newId, index.isUnique(),
-                                                 index.getConstraint());
+                                                 index.getConstraint(), index.getJoinType().name());
                 }
                 break;
                 default:

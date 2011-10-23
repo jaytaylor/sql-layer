@@ -13,27 +13,12 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.row;
+package com.akiban.server.error;
 
+import com.akiban.ais.model.GroupIndex;
 
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.util.ValueHolder;
-
-public class ValuesHolderRow extends AbstractValuesHolderRow {
-
-    // ValuesHolderRow interface -- mostly just promoting visiblity
-
-    @Override
-    public void clear() {
-        super.clear();
-    }
-
-    @Override
-    public ValueHolder holderAt(int index) {
-        return super.holderAt(index);
-    }
-
-    public ValuesHolderRow(RowType rowType) {
-        super(rowType, true);
+public final class GroupIndexDepthException extends InvalidOperationException {
+    public GroupIndexDepthException(GroupIndex index, int depth) {
+        super(ErrorCode.GROUP_INDEX_DEPTH, index.getIndexName(), depth);
     }
 }

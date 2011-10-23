@@ -132,7 +132,7 @@ public class
         Group group = ais.getGroup(groupName);
         checkFound(group, "creating group index", "group", groupName);
         String constraint = unique ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT;
-        GroupIndex.create(ais, group, indexName, indexIdGenerator++, unique, constraint);
+        GroupIndex.create(ais, group, indexName, indexIdGenerator++, unique, constraint, null);
     }
 
     public void indexColumn(String schemaName, String tableName,
