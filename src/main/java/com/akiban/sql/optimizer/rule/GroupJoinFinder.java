@@ -201,15 +201,8 @@ public class GroupJoinFinder extends BaseRule
         }
         else if (joinable.isJoin()) {
             JoinNode join = (JoinNode)joinable;
-            if (join.getLeft().isTable()) {
-                if (join.getRight().isTable()) {
-                    if (compareTableSources((TableSource)join.getLeft(),
-                                            (TableSource)join.getRight()) > 0)
-                        join.reverse();
-                }
-                else
-                    join.reverse();
-            }
+            if (compareJoinables(join.getLeft(), join.getRight()) > 0)
+                join.reverse();
         }
         return joinable;
     }
@@ -540,18 +533,6 @@ public class GroupJoinFinder extends BaseRule
             return 0;
     }
     
-    protected static int compareJoinables(Joinable j1, Joinable j2) {
-        if (j1.isTable()) {
-            if (!j2.isTable())
-                return -1;
-            return compareTableSources((TableSource)j1, (TableSource)j2);
-        }
-        else if (j2.isTable())
-            return +1;
-        else
-            return 0;
-    }
-
     protected static int compareTableSources(TableSource ts1, TableSource ts2) {
         TableNode t1 = ts1.getTable();
         UserTable ut1 = t1.getTable();
@@ -585,6 +566,66 @@ public class GroupJoinFinder extends BaseRule
             getInnerJoins(((JoinNode)joinable).getLeft(), into);
             getInnerJoins(((JoinNode)joinable).getRight(), into);
         }
+    }
+
+    protected static int compareJoinables(Joinable j1, Joinable j2) {
+        if (j1.isTable() && j2.isTable())
+            return compareTableSources((TableSource)j1, (TableSource)j2);
+        Group g1 = singleGroup(j1);
+        Group g2 = singleGroup(j2);
+        if (g1 == null) {
+            if (g2 != null)
+                return +1;
+            else
+                return 0;
+        }
+        else if (g2 == null)
+            return -1;
+        if (g1 != g2)
+            return g1.getName().compareTo(g2.getName());
+        int[] range1 = ordinalRange(j1);
+        int[] range2 = ordinalRange(j2);
+        if (range1[1] < range2[0])
+            return -1;
+        else if (range1[0] > range2[1])
+            return +1;
+        else
+            return 0;
+    }
+
+    protected static Group singleGroup(Joinable j) {
+        if (j.isTable())
+            return ((TableSource)j).getTable().getGroup();
+        else if (j.isJoin()) {
+            JoinNode join = (JoinNode)j;
+            Group gl = singleGroup(join.getLeft());
+            Group gr = singleGroup(join.getRight());
+            if (gl == gr)
+                return gl;
+            else
+                return null;
+        }
+        else
+            return null;
+    }
+
+    protected static int[] ordinalRange(Joinable j) {
+        if (j.isTable()) {
+            int ord = ((TableSource)j).getTable().getOrdinal();
+            return new int[] { ord, ord };
+        }
+        else if (j.isJoin()) {
+            JoinNode join = (JoinNode)j;
+            int[] ol = ordinalRange(join.getLeft());
+            int[] or = ordinalRange(join.getRight());
+            if (ol[0] > or[0])
+                ol[0] = or[0];
+            if (ol[1] < or[1])
+                ol[1] = or[1];
+            return ol;
+        }
+        else
+            return new int[] { -1, -1 };
     }
 
 }
