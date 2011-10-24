@@ -47,7 +47,7 @@ public abstract class IndexScanSelector {
             }
             final String description;
             description = leafmostRequired != index.leafMostTable()
-                    ? " INNER JOIN thru " + leafmostRequired.getName().getTableName()
+                    ? " INNER JOIN thru " + leafmostRequired.getName().getTableName() + ", then LEFT"
                     : "";
             return new SelectiveGiSelector((GroupIndex)index, requiredTables, description);
         }
