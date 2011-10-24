@@ -29,17 +29,6 @@ import static org.junit.Assert.assertFalse;
 public class IsNullExpressionTest extends ComposedExpressionTestBase
 {
     @Test
-    public void testnull ()
-    {
-        
-        Expression expression = new IsNullExpression (null); 
-        ValueSource source = expression.evaluation().eval();
- 
-        assertTrue(source.getBool());
-        
-    }
-
-    @Test
     public void testNullExpression ()
     {
         Expression  expression = new IsNullExpression(new LiteralExpression(AkType.NULL, null));

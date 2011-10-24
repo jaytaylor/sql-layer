@@ -47,14 +47,14 @@ public class IsNullExpression extends AbstractUnaryExpression
         @Override
         public ValueSource eval() 
         {
-           return new ValueHolder (AkType.BOOL, this.operand() == null || this.operand().isNull());
+           return new ValueHolder (AkType.BOOL, operand().isNull());
         }
          
      }
     
     public IsNullExpression (Expression e)
     {
-        super(AkType.BOOL, e == null ? new LiteralExpression(AkType.NULL, null) : e);
+        super(AkType.BOOL, e);
     }
 
     @Override
@@ -66,6 +66,6 @@ public class IsNullExpression extends AbstractUnaryExpression
     @Override
     public ExpressionEvaluation evaluation() 
     {
-        return new InnerEvaluation(this.operandEvaluation());
+        return new InnerEvaluation(operandEvaluation());
     }
 }
