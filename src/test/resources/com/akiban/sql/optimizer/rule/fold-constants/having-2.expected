@@ -2,4 +2,4 @@ SelectQuery@9ff0a8
   ResultSet@52b57e9a[_SQL_COL_1]
     Project@98adae2[null]
       Select@1ecfe07[]
-        ExpressionsSource@19e215b[[]]
+        ExpressionsSource@19e215b([[]])
