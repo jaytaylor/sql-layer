@@ -99,6 +99,7 @@ public class IndexGoal implements Comparator<IndexScan>
     // the GROUP BY, and non-columns won't appear in the index.
     private AggregateSource grouping;
     private Sort ordering;
+    private Project projectDistinct;
 
     private TableNode updateTarget;
 
@@ -110,11 +111,13 @@ public class IndexGoal implements Comparator<IndexScan>
                      List<ConditionList> conditionSources,
                      AggregateSource grouping,
                      Sort ordering,
+                     Project projectDistinct,
                      Collection<TableSource> tables) {
         this.boundTables = boundTables;
         this.conditionSources = conditionSources;
         this.grouping = grouping;
         this.ordering = ordering;
+        this.projectDistinct = projectDistinct;
         
         if (conditionSources.size() == 1)
             conditions = conditionSources.get(0);
@@ -298,6 +301,26 @@ public class IndexGoal implements Comparator<IndexScan>
                 else
                     return IndexScan.OrderEffectiveness.GROUPED;
             }
+        }
+        else if (projectDistinct != null) {
+            assert (ordering == null);
+            boolean allFound = true;
+            List<ExpressionNode> distinct = projectDistinct.getFields();
+            for (ExpressionNode targetExpression : distinct) {
+                int found = -1;
+                for (int i = 0; i < indexOrdering.size(); i++) {
+                    if (targetExpression.equals(indexOrdering.get(i).getExpression())) {
+                        found = i;
+                        break;
+                    }
+                }
+                if ((found < 0) || (found >= distinct.size())) {
+                    allFound = false;
+                    break;
+                }
+            }
+            if (allFound)
+                return IndexScan.OrderEffectiveness.SORTED;
         }
         return result;
     }
@@ -637,6 +660,19 @@ public class IndexGoal implements Comparator<IndexScan>
                 // Sort not needed: splice it out.
                 ordering.getOutput().replaceInput(ordering, ordering.getInput());
             }
+        }
+        if (projectDistinct != null) {
+            Distinct distinct = (Distinct)projectDistinct.getOutput();
+            Distinct.Implementation implementation;
+            switch (index.getOrderEffectiveness()) {
+            case SORTED:
+                implementation = Distinct.Implementation.PRESORTED;
+                break;
+            default:
+                implementation = Distinct.Implementation.SORT;
+                break;
+            }
+            distinct.setImplementation(implementation);
         }
     }
     
