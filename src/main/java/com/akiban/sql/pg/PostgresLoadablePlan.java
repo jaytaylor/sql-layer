@@ -15,11 +15,8 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.util.Tap;
-
-import java.io.IOException;
 
 public class PostgresLoadablePlan extends PostgresOperatorStatement
 {
@@ -33,26 +30,18 @@ public class PostgresLoadablePlan extends PostgresOperatorStatement
         return ACQUIRE_LOCK_TAP;
     }
 
-    public static PostgresLoadablePlan statement(PostgresServer server, String sql, AkibanInformationSchema ais) throws IOException
+    public static PostgresLoadablePlan statement(PostgresServerSession server, String sql)
     {
-        PostgresLoadablePlan statement = null;
-        if (sql.startsWith(LOADABLE_PLAN_PREFIX)) {
-            String className = sql.substring(LOADABLE_PLAN_PREFIX.length());
-            // Get rid of trailing semicolon and, just in case, any leading or trailing whitespace.
-            className = className.replace(";", "").trim();
-            LoadablePlan loadablePlan = loadPlan(server, className, ais);
-            statement = new PostgresLoadablePlan(loadablePlan);
-        }
-        return statement;
+        LoadablePlan loadablePlan = loadPlan(server, sql);
+        return loadablePlan == null ? null : new PostgresLoadablePlan(loadablePlan);
     }
 
-    private static LoadablePlan loadPlan(PostgresServer server, String className, AkibanInformationSchema ais) throws IOException
+    private static LoadablePlan loadPlan(PostgresServerSession server, String planName)
     {
-        LoadablePlan loadablePlan = server.loadablePlan(className);
-        if (loadablePlan == null) {
-            throw new IOException(String.format("No loadable plan registered: %s", className));
+        LoadablePlan loadablePlan = server.loadablePlan(planName);
+        if (loadablePlan != null) {
+            loadablePlan.ais(server.getAIS());
         }
-        loadablePlan.ais(ais);
         return loadablePlan;
     }
 
@@ -67,7 +56,6 @@ public class PostgresLoadablePlan extends PostgresOperatorStatement
               Integer.MAX_VALUE);
     }
 
-    private static final String LOADABLE_PLAN_PREFIX = "#run";
     private static final Tap.InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadablePlan: execute shared");
     private static final Tap.InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadablePlan: acquire shared lock");
     private static final PostgresType[] NO_INPUTS = new PostgresType[0];

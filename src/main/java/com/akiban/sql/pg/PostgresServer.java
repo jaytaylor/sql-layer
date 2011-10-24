@@ -176,8 +176,8 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         return statementCache;
     }
 
-    public LoadablePlan loadablePlan(String className) {
-        return loadablePlans.get(className);
+    public LoadablePlan loadablePlan(String planName) {
+        return loadablePlans.get(planName);
     }
 
     /** This is the version for use by connections. */
