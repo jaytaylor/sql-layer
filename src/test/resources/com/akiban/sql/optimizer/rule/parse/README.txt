@@ -22,6 +22,10 @@ delete-2: delete with condition
 
 distinct-1: DISTINCT qualification
 
+distinct-2: DISTINCT and ORDER BY
+
+distinct-3: Illegal DISTINCT and ORDER BY
+
 exists-1: EXISTS condition
 
 group-by-1: GROUP BY expression
