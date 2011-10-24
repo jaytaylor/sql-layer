@@ -4,7 +4,13 @@ exists: EXISTS to semi-join.
 
 in-params: IN list with parameters.
 
-in-subquery: IN SELECT to semi-join.
+in-subquery: IN SELECT to semi-join (not indexable).
+
+in-subquery-outer-condition: IN SELECT to semi-join with condition referencing outside.
+
+in-subquery-distinct: indexable IN with DISTINCT enabler.
+
+in-subquery-not-distinct: indexable IN without DISTINCT enabler.
 
 not-index: IN remains as semi-join.
 
