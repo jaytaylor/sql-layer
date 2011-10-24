@@ -722,7 +722,10 @@ public class ASTStatementLoader extends BaseRule
             List<ExpressionNode> operands = new ArrayList<ExpressionNode>(1);
             operands.add(toExpression(is.getLeftOperand()));
             String function;
-            if (((Boolean)((ConstantNode)is.getRightOperand()).getValue()).booleanValue())
+            Boolean value = ((ConstantNode)is.getRightOperand()).getValue();
+            if (value == null)
+                function = "isNullOp"; // TODO: Good enough for isUnknown?
+            else if (value.booleanValue())
                 function = "isTrue";
             else
                 function = "isFalse";
