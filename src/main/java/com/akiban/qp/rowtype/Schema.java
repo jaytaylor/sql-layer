@@ -46,9 +46,9 @@ public class Schema
             : groupIndexRowType((GroupIndex) index);
     }
 
-    public synchronized AggregatedRowType newAggregateType(RowType parent, List<AggregatorFactory> aggregatorFactories)
+    public synchronized AggregatedRowType newAggregateType(RowType parent, int inputsIndex, List<AggregatorFactory> aggregatorFactories)
     {
-        return new AggregatedRowType(this, nextTypeId(), parent, aggregatorFactories);
+        return new AggregatedRowType(this, nextTypeId(), parent, inputsIndex, aggregatorFactories);
     }
 
     public synchronized FlattenedRowType newFlattenType(RowType parent, RowType child)

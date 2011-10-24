@@ -29,20 +29,21 @@ public final class AggregatedRowType extends DerivedRowType {
 
     @Override
     public AkType typeAt(int index) {
-        AkType override = aggregatorFactories.get(index).overrideType();
-        if (override != null)
-            return override;
-        else
+        if (index < inputsIndex)
             return base.typeAt(index);
+        else
+            return aggregatorFactories.get(index - inputsIndex).outputType();
     }
 
     public AggregatedRowType(Schema schema, int typeId, 
-                             RowType base, List<AggregatorFactory> aggregatorFactories) {
+                             RowType base, int inputsIndex, List<AggregatorFactory> aggregatorFactories) {
         super(schema, typeId);
         this.base = base;
+        this.inputsIndex = inputsIndex;
         this.aggregatorFactories = aggregatorFactories;
     }
 
     private final RowType base;
+    private final int inputsIndex;
     private final List<AggregatorFactory> aggregatorFactories;
 }

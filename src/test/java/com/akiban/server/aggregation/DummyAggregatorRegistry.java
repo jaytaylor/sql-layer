@@ -27,8 +27,8 @@ public final class DummyAggregatorRegistry implements AggregatorRegistry {
             }
 
             @Override
-            public AkType overrideType() {
-                return null;
+            public AkType outputType() {
+                return AkType.NULL;
             }
 
             @Override

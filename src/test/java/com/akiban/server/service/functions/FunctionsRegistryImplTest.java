@@ -145,8 +145,8 @@ public final class FunctionsRegistryImplTest {
             throw new UnsupportedOperationException();
         }
         @Override
-        public AkType overrideType() {
-            return null;
+        public AkType outputType() {
+            return AkType.NULL;
         }
     };
 

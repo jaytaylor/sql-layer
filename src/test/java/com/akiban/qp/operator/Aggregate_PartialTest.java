@@ -56,7 +56,7 @@ public final class Aggregate_PartialTest {
                 .row(3L)
         );
         List<AggregatorFactory> aggregators = Collections.singletonList(TEST_AGGREGATOR);
-        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType(), aggregators);
+        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType(), 0, aggregators);
         Operator plan = new Aggregate_Partial(input, 0, aggregators, rowType);
         Deque<Row> expected = new RowsBuilder(AkType.VARCHAR)
                 .row("1, 2, 3")
@@ -73,7 +73,7 @@ public final class Aggregate_PartialTest {
                 .row(3L, 13L)
         );
         List<AggregatorFactory> aggregators = Collections.singletonList(TEST_AGGREGATOR);
-        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType(), aggregators);
+        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType(), 1, aggregators);
         Operator plan = new Aggregate_Partial(input, 1, aggregators, rowType);
         Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR)
                 .row(1L, "10, 11")
@@ -97,7 +97,7 @@ public final class Aggregate_PartialTest {
                 .row(1L)
         );
         List<AggregatorFactory> aggregators = Collections.<AggregatorFactory>emptyList();
-        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType(), aggregators);
+        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType(), 1, aggregators);
         Operator plan = new Aggregate_Partial(input, 1, aggregators, rowType);
         Deque<Row> expected = new RowsBuilder(AkType.LONG)
                 .row(1L)
@@ -122,7 +122,7 @@ public final class Aggregate_PartialTest {
                 .row(1L, 16L)
         );
         List<AggregatorFactory> aggregators = Collections.singletonList(TEST_AGGREGATOR);
-        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType(), aggregators);
+        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType(), 1, aggregators);
         Operator plan = new Aggregate_Partial(input, 1, aggregators, rowType);
         Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR)
                 .row(null, "8, 9")
@@ -145,7 +145,7 @@ public final class Aggregate_PartialTest {
                 .row(2L, "charlie", 5)
         );
         List<AggregatorFactory> aggregators = Collections.singletonList(TEST_AGGREGATOR);
-        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType(), aggregators);
+        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType(), 2, aggregators);
         Operator plan = new Aggregate_Partial(input, 2, aggregators, rowType);
         Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR, AkType.VARCHAR)
                 .row(1L, "alpha", "1, 2")
@@ -160,7 +160,7 @@ public final class Aggregate_PartialTest {
     public void noInputRowsNoGroupBy() {
         TestOperator input = new TestOperator(new RowsBuilder(AkType.LONG));
         List<AggregatorFactory> aggregators = Collections.singletonList(TEST_AGGREGATOR);
-        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType(), aggregators);
+        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType(), 0, aggregators);
         Operator plan = new Aggregate_Partial(input, 0, aggregators, rowType);
         Deque<Row> expected = new RowsBuilder(AkType.VARCHAR)
                 .row(new ValueHolder(AkType.VARCHAR, EMPTY))
@@ -172,7 +172,7 @@ public final class Aggregate_PartialTest {
     public void noInputRowsWithGroupBy() {
         TestOperator input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.LONG));
         List<AggregatorFactory> aggregators = Collections.singletonList(TEST_AGGREGATOR);
-        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType(), aggregators);
+        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType(), 1, aggregators);
         Operator plan = new Aggregate_Partial(input, 1, aggregators, rowType);
         Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR).rows();
         OperatorTestHelper.check(plan, expected);
@@ -206,7 +206,7 @@ public final class Aggregate_PartialTest {
 
         TestOperator input = new TestOperator(shuffled, interestingRows.rowType());
         List<AggregatorFactory> aggregators = Collections.singletonList(TEST_AGGREGATOR);
-        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType(), aggregators);
+        AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType(), 1, aggregators);
         Operator plan = new Aggregate_Partial(input, 1, aggregators, rowType);
 
         // Create the expected output, including rows that have passed through
@@ -231,7 +231,7 @@ public final class Aggregate_PartialTest {
                     .row(wrapLong(1L), wrapBytes(0x01, 0x02))
             );
             List<AggregatorFactory> aggregators = Collections.singletonList(TEST_AGGREGATOR);
-            AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType(), aggregators);
+            AggregatedRowType rowType = new AggregatedRowType(null, 1, input.rowType(), 1, aggregators);
             plan = new Aggregate_Partial(input, 1, aggregators, rowType);
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -247,7 +247,7 @@ public final class Aggregate_PartialTest {
             TestOperator input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.VARBINARY)
                     .row(wrapLong(1L), wrapBytes(0x01, 0x02))
             );
-            rowType = new AggregatedRowType(null, 1, input.rowType(), aggregators);
+            rowType = new AggregatedRowType(null, 1, input.rowType(), 1, aggregators);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -262,7 +262,7 @@ public final class Aggregate_PartialTest {
             input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.VARBINARY)
                     .row(wrapLong(1L), wrapBytes(0x01, 0x02))
             );
-            rowType = new AggregatedRowType(null, 1, input.rowType(), null);
+            rowType = new AggregatedRowType(null, 1, input.rowType(), 1, null);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -291,7 +291,7 @@ public final class Aggregate_PartialTest {
             input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.VARBINARY)
                     .row(wrapLong(1L), wrapBytes(0x01, 0x02))
             );
-            rowType = new AggregatedRowType(null, 1, input.rowType(), aggregators);
+            rowType = new AggregatedRowType(null, 1, input.rowType(), -1, aggregators);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -307,7 +307,7 @@ public final class Aggregate_PartialTest {
             input = new TestOperator(new RowsBuilder(AkType.LONG, AkType.VARBINARY)
                     .row(wrapLong(1L), wrapBytes(0x01, 0x02))
             );
-            rowType = new AggregatedRowType(null, 1, input.rowType(), aggregators);
+            rowType = new AggregatedRowType(null, 1, input.rowType(), 2, aggregators);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -356,19 +356,14 @@ public final class Aggregate_PartialTest {
             return new TestAggregator();
         }
         @Override
-        public AkType overrideType() {
-            return null;
+        public AkType outputType() {
+            return AkType.VARCHAR;
         }
     };
 
     // nested classes
 
     private static class TestAggregator implements Aggregator {
-
-        @Override
-        public AkType outputType() {
-            return AkType.VARCHAR;
-        }
 
         @Override
         public void input(ValueSource input) {

@@ -39,11 +39,6 @@ public final class CountAggregator implements Aggregator {
     // Aggregator interface
 
     @Override
-    public AkType outputType() {
-        return AkType.LONG;
-    }
-
-    @Override
     public void input(ValueSource input) {
         if (countStar || (!input.isNull())) {
             ++ count;
@@ -89,7 +84,7 @@ public final class CountAggregator implements Aggregator {
         }
 
         @Override
-        public AkType overrideType() {
+        public AkType outputType() {
             return AkType.LONG;
         }
 
