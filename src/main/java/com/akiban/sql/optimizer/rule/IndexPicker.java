@@ -338,7 +338,7 @@ public class IndexPicker extends BaseRule
     // Annotate subqueries with their outer table references.
     static class JoinsFinder implements PlanVisitor, ExpressionVisitor {
         List<Picker> result = new ArrayList<Picker>();
-        Stack<SubqueryState> subqueries = new Stack<SubqueryState>();
+        Deque<SubqueryState> subqueries = new ArrayDeque<SubqueryState>();
 
         public List<Picker> find(BaseQuery query) {
             query.accept(this);
@@ -378,12 +378,12 @@ public class IndexPicker extends BaseRule
                         return true;
                 }
                 Picker entry = new Picker(j);
-                if (!subqueries.empty()) {
+                if (!subqueries.isEmpty()) {
                     entry.query = subqueries.peek().subquery;
                 }
                 result.add(entry);
             }
-            if (!subqueries.empty() &&
+            if (!subqueries.isEmpty() &&
                 (n instanceof ColumnSource)) {
                 boolean added = subqueries.peek().tablesDefined.add((ColumnSource)n);
                 assert added : "Table defined more than once";
@@ -403,7 +403,7 @@ public class IndexPicker extends BaseRule
 
         @Override
         public boolean visit(ExpressionNode n) {
-            if (!subqueries.empty() &&
+            if (!subqueries.isEmpty() &&
                 (n instanceof ColumnExpression)) {
                 subqueries.peek().tablesReferenced.add(((ColumnExpression)n).getTable());
             }

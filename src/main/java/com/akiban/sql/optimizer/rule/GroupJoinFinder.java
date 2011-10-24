@@ -267,7 +267,7 @@ public class GroupJoinFinder extends BaseRule
     protected void findGroupJoins(List<JoinIsland> islands) {
         for (JoinIsland island : islands) {
             List<TableGroupJoin> whereJoins = new ArrayList<TableGroupJoin>();
-            findGroupJoins(island.root, new Stack<JoinNode>(), 
+            findGroupJoins(island.root, new ArrayDeque<JoinNode>(), 
                            island.whereConditions, whereJoins);
             island.whereJoins = whereJoins;
         }
@@ -277,13 +277,12 @@ public class GroupJoinFinder extends BaseRule
     }
 
     protected void findGroupJoins(Joinable joinable, 
-                                  Stack<JoinNode> outputJoins,
+                                  Deque<JoinNode> outputJoins,
                                   ConditionList whereConditions,
                                   List<TableGroupJoin> whereJoins) {
         if (joinable.isTable()) {
             TableSource table = (TableSource)joinable;
-            for (int i = outputJoins.size() - 1; i >= 0; i--) {
-                JoinNode output = outputJoins.get(i);
+            for (JoinNode output : outputJoins) {
                 ConditionList conditions = output.getJoinConditions();
                 TableGroupJoin tableJoin = findParentJoin(table, conditions);
                 if (tableJoin != null) {
@@ -306,7 +305,7 @@ public class GroupJoinFinder extends BaseRule
                 findGroupJoins(join.getRight(), outputJoins, whereConditions, whereJoins);
             }
             else {
-                Stack<JoinNode> singleJoin = new Stack<JoinNode>();
+                Deque<JoinNode> singleJoin = new ArrayDeque<JoinNode>(1);
                 singleJoin.push(join);
                 // In a LEFT OUTER JOIN, the outer half is allowed to
                 // take from higher conditions.
