@@ -164,7 +164,7 @@ public class OuterJoinPromoter extends BaseRule
                     return;
                 }
                 else if (fname.equals("not") ||
-                         fname.equals("isNullOp")) {
+                         fname.equals("isNull")) {
                     // These are too complicated to understand.
                     return;
                 }
