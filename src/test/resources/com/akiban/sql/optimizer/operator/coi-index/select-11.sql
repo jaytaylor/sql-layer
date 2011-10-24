@@ -1,0 +1,1 @@
+SELECT name, x.value from customers, (SELECT cid, MAX(order_date) AS value FROM orders GROUP BY cid) AS x WHERE customers.cid = x.cid

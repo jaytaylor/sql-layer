@@ -21,3 +21,11 @@ select-7oo: ordering group index with left join at leaf
 select-7ooo: ordering group index with left joins along
 
 select-14: IN using index
+
+select-14p: IN using index with parameters
+
+select-16: DISTINCT
+
+select-16s: DISTINCT with ORDER BY using Sort
+
+select-16g: DISTINCT with ORDER BY using group index

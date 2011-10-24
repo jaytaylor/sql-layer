@@ -111,6 +111,7 @@ public class IndexPicker extends BaseRule
             List<ConditionList> conditionSources = new ArrayList<ConditionList>();
             Sort ordering = null;
             AggregateSource grouping = null;
+            Project projectDistinct = null;
             while (true) {
                 input = input.getOutput();
                 if (!(input instanceof Joinable))
@@ -154,12 +155,22 @@ public class IndexPicker extends BaseRule
                     }
                 }
             }
+            else if (input instanceof Project) {
+                Project project = (Project)input;
+                input = project.getOutput();
+                if (input instanceof Distinct)
+                    projectDistinct = project;
+                else if (input instanceof Sort)
+                    ordering = (Sort)input;
+            }
             if (conditionSources.isEmpty() &&
                 (ordering == null) &&
-                (grouping == null))
+                (grouping == null) &&
+                (projectDistinct == null))
                 return null;
             return new IndexGoal(query, boundTables, 
-                                 conditionSources, grouping, ordering, tables);
+                                 conditionSources, grouping, ordering, projectDistinct,
+                                 tables);
         }
 
         protected IndexScan pickBestIndex(TableJoins tableJoins, IndexGoal goal) {
