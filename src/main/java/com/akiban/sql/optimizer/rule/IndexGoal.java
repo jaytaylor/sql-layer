@@ -376,6 +376,9 @@ public class IndexGoal implements Comparator<IndexScan>
                 TableSource rootRequired = null, leafRequired = null;
                 if (index.getJoinType() == JoinType.LEFT) {
                     while (rootTable != null) {
+                        // TODO: These isRequired() predicates need to
+                        // be relative to the group to support outer
+                        // joins between groups.
                         if (rootTable.isRequired()) {
                             rootRequired = rootTable;
                             if (leafRequired == null)
