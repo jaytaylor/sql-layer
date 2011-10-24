@@ -16,6 +16,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.OverflowException;
 import com.akiban.server.error.DivisionByZeroException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -122,6 +123,20 @@ public class ArithExpressionTest extends ComposedExpressionTestBase
         ValueSource actual = new ValueHolder (top.evaluation().eval());
         ValueSource expected = new ValueHolder(AkType.U_BIGINT, BigInteger.valueOf(3L));
         assertEquals("actual == expected", expected, actual);
+    }
+    
+    @Test (expected = OverflowException.class)      
+    public void BigIntPlusDouble () // expect exception
+    {
+        Expression left = new LiteralExpression(AkType.U_BIGINT, BigInteger.valueOf(Long.MAX_VALUE).pow(100));
+       
+        //javax.swing.JOptionPane.showMessageDialog(null, left.toString());
+        Expression right = new LiteralExpression (AkType.DOUBLE, 100000000.0);
+        Expression top = new ArithExpression(left, ArithOps.ADD, right);
+     
+        ValueSource actual = new ValueHolder(top.evaluation().eval());
+        
+        
     }
      
     @Override

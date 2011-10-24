@@ -15,7 +15,7 @@
 
 package com.akiban.server.types.extract;
 
-import com.akiban.server.error.DoubleOverflowException;
+import com.akiban.server.error.OverflowException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueSourceIsNullException;
@@ -44,13 +44,16 @@ public final class DoubleExtractor extends AbstractExtractor {
         default:
             throw unsupportedConversion(type);
         }
+        
+        
     }
 
     private double getDecimalAsDouble (ValueSource source )
     {
         BigDecimal x = source.getDecimal();
         if (x.compareTo(BigDecimal.valueOf(Double.MAX_VALUE)) >= 0)
-            throw new DoubleOverflowException("Overflow Exception");
+            throw new OverflowException();
+        
         else
             return x.doubleValue();
     }
@@ -59,7 +62,7 @@ public final class DoubleExtractor extends AbstractExtractor {
     {
         BigInteger x = source.getUBigInt();
         if (x.compareTo(BigInteger.valueOf((long)Double.MAX_VALUE)) >= 0)
-            throw new DoubleOverflowException("Overflow Exception");
+            throw new OverflowException();
         else
             return x.doubleValue();
     }
