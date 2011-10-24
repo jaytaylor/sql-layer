@@ -24,5 +24,7 @@ select-7o: join only for orphans
 
 select-9: extra true condition
 
+select-10: aggregate with DISTINCT
+
 update-1: change column to literal
 

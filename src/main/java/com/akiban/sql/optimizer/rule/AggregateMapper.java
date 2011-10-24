@@ -175,9 +175,9 @@ public class AggregateMapper extends BaseRule
             if ("AVG".equals(function)) {
                 ExpressionNode operand = expr.getOperand();
                 List<ExpressionNode> noperands = new ArrayList<ExpressionNode>(2);
-                noperands.add(new AggregateFunctionExpression("SUM", operand, false,
+                noperands.add(new AggregateFunctionExpression("SUM", operand, expr.isDistinct(),
                                                               operand.getSQLtype(), null));
-                noperands.add(new AggregateFunctionExpression("COUNT", operand, false,
+                noperands.add(new AggregateFunctionExpression("COUNT", operand, expr.isDistinct(),
                                                               new DataTypeDescriptor(TypeId.INTEGER_ID, false), null));
                 return new FunctionExpression("divide",
                                               noperands,
