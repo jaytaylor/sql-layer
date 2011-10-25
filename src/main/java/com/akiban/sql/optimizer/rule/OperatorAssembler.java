@@ -849,7 +849,7 @@ public class OperatorAssembler extends BaseRule
         /* Bindings-related state */
 
         protected int bindingsOffset = -1;
-        protected Stack<ColumnExpressionToIndex> boundRows = null;
+        protected Stack<ColumnExpressionToIndex> boundRows = null; // Needs to be List<>.
 
         protected void ensureBoundRows() {
             if (boundRows == null) {

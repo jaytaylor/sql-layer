@@ -484,7 +484,7 @@ public class IndexGoal implements Comparator<IndexScan>
         private RequiredColumns requiredColumns;
         private Map<PlanNode,Boolean> excludedPlanNodes;
         private Map<ExpressionNode,Boolean> excludedExpressions;
-        private Stack<Boolean> excludeNodeStack = new Stack<Boolean>();
+        private Deque<Boolean> excludeNodeStack = new ArrayDeque<Boolean>();
         private boolean excludeNode = false;
         private int excludeDepth = 0;
 
