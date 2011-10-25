@@ -37,8 +37,10 @@ public abstract class IndexScanSelector {
             }
 
             @Override
-            public String description() {
-                return " INNER JOIN thru " + leafmostRequired.getName().getTableName() + ", then LEFT";
+            public String description(GroupIndex index) {
+                return index.leafMostTable().equals(leafmostRequired)
+                        ? ""
+                        : " INNER JOIN thru " + leafmostRequired.getName().getTableName() + ", then LEFT";
             }
         });
     }
@@ -52,8 +54,10 @@ public abstract class IndexScanSelector {
             }
 
             @Override
-            public String description() {
-                return " RIGHT JOIN thru " + rootmostRequired.getName().getTableName() + ", then INNER";
+            public String description(GroupIndex index) {
+                return index.rootMostTable().equals(rootmostRequired)
+                        ? ""
+                        : " RIGHT JOIN thru " + rootmostRequired.getName().getTableName() + ", then INNER";
             }
         });
 
@@ -67,8 +71,8 @@ public abstract class IndexScanSelector {
             }
 
             @Override
-            public String description() {
-                return "INNER";
+            public String description(GroupIndex index) {
+                return "";
             }
         });
     }
@@ -84,20 +88,20 @@ public abstract class IndexScanSelector {
         UserTable giLeaf = index.leafMostTable();
         List<UserTable> requiredTables = new ArrayList<UserTable>(giLeaf.getDepth());
         for(UserTable table = giLeaf, end = index.rootMostTable().parentTable();
-            table == null || !table.equals(end);
+            table != null && !table.equals(end);
             table = table.parentTable()
         ) {
-            if (table == null || table.parentTable() == giLeaf)
+            if (table.parentTable() == giLeaf)
                 throw new IllegalArgumentException(table + " isn't in index" + index);
             if (policy.include(table))
                 requiredTables.add(table);
         }
-        return new SelectiveGiSelector(index, requiredTables, policy.description());
+        return new SelectiveGiSelector(index, requiredTables, policy.description(index));
     }
 
     private interface Policy {
         boolean include(UserTable table);
-        String description();
+        String description(GroupIndex index);
     }
 
     private IndexScanSelector() {}
