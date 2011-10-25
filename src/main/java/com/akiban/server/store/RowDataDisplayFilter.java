@@ -55,7 +55,7 @@ class RowDataDisplayFilter implements DisplayFilter {
     public String toValueDisplayString(final Exchange exchange) {
         final String treeName = exchange.getTree().getName();
         final String volumeName = exchange.getVolume().getName();
-        boolean protectedTree = treeName.contains("$$");
+        boolean protectedTree = containsExactlyOne(treeName, "$$");
         if (!protectedTree) {
             for (final String s : PROTECTED_VOLUME_NAMES) {
                 if (volumeName.equals(s)) {
@@ -99,5 +99,12 @@ class RowDataDisplayFilter implements DisplayFilter {
         }
         return defaultFilter.toValueDisplayString(exchange);
 
+    }
+
+    private boolean containsExactlyOne(String haystack, String needle) {
+        int first = haystack.indexOf(needle);
+        if (first < 0)
+            return false;
+        return haystack.indexOf(needle, first) < 0;
     }
 }

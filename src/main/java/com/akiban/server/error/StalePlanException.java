@@ -12,28 +12,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
+package com.akiban.server.error;
 
-package com.akiban.qp.row;
-
-
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.util.ValueHolder;
-
-public class ValuesHolderRow extends AbstractValuesHolderRow {
-
-    // ValuesHolderRow interface -- mostly just promoting visiblity
-
-    @Override
-    public void clear() {
-        super.clear();
-    }
-
-    @Override
-    public ValueHolder holderAt(int index) {
-        return super.holderAt(index);
-    }
-
-    public ValuesHolderRow(RowType rowType) {
-        super(rowType, true);
+public class StalePlanException extends InvalidOperationException {
+    public StalePlanException(String planName) {
+        super (ErrorCode.STALE_PLAN, planName);
     }
 }

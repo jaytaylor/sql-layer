@@ -67,11 +67,11 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange, UserTable innerJoinUntil)
+    public Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange, IndexScanSelector selector)
     {
         Cursor cursor;
         try {
-            cursor = new PersistitIndexCursor(this, schema.indexRowType(index), reverse, keyRange, innerJoinUntil);
+            cursor = new PersistitIndexCursor(this, schema.indexRowType(index), reverse, keyRange, selector);
         } catch (PersistitInterruptedException e) {
             throw new QueryCanceledException();
         } catch (PersistitException e) {

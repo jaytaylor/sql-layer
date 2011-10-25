@@ -45,6 +45,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         Integer indexId = (Integer) map.get(index_indexId);
         Boolean unique = (Boolean) map.get(index_unique);
         String constraint = (String) map.get(index_constraint);
+        String joinType = (String) map.get(index_joinType);
         if(IndexType.TABLE.toString().equals(indexType)) {
             Table table = ais.getTable(schemaName, tableName);
             if (table != null) {
@@ -54,14 +55,14 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         else if(IndexType.GROUP.toString().equals(indexType)) {
             Group group = ais.getGroup(tableName);
             if (group != null) {
-                index = GroupIndex.create(ais, group, indexName, indexId, unique, constraint);
+                index = GroupIndex.create(ais, group, indexName, indexId, unique, constraint, joinType);
             }
         }
         index.treeName = (String) map.get(index_treeName);
         return index;
     }
 
-    protected Index(TableName tableName, String indexName, Integer indexId, Boolean isUnique, String constraint)
+    protected Index(TableName tableName, String indexName, Integer indexId, Boolean isUnique, String constraint, String joinTypeName)
     {
         
         AISInvariants.checkNullName(indexName, "index", "index name");
@@ -71,12 +72,17 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         this.isUnique = isUnique;
         this.constraint = constraint;
         this.treeName = this.indexName.toString();
+        this.joinType = joinTypeName == null ? JOIN_TYPE_DEFAULT : JoinType.valueOf(joinTypeName);
         columns = new ArrayList<IndexColumn>();
     }
 
     public boolean isGroupIndex()
     {
         return !isTableIndex();
+    }
+
+    public JoinType getJoinType() {
+        return joinType;
     }
 
     protected Index()
@@ -384,6 +390,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     private List<IndexColumn> columns;
     private boolean columnsFrozen = false;
     private String treeName;
+    private JoinType joinType;
 
     // It really is an IndexDef, but declaring it that way creates trouble for AIS. We don't want to pull in
     // all the RowDef stuff and have it visible to GWT.
@@ -391,4 +398,10 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     private transient IndexRowComposition indexRowComposition;
     private transient IndexToHKey indexToHKey;
     private transient boolean isHKeyEquivalent;
+
+    private static final JoinType JOIN_TYPE_DEFAULT = JoinType.LEFT;
+
+    public enum JoinType {
+        LEFT, RIGHT
+    }
 }
