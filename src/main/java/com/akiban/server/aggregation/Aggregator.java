@@ -15,12 +15,10 @@
 
 package com.akiban.server.aggregation;
 
-import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
 
 public interface Aggregator {
-    AkType outputType();
     void input(ValueSource input);
     void output(ValueTarget output);
     ValueSource emptyValue();
