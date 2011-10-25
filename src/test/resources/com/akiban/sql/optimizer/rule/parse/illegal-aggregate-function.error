@@ -1,1 +1,1 @@
-com.akiban.server.error.UnsupportedSQLException: UNSUPPORTED_SQL: Unsupported SQL Aggregate not allowed in WHERE : (SUM(price) > 10) AND true
+com.akiban.server.error.UnsupportedSQLException: UNSUPPORTED_SQL: Unsupported SQL Aggregate not allowed in WHERE : (SUM(price) > 10) AND TRUE

@@ -58,13 +58,55 @@ public class AggregateSplitter extends BaseRule
                 return;
             }
         }
+        boolean distinct = checkDistinctDistincts(source);
         // Another way to do this would be to have a different class
         // for AggregateSource in the split-off state. Doing that
         // would require replacing expression references to the old
         // one as a ColumnSource.
         List<ExpressionNode> fields = source.splitOffProject();
         PlanNode input = source.getInput();
-        source.replaceInput(input, new Project(input, fields));
+        PlanNode ninput = new Project(input, fields);
+        if (distinct)
+            ninput = new Distinct(ninput);
+        source.replaceInput(input, ninput);
+    }
+
+    /** Check that all the <code>DISTINCT</code> qualifications are
+     * for the same expression and that there are no
+     * non-<code>DISTINCT</code> unless they are for the same
+     * expression and unaffected by it.
+     */
+    protected boolean checkDistinctDistincts(AggregateSource source) {
+        ExpressionNode operand = null;
+        for (AggregateFunctionExpression aggregate : source.getAggregates()) {
+            if (aggregate.isDistinct()) {
+                ExpressionNode other = aggregate.getOperand();
+                if (operand == null)
+                    operand = other;
+                else if (!operand.equals(other))
+                    throw new UnsupportedSQLException("More than one DISTINCT",
+                                                      other.getSQLsource());
+            }
+        }
+        if (operand == null)
+            return false;
+        for (AggregateFunctionExpression aggregate : source.getAggregates()) {
+            if (!aggregate.isDistinct()) {
+                ExpressionNode other = aggregate.getOperand();
+                if (!operand.equals(other))
+                    throw new UnsupportedSQLException("Mix of DISTINCT and non-DISTINCT",
+                                                      operand.getSQLsource());
+                else if (!distinctDoesNotMatter(aggregate.getFunction()))
+                    throw new UnsupportedSQLException("Mix of DISTINCT and non-DISTINCT",
+                                                      other.getSQLsource());
+            }
+        }
+        return true;
+    }
+
+    protected boolean distinctDoesNotMatter(String aggregateFunction) {
+        return ("MAX".equals(aggregateFunction) ||
+                "MIN".equals(aggregateFunction));
     }
 
 }
