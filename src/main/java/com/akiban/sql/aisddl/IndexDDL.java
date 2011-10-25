@@ -31,6 +31,7 @@ import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.TableIndexJoinTypeException;
 import com.akiban.server.error.UnsupportedGroupIndexJoinTypeException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.error.UnsupportedUniqueGroupIndexException;
@@ -200,6 +201,10 @@ public class IndexDDL
 
         if (ais.getUserTable(tableName) == null) {
             throw new NoSuchTableException (tableName);
+        }
+
+        if (index.getJoinType() != null) {
+            throw new TableIndexJoinTypeException();
         }
 
         AISBuilder builder = new AISBuilder();
