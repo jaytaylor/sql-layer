@@ -43,15 +43,19 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class PostgresServer implements Runnable, PostgresMXBean {
     private final int port;
     private final PostgresServiceRequirements reqs;
-    private PostgresStatementCache statementCache;
     private ServerSocket socket = null;
     private boolean running = false;
     private boolean listening = false;
     private Map<Integer,PostgresServerConnection> connections =
         new HashMap<Integer,PostgresServerConnection>();
-    private Map<String, LoadablePlan> loadablePlans = new HashMap<String, LoadablePlan>();
     private Thread thread;
     private final AtomicBoolean instrumentationEnabled = new AtomicBoolean(false);
+    // AIS-dependent state
+    private final Object aisLock = new Object();
+    private volatile int aisGeneration = -1;
+    private volatile PostgresStatementCache statementCache;
+    private final Map<String, LoadablePlan> loadablePlans = new HashMap<String, LoadablePlan>();
+    //
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresServer.class);
 
@@ -182,11 +186,16 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     /** This is the version for use by connections. */
     // TODO: This could create a new one if we didn't want to share them.
-    public PostgresStatementCache getStatementCache(int generation) {
-        if (statementCache != null) {
-            boolean newGeneration = statementCache.checkGeneration(generation);
-            if (newGeneration) {
+    public PostgresStatementCache getStatementCache(int generation)
+    {
+        synchronized (aisLock) {
+            if (aisGeneration != generation) {
+                assert aisGeneration < generation : generation;
+                if (statementCache != null) {
+                    statementCache.invalidate();
+                }
                 loadablePlans.clear();
+                aisGeneration = generation;
             }
         }
         return statementCache;
