@@ -1,5 +1,5 @@
 SelectQuery@58c16b18
   ResultSet@35ad093c[_SQL_COL_1]
     Project@73395dab[COALESCE(user.parent.name,N/A)]
-      Select@7215fb38[or(user.parent.id != 1,and(user.parent.id > 10,and(user.parent.id < 20,and(user.parent.id != 3,or(isNullOp(user.parent.name),user.parent.name == )))))]
+      Select@7215fb38[or(user.parent.id != 1,and(user.parent.id > 10,and(user.parent.id < 20,and(user.parent.id != 3,or(isNull(user.parent.name),user.parent.name == )))))]
         TableSource@120540c(user.parent)

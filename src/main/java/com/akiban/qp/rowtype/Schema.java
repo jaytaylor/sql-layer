@@ -16,6 +16,7 @@
 package com.akiban.qp.rowtype;
 
 import com.akiban.ais.model.*;
+import com.akiban.server.aggregation.AggregatorFactory;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
 
@@ -45,9 +46,9 @@ public class Schema
             : groupIndexRowType((GroupIndex) index);
     }
 
-    public synchronized AggregatedRowType newAggregateType(RowType parent)
+    public synchronized AggregatedRowType newAggregateType(RowType parent, int inputsIndex, List<AggregatorFactory> aggregatorFactories)
     {
-        return new AggregatedRowType(this, nextTypeId(), parent);
+        return new AggregatedRowType(this, nextTypeId(), parent, inputsIndex, aggregatorFactories);
     }
 
     public synchronized FlattenedRowType newFlattenType(RowType parent, RowType child)
