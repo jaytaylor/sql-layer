@@ -22,6 +22,7 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.server.types.util.ValueHolder;
 
 
@@ -47,7 +48,7 @@ public class IsNullExpression extends AbstractUnaryExpression
         @Override
         public ValueSource eval() 
         {
-           return new ValueHolder (AkType.BOOL, operand().isNull());
+           return BoolValueSource.of(operand().isNull()); 
         }
          
      }
