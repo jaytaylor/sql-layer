@@ -15,6 +15,7 @@
 
 package com.akiban.qp.row;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.rowtype.ProjectedRowType;
@@ -69,6 +70,11 @@ public class ProjectedRow extends AbstractRow
     public HKey hKey()
     {
         return null;
+    }
+
+    @Override
+    public boolean containsRealRowOf(UserTable userTable) {
+        return row.containsRealRowOf(userTable);
     }
 
     // AbstractRow interface

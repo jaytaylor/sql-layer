@@ -16,6 +16,7 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.BindableRow;
@@ -73,7 +74,7 @@ public class API
                                                        RowType childType,
                                                        JoinType joinType)
     {
-        return flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, EnumSet.noneOf(FlattenOption.class));
+        return flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, NO_FLATTEN_OPTIONS);
     }
 
     public static Operator flatten_HKeyOrdered(Operator inputOperator,
@@ -99,7 +100,7 @@ public class API
                                                        RowType parentType,
                                                        RowType childType,
                                                        JoinType joinType,
-                                                       EnumSet<FlattenOption> flags)
+                                                       Set<FlattenOption> flags)
     {
         return new Flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, flags);
     }
@@ -117,14 +118,24 @@ public class API
     }
 
     public static Operator groupScan_Default(GroupTable groupTable,
+                                             Limit limit,
+                                             int hKeyBindingPosition,
+                                             boolean deep,
+                                             UserTable hKeyType,
+                                             UserTable shortenUntil)
+    {
+        return new GroupScan_Default(
+                new GroupScan_Default.PositionalGroupCursorCreator(groupTable, hKeyBindingPosition, deep, hKeyType, shortenUntil),
+                limit
+        );
+    }
+
+    public static Operator groupScan_Default(GroupTable groupTable,
                                                      Limit limit,
                                                      int hKeyBindingPosition,
                                                      boolean deep)
     {
-        return new GroupScan_Default(
-                new GroupScan_Default.PositionalGroupCursorCreator(groupTable, hKeyBindingPosition, deep),
-                limit
-        );
+        return groupScan_Default(groupTable, limit, hKeyBindingPosition, deep, null, null);
     }
 
     public static Operator valuesScan_Default (Collection<? extends BindableRow> rows, RowType rowType)
@@ -213,7 +224,8 @@ public class API
                                                      IndexKeyRange indexKeyRange,
                                                      UserTableRowType innerJoinUntilRowType)
     {
-        return new IndexScan_Default(indexType, reverse, indexKeyRange, innerJoinUntilRowType);
+        IndexScanSelector selector = IndexScanSelector.innerUntil(indexType.index(), innerJoinUntilRowType.userTable());
+        return new IndexScan_Default(indexType, reverse, indexKeyRange, selector);
     }
 
     // Select
@@ -341,6 +353,8 @@ public class API
         return new TopLevelWrappingCursor(root.cursor(adapter));
     }
 
+    private static final EnumSet<FlattenOption> NO_FLATTEN_OPTIONS = EnumSet.noneOf(FlattenOption.class);
+
     // Options
 
     // Flattening flags
@@ -354,8 +368,7 @@ public class API
 
     public static enum FlattenOption {
         KEEP_PARENT,
-        KEEP_CHILD,
-        LEFT_JOIN_SHORTENS_HKEY
+        KEEP_CHILD
     }
 
     // Lookup flags

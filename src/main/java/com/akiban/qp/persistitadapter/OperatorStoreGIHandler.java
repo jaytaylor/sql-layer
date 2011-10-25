@@ -35,7 +35,6 @@ class OperatorStoreGIHandler {
 
     public void handleRow(GroupIndex groupIndex, Row row, Action action)
     {
-        assert Action.BULK_ADD.equals(action) == (sourceTable==null) : null;
         GroupIndexPosition sourceRowPosition = positionWithinBranch(groupIndex, sourceTable);
         if (sourceRowPosition.equals(GroupIndexPosition.BELOW_SEGMENT)) { // asserts sourceRowPosition != null :-)
             return; // nothing to do
@@ -47,10 +46,6 @@ class OperatorStoreGIHandler {
         target.attach(key);
         IndexRowComposition irc = groupIndex.indexRowComposition();
 
-        // nullPoint is the point at which we should stop nulling hkey values; needs a better name.
-        // This is the last index of the hkey component that should be nulled.
-        int nullPoint = -1;
-
         for(int i=0, LEN = irc.getLength(); i < LEN; ++i) {
             assert irc.isInRowData(i);
             assert ! irc.isInHKey(i);
@@ -60,15 +55,6 @@ class OperatorStoreGIHandler {
 
             ValueSource source = row.eval(flattenedIndex);
             Converters.convert(source, target.expectingType(column));
-
-            boolean isHKeyComponent = i+1 > groupIndex.getColumns().size();
-            if (sourceRowPosition.isAboveSegment() && isHKeyComponent && column.getTable().equals(sourceTable)) {
-                nullPoint = i;
-            }
-        }
-
-        if (!Action.BULK_ADD.equals(action) && sourceRowPosition.isAboveSegment() && nullPoint < 0) {
-            return;
         }
 
         // Description of group index entry values:
@@ -78,26 +64,16 @@ class OperatorStoreGIHandler {
         // If you then give that order an item with a null sku, the index key will still be
         // (null, <date>, <hkey) but its value will be depth(i) == 2.
         // This depth is stored as an int (we don't anticipate any group branches with depth > 2^31-1).
-        int rightmostTableDepth = depthFromHKey(groupIndex, row);
+        long realTablesMap = realTablesMap(groupIndex, row);
         exchange.getValue().clear();
-        exchange.getValue().put(rightmostTableDepth);
+        exchange.getValue().put(realTablesMap);
 
         switch (action) {
-        case BULK_ADD:
-            assert nullPoint < 0 : nullPoint;
-            storeExchange(groupIndex, exchange);
-            break;
         case STORE:
             storeExchange(groupIndex, exchange);
-            if (nullOutHKey(nullPoint, groupIndex, row, key)) {
-                removeExchange(groupIndex, exchange);
-            }
             break;
         case DELETE:
             removeExchange(groupIndex, exchange);
-            if (nullOutHKey(nullPoint, groupIndex, row, key)) {
-                storeExchange(groupIndex, exchange);
-            }
             break;
         default:
             throw new UnsupportedOperationException(action.name());
@@ -145,21 +121,19 @@ class OperatorStoreGIHandler {
         }
     }
 
-    private static int depthFromHKey(GroupIndex groupIndex, Row row) {
-        final int targetSegments = row.hKey().segments();
-        for(UserTable table=groupIndex.leafMostTable(), END=groupIndex.rootMostTable().parentTable();
+    private static long realTablesMap(GroupIndex groupIndex, Row row) {
+        long result = 0;
+         int indexFromEnd = 0;
+         for(UserTable table=groupIndex.leafMostTable(), END=groupIndex.rootMostTable().parentTable();
                 !(table == null || table.equals(END));
                 table = table.parentTable()
         ){
-            if (table.hKey().segments().size() == targetSegments) {
-                return table.getDepth();
+            if (row.containsRealRowOf(table)) {
+                result |= 1 << indexFromEnd;
             }
+            ++indexFromEnd;
         }
-        throw new AssertionError(
-                String.format("couldn't find a table with %d segments for row %s (hkey=%s) in group index %s",
-                        targetSegments, row, row.hKey(), groupIndex
-                )
-        );
+        return result;
     }
 
     private static GroupIndexPosition positionWithinBranch(GroupIndex groupIndex, UserTable table) {
@@ -181,26 +155,6 @@ class OperatorStoreGIHandler {
                     ? GroupIndexPosition.ABOVE_SEGMENT
                     : GroupIndexPosition.WITHIN_SEGMENT;
         }
-    }
-
-    private boolean nullOutHKey(int nullPoint, GroupIndex groupIndex, Row row, Key key) {
-        if (nullPoint < 0) {
-            return false;
-        }
-        key.setDepth(nullPoint);
-        IndexRowComposition irc = groupIndex.indexRowComposition();
-        for (int i = groupIndex.getColumns().size(), LEN=irc.getLength(); i < LEN; ++i) {
-            if (i <= nullPoint) {
-                key.append(null);
-            }
-            else {
-                final int flattenedIndex = irc.getFieldPosition(i);
-                Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
-                ValueSource source = row.eval(flattenedIndex);
-                Converters.convert(source, target.expectingType(column));
-            }
-        }
-        return true;
     }
 
     private OperatorStoreGIHandler(PersistitAdapter adapter, UserTable sourceTable) {
@@ -226,12 +180,7 @@ class OperatorStoreGIHandler {
         ABOVE_SEGMENT,
         BELOW_SEGMENT,
         WITHIN_SEGMENT
-        ;
-
-        public boolean isAboveSegment() { // more readable shorthand
-            return this == ABOVE_SEGMENT;
-        }
     }
 
-    static enum Action {STORE, DELETE, BULK_ADD }
+    static enum Action {STORE, DELETE }
 }

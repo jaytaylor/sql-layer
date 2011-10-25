@@ -58,6 +58,10 @@ public class GroupIndexCreator {
         return createIndex(ais, groupName, indexName, false, tableColumnList);
     }
 
+    public static GroupIndex createIndex(AkibanInformationSchema ais, String groupName, String indexName,
+                                         boolean unique, String tableColumnList) {
+        return createIndex(ais, groupName, indexName, unique, tableColumnList, Index.JoinType.LEFT);
+    }
     /**
      * Helper function for converting a simple group index specification into an
      * actual GroupIndex. This can then be passed to DDLFunctions.createGroupIndex().
@@ -71,7 +75,7 @@ public class GroupIndexCreator {
      * @throws GroupIndexCreatorException For any error
      */
     public static GroupIndex createIndex(AkibanInformationSchema ais, String groupName, String indexName,
-                                         boolean unique, String tableColumnList) {
+                                         boolean unique, String tableColumnList, Index.JoinType joinType) {
         final Group group = ais.getGroup(groupName);
         if(group == null) {
             throw new NoSuchGroupException (groupName);
@@ -83,7 +87,7 @@ public class GroupIndexCreator {
         final String tableColPairs[] = tableColumnList.split(",");
 
         int pos = 0;
-        final GroupIndex tmpIndex = new GroupIndex(group, indexName, 0, unique, Index.KEY_CONSTRAINT);
+        final GroupIndex tmpIndex = new GroupIndex(group, indexName, 0, unique, Index.KEY_CONSTRAINT, joinType.name());
         for(String tableCol : tableColPairs) {
             int period = tableCol.indexOf('.');
             if(period == -1) {

@@ -16,9 +16,9 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.qp.operator.StoreAdapterRuntimeException;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
@@ -48,7 +48,6 @@ class PersistitIndexCursor implements Cursor
     @Override
     public Row next()
     {
-        final boolean isTableIndex = index().isTableIndex();
         try {
             boolean needAnother;
             do {
@@ -56,7 +55,7 @@ class PersistitIndexCursor implements Cursor
                     (indexFilter == null
                      ? exchange.traverse(direction, true)
                      : exchange.traverse(direction, indexFilter, FETCH_NO_BYTES))) {
-                    if (isTableIndex || exchange.fetch().getValue().getInt() >= minimumDepth) {
+                    if (selector.matchesAll() || selector.matches(exchange.fetch().getValue().getLong())) {
                         // The value of a group index is the depth at which it's defined, as an int.
                         // See OperatorStoreGIHandler, search for "Description of group index entry values"
                         unsharedRow().get().copyFromExchange(exchange);
@@ -97,14 +96,14 @@ class PersistitIndexCursor implements Cursor
                          IndexRowType indexRowType,
                          boolean reverse,
                          IndexKeyRange keyRange,
-                         UserTable innerJoinUntil)
+                         IndexScanSelector selector)
         throws PersistitException
     {
         this.keyRange = keyRange;
         this.adapter = adapter;
         this.indexRowType = indexRowType;
         this.row = new ShareHolder<PersistitIndexRow>(adapter.newIndexRow(indexRowType));
-        this.minimumDepth = innerJoinUntil.getDepth();
+        this.selector = selector;
         if (reverse) {
             boundary = Key.AFTER;
             direction = Key.LT;
@@ -145,7 +144,7 @@ class PersistitIndexCursor implements Cursor
     private final Key.EdgeValue boundary;
     private final Key.Direction direction;
     private final IndexKeyRange keyRange;
-    private final int minimumDepth;
+    private final IndexScanSelector selector;
     private Exchange exchange;
     private KeyFilter indexFilter;
 
