@@ -224,7 +224,7 @@ public class API
                                                      IndexKeyRange indexKeyRange,
                                                      UserTableRowType innerJoinUntilRowType)
     {
-        IndexScanSelector selector = IndexScanSelector.innerUntil(indexType.index(), innerJoinUntilRowType.userTable());
+        IndexScanSelector selector = IndexScanSelector.leftJoinAfter(indexType.index(), innerJoinUntilRowType.userTable());
         return new IndexScan_Default(indexType, reverse, indexKeyRange, selector);
     }
 
@@ -291,13 +291,6 @@ public class API
     public static Ordering ordering()
     {
         return new Ordering();
-    }
-
-    // Distinct
-
-    public static Operator distinct_Partial(Operator input, RowType distinctType)
-    {
-        return new Distinct_Partial(input, distinctType);
     }
 
     // Map

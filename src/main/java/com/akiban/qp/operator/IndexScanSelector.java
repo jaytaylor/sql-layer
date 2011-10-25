@@ -17,7 +17,6 @@ package com.akiban.qp.operator;
 
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 
 import java.util.ArrayList;
@@ -29,28 +28,76 @@ public abstract class IndexScanSelector {
     public abstract boolean matchesAll();
     public abstract boolean matches(long map);
 
-    public static IndexScanSelector innerUntil(Index index, UserTable leafmostRequired) {
+    public static IndexScanSelector leftJoinAfter(Index index, final UserTable leafmostRequired) {
+        final int leafmostRequiredDepth = leafmostRequired.getDepth();
+        return create(index, new Policy() {
+            @Override
+            public boolean include(UserTable table) {
+                return table.getDepth() <= leafmostRequiredDepth;
+            }
+
+            @Override
+            public String description() {
+                return " INNER JOIN thru " + leafmostRequired.getName().getTableName() + ", then LEFT";
+            }
+        });
+    }
+
+    public static IndexScanSelector rightJoinUntil(Index index, final UserTable rootmostRequired) {
+        final int leafmostRequiredDepth = rootmostRequired.getDepth();
+        return create(index, new Policy() {
+            @Override
+            public boolean include(UserTable table) {
+                return table.getDepth() >= leafmostRequiredDepth;
+            }
+
+            @Override
+            public String description() {
+                return " RIGHT JOIN thru " + rootmostRequired.getName().getTableName() + ", then INNER";
+            }
+        });
+
+    }
+
+    public static IndexScanSelector inner(Index index) {
+        return create(index, new Policy() {
+            @Override
+            public boolean include(UserTable table) {
+                return true;
+            }
+
+            @Override
+            public String description() {
+                return "INNER";
+            }
+        });
+    }
+
+    private static IndexScanSelector create(Index index, Policy policy) {
         if (index.isTableIndex()) {
-            assert index.leafMostTable().equals(leafmostRequired) : leafmostRequired + " not in " + index;
             return ALLOW_ALL;
         }
-        else {
-            Table rootmost = index.rootMostTable();
-            Table leafmost = index.leafMostTable();
-            List<UserTable> requiredTables = new ArrayList<UserTable>(leafmostRequired.getDepth());
-            for (UserTable required = leafmostRequired; ; required = required.parentTable()) {
-                if (required == null || required.parentTable() == leafmost)
-                    throw new IllegalArgumentException(required + " isn't in index" + index);
-                requiredTables.add(required);
-                if (required.equals(rootmost))
-                    break;
-            }
-            final String description;
-            description = leafmostRequired != index.leafMostTable()
-                    ? " INNER JOIN thru " + leafmostRequired.getName().getTableName() + ", then LEFT"
-                    : "";
-            return new SelectiveGiSelector((GroupIndex)index, requiredTables, description);
+        return create((GroupIndex)index, policy);
+    }
+
+    private static IndexScanSelector create(GroupIndex index, Policy policy) {
+        UserTable giLeaf = index.leafMostTable();
+        List<UserTable> requiredTables = new ArrayList<UserTable>(giLeaf.getDepth());
+        for(UserTable table = giLeaf, end = index.rootMostTable().parentTable();
+            table == null || !table.equals(end);
+            table = table.parentTable()
+        ) {
+            if (table == null || table.parentTable() == giLeaf)
+                throw new IllegalArgumentException(table + " isn't in index" + index);
+            if (policy.include(table))
+                requiredTables.add(table);
         }
+        return new SelectiveGiSelector(index, requiredTables, policy.description());
+    }
+
+    private interface Policy {
+        boolean include(UserTable table);
+        String description();
     }
 
     private IndexScanSelector() {}
