@@ -25,7 +25,6 @@ public class PostgresStatementCache
 {
     private Cache cache;
     private int hits, misses;
-    private int generation = -1;
 
     static class Cache extends LinkedHashMap<String,PostgresStatement> {
         private int capacity;
@@ -93,12 +92,4 @@ public class PostgresStatementCache
         hits = 0;
         misses = 0;
     }
-
-    public synchronized void checkGeneration(int generation) {
-        if (this.generation != generation) {
-            this.generation = generation;
-            cache.clear();
-        }
-    }
-
 }
