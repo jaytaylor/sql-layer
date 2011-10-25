@@ -32,15 +32,14 @@ import static org.junit.Assert.assertTrue;
 
 public class ArithExpressionTest extends ComposedExpressionTestBase
 {
-    protected ExpressionComposer ex =  ArithOps.MINUS;
+    protected ArithOp ex =  ArithOps.MINUS;
    
     @Test
     public void longMinusDouble ()
     {
-        ex = ArithOps.MINUS;
         Expression left = new LiteralExpression(AkType.LONG, 5L);
         Expression right = new LiteralExpression(AkType.DOUBLE, 2.0);
-        Expression top = new ArithExpression(left, ArithOps.MINUS, right);
+        Expression top = new ArithExpression(left, ex = ArithOps.MINUS, right);
    
         assertTrue("top should be constant", top.isConstant());
         ValueSource actual = new ValueHolder(top.evaluation().eval());
@@ -52,10 +51,9 @@ public class ArithExpressionTest extends ComposedExpressionTestBase
     @Test
     public void bigDecimalTimesBigInteger () 
     {
-        ex = ArithOps.MULTIPLY;
         Expression left = new LiteralExpression (AkType.DECIMAL, BigDecimal.valueOf(2.0));
         Expression right = new LiteralExpression(AkType.U_BIGINT, BigInteger.ONE);
-        Expression top = new ArithExpression(left, ArithOps.MULTIPLY, right);
+        Expression top = new ArithExpression(left, ex = ArithOps.MULTIPLY, right);
         
         assertTrue("Top is const", top.isConstant());
         ValueSource actual = new ValueHolder(top.evaluation().eval());
@@ -66,10 +64,9 @@ public class ArithExpressionTest extends ComposedExpressionTestBase
     @Test
     public void longDivideLong ()
     {
-        ex = ArithOps.DIVIDE;
         Expression left = new LiteralExpression (AkType.LONG, 2L);
         Expression right = new LiteralExpression(AkType.LONG, 5L);
-        Expression top = new ArithExpression(left, ArithOps.DIVIDE, right);
+        Expression top = new ArithExpression(left, ex = ArithOps.DIVIDE, right);
         
         assertTrue("Top is const", top.isConstant());
         ValueSource actual = new ValueHolder(top.evaluation().eval());
@@ -82,7 +79,7 @@ public class ArithExpressionTest extends ComposedExpressionTestBase
     {
         Expression left = new LiteralExpression (AkType.U_BIGINT, BigInteger.ONE);
         Expression right = new LiteralExpression (AkType.U_BIGINT, BigInteger.TEN);
-        Expression top = new ArithExpression (left, ArithOps.ADD, right);
+        Expression top = new ArithExpression (left, ex = ArithOps.ADD, right);
         
         assertTrue("Top is const", top.isConstant());
         ValueSource actual = new ValueHolder (top.evaluation().eval());
@@ -95,7 +92,7 @@ public class ArithExpressionTest extends ComposedExpressionTestBase
     {
         Expression left = new LiteralExpression (AkType.U_BIGINT, BigInteger.ONE);
         Expression right = new LiteralExpression (AkType.U_BIGINT, BigInteger.ZERO);
-        Expression top = new ArithExpression (left, ArithOps.DIVIDE, right);
+        Expression top = new ArithExpression (left, ex = ArithOps.DIVIDE, right);
         ValueSource actual = new ValueHolder (top.evaluation().eval());
     }
   
@@ -104,7 +101,7 @@ public class ArithExpressionTest extends ComposedExpressionTestBase
     {
         Expression left = new LiteralExpression (AkType.DATE, 1L);
         Expression right = new LiteralExpression (AkType.LONG, 2L);
-        Expression top = new ArithExpression (left, ArithOps.ADD, right);
+        Expression top = new ArithExpression (left, ex = ArithOps.ADD, right);
         
         assertTrue("Top is const", top.isConstant());
         ValueSource actual = new ValueHolder (top.evaluation().eval());
@@ -117,7 +114,7 @@ public class ArithExpressionTest extends ComposedExpressionTestBase
     {
         Expression left = new LiteralExpression (AkType.U_BIGINT, BigInteger.ONE);
         Expression right = new LiteralExpression (AkType.VARCHAR,"2");
-        Expression top = new ArithExpression (left, ArithOps.ADD, right);
+        Expression top = new ArithExpression (left, ex = ArithOps.ADD, right);
         
         assertTrue("Top is const", top.isConstant());
         ValueSource actual = new ValueHolder (top.evaluation().eval());
@@ -131,7 +128,7 @@ public class ArithExpressionTest extends ComposedExpressionTestBase
         Expression left = new LiteralExpression(AkType.U_BIGINT, BigInteger.valueOf(Long.MAX_VALUE).pow(100));
        
         Expression right = new LiteralExpression (AkType.DOUBLE, 100000000.0);
-        Expression top = new ArithExpression(left, ArithOps.ADD, right);
+        Expression top = new ArithExpression(left, ex = ArithOps.ADD, right);
      
         ValueSource actual = new ValueHolder(top.evaluation().eval());
         
@@ -147,6 +144,6 @@ public class ArithExpressionTest extends ComposedExpressionTestBase
     @Override
     protected ExpressionComposer getComposer()
     {
-        return ex ;
+        return (ExpressionComposer)ex;
     }
 }

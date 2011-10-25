@@ -16,7 +16,6 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.expression.std.TrigExpression.TrigName;
-import java.util.Random;
 import java.util.List;
 import org.junit.runner.RunWith;
 import com.akiban.junit.ParameterizationBuilder;
@@ -50,21 +49,6 @@ public class TrigExpressionTest extends ComposedExpressionTestBase
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params()
     {
-        /*
-         * case SIN:   result = Math.sin(dvar1); break;              
-                case COS:   result = Math.cos(dvar1); break;       
-                case TAN:   result = Math.tan(dvar1);break;      
-                case COT:   result = Math.cos(dvar1) / Math.sin(dvar1); break;      
-                case ASIN:  result = Math.asin(dvar1); break;
-                case ACOS:  result = Math.acos(dvar1); break;
-                case ATAN:  result = Math.atan(dvar1); break;
-                case ATAN2: result = Math.atan2(dvar1, dvar2); break;
-                case COSH:  result = Math.cosh(dvar1); break;
-                case SINH:  result = Math.sinh(dvar1); break;
-                case TANH:  result = Math.tanh(dvar1); break;
-                case COTH:  result = Math.cosh(dvar1) / Math.sinh(dvar1); break;
-         */
-        
         ParameterizationBuilder pb = new ParameterizationBuilder();
         
         

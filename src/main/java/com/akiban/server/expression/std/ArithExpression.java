@@ -31,7 +31,7 @@ import java.util.List;
 public class ArithExpression extends AbstractBinaryExpression
 {
     private final ArithOp op;
-    private AkType topT;
+    protected final AkType topT;
     static public final List<AkType> SUPPORTED_TYPES = // Order is IMPORTANT
             Arrays.asList(AkType.DECIMAL, AkType.DOUBLE, AkType.U_BIGINT, AkType.LONG);
     static private final EnumSet<AkType> DATETIME_TYPES = EnumSet.of(AkType.DATE, AkType.TIME, AkType.DATETIME, AkType.TIMESTAMP);
