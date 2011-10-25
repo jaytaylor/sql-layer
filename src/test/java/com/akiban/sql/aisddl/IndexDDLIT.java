@@ -69,7 +69,7 @@ public class IndexDDLIT extends PostgresServerITBase {
     
     @Test 
     public void createGroupKey() throws SQLException {
-        String sql = "CREATE INDEX test4 on test.t2 (t1.c1, t2.c1)";
+        String sql = "CREATE INDEX test4 on test.t2 (t1.c1, t2.c1) USING LEFT JOIN";
         createJoinedTables();
         
         connection.createStatement().execute(sql);
@@ -203,7 +203,7 @@ public class IndexDDLIT extends PostgresServerITBase {
     
     @Test 
     public void dropGroupIndex () throws SQLException { 
-        String sql = "CREATE INDEX test16 on test.t2 (t1.c1, t2.c1)";
+        String sql = "CREATE INDEX test16 on test.t2 (t1.c1, t2.c1) USING LEFT JOIN";
         createJoinedTables();
         connection.createStatement().execute(sql);
         
