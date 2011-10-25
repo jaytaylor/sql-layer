@@ -139,12 +139,26 @@ public class ApiTestBase {
 
     @Before
     public final void startTestServices() throws Exception {
-        ConverterTestUtils.setGlobalTimezone("UTC");
-        testServicesStarted = false;
-        sm = createServiceManager( startupConfigProperties() );
-        sm.startServices();
-        session = sm.getSessionService().createSession();
-        testServicesStarted = true;
+        try {
+            ConverterTestUtils.setGlobalTimezone("UTC");
+            testServicesStarted = false;
+            sm = createServiceManager( startupConfigProperties() );
+            sm.startServices();
+            session = sm.getSessionService().createSession();
+            testServicesStarted = true;
+        } catch (Exception e) {
+            handleStartupFailure(e);
+        }
+    }
+
+    /**
+     * Handle a failure during services startup. The default implementation is to just throw the exception, and
+     * most tests should <em>not</em> override this. It's designed solely as a testing hook for FailureOnStartupIT.
+     * @param e the startup exception
+     * @throws Exception the startup exception
+     */
+    void handleStartupFailure(Exception e) throws Exception {
+        throw e;
     }
 
     protected ServiceManager createServiceManager(Collection<Property> startupConfigProperties) {

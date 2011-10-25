@@ -18,6 +18,7 @@ package com.akiban.qp.persistitadapter.sort;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.server.PersistitValueValueSource;
@@ -38,7 +39,10 @@ public abstract class SortCursor implements Cursor
 
     // SortCursor interface
 
-    public static SortCursor create(IndexKeyRange keyRange, API.Ordering ordering, RowGenerator rowGenerator)
+    public static SortCursor create(PersistitAdapter adapter,
+                                    IndexKeyRange keyRange,
+                                    API.Ordering ordering,
+                                    RowGenerator rowGenerator)
     {
         boolean allAscending = true;
         boolean allDescending = true;
@@ -58,7 +62,7 @@ public abstract class SortCursor implements Cursor
             // IndexRowType in that case, so an IndexKeyRange can't be created.
             keyRange == null || keyRange.unbounded() ?
             new SortCursorMixedOrderUnbounded(rowGenerator, keyRange, ordering) :
-            new SortCursorMixedOrderBounded(rowGenerator, keyRange, ordering);
+            new SortCursorMixedOrderBounded(rowGenerator, keyRange, ordering, adapter);
     }
 
     // For use by subclasses

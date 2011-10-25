@@ -20,6 +20,7 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -77,6 +78,10 @@ public abstract class AbstractCompositeExpression implements Expression {
         return children;
     }
 
+    protected AbstractCompositeExpression(AkType type, Expression... children) {
+        this(type, Arrays.asList(children));
+    }
+
     protected AbstractCompositeExpression(AkType type, List<? extends Expression> children) {
         this.children = children.isEmpty()
                 ? Collections.<Expression>emptyList()
@@ -90,6 +95,25 @@ public abstract class AbstractCompositeExpression implements Expression {
             result.add(expression.evaluation());
         }
         return result;
+    }
+
+    protected static AkType childrenType(List<? extends Expression> children) {
+        Iterator<? extends Expression> iter = children.iterator();
+        if (!iter.hasNext())
+            throw new IllegalArgumentException("expression must take at least one operand; none provided");
+        AkType type = iter.next().valueType();
+        while(iter.hasNext()) { // should only be once, but AbstractTwoArgExpression will check that
+            AkType childType = iter.next().valueType();
+            if (type == AkType.NULL) {
+                type = childType;
+            }
+            // TODO put this back in when we get casting expressions. Until then, Extractors will do their job.
+//            else if (childType != AkType.NULL && !type.equals(childType)) {
+//                throw new IllegalArgumentException("Comparison's children must all have same type. First child was "
+//                        + type + ", but then saw " + childType);
+//            }
+        }
+        return type;
     }
 
     // for use in this class

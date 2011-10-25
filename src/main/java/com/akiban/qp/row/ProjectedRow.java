@@ -16,6 +16,7 @@
 package com.akiban.qp.row;
 
 import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.rowtype.ProjectedRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.Quote;
@@ -86,11 +87,11 @@ public class ProjectedRow extends AbstractRow
 
     // ProjectedRow interface
 
-    public ProjectedRow(ProjectedRowType rowType, Row row, Bindings bindings, List<Expression> expressions)
+    public ProjectedRow(ProjectedRowType rowType, Row row, Bindings bindings, StoreAdapter adapter, List<Expression> expressions)
     {
         this.rowType = rowType;
         this.row = row;
-        this.evaluations = createEvaluations(expressions, row, bindings);
+        this.evaluations = createEvaluations(expressions, row, bindings, adapter);
         this.holders = new ValueHolder[expressions.size()];
         super.runId(row.runId());
     }
@@ -103,11 +104,13 @@ public class ProjectedRow extends AbstractRow
         return holders[i];
     }
 
-    private List<ExpressionEvaluation> createEvaluations(List<Expression> expressions, Row row, Bindings bindings)
+    private List<ExpressionEvaluation> createEvaluations(List<Expression> expressions, 
+                                                         Row row, Bindings bindings, StoreAdapter adapter)
     {
         List<ExpressionEvaluation> result = new ArrayList<ExpressionEvaluation>();
         for (Expression expression : expressions) {
             ExpressionEvaluation evaluation = expression.evaluation();
+            evaluation.of(adapter);
             evaluation.of(bindings);
             evaluation.of(row);
             result.add(evaluation);

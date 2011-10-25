@@ -15,53 +15,24 @@
 
 package com.akiban.qp.row;
 
-import com.akiban.qp.rowtype.AggregatedRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 
-import java.util.ArrayList;
-import java.util.List;
+public class ValuesHolderRow extends AbstractValuesHolderRow {
 
-public class ValuesHolderRow extends AbstractRow {
+    // ValuesHolderRow interface -- mostly just promoting visiblity
 
+    @Override
     public void clear() {
-        for (ValueHolder value : values) {
-            value.clear();
-        }
+        super.clear();
     }
 
+    @Override
     public ValueHolder holderAt(int index) {
-        return values.get(index);
-    }
-
-    @Override
-    public RowType rowType() {
-        return rowType;
-    }
-
-    @Override
-    public HKey hKey() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public ValueSource eval(int i) {
-        ValueHolder value = values.get(i);
-        if (!value.hasSourceState()) {
-            throw new IllegalStateException("value at index " + i + " was never set");
-        }
-        return value;
+        return super.holderAt(index);
     }
 
     public ValuesHolderRow(RowType rowType) {
-        this.rowType = rowType;
-        values = new ArrayList<ValueHolder>();
-        for (int i=0; i < rowType.nFields(); ++i) {
-            values.add(new ValueHolder());
-        }
+        super(rowType, true);
     }
-
-    private final RowType rowType;
-    private final List<ValueHolder> values;
 }

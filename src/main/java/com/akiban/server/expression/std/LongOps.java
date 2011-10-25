@@ -15,42 +15,54 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.DivisionByZeroException;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
+import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
-
-import java.util.List;
 
 public class LongOps {
 
-    public static LongOpForLong LONG_MULTIPLY = new LongOpForLong('*') {
+    @Scalar("times")
+    public static final LongOpForLong LONG_MULTIPLY = new LongOpForLong('*') {
         @Override
         public long evaluate(long one, long two) {
             return one * two;
         }
     };
 
-    public static LongOpForLong LONG_SUBTRACT = new LongOpForLong('-') {
+    @Scalar("minus")
+    public static final LongOpForLong LONG_SUBTRACT = new LongOpForLong('-') {
         @Override
         public long evaluate(long one, long two) {
             return one - two;
         }
     };
 
-    public static LongOpForLong LONG_ADD = new LongOpForLong('+') {
+    @Scalar("plus")
+    public static final LongOpForLong LONG_ADD = new LongOpForLong('+') {
         @Override
         public long evaluate(long one, long two) {
             return one + two;
         }
     };
 
+    @Scalar("divide")
+    public static final LongOpForLong LONG_DIVIDE = new LongOpForLong('/') {
+        @Override
+        public long evaluate(long one, long two) {
+            if (two == 0)
+                throw new DivisionByZeroException();
+            return one / two;
+        }
+    };
+
     private LongOps() {}
 
-    static abstract class LongOpForLong implements LongOp, ExpressionComposer {
+    static abstract class LongOpForLong extends BinaryComposer implements LongOp {
 
         @Override
-        public Expression compose(List<? extends Expression> arguments) {
-            return new LongOpExpression(this, arguments);
+        protected Expression compose(Expression first, Expression second) {
+            return new LongOpExpression(first, this, second);
         }
 
         @Override

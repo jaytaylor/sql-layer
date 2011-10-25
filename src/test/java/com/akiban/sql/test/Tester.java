@@ -15,6 +15,8 @@
 
 package com.akiban.sql.test;
 
+import com.akiban.server.aggregation.DummyAggregatorRegistry;
+import com.akiban.server.service.functions.FunctionsRegistryImpl;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.compiler.BooleanNormalizer;
 import com.akiban.sql.optimizer.AISBinder;
@@ -22,6 +24,8 @@ import com.akiban.sql.optimizer.AISTypeComputer;
 import com.akiban.sql.optimizer.BindingNodeFactory;
 import com.akiban.sql.optimizer.BoundNodeToString;
 import com.akiban.sql.optimizer.Grouper;
+import com.akiban.sql.optimizer.OperatorCompiler_Old;
+import com.akiban.sql.optimizer.OperatorCompiler_OldTest;
 import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.OperatorCompilerTest;
 import com.akiban.sql.optimizer.SubqueryFlattener;
@@ -66,7 +70,7 @@ public class Tester
         BIND, COMPUTE_TYPES,
         BOOLEAN_NORMALIZE, FLATTEN_SUBQUERIES,
         GROUP, GROUP_REWRITE, 
-        SIMPLIFY, SIMPLIFY_REORDER, PLAN, OPERATORS
+        SIMPLIFY, SIMPLIFY_REORDER, PLAN, OPERATORS_OLD, OPERATORS
     }
 
     List<Action> actions;
@@ -77,6 +81,7 @@ public class Tester
     BooleanNormalizer booleanNormalizer;
     SubqueryFlattener subqueryFlattener;
     Grouper grouper;
+    OperatorCompiler_Old operatorCompiler_Old;
     OperatorCompiler operatorCompiler;
     List<BaseRule> planRules;
     RulesContext rulesContext;
@@ -184,11 +189,19 @@ public class Tester
                     System.out.println(PlanToString.of(plan.getPlan()));
                 }
                 break;
-            case OPERATORS:
+            case OPERATORS_OLD:
                 {
-                    Object compiled = operatorCompiler.compile(new PostgresSessionTracer(1, false),
+                    Object compiled = operatorCompiler_Old.compile(new PostgresSessionTracer(1, false),
                                                                (DMLStatementNode)stmt,
                                                                parser.getParameterList());
+                    if (!silent)
+                        System.out.println(compiled);
+                }
+                break;
+            case OPERATORS:
+                {
+                    Object compiled = operatorCompiler.compile((DMLStatementNode)stmt,
+                                                                   parser.getParameterList());
                     if (!silent)
                         System.out.println(compiled);
                 }
@@ -221,8 +234,10 @@ public class Tester
         AkibanInformationSchema ais = toAis.getAis();
         if (actions.contains(Action.BIND))
             binder = new AISBinder(ais, "user");
+        if (actions.contains(Action.OPERATORS_OLD))
+            operatorCompiler_Old = OperatorCompiler_OldTest.TestOperatorCompiler.create(parser, ais, "user");
         if (actions.contains(Action.OPERATORS))
-            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, ais, "user");
+            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, ais, "user", new FunctionsRegistryImpl(), new DummyAggregatorRegistry());
         if (actions.contains(Action.PLAN))
             rulesContext = new RulesTestContext(ais, planRules);
     }
@@ -327,6 +342,8 @@ public class Tester
                         tester.parsePlanRules(rules);
                     tester.addAction(Action.PLAN);
                 }
+                else if ("-operators-old".equals(arg))
+                    tester.addAction(Action.OPERATORS_OLD);
                 else if ("-operators".equals(arg))
                     tester.addAction(Action.OPERATORS);
                 else if ("-repeat".equals(arg))

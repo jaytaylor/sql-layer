@@ -17,6 +17,7 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.qp.operator.ArrayBindings;
 import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.std.CompareExpression;
@@ -28,8 +29,6 @@ import com.akiban.server.types.conversion.Converters;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
-import java.util.Arrays;
-
 class MixedOrderScanStateBounded extends MixedOrderScanState
 {
     @Override
@@ -38,7 +37,7 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
         Key.Direction direction;
         if (ascending) {
             ValueSource boundarySource =
-                cursor.keyRange().lo().boundExpressions(cursor.bindings()).eval(field);
+                cursor.keyRange().lo().boundExpressions(cursor.bindings(), adapter).eval(field);
             if (boundarySource.isNull()) {
                 cursor.exchange.append(Key.BEFORE);
                 direction = Key.GT;
@@ -48,7 +47,7 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
             }
         } else {
             ValueSource boundarySource =
-                cursor.keyRange().hi().boundExpressions(cursor.bindings()).eval(field);
+                cursor.keyRange().hi().boundExpressions(cursor.bindings(), adapter).eval(field);
             if (boundarySource.isNull()) {
                 cursor.exchange.append(Key.AFTER);
                 direction = Key.LT;
@@ -76,30 +75,32 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
     {
         boolean loEqualsHi = false;
         if (!loSource.isNull() && !hiSource.isNull()) {
-            objectTarget.expectType(cursor.keyRange().lo().indexRowType().typeAt(field));
+            objectTarget.expectType(cursor.keyRange().indexRowType().typeAt(field));
             cursor.bindings().set(0, objectTarget.convertFromSource(loSource));
-            objectTarget.expectType(cursor.keyRange().hi().indexRowType().typeAt(field));
             cursor.bindings().set(1, objectTarget.convertFromSource(hiSource));
             loEqualsHi = loEqualsHiEvaluation.eval().getBool();
         }
         return loEqualsHi;
     }
 
-    public MixedOrderScanStateBounded(SortCursorMixedOrder cursor, int field) throws PersistitException
+    public MixedOrderScanStateBounded(StoreAdapter adapter, SortCursorMixedOrder cursor, int field)
+        throws PersistitException
     {
         super(cursor, field, cursor.ordering().ascending(field));
+        this.adapter = adapter;
         this.keyTarget = new PersistitKeyValueTarget();
         this.keyTarget.attach(cursor.exchange.getKey());
         this.loEqualsHiEvaluation =
             new CompareExpression(
-                Arrays.asList(new VariableExpression(cursor.keyRange().lo().indexRowType().typeAt(field), 0),
-                              new VariableExpression(cursor.keyRange().hi().indexRowType().typeAt(field), 1)),
-                Comparison.EQ).evaluation();
+                new VariableExpression(cursor.keyRange().indexRowType().typeAt(field), 0),
+                Comparison.EQ,
+                new VariableExpression(cursor.keyRange().indexRowType().typeAt(field), 1)).evaluation();
         this.loEqualsHiBindings = new ArrayBindings(2);
         this.loEqualsHiEvaluation.of(this.loEqualsHiBindings);
         this.objectTarget = new ToObjectValueTarget();
     }
 
+    private final StoreAdapter adapter;
     private final PersistitKeyValueTarget keyTarget;
     private final ExpressionEvaluation loEqualsHiEvaluation;
     private final Bindings loEqualsHiBindings;

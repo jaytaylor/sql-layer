@@ -15,11 +15,12 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.operator.UndefBindings;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.test.it.qp.NullsRow;
 import com.akiban.server.types.AkType;
@@ -38,7 +39,7 @@ import static org.junit.Assert.*;
 
 public abstract class ComposedExpressionTestBase {
     protected abstract int childrenCount();
-    protected abstract Expression getExpression(List<? extends Expression> children);
+    protected abstract ExpressionComposer getComposer();
 
     @Test
     public void childrenAreConst() {
@@ -170,7 +171,7 @@ public abstract class ComposedExpressionTestBase {
         for (int i=1; i < childrenCount; ++i) {
             children.add(new DummyExpression(messages, IS_CONSTANT));
         }
-        Expression expression = getExpression(children);
+        Expression expression = getComposer().compose(children);
         Set<ExpressionAttribute> attributeSet = attributesSet(attributes);
         assertEquals("isConstant", attributeSet.contains(IS_CONSTANT), expression.isConstant());
         assertEquals("needsRow", attributeSet.contains(NEEDS_ROW), expression.needsRow());
@@ -255,6 +256,10 @@ public abstract class ComposedExpressionTestBase {
         @Override
         public void of(Bindings bindings) {
             missingRequirements.remove(ExpressionAttribute.NEEDS_BINDINGS);
+        }
+
+        @Override
+        public void of(StoreAdapter adapter) {
         }
 
         @Override

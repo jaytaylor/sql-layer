@@ -16,9 +16,11 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import java.util.List;
+import java.util.Arrays;
 
 /** Physical SELECT query */
 public class PhysicalSelect extends BasePlannable
@@ -42,16 +44,22 @@ public class PhysicalSelect extends BasePlannable
     }
 
     private List<PhysicalResultColumn> resultColumns;
+    private RowType rowType;
     
-    public PhysicalSelect(Operator resultOperator,
+    public PhysicalSelect(Operator resultOperator, RowType rowType,
                           List<PhysicalResultColumn> resultColumns,
                           DataTypeDescriptor[] parameterTypes) {
         super(resultOperator, parameterTypes);
+        this.rowType = rowType;
         this.resultColumns = resultColumns;
     }
 
     public Operator getResultOperator() {
         return (Operator)getPlannable();
+    }
+
+    public RowType getResultRowType() {
+        return rowType;
     }
 
     public List<PhysicalResultColumn> getResultColumns() {
@@ -64,16 +72,11 @@ public class PhysicalSelect extends BasePlannable
     }
     
     @Override
-    public String summaryString() {
-        StringBuilder str = new StringBuilder(super.summaryString());
+    protected String withIndentedExplain(StringBuilder str) {
         if (getParameterTypes() != null)
-            str.append(getParameterTypes());
+            str.append(Arrays.toString(getParameterTypes()));
         str.append(resultColumns);
-        for (String operator : explainPlan()) {
-            str.append("\n  ");
-            str.append(operator);
-        }
-        return str.toString();
+        return super.withIndentedExplain(str);
     }
 
 }

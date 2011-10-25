@@ -23,6 +23,7 @@ import com.akiban.qp.persistitadapter.PersistitIndexRow;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -34,7 +35,9 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ToObjectValueTarget;
+import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.ShareHolder;
 import com.persistit.exception.PersistitException;
 import com.akiban.util.Strings;
@@ -184,45 +187,32 @@ public class OperatorITBase extends ITBase
     }
 
     protected RowBase row(IndexRowType indexRowType, Object... values) {
+/*
         try {
+*/
+            ValuesHolderRow row = new ValuesHolderRow(indexRowType);
+            for (int i = 0; i < values.length; i++) {
+                Object value = values[i];
+                ValueHolder valueHolder = row.holderAt(i);
+                if (value == null) {
+                    valueHolder.putRawNull();
+                } else if (value instanceof Integer) {
+                    valueHolder.putInt((Integer) value);
+                } else if (value instanceof Long) {
+                    valueHolder.putInt((Long) value);
+                } else if (value instanceof String) {
+                    valueHolder.putString((String) value);
+                } else {
+                    fail();
+                }
+            }
+            return row;
+/*
             return new PersistitIndexRow(adapter, indexRowType, values);
         } catch(PersistitException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    protected void compareRows(RowBase[] expected, Cursor cursor)
-    {
-        compareRows(expected, cursor, NO_BINDINGS);
-    }
-
-    protected void compareRows(RowBase[] expected, Cursor cursor, Bindings bindings)
-    {
-        List<ShareHolder<Row>> actualRows = new ArrayList<ShareHolder<Row>>(); // So that result is viewable in debugger
-        try {
-            cursor.open(bindings);
-            RowBase actualRow;
-            while ((actualRow = cursor.next()) != null) {
-                int count = actualRows.size();
-                assertTrue(String.format("failed test %d < %d", count, expected.length), count < expected.length);
-                if(!equal(expected[count], actualRow)) {
-                    String expectedString = expected[count] == null ? "null" : expected[count].toString();
-                    String actualString = actualRow == null ? "null" : actualRow.toString();
-                    assertEquals("row " + count, expectedString, actualString);
-                }
-                if (expected[count] instanceof TestRow) {
-                    TestRow expectedTestRow = (TestRow) expected[count];
-                    if (expectedTestRow.persistityString() != null) {
-                        String actualHKeyString = actualRow == null ? "null" : actualRow.hKey().toString();
-                        assertEquals(count + ": hkey", expectedTestRow.persistityString(), actualHKeyString);
-                    }
-                }
-                actualRows.add(new ShareHolder<Row>((Row) actualRow));
-            }
-        } finally {
-            cursor.close();
-        }
-        assertEquals(expected.length, actualRows.size());
+*/
     }
 
     // Useful when scanning is expected to throw an exception
@@ -284,27 +274,11 @@ public class OperatorITBase extends ITBase
         assertEquals(expected.length, count);
     }
 
-    protected boolean equal(RowBase expected, RowBase actual)
-    {
-        ToObjectValueTarget target = new ToObjectValueTarget();
-        boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
-        for (int i = 0; equal && i < actual.rowType().nFields(); i++) {
-            Object expectedField = target.convertFromSource(expected.eval(i));
-            Object actualField = target.convertFromSource(actual.eval(i));
-            equal =
-                expectedField == actualField || // handles case in which both are null
-                expectedField != null && actualField != null && expectedField.equals(actualField);
-        }
-        return equal;
-    }
-
     protected int ordinal(RowType rowType)
     {
         RowDef rowDef = (RowDef) rowType.userTable().rowDef();
         return rowDef.getOrdinal();
     }
-
-    protected static final Bindings NO_BINDINGS = new ArrayBindings(0);
 
     protected int customer;
     protected int order;

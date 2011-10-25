@@ -16,9 +16,11 @@
 package com.akiban.qp.operator;
 
 import com.akiban.qp.row.AbstractRow;
+import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
@@ -57,10 +59,10 @@ public final class RowsBuilder {
         return row(holders);
     }
 
-    public RowsBuilder row(ValueHolder... values) {
+    public RowsBuilder row(ValueSource... values) {
         ArgumentValidation.isEQ("values.length", values.length, types.length);
         for (int i=0; i < values.length; ++i) {
-            ValueHolder value = values[i];
+            ValueSource value = values[i];
             AkType valueType = value.getConversionType();
             AkType requiredType = types[i];
             if (valueType != AkType.NULL && valueType != requiredType) {
@@ -92,7 +94,11 @@ public final class RowsBuilder {
     }
 
     public RowsBuilder(AkType... types) {
-        rowType = new ValuesRowType(null, COUNT.incrementAndGet(), types);
+        this(null, types);
+    }
+
+    public RowsBuilder(Schema schema, AkType... types) {
+        rowType = new ValuesRowType(schema, COUNT.incrementAndGet(), types);
         this.types = types;
     }
 
@@ -129,12 +135,12 @@ public final class RowsBuilder {
             return Strings.join(values, ", ");
         }
 
-        private InternalRow(RowType rowType, List<ValueHolder> values) {
+        private InternalRow(RowType rowType, List<? extends ValueSource> values) {
             this.rowType = rowType;
-            this.values = new ArrayList<ValueHolder>(values);
+            this.values = new ArrayList<ValueSource>(values);
         }
 
         private final RowType rowType;
-        private final List<ValueHolder> values;
+        private final List<ValueSource> values;
     }
 }

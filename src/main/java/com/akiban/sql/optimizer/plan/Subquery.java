@@ -15,24 +15,35 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import java.util.Set;
+
 /** A marker node around some subquery.
  */
-public class Subquery extends BasePlanWithInput
+public class Subquery extends BaseQuery
 {
-    public Subquery(PlanNode input) {
-        super(input);
+    private Set<ColumnSource> outerTables;
+
+    public Subquery(PlanNode inside) {
+        super(inside);
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof Subquery)) return false;
-        Subquery other = (Subquery)obj;
-        return getInput().equals(other.getInput());
+    public Set<ColumnSource> getOuterTables() {
+        if (outerTables != null)
+            return outerTables;
+        else
+            return super.getOuterTables();
+    }
+
+    public void setOuterTables(Set<ColumnSource> outerTables) {
+        this.outerTables = outerTables;
     }
 
     @Override
-    public int hashCode() {
-        return getInput().hashCode();
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        if (outerTables != null)
+            outerTables = duplicateSet(outerTables, map);
     }
 
 }

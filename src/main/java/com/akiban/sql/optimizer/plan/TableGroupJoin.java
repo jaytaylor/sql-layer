@@ -17,25 +17,27 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.Join;
 
+import java.util.List;
+
 /** A join within a group corresponding to the GROUPING FK constraint. 
  */
 public class TableGroupJoin extends BasePlanElement
 {
     private TableGroup group;
     private TableSource parent, child;
-    private ConditionExpression condition;
+    private List<ComparisonCondition> conditions;
     private Join join;
 
     public TableGroupJoin(TableGroup group,
                           TableSource parent, TableSource child,
-                          ConditionExpression condition, Join join) {
+                          List<ComparisonCondition> conditions, Join join) {
         this.group = group;
         this.parent = parent;
         parent.setGroup(group);
         this.child = child;
-        this.condition = condition;
-        ((ComparisonCondition)
-         condition).setImplementation(ConditionExpression.Implementation.GROUP_JOIN);
+        this.conditions = conditions;
+        for (ComparisonCondition condition : conditions)
+          condition.setImplementation(ConditionExpression.Implementation.GROUP_JOIN);
         child.setParentJoin(this);
         this.join = join;
         group.addJoin(this);
@@ -54,8 +56,8 @@ public class TableGroupJoin extends BasePlanElement
     public TableSource getChild() {
         return child;
     }
-    public ConditionExpression getCondition() {
-        return condition;
+    public List<ComparisonCondition> getConditions() {
+        return conditions;
     }
     public Join getJoin() {
         return join;
@@ -78,6 +80,7 @@ public class TableGroupJoin extends BasePlanElement
         group = (TableGroup)group.duplicate(map);
         parent = (TableSource)parent.duplicate(map);
         child = (TableSource)child.duplicate(map);
+        conditions = duplicateList(conditions, map);
     }
     
 }

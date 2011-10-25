@@ -39,10 +39,11 @@ final class Aggregate_Partial extends Operator
     @Override
     protected Cursor cursor(StoreAdapter adapter) {
         List<Aggregator> aggregators = new ArrayList<Aggregator>();
-        for (String name : aggregatorNames) {
-            aggregators.add(factory.get(name));
+        for (AggregatorFactory factory : aggregatorFactories) {
+            aggregators.add(factory.get());
         }
         return new AggregateCursor(
+                adapter,
                 inputOperator.cursor(adapter),
                 inputOperator.rowType(),
                 aggregators,
@@ -69,13 +70,11 @@ final class Aggregate_Partial extends Operator
 
     // AggregationOperator interface
 
-    public Aggregate_Partial(Operator inputOperator, int inputsIndex, AggregatorFactory factory,
-                             List<String> aggregatorNames) {
+    public Aggregate_Partial(Operator inputOperator, int inputsIndex, List<AggregatorFactory> aggregatorFactories) {
         this(
                 inputOperator,
                 inputsIndex,
-                factory,
-                aggregatorNames,
+                aggregatorFactories,
                 inputOperator.rowType().schema().newAggregateType(inputOperator.rowType())
         );
     }
@@ -85,23 +84,22 @@ final class Aggregate_Partial extends Operator
     @Override
     public String toString() {
         if (inputsIndex == 0) {
-            return String.format("Aggregation(without GROUP BY: %s)", aggregatorNames);
+            return String.format("Aggregation(without GROUP BY: %s)", aggregatorFactories);
         }
         if (inputsIndex == 1) {
-            return String.format("Aggregation(GROUP BY 1 field, then: %s)", aggregatorNames);
+            return String.format("Aggregation(GROUP BY 1 field, then: %s)", aggregatorFactories);
         }
-        return String.format("Aggregation(GROUP BY %d fields, then: %s)", inputsIndex, aggregatorNames);
+        return String.format("Aggregation(GROUP BY %d fields, then: %s)", inputsIndex, aggregatorFactories);
     }
 
 
     // package-private (for testing)
 
-    Aggregate_Partial(Operator inputOperator, int inputsIndex, AggregatorFactory factory,
-                      List<String> aggregatorNames, AggregatedRowType outputType) {
+    Aggregate_Partial(Operator inputOperator, int inputsIndex,
+                      List<AggregatorFactory> aggregatorFactories, AggregatedRowType outputType) {
         this.inputOperator = inputOperator;
         this.inputsIndex = inputsIndex;
-        this.factory = factory;
-        this.aggregatorNames = new ArrayList<String>(aggregatorNames);
+        this.aggregatorFactories = new ArrayList<AggregatorFactory>(aggregatorFactories);
         this.outputType = outputType;
         validate();
     }
@@ -109,14 +107,13 @@ final class Aggregate_Partial extends Operator
     // private methods
 
     private void validate() {
-        ArgumentValidation.isBetween("inputsIndex", 0, inputsIndex, inputOperator.rowType().nFields());
-        if (inputsIndex + aggregatorNames.size() != inputOperator.rowType().nFields()) {
+        ArgumentValidation.isBetween("inputsIndex", 0, inputsIndex, inputOperator.rowType().nFields()+1);
+        if (inputsIndex + aggregatorFactories.size() != inputOperator.rowType().nFields()) {
             throw new IllegalArgumentException(
                     String.format("inputsIndex(=%d) + aggregatorNames.size(=%d) != inputRowType.nFields(=%d)",
-                            inputsIndex, aggregatorNames.size(), inputOperator.rowType().nFields()
+                            inputsIndex, aggregatorFactories.size(), inputOperator.rowType().nFields()
             ));
         }
-        factory.validateNames(aggregatorNames);
         if (outputType == null)
             throw new NullPointerException();
     }
@@ -126,8 +123,7 @@ final class Aggregate_Partial extends Operator
     private final Operator inputOperator;
     private final AggregatedRowType outputType;
     private final int inputsIndex;
-    private final AggregatorFactory factory;
-    private final List<String> aggregatorNames;
+    private final List<AggregatorFactory> aggregatorFactories;
 
     // nested classes
 
@@ -145,6 +141,7 @@ final class Aggregate_Partial extends Operator
 
         @Override
         public Row next() {
+            adapter.checkQueryCancelation();
             if (cursorState == CursorState.CLOSED)
                 throw new IllegalStateException("cursor not open");
             if (cursorState == CursorState.CLOSING) {
@@ -162,7 +159,7 @@ final class Aggregate_Partial extends Operator
                     }
                     else if (noGroupBy()) {
                         cursorState = CursorState.CLOSING;
-                        return createNullOutput();
+                        return createEmptyOutput();
                     }
                     else {
                         close();
@@ -217,11 +214,11 @@ final class Aggregate_Partial extends Operator
             return outputRow;
         }
 
-        private Row createNullOutput() {
+        private Row createEmptyOutput() {
             assert noGroupBy() : "shouldn't be creating null output row when I have a grouping";
             ValuesHolderRow outputRow = unsharedOutputRow();
             for (int i = 0; i < outputRow.rowType().nFields(); ++i) {
-                outputRow.holderAt(i).putNull();
+                outputRow.holderAt(i).copyFrom(aggregators.get(i).emptyValue());
             }
             return outputRow;
         }
@@ -284,8 +281,13 @@ final class Aggregate_Partial extends Operator
 
         // AggregateCursor interface
 
-        private AggregateCursor(Cursor inputCursor, RowType inputRowType, List<Aggregator> aggregators,
-                                int inputsIndex, AggregatedRowType outputRowType) {
+        private AggregateCursor(StoreAdapter adapter,
+                                Cursor inputCursor,
+                                RowType inputRowType,
+                                List<Aggregator> aggregators,
+                                int inputsIndex,
+                                AggregatedRowType outputRowType) {
+            this.adapter = adapter;
             this.inputCursor = inputCursor;
             this.inputRowType = inputRowType;
             this.aggregators = aggregators;
@@ -300,6 +302,7 @@ final class Aggregate_Partial extends Operator
 
         // object state
 
+        private final StoreAdapter adapter;
         private final Cursor inputCursor;
         private final RowType inputRowType;
         private final List<Aggregator> aggregators;

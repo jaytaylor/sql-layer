@@ -15,15 +15,15 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.rowtype.Schema;
 import com.akiban.sql.StandardException;
 
 import com.akiban.sql.optimizer.OperatorCompiler;
-import com.akiban.sql.optimizer.simplified.SimplifiedQuery.ColumnExpression;
-import com.akiban.sql.optimizer.simplified.SimplifiedQuery.SimpleExpression;
-import com.akiban.sql.optimizer.simplified.SimplifiedQuery.SimpleSelectColumn;
+import com.akiban.sql.optimizer.plan.BasePlannable;
+import com.akiban.sql.optimizer.plan.PhysicalSelect;
+import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
+import com.akiban.sql.optimizer.plan.PhysicalUpdate;
+import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
+import com.akiban.sql.optimizer.rule.BaseRule;
 
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.SQLParser;
@@ -35,6 +35,7 @@ import com.akiban.ais.model.Column;
 
 import com.akiban.server.error.ParseException;
 import com.akiban.server.service.EventTypes;
+import com.akiban.server.service.instrumentation.SessionTracer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,11 +50,16 @@ public class PostgresOperatorCompiler extends OperatorCompiler
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorCompiler.class);
 
+    private SessionTracer tracer;
+
     public PostgresOperatorCompiler(PostgresServerSession server) {
-        super(server.getParser(), server.getAIS(), server.getDefaultSchemaName());
+        super(server.getParser(), server.getAIS(), server.getDefaultSchemaName(),
+                server.expressionFactory(), server.aggregatorRegistry());
 
         server.setAttribute("aisBinder", binder);
         server.setAttribute("compiler", this);
+
+        tracer = server.getSessionTracer();
     }
 
     @Override
@@ -64,8 +70,9 @@ public class PostgresOperatorCompiler extends OperatorCompiler
         try {
             return generate(server, parser.parseStatement(sql), 
                             parser.getParameterList(), paramTypes);
-        } catch (StandardException e) {
-            throw new ParseException ("", e.getMessage(), sql);
+        } 
+        catch (StandardException e) {
+            throw new ParseException("", e.getMessage(), sql);
         }
     }
 
@@ -74,7 +81,18 @@ public class PostgresOperatorCompiler extends OperatorCompiler
         binder.setDefaultSchemaName(server.getDefaultSchemaName());
     }
 
-    static class PostgresResultColumn extends ResultColumnBase {
+    @Override
+    protected DMLStatementNode bindAndTransform(DMLStatementNode stmt)  {
+        try {
+            tracer.beginEvent(EventTypes.BIND_AND_GROUP); // TODO: rename.
+            return super.bindAndTransform(stmt);
+        } 
+        finally {
+            tracer.endEvent();
+        }
+    }
+
+    static class PostgresResultColumn extends PhysicalResultColumn {
         private PostgresType type;
         
         public PostgresResultColumn(String name, PostgresType type) {
@@ -88,21 +106,15 @@ public class PostgresOperatorCompiler extends OperatorCompiler
     }
 
     @Override
-    public ResultColumnBase getResultColumn(SimpleSelectColumn selectColumn)  {
-        String name = selectColumn.getName();
-        PostgresType type = null;
-        SimpleExpression selectExpr = selectColumn.getExpression();
-        if (selectExpr.isColumn()) {
-            ColumnExpression columnExpression = (ColumnExpression)selectExpr;
-            Column column = columnExpression.getColumn();
-            if (selectColumn.isNameDefaulted())
-                name = column.getName(); // User-preferred case.
-            type = PostgresType.fromAIS(column);
+    public PhysicalResultColumn getResultColumn(ResultField field) {
+        PostgresType pgType = null;
+        if (field.getAIScolumn() != null) {
+            pgType = PostgresType.fromAIS(field.getAIScolumn());
         }
-        else {
-            type = PostgresType.fromDerby(selectColumn.getType());
+        else if (field.getSQLtype() != null) {
+            pgType = PostgresType.fromDerby(field.getSQLtype());
         }
-        return new PostgresResultColumn(name, type);
+        return new PostgresResultColumn(field.getName(), pgType);
     }
 
     @Override
@@ -112,11 +124,13 @@ public class PostgresOperatorCompiler extends OperatorCompiler
         if (!(stmt instanceof DMLStatementNode))
             return null;
         DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
-        Result result = null;
+        BasePlannable result = null;
+        tracer = session.getSessionTracer(); // Don't think this ever changes.
         try {
-            session.getSessionTracer().beginEvent(EventTypes.COMPILE);
-            result = compile(session.getSessionTracer(), dmlStmt, params);
-        } finally {
+            tracer.beginEvent(EventTypes.COMPILE);
+            result = compile(dmlStmt, params);
+        } 
+        finally {
             session.getSessionTracer().endEvent();
         }
 
@@ -134,29 +148,39 @@ public class PostgresOperatorCompiler extends OperatorCompiler
             }
         }
 
-        if (result.isModify())
+        if (result.isUpdate()) {
+            PhysicalUpdate update = (PhysicalUpdate)result;
             return new PostgresModifyOperatorStatement(stmt.statementToString(),
-                                                       (UpdatePlannable) result.getResultOperator(),
+                                                       update.getUpdatePlannable(),
                                                        parameterTypes);
+        }
         else {
-            int ncols = result.getResultColumns().size();
+            PhysicalSelect select = (PhysicalSelect)result;
+            int ncols = select.getResultColumns().size();
             List<String> columnNames = new ArrayList<String>(ncols);
             List<PostgresType> columnTypes = new ArrayList<PostgresType>(ncols);
-            for (ResultColumnBase rcBase : result.getResultColumns()) {
-                PostgresResultColumn resultColumn = (PostgresResultColumn)rcBase;
+            for (PhysicalResultColumn physColumn : select.getResultColumns()) {
+                PostgresResultColumn resultColumn = (PostgresResultColumn)physColumn;
                 columnNames.add(resultColumn.getName());
                 columnTypes.add(resultColumn.getType());
             }
-            return new PostgresOperatorStatement((Operator)result.getResultOperator(),
+            return new PostgresOperatorStatement(select.getResultOperator(),
+                                                 select.getResultRowType(),
                                                  columnNames, columnTypes,
                                                  parameterTypes,
-                                                 result.getOffset(),
-                                                 result.getLimit());
+                                                 // TODO: Assumes Limit operator used.
+                                                 0, -1);
         }
     }
 
-    protected Schema getSchema() {
-        return schema;
+    @Override
+    public void beginRule(BaseRule rule) {
+        tracer.beginEvent(rule.getTraceName());
+    }
+
+    @Override
+    public void endRule(BaseRule rule) {
+        tracer.endEvent();
     }
 
 }

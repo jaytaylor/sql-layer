@@ -4,6 +4,6 @@ SelectQuery@1089cc5e
       Select@2c79809[]
         AggregateSource@7dce784b([user.orders.order_date],[SUM(times(user.items.price,user.items.quan))])
           Select@7e3bc473[]
-            JoinNode@5de9ac4(INNER_JOIN[user.orders.oid == user.items.oid])
+            JoinNode@5de9ac4(INNER[user.orders.oid == user.items.oid])
               TableSource@536c79d7(user.items)
               TableSource@15af33d6(user.orders)

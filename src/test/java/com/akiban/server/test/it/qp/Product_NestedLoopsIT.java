@@ -28,11 +28,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 
-import static com.akiban.server.types.AkType.*;
 import static com.akiban.qp.operator.API.FlattenOption.KEEP_PARENT;
 import static com.akiban.qp.operator.API.JoinType.INNER_JOIN;
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.qp.rowtype.RowTypeChecks.checkRowTypeFields;
+import static com.akiban.server.types.AkType.INT;
+import static com.akiban.server.types.AkType.VARCHAR;
 import static org.junit.Assert.assertTrue;
 
 public class Product_NestedLoopsIT extends OperatorITBase

@@ -614,7 +614,6 @@ public class
 
     public void groupingIsComplete() {
         LOG.info("groupingIsComplete");
-        
         // make sure the groups have all the correct columns
         // including the hidden PK columns. 
         for (Group group : ais.getGroups().values()) {

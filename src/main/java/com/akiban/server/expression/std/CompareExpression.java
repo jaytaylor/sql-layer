@@ -17,7 +17,9 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
@@ -26,11 +28,17 @@ import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.server.types.util.ValueHolder;
 
 import java.util.EnumMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public final class CompareExpression extends AbstractTwoArgExpression {
+public final class CompareExpression extends AbstractBinaryExpression {
+
+    @Scalar("equals") public static final ExpressionComposer EQ_COMPOSER = new InnerComposer(Comparison.EQ);
+    @Scalar("greaterOrEquals") public static final ExpressionComposer GE_COMPOSER = new InnerComposer(Comparison.GE);
+    @Scalar("greaterThan") public static final ExpressionComposer GT_COMPOSER = new InnerComposer(Comparison.GT);
+    @Scalar("lessOrEquals") public static final ExpressionComposer LE_COMPOSER = new InnerComposer(Comparison.LE);
+    @Scalar("lessThan") public static final ExpressionComposer LT_COMPOSER = new InnerComposer(Comparison.LT);
+    @Scalar("notEquals") public static final ExpressionComposer NE_COMPOSER = new InnerComposer(Comparison.NE);
 
     // AbstractTwoArgExpression interface
     @Override
@@ -43,10 +51,10 @@ public final class CompareExpression extends AbstractTwoArgExpression {
         return new InnerEvaluation(childrenEvaluations(), comparison, op);
     }
 
-    public CompareExpression(List<? extends Expression> children, Comparison comparison) {
-        super(AkType.BOOL, children);
+    public CompareExpression(Expression lhs, Comparison comparison, Expression rhs) {
+        super(AkType.BOOL, lhs, rhs);
         this.comparison = comparison;
-        AkType type = childrenType(children);
+        AkType type = childrenType(children());
         assert type != null;
         this.op = readOnlyCompareOps.get(type);
         if (this.op == null)
@@ -62,25 +70,6 @@ public final class CompareExpression extends AbstractTwoArgExpression {
 
 
     // for use in this class
-
-    private static AkType childrenType(List<? extends Expression> children) {
-        Iterator<? extends Expression> iter = children.iterator();
-        if (!iter.hasNext())
-            throw new IllegalArgumentException("Comparison must take exatly two children expressions; none provided");
-        AkType type = iter.next().valueType();
-        while(iter.hasNext()) { // should only be once, but AbstractTwoArgExpression will check that
-            AkType childType = iter.next().valueType();
-            if (type == AkType.NULL) {
-                type = childType;
-            }
-            // TODO put this back in when we get casting expressions. Until then, Extractors will do their job.
-//            else if (childType != AkType.NULL && !type.equals(childType)) {
-//                throw new IllegalArgumentException("Comparison's children must all have same type. First child was "
-//                        + type + ", but then saw " + childType);
-//            }
-        }
-        return type;
-    }
 
     private static Map<AkType,CompareOp> createCompareOpsMap() {
         Map<AkType,CompareOp> map = new EnumMap<AkType, CompareOp>(AkType.class);
@@ -136,7 +125,12 @@ public final class CompareExpression extends AbstractTwoArgExpression {
             public int compare(ValueSource a, ValueSource b) {
                 long aLong = Extractors.getLongExtractor(type).getLong(a);
                 long bLong = Extractors.getLongExtractor(type).getLong(b);
-                return (int)(aLong - bLong);
+                if (aLong < bLong)
+                    return -1;
+                else if (aLong > bLong)
+                    return +1;
+                else
+                    return 0;
             }
         };
     }
@@ -209,5 +203,19 @@ public final class CompareExpression extends AbstractTwoArgExpression {
         private final Comparison comparison;
         private final CompareOp op;
         private final ValueHolder scratch;
+    }
+
+    private static final class InnerComposer extends BinaryComposer {
+
+        @Override
+        protected Expression compose(Expression first, Expression second) {
+            return new CompareExpression(first, comparison, second);
+        }
+
+        private InnerComposer(Comparison comparison) {
+            this.comparison = comparison;
+        }
+
+        private final Comparison comparison;
     }
 }

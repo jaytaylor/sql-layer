@@ -145,7 +145,7 @@ public class DefaultNameGenerator implements NameGenerator {
     }
     
     @Override
-    public String generateJoinName (UserTable parentTable, UserTable childTable, List<JoinColumn> columns) {
+    public String generateJoinName (TableName parentTable, TableName childTable, List<JoinColumn> columns) {
         List<String> pkColNames = new LinkedList<String>();
         List<String> fkColNames = new LinkedList<String>();
         for (JoinColumn col : columns) {
@@ -153,11 +153,11 @@ public class DefaultNameGenerator implements NameGenerator {
             fkColNames.add(col.getChild().getName());
         }
         String ret = String.format("%s/%s/%s/%s/%s/%s",
-                parentTable.getName().getSchemaName(),
-                parentTable.getName().getTableName(),
+                parentTable.getSchemaName(),
+                parentTable.getTableName(),
                 Strings.join(pkColNames, ","),
-                childTable.getName().getSchemaName(),
-                childTable.getName().getTableName(),
+                childTable.getSchemaName(),
+                childTable.getTableName(),
                 Strings.join(fkColNames, ","));
         return ret.toLowerCase().replace(',', '_');
     }

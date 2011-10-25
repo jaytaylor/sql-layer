@@ -16,9 +16,9 @@
 package com.akiban.qp.expression;
 
 import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.ColumnSelector;
 
 public class IndexBound
@@ -28,9 +28,9 @@ public class IndexBound
         return String.valueOf(unboundExpressions);
     }
 
-    public RowBase boundExpressions(Bindings bindings)
+    public BoundExpressions boundExpressions(Bindings bindings, StoreAdapter adapter)
     {
-        return unboundExpressions.get(bindings);
+        return unboundExpressions.get(bindings, adapter);
     }
 
     public ColumnSelector columnSelector()
@@ -38,12 +38,7 @@ public class IndexBound
         return columnSelector;
     }
 
-    public IndexRowType indexRowType()
-    {
-        return (IndexRowType) unboundExpressions.rowType();
-    }
-
-    public IndexBound(RowBase row, ColumnSelector columnSelector)
+    public IndexBound(BoundExpressions row, ColumnSelector columnSelector)
     {
         this(new PreBoundExpressions(row), columnSelector);
     }
@@ -61,31 +56,22 @@ public class IndexBound
 
     // nested classes
 
-    private static class PreBoundExpressions implements UnboundExpressions
-    {
-        @Override
-        public String toString()
-        {
-            return String.valueOf(row);
-        }
+    private static class PreBoundExpressions implements UnboundExpressions {
 
         @Override
-        public RowBase get(Bindings bindings)
-        {
-            return row;
+        public BoundExpressions get(Bindings bindings, StoreAdapter adapter) {
+            return expressions;
         }
 
         @Override
-        public RowType rowType()
-        {
-            return row.rowType();
+        public String toString() {
+            return String.valueOf(expressions);
         }
 
-        public PreBoundExpressions(RowBase row)
-        {
-            this.row = row;
+        public PreBoundExpressions(BoundExpressions expressions) {
+            this.expressions = expressions;
         }
 
-        private final RowBase row;
+        private final BoundExpressions expressions;
     }
 }

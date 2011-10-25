@@ -122,11 +122,13 @@ class Product_NestedLoops extends Operator
         {
             this.bindings = bindings;
             this.outerInput.open(bindings);
+            this.closed = false;
         }
 
         @Override
         public Row next()
         {
+            adapter.checkQueryCancelation();
             Row outputRow = null;
             while (!closed && outputRow == null) {
                 outputRow = nextProductRow();
@@ -174,6 +176,7 @@ class Product_NestedLoops extends Operator
 
         Execution(StoreAdapter adapter)
         {
+            this.adapter = adapter;
             this.outerInput = outerInputOperator.cursor(adapter);
             this.innerRows = new InnerRows(innerInputOperator.cursor(adapter));
         }
@@ -208,6 +211,7 @@ class Product_NestedLoops extends Operator
 
         // Object state
 
+        private final StoreAdapter adapter;
         private final Cursor outerInput;
         private final ShareHolder<Row> outerRow = new ShareHolder<Row>();
         private final ShareHolder<Row> outerBranchRow = new ShareHolder<Row>();

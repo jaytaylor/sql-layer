@@ -18,8 +18,10 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
-import com.akiban.qp.operator.API.JoinType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -29,6 +31,13 @@ import java.util.*;
  */
 public class OuterJoinPromoter extends BaseRule
 {
+    private static final Logger logger = LoggerFactory.getLogger(OuterJoinPromoter.class);
+
+    @Override
+    protected Logger getLogger() {
+        return logger;
+    }
+
     static class WhereFinder implements PlanVisitor, ExpressionVisitor {
         List<Select> result = new ArrayList<Select>();
 
@@ -185,15 +194,15 @@ public class OuterJoinPromoter extends BaseRule
             boolean rp = promoteOuterJoins(join.getRight(), required);
             boolean promoted = false;
             switch (join.getJoinType()) {
-            case LEFT_JOIN:
+            case LEFT:
                 promoted = rp;
                 break;
-            case RIGHT_JOIN:
+            case RIGHT:
                 promoted = lp;
                 break;
             }
             if (promoted) {
-                join.setJoinType(JoinType.INNER_JOIN);
+                join.setJoinType(JoinType.INNER);
                 promotedOuterJoin(join);
             }
             return lp || rp;
@@ -205,7 +214,7 @@ public class OuterJoinPromoter extends BaseRule
     protected void promotedOuterJoin(Joinable joinable) {
         if (joinable instanceof JoinNode) {
             JoinNode join = (JoinNode)joinable;
-            if (join.getJoinType() == JoinType.INNER_JOIN) {
+            if (join.getJoinType() == JoinType.INNER) {
                 promotedOuterJoin(join.getLeft());
                 promotedOuterJoin(join.getRight());
             }

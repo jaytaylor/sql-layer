@@ -15,9 +15,10 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
+import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
-import com.akiban.qp.row.RowBase;
+import com.akiban.qp.operator.StoreAdapter;
 import com.persistit.exception.PersistitException;
 
 class SortCursorMixedOrderBounded extends SortCursorMixedOrder
@@ -27,14 +28,14 @@ class SortCursorMixedOrderBounded extends SortCursorMixedOrder
     @Override
     public MixedOrderScanState createScanState(SortCursorMixedOrder cursor, int field) throws PersistitException
     {
-        return new MixedOrderScanStateBounded(cursor, field);
+        return new MixedOrderScanStateBounded(adapter, cursor, field);
     }
 
     @Override
     public void computeBoundaries()
     {
-        RowBase lo = keyRange.lo().boundExpressions(bindings);
-        RowBase hi = keyRange.hi().boundExpressions(bindings);
+        BoundExpressions lo = keyRange.lo().boundExpressions(bindings, adapter);
+        BoundExpressions hi = keyRange.hi().boundExpressions(bindings, adapter);
         // Set lo and hi bounds for each key segment
         int fields = scanStates.size();
         for (int f = 0; f < fields; f++) {
@@ -53,13 +54,19 @@ class SortCursorMixedOrderBounded extends SortCursorMixedOrder
         }
     }
 
-    public SortCursorMixedOrderBounded(RowGenerator rowGenerator, IndexKeyRange keyRange, API.Ordering ordering)
+    public SortCursorMixedOrderBounded(RowGenerator rowGenerator,
+                                       IndexKeyRange keyRange,
+                                       API.Ordering ordering,
+                                       StoreAdapter adapter)
     {
         super(rowGenerator, keyRange, ordering);
+        this.adapter = adapter;
     }
 
     private MixedOrderScanStateBounded scanState(int field)
     {
         return (MixedOrderScanStateBounded) scanStates.get(field);
     }
+
+    private final StoreAdapter adapter;
 }

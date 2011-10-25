@@ -54,6 +54,16 @@ public final class Extractors {
         return VARBINARY_EXTRACTOR;
     }
 
+    public static ObjectExtractor<?> getObjectExtractor(AkType type) {
+        switch (type) {
+        case VARBINARY: return VARBINARY_EXTRACTOR;
+        case VARCHAR:   return STRING_EXTRACTOR;
+        case DECIMAL:   return DECIMAL_EXTRACTOR;
+        case U_BIGINT:  return UBIGINT_EXTRACTOR;
+        default: throw new AkibanInternalException("not an ObjectExtractor type: " + type);
+        }
+    }
+
     // private methods
 
     private static <E extends AbstractExtractor> E get(AkType type, Class<E> extractorClass, boolean nullDefault) {

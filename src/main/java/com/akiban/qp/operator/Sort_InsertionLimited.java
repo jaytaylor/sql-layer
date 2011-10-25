@@ -105,13 +105,15 @@ class Sort_InsertionLimited extends Operator
         {
             input.open(bindings);
             state = State.FILLING;
-            this.bindings = bindings;
+            for (ExpressionEvaluation eval : evaluations)
+                eval.of(bindings);
             sorted = new TreeSet<Holder>();
         }
 
         @Override
         public Row next()
         {
+            adapter.checkQueryCancelation();
             switch (state) {
             case FILLING:
                 {
@@ -119,7 +121,7 @@ class Sort_InsertionLimited extends Operator
                     Row row;
                     while ((row = input.next()) != null) {
                         assert row.rowType() == sortType : row;
-                        Holder holder = new Holder(count++, row, bindings);
+                        Holder holder = new Holder(count++, row, evaluations);
                         if (sorted.size() < limit) {
                             // Still room: add it in.
                             boolean added = sorted.add(holder);
@@ -181,14 +183,23 @@ class Sort_InsertionLimited extends Operator
 
         Execution(StoreAdapter adapter, Cursor input)
         {
+            this.adapter = adapter;
             this.input = input;
+            int nsort = ordering.sortFields();
+            evaluations = new ArrayList<ExpressionEvaluation>(nsort);
+            for (int i = 0; i < nsort; i++) {
+                ExpressionEvaluation evaluation = ordering.expression(i).evaluation();
+                evaluation.of(adapter);
+                evaluations.add(evaluation);
+            }
         }
 
         // Object state
 
+        private final StoreAdapter adapter;
         private final Cursor input;
+        private final List<ExpressionEvaluation> evaluations;
         private State state;
-        private Bindings bindings;
         private SortedSet<Holder> sorted;
         private Iterator<Holder> iterator;
     }
@@ -205,7 +216,7 @@ class Sort_InsertionLimited extends Operator
         private ToObjectValueTarget target = new ToObjectValueTarget();
         private Comparable[] values;
 
-        public Holder(int index, Row arow, Bindings bindings) {
+        public Holder(int index, Row arow, List<ExpressionEvaluation> evaluations) {
             this.index = index;
 
             row = new ShareHolder<Row>();
@@ -213,13 +224,10 @@ class Sort_InsertionLimited extends Operator
 
             values = new Comparable[ordering.sortFields()];
             for (int i = 0; i < values.length; i++) {
-                ExpressionEvaluation evaluation = ordering.evaluation(i);
+                ExpressionEvaluation evaluation = evaluations.get(i);
                 evaluation.of(arow);
-                evaluation.of(bindings);
                 ValueSource valueSource = evaluation.eval();
-                // TODO: Use ordering.type(i)) once qp expressions are gone. (Actually, valuesource's type should
-                // TODO: always work, but still...)
-                target.expectType(valueSource.getConversionType());
+                target.expectType(ordering.type(i));
                 Converters.convert(valueSource, target);
                 values[i] = (Comparable) target.lastConvertedValue();
             }

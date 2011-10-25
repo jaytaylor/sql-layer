@@ -289,37 +289,45 @@ public class SubqueryFlattener
 
     // To be flattened into normal inner join, results must be unique.
     
-    // All of the tables in the FROM list must have a unique index all
-    // of whose columns appear in top-level equality conditions with
-    // something not from that table and at least one of them the
-    // stronger condition of something not in the subquery.
+    // All of the tables joined in the subquery must have a unique
+    // index all of whose columns appear in top-level equality
+    // conditions with something not from that table and at least one
+    // of them the stronger condition of something not in the
+    // subquery.
     protected boolean isUniqueSubquery(SelectNode selectNode, ValueNode parentOperand)
             throws StandardException {
-        FromList fromList = selectNode.getFromList();
-        AndNode whereConditions = (AndNode)selectNode.getWhereClause();
+        List<FromTable> fromTables = new ArrayList<FromTable>(); // Tables in the query.
+        List<BinaryComparisonOperatorNode> equalityConditions = 
+            new ArrayList<BinaryComparisonOperatorNode>(); // Column conditions.
+        if (!innerJoinedFromTables(selectNode.getFromList(), 
+                                   fromTables, equalityConditions))
+            return false;
+        addEqualityConditions((AndNode)selectNode.getWhereClause(), equalityConditions);
+        Collection<Collection<ColumnBinding>> equatedColumns = 
+            getEquatedColumns(fromTables, equalityConditions);
+        Map<ColumnBinding,ColumnEquality> columnEqualities = 
+            new HashMap<ColumnBinding,ColumnEquality>();
         boolean anyStronger = false;
-        boolean[] results = new boolean[2];
-        for (FromTable fromTable : fromList) {
+        for (FromTable fromTable : fromTables) {
             TableBinding binding = (TableBinding)fromTable.getUserData();
-            if (binding == null) continue;
-            Table table = binding.getTable();
             boolean anyIndex = false;
-            for (Index index : table.getIndexes()) {
+            for (Index index : binding.getTable().getIndexes()) {
                 if (!index.isUnique()) continue;
                 boolean allColumns = true, allStronger = true;
                 for (IndexColumn indexColumn : index.getColumns()) {
                     Column column = indexColumn.getColumn();
-                    results[0] = results[1] = false;
-                    findColumnCondition(fromList, fromTable, column, 
-                                        whereConditions, parentOperand,
-                                        results);
-                    if (!results[0]) {
+                    ColumnEquality constraint = 
+                        getColumnEquality(fromTable, column, 
+                                            fromTables, equatedColumns,
+                                            equalityConditions, parentOperand,
+                                            columnEqualities);
+                    if (constraint == ColumnEquality.NONE) {
                         // Failed weaker condition (some column condition free of same table),
                         // index is no good.
                         allColumns = false;
                         break;
                     }
-                    if (!results[1]) {
+                    if (constraint == ColumnEquality.OTHER_TABLES) {
                         // Only failed stronger condition (some column condition free of all tables),
                         // remember but finish index.
                         allStronger = false;
@@ -339,73 +347,221 @@ public class SubqueryFlattener
         return anyStronger;
     }
 
-    // Does this column appear in an equality condition, either in the
-    // where clause or because of the parent RHS, that is free of the given tables.
-    // results[0] is true if free of the specific table.
-    // results[1] is true if free of all the tables.
-    protected void findColumnCondition(FromList fromList, FromTable fromTable, 
-                                       Column column, 
-                                       AndNode whereConditions, ValueNode parentOperand,
-                                       boolean[] results)
+    // Get all the inner joined tables. Return false for any other
+    // kind of join or anything not a table.
+    protected boolean innerJoinedFromTables(FromList fromList, 
+                                            List<FromTable> intoList,
+                                            List<BinaryComparisonOperatorNode> equalityConditions)
             throws StandardException {
-        if (isColumnReference(fromTable, column, parentOperand)) {
-            results[0] = results[1] = true; // Totally outside this query.
-            return;
+        for (FromTable fromTable : fromList) {
+            if (!innerJoinedFromTables(fromTable, intoList, equalityConditions))
+                return false;
         }
-        if (whereConditions != null) {
-            FromTableBindingVisitor visitor = new FromTableBindingVisitor(fromList, fromTable);
+        return true;
+    }
+
+    protected boolean innerJoinedFromTables(ResultSetNode fromTable, 
+                                            List<FromTable> intoList,
+                                            List<BinaryComparisonOperatorNode> equalityConditions)
+            throws StandardException {
+        switch (fromTable.getNodeType()) {
+        case NodeTypes.JOIN_NODE:
+            {
+                JoinNode joinNode = (JoinNode)fromTable;
+                if (innerJoinedFromTables(joinNode.getLeftResultSet(),
+                                          intoList, equalityConditions) &&
+                    innerJoinedFromTables(joinNode.getRightResultSet(),
+                                          intoList, equalityConditions)) {
+                    addEqualityConditions((AndNode)joinNode.getJoinClause(),
+                                          equalityConditions);
+                    return true;
+                }
+            }
+        case NodeTypes.FROM_BASE_TABLE:
+            if (fromTable.getUserData() != null) {
+                intoList.add((FromBaseTable)fromTable);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Get any conditions that seem to equality conditions with a
+    // column from the given CNF conditions.
+    protected void addEqualityConditions(AndNode conditions,
+                                         List<BinaryComparisonOperatorNode> equalityConditions) {
+        if (conditions != null) {
             while (true) {
-                ValueNode leftOperand = whereConditions.getLeftOperand();
-                ValueNode rightOperand = whereConditions.getRightOperand();
+                ValueNode leftOperand = conditions.getLeftOperand();
+                ValueNode rightOperand = conditions.getRightOperand();
                 if (leftOperand.getNodeType() == NodeTypes.BINARY_EQUALS_OPERATOR_NODE) {
-                    BinaryComparisonOperatorNode binop = (BinaryComparisonOperatorNode)leftOperand;
-                    ValueNode checkOperand = null;
-                    // If both left and right are column references, it's a
-                    // failure caught by visiting the right.
-                    if (isColumnReference(fromTable, column, binop.getLeftOperand()))
-                        checkOperand = binop.getRightOperand();
-                    else if (isColumnReference(fromTable, column, binop.getRightOperand()))
-                        checkOperand = binop.getLeftOperand();
-                    if (checkOperand != null) {
-                        visitor.reset();
-                        checkOperand.accept(visitor);
-                        switch (visitor.getFound()) {
-                        case NOT_FOUND:
-                            results[0] = results[1] = true;
-                            return;
-                        case FOUND_FROM_LIST:
-                            results[0] = true;  // Failed the stronger, but passed the weaker test.
-                            break;
-                        }
-                    }
+                    BinaryComparisonOperatorNode equals = (BinaryComparisonOperatorNode)leftOperand;
+                    if ((equals.getLeftOperand() instanceof ColumnReference) ||
+                        (equals.getRightOperand() instanceof ColumnReference))
+                        equalityConditions.add(equals);
                 }
                 if (rightOperand instanceof AndNode)
-                    whereConditions = (AndNode)rightOperand;
+                    conditions = (AndNode)rightOperand;
                 else
                     break;
             }
         }
     }
 
-    protected boolean isColumnReference(FromTable fromTable, Column column, ValueNode expr)
+    // Get columns within the subquery that are equated. Can then use
+    // other conditions on either one to fulfill an index.
+    protected Collection<Collection<ColumnBinding>> getEquatedColumns(List<FromTable> fromTables, 
+                                                                      List<BinaryComparisonOperatorNode> equalityConditions) {
+        Collection<Collection<ColumnBinding>> result = 
+            new ArrayList<Collection<ColumnBinding>>();
+        Iterator<BinaryComparisonOperatorNode> iter = equalityConditions.iterator();
+        while (iter.hasNext()) {
+            BinaryComparisonOperatorNode equals = iter.next();
+            ColumnBinding leftCB = getColumnBinding(equals.getLeftOperand(), fromTables);
+            ColumnBinding rightCB = getColumnBinding(equals.getRightOperand(), fromTables);
+            if ((leftCB == null) && (rightCB == null)) {
+                iter.remove();
+            }
+            else if ((leftCB != null) && (rightCB != null)) {
+                addEquatedColumns(leftCB, rightCB, result);
+                iter.remove();
+            }
+        }
+        return result;
+    }
+
+    // Add an equation between two columns in the subquery, merging as necessary.
+    protected void addEquatedColumns(ColumnBinding cb1, ColumnBinding cb2, 
+                                     Collection<Collection<ColumnBinding>> equatedColumns) {
+        Collection<ColumnBinding> cc1 = null, cc2 = null;
+        for (Collection<ColumnBinding> cc : equatedColumns) {
+            if (cc.contains(cb1))
+                cc1 = cc;
+            if (cc.contains(cb2))
+                cc2 = cc;
+            if ((cc1 != null) && (cc2 != null)) 
+                break;
+        }
+        if (cc1 != null) {
+            if (cc2 != null) {
+                if (cc1 != cc2) {
+                    equatedColumns.remove(cc2);
+                    cc1.addAll(cc2);
+                }
+            }
+            else {
+                cc1.add(cb2);
+            }
+        }
+        else if (cc2 != null) {
+            cc2.add(cb1);
+        }
+        else {
+            Collection<ColumnBinding> ncc = new HashSet<ColumnBinding>(2);
+            ncc.add(cb1);
+            ncc.add(cb2);
+            equatedColumns.add(ncc);
+        }
+    }
+
+    enum ColumnEquality { NONE, OTHER_TABLES, OUTSIDE };
+
+    // Determine how strongly the given column is constrained by the
+    // given equality conditions.
+    protected ColumnEquality getColumnEquality(FromTable fromTable, Column column, 
+                                               List<FromTable> fromTables, 
+                                               Collection<Collection<ColumnBinding>> equatedColumns,
+                                               List<BinaryComparisonOperatorNode> equalityConditions, 
+                                               ValueNode parentOperand,
+                                               Map<ColumnBinding,ColumnEquality> columnEqualities)
             throws StandardException {
-        if (!(expr instanceof ColumnReference)) return false;
-        ColumnBinding binding = (ColumnBinding)((ColumnReference)expr).getUserData();
-        return ((binding != null) && 
-                (binding.getFromTable() == fromTable) &&
-                (binding.getColumn() == column));
+        ColumnBinding columnBinding = new ColumnBinding(fromTable, column);
+        ColumnEquality constraint = columnEqualities.get(columnBinding);
+        if (constraint != null)
+            return constraint;  // Already computed earlier.
+        Collection<ColumnBinding> equated = null;
+        for (Collection<ColumnBinding> cc : equatedColumns) {
+            if (cc.contains(columnBinding)) {
+                equated = cc;
+                break;
+            }
+        }
+        if (equated == null)
+            equated = Collections.singletonList(columnBinding);
+        outside:
+        {
+            if (isColumnReference(parentOperand, equated)) {
+                // Equated via IN with something outside the subquery.
+                constraint = ColumnEquality.OUTSIDE;
+                break outside;
+            }
+            if (equated.size() > 1) {
+                for (ColumnBinding cb : equated) {
+                    if (cb.getFromTable() != fromTable) {
+                        constraint = ColumnEquality.OTHER_TABLES;
+                        break;
+                    }
+                }
+            }
+            FromTableBindingVisitor visitor = new FromTableBindingVisitor(fromTables, 
+                                                                          fromTable);
+            for (BinaryComparisonOperatorNode equals : equalityConditions) {
+                ValueNode checkOperand = null;
+                if (isColumnReference(equals.getLeftOperand(), equated))
+                    checkOperand = equals.getRightOperand();
+                else if (isColumnReference(equals.getRightOperand(), equated))
+                    checkOperand = equals.getLeftOperand();
+                if (checkOperand != null) {
+                    visitor.reset();
+                    checkOperand.accept(visitor);
+                    switch (visitor.getFound()) {
+                    case NOT_FOUND:
+                        constraint = ColumnEquality.OUTSIDE;
+                        break outside;
+                    case FOUND_FROM_LIST:
+                        constraint = ColumnEquality.OTHER_TABLES;
+                        break;
+                    }
+                }
+            }
+        }
+        if (constraint  == null)
+            constraint = ColumnEquality.NONE;
+        for (ColumnBinding cb : equated) {
+            ColumnEquality previous = columnEqualities.put(cb, constraint);
+            assert (previous == null);
+        }
+        return constraint;
+    }
+
+    protected ColumnBinding getColumnBinding(ValueNode expr,
+                                             List<FromTable> fromTables) {
+        if (!(expr instanceof ColumnReference)) return null;
+        ColumnBinding columnBinding = (ColumnBinding)
+            (((ColumnReference)expr).getUserData());
+        if ((columnBinding != null) &&
+            fromTables.contains(columnBinding.getFromTable()))
+            return columnBinding;
+        return null;
+    }
+
+    protected boolean isColumnReference(ValueNode expr,
+                                        Collection<ColumnBinding> equated)
+            throws StandardException {
+        return ((expr instanceof ColumnReference) &&
+                equated.contains(((ColumnReference)expr).getUserData()));
     }
 
     static class FromTableBindingVisitor implements Visitor {
         enum Found { NOT_FOUND, FOUND_FROM_LIST, FOUND_TABLE };
 
         protected Found found;
-        private FromList fromList;
+        private List<FromTable> fromTables;
         private FromTable fromTable;
 
-        public FromTableBindingVisitor(FromList fromList, FromTable fromTable) {
+        public FromTableBindingVisitor(List<FromTable> fromTables, FromTable fromTable) {
             this.found = Found.NOT_FOUND;
-            this.fromList = fromList;
+            this.fromTables = fromTables;
             this.fromTable = fromTable;
         }
 
@@ -417,7 +573,7 @@ public class SubqueryFlattener
                     if (bft == fromTable) {
                         found = Found.FOUND_TABLE;
                     }
-                    else if (fromList.indexOf(bft) >= 0) {
+                    else if (fromTables.indexOf(bft) >= 0) {
                         found = Found.FOUND_FROM_LIST;
                     }
                 }

@@ -31,6 +31,7 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.session.Session;
@@ -42,6 +43,7 @@ import com.akiban.server.types.ValueSource;
 import com.persistit.Exchange;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
+import com.persistit.exception.PersistitInterruptedException;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -56,6 +58,8 @@ public class PersistitAdapter extends StoreAdapter
         GroupCursor cursor;
         try {
             cursor = new PersistitGroupCursor(this, groupTable);
+        } catch (PersistitInterruptedException e) {
+            throw new QueryCanceledException();
         } catch (PersistitException e) {
             throw new StoreAdapterRuntimeException(e);
         }
@@ -68,6 +72,8 @@ public class PersistitAdapter extends StoreAdapter
         Cursor cursor;
         try {
             cursor = new PersistitIndexCursor(this, schema.indexRowType(index), keyRange, ordering, innerJoinUntil);
+        } catch (PersistitInterruptedException e) {
+            throw new QueryCanceledException();
         } catch (PersistitException e) {
             throw new StoreAdapterRuntimeException(e);
         }
@@ -79,8 +85,18 @@ public class PersistitAdapter extends StoreAdapter
     {
         try {
             return new Sorter(this, input, rowType, ordering, bindings).sort();
+        } catch (PersistitInterruptedException e) {
+            throw new QueryCanceledException();
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
+        }
+    }
+
+    @Override
+    public void checkQueryCancelation()
+    {
+        if (session.isCurrentQueryCanceled()) {
+            throw new QueryCanceledException();
         }
     }
 
@@ -107,6 +123,8 @@ public class PersistitAdapter extends StoreAdapter
         RowData newRowData = rowData(rowDef, newRow, bindings);
         try {
             persistit.updateRow(session, oldRowData, newRowData, null);
+        } catch (PersistitInterruptedException e) {
+            throw new QueryCanceledException();
         } catch (PersistitException e) {
             throw new PersistItErrorException(e);
         }
@@ -117,6 +135,8 @@ public class PersistitAdapter extends StoreAdapter
         RowData newRowData = rowData (rowDef, newRow, bindings);
         try {
             persistit.writeRow(session, newRowData);
+        } catch (PersistitInterruptedException e) {
+            throw new QueryCanceledException();
         } catch (PersistitException e) {
             throw new PersistItErrorException (e);
         }
@@ -128,6 +148,8 @@ public class PersistitAdapter extends StoreAdapter
         RowData oldRowData = rowData(rowDef, oldRow, bindings);
         try {
             persistit.deleteRow(session, oldRowData);
+        } catch (PersistitInterruptedException e) {
+            throw new QueryCanceledException();
         } catch (PersistitException e) {
             throw new PersistItErrorException (e);
         }
@@ -188,9 +210,9 @@ public class PersistitAdapter extends StoreAdapter
         return transact(persistit.getExchange(session, index));
     }
 
-    public Exchange takeExchangeForSorting()
+    public Exchange takeExchangeForSorting(TreeLink treeLink)
     {
-        return treeService.getExchange(session, sortTreeLink);
+        return treeService.getExchange(session, treeLink);
     }
 
     private Exchange transact(Exchange exchange)
@@ -201,6 +223,8 @@ public class PersistitAdapter extends StoreAdapter
                     Transaction transaction = exchange.getTransaction();
                     try {
                         transaction.begin();
+                    } catch (PersistitInterruptedException e) {
+                        throw new QueryCanceledException();
                     } catch (PersistitException e) {
                         throw new RuntimeException(e);
                     }
@@ -251,19 +275,13 @@ public class PersistitAdapter extends StoreAdapter
         this.session = session;
         this.treeService = treeService;
         this.filterFactory = new PersistitFilterFactory(this, hook);
-        this.sortTreeLink = new TemporaryTableTreeLink(SORT_TREE_NAME_PREFIX + session.sessionId());
     }
-
-    // Class state
-
-    private static final String SORT_TREE_NAME_PREFIX = "sort.";
 
     // Object state
 
     private final AtomicBoolean transactional = new AtomicBoolean(false);
     private final Map<Exchange, Transaction> transactionsMap = new HashMap<Exchange, Transaction>();
     private final TreeService treeService;
-    private final TreeLink sortTreeLink;
     final PersistitStore persistit;
     final Session session;
     final PersistitFilterFactory filterFactory;

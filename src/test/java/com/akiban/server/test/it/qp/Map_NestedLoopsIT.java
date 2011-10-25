@@ -16,17 +16,32 @@
 package com.akiban.server.test.it.qp;
 
 
+import com.akiban.qp.expression.ExpressionRow;
+import com.akiban.qp.expression.IndexBound;
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.UndefBindings;
+import com.akiban.qp.row.BindableRow;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.BoundFieldExpression;
 import com.akiban.server.expression.std.Comparison;
+import com.akiban.server.expression.std.FieldExpression;
+import com.akiban.server.expression.std.LiteralExpression;
+import com.akiban.server.types.AkType;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.server.expression.std.Expressions.*;
@@ -219,5 +234,58 @@ public class Map_NestedLoopsIT extends OperatorITBase
             row(projectRowType, 6L, null),
         };
         compareRows(expected, cursor(plan, adapter));
+    }
+
+    @Test
+    // Inspired by bug 869396
+    public void testIndexScanUnderMapNestedLoopsUsedAsInnerLoopOfAnotherMapNestedLoops()
+    {
+        RowType cidValueRowType = schema.newValuesType(AkType.INT);
+        IndexBound cidBound =
+            new IndexBound(
+                new RowBasedUnboundExpressions(
+                    customerCidIndexRowType,
+                    Arrays.asList((Expression) new BoundFieldExpression(
+                        1,
+                        new FieldExpression(cidValueRowType, 0)))),
+                new SetColumnSelector(0));
+        IndexKeyRange cidRange = new IndexKeyRange(customerCidIndexRowType, cidBound, true, cidBound, true);
+        Operator plan =
+            map_NestedLoops(
+                valuesScan_Default(
+                        bindableExpressions(intRow(cidValueRowType, 1),
+                                intRow(cidValueRowType, 2),
+                                intRow(cidValueRowType, 3),
+                                intRow(cidValueRowType, 4),
+                                intRow(cidValueRowType, 5)),
+                    cidValueRowType),
+                map_NestedLoops(
+                    indexScan_Default(customerCidIndexRowType, false, cidRange),
+                    ancestorLookup_Nested(coi, customerCidIndexRowType, Collections.singleton(customerRowType), 0),
+                    0),
+                1);
+        RowBase[] expected = new RowBase[]{
+            row(customerRowType, 1L, "northbridge"),
+            row(customerRowType, 2L, "foundation"),
+            row(customerRowType, 3L, "matrix"),
+            row(customerRowType, 4L, "atlas"),
+            row(customerRowType, 5L, "highland"),
+        };
+        compareRows(expected, cursor(plan, adapter));
+    }
+
+    private Row intRow(RowType rowType, int x)
+    {
+        return new ExpressionRow(rowType,
+                                 UndefBindings.only(), null,
+                                 Arrays.asList((Expression) new LiteralExpression(AkType.INT, x)));
+    }
+
+    private Collection<? extends BindableRow> bindableExpressions(Row... rows) {
+        List<BindableRow> result = new ArrayList<BindableRow>();
+        for (Row row : rows) {
+            result.add(BindableRow.of(row));
+        }
+        return result;
     }
 }

@@ -15,6 +15,7 @@
 
 package com.akiban.server.types.extract;
 
+import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueSourceIsNullException;
@@ -32,7 +33,11 @@ class ExtractorsForLong extends LongExtractor {
 
     @Override
     public long getLong(String string) {
-        return Long.parseLong(string);
+        try {
+            return Long.parseLong(string);
+        } catch (NumberFormatException ex) {
+            throw new InvalidCharToNumException (string); 
+        }
     }
 
     @Override
@@ -49,8 +54,18 @@ class ExtractorsForLong extends LongExtractor {
         case U_FLOAT:   return (long)source.getUFloat();
         case DOUBLE:    return (long)source.getDouble();
         case U_DOUBLE:  return (long)source.getUDouble();
-        case TEXT:      return Long.parseLong(source.getText());
-        case VARCHAR:   return Long.parseLong(source.getString());
+        case TEXT:
+            try {
+                return Long.parseLong(source.getText());
+            } catch (NumberFormatException ex) {
+                throw new InvalidCharToNumException (source.getText());
+            }
+        case VARCHAR:
+            try {
+                return Long.parseLong(source.getString());
+            } catch (NumberFormatException ex) {
+                throw new InvalidCharToNumException (source.getString());
+            }
         case DECIMAL:   return source.getDecimal().longValue();
         default: throw unsupportedConversion(type);
         }

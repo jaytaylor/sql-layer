@@ -1,0 +1,1 @@
+SELECT iid, sku, quan FROM items WHERE EXISTS (SELECT * FROM items i2 WHERE items.sku = i2.sku AND items.iid <> i2.iid) OR iid < 0

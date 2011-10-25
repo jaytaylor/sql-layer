@@ -17,16 +17,18 @@ package com.akiban.server.expression.std;
 
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.ValuesRowType;
+import com.akiban.server.error.DivisionByZeroException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -38,7 +40,7 @@ public final class LongOpExpressionTest extends ComposedExpressionTestBase {
     public void longMinusLong() {
         Expression left = new LiteralExpression(AkType.LONG, 5L);
         Expression right = new LiteralExpression(AkType.LONG, 2L);
-        Expression top = new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right));
+        Expression top = new LongOpExpression(left, LongOps.LONG_SUBTRACT, right);
         
         assertTrue("top should be constant", top.isConstant());
         ValueSource actual = new ValueHolder(top.evaluation().eval());
@@ -50,7 +52,7 @@ public final class LongOpExpressionTest extends ComposedExpressionTestBase {
     public void longMinusFloat() {
         Expression left = new LiteralExpression(AkType.LONG, 5L);
         Expression right = new LiteralExpression(AkType.FLOAT, 2F);
-        Expression top = new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right));
+        Expression top = new LongOpExpression(left, LongOps.LONG_SUBTRACT, right);
 
         assertTrue("top should be constant", top.isConstant());
         ValueSource actual = new ValueHolder(top.evaluation().eval());
@@ -62,7 +64,7 @@ public final class LongOpExpressionTest extends ComposedExpressionTestBase {
     public void longMinusString() {
         Expression left = new LiteralExpression(AkType.LONG, 5L);
         Expression right = new LiteralExpression(AkType.VARCHAR, "2");
-        Expression top = new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right));
+        Expression top = new LongOpExpression(left, LongOps.LONG_SUBTRACT, right);
 
         assertTrue("top should be constant", top.isConstant());
         ValueSource actual = new ValueHolder(top.evaluation().eval());
@@ -74,7 +76,7 @@ public final class LongOpExpressionTest extends ComposedExpressionTestBase {
     public void longMinusNull() {
         Expression left = new LiteralExpression(AkType.LONG, 5L);
         Expression right = LiteralExpression.forNull();
-        Expression top = new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right));
+        Expression top = new LongOpExpression(left, LongOps.LONG_SUBTRACT, right);
 
         assertTrue("top should be constant", top.isConstant());
         ValueSource actual = new ValueHolder(top.evaluation().eval());
@@ -87,7 +89,7 @@ public final class LongOpExpressionTest extends ComposedExpressionTestBase {
         ValuesRowType dummyType = new ValuesRowType(null, 1, AkType.LONG, AkType.DOUBLE);
         Expression left = new FieldExpression(dummyType, 0);
         Expression right = new FieldExpression(dummyType, 1);
-        Expression top = new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right));
+        Expression top = new LongOpExpression(left, LongOps.LONG_SUBTRACT, right);
 
         assertFalse("top shouldn't be constant", top.isConstant());
         ExpressionEvaluation evaluation = top.evaluation();
@@ -98,10 +100,30 @@ public final class LongOpExpressionTest extends ComposedExpressionTestBase {
         assertEquals("ValueSource", expected, actual);
     }
 
+    @Test
+    public void longDivideLong() {
+        Expression left = new LiteralExpression(AkType.LONG, 11L);
+        Expression right = new LiteralExpression(AkType.LONG, 3L);
+        Expression top = new LongOpExpression(left, LongOps.LONG_DIVIDE, right);
+
+        assertTrue("top should be constant", top.isConstant());
+        ValueSource actual = new ValueHolder(top.evaluation().eval());
+        ValueSource expected = new ValueHolder(LongOps.LONG_DIVIDE.opType(), 3L);
+        assertEquals("ValueSource", expected, actual);
+    }
+    
+    @Test(expected = DivisionByZeroException.class)
+    public void divideByZero() {
+        Expression left = new LiteralExpression(AkType.LONG, 5L);
+        Expression right = new LiteralExpression(AkType.LONG, 0L);
+        Expression top = new LongOpExpression(left, LongOps.LONG_DIVIDE, right);
+        Extractors.getLongExtractor(AkType.LONG).getLong(top.evaluation().eval());
+    }
+
     @Test(expected = WrongExpressionArityException.class)
     public void oneArg() {
         Expression left = new LiteralExpression(AkType.LONG, 5L);
-        new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left));
+        LongOps.LONG_SUBTRACT.compose(Arrays.asList(left));
     }
 
     @Test(expected = WrongExpressionArityException.class)
@@ -109,7 +131,7 @@ public final class LongOpExpressionTest extends ComposedExpressionTestBase {
         Expression left = new LiteralExpression(AkType.LONG, 5L);
         Expression right = new LiteralExpression(AkType.VARCHAR, "2");
         Expression extra = new LiteralExpression(AkType.LONG, 2L);
-        new LongOpExpression(LongOps.LONG_SUBTRACT, Arrays.asList(left, right, extra));
+        LongOps.LONG_SUBTRACT.compose(Arrays.asList(left, right, extra));
     }
 
     @Override
@@ -118,7 +140,7 @@ public final class LongOpExpressionTest extends ComposedExpressionTestBase {
     }
 
     @Override
-    protected Expression getExpression(List<? extends Expression> children) {
-        return new LongOpExpression(LongOps.LONG_SUBTRACT, children);
+    protected ExpressionComposer getComposer() {
+        return LongOps.LONG_SUBTRACT;
     }
 }

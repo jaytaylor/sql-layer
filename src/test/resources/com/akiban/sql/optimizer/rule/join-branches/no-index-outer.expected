@@ -2,7 +2,7 @@ SelectQuery@1873eb2
   ResultSet@25491d[name, order_date]
     Project@1e32382[user.customers.name, user.orders.order_date]
       Select@1304043[]
-        Flatten@cb07ef(user.customers LEFT_JOIN user.orders)
+        Flatten@cb07ef(user.customers LEFT user.orders)
           Select@176086d[user.orders.order_date > $0]
             GroupScan@234265(Group(customers -> user._akiban_customers))
               TableSource@59e2afb2(user.customers - TableGroup@6aadae91(customers))

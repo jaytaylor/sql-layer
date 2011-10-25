@@ -17,6 +17,9 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.plan.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 
 /** Move WHERE clauses closer to their table origin.
@@ -33,9 +36,15 @@ import java.util.*;
 // recognize joins of such filtered tables.
 public class SelectPreponer extends BaseRule
 {
+    private static final Logger logger = LoggerFactory.getLogger(SelectPreponer.class);
+
+    @Override
+    protected Logger getLogger() {
+        return logger;
+    }
+
     static class TableOriginFinder implements PlanVisitor, ExpressionVisitor {
         List<PlanNode> origins = new ArrayList<PlanNode>();
-        Map<PlanNode,PlanNode> nestings;
 
         public void find(PlanNode root) {
             root.accept(this);
@@ -43,10 +52,6 @@ public class SelectPreponer extends BaseRule
 
         public List<PlanNode> getOrigins() {
             return origins;
-        }
-
-        public Map<PlanNode,PlanNode> getNestings() {
-            return nestings;
         }
 
         @Override
@@ -77,12 +82,6 @@ public class SelectPreponer extends BaseRule
                     origins.add(n);
                 }
             }
-            else if (n instanceof Product) {
-                if (nestings == null)
-                    nestings = new HashMap<PlanNode,PlanNode>();
-                for (PlanNode subplan : ((Product)n).getSubplans())
-                    nestings.put(subplan, n);
-            }
             return true;
         }
 
@@ -107,17 +106,15 @@ public class SelectPreponer extends BaseRule
         TableOriginFinder finder = new TableOriginFinder();
         finder.find(plan.getPlan());
         for (PlanNode origin : finder.getOrigins()) {
-            new Preponer(finder.getNestings()).pullToward(origin);
+            new Preponer().pullToward(origin);
         }
     }
     
     static class Preponer {
-        Map<PlanNode,PlanNode> nestings;
         Map<TableSource,PlanNode> loaders;
         Map<ExpressionNode,PlanNode> indexColumns;
         
-        public Preponer(Map<PlanNode,PlanNode> nestings) {
-            this.nestings = nestings;
+        public Preponer() {
         }
 
         protected void pullToward(PlanNode node) {
@@ -152,7 +149,8 @@ public class SelectPreponer extends BaseRule
                     }
                     sawJoin = true;
                 }
-                else if (node instanceof Product) {
+                else if ((node instanceof Product) ||
+                         (node instanceof MapJoin)) {
                     // Only inner right now.
                     sawJoin = true;
                 }
@@ -175,7 +173,7 @@ public class SelectPreponer extends BaseRule
 
         // Have a straight path to these conditions and know where
         // tables came from.  See what can be moved back there.
-        protected void moveConditions(List<ConditionExpression> conditions) {
+        protected void moveConditions(ConditionList conditions) {
             Iterator<ConditionExpression> iter = conditions.iterator();
             while (iter.hasNext()) {
                 ConditionExpression condition = iter.next();
@@ -210,18 +208,14 @@ public class SelectPreponer extends BaseRule
             if (after instanceof Select)
                 select = (Select)after;
             else {
-                select = new Select(before, new ArrayList<ConditionExpression>(1));
+                select = new Select(before, new ConditionList(1));
                 after.replaceInput(before, select);
             }
             select.getConditions().add(condition);
         }
 
-        // Like PlanNode.getOutput(), except that it jumps up to Products, etc.
         protected PlanNode getOutput(PlanNode input) {
-            PlanNode output = input.getOutput();
-            if ((output == null) && (nestings != null))
-                output = nestings.get(input);
-            return output;
+            return input.getOutput();
         }
 
     }
@@ -229,20 +223,27 @@ public class SelectPreponer extends BaseRule
     /** If this condition involves only a single table, return it. */
     // TODO: Lots of room for improvement here, even with that simple contract.
     public static TableSource getSingleTableConditionTable(ConditionExpression condition) {
-        if (!(condition instanceof ComparisonCondition))
-            return null;
-        ComparisonCondition comp = (ComparisonCondition)condition;
-        ExpressionNode left = comp.getLeft();
-        ExpressionNode right = comp.getRight();
-        if (!(left.isColumn()))
-            return null;
-        ColumnSource table = null;
-        table = ((ColumnExpression)left).getTable();
-        if (!(table instanceof TableSource))
-            return null;
-        if (!isConstant(right))
-            return null;
-        return (TableSource)table;
+        if (condition instanceof ComparisonCondition) {
+            ComparisonCondition comp = (ComparisonCondition)condition;
+            ExpressionNode left = comp.getLeft();
+            ExpressionNode right = comp.getRight();
+            if (!(left.isColumn()))
+                return null;
+            ColumnSource table = null;
+            table = ((ColumnExpression)left).getTable();
+            if (!(table instanceof TableSource))
+                return null;
+            if (!isConstant(right))
+                return null;
+            return (TableSource)table;
+        }
+        else if (condition instanceof BooleanOperationExpression) {
+            BooleanOperationExpression bexpr = (BooleanOperationExpression)condition;
+            TableSource left = getSingleTableConditionTable(bexpr.getLeft());
+            TableSource right = getSingleTableConditionTable(bexpr.getRight());
+            if (left == right) return left;
+        }
+        return null;
     }
 
     // TODO: Column from outer table okay, too. Need general predicate for that.

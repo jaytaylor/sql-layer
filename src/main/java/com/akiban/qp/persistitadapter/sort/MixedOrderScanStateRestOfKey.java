@@ -37,7 +37,7 @@ class MixedOrderScanStateRestOfKey extends MixedOrderScanState
     {
         boolean more = ascending ? cursor.exchange.next(true) : cursor.exchange.previous(true);
         if (more) {
-            more = cursor.exchange.getKey().firstUniqueByteIndex(subtreeRootKey) > subtreeRootKey.getEncodedSize();
+            more = cursor.exchange.getKey().firstUniqueByteIndex(subtreeRootKey) >= subtreeRootKey.getEncodedSize();
         }
         if (!more) {
             // Restore exchange key to where it was before exploring this subtree. But also attach one

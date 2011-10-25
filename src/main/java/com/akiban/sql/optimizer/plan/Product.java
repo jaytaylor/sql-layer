@@ -24,6 +24,8 @@ public class Product extends BasePlanNode implements PlanWithInput
 
     public Product(List<PlanNode> subplans) {
         this.subplans = subplans;
+        for (PlanNode subplan : subplans)
+          subplan.setOutput(this);
     }
 
     public List<PlanNode> getSubplans() {
@@ -33,8 +35,10 @@ public class Product extends BasePlanNode implements PlanWithInput
     @Override
     public void replaceInput(PlanNode oldInput, PlanNode newInput) {
         int index = subplans.indexOf(oldInput);
-        if (index >= 0)
+        if (index >= 0) {
             subplans.set(index, newInput);
+            newInput.setOutput(this);
+        }
     }
 
     @Override

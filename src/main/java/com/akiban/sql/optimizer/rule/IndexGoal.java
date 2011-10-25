@@ -81,10 +81,12 @@ public class IndexGoal implements Comparator<IndexScan>
     }
 
     // Tables already bound outside.
-    private Set<TableSource> boundTables;
+    private Set<ColumnSource> boundTables;
 
     // All the conditions that might be indexable.
     private List<ConditionExpression> conditions;
+    // Where they came from.
+    private List<ConditionList> conditionSources;
 
     // If both grouping and ordering are present, they must be
     // compatible. Something satisfying the ordering would also handle
@@ -103,23 +105,35 @@ public class IndexGoal implements Comparator<IndexScan>
     // All the columns besides those in conditions that will be needed.
     private RequiredColumns requiredColumns;
 
-    public IndexGoal(PlanNode plan,
-                     Set<TableSource> boundTables, 
-                     List<ConditionExpression> conditions,
+    public IndexGoal(BaseQuery query,
+                     Set<ColumnSource> boundTables, 
+                     List<ConditionList> conditionSources,
                      AggregateSource grouping,
                      Sort ordering,
                      Collection<TableSource> tables) {
         this.boundTables = boundTables;
-        this.conditions = conditions;
+        this.conditionSources = conditionSources;
         this.grouping = grouping;
         this.ordering = ordering;
         
-        if ((plan instanceof UpdateStatement) ||
-            (plan instanceof DeleteStatement))
-          updateTarget = ((BaseUpdateStatement)plan).getTargetTable();
+        if (conditionSources.size() == 1)
+            conditions = conditionSources.get(0);
+        else {
+            conditions = new ArrayList<ConditionExpression>();
+            for (ConditionList cs : conditionSources) {
+                conditions.addAll(cs);
+            }
+        }
+            
+        if ((query instanceof UpdateStatement) ||
+            (query instanceof DeleteStatement))
+          updateTarget = ((BaseUpdateStatement)query).getTargetTable();
 
         requiredColumns = new RequiredColumns(tables);
-        plan.accept(new RequiredColumnsFiller(requiredColumns, conditions));
+        Collection<PlanNode> orderings = (ordering == null) ? 
+            Collections.<PlanNode>emptyList() : 
+            Collections.<PlanNode>singletonList(ordering);
+        query.accept(new RequiredColumnsFiller(requiredColumns, orderings, conditions));
     }
 
     /** Populate given index usage according to goal.
@@ -216,6 +230,12 @@ public class IndexGoal implements Comparator<IndexScan>
             int idx = 0;
             for (OrderByExpression targetColumn : ordering.getOrderBy()) {
                 ExpressionNode targetExpression = targetColumn.getExpression();
+                if (targetExpression.isColumn() &&
+                    (grouping != null)) {
+                    if (((ColumnExpression)targetExpression).getTable() == grouping) {
+                        targetExpression = grouping.getField(((ColumnExpression)targetExpression).getPosition());
+                    }
+                }
                 OrderByExpression indexColumn = null;
                 if (idx < indexOrdering.size())
                     indexColumn = indexOrdering.get(idx);
@@ -340,7 +360,7 @@ public class IndexGoal implements Comparator<IndexScan>
         IndexScan bestIndex = null;
         if (!groupOnly) {
             for (TableIndex index : table.getTable().getTable().getIndexes()) {
-                IndexScan candidate = new IndexScan(index, table, table);
+                IndexScan candidate = new IndexScan(index, table, table, table);
                 bestIndex = betterIndex(bestIndex, candidate);
             }
         }
@@ -354,13 +374,16 @@ public class IndexGoal implements Comparator<IndexScan>
                 // The root must be present, since the index does not
                 // contain orphans.
                 TableSource rootTable = table;
+                TableSource leafRequired = null;
                 while (rootTable != null) {
+                    if ((leafRequired == null) && rootTable.isRequired())
+                        leafRequired = rootTable;
                     if (index.rootMostTable() == rootTable.getTable().getTable())
                         break;
                     rootTable = rootTable.getParentTable();
                 }
-                if (rootTable == null) continue;
-                IndexScan candidate = new IndexScan(index, table, rootTable);
+                if ((rootTable == null) || (leafRequired == null)) continue;
+                IndexScan candidate = new IndexScan(index, rootTable, leafRequired, table);
                 bestIndex = betterIndex(bestIndex, candidate);
             
             }
@@ -436,27 +459,40 @@ public class IndexGoal implements Comparator<IndexScan>
 
     static class RequiredColumnsFiller implements PlanVisitor, ExpressionVisitor {
         private RequiredColumns requiredColumns;
-        // TODO: Maybe make this use pointer equality instead of equals().
-        private Set<ExpressionNode> excluded;
+        private Map<PlanNode,Boolean> excludedPlanNodes;
+        private Map<ExpressionNode,Boolean> excludedExpressions;
+        private Stack<Boolean> excludeNodeStack = new Stack<Boolean>();
+        private boolean excludeNode = false;
         private int excludeDepth = 0;
 
         public RequiredColumnsFiller(RequiredColumns requiredColumns) {
             this.requiredColumns = requiredColumns;
-            excluded = new HashSet<ExpressionNode>();
         }
 
         public RequiredColumnsFiller(RequiredColumns requiredColumns,
-                                     Collection<ConditionExpression> conditions) {
-            this(requiredColumns);
-            excluded.addAll(conditions);
+                                     Collection<PlanNode> excludedPlanNodes,
+                                     Collection<ConditionExpression> excludedExpressions) {
+            this.requiredColumns = requiredColumns;
+            this.excludedPlanNodes = new IdentityHashMap<PlanNode,Boolean>();
+            for (PlanNode planNode : excludedPlanNodes)
+                this.excludedPlanNodes.put(planNode, Boolean.TRUE);
+            this.excludedExpressions = new IdentityHashMap<ExpressionNode,Boolean>();
+            for (ConditionExpression condition : excludedExpressions)
+                this.excludedExpressions.put(condition, Boolean.TRUE);
         }
 
         @Override
         public boolean visitEnter(PlanNode n) {
+            // Input nodes are called within the context of their output.
+            // We want to know whether just this node is excluded, not
+            // it and all its inputs.
+            excludeNodeStack.push(excludeNode);
+            excludeNode = exclude(n);
             return visit(n);
         }
         @Override
         public boolean visitLeave(PlanNode n) {
+            excludeNode = excludeNodeStack.pop();
             return true;
         }
         @Override
@@ -466,28 +502,35 @@ public class IndexGoal implements Comparator<IndexScan>
 
         @Override
         public boolean visitEnter(ExpressionNode n) {
-            if (exclude(n))
+            if (!excludeNode && exclude(n))
                 excludeDepth++;
             return visit(n);
         }
         @Override
         public boolean visitLeave(ExpressionNode n) {
-            if (exclude(n))
+            if (!excludeNode && exclude(n))
                 excludeDepth--;
             return true;
         }
         @Override
         public boolean visit(ExpressionNode n) {
-            if (excludeDepth == 0) {
+            if (!excludeNode && (excludeDepth == 0)) {
                 if (n instanceof ColumnExpression)
                     requiredColumns.require((ColumnExpression)n);
             }
             return true;
         }
 
+        // Should this plan node be excluded from the requirement?
+        protected boolean exclude(PlanNode node) {
+            return ((excludedPlanNodes != null) &&
+                    (excludedPlanNodes.get(node) != null));
+        }
+        
         // Should this expression be excluded from requirement?
         protected boolean exclude(ExpressionNode expr) {
-            return (excluded.contains(expr) ||
+            return (((excludedExpressions != null) &&
+                     (excludedExpressions.get(expr) != null)) ||
                     // Group join conditions are handled specially.
                     ((expr instanceof ConditionExpression) &&
                      (((ConditionExpression)expr).getImplementation() ==
@@ -513,7 +556,11 @@ public class IndexGoal implements Comparator<IndexScan>
             if (!found)
                 condition.accept(filler);
         }
-
+        // Add sort if not handled by the index.
+        if ((ordering != null) &&
+            (index.getOrderEffectiveness() != IndexScan.OrderEffectiveness.SORTED))
+            ordering.accept(filler);
+            
         // Record what tables are required: within the index if any
         // columns still needed, others if joined at all. Do this
         // before taking account of columns from a covering index,
@@ -521,14 +568,22 @@ public class IndexGoal implements Comparator<IndexScan>
         {
             Collection<TableSource> joined = index.getTables();
             Set<TableSource> required = new HashSet<TableSource>();
+            boolean moreTables = false;
             for (TableSource table : requiredAfter.getTables()) {
-                if (!joined.contains(table) || 
-                    requiredAfter.hasColumns(table) ||
-                    (table.getTable() == updateTarget)) {
+                if (!joined.contains(table)) {
+                    moreTables = true;
+                    required.add(table);
+                }
+                else if (requiredAfter.hasColumns(table) ||
+                         (table.getTable() == updateTarget)) {
                     required.add(table);
                 }
             }
             index.setRequiredTables(required);
+            if (moreTables)
+                // Need to join up last the index; index might point
+                // to an orphan.
+                return false;
         }
 
         if (updateTarget != null) {
@@ -552,12 +607,10 @@ public class IndexGoal implements Comparator<IndexScan>
     public void installUpstream(IndexScan index) {
         if (index.getConditions() != null) {
             for (ConditionExpression condition : index.getConditions()) {
-                // TODO: This depends on conditions being the original
-                // from the Select, and not some copy merged with join
-                // conditions, etc. When it is, more work will be
-                // needed to track down where to remove, though
-                // setting the implementation may be enough.
-                conditions.remove(condition);
+                for (ConditionList conditionSource : conditionSources) {
+                    if (conditionSource.remove(condition))
+                        break;
+                }
                 if (condition instanceof ComparisonCondition) {
                     ((ComparisonCondition)condition).setImplementation(ConditionExpression.Implementation.INDEX);
                 }

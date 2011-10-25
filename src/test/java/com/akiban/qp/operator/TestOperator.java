@@ -15,8 +15,10 @@
 
 package com.akiban.qp.operator;
 
+import java.util.ArrayList;
 import java.util.Collection;
 
+import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 
@@ -24,10 +26,18 @@ import com.akiban.qp.rowtype.RowType;
 public final class TestOperator extends ValuesScan_Default {
 
     public TestOperator(RowsBuilder rowsBuilder) {
-        super (rowsBuilder.rows(), rowsBuilder.rowType());
+        super (bindableRows(rowsBuilder.rows()), rowsBuilder.rowType());
     }
     
     public TestOperator (Collection<? extends Row> rows, RowType rowType) {
-        super(rows, rowType);
+        super(bindableRows(rows), rowType);
+    }
+
+    private static Collection<? extends BindableRow> bindableRows(Collection<? extends Row> rows) {
+        Collection<BindableRow> result = new ArrayList<BindableRow>();
+        for (Row row : rows) {
+            result.add(BindableRow.of(row));
+        }
+        return result;
     }
 }

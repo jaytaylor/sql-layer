@@ -15,14 +15,12 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.server.expression.ExpressionFactory;
+import com.akiban.server.aggregation.AggregatorRegistry;
+import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-
-import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.rowtype.Schema;
 
@@ -32,12 +30,16 @@ import java.util.List;
 public class SchemaRulesContext extends RulesContext
 {
     private Schema schema;
-    private ExpressionFactory expressionFactory;
+    private AggregatorRegistry aggregatorRegistry;
+    private ExpressionRegistry expressionRegistry;
 
-    public SchemaRulesContext(AkibanInformationSchema ais, ExpressionFactory expressionFactory, List<BaseRule> rules) {
+    public SchemaRulesContext(AkibanInformationSchema ais,
+                              ExpressionRegistry expressionRegistry, AggregatorRegistry aggregatorRegistry,
+                              List<BaseRule> rules) {
         super(rules);
         schema = new Schema(ais);
-        this.expressionFactory = expressionFactory;
+        this.aggregatorRegistry = aggregatorRegistry;
+        this.expressionRegistry = expressionRegistry;
     }
 
     public Schema getSchema() {
@@ -48,13 +50,12 @@ public class SchemaRulesContext extends RulesContext
         return new PhysicalResultColumn(field.getName());
     }
 
-    public ExpressionFactory getExpressionFactory() {
-        return expressionFactory;
+    public ExpressionRegistry getExpressionRegistry() {
+        return expressionRegistry;
     }
 
-    // TODO: Something like this.
-    /*
-    public AggregatorFactory getAggregatorFactory() {...}
-    */
+    public AggregatorRegistry getAggregatorRegistry() {
+        return aggregatorRegistry;
+    }
       
 }

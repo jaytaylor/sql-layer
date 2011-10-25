@@ -18,15 +18,15 @@ package com.akiban.qp.operator;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.row.Row;
+import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 
-import com.akiban.server.aggregation.AggregatorFactory;
+import com.akiban.server.aggregation.AggregatorRegistry;
+import com.akiban.server.aggregation.Aggregators;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.types.AkType;
 
@@ -38,10 +38,17 @@ public class API
 
     public static Operator aggregate_Partial(Operator inputOperator,
                                                      int inputsIndex,
-                                                     AggregatorFactory factory,
+                                                     AggregatorRegistry registry,
                                                      List<String> aggregatorNames)
     {
-        return new Aggregate_Partial(inputOperator, inputsIndex, factory, aggregatorNames);
+        return new Aggregate_Partial(
+                inputOperator,
+                inputsIndex,
+                Aggregators.factories(
+                        registry,
+                        Aggregators.aggregatorIds(aggregatorNames, inputOperator.rowType(), inputsIndex)
+                )
+        );
     }
 
     // Project
@@ -121,7 +128,7 @@ public class API
         );
     }
 
-    public static Operator valuesScan_Default (Collection<? extends Row> rows, RowType rowType)
+    public static Operator valuesScan_Default (Collection<? extends BindableRow> rows, RowType rowType)
     {
         return new ValuesScan_Default (rows, rowType);
     }
@@ -174,18 +181,18 @@ public class API
     // AncestorLookup
 
     public static Operator ancestorLookup_Default(Operator inputOperator,
-                                                          GroupTable groupTable,
-                                                          RowType rowType,
-                                                          Collection<? extends RowType> ancestorTypes,
-                                                          LookupOption flag)
+                                                  GroupTable groupTable,
+                                                  RowType rowType,
+                                                  Collection<? extends RowType> ancestorTypes,
+                                                  LookupOption flag)
     {
         return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes, flag);
     }
 
     public static Operator ancestorLookup_Nested(GroupTable groupTable,
-                                                         RowType rowType,
-                                                         Collection<? extends RowType> ancestorTypes,
-                                                         int hKeyBindingPosition)
+                                                 RowType rowType,
+                                                 Collection<? extends RowType> ancestorTypes,
+                                                 int hKeyBindingPosition)
     {
         return new AncestorLookup_Nested(groupTable, rowType, ancestorTypes, hKeyBindingPosition);
     }
@@ -307,17 +314,17 @@ public class API
     // Map
 
     public static Operator map_NestedLoops(Operator outerInput,
-                                                   Operator innerInput,
-                                                   int inputBindingPosition)
+                                           Operator innerInput,
+                                           int inputBindingPosition)
     {
         return new Map_NestedLoops(outerInput, innerInput, null, null, inputBindingPosition);
     }
 
     public static Operator map_NestedLoops(Operator outerInput,
-                                                   Operator innerInput,
-                                                   RowType outerJoinRowType,
-                                                   List<Expression> outerJoinRowExpressions,
-                                                   int inputBindingPosition)
+                                           Operator innerInput,
+                                           RowType outerJoinRowType,
+                                           List<Expression> outerJoinRowExpressions,
+                                           int inputBindingPosition)
     {
         return new Map_NestedLoops(outerInput,
                                    innerInput,
@@ -427,12 +434,11 @@ public class API
 
         public int sortFields()
         {
-            return evaluations.size();
+            return expressions.size();
         }
 
-        public ExpressionEvaluation evaluation(int i)
-        {
-            return evaluations.get(i);
+        public Expression expression(int i) {
+            return expressions.get(i);
         }
 
         public AkType type(int i)
@@ -448,7 +454,6 @@ public class API
         public void append(Expression expression, boolean ascending)
         {
             expressions.add(expression);
-            evaluations.add(expression.evaluation());
             directions.add(ascending);
         }
 
@@ -456,14 +461,12 @@ public class API
         {
             Ordering copy = new Ordering();
             copy.expressions.addAll(expressions);
-            copy.evaluations.addAll(evaluations);
             copy.directions.addAll(directions);
             return copy;
         }
 
         private final List<com.akiban.server.expression.Expression> expressions =
             new ArrayList<com.akiban.server.expression.Expression>();
-        private final List<ExpressionEvaluation> evaluations = new ArrayList<ExpressionEvaluation>();
         private final List<Boolean> directions = new ArrayList<Boolean>(); // true: ascending, false: descending
     }
 

@@ -16,11 +16,13 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.server.types.util.ValueHolder;
 
 public final class LiteralExpression implements Expression {
@@ -82,6 +84,12 @@ public final class LiteralExpression implements Expression {
         return NULL_EXPRESSION;
     }
 
+    public static Expression forBool(Boolean value) {
+        if (value == null)
+            return BOOL_NULL;
+        return value ? BOOL_TRUE : BOOL_FALSE;
+    }
+
     // Object interface
 
     @Override
@@ -96,6 +104,9 @@ public final class LiteralExpression implements Expression {
     // const
     
     private static Expression NULL_EXPRESSION = new LiteralExpression(new InternalEvaluation(ValueHolder.holdingNull()));
+    private static Expression BOOL_TRUE = new LiteralExpression(new InternalEvaluation(BoolValueSource.OF_TRUE));
+    private static Expression BOOL_FALSE = new LiteralExpression(new InternalEvaluation(BoolValueSource.OF_FALSE));
+    private static Expression BOOL_NULL = new LiteralExpression(new InternalEvaluation(BoolValueSource.OF_NULL));
 
     // nested classes
     
@@ -106,6 +117,10 @@ public final class LiteralExpression implements Expression {
 
         @Override
         public void of(Bindings bindings) {
+        }
+
+        @Override
+        public void of(StoreAdapter adapter) {
         }
 
         @Override

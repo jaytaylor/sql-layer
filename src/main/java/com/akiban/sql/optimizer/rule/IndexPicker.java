@@ -18,38 +18,375 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.sql.optimizer.plan.*;
 
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
-
-import com.akiban.qp.operator.API.JoinType;
+import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
 import com.akiban.server.error.UnsupportedSQLException;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 /** A goal for indexing: conditions on joined tables and ordering / grouping. */
 public class IndexPicker extends BaseRule
 {
-    static class TableJoinsFinder implements PlanVisitor, ExpressionVisitor {
-        List<TableJoins> result = new ArrayList<TableJoins>();
+    private static final Logger logger = LoggerFactory.getLogger(IndexPicker.class);
 
-        public List<TableJoins> find(PlanNode root) {
-            root.accept(this);
+    @Override
+    protected Logger getLogger() {
+        return logger;
+    }
+
+    @Override
+    public void apply(PlanContext planContext) {
+        BaseQuery query = (BaseQuery)planContext.getPlan();
+        List<Picker> pickers = new JoinsFinder().find(query);
+        for (Picker picker : pickers)
+            picker.pickIndexes();
+    }
+
+    static class Picker {
+        Joinable joinable;
+        BaseQuery query;
+        Set<ColumnSource> boundTables;
+
+        public Picker(Joinable joinable) {
+            this.joinable = joinable;
+        }
+
+        public void pickIndexes() {
+            // Start with tables outside this subquery. Then add as we
+            // set up each nested loop join.
+            boundTables = new HashSet<ColumnSource>(query.getOuterTables());
+
+            pickIndexes(joinable);
+        }
+
+        protected void pickIndexes(Joinable joinable) {
+            if (joinable instanceof TableJoins) {
+                pickIndex((TableJoins)joinable);
+                return;
+            }
+            if (joinable instanceof JoinNode) {
+                pickIndexes((JoinNode)joinable);
+                return;
+            }
+
+            assert !(joinable instanceof TableSource);
+            if (joinable instanceof ColumnSource) {
+                // Subqueries, VALUES, etc. now available.
+                boundTables.add((ColumnSource)joinable);
+            }
+        }
+
+        protected void pickIndex(TableJoins tableJoins) {
+            // Goal is to get all the tables joined right here. Others
+            // in the group may come via XxxLookup in a nested
+            // loop. Can only consider table indexes on the inner
+            // joined tables and group indexes corresponding to outer
+            // joins.
+            IndexGoal goal = determineIndexGoal(tableJoins);
+            IndexScan index = pickBestIndex(tableJoins, goal);
+            pickedIndex(tableJoins, goal, index);
+        }
+
+        protected IndexGoal determineIndexGoal(TableJoins tableJoins) {
+            return determineIndexGoal(tableJoins, tableJoins.getTables());
+        }
+
+        protected void pickedIndex(TableJoins tableJoins, 
+                                   IndexGoal goal, IndexScan index) {
+            if (index != null) {
+                goal.installUpstream(index);
+            }
+            PlanNode scan = index;
+            if (scan == null)
+                scan = new GroupScan(tableJoins.getGroup());
+            tableJoins.setScan(scan);
+            boundTables.addAll(tableJoins.getTables());
+        }
+
+        protected IndexGoal determineIndexGoal(PlanNode input, 
+                                               Collection<TableSource> tables) {
+            List<ConditionList> conditionSources = new ArrayList<ConditionList>();
+            Sort ordering = null;
+            AggregateSource grouping = null;
+            while (true) {
+                input = input.getOutput();
+                if (!(input instanceof Joinable))
+                    break;
+                if (input instanceof JoinNode) {
+                    ConditionList conds = ((JoinNode)input).getJoinConditions();
+                    if ((conds != null) && !conds.isEmpty())
+                        conditionSources.add(conds);
+                }
+            }
+            if (input instanceof Select) {
+                ConditionList conds = ((Select)input).getConditions();
+                if (!conds.isEmpty())
+                    conditionSources.add(conds);
+            }
+            input = input.getOutput();
+            if (input instanceof Sort) {
+                ordering = (Sort)input;
+            }
+            else if (input instanceof AggregateSource) {
+                grouping = (AggregateSource)input;
+                if (!grouping.hasGroupBy())
+                    grouping = null;
+                input = input.getOutput();
+                if (input instanceof Select)
+                    input = input.getOutput();
+                if (input instanceof Sort) {
+                    // Needs to be possible to satisfy both.
+                    ordering = (Sort)input;
+                    if (grouping != null) {
+                        List<ExpressionNode> groupBy = grouping.getGroupBy();
+                        for (OrderByExpression orderBy : ordering.getOrderBy()) {
+                            ExpressionNode orderByExpr = orderBy.getExpression();
+                            if (!((orderByExpr.isColumn() &&
+                                   (((ColumnExpression)orderByExpr).getTable() == grouping)) ||
+                                  groupBy.contains(orderByExpr))) {
+                                ordering = null;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if (conditionSources.isEmpty() &&
+                (ordering == null) &&
+                (grouping == null))
+                return null;
+            return new IndexGoal(query, boundTables, 
+                                 conditionSources, grouping, ordering, tables);
+        }
+
+        protected IndexScan pickBestIndex(TableJoins tableJoins, IndexGoal goal) {
+            if (goal == null)
+                return null;
+            Collection<TableSource> tables = new ArrayList<TableSource>();
+            Set<TableSource> required = new HashSet<TableSource>();
+            getRequiredTables(tableJoins.getJoins(), tables, required, true);
+            return goal.pickBestIndex(tables, required);
+        }
+
+        protected void getRequiredTables(Joinable joinable,
+                                         Collection<TableSource> tables,
+                                         Set<TableSource> required,
+                                         boolean allInner) {
+            if (joinable instanceof JoinNode) {
+                JoinNode join = (JoinNode)joinable;
+                getRequiredTables(join.getLeft(), tables, required,
+                                  allInner && (join.getJoinType() != JoinType.RIGHT));
+                getRequiredTables(join.getRight(), tables, required,
+                                  allInner && (join.getJoinType() != JoinType.LEFT));
+            }
+            else if (joinable instanceof TableSource) {
+                TableSource table = (TableSource)joinable;
+                tables.add(table);
+                if (allInner) required.add(table);
+            }
+        }
+
+        protected void pickIndexes(JoinNode join) {
+            join.setImplementation(JoinNode.Implementation.NESTED_LOOPS);
+            
+            Joinable left = join.getLeft();
+            Joinable right = join.getRight();
+
+            boolean tryReverse = false, twoTablesInner = false;
+            if (join.getReverseHook() == null) {
+                switch (join.getJoinType()) {
+                case INNER:
+                    twoTablesInner = ((left instanceof TableJoins) && 
+                                      (right instanceof TableJoins));
+                    tryReverse = twoTablesInner;
+                    break;
+                case RIGHT:
+                    join.reverse();
+                }
+            }
+            else {
+                tryReverse = join.getReverseHook().canReverse(join);
+            }
+
+            if (tryReverse) {
+                if (twoTablesInner) {
+                    if (pickIndexesTablesInner(join))
+                        return;
+                }
+                if (right instanceof ColumnSource) {
+                    if (pickIndexesTableValues(join))
+                        return;
+                    left = join.getLeft();
+                    right = join.getRight();
+                }
+            }
+
+            // Default is just to do each in the given order.
+            pickIndexes(left);
+            pickIndexes(right);
+        }
+
+        // Pick indexes for two tables. See which one gets a better
+        // initial index.
+        // TODO: Better to find all the INNER joins beneath this and
+        // do them all at once, not a pair at a time.
+        protected boolean pickIndexesTablesInner(JoinNode join) {
+            TableJoins left = (TableJoins)join.getLeft();
+            TableJoins right = (TableJoins)join.getRight();
+            IndexGoal lgoal = determineIndexGoal(left);
+            IndexScan lindex = pickBestIndex(left, lgoal);
+            IndexGoal rgoal = determineIndexGoal(right);
+            IndexScan rindex = pickBestIndex(right, rgoal);
+            boolean rightFirst = false;
+            if (lindex == null)
+                rightFirst = (rindex != null);
+            else if (rindex != null)
+                rightFirst = (lgoal.compare(lindex, rindex) < 0);
+            if (rightFirst) {
+                TableJoins temp = left;
+                left = right;
+                right = temp;
+
+                join.reverse();
+                lgoal = rgoal;
+                lindex = rindex;
+            }
+            // Commit to the left choice and redo the right with it bound.
+            pickedIndex(left, lgoal, lindex);
+            pickIndexes(right);
+            return true;
+        }
+
+        // Pick indexes for table and VALUES (or generally not tables).
+        // Put the VALUES outside if the join condition ends up indexed.
+        protected boolean pickIndexesTableValues(JoinNode join) {
+            TableJoins left = leftOfValues(join);
+            ColumnSource right = (ColumnSource)join.getRight();
+
+            boundTables.add(right);
+            IndexGoal lgoal = determineIndexGoal(left);
+            IndexScan lindex = pickBestIndex(left, lgoal);
+            boundTables.remove(right);
+            
+            if ((lindex == null) || !lindex.hasConditions())
+                return false;
+
+            boolean found = false;
+            for (ConditionExpression joinCondition : join.getJoinConditions()) {
+                if (lindex.getConditions().contains(joinCondition)) {
+                    found = true;
+                }
+            }
+            if (!found) 
+                return false;
+            
+            // Put the VALUES outside and commit to that in the simple case.
+            join.reverse();
+            if (left != join.getRight())
+                return false;
+            pickedIndex(left, lgoal, lindex);
+            return true;
+        }
+
+        // Get the table joins that seems to be most interestingly
+        // joined with a VALUES.
+        // TODO: Not very general.
+        protected TableJoins leftOfValues(JoinNode join) {
+            Joinable left = join.getLeft();
+            if (left instanceof TableJoins)
+                return (TableJoins)left;
+            Collection<TableSource> tables = new ArrayList<TableSource>();
+            for (ConditionExpression joinCondition : join.getJoinConditions()) {
+                if (joinCondition instanceof ComparisonCondition) {
+                    ExpressionNode lop = ((ComparisonCondition)joinCondition).getLeft();
+                    if (lop.isColumn()) {
+                        ColumnSource table = ((ColumnExpression)lop).getTable();
+                        if (table instanceof TableSource)
+                            tables.add((TableSource)table);
+                    }
+                }
+            }
+            if (tables.isEmpty())
+                return null;
+            return findTableSource(left, tables);
+        }
+        
+        protected TableJoins findTableSource(Joinable joinable,
+                                             Collection<TableSource> tables) {
+            if (joinable instanceof TableJoins) {
+                TableJoins tjoins = (TableJoins)joinable;
+                for (TableSource table : tables) {
+                    if (tjoins.getTables().contains(table))
+                        return tjoins;
+                }
+            }
+            else if (joinable instanceof JoinNode) {
+                JoinNode join = (JoinNode)joinable;
+                TableJoins result = findTableSource(join.getLeft(), tables);
+                if (result != null) return result;
+                return findTableSource(join.getRight(), tables);
+            }
+            return null;
+        }
+    }
+
+    // Purpose is twofold: 
+    // Find top-level joins and note what query they come from; 
+    // Annotate subqueries with their outer table references.
+    static class JoinsFinder implements PlanVisitor, ExpressionVisitor {
+        List<Picker> result = new ArrayList<Picker>();
+        Stack<SubqueryState> subqueries = new Stack<SubqueryState>();
+
+        public List<Picker> find(BaseQuery query) {
+            query.accept(this);
+            for (Picker entry : result)
+                if (entry.query == null)
+                    entry.query = query;
             return result;
         }
 
         @Override
         public boolean visitEnter(PlanNode n) {
+            if (n instanceof Subquery) {
+                subqueries.push(new SubqueryState((Subquery)n));
+                return true;
+            }
             return visit(n);
         }
 
         @Override
         public boolean visitLeave(PlanNode n) {
+            if (n instanceof Subquery) {
+                SubqueryState s = subqueries.pop();
+                s.subquery.setOuterTables(s.getTablesReferencedButNotDefined());
+            }
             return true;
         }
 
         @Override
         public boolean visit(PlanNode n) {
-            if (n instanceof TableJoins) {
-                result.add((TableJoins)n);
+            if (n instanceof Joinable) {
+                Joinable j = (Joinable)n;
+                while (j.getOutput() instanceof Joinable)
+                    j = (Joinable)j.getOutput();
+                for (Picker entry : result) {
+                    if (entry.joinable == j)
+                        // Already have another set of joins to same root join.
+                        return true;
+                }
+                Picker entry = new Picker(j);
+                if (!subqueries.empty()) {
+                    entry.query = subqueries.peek().subquery;
+                }
+                result.add(entry);
+            }
+            if (!subqueries.empty() &&
+                (n instanceof ColumnSource)) {
+                boolean added = subqueries.peek().tablesDefined.add((ColumnSource)n);
+                assert added : "Table defined more than once";
             }
             return true;
         }
@@ -66,99 +403,27 @@ public class IndexPicker extends BaseRule
 
         @Override
         public boolean visit(ExpressionNode n) {
+            if (!subqueries.empty() &&
+                (n instanceof ColumnExpression)) {
+                subqueries.peek().tablesReferenced.add(((ColumnExpression)n).getTable());
+            }
             return true;
         }
     }
 
-    @Override
-      public void apply(PlanContext planContext) {
-        PlanNode plan = planContext.getPlan();
-        List<TableJoins> groups = new TableJoinsFinder().find(plan);
-        // TODO: For now, very conservative about everything being simple.
-        if (groups.isEmpty()) return;
-        if (groups.size() > 1)
-            throw new UnsupportedSQLException("Joins are too complex: " + groups, null);
-        TableJoins tableJoins = groups.get(0);
-        pickIndexes(tableJoins, plan);
-    }
+    static class SubqueryState {
+        Subquery subquery;
+        Set<ColumnSource> tablesReferenced = new HashSet<ColumnSource>();
+        Set<ColumnSource> tablesDefined = new HashSet<ColumnSource>();
 
-    protected void pickIndexes(TableJoins tableJoins, PlanNode plan) {
-        // Goal is to get all the tables joined right here. Others in
-        // the group may come via XxxLookup in a nested loop. Can only
-        // consider indexes on the inner joined tables.
-        IndexGoal goal = determineIndexGoal(tableJoins, plan, tableJoins.getTables());
-        IndexScan index = null;
-        if (goal != null) {
-            Collection<TableSource> tables = new ArrayList<TableSource>();
-            Set<TableSource> required = new HashSet<TableSource>();
-            getRequiredTables(tableJoins.getJoins(), tables, required, true);
-            index = goal.pickBestIndex(tables, required);
+        public SubqueryState(Subquery subquery) {
+            this.subquery = subquery;
         }
-        if (index != null) {
-            goal.installUpstream(index);
-        }
-        PlanNode scan = index;
-        if (scan == null)
-            scan = new GroupScan(tableJoins.getGroup());
-        tableJoins.setScan(scan);
-    }
 
-    protected void getRequiredTables(Joinable joinable,
-                                     Collection<TableSource> tables,
-                                     Set<TableSource> required,
-                                     boolean allInner) {
-        if (joinable instanceof JoinNode) {
-            JoinNode join = (JoinNode)joinable;
-            getRequiredTables(join.getLeft(), tables, required,
-                              allInner && (join.getJoinType() != JoinType.RIGHT_JOIN));
-            getRequiredTables(join.getRight(), tables, required,
-                              allInner && (join.getJoinType() != JoinType.LEFT_JOIN));
+        public Set<ColumnSource> getTablesReferencedButNotDefined() {
+            tablesReferenced.removeAll(tablesDefined);
+            return tablesReferenced;
         }
-        else if (joinable instanceof TableSource) {
-            TableSource table = (TableSource)joinable;
-            tables.add(table);
-            if (allInner) required.add(table);
-        }
-    }
-
-    protected IndexGoal determineIndexGoal(PlanNode input, 
-                                           PlanNode plan,
-                                           Collection<TableSource> tables) {
-        List<ConditionExpression> conditions;
-        Sort ordering = null;
-        AggregateSource grouping = null;
-        input = input.getOutput();
-        if (input instanceof Select)
-            conditions = ((Select)input).getConditions();
-        else
-            return null;
-        input = input.getOutput();
-        if (input instanceof Sort) {
-            ordering = (Sort)input;
-        }
-        else if (input instanceof AggregateSource) {
-            grouping = (AggregateSource)input;
-            if (!grouping.hasGroupBy())
-              grouping = null;
-            input = input.getOutput();
-            if (input instanceof Select)
-                input = input.getOutput();
-            if (input instanceof Sort) {
-                // Needs to be possible to satisfy both.
-                ordering = (Sort)input;
-                if (grouping != null) {
-                  List<ExpressionNode> groupBy = grouping.getGroupBy();
-                  for (OrderByExpression orderBy : ordering.getOrderBy()) {
-                    if (!groupBy.contains(orderBy.getExpression())) {
-                      ordering = null;
-                      break;
-                    }
-                  }
-                }
-            }
-        }
-        return new IndexGoal(plan, Collections.<TableSource>emptySet(),
-                             conditions, grouping, ordering, tables);
     }
 
 }

@@ -24,13 +24,12 @@ import com.akiban.server.types.ValueSource;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
 
-import static com.akiban.server.types.AkType.*;
 import static com.akiban.server.expression.std.Comparison.*;
+import static com.akiban.server.expression.std.ExprUtil.*;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -44,32 +43,33 @@ public final class CompareExpressionTest {
         ParameterizationBuilder pb = new ParameterizationBuilder();
 
         // null to null
-        param(pb, litNull(), litNull(), NULL);
+        param(pb, constNull(), constNull(), NULL);
 
         // longs
-        param(pb, litNull(), lit(LONG, 5), NULL);
-        param(pb, lit(LONG, 5), litNull(), NULL);
-        param(pb, lit(LONG, 5), lit(LONG, 5), LE, EQ, GE);
-        param(pb, lit(LONG, 4), lit(LONG, 5), LE, LT, NE);
-        param(pb, lit(LONG, 5), lit(LONG, 4), GE, GT, NE);
+        param(pb, constNull(), lit(5), NULL);
+        param(pb, lit(5), constNull(), NULL);
+        param(pb, lit(5), lit(5), LE, EQ, GE);
+        param(pb, lit(4), lit(5), LE, LT, NE);
+        param(pb, lit(5), lit(4), GE, GT, NE);
+        param(pb, lit(20081012000000L), lit(20110504000000L), LE, LT, NE);
 
         // doubles
-        param(pb, litNull(), lit(DOUBLE, 5.0), NULL);
-        param(pb, lit(DOUBLE, 5.0), litNull(), NULL);
-        param(pb, lit(DOUBLE, 5.0), lit(DOUBLE, 5.0), LE, EQ, GE);
-        param(pb, lit(DOUBLE, 4.0), lit(DOUBLE, 5.0), LE, LT, NE);
-        param(pb, lit(DOUBLE, 5.0), lit(DOUBLE, 4.0), GE, GT, NE);
+        param(pb, constNull(), lit(5.0), NULL);
+        param(pb, lit(5.0), constNull(), NULL);
+        param(pb, lit(5.0), lit(5.0), LE, EQ, GE);
+        param(pb, lit(4.0), lit(5.0), LE, LT, NE);
+        param(pb, lit(5.0), lit(4.0), GE, GT, NE);
         
         // String
-        param(pb, litNull(), lit("alpha"), NULL);
-        param(pb, lit("beta"), litNull(), NULL);
+        param(pb, constNull(), lit("alpha"), NULL);
+        param(pb, lit("beta"), constNull(), NULL);
         param(pb, lit("aaa"), lit("aaa"), LE, EQ, GE);
         param(pb, lit("aa"), lit("aaa"), LE, LT, NE);
         param(pb, lit("aaa"), lit("aa"), GE, GT, NE);
 
         // bools
-        param(pb, litNull(), lit(true), NULL);
-        param(pb, lit(true), litNull(), NULL);
+        param(pb, constNull(), lit(true), NULL);
+        param(pb, lit(true), constNull(), NULL);
         param(pb, lit(true), lit(true), LE, EQ, GE);
         param(pb, lit(false), lit(false), LE, EQ, GE);
         param(pb, lit(false), lit(true), LE, LT, NE);
@@ -88,32 +88,10 @@ public final class CompareExpressionTest {
         }
     }
 
-    private static Expression lit(AkType type, long value) {
-        assert type.underlyingType() == UnderlyingType.LONG_AKTYPE : type.underlyingType();
-        return new LiteralExpression(type, value);
-    }
-
-    private static Expression lit(AkType type, double value) {
-        assert type.underlyingType() == UnderlyingType.DOUBLE_AKTYPE : type.underlyingType();
-        return new LiteralExpression(type, value);
-    }
-
-    private static Expression lit(String value) {
-        return new LiteralExpression(AkType.VARCHAR, value);
-    }
-
-    private static Expression lit(boolean value) {
-        return new LiteralExpression(AkType.BOOL, value);
-    }
-
-    private static Expression litNull() {
-        return LiteralExpression.forNull();
-    }
-
     @Test
     public void test() {
-        Expression compareExpression = new CompareExpression(Arrays.asList(left, right), comparison);
-        assertEquals("compareExpression type", BOOL, compareExpression.valueType());
+        Expression compareExpression = new CompareExpression(left, comparison, right);
+        assertEquals("compareExpression type", AkType.BOOL, compareExpression.valueType());
         assertFalse("compareExpression needs row", compareExpression.needsRow());
         assertFalse("compareExpression needs bindings", compareExpression.needsBindings());
         ExpressionEvaluation evaluation = compareExpression.evaluation();

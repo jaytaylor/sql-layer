@@ -18,6 +18,7 @@ package com.akiban.sql.pg;
 import com.akiban.server.error.UnableToExplainException;
 import com.akiban.server.error.UnsupportedExplainException;
 import com.akiban.sql.optimizer.OperatorCompiler;
+import com.akiban.sql.optimizer.plan.BasePlannable;
 
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.ExplainStatementNode;
@@ -48,9 +49,7 @@ public class PostgresExplainStatementGenerator extends PostgresBaseStatementGene
             throw new UnsupportedExplainException();
         if (!(innerStmt instanceof DMLStatementNode))
             throw new UnableToExplainException ();
-        OperatorCompiler.Result result = compiler.compile(server.getSessionTracer(),
-                                                          (DMLStatementNode)innerStmt,
-                                                          params);
+        BasePlannable result = compiler.compile((DMLStatementNode)innerStmt, params);
         return new PostgresExplainStatement(result.explainPlan());
     }
 

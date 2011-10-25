@@ -16,6 +16,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -47,8 +48,15 @@ public final class BoundFieldExpression implements Expression {
     public AkType valueType() {
         return fieldExpression.valueType();
     }
-    // BoundFieldExpression interface
 
+    // Object interface
+
+    @Override
+    public String toString() {
+        return String.format("Bound(%d,%s)", rowBindingPosition, fieldExpression.toString());
+    }
+
+    // BoundFieldExpression interface
 
     public BoundFieldExpression(int rowBindingPosition, FieldExpression fieldExpression) {
         this.rowBindingPosition = rowBindingPosition;
@@ -67,6 +75,11 @@ public final class BoundFieldExpression implements Expression {
         @Override
         public void of(Bindings bindings) {
             fieldExpressionEvaluation.of((Row)bindings.get(rowBindingPosition));
+        }
+
+        @Override
+        public void of(StoreAdapter adapter) {
+            fieldExpressionEvaluation.of(adapter);
         }
 
         @Override

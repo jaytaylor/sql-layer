@@ -77,7 +77,7 @@ public class AISMerge {
         // Also the tableIDs need to be assigned correctly, which 
         // TableSubsetWriter doesn't do. 
         LOG.info(String.format("Merging table %s into targetAIS", sourceTable.getName().toString()));
-        
+
         final AISBuilder builder = new AISBuilder(targetAIS);
         builder.setTableIdOffset(computeTableIdOffset(targetAIS));
 
@@ -163,7 +163,7 @@ public class AISMerge {
                     index.isUnique(), 
                     index.getConstraint());
             for (IndexColumn col : index.getColumns()) {
-                builder.indexColumn(schemaName, tableName, index.getIndexName().getName(), 
+                    builder.indexColumn(schemaName, tableName, index.getIndexName().getName(),
                         col.getColumn().getName(), 
                         col.getPosition(), 
                         col.isAscending(), 
@@ -180,9 +180,10 @@ public class AISMerge {
             throw new JoinToUnknownTableException(sourceTable.getName(), new TableName(parentSchemaName, parentTableName));
          }
         LOG.debug(String.format("Table is child of table %s", parentTable.getName().toString()));
-        String joinName = groupNames.generateJoinName(parentTable, sourceTable, join.getJoinColumns());
-
-        builder.joinTables(joinName, 
+        String joinName = groupNames.generateJoinName(parentTable.getName(),
+                                                      sourceTable.getName(),
+                                                      join.getJoinColumns());
+        builder.joinTables(joinName,
                 parentSchemaName,
                 parentTableName,
                 sourceTable.getName().getSchemaName(), 
@@ -212,6 +213,31 @@ public class AISMerge {
             throw new JoinToMultipleParentsException(join.getChild().getName());
         }
     }
+
+    // FOR DEBUGGING
+/*
+    private void dumpGroupStructure(String label, AkibanInformationSchema ais)
+    {
+        for (Group group : ais.getGroups().values()) {
+            if (!group.getGroupTable().getRoot().getName().getSchemaName().equals("akiban_information_schema")) {
+                System.out.println(String.format("%s: Group %s", label, group.getName()));
+                System.out.println("    tables:");
+                for (UserTable userTable : ais.getUserTables().values()) {
+                    if (userTable.getGroup() == group) {
+                        System.out.println(String.format("        %s -> %s", userTable, userTable.parentTable()));
+                    }
+                }
+                System.out.println("    joins:");
+                for (Join join : ais.getJoins().values()) {
+                    if (join.getGroup() == group) {
+                        System.out.println(String.format("        %s -> %s", join.getChild(), join.getParent()));
+                    }
+                }
+            }
+        }
+    }
+*/
+
     private int computeTableIdOffset(AkibanInformationSchema ais) {
         // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
         int offset = 1;

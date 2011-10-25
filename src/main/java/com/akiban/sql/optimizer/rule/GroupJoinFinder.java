@@ -18,11 +18,15 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Join;
+import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.API.JoinType;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
@@ -30,10 +34,27 @@ import java.util.*;
  */
 public class GroupJoinFinder extends BaseRule
 {
-    static class JoinIslandFinder implements PlanVisitor, ExpressionVisitor {
-        List<Joinable> result = new ArrayList<Joinable>();
+    private static final Logger logger = LoggerFactory.getLogger(GroupJoinFinder.class);
 
-        public List<Joinable> find(PlanNode root) {
+    @Override
+    protected Logger getLogger() {
+        return logger;
+    }
+
+    @Override
+    public void apply(PlanContext plan) {
+        List<JoinIsland> islands = new JoinIslandFinder().find(plan.getPlan());
+        moveAndNormalizeWhereConditions(islands);
+        findGroupJoins(islands);
+        reorderJoins(islands);
+        moveJoinConditions(islands);
+        isolateGroups(islands);
+    }
+    
+    static class JoinIslandFinder implements PlanVisitor, ExpressionVisitor {
+        List<JoinIsland> result = new ArrayList<JoinIsland>();
+
+        public List<JoinIsland> find(PlanNode root) {
             root.accept(this);
             return result;
         }
@@ -51,9 +72,11 @@ public class GroupJoinFinder extends BaseRule
         @Override
         public boolean visit(PlanNode n) {
             if (n instanceof Joinable) {
-                Joinable j = (Joinable)n;
-                if (!(j.getOutput() instanceof Joinable))
-                    result.add(j);
+                Joinable joinable = (Joinable)n;
+                PlanWithInput output = joinable.getOutput();
+                if (!(output instanceof Joinable)) {
+                    result.add(new JoinIsland(joinable, output));
+                }
             }
             return true;
         }
@@ -74,37 +97,41 @@ public class GroupJoinFinder extends BaseRule
         }
     }
 
-    @Override
-    public void apply(PlanContext plan) {
-        List<Joinable> islands = new JoinIslandFinder().find(plan.getPlan());
-        moveAndNormalizeWhereConditions(islands);
-        reorderJoins(islands);
-        findGroupJoins(islands);
-        isolateGroups(islands);
+    // A subtree of joins.
+    static class JoinIsland {
+        Joinable root;
+        PlanWithInput output;
+        ConditionList whereConditions;
+        List<TableGroupJoin> whereJoins;
+
+        public JoinIsland(Joinable root, PlanWithInput output) {
+            this.root = root;
+            this.output = output;
+            if (output instanceof Select)
+                whereConditions = ((Select)output).getConditions();
+        }
     }
-    
+
     // First pass: find all the WHERE conditions above inner joins
     // and put given join condition up there, since it's equivalent.
     // While there, normalize comparisons.
-    protected void moveAndNormalizeWhereConditions(List<Joinable> islands) {
-        for (Joinable island : islands) {
-            if (island.getOutput() instanceof Select) {
-                List<ConditionExpression> conditions = 
-                    ((Select)island.getOutput()).getConditions();
-                moveInnerJoinConditions(island, conditions);
-                normalizeColumnComparisons(conditions);
+    protected void moveAndNormalizeWhereConditions(List<JoinIsland> islands) {
+        for (JoinIsland island : islands) {
+            if (island.whereConditions != null) {
+                moveInnerJoinConditions(island.root, island.whereConditions);
+                normalizeColumnComparisons(island.whereConditions);
             }
-            normalizeColumnComparisons(island);
+            normalizeColumnComparisons(island.root);
         }
     }
 
     // So long as there are INNER joins, move their conditions up to
     // the top-level join.
     protected void moveInnerJoinConditions(Joinable joinable,
-                                           List<ConditionExpression> whereConditions) {
+                                           ConditionList whereConditions) {
         if (joinable.isInnerJoin()) {
             JoinNode join = (JoinNode)joinable;
-            List<ConditionExpression> joinConditions = join.getJoinConditions();
+            ConditionList joinConditions = join.getJoinConditions();
             if (joinConditions != null) {
                 whereConditions.addAll(joinConditions);
                 joinConditions.clear();
@@ -118,7 +145,7 @@ public class GroupJoinFinder extends BaseRule
     // the form <col> <op> <expr>, with the child on the left in the
     // case of two columns, which is what we may then recognize as a
     // group join.
-    protected void normalizeColumnComparisons(List<ConditionExpression> conditions) {
+    protected void normalizeColumnComparisons(ConditionList conditions) {
         if (conditions == null) return;
         for (ConditionExpression cond : conditions) {
             if (cond instanceof ComparisonCondition) {
@@ -151,17 +178,16 @@ public class GroupJoinFinder extends BaseRule
         }
     }
 
-    // Second pass: put adjacent inner joined tables together in
+    // Third pass: put adjacent inner joined tables together in
     // left-deep ascending-ordinal order. E.g. (CO)I.
-    protected void reorderJoins(List<Joinable> islands) {
-        for (int i = 0; i < islands.size(); i++) {
-            Joinable island = islands.get(i);
-            Joinable nisland = reorderJoins(island);
-            if (island != nisland) {
-                island.getOutput().replaceInput(island, nisland);
-                islands.set(i, nisland);
+    protected void reorderJoins(List<JoinIsland> islands) {
+        for (JoinIsland island : islands) {
+            Joinable nroot = reorderJoins(island.root);            
+            if (island.root != nroot) {
+                island.output.replaceInput(island.root, nroot);
+                island.root = nroot;
             }
-        }        
+        }
     }
 
     protected Joinable reorderJoins(Joinable joinable) {
@@ -190,12 +216,13 @@ public class GroupJoinFinder extends BaseRule
 
     // Make inner joins into a tree of group-tree / non-table.
     protected Joinable orderInnerJoins(List<Joinable> joinables) {
-        Map<Group,List<TableSource>> groups = new HashMap<Group,List<TableSource>>();
+        Map<TableGroup,List<TableSource>> groups = 
+            new HashMap<TableGroup,List<TableSource>>();
         List<Joinable> nonTables = new ArrayList<Joinable>();
         for (Joinable joinable : joinables) {
             if (joinable instanceof TableSource) {
                 TableSource table = (TableSource)joinable;
-                Group group = table.getTable().getGroup();
+                TableGroup group = table.getGroup();
                 List<TableSource> entry = groups.get(group);
                 if (entry == null) {
                     entry = new ArrayList<TableSource>();
@@ -208,54 +235,57 @@ public class GroupJoinFinder extends BaseRule
         }
         joinables.clear();
         // Make order of groups predictable.
-        List<Group> keys = new ArrayList(groups.keySet());
-        Collections.sort(keys, new Comparator<Group>() {
-                                 public int compare(Group g1, Group g2) {
-                                     return g1.getName().compareTo(g2.getName());
-                                 }
-                             });
-        for (Group gkey : keys) {
+        List<TableGroup> keys = new ArrayList(groups.keySet());
+        Collections.sort(keys, tableGroupComparator);
+        for (TableGroup gkey : keys) {
             List<TableSource> group = groups.get(gkey);
-            Collections.sort(group, new Comparator<TableSource>() {
-                                 public int compare(TableSource t1, TableSource t2) {
-                                     return compareTableSources(t1, t2);
-                                 }
-                             });
-            joinables.add(constructInnerJoins(group));
+            Collections.sort(group, tableSourceComparator);
+            joinables.add(constructLeftInnerJoins(group));
         }
         joinables.addAll(nonTables);
         if (joinables.size() > 1)
-            return constructInnerJoins(joinables);
+            return constructRightInnerJoins(joinables);
         else
             return joinables.get(0);
     }
 
-    protected Joinable constructInnerJoins(List<? extends Joinable> joinables) {
+    // Group flattening is left-recursive.
+    protected Joinable constructLeftInnerJoins(List<? extends Joinable> joinables) {
         Joinable result = joinables.get(0);
         for (int i = 1; i < joinables.size(); i++) {
-            result = new JoinNode(result, joinables.get(i), JoinType.INNER_JOIN);
+            result = new JoinNode(result, joinables.get(i), JoinType.INNER);
         }
         return result;
     }
 
-    // Third pass: find join conditions corresponding to group joins.
-    protected void findGroupJoins(List<Joinable> islands) {
-        for (Joinable island : islands) {
-            List<ConditionExpression> whereConditions = null;
-            if (island.getOutput() instanceof Select)
-                whereConditions = ((Select)island.getOutput()).getConditions();
-            findGroupJoins(island, null, whereConditions);
+    // Nested loop joins are right-recursive.
+    protected Joinable constructRightInnerJoins(List<? extends Joinable> joinables) {
+        int size = joinables.size();
+        Joinable result = joinables.get(--size);
+        while (size > 0) {
+            result = new JoinNode(joinables.get(--size), result, JoinType.INNER);
         }
-        for (Joinable island : islands) {
-            findSingleGroups(island);
+        return result;
+    }
+
+    // Second pass: find join conditions corresponding to group joins.
+    protected void findGroupJoins(List<JoinIsland> islands) {
+        for (JoinIsland island : islands) {
+            List<TableGroupJoin> whereJoins = new ArrayList<TableGroupJoin>();
+            findGroupJoins(island.root, null, island.whereConditions, whereJoins);
+            island.whereJoins = whereJoins;
+        }
+        for (JoinIsland island : islands) {
+            findSingleGroups(island.root);
         }
     }
 
     protected void findGroupJoins(Joinable joinable, JoinNode output,
-                                  List<ConditionExpression> whereConditions) {
+                                  ConditionList whereConditions,
+                                  List<TableGroupJoin> whereJoins) {
         if (joinable.isTable()) {
             TableSource table = (TableSource)joinable;
-            List<ConditionExpression> conditions = null;
+            ConditionList conditions = null;
             if (output != null)
                 conditions = output.getJoinConditions();
             if ((conditions != null) && conditions.isEmpty())
@@ -263,16 +293,11 @@ public class GroupJoinFinder extends BaseRule
             if (conditions == null)
                 conditions = whereConditions;
             TableGroupJoin tableJoin = findParentJoin(table, conditions);
-            if ((output != null) && (tableJoin != null)) {
-                output.setGroupJoin(tableJoin);
-                if (conditions == whereConditions) {
-                    ConditionExpression condition = tableJoin.getCondition();
-                    // Move down from WHERE conditions to join condition.
-                    if (output.getJoinConditions() == null)
-                        output.setJoinConditions(new ArrayList<ConditionExpression>());
-                    output.getJoinConditions().add(condition);
-                    conditions.remove(condition);
-                }
+            if (tableJoin != null) {
+                if (conditions == whereConditions)
+                    whereJoins.add(tableJoin); // Position after reordering.
+                else
+                    output.setGroupJoin(tableJoin);
             }
         }
         else if (joinable.isJoin()) {
@@ -280,51 +305,91 @@ public class GroupJoinFinder extends BaseRule
             Joinable right = join.getRight();
             if (!join.isInnerJoin())
                 whereConditions = null;
-            findGroupJoins(join.getLeft(), join, whereConditions);
-            findGroupJoins(join.getRight(), join, whereConditions);
+            findGroupJoins(join.getLeft(), join, whereConditions, whereJoins);
+            findGroupJoins(join.getRight(), join, whereConditions, whereJoins);
         }
     }
 
     // Find a condition among the given conditions that matches the
     // parent join for the given table.
     protected TableGroupJoin findParentJoin(TableSource childTable,
-                                            List<ConditionExpression> conditions) {
+                                            ConditionList conditions) {
         if (conditions == null) return null;
         TableNode childNode = childTable.getTable();
         Join groupJoin = childNode.getTable().getParentJoin();
         if (groupJoin == null) return null;
         TableNode parentNode = childNode.getTree().getNode(groupJoin.getParent());
         if (parentNode == null) return null;
-        ComparisonCondition groupJoinCondition = null;
-        TableSource parentTable = null;
+        List<JoinColumn> joinColumns = groupJoin.getJoinColumns();
+        int ncols = joinColumns.size();
+        Map<TableSource,List<ComparisonCondition>> parentTables = 
+          new HashMap<TableSource,List<ComparisonCondition>>();
         for (ConditionExpression condition : conditions) {
             if (condition instanceof ComparisonCondition) {
                 ComparisonCondition ccond = (ComparisonCondition)condition;
                 ExpressionNode left = ccond.getLeft();
                 ExpressionNode right = ccond.getRight();
-                if (left.isColumn() && right.isColumn() &&
-                    (((ColumnExpression)left).getTable() == childTable)) {
-                    ColumnSource rightSource = ((ColumnExpression)right).getTable();
+                if (left.isColumn() && right.isColumn()) {
+                  ColumnExpression lcol = (ColumnExpression)left;
+                  ColumnExpression rcol = (ColumnExpression)right;
+                  if (lcol.getTable() == childTable) {
+                    ColumnSource rightSource = rcol.getTable();
                     if (rightSource instanceof TableSource) {
-                        TableSource rightTable = (TableSource)rightSource;
-                        if (rightTable.getTable() == parentNode) {
-                            if (groupJoinCondition == null) {
-                                groupJoinCondition = ccond;
-                                parentTable = rightTable;
+                      TableSource rightTable = (TableSource)rightSource;
+                      if (rightTable.getTable() == parentNode) {
+                        for (int i = 0; i < ncols; i++) {
+                          JoinColumn joinColumn = joinColumns.get(i);
+                          if ((joinColumn.getChild() == lcol.getColumn()) &&
+                              (joinColumn.getParent() == rcol.getColumn())) {
+                            List<ComparisonCondition> entry = 
+                              parentTables.get(rightTable);
+                            if (entry == null) {
+                              entry = new ArrayList<ComparisonCondition>(Collections.<ComparisonCondition>nCopies(ncols, null));
+                              parentTables.put(rightTable, entry);
                             }
-                            else {
-                                // TODO: What we need is something
-                                // earlier to decide that the primary
-                                // keys are equated and so share the
-                                // references somehow.
-                                throw new UnsupportedSQLException("Found two possible parent joins", ccond.getSQLsource());
-                            }
+                            entry.set(i, ccond);
+                          }
                         }
+                      }
                     }
+                  }
                 }
             }
         }
-        if (groupJoinCondition == null) return null;
+        TableSource parentTable = null;
+        List<ComparisonCondition> groupJoinConditions = null;
+        for (Map.Entry<TableSource,List<ComparisonCondition>> entry : parentTables.entrySet()) {
+          boolean found = true;
+          for (ComparisonCondition elem : entry.getValue()) {
+            if (elem == null) {
+              found = false;
+              break;
+            }
+          }
+          if (found) {
+            if (parentTable == null) {
+              parentTable = entry.getKey();
+              groupJoinConditions = entry.getValue();
+            }
+            else {
+              // TODO: What we need is something
+              // earlier to decide that the primary
+              // keys are equated and so share the
+              // references somehow.
+              ConditionExpression c1 = groupJoinConditions.get(0);
+              ConditionExpression c2 = entry.getValue().get(0);
+              if (conditions.indexOf(c1) > conditions.indexOf(c2)) {
+                // Make the order predictable for tests.
+                ConditionExpression temp = c1;
+                c1 = c2;
+                c2 = temp;
+              }
+              throw new UnsupportedSQLException("Found two possible parent joins", 
+                                                c2.getSQLsource());
+            }
+          }
+        }
+        if (parentTable == null) return null;
         TableGroup group = parentTable.getGroup();
         if (group == null) {
             group = childTable.getGroup();
@@ -335,7 +400,7 @@ public class GroupJoinFinder extends BaseRule
             group.merge(childTable.getGroup());
         }
         return new TableGroupJoin(group, parentTable, childTable, 
-                                  groupJoinCondition, groupJoin);
+                                  groupJoinConditions, groupJoin);
     }
 
     protected void findSingleGroups(Joinable joinable) {
@@ -353,19 +418,53 @@ public class GroupJoinFinder extends BaseRule
         }
     }
 
-    // Fourth pass: wrap contiguous group joins in separate joinable.
+    // Fourth pass: move the WHERE conditions back to their actual
+    // joins, which may be different from the ones they were on in the
+    // original query.
+    protected void moveJoinConditions(List<JoinIsland> islands) {
+        for (JoinIsland island : islands) {
+            if (!island.whereJoins.isEmpty())
+                moveJoinConditions(island.root, null, 
+                                   island.whereConditions, island.whereJoins);
+        }        
+    }
+
+    protected void moveJoinConditions(Joinable joinable, JoinNode output,
+                                      ConditionList whereConditions,
+                                      List<TableGroupJoin> whereJoins) {
+        if (joinable.isTable()) {
+            if (output != null) {
+                TableSource table = (TableSource)joinable;
+                TableGroupJoin tableJoin = table.getParentJoin();
+                if (whereJoins.contains(tableJoin)) {
+                    output.setGroupJoin(tableJoin);
+                    List<ComparisonCondition> joinConditions = tableJoin.getConditions();
+                    // Move down from WHERE conditions to join conditions.
+                    if (output.getJoinConditions() == null)
+                        output.setJoinConditions(new ConditionList());
+                    output.getJoinConditions().addAll(joinConditions);
+                    whereConditions.removeAll(joinConditions);
+                }
+            }
+        }
+        else if (joinable.isJoin()) {
+            JoinNode join = (JoinNode)joinable;
+            moveJoinConditions(join.getLeft(), join, whereConditions, whereJoins);
+            moveJoinConditions(join.getRight(), join, whereConditions, whereJoins);
+        }
+    }
+
+    // Fifth pass: wrap contiguous group joins in separate joinable.
     // We have done out best with the inner joins to make this possible,
     // but some outer joins may require that a TableGroup be broken up into
     // multiple TableJoins.
-    protected void isolateGroups(List<Joinable> islands) {
-        for (int i = 0; i < islands.size(); i++) {
-            Joinable island = islands.get(i);
-            TableGroup group = isolateGroups(island);
+    protected void isolateGroups(List<JoinIsland> islands) {
+        for (JoinIsland island : islands) {
+            TableGroup group = isolateGroups(island.root);
             if (group != null) {
-                PlanWithInput output = island.getOutput();
-                Joinable nisland = getTableJoins(island, group);
-                output.replaceInput(island, nisland);
-                islands.set(i, nisland);
+                Joinable nroot = getTableJoins(island.root, group);
+                island.output.replaceInput(island.root, nroot);
+                island.root = nroot;
             }
         }
     }
@@ -412,6 +511,23 @@ public class GroupJoinFinder extends BaseRule
         }
     }
 
+    static final Comparator<TableGroup> tableGroupComparator = new Comparator<TableGroup>() {
+        @Override
+        public int compare(TableGroup tg1, TableGroup tg2) {
+            Group g1 = tg1.getGroup();
+            Group g2 = tg2.getGroup();
+            if (g1 != g2)
+                return g1.getName().compareTo(g2.getName());
+            return tg1.getMinOrdinal() - tg2.getMinOrdinal();
+        }
+    };
+
+    static final Comparator<TableSource> tableSourceComparator = new Comparator<TableSource>() {
+        public int compare(TableSource t1, TableSource t2) {
+            return compareTableSources(t1, t2);
+        }
+    };
+
     protected static int compareColumnSources(ColumnSource c1, ColumnSource c2) {
         if (c1 instanceof TableSource) {
             if (!(c2 instanceof TableSource))
@@ -440,14 +556,16 @@ public class GroupJoinFinder extends BaseRule
         TableNode t1 = ts1.getTable();
         UserTable ut1 = t1.getTable();
         Group g1 = ut1.getGroup();
+        TableGroup tg1 = ts1.getGroup();
         TableNode t2 = ts2.getTable();
         UserTable ut2 = t2.getTable();
         Group g2 = ut2.getGroup();
-        if (g1 == g2) {
-            return t1.getOrdinal() - t2.getOrdinal();
-        }
-        else
+        TableGroup tg2 = ts2.getGroup();
+        if (g1 != g2)
             return g1.getName().compareTo(g2.getName());
+        if (tg1 == tg2)         // Including null because not yet computed.
+            return t1.getOrdinal() - t2.getOrdinal();
+        return tg1.getMinOrdinal() - tg2.getMinOrdinal();
     }
 
     // Return size of directly-reachable subtree of all inner joins.

@@ -68,6 +68,7 @@ class GroupScan_Default extends Operator
         @Override
         public Row next()
         {
+            adapter.checkQueryCancelation();
             Row row;
             if ((row = cursor.next()) == null || limit.limitReached(row)) {
                 close();

@@ -1,0 +1,1 @@
+SELECT min(cid) FROM customers GROUP BY cid

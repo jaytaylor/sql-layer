@@ -118,11 +118,13 @@ class Map_NestedLoops extends Operator
         {
             this.bindings = bindings;
             this.outerInput.open(bindings);
+            this.closed = false;
         }
 
         @Override
         public Row next()
         {
+            adapter.checkQueryCancelation();
             Row outputRow = null;
             while (!closed && outputRow == null) {
                 outputRow = nextOutputRow();
@@ -159,6 +161,7 @@ class Map_NestedLoops extends Operator
 
         Execution(StoreAdapter adapter)
         {
+            this.adapter = adapter;
             this.outerInput = outerInputOperator.cursor(adapter);
             this.innerInput = innerInputOperator.cursor(adapter);
             if (outerJoinRowExpressions == null) {
@@ -166,7 +169,9 @@ class Map_NestedLoops extends Operator
             } else {
                 this.outerJoinRowEvaluations = new ArrayList<ExpressionEvaluation>();
                 for (Expression outerJoinRowExpression : outerJoinRowExpressions) {
-                    outerJoinRowEvaluations.add(outerJoinRowExpression.evaluation());
+                    ExpressionEvaluation eval = outerJoinRowExpression.evaluation();
+                    eval.of(adapter);
+                    outerJoinRowEvaluations.add(eval);
                 }
             }
         }
@@ -205,7 +210,7 @@ class Map_NestedLoops extends Operator
         private void closeOuter()
         {
             outerRow.release();
-            outerRow.release();
+            outerJoinRow.release();
             outerInput.close();
         }
 
@@ -228,6 +233,7 @@ class Map_NestedLoops extends Operator
 
         // Object state
 
+        private final StoreAdapter adapter;
         private final Cursor outerInput;
         private final Cursor innerInput;
         private final ShareHolder<Row> outerRow = new ShareHolder<Row>();

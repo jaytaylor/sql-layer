@@ -74,6 +74,7 @@ public class PersistitIndexRow extends AbstractRow
         return hKey;
     }
 
+/*
     // For use by OperatorIT
     public PersistitIndexRow(PersistitAdapter adapter, IndexRowType indexRowType, Object... values) throws PersistitException
     {
@@ -84,6 +85,7 @@ public class PersistitIndexRow extends AbstractRow
             appender.append(o, columnIt.next().getColumn());
         }
     }
+*/
 
     // PersistitIndexRow interface
 

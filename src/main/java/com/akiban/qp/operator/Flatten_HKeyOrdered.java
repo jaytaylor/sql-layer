@@ -105,6 +105,7 @@ class Flatten_HKeyOrdered extends Operator
         ArgumentValidation.notNull("parentType", parentType);
         ArgumentValidation.notNull("childType", childType);
         ArgumentValidation.notNull("flattenType", joinType);
+        ArgumentValidation.isTrue("parentType really is parent of childType", parentType.parentOf(childType));
         assert parentType != null;
         assert childType != null;
         this.inputOperator = inputOperator;
@@ -163,6 +164,7 @@ class Flatten_HKeyOrdered extends Operator
         @Override
         public Row next()
         {
+            adapter.checkQueryCancelation();
             Row outputRow = pending.take();
             Row inputRow;
             while (outputRow == null && (((inputRow = input.next()) != null) || parent.isHolding())) {

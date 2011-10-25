@@ -28,12 +28,13 @@ import com.akiban.qp.persistitadapter.sort.SortCursorAscending;
 import com.akiban.qp.persistitadapter.sort.SortCursorDescending;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.server.error.QueryCanceledException;
 import com.akiban.util.ShareHolder;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitException;
-import sun.nio.cs.Surrogate;
+import com.persistit.exception.PersistitInterruptedException;
 
 class PersistitIndexCursor implements Cursor
 {
@@ -44,7 +45,7 @@ class PersistitIndexCursor implements Cursor
     {
         assert exchange == null;
         exchange = adapter.takeExchange(indexRowType.index());
-        sortCursor = SortCursor.create(keyRange, ordering, new IndexScanRowGenerator());
+        sortCursor = SortCursor.create(adapter, keyRange, ordering, new IndexScanRowGenerator());
         sortCursor.open(bindings);
     }
 
@@ -65,9 +66,12 @@ class PersistitIndexCursor implements Cursor
                     needAnother = false;
                 }
             } while (needAnother);
+        } catch (PersistitInterruptedException e) {
+            throw new QueryCanceledException();
         } catch (PersistitException e) {
             throw new StoreAdapterRuntimeException(e);
         }
+        assert (next == null) == (exchange == null);
         return next;
     }
 
@@ -103,7 +107,7 @@ class PersistitIndexCursor implements Cursor
 
     private ShareHolder<PersistitIndexRow> unsharedRow() throws PersistitException
     {
-        if (row.get().isShared()) {
+        if (row.isEmpty() || row.isShared()) {
             row.hold(adapter.newIndexRow(indexRowType));
         }
         return row;
