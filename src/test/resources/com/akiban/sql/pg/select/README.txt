@@ -74,6 +74,8 @@ select-23: IN / ANY as expression
 
 select-24: RIGHT join
 
+select-24g: RIGHT join group index
+
 types: select all typed fields
 
 types_a_date: match literal
