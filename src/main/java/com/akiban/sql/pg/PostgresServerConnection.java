@@ -373,8 +373,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         updateAIS();
 
         PostgresStatement pstmt = null;
-        // PostgresStatement pstmt = PostgresLoadablePlan.statement(this, sql);
-        if (pstmt == null && statementCache != null)
+        if (statementCache != null)
             pstmt = statementCache.get(sql);
         if (pstmt == null) {
             for (PostgresStatementParser parser : unparsedGenerators) {
@@ -629,6 +628,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
 
         statementCache = server.getStatementCache(aisGeneration);
+        server.clearPlans();
         unparsedGenerators = new PostgresStatementParser[] {
             new PostgresEmulatedMetaDataStatementParser(this)
         };

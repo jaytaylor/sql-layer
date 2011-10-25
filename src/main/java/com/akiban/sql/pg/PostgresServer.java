@@ -183,8 +183,12 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     /** This is the version for use by connections. */
     // TODO: This could create a new one if we didn't want to share them.
     public PostgresStatementCache getStatementCache(int generation) {
-        if (statementCache != null)
-            statementCache.checkGeneration(generation);
+        if (statementCache != null) {
+            boolean newGeneration = statementCache.checkGeneration(generation);
+            if (newGeneration) {
+                loadablePlans.clear();
+            }
+        }
         return statementCache;
     }
 
@@ -283,6 +287,12 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     @Override
     public long getTotalEventTime(int sessionId, String eventName) {
         return getConnection(sessionId).getSessionTracer().getTotalEventTime(eventName);
+    }
+
+    @Override
+    public void clearPlans()
+    {
+        loadablePlans.clear();
     }
 
     @Override

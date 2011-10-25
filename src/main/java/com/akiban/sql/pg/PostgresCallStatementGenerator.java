@@ -15,6 +15,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.error.StalePlanException;
 import com.akiban.sql.parser.*;
 import com.sun.org.apache.bcel.internal.generic.RETURN;
 
@@ -39,6 +40,9 @@ public class PostgresCallStatementGenerator extends PostgresBaseStatementGenerat
             CallStatementNode call = (CallStatementNode) stmt;
             String planName = ((StaticMethodCallNode) call.methodCall().getJavaValueNode()).getMethodName();
             statement = PostgresLoadablePlan.statement(server, planName);
+            if (statement == null) {
+                throw new StalePlanException(planName);
+            }
         }
         return statement;
     }

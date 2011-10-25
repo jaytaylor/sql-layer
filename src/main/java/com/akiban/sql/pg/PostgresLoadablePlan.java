@@ -32,17 +32,11 @@ public class PostgresLoadablePlan extends PostgresOperatorStatement
 
     public static PostgresLoadablePlan statement(PostgresServerSession server, String sql)
     {
-        LoadablePlan loadablePlan = loadPlan(server, sql);
-        return loadablePlan == null ? null : new PostgresLoadablePlan(loadablePlan);
-    }
-
-    private static LoadablePlan loadPlan(PostgresServerSession server, String planName)
-    {
-        LoadablePlan loadablePlan = server.loadablePlan(planName);
+        LoadablePlan loadablePlan = server.loadablePlan(sql);
         if (loadablePlan != null) {
             loadablePlan.ais(server.getAIS());
         }
-        return loadablePlan;
+        return loadablePlan == null ? null : new PostgresLoadablePlan(loadablePlan);
     }
 
     private PostgresLoadablePlan(LoadablePlan loadablePlan)

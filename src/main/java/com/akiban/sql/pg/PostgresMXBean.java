@@ -65,5 +65,6 @@ public interface PostgresMXBean {
     /*
      * Loadable plans
      */
+    void clearPlans();
     String loadPlan(String jarFilePath, String className);
 }

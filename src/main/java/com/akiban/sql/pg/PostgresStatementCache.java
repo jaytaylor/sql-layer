@@ -94,11 +94,13 @@ public class PostgresStatementCache
         misses = 0;
     }
 
-    public synchronized void checkGeneration(int generation) {
+    public synchronized boolean checkGeneration(int generation) {
         if (this.generation != generation) {
             this.generation = generation;
             cache.clear();
+            return true;
         }
+        return false;
     }
 
 }
