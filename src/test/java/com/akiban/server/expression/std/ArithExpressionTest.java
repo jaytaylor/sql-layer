@@ -35,7 +35,7 @@ public class ArithExpressionTest extends ComposedExpressionTestBase
     protected ExpressionComposer ex =  ArithOps.MINUS;
    
     @Test
-    public void LongMinusDouble ()
+    public void longMinusDouble ()
     {
         ex = ArithOps.MINUS;
         Expression left = new LiteralExpression(AkType.LONG, 5L);
@@ -50,7 +50,7 @@ public class ArithExpressionTest extends ComposedExpressionTestBase
     }
     
     @Test
-    public void BigDecimalTimesBigInteger () 
+    public void bigDecimalTimesBigInteger () 
     {
         ex = ArithOps.MULTIPLY;
         Expression left = new LiteralExpression (AkType.DECIMAL, BigDecimal.valueOf(2.0));
@@ -64,7 +64,7 @@ public class ArithExpressionTest extends ComposedExpressionTestBase
     }
 
     @Test
-    public void LongDivideLong ()
+    public void longDivideLong ()
     {
         ex = ArithOps.DIVIDE;
         Expression left = new LiteralExpression (AkType.LONG, 2L);
@@ -78,7 +78,7 @@ public class ArithExpressionTest extends ComposedExpressionTestBase
     }
     
     @Test
-    public void BigIntPlusBigInt ()
+    public void bigIntPlusBigInt ()
     {
         Expression left = new LiteralExpression (AkType.U_BIGINT, BigInteger.ONE);
         Expression right = new LiteralExpression (AkType.U_BIGINT, BigInteger.TEN);
@@ -91,7 +91,7 @@ public class ArithExpressionTest extends ComposedExpressionTestBase
     }
     
     @Test (expected = DivisionByZeroException.class)
-    public void DivideByZero ()
+    public void divideByZero ()
     {
         Expression left = new LiteralExpression (AkType.U_BIGINT, BigInteger.ONE);
         Expression right = new LiteralExpression (AkType.U_BIGINT, BigInteger.ZERO);
@@ -113,7 +113,7 @@ public class ArithExpressionTest extends ComposedExpressionTestBase
     }
     
     @Test 
-    public void LongPlusString ()
+    public void longPlusString ()
     {
         Expression left = new LiteralExpression (AkType.U_BIGINT, BigInteger.ONE);
         Expression right = new LiteralExpression (AkType.VARCHAR,"2");
@@ -126,11 +126,10 @@ public class ArithExpressionTest extends ComposedExpressionTestBase
     }
     
     @Test (expected = OverflowException.class)      
-    public void BigIntPlusDouble () // expect exception
+    public void bigIntPlusDouble () // expect exception
     {
         Expression left = new LiteralExpression(AkType.U_BIGINT, BigInteger.valueOf(Long.MAX_VALUE).pow(100));
        
-        //javax.swing.JOptionPane.showMessageDialog(null, left.toString());
         Expression right = new LiteralExpression (AkType.DOUBLE, 100000000.0);
         Expression top = new ArithExpression(left, ArithOps.ADD, right);
      

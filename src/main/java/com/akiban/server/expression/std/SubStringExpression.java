@@ -16,7 +16,7 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -110,7 +110,7 @@ public class SubStringExpression extends AbstractCompositeExpression
     {
         super(AkType.VARCHAR, children);
         if (children.size() > 3 || children.size() < 2)
-            throw new AkibanInternalException("Ilegal number of Arguments");        
+            throw new WrongExpressionArityException(3, children.size());        
     }
 
     @Override

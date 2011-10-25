@@ -18,7 +18,6 @@ package com.akiban.server.expression.std;
 import com.akiban.server.error.DivisionByZeroException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.service.functions.Scalar;
-import com.akiban.server.types.AkType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -48,8 +47,7 @@ public class ArithOps
        @Override
        public BigInteger evaluate (BigInteger one, BigInteger two)
        {
-           return new BigInteger(1, one.toByteArray()).multiply(two);// force one to be unsigned
-                                                                // so that the result is unsigned
+           return one.multiply(two);
        } 
     };
     
@@ -77,7 +75,7 @@ public class ArithOps
        @Override
        public BigInteger evaluate (BigInteger one, BigInteger two)
        {
-           return new BigInteger(1, one.toByteArray()).subtract(two);
+           return one.subtract(two);
        }        
     };
     
@@ -113,7 +111,7 @@ public class ArithOps
        {
            if (two.equals(BigInteger.ZERO))
                 throw new DivisionByZeroException();
-           return new BigInteger(1, one.toByteArray()).divide(two);
+           return one.divide(two);
        }  
     };
     
@@ -142,25 +140,12 @@ public class ArithOps
        @Override
        public BigInteger evaluate (BigInteger one, BigInteger two)
        {
-           return new BigInteger(1, one.toByteArray()).add(two);                                          
+           return one.add(two);                                        
        }  
     };
             
     static abstract class ArithOpComposer extends BinaryComposer implements ArithOp
     {
-        private AkType resType = AkType.LONG;
-        
-        @Override
-        public void setResultType (AkType type)
-        {
-            resType = type;
-        }
-        
-        @Override
-        public AkType getResultType ()
-        {
-            return resType;
-        }
         
         @Override
         protected Expression compose (Expression first, Expression second)
@@ -171,7 +156,7 @@ public class ArithOps
         @Override
         public String toString ()
         {
-            return (name + " " + resType);
+            return (name + "");
         }
         
         protected ArithOpComposer (char name)

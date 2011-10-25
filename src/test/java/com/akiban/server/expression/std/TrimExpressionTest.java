@@ -16,7 +16,6 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.types.ValueSourceIsNullException;
 import org.junit.runner.RunWith;
 import com.akiban.server.types.AkType;
 import com.akiban.junit.NamedParameterizedRunner;
@@ -40,8 +39,8 @@ public class TrimExpressionTest extends ComposedExpressionTestBase
     public TrimExpressionTest (String input, String expected, 
             TrimExpression.TrimType trimType)
     {
-        this.input = String.copyValueOf(input.toCharArray());
-        this.expected = String.copyValueOf(expected.toCharArray());
+        this.input = input;
+        this.expected = expected;
         this.trimType = trimType;
     }
     

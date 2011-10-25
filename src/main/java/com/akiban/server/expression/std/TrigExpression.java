@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -31,7 +32,7 @@ public class TrigExpression extends AbstractCompositeExpression
 { 
     public static enum TrigName
     {
-        SIN, COS, TAN, COT, ASIN, ACOS, ATAN, ATAN2, COSH
+        SIN, COS, TAN, COT, ASIN, ACOS, ATAN, ATAN2, COSH, SINH, TANH, COTH
     }
     
     private final TrigName name;
@@ -62,6 +63,15 @@ public class TrigExpression extends AbstractCompositeExpression
     
     @Scalar ("cosh")
     public static final ExpressionComposer COSH_COMPOSER = new InternalComposer(TrigName.COSH);
+    
+    @Scalar ("sinh")
+    public static final ExpressionComposer SINH_COMPOSER = new InternalComposer(TrigName.SINH);
+    
+    @Scalar ("tanh")
+    public static final ExpressionComposer  TANH_COMPOSER = new InternalComposer(TrigName.TANH);
+    
+    @Scalar ("coth")
+    public static final ExpressionComposer COTH_COMPOSER = new InternalComposer(TrigName.COTH);
     
     private static class InternalComposer implements ExpressionComposer
     {
@@ -114,15 +124,19 @@ public class TrigExpression extends AbstractCompositeExpression
             double result = 0;       
             switch (name)
             {
-                case SIN: result = Math.sin(dvar1); break;              
-                case COS: result = Math.cos(dvar1); break;       
-                case TAN: result = Math.tan(dvar1);break;      
-                case COT: result = Math.cos(dvar1) / Math.sin(dvar1); break;      
-                case ASIN: result = Math.asin(dvar1); break;
-                case ACOS: result = Math.acos(dvar1); break;
-                case ATAN: result = Math.atan(dvar1); break;
+                case SIN:   result = Math.sin(dvar1); break;              
+                case COS:   result = Math.cos(dvar1); break;       
+                case TAN:   result = Math.tan(dvar1);break;      
+                case COT:   result = Math.cos(dvar1) / Math.sin(dvar1); break; 
+                case ASIN:  result = Math.asin(dvar1); break;
+                case ACOS:  result = Math.acos(dvar1); break;
+                case ATAN:  result = Math.atan(dvar1); break;
                 case ATAN2: result = Math.atan2(dvar1, dvar2); break;
-                case COSH: result = Math.cosh(dvar1); break;
+                case COSH:  result = Math.cosh(dvar1); break;
+                case SINH:  result = Math.sinh(dvar1); break;
+                case TANH:  result = Math.tanh(dvar1); break;
+                case COTH:  result = Math.cosh(dvar1) / Math.sinh(dvar1); break;
+                default: throw new UnsupportedOperationException("Unknown Operation: " + name.name());
             }
             
             return new ValueHolder(AkType.DOUBLE, result);
@@ -142,11 +156,11 @@ public class TrigExpression extends AbstractCompositeExpression
         if (name.equals(TrigName.ATAN2))
         {   
             if (children.size() != 2)
-                throw new AkibanInternalException("Ilegal number of Arguments");
+                throw new WrongExpressionArityException(2, children.size());
         }
         else
             if (children.size() != 1)
-                throw new AkibanInternalException("Ilegal number of Arguments");
+                throw new WrongExpressionArityException(1, children.size());
      
         this.name = name;
     }

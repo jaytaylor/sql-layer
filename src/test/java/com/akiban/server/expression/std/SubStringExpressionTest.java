@@ -15,10 +15,9 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.types.ValueSourceIsNullException;
-import com.akiban.server.error.AkibanInternalException;
 import java.util.List;
-
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
@@ -29,7 +28,7 @@ import static org.junit.Assert.*;
 
 public class SubStringExpressionTest extends ComposedExpressionTestBase
 {
-    @Test (expected=AkibanInternalException.class)
+    @Test (expected=WrongExpressionArityException.class)
     public void testIllegalArg() 
     {
         // excessive arguments

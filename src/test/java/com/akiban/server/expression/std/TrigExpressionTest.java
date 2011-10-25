@@ -39,8 +39,6 @@ public class TrigExpressionTest extends ComposedExpressionTestBase
     private double expected;
     private TrigExpression.TrigName name;
     
-    private static Random rand = new Random();
-   
     public TrigExpressionTest (double input, double expected, TrigExpression.TrigName name, double input2)
     {
         this.input1 = input;
@@ -52,37 +50,76 @@ public class TrigExpressionTest extends ComposedExpressionTestBase
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params()
     {
+        /*
+         * case SIN:   result = Math.sin(dvar1); break;              
+                case COS:   result = Math.cos(dvar1); break;       
+                case TAN:   result = Math.tan(dvar1);break;      
+                case COT:   result = Math.cos(dvar1) / Math.sin(dvar1); break;      
+                case ASIN:  result = Math.asin(dvar1); break;
+                case ACOS:  result = Math.acos(dvar1); break;
+                case ATAN:  result = Math.atan(dvar1); break;
+                case ATAN2: result = Math.atan2(dvar1, dvar2); break;
+                case COSH:  result = Math.cosh(dvar1); break;
+                case SINH:  result = Math.sinh(dvar1); break;
+                case TANH:  result = Math.tanh(dvar1); break;
+                case COTH:  result = Math.cosh(dvar1) / Math.sinh(dvar1); break;
+         */
+        
         ParameterizationBuilder pb = new ParameterizationBuilder();
+        
+        
+        // SIN 
+        param (pb, Math.PI / 6, 0.5, TrigName.SIN, 0);
+        param (pb, Math.PI / 2, 1, TrigName.SIN, 0);
+        
+        // COS
+        param (pb, Math.PI / 3, 0.5, TrigName.COS, 0);
+        param (pb, 0, 1, TrigName.COS, 0);
+        
+        // TAN
+        param(pb, Math.PI / 4, 1, TrigName.TAN, 0);
+        param(pb, 0, 0, TrigName.TAN, 0);
+        
+        // COT
+        param(pb, Double.POSITIVE_INFINITY, Double.NaN, TrigName.COT, 0);
+        param(pb, Math.PI / 4, 1, TrigName.COT, 0);
+        
+        // ASIN
+        param(pb, 0.5, Math.PI / 6, TrigName.ASIN, 0);
+        param(pb, 1, Math.PI / 2, TrigName.ASIN, 0);
+        
+        // ACOS
+        param(pb, 0.5, Math.PI / 3, TrigName.ACOS, 0);
+        param(pb, 1, 0, TrigName.ACOS, 0);
+        
+        // ATAN
+        param(pb, 1, Math.PI / 4, TrigName.ATAN, 0);
+        param(pb, 0, 0, TrigName.ATAN, 0);
+        
+        // ATAN2
+        param(pb, 1, Math.PI /2 , TrigName.ATAN2, 0 );
+        param(pb, Double.NaN, Double.NaN, TrigName.ATAN2, 1);
+        
+        // COSH
+        param(pb, 0, 1, TrigName.COSH, 0);
+        param(pb, 1, (Math.E * Math.E + 1)/ 2 / Math.E,TrigName.COSH, 0);
+        
+        // SINH
+        param(pb, 0, 0, TrigName.SINH, 0);
+        param(pb, 1,(Math.E * Math.E - 1)/ 2 / Math.E, TrigName.SINH, 0);
+        
+        // TANH
+        param(pb, 0, 0, TrigName.TANH, 0);
+        param(pb, 1, (Math.E * Math.E - 1) / (Math.E * Math.E + 1), TrigName.TANH, 0);
+        
+        // COTH
+        param(pb, 0, Double.POSITIVE_INFINITY, TrigName.COTH, 0);
+        param(pb, 1, (Math.E * Math.E + 1) / (Math.E * Math.E - 1), TrigName.COTH, 0);
+   
  
-        double x, y ;
-        
-        for (TrigName trName : TrigName.values())
-        {   
-            y = getRandomNumber ();
-            x = getRandomNumber ();
-           
-            param(pb,x, getExpected(x,y,trName),trName, y);
-        }
-        
         return pb.asList();
     }
-    
-    private static double getExpected (double input1, double input2, TrigName name)
-    {
-        switch (name)
-        {
-            case SIN: return Math.sin(input1);
-            case COS: return Math.cos(input1);
-            case TAN: return Math.tan(input1);
-            case COT: return Math.cos(input1) / Math.sin(input1);
-            case ASIN: return Math.asin(input1);
-            case ACOS: return Math.acos(input1);
-            case ATAN: return Math.atan(input1);
-            case ATAN2: return Math.atan2(input1, input2);
-            default: return Math.cosh(input1);
-        }
-    }
-    
+       
     private static void param(ParameterizationBuilder pb, double input1,
             double expected, TrigExpression.TrigName name, double input2)
     {
@@ -90,11 +127,7 @@ public class TrigExpressionTest extends ComposedExpressionTestBase
                 input1, expected, name, input2);
     }
     
-    private static double getRandomNumber ()
-    {
-        return rand.nextDouble() * Math.pow(10, rand.nextInt(3));
-    }
-    
+  
     @Test
     public void test()
     {
@@ -123,7 +156,7 @@ public class TrigExpressionTest extends ComposedExpressionTestBase
     protected int childrenCount() 
     {
         
-        return (name.equals(TrigExpression.TrigName.ATAN2) ? 2 : 1); // or 1? 
+        return (name.equals(TrigExpression.TrigName.ATAN2) ? 2 : 1); 
     }
 
     @Override
@@ -139,7 +172,10 @@ public class TrigExpressionTest extends ComposedExpressionTestBase
             case ACOS: return TrigExpression.ACOS_COMPOSER;
             case ATAN: return TrigExpression.ATAN_COMPOSER;
             case ATAN2: return TrigExpression.ATAN2_COMPOSER;
-            default: return TrigExpression.COSH_COMPOSER;
+            case COSH:  return TrigExpression.COSH_COMPOSER;
+            case SINH:  return TrigExpression.SINH_COMPOSER;
+            case TANH:  return TrigExpression.TANH_COMPOSER;
+            default: return TrigExpression.COTH_COMPOSER;
         }
  
     }

@@ -21,11 +21,7 @@ import java.math.BigInteger;
 
 
 public interface ArithOp 
-{    
-    public void setResultType (AkType type);
-    
-    public AkType getResultType ();
-    
+{  
     // long 
     long evaluate (long one, long two);
     

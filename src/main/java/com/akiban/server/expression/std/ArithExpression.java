@@ -24,6 +24,7 @@ import com.akiban.server.types.util.AbstractArithValueSource;
 import com.akiban.util.ArgumentValidation;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -31,8 +32,8 @@ public class ArithExpression extends AbstractBinaryExpression
 {
     private final ArithOp op;
     private AkType topT;
-    static public final EnumSet<AkType> SUPPORTED_TYPES = // Order is IMPORTANT!
-            EnumSet.of(AkType.DECIMAL, AkType.DOUBLE, AkType.U_BIGINT, AkType.LONG);
+    static public final List<AkType> SUPPORTED_TYPES = // Order is IMPORTANT
+            Arrays.asList(AkType.DECIMAL, AkType.DOUBLE, AkType.U_BIGINT, AkType.LONG);
     static private final EnumSet<AkType> DATETIME_TYPES = EnumSet.of(AkType.DATE, AkType.TIME, AkType.DATETIME, AkType.TIMESTAMP);
 
     public ArithExpression (Expression lhs, ArithOp op, Expression rhs)
@@ -41,7 +42,6 @@ public class ArithExpression extends AbstractBinaryExpression
         
         this.op = op; 
         topT = super.valueType();
-        this.op.setResultType(topT);
     }
 
     @Override
