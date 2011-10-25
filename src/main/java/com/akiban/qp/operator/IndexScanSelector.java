@@ -37,7 +37,7 @@ public abstract class IndexScanSelector {
 
     public static IndexScanSelector leftJoinAfter(Index index, final UserTable leafmostRequired) {
         final int leafmostRequiredDepth = leafmostRequired.getDepth();
-        return create(index, new Policy() {
+        return create(index, new SelectorCreationPolicy() {
             @Override
             public boolean include(UserTable table) {
                 if (table.equals(leafmostRequired))
@@ -70,7 +70,7 @@ public abstract class IndexScanSelector {
 
     public static IndexScanSelector rightJoinUntil(Index index, final UserTable rootmostRequired) {
         final int leafmostRequiredDepth = rootmostRequired.getDepth();
-        return create(index, new Policy() {
+        return create(index, new SelectorCreationPolicy() {
             @Override
             public boolean include(UserTable table) {
                 if (table.equals(rootmostRequired))
@@ -108,7 +108,7 @@ public abstract class IndexScanSelector {
     }
 
     public static IndexScanSelector inner(Index index) {
-        return create(index, new Policy() {
+        return create(index, new SelectorCreationPolicy() {
             @Override
             public boolean include(UserTable table) {
                 return true;
@@ -129,7 +129,7 @@ public abstract class IndexScanSelector {
         });
     }
 
-    private static IndexScanSelector create(Index index, Policy policy) {
+    private static IndexScanSelector create(Index index, SelectorCreationPolicy policy) {
         if (index.isTableIndex()) {
             policy.validate((TableIndex)index);
             return ALLOW_ALL;
@@ -137,7 +137,7 @@ public abstract class IndexScanSelector {
         return create((GroupIndex)index, policy);
     }
 
-    private static IndexScanSelector create(GroupIndex index, Policy policy) {
+    private static IndexScanSelector create(GroupIndex index, SelectorCreationPolicy policy) {
         UserTable giLeaf = index.leafMostTable();
         List<UserTable> requiredTables = new ArrayList<UserTable>(giLeaf.getDepth());
         for(UserTable table = giLeaf, end = index.rootMostTable().parentTable();
@@ -151,10 +151,24 @@ public abstract class IndexScanSelector {
         return new SelectiveGiSelector(index, requiredTables, policy.description(index));
     }
 
-    private interface Policy {
+    /**
+     * A policy which tells which tables are required and which aren't.
+     */
+    private interface SelectorCreationPolicy {
         boolean include(UserTable table);
         String description(GroupIndex index);
+
+        /**
+         * Invoked <em>after all calls to {@linkplain #include}</em> to perform any final validations. Specifically,
+         * lets policies make sure that they saw tables they expected to see.
+         * @param index the index that triggered this policy
+         */
         void validate(GroupIndex index);
+
+        /**
+         * Invoked if the index that triggered this policy was a table index
+         * @param index the index that triggered this policy
+         */
         void validate(TableIndex index);
     }
 
