@@ -632,6 +632,7 @@ public class ASTStatementLoader extends BaseRule
                 needOperand = true;
                 break;
             }
+            boolean distinct = false;
             // TODO: This may not be right for c IN (SELECT x ... UNION SELECT y ...).
             // Maybe turn that into an OR and optimize each separately.
             {
@@ -655,7 +656,10 @@ public class ASTStatementLoader extends BaseRule
                             subquery = next;
                         break;
                     }
-                    if (!(plan instanceof ResultSet)) { // Also remove ResultSet.
+                    if (plan instanceof Distinct) {
+                        distinct = true;
+                    }
+                    else if (!(plan instanceof ResultSet)) { // Also remove ResultSet.
                         prev = (PlanWithInput)plan;
                     }
                     plan = next;
@@ -675,6 +679,9 @@ public class ASTStatementLoader extends BaseRule
                 List<ExpressionNode> fields = new ArrayList<ExpressionNode>(1);
                 fields.add(inner);
                 subquery = new Project(subquery, fields);
+                if (distinct)
+                    // See InConditionReverser#convert(Select,AnyCondition).
+                    subquery = new Distinct(subquery);
                 condition = new AnyCondition(new Subquery(subquery), 
                                              subqueryNode.getType(), subqueryNode);
             }
@@ -732,7 +739,10 @@ public class ASTStatementLoader extends BaseRule
             List<ExpressionNode> operands = new ArrayList<ExpressionNode>(1);
             operands.add(toExpression(is.getLeftOperand()));
             String function;
-            if (((Boolean)((ConstantNode)is.getRightOperand()).getValue()).booleanValue())
+            Boolean value = (Boolean)((ConstantNode)is.getRightOperand()).getValue();
+            if (value == null)
+                function = "isNull"; // No separate isUnknown.
+            else if (value.booleanValue())
                 function = "isTrue";
             else
                 function = "isFalse";

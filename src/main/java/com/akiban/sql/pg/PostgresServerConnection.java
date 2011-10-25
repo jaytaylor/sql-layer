@@ -628,7 +628,6 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
 
         statementCache = server.getStatementCache(aisGeneration);
-        server.clearPlans();
         unparsedGenerators = new PostgresStatementParser[] {
             new PostgresEmulatedMetaDataStatementParser(this)
         };

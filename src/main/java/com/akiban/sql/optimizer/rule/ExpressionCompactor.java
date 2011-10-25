@@ -147,7 +147,7 @@ public class ExpressionCompactor extends BaseRule
         }
         else if (condition instanceof FunctionExpression) {
             String fname = ((FunctionExpression)condition).getFunction();
-            if ("isNullOp".equals(fname))
+            if ("isNull".equals(fname))
                 return 1;
         }
         else if (condition instanceof SubqueryExpression)

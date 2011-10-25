@@ -80,6 +80,10 @@ public class IndexPicker extends BaseRule
         }
 
         protected void pickIndex(TableJoins tableJoins) {
+            if (tableJoins.getScan() != null) 
+                // This can happen if a subquery source gets replaced
+                // by ordinary joins that then get dealt with.
+                return;
             // Goal is to get all the tables joined right here. Others
             // in the group may come via XxxLookup in a nested
             // loop. Can only consider table indexes on the inner
@@ -220,6 +224,11 @@ public class IndexPicker extends BaseRule
             }
             else {
                 tryReverse = join.getReverseHook().canReverse(join);
+                if (!tryReverse) {
+                    join.getReverseHook().didNotReverse(join);
+                    left = join.getLeft();
+                    right = join.getRight();
+                }
             }
 
             if (tryReverse) {
@@ -265,13 +274,16 @@ public class IndexPicker extends BaseRule
                 lgoal = rgoal;
                 lindex = rindex;
             }
+            else if (join.getReverseHook() != null) {
+                join.getReverseHook().didNotReverse(join);
+            }
             // Commit to the left choice and redo the right with it bound.
             pickedIndex(left, lgoal, lindex);
             pickIndexes(right);
             return true;
         }
 
-        // Pick indexes for table and VALUES (or generally not tables).
+        // Pick indexes for table and VALUES (or generally a non-table ColumnSource).
         // Put the VALUES outside if the join condition ends up indexed.
         protected boolean pickIndexesTableValues(JoinNode join) {
             TableJoins left = leftOfValues(join);
@@ -291,8 +303,12 @@ public class IndexPicker extends BaseRule
                     found = true;
                 }
             }
-            if (!found) 
+            if (!found) {
+                if (join.getReverseHook() != null) {
+                    join.getReverseHook().didNotReverse(join);
+                }
                 return false;
+            }
             
             // Put the VALUES outside and commit to that in the simple case.
             join.reverse();
