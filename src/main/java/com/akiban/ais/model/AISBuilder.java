@@ -126,13 +126,13 @@ public class
                 constraint);
     }
 
-    public void groupIndex(String groupName, String indexName, Boolean unique)
+    public void groupIndex(String groupName, String indexName, Boolean unique, String joinType)
     {
         LOG.info("groupIndex: " + groupName + "." + indexName);
         Group group = ais.getGroup(groupName);
         checkFound(group, "creating group index", "group", groupName);
         String constraint = unique ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT;
-        GroupIndex.create(ais, group, indexName, indexIdGenerator++, unique, constraint, null);
+        GroupIndex.create(ais, group, indexName, indexIdGenerator++, unique, constraint, joinType);
     }
 
     public void indexColumn(String schemaName, String tableName,

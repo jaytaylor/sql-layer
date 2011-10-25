@@ -84,7 +84,8 @@ public enum ErrorCode {
     UNSUPPORTED_CHECK       ("0A", "505", Importance.ERROR, UnsupportedCheckConstraintException.class),
     UNSUPPORTED_GROUP_UNIQUE("0A", "506", Importance.DEBUG, UnsupportedUniqueGroupIndexException.class),
     UNSUPPORTED_INDEX_PREFIX("0A", "507", Importance.ERROR, UnsupportedIndexPrefixException.class),
-    SELECT_EXISTS_ERROR     ("0A", "508", Importance.DEBUG, SelectExistsErrorException.class),    
+    SELECT_EXISTS_ERROR     ("0A", "508", Importance.DEBUG, SelectExistsErrorException.class),
+    UNSUPPORTED_GROUP_INDEX_JOIN("0A", "509", Importance.DEBUG, UnsupportedGroupIndexJoinTypeException.class),
     
     // Class 0D - invalid target type specification
     // Class 0E - invalid schema name list specification
@@ -231,7 +232,8 @@ public enum ErrorCode {
     NO_SUCH_FUNCTION        ("42", "50D", Importance.DEBUG, NoSuchFunctionException.class),
     ORDER_GROUP_BY_NON_INTEGER_CONSTANT("42", "50E", Importance.DEBUG, OrderGroupByNonIntegerConstant.class),
     ORDER_GROUP_BY_INTEGER_OUT_OF_RANGE("42", "50F", Importance.DEBUG, OrderGroupByIntegerOutOfRange.class),
- 
+    MISSING_GROUP_INDEX_JOIN("42", "510", Importance.DEBUG, MissingGroupIndexJoinTypeException.class),
+    TABLE_INDEX_JOIN        ("42", "511", Importance.DEBUG, TableIndexJoinTypeException.class),
 
     // Class 44 - with check option violation
     
