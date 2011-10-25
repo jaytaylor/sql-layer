@@ -209,23 +209,63 @@ public class API
 
     // IndexScan
 
+    /**
+     * Creates a full scan operator for the given index, non-reversing, using LEFT JOIN semantics after the indexType's
+     * tableType
+     * @param indexType the index to scan
+     * @return the scan operator
+     * @deprecated use {@link #indexScan_Default(IndexRowType, boolean, IndexKeyRange, IndexScanSelector)}
+     */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType)
     {
         return indexScan_Default(indexType, false, null, indexType.tableType());
     }
 
+    /**
+     * Creates a scan operator for the given index, using LEFT JOIN semantics after the indexType's tableType.
+     * @param indexType the index to scan
+     * @param reverse whether to scan in reverse order
+     * @param indexKeyRange the scan range
+     * @return the scan operator
+     * @deprecated use {@link #indexScan_Default(IndexRowType, boolean, IndexKeyRange, IndexScanSelector)}
+     */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
     {
         return indexScan_Default(indexType, reverse, indexKeyRange, indexType.tableType());
     }
 
+    /**
+     * Creates a scan operator for the given index, using LEFT JOIN semantics after the given table type.
+     * @param indexType the index to scan
+     * @param reverse whether to scan in reverse order
+     * @param indexKeyRange the scan range
+     * @param innerJoinUntilRowType the table after which the scan should start using LEFT JOIN GI semantics.
+     * @return the scan operator
+     * @deprecated use {@link #indexScan_Default(IndexRowType, boolean, IndexKeyRange, IndexScanSelector)}
+     */
+    @Deprecated
     public static Operator indexScan_Default(IndexRowType indexType,
                                                      boolean reverse,
                                                      IndexKeyRange indexKeyRange,
                                                      UserTableRowType innerJoinUntilRowType)
     {
-        IndexScanSelector selector = IndexScanSelector.leftJoinAfter(indexType.index(), innerJoinUntilRowType.userTable());
-        return new IndexScan_Default(indexType, reverse, indexKeyRange, selector);
+        return indexScan_Default(
+                indexType,
+                reverse,
+                indexKeyRange,
+                IndexScanSelector.leftJoinAfter(indexType.index(), innerJoinUntilRowType.userTable())
+        );
+    }
+    public static Operator indexScan_Default(IndexRowType indexType,
+                                             boolean reverse,
+                                             IndexKeyRange indexKeyRange,
+                                             IndexScanSelector indexScanSelector)
+    {
+        return new IndexScan_Default(indexType, reverse, indexKeyRange, indexScanSelector);
     }
 
     // Select
