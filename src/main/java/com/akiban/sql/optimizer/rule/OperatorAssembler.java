@@ -41,6 +41,7 @@ import com.akiban.server.types.AkType;
 
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.BindableRow;
@@ -248,12 +249,33 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleIndexScan(IndexScan indexScan) {
             RowStream stream = new RowStream();
-            IndexRowType indexRowType = schema.indexRowType(indexScan.getIndex());
-            // TODO: If index is RIGHT JOIN group index, need different IndexScanSelector.
+            Index index = indexScan.getIndex();
+            IndexRowType indexRowType = schema.indexRowType(index);
+            IndexScanSelector selector;
+            if (index.isTableIndex()) {
+                selector = IndexScanSelector.inner(index);
+            }
+            else {
+                switch (index.getJoinType()) {
+                case LEFT:
+                    selector = IndexScanSelector
+                        .leftJoinAfter(index, 
+                                       indexScan.getLeafMostInnerTable().getTable().getTable());
+                    break;
+                case RIGHT:
+                    selector = IndexScanSelector
+                        .rightJoinUntil(index, 
+                                        indexScan.getRootMostInnerTable().getTable().getTable());
+                    break;
+                default:
+                    throw new AkibanInternalException("Unknown index join type " +
+                                                      index);
+                }
+            }
             stream.operator = API.indexScan_Default(indexRowType, 
                                                     indexScan.isReverseScan(),
                                                     assembleIndexKeyRange(indexScan, null),
-                                                    tableRowType(indexScan.getLeafMostInnerTable()));
+                                                    selector);
             stream.rowType = indexRowType;
             stream.fieldOffsets = new IndexFieldOffsets(indexScan, indexRowType);
             return stream;
