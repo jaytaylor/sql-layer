@@ -293,6 +293,13 @@ public class API
         return new Ordering();
     }
 
+    // Distinct
+
+    public static Operator distinct_Partial(Operator input, RowType distinctType)
+    {
+        return new Distinct_Partial(input, distinctType);
+    }
+
     // Map
 
     public static Operator map_NestedLoops(Operator outerInput,
