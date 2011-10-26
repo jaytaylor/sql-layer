@@ -36,7 +36,9 @@ class IndexScan_Default extends Operator
         StringBuilder str = new StringBuilder(getClass().getSimpleName());
         str.append("(").append(index);
         str.append(" ").append(indexKeyRange);
-        str.append(" ").append(ordering);
+        if (!ordering.allAscending()) {
+            str.append(" ").append(ordering);
+        }
         if (innerJoinUntilRowType.userTable() != index.leafMostTable()) {
             str.append(" INNER JOIN thru ").append(innerJoinUntilRowType.userTable().getName().getTableName());
         }
