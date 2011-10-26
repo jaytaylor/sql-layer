@@ -201,15 +201,10 @@ public class GroupJoinFinder extends BaseRule
         }
         else if (joinable.isJoin()) {
             JoinNode join = (JoinNode)joinable;
-            if (join.getLeft().isTable()) {
-                if (join.getRight().isTable()) {
-                    if (compareTableSources((TableSource)join.getLeft(),
-                                            (TableSource)join.getRight()) > 0)
-                        join.reverse();
-                }
-                else
-                    join.reverse();
-            }
+            join.setLeft(reorderJoins(join.getLeft()));
+            join.setRight(reorderJoins(join.getRight()));
+            if (compareJoinables(join.getLeft(), join.getRight()) > 0)
+                join.reverse();
         }
         return joinable;
     }
@@ -272,7 +267,8 @@ public class GroupJoinFinder extends BaseRule
     protected void findGroupJoins(List<JoinIsland> islands) {
         for (JoinIsland island : islands) {
             List<TableGroupJoin> whereJoins = new ArrayList<TableGroupJoin>();
-            findGroupJoins(island.root, null, island.whereConditions, whereJoins);
+            findGroupJoins(island.root, new ArrayDeque<JoinNode>(), 
+                           island.whereConditions, whereJoins);
             island.whereJoins = whereJoins;
         }
         for (JoinIsland island : islands) {
@@ -280,33 +276,49 @@ public class GroupJoinFinder extends BaseRule
         }
     }
 
-    protected void findGroupJoins(Joinable joinable, JoinNode output,
+    protected void findGroupJoins(Joinable joinable, 
+                                  Deque<JoinNode> outputJoins,
                                   ConditionList whereConditions,
                                   List<TableGroupJoin> whereJoins) {
         if (joinable.isTable()) {
             TableSource table = (TableSource)joinable;
-            ConditionList conditions = null;
-            if (output != null)
-                conditions = output.getJoinConditions();
-            if ((conditions != null) && conditions.isEmpty())
-                conditions = null;
-            if (conditions == null)
-                conditions = whereConditions;
-            TableGroupJoin tableJoin = findParentJoin(table, conditions);
-            if (tableJoin != null) {
-                if (conditions == whereConditions)
-                    whereJoins.add(tableJoin); // Position after reordering.
-                else
+            for (JoinNode output : outputJoins) {
+                ConditionList conditions = output.getJoinConditions();
+                TableGroupJoin tableJoin = findParentJoin(table, conditions);
+                if (tableJoin != null) {
                     output.setGroupJoin(tableJoin);
+                    return;
+                }
+            }
+            TableGroupJoin tableJoin = findParentJoin(table, whereConditions);
+            if (tableJoin != null) {
+                whereJoins.add(tableJoin); // Position after reordering.
+                return;
             }
         }
         else if (joinable.isJoin()) {
             JoinNode join = (JoinNode)joinable;
             Joinable right = join.getRight();
-            if (!join.isInnerJoin())
-                whereConditions = null;
-            findGroupJoins(join.getLeft(), join, whereConditions, whereJoins);
-            findGroupJoins(join.getRight(), join, whereConditions, whereJoins);
+            outputJoins.push(join);
+            if (join.isInnerJoin()) {
+                findGroupJoins(join.getLeft(), outputJoins, whereConditions, whereJoins);
+                findGroupJoins(join.getRight(), outputJoins, whereConditions, whereJoins);
+            }
+            else {
+                Deque<JoinNode> singleJoin = new ArrayDeque<JoinNode>(1);
+                singleJoin.push(join);
+                // In a LEFT OUTER JOIN, the outer half is allowed to
+                // take from higher conditions.
+                if (join.getJoinType() == JoinType.LEFT)
+                    findGroupJoins(join.getLeft(), outputJoins, whereConditions, whereJoins);
+                else
+                    findGroupJoins(join.getLeft(), singleJoin, null, null);
+                if (join.getJoinType() == JoinType.RIGHT)
+                    findGroupJoins(join.getRight(), outputJoins, whereConditions, whereJoins);
+                else
+                    findGroupJoins(join.getRight(), singleJoin, null, null);
+            }
+            outputJoins.pop();
         }
     }
 
@@ -314,7 +326,7 @@ public class GroupJoinFinder extends BaseRule
     // parent join for the given table.
     protected TableGroupJoin findParentJoin(TableSource childTable,
                                             ConditionList conditions) {
-        if (conditions == null) return null;
+        if ((conditions == null) || conditions.isEmpty()) return null;
         TableNode childNode = childTable.getTable();
         Join groupJoin = childNode.getTable().getParentJoin();
         if (groupJoin == null) return null;
@@ -540,18 +552,6 @@ public class GroupJoinFinder extends BaseRule
             return 0;
     }
     
-    protected static int compareJoinables(Joinable j1, Joinable j2) {
-        if (j1.isTable()) {
-            if (!j2.isTable())
-                return -1;
-            return compareTableSources((TableSource)j1, (TableSource)j2);
-        }
-        else if (j2.isTable())
-            return +1;
-        else
-            return 0;
-    }
-
     protected static int compareTableSources(TableSource ts1, TableSource ts2) {
         TableNode t1 = ts1.getTable();
         UserTable ut1 = t1.getTable();
@@ -585,6 +585,66 @@ public class GroupJoinFinder extends BaseRule
             getInnerJoins(((JoinNode)joinable).getLeft(), into);
             getInnerJoins(((JoinNode)joinable).getRight(), into);
         }
+    }
+
+    protected static int compareJoinables(Joinable j1, Joinable j2) {
+        if (j1.isTable() && j2.isTable())
+            return compareTableSources((TableSource)j1, (TableSource)j2);
+        Group g1 = singleGroup(j1);
+        Group g2 = singleGroup(j2);
+        if (g1 == null) {
+            if (g2 != null)
+                return -1;
+            else
+                return 0;
+        }
+        else if (g2 == null)
+            return +1;
+        if (g1 != g2)
+            return g1.getName().compareTo(g2.getName());
+        int[] range1 = ordinalRange(j1);
+        int[] range2 = ordinalRange(j2);
+        if (range1[1] < range2[0])
+            return -1;
+        else if (range1[0] > range2[1])
+            return +1;
+        else
+            return 0;
+    }
+
+    protected static Group singleGroup(Joinable j) {
+        if (j.isTable())
+            return ((TableSource)j).getTable().getGroup();
+        else if (j.isJoin()) {
+            JoinNode join = (JoinNode)j;
+            Group gl = singleGroup(join.getLeft());
+            Group gr = singleGroup(join.getRight());
+            if (gl == gr)
+                return gl;
+            else
+                return null;
+        }
+        else
+            return null;
+    }
+
+    protected static int[] ordinalRange(Joinable j) {
+        if (j.isTable()) {
+            int ord = ((TableSource)j).getTable().getOrdinal();
+            return new int[] { ord, ord };
+        }
+        else if (j.isJoin()) {
+            JoinNode join = (JoinNode)j;
+            int[] ol = ordinalRange(join.getLeft());
+            int[] or = ordinalRange(join.getRight());
+            if (ol[0] > or[0])
+                ol[0] = or[0];
+            if (ol[1] < or[1])
+                ol[1] = or[1];
+            return ol;
+        }
+        else
+            return new int[] { -1, -1 };
     }
 
 }

@@ -30,7 +30,7 @@ public class IndexScan extends BasePlanNode
 
     private Index index;
 
-    private TableSource rootMostTable, leafMostInnerTable, leafMostTable;
+    private TableSource rootMostTable, rootMostInnerTable, leafMostInnerTable, leafMostTable;
 
     // Conditions subsumed by this index.
     // TODO: any cases where a condition is only partially handled and
@@ -61,12 +61,19 @@ public class IndexScan extends BasePlanNode
     // Tables that would still need to be fetched if this index were used.
     private Set<TableSource> requiredTables;
 
+    public IndexScan(Index index, TableSource table) {
+        this.index = index;
+        rootMostTable = rootMostInnerTable = leafMostInnerTable = leafMostTable = table;
+    }
+
     public IndexScan(Index index, 
                      TableSource rootMostTable, 
+                     TableSource rootMostInnerTable,
                      TableSource leafMostInnerTable,
                      TableSource leafMostTable) {
         this.index = index;
         this.rootMostTable = rootMostTable;
+        this.rootMostInnerTable = rootMostInnerTable;
         this.leafMostInnerTable = leafMostInnerTable;
         this.leafMostTable = leafMostTable;
     }
@@ -77,6 +84,9 @@ public class IndexScan extends BasePlanNode
 
     public TableSource getRootMostTable() {
         return rootMostTable;
+    }
+    public TableSource getRootMostInnerTable() {
+        return rootMostInnerTable;
     }
     public TableSource getLeafMostInnerTable() {
         return leafMostInnerTable;

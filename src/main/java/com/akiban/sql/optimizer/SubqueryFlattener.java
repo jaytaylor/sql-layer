@@ -62,7 +62,7 @@ public class SubqueryFlattener
         this.nodeFactory = parserContext.getNodeFactory();
     }
 
-    private Stack<SelectNode> selectStack;
+    private Stack<SelectNode> selectStack; // Needs to hold nulls.
     private SelectNode currentSelectNode;
 
     /** Flatten top-level statement.
