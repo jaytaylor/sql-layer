@@ -70,6 +70,7 @@ class PersistitIndexCursor implements Cursor
                 }
             } while (needAnother);
         } catch (PersistitInterruptedException e) {
+            Thread.interrupted(); // We've handled the interruption, clear the interrupted bit.
             throw new QueryCanceledException();
         } catch (PersistitException e) {
             throw new StoreAdapterRuntimeException(e);

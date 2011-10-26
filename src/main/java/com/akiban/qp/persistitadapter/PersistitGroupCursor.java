@@ -65,6 +65,7 @@ class PersistitGroupCursor implements GroupCursor
                 hKey == null ? new FullScan() :
                 hKeyDeep ? new HKeyAndDescendentsScan(hKey) : new HKeyWithoutDescendentsScan(hKey);
         } catch (PersistitInterruptedException e) {
+            Thread.interrupted(); // We've handled the interruption, clear the interrupted bit.
             throw new QueryCanceledException();
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
