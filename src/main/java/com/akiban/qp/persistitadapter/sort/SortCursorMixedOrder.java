@@ -18,6 +18,7 @@ package com.akiban.qp.persistitadapter.sort;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapterException;
 import com.akiban.qp.row.Row;
 import com.persistit.exception.PersistitException;
@@ -71,6 +72,19 @@ public abstract class SortCursorMixedOrder extends SortCursor
 
     // SortCursorMixedOrder interface
 
+    public static SortCursorMixedOrder create(PersistitAdapter adapter,
+                                              RowGenerator rowGenerator,
+                                              IndexKeyRange keyRange,
+                                              API.Ordering ordering)
+    {
+        return
+            // keyRange == null occurs when Sorter is used, (to sort an arbitrary input stream). There is no
+            // IndexRowType in that case, so an IndexKeyRange can't be created.
+            keyRange == null || keyRange.unbounded()
+            ? new SortCursorMixedOrderUnbounded(adapter, rowGenerator, keyRange, ordering)
+            : new SortCursorMixedOrderBounded(adapter, rowGenerator, keyRange, ordering);
+    }
+
     public abstract MixedOrderScanState createScanState(SortCursorMixedOrder cursor, int field)
         throws PersistitException;
 
@@ -78,9 +92,12 @@ public abstract class SortCursorMixedOrder extends SortCursor
 
     // For use by subclasses
 
-    protected SortCursorMixedOrder(RowGenerator rowGenerator, IndexKeyRange keyRange, API.Ordering ordering)
+    protected SortCursorMixedOrder(PersistitAdapter adapter,
+                                   RowGenerator rowGenerator,
+                                   IndexKeyRange keyRange,
+                                   API.Ordering ordering)
     {
-        super(rowGenerator);
+        super(adapter, rowGenerator);
         this.keyRange = keyRange;
         this.ordering = ordering;
         sortFields = ordering.sortFields();

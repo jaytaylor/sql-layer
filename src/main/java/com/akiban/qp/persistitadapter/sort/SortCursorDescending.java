@@ -15,12 +15,48 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
+import com.akiban.qp.expression.IndexBound;
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.persistit.Key;
 
 public class SortCursorDescending extends SortCursorUnidirectional
 {
-    public SortCursorDescending(RowGenerator rowGenerator)
+    public static SortCursorDescending create(PersistitAdapter adapter,
+                                              RowGenerator rowGenerator,
+                                              IndexKeyRange keyRange,
+                                              API.Ordering ordering)
     {
-        super(rowGenerator, Key.AFTER, Key.LT);
+        return
+            keyRange == null || keyRange.unbounded()
+            ? new SortCursorDescending(adapter,
+                                       rowGenerator)
+            : new SortCursorDescending(adapter,
+                                       rowGenerator,
+                                       keyRange,
+                                       ordering.sortFields());
+    }
+
+    private SortCursorDescending(PersistitAdapter adapter, RowGenerator rowGenerator)
+    {
+        super(adapter, rowGenerator, Key.AFTER, Key.LT);
+    }
+
+    private SortCursorDescending(PersistitAdapter adapter,
+                                 RowGenerator rowGenerator,
+                                 IndexKeyRange keyRange,
+                                 int sortFields)
+    {
+        super(adapter,
+              rowGenerator,
+              keyRange.indexRowType(),
+              sortFields,
+              keyRange.hi(),
+              keyRange.hiInclusive(),
+              keyRange.lo(),
+              keyRange.loInclusive(),
+              -1);
     }
 }

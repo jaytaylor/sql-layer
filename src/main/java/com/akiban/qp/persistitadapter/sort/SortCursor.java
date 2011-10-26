@@ -54,21 +54,18 @@ public abstract class SortCursor implements Cursor
             }
         }
         return
-            allAscending ?
-            new SortCursorAscending(rowGenerator) :
-            allDescending ?
-            new SortCursorDescending(rowGenerator) :
-            // keyRange == null occurs when Sorter is used, (to sort an arbitrary input stream). There is no
-            // IndexRowType in that case, so an IndexKeyRange can't be created.
-            keyRange == null || keyRange.unbounded() ?
-            new SortCursorMixedOrderUnbounded(rowGenerator, keyRange, ordering) :
-            new SortCursorMixedOrderBounded(rowGenerator, keyRange, ordering, adapter);
+            allAscending
+            ? SortCursorAscending.create(adapter, rowGenerator, keyRange, ordering) :
+            allDescending
+            ? SortCursorDescending.create(adapter, rowGenerator, keyRange, ordering)
+            : SortCursorMixedOrder.create(adapter, rowGenerator, keyRange, ordering);
     }
 
     // For use by subclasses
 
-    protected SortCursor(RowGenerator rowGenerator)
+    protected SortCursor(PersistitAdapter adapter, RowGenerator rowGenerator)
     {
+        this.adapter = adapter;
         this.rowGenerator = rowGenerator;
         this.exchange = rowGenerator.exchange();
     }
@@ -80,6 +77,7 @@ public abstract class SortCursor implements Cursor
 
     // Object state
 
+    protected final PersistitAdapter adapter;
     protected final Exchange exchange;
     protected final RowGenerator rowGenerator;
 }

@@ -41,6 +41,7 @@ import com.akiban.server.store.PersistitStore;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.persistit.Exchange;
+import com.persistit.Key;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
@@ -213,6 +214,11 @@ public class PersistitAdapter extends StoreAdapter
     public Exchange takeExchangeForSorting(TreeLink treeLink)
     {
         return treeService.getExchange(session, treeLink);
+    }
+
+    public Key newKey()
+    {
+        return new Key(persistit.getDb());
     }
 
     private Exchange transact(Exchange exchange)

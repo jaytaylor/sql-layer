@@ -18,7 +18,7 @@ package com.akiban.qp.persistitadapter.sort;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.persistit.exception.PersistitException;
 
 class SortCursorMixedOrderBounded extends SortCursorMixedOrder
@@ -54,19 +54,16 @@ class SortCursorMixedOrderBounded extends SortCursorMixedOrder
         }
     }
 
-    public SortCursorMixedOrderBounded(RowGenerator rowGenerator,
+    public SortCursorMixedOrderBounded(PersistitAdapter adapter,
+                                       RowGenerator rowGenerator,
                                        IndexKeyRange keyRange,
-                                       API.Ordering ordering,
-                                       StoreAdapter adapter)
+                                       API.Ordering ordering)
     {
-        super(rowGenerator, keyRange, ordering);
-        this.adapter = adapter;
+        super(adapter, rowGenerator, keyRange, ordering);
     }
 
     private MixedOrderScanStateBounded scanState(int field)
     {
         return (MixedOrderScanStateBounded) scanStates.get(field);
     }
-
-    private final StoreAdapter adapter;
 }

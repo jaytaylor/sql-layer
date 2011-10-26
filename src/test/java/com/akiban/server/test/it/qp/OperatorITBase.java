@@ -15,31 +15,30 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.*;
+import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
-import com.akiban.qp.persistitadapter.PersistitIndexRow;
-import com.akiban.qp.operator.*;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.server.test.it.ITBase;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.util.ValueHolder;
-import com.akiban.util.ShareHolder;
-import com.persistit.exception.PersistitException;
 import com.akiban.util.Strings;
 import org.junit.Before;
 
@@ -48,7 +47,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.akiban.qp.operator.API.cursor;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class OperatorITBase extends ITBase
 {
