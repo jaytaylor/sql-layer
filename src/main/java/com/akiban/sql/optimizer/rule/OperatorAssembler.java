@@ -249,6 +249,7 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleIndexScan(IndexScan indexScan) {
             RowStream stream = new RowStream();
             IndexRowType indexRowType = schema.indexRowType(indexScan.getIndex());
+            // TODO: If index is RIGHT JOIN group index, need different IndexScanSelector.
             stream.operator = API.indexScan_Default(indexRowType, 
                                                     indexScan.isReverseScan(),
                                                     assembleIndexKeyRange(indexScan, null),

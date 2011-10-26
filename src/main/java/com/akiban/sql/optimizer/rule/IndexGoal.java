@@ -22,6 +22,7 @@ import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.Index.JoinType;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
@@ -383,7 +384,7 @@ public class IndexGoal implements Comparator<IndexScan>
         IndexScan bestIndex = null;
         if (!groupOnly) {
             for (TableIndex index : table.getTable().getTable().getIndexes()) {
-                IndexScan candidate = new IndexScan(index, table, table, table);
+                IndexScan candidate = new IndexScan(index, table);
                 bestIndex = betterIndex(bestIndex, candidate);
             }
         }
@@ -394,21 +395,64 @@ public class IndexGoal implements Comparator<IndexScan>
                 // ancestors discontiguous and duplicates hard to eliminate).
                 if (index.leafMostTable() != table.getTable().getTable())
                     continue;
-                // The root must be present, since the index does not
-                // contain orphans.
                 TableSource rootTable = table;
-                TableSource leafRequired = null;
-                while (rootTable != null) {
-                    if ((leafRequired == null) && rootTable.isRequired())
-                        leafRequired = rootTable;
-                    if (index.rootMostTable() == rootTable.getTable().getTable())
-                        break;
-                    rootTable = rootTable.getParentTable();
+                TableSource rootRequired = null, leafRequired = null;
+                if (index.getJoinType() == JoinType.LEFT) {
+                    while (rootTable != null) {
+                        // TODO: These isRequired() predicates need to
+                        // be relative to the group to support outer
+                        // joins between groups.
+                        if (rootTable.isRequired()) {
+                            rootRequired = rootTable;
+                            if (leafRequired == null)
+                                leafRequired = rootTable;
+                        }
+                        else {
+                            if (leafRequired != null) {
+                                leafRequired = null;
+                                break;
+                            }
+                        }
+                        if (index.rootMostTable() == rootTable.getTable().getTable())
+                            break;
+                        rootTable = rootTable.getParentTable();
+                    }
+                    // The root must be present, since a LEFT index
+                    // does not contain orphans.
+                    if ((rootTable == null) || 
+                        (rootRequired != rootTable) ||
+                        (leafRequired == null))
+                        continue;
                 }
-                if ((rootTable == null) || (leafRequired == null)) continue;
-                IndexScan candidate = new IndexScan(index, rootTable, leafRequired, table);
+                else {
+                    if (!table.isRequired())
+                        continue;
+                    leafRequired = table;
+                    TableSource childTable = null;
+                    while (rootTable != null) {
+                        if (rootTable.isRequired()) {
+                            if (rootRequired != null) {
+                                rootRequired = null;
+                                break;
+                            }
+                        }
+                        else {
+                            if (rootRequired == null)
+                                rootRequired = childTable;
+                        }
+                        if (index.rootMostTable() == rootTable.getTable().getTable())
+                            break;
+                        childTable = rootTable;
+                        rootTable = rootTable.getParentTable();
+                    }
+                    if ((rootTable == null) ||
+                        (rootRequired == null))
+                        continue;
+                }
+                IndexScan candidate = new IndexScan(index, rootTable, 
+                                                    rootRequired, leafRequired, 
+                                                    table);
                 bestIndex = betterIndex(bestIndex, candidate);
-            
             }
         }
         return bestIndex;

@@ -28,6 +28,8 @@ import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.sql.RegexFilenameFilter;
 
+import com.akiban.ais.model.Index.JoinType;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -125,7 +127,10 @@ public class PostgresServerITBase extends ITBase
                 String line = brdr.readLine();
                 if (line == null) break;
                 String defn[] = line.split("\t");
-                createGroupIndex(defn[0], defn[1], defn[2]);
+                JoinType joinType = JoinType.LEFT;
+                if (defn.length > 3)
+                    joinType = JoinType.valueOf(defn[3]);
+                createGroupIndex(defn[0], defn[1], defn[2], joinType);
             }
         }
         finally {
