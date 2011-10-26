@@ -120,13 +120,13 @@ public class TrigExpression extends AbstractCompositeExpression
                 
                 dvar2 = dExtractor.getDouble(secOperand);
             }
-            
+           
             double result = 0;       
             switch (name)
             {
                 case SIN:   result = Math.sin(dvar1); break;              
-                case COS:   result = Math.cos(dvar1); break;       
-                case TAN:   result = Math.tan(dvar1);break;      
+                case COS:   result = Math.cos(dvar1); break; 
+                case TAN:   result = Math.tan(dvar1);break;
                 case COT:   result = Math.cos(dvar1) / Math.sin(dvar1); break; 
                 case ASIN:  result = Math.asin(dvar1); break;
                 case ACOS:  result = Math.acos(dvar1); break;

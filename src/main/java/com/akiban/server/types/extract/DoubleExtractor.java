@@ -51,7 +51,7 @@ public final class DoubleExtractor extends AbstractExtractor {
     private double getDecimalAsDouble (ValueSource source )
     {
         BigDecimal x = source.getDecimal();
-        if (x.compareTo(BigDecimal.valueOf(Double.MAX_VALUE)) >= 0)
+        if (x.compareTo(BigDecimal.valueOf(Double.MAX_VALUE)) > 0 || x.compareTo(BigDecimal.valueOf(Double.MIN_VALUE)) < 0)
             throw new OverflowException();
         
         else
@@ -61,8 +61,8 @@ public final class DoubleExtractor extends AbstractExtractor {
     private double getBigIntAsDouble (ValueSource source)
     {
         BigInteger x = source.getUBigInt();
-        if (x.compareTo(BigInteger.valueOf((long)Double.MAX_VALUE)) >= 0)
-            throw new OverflowException();
+        if (x.compareTo(BigInteger.valueOf((long)Double.MAX_VALUE)) > 0) // the smallest value of a unsigned big int is 0
+            throw new OverflowException();                              // => no need to check for underflow?
         else
             return x.doubleValue();
     }

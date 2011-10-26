@@ -26,9 +26,7 @@ import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.sql.Time;
 import java.util.Collection;
-import java.util.Date;
 import org.junit.runner.RunWith;
 import org.junit.Test;
 
@@ -91,6 +89,7 @@ public class TypeDeterminationTest extends ComposedExpressionTestBase
             AkType expected)
     {
         pb.add(input1.name() + " AND " + input2.name(), input1, input2, expected);
+        pb.add(input2.name() + " AND " + input1.name(), input2, input1, expected); // just to document the symetry
     }
 
     @OnlyIfNot("exceptionExpected()")
