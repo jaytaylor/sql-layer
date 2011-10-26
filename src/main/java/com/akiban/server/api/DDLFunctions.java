@@ -162,11 +162,12 @@ public interface DDLFunctions {
      * Create new indexes on existing table(s). Both Table and Group indexes are supported. Primary
      * keys can not be created through this interface. Specified index IDs will not be used as they
      * are recalculated later. Blocks until the actual index data has been created.
+     *
      * @param indexesToAdd a list of indexes to add to the existing AIS
-     * @throws Exception 
+     * @throws Exception
      * @throws InvalidOperationException
      */
-    void createIndexes(Session session, Collection<Index> indexesToAdd);
+    void createIndexes(Session session, Collection<? extends Index> indexesToAdd);
 
     /**
      * Drop indexes on an existing table.

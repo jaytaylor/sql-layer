@@ -20,6 +20,9 @@ import java.util.List;
 @SuppressWarnings("unused") // jmx
 public interface DXLMXBean {
     String getUsingSchema();
+
+    void recreateGroupIndexes();
+
     void setUsingSchema(String schema);
 
     void createTable(String ddl);

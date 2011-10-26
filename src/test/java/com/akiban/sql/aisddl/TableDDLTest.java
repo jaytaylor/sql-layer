@@ -238,7 +238,7 @@ public class TableDDLTest {
 
         @Override
         public void createIndexes(Session session,
-                Collection<Index> indexesToAdd) {}
+                Collection<? extends Index> indexesToAdd) {}
 
         @Override
         public void createTable(Session session, String schema, String ddlText) {}
