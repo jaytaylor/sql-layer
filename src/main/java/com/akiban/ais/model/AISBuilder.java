@@ -113,9 +113,6 @@ public class
         column.setCollation(collation);
     }
 
-    /**
-     * Create a new TableIndex
-     */
     public void index(String schemaName, String tableName, String indexName,
             Boolean unique, String constraint) {
         LOG.info("index: " + schemaName + "." + tableName + "." + indexName);
