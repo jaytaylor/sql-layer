@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.error.OverflowException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -93,6 +94,8 @@ public class TrigExpression extends AbstractCompositeExpression
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
         private final TrigName name;
+        private static final double BOUND = 0.000000000000001;
+
         public InnerEvaluation (List<? extends ExpressionEvaluation> children, TrigName name)
         {
              super(children);  
@@ -126,8 +129,14 @@ public class TrigExpression extends AbstractCompositeExpression
             {
                 case SIN:   result = Math.sin(dvar1); break;              
                 case COS:   result = Math.cos(dvar1); break; 
-                case TAN:   result = Math.tan(dvar1);break;
-                case COT:   result = Math.cos(dvar1) / Math.sin(dvar1); break; 
+                case TAN:   if (Math.cos(dvar1) < BOUND && Math.cos(dvar1) > -BOUND) // if cos(dvar1) is 0
+                                throw new OverflowException ();
+                            else result = Math.tan(dvar1);
+                            break;
+                case COT:   if (Math.sin(dvar1) < BOUND && Math.sin(dvar1) > -BOUND)
+                                throw new OverflowException ();
+                            else result = Math.cos(dvar1) / Math.sin(dvar1);
+                            break;
                 case ASIN:  result = Math.asin(dvar1); break;
                 case ACOS:  result = Math.acos(dvar1); break;
                 case ATAN:  result = Math.atan(dvar1); break;
@@ -135,10 +144,12 @@ public class TrigExpression extends AbstractCompositeExpression
                 case COSH:  result = Math.cosh(dvar1); break;
                 case SINH:  result = Math.sinh(dvar1); break;
                 case TANH:  result = Math.tanh(dvar1); break;
-                case COTH:  result = Math.cosh(dvar1) / Math.sinh(dvar1); break;
+                case COTH:  if (dvar1 == 0)
+                                throw new OverflowException ();
+                            else result = Math.cosh(dvar1) / Math.sinh(dvar1);
+                            break;
                 default: throw new UnsupportedOperationException("Unknown Operation: " + name.name());
-            }
-            
+            }            
             return new ValueHolder(AkType.DOUBLE, result);
         }   
     }
