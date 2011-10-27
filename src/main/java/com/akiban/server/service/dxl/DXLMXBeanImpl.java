@@ -39,9 +39,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 class DXLMXBeanImpl implements DXLMXBean {
@@ -86,7 +84,7 @@ class DXLMXBeanImpl implements DXLMXBean {
 
     @Override
     public void recreateGroupIndexes() {
-        dxlService.rebuildGroupIndexes(ALL_GIS);
+        dxlService.recreateGroupIndexes(ALL_GIS);
     }
 
     @Override

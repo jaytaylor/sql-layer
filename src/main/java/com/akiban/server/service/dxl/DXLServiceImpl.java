@@ -77,7 +77,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
             ddlFunctions = localDdlFunctions;
             dmlFunctions = localDmlFunctions;
         }
-        rebuildGroupIndexes(startupGiRebuildPredicate());
+        recreateGroupIndexes(startupGiRebuildPredicate());
     }
 
     DMLFunctions createDMLFunctions(BasicDXLMiddleman middleman, DDLFunctions newlyCreatedDDLF) {
@@ -119,7 +119,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     }
 
     @Override
-    public void rebuildGroupIndexes(GroupIndexRebuildPredicate predicate) {
+    public void recreateGroupIndexes(GroupIndexRebuildPredicate predicate) {
         Session session = sessionService.createSession();
         try {
             DDLFunctions ddl = ddlFunctions();
@@ -129,7 +129,9 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
                 ArrayList<GroupIndex> groupGis = new ArrayList<GroupIndex>(group.getIndexes());
                 for (Iterator<GroupIndex> iterator = groupGis.iterator(); iterator.hasNext(); ) {
                     GroupIndex gi = iterator.next();
-                    if (!predicate.shouldRebuild(gi)) {
+                    boolean shouldRecreate = predicate.shouldRebuild(gi);
+                    groupIndexMayNeedRecreating(gi, shouldRecreate);
+                    if (!shouldRecreate) {
                         iterator.remove();
                     }
                 }
@@ -151,15 +153,6 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
 
     protected List<DXLFunctionsHook> getHooks() {
         return Collections.<DXLFunctionsHook>singletonList(DXLReadWriteLockHook.only());
-    }
-
-    protected GroupIndexRebuildPredicate startupGiRebuildPredicate() {
-        return new GroupIndexRebuildPredicate() {
-            @Override
-            public boolean shouldRebuild(GroupIndex index) {
-                return false;
-            }
-        };
     }
 
     @Override
@@ -191,5 +184,24 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
 
     protected final Session session() {
         return null;
+    }
+
+    /**
+     * Invoked when a group index may need recreating due to an invocation of {@linkplain #recreateGroupIndexes}. This
+     * method will be invoked <em>before</em> the index has been rebuilt; it'll still be active.
+     * @param groupIndex the index that's about to be recreated
+     * @param needsRecreating whether the index will be recreated
+     */
+    protected void groupIndexMayNeedRecreating(GroupIndex groupIndex, boolean needsRecreating) {
+        // nothing
+    }
+
+    private GroupIndexRebuildPredicate startupGiRebuildPredicate() {
+        return new GroupIndexRebuildPredicate() {
+            @Override
+            public boolean shouldRebuild(GroupIndex index) {
+                return false;
+            }
+        };
     }
 }
