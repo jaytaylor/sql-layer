@@ -371,13 +371,15 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     }
 
     private static JoinType extractJoinType(Integer idAndFlags) {
+        if (idAndFlags == null)
+            return  null;
         return (idAndFlags & IS_RIGHT_JOIN_FLAG) == IS_RIGHT_JOIN_FLAG
                 ? JoinType.RIGHT
                 : JoinType.LEFT;
     }
 
     private static boolean extractIsValid(Integer idAndFlags) {
-        return (idAndFlags & IS_VALID_FLAG) == IS_VALID_FLAG;
+        return idAndFlags != null && (idAndFlags & IS_VALID_FLAG) == IS_VALID_FLAG;
     }
 
     private static Integer extractIndexId(Integer idAndFlags) {
