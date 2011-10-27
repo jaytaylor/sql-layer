@@ -69,7 +69,7 @@ public class GroupIndexCreator {
      * @return GroupIndex representation of the requested
      * @throws GroupIndexCreatorException For any error
      */
-    public static GroupIndex createIndex(AkibanInformationSchema ais, String groupName, String indexName,
+    private static GroupIndex createIndex(AkibanInformationSchema ais, String groupName, String indexName,
                                          boolean unique, String tableColumnList, Index.JoinType joinType) {
         final Group group = ais.getGroup(groupName);
         if(group == null) {
