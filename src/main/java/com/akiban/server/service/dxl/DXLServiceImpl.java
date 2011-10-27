@@ -77,6 +77,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
             ddlFunctions = localDdlFunctions;
             dmlFunctions = localDmlFunctions;
         }
+        rebuildGroupIndexes(startupGiRebuildPredicate());
     }
 
     DMLFunctions createDMLFunctions(BasicDXLMiddleman middleman, DDLFunctions newlyCreatedDDLF) {
@@ -151,7 +152,16 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     protected List<DXLFunctionsHook> getHooks() {
         return Collections.<DXLFunctionsHook>singletonList(DXLReadWriteLockHook.only());
     }
-    
+
+    protected GroupIndexRebuildPredicate startupGiRebuildPredicate() {
+        return new GroupIndexRebuildPredicate() {
+            @Override
+            public boolean shouldRebuild(GroupIndex index) {
+                return false;
+            }
+        };
+    }
+
     @Override
     public void crash() {
         BasicDXLMiddleman.destroy();
