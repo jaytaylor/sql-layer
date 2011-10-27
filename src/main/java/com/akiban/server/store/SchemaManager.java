@@ -57,6 +57,7 @@ public interface SchemaManager {
     /**
      * Modifying the existing schema definitions by adding indexes. Both Table and Group indexes are
      * supported through this interface. If indexes is empty, this method does nothing.
+     *
      * @param session Session to operate under.
      * @param indexes List of index definitions to add.
      * @throws Exception If the request is invalid (e.g. duplicate index name, malformed Index) or there
@@ -64,7 +65,7 @@ public interface SchemaManager {
      * @return List of newly created indexes.
      * @throws Exception 
      */
-    Collection<Index> createIndexes(Session session, Collection<Index> indexes);
+    Collection<Index> createIndexes(Session session, Collection<? extends Index> indexes);
 
     /**
      * Modifying the existing schema definitions by adding indexes. Both Table and Group indexes are
