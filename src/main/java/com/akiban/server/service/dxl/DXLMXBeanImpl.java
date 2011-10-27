@@ -16,6 +16,7 @@
 package com.akiban.server.service.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
@@ -38,7 +39,9 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 class DXLMXBeanImpl implements DXLMXBean {
@@ -73,6 +76,33 @@ class DXLMXBeanImpl implements DXLMXBean {
     @Override
     public void createTable(String ddl) {
         createTable(usingSchema.get(), ddl);
+    }
+
+    @Override
+    public void recreateGroupIndexes() {
+        Session session = ServiceManagerImpl.newSession();
+        try {
+            Map<String,List<GroupIndex>> gisByGroup = new HashMap<String, List<GroupIndex>>();
+            DDLFunctions ddl = dxlService.ddlFunctions();
+            AkibanInformationSchema ais = ddl.getAIS(session);
+
+            for (com.akiban.ais.model.Group group : ais.getGroups().values()) {
+                gisByGroup.put(group.getName(), new ArrayList<GroupIndex>(group.getIndexes()));
+            }
+
+            for (Map.Entry<String,List<GroupIndex>> entry : gisByGroup.entrySet()) {
+                List<GroupIndex> gis = entry.getValue();
+                List<String> giNames = new ArrayList<String>(gis.size());
+                for (Index gi : gis) {
+                    giNames.add(gi.getIndexName().getName());
+                }
+                ddl.dropGroupIndexes(session, entry.getKey(), giNames);
+                ddl.createIndexes(session, gis);
+            }
+        }
+        finally {
+            session.close();
+        }
     }
 
     @Override
