@@ -47,9 +47,9 @@ class DXLMXBeanImpl implements DXLMXBean {
     private final AtomicReference<String> usingSchema = new AtomicReference<String>("test");
     private static final Logger LOG = LoggerFactory.getLogger(DXLMXBeanImpl.class);
     private static final String CREATE_GROUP_INDEX_LOG_FORMAT = "createGroupIndex failed: %s %s %s";
-    private static final DXLService.GroupIndexRebuildPredicate ALL_GIS = new DXLService.GroupIndexRebuildPredicate() {
+    private static final DXLService.GroupIndexRecreatePredicate ALL_GIS = new DXLService.GroupIndexRecreatePredicate() {
         @Override
-        public boolean shouldRebuild(GroupIndex index) {
+        public boolean shouldRecreate(GroupIndex index) {
             return true;
         }
     };

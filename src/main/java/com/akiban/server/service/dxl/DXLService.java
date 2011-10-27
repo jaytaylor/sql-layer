@@ -22,9 +22,9 @@ import com.akiban.server.api.DMLFunctions;
 public interface DXLService {
     DDLFunctions ddlFunctions();
     DMLFunctions dmlFunctions();
-    void recreateGroupIndexes(GroupIndexRebuildPredicate predicate);
+    void recreateGroupIndexes(GroupIndexRecreatePredicate predicate);
 
-    public interface GroupIndexRebuildPredicate {
-        boolean shouldRebuild(GroupIndex index);
+    public interface GroupIndexRecreatePredicate {
+        boolean shouldRecreate(GroupIndex index);
     }
 }

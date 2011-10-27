@@ -77,7 +77,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
             ddlFunctions = localDdlFunctions;
             dmlFunctions = localDmlFunctions;
         }
-        recreateGroupIndexes(startupGiRebuildPredicate());
+        recreateGroupIndexes(startupGiRecreatePredicate());
     }
 
     DMLFunctions createDMLFunctions(BasicDXLMiddleman middleman, DDLFunctions newlyCreatedDDLF) {
@@ -119,7 +119,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     }
 
     @Override
-    public void recreateGroupIndexes(GroupIndexRebuildPredicate predicate) {
+    public void recreateGroupIndexes(GroupIndexRecreatePredicate predicate) {
         Session session = sessionService.createSession();
         try {
             DDLFunctions ddl = ddlFunctions();
@@ -129,7 +129,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
                 ArrayList<GroupIndex> groupGis = new ArrayList<GroupIndex>(group.getIndexes());
                 for (Iterator<GroupIndex> iterator = groupGis.iterator(); iterator.hasNext(); ) {
                     GroupIndex gi = iterator.next();
-                    boolean shouldRecreate = predicate.shouldRebuild(gi);
+                    boolean shouldRecreate = predicate.shouldRecreate(gi);
                     groupIndexMayNeedRecreating(gi, shouldRecreate);
                     if (!shouldRecreate) {
                         iterator.remove();
@@ -196,10 +196,10 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
         // nothing
     }
 
-    private GroupIndexRebuildPredicate startupGiRebuildPredicate() {
-        return new GroupIndexRebuildPredicate() {
+    private GroupIndexRecreatePredicate startupGiRecreatePredicate() {
+        return new GroupIndexRecreatePredicate() {
             @Override
-            public boolean shouldRebuild(GroupIndex index) {
+            public boolean shouldRecreate(GroupIndex index) {
                 return ! index.isValid();
             }
         };
