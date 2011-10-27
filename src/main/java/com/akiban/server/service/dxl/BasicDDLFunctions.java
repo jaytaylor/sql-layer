@@ -269,7 +269,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    public void createIndexes(Session session, Collection<Index> indexesToAdd) {
+    public void createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
         logger.trace("creating indexes {}", indexesToAdd);
         if (indexesToAdd.isEmpty() == true) {
             return;
