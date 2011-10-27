@@ -16,22 +16,15 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.StoreAdapterRuntimeException;
+import com.akiban.qp.operator.*;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.persistitadapter.sort.RowGenerator;
 import com.akiban.qp.persistitadapter.sort.SortCursor;
-import com.akiban.qp.persistitadapter.sort.SortCursorAscending;
-import com.akiban.qp.persistitadapter.sort.SortCursorDescending;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.server.error.QueryCanceledException;
 import com.akiban.util.ShareHolder;
 import com.persistit.Exchange;
-import com.persistit.Key;
 import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
@@ -60,7 +53,10 @@ class PersistitIndexCursor implements Cursor
                     needAnother = !(isTableIndex ||
                                     // The value of a group index is the depth at which it's defined, as an int.
                                     // See OperatorStoreGIHandler, search for "Description of group index entry values"
-                                    exchange.fetch().getValue().getInt() >= minimumDepth);
+                                    // TODO: It would be better to limit the use of exchange to SortCursor, which means
+                                    // TODO: that the selector would need to be pushed down. Alternatively, the exchange's
+                                    // TODO: value could be made available here in PersistitIndexRow.
+                                    selector.matchesAll() || selector.matches(exchange.fetch().getValue().getLong()));
                 } else {
                     close();
                     needAnother = false;
@@ -91,7 +87,7 @@ class PersistitIndexCursor implements Cursor
                          IndexRowType indexRowType,
                          IndexKeyRange keyRange,
                          API.Ordering ordering,
-                         UserTable innerJoinUntil)
+                         IndexScanSelector selector)
         throws PersistitException
     {
         this.keyRange = keyRange;
@@ -100,7 +96,7 @@ class PersistitIndexCursor implements Cursor
         this.indexRowType = indexRowType;
         this.row = new ShareHolder<PersistitIndexRow>(adapter.newIndexRow(indexRowType));
         this.isTableIndex = indexRowType.index().isTableIndex();
-        this.minimumDepth = innerJoinUntil.getDepth();
+        this.selector = selector;
     }
 
     // For use by this class
@@ -126,7 +122,7 @@ class PersistitIndexCursor implements Cursor
     private final IndexKeyRange keyRange;
     private final API.Ordering ordering;
     private final boolean isTableIndex;
-    private final int minimumDepth;
+    private IndexScanSelector selector;
     private Exchange exchange;
     private SortCursor sortCursor;
 
@@ -151,15 +147,6 @@ class PersistitIndexCursor implements Cursor
         public Exchange exchange()
         {
             return PersistitIndexCursor.this.exchange;
-        }
-
-        @Override
-        public KeyFilter keyFilter(Bindings bindings)
-        {
-            return
-                keyRange.unbounded()
-                ? null
-                : adapter.filterFactory.computeIndexFilter(exchange.getKey(), index(), keyRange, bindings);
         }
     }
 }

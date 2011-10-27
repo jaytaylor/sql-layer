@@ -62,7 +62,7 @@ public class SubqueryFlattener
         this.nodeFactory = parserContext.getNodeFactory();
     }
 
-    private Stack<SelectNode> selectStack;
+    private Stack<SelectNode> selectStack; // Needs to hold nulls.
     private SelectNode currentSelectNode;
 
     /** Flatten top-level statement.
@@ -262,10 +262,15 @@ public class SubqueryFlattener
             throws StandardException {
         if (fromSubquery.getSubquery() instanceof SelectNode) {
             SelectNode selectNode = (SelectNode)fromSubquery.getSubquery();
-            if (selectNode.getGroupByList() != null)
+            if ((selectNode.getGroupByList() != null) ||
+                (selectNode.getHavingClause() != null))
                 return false;
         }
-        // TODO: Need more filtering.
+        if ((fromSubquery.getOrderByList() != null) ||
+            (fromSubquery.getOffset() != null) ||
+            (fromSubquery.getFetchFirst() != null))
+            return false;
+        // TODO: Need more filtering?
         return true;
     }
 

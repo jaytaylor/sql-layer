@@ -20,10 +20,6 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.ValuesHolderRow;
-import com.akiban.server.PersistitValueValueSource;
-import com.akiban.server.types.util.ValueHolder;
-import com.akiban.sql.optimizer.plan.Sort;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 
@@ -44,20 +40,9 @@ public abstract class SortCursor implements Cursor
                                     API.Ordering ordering,
                                     RowGenerator rowGenerator)
     {
-        boolean allAscending = true;
-        boolean allDescending = true;
-        for (int i = 0; i < ordering.sortFields(); i++) {
-            if (ordering.ascending(i)) {
-                allDescending = false;
-            } else {
-                allAscending = false;
-            }
-        }
         return
-            allAscending
-            ? SortCursorAscending.create(adapter, rowGenerator, keyRange, ordering) :
-            allDescending
-            ? SortCursorDescending.create(adapter, rowGenerator, keyRange, ordering)
+            ordering.allAscending() || ordering.allDescending()
+            ? SortCursorUnidirectional.create(adapter, rowGenerator, keyRange, ordering)
             : SortCursorMixedOrder.create(adapter, rowGenerator, keyRange, ordering);
     }
 

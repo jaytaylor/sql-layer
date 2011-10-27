@@ -18,12 +18,14 @@ package com.akiban.qp.persistitadapter.sort;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexBound;
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapterException;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.server.PersistitKeyValueTarget;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
@@ -32,7 +34,7 @@ import com.persistit.exception.PersistitException;
 
 import java.util.List;
 
-public abstract class SortCursorUnidirectional extends SortCursor
+public class SortCursorUnidirectional extends SortCursor
 {
     // Cursor interface
 
@@ -41,30 +43,21 @@ public abstract class SortCursorUnidirectional extends SortCursor
     {
         exchange.clear();
         if (bounded) {
-            startKey.clear();
-            endKey.clear();
-            startTarget.attach(startKey);
-            endTarget.attach(endKey);
-            BoundExpressions startExpressions = start.boundExpressions(bindings, adapter);
-            BoundExpressions endExpressions = end.boundExpressions(bindings, adapter);
-            for (int f = 0; f < sortFields; f++) {
-                ValueSource startSource = startExpressions.eval(f);
-                ValueSource endSource = endExpressions.eval(f);
-                startTarget.expectingType(types[f]);
-                endTarget.expectingType(types[f]);
-                Converters.convert(startSource, startTarget);
-                Converters.convert(endSource, endTarget);
+            evaluateBoundaries(bindings);
+            if (startKey == null) {
+                exchange.append(startBoundary);
+            } else {
+                if (direction == FORWARD && !startInclusive || direction == BACKWARD && startInclusive) {
+                    // direction == 1 && !startInclusive: If the search key is (10, 5) and there are rows (10, 5, ...)
+                    // then we do not want them if !startInclusive. Making the search key (10, 5, AFTER) will cause
+                    // these records to be skipped.
+                    // direction == -1 && startInclusive: Similarly, going in the other direction, we do the
+                    // (10, 5, ...) records if startInclusive. But an LTEQ traversal would miss it unless we search
+                    // for (10, 5, AFTER).
+                    startKey.append(Key.AFTER);
+                }
+                startKey.copyTo(exchange.getKey());
             }
-            if (direction == 1 && !startInclusive || direction == -1 && startInclusive) {
-                // direction == 1 && !startInclusive: If the search key is (10, 5) and there is a row (10, 5, ...)
-                // then we do not want that row if !startInclusive. Making the search key (10, 5, AFTER) will cause
-                // that record to be skipped.
-                // direction == -1 && startInclusive: Similarly, going in the other direction, we do want the
-                // (10, 5, ...) record if startInclusive. But an LTEQ traversal would miss it unless we search
-                // for (10, 5, AFTER).
-                startKey.append(Key.AFTER);
-            }
-            startKey.copyTo(exchange.getKey());
         } else {
             exchange.append(startBoundary);
         }
@@ -99,92 +92,186 @@ public abstract class SortCursorUnidirectional extends SortCursor
 
     // SortCursorUnidirectional interface
 
-    protected SortCursorUnidirectional(PersistitAdapter adapter,
-                                       RowGenerator rowGenerator,
-                                       Key.EdgeValue startBoundary,
-                                       Key.Direction direction)
+    public static SortCursorUnidirectional create(PersistitAdapter adapter,
+                                                  RowGenerator rowGenerator,
+                                                  IndexKeyRange keyRange,
+                                                  API.Ordering ordering)
+    {
+        return
+            keyRange == null || keyRange.unbounded()
+            ? new SortCursorUnidirectional(adapter, rowGenerator, ordering)
+            : new SortCursorUnidirectional(adapter, rowGenerator, keyRange, ordering);
+    }
+
+    // For use by this class
+
+    private SortCursorUnidirectional(PersistitAdapter adapter,
+                                     RowGenerator rowGenerator,
+                                     API.Ordering ordering)
     {
         super(adapter, rowGenerator);
         this.bounded = false;
         this.adapter = adapter;
-        this.startBoundary = startBoundary;
-        this.keyComparison = direction;
-        this.subsequentKeyComparison = direction;
+        if (ordering.allAscending()) {
+            this.startBoundary = Key.BEFORE;
+            this.keyComparison = Key.GT;
+            this.subsequentKeyComparison = Key.GT;
+        } else if (ordering.allDescending()) {
+            this.startBoundary = Key.AFTER;
+            this.keyComparison = Key.LT;
+            this.subsequentKeyComparison = Key.LT;
+        } else {
+            assert false : ordering;
+        }
     }
 
-    protected SortCursorUnidirectional(PersistitAdapter adapter,
-                                       RowGenerator rowGenerator,
-                                       IndexRowType indexRowType,
-                                       int sortFields,
-                                       IndexBound start,
-                                       boolean startInclusive,
-                                       IndexBound end,
-                                       boolean endInclusive,
-                                       int direction)
+    private SortCursorUnidirectional(PersistitAdapter adapter,
+                                     RowGenerator rowGenerator,
+                                     IndexKeyRange keyRange,
+                                     API.Ordering ordering)
     {
         super(adapter, rowGenerator);
         this.bounded = true;
         this.adapter = adapter;
-        this.sortFields = sortFields;
-        this.start = start;
-        this.startInclusive = startInclusive;
-        this.end = end;
-        this.endInclusive = endInclusive;
-        this.startKey = adapter.newKey();
-        this.endKey = adapter.newKey();
+        if (ordering.allAscending()) {
+            this.direction = FORWARD;
+            this.start = keyRange.lo();
+            this.startInclusive = keyRange.loInclusive();
+            this.end = keyRange.hi();
+            this.endInclusive = keyRange.hiInclusive();
+            this.keyComparison = startInclusive ? Key.GTEQ : Key.GT;
+            this.subsequentKeyComparison = Key.GT;
+            this.startBoundary = Key.BEFORE;
+        } else if (ordering.allDescending()) {
+            this.direction = BACKWARD;
+            this.start = keyRange.hi();
+            this.startInclusive = keyRange.hiInclusive();
+            this.end = keyRange.lo();
+            this.endInclusive = keyRange.loInclusive();
+            this.keyComparison = startInclusive ? Key.LTEQ : Key.LT;
+            this.subsequentKeyComparison = Key.LT;
+            this.startBoundary = Key.AFTER;
+        } else {
+            assert false : ordering;
+        }
+        this.startKey = start == null ? null : adapter.newKey();
+        this.endKey = end == null ? null : adapter.newKey();
+        // Compute number of sort fields
+        ColumnSelector loSelector = keyRange.lo() == null ? null : keyRange.lo().columnSelector();
+        ColumnSelector hiSelector = keyRange.hi() == null ? null : keyRange.hi().columnSelector();
+        boolean restriction = true;
+        sortFields = 0;
+        while (restriction && sortFields < ordering.sortFields()) {
+            if (loSelector != null && loSelector.includesColumn(sortFields) ||
+                hiSelector != null && hiSelector.includesColumn(sortFields)) {
+                sortFields++;
+            } else {
+                restriction = false;
+            }
+        }
+        //
         this.types = new AkType[sortFields];
-        List<IndexColumn> indexColumns = indexRowType.index().getColumns();
+        List<IndexColumn> indexColumns = keyRange.indexRowType().index().getColumns();
         for (int f = 0; f < sortFields; f++) {
             this.types[f] = indexColumns.get(f).getColumn().getType().akType();
         }
-        if (direction == 1) {
-            this.direction = 1;
-            this.keyComparison = startInclusive ? Key.GTEQ : Key.GT;
-            this.subsequentKeyComparison = Key.GT;
-        } else if (direction == -1) {
-            this.direction = -1;
-            this.keyComparison = startInclusive ? Key.LTEQ : Key.LT;
-            this.subsequentKeyComparison = Key.LT;
-        }
     }
 
-    // For use by this class
+    private void evaluateBoundaries(Bindings bindings)
+    {
+        /*
+            Null bounds are slightly tricky. An index restriction is described by an IndexKeyRange which contains
+            two IndexBounds. The IndexBound wraps an index row. The fields of the row that are being restricted are
+            described by the IndexBound's ColumnSelector. The only index restrictions supported specify:
+            a) equality for zero or more fields of the index,
+            b) 0-1 inequality, and
+            c) any remaining columns unbounded.
+
+            By the time we get here, we've stopped paying attention to part c. Parts a and b occupy the first
+            sortFields columns of the index. Now about the nulls: For each field of parts a and b, we have a
+            lo value and a hi value. There are four cases:
+
+            - both lo and hi are non-null: Just write the field values into startKey and endKey.
+
+            - lo is null: Write null into the startKey.
+
+            - hi is null, lo is not null: This restriction says that we want everything to the right of
+              the lo value. Persistit ranks null lower than anything, so instead of writing null to endKey,
+              we write Key.AFTER.
+
+            - lo and hi are both null: This is NOT an unbounded case. This means that we are restricting both
+              lo and hi to be null, so write null, not Key.AFTER to endKey.
+        */
+        boolean[] startNull = new boolean[sortFields];
+        if (startKey != null) {
+            startKey.clear();
+            keyTarget.attach(startKey);
+            BoundExpressions boundExpressions = start.boundExpressions(bindings, adapter);
+            for (int f = 0; f < sortFields; f++) {
+                ValueSource keySource = boundExpressions.eval(f);
+                startNull[f] = keySource.isNull();
+                keyTarget.expectingType(types[f]);
+                Converters.convert(keySource, keyTarget);
+            }
+        }
+        if (endKey != null) {
+            endKey.clear();
+            keyTarget.attach(endKey);
+            BoundExpressions boundExpressions = end.boundExpressions(bindings, adapter);
+            for (int f = 0; f < sortFields; f++) {
+                ValueSource keySource = boundExpressions.eval(f);
+                if (keySource.isNull() && !startNull[f]) {
+                    endKey.append(Key.AFTER);
+                } else {
+                    keyTarget.expectingType(types[f]);
+                    Converters.convert(keySource, keyTarget);
+                }
+            }
+        }
+    }
 
     // TODO: Revisit comparison logic. Checking prefix should work.
 
     private boolean pastEnd()
     {
         boolean pastEnd;
-        Key key = exchange.getKey();
-        int keyDepth = key.getDepth();
-        int keySize = key.getEncodedSize();
-        assert key.getDepth() >= endKey.getDepth();
-        key.setDepth(endKey.getDepth());
-        int c = key.compareTo(endKey) * direction;
-        pastEnd = c > 0 || c == 0 && !endInclusive;
-        key.setEncodedSize(keySize);
-        key.setDepth(keyDepth);
+        if (endKey == null) {
+            pastEnd = false;
+        } else {
+            Key key = exchange.getKey();
+            int keyDepth = key.getDepth();
+            int keySize = key.getEncodedSize();
+            assert key.getDepth() >= endKey.getDepth();
+            key.setDepth(endKey.getDepth());
+            int c = key.compareTo(endKey) * direction;
+            pastEnd = c > 0 || c == 0 && !endInclusive;
+            key.setEncodedSize(keySize);
+            key.setDepth(keyDepth);
+        }
         return pastEnd;
     }
 
+    // Class state
+
+    private static final int FORWARD = 1;
+    private static final int BACKWARD = -1;
+
     // Object state
 
-    private final PersistitKeyValueTarget startTarget = new PersistitKeyValueTarget();
-    private final PersistitKeyValueTarget endTarget = new PersistitKeyValueTarget();
     private final PersistitAdapter adapter;
-    private final boolean bounded;
-    private int sortFields;
+    private final boolean bounded; // true for a scan with restrictions, false for a full scan
     private int direction; // +1 = ascending, -1 = descending
     private Key.Direction keyComparison;
-    // unbounded
-    private Key.EdgeValue startBoundary;
-    // bounded
-    private AkType[] types;
     private Key.Direction subsequentKeyComparison;
+    private Key.EdgeValue startBoundary; // Start of a scan that is unbounded at the start
+    // For bounded scans
+    private int sortFields; // Number of index fields with restrictions
+    private AkType[] types;
     private IndexBound start;
     private IndexBound end;
     private boolean startInclusive;
     private boolean endInclusive;
     private Key startKey;
     private Key endKey;
+    private final PersistitKeyValueTarget keyTarget = new PersistitKeyValueTarget();
 }

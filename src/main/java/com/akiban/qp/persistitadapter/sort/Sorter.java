@@ -208,13 +208,6 @@ public class Sorter
             return exchange;
         }
 
-        @Override
-        public KeyFilter keyFilter(Bindings bindings)
-        {
-            // Sorter does a complete sort, so a KeyFilter isn't needed.
-            return null;
-        }
-
         SorterRowGenerator()
         {
             valueSource = new PersistitValueValueSource();

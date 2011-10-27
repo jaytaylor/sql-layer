@@ -17,7 +17,6 @@ package com.akiban.qp.operator;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
@@ -31,7 +30,7 @@ public abstract class StoreAdapter
     public abstract Cursor newIndexCursor(Index index,
                                           IndexKeyRange keyRange,
                                           API.Ordering ordering,
-                                          UserTable innerJoinUntil);
+                                          IndexScanSelector scanSelector);
 
     public abstract HKey newHKey(RowType rowType);
 

@@ -26,5 +26,4 @@ public interface RowGenerator
     Row row() throws PersistitException; // row your boat, gently down the stream, merrily, merrily, merrily, merrily, life is but a dream.
     void close();
     Exchange exchange();
-    KeyFilter keyFilter(Bindings bindings);
 }

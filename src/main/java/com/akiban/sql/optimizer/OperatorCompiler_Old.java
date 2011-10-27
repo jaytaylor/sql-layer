@@ -28,6 +28,7 @@ import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.expression.UnboundExpressions;
 import com.akiban.qp.rowtype.*;
+import com.akiban.qp.util.SchemaCache;
 
 import com.akiban.sql.parser.*;
 import com.akiban.sql.compiler.*;
@@ -82,7 +83,7 @@ public class OperatorCompiler_Old
         booleanNormalizer = new BooleanNormalizer(parser);
         subqueryFlattener = new SubqueryFlattener(parser);
         grouper = new Grouper(parser);
-        schema = new Schema(ais);
+        schema = SchemaCache.globalSchema(ais);
     }
 
     public void addView(ViewDefinition view) throws StandardException {

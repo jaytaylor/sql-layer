@@ -203,6 +203,7 @@ public enum ErrorCode {
     // Class 35 - invalid condition number
     // Class 36 - cursor sensitivity exception
     // Class 38 - external routine exception
+    STALE_PLAN              ("38", "000", Importance.ERROR, StalePlanException.class),
     // Class 39 - external routine invocation
     // Class 3B - savepoint exception
     // Class 3C - ambiguous cursor name
@@ -290,6 +291,7 @@ public enum ErrorCode {
     BAD_AIS_REFERENCE       ("50", "01L", Importance.DEBUG, BadAISReferenceException.class),
     BAD_INTERNAL_SETTING    ("50", "01M", Importance.DEBUG, BadAISInternalSettingException.class),
     TYPES_ARE_STATIC        ("50", "01N", Importance.DEBUG, TypesAreStaticException.class),
+    GROUP_INDEX_DEPTH       ("50", "01O", Importance.DEBUG, GroupIndexDepthException.class),
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),

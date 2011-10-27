@@ -254,8 +254,8 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         Operator plan;
         if (useIndex) {
             Operator indexScan = indexScan_Default(predicateType.indexRowType(predicateIndex),
-                                                           descending,
-                                                           indexKeyRange);
+                                                   descending,
+                                                   indexKeyRange);
             plan = branchLookup_Default(indexScan,
                     groupTable,
                     predicateType.indexRowType(predicateIndex),

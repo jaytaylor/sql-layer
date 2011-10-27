@@ -16,6 +16,7 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.BindableRow;
@@ -118,12 +119,14 @@ public class API
     }
 
     public static Operator groupScan_Default(GroupTable groupTable,
-                                                     Limit limit,
-                                                     int hKeyBindingPosition,
-                                                     boolean deep)
+                                             Limit limit,
+                                             int hKeyBindingPosition,
+                                             boolean deep,
+                                             UserTable hKeyType,
+                                             UserTable shortenUntil)
     {
         return new GroupScan_Default(
-                new GroupScan_Default.PositionalGroupCursorCreator(groupTable, hKeyBindingPosition, deep),
+                new GroupScan_Default.PositionalGroupCursorCreator(groupTable, hKeyBindingPosition, deep, hKeyType, shortenUntil),
                 limit
         );
     }
@@ -199,25 +202,60 @@ public class API
 
     // IndexScan
 
-    /** @deprecated */
+    /**
+     * Creates a full ascending scan operator for the given index using LEFT JOIN semantics after the indexType's
+     * tableType
+     * @param indexType the index to scan
+     * @return the scan operator
+     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
+     */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType)
     {
         return indexScan_Default(indexType, false, new IndexKeyRange(indexType, null, false, null, false));
     }
 
-    /** @deprecated */
+    /**
+     * Creates a full ascending scan operator for the given index using LEFT JOIN semantics after the indexType's
+     * tableType
+     * @param indexType the index to scan
+     * @param reverse whether to scan in reverse order
+     * @return the scan operator
+     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
+     */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType, boolean reverse)
     {
         return indexScan_Default(indexType, reverse, new IndexKeyRange(indexType, null, false, null, false));
     }
 
-    /** @deprecated */
+    /**
+     * Creates a scan operator for the given index, using LEFT JOIN semantics after the indexType's tableType.
+     * @param indexType the index to scan
+     * @param reverse whether to scan in reverse order
+     * @param indexKeyRange the scan range
+     * @return the scan operator
+     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
+     */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
     {
         return indexScan_Default(indexType, reverse, indexKeyRange, indexType.tableType());
     }
 
-    /** @deprecated */
+    /**
+     * Creates a scan operator for the given index, using LEFT JOIN semantics after the given table type.
+     * @param indexType the index to scan
+     * @param reverse whether to scan in reverse order
+     * @param indexKeyRange the scan range
+     * @param innerJoinUntilRowType the table after which the scan should start using LEFT JOIN GI semantics.
+     * @return the scan operator
+     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
+     */
+    @Deprecated
     public static Operator indexScan_Default(IndexRowType indexType,
                                              boolean reverse,
                                              IndexKeyRange indexKeyRange,
@@ -226,7 +264,7 @@ public class API
         Ordering ordering = new Ordering();
         int fields = indexType.nFields();
         for (int f = 0; f < fields; f++) {
-            ordering.append(new FieldExpression(indexType, 0), !reverse);
+            ordering.append(new FieldExpression(indexType, f), !reverse);
         }
         return indexScan_Default(indexType, indexKeyRange, ordering, innerJoinUntilRowType);
     }
@@ -235,7 +273,7 @@ public class API
                                              IndexKeyRange indexKeyRange,
                                              Ordering ordering)
     {
-        return new IndexScan_Default(indexType, indexKeyRange, ordering, indexType.tableType());
+        return indexScan_Default(indexType, indexKeyRange, ordering, indexType.tableType());
     }
 
     public static Operator indexScan_Default(IndexRowType indexType,
@@ -243,7 +281,19 @@ public class API
                                              Ordering ordering,
                                              UserTableRowType innerJoinUntilRowType)
     {
-        return new IndexScan_Default(indexType, indexKeyRange, ordering, innerJoinUntilRowType);
+        return indexScan_Default(indexType,
+                                 indexKeyRange,
+                                 ordering,
+                                 IndexScanSelector.leftJoinAfter(indexType.index(),
+                                                                 innerJoinUntilRowType.userTable()));
+    }
+
+    public static Operator indexScan_Default(IndexRowType indexType,
+                                             IndexKeyRange indexKeyRange,
+                                             Ordering ordering,
+                                             IndexScanSelector indexScanSelector)
+    {
+        return new IndexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector);
     }
 
     // Select
@@ -309,6 +359,13 @@ public class API
     public static Ordering ordering()
     {
         return new Ordering();
+    }
+
+    // Distinct
+
+    public static Operator distinct_Partial(Operator input, RowType distinctType)
+    {
+        return new Distinct_Partial(input, distinctType);
     }
 
     // Map
@@ -436,6 +493,17 @@ public class API
                 }
             }
             return allAscending;
+        }
+
+        public boolean allDescending()
+        {
+            boolean allDescending = true;
+            for (Boolean direction : directions) {
+                if (direction) {
+                    allDescending = false;
+                }
+            }
+            return allDescending;
         }
 
         public void append(Expression expression, boolean ascending)

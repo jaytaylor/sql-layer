@@ -15,6 +15,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.error.*;
 import com.akiban.server.expression.ExpressionRegistry;
@@ -635,6 +636,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             compiler,
             new PostgresDDLStatementGenerator(this),
             new PostgresSessionStatementGenerator(this),
+            new PostgresCallStatementGenerator(this),
             explainer
         };
     }
@@ -748,6 +750,12 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     @Override
     public StoreAdapter getStore() {
         return adapter;
+    }
+
+    @Override
+    public LoadablePlan loadablePlan(String planName)
+    {
+        return server.loadablePlan(planName);
     }
 
     public boolean isInstrumentationEnabled() {

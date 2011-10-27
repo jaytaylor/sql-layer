@@ -15,12 +15,16 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.qp.loadableplan.LoadablePlan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -39,7 +43,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class PostgresServer implements Runnable, PostgresMXBean {
     private final int port;
     private final PostgresServiceRequirements reqs;
-    private PostgresStatementCache statementCache;
     private ServerSocket socket = null;
     private boolean running = false;
     private boolean listening = false;
@@ -47,6 +50,12 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         new HashMap<Integer,PostgresServerConnection>();
     private Thread thread;
     private final AtomicBoolean instrumentationEnabled = new AtomicBoolean(false);
+    // AIS-dependent state
+    private final Object aisLock = new Object();
+    private volatile int aisGeneration = -1;
+    private volatile PostgresStatementCache statementCache;
+    private final Map<String, LoadablePlan> loadablePlans = new HashMap<String, LoadablePlan>();
+    //
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresServer.class);
 
@@ -171,11 +180,24 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         return statementCache;
     }
 
+    public LoadablePlan loadablePlan(String planName) {
+        return loadablePlans.get(planName);
+    }
+
     /** This is the version for use by connections. */
     // TODO: This could create a new one if we didn't want to share them.
-    public PostgresStatementCache getStatementCache(int generation) {
-        if (statementCache != null)
-            statementCache.checkGeneration(generation);
+    public PostgresStatementCache getStatementCache(int generation)
+    {
+        synchronized (aisLock) {
+            if (aisGeneration != generation) {
+                assert aisGeneration < generation : generation;
+                if (statementCache != null) {
+                    statementCache.invalidate();
+                }
+                loadablePlans.clear();
+                aisGeneration = generation;
+            }
+        }
         return statementCache;
     }
 
@@ -275,5 +297,34 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     public long getTotalEventTime(int sessionId, String eventName) {
         return getConnection(sessionId).getSessionTracer().getTotalEventTime(eventName);
     }
-    
+
+    @Override
+    public void clearPlans()
+    {
+        loadablePlans.clear();
+    }
+
+    @Override
+    public String loadPlan(String jarFilePath, String className) {
+        String status;
+        try {
+            File jarFile = new File(jarFilePath);
+            if (!jarFile.isAbsolute()) {
+                throw new IOException(String.format("jar file name does not specify an absolute path: %s",
+                                                    jarFilePath));
+            }
+            URL url = new URL(String.format("file://%s", jarFilePath));
+            URLClassLoader classLoader = new URLClassLoader(new URL[]{url});
+            Class klass = classLoader.loadClass(className);
+            LoadablePlan loadablePlan = (LoadablePlan) klass.newInstance();
+            LoadablePlan previousPlan = loadablePlans.put(loadablePlan.name(), loadablePlan);
+            status = String.format("%s %s -> %s",
+                                   (previousPlan == null ? "Loaded" : "Reloaded"),
+                                   loadablePlan.name(),
+                                   className);
+        } catch (Exception e) {
+            status = e.toString();
+        }
+        return status;
+    }
 }

@@ -15,7 +15,6 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
 import com.akiban.qp.operator.*;
 import com.akiban.server.types.ToObjectValueTarget;
@@ -40,8 +39,8 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     private int offset = 0;
     private int limit = -1;
 
-    private static final Tap.InOutTap EXECUTE_TAP = Tap.createTimer("PostgresBaseStatement: execute shared");
-    private static final Tap.InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresBaseStatement: acquire shared lock");
+    private static final Tap.InOutTap EXECUTE_TAP = Tap.createTimer("PostgresOperatorStatement: execute shared");
+    private static final Tap.InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresOperatorStatement: acquire shared lock");
 
     public PostgresOperatorStatement(Operator resultOperator,
                                      RowType resultRowType,
@@ -78,7 +77,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             Row row;
             ToObjectValueTarget target = new ToObjectValueTarget();
             while ((row = cursor.next()) != null) {
-                assert (row.rowType() == resultRowType) : row;
+                assert resultRowType == null || (row.rowType() == resultRowType) : row;
                 if (nskip > 0) {
                     nskip--;
                     continue;

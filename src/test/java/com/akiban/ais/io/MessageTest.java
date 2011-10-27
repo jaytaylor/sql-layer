@@ -78,7 +78,7 @@ public final class MessageTest {
         assertNotNull("o table not null", oTable);
         final Group group = cTable.getGroup();
         assertSame("customer and order group", group, oTable.getGroup());
-        final GroupIndex fooIndex = GroupIndex.create(ais, group, "foo", 100, false, "KEY");
+        final GroupIndex fooIndex = GroupIndex.create(ais, group, "foo", 100, false, "KEY", null);
         fooIndex.addColumn(new IndexColumn(fooIndex, cTable.getColumn("name"), 0, true, null));
         fooIndex.addColumn(new IndexColumn(fooIndex, oTable.getColumn("foo"), 1, true, null));
         ais.checkIntegrity();

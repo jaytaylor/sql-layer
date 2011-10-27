@@ -1,5 +1,5 @@
 project([Field(4)])
   Flatten_HKeyOrdered(user.customers LEFT user.orders)
     AncestorLookup_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) -> [user.customers, user.orders])
-      IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) (,) INNER JOIN thru customers)
+      IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) (,) INNER JOIN thru customers, then LEFT)
 [order_date:date[DATE]]
