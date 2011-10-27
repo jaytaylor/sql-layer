@@ -200,7 +200,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
         return new GroupIndexRebuildPredicate() {
             @Override
             public boolean shouldRebuild(GroupIndex index) {
-                return false;
+                return ! index.isValid();
             }
         };
     }
