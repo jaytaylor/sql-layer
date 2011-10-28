@@ -16,7 +16,3 @@
     com.akiban.server.service.instrumentation.InstrumentationService : com.akiban.server.service.instrumentation.InstrumentationServiceImpl
     com.akiban.server.aggregation.AggregatorRegistry : com.akiban.server.service.functions.FunctionsRegistryImpl
     com.akiban.server.expression.ExpressionRegistry : com.akiban.server.service.functions.FunctionsRegistryImpl
-
-# This binding is really just a crutch while we move away from the static SMI.get() pattern
-- bind:
-    com.akiban.server.service.ServiceManager : com.akiban.server.service.ServiceManagerImpl
