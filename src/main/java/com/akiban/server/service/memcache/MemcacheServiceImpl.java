@@ -204,10 +204,10 @@ public class MemcacheServiceImpl implements MemcacheService,
 
         if (binary) {
             pipelineFactory = new BinaryPipelineFactory(this, verbose,
-                    idle_time, allChannels, formatGetter, callback);
+                    idle_time, allChannels, formatGetter, callback, sessionService);
         } else {
             pipelineFactory = new TextPipelineFactory(this, verbose, idle_time,
-                    text_frame_size, allChannels, formatGetter, callback);
+                    text_frame_size, allChannels, formatGetter, callback, sessionService);
         }
 
         bootstrap.setPipelineFactory(pipelineFactory);
@@ -251,11 +251,12 @@ public class MemcacheServiceImpl implements MemcacheService,
                 boolean verbose, int idleTime, int frameSize,
                 DefaultChannelGroup channelGroup,
                 AkibanCommandHandler.FormatGetter formatGetter,
-                AkibanCommandHandler.CommandCallback callback) {
+                AkibanCommandHandler.CommandCallback callback,
+                SessionService sessionService) {
             this.frameSize = frameSize;
             responseEncoder = new MemcachedResponseEncoder();
             commandHandler = new AkibanCommandHandler(hapiProcessor,
-                    channelGroup, formatGetter, callback);
+                    channelGroup, formatGetter, callback, sessionService);
         }
 
         public final ChannelPipeline getPipeline() throws Exception {
@@ -279,11 +280,12 @@ public class MemcacheServiceImpl implements MemcacheService,
                 boolean verbose, int idleTime,
                 DefaultChannelGroup channelGroup,
                 AkibanCommandHandler.FormatGetter formatGetter,
-                AkibanCommandHandler.CommandCallback callback) {
+                AkibanCommandHandler.CommandCallback callback,
+                SessionService sessionService) {
             commandDecoder = new MemcachedBinaryCommandDecoder();
             responseEncoder = new MemcachedBinaryResponseEncoder();
             commandHandler = new AkibanCommandHandler(hapiProcessor,
-                    channelGroup, formatGetter, callback);
+                    channelGroup, formatGetter, callback, sessionService);
         }
 
         public ChannelPipeline getPipeline() throws Exception {

@@ -19,7 +19,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 
-import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.service.session.SessionService;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
@@ -134,12 +134,7 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler {
         void requestFailed();
     }
 
-    private final ThreadLocal<Session> session = new ThreadLocal<Session>() {
-        @Override
-        protected Session initialValue() {
-            return ServiceManagerImpl.newSession();
-        }
-    };
+    private final ThreadLocal<Session> session;
     /**
      * State variables that are universal for entire service. The handler *must*
      * be declared with a ChannelPipelineCoverage of "all".
@@ -153,11 +148,18 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler {
 
     public AkibanCommandHandler(HapiProcessor hapiProcessor,
             DefaultChannelGroup channelGroup, FormatGetter formatGetter,
-            CommandCallback callback) {
+            CommandCallback callback,
+            final SessionService sessionService) {
         this.hapiProcessor = hapiProcessor;
         this.channelGroup = channelGroup;
         this.formatGetter = formatGetter;
         this.callback = callback;
+        this.session = new ThreadLocal<Session>() {
+            @Override
+            protected Session initialValue() {
+                return sessionService.createSession();
+            }
+        };
     }
 
     /**
