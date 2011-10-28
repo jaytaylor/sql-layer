@@ -46,7 +46,7 @@ public class AkServerAisSourceTargetIT extends ITBase {
         final AkibanInformationSchema ais = ddl().getAIS(session());
         
         // Store AIS data
-        final Target target = new AkServerAisTarget(store());
+        final Target target = new AkServerAisTarget(store(), serviceManager().getSessionService());
         new Writer(target).save(ais);
 
         // Retrieve AIS data
@@ -64,7 +64,7 @@ public class AkServerAisSourceTargetIT extends ITBase {
         final AkibanInformationSchema ais = ddl().getAIS(session());
         
         // Store AIS data
-        final Target target = new AkServerAisTarget(store());
+        final Target target = new AkServerAisTarget(store(), serviceManager().getSessionService());
         new Writer(target).save(ais);
 
         // Retrieve AIS data
