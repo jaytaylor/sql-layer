@@ -24,6 +24,7 @@ import com.akiban.server.api.dml.scan.LegacyRowOutput;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.error.CursorIsUnknownException;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
@@ -104,8 +105,8 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
     }
 
     @Inject
-    public ConcurrencyAtomicsDXLService(SchemaManager schemaManager, Store store, TreeService treeService) {
-        super(schemaManager, store, treeService);
+    public ConcurrencyAtomicsDXLService(SchemaManager schemaManager, Store store, TreeService treeService, SessionService sessionService) {
+        super(schemaManager, store, treeService, sessionService);
     }
 
     public class ScanhooksDMLFunctions extends BasicDMLFunctions {
