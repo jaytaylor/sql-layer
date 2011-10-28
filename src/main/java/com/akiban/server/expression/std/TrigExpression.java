@@ -129,11 +129,11 @@ public class TrigExpression extends AbstractCompositeExpression
             {
                 case SIN:   result = Math.sin(dvar1); break;              
                 case COS:   result = Math.cos(dvar1); break; 
-                case TAN:   if ((temp = Math.cos(dvar1)) < BOUND && temp > -BOUND) // if cos(dvar1) is 0
+                case TAN:   if ( Math.cos(dvar1) == 0) // if cos(dvar1) is 0
                                 throw new OverflowException ();
                             else result = Math.tan(dvar1);
                             break;
-                case COT:   if ( (temp = Math.sin(dvar1)) < BOUND && temp > -BOUND)
+                case COT:   if ((temp = Math.sin(dvar1)) == 0)
                                 throw new OverflowException ();
                             else result = Math.cos(dvar1) / temp;
                             break;
