@@ -315,7 +315,7 @@ public class Grouper implements Visitor
                                 groupBinding.getCorrelationName(),
                                 null, null,
                                 parserContext);
-        TableBinding groupTableBinding = new TableBinding(aisGroupTable);
+        TableBinding groupTableBinding = new TableBinding(aisGroupTable, false);
         groupTableBinding.setGroupBinding(groupBinding);
         groupTable.setUserData(groupTableBinding);
         groupTables.put(groupBinding, groupTable);
