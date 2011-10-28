@@ -212,16 +212,16 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                     // Make sure that query cancelation flag is cleared for the next message.
                     session.cancelCurrentQuery(false);
                     logger.warn(ex.getMessage());
-                    logger.debug("StackTrace: {}", ex);
+                    logger.warn("StackTrace: {}", ex);
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
                     sendErrorResponse(type, ex, ErrorCode.QUERY_CANCELED, message);
                 } catch (InvalidOperationException ex) {
                     logger.warn("Error in query: {}",ex.getMessage());
-                    logger.debug("StackTrace: {}", ex);
+                    logger.warn("StackTrace: {}", ex);
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
                 } catch (Exception ex) {
                     logger.warn("Unexpected error in query", ex);
-                    logger.debug("Stack Trace: {}", ex);
+                    logger.warn("Stack Trace: {}", ex);
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
                     sendErrorResponse(type, ex, ErrorCode.UNEXPECTED_EXCEPTION, message);
                 }

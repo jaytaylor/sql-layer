@@ -102,14 +102,12 @@ public class OptimizerTestBase extends ASTTransformTestBase
                 String line = brdr.readLine();
                 if (line == null) break;
                 String defn[] = line.split("\t");
-                boolean unique = false;
                 JoinType joinType = JoinType.LEFT;
                 if (defn.length > 3)
                     joinType = JoinType.valueOf(defn[3]);
                 GroupIndex index = GroupIndexCreator.createIndex(ais,
                                                                  defn[0], 
                                                                  defn[1],
-                                                                 unique,
                                                                  defn[2],
                                                                  joinType);
                 index.getGroup().addIndex(index);

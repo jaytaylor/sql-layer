@@ -362,7 +362,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
     
     @Override
-    public Collection<Index> createIndexes(Session session, Collection<Index> indexesToAdd) {
+    public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
         final Map<String,String> volumeToSchema = new HashMap<String,String>();
         final AkibanInformationSchema newAIS = new AkibanInformationSchema();
         new Writer(new AISTarget(newAIS)).save(getAis());
@@ -407,7 +407,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     schemaName = indexName.getSchemaName();
                     Integer newId = SchemaDefToAis.findMaxIndexIDInGroup(newAIS, newGroup) + 1;
                     newIndex = GroupIndex.create(newAIS, newGroup, indexName.getName(), newId, index.isUnique(),
-                                                 index.getConstraint(), index.getJoinType().name());
+                                                 index.getConstraint(), index.getJoinType());
                 }
                 break;
                 default:
