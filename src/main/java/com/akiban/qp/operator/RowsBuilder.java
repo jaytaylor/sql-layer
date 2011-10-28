@@ -15,11 +15,13 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
@@ -93,7 +95,11 @@ public final class RowsBuilder {
     }
 
     public RowsBuilder(AkType... types) {
-        rowType = new ValuesRowType(null, COUNT.incrementAndGet(), types);
+        this(null, types);
+    }
+
+    public RowsBuilder(Schema schema, AkType... types) {
+        rowType = new ValuesRowType(schema, COUNT.incrementAndGet(), types);
         this.types = types;
     }
 

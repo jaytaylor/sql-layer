@@ -93,7 +93,7 @@ public class OuterJoinPromoter extends BaseRule
 
     static class RequiredSources implements ExpressionVisitor {
         private Set<ColumnSource> required = new HashSet<ColumnSource>();
-        private Stack<ExpressionNode> stack = new Stack<ExpressionNode>();
+        private Deque<ExpressionNode> stack = new ArrayDeque<ExpressionNode>();
         
         public RequiredSources() {
         }
@@ -164,7 +164,7 @@ public class OuterJoinPromoter extends BaseRule
                     return;
                 }
                 else if (fname.equals("not") ||
-                         fname.equals("isNullOp")) {
+                         fname.equals("isNull")) {
                     // These are too complicated to understand.
                     return;
                 }

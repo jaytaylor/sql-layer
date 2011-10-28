@@ -45,7 +45,7 @@ public class AISBinder implements Visitor
     private AkibanInformationSchema ais;
     private String defaultSchemaName;
     private Map<TableName,ViewDefinition> views;
-    private Stack<BindingContext> bindingContexts;
+    private Deque<BindingContext> bindingContexts;
     private Set<QueryTreeNode> visited;
 
     public AISBinder(AkibanInformationSchema ais, String defaultSchemaName) {
@@ -80,7 +80,7 @@ public class AISBinder implements Visitor
 
     public void bind(StatementNode stmt) throws StandardException {
         visited = new HashSet<QueryTreeNode>();
-        bindingContexts = new Stack<BindingContext>();
+        bindingContexts = new ArrayDeque<BindingContext>();
         try {
             stmt.accept(this);
         }
@@ -921,7 +921,7 @@ public class AISBinder implements Visitor
     }
     protected void pushBindingContext(ResultSetNode resultSet) {
         BindingContext next = new BindingContext();
-        if (!bindingContexts.empty()) {
+        if (!bindingContexts.isEmpty()) {
             next.correlationNames.putAll(bindingContexts.peek().correlationNames);
         }
         if (resultSet != null) {

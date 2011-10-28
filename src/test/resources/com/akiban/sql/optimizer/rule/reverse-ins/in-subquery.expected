@@ -1,17 +1,16 @@
-SelectQuery@2b890c67
-  ResultSet@328d5485[order_date, sku, quan]
-    Project@5ca801b0[user.orders.order_date, user.items.sku, user.items.quan]
-      Select@1a06f956[ANY(Subquery@b7cf28b)]
-        Flatten@58e5ebd(user.orders INNER user.items)
-          BranchLookup@45edcd24(user.customers -> user.customers)
-            IndexScan@7f371a59(Index(user.customers.name[IndexColumn(name)]), NONE, =Smith)
-            TableSource@6c267f18(user.orders - TableGroupJoin@7aa30a4e(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-            TableSource@53623820(user.items - TableGroupJoin@65f9c5c8(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
-
-Subquery@b7cf28b
-  Project@38178991[user.items.quan == user.items.quan]
-    Select@1148ab5c[]
-      Flatten@712801c5(user.items)
-        AncestorLookup@798c668c(user.items -> [user.items])
-          IndexScan@70a0afab(Index(user.items.sku[IndexColumn(sku)]), NONE, =1234)
-          TableSource@35e5ebbf(user.items - TableGroup@456d3d51(customers))
+SelectQuery@377e9134
+  ResultSet@566f0962[order_date, sku, quan]
+    MapJoin@1d1d565f()
+      Flatten@711185e7(user.orders INNER user.items)
+        BranchLookup@356e3aaf(user.customers -> user.customers)
+          IndexScan@57ced290(Index(user.customers.name[IndexColumn(name)]), NONE, =Smith)
+          TableSource@2d205042(user.orders - TableGroupJoin@4b6218f9(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+          TableSource@24753433(user.items - TableGroupJoin@1555aa19(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+      Project@13d12d43[user.orders.order_date, user.items.sku, user.items.quan]
+        Select@9f293df[]
+          Limit@2b125a40(LIMIT 1)
+            Select@41e335d7[user.items.quan == user.items.quan]
+              Flatten@2be3d80c(user.items)
+                AncestorLookup@7b7d1256(user.items -> [user.items])
+                  IndexScan@503f0b70(Index(user.items.sku[IndexColumn(sku)]), NONE, =1234)
+                  TableSource@37975d46(user.items - TableGroup@5b080f38(customers))

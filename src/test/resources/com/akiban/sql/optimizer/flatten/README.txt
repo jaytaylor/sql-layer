@@ -10,6 +10,10 @@ select-5: subquery without unique column
 
 select-6: subquery with multiple tables but still unique
 
+select-6j: same with explicit INNER JOIN
+
+select-6n: uniqueness from index and join condition
+
 select-7: EXISTS with unique constraint
 
 select-8: view

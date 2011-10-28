@@ -16,6 +16,7 @@
 package com.akiban.server.service.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
@@ -46,6 +47,12 @@ class DXLMXBeanImpl implements DXLMXBean {
     private final AtomicReference<String> usingSchema = new AtomicReference<String>("test");
     private static final Logger LOG = LoggerFactory.getLogger(DXLMXBeanImpl.class);
     private static final String CREATE_GROUP_INDEX_LOG_FORMAT = "createGroupIndex failed: %s %s %s";
+    private static final DXLService.GroupIndexRecreatePredicate ALL_GIS = new DXLService.GroupIndexRecreatePredicate() {
+        @Override
+        public boolean shouldRecreate(GroupIndex index) {
+            return true;
+        }
+    };
 
     public DXLMXBeanImpl(DXLServiceImpl dxlService) {
         this.dxlService = dxlService;
@@ -76,12 +83,17 @@ class DXLMXBeanImpl implements DXLMXBean {
     }
 
     @Override
-    public void createGroupIndex(String groupName, String indexName, String tableColumnList) {
+    public void recreateGroupIndexes() {
+        dxlService.recreateGroupIndexes(ALL_GIS);
+    }
+
+    @Override
+    public void createGroupIndex(String groupName, String indexName, String tableColumnList, Index.JoinType joinType) {
         Session session = ServiceManagerImpl.newSession();
         try {
             DDLFunctions ddlFunctions = dxlService.ddlFunctions();
             AkibanInformationSchema ais = ddlFunctions.getAIS(session);
-            Index index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnList);
+            Index index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnList, joinType);
             ddlFunctions.createIndexes(session, Collections.singleton(index));
         }
         catch (InvalidOperationException e) {

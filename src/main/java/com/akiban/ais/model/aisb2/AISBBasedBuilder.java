@@ -310,7 +310,7 @@ public class AISBBasedBuilder
             }
             this.groupName = localGroupName;
             this.position = 0;
-            aisb.groupIndex(this.groupName, this.indexName, false);
+            aisb.groupIndex(this.groupName, this.indexName, false, null);
             return and(schema, table, column);
         }
 

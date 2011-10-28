@@ -51,7 +51,7 @@ public class Grouper implements Visitor
             this.baseTable = baseTable;
             this.tableBinding = tableBinding;
             boundColumns = new HashMap<Column,List<ColumnBinding> >();
-            joinedColumns = new HashMap<ColumnBinding,ValueNode>();
+            joinedColumns = new IdentityHashMap<ColumnBinding,ValueNode>();
         }
         UserTable getUserTable() {
             return (UserTable)tableBinding.getTable();

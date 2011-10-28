@@ -15,6 +15,7 @@
 
 package com.akiban.qp.row;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.ValueSource;
@@ -67,6 +68,11 @@ public class ProductRow extends AbstractRow
     public HKey hKey()
     {
         return null;
+    }
+
+    @Override
+    public boolean containsRealRowOf(UserTable userTable) {
+        return containRealRowOf(left, right, userTable);
     }
 
     @Override

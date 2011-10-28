@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -29,7 +30,7 @@ import com.akiban.server.error.IndexTableNotInGroupException;
 
 public class GroupIndex extends Index
 {
-    public static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
+    static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
                                     Boolean isUnique, String constraint)
     {
         ais.checkMutability();
@@ -38,10 +39,26 @@ public class GroupIndex extends Index
         return index;
     }
 
+    public static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
+                                    Boolean isUnique, String constraint, JoinType joinType)
+    {
+        ais.checkMutability();
+        GroupIndex index = new GroupIndex(group, indexName, indexId, isUnique, constraint, joinType);
+        group.addIndex(index);
+        return index;
+    }
+
     public GroupIndex(Group group, String indexName, Integer indexId, Boolean isUnique, String constraint)
     {
-        // index checks index name. 
+        // index checks index name.
         super(new TableName("", group.getName()), indexName, indexId, isUnique, constraint);
+        this.group = group;
+    }
+
+    public GroupIndex(Group group, String indexName, Integer indexId, Boolean isUnique, String constraint, JoinType joinType)
+    {
+        // index checks index name.
+        super(new TableName("", group.getName()), indexName, indexId, isUnique, constraint, joinType, true);
         this.group = group;
     }
 
@@ -102,16 +119,36 @@ public class GroupIndex extends Index
             return hKeyColumn.column();
         }
 
-        // table is within the branch segment; use a rootward bias, but no more rootward than the rootmost table
-        for (Column equivalentColumn : hKeyColumn.equivalentColumns()) {
-            int equivalentColumnDepth = equivalentColumn.getUserTable().getDepth();
-            if (equivalentColumnDepth >= rootMostDepth) {
-                return equivalentColumn;
+        // table is within the branch segment
+        List<Column> equivalentColumns = hKeyColumn.equivalentColumns();
+        switch (getJoinType()) {
+        case LEFT:
+            // use a rootward bias, but no more rootward than the rootmost table
+            for (Column equivalentColumn : equivalentColumns) {
+                int equivalentColumnDepth = equivalentColumn.getUserTable().getDepth();
+                if (equivalentColumnDepth >= rootMostDepth) {
+                    return equivalentColumn;
+                }
             }
+            break;
+        case RIGHT:
+            // use a childward bias, but no more childward than the childmost table
+            int leafMostDepth = leafMostTable().getDepth();
+            for(ListIterator<Column> reverseCols = equivalentColumns.listIterator(equivalentColumns.size());
+                reverseCols.hasPrevious();)
+            {
+                Column equivalentColumn = reverseCols.previous();
+                int equivalentColumnDepth = equivalentColumn.getUserTable().getDepth();
+                if (equivalentColumnDepth <= leafMostDepth) {
+                    return equivalentColumn;
+                }
+            }
+            break;
         }
+
         throw new AssertionError(
                 "no suitable column found for table " + hKeyColumn.segment().table()
-                        + " in " + hKeyColumn.equivalentColumns()
+                        + " in " + equivalentColumns
         );
     }
 

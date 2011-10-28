@@ -15,6 +15,7 @@
 
 package com.akiban.qp.row;
 
+
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.util.ValueHolder;
 

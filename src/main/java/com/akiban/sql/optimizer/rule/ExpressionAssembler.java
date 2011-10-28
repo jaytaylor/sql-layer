@@ -63,8 +63,14 @@ public class ExpressionAssembler
         public int getBindingsOffset();
     }
 
+    public interface SubqueryOperatorAssembler {
+        /** Assemble the given subquery expression. */
+        public Expression assembleSubqueryExpression(SubqueryExpression subqueryExpression);
+    }
+
     public Expression assembleExpression(ExpressionNode node,
-                                         ColumnExpressionContext columnContext) {
+                                         ColumnExpressionContext columnContext,
+                                         SubqueryOperatorAssembler subqueryAssembler) {
         if (node instanceof ConstantExpression)
             return literal(((ConstantExpression)node).getValue());
         else if (node instanceof ColumnExpression)
@@ -75,24 +81,31 @@ public class ExpressionAssembler
             BooleanOperationExpression bexpr = (BooleanOperationExpression)node;
             return expressionRegistry
                 .composer(bexpr.getOperation().getFunctionName())
-                .compose(Arrays.asList(assembleExpression(bexpr.getLeft(), columnContext),
-                                       assembleExpression(bexpr.getRight(), columnContext)));
+                .compose(Arrays.asList(assembleExpression(bexpr.getLeft(), 
+                                                          columnContext, 
+                                                          subqueryAssembler),
+                                       assembleExpression(bexpr.getRight(), 
+                                                          columnContext,
+                                                          subqueryAssembler)));
         }
         else if (node instanceof CastExpression)
             // TODO: Need actual cast.
             return assembleExpression(((CastExpression)node).getOperand(),
-                                      columnContext);
+                                      columnContext, subqueryAssembler);
         else if (node instanceof ComparisonCondition) {
             ComparisonCondition cond = (ComparisonCondition)node;
-            return compare(assembleExpression(cond.getLeft(), columnContext),
+            return compare(assembleExpression(cond.getLeft(), 
+                                              columnContext, subqueryAssembler),
                            cond.getOperation(),
-                           assembleExpression(cond.getRight(), columnContext));
+                           assembleExpression(cond.getRight(), 
+                                              columnContext, subqueryAssembler));
         }
         else if (node instanceof FunctionExpression) {
             FunctionExpression funcNode = (FunctionExpression)node;
             return expressionRegistry
                 .composer(funcNode.getFunction())
-                .compose(assembleExpressions(funcNode.getOperands(), columnContext));
+                .compose(assembleExpressions(funcNode.getOperands(), 
+                                             columnContext, subqueryAssembler));
         }
         else if (node instanceof IfElseExpression) {
             IfElseExpression ifElse = (IfElseExpression)node;
@@ -100,24 +113,28 @@ public class ExpressionAssembler
             return expressionRegistry
                 .composer("ifThenElse")
                 .compose(Arrays.asList(assembleExpression(ifElse.getTestCondition(), 
-                                                          columnContext),
+                                                          columnContext, 
+                                                          subqueryAssembler),
                                        assembleExpression(ifElse.getThenExpression(), 
-                                                          columnContext),
+                                                          columnContext,
+                                                          subqueryAssembler),
                                        assembleExpression(ifElse.getElseExpression(), 
-                                                          columnContext)));
+                                                          columnContext, 
+                                                          subqueryAssembler)));
         }
         else if (node instanceof InListCondition) {
             InListCondition inList = (InListCondition)node;
-            Expression lhs = assembleExpression(inList.getOperand(), columnContext);
+            Expression lhs = assembleExpression(inList.getOperand(), 
+                                                columnContext, subqueryAssembler);
             List<Expression> rhs = assembleExpressions(inList.getExpressions(),
-                                                       columnContext);
+                                                       columnContext, subqueryAssembler);
             return new InExpression(lhs, rhs);
         }
+        else if (node instanceof SubqueryExpression)
+            return subqueryAssembler.assembleSubqueryExpression((SubqueryExpression)node);
         else if (node instanceof AggregateFunctionExpression)
             throw new UnsupportedSQLException("Aggregate used as regular function", 
                                               node.getSQLsource());
-        else if (node instanceof SubqueryExpression)
-            throw new AkibanInternalException("Should have called assembleSubqueryExpression");
         else
             throw new UnsupportedSQLException("Unknown expression", node.getSQLsource());
     }
@@ -144,27 +161,12 @@ public class ExpressionAssembler
         throw new AkibanInternalException("Column not found " + column);
     }
 
-    public Expression assembleSubqueryExpression(SubqueryExpression node,
-                                                 ColumnExpressionContext columnContext,
-                                                 Operator subquery) {
-        if (node instanceof SubqueryValueExpression)
-            throw new UnsupportedSQLException("subquery as expression", 
-                                              node.getSQLsource());
-        else if (node instanceof ExistsCondition)
-            throw new UnsupportedSQLException("EXISTS as expression", 
-                                              node.getSQLsource());
-        else if (node instanceof AnyCondition)
-            throw new UnsupportedSQLException("ANY as expression", 
-                                              node.getSQLsource());
-        else
-            throw new UnsupportedSQLException("Unknown subquery", node.getSQLsource());
-    }
-
     protected List<Expression> assembleExpressions(List<ExpressionNode> expressions,
-                                                   ColumnExpressionContext columnContext) {
+                                                   ColumnExpressionContext columnContext,
+                                                   SubqueryOperatorAssembler subqueryAssembler) {
         List<Expression> result = new ArrayList<Expression>(expressions.size());
         for (ExpressionNode expr : expressions) {
-            result.add(assembleExpression(expr, columnContext));
+            result.add(assembleExpression(expr, columnContext, subqueryAssembler));
         }
         return result;
     }
@@ -172,7 +174,7 @@ public class ExpressionAssembler
     public ConstantExpression evalNow(ExpressionNode node) {
         if (node instanceof ConstantExpression)
             return (ConstantExpression)node;
-        Expression expr = assembleExpression(node, null);
+        Expression expr = assembleExpression(node, null, null);
         if (!expr.isConstant())
             throw new AkibanInternalException("required constant expression: " + expr);
         if (node instanceof ConditionExpression) {

@@ -339,6 +339,7 @@
                     <akserver.port>${akserver.port}</akserver.port>
                     <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
                 </systemPropertyVariables>
+                <argLine>${akiban.test.extraJvmArgs}</argLine>
             </configuration>
             <executions>
                 <execution>

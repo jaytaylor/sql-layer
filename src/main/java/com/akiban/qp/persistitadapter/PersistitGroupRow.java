@@ -15,6 +15,7 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.rowdata.FieldDef;

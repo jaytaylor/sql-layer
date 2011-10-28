@@ -17,17 +17,9 @@ package com.akiban.sql.optimizer.rule;
 
 import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 
-import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.BindableRow;
-import com.akiban.server.expression.std.Expressions;
-import com.akiban.server.expression.std.LiteralExpression;
-
-import com.akiban.server.error.UnsupportedSQLException;
-
-import com.akiban.server.expression.Expression;
-import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
@@ -36,9 +28,23 @@ import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ParameterNode;
 
-import com.akiban.qp.operator.API;
+import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.error.UnsupportedSQLException;
+
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.expression.std.LiteralExpression;
+import com.akiban.server.expression.subquery.AnySubqueryExpression;
+import com.akiban.server.expression.subquery.ExistsSubqueryExpression;
+import com.akiban.server.expression.subquery.ScalarSubqueryExpression;
+import com.akiban.server.types.AkType;
+
 import com.akiban.qp.exec.UpdatePlannable;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.IndexScanSelector;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.UpdateFunction;
+import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.*;
 
@@ -72,7 +78,7 @@ public class OperatorAssembler extends BaseRule
         new Assembler(plan).apply();
     }
 
-    static class Assembler {
+    static class Assembler implements SubqueryOperatorAssembler {
         private PlanContext planContext;
         private SchemaRulesContext rulesContext;
         private Schema schema;
@@ -194,11 +200,6 @@ public class OperatorAssembler extends BaseRule
             return new PhysicalUpdate(plan, getParameterTypes());
         }
 
-        protected Operator assembleSubquery(Subquery subquery) {
-            RowStream stream = assembleQuery(subquery.getQuery());
-            return stream.operator;
-        }
-
         // Assemble the top-level query. If there is a ResultSet at
         // the top, it is not handled here, since its meaning is
         // different for the different statement types.
@@ -238,6 +239,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleProject((Project)node);
             else if (node instanceof ExpressionsSource)
                 return assembleExpressionsSource((ExpressionsSource)node);
+            else if (node instanceof SubquerySource)
+                return assembleSubquerySource((SubquerySource)node);
             else if (node instanceof NullSource)
                 return assembleNullSource((NullSource)node);
             else
@@ -246,11 +249,33 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleIndexScan(IndexScan indexScan) {
             RowStream stream = new RowStream();
-            IndexRowType indexRowType = schema.indexRowType(indexScan.getIndex());
+            Index index = indexScan.getIndex();
+            IndexRowType indexRowType = schema.indexRowType(index);
+            IndexScanSelector selector;
+            if (index.isTableIndex()) {
+                selector = IndexScanSelector.inner(index);
+            }
+            else {
+                switch (index.getJoinType()) {
+                case LEFT:
+                    selector = IndexScanSelector
+                        .leftJoinAfter(index, 
+                                       indexScan.getLeafMostInnerTable().getTable().getTable());
+                    break;
+                case RIGHT:
+                    selector = IndexScanSelector
+                        .rightJoinUntil(index, 
+                                        indexScan.getRootMostInnerTable().getTable().getTable());
+                    break;
+                default:
+                    throw new AkibanInternalException("Unknown index join type " +
+                                                      index);
+                }
+            }
             stream.operator = API.indexScan_Default(indexRowType, 
                                                     indexScan.isReverseScan(),
                                                     assembleIndexKeyRange(indexScan, null),
-                                                    tableRowType(indexScan.getLeafMostInnerTable()));
+                                                    selector);
             stream.rowType = indexRowType;
             stream.fieldOffsets = new IndexFieldOffsets(indexScan, indexRowType);
             return stream;
@@ -277,6 +302,21 @@ public class OperatorAssembler extends BaseRule
             }
             stream.operator = API.valuesScan_Default(bindableRows, stream.rowType);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(expressionsSource, 
+                                                               stream.rowType);
+            if (expressionsSource.getDistinctState() == DistinctState.NEED_DISTINCT) {
+                // Add Sort (usually _InsertionLimited) and Distinct.
+                assembleSort(stream, stream.rowType.nFields(), expressionsSource);
+                stream.operator = API.distinct_Partial(stream.operator, stream.rowType);
+            }
+            return stream;
+        }
+
+        protected RowStream assembleSubquerySource(SubquerySource subquerySource) {
+            PlanNode subquery = subquerySource.getSubquery().getQuery();
+            if (subquery instanceof ResultSet)
+                subquery = ((ResultSet)subquery).getInput();
+            RowStream stream = assembleStream(subquery);
+            stream.fieldOffsets = new ColumnSourceFieldOffsets(subquerySource, 
                                                                stream.rowType);
             return stream;
         }
@@ -493,15 +533,9 @@ public class OperatorAssembler extends BaseRule
             case UNGROUPED:
                 break;
             default:
-                {
-                    // TODO: Could pre-aggregate now in PREAGGREGATE_RESORT case.
-                    API.Ordering ordering = API.ordering();
-                    for (int i = 0; i < nkeys; i++) {
-                        ordering.append(Expressions.field(stream.rowType, i), true);
-                    }
-                    stream.operator = API.sort_Tree(stream.operator, stream.rowType, 
-                                                    ordering);
-                }
+                // TODO: Could pre-aggregate now in PREAGGREGATE_RESORT case.
+                assembleSort(stream, nkeys, aggregateSource.getInput());
+                break;
             }
             stream.operator = API.aggregate_Partial(stream.operator, nkeys,
                                                     rulesContext.getAggregatorRegistry(),
@@ -514,14 +548,17 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleDistinct(Distinct distinct) {
             RowStream stream = assembleStream(distinct.getInput());
-            stream.operator = API.aggregate_Partial(stream.operator,
-                                                    stream.rowType.nFields(),
-                                                    null,
-                                                    Collections.<String>emptyList());
-            // TODO: Probably want separate Distinct operator so that
-            // row type does not change.
-            stream.rowType = stream.operator.rowType();
-            stream.fieldOffsets = null;
+            Distinct.Implementation impl = distinct.getImplementation();
+            if (impl == null)
+              impl = Distinct.Implementation.SORT;
+            switch (impl) {
+            case PRESORTED:
+                break;
+            default:
+                assembleSort(stream, stream.rowType.nFields(), distinct.getInput());
+                break;
+            }
+            stream.operator = API.distinct_Partial(stream.operator, stream.rowType);
             return stream;
         }
 
@@ -529,28 +566,54 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleSort(Sort sort) {
             RowStream stream = assembleStream(sort.getInput());
+            List<ExpressionNode> projects = null;
+            if ((stream.fieldOffsets == null) &&
+                (sort.getInput() instanceof Project))
+                // Cf. comment in assembleProject().
+                projects = ((Project)sort.getInput()).getFields();
             API.Ordering ordering = API.ordering();
             for (OrderByExpression orderBy : sort.getOrderBy()) {
-                ordering.append(assembleExpression(orderBy.getExpression(),
-                                                   stream.fieldOffsets),
-                                orderBy.isAscending());
+                Expression expr = null;
+                if (projects != null) {
+                    int idx = projects.indexOf(orderBy.getExpression());
+                    if (idx >= 0)
+                        expr = Expressions.field(stream.rowType, idx);
+                }
+                if (expr == null)
+                    expr = assembleExpression(orderBy.getExpression(), 
+                                              stream.fieldOffsets);
+                ordering.append(expr, orderBy.isAscending());
             }
+            assembleSort(stream, ordering, sort.getInput(), sort.getOutput());
+            return stream;
+        }
+
+        protected void assembleSort(RowStream stream, API.Ordering ordering,
+                                    PlanNode input, PlanNode output) {
             int maxrows = -1;
-            if (sort.getOutput() instanceof Limit) {
-                Limit limit = (Limit)sort.getOutput();
+            if (output instanceof Limit) {
+                Limit limit = (Limit)output;
                 if (!limit.isOffsetParameter() && !limit.isLimitParameter()) {
                     maxrows = limit.getOffset() + limit.getLimit();
                 }
             }
-            else {
-                // TODO: Also if input is VALUES, whose size we know in advance.
+            else if (input instanceof ExpressionsSource) {
+                ExpressionsSource expressionsSource = (ExpressionsSource)input;
+                maxrows = expressionsSource.getExpressions().size();
             }
             if ((maxrows >= 0) && (maxrows <= INSERTION_SORT_MAX_LIMIT))
                 stream.operator = API.sort_InsertionLimited(stream.operator, stream.rowType,
                                                             ordering, maxrows);
             else
                 stream.operator = API.sort_Tree(stream.operator, stream.rowType, ordering);
-            return stream;
+        }
+
+        protected void assembleSort(RowStream stream, int nkeys, PlanNode input) {
+            API.Ordering ordering = API.ordering();
+            for (int i = 0; i < nkeys; i++) {
+                ordering.append(Expressions.field(stream.rowType, i), true);
+            }
+            assembleSort(stream, ordering, input, null);
         }
 
         protected RowStream assembleLimit(Limit limit) {
@@ -604,14 +667,63 @@ public class OperatorAssembler extends BaseRule
         protected Expression assembleExpression(ExpressionNode expr,
                                                 ColumnExpressionToIndex fieldOffsets) {
             ColumnExpressionContext context = getColumnExpressionContext(fieldOffsets);
-            if (expr instanceof SubqueryExpression) { 
-                SubqueryExpression sexpr = (SubqueryExpression)expr;
-                Operator subquery = assembleSubquery(sexpr.getSubquery());
-                return expressionAssembler.assembleSubqueryExpression(sexpr, 
-                                                                      context, 
-                                                                      subquery);
+            return expressionAssembler.assembleExpression(expr, context, this);
+        }
+
+        @Override
+        // Called back to deal with subqueries.
+        public Expression assembleSubqueryExpression(SubqueryExpression sexpr) {
+            ColumnExpressionToIndex fieldOffsets = columnBoundRows.current;
+            RowType outerRowType = null;
+            if (fieldOffsets != null)
+                outerRowType = fieldOffsets.getRowType();
+            pushBoundRow(fieldOffsets);
+            PlanNode subquery = sexpr.getSubquery().getQuery();
+            ExpressionNode expression = null;
+            if ((sexpr instanceof AnyCondition) ||
+                (sexpr instanceof SubqueryValueExpression)) {
+                if (subquery instanceof ResultSet)
+                    subquery = ((ResultSet)subquery).getInput();
+                if (!(subquery instanceof Project))
+                    throw new AkibanInternalException("subquery does not have project");
+                Project project = (Project)subquery;
+                subquery = project.getInput();
+                expression = project.getFields().get(0);
             }
-            return expressionAssembler.assembleExpression(expr, context);
+            RowStream stream = assembleQuery(subquery);
+            Expression innerExpression = null;
+            if (expression != null)
+                innerExpression = assembleExpression(expression, stream.fieldOffsets);
+            Expression result = assembleSubqueryExpression(sexpr, 
+                                                           stream.operator,
+                                                           innerExpression,
+                                                           outerRowType,
+                                                           stream.rowType,
+                                                           currentBindingPosition());
+            popBoundRow();
+            columnBoundRows.current = fieldOffsets;
+            return result;
+        }
+
+        protected Expression assembleSubqueryExpression(SubqueryExpression sexpr,
+                                                        Operator operator,
+                                                        Expression innerExpression,
+                                                        RowType outerRowType,
+                                                        RowType innerRowType,
+                                                        int bindingPosition) {
+            if (sexpr instanceof ExistsCondition)
+                return new ExistsSubqueryExpression(operator, outerRowType,
+                                                    innerRowType, bindingPosition);
+            else if (sexpr instanceof AnyCondition)
+                return new AnySubqueryExpression(operator, innerExpression,
+                                                 outerRowType, innerRowType,
+                                                 bindingPosition);
+            else if (sexpr instanceof SubqueryValueExpression)
+                return new ScalarSubqueryExpression(operator, innerExpression,
+                                                    outerRowType, innerRowType,
+                                                    bindingPosition);
+            else
+                throw new UnsupportedSQLException("Unknown subquery", sexpr.getSQLsource());
         }
 
         // Get a list of result columns based on ResultSet expression names.
@@ -760,7 +872,7 @@ public class OperatorAssembler extends BaseRule
         /* Bindings-related state */
 
         protected int bindingsOffset = -1;
-        protected Stack<ColumnExpressionToIndex> boundRows = null;
+        protected Stack<ColumnExpressionToIndex> boundRows = null; // Needs to be List<>.
 
         protected void ensureBoundRows() {
             if (boundRows == null) {

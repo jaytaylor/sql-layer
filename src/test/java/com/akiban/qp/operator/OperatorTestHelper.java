@@ -17,11 +17,11 @@ package com.akiban.qp.operator;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.Strings;
 import org.junit.Assert;
@@ -37,7 +37,7 @@ public final class OperatorTestHelper {
 
     // OperatorTestHelper interface
 
-    static void check(Operator plan, Collection<Row> expecteds) {
+    public static void check(Operator plan, Collection<Row> expecteds) {
         List<Row> actuals = execute(plan);
         if (expecteds.size() != actuals.size()) {
             assertEquals("output", Strings.join(expecteds), Strings.join(actuals));
@@ -72,10 +72,10 @@ public final class OperatorTestHelper {
         }
     }
 
-    static List<Row> execute(Operator plan) {
+    public static List<Row> execute(Operator plan) {
         List<Row> rows = new ArrayList<Row>();
         Cursor cursor = plan.cursor(ADAPTER);
-        cursor.open(UndefBindings.only());
+        cursor.open(new ArrayBindings(0));
         try {
             for(Row row = cursor.next(); row != null; row = cursor.next()) {
                 row.acquire();
@@ -85,6 +85,10 @@ public final class OperatorTestHelper {
         } finally {
             cursor.close();
         }
+    }
+
+    public static Schema schema() {
+        return new Schema(new com.akiban.ais.model.AkibanInformationSchema());
     }
 
     // for use in this class
@@ -110,7 +114,7 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange, UserTable innerJoinUntil)
+        public Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange, IndexScanSelector selector)
         {
             throw new UnsupportedOperationException();
         }

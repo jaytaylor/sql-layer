@@ -994,7 +994,7 @@ public class RowDefCacheTest
         {
             AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
             Table customerTable = ais.getTable(SCHEMA, "customer");
-            GroupIndex index = GroupIndex.create(ais, customerTable.getGroup(), "cName", 100, false, Index.KEY_CONSTRAINT);
+            GroupIndex index = GroupIndex.create(ais, customerTable.getGroup(), "cName", 100, false, Index.KEY_CONSTRAINT, Index.JoinType.LEFT);
             index.addColumn(new IndexColumn(index, customerTable.getColumn("name"), 0,true, null));
             rowDefCache = SCHEMA_FACTORY.rowDefCache(ais);
         }
@@ -1034,7 +1034,7 @@ public class RowDefCacheTest
             AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
             Table customerTable = ais.getTable(SCHEMA, "customer");
             Table ordersTable = ais.getTable(SCHEMA, "orders");
-            GroupIndex index = GroupIndex.create(ais, customerTable.getGroup(), "cName_oDate", 100, false, Index.KEY_CONSTRAINT);
+            GroupIndex index = GroupIndex.create(ais, customerTable.getGroup(), "cName_oDate", 100, false, Index.KEY_CONSTRAINT,  Index.JoinType.LEFT);
             index.addColumn(new IndexColumn(index, customerTable.getColumn("name"), 0, true, null));
             index.addColumn(new IndexColumn(index, ordersTable.getColumn("date"), 1, true, null));
             rowDefCache = SCHEMA_FACTORY.rowDefCache(ais);
@@ -1084,7 +1084,7 @@ public class RowDefCacheTest
             Table customerTable = ais.getTable(SCHEMA, "customer");
             Table ordersTable = ais.getTable(SCHEMA, "orders");
             Table itemsTable = ais.getTable(SCHEMA, "items");
-            GroupIndex index = GroupIndex.create(ais, customerTable.getGroup(), "cName_oDate_iSku", 100, false, Index.KEY_CONSTRAINT);
+            GroupIndex index = GroupIndex.create(ais, customerTable.getGroup(), "cName_oDate_iSku", 100, false, Index.KEY_CONSTRAINT,  Index.JoinType.LEFT);
             index.addColumn(new IndexColumn(index, customerTable.getColumn("name"), 0, true, null));
             index.addColumn(new IndexColumn(index, ordersTable.getColumn("date"), 1, true, null));
             index.addColumn(new IndexColumn(index, itemsTable.getColumn("sku"), 2, true, null));
@@ -1141,7 +1141,7 @@ public class RowDefCacheTest
             Table customerTable = ais.getTable(SCHEMA, "customer");
             Table ordersTable = ais.getTable(SCHEMA, "orders");
             Table itemsTable = ais.getTable(SCHEMA, "items");
-            GroupIndex index = GroupIndex.create(ais, customerTable.getGroup(), "oDate_iSku", 100, false, Index.KEY_CONSTRAINT);
+            GroupIndex index = GroupIndex.create(ais, customerTable.getGroup(), "oDate_iSku", 100, false, Index.KEY_CONSTRAINT, Index.JoinType.LEFT);
             index.addColumn(new IndexColumn(index, ordersTable.getColumn("date"), 0, true, null));
             index.addColumn(new IndexColumn(index, itemsTable.getColumn("sku"), 1, true, null));
             rowDefCache = SCHEMA_FACTORY.rowDefCache(ais);
