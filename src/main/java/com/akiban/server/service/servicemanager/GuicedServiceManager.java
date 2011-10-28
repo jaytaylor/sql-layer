@@ -16,7 +16,6 @@
 package com.akiban.server.service.servicemanager;
 
 import com.akiban.server.AkServer;
-import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
@@ -270,6 +269,15 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         @Override
         public void setFullClassNames(boolean value) {
             fullClassNames.set(value);
+        }
+
+        @Override
+        public List<String> getServicesInStartupOrder() {
+            List<String> result = new ArrayList<String>();
+            for (Class<?> serviceClass : guicer.servicesClassesInStartupOrder()) {
+                result.add(isFullClassNames() ? serviceClass.getName() : serviceClass.getSimpleName() );
+            }
+            return result;
         }
 
         private final AtomicBoolean fullClassNames = new AtomicBoolean(false);

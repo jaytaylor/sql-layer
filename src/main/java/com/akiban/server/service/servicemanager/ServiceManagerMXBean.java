@@ -24,4 +24,5 @@ public interface ServiceManagerMXBean {
 
     public List<String> getStartedDependencies();
     public void graphStartedDependencies(String filename);
+    public List<String> getServicesInStartupOrder();
 }
