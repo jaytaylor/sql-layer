@@ -247,21 +247,21 @@ public class IndexDDL
             throw new UnsupportedUniqueGroupIndexException (indexName);
         }
         
-        String joinType = null;
+        Index.JoinType joinType = null;
         if (index.getJoinType() == null) {
             throw new MissingGroupIndexJoinTypeException();
         }
         else {
             switch (index.getJoinType()) {
             case LEFT_OUTER:
-                joinType = "LEFT";
+                joinType = Index.JoinType.LEFT;
                 break;
             case RIGHT_OUTER:
-                joinType = "RIGHT";
+                joinType = Index.JoinType.RIGHT;
                 break;
             case INNER:
                 if (false) {        // TODO: Not yet supported; falls through to error.
-                joinType = "INNER";
+//                joinType = Index.JoinType.INNER;
                 break;
                 }
             default:

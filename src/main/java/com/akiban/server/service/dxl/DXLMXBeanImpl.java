@@ -106,12 +106,12 @@ class DXLMXBeanImpl implements DXLMXBean {
     }
 
     @Override
-    public void createGroupIndex(String groupName, String indexName, String tableColumnList) {
+    public void createGroupIndex(String groupName, String indexName, String tableColumnList, Index.JoinType joinType) {
         Session session = ServiceManagerImpl.newSession();
         try {
             DDLFunctions ddlFunctions = dxlService.ddlFunctions();
             AkibanInformationSchema ais = ddlFunctions.getAIS(session);
-            Index index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnList);
+            Index index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnList, joinType);
             ddlFunctions.createIndexes(session, Collections.singleton(index));
         }
         catch (InvalidOperationException e) {
