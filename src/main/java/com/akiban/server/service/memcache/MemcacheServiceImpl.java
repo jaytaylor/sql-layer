@@ -20,6 +20,7 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.session.SessionService;
 import com.google.inject.Inject;
@@ -98,6 +99,7 @@ public class MemcacheServiceImpl implements MemcacheService,
     private final ConfigurationService config;
     private final JmxRegistryService jmxRegistry;
     private final SessionService sessionService;
+    private final DXLService dxl;
 
     // Daemon vars
     private final int text_frame_size = 32768 * 1024;
@@ -106,10 +108,11 @@ public class MemcacheServiceImpl implements MemcacheService,
     int port;
 
     @Inject
-    public MemcacheServiceImpl(ConfigurationService config, JmxRegistryService jmxRegistry, SessionService sessionService) {
+    public MemcacheServiceImpl(ConfigurationService config, JmxRegistryService jmxRegistry, SessionService sessionService, DXLService dxl) {
         this.config = config;
         this.jmxRegistry = jmxRegistry;
         this.sessionService = sessionService;
+        this.dxl = dxl;
     }
 
     @Override
@@ -117,7 +120,7 @@ public class MemcacheServiceImpl implements MemcacheService,
             HapiOutputter outputter, OutputStream outputStream)
             throws HapiRequestException {
         final HapiProcessor processor = manageBean.getHapiProcessor()
-                .getHapiProcessor();
+                .getHapiProcessor(config, dxl);
 
         processor.processRequest(session, request, outputter, outputStream);
     }
@@ -126,7 +129,7 @@ public class MemcacheServiceImpl implements MemcacheService,
     public Index findHapiRequestIndex(Session session, HapiGetRequest request)
             throws HapiRequestException {
         final HapiProcessor processor = manageBean.getHapiProcessor()
-                .getHapiProcessor();
+                .getHapiProcessor(config, dxl);
 
         return processor.findHapiRequestIndex(session, request);
     }
@@ -159,7 +162,7 @@ public class MemcacheServiceImpl implements MemcacheService,
             }
         }
 
-        manageBean = new ManageBean(defaultHapi, defaultOutput, jmxRegistry, sessionService);
+        manageBean = new ManageBean(defaultHapi, defaultOutput, jmxRegistry, sessionService, config, dxl);
         try {
             final String portString = config.getProperty("akserver.memcached.port");
 
@@ -309,6 +312,8 @@ public class MemcacheServiceImpl implements MemcacheService,
         private final SessionService sessionService;
         private final AtomicReference<WhichStruct<OutputFormat>> outputAs;
         private final AtomicReference<WhichStruct<HapiProcessorFactory>> processAs;
+        private final ConfigurationService config;
+        private final DXLService dxl;
 
         private static class WhichStruct<T> {
             final T whichItem;
@@ -320,12 +325,15 @@ public class MemcacheServiceImpl implements MemcacheService,
             }
         }
 
-        ManageBean(HapiProcessorFactory whichHapi, OutputFormat outputFormat, JmxRegistryService jmxRegistry, SessionService sessionService) {
+        ManageBean(HapiProcessorFactory whichHapi, OutputFormat outputFormat, JmxRegistryService jmxRegistry,
+                   SessionService sessionService, ConfigurationService config, DXLService dxl) {
             processAs = new AtomicReference<WhichStruct<HapiProcessorFactory>>(
                     null);
             outputAs = new AtomicReference<WhichStruct<OutputFormat>>(null);
             this.jmxRegistry = jmxRegistry;
             this.sessionService = sessionService;
+            this.config = config;
+            this.dxl = dxl;
             setHapiProcessor(whichHapi);
             setOutputFormat(outputFormat);
         }
@@ -375,9 +383,9 @@ public class MemcacheServiceImpl implements MemcacheService,
                 return;
             }
             ObjectName objectName = null;
-            if (whichProcessor.getHapiProcessor() instanceof JmxManageable) {
+            if (whichProcessor.getHapiProcessor(config, dxl) instanceof JmxManageable) {
                 JmxManageable asJmx = (JmxManageable) whichProcessor
-                        .getHapiProcessor();
+                        .getHapiProcessor(config, dxl);
                 objectName = jmxRegistry.register(asJmx);
             }
             WhichStruct<HapiProcessorFactory> newStruct = new WhichStruct<HapiProcessorFactory>(
@@ -400,7 +408,7 @@ public class MemcacheServiceImpl implements MemcacheService,
             Session session = sessionService.createSession();
             try {
                 HapiGetRequest getRequest = ParsedHapiGetRequest.parse(request);
-                Index index = processAs.get().whichItem.getHapiProcessor()
+                Index index = processAs.get().whichItem.getHapiProcessor(config, dxl)
                         .findHapiRequestIndex(session, getRequest);
                 return index == null ? "null" : index.toString();
             } catch (HapiRequestException e) {
