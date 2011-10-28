@@ -15,9 +15,12 @@
 
 package com.akiban.server;
 
+import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.akiban.server.store.Store;
 import com.akiban.util.OsUtils;
 import com.akiban.util.Strings;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,8 +53,9 @@ public class AkServer implements Service<AkServerEmptyInterface>, JmxManageable,
 
     private final JmxObjectInfo jmxObjectInfo;
 
-    public AkServer() {
-        this.jmxObjectInfo = new JmxObjectInfo("AKSERVER", new ManageMXBeanImpl(this), ManageMXBean.class);
+    @Inject
+    public AkServer(Store store, DXLService dxl) {
+        this.jmxObjectInfo = new JmxObjectInfo("AKSERVER", new ManageMXBeanImpl(store, dxl), ManageMXBean.class);
     }
 
     @Override
@@ -81,11 +85,6 @@ public class AkServer implements Service<AkServerEmptyInterface>, JmxManageable,
         stop();
     }
 
-    public ServiceManager getServiceManager()
-    {
-        return ServiceManagerImpl.get();
-    }
-
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
         return jmxObjectInfo;
@@ -112,7 +111,6 @@ public class AkServer implements Service<AkServerEmptyInterface>, JmxManageable,
         }
     }
 
-    
     public interface ShutdownMXBean {
         public void shutdown();
     }

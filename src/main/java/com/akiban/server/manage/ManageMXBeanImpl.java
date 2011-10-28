@@ -15,29 +15,25 @@
 
 package com.akiban.server.manage;
 
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.AkServer;
-import com.akiban.server.CustomQuery;
 import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.Store;
 
 public class ManageMXBeanImpl implements ManageMXBean {
-    private final AkServer akserver;
+    private final Store store;
+    private final DXLService dxlService;
 
-    private Class<?> customClass;
-    private AtomicReference<CustomQuery> runningQuery = new AtomicReference<CustomQuery>();
-
-    public ManageMXBeanImpl(final AkServer akserver) {
-        this.akserver = akserver;
+    public ManageMXBeanImpl(Store store, DXLService dxlService) {
+        this.store = store;
+        this.dxlService = dxlService;
     }
 
     @Override
@@ -52,7 +48,7 @@ public class ManageMXBeanImpl implements ManageMXBean {
 
     @Override
     public boolean isDeferIndexesEnabled() {
-        return akserver.getServiceManager().getStore().isDeferIndexes();
+        return getStore().isDeferIndexes();
     }
 
     @Override
@@ -99,96 +95,13 @@ public class ManageMXBeanImpl implements ManageMXBean {
     }
 
     @Override
-    public String loadCustomQuery(final String className, String path) {
-        try {
-            customClass = null;
-            URL[] urls;
-            if (path == null) {
-                urls = new URL[] { new URL("file:///tmp/custom-classes/") };
-            } else {
-                String[] pathElements = path.split(":");
-                urls = new URL[pathElements.length];
-                for (int i = 0; i < pathElements.length; i++) {
-                    urls[i] = new URL("file://" + pathElements[i]);
-                }
-            }
-            final ClassLoader cl = new URLClassLoader(urls);
-            final Class<?> c = cl.loadClass(className);
-            if (CustomQuery.class.isAssignableFrom(c)) {
-                customClass = c;
-                return "OK";
-            } else {
-                return c.getSimpleName() + " does not implement CustomQuery";
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            return e.toString();
-        }
-    }
-
-    @Override
-    public String runCustomQuery(final String params) {
-        if (runningQuery.get() == null) {
-            try {
-                final CustomQuery cq = (CustomQuery) (customClass.newInstance());
-                cq.setServiceManager(akserver.getServiceManager());
-                cq.setParameters(params.split(" "));
-                runningQuery.set(cq);
-                new Thread(new Runnable() {
-                    public void run() {
-                        try {
-                            cq.runQuery();
-                        } catch (Exception e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }, "Run " + customClass.getSimpleName()).start();
-                return "Running - use showCustomQueryResult to view status";
-            } catch (Exception e) {
-                runningQuery.set(null);
-                e.printStackTrace();
-                return e.toString();
-            }
-        } else {
-            return "Already running - use stopCustomQuery to stop";
-        }
-    }
-
-    @Override
-    public String stopCustomQuery() {
-        CustomQuery cq = runningQuery.get();
-        if (cq == null) {
-            return "No running query";
-        } else {
-            try {
-                cq.stopQuery();
-                runningQuery.set(null);
-                return cq.getResult();
-            } catch (Exception e) {
-                e.printStackTrace();
-                return e.toString();
-            }
-        }
-    }
-    
-    @Override
-    public String showCustomQueryResult() {
-        CustomQuery cq = runningQuery.get();
-        if (cq == null) {
-            return "No running query";
-        } else {
-            return cq.getResult();
-        }
-    }
-
-    @Override
     public String getVersionString() {
         return AkServer.VERSION_STRING;
     }
 
 
     private Store getStore() {
-        return akserver.getServiceManager().getStore();
+        return store;
     }
 
     /**
@@ -215,7 +128,7 @@ public class ManageMXBeanImpl implements ManageMXBean {
      * @return Collection of selected Indexes
      */
     private Collection<Index> gatherIndexes(Session session, String arg) {
-        AkibanInformationSchema ais = akserver.getServiceManager().getDXL().ddlFunctions().getAIS(session);
+        AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
         Collection<Index> indexes = new HashSet<Index>();
         for(UserTable table : ais.getUserTables().values()) {
             for(Index index : table.getIndexes()) {
