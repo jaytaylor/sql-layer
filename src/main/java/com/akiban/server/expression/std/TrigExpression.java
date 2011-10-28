@@ -14,7 +14,6 @@
  */
 
 package com.akiban.server.expression.std;
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.OverflowException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
@@ -124,18 +123,19 @@ public class TrigExpression extends AbstractCompositeExpression
                 dvar2 = dExtractor.getDouble(secOperand);
             }
            
-            double result = 0;       
+            double result = 0;
+            double temp;
             switch (name)
             {
                 case SIN:   result = Math.sin(dvar1); break;              
                 case COS:   result = Math.cos(dvar1); break; 
-                case TAN:   if (Math.cos(dvar1) < BOUND && Math.cos(dvar1) > -BOUND) // if cos(dvar1) is 0
+                case TAN:   if ((temp = Math.cos(dvar1)) < BOUND && temp > -BOUND) // if cos(dvar1) is 0
                                 throw new OverflowException ();
                             else result = Math.tan(dvar1);
                             break;
-                case COT:   if (Math.sin(dvar1) < BOUND && Math.sin(dvar1) > -BOUND)
+                case COT:   if ( (temp = Math.sin(dvar1)) < BOUND && temp > -BOUND)
                                 throw new OverflowException ();
-                            else result = Math.cos(dvar1) / Math.sin(dvar1);
+                            else result = Math.cos(dvar1) / temp;
                             break;
                 case ASIN:  result = Math.asin(dvar1); break;
                 case ACOS:  result = Math.acos(dvar1); break;
