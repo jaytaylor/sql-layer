@@ -17,6 +17,7 @@ package com.akiban.server;
 
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.akiban.server.service.session.SessionService;
 import com.akiban.server.store.Store;
 import com.akiban.util.OsUtils;
 import com.akiban.util.Strings;
@@ -54,8 +55,12 @@ public class AkServer implements Service<AkServerEmptyInterface>, JmxManageable,
     private final JmxObjectInfo jmxObjectInfo;
 
     @Inject
-    public AkServer(Store store, DXLService dxl) {
-        this.jmxObjectInfo = new JmxObjectInfo("AKSERVER", new ManageMXBeanImpl(store, dxl), ManageMXBean.class);
+    public AkServer(Store store, DXLService dxl, SessionService sessionService) {
+        this.jmxObjectInfo = new JmxObjectInfo(
+                "AKSERVER",
+                new ManageMXBeanImpl(store, dxl, sessionService),
+                ManageMXBean.class
+        );
     }
 
     @Override

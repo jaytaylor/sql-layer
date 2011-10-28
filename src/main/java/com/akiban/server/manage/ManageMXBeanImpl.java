@@ -22,18 +22,20 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.AkServer;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionService;
 import com.akiban.server.store.Store;
 
 public class ManageMXBeanImpl implements ManageMXBean {
     private final Store store;
     private final DXLService dxlService;
+    private final SessionService sessionService;
 
-    public ManageMXBeanImpl(Store store, DXLService dxlService) {
+    public ManageMXBeanImpl(Store store, DXLService dxlService, SessionService sessionService) {
         this.store = store;
         this.dxlService = dxlService;
+        this.sessionService = sessionService;
     }
 
     @Override
@@ -58,7 +60,7 @@ public class ManageMXBeanImpl implements ManageMXBean {
 
     @Override
     public void buildIndexes(final String arg, final boolean deferIndexes) {
-        Session session = ServiceManagerImpl.newSession();
+        Session session = createSession();
         try {
             Collection<Index> indexes = gatherIndexes(session, arg);
             getStore().buildIndexes(session, indexes, deferIndexes);
@@ -71,7 +73,7 @@ public class ManageMXBeanImpl implements ManageMXBean {
 
     @Override
     public void deleteIndexes(final String arg) {
-        Session session = ServiceManagerImpl.newSession();
+        Session session = createSession();
         try {
             Collection<Index> indexes = gatherIndexes(session, arg);
             getStore().deleteIndexes(session, indexes);
@@ -84,7 +86,7 @@ public class ManageMXBeanImpl implements ManageMXBean {
 
     @Override
     public void flushIndexes() {
-        Session session = ServiceManagerImpl.newSession();
+        Session session = createSession();
         try {
             getStore().flushIndexes(session);
         } catch(Exception t) {
@@ -99,9 +101,12 @@ public class ManageMXBeanImpl implements ManageMXBean {
         return AkServer.VERSION_STRING;
     }
 
-
     private Store getStore() {
         return store;
+    }
+
+    private Session createSession() {
+        return sessionService.createSession();
     }
 
     /**
