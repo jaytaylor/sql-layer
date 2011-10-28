@@ -126,14 +126,14 @@ public final class COIBasicIT extends ITBase {
     public void insertToUTablesAndScan() throws InvalidOperationException {
         final TableIds tids = createTables();
 
-        final NewRow cRow = NewRowBuilder.forTable(tids.c).put(1L).put("Robert").check(dml()).row();
-        final NewRow oRow = NewRowBuilder.forTable(tids.o).put(10L).put(1L).check(dml()).row();
-        final NewRow iRow = NewRowBuilder.forTable(tids.i).put(100L).put(10L).put("Desc 1").check(dml()).row();
+        final NewRow cRow = NewRowBuilder.forTable(tids.c, store()).put(1L).put("Robert").check(dml()).row();
+        final NewRow oRow = NewRowBuilder.forTable(tids.o, store()).put(10L).put(1L).check(dml()).row();
+        final NewRow iRow = NewRowBuilder.forTable(tids.i, store()).put(100L).put(10L).put("Desc 1").check(dml()).row();
 
         writeRows(cRow, oRow, iRow);
-        expectFullRows(tids.c, NewRowBuilder.copyOf(cRow).row());
-        expectFullRows(tids.o, NewRowBuilder.copyOf(oRow).row());
-        expectFullRows(tids.i, NewRowBuilder.copyOf(iRow).row());
+        expectFullRows(tids.c, NewRowBuilder.copyOf(cRow, store()).row());
+        expectFullRows(tids.o, NewRowBuilder.copyOf(oRow, store()).row());
+        expectFullRows(tids.i, NewRowBuilder.copyOf(iRow, store()).row());
 
 //        expectFullRows(tids.coi, cRow, oRow, iRow); // TODO - commented out per 751883
     }
@@ -142,9 +142,9 @@ public final class COIBasicIT extends ITBase {
     public void insertToUTablesAndScanToLegacy() throws InvalidOperationException {
         final TableIds tids = createTables();
 
-        final NewRow cRow = NewRowBuilder.forTable(tids.c).put(1L).put("Robert").check(dml()).row();
-        final NewRow oRow = NewRowBuilder.forTable(tids.o).put(10L).put(1L).check(dml()).row();
-        final NewRow iRow = NewRowBuilder.forTable(tids.i).put(100L).put(10L).put("Desc 1").check(dml()).row();
+        final NewRow cRow = NewRowBuilder.forTable(tids.c, store()).put(1L).put("Robert").check(dml()).row();
+        final NewRow oRow = NewRowBuilder.forTable(tids.o, store()).put(10L).put(1L).check(dml()).row();
+        final NewRow iRow = NewRowBuilder.forTable(tids.i, store()).put(100L).put(10L).put("Desc 1").check(dml()).row();
 
         writeRows(cRow, oRow, iRow);
         List<RowData> cRows = scanFull(scanAllRequest(tids.c));
@@ -174,9 +174,9 @@ public final class COIBasicIT extends ITBase {
     public void dropTableLeaves() throws InvalidOperationException {
         final TableIds tids = createTables();
 
-        final NewRow cRow = NewRowBuilder.forTable(tids.c).put(1L).put("Robert").check(dml()).row();
-        final NewRow oRow = NewRowBuilder.forTable(tids.o).put(10L).put(1L).check(dml()).row();
-        final NewRow iRow = NewRowBuilder.forTable(tids.i).put(100L).put(10L).put("Desc 1").check(dml()).row();
+        final NewRow cRow = NewRowBuilder.forTable(tids.c, store()).put(1L).put("Robert").check(dml()).row();
+        final NewRow oRow = NewRowBuilder.forTable(tids.o, store()).put(10L).put(1L).check(dml()).row();
+        final NewRow iRow = NewRowBuilder.forTable(tids.i, store()).put(100L).put(10L).put("Desc 1").check(dml()).row();
 
         writeRows(cRow, oRow, iRow);
         List<RowData> cRows = scanFull(scanAllRequest(tids.c));

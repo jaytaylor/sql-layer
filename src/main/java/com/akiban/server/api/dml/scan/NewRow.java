@@ -21,7 +21,7 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.store.Store;
 
 /**
  * <p>A map-like interface for defining rows. This interface does not specify any inherent binding to a row definition;
@@ -144,9 +144,9 @@ public abstract class NewRow {
         this.rowDef = rowDef;
     }
 
-    protected static RowDef rowDef(int rowDefId)
+    protected static RowDef rowDef(int rowDefId, Store store)
     {
-        RowDefCache rowDefCache = ServiceManagerImpl.get().getStore().getRowDefCache();
+        RowDefCache rowDefCache = store.getRowDefCache();
         RowDef rowDef = rowDefCache.getRowDef(rowDefId);
         return rowDef;
     }

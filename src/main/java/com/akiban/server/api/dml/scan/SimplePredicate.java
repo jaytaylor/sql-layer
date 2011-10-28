@@ -18,6 +18,7 @@ package com.akiban.server.api.dml.scan;
 import java.util.EnumSet;
 import java.util.Set;
 
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.util.ArgumentValidation;
 
 public final class SimplePredicate implements Predicate {
@@ -45,7 +46,7 @@ public final class SimplePredicate implements Predicate {
             case EQ:
                 if (startRow == null) {
                     assert endRow == null : endRow;
-                    startRow = new NiceRow(tableId, null);
+                    startRow = new NiceRow(tableId, (RowDef)null);
                     endRow = startRow;
                     scanFlags.add(ScanFlag.START_RANGE_EXCLUSIVE);
                     scanFlags.add(ScanFlag.END_RANGE_EXCLUSIVE);
@@ -56,7 +57,7 @@ public final class SimplePredicate implements Predicate {
             case LT:
             case LTE:
                 if (endRow == null) {
-                    endRow = new NiceRow(tableId, null);
+                    endRow = new NiceRow(tableId, (RowDef)null);
                 }
                 putToRow(endRow, column, value);
                 scanFlags.add(ScanFlag.START_AT_BEGINNING);
@@ -67,7 +68,7 @@ public final class SimplePredicate implements Predicate {
             case GT:
             case GTE:
                 if (startRow == null) {
-                    startRow = new NiceRow(tableId, null);
+                    startRow = new NiceRow(tableId, (RowDef)null);
                 }
                 putToRow(startRow, column, value);
                 scanFlags.add(ScanFlag.END_AT_END);

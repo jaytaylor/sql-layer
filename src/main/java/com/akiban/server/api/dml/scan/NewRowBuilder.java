@@ -17,7 +17,7 @@ package com.akiban.server.api.dml.scan;
 
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.store.Store;
 
 /**
  * Convenience class for building NewRows. Primarily useful for debugging.
@@ -26,12 +26,12 @@ public final class NewRowBuilder {
     private final NewRow row;
     private int nextCol = 0;
 
-    public static NewRowBuilder forTable(int tableId) {
-        return new NewRowBuilder(new NiceRow(tableId));
+    public static NewRowBuilder forTable(int tableId, Store store) {
+        return new NewRowBuilder(new NiceRow(tableId, store));
     }
 
-    public static NewRowBuilder copyOf(NewRow row) {
-        NewRowBuilder builder = forTable(row.getTableId());
+    public static NewRowBuilder copyOf(NewRow row, Store store) {
+        NewRowBuilder builder = forTable(row.getTableId(), store);
         builder.row().getFields().putAll( row.getFields() );
         return builder;
     }

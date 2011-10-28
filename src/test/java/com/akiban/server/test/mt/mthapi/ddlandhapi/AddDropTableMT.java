@@ -178,7 +178,7 @@ public final class AddDropTableMT extends HapiMTBase {
         };
     }
 
-    private static WriteThread getAddDropTableThread(final SaisTable customer) {
+    private WriteThread getAddDropTableThread(final SaisTable customer) {
         return new AddDropTablesWriter(customer) {
 
             @Override
