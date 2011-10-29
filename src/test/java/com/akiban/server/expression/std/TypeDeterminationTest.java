@@ -89,7 +89,7 @@ public class TypeDeterminationTest extends ComposedExpressionTestBase
             AkType expected)
     {
         pb.add(input1.name() + " AND " + input2.name(), input1, input2, expected);
-        pb.add(input2.name() + " AND " + input1.name(), input2, input1, expected); // just to document the symetry
+        pb.add(input2.name() + " AND " + input1.name() + "(2)", input2, input1, expected); // just to document the symetry
     }
 
     @OnlyIfNot("exceptionExpected()")
