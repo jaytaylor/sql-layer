@@ -70,7 +70,7 @@ public class TrigExpressionTest extends ComposedExpressionTestBase
         
         // COT
         param(pb, Double.POSITIVE_INFINITY, Double.NaN, TrigName.COT, 0, false);
-        param(pb, Math.PI / 4, 1, TrigName.COT, 0, false);
+        param(pb, Math.PI, Double.NEGATIVE_INFINITY, TrigName.COT, 0, true); // expect overflow exception
         
         // ASIN
         param(pb, 0.5, Math.PI / 6, TrigName.ASIN, 0, false);

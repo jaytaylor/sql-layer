@@ -92,8 +92,7 @@ public class TrigExpression extends AbstractCompositeExpression
     
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
-        private final TrigName name;
-        private static final double BOUND = 0.000000000000001;
+        private final TrigName name;   
 
         public InnerEvaluation (List<? extends ExpressionEvaluation> children, TrigName name)
         {
