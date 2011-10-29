@@ -23,6 +23,7 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
 import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.optimizer.plan.AggregateSource.Implementation;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,11 +51,19 @@ public class AggregateSplitter extends BaseRule
 
     protected void split(AggregateSource source) {
         assert !source.isProjectSplitOff();
-        // TODO: This is only to support the old Count_Default operator while we have it.
         if (!source.hasGroupBy() && source.getAggregates().size() == 1) {
             AggregateFunctionExpression aggr1 = source.getAggregates().get(0);
             if ((aggr1.getOperand() == null) &&
                 (aggr1.getFunction().equals("COUNT"))) {
+                TableSource singleTable = trivialCountStar(source);
+                if (singleTable != null) {
+                    source.setImplementation(Implementation.COUNT_TABLE_STATUS);
+                    source.setTable(singleTable);
+                }
+                else
+                    // TODO: This is only to support the old
+                    // Count_Default operator while we have it.
+                    source.setImplementation(Implementation.COUNT_STAR);
                 return;
             }
         }
@@ -107,6 +116,26 @@ public class AggregateSplitter extends BaseRule
     protected boolean distinctDoesNotMatter(String aggregateFunction) {
         return ("MAX".equals(aggregateFunction) ||
                 "MIN".equals(aggregateFunction));
+    }
+
+    /** COUNT(*) from single table? */
+    protected TableSource trivialCountStar(AggregateSource source) {
+        PlanNode input = source.getInput();
+        if (!(input instanceof Select))
+            return null;
+        Select select = (Select)input;
+        if (!select.getConditions().isEmpty())
+            return null;
+        input = select.getInput();
+        if (!(input instanceof Flatten))
+            return null;
+        Flatten flatten = (Flatten)input;
+        if (flatten.getTableNodes().size() != 1)
+            return null;
+        input = flatten.getInput();
+        if (!(input instanceof GroupScan))
+            return null;
+        return flatten.getTableSources().get(0);
     }
 
 }

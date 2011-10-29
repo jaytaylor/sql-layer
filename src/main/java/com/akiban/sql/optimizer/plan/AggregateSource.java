@@ -29,7 +29,8 @@ import java.util.ArrayList;
 public class AggregateSource extends BasePlanWithInput implements ColumnSource
 {
     public static enum Implementation {
-        PRESORTED, PREAGGREGATE_RESORT, SORT, HASH, TREE, UNGROUPED
+        PRESORTED, PREAGGREGATE_RESORT, SORT, HASH, TREE, UNGROUPED,
+        COUNT_STAR, COUNT_TABLE_STATUS
     }
 
     private boolean projectSplitOff;
@@ -37,6 +38,7 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
     private List<AggregateFunctionExpression> aggregates;
     private int nGroupBy;
     private List<String> aggregateFunctions;
+    private TableSource table;
 
     private Implementation implementation;
 
@@ -100,6 +102,15 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
     public List<String> getAggregateFunctions() {
         assert projectSplitOff;
         return aggregateFunctions;
+    }
+
+    public TableSource getTable() {
+        assert (implementation == Implementation.COUNT_TABLE_STATUS);
+        return table;
+    }
+    public void setTable(TableSource table) {
+        assert (implementation == Implementation.COUNT_TABLE_STATUS);
+        this.table = table;
     }
 
     public Implementation getImplementation() {

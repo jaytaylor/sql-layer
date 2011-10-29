@@ -6,6 +6,8 @@ count-2: COUNT(*) with indexed condition
 
 count-3: COUNT(*) with joins and index and non-index conditions
 
+count-4: COUNT(*) from multiple tables
+
 delete-1: DELETE by primary key
 
 delete-2: DELETE by general condition
