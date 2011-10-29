@@ -56,4 +56,21 @@ public class CountIT extends OperatorITBase
         compareRows(expected, cursor);
     }
 
+    @Test
+    public void testCustomers()
+    {
+        Operator plan = count_TableStatus(customerRowType);
+        Cursor cursor = cursor(plan, adapter);
+        RowType resultRowType = plan.rowType();
+        RowBase[] expected = new RowBase[]{
+            row(resultRowType, 3L)
+        };
+        compareRows(expected, cursor);
+        writeRows(createNewRow(customer, 5L, "matrix"));
+        expected = new RowBase[]{
+            row(resultRowType, 4L)
+        };
+        compareRows(expected, cursor);
+    }
+
 }

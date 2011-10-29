@@ -154,6 +154,12 @@ public final class OperatorTestHelper {
         {
         }
 
+        @Override
+        public long rowCount(RowType tableType)
+        {
+            throw new UnsupportedOperationException();
+        }
+
         public TestAdapter()
         {
             super(null);
