@@ -34,7 +34,7 @@ import static org.junit.Assert.*;
 
 
 @RunWith(NamedParameterizedRunner.class)
-public class TrigExpressionTest extends ComposedExpressionTestBase
+public class TrigExpressionTest// extends ComposedExpressionTestBase
 {
     private double input1;
     private double input2;
@@ -66,7 +66,7 @@ public class TrigExpressionTest extends ComposedExpressionTestBase
         
         // TAN
         param(pb, Math.PI / 4, 1, TrigName.TAN, 0, false);
-        param(pb, Math.PI / 2, Math.tan(Math.PI /2), TrigName.TAN, 0, false); // will NOT flow exception
+        param(pb, Math.PI / 2, Math.tan(Math.PI /2), TrigName.TAN, 0, false); // will NOT throw overflow exception
         
         // COT
         param(pb, Double.POSITIVE_INFINITY, Double.NaN, TrigName.COT, 0, false);
@@ -153,6 +153,7 @@ public class TrigExpressionTest extends ComposedExpressionTestBase
                 ? getArgList(ExprUtil.lit(input1), ExprUtil.lit(input2))
                 : getArgList(ExprUtil.lit(input1))), name);
     }
+    /*
     
     @Override
     protected int childrenCount() 
@@ -178,5 +179,5 @@ public class TrigExpressionTest extends ComposedExpressionTestBase
             case TANH:  return TrigExpression.TANH_COMPOSER;
             default: return TrigExpression.COTH_COMPOSER;
         }
-    }    
+    }   */ 
 }
