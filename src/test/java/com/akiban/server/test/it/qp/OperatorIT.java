@@ -54,7 +54,6 @@ public class OperatorIT extends OperatorITBase
 
     @Test
     public void basicUpdate() throws Exception {
-        adapter.setTransactional(false);
 
         UpdateFunction updateFunction = new UpdateFunction() {
             @Override

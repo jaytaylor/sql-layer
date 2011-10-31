@@ -15,10 +15,14 @@
 
 package com.akiban.server.error;
 
+import com.akiban.server.service.session.Session;
+
 public class QueryCanceledException extends InvalidOperationException
 {
-    public QueryCanceledException()
+    public QueryCanceledException(Session session)
     {
         super(ErrorCode.QUERY_CANCELED);
+        session.cancelCurrentQuery(false);
+        Thread.interrupted();
     }
 }
