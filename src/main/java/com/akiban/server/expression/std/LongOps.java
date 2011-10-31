@@ -22,7 +22,7 @@ import com.akiban.server.types.AkType;
 
 public class LongOps {
 
-    @Scalar("times")
+    @Scalar("Ltimes")
     public static final LongOpForLong LONG_MULTIPLY = new LongOpForLong('*') {
         @Override
         public long evaluate(long one, long two) {
@@ -30,7 +30,7 @@ public class LongOps {
         }
     };
 
-    @Scalar("minus")
+    @Scalar("Lminus")
     public static final LongOpForLong LONG_SUBTRACT = new LongOpForLong('-') {
         @Override
         public long evaluate(long one, long two) {
@@ -38,7 +38,7 @@ public class LongOps {
         }
     };
 
-    @Scalar("plus")
+    @Scalar("Lplus")
     public static final LongOpForLong LONG_ADD = new LongOpForLong('+') {
         @Override
         public long evaluate(long one, long two) {
@@ -46,7 +46,7 @@ public class LongOps {
         }
     };
 
-    @Scalar("divide")
+    @Scalar("Ldivide")
     public static final LongOpForLong LONG_DIVIDE = new LongOpForLong('/') {
         @Override
         public long evaluate(long one, long two) {

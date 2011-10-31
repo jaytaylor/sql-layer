@@ -113,10 +113,12 @@ public final class Converters {
                 VARBINARY
         );
         builder.legalConversions(U_BIGINT,
+                DECIMAL,
                 VARCHAR,
                 LONG
         );
         builder.legalConversions(DECIMAL,
+                U_BIGINT,
                 VARCHAR,
                 LONG,
                 FLOAT,

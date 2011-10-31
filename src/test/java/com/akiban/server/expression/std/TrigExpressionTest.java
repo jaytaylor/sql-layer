@@ -66,11 +66,11 @@ public class TrigExpressionTest extends ComposedExpressionTestBase
         
         // TAN
         param(pb, Math.PI / 4, 1, TrigName.TAN, 0, false);
-        param(pb, Math.PI / 2, Double.POSITIVE_INFINITY, TrigName.TAN, 0, true); // expect overflow exception
+        param(pb, Math.PI / 2, Math.tan(Math.PI /2), TrigName.TAN, 0, false); // will NOT flow exception
         
         // COT
         param(pb, Double.POSITIVE_INFINITY, Double.NaN, TrigName.COT, 0, false);
-        param(pb, Math.PI, Double.NEGATIVE_INFINITY, TrigName.COT, 0, true); // expect overflow exception
+        param(pb, 0.0 , Double.NEGATIVE_INFINITY, TrigName.COT, 0, true); // expect overflow exception
         
         // ASIN
         param(pb, 0.5, Math.PI / 6, TrigName.ASIN, 0, false);
