@@ -35,6 +35,7 @@ import com.akiban.server.TableStatusCache;
 import com.akiban.server.error.ConfigurationPropertiesLoadException;
 import com.akiban.server.error.InvalidVolumeException;
 import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.rowdata.RowData;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
@@ -158,6 +159,7 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         db.setPersistitLogger(new Slf4jAdapter(LOG));
         try {
             db.initialize(properties);
+            
         } catch (PersistitException e1) {
             throw new PersistItErrorException (e1);
         }
