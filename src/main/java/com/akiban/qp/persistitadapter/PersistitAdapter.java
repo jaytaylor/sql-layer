@@ -57,8 +57,7 @@ public class PersistitAdapter extends StoreAdapter
             cursor = new PersistitGroupCursor(this, groupTable);
         } catch (PersistitException e) {
             handlePersistitException(e);
-            assert false;
-            return null;
+            throw new AssertionError();
         }
         return cursor;
     }
@@ -71,8 +70,7 @@ public class PersistitAdapter extends StoreAdapter
             cursor = new PersistitIndexCursor(this, schema.indexRowType(index), reverse, keyRange, selector);
         } catch (PersistitException e) {
             handlePersistitException(e);
-            assert false;
-            return null;
+            throw new AssertionError();
         }
         return cursor;
     }
@@ -84,8 +82,7 @@ public class PersistitAdapter extends StoreAdapter
             return new Sorter(this, input, rowType, ordering, bindings).sort();
         } catch (PersistitException e) {
             handlePersistitException(e);
-            assert false;
-            return null;
+            throw new AssertionError();
         }
     }
 

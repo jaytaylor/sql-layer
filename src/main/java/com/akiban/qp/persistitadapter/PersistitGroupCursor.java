@@ -86,8 +86,7 @@ class PersistitGroupCursor implements GroupCursor
             return next ? row.get() : null;
         } catch (PersistitException e) {
             adapter.handlePersistitException(e);
-            assert false;
-            return null;
+            throw new AssertionError();
         } catch (InvalidOperationException e) {
             throw new PersistitAdapterException(e);
         }

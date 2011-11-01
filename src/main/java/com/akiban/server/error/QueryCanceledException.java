@@ -22,7 +22,8 @@ public class QueryCanceledException extends InvalidOperationException
     public QueryCanceledException(Session session)
     {
         super(ErrorCode.QUERY_CANCELED);
-        session.cancelCurrentQuery(false);
-        Thread.interrupted();
+        // Clear state causing current query to terminate ...
+        session.cancelCurrentQuery(false); // in the session
+        Thread.interrupted(); // and the thread's interruption flag
     }
 }
