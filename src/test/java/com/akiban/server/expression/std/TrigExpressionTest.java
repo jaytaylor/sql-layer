@@ -34,7 +34,7 @@ import static org.junit.Assert.*;
 
 
 @RunWith(NamedParameterizedRunner.class)
-public class TrigExpressionTest// extends ComposedExpressionTestBase
+public class TrigExpressionTest extends ComposedExpressionTestBase
 {
     private double input1;
     private double input2;
@@ -153,7 +153,7 @@ public class TrigExpressionTest// extends ComposedExpressionTestBase
                 ? getArgList(ExprUtil.lit(input1), ExprUtil.lit(input2))
                 : getArgList(ExprUtil.lit(input1))), name);
     }
-    /*
+    
     
     @Override
     protected int childrenCount() 
@@ -179,5 +179,5 @@ public class TrigExpressionTest// extends ComposedExpressionTestBase
             case TANH:  return TrigExpression.TANH_COMPOSER;
             default: return TrigExpression.COTH_COMPOSER;
         }
-    }   */ 
+    }   
 }
