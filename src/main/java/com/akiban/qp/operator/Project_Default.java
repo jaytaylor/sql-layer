@@ -116,7 +116,7 @@ class Project_Default extends Operator
 
     // Inner classes
 
-    private class Execution implements Cursor
+    private class Execution extends OperatorExecutionBase implements Cursor
     {
         // Cursor interface
 
@@ -130,7 +130,7 @@ class Project_Default extends Operator
         @Override
         public Row next()
         {
-            adapter.checkQueryCancelation();
+            checkQueryCancelation();
             Row projectedRow = null;
             Row inputRow;
             if ((inputRow = input.next()) != null) {
@@ -152,13 +152,12 @@ class Project_Default extends Operator
 
         Execution(StoreAdapter adapter, Cursor input)
         {
-            this.adapter = adapter;
+            super(adapter);
             this.input = input;
         }
 
         // Object state
 
-        private final StoreAdapter adapter;
         private final Cursor input;
         private Bindings bindings;
     }

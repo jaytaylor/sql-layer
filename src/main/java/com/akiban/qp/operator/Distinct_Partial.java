@@ -82,7 +82,7 @@ class Distinct_Partial extends Operator
 
     // Inner classes
 
-    private class Execution implements Cursor
+    private class Execution extends OperatorExecutionBase implements Cursor
     {
         // Cursor interface
 
@@ -96,7 +96,7 @@ class Distinct_Partial extends Operator
         @Override
         public Row next()
         {
-            adapter.checkQueryCancelation();
+            checkQueryCancelation();
             Row row;
             while ((row = input.next()) != null) {
                 assert row.rowType() == distinctType : row;
@@ -117,7 +117,7 @@ class Distinct_Partial extends Operator
 
         Execution(StoreAdapter adapter, Cursor input)
         {
-            this.adapter = adapter;
+            super(adapter);
             this.input = input;
 
             nfields = distinctType.nFields();
@@ -158,7 +158,6 @@ class Distinct_Partial extends Operator
 
         // Object state
 
-        private final StoreAdapter adapter;
         private final Cursor input;
         private final ShareHolder<Row> currentRow = new ShareHolder<Row>();
         private final int nfields;

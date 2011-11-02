@@ -16,7 +16,7 @@
 package com.akiban.server.service.servicemanager;
 
 import com.akiban.server.AkServer;
-import com.akiban.server.error.ServiceStartupException;
+import com.akiban.server.AkServerInterface;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.ServiceManagerImpl;
@@ -28,8 +28,8 @@ import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.service.servicemanager.configuration.BindingsConfigurationLoader;
 import com.akiban.server.service.servicemanager.configuration.DefaultServiceConfigurationHandler;
-import com.akiban.server.service.servicemanager.configuration.ServiceConfigurationHandler;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
+import com.akiban.server.service.servicemanager.configuration.ServiceConfigurationHandler;
 import com.akiban.server.service.servicemanager.configuration.yaml.YamlConfiguration;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.stats.StatisticsService;
@@ -42,20 +42,10 @@ import org.slf4j.LoggerFactory;
 
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -102,8 +92,8 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
     }
 
     @Override
-    public AkServer getAkSserver() {
-        return getServiceByClass(AkServer.class);
+    public AkServerInterface getAkSserver() {
+        return getServiceByClass(AkServerInterface.class);
     }
 
     @Override

@@ -93,7 +93,7 @@ class Product_ByRun extends Operator
 
     // Inner classes
 
-    private class Execution implements Cursor
+    private class Execution extends OperatorExecutionBase implements Cursor
     {
         // Cursor interface
 
@@ -106,7 +106,7 @@ class Product_ByRun extends Operator
         @Override
         public Row next()
         {
-            adapter.checkQueryCancelation();
+            checkQueryCancelation();
             Row row = null;
             if (runState == RunState.RIGHT) {
                 row = nextProductRow();
@@ -159,7 +159,7 @@ class Product_ByRun extends Operator
 
         Execution(StoreAdapter adapter, Cursor input)
         {
-            this.adapter = adapter;
+            super(adapter);
             this.input = input;
         }
 
@@ -243,7 +243,6 @@ class Product_ByRun extends Operator
 
         // Object state
 
-        private final StoreAdapter adapter;
         private final Cursor input;
         private final RowList leftRows = new RowList();
         private RowList.Scan leftScan;

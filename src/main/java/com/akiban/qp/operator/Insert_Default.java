@@ -26,7 +26,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.util.Strings;
 import com.akiban.util.Tap;
 
-class Insert_Default implements UpdatePlannable {
+class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
 
     public Insert_Default(Operator inputOperator) {
         this.inputOperator = inputOperator;
@@ -34,6 +34,7 @@ class Insert_Default implements UpdatePlannable {
 
     @Override
     public UpdateResult run(Bindings bindings, StoreAdapter adapter) {
+        adapter(adapter);
         int seen = 0, modified = 0;
         INSERT_TAP.in();
         Cursor inputCursor = inputOperator.cursor(adapter);
@@ -41,7 +42,7 @@ class Insert_Default implements UpdatePlannable {
         try {
             Row row;
             while ((row = inputCursor.next()) != null) {
-                adapter.checkQueryCancelation();
+                checkQueryCancelation();
                 ++seen;
                 adapter.writeRow(row, bindings);
                 ++modified;

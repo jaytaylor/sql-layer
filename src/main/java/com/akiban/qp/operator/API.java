@@ -390,7 +390,7 @@ public class API
     public static Cursor cursor(Operator root, StoreAdapter adapter)
     {
         // if all they need is the wrapped cursor, create it directly
-        return new TopLevelWrappingCursor(root.cursor(adapter));
+        return new TopLevelWrappingCursor(adapter, root.cursor(adapter));
     }
 
     private static final EnumSet<FlattenOption> NO_FLATTEN_OPTIONS = EnumSet.noneOf(FlattenOption.class);
