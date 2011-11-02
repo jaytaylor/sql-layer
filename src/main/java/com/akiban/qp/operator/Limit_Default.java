@@ -142,7 +142,7 @@ final class Limit_Default extends Operator
 
         @Override
         public Row next() {
-            adapter.checkQueryCancelation();
+            checkQueryCancelation();
             Row row;
             while (skipLeft > 0) {
                 if ((row = input.next()) == null) {
@@ -169,13 +169,11 @@ final class Limit_Default extends Operator
 
         // Execution interface
         Execution(StoreAdapter adapter, Cursor input) {
-            super(input);
-            this.adapter = adapter;
+            super(adapter, input);
         }
 
         // class state
 
-        private final StoreAdapter adapter;
         private int skipLeft, limitLeft;
     }
 }

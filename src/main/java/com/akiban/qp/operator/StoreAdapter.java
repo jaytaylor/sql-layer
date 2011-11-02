@@ -47,7 +47,7 @@ public abstract class StoreAdapter
 
     public abstract Cursor sort(Cursor input, RowType rowType, API.Ordering ordering, Bindings bindings);
 
-    public abstract void checkQueryCancelation();
+    public abstract void checkQueryCancelation(long queryStartMsec);
 
     // For use by subclasses
 

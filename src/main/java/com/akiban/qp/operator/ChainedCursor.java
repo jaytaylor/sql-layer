@@ -17,10 +17,12 @@ package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
 
-public abstract class ChainedCursor implements Cursor {
+public abstract class ChainedCursor extends OperatorExecutionBase implements Cursor
+{
     protected final Cursor input;
 
-    protected ChainedCursor(Cursor input) {
+    protected ChainedCursor(StoreAdapter adapter, Cursor input) {
+        super(adapter);
         this.input = input;
     }
 

@@ -89,7 +89,7 @@ public final class GroupIndexScanIT extends ITBase {
         GroupIndex gi = createGroupIndex(groupName, GI_NAME, "o.when, i.sku");
 
         schema = new Schema(ddl().getAIS(session()));
-        adapter = new PersistitAdapter(schema, persistitStore(), treeService(), session());
+        adapter = new PersistitAdapter(schema, persistitStore(), treeService(), session(), akServer());
         giRowType = schema.indexRowType(gi);
 
         writeRows(

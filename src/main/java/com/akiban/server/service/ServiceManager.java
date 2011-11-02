@@ -16,6 +16,7 @@
 package com.akiban.server.service;
 
 import com.akiban.server.AkServer;
+import com.akiban.server.AkServerInterface;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
@@ -39,7 +40,7 @@ public interface ServiceManager {
 
     ConfigurationService getConfigurationService();
     
-    AkServer getAkSserver();
+    AkServerInterface getAkSserver();
 
     Store getStore();
     

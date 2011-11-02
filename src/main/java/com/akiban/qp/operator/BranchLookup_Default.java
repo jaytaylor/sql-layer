@@ -178,7 +178,7 @@ public class BranchLookup_Default extends Operator
     private final int branchRootOrdinal;
     private final Limit limit;
 
-    private class Execution implements Cursor
+    private class Execution extends OperatorExecutionBase implements Cursor
     {
         // Cursor interface
 
@@ -192,7 +192,7 @@ public class BranchLookup_Default extends Operator
         @Override
         public Row next()
         {
-            adapter.checkQueryCancelation();
+            checkQueryCancelation();
             Row nextRow = null;
             while (nextRow == null && inputRow.isHolding()) {
                 switch (lookupState) {
@@ -238,7 +238,7 @@ public class BranchLookup_Default extends Operator
 
         Execution(StoreAdapter adapter, Cursor input)
         {
-            this.adapter = adapter;
+            super(adapter);
             this.inputCursor = input;
             this.lookupCursor = adapter.newGroupCursor(groupTable);
             this.lookupRowHKey = adapter.newHKey(outputRowType);
@@ -294,7 +294,6 @@ public class BranchLookup_Default extends Operator
 
         // Object state
 
-        private final StoreAdapter adapter;
         private final Cursor inputCursor;
         private final ShareHolder<Row> inputRow = new ShareHolder<Row>();
         private final GroupCursor lookupCursor;

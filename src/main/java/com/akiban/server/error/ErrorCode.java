@@ -213,6 +213,7 @@ public enum ErrorCode {
     NO_SUCH_SCHEMA          ("3F", "000", Importance.DEBUG, NoSuchSchemaException.class),
     
     // Class 40 - transaction rollback
+    QUERY_TIMEOUT           ("40", "000", Importance.ERROR, QueryTimedOutException.class),
 
     // Class 42 - syntax error or access rule violation
     // These exceptions are re-thrown errors from the parser and from the

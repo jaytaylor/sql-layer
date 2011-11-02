@@ -112,7 +112,7 @@ public class OperatorITBase extends ITBase
         else {
             persistitStore = (PersistitStore) plainStore;
         }
-        adapter = new PersistitAdapter(schema, persistitStore, treeService(), session());
+        adapter = new PersistitAdapter(schema, persistitStore, treeService(), session(), akServer());
     }
 
     protected void use(NewRow[] db)

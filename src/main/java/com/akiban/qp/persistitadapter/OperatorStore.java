@@ -32,6 +32,7 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
+import com.akiban.server.AkServerInterface;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDataExtractor;
 import com.akiban.server.rowdata.RowDef;
@@ -79,7 +80,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             throw new RuntimeException("group index maintence won't work with partial rows");
         }
 
-        PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), persistitStore, treeService, session);
+        PersistitAdapter adapter =
+            new PersistitAdapter(SchemaCache.globalSchema(ais), persistitStore, treeService, session, akServer);
         Schema schema = adapter.schema();
 
         UpdateFunction updateFunction = new InternalUpdateFunction(adapter, rowDef, newRowData, columnSelector);
@@ -159,7 +161,12 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 transaction.begin();
 
                 AkibanInformationSchema ais = aisHolder.getAis();
-                PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), treeService, session);
+                PersistitAdapter adapter =
+                    new PersistitAdapter(SchemaCache.globalSchema(ais),
+                                         getPersistitStore(),
+                                         treeService,
+                                         session,
+                                         akServer);
                 UserTable uTable = ais.getUserTable(rowData.getRowDefId());
                 maintainGroupIndexes(
                         session, ais, adapter,
@@ -196,7 +203,12 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 DELETE_MAINTENANCE.in();
                 transaction.begin();
                 AkibanInformationSchema ais = aisHolder.getAis();
-                PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), treeService, session);
+                PersistitAdapter adapter =
+                    new PersistitAdapter(SchemaCache.globalSchema(ais),
+                                         getPersistitStore(),
+                                         treeService,
+                                         session,
+                                         akServer);
                 UserTable uTable = ais.getUserTable(rowData.getRowDefId());
 
                 maintainGroupIndexes(
@@ -246,7 +258,12 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
 
         AkibanInformationSchema ais = aisHolder.getAis();
-        PersistitAdapter adapter = new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), treeService, session);
+        PersistitAdapter adapter =
+            new PersistitAdapter(SchemaCache.globalSchema(ais),
+                                 getPersistitStore(),
+                                 treeService,
+                                 session,
+                                 akServer);
         for(GroupIndex groupIndex : groupIndexes) {
             Operator plan = OperatorStoreMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex);
             runMaintenancePlan(
@@ -263,10 +280,11 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     // OperatorStore interface
 
     @Inject
-    public OperatorStore(AisHolder aisHolder, TreeService treeService) {
-        super(new PersistitStore(false, treeService));
+    public OperatorStore(AisHolder aisHolder, TreeService treeService, AkServerInterface akServer) {
+        super(new PersistitStore(false, treeService, akServer));
         this.aisHolder = aisHolder;
         this.treeService = treeService;
+        this.akServer = akServer;
     }
 
     public PersistitStore getPersistitStore() {
@@ -365,6 +383,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
 
     // object state
+    private final AkServerInterface akServer;
     private final TreeService treeService;
     private final AisHolder aisHolder;
 

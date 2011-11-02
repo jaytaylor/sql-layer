@@ -19,6 +19,11 @@ public class QueryCanceledException extends InvalidOperationException
 {
     public QueryCanceledException()
     {
-        super(ErrorCode.QUERY_CANCELED);
+        this(ErrorCode.QUERY_CANCELED);
+    }
+
+    protected QueryCanceledException(ErrorCode errorCode, Object... args)
+    {
+        super(errorCode, args);
     }
 }

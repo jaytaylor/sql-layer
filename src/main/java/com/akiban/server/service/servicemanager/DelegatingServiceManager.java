@@ -16,6 +16,7 @@
 package com.akiban.server.service.servicemanager;
 
 import com.akiban.server.AkServer;
+import com.akiban.server.AkServerInterface;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.config.ConfigurationService;
@@ -55,7 +56,7 @@ public abstract class DelegatingServiceManager implements ServiceManager {
     }
 
     @Override
-    public AkServer getAkSserver() {
+    public AkServerInterface getAkSserver() {
         return delegate().getAkSserver();
     }
 

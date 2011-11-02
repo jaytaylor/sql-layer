@@ -25,7 +25,7 @@ import com.akiban.util.Tap;
 import java.util.Collections;
 import java.util.List;
 
-class Update_Default implements UpdatePlannable {
+class Update_Default extends OperatorExecutionBase implements UpdatePlannable {
 
     // Object interface
 
@@ -47,6 +47,7 @@ class Update_Default implements UpdatePlannable {
 
     @Override
     public UpdateResult run(Bindings bindings, StoreAdapter adapter) {
+        adapter(adapter);
         int seen = 0, modified = 0;
         UPDATE_TAP.in();
         Cursor inputCursor = inputOperator.cursor(adapter);
@@ -54,7 +55,7 @@ class Update_Default implements UpdatePlannable {
         try {
             Row oldRow;
             while ((oldRow = inputCursor.next()) != null) {
-                adapter.checkQueryCancelation();
+                checkQueryCancelation();
                 ++seen;
                 if (updateFunction.rowIsSelected(oldRow)) {
                     Row newRow = updateFunction.evaluate(oldRow, bindings);

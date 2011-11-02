@@ -21,6 +21,7 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.server.AkServerInterface;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDataExtractor;
@@ -33,7 +34,8 @@ import com.akiban.server.store.PersistitStore;
 
 public class TwoTableRowCollector extends OperatorBasedRowCollector
 {
-    TwoTableRowCollector(Session session,
+    TwoTableRowCollector(AkServerInterface akServer,
+                         Session session,
                          PersistitStore store,
                          RowDef rowDef,
                          int indexId,
@@ -44,7 +46,7 @@ public class TwoTableRowCollector extends OperatorBasedRowCollector
                          ColumnSelector endColumns,
                          byte[] columnBitMap)
     {
-        super(store, session);
+        super(store, session, akServer);
         // Get group table and check that start/end refer to it
         GroupTable groupTable = rowDef.groupTable();
         assert start == null || start.getRowDefId() == groupTable.getTableId() : start;

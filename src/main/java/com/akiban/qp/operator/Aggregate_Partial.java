@@ -127,7 +127,8 @@ final class Aggregate_Partial extends Operator
 
     // nested classes
 
-    private static class AggregateCursor implements Cursor {
+    private static class AggregateCursor extends OperatorExecutionBase implements Cursor
+    {
 
         // Cursor interface
 
@@ -141,7 +142,7 @@ final class Aggregate_Partial extends Operator
 
         @Override
         public Row next() {
-            adapter.checkQueryCancelation();
+            checkQueryCancelation();
             if (cursorState == CursorState.CLOSED)
                 throw new IllegalStateException("cursor not open");
             if (cursorState == CursorState.CLOSING) {
@@ -289,7 +290,7 @@ final class Aggregate_Partial extends Operator
                                 List<Aggregator> aggregators,
                                 int inputsIndex,
                                 AggregatedRowType outputRowType) {
-            this.adapter = adapter;
+            super(adapter);
             this.inputCursor = inputCursor;
             this.inputRowType = inputRowType;
             this.aggregatorFactories = aggregatorFactories;
@@ -305,7 +306,6 @@ final class Aggregate_Partial extends Operator
 
         // object state
 
-        private final StoreAdapter adapter;
         private final Cursor inputCursor;
         private final RowType inputRowType;
         private final List<AggregatorFactory> aggregatorFactories;
