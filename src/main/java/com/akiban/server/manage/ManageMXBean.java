@@ -33,9 +33,9 @@ public interface ManageMXBean {
 
     void flushIndexes();
 
-    int getQueryTimeoutSec();
+    long getQueryTimeoutSec();
 
-    void setQueryTimeoutSec(int timeoutSec);
+    void setQueryTimeoutSec(long timeoutSec);
 
     // TODO - temporary
     //
