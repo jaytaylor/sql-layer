@@ -13,7 +13,6 @@
 # You should have received a copy of the GNU Affero General Public License
 # along with this program.  If not, see http://www.gnu.org/licenses.
 #
-set +x
 
 if [ $# -lt 1 ]; then
     echo "Usage: ./build_packages.sh [debian|redhat]"
