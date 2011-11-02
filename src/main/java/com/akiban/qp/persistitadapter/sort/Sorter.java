@@ -15,6 +15,7 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
+import com.akiban.qp.operator.OperatorExecutionBase;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapterException;
 import com.akiban.qp.operator.API;
@@ -48,6 +49,9 @@ public class Sorter
     {
         this.adapter = adapter;
         this.input = input;
+        // This typecast is pretty bad. But I really don't want to pass the query start time as an argument from
+        // the Sort_Tree operator, through the StoreAdapter interface, to here.
+        this.queryStartTimeMsec = ((OperatorExecutionBase) input).startTimeMsec();
         this.rowType = rowType;
         this.ordering = ordering.copy();
         this.bindings = bindings;
@@ -106,7 +110,7 @@ public class Sorter
         try {
             Row row;
             while ((row = input.next()) != null) {
-                adapter.checkQueryCancelation();
+                adapter.checkQueryCancelation(queryStartTimeMsec);
                 createKey(row);
                 createValue(row);
                 exchange.store();
@@ -184,4 +188,5 @@ public class Sorter
     final AkType fieldTypes[], orderingTypes[];
     Exchange exchange;
     long rowCount = 0;
+    long queryStartTimeMsec;
 }

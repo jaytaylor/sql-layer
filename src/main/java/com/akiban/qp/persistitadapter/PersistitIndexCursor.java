@@ -29,7 +29,10 @@ import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitException;
+import com.persistit.exception.PersistitIOException;
 import com.persistit.exception.PersistitInterruptedException;
+
+import java.io.InterruptedIOException;
 
 class PersistitIndexCursor implements Cursor
 {
@@ -69,11 +72,8 @@ class PersistitIndexCursor implements Cursor
                     needAnother = false;
                 }
             } while (needAnother);
-        } catch (PersistitInterruptedException e) {
-            Thread.interrupted(); // We've handled the interruption, clear the interrupted bit.
-            throw new QueryCanceledException();
         } catch (PersistitException e) {
-            throw new StoreAdapterRuntimeException(e);
+            adapter.handlePersistitException(e);
         }
         PersistitIndexRow next = exchange == null ? null : row.get();
         assert (next == null) == (exchange == null);

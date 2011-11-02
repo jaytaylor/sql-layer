@@ -33,5 +33,8 @@ public interface ManageMXBean {
 
     void flushIndexes();
 
+    int getQueryTimeoutSec();
+
+    void setQueryTimeoutSec(int timeoutSec);
     String getVersionString();
 }

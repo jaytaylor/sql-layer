@@ -97,7 +97,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
         } else {
             persistitStore = (PersistitStore) plainStore;
         }
-        adapter = new PersistitAdapter(schema, persistitStore, null, session());
+        adapter = new PersistitAdapter(schema, persistitStore, null, session(), akServer());
         use(db);
     }
 

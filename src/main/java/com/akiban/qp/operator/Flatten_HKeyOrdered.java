@@ -146,7 +146,7 @@ class Flatten_HKeyOrdered extends Operator
 
     // Inner classes
 
-    private class Execution implements Cursor
+    private class Execution extends OperatorExecutionBase implements Cursor
     {
         // Cursor interface
 
@@ -159,7 +159,7 @@ class Flatten_HKeyOrdered extends Operator
         @Override
         public Row next()
         {
-            adapter.checkQueryCancelation();
+            checkQueryCancelation();
             Row outputRow = pending.take();
             Row inputRow;
             while (outputRow == null && (((inputRow = input.next()) != null) || parent.isHolding())) {
@@ -217,7 +217,7 @@ class Flatten_HKeyOrdered extends Operator
 
         Execution(StoreAdapter adapter, Cursor input)
         {
-            this.adapter = adapter;
+            super(adapter);
             this.input = input;
             this.leftJoinHKey = adapter.newHKey(childType);
         }
@@ -306,7 +306,6 @@ class Flatten_HKeyOrdered extends Operator
 
         // Object state
 
-        private final StoreAdapter adapter;
         private final Cursor input;
         private final ShareHolder<Row> parent = new ShareHolder<Row>();
         private final PendingRows pending = new PendingRows(MAX_PENDING);

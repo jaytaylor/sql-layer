@@ -96,7 +96,7 @@ public class QPProfileITBase extends ITBase
         else {
             persistitStore = (PersistitStore) plainStore;
         }
-        adapter = new PersistitAdapter(schema, persistitStore, null, session());
+        adapter = new PersistitAdapter(schema, persistitStore, null, session(), akServer());
     }
 
     protected void populateDB(int customers, int ordersPerCustomer, int itemsPerOrder)

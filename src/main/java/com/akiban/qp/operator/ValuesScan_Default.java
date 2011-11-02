@@ -52,15 +52,14 @@ public class ValuesScan_Default extends Operator
     private final Collection<? extends BindableRow> rows;
     private final RowType rowType;
     
-    private static class Execution implements Cursor
+    private static class Execution extends OperatorExecutionBase implements Cursor
     {
-        private final StoreAdapter adapter;
         private final Collection<? extends BindableRow> rows;
         private Iterator<? extends BindableRow> iter;
         private Bindings bindings;
 
         public Execution (StoreAdapter adapter, Collection<? extends BindableRow> rows) {
-            this.adapter = adapter;
+            super(adapter);
             this.rows = rows;
         }
 
