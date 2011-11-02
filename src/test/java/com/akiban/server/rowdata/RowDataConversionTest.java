@@ -56,6 +56,7 @@ public final class RowDataConversionTest extends ConversionTestBase {
         LongExtractor year = Extractors.getLongExtractor(AkType.YEAR);
         LongExtractor timestamp = Extractors.getLongExtractor(AkType.TIMESTAMP);
         LongExtractor time = Extractors.getLongExtractor(AkType.TIME);
+        LongExtractor interval = Extractors.getLongExtractor(AkType.INTERVAL);
         ConverterTestUtils.setGlobalTimezone("UTC");
 
         ConversionSuite<?> suite = ConversionSuite.build(new ConversionPair())
@@ -123,6 +124,9 @@ public final class RowDataConversionTest extends ConversionTestBase {
                 .add(TestCase.forTimestamp(timestamp.getLong("1986-10-28 00:00:00"), b(530841600, 4)))
                 .add(TestCase.forTimestamp(timestamp.getLong("2011-04-10 18:34:00"), b(1302460440, 4)))
 
+                // Interval
+                .add(TestCase.forInterval(interval.getLong("12345"), b(12345L, 8) ))
+                
                 // Time
                 .add(TestCase.forTime(time.getLong("00:00:00"), b(0, 3)))
                 .add(TestCase.forTime(time.getLong("00:00:01"), b(1, 3)))
@@ -203,6 +207,9 @@ public final class RowDataConversionTest extends ConversionTestBase {
             switch (akType) {
                 case LONG:
                     typeName = Types.BIGINT.name().toUpperCase();
+                    break;
+                case INTERVAL:
+                    typeName = Types.INTERVAL.name().toUpperCase();
                     break;
                 default:
                     typeName = akType.name();

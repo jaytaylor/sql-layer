@@ -13,17 +13,25 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.error;
+package com.akiban.server.expression.std;
 
-import com.akiban.server.service.session.Session;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
-public class QueryCanceledException extends InvalidOperationException
-{
-    public QueryCanceledException(Session session)
-    {
-        super(ErrorCode.QUERY_CANCELED);
-        // Clear state causing current query to terminate ...
-        session.cancelCurrentQuery(false); // in the session
-        Thread.interrupted(); // and the thread's interruption flag
-    }
+
+public interface ArithOp 
+{  
+    // long 
+    long evaluate (long one, long two);
+    
+    // double
+    double evaluate (double one, double two);
+    
+    // BigDecimal
+    BigDecimal evaluate (BigDecimal one, BigDecimal two);
+    
+    // BigInteger
+    BigInteger evaluate (BigInteger one, BigInteger two);
+
+    abstract char opName ();
 }

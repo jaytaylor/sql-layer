@@ -134,7 +134,7 @@ public final class PersistitValueValueSource implements ValueSource
     @Override
     public long getInterval()
     {
-        throw new UnsupportedOperationException();
+        return as(Long.class, AkType.INTERVAL);
     }
 
     @Override

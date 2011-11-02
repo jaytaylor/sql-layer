@@ -225,6 +225,7 @@ public final class FromObjectValueSource implements ValueSource {
         case DATE:
         case DATETIME:
         case TIMESTAMP:
+        case INTERVAL:
         case INT:
         case LONG:
         case TIME:
