@@ -137,6 +137,11 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     }
 
     @Override
+    public long getInterval() {
+        return rawLong(AkType.INTERVAL);
+    }
+    
+    @Override
     public long getUInt() {
         return rawLong(AkType.U_INT);
     }
@@ -235,6 +240,11 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     @Override
     public void putTimestamp(long value) {
         putRaw(AkType.TIMESTAMP, value);
+    }
+    
+    @Override
+    public void putInterval(long value) {
+        putRaw(AkType.INTERVAL, value);
     }
 
     @Override

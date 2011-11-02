@@ -121,6 +121,12 @@ public final class RowDataValueTarget implements ValueTarget {
         checkState(AkType.TIMESTAMP);
         recordEncoded(encodeLong(value));
     }
+    
+    @Override
+    public void putInterval(long value) {
+        checkState(AkType.INTERVAL);
+        recordEncoded(encodeLong(value));
+    }
 
     @Override
     public void putUBigInt(BigInteger value) {

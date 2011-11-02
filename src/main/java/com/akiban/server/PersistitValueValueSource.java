@@ -130,6 +130,12 @@ public final class PersistitValueValueSource implements ValueSource
     {
         return as(Long.class, AkType.TIMESTAMP);
     }
+    
+    @Override
+    public long getInterval()
+    {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
     public long getUInt()

@@ -229,6 +229,52 @@ abstract class ExtractorsForDates extends LongExtractor {
         }
     };
 
+    final static ExtractorsForDates INTERVAL = new ExtractorsForDates(AkType.INTERVAL)
+    {
+        @Override
+        protected long doGetLong(ValueSource source){
+            AkType type = source.getConversionType();
+            switch (type){
+                case INTERVAL:  return source.getInterval();
+                case DECIMAL:   return source.getDecimal().longValue();
+                case DOUBLE:    return (long)source.getDouble();
+                case U_BIGINT:  return source.getUBigInt().longValue();
+                case VARCHAR:   return getLong(source.getString());
+                case TEXT:      return getLong(source.getText());
+                case LONG:      return source.getLong();
+                case INT:       return source.getInt();
+                case U_INT:     return source.getUInt();
+                case U_DOUBLE:  return (long)source.getUDouble();
+                default:        throw unsupportedConversion(type);
+            }
+        }
+
+        /**
+         * format: n DAY, n MONTH, n YEAR , n HOUR, n MIN, n SEC
+         * or n  (milisec)
+         */
+        @Override
+        public long getLong (String st){
+            // TO DO: parse string to get DAY, MONTH, ....
+
+            // for now, assume milisec
+              try {
+                long value = Long.parseLong(st);
+                return value;
+            } catch (NumberFormatException ex) {
+                throw new InvalidDateFormatException ("interval", st);
+            }
+        }
+
+        /*
+         * return interval in milisec
+         */
+        @Override
+        public String asString (long value){
+            return value + "";
+        }
+    };
+
     protected abstract long doGetLong(ValueSource source);
 
     @Override
@@ -236,7 +282,7 @@ abstract class ExtractorsForDates extends LongExtractor {
         if (source.isNull())
             throw new ValueSourceIsNullException();
         AkType type = source.getConversionType();
-        if (type == targetConversionType()) {
+        if (type == targetConversionType() || targetConversionType() == AkType.INTERVAL) {
             return doGetLong(source);
         }
         switch (type) {

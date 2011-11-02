@@ -127,6 +127,11 @@ public final class PersistitKeyValueTarget implements ValueTarget {
         key.append(value);
         invalidate();
     }
+    
+    @Override
+    public void putInterval(long value) {
+        throw new UnsupportedOperationException();
+    }
 
     @Override
     public void putUBigInt(BigInteger value) {

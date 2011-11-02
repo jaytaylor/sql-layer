@@ -31,6 +31,7 @@ final class ExtractorForBigInteger extends ObjectExtractor<BigInteger> {
         case U_INT:     return BigInteger.valueOf(source.getUInt());
         case TEXT:      return new BigInteger(source.getText());
         case VARCHAR:   return new BigInteger(source.getString());
+        case INTERVAL:  return BigInteger.valueOf(source.getInterval());
         default: throw unsupportedConversion(type);
         }
     }

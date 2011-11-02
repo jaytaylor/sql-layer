@@ -129,6 +129,12 @@ abstract class AbstractRowDataValueSource implements ValueSource {
         checkState(AkType.TIMESTAMP);
         return extractLong(Signage.SIGNED);
     }
+    
+    @Override
+    public long getInterval() {
+        checkState(AkType.INTERVAL);
+        return extractLong(Signage.SIGNED);
+    }
 
     @Override
     public long getUInt() {

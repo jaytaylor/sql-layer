@@ -37,6 +37,7 @@ public final class DoubleExtractor extends AbstractExtractor {
         case U_DOUBLE:  return source.getUDouble();
         case U_FLOAT:   return source.getUFloat();
         case U_INT:     return source.getUInt();
+        case INTERVAL:  return source.getInterval();
         default:
             throw unsupportedConversion(type);
         }
