@@ -127,7 +127,7 @@ public class IndexScanIT extends OperatorITBase
         compareRenderedHKeys(expected, cursor);
     }
 
-    // Naming schema for next tests:
+    // Naming scheme for next tests:
     // testLoABHiCD
     // A: Inclusive/Exclusive for lo bound
     // B: Match/Miss indicates whether the lo bound matches or misses an actual value in the db

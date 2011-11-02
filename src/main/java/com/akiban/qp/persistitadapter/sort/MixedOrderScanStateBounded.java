@@ -15,15 +15,8 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.qp.operator.ArrayBindings;
-import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.PersistitKeyValueTarget;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.expression.std.CompareExpression;
-import com.akiban.server.expression.std.Comparison;
-import com.akiban.server.expression.std.VariableExpression;
-import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.persistit.Key;
@@ -36,27 +29,31 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
     {
         Key.Direction direction;
         if (ascending) {
-            ValueSource boundarySource =
-                cursor.keyRange().lo().boundExpressions(cursor.bindings(), adapter).eval(field);
-            if (boundarySource.isNull()) {
+            if (loSource.isNull()) {
                 cursor.exchange.append(Key.BEFORE);
                 direction = Key.GT;
             } else {
-                Converters.convert(boundarySource, keyTarget);
+                keyTarget.expectingType(loSource.getConversionType());
+                Converters.convert(loSource, keyTarget);
                 direction = loInclusive ? Key.GTEQ : Key.GT;
             }
         } else {
-            ValueSource boundarySource =
-                cursor.keyRange().hi().boundExpressions(cursor.bindings(), adapter).eval(field);
-            if (boundarySource.isNull()) {
-                cursor.exchange.append(Key.AFTER);
+            if (hiSource.isNull()) {
+                // About null handling: See comment in SortCursorUnidirectional.evaluateBoundaries.
+                if (loSource.isNull()) {
+                    cursor.exchange.append(null);
+                } else {
+                    cursor.exchange.append(Key.AFTER);
+                }
                 direction = Key.LT;
             } else {
-                Converters.convert(boundarySource, keyTarget);
+                keyTarget.expectingType(hiSource.getConversionType());
+                Converters.convert(hiSource, keyTarget);
                 direction = hiInclusive ? Key.LTEQ : Key.LT;
             }
         }
-        return cursor.exchange.traverse(direction, false);
+        boolean x = cursor.exchange.traverse(direction, false);
+        return x;
     }
 
     public void setRange(ValueSource lo, ValueSource hi)
@@ -71,40 +68,15 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
         this.hiInclusive = hiInclusive;
     }
 
-    public boolean loEqualsHi()
-    {
-        boolean loEqualsHi = false;
-        if (!loSource.isNull() && !hiSource.isNull()) {
-            objectTarget.expectType(cursor.keyRange().indexRowType().typeAt(field));
-            cursor.bindings().set(0, objectTarget.convertFromSource(loSource));
-            cursor.bindings().set(1, objectTarget.convertFromSource(hiSource));
-            loEqualsHi = loEqualsHiEvaluation.eval().getBool();
-        }
-        return loEqualsHi;
-    }
-
     public MixedOrderScanStateBounded(StoreAdapter adapter, SortCursorMixedOrder cursor, int field)
         throws PersistitException
     {
         super(cursor, field, cursor.ordering().ascending(field));
-        this.adapter = adapter;
         this.keyTarget = new PersistitKeyValueTarget();
         this.keyTarget.attach(cursor.exchange.getKey());
-        this.loEqualsHiEvaluation =
-            new CompareExpression(
-                new VariableExpression(cursor.keyRange().indexRowType().typeAt(field), 0),
-                Comparison.EQ,
-                new VariableExpression(cursor.keyRange().indexRowType().typeAt(field), 1)).evaluation();
-        this.loEqualsHiBindings = new ArrayBindings(2);
-        this.loEqualsHiEvaluation.of(this.loEqualsHiBindings);
-        this.objectTarget = new ToObjectValueTarget();
     }
 
-    private final StoreAdapter adapter;
     private final PersistitKeyValueTarget keyTarget;
-    private final ExpressionEvaluation loEqualsHiEvaluation;
-    private final Bindings loEqualsHiBindings;
-    private final ToObjectValueTarget objectTarget;
     private ValueSource loSource;
     private ValueSource hiSource;
     private boolean loInclusive;

@@ -18,7 +18,7 @@ package com.akiban.qp.persistitadapter.sort;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
-class MixedOrderScanStateUnbounded extends MixedOrderScanState
+class  MixedOrderScanStateUnbounded extends MixedOrderScanState
 {
     @Override
     public boolean startScan() throws PersistitException

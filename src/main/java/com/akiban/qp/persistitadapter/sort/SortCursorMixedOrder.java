@@ -15,12 +15,16 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
+import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapterException;
 import com.akiban.qp.row.Row;
+import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.types.NullValueSource;
+import com.akiban.server.types.ValueSource;
 import com.persistit.exception.PersistitException;
 
 import java.util.ArrayList;
@@ -35,16 +39,9 @@ public abstract class SortCursorMixedOrder extends SortCursor
     {
         this.bindings = bindings;
         exchange.clear();
+        scanStates.clear();
         try {
-            // TODO: This should be done in the constructor, once bindings are available that early.
-            for (int f = 0; f < sortFields; f++) {
-                scanStates.add(createScanState(this, scanStates.size()));
-            }
-            if (sortFields < keyFields) {
-                this.scanStates.add(new MixedOrderScanStateRestOfKey(this, scanStates.size()));
-            }
-            // TODO: ------------------------------------------------------------------------------------
-            computeBoundaries();
+            initializeScanStates();
             repositionExchange(0);
         } catch (PersistitException e) {
             close();
@@ -85,10 +82,7 @@ public abstract class SortCursorMixedOrder extends SortCursor
             : new SortCursorMixedOrderBounded(adapter, rowGenerator, keyRange, ordering);
     }
 
-    public abstract MixedOrderScanState createScanState(SortCursorMixedOrder cursor, int field)
-        throws PersistitException;
-
-    public abstract void computeBoundaries();
+    public abstract void initializeScanStates() throws PersistitException;
 
     // For use by subclasses
 

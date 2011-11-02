@@ -37,14 +37,13 @@ import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
 
 /*
- * This test covers index scans with combinations of the following variations:
- * - unbounded/bounded
+ * This test covers unbounded index scans with combinations of the following variations:
  * - ascending/descending/mixed
  * - order covers all/some key fields
  * - null values
  */
 
-public class IndexScanComplexIT extends OperatorITBase
+public class IndexScanUnboundedIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -676,56 +675,6 @@ public class IndexScanComplexIT extends OperatorITBase
         compareRows(expected, cursor(plan, adapter));
     }
 
-    @Test
-    public void testBoundedAscAll()
-    {
-        {
-            Operator plan = indexScan_Default(idxRowType,
-                                              range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
-                                                    EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED),
-                                              ordering(A, ASC, B, ASC, C, ASC, ID, ASC));
-            RowBase[] expected = new RowBase[]{
-                row(idxRowType, 2L, 21L, 211L, 1004L),
-                row(idxRowType, 2L, 21L, 212L, 1005L),
-                row(idxRowType, 2L, 22L, 221L, 1006L),
-                row(idxRowType, 2L, 22L, 222L, 1007L),
-            };
-            compareRows(expected, cursor(plan, adapter));
-        }
-        {
-            Operator plan = indexScan_Default(idxRowType,
-                                              range(EXCLUSIVE, 1, 11, UNSPECIFIED,
-                                                    EXCLUSIVE, 3, null, UNSPECIFIED),
-                                              ordering(A, ASC, B, ASC, C, ASC, ID, ASC));
-            RowBase[] expected = new RowBase[]{
-                row(idxRowType, 1L, 12L, 121L, 1002L),
-                row(idxRowType, 1L, 12L, 122L, 1003L),
-                row(idxRowType, 2L, 21L, 211L, 1004L),
-                row(idxRowType, 2L, 21L, 212L, 1005L),
-                row(idxRowType, 2L, 22L, 221L, 1006L),
-                row(idxRowType, 2L, 22L, 222L, 1007L),
-            };
-            dumpToAssertion(plan);
-            compareRows(expected, cursor(plan, adapter));
-        }
-        {
-            Operator plan = indexScan_Default(idxRowType,
-                                              range(EXCLUSIVE, 1, 11, 111,
-                                                    EXCLUSIVE, 3, null, UNSPECIFIED),
-                                              ordering(A, ASC, B, ASC, C, ASC, ID, ASC));
-            RowBase[] expected = new RowBase[]{
-                row(idxRowType, 1L, 11L, 112L, 1001L),
-                row(idxRowType, 1L, 12L, 121L, 1002L),
-                row(idxRowType, 1L, 12L, 122L, 1003L),
-                row(idxRowType, 2L, 21L, 211L, 1004L),
-                row(idxRowType, 2L, 21L, 212L, 1005L),
-                row(idxRowType, 2L, 22L, 221L, 1006L),
-                row(idxRowType, 2L, 22L, 222L, 1007L),
-            };
-            compareRows(expected, cursor(plan, adapter));
-        }
-    }
-
     // For use by this class
 
     private IndexKeyRange unbounded()
@@ -733,28 +682,6 @@ public class IndexScanComplexIT extends OperatorITBase
         return new IndexKeyRange(idxRowType, null, false, null, false);
     }
     
-    private IndexKeyRange range(boolean loInclusive, Integer aLo, Integer bLo, Integer cLo,
-                                boolean hiInclusive, Integer aHi, Integer bHi, Integer cHi)
-    {
-        IndexBound lo;
-        if (bLo == UNSPECIFIED) {
-            lo = new IndexBound(row(idxRowType, aLo), new SetColumnSelector(0));
-        } else if (cLo == UNSPECIFIED) {
-            lo = new IndexBound(row(idxRowType, aLo, bLo), new SetColumnSelector(0, 1));
-        } else {
-            lo = new IndexBound(row(idxRowType, aLo, bLo, cLo), new SetColumnSelector(0, 1, 2));
-        }
-        IndexBound hi;
-        if (bHi == UNSPECIFIED) {
-            hi = new IndexBound(row(idxRowType, aHi), new SetColumnSelector(0));
-        } else if (cHi == UNSPECIFIED) {
-            hi = new IndexBound(row(idxRowType, aHi, bHi), new SetColumnSelector(0, 1));
-        } else {
-            hi = new IndexBound(row(idxRowType, aHi, bHi, cHi), new SetColumnSelector(0, 1, 2));
-        }
-        return new IndexKeyRange(idxRowType, lo, loInclusive, hi, hiInclusive);
-    }
-
     private API.Ordering ordering(Object ... ord) // alternating column positions and asc/desc
     {
         API.Ordering ordering = API.ordering();
@@ -774,9 +701,6 @@ public class IndexScanComplexIT extends OperatorITBase
     private static final int ID = 3;
     private static final boolean ASC = true;
     private static final boolean DESC = false;
-    private static final boolean EXCLUSIVE = false;
-    private static final boolean INCLUSIVE = true;
-    private static final Integer UNSPECIFIED = new Integer(Integer.MIN_VALUE);
 
     private int t;
     private RowType tRowType;
