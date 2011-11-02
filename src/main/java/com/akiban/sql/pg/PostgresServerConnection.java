@@ -209,8 +209,6 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                         break;
                     }
                 } catch (QueryCanceledException ex) {
-                    // Make sure that query cancelation flag is cleared for the next message.
-                    session.cancelCurrentQuery(false);
                     logger.warn(ex.getMessage());
                     logger.warn("StackTrace: {}", ex);
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
