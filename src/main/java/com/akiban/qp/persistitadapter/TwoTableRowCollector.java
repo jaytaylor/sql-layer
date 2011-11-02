@@ -29,12 +29,13 @@ import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ByteArrayColumnSelector;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 
 public class TwoTableRowCollector extends OperatorBasedRowCollector
 {
-    TwoTableRowCollector(AkServerInterface akServer,
+    TwoTableRowCollector(ConfigurationService config,
                          Session session,
                          PersistitStore store,
                          RowDef rowDef,
@@ -46,7 +47,7 @@ public class TwoTableRowCollector extends OperatorBasedRowCollector
                          ColumnSelector endColumns,
                          byte[] columnBitMap)
     {
-        super(store, session, akServer);
+        super(store, session, config);
         // Get group table and check that start/end refer to it
         GroupTable groupTable = rowDef.groupTable();
         assert start == null || start.getRowDefId() == groupTable.getTableId() : start;

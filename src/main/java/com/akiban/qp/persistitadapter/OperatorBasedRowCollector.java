@@ -26,13 +26,12 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.AkServer;
-import com.akiban.server.AkServerInterface;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.memcache.hprocessor.PredicateLimit;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
@@ -178,7 +177,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
 
     // OperatorBasedRowCollector interface
 
-    public static OperatorBasedRowCollector newCollector(AkServerInterface akServer,
+    public static OperatorBasedRowCollector newCollector(ConfigurationService config,
                                                          Session session,
                                                          PersistitStore store,
                                                          int scanFlags,
@@ -201,7 +200,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         OperatorBasedRowCollector rowCollector =
             rowDef.isUserTable()
             // HAPI query root table = predicate table
-            ? new OneTableRowCollector(akServer,
+            ? new OneTableRowCollector(config,
                                        session,
                                        store,
                                        rowDef,
@@ -212,7 +211,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                                        end,
                                        endColumns)
             // HAPI query root table != predicate table
-            : new TwoTableRowCollector(akServer,
+            : new TwoTableRowCollector(config,
                                        session,
                                        store,
                                        rowDef,
@@ -230,12 +229,12 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         return rowCollector;
     }
     
-    protected OperatorBasedRowCollector(PersistitStore store, Session session, AkServerInterface akServer)
+    protected OperatorBasedRowCollector(PersistitStore store, Session session, ConfigurationService config)
     {
         this.schema = SchemaCache.globalSchema(store.getRowDefCache().ais());
         // Passing null to PersistitAdapter's TreeService argument. TreeService is only needed for sorting,
         // which OBRC doesn't use.
-        this.adapter = new PersistitAdapter(schema, store, null, session, akServer);
+        this.adapter = new PersistitAdapter(schema, store, null, session, config);
         this.rowCollectorId = idCounter.getAndIncrement();
     }
 

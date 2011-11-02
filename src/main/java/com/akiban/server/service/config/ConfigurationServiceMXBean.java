@@ -20,4 +20,8 @@ import java.util.Set;
 public interface ConfigurationServiceMXBean
 {
     Set<Property> getProperties();
+
+    long getQueryTimeoutSec();
+
+    void setQueryTimeoutSec(long timeoutSec);
 }

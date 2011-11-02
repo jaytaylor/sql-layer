@@ -99,18 +99,6 @@ public class ManageMXBeanImpl implements ManageMXBean {
     }
 
     @Override
-    public long getQueryTimeoutSec()
-    {
-        return akserver.queryTimeoutSec();
-    }
-
-    @Override
-    public void setQueryTimeoutSec(long queryTimeoutSec)
-    {
-        akserver.queryTimeoutSec(queryTimeoutSec);
-    }
-
-    @Override
     public String loadCustomQuery(final String className, String path) {
         try {
             customClass = null;
