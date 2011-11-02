@@ -45,6 +45,7 @@ class AbstractAggregator implements Aggregator
     private static final LongExtractor L_EXTRACTOR = Extractors.getLongExtractor(AkType.LONG);
     private static final LongExtractor DATE_EXTRACTOR = Extractors.getLongExtractor(AkType.DATE);
     private static final LongExtractor TIME_EXTRACTOR = Extractors.getLongExtractor(AkType.TIME);
+    private static final LongExtractor DATETIME_EXTRACTOR = Extractors.getLongExtractor(AkType.DATETIME);
     private static final ObjectExtractor<BigDecimal> DEC_EXTRACTOR = Extractors.getDecimalExtractor();
     private static final ObjectExtractor<BigInteger> BIGINT_EXTRACTOR = Extractors.getUBigIntExtractor();
     private static final BooleanExtractor B_EXTRACTOR = Extractors.getBooleanExtractor();
@@ -77,6 +78,7 @@ class AbstractAggregator implements Aggregator
                 switch (type)
                 {
                     case DOUBLE:    value.putDouble(processor.process(D_EXTRACTOR.getDouble(value), D_EXTRACTOR.getDouble(input))); break;
+                    case INT:
                     case LONG:      value.putLong(processor.process(L_EXTRACTOR.getLong(value), L_EXTRACTOR.getLong(input))); break;
                     case DECIMAL:   value.putDecimal(processor.process(DEC_EXTRACTOR.getObject(value), DEC_EXTRACTOR.getObject(input))); break;
                     case U_BIGINT:  value.putUBigInt(processor.process(BIGINT_EXTRACTOR.getObject(value), BIGINT_EXTRACTOR.getObject(input))); break;
@@ -84,6 +86,7 @@ class AbstractAggregator implements Aggregator
                     case DATE:      value.putDate(processor.process(DATE_EXTRACTOR.getLong(value), DATE_EXTRACTOR.getLong(input))); break;
                     case TIME:      value.putTime(processor.process(TIME_EXTRACTOR.getLong(value), TIME_EXTRACTOR.getLong(input))); break;
                     case VARCHAR:   value.putString(processor.process(S_EXTRACTOR.getObject(value), S_EXTRACTOR.getObject(input))); break;
+                    case DATETIME:  value.putDateTime(processor.process(DATETIME_EXTRACTOR.getLong(value), DATETIME_EXTRACTOR.getLong(input))); break;
                     default: throw new UnsupportedOperationException("Not supported yet.");
                 }         
         }
