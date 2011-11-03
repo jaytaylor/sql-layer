@@ -15,9 +15,9 @@
 
 package com.akiban.sql.pg;
 
+import java.io.File;
 import java.io.StringReader;
 
-import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -25,6 +25,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import org.junit.Test;
 
 
 /**
@@ -111,6 +112,31 @@ public class YamlTesterParseTest {
 	test("- Statement: a b c" +
 	     "\n- params: [[a, b], [c, d, e]]",
 	     "testStatementParamsValueDifferentLengthParams");
+    }
+
+    @Test
+    public void testIncludeMissingValue() {
+	test("- Include:", "testIncludeMissingValue");
+    }
+
+    @Test
+    public void testIncludeWrongTypeValue() {
+	test("- Include: [a, b]",
+	     "testIncludeWrongTypeValue");
+    }
+
+    @Test
+    public void testIncludeFileNotFound() {
+	test("- Include: file-definitely-not-found",
+	     "testIncludeFileNotFound");
+    }
+
+    @Test
+    public void testIncludeUnexpectedAttributes() throws Exception {
+	File tmp = File.createTempFile("abc", null);
+	test("- Include: " + tmp +
+	     "\n- foo: bar",
+	     "testIncludeUnexpectedAttributes");
     }
 
     private void test(String yaml, String testMethod) {

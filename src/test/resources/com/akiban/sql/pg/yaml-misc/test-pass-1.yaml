@@ -12,6 +12,11 @@
 - output:
   - [1, Smith]
   - [2, Jones]
+- explain: |
+    project([Field(0), Field(1)])
+      Sort_Tree(user.customers)
+        Filter_Default([user.customers])
+          GroupScan_Default(full scan on _akiban_customers NO LIMIT)
 ---
 # Try a statement with a syntax error
 - Statement: SELECT FROM;

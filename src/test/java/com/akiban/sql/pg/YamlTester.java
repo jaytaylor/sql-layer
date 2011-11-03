@@ -250,12 +250,24 @@ public class YamlTester {
 
 	private void parseExplain(Object value) {
 	    assertNull("The explain attribute must not appear more than once",
-		       explain == null);
+		       explain);
 	    explain = string(value, "explain value");
 	}
 
 	@Override
 	void execute() throws SQLException {
+	    if (explain != null) {
+		Statement stmt = connection.createStatement();
+		try {
+		    stmt.execute("EXPLAIN " + statement);
+		    String explainResults =
+			collectExplainResults(stmt.getResultSet());
+		    assertEquals("Explain results do not match:",
+				 explain, explainResults);
+		} finally {
+		    stmt.close();
+		}
+	    }
 	    if (params == null) {
 		Statement stmt = connection.createStatement(
 		    ResultSet.TYPE_SCROLL_INSENSITIVE,
@@ -302,6 +314,21 @@ public class YamlTester {
 		    stmt.close();
 		}
 	    }
+	}
+
+	private String collectExplainResults(ResultSet rs) throws SQLException {
+	    StringBuilder sb = new StringBuilder();
+	    int numColumns = rs.getMetaData().getColumnCount();
+	    while (rs.next()) {
+		for (int i = 1; i <= numColumns; i++) {
+		    if (i != 1) {
+			sb.append(", ");
+		    }
+		    sb.append(rs.getString(i));
+		}
+		sb.append('\n');
+	    }
+	    return sb.toString();
 	}
 
 	private void checkSuccess(Statement stmt) throws SQLException {
@@ -392,20 +419,30 @@ public class YamlTester {
 	private void debugPrintResults(ResultSet rs)
 		throws SQLException
 	{
-	    System.out.println(context() + "Result output:");
+	    System.err.println(context() + "Result output:");
+	    printResultSet(rs);
+	    rs.beforeFirst();
+	}
+
+	private void printResultSet(ResultSet rs) throws SQLException {
 	    ResultSetMetaData md = rs.getMetaData();
 	    int nc = md.getColumnCount();
+	    for (int i = 1; i <= nc; i++) {
+		if (i != 1) {
+		    System.err.print(", ");
+		}
+		System.err.print(md.getColumnName(i));
+	    }
+	    System.err.println();
 	    while (rs.next()) {
-		System.err.print("[");
 		for (int i = 1; i <= nc; i++) {
 		    if (i != 1) {
 			System.err.print(", ");
 		    }
 		    System.err.print(rs.getObject(i));
 		}
-		System.err.println("]");
+		System.err.println();
 	    }
-	    rs.beforeFirst();
 	}
 
 	private void checkFailure(SQLException sqlException) {
@@ -442,15 +479,20 @@ public class YamlTester {
 	IncludeCommand(Object value, List<Object> sequence) {
 	    String includeValue = string(value, "Include value");
 	    File include = new File(includeValue);
-	    assertEquals("The Include command does not support attributes",
-			 1, sequence.size());
+	    if (sequence.size() > 1) {
+		throw new AssertionError(
+		    "The Include command does not support attributes" +
+		    "\nFound: " + sequence.get(1));
+	    }
 	    if (!include.isAbsolute()) {
 		String parent = filename;
 		if (!includeStack.isEmpty()) {
 		    parent = includeStack.peek();
 		}
-		include = new File(
-		    new File(parent).getParent(), include.toString());
+		if (parent != null) {
+		    include = new File(
+			new File(parent).getParent(), include.toString());
+		}
 	    }
 	    this.include = include.toString();
 	    Reader in = null;
