@@ -39,6 +39,7 @@ import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;
+import com.akiban.server.service.config.ConfigurationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -115,7 +116,7 @@ public class PersistitStore implements Store {
 
     RowDefCache rowDefCache;
 
-    final AkServerInterface akServer;
+    final ConfigurationService config;
 
     final TreeService treeService;
 
@@ -131,10 +132,10 @@ public class PersistitStore implements Store {
 
     private int deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
 
-    public PersistitStore(boolean updateGroupIndexes, TreeService treeService, AkServerInterface akServer) {
+    public PersistitStore(boolean updateGroupIndexes, TreeService treeService, ConfigurationService config) {
         this.updateGroupIndexes = updateGroupIndexes;
         this.treeService = treeService;
-        this.akServer = akServer;
+        this.config = config;
     }
 
     public synchronized void start() {
@@ -995,7 +996,7 @@ public class PersistitStore implements Store {
             endColumns = createNonNullFieldSelector(end);
         }
         RowDef rowDef = checkRequest(rowDefId, start, startColumns, end, endColumns);
-        RowCollector rc = OperatorBasedRowCollector.newCollector(akServer,
+        RowCollector rc = OperatorBasedRowCollector.newCollector(config,
                                                                  session,
                                                                  this,
                                                                  scanFlags,

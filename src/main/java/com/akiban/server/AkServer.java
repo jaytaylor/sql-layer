@@ -50,7 +50,6 @@ public class AkServer implements Service<AkServerInterface>, JmxManageable, AkSe
     private static final String pidFileName = System.getProperty("akserver.pidfile");
 
     private final JmxObjectInfo jmxObjectInfo;
-    private volatile long queryTimeoutSec = -1L; // No timeout
 
     public AkServer() {
         this.jmxObjectInfo = new JmxObjectInfo("AKSERVER", new ManageMXBeanImpl(this), ManageMXBean.class);
@@ -101,16 +100,6 @@ public class AkServer implements Service<AkServerInterface>, JmxManageable, AkSe
     @Override
     public Class<AkServerInterface> castClass() {
         return AkServerInterface.class;
-    }
-
-    public long queryTimeoutSec()
-    {
-        return queryTimeoutSec;
-    }
-
-    public void queryTimeoutSec(long queryTimeoutSec)
-    {
-        this.queryTimeoutSec = queryTimeoutSec;
     }
 
     private static String getVersionString()
