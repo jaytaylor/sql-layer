@@ -99,6 +99,7 @@ class Processors
             switch (type)
             {
                 case DOUBLE:
+                case INT:
                 case LONG:
                 case DECIMAL:
                 case U_BIGINT:
