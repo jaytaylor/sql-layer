@@ -45,8 +45,8 @@ class TopLevelWrappingCursor extends ChainedCursor {
 
     // WrappingCursor interface
 
-    TopLevelWrappingCursor(Cursor input) {
-        super(input);
+    TopLevelWrappingCursor(StoreAdapter adapter, Cursor input) {
+        super(adapter, input);
     }
 
     // private methods

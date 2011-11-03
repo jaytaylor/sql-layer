@@ -85,7 +85,7 @@ class Sort_Tree extends Operator
 
     // Inner classes
 
-    private class Execution implements Cursor
+    private class Execution extends OperatorExecutionBase implements Cursor
     {
         // Cursor interface
 
@@ -101,7 +101,7 @@ class Sort_Tree extends Operator
         @Override
         public Row next()
         {
-            adapter.checkQueryCancelation();
+            checkQueryCancelation();
             if (output == null) {
                 output = adapter.sort(input, sortType, ordering, bindings);
             }
@@ -132,13 +132,12 @@ class Sort_Tree extends Operator
 
         Execution(StoreAdapter adapter, Cursor input)
         {
-            this.adapter = adapter;
+            super(adapter);
             this.input = input;
         }
 
         // Object state
 
-        private final StoreAdapter adapter;
         private final Cursor input;
         private Cursor output;
         private Bindings bindings;

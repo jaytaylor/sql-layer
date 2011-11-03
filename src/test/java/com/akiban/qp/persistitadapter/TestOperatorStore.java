@@ -40,7 +40,7 @@ public class TestOperatorStore extends OperatorStore {
 
     @Inject
     public TestOperatorStore(AisHolder aisHolder, TreeService treeService) {
-        super(aisHolder, treeService);
+        super(aisHolder, treeService, null);
     }
 
     // service overrides

@@ -209,8 +209,6 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                         break;
                     }
                 } catch (QueryCanceledException ex) {
-                    // Make sure that query cancelation flag is cleared for the next message.
-                    session.cancelCurrentQuery(false);
                     logger.warn(ex.getMessage());
                     logger.warn("StackTrace: {}", ex);
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
@@ -624,7 +622,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             adapter = new PersistitAdapter(schema,
                                            persistitStore,
                                            reqs.treeService(),
-                                           session);
+                                           session,
+                                           reqs.akServer());
         }
 
         statementCache = server.getStatementCache(aisGeneration);

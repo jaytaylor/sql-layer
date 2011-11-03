@@ -120,7 +120,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
         } else {
             persistitStore = (PersistitStore) plainStore;
         }
-        adapter = new PersistitAdapter(schema, persistitStore, null, session());
+        adapter = new PersistitAdapter(schema, persistitStore, null, session(), akServer());
         use(db);
     }
 

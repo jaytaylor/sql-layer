@@ -32,6 +32,7 @@ import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.Table;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
+import com.akiban.server.*;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.IndexDef;
@@ -45,10 +46,6 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.AkServerUtil;
-import com.akiban.server.TableStatistics;
-import com.akiban.server.TableStatus;
-import com.akiban.server.TableStatusCache;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -118,6 +115,8 @@ public class PersistitStore implements Store {
 
     RowDefCache rowDefCache;
 
+    final AkServerInterface akServer;
+
     final TreeService treeService;
 
     TableStatusCache tableStatusCache;
@@ -132,9 +131,10 @@ public class PersistitStore implements Store {
 
     private int deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
 
-    public PersistitStore(boolean updateGroupIndexes, TreeService treeService) {
+    public PersistitStore(boolean updateGroupIndexes, TreeService treeService, AkServerInterface akServer) {
         this.updateGroupIndexes = updateGroupIndexes;
         this.treeService = treeService;
+        this.akServer = akServer;
     }
 
     public synchronized void start() {
@@ -995,7 +995,8 @@ public class PersistitStore implements Store {
             endColumns = createNonNullFieldSelector(end);
         }
         RowDef rowDef = checkRequest(rowDefId, start, startColumns, end, endColumns);
-        RowCollector rc = OperatorBasedRowCollector.newCollector(session,
+        RowCollector rc = OperatorBasedRowCollector.newCollector(akServer,
+                                                                 session,
                                                                  this,
                                                                  scanFlags,
                                                                  rowDef,
