@@ -40,7 +40,6 @@ import org.junit.runner.RunWith;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 
-import com.akiban.server.error.InvalidOperationException;
 import org.junit.Before;
 
 import java.util.ArrayList;
@@ -166,7 +165,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     }
 
     @Override
-    public void checkResult(String result) throws IOException,InvalidOperationException {
+    public void checkResult(String result) throws IOException{
         assertEqualsWithoutHashes(caseName, expected, result);
     }
 
