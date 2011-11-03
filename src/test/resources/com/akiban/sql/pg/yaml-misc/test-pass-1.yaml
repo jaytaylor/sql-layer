@@ -31,4 +31,8 @@
 - Statement: SELECT cid FROM customers WHERE name = ?;
 - params: [[Jones], [Smith]]
 - output: [[2], [1]]
+---
+# Try don't care value
+- Statement: SELECT * FROM customers WHERE name = 'Smith'
+- output: [[!dc dc, Smith]]
 ...

@@ -39,7 +39,6 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.not;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
@@ -47,6 +46,10 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.AbstractConstruct;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
+import org.yaml.snakeyaml.nodes.Node;
+import org.yaml.snakeyaml.nodes.Tag;
 
 /**
  * A utility for testing SQL access based on the contents of a YAML file.
@@ -71,7 +74,7 @@ public class YamlTester {
     }
 
     void test(Reader in) {
-	Yaml yaml = new Yaml();
+	Yaml yaml = new Yaml(new DontCareConstructor());
 	for (Object document : yaml.loadAll(in)) {
 	    ++commandNumber;
 	    commandKey = null;
@@ -395,9 +398,12 @@ public class YamlTester {
 		    for (int i = 1; i <= numColumns; i++) {
 			resultsRow.add(rs.getObject(i));
 		    }
-		    assertEquals(
-			"Unexpected output in row " + (outputRow + 1) + ":",
-			row, resultsRow);
+		    if (!rowsEqual(row, resultsRow)) {
+			throw new AssertionError(
+			    "Unexpected output in row " + (outputRow + 1) + ":" +
+			    "\nExpected: " + row +
+			    "\n     got: " + resultsRow);
+		    }
 		}
 		if (outputRow < output.size()) {
 		    if (resultsEmpty &&
@@ -414,6 +420,27 @@ public class YamlTester {
 			"\nExpected: " + output.size());
 		}
 	    }
+	}
+
+        private boolean rowsEqual(List<Object> pattern, List<Object> row) {
+	    int size = pattern.size();
+	    if (size != row.size()) {
+		return false;
+	    }
+	    for (int i = 0; i < size; i++) {
+		Object patternElem = pattern.get(i);
+		if (patternElem != DontCare.INSTANCE) {
+		    Object rowElem = row.get(i);
+		    if (patternElem == null ? rowElem == null
+			: patternElem.equals(rowElem))
+		    {
+			continue;
+		    } else {
+			return false;
+		    }
+		}
+	    }
+	    return true;
 	}
 
 	private void debugPrintResults(ResultSet rs)
@@ -624,6 +651,26 @@ public class YamlTester {
 	assertFalse("The " + desc + " must not be empty", list.isEmpty());
 	return list;
     }
+
+    static class DontCare {
+	private DontCare() { }
+	static final DontCare INSTANCE = new DontCare();
+	public String toString() {
+	    return "!dc";
+	}
+    }
+
+    static class DontCareConstructor extends SafeConstructor {
+	public DontCareConstructor() {
+	    this.yamlConstructors.put(new Tag("!dc"), new ConstructDontCare());
+	}
+	private static class ConstructDontCare extends AbstractConstruct {
+	    public Object construct(Node node) {
+		return DontCare.INSTANCE;
+	    }
+	}
+    }
+
 
     private String context() {
 	StringBuffer context = new StringBuffer();
