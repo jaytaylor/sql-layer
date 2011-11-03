@@ -35,4 +35,8 @@
 # Try don't care value
 - Statement: SELECT * FROM customers WHERE name = 'Smith'
 - output: [[!dc dc, Smith]]
+---
+# Try output_type
+- Statement: SELECT * FROM customers WHERE name = 'Smith'
+- output_types: [int4, varchar]
 ...

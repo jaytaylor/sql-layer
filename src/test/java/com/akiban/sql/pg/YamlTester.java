@@ -115,6 +115,7 @@ public class YamlTester {
 	List<List<Object>> params;
 	List<String> paramTypes;
 	List<List<Object>> output;
+	List<String> outputTypes;
 
 	/**
 	 * The number of output or updated rows expected, or -1 if not
@@ -153,6 +154,8 @@ public class YamlTester {
 		    parseParamTypes(attributeValue);
 		} else if ("output".equals(attribute)) {
 		    parseOutput(attributeValue);
+		} else if ("output_types".equals(attribute)) {
+		    parseOutputTypes(attributeValue);
 		} else if ("error".equals(attribute)) {
 		    parseError(attributeValue);
 		} else if ("explain".equals(attribute)) {
@@ -227,6 +230,13 @@ public class YamlTester {
 	    } else {
 		fail("The output value must be a count or a sequence of row");
 	    }
+	}
+
+	private void parseOutputTypes(Object value) {
+	    assertNull(
+		"The output_types attribute must not appear more than once",
+		paramTypes);
+	    outputTypes = nonEmptyStringSequence(value, "output_types value");
 	}
 
 	private void parseError(Object value) {
@@ -343,6 +353,11 @@ public class YamlTester {
 		int updateCount = stmt.getUpdateCount();
 		assertFalse("Query did not produce an update count",
 			    updateCount == -1);
+		assertNull("Query did not produce results output",
+			   output);
+		assertNull("Query did not produce results, so output_types" +
+			   " are not supported",
+			   outputTypes);
 		checkRowCount(updateCount);
 	    } else {
 		checkResults(rs);
@@ -372,6 +387,17 @@ public class YamlTester {
 
 	private void checkResults(ResultSet rs) throws SQLException {
 	    debugPrintResults(rs);
+	    if (outputTypes != null && outputRow == 0) {
+		ResultSetMetaData metaData = rs.getMetaData();
+		int numColumns = metaData.getColumnCount();
+		assertEquals("Wrong number of output types:",
+			     outputTypes.size(), numColumns);
+		for (int i = 1; i <= numColumns; i++) {
+		    assertEquals("Wrong output type for column " + i + ":",
+				 outputTypes.get(i - 1),
+				 metaData.getColumnTypeName(i));
+		}
+	    }
 	    if (rowCount != -1) {
 		int c = 0;
 		while (rs.next()) {
@@ -670,7 +696,6 @@ public class YamlTester {
 	    }
 	}
     }
-
 
     private String context() {
 	StringBuffer context = new StringBuffer();
