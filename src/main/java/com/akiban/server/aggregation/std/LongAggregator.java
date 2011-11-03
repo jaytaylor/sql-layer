@@ -40,6 +40,11 @@ public final class LongAggregator implements Aggregator {
             }
 
             @Override
+            public AkType outputType() {
+                return type;
+            }
+
+            @Override
             public String toString() {
                 return name;
             }
@@ -55,15 +60,15 @@ public final class LongAggregator implements Aggregator {
             }
 
             @Override
+            public AkType outputType() {
+                return type;
+            }
+
+            @Override
             public String toString() {
                 return name;
             }
         };
-    }
-
-    @Override
-    public AkType outputType() {
-        return type;
     }
 
     @Override

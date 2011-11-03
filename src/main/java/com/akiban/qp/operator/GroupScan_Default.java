@@ -16,6 +16,7 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.util.ArgumentValidation;
@@ -54,7 +55,7 @@ class GroupScan_Default extends Operator
 
     // Inner classes
 
-    private static class Execution implements Cursor
+    private static class Execution extends OperatorExecutionBase implements Cursor
     {
 
         // Cursor interface
@@ -68,7 +69,7 @@ class GroupScan_Default extends Operator
         @Override
         public Row next()
         {
-            adapter.checkQueryCancelation();
+            checkQueryCancelation();
             Row row;
             if ((row = cursor.next()) == null || limit.limitReached(row)) {
                 close();
@@ -87,14 +88,13 @@ class GroupScan_Default extends Operator
 
         Execution(StoreAdapter adapter, GroupCursorCreator cursorCreator, Limit limit)
         {
-            this.adapter = adapter;
+            super(adapter);
             this.cursor = cursorCreator.cursor(adapter);
             this.limit = limit;
         }
 
         // Object state
 
-        private final StoreAdapter adapter;
         private final Cursor cursor;
         private final Limit limit;
     }
@@ -173,16 +173,25 @@ class GroupScan_Default extends Operator
         @Override
         public Cursor cursor(StoreAdapter adapter)
         {
-            return new HKeyBoundCursor(adapter.newGroupCursor(groupTable()), hKeyBindingPosition, deep);
+            return new HKeyBoundCursor(adapter, adapter.newGroupCursor(groupTable()), hKeyBindingPosition, deep, hKeyType, shortenUntil);
         }
 
         // PositionalGroupCursorCreator interface
 
-        PositionalGroupCursorCreator(GroupTable groupTable, int hKeyBindingPosition, boolean deep)
+        PositionalGroupCursorCreator(GroupTable groupTable, int hKeyBindingPosition, boolean deep, UserTable hKeyType, UserTable shortenUntil)
         {
             super(groupTable);
             this.hKeyBindingPosition = hKeyBindingPosition;
             this.deep = deep;
+            if ((shortenUntil == hKeyType) || shortenUntil.isDescendantOf(hKeyType)) {
+                shortenUntil = null;
+                hKeyType = null;
+            }
+            this.shortenUntil = shortenUntil;
+            this.hKeyType = hKeyType;
+            assert (hKeyType == null) == (shortenUntil == null) : hKeyType + " ~ " + shortenUntil;
+            assert hKeyType == null || hKeyType.isDescendantOf(shortenUntil)
+                    : hKeyType + " is not a descendant of " + shortenUntil;
         }
 
         // AbstractGroupCursorCreator interface
@@ -197,6 +206,8 @@ class GroupScan_Default extends Operator
 
         private final int hKeyBindingPosition;
         private final boolean deep;
+        private final UserTable shortenUntil;
+        private final UserTable hKeyType;
     }
 
     private static class HKeyBoundCursor extends ChainedCursor
@@ -205,26 +216,77 @@ class GroupScan_Default extends Operator
         @Override
         public void open(Bindings bindings)
         {
-            Object supposedHKey = bindings.get(hKeyBindingPosition);
-            if (!(supposedHKey instanceof HKey)) {
-                throw new RuntimeException(String.format("%s doesn't contain hkey at position %s",
-                                                         bindings, hKeyBindingPosition));
-            }
-            HKey hKey = (HKey) supposedHKey;
+            this.bindings = bindings;
+            HKey hKey = getHKeyFromBindings();
             input.rebind(hKey, deep);
             input.open(bindings);
         }
 
-        HKeyBoundCursor(GroupCursor input, int hKeyBindingPosition, boolean deep)
+        @Override
+        public Row next() {
+            // If we've ever seen a row, just defer to super
+            if (sawOne) {
+                return super.next();
+            }
+            Row result = super.next();
+            // If we saw a row, mark it as such and defer to super
+            if (result != null) {
+                sawOne = true;
+                return result;
+            }
+            // Our search is at an end; return our answer
+            if (atTable == null || atTable == stopSearchTable) {
+                return null;
+            }
+            // Close the input, shorten our hkey, re-open and try again
+            close();
+            assert atTable.parentTable() != null : atTable;
+            atTable = atTable.parentTable();
+            HKey hkey = getHKeyFromBindings();
+            hkey.useSegments(atTable.getDepth() + 1);
+            open(bindings);
+            return next();
+        }
+
+        HKeyBoundCursor(StoreAdapter adapter,
+                        GroupCursor input,
+                        int hKeyBindingPosition,
+                        boolean deep,
+                        UserTable hKeyType,
+                        UserTable shortenUntil)
         {
-            super(input);
+            super(adapter, input);
             this.input = input;
             this.hKeyBindingPosition = hKeyBindingPosition;
             this.deep = deep;
+            this.atTable = hKeyType;
+            this.stopSearchTable = shortenUntil;
+        }
+
+        private int[] hKeyDepths(UserTable hKeyType, UserTable shortenUntil) {
+            int[] result = new int[shortenUntil.getDepth() - hKeyType.getDepth() + 1];
+            int i = 0;
+            for(UserTable curr = hKeyType; curr != null && curr != shortenUntil.parentTable(); curr = curr.parentTable()) {
+                result[i] = curr.getDepth() + 1;
+            }
+            return result;
+        }
+
+        private HKey getHKeyFromBindings() {
+            Object supposedHKey = bindings.get(hKeyBindingPosition);
+            if (!(supposedHKey instanceof HKey)) {
+                throw new RuntimeException(String.format("%s doesn't contain hkey at position %s",
+                        bindings, hKeyBindingPosition));
+            }
+            return (HKey) supposedHKey;
         }
 
         private final GroupCursor input;
         private final int hKeyBindingPosition;
         private final boolean deep;
+        private UserTable atTable;
+        private final UserTable stopSearchTable;
+        private boolean sawOne = false;
+        private Bindings bindings;
     }
 }

@@ -26,10 +26,13 @@ import org.slf4j.LoggerFactory;
 
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.IndistinguishableIndexException;
+import com.akiban.server.error.MissingGroupIndexJoinTypeException;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.TableIndexJoinTypeException;
+import com.akiban.server.error.UnsupportedGroupIndexJoinTypeException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.error.UnsupportedUniqueGroupIndexException;
 import com.akiban.server.service.session.Session;
@@ -200,6 +203,10 @@ public class IndexDDL
             throw new NoSuchTableException (tableName);
         }
 
+        if (index.getJoinType() != null) {
+            throw new TableIndexJoinTypeException();
+        }
+
         AISBuilder builder = new AISBuilder();
         addTable (builder, ais, tableName);
         
@@ -240,9 +247,31 @@ public class IndexDDL
             throw new UnsupportedUniqueGroupIndexException (indexName);
         }
         
+        Index.JoinType joinType = null;
+        if (index.getJoinType() == null) {
+            throw new MissingGroupIndexJoinTypeException();
+        }
+        else {
+            switch (index.getJoinType()) {
+            case LEFT_OUTER:
+                joinType = Index.JoinType.LEFT;
+                break;
+            case RIGHT_OUTER:
+                joinType = Index.JoinType.RIGHT;
+                break;
+            case INNER:
+                if (false) {        // TODO: Not yet supported; falls through to error.
+//                joinType = Index.JoinType.INNER;
+                break;
+                }
+            default:
+                throw new UnsupportedGroupIndexJoinTypeException(index.getJoinType().toString());
+            }
+        }
+
         AISBuilder builder = new AISBuilder();
         addGroup(builder, ais, groupName);
-        builder.groupIndex(groupName, indexName, index.getUniqueness());
+        builder.groupIndex(groupName, indexName, index.getUniqueness(), joinType);
         
         int i = 0;
         String schemaName;

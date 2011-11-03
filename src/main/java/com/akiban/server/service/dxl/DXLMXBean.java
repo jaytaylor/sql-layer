@@ -15,16 +15,21 @@
 
 package com.akiban.server.service.dxl;
 
+import com.akiban.ais.model.Index;
+
 import java.util.List;
 
 @SuppressWarnings("unused") // jmx
 public interface DXLMXBean {
     String getUsingSchema();
+
+    void recreateGroupIndexes();
+
     void setUsingSchema(String schema);
 
     void createTable(String ddl);
 
-    void createGroupIndex(String groupName, String indexName, String tableColumnList);
+    void createGroupIndex(String groupName, String indexName, String tableColumnList, Index.JoinType joinType);
 
     void dropTable(String tableName) ;
 

@@ -27,6 +27,6 @@ public final class HookablePersistitAdapter extends PersistitAdapter {
     }
 
     public HookablePersistitAdapter(Schema schema, PersistitStore persistit, Session session, TreeService treeService, FilterFactoryHook hook) {
-        super(schema, persistit, session, treeService, hook);
+        super(schema, persistit, session, treeService, null, hook);
     }
 }

@@ -1,0 +1,9 @@
+SelectQuery@3f9872ad
+  ResultSet@3190dc79[_SQL_COL_1, _SQL_COL_2, _SQL_COL_3]
+    Project@1d7aa55b[GROUP[0], divide(GROUP[1],GROUP[2]), GROUP[3]]
+      Select@5efe087b[]
+        AggregateSource@77def3f5(UNGROUPED,[MIN, SUM, COUNT, MAX])
+          Distinct@4e62974e
+            Project@2abbaa16[user.items.sku, user.items.sku, user.items.sku, user.items.sku]
+              Select@69ba045[]
+                TableSource@bc22eb(user.items)

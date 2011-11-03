@@ -20,7 +20,6 @@ import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.AisHolder;
 import com.akiban.server.store.Store;
-import com.akiban.server.test.it.ITBase;
 import com.google.inject.Inject;
 import org.junit.Test;
 
@@ -72,7 +71,7 @@ public final class FailureOnStartupIT extends ApiTestBase {
 
         @Inject
         public BadStore(AisHolder aisHolder, TreeService treeService) {
-            super(aisHolder, treeService);
+            super(aisHolder, treeService, null);
         }
 
         @Override

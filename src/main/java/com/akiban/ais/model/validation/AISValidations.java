@@ -42,6 +42,7 @@ public final class AISValidations {
     public static final AISValidation TABLES_IN_GROUP_SAME_TREE_NAME = new TablesInGroupSameTreeName();
     public static final AISValidation TABLE_TREE_NAMES_UNIQUE = new TableTreeNamesUnique();
     public static final AISValidation TYPES_ARE_FROM_STATIC = new TypesAreFromStatic();
+    public static final AISValidation GROUP_INDEX_DEPTH = new GroupIndexDepth();
     
     public static final Collection<AISValidation> LIVE_AIS_VALIDATIONS;
     
@@ -67,7 +68,8 @@ public final class AISValidations {
                 TABLES_IN_GROUP_SAME_TREE_NAME,
                 TABLE_TREE_NAMES_UNIQUE,
                 INDEX_TREE_NAMES_UNIQUE,
-                TYPES_ARE_FROM_STATIC
+                TYPES_ARE_FROM_STATIC,
+                GROUP_INDEX_DEPTH
                 //CHARACTER_SET_SUPPORTED
                 ));
     }

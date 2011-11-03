@@ -62,4 +62,9 @@ public interface PostgresMXBean {
     long getEventTime(int sessionId, String eventName);
     long getTotalEventTime(int sessionId, String eventName);
 
+    /*
+     * Loadable plans
+     */
+    void clearPlans();
+    String loadPlan(String jarFilePath, String className);
 }

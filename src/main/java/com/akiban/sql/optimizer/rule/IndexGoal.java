@@ -22,6 +22,7 @@ import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.Index.JoinType;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
@@ -99,6 +100,7 @@ public class IndexGoal implements Comparator<IndexScan>
     // the GROUP BY, and non-columns won't appear in the index.
     private AggregateSource grouping;
     private Sort ordering;
+    private Project projectDistinct;
 
     private TableNode updateTarget;
 
@@ -110,11 +112,13 @@ public class IndexGoal implements Comparator<IndexScan>
                      List<ConditionList> conditionSources,
                      AggregateSource grouping,
                      Sort ordering,
+                     Project projectDistinct,
                      Collection<TableSource> tables) {
         this.boundTables = boundTables;
         this.conditionSources = conditionSources;
         this.grouping = grouping;
         this.ordering = ordering;
+        this.projectDistinct = projectDistinct;
         
         if (conditionSources.size() == 1)
             conditions = conditionSources.get(0);
@@ -299,6 +303,26 @@ public class IndexGoal implements Comparator<IndexScan>
                     return IndexScan.OrderEffectiveness.GROUPED;
             }
         }
+        else if (projectDistinct != null) {
+            assert (ordering == null);
+            boolean allFound = true;
+            List<ExpressionNode> distinct = projectDistinct.getFields();
+            for (ExpressionNode targetExpression : distinct) {
+                int found = -1;
+                for (int i = 0; i < indexOrdering.size(); i++) {
+                    if (targetExpression.equals(indexOrdering.get(i).getExpression())) {
+                        found = i;
+                        break;
+                    }
+                }
+                if ((found < 0) || (found >= distinct.size())) {
+                    allFound = false;
+                    break;
+                }
+            }
+            if (allFound)
+                return IndexScan.OrderEffectiveness.SORTED;
+        }
         return result;
     }
 
@@ -360,7 +384,7 @@ public class IndexGoal implements Comparator<IndexScan>
         IndexScan bestIndex = null;
         if (!groupOnly) {
             for (TableIndex index : table.getTable().getTable().getIndexes()) {
-                IndexScan candidate = new IndexScan(index, table, table, table);
+                IndexScan candidate = new IndexScan(index, table);
                 bestIndex = betterIndex(bestIndex, candidate);
             }
         }
@@ -371,21 +395,64 @@ public class IndexGoal implements Comparator<IndexScan>
                 // ancestors discontiguous and duplicates hard to eliminate).
                 if (index.leafMostTable() != table.getTable().getTable())
                     continue;
-                // The root must be present, since the index does not
-                // contain orphans.
                 TableSource rootTable = table;
-                TableSource leafRequired = null;
-                while (rootTable != null) {
-                    if ((leafRequired == null) && rootTable.isRequired())
-                        leafRequired = rootTable;
-                    if (index.rootMostTable() == rootTable.getTable().getTable())
-                        break;
-                    rootTable = rootTable.getParentTable();
+                TableSource rootRequired = null, leafRequired = null;
+                if (index.getJoinType() == JoinType.LEFT) {
+                    while (rootTable != null) {
+                        // TODO: These isRequired() predicates need to
+                        // be relative to the group to support outer
+                        // joins between groups.
+                        if (rootTable.isRequired()) {
+                            rootRequired = rootTable;
+                            if (leafRequired == null)
+                                leafRequired = rootTable;
+                        }
+                        else {
+                            if (leafRequired != null) {
+                                leafRequired = null;
+                                break;
+                            }
+                        }
+                        if (index.rootMostTable() == rootTable.getTable().getTable())
+                            break;
+                        rootTable = rootTable.getParentTable();
+                    }
+                    // The root must be present, since a LEFT index
+                    // does not contain orphans.
+                    if ((rootTable == null) || 
+                        (rootRequired != rootTable) ||
+                        (leafRequired == null))
+                        continue;
                 }
-                if ((rootTable == null) || (leafRequired == null)) continue;
-                IndexScan candidate = new IndexScan(index, rootTable, leafRequired, table);
+                else {
+                    if (!table.isRequired())
+                        continue;
+                    leafRequired = table;
+                    TableSource childTable = null;
+                    while (rootTable != null) {
+                        if (rootTable.isRequired()) {
+                            if (rootRequired != null) {
+                                rootRequired = null;
+                                break;
+                            }
+                        }
+                        else {
+                            if (rootRequired == null)
+                                rootRequired = childTable;
+                        }
+                        if (index.rootMostTable() == rootTable.getTable().getTable())
+                            break;
+                        childTable = rootTable;
+                        rootTable = rootTable.getParentTable();
+                    }
+                    if ((rootTable == null) ||
+                        (rootRequired == null))
+                        continue;
+                }
+                IndexScan candidate = new IndexScan(index, rootTable, 
+                                                    rootRequired, leafRequired, 
+                                                    table);
                 bestIndex = betterIndex(bestIndex, candidate);
-            
             }
         }
         return bestIndex;
@@ -461,7 +528,7 @@ public class IndexGoal implements Comparator<IndexScan>
         private RequiredColumns requiredColumns;
         private Map<PlanNode,Boolean> excludedPlanNodes;
         private Map<ExpressionNode,Boolean> excludedExpressions;
-        private Stack<Boolean> excludeNodeStack = new Stack<Boolean>();
+        private Deque<Boolean> excludeNodeStack = new ArrayDeque<Boolean>();
         private boolean excludeNode = false;
         private int excludeDepth = 0;
 
@@ -637,6 +704,19 @@ public class IndexGoal implements Comparator<IndexScan>
                 // Sort not needed: splice it out.
                 ordering.getOutput().replaceInput(ordering, ordering.getInput());
             }
+        }
+        if (projectDistinct != null) {
+            Distinct distinct = (Distinct)projectDistinct.getOutput();
+            Distinct.Implementation implementation;
+            switch (index.getOrderEffectiveness()) {
+            case SORTED:
+                implementation = Distinct.Implementation.PRESORTED;
+                break;
+            default:
+                implementation = Distinct.Implementation.SORT;
+                break;
+            }
+            distinct.setImplementation(implementation);
         }
     }
     

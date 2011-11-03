@@ -16,6 +16,7 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.BindableRow;
@@ -73,7 +74,7 @@ public class API
                                                        RowType childType,
                                                        JoinType joinType)
     {
-        return flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, EnumSet.noneOf(FlattenOption.class));
+        return flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, NO_FLATTEN_OPTIONS);
     }
 
     public static Operator flatten_HKeyOrdered(Operator inputOperator,
@@ -99,7 +100,7 @@ public class API
                                                        RowType parentType,
                                                        RowType childType,
                                                        JoinType joinType,
-                                                       EnumSet<FlattenOption> flags)
+                                                       Set<FlattenOption> flags)
     {
         return new Flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, flags);
     }
@@ -117,14 +118,24 @@ public class API
     }
 
     public static Operator groupScan_Default(GroupTable groupTable,
+                                             Limit limit,
+                                             int hKeyBindingPosition,
+                                             boolean deep,
+                                             UserTable hKeyType,
+                                             UserTable shortenUntil)
+    {
+        return new GroupScan_Default(
+                new GroupScan_Default.PositionalGroupCursorCreator(groupTable, hKeyBindingPosition, deep, hKeyType, shortenUntil),
+                limit
+        );
+    }
+
+    public static Operator groupScan_Default(GroupTable groupTable,
                                                      Limit limit,
                                                      int hKeyBindingPosition,
                                                      boolean deep)
     {
-        return new GroupScan_Default(
-                new GroupScan_Default.PositionalGroupCursorCreator(groupTable, hKeyBindingPosition, deep),
-                limit
-        );
+        return groupScan_Default(groupTable, limit, hKeyBindingPosition, deep, null, null);
     }
 
     public static Operator valuesScan_Default (Collection<? extends BindableRow> rows, RowType rowType)
@@ -198,22 +209,63 @@ public class API
 
     // IndexScan
 
+    /**
+     * Creates a full scan operator for the given index, non-reversing, using LEFT JOIN semantics after the indexType's
+     * tableType
+     * @param indexType the index to scan
+     * @return the scan operator
+     * @deprecated use {@link #indexScan_Default(IndexRowType, boolean, IndexKeyRange, IndexScanSelector)}
+     */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType)
     {
         return indexScan_Default(indexType, false, null, indexType.tableType());
     }
 
+    /**
+     * Creates a scan operator for the given index, using LEFT JOIN semantics after the indexType's tableType.
+     * @param indexType the index to scan
+     * @param reverse whether to scan in reverse order
+     * @param indexKeyRange the scan range
+     * @return the scan operator
+     * @deprecated use {@link #indexScan_Default(IndexRowType, boolean, IndexKeyRange, IndexScanSelector)}
+     */
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
     {
         return indexScan_Default(indexType, reverse, indexKeyRange, indexType.tableType());
     }
 
+    /**
+     * Creates a scan operator for the given index, using LEFT JOIN semantics after the given table type.
+     * @param indexType the index to scan
+     * @param reverse whether to scan in reverse order
+     * @param indexKeyRange the scan range
+     * @param innerJoinUntilRowType the table after which the scan should start using LEFT JOIN GI semantics.
+     * @return the scan operator
+     * @deprecated use {@link #indexScan_Default(IndexRowType, boolean, IndexKeyRange, IndexScanSelector)}
+     */
+    @Deprecated
     public static Operator indexScan_Default(IndexRowType indexType,
                                                      boolean reverse,
                                                      IndexKeyRange indexKeyRange,
                                                      UserTableRowType innerJoinUntilRowType)
     {
-        return new IndexScan_Default(indexType, reverse, indexKeyRange, innerJoinUntilRowType);
+        return indexScan_Default(
+                indexType,
+                reverse,
+                indexKeyRange,
+                IndexScanSelector.leftJoinAfter(indexType.index(), innerJoinUntilRowType.userTable())
+        );
+    }
+    public static Operator indexScan_Default(IndexRowType indexType,
+                                             boolean reverse,
+                                             IndexKeyRange indexKeyRange,
+                                             IndexScanSelector indexScanSelector)
+    {
+        return new IndexScan_Default(indexType, reverse, indexKeyRange, indexScanSelector);
     }
 
     // Select
@@ -338,8 +390,10 @@ public class API
     public static Cursor cursor(Operator root, StoreAdapter adapter)
     {
         // if all they need is the wrapped cursor, create it directly
-        return new TopLevelWrappingCursor(root.cursor(adapter));
+        return new TopLevelWrappingCursor(adapter, root.cursor(adapter));
     }
+
+    private static final EnumSet<FlattenOption> NO_FLATTEN_OPTIONS = EnumSet.noneOf(FlattenOption.class);
 
     // Options
 
@@ -354,8 +408,7 @@ public class API
 
     public static enum FlattenOption {
         KEEP_PARENT,
-        KEEP_CHILD,
-        LEFT_JOIN_SHORTENS_HKEY
+        KEEP_CHILD
     }
 
     // Lookup flags

@@ -123,6 +123,7 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
     public static interface JoinReverseHook {
         public boolean canReverse(JoinNode join);
         public void beforeReverse(JoinNode join);
+        public void didNotReverse(JoinNode join);
     }
 
     private JoinReverseHook reverseHook;

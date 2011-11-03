@@ -80,6 +80,10 @@ public class IndexPicker extends BaseRule
         }
 
         protected void pickIndex(TableJoins tableJoins) {
+            if (tableJoins.getScan() != null) 
+                // This can happen if a subquery source gets replaced
+                // by ordinary joins that then get dealt with.
+                return;
             // Goal is to get all the tables joined right here. Others
             // in the group may come via XxxLookup in a nested
             // loop. Can only consider table indexes on the inner
@@ -111,6 +115,7 @@ public class IndexPicker extends BaseRule
             List<ConditionList> conditionSources = new ArrayList<ConditionList>();
             Sort ordering = null;
             AggregateSource grouping = null;
+            Project projectDistinct = null;
             while (true) {
                 input = input.getOutput();
                 if (!(input instanceof Joinable))
@@ -154,12 +159,22 @@ public class IndexPicker extends BaseRule
                     }
                 }
             }
+            else if (input instanceof Project) {
+                Project project = (Project)input;
+                input = project.getOutput();
+                if (input instanceof Distinct)
+                    projectDistinct = project;
+                else if (input instanceof Sort)
+                    ordering = (Sort)input;
+            }
             if (conditionSources.isEmpty() &&
                 (ordering == null) &&
-                (grouping == null))
+                (grouping == null) &&
+                (projectDistinct == null))
                 return null;
             return new IndexGoal(query, boundTables, 
-                                 conditionSources, grouping, ordering, tables);
+                                 conditionSources, grouping, ordering, projectDistinct,
+                                 tables);
         }
 
         protected IndexScan pickBestIndex(TableJoins tableJoins, IndexGoal goal) {
@@ -209,6 +224,11 @@ public class IndexPicker extends BaseRule
             }
             else {
                 tryReverse = join.getReverseHook().canReverse(join);
+                if (!tryReverse) {
+                    join.getReverseHook().didNotReverse(join);
+                    left = join.getLeft();
+                    right = join.getRight();
+                }
             }
 
             if (tryReverse) {
@@ -254,13 +274,16 @@ public class IndexPicker extends BaseRule
                 lgoal = rgoal;
                 lindex = rindex;
             }
+            else if (join.getReverseHook() != null) {
+                join.getReverseHook().didNotReverse(join);
+            }
             // Commit to the left choice and redo the right with it bound.
             pickedIndex(left, lgoal, lindex);
             pickIndexes(right);
             return true;
         }
 
-        // Pick indexes for table and VALUES (or generally not tables).
+        // Pick indexes for table and VALUES (or generally a non-table ColumnSource).
         // Put the VALUES outside if the join condition ends up indexed.
         protected boolean pickIndexesTableValues(JoinNode join) {
             TableJoins left = leftOfValues(join);
@@ -280,8 +303,12 @@ public class IndexPicker extends BaseRule
                     found = true;
                 }
             }
-            if (!found) 
+            if (!found) {
+                if (join.getReverseHook() != null) {
+                    join.getReverseHook().didNotReverse(join);
+                }
                 return false;
+            }
             
             // Put the VALUES outside and commit to that in the simple case.
             join.reverse();
@@ -338,7 +365,7 @@ public class IndexPicker extends BaseRule
     // Annotate subqueries with their outer table references.
     static class JoinsFinder implements PlanVisitor, ExpressionVisitor {
         List<Picker> result = new ArrayList<Picker>();
-        Stack<SubqueryState> subqueries = new Stack<SubqueryState>();
+        Deque<SubqueryState> subqueries = new ArrayDeque<SubqueryState>();
 
         public List<Picker> find(BaseQuery query) {
             query.accept(this);
@@ -378,12 +405,12 @@ public class IndexPicker extends BaseRule
                         return true;
                 }
                 Picker entry = new Picker(j);
-                if (!subqueries.empty()) {
+                if (!subqueries.isEmpty()) {
                     entry.query = subqueries.peek().subquery;
                 }
                 result.add(entry);
             }
-            if (!subqueries.empty() &&
+            if (!subqueries.isEmpty() &&
                 (n instanceof ColumnSource)) {
                 boolean added = subqueries.peek().tablesDefined.add((ColumnSource)n);
                 assert added : "Table defined more than once";
@@ -403,7 +430,7 @@ public class IndexPicker extends BaseRule
 
         @Override
         public boolean visit(ExpressionNode n) {
-            if (!subqueries.empty() &&
+            if (!subqueries.isEmpty() &&
                 (n instanceof ColumnExpression)) {
                 subqueries.peek().tablesReferenced.add(((ColumnExpression)n).getTable());
             }

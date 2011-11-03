@@ -19,6 +19,7 @@ import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
@@ -40,6 +41,7 @@ import com.akiban.server.types.AkType;
 
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.BindableRow;
@@ -247,11 +249,33 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleIndexScan(IndexScan indexScan) {
             RowStream stream = new RowStream();
-            IndexRowType indexRowType = schema.indexRowType(indexScan.getIndex());
+            Index index = indexScan.getIndex();
+            IndexRowType indexRowType = schema.indexRowType(index);
+            IndexScanSelector selector;
+            if (index.isTableIndex()) {
+                selector = IndexScanSelector.inner(index);
+            }
+            else {
+                switch (index.getJoinType()) {
+                case LEFT:
+                    selector = IndexScanSelector
+                        .leftJoinAfter(index, 
+                                       indexScan.getLeafMostInnerTable().getTable().getTable());
+                    break;
+                case RIGHT:
+                    selector = IndexScanSelector
+                        .rightJoinUntil(index, 
+                                        indexScan.getRootMostInnerTable().getTable().getTable());
+                    break;
+                default:
+                    throw new AkibanInternalException("Unknown index join type " +
+                                                      index);
+                }
+            }
             stream.operator = API.indexScan_Default(indexRowType, 
                                                     indexScan.isReverseScan(),
                                                     assembleIndexKeyRange(indexScan, null),
-                                                    tableRowType(indexScan.getLeafMostInnerTable()));
+                                                    selector);
             stream.rowType = indexRowType;
             stream.fieldOffsets = new IndexFieldOffsets(indexScan, indexRowType);
             return stream;
@@ -279,6 +303,11 @@ public class OperatorAssembler extends BaseRule
             stream.operator = API.valuesScan_Default(bindableRows, stream.rowType);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(expressionsSource, 
                                                                stream.rowType);
+            if (expressionsSource.getDistinctState() == DistinctState.NEED_DISTINCT) {
+                // Add Sort (usually _InsertionLimited) and Distinct.
+                assembleSort(stream, stream.rowType.nFields(), expressionsSource);
+                stream.operator = API.distinct_Partial(stream.operator, stream.rowType);
+            }
             return stream;
         }
 
@@ -504,15 +533,9 @@ public class OperatorAssembler extends BaseRule
             case UNGROUPED:
                 break;
             default:
-                {
-                    // TODO: Could pre-aggregate now in PREAGGREGATE_RESORT case.
-                    API.Ordering ordering = API.ordering();
-                    for (int i = 0; i < nkeys; i++) {
-                        ordering.append(Expressions.field(stream.rowType, i), true);
-                    }
-                    stream.operator = API.sort_Tree(stream.operator, stream.rowType, 
-                                                    ordering);
-                }
+                // TODO: Could pre-aggregate now in PREAGGREGATE_RESORT case.
+                assembleSort(stream, nkeys, aggregateSource.getInput());
+                break;
             }
             stream.operator = API.aggregate_Partial(stream.operator, nkeys,
                                                     rulesContext.getAggregatorRegistry(),
@@ -525,14 +548,17 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleDistinct(Distinct distinct) {
             RowStream stream = assembleStream(distinct.getInput());
-            stream.operator = API.aggregate_Partial(stream.operator,
-                                                    stream.rowType.nFields(),
-                                                    null,
-                                                    Collections.<String>emptyList());
-            // TODO: Probably want separate Distinct operator so that
-            // row type does not change.
-            stream.rowType = stream.operator.rowType();
-            stream.fieldOffsets = null;
+            Distinct.Implementation impl = distinct.getImplementation();
+            if (impl == null)
+              impl = Distinct.Implementation.SORT;
+            switch (impl) {
+            case PRESORTED:
+                break;
+            default:
+                assembleSort(stream, stream.rowType.nFields(), distinct.getInput());
+                break;
+            }
+            stream.operator = API.distinct_Partial(stream.operator, stream.rowType);
             return stream;
         }
 
@@ -540,28 +566,54 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleSort(Sort sort) {
             RowStream stream = assembleStream(sort.getInput());
+            List<ExpressionNode> projects = null;
+            if ((stream.fieldOffsets == null) &&
+                (sort.getInput() instanceof Project))
+                // Cf. comment in assembleProject().
+                projects = ((Project)sort.getInput()).getFields();
             API.Ordering ordering = API.ordering();
             for (OrderByExpression orderBy : sort.getOrderBy()) {
-                ordering.append(assembleExpression(orderBy.getExpression(),
-                                                   stream.fieldOffsets),
-                                orderBy.isAscending());
+                Expression expr = null;
+                if (projects != null) {
+                    int idx = projects.indexOf(orderBy.getExpression());
+                    if (idx >= 0)
+                        expr = Expressions.field(stream.rowType, idx);
+                }
+                if (expr == null)
+                    expr = assembleExpression(orderBy.getExpression(), 
+                                              stream.fieldOffsets);
+                ordering.append(expr, orderBy.isAscending());
             }
+            assembleSort(stream, ordering, sort.getInput(), sort.getOutput());
+            return stream;
+        }
+
+        protected void assembleSort(RowStream stream, API.Ordering ordering,
+                                    PlanNode input, PlanNode output) {
             int maxrows = -1;
-            if (sort.getOutput() instanceof Limit) {
-                Limit limit = (Limit)sort.getOutput();
+            if (output instanceof Limit) {
+                Limit limit = (Limit)output;
                 if (!limit.isOffsetParameter() && !limit.isLimitParameter()) {
                     maxrows = limit.getOffset() + limit.getLimit();
                 }
             }
-            else {
-                // TODO: Also if input is VALUES, whose size we know in advance.
+            else if (input instanceof ExpressionsSource) {
+                ExpressionsSource expressionsSource = (ExpressionsSource)input;
+                maxrows = expressionsSource.getExpressions().size();
             }
             if ((maxrows >= 0) && (maxrows <= INSERTION_SORT_MAX_LIMIT))
                 stream.operator = API.sort_InsertionLimited(stream.operator, stream.rowType,
                                                             ordering, maxrows);
             else
                 stream.operator = API.sort_Tree(stream.operator, stream.rowType, ordering);
-            return stream;
+        }
+
+        protected void assembleSort(RowStream stream, int nkeys, PlanNode input) {
+            API.Ordering ordering = API.ordering();
+            for (int i = 0; i < nkeys; i++) {
+                ordering.append(Expressions.field(stream.rowType, i), true);
+            }
+            assembleSort(stream, ordering, input, null);
         }
 
         protected RowStream assembleLimit(Limit limit) {
@@ -820,7 +872,7 @@ public class OperatorAssembler extends BaseRule
         /* Bindings-related state */
 
         protected int bindingsOffset = -1;
-        protected Stack<ColumnExpressionToIndex> boundRows = null;
+        protected Stack<ColumnExpressionToIndex> boundRows = null; // Needs to be List<>.
 
         protected void ensureBoundRows() {
             if (boundRows == null) {

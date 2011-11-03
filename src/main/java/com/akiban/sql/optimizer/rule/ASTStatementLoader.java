@@ -254,18 +254,28 @@ public class ASTStatementLoader extends BaseRule
             if (selectNode.hasWindows())
                 throw new UnsupportedSQLException("WINDOW", selectNode);
         
-            if (selectNode.isDistinct())
-                query = new Distinct(query, projects);
-
-            if (!sorts.isEmpty()) {
-                query = new Sort(query, sorts);
+            if (selectNode.isDistinct()) {
+                query = new Project(query, projects);
+                if (!sorts.isEmpty()) {
+                    query = new Sort(query, sortsForDistinct(sorts, projects));
+                    query = new Distinct(query, Distinct.Implementation.PRESORTED);
+                }
+                else
+                    query = new Distinct(query);
+                if ((offsetClause != null) || 
+                    (fetchFirstClause != null))
+                    query = toLimit(query, offsetClause, fetchFirstClause);
+            }
+            else {
+                if (!sorts.isEmpty()) {
+                    query = new Sort(query, sorts);
+                }
+                if ((offsetClause != null) || 
+                    (fetchFirstClause != null))
+                    query = toLimit(query, offsetClause, fetchFirstClause);
+                query = new Project(query, projects);
             }
 
-            if ((offsetClause != null) || 
-                (fetchFirstClause != null))
-                query = toLimit(query, offsetClause, fetchFirstClause);
-
-            query = new Project(query, projects);
             query = new ResultSet(query, results);
 
             return query;
@@ -622,6 +632,7 @@ public class ASTStatementLoader extends BaseRule
                 needOperand = true;
                 break;
             }
+            boolean distinct = false;
             // TODO: This may not be right for c IN (SELECT x ... UNION SELECT y ...).
             // Maybe turn that into an OR and optimize each separately.
             {
@@ -645,7 +656,10 @@ public class ASTStatementLoader extends BaseRule
                             subquery = next;
                         break;
                     }
-                    if (!(plan instanceof ResultSet)) { // Also remove ResultSet.
+                    if (plan instanceof Distinct) {
+                        distinct = true;
+                    }
+                    else if (!(plan instanceof ResultSet)) { // Also remove ResultSet.
                         prev = (PlanWithInput)plan;
                     }
                     plan = next;
@@ -665,6 +679,9 @@ public class ASTStatementLoader extends BaseRule
                 List<ExpressionNode> fields = new ArrayList<ExpressionNode>(1);
                 fields.add(inner);
                 subquery = new Project(subquery, fields);
+                if (distinct)
+                    // See InConditionReverser#convert(Select,AnyCondition).
+                    subquery = new Distinct(subquery);
                 condition = new AnyCondition(new Subquery(subquery), 
                                              subqueryNode.getType(), subqueryNode);
             }
@@ -722,7 +739,10 @@ public class ASTStatementLoader extends BaseRule
             List<ExpressionNode> operands = new ArrayList<ExpressionNode>(1);
             operands.add(toExpression(is.getLeftOperand()));
             String function;
-            if (((Boolean)((ConstantNode)is.getRightOperand()).getValue()).booleanValue())
+            Boolean value = (Boolean)((ConstantNode)is.getRightOperand()).getValue();
+            if (value == null)
+                function = "isNull"; // No separate isUnknown.
+            else if (value.booleanValue())
                 function = "isTrue";
             else
                 function = "isFalse";
@@ -823,6 +843,30 @@ public class ASTStatementLoader extends BaseRule
             else
                 return new LogicalFunctionCondition("and", conditions,
                                                     condition.getType(), condition);
+        }
+
+        /** SELECT DISTINCT with sorting adds extra columns so as to
+         * only sort once.
+         */
+        protected List<OrderByExpression> sortsForDistinct(List<OrderByExpression> sorts,
+                                                           List<ExpressionNode> projects)
+                throws StandardException {
+            BitSet used = new BitSet(projects.size());
+            for (OrderByExpression orderBy : sorts) {
+                int idx = projects.indexOf(orderBy.getExpression());
+                if (idx < 0)
+                    throw new UnsupportedSQLException("SELECT DISTINCT requires that ORDER BY expressions be in the select list",
+                                                      orderBy.getExpression().getSQLsource());
+                used.set(idx);
+            }
+            for (int i = 0; i < projects.size(); i++) {
+                if (!used.get(i)) {
+                    OrderByExpression orderBy = new OrderByExpression(projects.get(i),
+                                                                      sorts.get(0).isAscending());
+                    sorts.add(orderBy);
+                }
+            }
+            return sorts;
         }
 
         /** LIMIT / OFFSET */

@@ -84,7 +84,8 @@ public enum ErrorCode {
     UNSUPPORTED_CHECK       ("0A", "505", Importance.ERROR, UnsupportedCheckConstraintException.class),
     UNSUPPORTED_GROUP_UNIQUE("0A", "506", Importance.DEBUG, UnsupportedUniqueGroupIndexException.class),
     UNSUPPORTED_INDEX_PREFIX("0A", "507", Importance.ERROR, UnsupportedIndexPrefixException.class),
-    SELECT_EXISTS_ERROR     ("0A", "508", Importance.DEBUG, SelectExistsErrorException.class),    
+    SELECT_EXISTS_ERROR     ("0A", "508", Importance.DEBUG, SelectExistsErrorException.class),
+    UNSUPPORTED_GROUP_INDEX_JOIN("0A", "509", Importance.DEBUG, UnsupportedGroupIndexJoinTypeException.class),
     
     // Class 0D - invalid target type specification
     // Class 0E - invalid schema name list specification
@@ -203,6 +204,7 @@ public enum ErrorCode {
     // Class 35 - invalid condition number
     // Class 36 - cursor sensitivity exception
     // Class 38 - external routine exception
+    STALE_PLAN              ("38", "000", Importance.ERROR, StalePlanException.class),
     // Class 39 - external routine invocation
     // Class 3B - savepoint exception
     // Class 3C - ambiguous cursor name
@@ -211,6 +213,7 @@ public enum ErrorCode {
     NO_SUCH_SCHEMA          ("3F", "000", Importance.DEBUG, NoSuchSchemaException.class),
     
     // Class 40 - transaction rollback
+    QUERY_TIMEOUT           ("40", "000", Importance.ERROR, QueryTimedOutException.class),
 
     // Class 42 - syntax error or access rule violation
     // These exceptions are re-thrown errors from the parser and from the
@@ -231,7 +234,8 @@ public enum ErrorCode {
     NO_SUCH_FUNCTION        ("42", "50D", Importance.DEBUG, NoSuchFunctionException.class),
     ORDER_GROUP_BY_NON_INTEGER_CONSTANT("42", "50E", Importance.DEBUG, OrderGroupByNonIntegerConstant.class),
     ORDER_GROUP_BY_INTEGER_OUT_OF_RANGE("42", "50F", Importance.DEBUG, OrderGroupByIntegerOutOfRange.class),
- 
+    MISSING_GROUP_INDEX_JOIN("42", "510", Importance.DEBUG, MissingGroupIndexJoinTypeException.class),
+    TABLE_INDEX_JOIN        ("42", "511", Importance.DEBUG, TableIndexJoinTypeException.class),
 
     // Class 44 - with check option violation
     
@@ -290,6 +294,7 @@ public enum ErrorCode {
     BAD_AIS_REFERENCE       ("50", "01L", Importance.DEBUG, BadAISReferenceException.class),
     BAD_INTERNAL_SETTING    ("50", "01M", Importance.DEBUG, BadAISInternalSettingException.class),
     TYPES_ARE_STATIC        ("50", "01N", Importance.DEBUG, TypesAreStaticException.class),
+    GROUP_INDEX_DEPTH       ("50", "01O", Importance.DEBUG, GroupIndexDepthException.class),
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),

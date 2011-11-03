@@ -18,6 +18,7 @@ package com.akiban.qp.expression;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.AbstractRow;

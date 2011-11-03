@@ -14,6 +14,9 @@
  */
 package com.akiban.server.aggregation;
 
+import com.akiban.server.types.AkType;
+
 public interface AggregatorFactory {
     Aggregator get();
+    AkType outputType();
 }

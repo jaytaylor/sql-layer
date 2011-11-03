@@ -96,7 +96,7 @@ resultSet:
 				operand: 					
 					com.akiban.sql.parser.IsNullNode@42552c
 					operator: is null
-					methodName: isNullOp
+					methodName: isNull
 					type: null
 					operand: 						
 						com.akiban.sql.parser.ColumnReference@2e5bbd6

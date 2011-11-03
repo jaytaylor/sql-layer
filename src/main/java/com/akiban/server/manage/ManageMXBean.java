@@ -33,6 +33,10 @@ public interface ManageMXBean {
 
     void flushIndexes();
 
+    long getQueryTimeoutSec();
+
+    void setQueryTimeoutSec(long timeoutSec);
+
     // TODO - temporary
     //
     String loadCustomQuery(String className, String path);

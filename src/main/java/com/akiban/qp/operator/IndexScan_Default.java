@@ -15,13 +15,10 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,9 +35,7 @@ class IndexScan_Default extends Operator
         str.append(" ").append(indexKeyRange);
         if (reverse)
             str.append(" reverse");
-        if (innerJoinUntilRowType.userTable() != index.leafMostTable())
-            str.append(" INNER JOIN thru ")
-               .append(innerJoinUntilRowType.userTable().getName().getTableName());
+        str.append(scanSelector.describe());
         str.append(")");
         return str.toString();
     }
@@ -58,36 +53,13 @@ class IndexScan_Default extends Operator
     public IndexScan_Default(IndexRowType indexType,
                              boolean reverse,
                              IndexKeyRange indexKeyRange,
-                             UserTableRowType innerJoinUntilRowType)
+                             IndexScanSelector scanSelector)
     {
         ArgumentValidation.notNull("indexType", indexType);
         this.index = indexType.index();
         this.reverse = reverse;
         this.indexKeyRange = indexKeyRange;
-        if (index.isTableIndex()) {
-            ArgumentValidation.isEQ(
-                    "group index table", this.index.leafMostTable(),
-                    "rootmost existing row type", innerJoinUntilRowType.userTable()
-            );
-        }
-        else {
-            GroupIndex tableIndex = (GroupIndex)this.index;
-            boolean rootmostRowTypeInSegment = false;
-            for (
-                    UserTable branchTable=tableIndex.leafMostTable();
-                    branchTable!= null && !branchTable.equals(tableIndex.rootMostTable().parentTable());
-                    branchTable = branchTable.parentTable()
-            ) {
-                if (branchTable.equals(innerJoinUntilRowType.userTable())) {
-                    rootmostRowTypeInSegment = true;
-                    break;
-                }
-            }
-            if (!rootmostRowTypeInSegment) {
-                throw new IllegalArgumentException(innerJoinUntilRowType + " not in branch for " + tableIndex);
-            }
-        }
-        this.innerJoinUntilRowType = innerJoinUntilRowType;
+        this.scanSelector = scanSelector;
     }
 
     // Class state
@@ -99,11 +71,11 @@ class IndexScan_Default extends Operator
     private final Index index;
     private final boolean reverse;
     private final IndexKeyRange indexKeyRange;
-    private final UserTableRowType innerJoinUntilRowType;
+    private final IndexScanSelector scanSelector;
 
     // Inner classes
 
-    private class Execution implements Cursor
+    private class Execution extends OperatorExecutionBase implements Cursor
     {
         // OperatorExecution interface
 
@@ -118,7 +90,7 @@ class IndexScan_Default extends Operator
         @Override
         public Row next()
         {
-            adapter.checkQueryCancelation();
+            checkQueryCancelation();
             Row row = cursor.next();
             if (row == null) {
                 close();
@@ -141,13 +113,12 @@ class IndexScan_Default extends Operator
 
         Execution(StoreAdapter adapter)
         {
-            this.adapter = adapter;
-            this.cursor = adapter.newIndexCursor(index, reverse, indexKeyRange, innerJoinUntilRowType.userTable());
+            super(adapter);
+            this.cursor = adapter.newIndexCursor(index, reverse, indexKeyRange, scanSelector);
         }
 
         // Object state
 
-        private final StoreAdapter adapter;
         private final Cursor cursor;
         private int runIdCounter = 0;
     }

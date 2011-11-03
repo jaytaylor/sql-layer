@@ -40,7 +40,8 @@ import java.lang.management.ManagementFactory;
 /**
  * @author peter
  */
-public class AkServer implements Service<AkServerEmptyInterface>, JmxManageable, AkServerEmptyInterface {
+public class AkServer implements Service<AkServerInterface>, JmxManageable, AkServerInterface
+{
     private static final String VERSION_STRING_FILE = "version/akserver_version";
     public static final String VERSION_STRING = getVersionString();
 
@@ -49,6 +50,7 @@ public class AkServer implements Service<AkServerEmptyInterface>, JmxManageable,
     private static final String pidFileName = System.getProperty("akserver.pidfile");
 
     private final JmxObjectInfo jmxObjectInfo;
+    private volatile long queryTimeoutSec = -1L; // No timeout
 
     public AkServer() {
         this.jmxObjectInfo = new JmxObjectInfo("AKSERVER", new ManageMXBeanImpl(this), ManageMXBean.class);
@@ -97,8 +99,18 @@ public class AkServer implements Service<AkServerEmptyInterface>, JmxManageable,
     }
 
     @Override
-    public Class<AkServerEmptyInterface> castClass() {
-        return AkServerEmptyInterface.class;
+    public Class<AkServerInterface> castClass() {
+        return AkServerInterface.class;
+    }
+
+    public long queryTimeoutSec()
+    {
+        return queryTimeoutSec;
+    }
+
+    public void queryTimeoutSec(long queryTimeoutSec)
+    {
+        this.queryTimeoutSec = queryTimeoutSec;
     }
 
     private static String getVersionString()

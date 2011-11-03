@@ -17,6 +17,10 @@ package com.akiban.qp.rowtype;
 
 import com.akiban.server.types.AkType;
 
+import com.akiban.server.aggregation.AggregatorFactory;
+
+import java.util.List;
+
 public final class AggregatedRowType extends DerivedRowType {
     @Override
     public int nFields() {
@@ -25,13 +29,21 @@ public final class AggregatedRowType extends DerivedRowType {
 
     @Override
     public AkType typeAt(int index) {
-        return base.typeAt(index);
+        if (index < inputsIndex)
+            return base.typeAt(index);
+        else
+            return aggregatorFactories.get(index - inputsIndex).outputType();
     }
 
-    public AggregatedRowType(Schema schema, int typeId, RowType base) {
+    public AggregatedRowType(Schema schema, int typeId, 
+                             RowType base, int inputsIndex, List<AggregatorFactory> aggregatorFactories) {
         super(schema, typeId);
         this.base = base;
+        this.inputsIndex = inputsIndex;
+        this.aggregatorFactories = aggregatorFactories;
     }
 
     private final RowType base;
+    private final int inputsIndex;
+    private final List<AggregatorFactory> aggregatorFactories;
 }

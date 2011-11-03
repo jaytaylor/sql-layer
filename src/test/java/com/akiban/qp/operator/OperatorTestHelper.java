@@ -17,7 +17,6 @@ package com.akiban.qp.operator;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
@@ -115,7 +114,7 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange, UserTable innerJoinUntil)
+        public Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange, IndexScanSelector selector)
         {
             throw new UnsupportedOperationException();
         }
@@ -151,7 +150,7 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public void checkQueryCancelation()
+        public void checkQueryCancelation(long startTimeMsec)
         {
         }
 

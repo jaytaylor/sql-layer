@@ -15,6 +15,7 @@
 
 package com.akiban.qp.row;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.ValueSource;
@@ -48,6 +49,11 @@ public class FlattenedRow extends AbstractRow
             source = childh.isEmpty() ? NullValueSource.only() : childh.get().eval(i - nParentFields);
         }
         return source;
+    }
+
+    @Override
+    public boolean containsRealRowOf(UserTable userTable) {
+        return containRealRowOf(parenth, childh, userTable);
     }
 
     @Override

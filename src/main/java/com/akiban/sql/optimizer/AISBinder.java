@@ -45,7 +45,7 @@ public class AISBinder implements Visitor
     private AkibanInformationSchema ais;
     private String defaultSchemaName;
     private Map<TableName,ViewDefinition> views;
-    private Stack<BindingContext> bindingContexts;
+    private Deque<BindingContext> bindingContexts;
     private Set<QueryTreeNode> visited;
 
     public AISBinder(AkibanInformationSchema ais, String defaultSchemaName) {
@@ -80,7 +80,7 @@ public class AISBinder implements Visitor
 
     public void bind(StatementNode stmt) throws StandardException {
         visited = new HashSet<QueryTreeNode>();
-        bindingContexts = new Stack<BindingContext>();
+        bindingContexts = new ArrayDeque<BindingContext>();
         try {
             stmt.accept(this);
         }
@@ -341,7 +341,7 @@ public class AISBinder implements Visitor
         int size = fromList.size();
         for (int i = 0; i < size; i++) {
             FromTable fromTable = fromList.get(i);
-            FromTable newFromTable = fromTable(fromTable);
+            FromTable newFromTable = fromTable(fromTable, false);
             if (newFromTable != fromTable)
                 fromList.set(i, newFromTable);
         }
@@ -352,13 +352,14 @@ public class AISBinder implements Visitor
     }
 
     // Process a FROM list table, finding the table binding.
-    protected FromTable fromTable(FromTable fromTable) {
+    protected FromTable fromTable(FromTable fromTable, boolean nullable) {
         switch (fromTable.getNodeType()) {
         case NodeTypes.FROM_BASE_TABLE:
-            return fromBaseTable((FromBaseTable)fromTable);
+            return fromBaseTable((FromBaseTable)fromTable, nullable);
         case NodeTypes.JOIN_NODE:
+            return joinNode((JoinNode)fromTable, nullable);
         case NodeTypes.HALF_OUTER_JOIN_NODE:
-            return joinNode((JoinNode)fromTable);
+            return joinNode((HalfOuterJoinNode)fromTable, nullable);
         case NodeTypes.FROM_SUBQUERY:
             return fromSubquery((FromSubquery)fromTable);
         default:
@@ -371,25 +372,35 @@ public class AISBinder implements Visitor
         }
     }
 
-    protected FromTable fromBaseTable(FromBaseTable fromBaseTable)  {
+    protected FromTable fromBaseTable(FromBaseTable fromBaseTable, boolean nullable)  {
         TableName tableName = fromBaseTable.getOrigTableName();
         ViewDefinition view = views.get(tableName);
         if (view != null)
             try {
-                return fromTable(view.getSubquery(this));
+                return fromTable(view.getSubquery(this), false);
             } catch (StandardException e) {
                 throw new ViewHasBadSubqueryException(view.getName().toString(), e.getMessage());
             }
 
         Table table = lookupTableName(tableName);
         tableName.setUserData(table);
-        fromBaseTable.setUserData(new TableBinding(table));
+        fromBaseTable.setUserData(new TableBinding(table, nullable));
         return fromBaseTable;
     }
     
-    protected FromTable joinNode(JoinNode joinNode) {
-        joinNode.setLeftResultSet(fromTable((FromTable)joinNode.getLeftResultSet()));
-        joinNode.setRightResultSet(fromTable((FromTable)joinNode.getRightResultSet()));
+    protected FromTable joinNode(JoinNode joinNode, boolean nullable) {
+        joinNode.setLeftResultSet(fromTable((FromTable)joinNode.getLeftResultSet(),
+                                            nullable));
+        joinNode.setRightResultSet(fromTable((FromTable)joinNode.getRightResultSet(),
+                                             nullable));
+        return joinNode;
+    }
+
+    protected FromTable joinNode(HalfOuterJoinNode joinNode, boolean nullable) {
+        joinNode.setLeftResultSet(fromTable((FromTable)joinNode.getLeftResultSet(),
+                                            nullable || joinNode.isRightOuterJoin()));
+        joinNode.setRightResultSet(fromTable((FromTable)joinNode.getRightResultSet(),
+                                             nullable || !joinNode.isRightOuterJoin()));
         return joinNode;
     }
 
@@ -603,7 +614,7 @@ public class AISBinder implements Visitor
                 Column column = table.getColumn(columnName);
                 if (column == null)
                     return null;
-                return new ColumnBinding(fromTable, column);
+                return new ColumnBinding(fromTable, column, tableBinding.isNullable());
         }
         else if (fromTable instanceof FromSubquery) {
             FromSubquery fromSubquery = (FromSubquery)fromTable;
@@ -781,7 +792,8 @@ public class AISBinder implements Visitor
                                     parserContext);
             rcList.addResultColumn(resultColumn);
             // Easy to do binding right here.
-            valueNode.setUserData(new ColumnBinding(fromTable, column));
+            valueNode.setUserData(new ColumnBinding(fromTable, column, 
+                                                    tableBinding.isNullable()));
         }
         return rcList;
     }
@@ -868,7 +880,7 @@ public class AISBinder implements Visitor
                 Column column = table.getColumn(columnName);
                 if (column == null)
                     throw new NoSuchColumnException (columnName);
-                ColumnBinding columnBinding = new ColumnBinding(null, column);
+                ColumnBinding columnBinding = new ColumnBinding(null, column, false);
                 columnReference.setUserData(columnBinding);
             }
         }
@@ -909,7 +921,7 @@ public class AISBinder implements Visitor
     }
     protected void pushBindingContext(ResultSetNode resultSet) {
         BindingContext next = new BindingContext();
-        if (!bindingContexts.empty()) {
+        if (!bindingContexts.isEmpty()) {
             next.correlationNames.putAll(bindingContexts.peek().correlationNames);
         }
         if (resultSet != null) {

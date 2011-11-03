@@ -61,22 +61,50 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         return index;
     }
 
-    protected Index(TableName tableName, String indexName, Integer indexId, Boolean isUnique, String constraint)
+    protected Index(TableName tableName, String indexName, Integer indexId, Boolean isUnique, String constraint, JoinType joinType, boolean isValid)
     {
-        
+        if ( (indexId != null) && (indexId | INDEX_ID_BITS) != INDEX_ID_BITS)
+            throw new IllegalArgumentException("index ID out of range: " + indexId + " > " + INDEX_ID_BITS);
         AISInvariants.checkNullName(indexName, "index", "index name");
-        
+
+        if (isValid)
+            indexId |= IS_VALID_FLAG;
+        if (joinType == JoinType.RIGHT)
+            indexId |= IS_RIGHT_JOIN_FLAG;
+
         this.indexName = new IndexName(tableName, indexName);
         this.indexId = indexId;
         this.isUnique = isUnique;
         this.constraint = constraint;
         this.treeName = this.indexName.toString();
+        this.joinType = joinType;
+        this.isValid = isValid;
         columns = new ArrayList<IndexColumn>();
+    }
+
+    protected Index(TableName tableName, String indexName, Integer idAndFlags, Boolean isUnique, String constraint) {
+        this (
+                tableName,
+                indexName,
+                extractIndexId(idAndFlags),
+                isUnique,
+                constraint,
+                extractJoinType(idAndFlags),
+                extractIsValid(idAndFlags)
+        );
     }
 
     public boolean isGroupIndex()
     {
         return !isTableIndex();
+    }
+
+    public JoinType getJoinType() {
+        return joinType;
+    }
+
+    public boolean isValid() {
+        return isTableIndex() || isValid;
     }
 
     protected Index()
@@ -167,11 +195,6 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     public Integer getIndexId()
     {
         return indexId;
-    }
-
-    public void setIndexId(Integer indexId)
-    {
-        this.indexId = indexId;
     }
 
     @Override
@@ -347,9 +370,33 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         */
     }
 
+    private static JoinType extractJoinType(Integer idAndFlags) {
+        if (idAndFlags == null)
+            return  null;
+        return (idAndFlags & IS_RIGHT_JOIN_FLAG) == IS_RIGHT_JOIN_FLAG
+                ? JoinType.RIGHT
+                : JoinType.LEFT;
+    }
+
+    private static boolean extractIsValid(Integer idAndFlags) {
+        return idAndFlags != null && (idAndFlags & IS_VALID_FLAG) == IS_VALID_FLAG;
+    }
+
+    private static Integer extractIndexId(Integer idAndFlags) {
+        if (idAndFlags == null)
+            return null;
+        return idAndFlags & INDEX_ID_BITS;
+    }
+
     public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
     public static final String UNIQUE_KEY_CONSTRAINT = "UNIQUE";
     public static final String KEY_CONSTRAINT = "KEY";
+
+    private static final int INDEX_ID_BITS = 0x0000FFFF;
+    private static final int IS_VALID_FLAG = INDEX_ID_BITS + 1;
+    private static final int IS_RIGHT_JOIN_FLAG = IS_VALID_FLAG << 1;
+
+    static final int MAX_INDEX_ID = INDEX_ID_BITS;
 
     public static enum IndexType {
         TABLE("TABLE"),
@@ -384,6 +431,8 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     private List<IndexColumn> columns;
     private boolean columnsFrozen = false;
     private String treeName;
+    private transient JoinType joinType;
+    private transient boolean isValid;
 
     // It really is an IndexDef, but declaring it that way creates trouble for AIS. We don't want to pull in
     // all the RowDef stuff and have it visible to GWT.
@@ -391,4 +440,8 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     private transient IndexRowComposition indexRowComposition;
     private transient IndexToHKey indexToHKey;
     private transient boolean isHKeyEquivalent;
+
+    public enum JoinType {
+        LEFT, RIGHT
+    }
 }

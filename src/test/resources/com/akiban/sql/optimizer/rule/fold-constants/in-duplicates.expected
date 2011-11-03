@@ -6,4 +6,4 @@ SelectQuery@32f9f91d
 
 Subquery@5f9299f5
   Project@11b9d4d8[user.customers.cid == VALUES[0]]
-    ExpressionsSource@ffa490e[[1], [2], [3], [5]]
+    ExpressionsSource@ffa490e([[1], [2], [3], [5]])

@@ -1,0 +1,8 @@
+PhysicalSelect[iid:int[INT], oid:int[INT], sku:varchar(32)[VARCHAR], quan:int[INT]]
+  Map_NestedLoops
+    Distinct_Partial(project([Field(1)]))
+      project([Field(1)])
+        IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) (>=UnboundExpressions[Literal(Smith), Literal(NULL)],<=UnboundExpressions[Literal(Smith), Literal(NULL)]))
+    project([Field(0), Field(1), Field(2), Field(3)])
+      AncestorLookup_Default(Index(user.items.sku[IndexColumn(sku)]) -> [user.items])
+        IndexScan_Default(Index(user.items.sku[IndexColumn(sku)]) (>=UnboundExpressions[Bound(0,Field(0))],<=UnboundExpressions[Bound(0,Field(0))]))

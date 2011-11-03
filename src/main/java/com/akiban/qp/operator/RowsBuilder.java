@@ -15,6 +15,7 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.HKey;

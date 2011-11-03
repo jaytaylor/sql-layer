@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,6 +38,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.persistitadapter.OperatorStore;
+import com.akiban.server.AkServerInterface;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.rowdata.RowData;
@@ -50,6 +52,7 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.types.extract.ConverterTestUtils;
 import com.akiban.server.util.GroupIndexCreator;
 import com.akiban.util.Strings;
+import com.akiban.util.TapReport;
 import com.akiban.util.Undef;
 import junit.framework.Assert;
 
@@ -90,7 +93,14 @@ import com.akiban.server.service.session.Session;
  * various convenience testing methods.</p>
  */
 public class ApiTestBase {
+    private static final String TAPS = System.getProperty("it.taps");
     protected final static Object UNDEF = Undef.only();
+    private static final Comparator<? super TapReport> TAP_REPORT_COMPARATOR = new Comparator<TapReport>() {
+        @Override
+        public int compare(TapReport o1, TapReport o2) {
+            return o1.getName().compareTo(o2.getName());
+        }
+    };
 
     public static class ListRowOutput implements RowOutput {
         private final List<NewRow> rows = new ArrayList<NewRow>();
@@ -146,6 +156,10 @@ public class ApiTestBase {
             sm.startServices();
             session = sm.getSessionService().createSession();
             testServicesStarted = true;
+            if (TAPS != null) {
+                sm.getStatisticsService().reset(TAPS);
+                sm.getStatisticsService().setEnabled(TAPS, true);
+            }
         } catch (Exception e) {
             handleStartupFailure(e);
         }
@@ -174,6 +188,23 @@ public class ApiTestBase {
     public final void stopTestServices() throws Exception {
         if (!testServicesStarted) {
             return;
+        }
+        if (TAPS != null) {
+            TapReport[] reports = sm.getStatisticsService().getReport(TAPS);
+            Arrays.sort(reports, TAP_REPORT_COMPARATOR);
+            for (TapReport report : reports) {
+                long totalNanos = report.getCumulativeTime();
+                double totalSecs = ((double) totalNanos) / 1000000000.0d;
+                double secsPer = totalSecs / report.getOutCount();
+                System.err.printf("%s:\t in=%d out=%d time=%.2f sec (%d nanos, %.5f sec per out)%n",
+                        report.getName(),
+                        report.getInCount(),
+                        report.getOutCount(),
+                        totalSecs,
+                        totalNanos,
+                        secsPer
+                );
+            }
         }
         String openCursorsMessage = null;
         if (sm.serviceIsStarted(DXLService.class)) {
@@ -233,6 +264,10 @@ public class ApiTestBase {
 
     protected final Store store() {
         return sm.getStore();
+    }
+
+    protected final AkServerInterface akServer() {
+        return sm.getAkSserver();
     }
 
     protected String akibanFK(String childCol, String parentTable, String parentCol) {
@@ -309,14 +344,14 @@ public class ApiTestBase {
 
     protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs)
             throws InvalidOperationException {
-        return createGroupIndex(groupName, indexName, false, tableColumnPairs);
+        return createGroupIndex(groupName, indexName, tableColumnPairs, Index.JoinType.LEFT);
     }
 
-    protected final GroupIndex createGroupIndex(String groupName, String indexName, boolean unique, String tableColumnPairs)
+    protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs, Index.JoinType joinType)
             throws InvalidOperationException {
         AkibanInformationSchema ais = ddl().getAIS(session());
         final Index index;
-        index = GroupIndexCreator.createIndex(ais, groupName, indexName, unique, tableColumnPairs);
+        index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnPairs, joinType);
         ddl().createIndexes(session(), Collections.singleton(index));
         return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
     }

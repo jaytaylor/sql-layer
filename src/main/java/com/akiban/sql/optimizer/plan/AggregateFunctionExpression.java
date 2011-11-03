@@ -30,7 +30,7 @@ public class AggregateFunctionExpression extends BaseExpression
     public AggregateFunctionExpression(String function, ExpressionNode operand,
                                        boolean distinct, 
                                        DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, AkType.NULL, sqlSource); // TODO
+        super(sqlType, "COUNT".equals(function) ? AkType.LONG : operand.getAkType(), sqlSource);
         this.function = function;
         this.operand = operand;
         this.distinct = distinct;

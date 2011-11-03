@@ -36,12 +36,12 @@ import java.util.Map;
 
 final class OperatorStoreMaintenancePlans {
 
-    OperatorStoreMaintenancePlan forRowType(GroupIndex groupIndex, UserTableRowType rowType) {
-        Map<UserTableRowType,OperatorStoreMaintenancePlan> typesToPlans = indexToTypesToOperators.get(groupIndex);
+    OperatorStoreMaintenance forRowType(GroupIndex groupIndex, UserTableRowType rowType) {
+        Map<UserTableRowType,OperatorStoreMaintenance> typesToPlans = indexToTypesToOperators.get(groupIndex);
         if (typesToPlans == null) {
             throw new RuntimeException("no update plans found for group index " + groupIndex);
         }
-        OperatorStoreMaintenancePlan plan = typesToPlans.get(rowType);
+        OperatorStoreMaintenance plan = typesToPlans.get(rowType);
         if (plan == null) {
             throw new RuntimeException("no plan found for row type " + rowType + " in GI " + groupIndex);
         }
@@ -64,13 +64,24 @@ final class OperatorStoreMaintenancePlans {
      * @return PhysicalOperator
      */
     static Operator groupIndexCreationPlan(Schema schema, GroupIndex groupIndex) {
-        OperatorStoreMaintenancePlan.BranchTables branchTables = branchTablesRootToLeaf(schema, groupIndex);
+        OperatorStoreMaintenance.BranchTables branchTables = branchTablesRootToLeaf(schema, groupIndex);
 
         Operator plan = API.groupScan_Default(groupIndex.getGroup().getGroupTable(), NoLimit.instance());
 
         RowType parentRowType = null;
         API.JoinType joinType = API.JoinType.RIGHT_JOIN;
         EnumSet<API.FlattenOption> flattenOptions = EnumSet.noneOf(API.FlattenOption.class);
+        final API.JoinType withinGIJoin;
+        switch (groupIndex.getJoinType()) {
+        case LEFT:
+            withinGIJoin = API.JoinType.LEFT_JOIN;
+            break;
+        case RIGHT:
+            withinGIJoin = API.JoinType.RIGHT_JOIN;
+            break;
+        default:
+            throw new AssertionError(groupIndex.getJoinType().name());
+        }
         for (RowType branchRowType : branchTables.fromRoot()) {
             if (parentRowType == null) {
                 parentRowType = branchRowType;
@@ -80,8 +91,7 @@ final class OperatorStoreMaintenancePlans {
                 parentRowType = plan.rowType();
             }
             if (branchRowType.equals(branchTables.rootMost())) {
-                joinType = API.JoinType.LEFT_JOIN;
-                flattenOptions.add(API.FlattenOption.LEFT_JOIN_SHORTENS_HKEY);
+                joinType = withinGIJoin;
             }
         }
 
@@ -90,32 +100,32 @@ final class OperatorStoreMaintenancePlans {
 
     // for use in this class
 
-    private static OperatorStoreMaintenancePlan.BranchTables branchTablesRootToLeaf(Schema schema, GroupIndex groupIndex) {
-        return new OperatorStoreMaintenancePlan.BranchTables(schema, groupIndex);
+    private static OperatorStoreMaintenance.BranchTables branchTablesRootToLeaf(Schema schema, GroupIndex groupIndex) {
+        return new OperatorStoreMaintenance.BranchTables(schema, groupIndex);
     }
 
-    private static Map<GroupIndex, Map<UserTableRowType, OperatorStoreMaintenancePlan>> generateGiPlans(
+    private static Map<GroupIndex, Map<UserTableRowType, OperatorStoreMaintenance>> generateGiPlans(
             Schema schema,
             Collection<Group> groups)
     {
-        Map<GroupIndex,Map<UserTableRowType, OperatorStoreMaintenancePlan>> giToMap
-                 = new HashMap<GroupIndex, Map<UserTableRowType, OperatorStoreMaintenancePlan>>();
+        Map<GroupIndex,Map<UserTableRowType, OperatorStoreMaintenance>> giToMap
+                 = new HashMap<GroupIndex, Map<UserTableRowType, OperatorStoreMaintenance>>();
         for (Group group : groups) {
             for (GroupIndex groupIndex : group.getIndexes()) {
-                Map<UserTableRowType, OperatorStoreMaintenancePlan> map = generateGIPlans(schema, groupIndex);
+                Map<UserTableRowType, OperatorStoreMaintenance> map = generateGIPlans(schema, groupIndex);
                 giToMap.put(groupIndex, map);
             }
         }
         return Collections.unmodifiableMap(giToMap);
     }
 
-    private static Map<UserTableRowType, OperatorStoreMaintenancePlan> generateGIPlans(Schema schema, GroupIndex groupIndex) {
-        OperatorStoreMaintenancePlan.BranchTables branchTables = new OperatorStoreMaintenancePlan.BranchTables(schema, groupIndex);
-        Map<UserTableRowType, OperatorStoreMaintenancePlan> plansPerType
-                = new HashMap<UserTableRowType, OperatorStoreMaintenancePlan>();
+    private static Map<UserTableRowType, OperatorStoreMaintenance> generateGIPlans(Schema schema, GroupIndex groupIndex) {
+        OperatorStoreMaintenance.BranchTables branchTables = new OperatorStoreMaintenance.BranchTables(schema, groupIndex);
+        Map<UserTableRowType, OperatorStoreMaintenance> plansPerType
+                = new HashMap<UserTableRowType, OperatorStoreMaintenance>();
         for(UserTable table = groupIndex.leafMostTable(); table != null; table = table.parentTable()) {
             UserTableRowType rowType = schema.userTableRowType(table);
-            OperatorStoreMaintenancePlan plan = new OperatorStoreMaintenancePlan(branchTables, groupIndex, rowType);
+            OperatorStoreMaintenance plan = new OperatorStoreMaintenance(branchTables, groupIndex, rowType);
             plansPerType.put(rowType, plan);
         }
         return Collections.unmodifiableMap(plansPerType);
@@ -123,7 +133,7 @@ final class OperatorStoreMaintenancePlans {
 
     // object state
 
-    private Map<GroupIndex,Map<UserTableRowType, OperatorStoreMaintenancePlan>> indexToTypesToOperators;
+    private Map<GroupIndex,Map<UserTableRowType, OperatorStoreMaintenance>> indexToTypesToOperators;
 
     // consts
 

@@ -15,6 +15,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.service.dxl.DXLService;
@@ -80,6 +81,9 @@ public interface PostgresServerSession
 
     /** Return an adapter for the session's store. */
     public StoreAdapter getStore();
+
+    /** Return the LoadablePlan with the given name. */
+    public LoadablePlan loadablePlan(String planName);
 
     /** Begin a new transaction. */
     public void beginTransaction();

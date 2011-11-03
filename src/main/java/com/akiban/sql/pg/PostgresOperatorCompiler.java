@@ -25,10 +25,7 @@ import com.akiban.sql.optimizer.plan.PhysicalUpdate;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.rule.BaseRule;
 
-import com.akiban.sql.parser.DMLStatementNode;
-import com.akiban.sql.parser.SQLParser;
-import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.parser.ParameterNode;
+import com.akiban.sql.parser.*;
 import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.ais.model.Column;
@@ -121,7 +118,7 @@ public class PostgresOperatorCompiler extends OperatorCompiler
     public PostgresStatement generate(PostgresServerSession session,
                                       StatementNode stmt, 
                                       List<ParameterNode> params, int[] paramTypes) {
-        if (!(stmt instanceof DMLStatementNode))
+        if (stmt instanceof CallStatementNode || !(stmt instanceof DMLStatementNode))
             return null;
         DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
         BasePlannable result = null;

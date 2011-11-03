@@ -31,6 +31,7 @@ import com.akiban.ais.ddl.SchemaDef;
 import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.Index.JoinType;
 import com.akiban.server.util.GroupIndexCreator;
 
 import org.junit.Before;
@@ -101,10 +102,14 @@ public class OptimizerTestBase extends ASTTransformTestBase
                 String line = brdr.readLine();
                 if (line == null) break;
                 String defn[] = line.split("\t");
+                JoinType joinType = JoinType.LEFT;
+                if (defn.length > 3)
+                    joinType = JoinType.valueOf(defn[3]);
                 GroupIndex index = GroupIndexCreator.createIndex(ais,
                                                                  defn[0], 
                                                                  defn[1],
-                                                                 defn[2]);
+                                                                 defn[2],
+                                                                 joinType);
                 index.getGroup().addIndex(index);
             }
         }

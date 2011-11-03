@@ -1,0 +1,10 @@
+SelectQuery@d1f24bb
+  ResultSet@77a477b7[name, order_date, sku, quan]
+    Project@4eafccbe[user.customers.name, user.orders.order_date, user.items.sku, user.items.quan]
+      Select@77aaf64d[user.orders.order_date > Cast(2011-01-01 AS DATE NOT NULL)]
+        TableJoins@7910769b(TableGroup@27daf835(customers))
+          JoinNode@18dd7404(INNER/GROUP[user.items.oid == user.orders.oid] - TableGroupJoin@72ebbf5c(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+            JoinNode@53606bf5(RIGHT/GROUP[user.orders.cid == user.customers.cid] - TableGroupJoin@5f4fcc96(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+              TableSource@5d748654(user.customers - TableGroup@27daf835(customers))
+              TableSource@7e4ab8b9(user.orders - TableGroupJoin@5f4fcc96(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+            TableSource@5ba5ba75(user.items - TableGroupJoin@72ebbf5c(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))

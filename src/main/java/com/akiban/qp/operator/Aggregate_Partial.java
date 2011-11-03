@@ -46,6 +46,7 @@ final class Aggregate_Partial extends Operator
                 adapter,
                 inputOperator.cursor(adapter),
                 inputOperator.rowType(),
+                aggregatorFactories,
                 aggregators,
                 inputsIndex,
                 outputType
@@ -75,7 +76,7 @@ final class Aggregate_Partial extends Operator
                 inputOperator,
                 inputsIndex,
                 aggregatorFactories,
-                inputOperator.rowType().schema().newAggregateType(inputOperator.rowType())
+                inputOperator.rowType().schema().newAggregateType(inputOperator.rowType(), inputsIndex, aggregatorFactories)
         );
     }
 
@@ -95,8 +96,7 @@ final class Aggregate_Partial extends Operator
 
     // package-private (for testing)
 
-    Aggregate_Partial(Operator inputOperator, int inputsIndex,
-                      List<AggregatorFactory> aggregatorFactories, AggregatedRowType outputType) {
+    Aggregate_Partial(Operator inputOperator, int inputsIndex, List<AggregatorFactory> aggregatorFactories, AggregatedRowType outputType) {
         this.inputOperator = inputOperator;
         this.inputsIndex = inputsIndex;
         this.aggregatorFactories = new ArrayList<AggregatorFactory>(aggregatorFactories);
@@ -127,7 +127,8 @@ final class Aggregate_Partial extends Operator
 
     // nested classes
 
-    private static class AggregateCursor implements Cursor {
+    private static class AggregateCursor extends OperatorExecutionBase implements Cursor
+    {
 
         // Cursor interface
 
@@ -141,7 +142,7 @@ final class Aggregate_Partial extends Operator
 
         @Override
         public Row next() {
-            adapter.checkQueryCancelation();
+            checkQueryCancelation();
             if (cursorState == CursorState.CLOSED)
                 throw new IllegalStateException("cursor not open");
             if (cursorState == CursorState.CLOSING) {
@@ -207,8 +208,9 @@ final class Aggregate_Partial extends Operator
             for (int i = inputsIndex; i < inputRowType.nFields(); ++i) {
                 ValueHolder holder = outputRow.holderAt(i);
                 int aggregatorIndex = i - inputsIndex;
+                AggregatorFactory factory = aggregatorFactories.get(aggregatorIndex);
                 Aggregator aggregator = aggregators.get(aggregatorIndex);
-                holder.expectType(aggregator.outputType());
+                holder.expectType(factory.outputType());
                 aggregator.output(holder);
             }
             return outputRow;
@@ -284,12 +286,14 @@ final class Aggregate_Partial extends Operator
         private AggregateCursor(StoreAdapter adapter,
                                 Cursor inputCursor,
                                 RowType inputRowType,
+                                List<AggregatorFactory> aggregatorFactories,
                                 List<Aggregator> aggregators,
                                 int inputsIndex,
                                 AggregatedRowType outputRowType) {
-            this.adapter = adapter;
+            super(adapter);
             this.inputCursor = inputCursor;
             this.inputRowType = inputRowType;
+            this.aggregatorFactories = aggregatorFactories;
             this.aggregators = aggregators;
             this.inputsIndex = inputsIndex;
             this.outputRowType = outputRowType;
@@ -302,9 +306,9 @@ final class Aggregate_Partial extends Operator
 
         // object state
 
-        private final StoreAdapter adapter;
         private final Cursor inputCursor;
         private final RowType inputRowType;
+        private final List<AggregatorFactory> aggregatorFactories;
         private final List<Aggregator> aggregators;
         private final int inputsIndex;
         private final AggregatedRowType outputRowType;

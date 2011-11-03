@@ -1,0 +1,8 @@
+SelectQuery@4cfa88fb
+  ResultSet@54373e38[name, city]
+    Project@76d5f9b9[user.customers.name, user.addresses.city]
+      Select@59fe1da2[]
+        TableJoins@3a4ba4d6(TableGroup@7de4e3e4(customers) - IndexScan@3e2dce4e(Index(.customers.state_and_name[IndexColumn(state), IndexColumn(name)]), SORTED, =MA))
+          JoinNode@3c32fb80(RIGHT/GROUP[user.addresses.cid == user.customers.cid] - TableGroupJoin@314382c6(Join(user/customers/cid/user/user.addresses/cid: user.addresses -> user.customers, group(customers))))
+            TableSource@311f56a3(user.customers - TableGroup@7de4e3e4(customers))
+            TableSource@710087(user.addresses - TableGroupJoin@314382c6(Join(user/customers/cid/user/user.addresses/cid: user.addresses -> user.customers, group(customers))))

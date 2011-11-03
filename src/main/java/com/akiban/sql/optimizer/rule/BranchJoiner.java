@@ -415,57 +415,63 @@ public class BranchJoiner extends BaseRule
             new ArrayList<JoinType>(Collections.nCopies(flattenSources.size() - 1,
                                                         JoinType.INNER));
         ConditionList joinConditions = new ConditionList(0);
-        copyJoins(joins, null, flattenSources, joinTypes, joinConditions);
+        copyJoins(joins, flattenSources, joinTypes, joinConditions);
         if (!joinConditions.isEmpty())
             input = new Select(input, joinConditions);
         return new Flatten(input, flattenNodes, flattenSources, joinTypes);
     }
 
-    // Turn a tree of joins into a regular flatten list.
-    // This only works for the simple cases: LEFT joins down the
-    // branch and no join conditions or only ones depending on the
-    // optional table. Everything else needs to be done using a
+    // Turn a tree of joins into a regular flatten list.  This only
+    // works for the simple cases: RIGHT then INNER then LEFT joins
+    // down the branch and no join conditions or only ones depending
+    // on the optional table. Everything else needs to be done using a
     // general nested loop join.
-    protected void copyJoins(Joinable joinable, JoinNode parent, 
+    protected void copyJoins(Joinable joinable,
                              List<TableSource> branch, 
                              List<JoinType> joinTypes,
                              ConditionList joinConditions) {
-        if (joinable.isTable()) {
-            TableSource table = (TableSource)joinable;
-            int idx = branch.indexOf(table);
-            if (idx <= 0) return;
-            if (parent != null) {
-                joinTypes.set(idx - 1, parent.getJoinType());
-                if (parent.hasJoinConditions()) {
-                    for (ConditionExpression cond : parent.getJoinConditions()) {
-                        if (cond.getImplementation() !=
-                            ConditionExpression.Implementation.GROUP_JOIN) {
-                            if (!isSimpleJoinCondition(cond, table))
-                                throw new UnsupportedSQLException("Join condition too complex", cond.getSQLsource());
-                            joinConditions.add(cond);
-                        }
+        if (joinable.isJoin()) {
+            JoinNode join = (JoinNode)joinable;
+            if (join.hasJoinConditions()) {
+                for (ConditionExpression cond : join.getJoinConditions()) {
+                    if (cond.getImplementation() !=
+                        ConditionExpression.Implementation.GROUP_JOIN) {
+                        if (!isSimpleJoinCondition(cond, join))
+                            throw new UnsupportedSQLException("Join condition too complex", cond.getSQLsource());
+                        joinConditions.add(cond);
                     }
                 }
             }
-        }
-        else if (joinable.isJoin()) {
-            JoinNode join = (JoinNode)joinable;
-            switch (join.getJoinType()) {
-            case INNER:
-            case LEFT:
-                break;
-            default:
-                throw new UnsupportedSQLException("Join too complex: " + join, null);
+            JoinType joinType = join.getJoinType();
+            if (joinType != JoinType.INNER) {
+                boolean found = false;
+                if (join.getLeft().isTable()) {
+                    TableSource table = (TableSource)join.getLeft();
+                    int idx = branch.indexOf(table);
+                    if (idx >= 0) {
+                        joinTypes.set(idx, joinType);
+                        found = true;
+                    }
+                }
+                if (!found && join.getRight().isTable()) {
+                    TableSource table = (TableSource)join.getRight();
+                    int idx = branch.indexOf(table);
+                    if (idx > 0) {
+                        joinTypes.set(idx - 1, joinType);
+                        found = true;
+                    }
+                }
             }
-            copyJoins(join.getLeft(), null, branch, joinTypes, joinConditions);
-            copyJoins(join.getRight(), join, branch, joinTypes, joinConditions);
+            copyJoins(join.getLeft(), branch, joinTypes, joinConditions);
+            copyJoins(join.getRight(), branch, joinTypes, joinConditions);
         }
     }
 
     // Is this join condition simple enough to execute before the join?
     protected boolean isSimpleJoinCondition(ConditionExpression cond,
-                                            TableSource table) {
-        return (table == SelectPreponer.getSingleTableConditionTable(cond));
+                                            JoinNode join) {
+        TableSource table = SelectPreponer.getSingleTableConditionTable(cond);
+        return ((table == join.getLeft()) || (table == join.getRight()));
     }
 
     static final Comparator<TableSource> tableSourceById = new Comparator<TableSource>() {

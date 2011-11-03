@@ -100,7 +100,7 @@ class Flatten_HKeyOrdered extends Operator
                                RowType parentType,
                                RowType childType,
                                API.JoinType joinType,
-                               EnumSet<API.FlattenOption> options)
+                               Set<API.FlattenOption> options)
     {
         ArgumentValidation.notNull("parentType", parentType);
         ArgumentValidation.notNull("childType", childType);
@@ -117,10 +117,6 @@ class Flatten_HKeyOrdered extends Operator
         this.rightJoin = fullJoin || joinType.equals(API.JoinType.RIGHT_JOIN);
         this.keepParent = options.contains(KEEP_PARENT);
         this.keepChild = options.contains(KEEP_CHILD);
-        this.leftJoinShortensHKey = options.contains(LEFT_JOIN_SHORTENS_HKEY);
-        if (this.leftJoinShortensHKey) {
-            ArgumentValidation.isTrue("flags contains LEFT_JOIN_SHORTENS_HKEY but not LEFT_JOIN", leftJoin);
-        }
         List<HKeySegment> childHKeySegments = childType.hKey().segments();
         HKeySegment lastChildHKeySegment = childHKeySegments.get(childHKeySegments.size() - 1);
         RowDef childRowDef = (RowDef) lastChildHKeySegment.table().rowDef();
@@ -143,7 +139,6 @@ class Flatten_HKeyOrdered extends Operator
     private final boolean rightJoin;
     private final boolean keepParent;
     private final boolean keepChild;
-    private final boolean leftJoinShortensHKey;
     // For constructing a left-join hkey
     private final int childOrdinal;
     private final int nChildHKeySegmentFields;
@@ -151,7 +146,7 @@ class Flatten_HKeyOrdered extends Operator
 
     // Inner classes
 
-    private class Execution implements Cursor
+    private class Execution extends OperatorExecutionBase implements Cursor
     {
         // Cursor interface
 
@@ -164,7 +159,7 @@ class Flatten_HKeyOrdered extends Operator
         @Override
         public Row next()
         {
-            adapter.checkQueryCancelation();
+            checkQueryCancelation();
             Row outputRow = pending.take();
             Row inputRow;
             while (outputRow == null && (((inputRow = input.next()) != null) || parent.isHolding())) {
@@ -222,7 +217,7 @@ class Flatten_HKeyOrdered extends Operator
 
         Execution(StoreAdapter adapter, Cursor input)
         {
-            this.adapter = adapter;
+            super(adapter);
             this.input = input;
             this.leftJoinHKey = adapter.newHKey(childType);
         }
@@ -240,20 +235,15 @@ class Flatten_HKeyOrdered extends Operator
         {
             assert parent != null;
             if (leftJoin) {
-                HKey hKey;
-                if (leftJoinShortensHKey) {
-                    hKey = parent.hKey();
-                } else {
-                    if (parent.hKey().segments() < parentHKeySegments) {
-                        throw new IncompatibleRowException(
-                            String.format("%s: parent hkey %s has been shortened by an earlier Flatten, " +
-                                          "so this Flatten should specify LEFT_JOIN_SHORTENS_HKEY also",
-                                          this, parent.hKey()));
-                    }
-                    // Copy leftJoinHKey to avoid aliasing problems. (leftJoinHKey changes on each parent row.)
-                    hKey = adapter.newHKey(childType);
-                    leftJoinHKey.copyTo(hKey);
+                if (parent.hKey().segments() < parentHKeySegments) {
+                    throw new IncompatibleRowException(
+                        String.format("%s: parent hkey %s has been shortened by an earlier Flatten, " +
+                                      "so this Flatten should specify LEFT_JOIN_SHORTENS_HKEY also",
+                                      this, parent.hKey()));
                 }
+                // Copy leftJoinHKey to avoid aliasing problems. (leftJoinHKey changes on each parent row.)
+                HKey hKey = adapter.newHKey(childType);
+                leftJoinHKey.copyTo(hKey);
                 pending.add(new FlattenedRow(flattenType, parent, null, hKey));
                 // Prevent generation of another left join row for the same parent
                 childlessParent = false;
@@ -316,7 +306,6 @@ class Flatten_HKeyOrdered extends Operator
 
         // Object state
 
-        private final StoreAdapter adapter;
         private final Cursor input;
         private final ShareHolder<Row> parent = new ShareHolder<Row>();
         private final PendingRows pending = new PendingRows(MAX_PENDING);

@@ -1,0 +1,9 @@
+SelectQuery@47042c25
+  ResultSet@62ee558f[_SQL_COL_1]
+    Project@d335207[GROUP[0]]
+      Select@244e5056[]
+        AggregateSource@117c50b9(UNGROUPED,[COUNT])
+          Distinct@7897aaa6
+            Project@2d44b624[user.customers.name]
+              Select@7a120cb3[]
+                TableSource@57c501f7(user.customers)

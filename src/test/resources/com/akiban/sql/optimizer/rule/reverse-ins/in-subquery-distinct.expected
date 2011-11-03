@@ -1,0 +1,19 @@
+SelectQuery@1f31cd12
+  ResultSet@7e8e68bd[cid, name]
+    MapJoin@34d704f0()
+      SubquerySource@74a138(ANY)
+        Subquery@14ca1a93
+          Distinct@3df3bec
+            Project@6096b38e[user.customers.name]
+              Select@45e6612c[]
+                Flatten@108543aa(user.customers INNER user.orders)
+                  Select@1d1d565f[user.orders.order_date > 2011-03-02]
+                    BranchLookup@711185e7(user.customers -> user.customers)
+                      IndexScan@356e3aaf(Index(user.customers.name[IndexColumn(name)]), SORTED)
+                      TableSource@24753433(user.orders - TableGroupJoin@57ced290(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+      Project@377e9134[user.customers.cid, user.customers.name]
+        Select@566f0962[]
+          Flatten@4b6218f9(user.customers)
+            AncestorLookup@1555aa19(user.customers -> [user.customers])
+              IndexScan@2b125a40(Index(user.customers.name[IndexColumn(name)]), NONE, =ANY[0])
+              TableSource@37975d46(user.customers - TableGroup@41e335d7(customers))

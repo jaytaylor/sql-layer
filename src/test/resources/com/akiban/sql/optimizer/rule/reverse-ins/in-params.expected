@@ -1,13 +1,11 @@
-SelectQuery@75144026
-  ResultSet@47fbad7[order_date, sku, quan]
-    MapJoin@37debcf3()
-      Flatten@47122d(user.orders INNER user.items)
-        BranchLookup@39fa487f(user.customers -> user.customers)
-          IndexScan@5eada795(Index(user.customers.name[IndexColumn(name)]), NONE, =Smith)
-          TableSource@7d08c1b7(user.orders - TableGroupJoin@5ad557c2(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-          TableSource@49e61582(user.items - TableGroupJoin@6c74b024(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
-      Project@5dc37b8f[user.orders.order_date, user.items.sku, user.items.quan]
-        Select@4ce51960[]
-          Limit@60d8431c(LIMIT 1)
-            Select@161e14f0[user.items.sku == VALUES[0]]
-              ExpressionsSource@208e2fb5[[$0], [$1], [$2]]
+SelectQuery@13b33a0e
+  ResultSet@5ba8773c[order_date, sku, quan]
+    MapJoin@6ad16fc1()
+      ExpressionsSource@5d2aea3e([[$0], [$1], [$2]], NEED_DISTINCT)
+      Project@112c3327[user.orders.order_date, user.items.sku, user.items.quan]
+        Select@6cd24e3f[]
+          Flatten@bdee400(user.orders INNER user.items)
+            AncestorLookup@564ac216(user.items -> [user.orders, user.items])
+              IndexScan@460c5e9c(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), NONE, =Smith, =VALUES[0])
+              TableSource@d4dd758(user.orders - TableGroupJoin@561777b1(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+              TableSource@da0225b(user.items - TableGroupJoin@1eb3319f(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))

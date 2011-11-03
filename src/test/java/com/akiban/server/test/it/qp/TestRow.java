@@ -15,6 +15,7 @@
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.RowValuesHolder;
