@@ -38,6 +38,9 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.persistitadapter.OperatorStore;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.AkServerInterface;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.rowdata.RowData;
@@ -265,6 +268,10 @@ public class ApiTestBase {
         return sm.getStore();
     }
 
+    protected final AkServerInterface akServer() {
+        return sm.getAkSserver();
+    }
+
     protected String akibanFK(String childCol, String parentTable, String parentCol) {
         ++akibanFKCount;
         return String.format("CONSTRAINT __akiban_fk_%d FOREIGN KEY __akiban_fk_%d (%s) REFERENCES %s (%s)",
@@ -274,6 +281,10 @@ public class ApiTestBase {
 
     protected final Session session() {
         return session;
+    }
+
+    protected final PersistitAdapter persistitAdapter(Schema schema) {
+        return new PersistitAdapter(schema, persistitStore(), treeService(), session(), configService());
     }
 
     protected final PersistitStore persistitStore() {

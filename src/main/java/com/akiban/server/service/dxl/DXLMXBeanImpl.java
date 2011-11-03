@@ -40,9 +40,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
 class DXLMXBeanImpl implements DXLMXBean {
@@ -51,6 +49,12 @@ class DXLMXBeanImpl implements DXLMXBean {
     private final AtomicReference<String> usingSchema = new AtomicReference<String>("test");
     private static final Logger LOG = LoggerFactory.getLogger(DXLMXBeanImpl.class);
     private static final String CREATE_GROUP_INDEX_LOG_FORMAT = "createGroupIndex failed: %s %s %s";
+    private static final DXLService.GroupIndexRecreatePredicate ALL_GIS = new DXLService.GroupIndexRecreatePredicate() {
+        @Override
+        public boolean shouldRecreate(GroupIndex index) {
+            return true;
+        }
+    };
 
     public DXLMXBeanImpl(DXLServiceImpl dxlService, Store store) {
         this.dxlService = dxlService;
@@ -83,29 +87,7 @@ class DXLMXBeanImpl implements DXLMXBean {
 
     @Override
     public void recreateGroupIndexes() {
-        Session session = ServiceManagerImpl.newSession();
-        try {
-            Map<String,List<GroupIndex>> gisByGroup = new HashMap<String, List<GroupIndex>>();
-            DDLFunctions ddl = dxlService.ddlFunctions();
-            AkibanInformationSchema ais = ddl.getAIS(session);
-
-            for (com.akiban.ais.model.Group group : ais.getGroups().values()) {
-                gisByGroup.put(group.getName(), new ArrayList<GroupIndex>(group.getIndexes()));
-            }
-
-            for (Map.Entry<String,List<GroupIndex>> entry : gisByGroup.entrySet()) {
-                List<GroupIndex> gis = entry.getValue();
-                List<String> giNames = new ArrayList<String>(gis.size());
-                for (Index gi : gis) {
-                    giNames.add(gi.getIndexName().getName());
-                }
-                ddl.dropGroupIndexes(session, entry.getKey(), giNames);
-                ddl.createIndexes(session, gis);
-            }
-        }
-        finally {
-            session.close();
-        }
+        dxlService.recreateGroupIndexes(ALL_GIS);
     }
 
     @Override

@@ -23,7 +23,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.util.Strings;
 import com.akiban.util.Tap;
 
-class Delete_Default implements UpdatePlannable {
+class Delete_Default extends OperatorExecutionBase implements UpdatePlannable {
 
     // constructor
 
@@ -40,6 +40,7 @@ class Delete_Default implements UpdatePlannable {
 
     @Override
     public UpdateResult run(Bindings bindings, StoreAdapter adapter) {
+        adapter(adapter);
         int seen = 0, modified = 0;
         DELETE_TAP.in();
         Cursor inputCursor = inputOperator.cursor(adapter);
@@ -47,7 +48,7 @@ class Delete_Default implements UpdatePlannable {
         try {
             Row oldRow;
             while ((oldRow = inputCursor.next()) != null) {
-                adapter.checkQueryCancelation();
+                checkQueryCancelation();
                 ++seen;
                 adapter.deleteRow(oldRow, bindings);
                 ++modified;

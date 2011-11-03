@@ -15,5 +15,6 @@
 
 package com.akiban.server;
 
-public interface AkServerEmptyInterface {
+public interface AkServerInterface
+{
 }

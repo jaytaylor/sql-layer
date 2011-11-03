@@ -101,16 +101,7 @@ public class OperatorITBase extends ITBase
                           createNewRow(item, 212L, 21L),
                           createNewRow(item, 221L, 22L),
                           createNewRow(item, 222L, 22L)};
-        Store plainStore = store();
-        final PersistitStore persistitStore;
-        if (plainStore instanceof OperatorStore) {
-            OperatorStore operatorStore = (OperatorStore) plainStore;
-            persistitStore = operatorStore.getPersistitStore();
-        }
-        else {
-            persistitStore = (PersistitStore) plainStore;
-        }
-        adapter = new PersistitAdapter(schema, persistitStore, treeService(), session());
+        adapter = persistitAdapter(schema);
     }
 
     protected void use(NewRow[] db)
