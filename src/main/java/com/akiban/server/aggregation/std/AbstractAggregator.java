@@ -90,10 +90,6 @@ class AbstractAggregator implements Aggregator
                     default: throw new UnsupportedOperationException("Not supported yet.");
                 }         
         }
-        else
-        {
-            //javax.swing.JOptionPane.showMessageDialog(null, "input is null");
-        }
     }
 
     @Override

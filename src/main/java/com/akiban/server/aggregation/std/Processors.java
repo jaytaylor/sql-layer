@@ -43,6 +43,7 @@ class Processors
             switch (type)
             {
                 case DOUBLE:
+                case INT:
                 case LONG:
                 case DECIMAL:
                 case U_BIGINT: return;
@@ -104,6 +105,7 @@ class Processors
                 case VARCHAR:
                 case DATE:
                 case BOOL:
+                case DATETIME:
                 case TIME:      return;
                 default:        throw new UnsupportedOperationException("Not supported yet.");
             }            
