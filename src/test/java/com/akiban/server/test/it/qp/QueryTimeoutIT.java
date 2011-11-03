@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.akiban.qp.operator.API.cursor;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class QueryTimeoutIT extends OperatorITBase
 {
@@ -97,6 +98,83 @@ public class QueryTimeoutIT extends OperatorITBase
         assertTrue(elapsedSec >= timeoutSec && elapsedSec < timeoutSec * 1.25);
     }
 
+    @Test
+    public void shortenedTimeout() throws InterruptedException
+    {
+        int INITIAL_TIMEOUT_SEC = 10000;
+        int MODIFIED_TIMEOUT_SEC = 5;
+        AkServer akServer = (AkServer) akServer();
+        akServer.queryTimeoutSec(INITIAL_TIMEOUT_SEC);
+        final Operator plan = new DoNothingForever();
+        final Cursor cursor = cursor(plan, adapter);
+        final AtomicBoolean exited = new AtomicBoolean(false);
+        Thread queryThread = new Thread(
+            new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    try {
+                        while (true) {
+                            cursor.next();
+                        }
+                    } catch (QueryTimedOutException e) {
+                        exited.set(true);
+                    }
+                }
+            });
+        long start = System.currentTimeMillis();
+        queryThread.start();
+        // Shorten timeout
+        Thread.sleep(1000); // 1 sec
+        akServer.queryTimeoutSec(MODIFIED_TIMEOUT_SEC);
+        queryThread.join();
+        long stop = System.currentTimeMillis();
+        assertTrue(exited.get());
+        long elapsedSec = (stop - start) / 1000;
+        assertTrue(elapsedSec >= MODIFIED_TIMEOUT_SEC && elapsedSec < MODIFIED_TIMEOUT_SEC * 1.25);
+    }
+
+    @Test
+    public void removedTimeout() throws InterruptedException
+    {
+        int INITIAL_TIMEOUT_SEC = 5;
+        int MODIFIED_TIMEOUT_SEC = -1; // No timeout
+        AkServer akServer = (AkServer) akServer();
+        akServer.queryTimeoutSec(INITIAL_TIMEOUT_SEC);
+        final Operator plan = new DoNothingForever();
+        final Cursor cursor = cursor(plan, adapter);
+        final AtomicBoolean exited = new AtomicBoolean(false);
+        Thread queryThread = new Thread(
+            new Runnable()
+            {
+                @Override
+                public void run()
+                {
+                    try {
+                        while (true) {
+                            cursor.next();
+                        }
+                    } catch (QueryCanceledException e) { // catches timeout too
+                        exited.set(true);
+                    }
+                }
+            });
+        long start = System.currentTimeMillis();
+        queryThread.start();
+        // Remove timeout
+        Thread.sleep(1000); // 1 sec
+        akServer.queryTimeoutSec(MODIFIED_TIMEOUT_SEC);
+        Thread.sleep(INITIAL_TIMEOUT_SEC * 1000);
+        session().cancelCurrentQuery(true);
+        queryThread.join();
+        long stop = System.currentTimeMillis();
+        assertTrue(exited.get());
+        long elapsedSec = (stop - start) / 1000;
+        long expectedSec = INITIAL_TIMEOUT_SEC + 1;
+        assertTrue(elapsedSec >= expectedSec && elapsedSec < expectedSec * 1.25);
+    }
+
     private static class DoNothingForever extends Operator
     {
         // Operator interface
@@ -120,6 +198,11 @@ public class QueryTimeoutIT extends OperatorITBase
             public Row next()
             {
                 checkQueryCancelation();
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e) {
+                    fail();
+                }
                 return null;
             }
 

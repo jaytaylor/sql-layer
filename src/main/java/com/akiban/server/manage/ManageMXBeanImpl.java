@@ -99,13 +99,13 @@ public class ManageMXBeanImpl implements ManageMXBean {
     }
 
     @Override
-    public int getQueryTimeoutSec()
+    public long getQueryTimeoutSec()
     {
         return akserver.queryTimeoutSec();
     }
 
     @Override
-    public void setQueryTimeoutSec(int queryTimeoutSec)
+    public void setQueryTimeoutSec(long queryTimeoutSec)
     {
         akserver.queryTimeoutSec(queryTimeoutSec);
     }
