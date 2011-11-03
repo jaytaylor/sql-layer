@@ -86,7 +86,7 @@ public class ArithOps
        public long evaluate (long one, long two)
        {
            if (two == 0)
-                throw new DivisionByZeroException();
+                throw new DivisionByZeroException(); 
            return one / two;
        }
        
@@ -94,7 +94,7 @@ public class ArithOps
        public double evaluate (double one, double two) 
        {
            if (two == 0)
-                throw new DivisionByZeroException();
+                throw new DivisionByZeroException(); 
            return one / two;
        }
        
