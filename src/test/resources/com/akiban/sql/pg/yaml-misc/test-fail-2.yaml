@@ -1,0 +1,14 @@
+---
+# Create tables
+- Statement:
+    CREATE TABLE customers (cid int, name varchar(32));
+---
+# Populate tables
+- Statement: INSERT INTO customers VALUES (1, 'Smith'), (2, 'Jones');
+---
+# Query with incorrect results
+- Statement: SELECT * FROM customers
+- output:
+  - [1, Smith]
+  - [2, Howard]
+...

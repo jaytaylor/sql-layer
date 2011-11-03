@@ -1,0 +1,29 @@
+---
+# Create tables
+- Statement:
+    CREATE TABLE customers (cid int, name varchar(32));
+---
+# Populate tables
+- Statement: INSERT INTO customers VALUES (1, 'Smith'), (2, 'Jones');
+- output: 2
+---
+# Check contents
+- Statement: SELECT cid, name FROM customers ORDER BY cid;
+- output:
+  - [1, Smith]
+  - [2, Jones]
+---
+# Try a statement with a syntax error
+- Statement: SELECT FROM;
+- error: 0
+---
+# Try one set of parameters
+- Statement: SELECT cid FROM customers WHERE name = ?;
+- params: [Smith]
+- output: [[1]]
+---
+# Try multiple sets of parameters
+- Statement: SELECT cid FROM customers WHERE name = ?;
+- params: [[Jones], [Smith]]
+- output: [[2], [1]]
+...
