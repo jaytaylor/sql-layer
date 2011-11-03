@@ -94,10 +94,12 @@ public class PersistitAdapter extends StoreAdapter
         if (session.isCurrentQueryCanceled()) {
             throw new QueryCanceledException(session);
         }
-        long queryTimeoutMsec = akServer.queryTimeoutSec() * 1000;
-        long runningTimeMsec = System.currentTimeMillis() - queryStartMsec;
-        if (runningTimeMsec > queryTimeoutMsec) {
-            throw new QueryTimedOutException(runningTimeMsec);
+        long queryTimeoutSec = akServer.queryTimeoutSec();
+        if (queryTimeoutSec >= 0) {
+            long runningTimeMsec = System.currentTimeMillis() - queryStartMsec;
+            if (runningTimeMsec > queryTimeoutSec * 1000) {
+                throw new QueryTimedOutException(runningTimeMsec);
+            }
         }
     }
 
