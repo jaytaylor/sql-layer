@@ -28,13 +28,13 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.AkServerInterface;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.error.QueryTimedOutException;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
@@ -94,10 +94,12 @@ public class PersistitAdapter extends StoreAdapter
         if (session.isCurrentQueryCanceled()) {
             throw new QueryCanceledException(session);
         }
-        long queryTimeoutMsec = akServer.queryTimeoutSec() * 1000;
-        long runningTimeMsec = System.currentTimeMillis() - queryStartMsec;
-        if (runningTimeMsec > queryTimeoutMsec) {
-            throw new QueryTimedOutException(runningTimeMsec);
+        long queryTimeoutSec = config.queryTimeoutSec();
+        if (queryTimeoutSec >= 0) {
+            long runningTimeMsec = System.currentTimeMillis() - queryStartMsec;
+            if (runningTimeMsec > queryTimeoutSec * 1000) {
+                throw new QueryTimedOutException(runningTimeMsec);
+            }
         }
     }
 
@@ -227,20 +229,20 @@ public class PersistitAdapter extends StoreAdapter
                             PersistitStore persistit,
                             TreeService treeService,
                             Session session,
-                            AkServerInterface akServer)
+                            ConfigurationService config)
     {
-        this(schema, persistit, session, treeService, akServer, null);
+        this(schema, persistit, session, treeService, config, null);
     }
 
     PersistitAdapter(Schema schema,
                      PersistitStore persistit,
                      Session session,
                      TreeService treeService,
-                     AkServerInterface akServer,
+                     ConfigurationService config,
                      PersistitFilterFactory.InternalHook hook)
     {
         super(schema);
-        this.akServer = akServer;
+        this.config = config;
         this.persistit = persistit;
         this.session = session;
         this.treeService = treeService;
@@ -250,7 +252,7 @@ public class PersistitAdapter extends StoreAdapter
     // Object state
 
     private final TreeService treeService;
-    private final AkServerInterface akServer;
+    private final ConfigurationService config;
     final PersistitStore persistit;
     final Session session;
     final PersistitFilterFactory filterFactory;

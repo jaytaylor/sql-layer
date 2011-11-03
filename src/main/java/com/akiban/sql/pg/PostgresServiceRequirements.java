@@ -18,6 +18,7 @@ package com.akiban.sql.pg;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.expression.ExpressionRegistry;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.instrumentation.InstrumentationService;
 import com.akiban.server.service.session.SessionService;
@@ -33,7 +34,7 @@ public final class PostgresServiceRequirements {
                                        TreeService treeService,
                                        ExpressionRegistry expressionRegistry,
                                        AggregatorRegistry aggregatorRegistry,
-                                       AkServerInterface akServer
+                                       ConfigurationService config
                                        ) {
         this.instrumentation = instrumentation;
         this.dxlService = dxlService;
@@ -42,7 +43,7 @@ public final class PostgresServiceRequirements {
         this.treeService = treeService;
         this.expressionRegistry = expressionRegistry;
         this.aggregatorRegistry = aggregatorRegistry;
-        this.akServer = akServer;
+        this.config = config;
     }
 
     public InstrumentationService instrumentation() {
@@ -73,8 +74,8 @@ public final class PostgresServiceRequirements {
         return aggregatorRegistry;
     }
 
-    public AkServerInterface akServer() {
-        return akServer;
+    public ConfigurationService config() {
+        return config;
     }
 
     private final InstrumentationService instrumentation;
@@ -84,5 +85,5 @@ public final class PostgresServiceRequirements {
     private final TreeService treeService;
     private final ExpressionRegistry expressionRegistry;
     private final AggregatorRegistry aggregatorRegistry;
-    private final AkServerInterface akServer;
+    private final ConfigurationService config;
 }
