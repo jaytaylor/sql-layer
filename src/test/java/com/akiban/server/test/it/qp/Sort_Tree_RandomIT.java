@@ -80,7 +80,7 @@ public class Sort_Tree_RandomIT extends OperatorITBase
         } else {
             persistitStore = (PersistitStore) plainStore;
         }
-        adapter = new PersistitAdapter(schema, persistitStore, treeService(), session());
+        adapter = new PersistitAdapter(schema, persistitStore, treeService(), session(), akServer());
         use(db);
     }
 

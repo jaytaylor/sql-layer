@@ -85,7 +85,6 @@ public interface ModelNames
     String index_constraint = "constraint";
     String index_unique = "unique";
     String index_treeName = "treeName";
-    String index_joinType = "joinType";
     // indexColumn
     String indexColumn = "indexColumn";
     String indexColumn_schemaName = "schemaName";

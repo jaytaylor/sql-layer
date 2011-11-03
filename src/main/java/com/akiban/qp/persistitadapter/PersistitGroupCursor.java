@@ -21,12 +21,10 @@ import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.QueryCanceledException;
 import com.akiban.util.ShareHolder;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
-import com.persistit.exception.PersistitInterruptedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,10 +62,8 @@ class PersistitGroupCursor implements GroupCursor
             groupScan =
                 hKey == null ? new FullScan() :
                 hKeyDeep ? new HKeyAndDescendentsScan(hKey) : new HKeyWithoutDescendentsScan(hKey);
-        } catch (PersistitInterruptedException e) {
-            throw new QueryCanceledException();
         } catch (PersistitException e) {
-            throw new PersistitAdapterException(e);
+            adapter.handlePersistitException(e);
         }
     }
 
@@ -88,10 +84,9 @@ class PersistitGroupCursor implements GroupCursor
                 LOG.debug("PersistitGroupCursor: {}", next ? row : null);
             }
             return next ? row.get() : null;
-        } catch (PersistitInterruptedException e) {
-            throw new QueryCanceledException();
         } catch (PersistitException e) {
-            throw new PersistitAdapterException(e);
+            adapter.handlePersistitException(e);
+            throw new AssertionError();
         } catch (InvalidOperationException e) {
             throw new PersistitAdapterException(e);
         }

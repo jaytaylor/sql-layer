@@ -38,6 +38,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.persistitadapter.OperatorStore;
+import com.akiban.server.AkServerInterface;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.rowdata.RowData;
@@ -265,6 +266,10 @@ public class ApiTestBase {
         return sm.getStore();
     }
 
+    protected final AkServerInterface akServer() {
+        return sm.getAkSserver();
+    }
+
     protected String akibanFK(String childCol, String parentTable, String parentCol) {
         ++akibanFKCount;
         return String.format("CONSTRAINT __akiban_fk_%d FOREIGN KEY __akiban_fk_%d (%s) REFERENCES %s (%s)",
@@ -339,23 +344,14 @@ public class ApiTestBase {
 
     protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs)
             throws InvalidOperationException {
-        return createGroupIndex(groupName, indexName, false, tableColumnPairs);
+        return createGroupIndex(groupName, indexName, tableColumnPairs, Index.JoinType.LEFT);
     }
 
     protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs, Index.JoinType joinType)
-    throws InvalidOperationException {
-        return createGroupIndex(groupName, indexName, false, tableColumnPairs, joinType);
-    }
-
-    protected final GroupIndex createGroupIndex(String groupName, String indexName, boolean unique, String tableColumnPairs) {
-        return createGroupIndex(groupName, indexName, unique, tableColumnPairs, Index.JoinType.LEFT);
-    }
-
-    protected final GroupIndex createGroupIndex(String groupName, String indexName, boolean unique, String tableColumnPairs, Index.JoinType joinType)
             throws InvalidOperationException {
         AkibanInformationSchema ais = ddl().getAIS(session());
         final Index index;
-        index = GroupIndexCreator.createIndex(ais, groupName, indexName, unique, tableColumnPairs, joinType);
+        index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnPairs, joinType);
         ddl().createIndexes(session(), Collections.singleton(index));
         return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
     }

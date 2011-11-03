@@ -113,9 +113,6 @@ public class
         column.setCollation(collation);
     }
 
-    /**
-     * Create a new TableIndex
-     */
     public void index(String schemaName, String tableName, String indexName,
             Boolean unique, String constraint) {
         LOG.info("index: " + schemaName + "." + tableName + "." + indexName);
@@ -126,13 +123,19 @@ public class
                 constraint);
     }
 
-    public void groupIndex(String groupName, String indexName, Boolean unique)
+    public void groupIndex(String groupName, String indexName, Boolean unique, Index.JoinType joinType)
     {
         LOG.info("groupIndex: " + groupName + "." + indexName);
         Group group = ais.getGroup(groupName);
         checkFound(group, "creating group index", "group", groupName);
         String constraint = unique ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT;
-        GroupIndex.create(ais, group, indexName, indexIdGenerator++, unique, constraint, null);
+        GroupIndex.create(ais, group, indexName, indexIdGenerator++, unique, constraint, joinType);
+    }
+
+    @Deprecated
+    public void groupIndex(String groupName, String indexName, Boolean unique)
+    {
+        groupIndex(groupName, indexName, unique, Index.JoinType.LEFT);
     }
 
     public void indexColumn(String schemaName, String tableName,

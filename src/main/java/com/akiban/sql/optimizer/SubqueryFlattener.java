@@ -480,7 +480,7 @@ public class SubqueryFlattener
                                                ValueNode parentOperand,
                                                Map<ColumnBinding,ColumnEquality> columnEqualities)
             throws StandardException {
-        ColumnBinding columnBinding = new ColumnBinding(fromTable, column);
+        ColumnBinding columnBinding = new ColumnBinding(fromTable, column, false);
         ColumnEquality constraint = columnEqualities.get(columnBinding);
         if (constraint != null)
             return constraint;  // Already computed earlier.
