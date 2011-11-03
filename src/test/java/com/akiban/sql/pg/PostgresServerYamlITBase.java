@@ -54,7 +54,7 @@ public class PostgresServerYamlITBase extends PostgresServerITBase {
     public void testYaml() throws IOException {
 	Reader in = new FileReader(caseName);
 	try {
-	    new YamlTester(in, connection).test();
+	    new YamlTester(caseName, in, connection).test();
 	} finally {
 	    in.close();
 	}

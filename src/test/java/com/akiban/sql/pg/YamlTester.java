@@ -15,6 +15,9 @@
 
 package com.akiban.sql.pg;
 
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
 import java.io.Reader;
 
 import java.util.ArrayList;
@@ -22,6 +25,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Stack;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -49,17 +53,24 @@ import org.yaml.snakeyaml.Yaml;
  */
 public class YamlTester {
 
+    private final String filename;
     private final Reader in;
     private final Connection connection;
+    private final Stack<String> includeStack = new Stack<String>();
     private int commandNumber = 0;
     private String commandKey = null;
 
-    public YamlTester(Reader in, Connection connection) {
+    public YamlTester(String filename, Reader in, Connection connection) {
+	this.filename = filename;
 	this.in = in;
 	this.connection = connection;
     }
 
     public void test() {
+	test(in);
+    }
+
+    void test(Reader in) {
 	Yaml yaml = new Yaml();
 	for (Object document : yaml.loadAll(in)) {
 	    ++commandNumber;
@@ -75,6 +86,8 @@ public class YamlTester {
 		Command command;
 		if ("Statement".equals(commandKey)) {
 		    command = new StatementCommand(value, sequence);
+		} else if ("Include".equals(commandKey)) {
+		    command = new IncludeCommand(value, sequence);
 		} else {
 		    throw new AssertionError(
 			"Unknown command: " + commandKey);
@@ -241,6 +254,7 @@ public class YamlTester {
 	    explain = string(value, "explain value");
 	}
 
+	@Override
 	void execute() throws SQLException {
 	    if (params == null) {
 		Statement stmt = connection.createStatement(
@@ -378,8 +392,7 @@ public class YamlTester {
 	private void debugPrintResults(ResultSet rs)
 		throws SQLException
 	{
-	    System.out.println(
-		"Result output for command " + commandNumber + ":");
+	    System.out.println(context() + "Result output:");
 	    ResultSetMetaData md = rs.getMetaData();
 	    int nc = md.getColumnCount();
 	    while (rs.next()) {
@@ -421,6 +434,52 @@ public class YamlTester {
 	    }
 	    System.err.println("Received expected exception: " + sqlException);
 	}
+    }
+
+    class IncludeCommand extends Command {
+    	final String include;
+
+	IncludeCommand(Object value, List<Object> sequence) {
+	    String includeValue = string(value, "Include value");
+	    File include = new File(includeValue);
+	    assertEquals("The Include command does not support attributes",
+			 1, sequence.size());
+	    if (!include.isAbsolute()) {
+		String parent = filename;
+		if (!includeStack.isEmpty()) {
+		    parent = includeStack.peek();
+		}
+		include = new File(
+		    new File(parent).getParent(), include.toString());
+	    }
+	    this.include = include.toString();
+	    Reader in = null;
+	    try {
+		in = new FileReader(include);
+	    } catch (IOException e) {
+		throw initCause(
+		    new AssertionError(
+			"Problem accessing include file " + include +
+			": " + e.getMessage()),
+		    e);
+	    }
+	    int originalCommandNumber = commandNumber;
+	    commandNumber = 0;
+	    try {
+		includeStack.push(includeValue);
+		test(in);
+	    } finally {
+		includeStack.pop();
+		commandNumber = originalCommandNumber;
+		try {
+		    in.close();
+		} catch (IOException e) {
+		}
+	    }
+	}
+
+	@Override
+	void execute() { }
     }
 
     static <T extends Throwable> T initCause(T exception, Throwable cause) {
@@ -526,6 +585,17 @@ public class YamlTester {
 
     private String context() {
 	StringBuffer context = new StringBuffer();
+	if (filename != null) {
+	    context.append(filename);
+	}
+	if (!includeStack.isEmpty()) {
+	    for (String include : includeStack) {
+		if (context.length() != 0) {
+		    context.append(", ");
+		}
+		context.append("Include ").append(include);
+	    }
+	}
 	if (commandNumber != 0) {
 	    if (context.length() != 0) {
 		context.append(", ");

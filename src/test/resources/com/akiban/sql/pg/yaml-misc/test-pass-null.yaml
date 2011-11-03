@@ -1,0 +1,19 @@
+# Test null and empty values
+---
+# Create tables
+- Statement: CREATE TABLE customers (cid int, name varchar(32))
+---
+# Populate tables
+- Statement: INSERT INTO customers (name)
+        VALUES ('Smith'), (''), ('null')
+---
+- Statement: INSERT INTO customers (cid) VALUES (1)
+---
+# Query
+- Statement: SELECT * FROM customers
+- output:
+  - [null, Smith]
+  - [null, '']
+  - [null, 'null']
+  - [1, null]
+...

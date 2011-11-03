@@ -1,0 +1,11 @@
+---
+- Statement:
+    CREATE TABLE customers (cid int, name varchar(32));
+---
+- Statement: INSERT INTO customers VALUES (1, 'Smith'), (2, 'Jones');
+---
+- Statement: SELECT cid, name FROM customers ORDER BY cid;
+- output:
+  - [1, Smith]
+  - [2, Jones]
+...

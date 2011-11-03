@@ -115,7 +115,7 @@ public class YamlTesterParseTest {
 
     private void test(String yaml, String testMethod) {
 	try {
-	    new YamlTester(new StringReader(yaml), null).test();
+	    new YamlTester(null, new StringReader(yaml), null).test();
 	} catch (Throwable t) {
 	    System.out.println(testMethod + ": " + t);
 	    return;
