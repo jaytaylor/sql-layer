@@ -255,9 +255,10 @@ public class ASTStatementLoader extends BaseRule
                 throw new UnsupportedSQLException("WINDOW", selectNode);
         
             if (selectNode.isDistinct()) {
-                query = new Project(query, projects);
+                Project project = new Project(query, projects);
+                query = project;
                 if (!sorts.isEmpty()) {
-                    query = new Sort(query, sortsForDistinct(sorts, projects));
+                    query = new Sort(query, sortsForDistinct(sorts, project));
                     query = new Distinct(query, Distinct.Implementation.PRESORTED);
                 }
                 else
@@ -845,23 +846,34 @@ public class ASTStatementLoader extends BaseRule
                                                     condition.getType(), condition);
         }
 
-        /** SELECT DISTINCT with sorting adds extra columns so as to
-         * only sort once.
+        /** SELECT DISTINCT with sorting sorts by an input Project and
+         * adds extra columns so as to only sort once for both
+         * Distinct and the requested ordering.
          */
         protected List<OrderByExpression> sortsForDistinct(List<OrderByExpression> sorts,
-                                                           List<ExpressionNode> projects)
+                                                           Project project)
                 throws StandardException {
-            BitSet used = new BitSet(projects.size());
+            List<ExpressionNode> exprs = project.getFields();
+            BitSet used = new BitSet(exprs.size());
             for (OrderByExpression orderBy : sorts) {
-                int idx = projects.indexOf(orderBy.getExpression());
+                ExpressionNode expr = orderBy.getExpression();
+                int idx = exprs.indexOf(expr);
                 if (idx < 0)
                     throw new UnsupportedSQLException("SELECT DISTINCT requires that ORDER BY expressions be in the select list",
-                                                      orderBy.getExpression().getSQLsource());
+                                                      expr.getSQLsource());
+                ExpressionNode cexpr = new ColumnExpression(project, idx,
+                                                            expr.getSQLtype(),
+                                                            expr.getSQLsource());
+                orderBy.setExpression(cexpr);
                 used.set(idx);
             }
-            for (int i = 0; i < projects.size(); i++) {
+            for (int i = 0; i < exprs.size(); i++) {
                 if (!used.get(i)) {
-                    OrderByExpression orderBy = new OrderByExpression(projects.get(i),
+                    ExpressionNode expr = exprs.get(i);
+                    ExpressionNode cexpr = new ColumnExpression(project, i,
+                                                                expr.getSQLtype(),
+                                                                expr.getSQLsource());
+                    OrderByExpression orderBy = new OrderByExpression(cexpr,
                                                                       sorts.get(0).isAscending());
                     sorts.add(orderBy);
                 }
