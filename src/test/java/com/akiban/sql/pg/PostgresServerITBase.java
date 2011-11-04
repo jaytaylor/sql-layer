@@ -43,8 +43,6 @@ public class PostgresServerITBase extends ITBase
     public static final String USER_NAME = "user";
     public static final String USER_PASSWORD = "user";
 
-    protected Connection connection;
-
     protected Connection openConnection() throws Exception {
         int port = serviceManager().getPostgresService().getPort();
         if (port <= 0) {
@@ -62,6 +60,8 @@ public class PostgresServerITBase extends ITBase
     protected PostgresServer server() {
         return serviceManager().getPostgresService().getServer();
     }
+
+    protected Connection connection;
 
     @Before
     public void openTheConnection() throws Exception {
@@ -93,4 +93,5 @@ public class PostgresServerITBase extends ITBase
 
     protected PostgresServerITBase() {
     }
+
 }

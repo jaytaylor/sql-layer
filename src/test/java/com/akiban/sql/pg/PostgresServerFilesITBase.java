@@ -47,8 +47,6 @@ import java.util.List;
 @Ignore
 public class PostgresServerFilesITBase extends PostgresServerITBase
 {
-    protected int rootTableId;
-
     public void loadDatabase(File dir) throws Exception {
         loadSchemaFile(new File(dir, "schema.ddl"));
         File groupIndex = new File(dir, "group.idx");
@@ -58,6 +56,8 @@ public class PostgresServerFilesITBase extends PostgresServerITBase
             loadDataFile(data);
         }
     }
+
+    protected int rootTableId;
 
     protected void loadSchemaFile(File file) throws Exception {
         Reader rdr = null;
