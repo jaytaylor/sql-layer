@@ -5,3 +5,5 @@ sort-2: columns reversed
 sort-3: additional SELECT list columns
 
 sort-4: additional sort columns
+
+distinct: DISTINCT added (giving own Project)
