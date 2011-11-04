@@ -148,6 +148,57 @@ public class YamlTester {
 	abstract void execute() throws Exception;
     }
 
+    class IncludeCommand extends Command {
+    	final String include;
+
+	IncludeCommand(Object value, List<Object> sequence) {
+	    String includeValue = string(value, "Include value");
+	    File include = new File(includeValue);
+	    if (sequence.size() > 1) {
+		throw new AssertionError(
+		    "The Include command does not support attributes" +
+		    "\nFound: " + sequence.get(1));
+	    }
+	    if (!include.isAbsolute()) {
+		String parent = filename;
+		if (!includeStack.isEmpty()) {
+		    parent = includeStack.peek();
+		}
+		if (parent != null) {
+		    include = new File(
+			new File(parent).getParent(), include.toString());
+		}
+	    }
+	    this.include = include.toString();
+	    Reader in = null;
+	    try {
+		in = new FileReader(include);
+	    } catch (IOException e) {
+		throw initCause(
+		    new AssertionError(
+			"Problem accessing include file " + include +
+			": " + e.getMessage()),
+		    e);
+	    }
+	    int originalCommandNumber = commandNumber;
+	    commandNumber = 0;
+	    try {
+		includeStack.push(includeValue);
+		test(in);
+	    } finally {
+		includeStack.pop();
+		commandNumber = originalCommandNumber;
+		try {
+		    in.close();
+		} catch (IOException e) {
+		}
+	    }
+	}
+
+	@Override
+	void execute() { }
+    }
+
     class PropertiesCommand extends Command {
 
 	PropertiesCommand(Object value, List<Object> sequence) {
@@ -172,29 +223,22 @@ public class YamlTester {
 	List<List<Object>> params;
 	List<Integer> paramTypes;
 	List<List<Object>> output;
-	List<String> outputTypes;
-
-	/**
-	 * The number of output or updated rows expected, or -1 if not
-	 * specified.
-	 */
 	int rowCount = -1;
-
+	List<String> outputTypes;
 	boolean errorSpecified;
 	int errorNumber;
 	String errorMessage;
-
 	String explain;
 
 	/**
-	 * The 1-based row of parameters being used for the current
-	 * parameterized statement execution.
+	 * The 1-based index of the row of parameters being used for the
+	 * current parameterized statement execution.
 	 */
 	int paramsRow = 1;
 
 	/**
-	 * The 0-based row of the output being compared with the statement
-	 * output.
+	 * The 0-based index of the row of the output being compared with the
+	 * statement output.
 	 */
 	int outputRow = 0;
 
@@ -211,6 +255,8 @@ public class YamlTester {
 		    parseParamTypes(attributeValue);
 		} else if ("output".equals(attribute)) {
 		    parseOutput(attributeValue);
+		} else if ("row_count".equals(attribute)) {
+		    parseRowCount(attributeValue);
 		} else if ("output_types".equals(attribute)) {
 		    parseOutputTypes(attributeValue);
 		} else if ("error".equals(attribute)) {
@@ -221,34 +267,50 @@ public class YamlTester {
 		    fail("The " + attribute + " attribute was not expected");
 		}
 	    }
+	    if (errorSpecified && output != null) {
+		fail("Cannot specify both error and output attributes");
+	    }
+	    if (errorSpecified && rowCount != -1) {
+		fail("Cannot specify both error and row_count attributes");
+	    }
+	    if (paramTypes != null) {
+		if (params == null) {
+		    fail("Cannot specify the param_types attribute without" +
+			 " params attribute");
+		} else {
+		    assertEquals("The params_types attribute must be the same" +
+				 " length as the row length of the params" +
+				 " attribute",
+				 params.get(0).size(), paramTypes.size());
+		}
+	    }
+	    if (rowCount != -1) {
+		if (output != null) {
+		    assertEquals("The row_count attribute must be the same" +
+				 " as the length of the rows in the output"+
+				 " attribute",
+				 output.get(0).size(), rowCount);
+		} else if (outputTypes != null) {
+		    assertEquals("The row_count attribute must be the same" +
+				 " as the length of the output_types" +
+				 " attribute",
+				 outputTypes.size(), rowCount);
+		}
+	    }
+	    if (outputTypes != null) {
+		if (output != null) {
+		    assertEquals("The output_types attribute must be the same" +
+				 " length as the length of the rows in the" +
+				 " output attribute",
+				 output.get(0).size(), outputTypes.size());
+		}
+	    }
 	}
 
 	private void parseParams(Object value) {
-	    List<Object> list = nonEmptySequence(value, "params value");
-	    if (params == null) {
-		params = new ArrayList<List<Object>>();
-	    }
-	    if (list.get(0) instanceof List) {
-		int length = params.isEmpty() ? -1 : params.get(0).size();
-		int rowNumber = 0;
-		for (Object elem : list) {
-		    rowNumber++;
-		    List<Object> listElem =
-			nonEmptyScalarSequence(elem, "params value element");
-		    if (length == -1) {
-			length = listElem.size();
-		    } else {
-			assertEquals(
-			    "Parameters row " + rowNumber + " has a different" +
-			    " length than previous rows:",
-			    length, listElem.size());
-		    }
-		    params.add(listElem);
-		}
-	    } else {
-		/* Single set of parameters */
-		params.add(nonEmptyScalarSequence(list, "params value"));
-	    }
+	    assertNull("The params attribute must not appear more than once",
+		       params);
+	    params = rows(value, "params value");
 	}
 
 	private void parseParamTypes(Object value) {
@@ -270,34 +332,17 @@ public class YamlTester {
 	}
 
 	private void parseOutput(Object value) {
-	    assertTrue("The output attribute must not appear more than once",
-		       rowCount == -1 && output == null);
-	    assertFalse("The output and error attributes must not both" +
-			" be specified",
-			errorSpecified);
-	    if (value instanceof Integer) {
-		rowCount = (Integer) value;
-		assertTrue("The output row count must not be negative" +
-			   "\nGot: " + rowCount,
-			   rowCount >= 0);
-	    } else if (value instanceof List) {
-		List<Object> rows = sequence(value, "output value");
-		int rowLength = -1;
-		output = new ArrayList<List<Object>>(rows.size());
-		for (Object elem : rows) {
-		    List<Object> row =
-			nonEmptyScalarSequence(elem, "output row");
-		    if (rowLength == -1) {
-			rowLength = row.size();
-		    } else {
-			assertEquals("Output rows must all be the same length",
-				     rowLength, row.size());
-		    }
-		    output.add(row);
-		}
-	    } else {
-		fail("The output value must be a count or a sequence of row");
-	    }
+	    assertNull("The output attribute must not appear more than once",
+		       output);
+	    output = rows(value, "output value");
+	}
+
+	private void parseRowCount(Object value) {
+	    assertTrue("The row_count attribute must not appear more than once",
+		       rowCount == -1);
+	    rowCount = integer(value, "row_count value");
+	    assertTrue("The row_count value must not be negative",
+		       rowCount >= 0);
 	}
 
 	private void parseOutputTypes(Object value) {
@@ -310,22 +355,15 @@ public class YamlTester {
 	private void parseError(Object value) {
 	    assertFalse("The error attribute must not appear more than once",
 			errorSpecified);
-	    assertTrue("The error and output attributes must not both" +
-		       " be specified",
-		       rowCount == -1 && output == null);
 	    errorSpecified = true;
-	    if (value instanceof Integer) {
-		errorNumber = (Integer) value;
-	    } else {
-		List<Object> errorInfo =
-		    nonEmptyScalarSequence(value, "error value");
-		errorNumber = integer(errorInfo.get(0), "error number");
-		if (errorInfo.size() > 1) {
-		    errorMessage = string(errorInfo.get(1), "error message");
-		    assertTrue("The error attribute can have at most two" +
-			       " elements",
-			       errorInfo.size() < 3);
-		}
+	    List<Object> errorInfo =
+		nonEmptyScalarSequence(value, "error value");
+	    errorNumber = integer(errorInfo.get(0), "error number");
+	    if (errorInfo.size() > 1) {
+		errorMessage = string(errorInfo.get(1), "error message");
+		assertTrue("The error attribute can have at most two" +
+			   " elements",
+			   errorInfo.size() < 3);
 	    }
 	}
 
@@ -599,56 +637,6 @@ public class YamlTester {
 	}
     }
 
-    class IncludeCommand extends Command {
-    	final String include;
-
-	IncludeCommand(Object value, List<Object> sequence) {
-	    String includeValue = string(value, "Include value");
-	    File include = new File(includeValue);
-	    if (sequence.size() > 1) {
-		throw new AssertionError(
-		    "The Include command does not support attributes" +
-		    "\nFound: " + sequence.get(1));
-	    }
-	    if (!include.isAbsolute()) {
-		String parent = filename;
-		if (!includeStack.isEmpty()) {
-		    parent = includeStack.peek();
-		}
-		if (parent != null) {
-		    include = new File(
-			new File(parent).getParent(), include.toString());
-		}
-	    }
-	    this.include = include.toString();
-	    Reader in = null;
-	    try {
-		in = new FileReader(include);
-	    } catch (IOException e) {
-		throw initCause(
-		    new AssertionError(
-			"Problem accessing include file " + include +
-			": " + e.getMessage()),
-		    e);
-	    }
-	    int originalCommandNumber = commandNumber;
-	    commandNumber = 0;
-	    try {
-		includeStack.push(includeValue);
-		test(in);
-	    } finally {
-		includeStack.pop();
-		commandNumber = originalCommandNumber;
-		try {
-		    in.close();
-		} catch (IOException e) {
-		}
-	    }
-	}
-
-	@Override
-	void execute() { }
-    }
 
     static <T extends Throwable> T initCause(T exception, Throwable cause) {
 	exception.initCause(cause);
@@ -755,6 +743,26 @@ public class YamlTester {
 	List<String> list = stringSequence(object, desc);
 	assertFalse("The " + desc + " must not be empty", list.isEmpty());
 	return list;
+    }
+
+    static List<List<Object>> rows(Object object, String desc) {
+	List<Object> list = nonEmptySequence(object, desc);
+	List<List<Object>> rows = new ArrayList<List<Object>>();
+	int rowLength = -1;
+	for (int i = 0; i < list.size(); i++) {
+	    List<Object> row =
+		nonEmptyScalarSequence(list.get(i), desc + " element");
+	    if (i == 0) {
+		rowLength = row.size();
+	    } else {
+		assertEquals(
+		    desc + " row " + (i + 1) + " has a different" +
+		    " length than previous rows:",
+		    rowLength, row.size());
+	    }
+	    rows.add(row);
+	}
+	return rows;
     }
 
     static class DontCare {

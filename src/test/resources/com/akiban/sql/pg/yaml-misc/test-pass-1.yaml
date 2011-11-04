@@ -5,7 +5,7 @@
 ---
 # Populate tables
 - Statement: INSERT INTO customers VALUES (1, 'Smith'), (2, 'Jones');
-- output: 2
+- row_count: 2
 ---
 # Check contents
 - Statement: SELECT cid, name FROM customers ORDER BY cid;
@@ -20,11 +20,12 @@
 ---
 # Try a statement with a syntax error
 - Statement: SELECT FROM;
-- error: 0
+- error: [0]
 ---
 # Try one set of parameters
 - Statement: SELECT cid FROM customers WHERE name = ?;
-- params: [Smith]
+- params:
+  - [Smith]
 - output: [[1]]
 ---
 # Try multiple sets of parameters
@@ -42,6 +43,7 @@
 ---
 # Type param_types
 - Statement: SELECT * FROM customers WHERE name = ?
-- params: [Smith]
+- params:
+  - [Smith]
 - param_types: [VARCHAR]
 ...

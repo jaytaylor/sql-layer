@@ -41,8 +41,8 @@ import java.util.EnumSet;
 import java.util.List;
 
 /**
- * A base class for integration tests that access the Postgres server and read
- * test data from separate files.
+ * A base class for integration tests that use data from files to specify the
+ * input and output expected from calls to the Postgres server.
  */
 @Ignore
 public class PostgresServerFilesITBase extends PostgresServerITBase
