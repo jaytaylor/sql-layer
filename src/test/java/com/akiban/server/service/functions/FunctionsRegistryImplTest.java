@@ -20,6 +20,7 @@ import com.akiban.server.aggregation.AggregatorFactory;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.types.AkType;
 import org.junit.Test;
 
@@ -121,6 +122,14 @@ public final class FunctionsRegistryImplTest {
     public static final ExpressionComposer GOOD_EXPRESSION_COMPOSER = new ExpressionComposer() {
         @Override
         public Expression compose(List<? extends Expression> arguments) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public AkType argumentType(int index) {
+            throw new UnsupportedOperationException();
+        }
+        @Override
+        public ExpressionType composeType(List<? extends ExpressionType> argumentTypes) {
             throw new UnsupportedOperationException();
         }
     };

@@ -19,6 +19,7 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
@@ -210,6 +211,16 @@ public final class CompareExpression extends AbstractBinaryExpression {
         @Override
         protected Expression compose(Expression first, Expression second) {
             return new CompareExpression(first, comparison, second);
+        }
+
+        @Override
+        public AkType argumentType(int index) {
+            return null;
+        }
+
+        @Override
+        protected ExpressionType composeType(ExpressionType first, ExpressionType second) {
+            return (first.getType() != AkType.NULL) ? first : second;
         }
 
         private InnerComposer(Comparison comparison) {

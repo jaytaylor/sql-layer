@@ -17,6 +17,7 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.error.DivisionByZeroException;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 
@@ -63,6 +64,16 @@ public class LongOps {
         @Override
         protected Expression compose(Expression first, Expression second) {
             return new LongOpExpression(first, this, second);
+        }
+
+        @Override
+        public AkType argumentType(int index) {
+            return opType();
+        }
+
+        @Override
+        protected ExpressionType composeType(ExpressionType first, ExpressionType second) {
+            return ExpressionTypes.LONG;
         }
 
         @Override

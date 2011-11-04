@@ -19,6 +19,7 @@ import com.akiban.server.Quote;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
@@ -35,6 +36,22 @@ public final class ConcatExpression extends AbstractCompositeExpression {
         @Override
         public Expression compose(List<? extends Expression> arguments) {
             return new ConcatExpression(arguments);
+        }
+
+        @Override
+        public AkType argumentType(int index) {
+            return AkType.VARCHAR;
+        }
+
+        @Override
+        public ExpressionType composeType(List<? extends ExpressionType> argumentTypes) {
+            int length = 0;
+            for (ExpressionType type : argumentTypes) {
+                if (type.getType() == AkType.VARCHAR) {
+                    length += type.getPrecision();
+                }
+            }
+            return ExpressionTypes.varchar(length);
         }
     };
     

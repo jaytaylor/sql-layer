@@ -18,6 +18,7 @@ package com.akiban.server.expression.std;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
@@ -34,6 +35,20 @@ public final class CoalesceExpression extends AbstractCompositeExpression {
         @Override
         public Expression compose(List<? extends Expression> arguments) {
             return new CoalesceExpression(arguments);
+        }
+
+        @Override
+        public AkType argumentType(int index) {
+            return null;
+        }
+
+        @Override
+        public ExpressionType composeType(List<? extends ExpressionType> argumentTypes) {
+            for (ExpressionType type : argumentTypes) {
+                if (type.getType() != AkType.NULL)
+                    return type;
+            }
+            return null;
         }
     };
 
