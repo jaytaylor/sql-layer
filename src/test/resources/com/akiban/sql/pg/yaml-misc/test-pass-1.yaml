@@ -39,4 +39,9 @@
 # Try output_type
 - Statement: SELECT * FROM customers WHERE name = 'Smith'
 - output_types: [int4, varchar]
+---
+# Type param_types
+- Statement: SELECT * FROM customers WHERE name = ?
+- params: [Smith]
+- param_types: [VARCHAR]
 ...

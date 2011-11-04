@@ -115,6 +115,14 @@ public class YamlTesterParseTest {
     }
 
     @Test
+    public void testStatementParamsTypesUnknown() {
+	test("- Statement: a b c" +
+	     "\n- params: [[a, b]]" +
+	     "\n- param_types: [CHAR, WHATTYPE]",
+	     "testStatementParamsTypesUnknown");
+    }
+
+    @Test
     public void testIncludeMissingValue() {
 	test("- Include:", "testIncludeMissingValue");
     }
@@ -143,7 +151,8 @@ public class YamlTesterParseTest {
 	try {
 	    new YamlTester(null, new StringReader(yaml), null).test();
 	} catch (Throwable t) {
-	    System.out.println(testMethod + ": " + t);
+	    System.err.println(testMethod + ": " + t);
+	    //t.printStackTrace();
 	    return;
 	}
 	fail("Expected exception");

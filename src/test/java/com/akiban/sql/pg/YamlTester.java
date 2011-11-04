@@ -22,6 +22,7 @@ import java.io.Reader;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -33,6 +34,7 @@ import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.instanceOf;
@@ -55,6 +57,31 @@ import org.yaml.snakeyaml.nodes.Tag;
  * A utility for testing SQL access based on the contents of a YAML file.
  */
 public class YamlTester {
+
+    private static final Map<String, Integer> typeNameToNumber =
+	new HashMap<String, Integer>();
+    private static final Map<Integer, String> typeNumberToName =
+	new HashMap<Integer, String>();
+    static {
+	addTypeNameAndNumber("BIGINT", Types.BIGINT);
+	addTypeNameAndNumber("BLOB", Types.BLOB);
+	addTypeNameAndNumber("BOOLEAN", Types.BOOLEAN);
+	addTypeNameAndNumber("CHAR", Types.CHAR);
+	addTypeNameAndNumber("CLOB", Types.CLOB);
+	addTypeNameAndNumber("DATE", Types.DATE);
+	addTypeNameAndNumber("DECIMAL", Types.DECIMAL);
+	addTypeNameAndNumber("DOUBLE", Types.DOUBLE);
+	addTypeNameAndNumber("FLOAT", Types.FLOAT);
+	addTypeNameAndNumber("INTEGER", Types.INTEGER);
+	addTypeNameAndNumber("NUMERIC", Types.NUMERIC);
+	addTypeNameAndNumber("REAL", Types.REAL);
+	addTypeNameAndNumber("SMALLINT", Types.SMALLINT);
+	addTypeNameAndNumber("TIME", Types.TIME);
+	addTypeNameAndNumber("TIMESTAMP", Types.TIMESTAMP);
+	addTypeNameAndNumber("TINYINT", Types.TINYINT);
+	addTypeNameAndNumber("VARBINARY", Types.VARBINARY);
+	addTypeNameAndNumber("VARCHAR", Types.VARCHAR);
+    }
 
     private final String filename;
     private final Reader in;
@@ -113,7 +140,7 @@ public class YamlTester {
     class StatementCommand extends Command {
 	final String statement;
 	List<List<Object>> params;
-	List<String> paramTypes;
+	List<Integer> paramTypes;
 	List<List<Object>> output;
 	List<String> outputTypes;
 
@@ -198,7 +225,18 @@ public class YamlTester {
 	    assertNull(
 		"The param_types attribute must not appear more than once",
 		paramTypes);
-	    paramTypes = nonEmptyStringSequence(value, "param_types value");
+	    List<String> paramTypeNames =
+		nonEmptyStringSequence(value, "param_types value");
+	    paramTypes = new ArrayList<Integer>(paramTypeNames.size());
+	    for (String typeName : paramTypeNames) {
+		try {
+		    paramTypes.add(getTypeNumber(typeName));
+		} catch (IllegalArgumentException e) {
+		    throw new AssertionError(
+			"Unknown type name for param_types value: " +
+			typeName);
+		}
+	    }
 	}
 
 	private void parseOutput(Object value) {
@@ -302,14 +340,19 @@ public class YamlTester {
 		    ResultSet.TYPE_SCROLL_INSENSITIVE,
 		    ResultSet.CONCUR_READ_ONLY);
 		try {
+		    int numParams = params.get(0).size();
 		    for (List<Object> paramsList : params) {
-			int i = 1;
 			if (params.size() > 1) {
 			    commandKey = "Statement, params list " + paramsRow;
 			}
 			System.out.println(commandKey);
-			for (Object param : paramsList) {
-			    stmt.setObject(i++, param);
+			for (int i = 0; i < numParams; i++) {
+			    Object param = paramsList.get(i);
+			    if (paramTypes != null) {
+				stmt.setObject(i + 1, param, paramTypes.get(i));
+			    } else {
+				stmt.setObject(i + 1, param);
+			    }
 			}
 			SQLException sqlException = null;
 			System.err.println("Execute with params: " + paramsList);
@@ -695,6 +738,29 @@ public class YamlTester {
 		return DontCare.INSTANCE;
 	    }
 	}
+    }
+
+    private static void addTypeNameAndNumber(String name, int number) {
+	typeNameToNumber.put(name, number);
+	typeNumberToName.put(number, name);
+    }
+
+    private static String getTypeName(int typeNumber) {
+	String name = typeNumberToName.get(typeNumber);
+	if (name == null) {
+	    throw new IllegalArgumentException(
+		"Unknown type number: " + typeNumber);
+	}
+	return name;
+    }
+
+    private static int getTypeNumber(String typeName) {
+	Integer number = typeNameToNumber.get(typeName);
+	if (number == null) {
+	    throw new IllegalArgumentException(
+		"Unknown type name: " + typeName);
+	}
+	return number;
     }
 
     private String context() {
