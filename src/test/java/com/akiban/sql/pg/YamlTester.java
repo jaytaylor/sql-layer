@@ -58,6 +58,10 @@ import org.yaml.snakeyaml.nodes.Tag;
  */
 public class YamlTester {
 
+    private static String ALL_FRAMEWORKS = "all";
+    private static String IT_FRAMEWORK = "it";
+    private static String SUPPRESSED = "suppressed";
+
     private static final Map<String, Integer> typeNameToNumber =
 	new HashMap<String, Integer>();
     private static final Map<Integer, String> typeNumberToName =
@@ -87,6 +91,7 @@ public class YamlTester {
     private final Reader in;
     private final Connection connection;
     private final Stack<String> includeStack = new Stack<String>();
+    private boolean suppressed = false;
     private int commandNumber = 0;
     private String commandKey = null;
 
@@ -103,6 +108,10 @@ public class YamlTester {
     void test(Reader in) {
 	Yaml yaml = new Yaml(new DontCareConstructor());
 	for (Object document : yaml.loadAll(in)) {
+	    if (suppressed) {
+		System.err.println("Test suppressed: exiting");
+		break;
+	    }
 	    ++commandNumber;
 	    commandKey = null;
 	    try {
@@ -114,10 +123,12 @@ public class YamlTester {
 		commandKey = string(firstEntry.getKey(), "command name");
 		Object value = firstEntry.getValue();
 		Command command;
-		if ("Statement".equals(commandKey)) {
-		    command = new StatementCommand(value, sequence);
-		} else if ("Include".equals(commandKey)) {
+		if ("Include".equals(commandKey)) {
 		    command = new IncludeCommand(value, sequence);
+		} else if ("Properties".equals(commandKey)) {
+		    command = new PropertiesCommand(value, sequence);
+		} else if ("Statement".equals(commandKey)) {
+		    command = new StatementCommand(value, sequence);
 		} else {
 		    throw new AssertionError(
 			"Unknown command: " + commandKey);
@@ -135,6 +146,25 @@ public class YamlTester {
 
     abstract class Command {
 	abstract void execute() throws Exception;
+    }
+
+    class PropertiesCommand extends Command {
+
+	PropertiesCommand(Object value, List<Object> sequence) {
+	    String framework = string(value, "Properties value");
+	    if (framework == ALL_FRAMEWORKS || framework == IT_FRAMEWORK) {
+		for (Object elem : sequence) {
+		    Entry<Object, Object> entry =
+			onlyEntry(elem, "Properties entry");
+		    if (SUPPRESSED.equals(entry.getKey())) {
+			suppressed = bool(entry.getValue(), "suppressed value");
+		    }
+		}
+	    }
+	}
+
+	@Override
+	void execute() { }
     }
 
     class StatementCommand extends Command {
@@ -643,6 +673,12 @@ public class YamlTester {
 	assertThat("The " + desc + " must be an integer",
 		   object, instanceOf(Integer.class));
 	return (Integer) object;
+    }
+
+    static boolean bool(Object object, String desc) {
+	assertThat("The " + desc + " must be a boolean",
+		   object, instanceOf(Boolean.class));
+	return (Boolean) object;
     }
 
     static Map<Object, Object> map(Object object, String desc) {
