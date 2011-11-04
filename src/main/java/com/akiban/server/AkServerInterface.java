@@ -17,5 +17,4 @@ package com.akiban.server;
 
 public interface AkServerInterface
 {
-    long queryTimeoutSec();
 }

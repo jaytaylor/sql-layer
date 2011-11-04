@@ -23,12 +23,13 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 
 public class OneTableRowCollector extends OperatorBasedRowCollector
 {
-    OneTableRowCollector(AkServerInterface akServer,
+    OneTableRowCollector(ConfigurationService config,
                          Session session,
                          PersistitStore store,
                          RowDef rowDef,
@@ -39,7 +40,7 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
                          RowData end,
                          ColumnSelector endColumns)
     {
-        super(store, session, akServer);
+        super(store, session, config);
         // rootmostQueryTable
         queryRootTable = rowDef.userTable();
         queryRootType = schema.userTableRowType(queryRootTable);

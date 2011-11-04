@@ -226,7 +226,7 @@ public final class BasicDMLFunctionsTest {
             collector = new StringRowCollector(TABLE_ID, strings);
             output = new StringRowOutput();
             cursor = new Cursor(collector, limit, null);
-            cursorId = new CursorId(5, TABLE_ID);
+            cursorId = new CursorId(1, 5, TABLE_ID);
         }
     }
 

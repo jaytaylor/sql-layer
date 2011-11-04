@@ -70,7 +70,7 @@ public class QueryTimeoutIT extends OperatorITBase
     public void exitWithTimeout() throws InterruptedException
     {
         int timeoutSec = 3;
-        ((AkServer)akServer()).queryTimeoutSec(timeoutSec);
+        configService().queryTimeoutSec(timeoutSec);
         final Operator plan = new DoNothingForever();
         final Cursor cursor = cursor(plan, adapter);
         final AtomicBoolean exited = new AtomicBoolean(false);
@@ -104,7 +104,7 @@ public class QueryTimeoutIT extends OperatorITBase
         int INITIAL_TIMEOUT_SEC = 10000;
         int MODIFIED_TIMEOUT_SEC = 5;
         AkServer akServer = (AkServer) akServer();
-        akServer.queryTimeoutSec(INITIAL_TIMEOUT_SEC);
+        configService().queryTimeoutSec(INITIAL_TIMEOUT_SEC);
         final Operator plan = new DoNothingForever();
         final Cursor cursor = cursor(plan, adapter);
         final AtomicBoolean exited = new AtomicBoolean(false);
@@ -127,7 +127,7 @@ public class QueryTimeoutIT extends OperatorITBase
         queryThread.start();
         // Shorten timeout
         Thread.sleep(1000); // 1 sec
-        akServer.queryTimeoutSec(MODIFIED_TIMEOUT_SEC);
+        configService().queryTimeoutSec(MODIFIED_TIMEOUT_SEC);
         queryThread.join();
         long stop = System.currentTimeMillis();
         assertTrue(exited.get());
@@ -141,7 +141,7 @@ public class QueryTimeoutIT extends OperatorITBase
         int INITIAL_TIMEOUT_SEC = 5;
         int MODIFIED_TIMEOUT_SEC = -1; // No timeout
         AkServer akServer = (AkServer) akServer();
-        akServer.queryTimeoutSec(INITIAL_TIMEOUT_SEC);
+        configService().queryTimeoutSec(INITIAL_TIMEOUT_SEC);
         final Operator plan = new DoNothingForever();
         final Cursor cursor = cursor(plan, adapter);
         final AtomicBoolean exited = new AtomicBoolean(false);
@@ -164,7 +164,7 @@ public class QueryTimeoutIT extends OperatorITBase
         queryThread.start();
         // Remove timeout
         Thread.sleep(1000); // 1 sec
-        akServer.queryTimeoutSec(MODIFIED_TIMEOUT_SEC);
+        configService().queryTimeoutSec(MODIFIED_TIMEOUT_SEC);
         Thread.sleep(INITIAL_TIMEOUT_SEC * 1000);
         session().cancelCurrentQuery(true);
         queryThread.join();

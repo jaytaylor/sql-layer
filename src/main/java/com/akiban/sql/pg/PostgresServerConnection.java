@@ -623,7 +623,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                                            persistitStore,
                                            reqs.treeService(),
                                            session,
-                                           reqs.akServer());
+                                           reqs.config());
         }
 
         statementCache = server.getStatementCache(aisGeneration);

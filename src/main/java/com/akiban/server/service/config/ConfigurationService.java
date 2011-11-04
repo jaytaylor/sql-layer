@@ -85,4 +85,7 @@ public interface ConfigurationService
      * @return a set of all defined properties
      */
     Set<Property> getProperties();
+
+    long queryTimeoutSec();
+    void queryTimeoutSec(long queryTimeoutSec);
 }

@@ -90,15 +90,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
                           createNewRow(c, 27L, 2L, "c27"),
                           createNewRow(c, 28L, 2L, "c28"),
         };
-        Store plainStore = store();
-        final PersistitStore persistitStore;
-        if (plainStore instanceof OperatorStore) {
-            OperatorStore operatorStore = (OperatorStore) plainStore;
-            persistitStore = operatorStore.getPersistitStore();
-        } else {
-            persistitStore = (PersistitStore) plainStore;
-        }
-        adapter = new PersistitAdapter(schema, persistitStore, null, session(), akServer());
+        adapter = persistitAdapter(schema);
         use(db);
     }
 
