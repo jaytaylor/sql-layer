@@ -20,6 +20,7 @@ import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
@@ -40,6 +41,24 @@ public class SubStringExpression extends AbstractCompositeExpression
         public Expression compose(List<? extends Expression> arguments) {
             return new SubStringExpression(arguments);
         }        
+
+        @Override
+        public AkType argumentType(int index) {
+            switch (index) {
+            case 0:
+                return AkType.VARCHAR;
+            case 1:
+            case 2:
+                return AkType.LONG;
+            default:
+                return null;
+            }
+        }
+
+        @Override
+        public ExpressionType composeType(List<? extends ExpressionType> arguments) {
+            return arguments.get(0);
+        }
     };
     
     @Scalar("substr")

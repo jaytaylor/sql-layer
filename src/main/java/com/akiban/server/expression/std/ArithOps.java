@@ -17,7 +17,9 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.error.DivisionByZeroException;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
+import com.akiban.server.types.AkType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -153,6 +155,18 @@ public class ArithOps
             return new ArithExpression(first, this, second);
         }
         
+        @Override
+        public AkType argumentType(int index) {
+            return null;
+        }
+
+        @Override
+        protected ExpressionType composeType(ExpressionType first, ExpressionType second) {
+            // Complex type promotion rules, but SQL parser should
+            // know them and not call this.
+            throw new UnsupportedOperationException("ArithOps asked to composeType");
+        }
+
         @Override
         public String toString ()
         {

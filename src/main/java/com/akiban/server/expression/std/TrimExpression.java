@@ -19,6 +19,7 @@ package com.akiban.server.expression.std;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
@@ -101,6 +102,16 @@ public class TrimExpression extends AbstractUnaryExpression
         protected Expression compose(Expression argument) 
         {
             return new TrimExpression (argument,trimType);
+        }
+
+        @Override
+        protected AkType argumentType() {
+            return AkType.VARCHAR;
+        }
+
+        @Override
+        protected ExpressionType composeType(ExpressionType argumentType) {
+            return argumentType; // Worst case is nothing removed: same width.
         }
     }
   

@@ -19,6 +19,7 @@ import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
@@ -87,8 +88,17 @@ public class TrigExpression extends AbstractCompositeExpression
         {
             return new TrigExpression(arguments, name);
         }
-        
-    }   
+
+        @Override
+        public AkType argumentType(int index) {
+            return AkType.DOUBLE;
+        }
+
+        @Override
+        public ExpressionType composeType(List<? extends ExpressionType> arguments) {
+            return ExpressionTypes.DOUBLE;
+        }
+    }
     
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
