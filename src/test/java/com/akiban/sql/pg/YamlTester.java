@@ -42,6 +42,7 @@ import static org.hamcrest.CoreMatchers.not;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
@@ -56,12 +57,60 @@ import org.yaml.snakeyaml.nodes.Tag;
 /**
  * A utility for testing SQL access based on the contents of a YAML file.
  */
+/* General syntax:
+
+   - One or more YAML documents.
+   - Each document is a sequence whose first element is a map.
+   - Key of first element's map is a command: a string with an uppercase first
+     character
+
+   Commands:
+
+   Include
+   - Syntax:
+     - Include: <file>
+   - If the file is relative, it is parsed relative to the containing file.
+
+   Properties
+   - Syntax:
+     - Properties: <framework>
+     - <property>: <value>
+   - The values that apply to this framework are: "all" (all frameworks) and
+     "it" (this integration test framework).
+   - The last property definition overrides previous ones.
+
+   Statement
+   - Syntax
+     - Statement: <statement text>
+     - params:
+       - [<parameter value>, ...]
+     - param_types: [<column type>, ...]
+     - output:
+       - [<output value>, ...]
+     - row_count: <number of rows>
+     - output_types: [<column type>, ...]
+     - explain: <explain plan>
+     - error: [<error number>, <error message>]
+   - Attributes are optional and can appear at most once
+   - Only one statement in statement text
+   - At least one row element in params, param_types, output, output_types
+   - At least one row in params and output
+   - Types for param_types and output_types listed in code below
+   - The value of row_count is non-negative
+   - The error message is optional
+   - param_types requires params
+   - Can't have error with output or row_count
+   - param_types requires params
+   - All rows same length for output and params
+   - Same values for output row length, output_types length, and row_count
+   - Same values for params row length and param_types length
+   - YAML null for null value
+   - !dc dc for don't care value in output
+*/
 public class YamlTester {
 
-    private static String ALL_FRAMEWORKS = "all";
-    private static String IT_FRAMEWORK = "it";
-    private static String SUPPRESSED = "suppressed";
-
+    private static final boolean DEBUG =
+	Boolean.getBoolean(YamlTester.class.getName() + ".DEBUG");
     private static final Map<String, Integer> typeNameToNumber =
 	new HashMap<String, Integer>();
     private static final Map<Integer, String> typeNumberToName =
@@ -91,163 +140,158 @@ public class YamlTester {
     private final Reader in;
     private final Connection connection;
     private final Stack<String> includeStack = new Stack<String>();
-    private boolean suppressed = false;
     private int commandNumber = 0;
-    private String commandKey = null;
+    private String commandName = null;
+    private boolean suppressed = false;
 
-    public YamlTester(String filename, Reader in, Connection connection) {
+    /**
+     * Creates an instance of this class.
+     *
+     * @param filename the file name of the YAML input
+     * @param in the YAML input
+     * @param connection the JDBC connection
+     */
+    YamlTester(String filename, Reader in, Connection connection) {
 	this.filename = filename;
 	this.in = in;
 	this.connection = connection;
     }
 
-    public void test() {
+    void test() {
 	test(in);
     }
 
-    void test(Reader in) {
-	Yaml yaml = new Yaml(new DontCareConstructor());
-	for (Object document : yaml.loadAll(in)) {
-	    if (suppressed) {
-		System.err.println("Test suppressed: exiting");
-		break;
-	    }
-	    ++commandNumber;
-	    commandKey = null;
-	    try {
+    private void test(Reader in) {
+	try {
+	    Yaml yaml = new Yaml(new DontCareConstructor());
+	    for (Object document : yaml.loadAll(in)) {
+		if (suppressed) {
+		    System.err.println("Test suppressed: exiting");
+		    break;
+		}
+		++commandNumber;
+		commandName = null;
 		List<Object> sequence =
-		    nonEmptySequence(document, "YAML document");
-		Entry<Object, Object> firstEntry =
-		    firstEntry(sequence.get(0),
-			       "first element of the document");
-		commandKey = string(firstEntry.getKey(), "command name");
+		    nonEmptySequence(document, "command document");
+		Entry<Object, Object> firstEntry = firstEntry(
+		    sequence.get(0), "first element of the document");
+		commandName = string(firstEntry.getKey(), "command name");
 		Object value = firstEntry.getValue();
-		Command command;
-		if ("Include".equals(commandKey)) {
-		    command = new IncludeCommand(value, sequence);
-		} else if ("Properties".equals(commandKey)) {
-		    command = new PropertiesCommand(value, sequence);
-		} else if ("Statement".equals(commandKey)) {
-		    command = new StatementCommand(value, sequence);
+		if ("Include".equals(commandName)) {
+		    includeCommand(value, sequence);
+		} else if ("Properties".equals(commandName)) {
+		    propertiesCommand(value, sequence);
+		} else if ("Statement".equals(commandName)) {
+		    statementCommand(value, sequence);
 		} else {
-		    throw new AssertionError(
-			"Unknown command: " + commandKey);
+		    fail("Unknown command: " + commandName);
 		}
-		command.execute();
-	    } catch (Throwable e) {
-		throw initCause(
-		    new AssertionError(context() + e.getMessage()), e);
 	    }
-	}
-	if (commandNumber == 0) {
-	    throw new AssertionError(context() + "YAML file must not be empty");
+	    if (commandNumber == 0) {
+		fail("Test file must not be empty");
+	    }
+	} catch (Throwable e) {
+	    /* Add context */
+	    throw initCause(new AssertionError(context() + e.getMessage()), e);
 	}
     }
 
-    abstract class Command {
-	abstract void execute() throws Exception;
-    }
-
-    class IncludeCommand extends Command {
-    	final String include;
-
-	IncludeCommand(Object value, List<Object> sequence) {
-	    String includeValue = string(value, "Include value");
-	    File include = new File(includeValue);
-	    if (sequence.size() > 1) {
-		throw new AssertionError(
-		    "The Include command does not support attributes" +
-		    "\nFound: " + sequence.get(1));
+    private void includeCommand(Object value, List<Object> sequence) {
+	String includeValue = string(value, "Include value");
+	File include = new File(includeValue);
+	if (sequence.size() > 1) {
+	    throw new AssertionError(
+		"The Include command does not support attributes" +
+		"\nFound: " + sequence.get(1));
+	}
+	if (!include.isAbsolute()) {
+	    String parent = filename;
+	    if (!includeStack.isEmpty()) {
+		parent = includeStack.peek();
 	    }
-	    if (!include.isAbsolute()) {
-		String parent = filename;
-		if (!includeStack.isEmpty()) {
-		    parent = includeStack.peek();
-		}
-		if (parent != null) {
-		    include = new File(
-			new File(parent).getParent(), include.toString());
-		}
+	    if (parent != null) {
+		include = new File(new File(parent).getParent(),
+				   include.toString());
 	    }
-	    this.include = include.toString();
-	    Reader in = null;
+	}
+	Reader in = null;
+	try {
+	    in = new FileReader(include);
+	} catch (IOException e) {
+	    throw initCause(
+		new AssertionError(
+		    "Problem accessing include file " + include + ": " +
+		    e.getMessage()),
+		e);
+	}
+	int originalCommandNumber = commandNumber;
+	commandNumber = 0;
+	String originalCommandName = commandName;
+	commandName = null;
+	try {
+	    includeStack.push(includeValue);
+	    test(in);
+	} finally {
+	    includeStack.pop();
+	    commandNumber = originalCommandNumber;
+	    commandName = originalCommandName;
 	    try {
-		in = new FileReader(include);
+		in.close();
 	    } catch (IOException e) {
-		throw initCause(
-		    new AssertionError(
-			"Problem accessing include file " + include +
-			": " + e.getMessage()),
-		    e);
 	    }
-	    int originalCommandNumber = commandNumber;
-	    commandNumber = 0;
-	    try {
-		includeStack.push(includeValue);
-		test(in);
-	    } finally {
-		includeStack.pop();
-		commandNumber = originalCommandNumber;
-		try {
-		    in.close();
-		} catch (IOException e) {
+	}
+    }
+
+    private void propertiesCommand(Object value, List<Object> sequence) {
+	String engine = string(value, "Properties framework engine");
+	if ("all".equals(engine) || "it".equals(engine)) {
+	    for (Object elem : sequence) {
+		Entry<Object, Object> entry =
+		    onlyEntry(elem, "Properties entry");
+		if ("suppressed".equals(entry.getKey())) {
+		    suppressed = bool(entry.getValue(), "suppressed value");
 		}
 	    }
 	}
-
-	@Override
-	void execute() { }
     }
 
-    class PropertiesCommand extends Command {
-
-	PropertiesCommand(Object value, List<Object> sequence) {
-	    String framework = string(value, "Properties value");
-	    if (framework == ALL_FRAMEWORKS || framework == IT_FRAMEWORK) {
-		for (Object elem : sequence) {
-		    Entry<Object, Object> entry =
-			onlyEntry(elem, "Properties entry");
-		    if (SUPPRESSED.equals(entry.getKey())) {
-			suppressed = bool(entry.getValue(), "suppressed value");
-		    }
-		}
-	    }
-	}
-
-	@Override
-	void execute() { }
+    private void statementCommand(Object value, List<Object> sequence)
+	throws SQLException
+    {
+	new StatementCommand(value, sequence).execute();
     }
 
-    class StatementCommand extends Command {
-	final String statement;
-	List<List<Object>> params;
-	List<Integer> paramTypes;
-	List<List<Object>> output;
-	int rowCount = -1;
-	List<String> outputTypes;
-	boolean errorSpecified;
-	int errorNumber;
-	String errorMessage;
-	String explain;
+    private class StatementCommand {
+	private final String statement;
+	private List<List<Object>> params;
+	private List<Integer> paramTypes;
+	private List<List<Object>> output;
+	private int rowCount = -1;
+	private List<String> outputTypes;
+	private boolean errorSpecified;
+	private int errorNumber;
+	private String errorMessage;
+	private String explain;
 
 	/**
 	 * The 1-based index of the row of parameters being used for the
 	 * current parameterized statement execution.
 	 */
-	int paramsRow = 1;
+	private int paramsRow = 1;
 
 	/**
 	 * The 0-based index of the row of the output being compared with the
 	 * statement output.
 	 */
-	int outputRow = 0;
+	private int outputRow = 0;
 
 	StatementCommand(Object value, List<Object> sequence) {
 	    statement = string(value, "Statement value");
 	    for (int i = 1; i < sequence.size(); i++) {
 		Entry<Object, Object> map =
-		    onlyEntry(sequence.get(i), "Statement element");
-		String attribute = string(map.getKey(), "statement attribute");
+		    onlyEntry(sequence.get(i), "Statement attribute");
+		String attribute =
+		    string(map.getKey(), "Statement attribute name");
 		Object attributeValue = map.getValue();
 		if ("params".equals(attribute)) {
 		    parseParams(attributeValue);
@@ -264,14 +308,9 @@ public class YamlTester {
 		} else if ("explain".equals(attribute)) {
 		    parseExplain(attributeValue);
 		} else {
-		    fail("The " + attribute + " attribute was not expected");
+		    fail("The " + attribute + " attribute name was not" +
+			 " recognized");
 		}
-	    }
-	    if (errorSpecified && output != null) {
-		fail("Cannot specify both error and output attributes");
-	    }
-	    if (errorSpecified && rowCount != -1) {
-		fail("Cannot specify both error and row_count attributes");
 	    }
 	    if (paramTypes != null) {
 		if (params == null) {
@@ -305,6 +344,12 @@ public class YamlTester {
 				 output.get(0).size(), outputTypes.size());
 		}
 	    }
+	    if (errorSpecified && output != null) {
+		fail("Cannot specify both error and output attributes");
+	    }
+	    if (errorSpecified && rowCount != -1) {
+		fail("Cannot specify both error and row_count attributes");
+	    }
 	}
 
 	private void parseParams(Object value) {
@@ -321,13 +366,10 @@ public class YamlTester {
 		nonEmptyStringSequence(value, "param_types value");
 	    paramTypes = new ArrayList<Integer>(paramTypeNames.size());
 	    for (String typeName : paramTypeNames) {
-		try {
-		    paramTypes.add(getTypeNumber(typeName));
-		} catch (IllegalArgumentException e) {
-		    throw new AssertionError(
-			"Unknown type name for param_types value: " +
-			typeName);
-		}
+		Integer typeNumber = getTypeNumber(typeName);
+		assertNotNull("Unknown type name in param_types: " + typeName,
+			      typeNumber);
+		paramTypes.add(typeNumber);
 	    }
 	}
 
@@ -350,6 +392,10 @@ public class YamlTester {
 		"The output_types attribute must not appear more than once",
 		paramTypes);
 	    outputTypes = nonEmptyStringSequence(value, "output_types value");
+	    for (String typeName : outputTypes) {
+		assertNotNull("Unknown type name in output_types: " + typeName,
+			      getTypeNumber(typeName));
+	    }
 	}
 
 	private void parseError(Object value) {
@@ -373,23 +419,14 @@ public class YamlTester {
 	    explain = string(value, "explain value");
 	}
 
-	@Override
-	void execute() throws SQLException {
+	private void execute() throws SQLException {
 	    if (explain != null) {
-		Statement stmt = connection.createStatement();
-		try {
-		    stmt.execute("EXPLAIN " + statement);
-		    String explainResults =
-			collectExplainResults(stmt.getResultSet());
-		    assertEquals("Explain results do not match:",
-				 explain, explainResults);
-		} finally {
-		    stmt.close();
-		}
+		checkExplain();
 	    }
 	    if (params == null) {
 		Statement stmt = connection.createStatement(
-		    ResultSet.TYPE_SCROLL_INSENSITIVE,
+		    (DEBUG ? ResultSet.TYPE_SCROLL_INSENSITIVE
+		     : ResultSet.TYPE_FORWARD_ONLY),
 		    ResultSet.CONCUR_READ_ONLY);
 		try {
 		    try {
@@ -405,15 +442,15 @@ public class YamlTester {
 	    } else {
 		PreparedStatement stmt = connection.prepareStatement(
 		    statement,
-		    ResultSet.TYPE_SCROLL_INSENSITIVE,
+		    (DEBUG ? ResultSet.TYPE_SCROLL_INSENSITIVE
+		     : ResultSet.TYPE_FORWARD_ONLY),
 		    ResultSet.CONCUR_READ_ONLY);
 		try {
 		    int numParams = params.get(0).size();
 		    for (List<Object> paramsList : params) {
 			if (params.size() > 1) {
-			    commandKey = "Statement, params list " + paramsRow;
+			    commandName = "Statement, params list " + paramsRow;
 			}
-			System.out.println(commandKey);
 			for (int i = 0; i < numParams; i++) {
 			    Object param = paramsList.get(i);
 			    if (paramTypes != null) {
@@ -423,7 +460,10 @@ public class YamlTester {
 			    }
 			}
 			SQLException sqlException = null;
-			System.err.println("Execute with params: " + paramsList);
+			if (DEBUG) {
+			    System.err.println(
+				"Execute with params: " + paramsList);
+			}
 			try {
 			    stmt.execute();
 			} catch (SQLException e) {
@@ -433,179 +473,33 @@ public class YamlTester {
 			checkSuccess(stmt);
 			paramsRow++;
 		    }
-		    commandKey = "Statement";
+		    commandName = "Statement";
 		} finally {
 		    stmt.close();
 		}
 	    }
 	}
 
-	private String collectExplainResults(ResultSet rs) throws SQLException {
-	    StringBuilder sb = new StringBuilder();
-	    int numColumns = rs.getMetaData().getColumnCount();
-	    while (rs.next()) {
-		for (int i = 1; i <= numColumns; i++) {
-		    if (i != 1) {
-			sb.append(", ");
-		    }
-		    sb.append(rs.getString(i));
-		}
-		sb.append('\n');
-	    }
-	    return sb.toString();
-	}
-
-	private void checkSuccess(Statement stmt) throws SQLException {
-	    assertFalse(
-		"Statement execution succeeded, but was expected to fail",
-		errorSpecified);
-	    ResultSet rs = stmt.getResultSet();
-	    if (rs == null) {
-		int updateCount = stmt.getUpdateCount();
-		assertFalse("Query did not produce an update count",
-			    updateCount == -1);
-		assertNull("Query did not produce results output",
-			   output);
-		assertNull("Query did not produce results, so output_types" +
-			   " are not supported",
-			   outputTypes);
-		checkRowCount(updateCount);
-	    } else {
-		checkResults(rs);
-		assertFalse("Multiple result sets not supported",
-			    stmt.getMoreResults());
-	    }
-	}
-
-	private void checkRowCount(int moreRows) {
-	    if (rowCount != -1) {
-		outputRow += moreRows;
-		if (outputRow > rowCount) {
-		    throw new AssertionError(
-			"Too many output rows:" +
-			"\nExpected: " + rowCount +
-			"\n     got: " + outputRow);
-		} else if (params == null || paramsRow == params.size()) {
-		    if (outputRow < rowCount) {
-			throw new AssertionError(
-			    "Too few output rows:" +
-			    "\nExpected: " + rowCount +
-			    "\n     got: " + outputRow);
-		    }
-		}
-	    }
-	}
-
-	private void checkResults(ResultSet rs) throws SQLException {
-	    debugPrintResults(rs);
-	    if (outputTypes != null && outputRow == 0) {
-		ResultSetMetaData metaData = rs.getMetaData();
-		int numColumns = metaData.getColumnCount();
-		assertEquals("Wrong number of output types:",
-			     outputTypes.size(), numColumns);
-		for (int i = 1; i <= numColumns; i++) {
-		    assertEquals("Wrong output type for column " + i + ":",
-				 outputTypes.get(i - 1),
-				 metaData.getColumnTypeName(i));
-		}
-	    }
-	    if (rowCount != -1) {
-		int c = 0;
+	private void checkExplain() throws SQLException {
+	    Statement stmt = connection.createStatement();
+	    try {
+		stmt.execute("EXPLAIN " + statement);
+		ResultSet rs = stmt.getResultSet();
+		StringBuilder sb = new StringBuilder();
+		int numColumns = rs.getMetaData().getColumnCount();
 		while (rs.next()) {
-		    c++;
-		}
-		checkRowCount(c);
-	    } else if (output != null) {
-		ResultSetMetaData metaData = rs.getMetaData();
-		int numColumns = metaData.getColumnCount();
-		boolean resultsEmpty = false;
-		for ( ; true; outputRow++) {
-		    if (!rs.next()) {
-			resultsEmpty = true;
-			break;
-		    } else if (outputRow >= output.size()) {
-			break;
-		    }
-		    List<Object> row = output.get(outputRow);
-		    if (outputRow == 0) {
-			assertEquals("Unexpected number of columns in output:",
-				     row.size(), numColumns);
-		    }
-		    List<Object> resultsRow = new ArrayList<Object>(row.size());
 		    for (int i = 1; i <= numColumns; i++) {
-			resultsRow.add(rs.getObject(i));
+			if (i != 1) {
+			    sb.append(", ");
+			}
+			sb.append(rs.getString(i));
 		    }
-		    if (!rowsEqual(row, resultsRow)) {
-			throw new AssertionError(
-			    "Unexpected output in row " + (outputRow + 1) + ":" +
-			    "\nExpected: " + row +
-			    "\n     got: " + resultsRow);
-		    }
+		    sb.append('\n');
 		}
-		if (outputRow < output.size()) {
-		    if (resultsEmpty &&
-			(params == null || paramsRow == params.size()))
-		    {
-			throw new AssertionError(
-			    "Not enough output rows:" +
-			    "\nExpected: " + output.size() +
-			    "\n     got: " + (outputRow + 1));
-		    }
-		} else if (!resultsEmpty) {
-		    throw new AssertionError(
-			"Too many output rows:" +
-			"\nExpected: " + output.size());
-		}
-	    }
-	}
-
-        private boolean rowsEqual(List<Object> pattern, List<Object> row) {
-	    int size = pattern.size();
-	    if (size != row.size()) {
-		return false;
-	    }
-	    for (int i = 0; i < size; i++) {
-		Object patternElem = pattern.get(i);
-		if (patternElem != DontCare.INSTANCE) {
-		    Object rowElem = row.get(i);
-		    if (patternElem == null ? rowElem == null
-			: patternElem.equals(rowElem))
-		    {
-			continue;
-		    } else {
-			return false;
-		    }
-		}
-	    }
-	    return true;
-	}
-
-	private void debugPrintResults(ResultSet rs)
-		throws SQLException
-	{
-	    System.err.println(context() + "Result output:");
-	    printResultSet(rs);
-	    rs.beforeFirst();
-	}
-
-	private void printResultSet(ResultSet rs) throws SQLException {
-	    ResultSetMetaData md = rs.getMetaData();
-	    int nc = md.getColumnCount();
-	    for (int i = 1; i <= nc; i++) {
-		if (i != 1) {
-		    System.err.print(", ");
-		}
-		System.err.print(md.getColumnName(i));
-	    }
-	    System.err.println();
-	    while (rs.next()) {
-		for (int i = 1; i <= nc; i++) {
-		    if (i != 1) {
-			System.err.print(", ");
-		    }
-		    System.err.print(rs.getObject(i));
-		}
-		System.err.println();
+		assertEquals("Explain results do not match:",
+			     explain, sb.toString());
+	    } finally {
+		stmt.close();
 	    }
 	}
 
@@ -633,10 +527,169 @@ public class YamlTester {
 			sqlException);
 		}
 	    }
-	    System.err.println("Received expected exception: " + sqlException);
+	    if (DEBUG) {
+		System.err.println(
+		    "Received expected exception: " + sqlException);
+	    }
+	}
+
+	private void checkSuccess(Statement stmt) throws SQLException {
+	    assertFalse("Statement execution succeeded, but was expected" +
+			" to generate an error",
+			errorSpecified);
+	    ResultSet rs = stmt.getResultSet();
+	    if (rs == null) {
+		assertNull("Query did not produce results output", output);
+		assertNull("Query did not produce results, so output_types" +
+			   " are not supported",
+			   outputTypes);
+		if (rowCount != -1) {
+		    int updateCount = stmt.getUpdateCount();
+		    assertFalse("Query did not produce an update count",
+				updateCount == -1);
+		    outputRow += updateCount;
+		    checkRowCount(rowCount, false);
+		}
+	    } else {
+		checkResults(rs);
+		assertFalse("Multiple result sets not supported",
+			    stmt.getMoreResults());
+	    }
+	}
+
+	/**
+	 * Check if we already know that the statement has generated the wrong
+	 * number of output rows.
+	 *
+	 * @param rowCount the expected number of result rows
+	 * @param moreRows whether there are known to be more result rows
+	 */
+	private void checkRowCount(int rowCount, boolean moreRows) {
+	    int expectedRows = outputRow;
+	    if (moreRows) {
+		expectedRows++;
+	    }
+	    if (expectedRows > rowCount) {
+		throw new AssertionError(
+		    "Too many output rows:" +
+		    "\nExpected: " + rowCount +
+		    "\n     got: " + expectedRows);
+	    } else if (!moreRows &&
+		       (params == null || paramsRow == params.size()) &&
+		       (outputRow < rowCount))
+	    {
+		throw new AssertionError(
+		    "Too few output rows:" +
+		    "\nExpected: " + rowCount +
+		    "\n     got: " + outputRow);
+	    }
+	}
+
+	private void checkResults(ResultSet rs) throws SQLException {
+	    if (DEBUG) {
+		debugPrintResults(rs);
+	    }
+	    if (outputTypes != null && outputRow == 0) {
+		checkOutputTypes(rs);
+	    }
+	    if (output != null) {
+		ResultSetMetaData metaData = rs.getMetaData();
+		int numColumns = metaData.getColumnCount();
+		boolean resultsEmpty = false;
+		for ( ; true; outputRow++) {
+		    if (!rs.next()) {
+			resultsEmpty = true;
+			break;
+		    } else if (outputRow >= output.size()) {
+			break;
+		    }
+		    List<Object> row = output.get(outputRow);
+		    if (outputRow == 0) {
+			assertEquals("Unexpected number of columns in output:",
+				     row.size(), numColumns);
+		    }
+		    List<Object> resultsRow = new ArrayList<Object>(row.size());
+		    for (int i = 1; i <= numColumns; i++) {
+			resultsRow.add(rs.getObject(i));
+		    }
+		    if (!rowsEqual(row, resultsRow)) {
+			throw new AssertionError(
+			    "Unexpected output in row " + (outputRow + 1) +
+			    ":" +
+			    "\nExpected: " + row +
+			    "\n     got: " + resultsRow);
+		    }
+		}
+		checkRowCount(outputRow, !resultsEmpty);
+	    } else if (rowCount != -1) {
+		while (rs.next()) {
+		    outputRow++;
+		}
+		checkRowCount(rowCount, false);
+	    }
+	}
+
+        private void checkOutputTypes(ResultSet rs) throws SQLException {
+	    ResultSetMetaData metaData = rs.getMetaData();
+	    int numColumns = metaData.getColumnCount();
+	    assertEquals("Wrong number of output types:",
+			 outputTypes.size(), numColumns);
+	    for (int i = 1; i <= numColumns; i++) {
+		int columnType = metaData.getColumnType(i);
+		String columnTypeName = getTypeName(columnType);
+		if (columnTypeName == null) {
+		    columnTypeName = "<unknown " + columnTypeName + ">";
+		}
+		assertEquals("Wrong output type for column " + i + ":",
+			     outputTypes.get(i - 1), columnTypeName);
+	    }
+	}
+
+        private boolean rowsEqual(List<Object> pattern, List<Object> row) {
+	    int size = pattern.size();
+	    if (size != row.size()) {
+		return false;
+	    }
+	    for (int i = 0; i < size; i++) {
+		Object patternElem = pattern.get(i);
+		if (patternElem != DontCare.INSTANCE) {
+		    Object rowElem = row.get(i);
+		    if (patternElem == null
+			? rowElem == null
+			: patternElem.equals(rowElem))
+		    {
+			continue;
+		    } else {
+			return false;
+		    }
+		}
+	    }
+	    return true;
+	}
+
+	private void debugPrintResults(ResultSet rs) throws SQLException {
+	    System.err.println(context() + "Result output:");
+	    ResultSetMetaData md = rs.getMetaData();
+	    int nc = md.getColumnCount();
+	    for (int i = 1; i <= nc; i++) {
+		if (i != 1) {
+		    System.err.print(", ");
+		}
+		System.err.print(md.getColumnName(i));
+	    }
+	    System.err.println();
+	    while (rs.next()) {
+		for (int i = 1; i <= nc; i++) {
+		    if (i != 1) {
+			System.err.print(", ");
+		    }
+		    System.err.print(rs.getObject(i));
+		}
+		System.err.println();
+	    }
+	    rs.beforeFirst();
 	}
     }
-
 
     static <T extends Throwable> T initCause(T exception, Throwable cause) {
 	exception.initCause(cause);
@@ -673,12 +726,6 @@ public class YamlTester {
 	assertThat("The " + desc + " must be a map",
 		   object, instanceOf(Map.class));
 	return (Map<Object, Object>) object;
-    }
-
-    static Map<Object, Object> nonEmptyMap(Object object, String desc) {
-	Map<Object, Object> map = map(object, desc);
-	assertFalse("The " + desc + " must not be empty", map.isEmpty());
-	return map;
     }
 
     static Entry<Object, Object> firstEntry(Object object, String desc) {
@@ -765,6 +812,10 @@ public class YamlTester {
 	return rows;
     }
 
+    /**
+     * An object that represents a don't care value specified in the expected
+     * output.
+     */
     static class DontCare {
 	private DontCare() { }
 	static final DontCare INSTANCE = new DontCare();
@@ -773,6 +824,7 @@ public class YamlTester {
 	}
     }
 
+    /** A snakeyaml constructor that converts dc tags to DontCare.INSTANCE. */
     static class DontCareConstructor extends SafeConstructor {
 	public DontCareConstructor() {
 	    this.yamlConstructors.put(new Tag("!dc"), new ConstructDontCare());
@@ -790,21 +842,11 @@ public class YamlTester {
     }
 
     private static String getTypeName(int typeNumber) {
-	String name = typeNumberToName.get(typeNumber);
-	if (name == null) {
-	    throw new IllegalArgumentException(
-		"Unknown type number: " + typeNumber);
-	}
-	return name;
+	return typeNumberToName.get(typeNumber);
     }
 
-    private static int getTypeNumber(String typeName) {
-	Integer number = typeNameToNumber.get(typeName);
-	if (number == null) {
-	    throw new IllegalArgumentException(
-		"Unknown type name: " + typeName);
-	}
-	return number;
+    private static Integer getTypeNumber(String typeName) {
+	return typeNameToNumber.get(typeName);
     }
 
     private String context() {
@@ -825,8 +867,8 @@ public class YamlTester {
 		context.append(", ");
 	    }
 	    context.append("Command ").append(commandNumber);
-	    if (commandKey != null) {
-		context.append(" (").append(commandKey).append(')');
+	    if (commandName != null) {
+		context.append(" (").append(commandName).append(')');
 	    }
 	}
 	if (context.length() != 0) {

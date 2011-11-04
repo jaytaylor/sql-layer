@@ -34,6 +34,9 @@ import org.junit.Test;
  */
 public class YamlTesterParseTest {
 
+    private static final boolean DEBUG =
+	Boolean.getBoolean(YamlTesterParseTest.class.getName() + ".DEBUG");
+
     @Test
     public void testIncorrectYaml() {
 	test("!!blah-blah", "testIncorrectYaml");
@@ -151,8 +154,10 @@ public class YamlTesterParseTest {
 	try {
 	    new YamlTester(null, new StringReader(yaml), null).test();
 	} catch (Throwable t) {
-	    System.err.println(testMethod + ": " + t);
-	    //t.printStackTrace();
+	    if (DEBUG) {
+		System.err.println(testMethod + ": " + t);
+		//t.printStackTrace();
+	    }
 	    return;
 	}
 	fail("Expected exception");

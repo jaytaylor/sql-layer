@@ -38,6 +38,9 @@ import org.junit.runner.RunWith;
 @RunWith(NamedParameterizedRunner.class)
 public class YamlTesterShouldFailIT extends PostgresServerYamlITBase {
 
+    private static final boolean DEBUG =
+	Boolean.getBoolean(YamlTesterShouldFailIT.class.getName() + ".DEBUG");
+
     private static final File RESOURCE_DIR =
         new File(PostgresServerITBase.RESOURCE_DIR, "yaml-misc");
 
@@ -63,7 +66,9 @@ public class YamlTesterShouldFailIT extends PostgresServerYamlITBase {
 	    super.testYaml();
 	    fail("Expected exception");
 	} catch (Throwable t) {
-	    System.err.println("testYaml: " + t);
+	    if (DEBUG) {
+		System.err.println("testYaml: " + t);
+	    }
 	}
     }
 }
