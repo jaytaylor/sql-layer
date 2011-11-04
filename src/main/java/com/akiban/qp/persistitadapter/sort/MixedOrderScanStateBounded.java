@@ -52,8 +52,7 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
                 direction = hiInclusive ? Key.LTEQ : Key.LT;
             }
         }
-        boolean x = cursor.exchange.traverse(direction, false);
-        return x;
+        return cursor.exchange.traverse(direction, false);
     }
 
     public void setRange(ValueSource lo, ValueSource hi)
