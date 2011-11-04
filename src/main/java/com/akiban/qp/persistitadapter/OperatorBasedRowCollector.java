@@ -31,6 +31,7 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;
+import com.akiban.server.api.FixedCountLimit;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.memcache.hprocessor.PredicateLimit;
 import com.akiban.server.service.session.Session;
@@ -268,7 +269,10 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                     limit);
         } else {
             assert !descending;
-            plan = groupScan_Default(groupTable, limit);
+            plan = groupScan_Default(groupTable);
+            if (scanLimit != ScanLimit.NONE && scanLimit instanceof FixedCountLimit) {
+                plan = limit_Default(plan, ((FixedCountLimit) scanLimit).getLimit());
+            }
         }
         // Fill in ancestors above predicate
         if (queryRootType != predicateType) {

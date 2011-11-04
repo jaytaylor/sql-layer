@@ -2,4 +2,4 @@ PhysicalSelect[cid:int[INT]]
   project([Field(0)])
     Filter_Default([user.customers])
       Select_HKeyOrdered(user.customers, Field(1) == Literal(Smith))
-        GroupScan_Default(full scan on _akiban_customers NO LIMIT)
+        GroupScan_Default(full scan on _akiban_customers)

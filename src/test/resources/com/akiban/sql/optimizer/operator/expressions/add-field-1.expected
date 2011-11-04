@@ -1,4 +1,4 @@
 PhysicalSelect[_SQL_COL_1:INTEGER NOT NULL]
   project([LongOp(op(+) -> Literal(1), Field(0) -> LONG)])
     Filter_Default([user.customers])
-      GroupScan_Default(full scan on _akiban_customers NO LIMIT)
+      GroupScan_Default(full scan on _akiban_customers)
