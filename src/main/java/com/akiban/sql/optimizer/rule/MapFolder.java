@@ -59,7 +59,7 @@ public class MapFolder extends BaseRule
         @Override
         public boolean visit(PlanNode n) {
             if (n instanceof MapJoin) {
-              result.add((MapJoin)n);
+                result.add((MapJoin)n);
             }
             return true;
         }
@@ -102,16 +102,19 @@ public class MapFolder extends BaseRule
         PlanWithInput parent = map;
         PlanNode child;
         do {
-          child = parent;
-          parent = child.getOutput();
-        } while (!((parent instanceof ResultSet) ||
+            child = parent;
+            parent = child.getOutput();
+        } while (!((parent instanceof MapJoin) ||
+                   // These need to be outside.
+                   (parent instanceof ResultSet) ||
                    (parent instanceof AggregateSource) ||
-                   (parent instanceof MapJoin) ||
+                   (parent instanceof Sort) ||
+                   // Captures enough at the edge of the inside.
                    (child instanceof Project)));
         if (child != map) {
-          map.getOutput().replaceInput(map, map.getInner());
-          parent.replaceInput(child, map);
-          map.setInner(child);
+            map.getOutput().replaceInput(map, map.getInner());
+            parent.replaceInput(child, map);
+            map.setInner(child);
         }
 
         map.setJoinType(null);  // No longer special.
