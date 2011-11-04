@@ -22,12 +22,14 @@ import com.akiban.server.types.AkType;
 
 public class ExpressionTypes
 {
+    public static final ExpressionType BOOL = new ExpressionTypeImpl(AkType.BOOL);
     public static final ExpressionType DATE = new ExpressionTypeImpl(AkType.DATE);
     public static final ExpressionType DATETIME = new ExpressionTypeImpl(AkType.DATETIME);
     public static final ExpressionType DOUBLE = new ExpressionTypeImpl(AkType.DOUBLE);
     public static final ExpressionType FLOAT = new ExpressionTypeImpl(AkType.FLOAT);
     public static final ExpressionType INT = new ExpressionTypeImpl(AkType.INT);
     public static final ExpressionType LONG = new ExpressionTypeImpl(AkType.LONG);
+    public static final ExpressionType TEXT = new ExpressionTypeImpl(AkType.TEXT);
     public static final ExpressionType TIME = new ExpressionTypeImpl(AkType.TIME);
     public static final ExpressionType TIMESTAMP = new ExpressionTypeImpl(AkType.TIMESTAMP);
     public static final ExpressionType U_BIGINT = new ExpressionTypeImpl(AkType.U_BIGINT);
@@ -35,7 +37,6 @@ public class ExpressionTypes
     public static final ExpressionType U_FLOAT = new ExpressionTypeImpl(AkType.U_FLOAT);
     public static final ExpressionType U_INT = new ExpressionTypeImpl(AkType.U_INT);
     public static final ExpressionType YEAR = new ExpressionTypeImpl(AkType.YEAR);
-    public static final ExpressionType BOOL = new ExpressionTypeImpl(AkType.BOOL);
 
     public static ExpressionType decimal(int precision, int scale) {
         return new ExpressionTypeImpl(AkType.DECIMAL, precision, scale);
