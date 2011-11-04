@@ -73,8 +73,8 @@ public class TwoTableRowCollector extends OperatorBasedRowCollector
                     end != null && endColumns.includesColumn(columnPosition)) {
                     if (predicateTable == null) {
                         predicateTable = userTable;
-                        userTableStart = start == null ? null : new NiceRow(predicateTable.getTableId());
-                        userTableEnd = end == null ? null : new NiceRow(predicateTable.getTableId());
+                        userTableStart = start == null ? null : new NiceRow(predicateTable.getTableId(), store);
+                        userTableEnd = end == null ? null : new NiceRow(predicateTable.getTableId(), store);
                     } else if (predicateTable != userTable) {
                         throw new IllegalArgumentException
                             (String.format("Restriction on at least two tables: %s, %s",

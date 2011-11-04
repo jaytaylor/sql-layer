@@ -123,9 +123,9 @@ public final class CBasicIT extends ITBase {
 
         List<NewRow> expectedRows = new ArrayList<NewRow>();
         NiceRow r;
-        r = new NiceRow(tableId); r.put(0, 11L); r.put(7, 18L); r.put(8, 19L); expectedRows.add(r);
-        r = new NiceRow(tableId); r.put(0, 21L); r.put(7, 28L); r.put(8, 29L); expectedRows.add(r);
-        r = new NiceRow(tableId); r.put(0, 31L); r.put(7, 38L); r.put(8, 39L); expectedRows.add(r);
+        r = new NiceRow(tableId, store()); r.put(0, 11L); r.put(7, 18L); r.put(8, 19L); expectedRows.add(r);
+        r = new NiceRow(tableId, store()); r.put(0, 21L); r.put(7, 28L); r.put(8, 29L); expectedRows.add(r);
+        r = new NiceRow(tableId, store()); r.put(0, 31L); r.put(7, 38L); r.put(8, 39L); expectedRows.add(r);
         assertEquals("row content", expectedRows, rows);
     }
 
@@ -348,7 +348,7 @@ public final class CBasicIT extends ITBase {
         }
 
         try {
-            NiceRow old = new NiceRow(tableId);
+            NiceRow old = new NiceRow(tableId, store());
             old.put(1, "hello world");
             dml().updateRow(session(), old, createNewRow(tableId, 1, "goodbye cruel world"), null );
         } catch (NoSuchRowException e) {
@@ -506,7 +506,7 @@ public final class CBasicIT extends ITBase {
         }
 
         try {
-            NiceRow deleteAttempt = new NiceRow(tableId);
+            NiceRow deleteAttempt = new NiceRow(tableId, store());
             deleteAttempt.put(1, "the customer's name");
             dml().deleteRow(session(), deleteAttempt);
         } catch (NoSuchRowException e) {
@@ -526,7 +526,7 @@ public final class CBasicIT extends ITBase {
         }
 
         try {
-            NiceRow deleteAttempt = new NiceRow(tableId);
+            NiceRow deleteAttempt = new NiceRow(tableId, store());
             deleteAttempt.put(1, "the customer's name");
             dml().deleteRow(session(), createNewRow(tableId, 0, "this row doesn't exist"));
         } catch (NoSuchRowException e) {

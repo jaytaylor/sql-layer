@@ -353,7 +353,7 @@ public class KeyUpdateIT extends KeyUpdateBase
 
     private TestRow row(TestRow parent, RowDef table, Object... values)
     {
-        TestRow row = new TestRow(table.getRowDefId());
+        TestRow row = new TestRow(table.getRowDefId(), store());
         int column = 0;
         for (Object value : values) {
             if (value instanceof Integer) {

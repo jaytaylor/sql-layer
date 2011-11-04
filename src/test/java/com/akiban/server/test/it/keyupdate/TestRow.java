@@ -16,12 +16,14 @@
 package com.akiban.server.test.it.keyupdate;
 
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.store.Store;
 
 public class TestRow extends NiceRow
 {
-    public TestRow(int tableId)
+    public TestRow(int tableId, Store store)
     {
-        super(tableId);
+        super(tableId, store);
+        this.store = store;
     }
 
     public HKey hKey()
@@ -44,6 +46,11 @@ public class TestRow extends NiceRow
         this.parent = parent;
     }
 
+    public Store getStore() {
+        return store;
+    }
+
     private HKey hKey;
     private TestRow parent;
+    private final Store store;
 }
