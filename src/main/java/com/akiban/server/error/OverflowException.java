@@ -13,11 +13,13 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.expression.std;
+package com.akiban.server.error;
 
-import com.akiban.server.types.AkType;
+public class OverflowException extends InvalidOperationException
+{
 
-public interface LongOp {
-    AkType opType();
-    long evaluate(long one, long two);
+        public OverflowException()
+        {
+            super(ErrorCode.OVERFLOW);
+        }
 }
