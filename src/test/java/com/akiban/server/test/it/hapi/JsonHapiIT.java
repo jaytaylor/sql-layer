@@ -494,7 +494,7 @@ public final class JsonHapiIT extends ITBase {
                 JSONArray rows = entry.getValue();
                 for(int rowNum=0, ROWS=rows.length(); rowNum < ROWS; ++rowNum) {
                     JSONArray columns = rows.getJSONArray(rowNum);
-                    NewRow row = new NiceRow(tableId);
+                    NewRow row = new NiceRow(tableId, store());
                     for(int col=0, COLS=columns.length(); col < COLS; ++col) {
                         Object value = columns.get(col);
                         if (JSONObject.NULL.equals(value)) {

@@ -17,7 +17,6 @@ package com.akiban.sql.pg;
 
 import com.akiban.server.error.StalePlanException;
 import com.akiban.sql.parser.*;
-import com.sun.org.apache.bcel.internal.generic.RETURN;
 
 import java.util.List;
 

@@ -55,7 +55,7 @@ class GroupScan_Default extends Operator
 
     // Inner classes
 
-    private static class Execution implements Cursor
+    private static class Execution extends OperatorExecutionBase implements Cursor
     {
 
         // Cursor interface
@@ -69,7 +69,7 @@ class GroupScan_Default extends Operator
         @Override
         public Row next()
         {
-            adapter.checkQueryCancelation();
+            checkQueryCancelation();
             Row row;
             if ((row = cursor.next()) == null || limit.limitReached(row)) {
                 close();
@@ -88,14 +88,13 @@ class GroupScan_Default extends Operator
 
         Execution(StoreAdapter adapter, GroupCursorCreator cursorCreator, Limit limit)
         {
-            this.adapter = adapter;
+            super(adapter);
             this.cursor = cursorCreator.cursor(adapter);
             this.limit = limit;
         }
 
         // Object state
 
-        private final StoreAdapter adapter;
         private final Cursor cursor;
         private final Limit limit;
     }
@@ -174,7 +173,7 @@ class GroupScan_Default extends Operator
         @Override
         public Cursor cursor(StoreAdapter adapter)
         {
-            return new HKeyBoundCursor(adapter.newGroupCursor(groupTable()), hKeyBindingPosition, deep, hKeyType, shortenUntil);
+            return new HKeyBoundCursor(adapter, adapter.newGroupCursor(groupTable()), hKeyBindingPosition, deep, hKeyType, shortenUntil);
         }
 
         // PositionalGroupCursorCreator interface
@@ -253,9 +252,14 @@ class GroupScan_Default extends Operator
             return next();
         }
 
-        HKeyBoundCursor(GroupCursor input, int hKeyBindingPosition, boolean deep, UserTable hKeyType, UserTable shortenUntil)
+        HKeyBoundCursor(StoreAdapter adapter,
+                        GroupCursor input,
+                        int hKeyBindingPosition,
+                        boolean deep,
+                        UserTable hKeyType,
+                        UserTable shortenUntil)
         {
-            super(input);
+            super(adapter, input);
             this.input = input;
             this.hKeyBindingPosition = hKeyBindingPosition;
             this.deep = deep;

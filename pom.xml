@@ -4,7 +4,7 @@
     <groupId>com.akiban</groupId>
     <artifactId>akiban-server</artifactId>
     <packaging>jar</packaging>
-    <version>0.8.0-SNAPSHOT</version>
+    <version>0.9.0-SNAPSHOT</version>
     <name>akiban-server</name>
     <properties>
         <!-- this is the default version number, hudson job sets this to the official number -->
@@ -125,7 +125,7 @@
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-persistit-core</artifactId>
-            <version>2.6.1-SNAPSHOT</version>
+            <version>2.6.2-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.akiban</groupId>
@@ -339,6 +339,7 @@
                     <akserver.port>${akserver.port}</akserver.port>
                     <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
                 </systemPropertyVariables>
+                <argLine>${akiban.test.extraJvmArgs}</argLine>
             </configuration>
             <executions>
                 <execution>

@@ -16,6 +16,7 @@
 package com.akiban.server.service.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
@@ -30,6 +31,7 @@ import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.store.Store;
 import com.akiban.server.util.GroupIndexCreator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,13 +44,21 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 class DXLMXBeanImpl implements DXLMXBean {
-    private DXLServiceImpl dxlService;
+    private final DXLServiceImpl dxlService;
+    private final Store store;
     private final AtomicReference<String> usingSchema = new AtomicReference<String>("test");
     private static final Logger LOG = LoggerFactory.getLogger(DXLMXBeanImpl.class);
     private static final String CREATE_GROUP_INDEX_LOG_FORMAT = "createGroupIndex failed: %s %s %s";
+    private static final DXLService.GroupIndexRecreatePredicate ALL_GIS = new DXLService.GroupIndexRecreatePredicate() {
+        @Override
+        public boolean shouldRecreate(GroupIndex index) {
+            return true;
+        }
+    };
 
-    public DXLMXBeanImpl(DXLServiceImpl dxlService) {
+    public DXLMXBeanImpl(DXLServiceImpl dxlService, Store store) {
         this.dxlService = dxlService;
+        this.store = store;
     }
 
     @Override
@@ -76,12 +86,17 @@ class DXLMXBeanImpl implements DXLMXBean {
     }
 
     @Override
-    public void createGroupIndex(String groupName, String indexName, String tableColumnList) {
+    public void recreateGroupIndexes() {
+        dxlService.recreateGroupIndexes(ALL_GIS);
+    }
+
+    @Override
+    public void createGroupIndex(String groupName, String indexName, String tableColumnList, Index.JoinType joinType) {
         Session session = ServiceManagerImpl.newSession();
         try {
             DDLFunctions ddlFunctions = dxlService.ddlFunctions();
             AkibanInformationSchema ais = ddlFunctions.getAIS(session);
-            Index index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnList);
+            Index index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnList, joinType);
             ddlFunctions.createIndexes(session, Collections.singleton(index));
         }
         catch (InvalidOperationException e) {
@@ -212,7 +227,7 @@ class DXLMXBeanImpl implements DXLMXBean {
         final Session session = ServiceManagerImpl.newSession();
         try {
             int tableId = dxlService.ddlFunctions().getTableId(session, new TableName(schema, table));
-            NewRow row = new NiceRow(tableId);
+            NewRow row = new NiceRow(tableId, store);
             String[] fieldsArray = fields.split(",\\s*");
             for (int i=0; i < fieldsArray.length; ++i) {
                 String field = java.net.URLDecoder.decode(fieldsArray[i], "UTF-8");

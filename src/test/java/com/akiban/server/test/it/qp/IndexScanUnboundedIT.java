@@ -86,7 +86,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
         } else {
             persistitStore = (PersistitStore) plainStore;
         }
-        adapter = new PersistitAdapter(schema, persistitStore, null, session());
+        adapter = new PersistitAdapter(schema, persistitStore, null, session(), configService());
         use(db);
     }
 

@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.postgresql.util.PSQLException;
 
 import com.akiban.ais.model.Group;
+import com.akiban.ais.model.Index.JoinType;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.sql.pg.PostgresServerITBase;
@@ -69,7 +70,7 @@ public class IndexDDLIT extends PostgresServerITBase {
     
     @Test 
     public void createGroupKey() throws SQLException {
-        String sql = "CREATE INDEX test4 on test.t2 (t1.c1, t2.c1)";
+        String sql = "CREATE INDEX test4 on test.t2 (t1.c1, t2.c1) USING LEFT JOIN";
         createJoinedTables();
         
         connection.createStatement().execute(sql);
@@ -88,6 +89,35 @@ public class IndexDDLIT extends PostgresServerITBase {
 
         assertNotNull (group.getIndex("test4"));
         assertFalse   (group.getIndex("test4").isUnique());
+        assertEquals  (JoinType.LEFT, group.getIndex("test4").getJoinType());
+        assertEquals  (2, group.getIndex("test4").getColumns().size());
+        assertEquals  ("c1", group.getIndex("test4").getColumns().get(0).getColumn().getName());
+        assertEquals  ("c1", group.getIndex("test4").getColumns().get(0).getColumn().getName());
+        
+    }
+    
+    @Test 
+    public void createGroupRight() throws SQLException {
+        String sql = "CREATE INDEX test4 on test.t2 (t1.c1, t2.c1) USING RIGHT JOIN";
+        createJoinedTables();
+        
+        connection.createStatement().execute(sql);
+
+        UserTable table1 = ddlServer().getAIS(session()).getUserTable("test", "t1");
+        assertNotNull (table1);
+
+        UserTable table2 = ddlServer().getAIS(session()).getUserTable("test", "t2");
+        assertNotNull (table2);
+        
+        assertNull (table1.getIndex("test4"));
+        assertNull (table2.getIndex("test4"));
+        
+        assertEquals (table1.getGroup().getName(), table2.getGroup().getName());
+        Group group = table1.getGroup();
+
+        assertNotNull (group.getIndex("test4"));
+        assertEquals  (JoinType.RIGHT, group.getIndex("test4").getJoinType());
+        assertFalse   (group.getIndex("test4").isUnique());
         assertEquals  (2, group.getIndex("test4").getColumns().size());
         assertEquals  ("c1", group.getIndex("test4").getColumns().get(0).getColumn().getName());
         assertEquals  ("c1", group.getIndex("test4").getColumns().get(0).getColumn().getName());
@@ -96,7 +126,7 @@ public class IndexDDLIT extends PostgresServerITBase {
     
     @Test (expected=PSQLException.class)
     public void createUniqueGroupKey () throws SQLException {
-        String sql = "CREATE UNIQUE INDEX test4 on test.t2 (t1.c1, t2.c1)";
+        String sql = "CREATE UNIQUE INDEX test4 on test.t2 (t1.c1, t2.c1) USING LEFT JOIN";
         createJoinedTables();
         
         connection.createStatement().execute(sql);
@@ -136,15 +166,31 @@ public class IndexDDLIT extends PostgresServerITBase {
     
     @Test (expected=PSQLException.class)
     public void createIndexErrorBranching() throws SQLException {
-        String sql ="CREATE INDEX test12 on test.t1 (t1.c1, t2.c3, t3.c1)";
+        String sql ="CREATE INDEX test12 on test.t1 (t1.c1, t2.c3, t3.c1) USING LEFT JOIN";
         createBranchedGroup();
         connection.createStatement().execute(sql);
     }
 
     @Test (expected=PSQLException.class)
     public void createIndexErrorTableCol() throws SQLException {
-        String sql = "CREATE INDEX test13 on test.t1 (t1.c1, t.c1)";
+        String sql = "CREATE INDEX test13 on test.t1 (t1.c1, t.c1) USING LEFT JOIN";
         createJoinedTables();
+        connection.createStatement().execute(sql);
+    }
+
+    @Test (expected=PSQLException.class)
+    public void createIndexTableWithJoin () throws SQLException {
+        String sql = "CREATE INDEX test4 on test.t1 (t1.c1, t1.c2) USING LEFT JOIN";
+        createJoinedTables();
+        
+        connection.createStatement().execute(sql);
+    }
+
+    @Test (expected=PSQLException.class)
+    public void createIndexGroupWithoutJoin () throws SQLException {
+        String sql = "CREATE INDEX test4 on test.t2 (t1.c1, t2.c1)";
+        createJoinedTables();
+        
         connection.createStatement().execute(sql);
     }
 
@@ -203,7 +249,7 @@ public class IndexDDLIT extends PostgresServerITBase {
     
     @Test 
     public void dropGroupIndex () throws SQLException { 
-        String sql = "CREATE INDEX test16 on test.t2 (t1.c1, t2.c1)";
+        String sql = "CREATE INDEX test16 on test.t2 (t1.c1, t2.c1) USING LEFT JOIN";
         createJoinedTables();
         connection.createStatement().execute(sql);
         

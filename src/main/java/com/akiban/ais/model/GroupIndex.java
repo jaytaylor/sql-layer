@@ -30,8 +30,17 @@ import com.akiban.server.error.IndexTableNotInGroupException;
 
 public class GroupIndex extends Index
 {
+    static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
+                                    Boolean isUnique, String constraint)
+    {
+        ais.checkMutability();
+        GroupIndex index = new GroupIndex(group, indexName, indexId, isUnique, constraint);
+        group.addIndex(index);
+        return index;
+    }
+
     public static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
-                                    Boolean isUnique, String constraint, String joinType)
+                                    Boolean isUnique, String constraint, JoinType joinType)
     {
         ais.checkMutability();
         GroupIndex index = new GroupIndex(group, indexName, indexId, isUnique, constraint, joinType);
@@ -39,10 +48,17 @@ public class GroupIndex extends Index
         return index;
     }
 
-    public GroupIndex(Group group, String indexName, Integer indexId, Boolean isUnique, String constraint, String joinType)
+    public GroupIndex(Group group, String indexName, Integer indexId, Boolean isUnique, String constraint)
     {
-        // index checks index name. 
-        super(new TableName("", group.getName()), indexName, indexId, isUnique, constraint, joinType);
+        // index checks index name.
+        super(new TableName("", group.getName()), indexName, indexId, isUnique, constraint);
+        this.group = group;
+    }
+
+    public GroupIndex(Group group, String indexName, Integer indexId, Boolean isUnique, String constraint, JoinType joinType)
+    {
+        // index checks index name.
+        super(new TableName("", group.getName()), indexName, indexId, isUnique, constraint, joinType, true);
         this.group = group;
     }
 

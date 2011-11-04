@@ -269,6 +269,29 @@ public class API
         return indexScan_Default(indexType, indexKeyRange, ordering, innerJoinUntilRowType);
     }
 
+    /**
+     * Creates a scan operator for the given index, using LEFT JOIN semantics after the given table type.
+     * @param indexType the index to scan
+     * @param reverse whether to scan in reverse order
+     * @param indexKeyRange the scan range
+     * @param indexScanSelector
+     * @return the scan operator
+     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
+     */
+    @Deprecated
+    public static Operator indexScan_Default(IndexRowType indexType,
+                                             boolean reverse,
+                                             IndexKeyRange indexKeyRange,
+                                             IndexScanSelector indexScanSelector)
+    {
+        Ordering ordering = new Ordering();
+        int fields = indexType.nFields();
+        for (int f = 0; f < fields; f++) {
+            ordering.append(new FieldExpression(indexType, f), !reverse);
+        }
+        return indexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector);
+    }
+
     public static Operator indexScan_Default(IndexRowType indexType,
                                              IndexKeyRange indexKeyRange,
                                              Ordering ordering)
@@ -418,7 +441,7 @@ public class API
     public static Cursor cursor(Operator root, StoreAdapter adapter)
     {
         // if all they need is the wrapped cursor, create it directly
-        return new TopLevelWrappingCursor(root.cursor(adapter));
+        return new TopLevelWrappingCursor(adapter, root.cursor(adapter));
     }
 
     // Options

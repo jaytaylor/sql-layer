@@ -18,6 +18,7 @@ package com.akiban.server.util;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
@@ -27,6 +28,7 @@ import org.junit.Test;
 
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class GroupIndexCreatorTest {
     private AkibanInformationSchema ais;
@@ -42,23 +44,38 @@ public class GroupIndexCreatorTest {
 
     @Test(expected=NoSuchGroupException.class)
     public void unknownGroup() throws Exception {
-        GroupIndexCreator.createIndex(ais, "foobar", "name_date", "c.name");
+        GroupIndexCreator.createIndex(ais, "foobar", "name_date", "c.name", Index.JoinType.LEFT);
     }
 
     @Test
-    public void singleTableSingleColumn() throws Exception {
-        GroupIndex index = GroupIndexCreator.createIndex(ais, "c", "c_name", "c.name");
+    public void singleTableSingleColumnLeft() throws Exception {
+        GroupIndex index = GroupIndexCreator.createIndex(ais, "c", "c_name", "c.name", Index.JoinType.LEFT);
         final Group cGroup = ais.getGroup("c");
         final UserTable cTable = ais.getUserTable("test", "c");
         assertEquals("group same", cGroup, index.getGroup());
         assertEquals("index name", "c_name", index.getIndexName().getName());
         assertEquals("column count", 1, index.getColumns().size());
         assertEquals("col1 is c.name", cTable.getColumn("name"), index.getColumns().get(0).getColumn());
+        assertEquals("join type", Index.JoinType.LEFT, index.getJoinType());
+        assertTrue("join not valid", index.isValid());
+    }
+
+    @Test
+    public void singleTableSingleColumnRight() throws Exception {
+        GroupIndex index = GroupIndexCreator.createIndex(ais, "c", "c_name", "c.name", Index.JoinType.RIGHT);
+        final Group cGroup = ais.getGroup("c");
+        final UserTable cTable = ais.getUserTable("test", "c");
+        assertEquals("group same", cGroup, index.getGroup());
+        assertEquals("index name", "c_name", index.getIndexName().getName());
+        assertEquals("column count", 1, index.getColumns().size());
+        assertEquals("col1 is c.name", cTable.getColumn("name"), index.getColumns().get(0).getColumn());
+        assertEquals("join type", Index.JoinType.RIGHT, index.getJoinType());
+        assertTrue("join not valid", index.isValid());
     }
 
     @Test
     public void twoTablesTwoColumns() throws Exception {
-        GroupIndex index = GroupIndexCreator.createIndex(ais, "c", "name_date", "c.name,o.date");
+        GroupIndex index = GroupIndexCreator.createIndex(ais, "c", "name_date", "c.name,o.date", Index.JoinType.LEFT);
         final Group cGroup = ais.getGroup("c");
         final UserTable cTable = ais.getUserTable("test", "c");
         final UserTable oTable = ais.getUserTable("test", "o");
@@ -67,5 +84,7 @@ public class GroupIndexCreatorTest {
         assertEquals("column count", 2, index.getColumns().size());
         assertEquals("col1 is c.name", cTable.getColumn("name"), index.getColumns().get(0).getColumn());
         assertEquals("col2 is o.date", oTable.getColumn("date"), index.getColumns().get(1).getColumn());
+        assertEquals("join type", Index.JoinType.LEFT, index.getJoinType());
+        assertTrue("join not valid", index.isValid());
     }
 }

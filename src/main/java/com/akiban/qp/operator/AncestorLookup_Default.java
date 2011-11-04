@@ -136,7 +136,7 @@ class AncestorLookup_Default extends Operator
 
     // Inner classes
 
-    private class Execution implements Cursor
+    private class Execution extends OperatorExecutionBase implements Cursor
     {
         // Cursor interface
 
@@ -150,7 +150,7 @@ class AncestorLookup_Default extends Operator
         @Override
         public Row next()
         {
-            adapter.checkQueryCancelation();
+            checkQueryCancelation();
             while (pending.isEmpty() && inputRow.isHolding()) {
                 advance();
             }
@@ -209,7 +209,7 @@ class AncestorLookup_Default extends Operator
 
         Execution(StoreAdapter adapter, Cursor input)
         {
-            this.adapter = adapter;
+            super(adapter);
             this.input = input;
             // Why + 1: Because the input row (whose ancestors get discovered) also goes into pending.
             this.pending = new PendingRows(ancestorTypeDepth.length + 1);
@@ -238,7 +238,6 @@ class AncestorLookup_Default extends Operator
 
         // Object state
 
-        private final StoreAdapter adapter;
         private final Cursor input;
         private final ShareHolder<Row> inputRow = new ShareHolder<Row>();
         private final GroupCursor ancestorCursor;

@@ -22,6 +22,7 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.memcache.outputter.jsonoutputter.JsonOutputter;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.store.Store;
 import com.akiban.server.test.it.ITBase;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -51,6 +52,10 @@ public class RCTortureIT extends ITBase
                 dropAllTables();
             }
         }
+    }
+
+    Store getStore() {
+        return store();
     }
 
     Session testSession()

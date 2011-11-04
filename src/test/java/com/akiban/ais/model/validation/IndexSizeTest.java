@@ -84,7 +84,7 @@ public class IndexSizeTest {
     public void groupIndexTooLarge() {
         builder.createGroup("t1", "test", "t1$t1");
         builder.addTableToGroup("t1", "test", "t1");
-        builder.groupIndex("t1", "i1", false);
+        builder.groupIndex("t1", "i1", false, null);
         builder.groupIndexColumn("t1", "i1", "test", "t1", "c2", 0);
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();

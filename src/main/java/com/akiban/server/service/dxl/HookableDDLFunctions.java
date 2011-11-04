@@ -301,7 +301,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void createIndexes(final Session session, Collection<Index> indexesToAdd) {
+    public void createIndexes(final Session session, Collection<? extends Index> indexesToAdd) {
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.CREATE_INDEXES);

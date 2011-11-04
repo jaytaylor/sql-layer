@@ -27,7 +27,10 @@ import com.akiban.util.ShareHolder;
 import com.persistit.Exchange;
 import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitException;
+import com.persistit.exception.PersistitIOException;
 import com.persistit.exception.PersistitInterruptedException;
+
+import java.io.InterruptedIOException;
 
 class PersistitIndexCursor implements Cursor
 {
@@ -62,10 +65,9 @@ class PersistitIndexCursor implements Cursor
                     needAnother = false;
                 }
             } while (needAnother);
-        } catch (PersistitInterruptedException e) {
-            throw new QueryCanceledException();
         } catch (PersistitException e) {
-            throw new StoreAdapterRuntimeException(e);
+            adapter.handlePersistitException(e);
+            throw new AssertionError();
         }
         assert (next == null) == (exchange == null);
         return next;

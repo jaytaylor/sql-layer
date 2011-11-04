@@ -439,48 +439,43 @@ public class RowData {
     }
 
     public String toString(final RowDefCache cache) {
-        final RowDef rowDef;
+        String toString;
         if (cache == null) {
-            rowDef = null;
+            toString = toStringWithoutRowDef("no RowDefCache");
         }
         else {
-            RowDef tmp;
             try {
-                tmp = cache.getRowDef(getRowDefId());
+                toString = toString(cache.getRowDef(getRowDefId()));
             }
             catch ( RowDefNotFoundException e) {
-                tmp = null;
+                toString = toStringWithoutRowDef(String.format("rowDefId %s not in cache", getRowDefId()));
             }
-            rowDef = tmp;
         }
-        return toString(rowDef);
+        return toString;
     }
 
-    public String toString(final RowDef rowDef) {
+    public String toString(final RowDef rowDef)
+    {
+        if (rowDef == null) {
+            return toStringWithoutRowDef("No RowDef provided");
+        }
         final AkibanAppender sb = AkibanAppender.of(new StringBuilder());
         RowDataValueSource source = new RowDataValueSource();
         try {
-            if (rowDef == null) {
-                sb.append("RowData?(rowDefId=");
-                sb.append(getRowDefId());
-                sb.append(": ");
-                AkServerUtil.hex(sb, bytes, rowStart, rowEnd - rowStart);
-            } else {
-                sb.append(rowDef.getTableName());
-                for (int i = 0; i < getFieldCount(); i++) {
-                    final FieldDef fieldDef = rowDef.getFieldDef(i);
-                    sb.append(i == 0 ? '(' : ',');
-                    final long location = fieldDef.getRowDef().fieldLocation(
-                            this, fieldDef.getFieldIndex());
-                    if (location == 0) {
-                       // sb.append("null");
-                    } else {
-                        source.bind(fieldDef, this);
-                        source.appendAsString(sb, Quote.SINGLE_QUOTE);
-                    }
+            sb.append(rowDef.getTableName());
+            for (int i = 0; i < getFieldCount(); i++) {
+                final FieldDef fieldDef = rowDef.getFieldDef(i);
+                sb.append(i == 0 ? '(' : ',');
+                final long location = fieldDef.getRowDef().fieldLocation(
+                    this, fieldDef.getFieldIndex());
+                if (location == 0) {
+                    // sb.append("null");
+                } else {
+                    source.bind(fieldDef, this);
+                    source.appendAsString(sb, Quote.SINGLE_QUOTE);
                 }
-                sb.append(')');
             }
+            sb.append(')');
         } catch (Exception e) {
             int size = Math.min(getRowSize(), 64);
             if (size > 0 && rowStart >= 0) {
@@ -556,5 +551,24 @@ public class RowData {
     {
         return MINIMUM_RECORD_LENGTH + // header and trailer
                (rowDef.getFieldCount() + 7) / 8; // null bitmap
+    }
+
+    private String toStringWithoutRowDef(String missingRowDefExplanation) {
+        final AkibanAppender sb = AkibanAppender.of(new StringBuilder());
+        try {
+            sb.append("RowData[");
+            sb.append(missingRowDefExplanation);
+            sb.append("]?(rowDefId=");
+            sb.append(getRowDefId());
+            sb.append(": ");
+            AkServerUtil.hex(sb, bytes, rowStart, rowEnd - rowStart);
+        } catch (Exception e) {
+            int size = Math.min(getRowSize(), 64);
+            if (size > 0 && rowStart >= 0) {
+                sb.append(AkServerUtil.dump(bytes, rowStart, size));
+            }
+            return sb.toString();
+        }
+        return sb.toString();
     }
 }
