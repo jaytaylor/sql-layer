@@ -27,6 +27,7 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionService;
 import com.akiban.server.store.RowCollector;
 import com.akiban.server.store.Store;
 
@@ -34,10 +35,11 @@ public class AkServerAisSource extends Source {
 
     private final Store store;
 
-    private final Session session = ServiceManagerImpl.newSession();
+    private final Session session;
     
-    public AkServerAisSource(final Store store) {
+    public AkServerAisSource(final Store store, SessionService sessionService) {
         this.store = store;
+        this.session = sessionService.createSession();
     }
 
     @Override
