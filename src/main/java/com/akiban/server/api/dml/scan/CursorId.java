@@ -22,13 +22,14 @@ import com.akiban.server.api.common.WrongByteAllocationException;
 import com.akiban.util.ArgumentValidation;
 
 public final class CursorId extends ByteBufferWriter {
-    private final int SIZE_ON_BUFFER = Long.SIZE / 8 + Integer.SIZE / 8;
+    private static final int SIZE_ON_BUFFER = 2 * (Long.SIZE / 8) + Integer.SIZE / 8;
 
-    private final int tableId;
+    private final long sessionId;
     private final long cursorId;
+    private final int tableId;
 
-    public CursorId(long cursorId, int tableId) {
-        ArgumentValidation.notNull("tableID", tableId);
+    public CursorId(long sessionId, long cursorId, int tableId) {
+        this.sessionId = sessionId;
         this.cursorId = cursorId;
         this.tableId = tableId;
     }
@@ -41,12 +42,14 @@ public final class CursorId extends ByteBufferWriter {
      */
     public CursorId(ByteBuffer readFrom, int allocatedBytes) {
         WrongByteAllocationException.ifNotEqual(allocatedBytes, SIZE_ON_BUFFER);
+        sessionId = readFrom.getLong();
         cursorId = readFrom.getLong();
         tableId = readFrom.getInt();
     }
 
     @Override
     protected void writeToBuffer(ByteBuffer output) throws Exception {
+        output.putLong(sessionId);
         output.putLong(cursorId);
         output.putInt(tableId);
     }
@@ -59,21 +62,20 @@ public final class CursorId extends ByteBufferWriter {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
-        CursorId cursorId1 = (CursorId) o;
-
-        if (cursorId != cursorId1.cursorId) return false;
-
-        return true;
+        CursorId that = (CursorId) o;
+        return
+            this.sessionId == that.sessionId &&
+            this.cursorId == that.cursorId &&
+            this.tableId == that.tableId;
     }
 
     @Override
     public int hashCode() {
-        return (int) (cursorId ^ (cursorId >>> 32));
+        return (int) ((tableId ^ cursorId) + sessionId);
     }
 
     @Override
     public String toString() {
-        return String.format("CursorId[%d for tableId=%d]", cursorId, tableId);
+        return String.format("CursorId[session %d, table %d, cursor %d]", sessionId, tableId, cursorId);
     }
 }
