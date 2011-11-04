@@ -46,11 +46,11 @@ public class AkServerAisSourceTargetIT extends ITBase {
         final AkibanInformationSchema ais = ddl().getAIS(session());
         
         // Store AIS data
-        final Target target = new AkServerAisTarget(store());
+        final Target target = new AkServerAisTarget(store(), serviceManager().getSessionService());
         new Writer(target).save(ais);
 
         // Retrieve AIS data
-        final Source source = new AkServerAisSource(store());
+        final Source source = new AkServerAisSource(store(), serviceManager().getSessionService());
         final AkibanInformationSchema aisCopy = new Reader(source).load();
 
         new Writer(new SqlTextTarget(new PrintWriter(new FileWriter("/tmp/ais1.txt")))).save(ais);
@@ -64,15 +64,15 @@ public class AkServerAisSourceTargetIT extends ITBase {
         final AkibanInformationSchema ais = ddl().getAIS(session());
         
         // Store AIS data
-        final Target target = new AkServerAisTarget(store());
+        final Target target = new AkServerAisTarget(store(), serviceManager().getSessionService());
         new Writer(target).save(ais);
 
         // Retrieve AIS data
-        final Source source1 = new AkServerAisSource(store());
+        final Source source1 = new AkServerAisSource(store(), serviceManager().getSessionService());
         final AkibanInformationSchema aisCopy1 = new Reader(source1).load();
         new Writer(target).save(aisCopy1);
 
-        final Source source2 = new AkServerAisSource(store());
+        final Source source2 = new AkServerAisSource(store(), serviceManager().getSessionService());
         final AkibanInformationSchema aisCopy2 = new Reader(source2).load();
 
         // new Writer(new SqlTextTarget(new PrintWriter(new
@@ -82,7 +82,7 @@ public class AkServerAisSourceTargetIT extends ITBase {
 
         assertTrue(equals(ais, aisCopy2));
 
-        final Source source3 = new AkServerAisSource(store());
+        final Source source3 = new AkServerAisSource(store(), serviceManager().getSessionService());
         final AkibanInformationSchema aisCopy3 = new Reader(source3).load();
         assertTrue(equals(ais, aisCopy3));
     }

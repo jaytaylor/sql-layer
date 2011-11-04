@@ -93,7 +93,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         assert index != null : userTable;
         UserTableRowType tableType = schema.userTableRowType(userTable);
         IndexRowType indexType = tableType.indexRowType(index);
-        IndexBound bound = new IndexBound(new NewRowBackedIndexRow(tableType, new LegacyRowWrapper(oldRowData), index),
+        IndexBound bound = new IndexBound(new NewRowBackedIndexRow(tableType, new LegacyRowWrapper(oldRowData, this), index),
                                           ConstantColumnSelector.ALL_ON);
         IndexKeyRange range = new IndexKeyRange(bound, true, bound, true);
 

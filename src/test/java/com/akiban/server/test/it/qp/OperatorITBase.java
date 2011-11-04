@@ -34,8 +34,6 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.server.test.it.ITBase;
-import com.akiban.server.types.ToObjectValueTarget;
-import com.akiban.util.ShareHolder;
 import com.persistit.exception.PersistitException;
 import com.akiban.util.Strings;
 import org.junit.Before;
@@ -162,7 +160,7 @@ public class OperatorITBase extends ITBase
 
     protected RowBase row(int tableId, Object... values /* alternating field position and value */)
     {
-        NiceRow niceRow = new NiceRow(tableId);
+        NiceRow niceRow = new NiceRow(tableId, store());
         int i = 0;
         while (i < values.length) {
             int position = (Integer) values[i++];

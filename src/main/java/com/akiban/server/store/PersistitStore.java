@@ -1441,7 +1441,7 @@ public class PersistitStore implements Store {
     private RowData mergeRows(RowDef rowDef, RowData currentRow,
             RowData newRowData, ColumnSelector columnSelector) {
         NewRow mergedRow = NiceRow.fromRowData(currentRow, rowDef);
-        NewRow newRow = new LegacyRowWrapper(newRowData);
+        NewRow newRow = new LegacyRowWrapper(newRowData, this);
         int fields = rowDef.getFieldCount();
         for (int i = 0; i < fields; i++) {
             if (columnSelector.includesColumn(i)) {

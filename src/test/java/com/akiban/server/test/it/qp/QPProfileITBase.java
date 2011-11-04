@@ -162,7 +162,7 @@ public class QPProfileITBase extends ITBase
 
     protected RowBase row(int tableId, Object... values /* alternating field position and value */)
     {
-        NiceRow niceRow = new NiceRow(tableId);
+        NiceRow niceRow = new NiceRow(tableId, store());
         int i = 0;
         while (i < values.length) {
             int position = (Integer) values[i++];
