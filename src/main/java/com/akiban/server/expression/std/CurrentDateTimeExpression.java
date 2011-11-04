@@ -91,34 +91,53 @@ public class CurrentDateTimeExpression extends AbstractVoidParamExpression
         }
     };
 */
+    
+    interface Functor
+    {
+        Date getCurrent ();
+    }
+
+    public static enum Context implements Functor
+    {
+        NOW // need a better name!
+        {
+            @Override
+            public Date getCurrent() { return new Date(); }
+        }
+    }
+
     private final boolean isString;
     private final AkType neededInfo;
+    private final Context context;
 
-    public CurrentDateTimeExpression (boolean isString, AkType neededInfo)
+    public CurrentDateTimeExpression (boolean isString, AkType neededInfo, Context context)
     {
         super(isString? AkType.VARCHAR : AkType.LONG);
         this.isString = isString;
         this.neededInfo = neededInfo;
+        this.context = context;
     }
 
     private static final class InnerEvaluation extends AbstractVoidParamExpressionEvaluation
     {
         private final boolean isString;
         private final AkType neededInfo;
+        private final Context context;
 
-        protected InnerEvaluation (boolean isString, AkType neededInfo)
+        protected InnerEvaluation (boolean isString, AkType neededInfo, Context context)
         {
             this.isString = isString;
             this.neededInfo = neededInfo;
+            this.context = context;
         }
 
         @Override
         public ValueSource eval()
         {
             if (isString)
-                return new ValueHolder(AkType.VARCHAR, new SimpleDateFormat(getFormat()).format(new Date()));
+                return new ValueHolder(AkType.VARCHAR, new SimpleDateFormat(getFormat()).format(context.getCurrent()));
             else
-                return new ValueHolder(AkType.LONG, Long.parseLong(new SimpleDateFormat(getFormat()).format(new Date())));
+                return new ValueHolder(AkType.LONG, Long.parseLong(new SimpleDateFormat(getFormat()).format(context.getCurrent())));
         }
 
         private String getFormat ()
@@ -142,6 +161,6 @@ public class CurrentDateTimeExpression extends AbstractVoidParamExpression
     @Override
     public ExpressionEvaluation evaluation()
     {
-        return new InnerEvaluation (isString, neededInfo);
+        return new InnerEvaluation (isString, neededInfo, context);
     }
 }

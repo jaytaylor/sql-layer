@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.expression.std.CurrentDateTimeExpression.Context;
 import java.util.Date;
 import java.text.SimpleDateFormat;
 import com.akiban.server.types.util.ValueHolder;
@@ -29,42 +30,42 @@ public class CurrentDateTimeExpressionTest
     @Test
     public void testCurrentDateinString()
     {
-        test(true, AkType.DATE, "yyyy-MM-dd");
+        test(true, AkType.DATE, Context.NOW, "yyyy-MM-dd");
     }
 
     @Test
     public void testCurrentDateInNumeric()
     {
-        test(false, AkType.DATE, "yyyyMMdd");
+        test(false, AkType.DATE, Context.NOW, "yyyyMMdd");
     }
 
     @Test
     public void testCurrentTimeInString()
     {
-        test(true,AkType.TIME, "hh:mm:ss");
+        test(true,AkType.TIME, Context.NOW, "hh:mm:ss");
     }
 
     @Test
     public void testCurrentTimeInNumeric()
     {
-        test(false, AkType.TIME, "hhmmss");
+        test(false, AkType.TIME, Context.NOW, "hhmmss");
     }
 
     @Test
     public void testCurrentTimestampInString()
     {
-        test(true, AkType.TIMESTAMP, "yyyy-MM-dd hh:mm:ss");
+        test(true, AkType.TIMESTAMP, Context.NOW, "yyyy-MM-dd hh:mm:ss");
     }
 
     @Test
     public void testCurrentTimestampInNumeric()
     {
-        test(false, AkType.TIMESTAMP, "yyyyMMddhhmmss");
+        test(false, AkType.TIMESTAMP, Context.NOW, "yyyyMMddhhmmss");
     }
 
-    private void test(boolean isString, AkType type, String format)
+    private void test(boolean isString, AkType type, Context context, String format)
     {
-        ValueSource actual = new CurrentDateTimeExpression(isString, type).evaluation().eval();
+        ValueSource actual = new CurrentDateTimeExpression(isString, type, context).evaluation().eval();
         ValueSource expected;
         if (isString)
             expected = new ValueHolder(AkType.VARCHAR, new SimpleDateFormat(format).format(new Date()));
