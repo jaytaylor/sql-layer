@@ -34,7 +34,7 @@ public class BinaryBitExpression extends AbstractBinaryExpression
 {
     private static interface AbsBitOperator
     {
-         BigInteger exc (BigInteger left, BigInteger right);
+        BigInteger exc (BigInteger left, BigInteger right);       
     }
 
     public static enum BitOperator implements AbsBitOperator
@@ -64,6 +64,7 @@ public class BinaryBitExpression extends AbstractBinaryExpression
             @Override
             public BigInteger exc (BigInteger left, BigInteger right) { return left.shiftRight(right.intValue()); }
         }
+
     }
     
     @Scalar("&")
@@ -131,9 +132,19 @@ public class BinaryBitExpression extends AbstractBinaryExpression
             }
            finally // if invalid types are supplied, result is zero
            {
-                return new ValueHolder(AkType.U_BIGINT, op.exc(left, right));
+                return new ValueHolder(AkType.U_BIGINT, to64Unsig(op.exc(left, right)));
            }
-        }        
+        }
+        BigInteger to64Unsig(BigInteger n)
+        {
+            n.clearBit(0);
+            StringBuilder st = new StringBuilder(n.toString(2));
+            if (st.length() < 64)
+                while (st.length() < 64) st.insert(0, '0');
+
+            return new BigInteger(st.substring(0, 64),2);
+        }
+
     }
     
     public BinaryBitExpression (Expression lhs, BitOperator op, Expression rhs)
