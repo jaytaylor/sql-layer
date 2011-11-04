@@ -138,9 +138,8 @@ public class BinaryBitExpression extends AbstractBinaryExpression
         BigInteger to64Unsig(BigInteger n)
         {
             n.clearBit(0);
-            StringBuilder st = new StringBuilder(n.toString(2));
-            if (st.length() < 64)
-                while (st.length() < 64) st.insert(0, '0');
+            StringBuilder st = new StringBuilder(n.toString(2));            
+            while (st.length() < 64) st.insert(0, '0');
 
             return new BigInteger(st.substring(0, 64),2);
         }
