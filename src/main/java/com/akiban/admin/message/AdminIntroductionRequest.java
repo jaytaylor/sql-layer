@@ -19,7 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
-import com.akiban.server.service.ServiceManager;
+import com.akiban.message.MessageRequiredServices;
 import com.akiban.server.service.session.Session;
 import com.akiban.message.AkibanSendConnection;
 import com.akiban.message.Request;
@@ -43,7 +43,7 @@ public class AdminIntroductionRequest extends Request
     }
 
     @Override
-    public void execute(AkibanSendConnection connection, Session session, ServiceManager serviceManager) throws Exception
+    public void execute(AkibanSendConnection connection, Session session, MessageRequiredServices requiredServices) throws Exception
     {
         // Executes in mysql head
     }

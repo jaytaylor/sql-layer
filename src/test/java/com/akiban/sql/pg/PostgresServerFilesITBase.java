@@ -138,7 +138,7 @@ public class PostgresServerFilesITBase extends PostgresServerITBase
                 String line = brdr.readLine();
                 if (line == null) break;
                 String[] cols = line.split("\t");
-                NewRow row = new NiceRow(tableId);
+                NewRow row = new NiceRow(tableId, store());
                 for (int i = 0; i < cols.length; i++)
                     row.put(i, cols[i]);
                 dml().writeRow(session(), row);

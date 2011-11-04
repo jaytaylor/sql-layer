@@ -109,7 +109,7 @@ public class TestStore
             if (currentRow.getRowDef() != newRow.getRowDef()) {
                 throw new RuntimeException();
             }
-            mergedRow = new TestRow(newRow.getRowDef().getRowDefId());
+            mergedRow = new TestRow(newRow.getRowDef().getRowDefId(), currentRow.getStore());
             int n = newRow.getRowDef().getFieldCount();
             for (int i = 0; i < n; i++) {
                 mergedRow.put(i, columnSelector.includesColumn(i) ? newRow.get(i) : currentRow.get(i));
