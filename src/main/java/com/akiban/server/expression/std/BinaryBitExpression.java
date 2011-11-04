@@ -13,17 +13,15 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.ObjectExtractor;
@@ -32,19 +30,43 @@ import java.math.BigInteger;
 import java.util.EnumSet;
 import java.util.List;
 
-
-public class BinaryBitwiseOpExpression extends AbstractBinaryExpression
+public class BinaryBitExpression extends AbstractBinaryExpression
 {
-    public static enum BitOperator
+    private static interface AbsBitOperator
     {
-        BITWISE_AND,
-        BITWISE_OR,
-        BITWISE_XOR,
-        LEFT_SHIFT,
-        RIGHT_SHIFT,
+         BigInteger exc (BigInteger left, BigInteger right);
+    }
+
+    public static enum BitOperator implements AbsBitOperator
+    {      
+        BITWISE_AND
+        {
+            @Override
+            public BigInteger exc (BigInteger left, BigInteger right) { return left.and(right);}
+        },
+        BITWISE_OR
+        {
+            @Override
+            public BigInteger exc (BigInteger left, BigInteger right) { return left.or(right);}
+        },
+        BITWISE_XOR
+        {
+            @Override
+            public BigInteger exc (BigInteger left, BigInteger right) { return left.xor(right);}
+        },
+        LEFT_SHIFT
+        {
+            @Override
+            public BigInteger exc (BigInteger left, BigInteger right) { return left.shiftLeft(right.intValue()); }
+        },
+        RIGHT_SHIFT
+        {
+            @Override
+            public BigInteger exc (BigInteger left, BigInteger right) { return left.shiftRight(right.intValue()); }
+        }
     }
     
-    @Scalar("$")
+    @Scalar("&")
     public static final ExpressionComposer B_AND_COMPOSER = new InternalComposer(BitOperator.BITWISE_AND);
     
     @Scalar("|")
@@ -58,11 +80,10 @@ public class BinaryBitwiseOpExpression extends AbstractBinaryExpression
     
     @Scalar(">>")
     public static final ExpressionComposer RIGHT_SHIFT_COMPOSER = new InternalComposer(BitOperator.RIGHT_SHIFT);
-    
-    
+        
     private final BitOperator op;
     public static final EnumSet<AkType> SUPPORTED_TYPES = EnumSet.of(
-            AkType.INT, AkType.LONG, AkType.U_BIGINT, AkType.U_INT);
+            AkType.INT, AkType.LONG, AkType.U_BIGINT, AkType.U_INT, AkType.NULL);
     
     private static class InternalComposer extends BinaryComposer
     {
@@ -71,63 +92,56 @@ public class BinaryBitwiseOpExpression extends AbstractBinaryExpression
         public InternalComposer (BitOperator op)
         {
             this.op = op;
-        }
+        }      
 
         @Override
         protected Expression compose(Expression first, Expression second) 
         {
-            return new BinaryBitwiseOpExpression(first, op, second);
+            return new BinaryBitExpression(first, op, second);
         }
     }   
     
     private static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
         private final BitOperator op;
-        
-        public InnerEvaluation (List<? extends ExpressionEvaluation> children, BitOperator op)
+        private final boolean topIsNull;
+
+        public InnerEvaluation (List<? extends ExpressionEvaluation> children, BitOperator op, boolean topIsNull)
         {
             super(children);
             this.op = op;
+            this.topIsNull = topIsNull;
         }
 
         @Override
         public ValueSource eval() 
         {
-            ObjectExtractor<BigInteger> bIntExtractor = Extractors.getUBigIntExtractor();
-            
-            BigInteger left = bIntExtractor.getObject(left());
-            BigInteger right = bIntExtractor.getObject(right());
-            BigInteger top;
-            
-            switch(op)
-            {
-                case BITWISE_AND:           top = left.and(right); break;
-                case BITWISE_OR:            top = left.or(right); break;
-                case BITWISE_XOR:           top = left.xor(right); break;
-                case LEFT_SHIFT:    top = left.shiftLeft(right.intValue()); break;
-                default:            top = left.shiftRight(right.intValue()); break;
-            }
-      
-            
-            return new ValueHolder(AkType.U_BIGINT, top);
-        }
-        
-    }
-    
-    public BinaryBitwiseOpExpression (Expression lhs, BitOperator op, Expression rhs)
-    {
-        super(AkType.U_BIGINT, lhs, rhs);
-        this.op = op;
-        checkType(lhs.valueType(), rhs.valueType());
-    }
-  
+            if (topIsNull) return NullValueSource.only();
 
-    private void checkType (AkType l, AkType r)
-    {
-            if (!SUPPORTED_TYPES.contains(r) || !SUPPORTED_TYPES.contains(l))
-                throw new UnsupportedOperationException(l + " " + op + " " + r + " is not supported."); 
+            ObjectExtractor<BigInteger> bIntExtractor = Extractors.getUBigIntExtractor();
+            BigInteger left = BigInteger.ZERO, right = BigInteger.ZERO;
+            try
+            {
+                left = bIntExtractor.getObject(left());
+                right = bIntExtractor.getObject(right());
+            }
+            catch (InconvertibleTypesException ex)
+            {
+                throw new UnsupportedOperationException ("Unsupported Operation : " + ex.getShortMessage());    
+            }
+           finally // if invalid types are supplied, result is zero
+           {
+                return new ValueHolder(AkType.U_BIGINT, op.exc(left, right));
+           }
+        }        
     }
     
+    public BinaryBitExpression (Expression lhs, BitOperator op, Expression rhs)
+    {
+        super(lhs.valueType() == AkType.NULL || rhs.valueType() == AkType.NULL ? AkType.NULL : AkType.U_BIGINT
+                , lhs, rhs);
+        this.op = op;        
+    } 
     
     @Override
     protected void describe(StringBuilder sb) 
@@ -138,7 +152,6 @@ public class BinaryBitwiseOpExpression extends AbstractBinaryExpression
     @Override
     public ExpressionEvaluation evaluation() 
     {
-        return new InnerEvaluation(childrenEvaluations(), op);
-    }
-    
+        return new InnerEvaluation(childrenEvaluations(), op, valueType() == AkType.NULL);
+    }    
 }
