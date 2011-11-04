@@ -31,8 +31,7 @@ import java.util.List;
 
 public final class ConcatExpression extends AbstractCompositeExpression {
 
-    @Scalar("concatenate")
-    public static final ExpressionComposer COMPOSER = new ExpressionComposer() {
+    static class ConcatComposer implements ExpressionComposer {
         @Override
         public Expression compose(List<? extends Expression> arguments) {
             return new ConcatExpression(arguments);
@@ -53,7 +52,10 @@ public final class ConcatExpression extends AbstractCompositeExpression {
             }
             return ExpressionTypes.varchar(length);
         }
-    };
+    }
+
+    @Scalar("concatenate")
+    public static final ExpressionComposer COMPOSER = new ConcatComposer();
     
     @Scalar("concat")
     public static final ExpressionComposer COMPOSER_ALIAS = COMPOSER;
