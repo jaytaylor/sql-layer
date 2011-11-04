@@ -17,12 +17,7 @@ package com.akiban.sql.optimizer;
 
 import com.akiban.sql.compiler.ASTTransformTestBase;
 import com.akiban.sql.compiler.BooleanNormalizer;
-import com.akiban.sql.optimizer.AISBinder;
-import com.akiban.sql.optimizer.AISTypeComputer;
-import com.akiban.sql.optimizer.BindingNodeFactory;
-import com.akiban.sql.optimizer.BoundNodeToString;
-import com.akiban.sql.optimizer.Grouper;
-import com.akiban.sql.optimizer.SubqueryFlattener;
+import com.akiban.sql.compiler.TypeComputer;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.views.ViewDefinition;
@@ -32,6 +27,7 @@ import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index.JoinType;
+import com.akiban.server.service.functions.FunctionsRegistryImpl;
 import com.akiban.server.util.GroupIndexCreator;
 
 import org.junit.Before;
@@ -58,7 +54,7 @@ public class OptimizerTestBase extends ASTTransformTestBase
 
     // Base class has all possible transformers for convenience.
     protected AISBinder binder;
-    protected AISTypeComputer typeComputer;
+    protected TypeComputer typeComputer;
     protected BooleanNormalizer booleanNormalizer;
     protected SubqueryFlattener subqueryFlattener;
     protected Grouper grouper;
@@ -68,7 +64,7 @@ public class OptimizerTestBase extends ASTTransformTestBase
         parser = new SQLParser();
         parser.setNodeFactory(new BindingNodeFactory(parser.getNodeFactory()));
         unparser = new BoundNodeToString();
-        typeComputer = new AISTypeComputer();
+        typeComputer = new FunctionsTypeComputer(new FunctionsRegistryImpl());
         booleanNormalizer = new BooleanNormalizer(parser);
         subqueryFlattener = new SubqueryFlattener(parser);
         grouper = new Grouper(parser);
