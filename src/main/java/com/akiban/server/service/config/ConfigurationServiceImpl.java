@@ -44,6 +44,20 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     private final Set<String> requiredKeys = new HashSet<String>();
 
     private final Object INTERNAL_LOCK = new Object();
+    
+    private volatile long queryTimeoutSec = -1L; // No timeout
+
+    @Override
+    public long queryTimeoutSec()
+    {
+        return queryTimeoutSec;
+    }
+
+    @Override
+    public void queryTimeoutSec(long queryTimeoutSec)
+    {
+        this.queryTimeoutSec = queryTimeoutSec;
+    }
 
     @Override
     public final String getProperty(String propertyName)
@@ -63,6 +77,18 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     @Override
     public final Set<Property> getProperties() {
         return new TreeSet<Property>(internalGetProperties().values());
+    }
+
+    @Override
+    public long getQueryTimeoutSec()
+    {
+        return queryTimeoutSec();
+    }
+
+    @Override
+    public void setQueryTimeoutSec(long queryTimeoutSec)
+    {
+        queryTimeoutSec(queryTimeoutSec);
     }
 
     @Override

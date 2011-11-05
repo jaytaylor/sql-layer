@@ -38,6 +38,8 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.persistitadapter.OperatorStore;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.service.config.ConfigurationService;
@@ -281,6 +283,10 @@ public class ApiTestBase {
         return session;
     }
 
+    protected final PersistitAdapter persistitAdapter(Schema schema) {
+        return new PersistitAdapter(schema, persistitStore(), treeService(), session(), configService());
+    }
+
     protected final PersistitStore persistitStore() {
         Store store = store();
         if (store instanceof OperatorStore) {
@@ -502,8 +508,12 @@ public class ApiTestBase {
         return set;
     }
 
-    public static NewRow createNewRow(int tableId, Object... columns) {
-        NewRow row = new NiceRow(tableId);
+    public NewRow createNewRow(int tableId, Object... columns) {
+        return createNewRow(store(), tableId, columns);
+    }
+
+    public static NewRow createNewRow(Store store, int tableId, Object... columns) {
+        NewRow row = new NiceRow(tableId, store);
         for (int i=0; i < columns.length; ++i) {
             if (columns[i] != UNDEF) {
                 row.put(i, columns[i] );
