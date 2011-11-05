@@ -15,11 +15,9 @@
 
 package com.akiban.server.service.servicemanager;
 
-import com.akiban.server.AkServer;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.instrumentation.InstrumentationService;
@@ -54,36 +52,20 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
     @Override
     public void startServices() {
-        ServiceManagerImpl.setServiceManager(this);
         getJmxRegistryService().register(this);
-        boolean success = false;
-        try {
-            for (Class<?> directlyRequiredClass : guicer.directlyRequiredClasses()) {
-                guicer.get(directlyRequiredClass, STANDARD_SERVICE_ACTIONS);
-            }
-            success = true;
-        } finally {
-            if (!success)
-                ServiceManagerImpl.setServiceManager(null);
+        for (Class<?> directlyRequiredClass : guicer.directlyRequiredClasses()) {
+            guicer.get(directlyRequiredClass, STANDARD_SERVICE_ACTIONS);
         }
     }
 
     @Override
     public void stopServices() throws Exception {
-        try {
-            guicer.stopAllServices(STANDARD_SERVICE_ACTIONS);
-        } finally {
-            ServiceManagerImpl.setServiceManager(null);
-        }
+        guicer.stopAllServices(STANDARD_SERVICE_ACTIONS);
     }
 
     @Override
     public void crashServices() throws Exception {
-        try {
-            guicer.stopAllServices(CRASH_SERVICES);
-        } finally {
-            ServiceManagerImpl.setServiceManager(null);
-        }
+        guicer.stopAllServices(CRASH_SERVICES);
     }
 
     @Override

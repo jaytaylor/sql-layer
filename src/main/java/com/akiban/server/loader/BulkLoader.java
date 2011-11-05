@@ -76,7 +76,8 @@ public class BulkLoader extends Thread
                 } else {
                     dataGrouper.run(tasks);
                 }
-                new PersistitLoader(persistitStore, db, tracker).load(finalTasks(tasks));
+                // TODO SessionService is null here, which won't work
+                new PersistitLoader(persistitStore, db, tracker, null).load(finalTasks(tasks));
                 tracker.info("Loading complete");
                 termination = new OKException();
             }
