@@ -32,13 +32,8 @@ import java.util.List;
 
 public class BinaryBitExpression extends AbstractBinaryExpression
 {
-    private static interface AbsBitOperator
+    public static enum BitOperator
     {
-        BigInteger exc (BigInteger left, BigInteger right);       
-    }
-
-    public static enum BitOperator implements AbsBitOperator
-    {      
         BITWISE_AND
         {
             @Override
@@ -63,8 +58,9 @@ public class BinaryBitExpression extends AbstractBinaryExpression
         {
             @Override
             public BigInteger exc (BigInteger left, BigInteger right) { return left.shiftRight(right.intValue()); }
-        }
+        };
 
+        protected abstract BigInteger exc (BigInteger left, BigInteger right);
     }
     
     @Scalar("&")
@@ -128,12 +124,12 @@ public class BinaryBitExpression extends AbstractBinaryExpression
             }
             catch (InconvertibleTypesException ex)
             {
-                throw new UnsupportedOperationException ("Unsupported Operation : " + ex.getShortMessage());    
+               // genereate some warnings?
             }
-           finally // if invalid types are supplied, result is zero
-           {
+            finally // if invalid types are supplied, result is zero
+            {
                 return new ValueHolder(AkType.U_BIGINT, op.exc(left, right));
-           }
+            }
         }
     }
     

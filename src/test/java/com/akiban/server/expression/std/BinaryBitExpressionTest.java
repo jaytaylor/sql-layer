@@ -100,8 +100,8 @@ public class BinaryBitExpressionTest extends ComposedExpressionTestBase
         assertEquals(functor[op.ordinal()].calc(BigInteger.valueOf(2), BigInteger.valueOf(5)), getActual(leftEx,rightEx));
     }
 
-    @Test  // will fail for now due to issues with the extractors ; after Scalars branch goes in, it'll pass
-    public void testStringWithDouble() // since the Scalar branch deals with this already
+    @Test  
+    public void testStringWithDouble() 
     {
         Expression leftEx = new LiteralExpression(AkType.VARCHAR, "2");
         Expression rightEx = new LiteralExpression(AkType.DOUBLE, 3.5);
