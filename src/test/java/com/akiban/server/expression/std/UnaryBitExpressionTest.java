@@ -51,15 +51,16 @@ public class UnaryBitExpressionTest extends ComposedExpressionTestBase
             @Override
             public ValueSource calc(BigInteger n)
             {
-                return new ValueHolder(AkType.U_BIGINT, n.not());
+                return new ValueHolder(AkType.U_BIGINT, n.not().and(n64));
             }
             
             @Override 
             public ValueSource error()
             {
-                return new ValueHolder(AkType.U_BIGINT, 
-                               BigInteger.valueOf(Long.MAX_VALUE).multiply(BigInteger.valueOf(2L)));
+                return new ValueHolder(AkType.U_BIGINT,n64);
             }
+
+            private final BigInteger n64 = BigInteger.valueOf(Long.MAX_VALUE).multiply(BigInteger.valueOf(2)).add(BigInteger.ONE);
         },
         new Functors()
         {
@@ -112,7 +113,7 @@ public class UnaryBitExpressionTest extends ComposedExpressionTestBase
     }
     
     @Test 
-    public void testDouble() // will fail since doubles cannot (yet) be extracted as long values
+    public void testDouble() 
     {
         Expression arg = new LiteralExpression(AkType.DOUBLE, 15.5);
         
@@ -149,8 +150,7 @@ public class UnaryBitExpressionTest extends ComposedExpressionTestBase
         Expression arg = new LiteralExpression(AkType.VARCHAR, "a");
         
         assertEquals(functor[op.ordinal()].error(), getActualSource(arg));
-    }
-    
+    }    
   
     private ValueSource getActualSource (Expression arg)
     {
@@ -167,6 +167,5 @@ public class UnaryBitExpressionTest extends ComposedExpressionTestBase
     protected ExpressionComposer getComposer() 
     {
         return composer;
-    }
-    
+    }    
 }

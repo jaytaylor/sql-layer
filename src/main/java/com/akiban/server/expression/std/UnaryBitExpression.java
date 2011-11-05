@@ -27,30 +27,24 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
 import java.math.BigInteger;
+import org.slf4j.LoggerFactory;
 
 public class UnaryBitExpression extends AbstractUnaryExpression
 {
-    private static interface UnaryBitOp
-    {
-        ValueSource exc (BigInteger arg);
-        ValueSource errorCase ();
-    }
-    
-    public static enum UnaryBitOperator implements UnaryBitOp
+    public static enum UnaryBitOperator 
     {
         NOT
         {
             @Override
             public ValueSource exc (BigInteger arg)
             {
-                return new ValueHolder(AkType.U_BIGINT, arg.not());
+                return new ValueHolder(AkType.U_BIGINT, arg.not().and(n64));
             }
             
             @Override
             public ValueSource errorCase ()
             {
-                return new ValueHolder(AkType.U_BIGINT,  
-                        BigInteger.valueOf(Long.MAX_VALUE).multiply(BigInteger.valueOf(2L)));
+                return new ValueHolder(AkType.U_BIGINT,n64);
             }
         },
         
@@ -67,8 +61,12 @@ public class UnaryBitExpression extends AbstractUnaryExpression
             {
                 return new ValueHolder(AkType.LONG, 0L);
             }
-        }
-    }
+        };
+
+        protected abstract ValueSource exc (BigInteger arg);
+        protected abstract ValueSource errorCase ();
+        private static final BigInteger n64 = BigInteger.valueOf(Long.MAX_VALUE).multiply(BigInteger.valueOf(2)).add(BigInteger.ONE);
+   }
     
     @Scalar("~")
     public static final ExpressionComposer NOT_COMPOSER = new InternalComposer(UnaryBitOperator.NOT);
@@ -110,21 +108,20 @@ public class UnaryBitExpression extends AbstractUnaryExpression
             BigInteger arg;
             try
             {
-              arg = Extractors.getUBigIntExtractor().getObject(source);
+                arg = Extractors.getUBigIntExtractor().getObject(source);
             }
             catch (InconvertibleTypesException ex) 
-            { 
+            {
+                LoggerFactory.getLogger(UnaryBitExpression.class).debug(ex.getShortMessage() + " - assume 0 as input");
                 return op.errorCase();
             } 
             catch (NumberFormatException ex)
             {
+                LoggerFactory.getLogger(UnaryBitExpression.class).debug(ex.getMessage() + " - assume 0 as input");
                 return op.errorCase();
-            }
-           
-            return op.exc(arg);
-            
-        }
-        
+            }           
+            return op.exc(arg);            
+        }        
     }
     
     private final UnaryBitOperator op;
@@ -145,6 +142,5 @@ public class UnaryBitExpression extends AbstractUnaryExpression
     public ExpressionEvaluation evaluation() 
     {
         return new InnerEvaluation(operandEvaluation(), op);
-    }
-    
+    }    
 }
