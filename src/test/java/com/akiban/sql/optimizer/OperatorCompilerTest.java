@@ -165,7 +165,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     }
 
     @Override
-    public void checkResult(String result) throws IOException {
+    public void checkResult(String result) throws IOException{
         assertEqualsWithoutHashes(caseName, expected, result);
     }
 

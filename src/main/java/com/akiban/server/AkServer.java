@@ -15,9 +15,13 @@
 
 package com.akiban.server;
 
+import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.akiban.server.service.session.SessionService;
+import com.akiban.server.store.Store;
 import com.akiban.util.OsUtils;
 import com.akiban.util.Strings;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +30,6 @@ import com.akiban.server.manage.ManageMXBean;
 import com.akiban.server.manage.ManageMXBeanImpl;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.util.Tap;
 
@@ -51,8 +54,13 @@ public class AkServer implements Service<AkServerInterface>, JmxManageable, AkSe
 
     private final JmxObjectInfo jmxObjectInfo;
 
-    public AkServer() {
-        this.jmxObjectInfo = new JmxObjectInfo("AKSERVER", new ManageMXBeanImpl(this), ManageMXBean.class);
+    @Inject
+    public AkServer(Store store, DXLService dxl, SessionService sessionService) {
+        this.jmxObjectInfo = new JmxObjectInfo(
+                "AKSERVER",
+                new ManageMXBeanImpl(store, dxl, sessionService),
+                ManageMXBean.class
+        );
     }
 
     @Override
@@ -82,11 +90,6 @@ public class AkServer implements Service<AkServerInterface>, JmxManageable, AkSe
         stop();
     }
 
-    public ServiceManager getServiceManager()
-    {
-        return ServiceManagerImpl.get();
-    }
-
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
         return jmxObjectInfo;
@@ -113,7 +116,6 @@ public class AkServer implements Service<AkServerInterface>, JmxManageable, AkSe
         }
     }
 
-    
     public interface ShutdownMXBean {
         public void shutdown();
     }

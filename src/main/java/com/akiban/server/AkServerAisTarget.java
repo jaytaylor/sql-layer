@@ -23,8 +23,8 @@ import com.akiban.ais.model.Target;
 import com.akiban.server.error.PersistItErrorException;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionService;
 import com.akiban.server.store.Store;
 import com.persistit.exception.PersistitException;
 
@@ -40,7 +40,7 @@ public class AkServerAisTarget extends Target {
 
     private final Store store;
     
-    private final Session session = ServiceManagerImpl.newSession();
+    private final Session session;
 
     // Target interface
 
@@ -77,9 +77,9 @@ public class AkServerAisTarget extends Target {
         session.close();
     }
 
-    public AkServerAisTarget(final Store store) {
+    public AkServerAisTarget(final Store store, SessionService sessionService) {
         this.store = store;
-
+        this.session = sessionService.createSession();
     }
 
     // For use by this class

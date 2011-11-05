@@ -337,7 +337,8 @@ public enum ErrorCode {
     UNKNOWN_TYPE            ("55", "001", Importance.DEBUG, UnknownDataTypeException.class),    
     UNKNOWN_TYPE_SIZE       ("55", "002", Importance.DEBUG, UnknownTypeSizeException.class),
     INCONVERTIBLE_TYPES     ("55", "003", Importance.DEBUG, InconvertibleTypesException.class),
-
+    OVERFLOW                ("55", "004", Importance.DEBUG, OverflowException.class),
+    
     // Class 56 - Explain query errors
     UNABLE_TO_EXPLAIN       ("56", "000", Importance.DEBUG, UnableToExplainException.class),
 
@@ -355,7 +356,7 @@ public enum ErrorCode {
     UNEXPECTED_EXCEPTION    ("70", "001", Importance.ERROR, null),
     UNSUPPORTED_OPERATION   ("70", "002", Importance.ERROR, null),
     UNSUPPORTED_MODIFICATION("70", "003", Importance.DEBUG, UnsupportedModificationException.class),
-    
+   
     // Generic codes - all unused. 
     // AkSserver and Head are out of sync
     //SERVER_SHUTDOWN         (1, 0, Importance.DEBUG, null),

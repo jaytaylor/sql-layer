@@ -508,8 +508,12 @@ public class ApiTestBase {
         return set;
     }
 
-    public static NewRow createNewRow(int tableId, Object... columns) {
-        NewRow row = new NiceRow(tableId);
+    public NewRow createNewRow(int tableId, Object... columns) {
+        return createNewRow(store(), tableId, columns);
+    }
+
+    public static NewRow createNewRow(Store store, int tableId, Object... columns) {
+        NewRow row = new NiceRow(tableId, store);
         for (int i=0; i < columns.length; ++i) {
             if (columns[i] != UNDEF) {
                 row.put(i, columns[i] );

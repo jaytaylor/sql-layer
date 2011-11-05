@@ -63,12 +63,12 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
             IndexBound lo =
                 start == null
                 ? null
-                : new IndexBound(new NewRowBackedIndexRow(queryRootType, new LegacyRowWrapper(start), predicateIndex),
+                : new IndexBound(new NewRowBackedIndexRow(queryRootType, new LegacyRowWrapper(start, store), predicateIndex),
                                  indexSelectorFromTableSelector(predicateIndex, startColumns));
             IndexBound hi =
                 end == null
                 ? null
-                : new IndexBound(new NewRowBackedIndexRow(queryRootType, new LegacyRowWrapper(end), predicateIndex),
+                : new IndexBound(new NewRowBackedIndexRow(queryRootType, new LegacyRowWrapper(end, store), predicateIndex),
                                  indexSelectorFromTableSelector(predicateIndex, endColumns));
             indexKeyRange = new IndexKeyRange
                 (lo,
