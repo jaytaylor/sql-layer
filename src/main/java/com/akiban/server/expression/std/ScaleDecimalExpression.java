@@ -15,34 +15,50 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.OverflowException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.util.ValueHolder;
 
-public class CastExpression extends AbstractUnaryExpression
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
+public class ScaleDecimalExpression extends AbstractUnaryExpression
 {
-    public CastExpression(AkType type, Expression operand) {
-        super(type, operand);
+    public ScaleDecimalExpression(int precision, int scale, Expression operand) {
+        super(AkType.DECIMAL, operand);
+        this.precision = precision;
+        this.scale = scale;
     }
 
     @Override
     protected String name() {
-        return "CAST_" + valueType();
+        return "ScaleDecimal";
+    }
+
+    @Override
+    public String toString() {
+        return name() + "(" + operand() + "," + precision + "." + scale + ")";
     }
 
     @Override
     public ExpressionEvaluation evaluation() {
-        return new InnerEvaluation(valueType(), operandEvaluation());
+        return new InnerEvaluation(precision, scale, RoundingMode.UP, 
+                                   operandEvaluation());
     }
 
+    private final int precision, scale;
+
     private static final class InnerEvaluation extends AbstractUnaryExpressionEvaluation {
-        public InnerEvaluation(AkType type, ExpressionEvaluation ev) {
+        public InnerEvaluation(int precision, int scale, RoundingMode roundingMode,
+                               ExpressionEvaluation ev) {
             super(ev);
-            this.type = type;
+            this.precision = precision;
+            this.scale = scale;
+            this.roundingMode = roundingMode;
         }
 
         @Override
@@ -50,20 +66,23 @@ public class CastExpression extends AbstractUnaryExpression
             ValueSource operandSource = operand();
             if (operandSource.isNull())
                 return NullValueSource.only();
-            if (type.equals(operandSource.getConversionType()))
-                return operandSource;
-            return Converters.convert(operandSource, holder());
+            BigDecimal value = operandSource.getDecimal();
+            value = value.setScale(scale, roundingMode);
+            if (value.precision() > precision)
+                throw new OverflowException();
+            return hold(value);
         }
 
-        private ValueHolder holder() {
+        private ValueSource hold(BigDecimal value) {
             if (holder == null) {
                 holder = new ValueHolder();
-                holder.expectType(type);
             }
+            holder.putDecimal(value);
             return holder;
         }
 
-        private final AkType type;
+        private final int precision, scale;
+        private final RoundingMode roundingMode;
         private ValueHolder holder;
     }
 }
