@@ -24,6 +24,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.extract.ObjectExtractor;
 import com.akiban.server.types.util.ValueHolder;
 import java.math.BigInteger;
@@ -37,30 +38,56 @@ public class BinaryBitExpression extends AbstractBinaryExpression
         BITWISE_AND
         {
             @Override
-            public BigInteger exc (BigInteger left, BigInteger right) { return left.and(right);}
+            protected BigInteger exc (ValueSource left, ValueSource right)
+            {
+                return bIntExtractor.getObject(left).and(bIntExtractor.getObject(right));
+            }
+
+            /*
+            @Override
+            public BigInteger exc (BigInteger left, long right)
+            {
+                throw new UnsupportedOperationException("not supported yet. use exc(BigInt, BigInt");
+            }
+             *
+             */
         },
         BITWISE_OR
         {
             @Override
-            public BigInteger exc (BigInteger left, BigInteger right) { return left.or(right);}
+            public BigInteger exc (ValueSource left, ValueSource right)
+            {
+                return bIntExtractor.getObject(left).or(bIntExtractor.getObject(right));
+            }
         },
         BITWISE_XOR
         {
             @Override
-            public BigInteger exc (BigInteger left, BigInteger right) { return left.xor(right);}
+            protected BigInteger exc (ValueSource left, ValueSource right)
+            {
+                return bIntExtractor.getObject(left).xor(bIntExtractor.getObject(right));
+            }
         },
         LEFT_SHIFT
         {
             @Override
-            public BigInteger exc (BigInteger left, BigInteger right) { return left.shiftLeft(right.intValue()); }
+            protected BigInteger exc (ValueSource left, ValueSource right)
+            {
+                return bIntExtractor.getObject(left).shiftLeft((int)lExtractor.getLong(right));
+            }
         },
         RIGHT_SHIFT
         {
             @Override
-            public BigInteger exc (BigInteger left, BigInteger right) { return left.shiftRight(right.intValue()); }
+            protected BigInteger exc (ValueSource left, ValueSource right)
+            {
+                return bIntExtractor.getObject(left).shiftRight((int)lExtractor.getLong(right));
+            }
         };
 
-        protected abstract BigInteger exc (BigInteger left, BigInteger right);
+        protected abstract BigInteger exc (ValueSource left,ValueSource right);
+        private static ObjectExtractor<BigInteger> bIntExtractor = Extractors.getUBigIntExtractor();
+        private static LongExtractor lExtractor = Extractors.getLongExtractor(AkType.LONG);
     }
     
     @Scalar("&")
@@ -80,9 +107,9 @@ public class BinaryBitExpression extends AbstractBinaryExpression
         
     private final BitOperator op;
        
-    private static class InternalComposer extends BinaryComposer
+    protected static class InternalComposer extends BinaryComposer
     {
-        private final BitOperator op;
+        protected final BitOperator op;
         
         public InternalComposer (BitOperator op)
         {
@@ -92,11 +119,11 @@ public class BinaryBitExpression extends AbstractBinaryExpression
         @Override
         protected Expression compose(Expression first, Expression second) 
         {
-            return new BinaryBitExpression(first, op, second);
+            return new BinaryBitExpression(first, op,second);
         }
-    }   
-    
-    private static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
+    }
+
+    protected static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
         private final BitOperator op;                
         private final boolean topIsNull;
@@ -113,24 +140,26 @@ public class BinaryBitExpression extends AbstractBinaryExpression
         {
             if (topIsNull) return NullValueSource.only();
 
-            ObjectExtractor<BigInteger> bIntExtractor = Extractors.getUBigIntExtractor();
-            BigInteger left = BigInteger.ZERO, right = BigInteger.ZERO;
+            BigInteger rst = BigInteger.ZERO;
             try
             {
-                left = bIntExtractor.getObject(left());
-                right = bIntExtractor.getObject(right());
+                rst = op.exc(left(), right());
             }
             catch (InconvertibleTypesException ex)
             {
                 // if invalid types are supplied, 0 is assumed to be input
-               LoggerFactory.getLogger(BinaryBitExpression.class).debug(ex.getShortMessage() + "assume 0 as input");
+               LoggerFactory.getLogger(BinaryBitExpression.class).debug(ex.getShortMessage() + " - assume 0 as input");
             }
-            finally 
-            {                
+            catch (Exception ex)
+            {
+                LoggerFactory.getLogger(BinaryBitExpression.class).debug(ex.getMessage() + "- assume 0 as input");
+            }
+            finally
+            {
                 BigInteger n64 = BigInteger.valueOf(Long.MAX_VALUE);
                 n64 = n64.multiply(BigInteger.valueOf(2));
                 n64 = n64.add(BigInteger.ONE);
-                return new ValueHolder(AkType.U_BIGINT, op.exc(left, right).and(n64));
+                return new ValueHolder(AkType.U_BIGINT, rst.and(n64));
             }
         }
     }
@@ -141,7 +170,8 @@ public class BinaryBitExpression extends AbstractBinaryExpression
                 , lhs, rhs);
         this.op = op;        
     } 
-    
+
+
     @Override
     protected void describe(StringBuilder sb) 
     {
