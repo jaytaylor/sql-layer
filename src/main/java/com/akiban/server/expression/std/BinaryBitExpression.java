@@ -100,21 +100,17 @@ public class BinaryBitExpression extends AbstractBinaryExpression
     
     private static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
-        private final BitOperator op;
-        private final boolean topIsNull;
+        private final BitOperator op;        
 
-        public InnerEvaluation (List<? extends ExpressionEvaluation> children, BitOperator op, boolean topIsNull)
+        public InnerEvaluation (List<? extends ExpressionEvaluation> children, BitOperator op)
         {
             super(children);
-            this.op = op;
-            this.topIsNull = topIsNull;
+            this.op = op;            
         }
 
         @Override
         public ValueSource eval() 
-        {
-            if (topIsNull) return NullValueSource.only();
-
+        { 
             ObjectExtractor<BigInteger> bIntExtractor = Extractors.getUBigIntExtractor();
             BigInteger left = BigInteger.ZERO, right = BigInteger.ZERO;
             try
@@ -149,6 +145,7 @@ public class BinaryBitExpression extends AbstractBinaryExpression
     @Override
     public ExpressionEvaluation evaluation() 
     {
-        return new InnerEvaluation(childrenEvaluations(), op, valueType() == AkType.NULL);
+        return valueType() == AkType.NULL ? LiteralExpression.forNull().evaluation() :
+            new InnerEvaluation(childrenEvaluations(), op);
     }    
 }
