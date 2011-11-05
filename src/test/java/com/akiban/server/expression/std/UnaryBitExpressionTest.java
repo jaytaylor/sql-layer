@@ -67,7 +67,7 @@ public class UnaryBitExpressionTest extends ComposedExpressionTestBase
             @Override
             public ValueSource calc(BigInteger n)
             {
-                return new ValueHolder(AkType.LONG, n.bitCount());
+                 return new ValueHolder(AkType.LONG, n.signum() >= 0 ?  n.bitCount() : 64 - n.bitCount());
             }
             
             @Override 

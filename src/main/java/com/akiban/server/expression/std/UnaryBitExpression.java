@@ -53,7 +53,7 @@ public class UnaryBitExpression extends AbstractUnaryExpression
             @Override
             public ValueSource exc (BigInteger arg)
             {
-                return new ValueHolder(AkType.LONG, (long)arg.bitCount());
+                return new ValueHolder(AkType.LONG, arg.signum() >= 0 ?  arg.bitCount() : 64 - arg.bitCount());
             }
             
             @Override
