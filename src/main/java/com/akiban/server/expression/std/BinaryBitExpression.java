@@ -42,15 +42,6 @@ public class BinaryBitExpression extends AbstractBinaryExpression
             {
                 return bIntExtractor.getObject(left).and(bIntExtractor.getObject(right));
             }
-
-            /*
-            @Override
-            public BigInteger exc (BigInteger left, long right)
-            {
-                throw new UnsupportedOperationException("not supported yet. use exc(BigInt, BigInt");
-            }
-             *
-             */
         },
         BITWISE_OR
         {
@@ -149,11 +140,7 @@ public class BinaryBitExpression extends AbstractBinaryExpression
             {
                 // if invalid types are supplied, 0 is assumed to be input
                LoggerFactory.getLogger(BinaryBitExpression.class).debug(ex.getShortMessage() + " - assume 0 as input");
-            }
-            catch (Exception ex)
-            {
-                LoggerFactory.getLogger(BinaryBitExpression.class).debug(ex.getMessage() + "- assume 0 as input");
-            }
+            }            
             finally
             {
                 BigInteger n64 = BigInteger.valueOf(Long.MAX_VALUE);
@@ -170,7 +157,6 @@ public class BinaryBitExpression extends AbstractBinaryExpression
                 , lhs, rhs);
         this.op = op;        
     } 
-
 
     @Override
     protected void describe(StringBuilder sb) 
