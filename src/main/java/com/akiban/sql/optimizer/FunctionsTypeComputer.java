@@ -74,13 +74,32 @@ public class FunctionsTypeComputer extends AISTypeComputer
         catch (NoSuchFunctionException ex) {
             return null;
         }
-        List<ExpressionType> argumentTypes = new ArrayList<ExpressionType>();
-        if (methodCall.getMethodParameters() != null) {
-            for (JavaValueNode javaValue : methodCall.getMethodParameters()) {
-                argumentTypes.add(toExpressionType(javaValue.getType()));
+        JavaValueNode[] args = methodCall.getMethodParameters();
+        int nargs = 0;
+        if (args != null)
+            nargs = args.length;
+        List<ExpressionType> argTypes = new ArrayList<ExpressionType>(nargs);
+        for (int i = 0; i < nargs; i++) {
+            JavaValueNode arg = args[i];
+            DataTypeDescriptor sqlType = arg.getType();
+            ExpressionType argType = toExpressionType(sqlType);
+            AkType requiredType = composer.argumentType(i);
+            if ((requiredType != null) && (argType != null) &&
+                (argType.getType() != requiredType) &&
+                (arg instanceof SQLToJavaValueNode)) {
+                SQLToJavaValueNode jarg = (SQLToJavaValueNode)arg;
+                ValueNode sqlArg = jarg.getSQLValueNode();
+                ExpressionType castType = castType(argType, requiredType, sqlType);
+                ValueNode cast = (ValueNode)sqlArg.getNodeFactory()
+                    .getNode(NodeTypes.CAST_NODE, 
+                             sqlArg, fromExpressionType(castType),
+                             sqlArg.getParserContext());
+                jarg.setSQLValueNode(cast);
+                argType = castType;
             }
+            argTypes.add(argType);
         }
-        ExpressionType resultType = composer.composeType(argumentTypes);
+        ExpressionType resultType = composer.composeType(argTypes);
         if (resultType == null)
             return null;
         return fromExpressionType(resultType);
@@ -127,27 +146,8 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
             return ExpressionTypes.varchar(sqlType.getMaximumWidth());
         case TypeId.FormatIds.USERDEFINED_TYPE_ID:
-            {
-                final AkType type = AkType.valueOf(sqlType.getFullSQLTypeName().toUpperCase());
-                final int precision = sqlType.getPrecision();
-                final int scale = sqlType.getScale();
-                return new ExpressionType() {
-                        @Override
-                        public AkType getType() {
-                            return type;
-                        }
-
-                        @Override
-                        public int getPrecision() {
-                            return precision;
-                        }
-
-                        @Override
-                        public int getScale() {
-                            return scale;
-                        }
-                    };
-            }
+            return ExpressionTypes.newType(AkType.valueOf(sqlType.getFullSQLTypeName().toUpperCase()), 
+                                           sqlType.getPrecision(), sqlType.getScale());
         default:
             return null;
         }
@@ -197,6 +197,58 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return new DataTypeDescriptor(TypeId.LONGVARBIT_ID, true);
         default:
             return null;
+        }
+    }
+
+    protected ExpressionType castType(ExpressionType fromType, AkType toType,
+                                      DataTypeDescriptor sqlType) {
+        switch (toType) {
+        case BOOL:
+            return ExpressionTypes.BOOL;
+        case INT:
+            return ExpressionTypes.INT;
+        case YEAR:
+            return ExpressionTypes.YEAR;
+        case LONG:
+            return ExpressionTypes.LONG;
+        case DOUBLE:
+            return ExpressionTypes.DOUBLE;
+        case FLOAT:
+            return ExpressionTypes.FLOAT;
+        case U_INT:
+            return ExpressionTypes.U_INT;
+        case U_BIGINT:
+            return ExpressionTypes.U_BIGINT;
+        case U_FLOAT:
+            return ExpressionTypes.U_FLOAT;
+        case U_DOUBLE:
+            return ExpressionTypes.U_DOUBLE;
+        case DATE:
+            return ExpressionTypes.DATE;
+        case TIME:
+            return ExpressionTypes.TIME;
+        case DATETIME:
+            return ExpressionTypes.DATETIME;
+        case TIMESTAMP:
+            return ExpressionTypes.TIMESTAMP;
+        case TEXT:
+            return ExpressionTypes.TEXT;
+        case VARCHAR:
+            return ExpressionTypes.varchar(sqlType.getMaximumWidth());
+        case VARBINARY:
+            return ExpressionTypes.varbinary(sqlType.getMaximumWidth());
+        case DECIMAL:
+            {
+                TypeId typeId = sqlType.getTypeId();
+                if (typeId.isNumericTypeId())
+                    return ExpressionTypes.decimal(sqlType.getPrecision(),
+                                                   sqlType.getScale());
+                else
+                    return ExpressionTypes.decimal(typeId.getMaximumPrecision(),
+                                                   typeId.getMaximumScale());
+            }
+        default:
+            return ExpressionTypes.newType(toType, 0, 0);
         }
     }
 
