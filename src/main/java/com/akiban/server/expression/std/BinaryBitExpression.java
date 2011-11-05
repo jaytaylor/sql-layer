@@ -27,8 +27,8 @@ import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.ObjectExtractor;
 import com.akiban.server.types.util.ValueHolder;
 import java.math.BigInteger;
-import java.util.EnumSet;
 import java.util.List;
+import org.slf4j.LoggerFactory;
 
 public class BinaryBitExpression extends AbstractBinaryExpression
 {
@@ -79,9 +79,7 @@ public class BinaryBitExpression extends AbstractBinaryExpression
     public static final ExpressionComposer RIGHT_SHIFT_COMPOSER = new InternalComposer(BitOperator.RIGHT_SHIFT);
         
     private final BitOperator op;
-    public static final EnumSet<AkType> SUPPORTED_TYPES = EnumSet.of(
-            AkType.INT, AkType.LONG, AkType.U_BIGINT, AkType.U_INT, AkType.NULL);
-    
+       
     private static class InternalComposer extends BinaryComposer
     {
         private final BitOperator op;
@@ -100,17 +98,21 @@ public class BinaryBitExpression extends AbstractBinaryExpression
     
     private static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
-        private final BitOperator op;        
+        private final BitOperator op;                
+        private final boolean topIsNull;
 
-        public InnerEvaluation (List<? extends ExpressionEvaluation> children, BitOperator op)
+        public InnerEvaluation (List<? extends ExpressionEvaluation> children, BitOperator op, boolean topIsNull)
         {
             super(children);
-            this.op = op;            
+            this.op = op;
+            this.topIsNull = topIsNull;
         }
-
+ 
         @Override
         public ValueSource eval() 
-        { 
+        {
+            if (topIsNull) return NullValueSource.only();
+
             ObjectExtractor<BigInteger> bIntExtractor = Extractors.getUBigIntExtractor();
             BigInteger left = BigInteger.ZERO, right = BigInteger.ZERO;
             try
@@ -120,11 +122,15 @@ public class BinaryBitExpression extends AbstractBinaryExpression
             }
             catch (InconvertibleTypesException ex)
             {
-               // genereate some warnings?
+                // if invalid types are supplied, 0 is assumed to be input
+               LoggerFactory.getLogger(BinaryBitExpression.class).debug(ex.getShortMessage() + "assume 0 as input");
             }
-            finally // if invalid types are supplied, result is zero
-            {
-                return new ValueHolder(AkType.U_BIGINT, op.exc(left, right));
+            finally 
+            {                
+                BigInteger n64 = BigInteger.valueOf(Long.MAX_VALUE);
+                n64 = n64.multiply(BigInteger.valueOf(2));
+                n64 = n64.add(BigInteger.ONE);
+                return new ValueHolder(AkType.U_BIGINT, op.exc(left, right).and(n64));
             }
         }
     }
@@ -144,8 +150,7 @@ public class BinaryBitExpression extends AbstractBinaryExpression
 
     @Override
     public ExpressionEvaluation evaluation() 
-    {
-        return valueType() == AkType.NULL ? LiteralExpression.forNull().evaluation() :
-            new InnerEvaluation(childrenEvaluations(), op);
+    {    
+        return new InnerEvaluation(childrenEvaluations(), op, valueType() == AkType.NULL);
     }    
 }

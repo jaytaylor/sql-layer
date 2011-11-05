@@ -15,6 +15,8 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.NullValueSource;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.junit.NamedParameterizedRunner;
@@ -33,7 +35,7 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(NamedParameterizedRunner.class)
-public class BinaryBitExpressionTest extends ComposedExpressionTestBase
+public class BinaryBitExpressionTest 
 {
     static interface Functor
     {
@@ -116,20 +118,31 @@ public class BinaryBitExpressionTest extends ComposedExpressionTestBase
         assertEquals(BigInteger.valueOf(0), getActual(leftEx, rightEx));
     }
 
+    @Test
+    public void testNullwithLong()
+    {
+        Expression leftEx = new LiteralExpression(AkType.NULL, null);
+        Expression rightEx = new LiteralExpression(AkType.LONG, 2L);
+
+        ValueSource actual = composer.compose(Arrays.asList(leftEx, rightEx)).evaluation().eval();
+        ValueSource expected = NullValueSource.only();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testNullWithNull()
+    {
+        Expression nullEx = LiteralExpression.forNull();
+
+        ValueSource actual = composer.compose(Arrays.asList(nullEx, nullEx)).evaluation().eval();
+        ValueSource expected = NullValueSource.only();
+
+        assertEquals(expected, actual);
+    }
+
     private BigInteger getActual (Expression left, Expression right)
     {
-        return getComposer().compose(Arrays.asList(left, right)).evaluation().eval().getUBigInt();
-    }
-
-    @Override
-    protected int childrenCount() 
-    {
-        return 2;
-    }
-
-    @Override
-    protected ExpressionComposer getComposer() 
-    {
-        return composer;
-    }    
+        return composer.compose(Arrays.asList(left, right)).evaluation().eval().getUBigInt();
+    } 
 }
