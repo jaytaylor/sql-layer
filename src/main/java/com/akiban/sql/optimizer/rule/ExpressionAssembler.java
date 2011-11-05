@@ -73,8 +73,13 @@ public class ExpressionAssembler
     public Expression assembleExpression(ExpressionNode node,
                                          ColumnExpressionContext columnContext,
                                          SubqueryOperatorAssembler subqueryAssembler) {
-        if (node instanceof ConstantExpression)
-            return literal(((ConstantExpression)node).getValue());
+        if (node instanceof ConstantExpression) {
+            if (node.getAkType() == null)
+                return literal(((ConstantExpression)node).getValue());
+            else
+                return literal(((ConstantExpression)node).getValue(),
+                               node.getAkType());
+        }
         else if (node instanceof ColumnExpression)
             return assembleColumnExpression((ColumnExpression)node, columnContext);
         else if (node instanceof ParameterExpression)
