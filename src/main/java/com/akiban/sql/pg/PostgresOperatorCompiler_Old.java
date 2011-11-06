@@ -138,7 +138,7 @@ public class PostgresOperatorCompiler_Old extends OperatorCompiler_Old
         if (result.isModify())
             return new PostgresModifyOperatorStatement(stmt.statementToString(),
                                                        (UpdatePlannable) result.getResultOperator(),
-                                                       parameterTypes);
+                                                       parameterTypes, null);
         else {
             int ncols = result.getResultColumns().size();
             List<String> columnNames = new ArrayList<String>(ncols);
@@ -152,7 +152,7 @@ public class PostgresOperatorCompiler_Old extends OperatorCompiler_Old
             RowType resultRowType = resultOperator.rowType();
             return new PostgresOperatorStatement(resultOperator, resultRowType,
                                                  columnNames, columnTypes,
-                                                 parameterTypes,
+                                                 parameterTypes, null,
                                                  result.getOffset(),
                                                  result.getLimit());
         }
