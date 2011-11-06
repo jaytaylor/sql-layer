@@ -28,13 +28,13 @@ public class InetatonExpressionTest  extends ComposedExpressionTestBase
     @Test
     public void test4Quads ()
     {
-        test("10.0.5.9", 167773449);
+        test("255.0.9.5", 4278192389L);
     }
 
      @Test
     public void test3Quads ()
     {
-        test("127.1.1", 2130771969); // equivalent to 127.1.0.1
+        test("255.1.1", 4278255617L); // equivalent to 255.1.0.1
     }
 
     @Test
@@ -88,7 +88,7 @@ public class InetatonExpressionTest  extends ComposedExpressionTestBase
     @Test
     public void testNumberOutofRange ()
     {
-        testExpectNull(new LiteralExpression(AkType.VARCHAR, "258.0.1.0"));
+        testExpectNull(new LiteralExpression(AkType.VARCHAR, "256.0.1.0"));
     }
     
     @Override

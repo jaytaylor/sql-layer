@@ -39,6 +39,7 @@ public class InetatonExpression extends AbstractUnaryExpression
 
     private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
+        private static final long FACTORS[] = {16777216L,  65536, 256};
         public InnerEvaluation (ExpressionEvaluation ev)
         {
             super(ev);
@@ -47,24 +48,20 @@ public class InetatonExpression extends AbstractUnaryExpression
         @Override
         public ValueSource eval()
         {
-            String ip = Extractors.getStringExtractor().getObject(operand());
-            String str[];
-            if (ip.contains("-") || (str = ip.split("\\.")).length > 4)
+            String strs[];
+            if ((strs = Extractors.getStringExtractor().getObject(operand()).split("\\.")).length > 4)
                 return NullValueSource.only();
             try
             {
-                short [] nums = new short[str.length];
-                int i;
-                long sum;
-                for (i = 0; i < str.length; ++i)
-                {
-                    nums[i] = Short.parseShort(str[i]);
-                    if (nums[i] > 255) return NullValueSource.only();
-                }
-                sum = nums[nums.length-1];
-                if (!ip.contains(".")) return new ValueHolder(AkType.LONG,sum);
-                for (i = 0; i < nums.length - 1; ++i)
-                    sum += nums[i] * Math.pow(256, 3 - i);
+                short num = Short.parseShort(strs[strs.length-1]);                
+                long sum = num;
+                if (sum < 0 || sum > 255) return NullValueSource.only();
+                else if(strs.length == 1) return new ValueHolder(AkType.LONG, sum);                
+                for (int i = 0; i < strs.length -1; ++i)
+                {                    
+                    if ((num = Short.parseShort(strs[i])) < 0 || num > 255) return NullValueSource.only();
+                    sum += num * FACTORS[i];
+                }   
                 return new ValueHolder(AkType.LONG, sum);
             }
             catch (NumberFormatException e)
