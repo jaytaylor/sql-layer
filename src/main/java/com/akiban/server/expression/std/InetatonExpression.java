@@ -47,14 +47,25 @@ public class InetatonExpression extends AbstractUnaryExpression
         @Override
         public ValueSource eval()
         {
-            String str[] = Extractors.getStringExtractor().getObject(operand()).split("\\.");         
-            if (str.length != 4 && str.length != 2) return NullValueSource.only();
+            String ip = Extractors.getStringExtractor().getObject(operand());
+            String str[];
+            if (ip.contains("-") || (str = ip.split("\\.")).length > 4)
+                return NullValueSource.only();
             try
             {
-                long n = Integer.parseInt(str[0]) * (long)Math.pow(256, 3);
-                for (int i = str.length - 2 ; i >= 0; --i)
-                    n += Integer.parseInt(str[str.length -1 -i]) * (long)Math.pow(256, i);
-                return new ValueHolder(AkType.LONG, n);
+                short [] nums = new short[str.length];
+                int i;
+                long sum;
+                for (i = 0; i < str.length; ++i)
+                {
+                    nums[i] = Short.parseShort(str[i]);
+                    if (nums[i] > 255) return NullValueSource.only();
+                }
+                sum = nums[nums.length-1];
+                if (!ip.contains(".")) return new ValueHolder(AkType.LONG,sum);
+                for (i = 0; i < nums.length - 1; ++i)
+                    sum += nums[i] * Math.pow(256, 3 - i);
+                return new ValueHolder(AkType.LONG, sum);
             }
             catch (NumberFormatException e)
             {

@@ -15,7 +15,6 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.AkType;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -23,60 +22,75 @@ import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+
 public class InetatonExpressionTest  extends ComposedExpressionTestBase
 {
     @Test
-    public void testLongForm ()
+    public void test4Quads ()
     {
-        Expression arg = new LiteralExpression(AkType.VARCHAR, "10.0.5.9");
-        InetatonExpression ip = new InetatonExpression(arg);
-        ValueSource s = ip.evaluation().eval();
-        long actual = s.getLong();
+        test("10.0.5.9", 167773449);
+    }
 
-        assertEquals(167773449, actual);
+     @Test
+    public void test3Quads ()
+    {
+        test("127.1.1", 2130771969); // equivalent to 127.1.0.1
     }
 
     @Test
-    public void testShortForm ()
+    public void test2Quads ()
     {
-        Expression arg = new LiteralExpression(AkType.VARCHAR, "127.1");
-        InetatonExpression ip = new InetatonExpression(arg);
-        ValueSource s = ip.evaluation().eval();
-        long actual = s.getLong();
+        test("127.1", 2130706433); // equivalent to 127.0.0.1
+    }
 
-        assertEquals(2130706433,actual);
+    @Test
+    public void test1Quad()
+    {
+        test("127", 127); // equivalent to 0.0.0.127
+    }
+
+    @Test
+    public void testZeroQuad()
+    {
+        testExpectNull(new LiteralExpression(AkType.VARCHAR, ""));
+    }
+
+    @Test
+    public void test5Quads() // do not accept IPv6 or anything other than Ipv4
+    {
+        testExpectNull(new LiteralExpression(AkType.VARCHAR,"1.2.3.4.5"));
     }
 
     @Test
     public void testNull ()
     {
-        Expression arg = new LiteralExpression(AkType.NULL, null);
-        InetatonExpression ip = new InetatonExpression(arg);
-        ValueSource s = ip.evaluation().eval();
-
-        assertTrue(s.isNull());
+        testExpectNull(new LiteralExpression(AkType.NULL, null));
     }
 
     @Test
     public void testBadFormatString ()
     {
-        Expression arg = new LiteralExpression(AkType.VARCHAR, "12sdfa");
-        InetatonExpression ip = new InetatonExpression(arg);
-        ValueSource s = ip.evaluation().eval();
-
-        assertTrue(s.isNull());
+        testExpectNull(new LiteralExpression(AkType.VARCHAR, "12sdfa"));
     }
 
     @Test
     public void testNonNumeric ()
-    {
-        Expression arg = new LiteralExpression(AkType.VARCHAR, "a.b.c.d");
-        InetatonExpression ip = new InetatonExpression(arg);
-        ValueSource s = ip.evaluation().eval();
-
-        assertTrue(s.isNull());
+    {        
+        testExpectNull(new LiteralExpression(AkType.VARCHAR, "a.b.c.d"));
     }
 
+    @Test
+    public void testNeg ()
+    {
+        testExpectNull(new LiteralExpression(AkType.VARCHAR, "-127.0.0.1"));
+    }
+
+    @Test
+    public void testNumberOutofRange ()
+    {
+        testExpectNull(new LiteralExpression(AkType.VARCHAR, "258.0.1.0"));
+    }
+    
     @Override
     protected int childrenCount()
     {
@@ -87,5 +101,16 @@ public class InetatonExpressionTest  extends ComposedExpressionTestBase
     protected ExpressionComposer getComposer()
     {
         return InetatonExpression.COMPOSER;
+    }
+
+    //------------ private methods-------------------------
+    private void testExpectNull (Expression arg)
+    {
+        assertTrue((new InetatonExpression(arg)).evaluation().eval().isNull());
+    }
+    private void test (String ip, long expected)
+    {
+        assertEquals(expected,
+                (new InetatonExpression(new LiteralExpression(AkType.VARCHAR, ip))).evaluation().eval().getLong());
     }
 }
