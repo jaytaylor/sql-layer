@@ -27,6 +27,8 @@ import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.session.Session;
 
+import static com.akiban.server.expression.std.EnvironmentExpression.EnvironmentValue;
+
 import java.util.Properties;
 import java.util.Map;
 
@@ -97,4 +99,6 @@ public interface PostgresServerSession
     public ExpressionRegistry expressionFactory();
 
     public AggregatorRegistry aggregatorRegistry();
+
+    public Object getEnvironmentValue(EnvironmentValue environmentValue);
 }

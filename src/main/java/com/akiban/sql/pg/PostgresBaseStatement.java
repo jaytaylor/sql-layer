@@ -121,6 +121,10 @@ public abstract class PostgresBaseStatement implements PostgresStatement
     protected void setEnvironmentBindings(PostgresServerSession session, 
                                           Bindings bindings) {
         if (environmentValues != null) {
+            int position = getNParameters();
+            for (EnvironmentValue environmentValue : environmentValues) {
+                bindings.set(position++, session.getEnvironmentValue(environmentValue));
+            }
         }
     }
 
