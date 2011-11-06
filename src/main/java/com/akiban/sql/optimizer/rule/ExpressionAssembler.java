@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposerWithBindingPosition;
 import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.optimizer.plan.*;
@@ -32,6 +33,7 @@ import com.akiban.server.error.UnsupportedSQLException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /** Turn {@link ExpressionNode} into {@link Expression}. */
@@ -141,6 +143,13 @@ public class ExpressionAssembler
         else if (node instanceof AggregateFunctionExpression)
             throw new UnsupportedSQLException("Aggregate used as regular function", 
                                               node.getSQLsource());
+        else if (node instanceof EnvironmentFunctionExpression) {
+            EnvironmentFunctionExpression funcNode = (EnvironmentFunctionExpression)node;
+            ExpressionComposerWithBindingPosition composer =
+                (ExpressionComposerWithBindingPosition)expressionRegistry.composer(funcNode.getFunction());
+            return composer.compose(funcNode.getBindingPosition(),
+                                    Collections.<Expression>emptyList());
+        }
         else
             throw new UnsupportedSQLException("Unknown expression", node.getSQLsource());
     }
