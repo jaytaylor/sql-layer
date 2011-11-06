@@ -135,6 +135,19 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
         assertEquals("actual == expected", expected, actual);
     }
 
+    @Test
+    public void timePlusInterval ()
+    {
+        Expression left = new LiteralExpression (AkType.TIME, 45L);
+        Expression right = new LiteralExpression (AkType.INTERVAL, 10L);
+        Expression top = new ArithExpression (left, ex = ArithOps.ADD, right);
+
+        assertTrue("Top is const", top.isConstant());
+        ValueSource actual = new ValueHolder (top.evaluation().eval());
+        ValueSource expected = new ValueHolder(AkType.TIME, 55L);
+        assertEquals("actual == expected", expected, actual);
+    }
+
     @Test (expected = OverflowException.class)      
     public void bigIntPlusDouble () // expect exception
     {
