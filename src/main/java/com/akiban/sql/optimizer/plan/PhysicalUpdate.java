@@ -19,14 +19,18 @@ import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.exec.UpdatePlannable;
 
+import static com.akiban.server.expression.std.EnvironmentExpression.EnvironmentValue;
+
 import java.util.Arrays;
+import java.util.List;
 
 /** Physical INSERT/UPDATE/DELETE statement */
 public class PhysicalUpdate extends BasePlannable
 {
     public PhysicalUpdate(UpdatePlannable updatePlannable,
-                          DataTypeDescriptor[] parameterTypes) {
-        super(updatePlannable, parameterTypes);
+                          DataTypeDescriptor[] parameterTypes,
+                          List<EnvironmentValue> environmentValues) {
+        super(updatePlannable, parameterTypes, environmentValues);
     }
 
     public UpdatePlannable getUpdatePlannable() {
@@ -42,6 +46,8 @@ public class PhysicalUpdate extends BasePlannable
     protected String withIndentedExplain(StringBuilder str) {
         if (getParameterTypes() != null)
             str.append(Arrays.toString(getParameterTypes()));
+        if (getEnvironmentValues() != null)
+            str.append(getEnvironmentValues());
         return super.withIndentedExplain(str);
     }
 

@@ -47,6 +47,11 @@ public class EnvironmentFunctionFinder extends BaseRule
     public static final WhiteboardMarker<List<EnvironmentValue>> MARKER = 
         new DefaultWhiteboardMarker<List<EnvironmentValue>>();
 
+    /** Recover the {@link EnvironmentValue} list put on the whiteboard when loaded. */
+    public static List<EnvironmentValue> getEnvironmentValues(PlanContext plan) {
+        return plan.getWhiteboard(MARKER);
+    }
+
     @Override
     public void apply(PlanContext planContext) {
         SchemaRulesContext rulesContext = (SchemaRulesContext)

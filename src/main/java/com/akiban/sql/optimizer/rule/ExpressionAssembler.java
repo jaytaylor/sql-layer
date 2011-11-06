@@ -64,7 +64,12 @@ public class ExpressionAssembler
         /** Get the index offset to be used for the deepest nested loop.
          * Normally this is the number of parameters to the query.
          */
-        public int getBindingsOffset();
+        public int getExpressionBindingsOffset();
+
+        /** Get the index offset to be used for the deepest nested loop.
+         * These come after any expressions.
+         */
+        public int getLoopBindingsOffset();
     }
 
     public interface SubqueryOperatorAssembler {
@@ -147,7 +152,7 @@ public class ExpressionAssembler
             EnvironmentFunctionExpression funcNode = (EnvironmentFunctionExpression)node;
             ExpressionComposerWithBindingPosition composer =
                 (ExpressionComposerWithBindingPosition)expressionRegistry.composer(funcNode.getFunction());
-            return composer.compose(funcNode.getBindingPosition(),
+            return composer.compose(columnContext.getExpressionBindingsOffset() + funcNode.getBindingPosition(),
                                     Collections.<Expression>emptyList());
         }
         else
@@ -169,7 +174,7 @@ public class ExpressionAssembler
             if (boundRow == null) continue;
             int fieldIndex = boundRow.getIndex(column);
             if (fieldIndex >= 0) {
-                rowIndex += columnContext.getBindingsOffset();
+                rowIndex += columnContext.getLoopBindingsOffset();
                 return boundField(boundRow.getRowType(), rowIndex, fieldIndex);
             }
         }
