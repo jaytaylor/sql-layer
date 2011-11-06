@@ -143,10 +143,7 @@ public class BinaryBitExpression extends AbstractBinaryExpression
             }            
             finally
             {
-                BigInteger n64 = BigInteger.valueOf(Long.MAX_VALUE);
-                n64 = n64.multiply(BigInteger.valueOf(2));
-                n64 = n64.add(BigInteger.ONE);
-                return new ValueHolder(AkType.U_BIGINT, rst.and(n64));
+                return new ValueHolder(AkType.U_BIGINT, rst.and(new BigInteger("FFFFFFFFFFFFFFFF", 16)));
             }
         }
     }
