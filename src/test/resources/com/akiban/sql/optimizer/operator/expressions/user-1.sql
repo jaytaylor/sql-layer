@@ -1,0 +1,2 @@
+SELECT CURRENT_USER FROM items
+ WHERE oid = ?

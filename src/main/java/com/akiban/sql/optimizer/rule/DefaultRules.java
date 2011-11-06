@@ -36,6 +36,7 @@ public class DefaultRules
         new AggregateSplitter(),
         new MapFolder(),
         new ExpressionCompactor(),
+        new EnvironmentFunctionFinder(),
         new OperatorAssembler()
      );
 
