@@ -60,7 +60,7 @@ public class UnaryBitExpressionTest extends ComposedExpressionTestBase
                 return new ValueHolder(AkType.U_BIGINT,n64);
             }
 
-            private final BigInteger n64 = BigInteger.valueOf(Long.MAX_VALUE).multiply(BigInteger.valueOf(2)).add(BigInteger.ONE);
+            private final BigInteger n64 = new BigInteger("FFFFFFFFFFFFFFFF", 16);
         },
         new Functors()
         {

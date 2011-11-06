@@ -65,7 +65,7 @@ public class UnaryBitExpression extends AbstractUnaryExpression
 
         protected abstract ValueSource exc (BigInteger arg);
         protected abstract ValueSource errorCase ();
-        private static final BigInteger n64 = BigInteger.valueOf(Long.MAX_VALUE).multiply(BigInteger.valueOf(2)).add(BigInteger.ONE);
+        private static final BigInteger n64 = new BigInteger("FFFFFFFFFFFFFFFF", 16);
    }
     
     @Scalar("~")
