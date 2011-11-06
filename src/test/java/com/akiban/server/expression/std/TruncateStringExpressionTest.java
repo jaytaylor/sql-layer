@@ -27,7 +27,8 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public final class TruncateStringExpressionTest {
+public final class TruncateStringExpressionTest
+{
     protected ValueSource truncate(ValueSource source, int length) {
         Expression expression = new TruncateStringExpression(length,
                                                              new LiteralExpression(source));
