@@ -8,6 +8,10 @@ aggregate-2n: Need sort for different ORDER BY.
 
 aggregate-3: no GROUP BY
 
+cast-1: implicit casts
+
+cast-2: explicit casts, including scale adjustment
+
 delete-1: single column condition
 
 insert-1: multiple VALUES 
