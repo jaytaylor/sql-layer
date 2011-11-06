@@ -30,7 +30,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class ArithExpressionTest extends ComposedExpressionTestBase
+public class ArithExpressionTest  extends ComposedExpressionTestBase
 {
     protected ArithOp ex =  ArithOps.MINUS;
    
@@ -121,7 +121,20 @@ public class ArithExpressionTest extends ComposedExpressionTestBase
         ValueSource expected = new ValueHolder(AkType.U_BIGINT, BigInteger.valueOf(3L));
         assertEquals("actual == expected", expected, actual);
     }
-    
+
+    @Test
+    public void dateMinusDate ()
+    {
+        Expression left = new LiteralExpression (AkType.DATE, 45L);
+        Expression right = new LiteralExpression (AkType.DATE, 10L);
+        Expression top = new ArithExpression (left, ex = ArithOps.MINUS, right);
+
+        assertTrue("Top is const", top.isConstant());
+        ValueSource actual = new ValueHolder (top.evaluation().eval());
+        ValueSource expected = new ValueHolder(AkType.INTERVAL, 35L);
+        assertEquals("actual == expected", expected, actual);
+    }
+
     @Test (expected = OverflowException.class)      
     public void bigIntPlusDouble () // expect exception
     {
