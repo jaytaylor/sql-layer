@@ -1080,14 +1080,38 @@ public class ASTStatementLoader extends BaseRule
                 String functionName = null;
                 switch (((CurrentDatetimeOperatorNode)valueNode).getField()) {
                 case DATE:
-                    functionName = "currentDate";
+                    functionName = "current_date_n";
                     break;
                 case TIME:
-                    functionName = "currentTime";
+                    functionName = "current_time_n";
                     break;
                 case TIMESTAMP:
-                    functionName = "currentTimestamp";
+                    functionName = "current_timestamp_n";
                     break;
+                }
+                return new FunctionExpression(functionName,
+                                              Collections.<ExpressionNode>emptyList(),
+                                              valueNode.getType(), valueNode);
+            }
+            else if (valueNode instanceof SpecialFunctionNode) {
+                String functionName = null;
+                switch (valueNode.getNodeType()) {
+                case NodeTypes.USER_NODE:
+                case NodeTypes.CURRENT_USER_NODE:
+                    functionName = "current_user";
+                    break;
+                case NodeTypes.SESSION_USER_NODE:
+                    functionName = "session_user";
+                    break;
+                case NodeTypes.SYSTEM_USER_NODE:
+                    functionName = "system_user";
+                    break;
+                case NodeTypes.CURRENT_ISOLATION_NODE:
+                case NodeTypes.IDENTITY_VAL_NODE:
+                case NodeTypes.CURRENT_SCHEMA_NODE:
+                case NodeTypes.CURRENT_ROLE_NODE:
+                default:
+                    throw new UnsupportedSQLException("Unsupported special function", valueNode);
                 }
                 return new FunctionExpression(functionName,
                                               Collections.<ExpressionNode>emptyList(),
