@@ -1,0 +1,6 @@
+SelectQuery@561ba49d
+  ResultSet@30d46b95[_SQL_COL_1, _SQL_COL_2, _SQL_COL_3]
+    Project@49e31c3e[current_date(0), current_time(0), current_timestamp(0)]
+      Select@5d535057[]
+        TableJoins@8bfaf9f(TableGroup@60a2f435(parent) - GroupScan@6a4ef523(Group(parent -> user._akiban_parent)))
+          TableSource@56de9984(user.parent - TableGroup@60a2f435(parent))

@@ -1080,13 +1080,13 @@ public class ASTStatementLoader extends BaseRule
                 String functionName = null;
                 switch (((CurrentDatetimeOperatorNode)valueNode).getField()) {
                 case DATE:
-                    functionName = "current_date_n";
+                    functionName = "current_date";
                     break;
                 case TIME:
-                    functionName = "current_time_n";
+                    functionName = "current_time";
                     break;
                 case TIMESTAMP:
-                    functionName = "current_timestamp_n";
+                    functionName = "current_timestamp";
                     break;
                 }
                 return new FunctionExpression(functionName,

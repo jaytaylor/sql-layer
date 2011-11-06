@@ -67,7 +67,9 @@ public class EnvironmentFunctionExpression extends BaseExpression
     @Override
     public String toString() {
         StringBuilder str = new StringBuilder(function);
-        str.append("()");
+        str.append("(");
+        str.append(bindingPosition);
+        str.append(")");
         return str.toString();
     }
 
