@@ -20,6 +20,7 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.store.Store;
 import com.akiban.server.test.ApiTestBase;
 import com.akiban.server.test.mt.mthapi.base.WriteThread;
 import com.akiban.server.test.mt.mthapi.base.sais.SaisTable;
@@ -95,16 +96,17 @@ public class BasicWriter implements WriteThread {
     private final TablesHolder tablesHolder = new TablesHolder();
     private AtomicInteger writesAtomic = new AtomicInteger(WRITES_INITIAL);
     private final Set<SaisTable> initialRoots;
+    private final Store store;
 
-    public BasicWriter(Set<SaisTable> initialRoots, RowGenerator rowGenerator) {
-        this(initialRoots, rowGenerator, -1, false);
+    public BasicWriter(Set<SaisTable> initialRoots, RowGenerator rowGenerator, Store store) {
+        this(initialRoots, rowGenerator, -1, false, store);
     }
 
-    public BasicWriter(Set<SaisTable> initialRoots, RowGenerator rowGenerator, long msOfSetup) {
-        this(initialRoots, rowGenerator, msOfSetup, true);
+    public BasicWriter(Set<SaisTable> initialRoots, RowGenerator rowGenerator, long msOfSetup, Store store) {
+        this(initialRoots, rowGenerator, msOfSetup, true, store);
     }
 
-    private BasicWriter(Set<SaisTable> initialRoots, RowGenerator rowGenerator, long msOfSetup, boolean checkMsSetup) {
+    private BasicWriter(Set<SaisTable> initialRoots, RowGenerator rowGenerator, long msOfSetup, boolean checkMsSetup, Store store) {
         ArgumentValidation.notNull("rowGenerator", rowGenerator);
         if (checkMsSetup) {
             ArgumentValidation.isGTE("msOfSetup", msOfSetup, 1);
@@ -113,6 +115,7 @@ public class BasicWriter implements WriteThread {
         this.rowGenerator = rowGenerator;
         this.initialRoots = new HashSet<SaisTable>(initialRoots);
         this.statesCount = rowGenerator.getStatesCount();
+        this.store = store;
     }
 
     @Override
@@ -122,7 +125,7 @@ public class BasicWriter implements WriteThread {
         int seed = this.hashCode();
 
         while (keepGoing.get()) {
-            seed = writeRandomly(session, seed, dml);
+            seed = writeRandomly(session, seed, dml, store);
         }
         boolean writesWasUnset = writesAtomic.compareAndSet(WRITES_INITIAL, writes);
         assert writesWasUnset;
@@ -154,12 +157,12 @@ public class BasicWriter implements WriteThread {
         int seed = (int)start;
         if (msOfSetup > 0) {
             do {
-                seed = writeRandomly(session, rand(seed), dml);
+                seed = writeRandomly(session, rand(seed), dml, store);
             } while (System.currentTimeMillis() - start <= msOfSetup);
         }
     }
 
-    private int writeRandomly(Session session, int pseudoRandom, DMLFunctions dml)
+    private int writeRandomly(Session session, int pseudoRandom, DMLFunctions dml, Store store)
             throws InvalidOperationException
     {
         TableInfo info = tablesHolder.randomTable(pseudoRandom);
@@ -171,7 +174,7 @@ public class BasicWriter implements WriteThread {
         } else {
             rowGenerator.updateRow(info.saisTable, info.fieldsForState(), info.state, pseudoRandom);
         }
-        NewRow row = ApiTestBase.createNewRow(info.tableId, info.fieldsForState());
+        NewRow row = ApiTestBase.createNewRow(store, info.tableId, info.fieldsForState());
         dml.writeRow(session, row);
         info.state = rowGenerator.nextState(info.state);
         ++writes;

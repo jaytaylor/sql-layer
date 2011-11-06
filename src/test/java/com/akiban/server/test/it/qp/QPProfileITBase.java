@@ -87,16 +87,7 @@ public class QPProfileITBase extends ITBase
         customerCidIndexRowType = indexType(customer, "cid");
         addressAddressIndexRowType = indexType(address, "address");
         coi = groupTable(customer);
-        Store plainStore = store();
-        final PersistitStore persistitStore;
-        if (plainStore instanceof OperatorStore) {
-            OperatorStore operatorStore = (OperatorStore) plainStore;
-            persistitStore = operatorStore.getPersistitStore();
-        }
-        else {
-            persistitStore = (PersistitStore) plainStore;
-        }
-        adapter = new PersistitAdapter(schema, persistitStore, null, session());
+        adapter = persistitAdapter(schema);
     }
 
     protected void populateDB(int customers, int ordersPerCustomer, int itemsPerOrder)
@@ -171,7 +162,7 @@ public class QPProfileITBase extends ITBase
 
     protected RowBase row(int tableId, Object... values /* alternating field position and value */)
     {
-        NiceRow niceRow = new NiceRow(tableId);
+        NiceRow niceRow = new NiceRow(tableId, store());
         int i = 0;
         while (i < values.length) {
             int position = (Integer) values[i++];

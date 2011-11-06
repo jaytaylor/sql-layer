@@ -31,6 +31,7 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.memcache.hprocessor.PredicateLimit;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
@@ -176,7 +177,8 @@ public abstract class OperatorBasedRowCollector implements RowCollector
 
     // OperatorBasedRowCollector interface
 
-    public static OperatorBasedRowCollector newCollector(Session session,
+    public static OperatorBasedRowCollector newCollector(ConfigurationService config,
+                                                         Session session,
                                                          PersistitStore store,
                                                          int scanFlags,
                                                          RowDef rowDef,
@@ -198,7 +200,8 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         OperatorBasedRowCollector rowCollector =
             rowDef.isUserTable()
             // HAPI query root table = predicate table
-            ? new OneTableRowCollector(session,
+            ? new OneTableRowCollector(config,
+                                       session,
                                        store,
                                        rowDef,
                                        indexId,
@@ -208,7 +211,8 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                                        end,
                                        endColumns)
             // HAPI query root table != predicate table
-            : new TwoTableRowCollector(session,
+            : new TwoTableRowCollector(config,
+                                       session,
                                        store,
                                        rowDef,
                                        indexId,
@@ -225,12 +229,12 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         return rowCollector;
     }
     
-    protected OperatorBasedRowCollector(PersistitStore store, Session session)
+    protected OperatorBasedRowCollector(PersistitStore store, Session session, ConfigurationService config)
     {
         this.schema = SchemaCache.globalSchema(store.getRowDefCache().ais());
         // Passing null to PersistitAdapter's TreeService argument. TreeService is only needed for sorting,
         // which OBRC doesn't use.
-        this.adapter = new PersistitAdapter(schema, store, null, session);
+        this.adapter = new PersistitAdapter(schema, store, null, session, config);
         this.rowCollectorId = idCounter.getAndIncrement();
     }
 

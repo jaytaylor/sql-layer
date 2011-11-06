@@ -15,7 +15,6 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.rowdata.FieldDef;
@@ -94,7 +93,7 @@ public class PersistitGroupRow extends AbstractRow
             try {
                 exception = null;
                 adapter.persistit.expandRowData(exchange, rowData);
-                row.setRowDef(rowData.getRowDefId());
+                row.setRowDef(rowData.getRowDefId(), adapter.persistit);
                 row.setRowData(rowData);
                 PersistitHKey persistitHKey = persistitHKey();
                 persistitHKey.copyFrom(exchange.getKey());

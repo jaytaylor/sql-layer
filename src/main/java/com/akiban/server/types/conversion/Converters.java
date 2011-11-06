@@ -116,6 +116,7 @@ public final class Converters {
         );
         builder.legalConversions(U_BIGINT,
                 DECIMAL,
+                DOUBLE,
                 VARCHAR,
                 LONG,
                 INTERVAL

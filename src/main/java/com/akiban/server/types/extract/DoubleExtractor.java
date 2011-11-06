@@ -15,32 +15,56 @@
 
 package com.akiban.server.types.extract;
 
+import com.akiban.server.error.OverflowException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueSourceIsNullException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 public final class DoubleExtractor extends AbstractExtractor {
 
     public double getDouble(ValueSource source) {
         if (source.isNull())
             throw new ValueSourceIsNullException();
+
         AkType type = source.getConversionType();
         switch (type) {
-        case DECIMAL:   return source.getDecimal().doubleValue();
+        case DECIMAL:   return getDecimalAsDouble(source);
         case DOUBLE:    return source.getDouble();
         case FLOAT:     return source.getFloat();
         case INT:       return source.getInt();
         case LONG:      return source.getLong();
         case VARCHAR:   return getDouble(source.getString());
         case TEXT:      return getDouble(source.getText());
-        case U_BIGINT:  return source.getUBigInt().doubleValue();
+        case U_BIGINT:  return getBigIntAsDouble(source);
         case U_DOUBLE:  return source.getUDouble();
         case U_FLOAT:   return source.getUFloat();
         case U_INT:     return source.getUInt();
         case INTERVAL:  return source.getInterval();
         default:
             throw unsupportedConversion(type);
-        }
+        }                
+    }
+
+    private double getDecimalAsDouble (ValueSource source )
+    {
+        BigDecimal x = source.getDecimal();
+        if (x.compareTo(BigDecimal.valueOf(Double.MAX_VALUE)) > 0
+                || x.compareTo(BigDecimal.valueOf(Double.MIN_VALUE)) < 0)
+            throw new OverflowException();        
+        else
+            return x.doubleValue();
+    }
+
+    private double getBigIntAsDouble (ValueSource source)
+    {
+        BigInteger x = source.getUBigInt();
+        if (x.compareTo(BigInteger.valueOf((long)Double.MAX_VALUE)) > 0
+                || x.compareTo(BigInteger.valueOf((long)Double.MIN_VALUE)) < 0)
+            throw new OverflowException();                              
+        else
+            return x.doubleValue();
     }
 
     public double getDouble(String string) {

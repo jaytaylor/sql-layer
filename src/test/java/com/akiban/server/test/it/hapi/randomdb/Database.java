@@ -69,7 +69,7 @@ class Database
         sampler = new Sampler(test.random, nCustomer);
         for (int i = 0; i < nCustomer; i++) {
             long cid = sampler.take();
-            NewRow row = ApiTestBase.createNewRow(test.customerTable, cid, cid);
+            NewRow row = ApiTestBase.createNewRow(test.getStore(), test.customerTable, cid, cid);
             test.addRow(row);
         }
         int nOrder = test.random.nextInt(RCTortureIT.MAX_CUSTOMERS * RCTortureIT.MAX_ORDERS_PER_CUSTOMER + 1);
@@ -78,7 +78,7 @@ class Database
             long cidOid = sampler.take();
             long cid = cidOid / RCTortureIT.MAX_ORDERS_PER_CUSTOMER;
             long oid = cidOid % RCTortureIT.MAX_ORDERS_PER_CUSTOMER;
-            NewRow row = ApiTestBase.createNewRow(test.orderTable, cid, oid, cid);
+            NewRow row = ApiTestBase.createNewRow(test.getStore(), test.orderTable, cid, oid, cid);
             test.addRow(row);
         }
         int nItem = test.random.nextInt(RCTortureIT.MAX_CUSTOMERS * RCTortureIT.MAX_ORDERS_PER_CUSTOMER * RCTortureIT.MAX_ITEMS_PER_ORDER + 1);
@@ -88,7 +88,7 @@ class Database
             long cid = cidOidIid / (RCTortureIT.MAX_ORDERS_PER_CUSTOMER * RCTortureIT.MAX_ITEMS_PER_ORDER);
             long oid = (cidOidIid / RCTortureIT.MAX_ITEMS_PER_ORDER) % RCTortureIT.MAX_ORDERS_PER_CUSTOMER;
             long iid = cidOidIid % RCTortureIT.MAX_ITEMS_PER_ORDER;
-            NewRow row = ApiTestBase.createNewRow(test.itemTable, cid, oid, iid, cid);
+            NewRow row = ApiTestBase.createNewRow(test.getStore(), test.itemTable, cid, oid, iid, cid);
             test.addRow(row);
         }
         int nAddress = test.random.nextInt(RCTortureIT.MAX_CUSTOMERS * RCTortureIT.MAX_ADDRESSES_PER_CUSTOMER + 1);
@@ -97,7 +97,7 @@ class Database
             long cidAid = sampler.take();
             long cid = cidAid / RCTortureIT.MAX_ADDRESSES_PER_CUSTOMER;
             long aid = cidAid % RCTortureIT.MAX_ADDRESSES_PER_CUSTOMER;
-            NewRow row = ApiTestBase.createNewRow(test.addressTable, cid, aid, cid);
+            NewRow row = ApiTestBase.createNewRow(test.getStore(), test.addressTable, cid, aid, cid);
             test.addRow(row);
         }
         test.sort(test.db);

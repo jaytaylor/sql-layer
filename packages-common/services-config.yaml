@@ -1,5 +1,5 @@
 - require:
-    - com.akiban.server.AkServerEmptyInterface           # loads the AKSERVER jmx bean
+    - com.akiban.server.AkServerInterface           # loads the AKSERVER jmx bean
     - com.akiban.server.service.dxl.DXLService           # leads the DDL/DML jmx bean
     - com.akiban.server.service.memcache.MemcacheService # HAPI
     - com.akiban.server.service.network.NetworkService   # MySQL replication

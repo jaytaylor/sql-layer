@@ -32,7 +32,9 @@ final class ExtractorForBigInteger extends ObjectExtractor<BigInteger> {
         case TEXT:      return new BigInteger(source.getText());
         case VARCHAR:   return new BigInteger(source.getString());
         case INTERVAL:  return BigInteger.valueOf(source.getInterval());
-        case DECIMAL:   return BigInteger.valueOf(source.getDecimal().longValue());
+        case DECIMAL:   return BigInteger.valueOf(source.getDecimal().longValueExact());
+        case U_DOUBLE:  return BigInteger.valueOf((long)source.getUDouble());
+        case DOUBLE:    return BigInteger.valueOf((long)source.getDouble());
         default: throw unsupportedConversion(type);
         }
     }

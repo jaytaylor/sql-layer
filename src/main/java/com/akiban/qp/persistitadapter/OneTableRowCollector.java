@@ -18,16 +18,19 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.server.AkServerInterface;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 
 public class OneTableRowCollector extends OperatorBasedRowCollector
 {
-    OneTableRowCollector(Session session,
+    OneTableRowCollector(ConfigurationService config,
+                         Session session,
                          PersistitStore store,
                          RowDef rowDef,
                          int indexId,
@@ -37,7 +40,7 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
                          RowData end,
                          ColumnSelector endColumns)
     {
-        super(store, session);
+        super(store, session, config);
         // rootmostQueryTable
         queryRootTable = rowDef.userTable();
         queryRootType = schema.userTableRowType(queryRootTable);
@@ -60,12 +63,12 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
             IndexBound lo =
                 start == null
                 ? null
-                : new IndexBound(new NewRowBackedIndexRow(queryRootType, new LegacyRowWrapper(start), predicateIndex),
+                : new IndexBound(new NewRowBackedIndexRow(queryRootType, new LegacyRowWrapper(start, store), predicateIndex),
                                  indexSelectorFromTableSelector(predicateIndex, startColumns));
             IndexBound hi =
                 end == null
                 ? null
-                : new IndexBound(new NewRowBackedIndexRow(queryRootType, new LegacyRowWrapper(end), predicateIndex),
+                : new IndexBound(new NewRowBackedIndexRow(queryRootType, new LegacyRowWrapper(end, store), predicateIndex),
                                  indexSelectorFromTableSelector(predicateIndex, endColumns));
             indexKeyRange = new IndexKeyRange
                 (lo,

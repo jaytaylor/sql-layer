@@ -123,7 +123,7 @@ class AncestorLookup_Nested extends Operator
 
     // Inner classes
 
-    private class Execution implements Cursor
+    private class Execution extends OperatorExecutionBase implements Cursor
     {
         // Cursor interface
 
@@ -142,7 +142,7 @@ class AncestorLookup_Nested extends Operator
         @Override
         public Row next()
         {
-            adapter.checkQueryCancelation();
+            checkQueryCancelation();
             Row row = pending.take();
             if (LOG.isDebugEnabled()) {
                 LOG.debug("AncestorLookup: {}", row == null ? null : row);
@@ -164,7 +164,7 @@ class AncestorLookup_Nested extends Operator
 
         Execution(StoreAdapter adapter)
         {
-            this.adapter = adapter;
+            super(adapter);
             this.pending = new PendingRows(ancestorTypeDepth.length);
             this.ancestorCursor = adapter.newGroupCursor(groupTable);
             this.hKey = adapter.newHKey(rowType);
@@ -204,7 +204,6 @@ class AncestorLookup_Nested extends Operator
 
         // Object state
 
-        private final StoreAdapter adapter;
         private final GroupCursor ancestorCursor;
         private final PendingRows pending;
         private final HKey hKey;

@@ -25,6 +25,7 @@ import com.akiban.server.rowdata.RowDataExtractor;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.SetColumnSelector;
+import com.akiban.server.store.Store;
 import com.akiban.util.ArgumentValidation;
 
 public class NiceRow extends NewRow {
@@ -33,9 +34,9 @@ public class NiceRow extends NewRow {
     private final Map<Integer,Object> fields;
     private final int tableId;
 
-    public NiceRow(int tableId)
+    public NiceRow(int tableId, Store store)
     {
-        this(tableId, rowDef(tableId));
+        this(tableId, rowDef(tableId, store));
     }
 
     public NiceRow(int tableId, RowDef rowDef)

@@ -96,7 +96,7 @@ class Sort_InsertionLimited extends Operator
 
     private enum State { CLOSED, FILLING, EMPTYING }
 
-    private class Execution implements Cursor
+    private class Execution extends OperatorExecutionBase implements Cursor
     {
         // Cursor interface
 
@@ -113,7 +113,7 @@ class Sort_InsertionLimited extends Operator
         @Override
         public Row next()
         {
-            adapter.checkQueryCancelation();
+            checkQueryCancelation();
             switch (state) {
             case FILLING:
                 {
@@ -183,7 +183,7 @@ class Sort_InsertionLimited extends Operator
 
         Execution(StoreAdapter adapter, Cursor input)
         {
-            this.adapter = adapter;
+            super(adapter);
             this.input = input;
             int nsort = ordering.sortFields();
             evaluations = new ArrayList<ExpressionEvaluation>(nsort);
@@ -196,7 +196,6 @@ class Sort_InsertionLimited extends Operator
 
         // Object state
 
-        private final StoreAdapter adapter;
         private final Cursor input;
         private final List<ExpressionEvaluation> evaluations;
         private State state;

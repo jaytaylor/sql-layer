@@ -622,7 +622,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             adapter = new PersistitAdapter(schema,
                                            persistitStore,
                                            reqs.treeService(),
-                                           session);
+                                           session,
+                                           reqs.config());
         }
 
         statementCache = server.getStatementCache(aisGeneration);
