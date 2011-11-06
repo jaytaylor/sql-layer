@@ -23,10 +23,12 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.Tap;
 
-import java.util.*;
-import java.io.IOException;
+import static com.akiban.server.expression.std.EnvironmentExpression.EnvironmentValue;
 
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
+
+import java.util.*;
+import java.io.IOException;
 
 /**
  * An SQL SELECT transformed into an operator tree
@@ -47,9 +49,10 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                                      List<String> columnNames,
                                      List<PostgresType> columnTypes,
                                      PostgresType[] parameterTypes,
+                                     List<EnvironmentValue> environmentValues,
                                      int offset,
                                      int limit) {
-        super(columnNames, columnTypes, parameterTypes);
+        super(columnNames, columnTypes, parameterTypes, environmentValues);
         this.resultOperator = resultOperator;
         this.resultRowType = resultRowType;
         this.offset = offset;
@@ -70,6 +73,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         Cursor cursor = null;
         try {
             lock(session, UNSPECIFIED_DML_READ);
+            setEnvironmentBindings(server, bindings);
             cursor = API.cursor(resultOperator, server.getStore());
             cursor.open(bindings);
             List<PostgresType> columnTypes = getColumnTypes();
@@ -134,6 +138,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
      * specifies that some results should be in binary. */
     static class BoundStatement extends PostgresOperatorStatement {
         private Bindings bindings;
+        private int nparams;
         private boolean[] columnBinary; // Is this column binary format?
         private boolean defaultColumnBinary;
 
@@ -142,11 +147,13 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                               List<String> columnNames,
                               List<PostgresType> columnTypes,
                               int offset, int limit,
-                              Bindings bindings,
-                              boolean[] columnBinary, boolean defaultColumnBinary) {
+                              Bindings bindings, int nparams,
+                              boolean[] columnBinary, boolean defaultColumnBinary,
+                              List<EnvironmentValue> environmentValues) {
             super(resultOperator, resultRowType, columnNames, columnTypes, 
-                  null, offset, limit);
+                  null, environmentValues, offset, limit);
             this.bindings = bindings;
+            this.nparams = nparams;
             this.columnBinary = columnBinary;
             this.defaultColumnBinary = defaultColumnBinary;
         }
@@ -154,6 +161,11 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         @Override
         public Bindings getBindings() {
             return bindings;
+        }
+
+        @Override
+        protected int getNParameters() {
+            return nparams;
         }
 
         @Override
@@ -176,11 +188,15 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             return this;        // Can be reused.
 
         Bindings bindings = getBindings();
-        if (parameters != null)
+        int nparams = getNParameters();
+        if (parameters != null) {
             bindings = getParameterBindings(parameters);
+            nparams = parameters.length;
+        }
         return new BoundStatement(resultOperator, resultRowType,
                                   getColumnNames(), getColumnTypes(),
-                                  offset, limit, bindings, 
-                                  columnBinary, defaultColumnBinary);
+                                  offset, limit, bindings, nparams,
+                                  columnBinary, defaultColumnBinary,
+                                  getEnvironmentValues());
     }
 }

@@ -20,6 +20,7 @@ import com.akiban.qp.exec.UpdateResult;
 
 import com.akiban.qp.operator.Bindings;
 
+import java.util.List;
 import java.io.IOException;
 
 import com.akiban.qp.operator.UndefBindings;
@@ -28,6 +29,8 @@ import com.akiban.server.service.session.Session;
 import com.akiban.util.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static com.akiban.server.expression.std.EnvironmentExpression.EnvironmentValue;
 
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
 
@@ -46,8 +49,9 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         
     public PostgresModifyOperatorStatement(String statementType,
                                            UpdatePlannable resultOperator,
-                                           PostgresType[] parameterTypes) {
-        super(parameterTypes);
+                                           PostgresType[] parameterTypes,
+                                           List<EnvironmentValue> environmentValues) {
+        super(parameterTypes, environmentValues);
         this.statementType = statementType;
         this.resultOperator = resultOperator;
     }
@@ -61,6 +65,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         final UpdateResult updateResult;
         try {
             lock(session, UNSPECIFIED_DML_WRITE);
+            setEnvironmentBindings(server, bindings);
             updateResult = resultOperator.run(bindings, server.getStore());
         } finally {
             unlock(session, UNSPECIFIED_DML_WRITE);
@@ -94,17 +99,25 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
     /** Only needed in the case where a statement has parameters. */
     static class BoundStatement extends PostgresModifyOperatorStatement {
         private Bindings bindings;
+        private int nparams;
 
         public BoundStatement(String statementType,
                               UpdatePlannable resultOperator,
-                              Bindings bindings) {
-            super(statementType, resultOperator, null);
+                              Bindings bindings, int nparams,
+                              List<EnvironmentValue> environmentValues) {
+            super(statementType, resultOperator, null, environmentValues);
             this.bindings = bindings;
+            this.nparams = nparams;
         }
 
         @Override
         public Bindings getBindings() {
             return bindings;
+        }
+
+        @Override
+        protected int getNParameters() {
+            return nparams;
         }
     }
 
@@ -117,6 +130,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
             return this;        // Can be reused.
 
         return new BoundStatement(statementType, resultOperator, 
-                                  getParameterBindings(parameters));
+                                  getParameterBindings(parameters), parameters.length,
+                                  getEnvironmentValues());
     }
 }
