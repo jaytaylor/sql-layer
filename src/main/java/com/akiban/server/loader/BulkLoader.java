@@ -24,7 +24,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
-import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,8 +77,7 @@ public class BulkLoader extends Thread
                 } else {
                     dataGrouper.run(tasks);
                 }
-                // TODO SessionService is null here, which won't work
-                new PersistitLoader(persistitStore, db, tracker, null).load(finalTasks(tasks));
+                new PersistitLoader(persistitStore, db, tracker, sessionService).load(finalTasks(tasks));
                 tracker.info("Loading complete");
                 termination = new OKException();
             }
@@ -91,14 +90,14 @@ public class BulkLoader extends Thread
     // BulkLoader interface
 
     // For testing
-    BulkLoader(Session session,
+    BulkLoader(SessionService sessionService,
                AkibanInformationSchema ais,
                String group,
                String artifactsSchema,
                TaskGenerator.Actions actions)
             throws ClassNotFoundException, SQLException
     {
-        this(session,
+        this(sessionService,
              null,
              ais,
              Collections.unmodifiableList(Arrays.asList(group)),
@@ -112,7 +111,7 @@ public class BulkLoader extends Thread
              false);
     }
 
-    public static synchronized BulkLoader start(Session session,
+    public static synchronized BulkLoader start(SessionService sessionService,
                                                 Store store,
                                                 AkibanInformationSchema ais,
                                                 List<String> groups,
@@ -127,7 +126,7 @@ public class BulkLoader extends Thread
             throws ClassNotFoundException, SQLException, InProgressException
     {
         if (inProgress == null) {
-            inProgress = new BulkLoader(session,
+            inProgress = new BulkLoader(sessionService,
                                         store,
                                         ais,
                                         groups,
@@ -164,7 +163,7 @@ public class BulkLoader extends Thread
         return tracker.recentEvents(lastEventId);
     }
 
-    public BulkLoader(Session session,
+    public BulkLoader(SessionService sessionService,
                       Store store,
                       AkibanInformationSchema ais,
                       List<String> groups,
@@ -178,7 +177,7 @@ public class BulkLoader extends Thread
                       boolean cleanup)
             throws ClassNotFoundException, SQLException
     {
-        this.session = session;
+        this.sessionService = sessionService;
         this.persistitStore = (PersistitStore) store;
         this.ais = ais;
         this.groups = Collections.unmodifiableList(groups);
@@ -336,7 +335,7 @@ public class BulkLoader extends Thread
     private List<String> groups;
     private Map<String, String> sourceSchemas;
     private PersistitStore persistitStore;
-    private final Session session;
+    private final SessionService sessionService;
     private AkibanInformationSchema ais;
     private TaskGenerator.Actions taskGeneratorActions;
     private Exception termination = null;
