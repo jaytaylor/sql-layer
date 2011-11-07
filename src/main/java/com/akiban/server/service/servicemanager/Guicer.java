@@ -343,6 +343,14 @@ public final class Guicer {
         }
     };
 
+    public List<Class<?>> servicesClassesInStartupOrder() {
+        List<Class<?>> result = new ArrayList<Class<?>>(services.size());
+        for (Object service : services) {
+            result.add(service.getClass());
+        }
+        return result;
+    }
+
     // nested classes
 
     private static final class ResolvedServiceBinding {
