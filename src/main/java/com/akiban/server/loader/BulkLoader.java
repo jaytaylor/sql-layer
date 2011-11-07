@@ -24,6 +24,7 @@ import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.akiban.server.service.session.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,13 +91,15 @@ public class BulkLoader extends Thread
     // BulkLoader interface
 
     // For testing
-    BulkLoader(AkibanInformationSchema ais,
+    BulkLoader(Session session,
+               AkibanInformationSchema ais,
                String group,
                String artifactsSchema,
                TaskGenerator.Actions actions)
             throws ClassNotFoundException, SQLException
     {
-        this(null,
+        this(session,
+             null,
              ais,
              Collections.unmodifiableList(Arrays.asList(group)),
              artifactsSchema,
@@ -109,7 +112,8 @@ public class BulkLoader extends Thread
              false);
     }
 
-    public static synchronized BulkLoader start(Store store,
+    public static synchronized BulkLoader start(Session session,
+                                                Store store,
                                                 AkibanInformationSchema ais,
                                                 List<String> groups,
                                                 String artifactsSchema,
@@ -123,7 +127,8 @@ public class BulkLoader extends Thread
             throws ClassNotFoundException, SQLException, InProgressException
     {
         if (inProgress == null) {
-            inProgress = new BulkLoader(store,
+            inProgress = new BulkLoader(session,
+                                        store,
                                         ais,
                                         groups,
                                         artifactsSchema,
@@ -159,7 +164,8 @@ public class BulkLoader extends Thread
         return tracker.recentEvents(lastEventId);
     }
 
-    public BulkLoader(Store store,
+    public BulkLoader(Session session,
+                      Store store,
                       AkibanInformationSchema ais,
                       List<String> groups,
                       String artifactsSchema,
@@ -172,6 +178,7 @@ public class BulkLoader extends Thread
                       boolean cleanup)
             throws ClassNotFoundException, SQLException
     {
+        this.session = session;
         this.persistitStore = (PersistitStore) store;
         this.ais = ais;
         this.groups = Collections.unmodifiableList(groups);
@@ -329,6 +336,7 @@ public class BulkLoader extends Thread
     private List<String> groups;
     private Map<String, String> sourceSchemas;
     private PersistitStore persistitStore;
+    private final Session session;
     private AkibanInformationSchema ais;
     private TaskGenerator.Actions taskGeneratorActions;
     private Exception termination = null;
