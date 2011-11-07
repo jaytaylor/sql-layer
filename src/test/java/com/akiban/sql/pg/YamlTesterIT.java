@@ -347,6 +347,20 @@ public class YamlTesterIT {
 		     "\n- param_types: [CHAR]");
     }
 
+    @Test
+    public void testStatementParamTypesSuccess() {
+	testYaml(
+	    "---\n" +
+	    "- Statement: CREATE TABLE c (cid int)\n" +
+	    "---\n" +
+	    "- Statement: INSERT INTO c VALUES (1), (2)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM c where cid = ?\n" +
+	    "- params: [[1]]\n" +
+	    "- param_types: [DECIMAL]\n" +
+	    "- output: [[1]]");
+    }
+
     /* Test Statement output */
 
     @Test
@@ -440,7 +454,7 @@ public class YamlTesterIT {
     }
 
     @Test
-    public void testStatementRightResults() {
+    public void testStatementOutputRightResults() {
 	testYaml(
 	    "---\n" +
 	    "- Statement:\n" +
@@ -453,6 +467,42 @@ public class YamlTesterIT {
 	    "- output:\n" +
 	    "  - [1, Smith]\n" +
 	    "  - [2, Jones]\n");
+    }
+
+    @Test
+    public void testStatementOutputDontCare() {
+	testYaml(
+	    "---\n" +
+	    "- Statement:\n" +
+	    "    CREATE TABLE customers (cid int, name varchar(32))\n" +
+	    "---\n" +
+	    "- Statement:\n" +
+	    "    INSERT INTO customers VALUES (1, 'Smith'), (2, 'Jones');\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM customers\n" +
+	    "- output:\n" +
+	    "  - [!dc dc, Smith]\n" +
+	    "  - [2, !dc dc]");
+    }
+
+    @Test
+    public void testStatementOutputNullAndEmpty() {
+	testYaml(
+	    "---\n" +
+	    "- Statement: CREATE TABLE customers (cid int, name varchar(32))\n" +
+	    "---\n" +
+	    "- Statement: INSERT INTO customers (name)\n" +
+	    "    VALUES ('Smith'), (''), ('null')\n" +
+	    "---\n" +
+	    "- Statement: INSERT INTO customers (cid) VALUES (1)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM customers\n" +
+	    "- output:\n" +
+	    "  - [null, Smith]\n" +
+	    "  - [null, '']\n" +
+	    "  - [null, 'null']\n" +
+	    "  - [1, null]\n" +
+	    "...");
     }
 
     @Test
@@ -737,7 +787,7 @@ public class YamlTesterIT {
 	    "- explain: |\n" +
 	    "    project([Field(0), Field(1)])\n" +
 	    "      Filter_Default([user.c])\n" +
-	    "        GroupScan_Default(full scan on _akiban_c NO LIMIT)\n");
+	    "        GroupScan_Default(full scan on _akiban_c)\n");
     }
 
     /* Test Statement error */

@@ -36,15 +36,15 @@ import org.junit.runner.RunWith;
  * tests.
  */
 @RunWith(NamedParameterizedRunner.class)
-public class YamlTesterShouldFailIT extends PostgresServerYamlITBase {
+public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase {
 
     private static final boolean DEBUG =
-	Boolean.getBoolean(YamlTesterShouldFailIT.class.getName() + ".DEBUG");
+	Boolean.getBoolean(PostgresServerMiscYamlIT.class.getName() + ".DEBUG");
 
     private static final File RESOURCE_DIR =
         new File(PostgresServerITBase.RESOURCE_DIR, "yaml-misc");
 
-    public YamlTesterShouldFailIT(String caseName) {
+    public PostgresServerMiscYamlIT(String caseName) {
         super(caseName);
     }
 
@@ -52,23 +52,10 @@ public class YamlTesterShouldFailIT extends PostgresServerYamlITBase {
     public static Collection<Parameterization> queries() throws Exception {
 	Collection<Object[]> params = new ArrayList<Object[]>();
 	File[] files = RESOURCE_DIR.listFiles(
-	    new RegexFilenameFilter("test-fail.*[.]yaml"));
+	    new RegexFilenameFilter("test-.*[.]yaml"));
 	for (File file : files) {
 	    params.add(new Object[] { file.toString() });
 	}
 	return NamedParamsTestBase.namedCases(params);
-    }
-
-    @Test
-    @Override
-    public void testYaml() throws IOException {
-	try {
-	    super.testYaml();
-	    fail("Expected exception");
-	} catch (Throwable t) {
-	    if (DEBUG) {
-		System.err.println("testYaml: " + t);
-	    }
-	}
     }
 }
