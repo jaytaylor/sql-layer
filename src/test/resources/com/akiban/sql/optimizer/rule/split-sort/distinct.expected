@@ -1,0 +1,15 @@
+SelectQuery@7f328c7a
+  ResultSet@4fa4ded3[order_date, name]
+    Distinct@5121177e
+      Sort@8c3c315[SELECT[0], SELECT[1]]
+        MapJoin@193936e1()
+          Flatten@7b41fab6(user.customers INNER user.orders)
+            GroupScan@28b301f2(Group(customers -> user._akiban_customers))
+              TableSource@e3a1ec6(user.customers - TableGroup@7ca522a6(customers))
+              TableSource@337ec9f7(user.orders - TableGroupJoin@44cbbe(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+          Project@538d7ace[user.orders.order_date, user.child.name]
+            Select@6d79953c[]
+              Flatten@249c2715(user.child)
+                BranchLookup@7c9e67a(user.parent -> user.parent)
+                  IndexScan@583a5794(Index(user.parent.name[IndexColumn(name)]), NONE, =user.customers.name)
+                  TableSource@7f5e2075(user.child - TableGroupJoin@5e4be2cc(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))

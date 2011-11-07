@@ -1,5 +1,7 @@
 aggregate: Aggregation with nested loops
 
+sort: Sorting with nested loops
+
 two-groups: General join between two groups.
 
 three-groups: General join and non-group join.
