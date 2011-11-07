@@ -27,83 +27,104 @@ import java.util.Date;
 
 public class CurrentDateTimeExpression extends AbstractVoidParamExpression
 {
-    /*
+    /**
+     * return current_date() expression in String
+     */
     @Scalar("current_date_s")
     public static final ExpressionComposer CURRENT_DATE_S_COMPOSER = new VoidComposer ()
     {
         @Override
         protected Expression compose()
         {
-            return new CurrentDateTimeExpression(true,AkType.DATE);
+            return new CurrentDateTimeExpression(true,AkType.DATE, Context.NOW);
         }
     };
-
+    
+    /**
+     * return current_date() expression in Long
+     */
     @Scalar("current_date_n")
     public static final ExpressionComposer CURRENT_DATE_N_COMPOSER = new VoidComposer ()
     {
         @Override
         protected Expression compose()
         {
-            return new CurrentDateTimeExpression(false, AkType.DATE);
+            return new CurrentDateTimeExpression(false, AkType.DATE, Context.NOW);
         }
     };
 
+    /**
+     * return current_time() expression in String
+     */
     @Scalar("current_time_s")
     public static final ExpressionComposer CURRENT_TIME_S_COMPOSER = new VoidComposer ()
     {
         @Override
         protected Expression compose()
         {
-            return new CurrentDateTimeExpression(true, AkType.TIME);
+            return new CurrentDateTimeExpression(true, AkType.TIME, Context.NOW);
         }
     };
-
+    
+    /**
+     *  return current_time() expression in Long
+     */
     @Scalar("current_time_n")
     public static final ExpressionComposer CURRENT_TIME_N_COMPOSER = new VoidComposer ()
     {
         @Override
         protected Expression compose()
         {
-            return new CurrentDateTimeExpression(false, AkType.TIME);
+            return new CurrentDateTimeExpression(false, AkType.TIME, Context.NOW);
         }
     };
 
+    /**
+     * return current_timestamp() expression in String
+     */
     @Scalar("current_timestamp_s")
     public static final ExpressionComposer CURRENT_TIMESTAMP_S_COMPOSER = new VoidComposer ()
     {
         @Override
         protected Expression compose()
         {
-            return new CurrentDateTimeExpression(true, AkType.TIMESTAMP);
+            return new CurrentDateTimeExpression(true, AkType.TIMESTAMP, Context.NOW);
         }
     };
 
+    /**
+     * return now() epxression  (an alias of current_timestamp()) in string
+     */
     @Scalar ("now")
     public static final ExpressionComposer CURRENT_TIMESTAMP_ALIAS = CURRENT_TIMESTAMP_S_COMPOSER;
     
+    /**
+     * return current_timestamp() epxression in Long
+     */
     @Scalar("current_timestamp_n")
     public static final ExpressionComposer CURRENT_TIMESTAMP_N_COMPOSER = new VoidComposer ()
     {
         @Override
         protected Expression compose()
         {
-            return new CurrentDateTimeExpression(false, AkType.TIMESTAMP);
+            return new CurrentDateTimeExpression(false, AkType.TIMESTAMP, Context.NOW);
         }
     };
-*/
-    
-    interface Functor
-    {
-        Date getCurrent ();
-    }
 
-    public static enum Context implements Functor
+    
+    public static enum Context
     {
         NOW // need a better name!
         {
             @Override
             public Date getCurrent() { return new Date(); }
         }
+        
+        // TODO : add more "contexts", ie., decide what date() to return
+        // as opposed to just returning new Date()
+        ;
+        
+        protected abstract Date getCurrent();
     }
 
     private final boolean isString;
@@ -133,11 +154,12 @@ public class CurrentDateTimeExpression extends AbstractVoidParamExpression
 
         @Override
         public ValueSource eval()
-        {
+        {   
             if (isString)
-                return new ValueHolder(AkType.VARCHAR, new SimpleDateFormat(getFormat()).format(context.getCurrent()));
+                return new ValueHolder(AkType.VARCHAR, new SimpleDateFormat(getFormat()).format(context.getCurrent()));           
             else
                 return new ValueHolder(AkType.LONG, Long.parseLong(new SimpleDateFormat(getFormat()).format(context.getCurrent())));
+
         }
 
         private String getFormat ()

@@ -13,31 +13,25 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
+
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.types.AkType;
+import com.akiban.server.expression.ExpressionComposer;
+import java.util.List;
 
-public abstract class AbstractVoidParamExpression implements Expression
+
+abstract class VoidComposer implements ExpressionComposer
 {
-    private final AkType type;
+    protected abstract Expression compose();
+
+    @Override
+    public Expression compose(List<? extends Expression> arguments) 
+    {
+        if (arguments.size() != 0)
+            throw new WrongExpressionArityException(1, arguments.size());
+        return compose();
+    }
     
-    protected AbstractVoidParamExpression (AkType type) { this.type = type;}
-
-    abstract protected String name ();
-
-    @Override
-    public String toString () { return name() + " in " + type; }
-
-    @Override
-    public boolean isConstant() { return false; }
-
-    @Override
-    public boolean needsBindings() { return true; }
-
-    @Override
-    public boolean needsRow() { return false; }
-    
-    @Override
-    public AkType valueType() { return type; }
 }
