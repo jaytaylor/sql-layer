@@ -75,7 +75,7 @@ class IndexScan_Default extends Operator
 
     // Inner classes
 
-    private class Execution implements Cursor
+    private class Execution extends OperatorExecutionBase implements Cursor
     {
         // OperatorExecution interface
 
@@ -90,7 +90,7 @@ class IndexScan_Default extends Operator
         @Override
         public Row next()
         {
-            adapter.checkQueryCancelation();
+            checkQueryCancelation();
             Row row = cursor.next();
             if (row == null) {
                 close();
@@ -113,13 +113,12 @@ class IndexScan_Default extends Operator
 
         Execution(StoreAdapter adapter)
         {
-            this.adapter = adapter;
+            super(adapter);
             this.cursor = adapter.newIndexCursor(index, reverse, indexKeyRange, scanSelector);
         }
 
         // Object state
 
-        private final StoreAdapter adapter;
         private final Cursor cursor;
         private int runIdCounter = 0;
     }

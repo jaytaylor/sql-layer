@@ -40,7 +40,7 @@ public final class SortIT extends ITBase {
                 .row("beta")
                 .row("alpha");
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
-        PersistitAdapter adapter = new PersistitAdapter(schema, persistitStore(), treeService(), session());
+        PersistitAdapter adapter = persistitAdapter(schema);
         TestOperator inputOperator = new TestOperator(rowsBuilder);
 
         Cursor inputCursor = API.cursor(inputOperator, adapter);

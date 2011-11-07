@@ -361,7 +361,7 @@ public abstract class KeyUpdateBase extends ITBase {
 
     protected TestRow copyRow(TestRow row)
     {
-        TestRow copy = new TestRow(row.getTableId());
+        TestRow copy = new TestRow(row.getTableId(), store());
         for (Map.Entry<Integer, Object> entry : row.getFields().entrySet()) {
             copy.put(entry.getKey(), entry.getValue());
         }
@@ -379,7 +379,7 @@ public abstract class KeyUpdateBase extends ITBase {
 
     protected final TestRow row(RowDef table, Object... values)
     {
-        TestRow row = new TestRow(table.getRowDefId());
+        TestRow row = new TestRow(table.getRowDefId(), store());
         int column = 0;
         for (Object value : values) {
             if (value instanceof Integer) {

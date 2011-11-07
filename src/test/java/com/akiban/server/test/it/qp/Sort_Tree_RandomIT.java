@@ -72,15 +72,7 @@ public class Sort_Tree_RandomIT extends OperatorITBase
         }
         db = new NewRow[rows.size()];
         rows.toArray(db);
-        Store plainStore = store();
-        final PersistitStore persistitStore;
-        if (plainStore instanceof OperatorStore) {
-            OperatorStore operatorStore = (OperatorStore) plainStore;
-            persistitStore = operatorStore.getPersistitStore();
-        } else {
-            persistitStore = (PersistitStore) plainStore;
-        }
-        adapter = new PersistitAdapter(schema, persistitStore, treeService(), session());
+        adapter = persistitAdapter(schema);
         use(db);
     }
 

@@ -13,11 +13,20 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.expression.std;
+package com.akiban.server.aggregation.std;
 
 import com.akiban.server.types.AkType;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
-public interface LongOp {
-    AkType opType();
-    long evaluate(long one, long two);
+interface AbstractProcessor
+{
+    long process (long oldState, long input);
+    double process (double oldState, double input);
+    BigDecimal process (BigDecimal oldState, BigDecimal input);
+    BigInteger process (BigInteger oldState, BigInteger input);
+    boolean process (boolean oldState, boolean input);
+    String process (String oldState, String input);
+    
+    void checkType (AkType type);
 }

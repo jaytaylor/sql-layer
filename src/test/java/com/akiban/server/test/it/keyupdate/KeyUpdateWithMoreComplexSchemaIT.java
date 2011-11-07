@@ -544,7 +544,7 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
 
     private TestRow row(RowDef table, Object... values)
     {
-        TestRow row = new TestRow(table.getRowDefId());
+        TestRow row = new TestRow(table.getRowDefId(), store());
         int column = 0;
         for (Object value : values) {
             if (value instanceof Integer) {
@@ -558,7 +558,7 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
 
     private TestRow row(TestRow parent, RowDef table, Object... values)
     {
-        TestRow row = new TestRow(table.getRowDefId());
+        TestRow row = new TestRow(table.getRowDefId(), store());
         int column = 0;
         for (Object value : values) {
             if (value instanceof Integer) {
@@ -627,7 +627,7 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
 
     private TestRow copyRow(TestRow row)
     {
-        TestRow copy = new TestRow(row.getTableId());
+        TestRow copy = new TestRow(row.getTableId(), store());
         for (Map.Entry<Integer, Object> entry : row.getFields().entrySet()) {
             copy.put(entry.getKey(), entry.getValue());
         }

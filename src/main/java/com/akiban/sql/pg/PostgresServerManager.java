@@ -46,9 +46,8 @@ public class PostgresServerManager implements PostgresService, Service<PostgresS
                                  ExpressionRegistry expressionRegistry,
                                  AggregatorRegistry aggregatorRegistry
     ) {
-        this.config = config;
         this.reqs = new PostgresServiceRequirements(dxlService, instrumentation, sessionService, store, treeService,
-                expressionRegistry, aggregatorRegistry);
+                expressionRegistry, aggregatorRegistry, config);
     }
 
     /*** Service<PostgresService> ***/
@@ -62,9 +61,9 @@ public class PostgresServerManager implements PostgresService, Service<PostgresS
     }
 
     public void start() throws ServiceStartupException {
-        String portString = config.getProperty("akserver.postgres.port");
+        String portString = reqs.config().getProperty("akserver.postgres.port");
         int port = Integer.parseInt(portString);
-        String capacityString = config.getProperty("akserver.postgres.statementCacheCapacity");
+        String capacityString = reqs.config().getProperty("akserver.postgres.statementCacheCapacity");
         int statementCacheCapacity = Integer.parseInt(capacityString);
 
         if (port > 0) {
@@ -102,8 +101,4 @@ public class PostgresServerManager implements PostgresService, Service<PostgresS
     public JmxObjectInfo getJmxObjectInfo() {
         return new JmxObjectInfo("PostgresServer", server, PostgresMXBean.class);
     }
-
-    // object state
-
-    private final ConfigurationService config;
 }
