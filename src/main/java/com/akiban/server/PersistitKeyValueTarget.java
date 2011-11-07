@@ -130,9 +130,10 @@ public final class PersistitKeyValueTarget implements ValueTarget {
     
     @Override
     public void putInterval(long value) {
-        checkState(AkType.INTERVAL);
-        key.append(value);
-        invalidate();
+       // checkState(AkType.INTERVAL);
+     //  key.append(value);
+       // invalidate();
+        throw new UnsupportedOperationException("interval not supported yet");
     }
 
     @Override

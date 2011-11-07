@@ -143,7 +143,7 @@ public class Types {
 	private static List<Type> listOfTypes() {
 	    List<Type> types = new ArrayList<Type>();
 		types.add(BIGINT);
-        types.add(U_BIGINT);
+                types.add(U_BIGINT);
 		types.add(BINARY);
 		types.add(BIT);
 		types.add(BLOB);
