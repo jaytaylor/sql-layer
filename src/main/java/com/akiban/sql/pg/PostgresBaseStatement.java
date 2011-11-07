@@ -105,7 +105,10 @@ public abstract class PostgresBaseStatement implements PostgresStatement
     }
 
     protected int getNParameters() {
-        return 0;
+        if (parameterTypes == null)
+            return 0;
+        else
+            return parameterTypes.length;
     }
 
     protected Bindings getParameterBindings(String[] parameters) {
