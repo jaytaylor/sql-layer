@@ -165,10 +165,6 @@ public class YamlTester {
 	try {
 	    Yaml yaml = new Yaml(new DontCareConstructor());
 	    for (Object document : yaml.loadAll(in)) {
-		if (suppressed) {
-		    System.err.println("Test suppressed: exiting");
-		    break;
-		}
 		++commandNumber;
 		commandName = null;
 		List<Object> sequence =
@@ -185,6 +181,10 @@ public class YamlTester {
 		    statementCommand(value, sequence);
 		} else {
 		    fail("Unknown command: " + commandName);
+		}
+		if (suppressed) {
+		    System.err.println(context() + "Test suppressed: exiting");
+		    break;
 		}
 	    }
 	    if (commandNumber == 0) {
@@ -319,7 +319,7 @@ public class YamlTester {
 		} else {
 		    assertEquals("The params_types attribute must be the same" +
 				 " length as the row length of the params" +
-				 " attribute",
+				 " attribute:",
 				 params.get(0).size(), paramTypes.size());
 		}
 	    }
@@ -327,12 +327,12 @@ public class YamlTester {
 		if (output != null) {
 		    assertEquals("The row_count attribute must be the same" +
 				 " as the length of the rows in the output"+
-				 " attribute",
+				 " attribute:",
 				 output.get(0).size(), rowCount);
 		} else if (outputTypes != null) {
 		    assertEquals("The row_count attribute must be the same" +
 				 " as the length of the output_types" +
-				 " attribute",
+				 " attribute:",
 				 outputTypes.size(), rowCount);
 		}
 	    }
@@ -340,7 +340,7 @@ public class YamlTester {
 		if (output != null) {
 		    assertEquals("The output_types attribute must be the same" +
 				 " length as the length of the rows in the" +
-				 " output attribute",
+				 " output attribute:",
 				 output.get(0).size(), outputTypes.size());
 		}
 	    }
@@ -406,7 +406,7 @@ public class YamlTester {
 		nonEmptyScalarSequence(value, "error value");
 	    errorNumber = integer(errorInfo.get(0), "error number");
 	    if (errorInfo.size() > 1) {
-		errorMessage = string(errorInfo.get(1), "error message");
+		errorMessage = string(errorInfo.get(1), "error message").trim();
 		assertTrue("The error attribute can have at most two" +
 			   " elements",
 			   errorInfo.size() < 3);
@@ -416,7 +416,7 @@ public class YamlTester {
 	private void parseExplain(Object value) {
 	    assertNull("The explain attribute must not appear more than once",
 		       explain);
-	    explain = string(value, "explain value");
+	    explain = string(value, "explain value").trim();
 	}
 
 	private void execute() throws SQLException {
@@ -496,8 +496,8 @@ public class YamlTester {
 		    }
 		    sb.append('\n');
 		}
-		assertEquals("Explain results do not match:",
-			     explain, sb.toString());
+		String got = sb.toString().trim();
+		assertEquals("Explain results do not match:", explain, got);
 	    } finally {
 		stmt.close();
 	    }
@@ -519,7 +519,7 @@ public class YamlTester {
 		    sqlException);
 	    }
 	    if (errorMessage != null) {
-		if (!errorMessage.equals(sqlException.getMessage())) {
+		if (!errorMessage.equals(sqlException.getMessage().trim())) {
 		    throw initCause(
 			new AssertionError(
 			    "Unexpected exception message:" +
@@ -558,30 +558,31 @@ public class YamlTester {
 	}
 
 	/**
-	 * Check if we already know that the statement has generated the wrong
-	 * number of output rows.
+	 * Check if the number of rows of output seen, as measured by the
+	 * outputRow field, is incorrect given the expected number of rows.
 	 *
-	 * @param rowCount the expected number of result rows
-	 * @param moreRows whether there are known to be more result rows
+	 * @param expected the number of rows expected
+	 * @param more whether there are more result rows in the current result
+	 * set
 	 */
-	private void checkRowCount(int rowCount, boolean moreRows) {
-	    int expectedRows = outputRow;
-	    if (moreRows) {
-		expectedRows++;
+	private void checkRowCount(int expected, boolean more) {
+	    int got = outputRow;
+	    if (more) {
+		got++;
 	    }
-	    if (expectedRows > rowCount) {
+	    if (got > expected) {
 		throw new AssertionError(
 		    "Too many output rows:" +
-		    "\nExpected: " + rowCount +
-		    "\n     got: " + expectedRows);
-	    } else if (!moreRows &&
+		    "\nExpected: " + expected +
+		    "\n     got: " + got);
+	    } else if (!more &&
 		       (params == null || paramsRow == params.size()) &&
-		       (outputRow < rowCount))
+		       (got < expected))
 	    {
 		throw new AssertionError(
 		    "Too few output rows:" +
-		    "\nExpected: " + rowCount +
-		    "\n     got: " + outputRow);
+		    "\nExpected: " + expected +
+		    "\n     got: " + got);
 	    }
 	}
 
@@ -620,7 +621,7 @@ public class YamlTester {
 			    "\n     got: " + resultsRow);
 		    }
 		}
-		checkRowCount(outputRow, !resultsEmpty);
+		checkRowCount(output.size(), !resultsEmpty);
 	    } else if (rowCount != -1) {
 		while (rs.next()) {
 		    outputRow++;
@@ -738,7 +739,7 @@ public class YamlTester {
 
     static Entry<Object, Object> onlyEntry(Object object, String desc) {
 	Map<Object, Object> map = map(object, desc);
-	assertEquals("The " + desc + " must contain exactly one entry",
+	assertEquals("The " + desc + " must contain exactly one entry:",
 		     1, map.size());
 	for (Entry<Object, Object> entry : map.entrySet()) {
 	    return entry;
