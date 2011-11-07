@@ -108,11 +108,6 @@ public abstract class SortCursorMixedOrder extends SortCursor
         return keyRange;
     }
 
-    Bindings bindings()
-    {
-        return bindings;
-    }
-
     API.Ordering ordering()
     {
         return ordering;

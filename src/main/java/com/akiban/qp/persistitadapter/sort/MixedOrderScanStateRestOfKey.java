@@ -16,7 +16,6 @@
 package com.akiban.qp.persistitadapter.sort;
 
 import com.persistit.Key;
-import com.persistit.KeyState;
 import com.persistit.exception.PersistitException;
 
 class MixedOrderScanStateRestOfKey extends MixedOrderScanState

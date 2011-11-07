@@ -36,6 +36,7 @@ class SortCursorMixedOrderBounded extends SortCursorMixedOrder
         BoundExpressions hi = keyRange.hi().boundExpressions(bindings, adapter);
         ColumnSelector hiSelector = keyRange.hi().columnSelector();
         // Set lo and hi bounds for each key segment
+        int lastBounded = -1;
         for (int f = 0; f < sortFields; f++) {
             boolean loBounded = loSelector.includesColumn(f);
             boolean hiBounded = hiSelector.includesColumn(f);
@@ -45,10 +46,17 @@ class SortCursorMixedOrderBounded extends SortCursorMixedOrder
                 MixedOrderScanStateBounded scanState = new MixedOrderScanStateBounded(adapter, this, f);
                 scanStates.add(scanState);
                 scanState.setRange(loSource, hiSource);
+                lastBounded = f;
             } else {
-                scanStates.add(new MixedOrderScanStateRestOfKey(this, f));
-                break;
+                MixedOrderScanStateUnbounded scanState = new MixedOrderScanStateUnbounded(this, f);
+                scanStates.add(scanState);
             }
+        }
+        // There should be at least one bounded field, or this would be a SortCursorMixedOrderUnbounded.
+        assert lastBounded != -1;
+        if (sortFields < keyFields) {
+            MixedOrderScanStateRestOfKey scanState = new MixedOrderScanStateRestOfKey(this, sortFields);
+            scanStates.add(scanState);
         }
         /*
          * An index restriction is described by an IndexKeyRange which contains
@@ -68,15 +76,14 @@ class SortCursorMixedOrderBounded extends SortCursorMixedOrder
          * b since there are two inequalities (y != z, p != q). The optimizer shouldn't ask for such things.
          *
          * So for scanStates:
-         * - lo(f) = hi(f), f < scanStates.size() - 2
-         * - lo(f) - hi(f) defines a range, with limits described by keyRange.lo/hiInclusive, f = scanStates.size() - 2
-         * - unbounded, f = scanStates.size() - 1
+         * - lo(f) = hi(f), f < lastBounded
+         * - lo(f) - hi(f) defines a range, with limits described by keyRange.lo/hiInclusive, f = lastBounded
          */
         int f = 0;
-        while (f < scanStates.size() - 2) {
+        while (f < lastBounded) {
             scanState(f++).setRangeLimits(true, true);
         }
-        scanState(f).setRangeLimits(keyRange().loInclusive(), keyRange().hiInclusive());
+        scanState(lastBounded).setRangeLimits(keyRange().loInclusive(), keyRange().hiInclusive());
     }
 
     // SortCursorMixedOrderBounded interface

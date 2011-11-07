@@ -159,7 +159,6 @@ public class IndexScanBoundedIT extends OperatorITBase
                 row(idxRowType, 2L, 22L, 222L, 1007L),
                 row(idxRowType, 2L, 22L, 221L, 1006L),
             };
-            dumpToAssertion(plan);
             compareRows(expected, cursor(plan, adapter));
         }
         {
