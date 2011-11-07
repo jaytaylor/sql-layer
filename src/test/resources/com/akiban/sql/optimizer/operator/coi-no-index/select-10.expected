@@ -1,6 +1,6 @@
 PhysicalSelect[_SQL_COL_1:VARCHAR(32), _SQL_COL_2:VARCHAR(32), _SQL_COL_3:VARCHAR(32)]
-  project([Field(0), Arith(/ -> Field(1), Field(2) -> NULL), Field(3)])
-    Aggregation(without GROUP BY: [MIN, SUM, COUNT, MAX])
+  project([Field(0), Arith(/ -> Field(1), Field(2) -> LONG), Field(3)])
+    Aggregation(without GROUP BY: [minVARCHAR, sumVARCHAR, count, maxVARCHAR])
       Distinct_Partial(project([Field(2), Field(2), Field(2), Field(2)]))
         Sort_Tree(project([Field(2), Field(2), Field(2), Field(2)]))
           project([Field(2), Field(2), Field(2), Field(2)])
