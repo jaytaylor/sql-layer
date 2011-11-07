@@ -27,6 +27,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
 import java.math.BigInteger;
+import java.util.logging.Logger;
 import org.slf4j.LoggerFactory;
 
 public class UnaryBitExpression extends AbstractUnaryExpression
@@ -92,6 +93,7 @@ public class UnaryBitExpression extends AbstractUnaryExpression
     private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
         private final UnaryBitOperator op;
+        private static final org.slf4j.Logger log = LoggerFactory.getLogger(UnaryBitExpression.class);
         
         public InnerEvaluation (ExpressionEvaluation ev, UnaryBitOperator op)
         {
@@ -112,12 +114,12 @@ public class UnaryBitExpression extends AbstractUnaryExpression
             }
             catch (InconvertibleTypesException ex) 
             {
-                LoggerFactory.getLogger(UnaryBitExpression.class).debug(ex.getShortMessage() + " - assume 0 as input");
+                log.debug("assume 0 as input ", ex);
                 return op.errorCase();
             } 
             catch (NumberFormatException ex)
             {
-                LoggerFactory.getLogger(UnaryBitExpression.class).debug(ex.getMessage() + " - assume 0 as input");
+                log.debug("assume 0 as input ", ex);
                 return op.errorCase();
             }           
             return op.exc(arg);            
