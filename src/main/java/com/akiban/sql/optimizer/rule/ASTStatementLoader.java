@@ -469,8 +469,8 @@ public class ASTStatementLoader extends BaseRule
                 break;
             case NodeTypes.IS_NULL_NODE:
             case NodeTypes.IS_NOT_NULL_NODE:
-                addFunctionCondition(conditions,
-                                     (UnaryOperatorNode)condition);
+                addIsNullCondition(conditions,
+                                   (IsNullNode)condition);
                 break;
 
             case NodeTypes.IS_NODE:
@@ -732,6 +732,28 @@ public class ASTStatementLoader extends BaseRule
             conditions.add(new FunctionCondition(ternary.getMethodName(),
                                                  operands,
                                                  ternary.getType(), ternary));
+        }
+
+        protected void addIsNullCondition(List<ConditionExpression> conditions,
+                                          IsNullNode isNull)
+                throws StandardException {
+            List<ExpressionNode> operands = new ArrayList<ExpressionNode>(1);
+            operands.add(toExpression(isNull.getOperand()));
+            String function = isNull.getMethodName();
+            boolean negated = false;
+            if ("isNotNull".equals(function)) {
+                function = "isNull";
+                negated = true;
+            }
+            FunctionCondition cond = new FunctionCondition(function, operands,
+                                                           isNull.getType(), isNull);
+            if (negated) {
+                List<ConditionExpression> noperands = new ArrayList<ConditionExpression>(1);
+                noperands.add(cond);
+                cond = new LogicalFunctionCondition("not", noperands,
+                                                    isNull.getType(), isNull);
+            }
+            conditions.add(cond);
         }
 
         protected void addIsCondition(List<ConditionExpression> conditions,
