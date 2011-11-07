@@ -109,33 +109,24 @@ public class API
 
     public static Operator groupScan_Default(GroupTable groupTable)
     {
-        return groupScan_Default(groupTable, NO_LIMIT);
-    }
-
-    public static Operator groupScan_Default(GroupTable groupTable, Limit limit)
-    {
-        return new GroupScan_Default(new GroupScan_Default.FullGroupCursorCreator(groupTable), limit);
+        return new GroupScan_Default(new GroupScan_Default.FullGroupCursorCreator(groupTable));
     }
 
     public static Operator groupScan_Default(GroupTable groupTable,
-                                             Limit limit,
                                              int hKeyBindingPosition,
                                              boolean deep,
                                              UserTable hKeyType,
                                              UserTable shortenUntil)
     {
         return new GroupScan_Default(
-                new GroupScan_Default.PositionalGroupCursorCreator(groupTable, hKeyBindingPosition, deep, hKeyType, shortenUntil),
-                limit
-        );
+                new GroupScan_Default.PositionalGroupCursorCreator(groupTable, hKeyBindingPosition, deep, hKeyType, shortenUntil));
     }
 
     public static Operator groupScan_Default(GroupTable groupTable,
-                                                     Limit limit,
                                                      int hKeyBindingPosition,
                                                      boolean deep)
     {
-        return groupScan_Default(groupTable, limit, hKeyBindingPosition, deep, null, null);
+        return groupScan_Default(groupTable, hKeyBindingPosition, deep, null, null);
     }
 
     public static Operator valuesScan_Default (Collection<? extends BindableRow> rows, RowType rowType)

@@ -5,4 +5,4 @@ PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE]]
         Flatten_HKeyOrdered(flatten(user.customers, user.orders) INNER user.items)
           Flatten_HKeyOrdered(user.customers INNER user.orders)
             Select_HKeyOrdered(user.items, Field(3) > Literal(100))
-              GroupScan_Default(full scan on _akiban_customers NO LIMIT)
+              GroupScan_Default(full scan on _akiban_customers)
