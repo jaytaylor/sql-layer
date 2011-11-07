@@ -126,7 +126,7 @@ public class EnvironmentFunctionFinder extends BaseRule
                                                          func.getSQLsource());
             }
             else {
-                throw new UnsupportedSQLException("Needs bindings but know how",
+                throw new UnsupportedSQLException("Needs bindings but don't know how",
                                                   func.getSQLsource());
             }
         }
