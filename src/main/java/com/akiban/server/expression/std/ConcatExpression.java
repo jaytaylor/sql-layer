@@ -56,8 +56,6 @@ public final class ConcatExpression extends AbstractCompositeExpression {
         boolean foundNonConst = false;
         for (Expression child : children()) {
             if (!child.isConstant()) {
-                if (shortCircuitLazily)
-                    return foundNonConst;
                 foundNonConst = true;
             }
             else if (child.evaluation().eval().isNull())
@@ -79,16 +77,16 @@ public final class ConcatExpression extends AbstractCompositeExpression {
      * @param shortCircuitAggressively if true (default behavior), any const NULL will cause this expression to
      * become a const NULL.
      */
-    ConcatExpression(List<? extends Expression> children, boolean shortCircuitAggressively) {
+    ConcatExpression(List<? extends Expression> children){
         super(AkType.VARCHAR, children);
-        this.shortCircuitLazily = ! shortCircuitAggressively;
     }
-
+/*
     public ConcatExpression(List<? extends Expression> children) {
         this(children, true);
     }
 
-    private final boolean shortCircuitLazily;
+     * 
+     */
 
     private static final class InnerEvaluation extends AbstractCompositeExpressionEvaluation {
         @Override

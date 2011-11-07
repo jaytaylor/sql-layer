@@ -74,7 +74,7 @@ public final class ConcatExpressionTest extends ComposedExpressionTestBase {
         return new ExpressionComposer() {
             @Override
             public Expression compose(List<? extends Expression> arguments) {
-                return new ConcatExpression(arguments, false);
+                return new ConcatExpression(arguments);
             }
         };
     }

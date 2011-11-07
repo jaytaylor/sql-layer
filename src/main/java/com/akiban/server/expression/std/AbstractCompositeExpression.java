@@ -32,6 +32,8 @@ public abstract class AbstractCompositeExpression implements Expression {
     @Override
     public boolean isConstant() {
         for (Expression child : children) {
+            if (child.valueType() == AkType.NULL)
+                return true;
             if (!child.isConstant())
                 return false;
         }
@@ -41,6 +43,8 @@ public abstract class AbstractCompositeExpression implements Expression {
     @Override
     public boolean needsRow() {
         for (Expression child : children) {
+            if (child.valueType() == AkType.NULL) 
+                return false;
             if (child.needsRow())
                 return true;
         }
@@ -50,6 +54,8 @@ public abstract class AbstractCompositeExpression implements Expression {
     @Override
     public boolean needsBindings() {
         for (Expression child : children) {
+            if (child.valueType() == AkType.NULL)
+                return false;
             if (child.needsBindings())
                 return true;
         }
