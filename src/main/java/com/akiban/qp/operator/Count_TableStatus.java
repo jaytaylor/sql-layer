@@ -73,7 +73,7 @@ class Count_TableStatus extends Operator
 
     // Inner classes
 
-    private class Execution implements Cursor
+    private class Execution extends OperatorExecutionBase implements Cursor
     {
         // Cursor interface
 
@@ -86,10 +86,10 @@ class Count_TableStatus extends Operator
         @Override
         public Row next()
         {
-            adapter.checkQueryCancelation();
+            checkQueryCancelation();
             if (pending) {
                 long rowCount = adapter.rowCount(tableType);
-                pending = false;
+                close();
                 return new ValuesRow(resultType, new Object[] { rowCount });
             }
             else {
@@ -107,12 +107,11 @@ class Count_TableStatus extends Operator
 
         Execution(StoreAdapter adapter)
         {
-            this.adapter = adapter;
+            super(adapter);
         }
 
         // Object state
 
-        private final StoreAdapter adapter;
         private boolean pending;
     }
 }
