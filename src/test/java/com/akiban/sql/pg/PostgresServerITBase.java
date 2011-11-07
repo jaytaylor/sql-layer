@@ -61,8 +61,8 @@ public class PostgresServerITBase extends ITBase
     public static final String SCHEMA_NAME = "user";
     public static final String DRIVER_NAME = "org.postgresql.Driver";
     public static final String CONNECTION_URL = "jdbc:postgresql://localhost:%d/user";
-    public static final String USER_NAME = "user";
-    public static final String USER_PASSWORD = "user";
+    public static final String USER_NAME = "auser";
+    public static final String USER_PASSWORD = "apassword";
 
     public void loadDatabase(File dir) throws Exception {
         loadSchemaFile(new File(dir, "schema.ddl"));
