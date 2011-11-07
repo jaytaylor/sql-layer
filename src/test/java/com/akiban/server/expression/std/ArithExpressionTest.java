@@ -16,6 +16,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.error.OverflowException;
 import com.akiban.server.error.DivisionByZeroException;
 import com.akiban.server.expression.Expression;
@@ -33,7 +34,7 @@ import static org.junit.Assert.assertTrue;
 public class ArithExpressionTest  extends ComposedExpressionTestBase
 {
     protected ArithOp ex =  ArithOps.MINUS;
-   
+
     @Test
     public void longMinusDouble ()
     {
@@ -123,16 +124,30 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
     }
 
     @Test
-    public void dateMinusDate ()
+    public void yearMinusYear ()
     {
-        Expression left = new LiteralExpression (AkType.DATE, 45L);
-        Expression right = new LiteralExpression (AkType.DATE, 10L);
+        Expression left = new LiteralExpression (AkType.YEAR,2006);
+        Expression right = new LiteralExpression (AkType.YEAR,1991);
         Expression top = new ArithExpression (left, ex = ArithOps.MINUS, right);
 
         assertTrue("Top is const", top.isConstant());
-        ValueSource actual = new ValueHolder (top.evaluation().eval());
-        ValueSource expected = new ValueHolder(AkType.INTERVAL, 35L);
-        assertEquals("actual == expected", expected, actual);
+        ValueSource actual = new ValueHolder(top.evaluation().eval());
+        ValueSource expected = new ValueHolder(AkType.INTERVAL, 15L); // 15 years
+        assertEquals("actuall = expected", expected, actual);
+    }
+
+
+    @Test
+    public void dateMinusDate ()
+    {
+        Expression left = new LiteralExpression (AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2006-11-07"));
+        Expression right = new LiteralExpression (AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2006-10-07"));
+        Expression top = new ArithExpression (left, ex = ArithOps.MINUS, right);
+
+        assertTrue("Top is const", top.isConstant());
+        ValueSource actual = new ValueHolder(top.evaluation().eval());
+        ValueSource expected = new ValueHolder(AkType.INTERVAL, 32L); // 32 days
+        assertEquals("actuall = expected", expected, actual);
     }
 
     @Test
@@ -148,6 +163,18 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
         assertEquals("actual == expected", expected, actual);
     }
 
+    @Test
+    public void testTimeMinusTime ()
+    {
+        Expression left = new LiteralExpression (AkType.TIME, Extractors.getLongExtractor(AkType.TIME).getLong("12:30:25"));
+        Expression right = new LiteralExpression (AkType.TIME, Extractors.getLongExtractor(AkType.TIME).getLong("12:30:30"));
+        Expression top = new ArithExpression(right, ex = ArithOps.MINUS, left);
+
+        ValueSource actual = new ValueHolder(top.evaluation().eval());
+        ValueSource expected = new ValueHolder(AkType.INTERVAL, 5L); // 5 secs
+        assertEquals("actuall == expected", expected, actual);
+    }
+
     @Test (expected = OverflowException.class)      
     public void bigIntPlusDouble () // expect exception
     {
@@ -158,7 +185,7 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
      
         ValueSource actual = new ValueHolder(top.evaluation().eval());        
     }
-     
+
     @Override
     protected int childrenCount() 
     {

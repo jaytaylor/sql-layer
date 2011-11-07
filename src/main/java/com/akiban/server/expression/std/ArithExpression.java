@@ -200,17 +200,15 @@ public class ArithExpression extends AbstractBinaryExpression
         @Override
         protected long rawInterval ()
         {
-            switch (SUPPORTED_TYPES.get(SUPPORTED_TYPES.indexOf(left.getConversionType()) + SUPPORTED_TYPES.indexOf(right.getConversionType())))
+            switch (SUPPORTED_TYPES.indexOf(left.getConversionType()) - SUPPORTED_TYPES.indexOf(right.getConversionType()))
             {
-                case DOUBLE:    return (long)rawDouble();
-                case DATE:
-                case TIME:
-                case YEAR:
-                case INTERVAL:
-                case LONG:      return rawLong();
-                case DECIMAL:   return rawDecimal().longValue();
-                case U_BIGINT:  return rawBigInteger().longValue();
-                default: throw new UnsupportedOperationException("");
+                case -1:
+                case 1:     return rawDecimal().longValue();
+                case -3:
+                case 3:     return (long)rawDouble();
+                case -5:
+                case 5:     return rawBigInteger().longValue();
+                default:    return rawLong();
             }
         }
 

@@ -163,6 +163,5 @@ public class TypeDeterminationTest
     protected ExpressionComposer getComposer() 
     {
         return (ExpressionComposer)op;
-    }
-    
+    }    
 }
