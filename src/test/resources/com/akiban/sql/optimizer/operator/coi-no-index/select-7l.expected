@@ -2,4 +2,4 @@ PhysicalSelect[_SQL_COL_1:INTEGER NOT NULL]
   project([Literal(1)])
     Filter_Default([user.items])
       Select_HKeyOrdered(user.items, Field(2) == Literal(1234))
-        GroupScan_Default(full scan on _akiban_customers NO LIMIT)
+        GroupScan_Default(full scan on _akiban_customers)
