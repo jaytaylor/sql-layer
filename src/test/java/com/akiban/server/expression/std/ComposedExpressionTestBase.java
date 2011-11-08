@@ -67,8 +67,6 @@ public abstract class ComposedExpressionTestBase {
         }
     }
 
-    //protected abstract int childrenCount();
- //   private CompositionTestInfo testInfo;
     protected abstract CompositionTestInfo getTestInfo ();
     protected abstract ExpressionComposer getComposer();
 
@@ -204,9 +202,9 @@ public abstract class ComposedExpressionTestBase {
         }
         Expression expression = getComposer().compose(children);
         Set<ExpressionAttribute> attributeSet = attributesSet(attributes);
-        assertEquals("isConstant", attributeSet.contains(IS_CONSTANT) /*|| anyChildIsNull(children) && getTestInfo().nullIsContaminating*/ , expression.isConstant());
-        assertEquals("needsRow", attributeSet.contains(NEEDS_ROW) /*&& !(anyChildIsNull(children) && getTestInfo().nullIsContaminating())*/ , expression.needsRow());
-        assertEquals("needsBindings", attributeSet.contains(NEEDS_BINDINGS) /*&& !(anyChildIsNull(children) && getTestInfo().nullIsContaminating())*/, expression.needsBindings());
+        assertEquals("isConstant", attributeSet.contains(IS_CONSTANT) || anyChildIsNull(children) && getTestInfo().nullIsContaminating , expression.isConstant());
+        assertEquals("needsRow", attributeSet.contains(NEEDS_ROW) && !(anyChildIsNull(children) && getTestInfo().nullIsContaminating()) , expression.needsRow());
+        assertEquals("needsBindings", attributeSet.contains(NEEDS_BINDINGS) && !(anyChildIsNull(children) && getTestInfo().nullIsContaminating()), expression.needsBindings());
         return new EvaluationPair(expression.evaluation(), messages);
     }
 
