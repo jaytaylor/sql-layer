@@ -204,12 +204,18 @@ public abstract class ComposedExpressionTestBase {
         }
         Expression expression = getComposer().compose(children);
         Set<ExpressionAttribute> attributeSet = attributesSet(attributes);
-        assertEquals("isConstant", attributeSet.contains(IS_CONSTANT) , expression.isConstant());
-        assertEquals("needsRow", attributeSet.contains(NEEDS_ROW)  , expression.needsRow());
-        assertEquals("needsBindings", attributeSet.contains(NEEDS_BINDINGS), expression.needsBindings());
+        assertEquals("isConstant", attributeSet.contains(IS_CONSTANT) /*|| anyChildIsNull(children) && getTestInfo().nullIsContaminating*/ , expression.isConstant());
+        assertEquals("needsRow", attributeSet.contains(NEEDS_ROW) /*&& !(anyChildIsNull(children) && getTestInfo().nullIsContaminating())*/ , expression.needsRow());
+        assertEquals("needsBindings", attributeSet.contains(NEEDS_BINDINGS) /*&& !(anyChildIsNull(children) && getTestInfo().nullIsContaminating())*/, expression.needsBindings());
         return new EvaluationPair(expression.evaluation(), messages);
     }
 
+    private boolean anyChildIsNull (List<Expression> children)
+    {
+        for (Expression child: children)
+            if (child.valueType() == AkType.NULL) return true;
+        return false;
+    }
     private void expectEvalError(ExpressionEvaluation evaluation) {
         try {
             evaluation.eval().isNull();
