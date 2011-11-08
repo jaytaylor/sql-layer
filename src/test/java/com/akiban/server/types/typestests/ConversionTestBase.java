@@ -21,7 +21,6 @@ import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.UnsupportedAkTypeException;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.extract.ConverterTestUtils;
@@ -61,19 +60,19 @@ public abstract class ConversionTestBase {
         suite.putMismatch(indexWithinSuite);
     }
 
-    @Test(expected = UnsupportedAkTypeException.class)
+    @Test(expected = UnsupportedOperationException.class)
     @OnlyIfNot("isSupported()")
     public void setupUnsupported() {
         suite.setupUnsupported(indexWithinSuite);
     }
 
-    @Test(expected = UnsupportedAkTypeException.class)
+    @Test(expected = UnsupportedOperationException.class)
     @OnlyIfNot("isSupported()")
     public void putUnsupported() {
         suite.putUnsupported(indexWithinSuite);
     }
 
-    @Test(expected = UnsupportedAkTypeException.class)
+    @Test(expected = UnsupportedOperationException.class)
     @OnlyIfNot("isSupported()")
     public void getUnsupported() {
         suite.getUnsupported(indexWithinSuite);
