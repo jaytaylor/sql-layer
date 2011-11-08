@@ -22,9 +22,9 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
 import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.std.ExpressionTypes;
+import com.akiban.server.service.functions.FunctionsRegistry;
 
 import com.akiban.server.types.AkType;
 
@@ -36,10 +36,10 @@ import java.util.List;
 /** Calculate types from expression composers. */
 public class FunctionsTypeComputer extends AISTypeComputer
 {
-    private ExpressionRegistry expressionRegistry;
+    private FunctionsRegistry functionsRegistry;
 
-    public FunctionsTypeComputer(ExpressionRegistry expressionRegistry) {
-        this.expressionRegistry = expressionRegistry;
+    public FunctionsTypeComputer(FunctionsRegistry functionsRegistry) {
+        this.functionsRegistry = functionsRegistry;
     }
     
     @Override
@@ -69,7 +69,7 @@ public class FunctionsTypeComputer extends AISTypeComputer
             throws StandardException {
         ExpressionComposer composer;
         try {
-            composer = expressionRegistry.composer(methodCall.getMethodName());
+            composer = functionsRegistry.composer(methodCall.getMethodName());
         }
         catch (NoSuchFunctionException ex) {
             return null;
