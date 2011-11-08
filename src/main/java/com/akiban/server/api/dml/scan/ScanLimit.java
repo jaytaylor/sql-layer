@@ -33,4 +33,5 @@ public interface ScanLimit {
      * @return whether scanning should stop
      */
     boolean limitReached(RowData row);
+
 }

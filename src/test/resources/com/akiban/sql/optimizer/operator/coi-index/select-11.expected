@@ -1,7 +1,7 @@
 PhysicalSelect[name:varchar(32)[VARCHAR], value:DATE]
   Map_NestedLoops
     project([Field(0), Field(1)])
-      Aggregation(GROUP BY 1 field, then: [MAX])
+      Aggregation(GROUP BY 1 field, then: [maxDATE])
         project([Field(1), Field(2)])
           AncestorLookup_Default(Index(user.orders.__akiban_fk_0[IndexColumn(cid)]) -> [user.orders])
             IndexScan_Default(Index(user.orders.__akiban_fk_0[IndexColumn(cid)]) (,))

@@ -16,10 +16,9 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.AkServerInterface;
-import com.akiban.server.aggregation.AggregatorRegistry;
-import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.InstrumentationService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
@@ -32,17 +31,14 @@ public final class PostgresServiceRequirements {
                                        SessionService sessionService,
                                        Store store,
                                        TreeService treeService,
-                                       ExpressionRegistry expressionRegistry,
-                                       AggregatorRegistry aggregatorRegistry,
-                                       ConfigurationService config
-                                       ) {
+                                       FunctionsRegistry functionsRegistry,
+                                       ConfigurationService config) {
         this.instrumentation = instrumentation;
         this.dxlService = dxlService;
         this.sessionService = sessionService;
         this.store = store;
         this.treeService = treeService;
-        this.expressionRegistry = expressionRegistry;
-        this.aggregatorRegistry = aggregatorRegistry;
+        this.functionsRegistry = functionsRegistry;
         this.config = config;
     }
 
@@ -66,12 +62,8 @@ public final class PostgresServiceRequirements {
         return treeService;
     }
 
-    public ExpressionRegistry expressionFactory() {
-        return expressionRegistry;
-    }
-
-    public AggregatorRegistry aggregatorRegistry() {
-        return aggregatorRegistry;
+    public FunctionsRegistry functionsRegistry() {
+        return functionsRegistry;
     }
 
     public ConfigurationService config() {
@@ -83,7 +75,6 @@ public final class PostgresServiceRequirements {
     private final SessionService sessionService;
     private final Store store;
     private final TreeService treeService;
-    private final ExpressionRegistry expressionRegistry;
-    private final AggregatorRegistry aggregatorRegistry;
+    private final FunctionsRegistry functionsRegistry;
     private final ConfigurationService config;
 }

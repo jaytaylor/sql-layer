@@ -2,4 +2,4 @@ PhysicalUpdate@5d89635d
   Delete_Default(Select_HKeyOrdered(user.child, Field(2) == Literal(Fred)))
     Select_HKeyOrdered(user.child, Field(2) == Literal(Fred))
       Filter_Default([user.child])
-        GroupScan_Default(full scan on _akiban_parent NO LIMIT)
+        GroupScan_Default(full scan on _akiban_parent)
