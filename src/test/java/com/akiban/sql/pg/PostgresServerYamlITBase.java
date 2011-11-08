@@ -15,10 +15,16 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.error.InvalidOperationException;
+
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.io.FileReader;
+import java.sql.Connection;
 
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -28,22 +34,80 @@ import org.junit.Test;
  * are expected to be parameterized on the name of the YAML file.
  */
 @Ignore
-public class PostgresServerYamlITBase extends PostgresServerITBase {
+public class PostgresServerYamlITBase {
+
+    protected static final boolean DEBUG = Boolean.getBoolean("test.DEBUG");
+
+    private static final PostgresServerIT manageServer = new PostgresServerIT();
+
+    private static Connection connection;
 
     protected String filename;
 
+    @BeforeClass
+    public static void openTheConnection() throws Exception {
+	manageServer.startTestServices();
+	manageServer.openTheConnection();
+	connection = manageServer.getConnection();
+    }
+
+    @AfterClass
+    public static void closeTheConnection() throws Exception {
+	manageServer.stopTestServices();
+	manageServer.closeTheConnection();
+	connection = null;
+    }
+
+    @Before
+    public void dropAllTables() {
+	if (DEBUG) {
+	    System.err.println("\nFilename: " + filename);
+	}
+	manageServer.accessDropAllTables();
+    }
+
     @Test
     public void testYaml() throws IOException {
-	Reader in = new FileReader(filename);
+	Throwable exception = null;
+	Reader in = null;
 	try {
+	    in = new FileReader(filename);
 	    new YamlTester(filename, in, connection).test();
+	    if (DEBUG) {
+		System.err.println("Test passed");
+	    }
+	} catch (RuntimeException e) {
+	    exception = e;
+	    throw e;
+	} catch (IOException e) {
+	    exception = e;
+	    throw e;
+	} catch (Error e) {
+	    exception = e;
+	    throw e;
 	} finally {
-	    in.close();
+	    if (exception != null) {
+		System.err.println("Test failed: " + exception);
+	    }
+	    if (in != null) {
+		in.close();
+	    }
 	}
     }
 
     /** Parameterized version. */
     protected PostgresServerYamlITBase(String filename) {
         this.filename = filename;
+    }
+
+    /** Subclass of PostgresServerITBase to access non-public methods. */
+    @Ignore
+    private static class PostgresServerIT extends PostgresServerITBase {
+	void accessDropAllTables() throws InvalidOperationException {
+	    dropAllTables();
+	}
+	Connection getConnection() {
+	    return connection;
+	}
     }
 }

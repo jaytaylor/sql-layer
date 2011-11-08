@@ -24,11 +24,11 @@ import java.io.StringReader;
 import java.io.Writer;
 import java.sql.Connection;
 
-import org.junit.After;
 import org.junit.AfterClass;
 import static org.junit.Assert.fail;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 /**
@@ -58,7 +58,7 @@ public class YamlTesterIT {
 	connection = null;
     }
 
-    @After
+    @Before
     public void dropAllTables() {
 	manageServer.accessDropAllTables();
     }
@@ -875,7 +875,8 @@ public class YamlTesterIT {
     /* Other methods and classes */
 
     /** Subclass of PostgresServerITBase to access non-public methods. */
-    static class PostgresServerIT extends PostgresServerITBase {
+    @Ignore
+    private static class PostgresServerIT extends PostgresServerITBase {
 	void accessDropAllTables() throws InvalidOperationException {
 	    dropAllTables();
 	}

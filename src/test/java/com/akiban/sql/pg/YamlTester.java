@@ -111,8 +111,7 @@ import org.yaml.snakeyaml.nodes.Tag;
 */
 public class YamlTester {
 
-    private static final boolean DEBUG =
-	Boolean.getBoolean(YamlTester.class.getName() + ".DEBUG");
+    private static final boolean DEBUG = Boolean.getBoolean("test.DEBUG");
     private static final Map<String, Integer> typeNameToNumber =
 	new HashMap<String, Integer>();
     private static final Map<Integer, String> typeNumberToName =
@@ -428,11 +427,11 @@ public class YamlTester {
 		checkExplain();
 	    }
 	    if (params == null) {
-		Statement stmt = connection.createStatement(
-		    (DEBUG ? ResultSet.TYPE_SCROLL_INSENSITIVE
-		     : ResultSet.TYPE_FORWARD_ONLY),
-		    ResultSet.CONCUR_READ_ONLY);
+		Statement stmt = connection.createStatement();
 		try {
+		    if (DEBUG) {
+			System.err.println("Executing statement: " + statement);
+		    }
 		    try {
 			stmt.execute(statement);
 		    } catch (SQLException e) {
@@ -444,11 +443,8 @@ public class YamlTester {
 		    stmt.close();
 		}
 	    } else {
-		PreparedStatement stmt = connection.prepareStatement(
-		    statement,
-		    (DEBUG ? ResultSet.TYPE_SCROLL_INSENSITIVE
-		     : ResultSet.TYPE_FORWARD_ONLY),
-		    ResultSet.CONCUR_READ_ONLY);
+		PreparedStatement stmt =
+		    connection.prepareStatement(statement);
 		try {
 		    int numParams = params.get(0).size();
 		    for (List<Object> paramsList : params) {
@@ -466,7 +462,8 @@ public class YamlTester {
 			SQLException sqlException = null;
 			if (DEBUG) {
 			    System.err.println(
-				"Execute with params: " + paramsList);
+				"Executing statement: " + statement +
+				"\nParameters: " + paramsList);
 			}
 			try {
 			    stmt.execute();
@@ -508,6 +505,9 @@ public class YamlTester {
 	}
 
 	private void checkFailure(SQLException sqlException) {
+	    if (DEBUG) {
+		System.err.println("Generated error: " + sqlException);
+	    }
 	    if (!errorSpecified) {
 		throw initCause(new AssertionError(
 				    "Unexpected statement execution failure: " +
@@ -530,10 +530,6 @@ public class YamlTester {
 			    "Expected: '" + errorMessage + "'"),
 			sqlException);
 		}
-	    }
-	    if (DEBUG) {
-		System.err.println(
-		    "Received expected exception: " + sqlException);
 	    }
 	}
 
@@ -591,11 +587,11 @@ public class YamlTester {
 	}
 
 	private void checkResults(ResultSet rs) throws SQLException {
-	    if (DEBUG) {
-		debugPrintResults(rs);
-	    }
 	    if (outputTypes != null && outputRow == 0) {
 		checkOutputTypes(rs);
+	    }
+	    if (DEBUG) {
+		System.err.println("Statement output:");
 	    }
 	    if (output != null) {
 		ResultSetMetaData metaData = rs.getMetaData();
@@ -617,6 +613,9 @@ public class YamlTester {
 		    for (int i = 1; i <= numColumns; i++) {
 			resultsRow.add(rs.getObject(i));
 		    }
+		    if (DEBUG) {
+			System.err.println(arrayString(resultsRow));
+		    }
 		    if (!rowsEqual(row, resultsRow)) {
 			throw new AssertionError(
 			    "Unexpected output in row " + (outputRow + 1) +
@@ -626,22 +625,26 @@ public class YamlTester {
 		    }
 		}
 		checkRowCount(output.size(), !resultsEmpty);
-	    } else if (rowCount != -1) {
-		while (rs.next()) {
-		    outputRow++;
-		}
-		checkRowCount(rowCount, false);
 	    } else {
-		/*
-		 * Access the result data even if we aren't comparing it to
-		 * anything, in case the access produces errors
-		 */
 		ResultSetMetaData metaData = rs.getMetaData();
 		int numColumns = metaData.getColumnCount();
+		List<Object> resultsRow =
+		    DEBUG ? new ArrayList<Object>(numColumns) : null;
 		while (rs.next()) {
+		    outputRow++;
 		    for (int i = 1; i <= numColumns; i++) {
-			rs.getObject(i);
+			Object result = rs.getObject(i);
+			if (DEBUG) {
+			    resultsRow.add(result);
+			}
 		    }
+		    if (DEBUG) {
+			System.err.println(arrayString(resultsRow));
+			resultsRow.clear();
+		    }
+		}
+		if (rowCount != -1) {
+		    checkRowCount(rowCount, false);
 		}
 	    }
 	}

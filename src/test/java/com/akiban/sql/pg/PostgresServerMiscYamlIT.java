@@ -15,9 +15,6 @@
 
 package com.akiban.sql.pg;
 
-import org.junit.Test;
-import static org.junit.Assert.fail;
-
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.NamedParameterizedRunner.TestParameters;
 import com.akiban.junit.Parameterization;
@@ -25,7 +22,6 @@ import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.RegexFilenameFilter;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -38,21 +34,26 @@ import org.junit.runner.RunWith;
 @RunWith(NamedParameterizedRunner.class)
 public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase {
 
-    private static final boolean DEBUG =
-	Boolean.getBoolean(PostgresServerMiscYamlIT.class.getName() + ".DEBUG");
+    /**
+     * A regular expression matching the names of the YAML files in the
+     * resource directory, not including the extension, to use for tests.
+     */
+    private static final String FILENAME_REGEXP =
+	System.getProperty(PostgresServerMiscYamlIT.class.getName() +
+			   ".FILENAME_REGEXP", "test-.*");
 
     private static final File RESOURCE_DIR =
         new File(PostgresServerITBase.RESOURCE_DIR, "yaml-misc");
 
-    public PostgresServerMiscYamlIT(String caseName) {
-        super(caseName);
+    public PostgresServerMiscYamlIT(String filename) {
+        super(filename);
     }
 
     @TestParameters
     public static Collection<Parameterization> queries() throws Exception {
 	Collection<Object[]> params = new ArrayList<Object[]>();
 	File[] files = RESOURCE_DIR.listFiles(
-	    new RegexFilenameFilter("test-.*[.]yaml"));
+	    new RegexFilenameFilter(FILENAME_REGEXP + "[.]yaml"));
 	for (File file : files) {
 	    params.add(new Object[] { file.toString() });
 	}
