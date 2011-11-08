@@ -22,6 +22,7 @@ import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.List;
 
 public class ArithOps 
 {
@@ -156,15 +157,17 @@ public class ArithOps
         }
         
         @Override
-        public AkType argumentType(int index) {
-            return null;
+        public void argumentTypes(List<AkType> argumentTypes) {
+            AkType type = ArithExpression.getTopType(argumentTypes.get(0),
+                                                     argumentTypes.get(1));
+            argumentTypes.set(0, type);
+            argumentTypes.set(1, type);
         }
 
         @Override
         protected ExpressionType composeType(ExpressionType first, ExpressionType second) {
-            // Complex type promotion rules, but SQL parser should
-            // know them and not call this.
-            throw new UnsupportedOperationException("ArithOps asked to composeType");
+            // TODO: Max decimal precision?
+            return first;
         }
 
         @Override

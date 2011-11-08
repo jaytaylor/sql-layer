@@ -38,8 +38,10 @@ public final class ConcatExpression extends AbstractCompositeExpression {
         }
 
         @Override
-        public AkType argumentType(int index) {
-            return AkType.VARCHAR;
+        public void argumentTypes(List<AkType> argumentTypes) {
+            for (int i = 0; i < argumentTypes.size(); i++) {
+                argumentTypes.set(i, AkType.VARCHAR);
+            }
         }
 
         @Override

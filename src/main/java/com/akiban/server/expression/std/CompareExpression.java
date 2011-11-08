@@ -214,13 +214,16 @@ public final class CompareExpression extends AbstractBinaryExpression {
         }
 
         @Override
-        public AkType argumentType(int index) {
-            return null;
+        public void argumentTypes(List<AkType> argumentTypes) {
+            // This is what the code does, using childrenType().
+            // The actual rule applied by the SQL parser is that,
+            // e.g. string op number is a numeric comparison.
+            argumentTypes.set(1, argumentTypes.get(0));
         }
 
         @Override
         protected ExpressionType composeType(ExpressionType first, ExpressionType second) {
-            return (first.getType() != AkType.NULL) ? first : second;
+            return first;
         }
 
         private InnerComposer(Comparison comparison) {

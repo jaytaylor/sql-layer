@@ -38,8 +38,7 @@ public final class CoalesceExpression extends AbstractCompositeExpression {
         }
 
         @Override
-        public AkType argumentType(int index) {
-            return null;
+        public void argumentTypes(List<AkType> argumentTypes) {
         }
 
         @Override

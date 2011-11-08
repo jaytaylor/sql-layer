@@ -27,7 +27,7 @@ abstract class UnaryComposer implements ExpressionComposer {
 
     protected abstract Expression compose(Expression argument);
 
-    protected abstract AkType argumentType();
+    protected abstract AkType argumentType(AkType givenType);
 
     protected abstract ExpressionType composeType(ExpressionType argumentType);
 
@@ -39,10 +39,10 @@ abstract class UnaryComposer implements ExpressionComposer {
     }
 
     @Override
-    public AkType argumentType(int index) {
-        if (index != 0)
-            throw new WrongExpressionArityException(1, index + 1);
-        return argumentType();
+    public void argumentTypes(List<AkType> argumentTypes) {
+        if (argumentTypes.size() != 1)
+            throw new WrongExpressionArityException(1, argumentTypes.size());
+        argumentTypes.set(0, argumentType(argumentTypes.get(0)));
     }
 
     @Override
