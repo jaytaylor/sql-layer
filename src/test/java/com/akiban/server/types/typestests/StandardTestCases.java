@@ -27,7 +27,9 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 
 import static com.akiban.server.types.typestests.TestCase.NO_STATE;
 
@@ -134,7 +136,22 @@ final class StandardTestCases {
         list.add(TestCase.forYear(yearConverter.getLong("1983"), NO_STATE));
         list.add(TestCase.forYear(yearConverter.getLong("2155"), NO_STATE));
 
+        list.add(TestCase.forInterval(0, NO_STATE));
+
+        verifyAllTypesTested(list);
+
         return Collections.unmodifiableCollection(list);
+    }
+
+    private static void verifyAllTypesTested(Collection<? extends TestCase<?>> testCases) {
+        Set<AkType> allTypes = EnumSet.allOf(AkType.class);
+        allTypes.removeAll(EnumSet.of(AkType.UNSUPPORTED, AkType.NULL));
+        for (TestCase<?> testCase : testCases) {
+            allTypes.remove(testCase.type());
+        }
+        if (!allTypes.isEmpty()) {
+            throw new RuntimeException("untested types: " + allTypes);
+        }
     }
 
     private static ByteSource wrap(int... values) {

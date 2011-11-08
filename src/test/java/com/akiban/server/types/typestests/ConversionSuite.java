@@ -81,6 +81,21 @@ public final class ConversionSuite<T> {
         }
     }
 
+    void setupUnsupported(int i) {
+        TestCase<? extends T> testCase = testCases.get(i);
+        converters.setUp(testCase);
+    }
+
+    void putUnsupported(int i) {
+        TestCase<? extends T> testCase = testCases.get(i);
+        testCase.put(converters.linkedTarget());
+    }
+
+    void getUnsupported(int i) {
+        TestCase<? extends T> testCase = testCases.get(i);
+        testCase.get(converters.linkedSource());
+    }
+
     private String errorMessage(String failedClass, String action, AkType expectedType, TestCase<?> switched) {
         return "expected " + failedClass + " error after " + action + ' ' + switched
                 + ": expected check for " + expectedType + " when " + action + ' ' + switched.type();
