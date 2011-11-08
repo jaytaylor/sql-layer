@@ -37,8 +37,9 @@ abstract class NoArgComposer implements ExpressionComposer {
     }
 
     @Override
-    public AkType argumentType(int index) {
-        throw new WrongExpressionArityException(0, index + 1);
+    public void argumentTypes(List<AkType> argumentTypes) {
+        if (argumentTypes.size() != 0)
+            throw new WrongExpressionArityException(0, argumentTypes.size());
     }
 
     @Override

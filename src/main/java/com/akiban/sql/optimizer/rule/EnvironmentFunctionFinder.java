@@ -23,9 +23,9 @@ import static com.akiban.sql.optimizer.plan.PlanContext.*;
 
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionComposerWithBindingPosition;
-import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.expression.ExpressionType;
 import static com.akiban.server.expression.std.EnvironmentExpression.*;
+import com.akiban.server.service.functions.FunctionsRegistry;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +56,7 @@ public class EnvironmentFunctionFinder extends BaseRule
     public void apply(PlanContext planContext) {
         SchemaRulesContext rulesContext = (SchemaRulesContext)
             planContext.getRulesContext();
-        Rewriter r = new Rewriter(rulesContext.getExpressionRegistry());
+        Rewriter r = new Rewriter(rulesContext.getFunctionsRegistry());
         planContext.getPlan().accept(r);
         if (r.environmentValues != null)
             planContext.putWhiteboard(MARKER, r.environmentValues);
@@ -64,10 +64,10 @@ public class EnvironmentFunctionFinder extends BaseRule
 
     static class Rewriter implements PlanVisitor, ExpressionRewriteVisitor {
         List<EnvironmentValue> environmentValues = null;
-        ExpressionRegistry expressionRegistry;
+        FunctionsRegistry functionsRegistry;
 
-        public Rewriter(ExpressionRegistry expressionRegistry) {
-            this.expressionRegistry = expressionRegistry;
+        public Rewriter(FunctionsRegistry functionsRegistry) {
+            this.functionsRegistry = functionsRegistry;
         }
 
         @Override
@@ -101,7 +101,7 @@ public class EnvironmentFunctionFinder extends BaseRule
                 return func;
             ExpressionComposer composer;
             try {
-                composer = expressionRegistry.composer(func.getFunction());
+                composer = functionsRegistry.composer(func.getFunction());
             }
             catch (NoSuchFunctionException ex) {
                 return func;

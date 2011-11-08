@@ -151,7 +151,7 @@ public class ExpressionAssembler
         else if (node instanceof EnvironmentFunctionExpression) {
             EnvironmentFunctionExpression funcNode = (EnvironmentFunctionExpression)node;
             ExpressionComposerWithBindingPosition composer =
-                (ExpressionComposerWithBindingPosition)expressionRegistry.composer(funcNode.getFunction());
+                (ExpressionComposerWithBindingPosition)functionsRegistry.composer(funcNode.getFunction());
             return composer.compose(columnContext.getExpressionBindingsOffset() + funcNode.getBindingPosition(),
                                     Collections.<Expression>emptyList());
         }
