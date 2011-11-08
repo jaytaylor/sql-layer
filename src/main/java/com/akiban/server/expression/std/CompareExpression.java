@@ -223,7 +223,7 @@ public final class CompareExpression extends AbstractBinaryExpression {
 
         @Override
         protected ExpressionType composeType(ExpressionType first, ExpressionType second) {
-            return first;
+            return ExpressionTypes.BOOL;
         }
 
         private InnerComposer(Comparison comparison) {

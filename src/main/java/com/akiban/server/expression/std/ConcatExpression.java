@@ -16,6 +16,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.Quote;
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -48,8 +49,14 @@ public final class ConcatExpression extends AbstractCompositeExpression {
         public ExpressionType composeType(List<? extends ExpressionType> argumentTypes) {
             int length = 0;
             for (ExpressionType type : argumentTypes) {
-                if (type.getType() == AkType.VARCHAR) {
+                switch (type.getType()) {
+                case AkType.VARCHAR:
                     length += type.getPrecision();
+                    break;
+                case AkType.NULL:
+                    break;
+                default:
+                    throw new AkibanInternalException("VARCHAR required, given " + type);
                 }
             }
             return ExpressionTypes.varchar(length);

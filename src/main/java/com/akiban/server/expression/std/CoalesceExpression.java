@@ -47,7 +47,7 @@ public final class CoalesceExpression extends AbstractCompositeExpression {
                 if (type.getType() != AkType.NULL)
                     return type;
             }
-            return null;
+            return ExpressionTypes.NULL;
         }
     };
 

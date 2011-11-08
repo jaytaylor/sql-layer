@@ -29,6 +29,7 @@ public class ExpressionTypes
     public static final ExpressionType FLOAT = newType(AkType.FLOAT);
     public static final ExpressionType INT = newType(AkType.INT);
     public static final ExpressionType LONG = newType(AkType.LONG);
+    public static final ExpressionType NULL = newType(AkType.NULL);
     public static final ExpressionType TEXT = newType(AkType.TEXT);
     public static final ExpressionType TIME = newType(AkType.TIME);
     public static final ExpressionType TIMESTAMP = newType(AkType.TIMESTAMP);
