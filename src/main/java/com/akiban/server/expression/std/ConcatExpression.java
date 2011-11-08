@@ -50,10 +50,10 @@ public final class ConcatExpression extends AbstractCompositeExpression {
             int length = 0;
             for (ExpressionType type : argumentTypes) {
                 switch (type.getType()) {
-                case AkType.VARCHAR:
+                case VARCHAR:
                     length += type.getPrecision();
                     break;
-                case AkType.NULL:
+                case NULL:
                     break;
                 default:
                     throw new AkibanInternalException("VARCHAR required, given " + type);
