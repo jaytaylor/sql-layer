@@ -125,7 +125,7 @@ public final class FunctionsRegistryImplTest {
             throw new UnsupportedOperationException();
         }
         @Override
-        public AkType argumentType(int index) {
+        public void argumentTypes(List<AkType> argumentTypes) {
             throw new UnsupportedOperationException();
         }
         @Override

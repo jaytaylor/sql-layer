@@ -16,7 +16,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionRegistry;
+import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.types.DataTypeDescriptor;
@@ -37,11 +37,11 @@ import java.util.List;
 /** Turn {@link ExpressionNode} into {@link Expression}. */
 public class ExpressionAssembler
 {
-    private ExpressionRegistry expressionRegistry;
+    private FunctionsRegistry functionsRegistry;
 
     public ExpressionAssembler(RulesContext rulesContext) {
-        this.expressionRegistry = ((SchemaRulesContext)
-                                  rulesContext).getExpressionRegistry();
+        this.functionsRegistry = ((SchemaRulesContext)
+                                  rulesContext).getFunctionsRegistry();
     }
 
     public interface ColumnExpressionToIndex {
@@ -86,7 +86,7 @@ public class ExpressionAssembler
             return variable(node.getAkType(), ((ParameterExpression)node).getPosition());
         else if (node instanceof BooleanOperationExpression) {
             BooleanOperationExpression bexpr = (BooleanOperationExpression)node;
-            return expressionRegistry
+            return functionsRegistry
                 .composer(bexpr.getOperation().getFunctionName())
                 .compose(Arrays.asList(assembleExpression(bexpr.getLeft(), 
                                                           columnContext, 
@@ -108,7 +108,7 @@ public class ExpressionAssembler
         }
         else if (node instanceof FunctionExpression) {
             FunctionExpression funcNode = (FunctionExpression)node;
-            return expressionRegistry
+            return functionsRegistry
                 .composer(funcNode.getFunction())
                 .compose(assembleExpressions(funcNode.getOperands(), 
                                              columnContext, subqueryAssembler));
@@ -116,7 +116,7 @@ public class ExpressionAssembler
         else if (node instanceof IfElseExpression) {
             IfElseExpression ifElse = (IfElseExpression)node;
             // TODO: Is this right?
-            return expressionRegistry
+            return functionsRegistry
                 .composer("ifThenElse")
                 .compose(Arrays.asList(assembleExpression(ifElse.getTestCondition(), 
                                                           columnContext, 

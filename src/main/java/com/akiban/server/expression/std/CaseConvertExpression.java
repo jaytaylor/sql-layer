@@ -61,13 +61,13 @@ public class CaseConvertExpression extends AbstractUnaryExpression
         }         
 
         @Override
-        protected AkType argumentType() {
+        protected AkType argumentType(AkType givenType) {
             return AkType.VARCHAR;
         }
 
         @Override
         protected ExpressionType composeType(ExpressionType argumentType) {
-            return argumentType; // Worst case is nothing removed: same width.
+            return argumentType; // Same width.
         }
     }
     

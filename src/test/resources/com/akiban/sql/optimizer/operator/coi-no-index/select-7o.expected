@@ -3,4 +3,4 @@ PhysicalSelect[order_date:date[DATE]]
     Filter_Default([flatten(user.customers, user.orders)])
       Flatten_HKeyOrdered(user.customers INNER user.orders)
         Select_HKeyOrdered(user.orders, Field(2) > Literal(2011-01-01))
-          GroupScan_Default(full scan on _akiban_customers NO LIMIT)
+          GroupScan_Default(full scan on _akiban_customers)

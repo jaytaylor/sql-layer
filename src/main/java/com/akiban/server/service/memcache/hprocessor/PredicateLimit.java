@@ -43,4 +43,8 @@ public final class PredicateLimit implements ScanLimit {
         }
         return limit == 0 || count > limit;
     }
+
+    public int getLimit() {
+        return limit;
+    }
 }

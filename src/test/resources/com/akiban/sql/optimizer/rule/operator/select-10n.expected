@@ -9,4 +9,4 @@ PhysicalSelect@1957a34[name, order_date, name]
         Select_HKeyOrdered(user.child, Field(2) != Literal(Smith))
           Select_HKeyOrdered(user.child, Field(2) == Bound(1,Field(0)))
             Filter_Default([user.child])
-              GroupScan_Default(full scan on _akiban_parent NO LIMIT)
+              GroupScan_Default(full scan on _akiban_parent)

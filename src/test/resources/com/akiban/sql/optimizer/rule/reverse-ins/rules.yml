@@ -8,4 +8,5 @@
 - com.akiban.sql.optimizer.rule.NestedLoopMapper
 - com.akiban.sql.optimizer.rule.BranchJoiner
 - com.akiban.sql.optimizer.rule.SelectPreponer
+#- com.akiban.sql.optimizer.rule.SortSplitter
 - com.akiban.sql.optimizer.rule.MapFolder
