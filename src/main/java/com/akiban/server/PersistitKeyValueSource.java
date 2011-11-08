@@ -164,6 +164,8 @@ public final class PersistitKeyValueSource implements ValueSource {
     // for use in this package
 
     void attach(Key key, int depth, AkType type) {
+        if (type == AkType.INTERVAL)
+            throw new UnsupportedOperationException();
         this.key = key;
         this.key.indexTo(depth);
         this.akType = type;

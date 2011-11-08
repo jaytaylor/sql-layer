@@ -28,6 +28,8 @@ import java.math.BigInteger;
 public final class RowDataValueTarget implements ValueTarget {
 
     public void bind(FieldDef fieldDef, byte[] backingBytes, int offset) {
+        if(fieldDef.getType().akType() == AkType.INTERVAL)
+            throw new UnsupportedOperationException();
         clear();
         ArgumentValidation.notNull("fieldDef", fieldDef);
         ArgumentValidation.withinArray("backing bytes", backingBytes, "offset", offset);
@@ -124,8 +126,7 @@ public final class RowDataValueTarget implements ValueTarget {
     
     @Override
     public void putInterval(long value) {
-        checkState(AkType.INTERVAL);
-        recordEncoded(encodeLong(value));
+        throw new UnsupportedOperationException();
     }
 
     @Override
