@@ -36,7 +36,7 @@ public final class NotExpression extends AbstractUnaryExpression {
         }
 
         @Override
-        protected AkType argumentType() {
+        protected AkType argumentType(AkType givenType) {
             return AkType.BOOL;
         }
 

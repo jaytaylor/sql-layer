@@ -22,9 +22,9 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
 import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.std.ExpressionTypes;
+import com.akiban.server.service.functions.FunctionsRegistry;
 
 import com.akiban.server.types.AkType;
 
@@ -36,10 +36,10 @@ import java.util.List;
 /** Calculate types from expression composers. */
 public class FunctionsTypeComputer extends AISTypeComputer
 {
-    private ExpressionRegistry expressionRegistry;
+    private FunctionsRegistry functionsRegistry;
 
-    public FunctionsTypeComputer(ExpressionRegistry expressionRegistry) {
-        this.expressionRegistry = expressionRegistry;
+    public FunctionsTypeComputer(FunctionsRegistry functionsRegistry) {
+        this.functionsRegistry = functionsRegistry;
     }
     
     @Override
@@ -78,7 +78,7 @@ public class FunctionsTypeComputer extends AISTypeComputer
             throws StandardException {
         ExpressionComposer composer;
         try {
-            composer = expressionRegistry.composer(methodCall.getMethodName());
+            composer = functionsRegistry.composer(methodCall.getMethodName());
         }
         catch (NoSuchFunctionException ex) {
             return null;
@@ -88,25 +88,34 @@ public class FunctionsTypeComputer extends AISTypeComputer
         if (args != null)
             nargs = args.length;
         List<ExpressionType> argTypes = new ArrayList<ExpressionType>(nargs);
+        List<AkType> origTypes = new ArrayList<AkType>(nargs);
         for (int i = 0; i < nargs; i++) {
             JavaValueNode arg = args[i];
             DataTypeDescriptor sqlType = arg.getType();
             ExpressionType argType = toExpressionType(sqlType);
-            AkType requiredType = composer.argumentType(i);
-            if ((requiredType != null) && (argType != null) &&
-                (argType.getType() != requiredType) &&
-                (arg instanceof SQLToJavaValueNode)) {
-                SQLToJavaValueNode jarg = (SQLToJavaValueNode)arg;
-                ValueNode sqlArg = jarg.getSQLValueNode();
-                ExpressionType castType = castType(argType, requiredType, sqlType);
-                ValueNode cast = (ValueNode)sqlArg.getNodeFactory()
-                    .getNode(NodeTypes.CAST_NODE, 
-                             sqlArg, fromExpressionType(castType),
-                             sqlArg.getParserContext());
-                jarg.setSQLValueNode(cast);
-                argType = castType;
-            }
             argTypes.add(argType);
+            origTypes.add(argType.getType());
+        }
+        List<AkType> requiredTypes = new ArrayList<AkType>(origTypes);
+        composer.argumentTypes(requiredTypes);
+        for (int i = 0; i < nargs; i++) {
+            if (origTypes.get(i) != requiredTypes.get(i)) {
+                // Need a different type: add a CAST.
+                JavaValueNode arg = args[i];
+                ExpressionType castType = castType(argTypes.get(i),
+                                                   requiredTypes.get(i), 
+                                                   arg.getType());
+                if (arg instanceof SQLToJavaValueNode) {
+                    SQLToJavaValueNode jarg = (SQLToJavaValueNode)arg;
+                    ValueNode sqlArg = jarg.getSQLValueNode();
+                    ValueNode cast = (ValueNode)sqlArg.getNodeFactory()
+                        .getNode(NodeTypes.CAST_NODE, 
+                                 sqlArg, fromExpressionType(castType),
+                                 sqlArg.getParserContext());
+                    jarg.setSQLValueNode(cast);
+                }
+                argTypes.set(i, castType);
+            }
         }
         ExpressionType resultType = composer.composeType(argTypes);
         if (resultType == null)

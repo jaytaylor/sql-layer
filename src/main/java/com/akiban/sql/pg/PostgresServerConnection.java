@@ -16,11 +16,11 @@
 package com.akiban.sql.pg;
 
 import com.akiban.qp.loadableplan.LoadablePlan;
-import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.error.*;
 import com.akiban.server.expression.ExpressionRegistry;
 import static com.akiban.server.expression.std.EnvironmentExpression.EnvironmentValue;
 import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.store.Store;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.SQLParser;
@@ -837,13 +837,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     @Override
-    public ExpressionRegistry expressionFactory() {
-        return reqs.expressionFactory();
-    }
-
-    @Override
-    public AggregatorRegistry aggregatorRegistry() {
-        return reqs.aggregatorRegistry();
+    public FunctionsRegistry functionsRegistry() {
+        return reqs.functionsRegistry();
     }
 
     @Override

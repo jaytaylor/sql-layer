@@ -105,7 +105,7 @@ public class TrimExpression extends AbstractUnaryExpression
         }
 
         @Override
-        protected AkType argumentType() {
+        protected AkType argumentType(AkType givenType) {
             return AkType.VARCHAR;
         }
 

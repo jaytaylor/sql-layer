@@ -66,7 +66,7 @@ final class OperatorStoreMaintenancePlans {
     static Operator groupIndexCreationPlan(Schema schema, GroupIndex groupIndex) {
         OperatorStoreMaintenance.BranchTables branchTables = branchTablesRootToLeaf(schema, groupIndex);
 
-        Operator plan = API.groupScan_Default(groupIndex.getGroup().getGroupTable(), NoLimit.instance());
+        Operator plan = API.groupScan_Default(groupIndex.getGroup().getGroupTable());
 
         RowType parentRowType = null;
         API.JoinType joinType = API.JoinType.RIGHT_JOIN;
