@@ -9,6 +9,7 @@
 - com.akiban.sql.optimizer.rule.BranchJoiner
 #- com.akiban.sql.optimizer.rule.SelectPreponer
 - com.akiban.sql.optimizer.rule.AggregateSplitter
+#- com.akiban.sql.optimizer.rule.SortSplitter
 - com.akiban.sql.optimizer.rule.MapFolder
 #- com.akiban.sql.optimizer.rule.ExpressionCompactor
 - com.akiban.sql.optimizer.rule.OperatorAssembler

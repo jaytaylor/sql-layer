@@ -6,4 +6,4 @@
            Flatten_HKeyOrdered(mmcm.customers KEEP INNER mmcm.orders)
              BranchLookup_Default(_akiban_customers mmcm.items -> mmcm.addresses limit NO LIMIT)
                AncestorLookup_Default(Index(mmcm.items.sku[IndexColumn(sku)]) -> [mmcm.customers, mmcm.orders, mmcm.items])
-                 GroupScan_Default(_akiban_customers NO LIMIT)
+                 GroupScan_Default(_akiban_customers)
