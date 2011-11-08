@@ -45,7 +45,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     private final PostgresServiceRequirements reqs;
     private ServerSocket socket = null;
     private boolean running = false;
-    private long startTime = 0;
+    private volatile long startTime = 0;
     private boolean listening = false;
     private Map<Integer,PostgresServerConnection> connections =
         new HashMap<Integer,PostgresServerConnection>();
