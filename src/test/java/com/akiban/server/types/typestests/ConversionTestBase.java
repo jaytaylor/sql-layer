@@ -20,6 +20,7 @@ import com.akiban.junit.OnlyIf;
 import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.extract.ConverterTestUtils;
@@ -30,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 @RunWith(NamedParameterizedRunner.class)
 public abstract class ConversionTestBase {
@@ -146,6 +148,11 @@ public abstract class ConversionTestBase {
         @Override
         public void syncConversions() {
             delegate.syncConversions();
+        }
+
+        @Override
+        public Set<? extends AkType> unsupportedTypes() {
+            return delegate.unsupportedTypes();
         }
 
         NoCheckLinkedConversion(LinkedConversion<?> delegate) {

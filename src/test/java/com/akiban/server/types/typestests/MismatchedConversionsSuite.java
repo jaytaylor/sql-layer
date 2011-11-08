@@ -37,6 +37,7 @@ public final class MismatchedConversionsSuite {
         List<AkType> validTypes = new ArrayList<AkType>();
         Collections.addAll(validTypes, AkType.values());
         validTypes.removeAll(invalidTypes);
+        validTypes.removeAll(baseConversion.unsupportedTypes());
         validTypes = Collections.unmodifiableList(validTypes); // sanity check
 
         List<AkType> scratchPad = new ArrayList<AkType>(validTypes);
@@ -171,6 +172,11 @@ public final class MismatchedConversionsSuite {
         @Override
         public void checkPut(Switcher expected) {
             throw new UnsupportedOperationException("this shouldn't be called!");
+        }
+
+        @Override
+        public Set<? extends AkType> unsupportedTypes() {
+            return delegate.unsupportedTypes();
         }
 
         private DelegateLinkedConversion(LinkedConversion<?> delegate) {

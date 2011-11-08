@@ -42,6 +42,8 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Collection;
+import java.util.EnumSet;
+import java.util.Set;
 
 import static com.akiban.util.Strings.parseHex;
 
@@ -180,6 +182,11 @@ public final class RowDataConversionTest extends ConversionTestBase {
         @Override
         public void syncConversions() {
             source.setWidth(target.lastEncodedLength());
+        }
+
+        @Override
+        public Set<? extends AkType> unsupportedTypes() {
+            return EnumSet.of(AkType.INTERVAL);
         }
 
         private void createEnvironment(TestCase<?> testCase) {
