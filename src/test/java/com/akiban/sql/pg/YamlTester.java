@@ -21,8 +21,10 @@ import java.io.IOException;
 import java.io.Reader;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -164,9 +166,11 @@ public class YamlTester {
     private void test(Reader in) {
 	try {
 	    Yaml yaml = new Yaml(new DontCareConstructor());
-	    for (Object document : yaml.loadAll(in)) {
+	    Iterator<Object> documents = yaml.loadAll(in).iterator();
+	    while (documents.hasNext()) {
 		++commandNumber;
 		commandName = null;
+		Object document = documents.next();
 		List<Object> sequence =
 		    nonEmptySequence(document, "command document");
 		Entry<Object, Object> firstEntry = firstEntry(
@@ -192,7 +196,7 @@ public class YamlTester {
 	    }
 	} catch (Throwable e) {
 	    /* Add context */
-	    throw initCause(new AssertionError(context() + e.getMessage()), e);
+	    throw initCause(new AssertionError(context() + e), e);
 	}
     }
 
@@ -221,7 +225,7 @@ public class YamlTester {
 	    throw initCause(
 		new AssertionError(
 		    "Problem accessing include file " + include + ": " +
-		    e.getMessage()),
+		    e),
 		e);
 	}
 	int originalCommandNumber = commandNumber;
@@ -507,7 +511,7 @@ public class YamlTester {
 	    if (!errorSpecified) {
 		throw initCause(new AssertionError(
 				    "Unexpected statement execution failure: " +
-				    sqlException.getMessage()),
+				    sqlException),
 				sqlException);
 	    }
 	    if (errorNumber != sqlException.getErrorCode()) {
@@ -617,8 +621,8 @@ public class YamlTester {
 			throw new AssertionError(
 			    "Unexpected output in row " + (outputRow + 1) +
 			    ":" +
-			    "\nExpected: " + row +
-			    "\n     got: " + resultsRow);
+			    "\nExpected: " + arrayString(row) +
+			    "\n     got: " + arrayString(resultsRow));
 		    }
 		}
 		checkRowCount(output.size(), !resultsEmpty);
@@ -627,6 +631,18 @@ public class YamlTester {
 		    outputRow++;
 		}
 		checkRowCount(rowCount, false);
+	    } else {
+		/*
+		 * Access the result data even if we aren't comparing it to
+		 * anything, in case the access produces errors
+		 */
+		ResultSetMetaData metaData = rs.getMetaData();
+		int numColumns = metaData.getColumnCount();
+		while (rs.next()) {
+		    for (int i = 1; i <= numColumns; i++) {
+			rs.getObject(i);
+		    }
+		}
 	    }
 	}
 
@@ -655,12 +671,12 @@ public class YamlTester {
 		Object patternElem = pattern.get(i);
 		if (patternElem != DontCare.INSTANCE) {
 		    Object rowElem = row.get(i);
-		    if (patternElem == null
-			? rowElem == null
-			: patternElem.equals(rowElem))
-		    {
-			continue;
-		    } else {
+		    if (patternElem == null) {
+			if (rowElem != null) {
+			    return false;
+			}
+		    } else if (!arrayElementString(patternElem).equals(
+				   arrayElementString(rowElem))) {
 			return false;
 		    }
 		}
@@ -689,6 +705,52 @@ public class YamlTester {
 		System.err.println();
 	    }
 	    rs.beforeFirst();
+	}
+    }
+
+    static String arrayString(List<Object> array) {
+	if (array == null) {
+	    return "null";
+	}
+	StringBuilder sb = new StringBuilder();
+	sb.append('[');
+	for (Object elem : array) {
+	    if (sb.length() != 1) {
+		sb.append(", ");
+	    }
+	    sb.append(arrayElementString(elem));
+	}
+	sb.append(']');
+	return sb.toString();
+    }
+
+    static String arrayElementString(Object elem) {
+	if (elem == null) {
+	    return "null";
+	} else {
+	    Class elemClass = elem.getClass();
+	    if (!elemClass.isArray()) {
+		return elem.toString();
+	    } else if (elemClass == byte[].class) {
+		return Arrays.toString((byte[]) elem);
+	    } else if (elemClass == short[].class) {
+		return Arrays.toString((short[]) elem);
+	    } else if (elemClass == int[].class) {
+		return Arrays.toString((int[]) elem);
+	    } else if (elemClass == long[].class) {
+		return Arrays.toString((long[]) elem);
+	    } else if (elemClass == char[].class) {
+		return Arrays.toString((char[]) elem);
+	    } else if (elemClass == float[].class) {
+		return Arrays.toString((float[]) elem);
+	    } else if (elemClass == double[].class) {
+		return Arrays.toString((double[]) elem);
+	    } else if (elemClass == boolean[].class) {
+		return Arrays.toString((boolean[]) elem);
+	    } else {
+		/* Another type of array -- shouldn't happen */
+		return elem.toString();
+	    }
 	}
     }
 
