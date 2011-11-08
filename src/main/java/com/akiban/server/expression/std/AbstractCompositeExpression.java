@@ -27,39 +27,42 @@ import java.util.List;
 
 public abstract class AbstractCompositeExpression implements Expression {
 
+    protected abstract boolean nullIsContaminating ();
+
     // Expression interface
 
     @Override
     public boolean isConstant() {
-        for (Expression child : children) {
-            if (child.valueType() == AkType.NULL)
+        boolean hasNonConst = false;
+        for (Expression child : children)
+        {
+            if (child.valueType() == AkType.NULL && nullIsContaminating())
                 return true;
-            if (!child.isConstant())
-                return false;
+            if(!child.isConstant()) hasNonConst = true;
         }
-        return true;
+        return !hasNonConst;
     }
 
     @Override
     public boolean needsRow() {
+        boolean needrow = false;
         for (Expression child : children) {
-            if (child.valueType() == AkType.NULL) 
+            if (child.valueType() == AkType.NULL && nullIsContaminating())
                 return false;
-            if (child.needsRow())
-                return true;
+            if(child.needsRow()) needrow = true;
         }
-        return false;
+        return needrow;
     }
 
     @Override
     public boolean needsBindings() {
+        boolean needBindings = false;
         for (Expression child : children) {
-            if (child.valueType() == AkType.NULL)
+            if (child.valueType() == AkType.NULL && nullIsContaminating())
                 return false;
-            if (child.needsBindings())
-                return true;
+            if(child.needsBindings()) needBindings = true;
         }
-        return false;
+        return needBindings;
     }
 
     @Override

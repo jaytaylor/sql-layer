@@ -33,7 +33,8 @@ import static org.junit.Assert.assertTrue;
 public class ArithExpressionTest extends ComposedExpressionTestBase
 {
     protected ArithOp ex =  ArithOps.MINUS;
-   
+    private final CompositionTestInfo testInfo = new CompositionTestInfo(2, AkType.DOUBLE, true);
+
     @Test
     public void longMinusDouble ()
     {
@@ -135,7 +136,7 @@ public class ArithExpressionTest extends ComposedExpressionTestBase
         
     }
      
-    @Override
+  //  @Override
     protected int childrenCount() 
     {
         return 2;
@@ -145,5 +146,11 @@ public class ArithExpressionTest extends ComposedExpressionTestBase
     protected ExpressionComposer getComposer()
     {
         return (ExpressionComposer)ex;
+    }
+
+    @Override
+    protected CompositionTestInfo getTestInfo()
+    {
+        return testInfo;
     }
 }

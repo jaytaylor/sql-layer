@@ -123,5 +123,11 @@ public class SubStringExpression extends AbstractCompositeExpression
     public ExpressionEvaluation evaluation() 
     {
         return new InnerEvaluation(this.childrenEvaluations());
-    }    
+    }
+
+    @Override
+    protected boolean nullIsContaminating()
+    {
+        return true;
+    }
 }

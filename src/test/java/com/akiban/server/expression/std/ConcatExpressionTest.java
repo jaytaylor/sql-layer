@@ -29,7 +29,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public final class ConcatExpressionTest extends ComposedExpressionTestBase {
+public final class ConcatExpressionTest  extends ComposedExpressionTestBase {
 
     @Test
     public void smoke() {
@@ -43,16 +43,18 @@ public final class ConcatExpressionTest extends ComposedExpressionTestBase {
         check(null, concat);
     }
 
+
     @Test
     public void allNumbers() {
         Expression concat = concat(lit(1), lit(2), lit(3.0));
         assertTrue("concat should be const", concat.isConstant());
         check("123.0", concat);
     }
+  
 
     @Test
     public void nonConstNullStillConstConcat() {
-        Expression concat = concat(lit(3), nonConst(3), constNull(AkType.VARCHAR));
+        Expression concat = concat(lit(3), nonConst(3), LiteralExpression.forNull());
         assertTrue("concat should be const", concat.isConstant());
         check(null, concat);
     }
@@ -61,12 +63,12 @@ public final class ConcatExpressionTest extends ComposedExpressionTestBase {
     public void noChildren() {
         concatAndCheck("");
     }
-
+ 
     // ComposedExpressionTestBase
 
     @Override
-    protected int childrenCount() {
-        return 3; // why not!
+    protected CompositionTestInfo getTestInfo() {
+        return testInfo;
     }
 
     @Override
@@ -104,4 +106,5 @@ public final class ConcatExpressionTest extends ComposedExpressionTestBase {
         return new ConcatExpression(Arrays.asList(inputs));
     }
 
+    private final CompositionTestInfo testInfo = new CompositionTestInfo(3, AkType.VARCHAR, true);
 }

@@ -17,6 +17,7 @@ package com.akiban.server.expression.std;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
 import com.akiban.server.expression.ExpressionComposer;
+import com.akiban.server.types.AkType;
 import org.junit.runner.RunWith;
 
 import java.util.Arrays;
@@ -34,8 +35,8 @@ public final class BoolLogicExpressionCompositionTest extends ComposedExpression
     }
     
     @Override
-    protected int childrenCount() {
-        return 2;
+    protected CompositionTestInfo getTestInfo (){
+        return testInfo;
     }
 
     @Override
@@ -48,4 +49,5 @@ public final class BoolLogicExpressionCompositionTest extends ComposedExpression
     }
 
     private final ExpressionComposer composer;
+    private final CompositionTestInfo testInfo = new CompositionTestInfo(2, AkType.BOOL, true);
 }
