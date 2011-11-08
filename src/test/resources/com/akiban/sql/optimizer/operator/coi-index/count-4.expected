@@ -3,4 +3,4 @@ PhysicalSelect[_SQL_COL_1:INTEGER NOT NULL]
     Count_Default(flatten(user.customers, user.orders))
       Filter_Default([flatten(user.customers, user.orders)])
         Flatten_HKeyOrdered(user.customers INNER user.orders)
-          GroupScan_Default(full scan on _akiban_customers NO LIMIT)
+          GroupScan_Default(full scan on _akiban_customers)
