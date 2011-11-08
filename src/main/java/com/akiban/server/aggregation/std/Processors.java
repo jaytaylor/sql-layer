@@ -51,7 +51,7 @@ class Processors
                 case LONG:
                 case DECIMAL:
                 case U_BIGINT: return;
-                default: throw new UnsupportedOperationException("Not supported yet.");
+                default: throw new UnsupportedOperationException("sum of " + type + " is not supported yet.");
             }
         }
 
@@ -59,9 +59,9 @@ class Processors
         public long process(long oldState, long input)
         {
             long sum = oldState + input;
-            if (oldState > 0 && input > 0 && sum < 0)
+            if (oldState > 0 && input > 0 && sum <= 0)
                 throw new OverflowException();
-            else if (oldState < 0 && input < 0 && sum > 0)
+            else if (oldState < 0 && input < 0 && sum >= 0)
                 throw new OverflowException();
             else
                 return oldState + input;
@@ -124,7 +124,7 @@ class Processors
                 case BOOL:
                 case DATETIME:
                 case TIME:      return;
-                default:        throw new UnsupportedOperationException("Not supported yet.");
+                default:        throw new UnsupportedOperationException(type + " is not supported yet.");
             }            
         }
 
