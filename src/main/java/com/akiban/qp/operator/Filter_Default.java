@@ -18,6 +18,7 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.Tap;
 
 import java.util.*;
 
@@ -69,6 +70,9 @@ class Filter_Default extends Operator
         this.inputOperator = inputOperator;
         this.keepTypes = new HashSet<RowType>(keepTypes);
     }
+    
+    // Class state
+    private static final Tap.PointTap FILTER_COUNT = Tap.createCount("operator: filter", true);
 
     // Object state
 
@@ -86,6 +90,7 @@ class Filter_Default extends Operator
         {
             input.open(bindings);
             closed = false;
+            FILTER_COUNT.hit();
         }
 
         @Override

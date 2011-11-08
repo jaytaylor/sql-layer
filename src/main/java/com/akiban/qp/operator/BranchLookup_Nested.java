@@ -24,6 +24,8 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.Tap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -152,6 +154,7 @@ public class BranchLookup_Nested extends Operator
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(BranchLookup_Nested.class);
+    private static final Tap.PointTap BRANCH_LOOKUP_COUNT = Tap.createCount("operator: branch_lookup_nested", true);
 
     // Object state
 
@@ -174,6 +177,7 @@ public class BranchLookup_Nested extends Operator
         @Override
         public void open(Bindings bindings)
         {
+        	BRANCH_LOOKUP_COUNT.hit();
             Row rowFromBindings = (Row) bindings.get(inputBindingPosition);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("BranchLookup_Nested: open using {}", rowFromBindings);

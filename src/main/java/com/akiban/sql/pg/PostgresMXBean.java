@@ -63,6 +63,11 @@ public interface PostgresMXBean {
     long getTotalEventTime(int sessionId, String eventName);
 
     /*
+     * Returns the uptime of the Postgres Server in nanoseconds.
+     */
+    long getUptime();
+
+    /*
      * Loadable plans
      */
     void clearPlans();

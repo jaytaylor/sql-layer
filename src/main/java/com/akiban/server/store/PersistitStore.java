@@ -90,9 +90,9 @@ public class PersistitStore implements Store {
 
     private static final Tap.InOutTap DELETE_ROW_TAP = Tap.createTimer("write: delete_row");
 
-    private static final Tap.InOutTap TX_COMMIT_TAP = Tap.createTimer("write: tx_commit");
+    private static final Tap.PointTap TX_COMMIT_COUNT = Tap.createCount("write: tx_commit", true);
 
-    private static final Tap.PointTap TX_RETRY_TAP = Tap.createCount("write: tx_retry");
+    private static final Tap.PointTap TX_RETRY_TAP = Tap.createCount("write: tx_retry", true);
 
     private static final Tap.InOutTap NEW_COLLECTOR_TAP = Tap.createTimer("read: new_collector");
 
@@ -512,7 +512,6 @@ public class PersistitStore implements Store {
                     }
                     propagateDownGroup(session, hEx);
                     transaction.commit(forceToDisk);
-                    TX_COMMIT_TAP.in();
 
                     break;
                 } catch (RollbackException re) {
@@ -521,7 +520,7 @@ public class PersistitStore implements Store {
                         throw new TransactionFailedException();
                     }
                 } finally {
-                    TX_COMMIT_TAP.out();
+                    TX_COMMIT_COUNT.hit();
                     transaction.end();
                 }
             }

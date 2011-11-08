@@ -45,6 +45,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     private final PostgresServiceRequirements reqs;
     private ServerSocket socket = null;
     private boolean running = false;
+    private long startTime = 0;
     private boolean listening = false;
     private Map<Integer,PostgresServerConnection> connections =
         new HashMap<Integer,PostgresServerConnection>();
@@ -74,6 +75,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         running in its own thread. */
     public void start() {
         running = true;
+        startTime = System.nanoTime();
         thread = new Thread(this);
         thread.start();
     }
@@ -296,6 +298,12 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     @Override
     public long getTotalEventTime(int sessionId, String eventName) {
         return getConnection(sessionId).getSessionTracer().getTotalEventTime(eventName);
+    }
+
+    @Override
+    public long getUptime()
+    {
+        return (System.nanoTime() - startTime);
     }
 
     @Override
