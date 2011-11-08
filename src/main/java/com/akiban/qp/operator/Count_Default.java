@@ -99,7 +99,7 @@ class Count_Default extends Operator
         @Override
         public void open(Bindings bindings)
         {
-        	COUNT_COUNT.hit();
+            COUNT_COUNT.hit();
             input.open(bindings);
             count = 0;
             closed = false;

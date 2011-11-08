@@ -133,7 +133,7 @@ class AncestorLookup_Nested extends Operator
         @Override
         public void open(Bindings bindings)
         {
-        	ANC_LOOKUP_COUNT.hit();
+            ANC_LOOKUP_COUNT.hit();
             Row rowFromBindings = (Row) bindings.get(inputBindingPosition);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("AncestorLookup_Nested: open using {}", rowFromBindings);

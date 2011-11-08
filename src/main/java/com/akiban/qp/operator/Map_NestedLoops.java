@@ -119,7 +119,7 @@ class Map_NestedLoops extends Operator
         @Override
         public void open(Bindings bindings)
         {
-        	MAP_NL_COUNT.hit();
+       	    MAP_NL_COUNT.hit();
             this.bindings = bindings;
             this.outerInput.open(bindings);
             this.closed = false;

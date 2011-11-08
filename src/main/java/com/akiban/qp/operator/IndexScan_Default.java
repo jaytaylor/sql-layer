@@ -87,7 +87,7 @@ class IndexScan_Default extends Operator
         @Override
         public void open(Bindings bindings)
         {
-        	INDEX_SCAN_COUNT.hit();
+            INDEX_SCAN_COUNT.hit();
             cursor.open(bindings);
         }
 

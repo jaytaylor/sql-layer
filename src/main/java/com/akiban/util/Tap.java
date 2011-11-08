@@ -224,9 +224,9 @@ public abstract class Tap {
     }
     
     public static PointTap createCount(String name, boolean enabled) {
-    	PointTap ret =  new PointTap(add(new PerThread(name, Count.class)));
+        PointTap ret =  new PointTap(add(new PerThread(name, Count.class)));
         Tap.setEnabled(name, enabled);
-    	return ret;
+        return ret;
     }
 
     public static InOutTap createTimer(String name) {

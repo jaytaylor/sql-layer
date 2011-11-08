@@ -188,7 +188,7 @@ public class BranchLookup_Default extends Operator
         @Override
         public void open(Bindings bindings)
         {
-        	BRANCH_LOOKUP_COUNT.hit();
+            BRANCH_LOOKUP_COUNT.hit();
             inputCursor.open(bindings);
             advanceInput();
         }

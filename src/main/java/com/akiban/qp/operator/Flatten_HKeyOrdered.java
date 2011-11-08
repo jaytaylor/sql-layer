@@ -155,7 +155,7 @@ class Flatten_HKeyOrdered extends Operator
         @Override
         public void open(Bindings bindings)
         {
-        	FLATTEN_COUNT.hit();
+            FLATTEN_COUNT.hit();
             input.open(bindings);
         }
 

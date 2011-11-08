@@ -123,7 +123,7 @@ class Product_NestedLoops extends Operator
         @Override
         public void open(Bindings bindings)
         {
-        	PRODUCT_NL_COUNT.hit();
+            PRODUCT_NL_COUNT.hit();
             this.bindings = bindings;
             this.outerInput.open(bindings);
             this.closed = false;

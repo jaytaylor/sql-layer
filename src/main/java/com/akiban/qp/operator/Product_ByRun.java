@@ -105,7 +105,7 @@ class Product_ByRun extends Operator
         @Override
         public void open(Bindings bindings)
         {
-        	PRODUCT_BY_RUN_COUNT.hit();
+            PRODUCT_BY_RUN_COUNT.hit();
             input.open(bindings);
         }
 

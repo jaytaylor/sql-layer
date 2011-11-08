@@ -177,7 +177,7 @@ public class BranchLookup_Nested extends Operator
         @Override
         public void open(Bindings bindings)
         {
-        	BRANCH_LOOKUP_COUNT.hit();
+            BRANCH_LOOKUP_COUNT.hit();
             Row rowFromBindings = (Row) bindings.get(inputBindingPosition);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("BranchLookup_Nested: open using {}", rowFromBindings);

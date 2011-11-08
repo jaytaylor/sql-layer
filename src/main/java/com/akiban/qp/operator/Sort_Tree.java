@@ -107,7 +107,7 @@ class Sort_Tree extends Operator
         {
             checkQueryCancelation();
             if (output == null) {
-            	SORT_TREE_COUNT.hit();
+                SORT_TREE_COUNT.hit();
                 output = adapter.sort(input, sortType, ordering, bindings);
             }
             Row row = null;

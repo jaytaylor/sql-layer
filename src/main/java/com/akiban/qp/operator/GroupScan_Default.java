@@ -66,7 +66,7 @@ class GroupScan_Default extends Operator
         @Override
         public void open(Bindings bindings)
         {
-        	GROUP_SCAN_COUNT.hit();
+            GROUP_SCAN_COUNT.hit();
             cursor.open(bindings);
         }
 

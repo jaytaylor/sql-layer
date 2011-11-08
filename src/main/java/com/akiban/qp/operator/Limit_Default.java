@@ -120,7 +120,7 @@ final class Limit_Default extends Operator
 
         @Override
         public void open(Bindings bindings) {
-        	LIMIT_COUNT.hit();
+            LIMIT_COUNT.hit();
             super.open(bindings);
             if (isSkipBinding()) {
                 Integer i = (Integer)bindings.get(skip());

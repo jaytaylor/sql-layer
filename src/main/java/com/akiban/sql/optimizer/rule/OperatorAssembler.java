@@ -103,16 +103,16 @@ public class OperatorAssembler extends BaseRule
         
         protected BasePlannable assembleStatement(BaseStatement plan) {
             if (plan instanceof SelectQuery) {
-            	SELECT_COUNT.hit();
+                SELECT_COUNT.hit();
                 return selectQuery((SelectQuery)plan);
             } else if (plan instanceof InsertStatement) {
-            	INSERT_COUNT.hit();
+                INSERT_COUNT.hit();
                 return insertStatement((InsertStatement)plan);
             } else if (plan instanceof UpdateStatement) {
-            	UPDATE_COUNT.hit();
+                UPDATE_COUNT.hit();
                 return updateStatement((UpdateStatement)plan);
             } else if (plan instanceof DeleteStatement) {
-            	DELETE_COUNT.hit();
+                DELETE_COUNT.hit();
                 return deleteStatement((DeleteStatement)plan);
             } else
                 throw new UnsupportedSQLException("Cannot assemble plan: " + plan, null);
