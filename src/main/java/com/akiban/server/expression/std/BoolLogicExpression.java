@@ -101,8 +101,9 @@ public final class BoolLogicExpression extends AbstractBinaryExpression {
         }
 
         @Override
-        public AkType argumentType(int index) {
-            return AkType.BOOL;
+        public void argumentTypes(List<AkType> argumentTypes) {
+            argumentTypes.set(0, AkType.BOOL);
+            argumentTypes.set(1, AkType.BOOL);
         }
 
         @Override

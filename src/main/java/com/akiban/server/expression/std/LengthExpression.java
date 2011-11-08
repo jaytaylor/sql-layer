@@ -39,7 +39,7 @@ public class LengthExpression  extends AbstractUnaryExpression
         }
 
         @Override
-        protected AkType argumentType() {
+        protected AkType argumentType(AkType givenType) {
             return AkType.VARCHAR;
         }
 

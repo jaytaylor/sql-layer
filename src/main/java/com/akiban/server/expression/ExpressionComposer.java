@@ -24,10 +24,12 @@ public interface ExpressionComposer {
      */
     Expression compose(List<? extends Expression> arguments);
 
-    /** Return the expected type of the <code>index</code>th argument
-     * or <code>null</code> if more than one type is accepted.
+    /** Given arguments of the specified types, adjust them for any
+     * type requirements, including from promotion based on other
+     * argument types. {@link #compose} and {@link #composeType} can then
+     * expect to receive those types and throw an exception if they do not.
      */
-    AkType argumentType(int index);
+    void argumentTypes(List<AkType> argumentTypes);
     
     /** Return the type of a composed expression when passed the given
      * types.

@@ -90,8 +90,10 @@ public class TrigExpression extends AbstractCompositeExpression
         }
 
         @Override
-        public AkType argumentType(int index) {
-            return AkType.DOUBLE;
+        public void argumentTypes(List<AkType> argumentTypes) {
+            for (int i = 0; i < argumentTypes.size(); i++) {
+                argumentTypes.set(i, AkType.DOUBLE);
+            }
         }
 
         @Override

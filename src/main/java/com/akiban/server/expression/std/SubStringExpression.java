@@ -43,16 +43,9 @@ public class SubStringExpression extends AbstractCompositeExpression
         }        
 
         @Override
-        public AkType argumentType(int index) {
-            switch (index) {
-            case 0:
-                return AkType.VARCHAR;
-            case 1:
-            case 2:
-                return AkType.LONG;
-            default:
-                return null;
-            }
+        public void argumentTypes(List<AkType> argumentTypes) {
+            argumentTypes.set(0, AkType.VARCHAR);
+            argumentTypes.set(1, AkType.LONG);
         }
 
         @Override

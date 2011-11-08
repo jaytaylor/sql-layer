@@ -538,7 +538,7 @@ public class OperatorAssembler extends BaseRule
                 break;
             }
             stream.operator = API.aggregate_Partial(stream.operator, nkeys,
-                                                    rulesContext.getAggregatorRegistry(),
+                                                    rulesContext.getFunctionsRegistry(),
                                                     aggregateSource.getAggregateFunctions());
             stream.rowType = stream.operator.rowType();
             stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource,
@@ -566,22 +566,10 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleSort(Sort sort) {
             RowStream stream = assembleStream(sort.getInput());
-            List<ExpressionNode> projects = null;
-            if ((stream.fieldOffsets == null) &&
-                (sort.getInput() instanceof Project))
-                // Cf. comment in assembleProject().
-                projects = ((Project)sort.getInput()).getFields();
             API.Ordering ordering = API.ordering();
             for (OrderByExpression orderBy : sort.getOrderBy()) {
-                Expression expr = null;
-                if (projects != null) {
-                    int idx = projects.indexOf(orderBy.getExpression());
-                    if (idx >= 0)
-                        expr = Expressions.field(stream.rowType, idx);
-                }
-                if (expr == null)
-                    expr = assembleExpression(orderBy.getExpression(), 
-                                              stream.fieldOffsets);
+                Expression expr = assembleExpression(orderBy.getExpression(), 
+                                                     stream.fieldOffsets);
                 ordering.append(expr, orderBy.isAscending());
             }
             assembleSort(stream, ordering, sort.getInput(), sort.getOutput());
@@ -634,11 +622,8 @@ public class OperatorAssembler extends BaseRule
                                                   assembleExpressions(project.getFields(),
                                                                       stream.fieldOffsets));
             stream.rowType = stream.operator.rowType();
-            // TODO: If Project were a ColumnSource, could use it to
-            // calculate intermediate results and change downstream
-            // references to use it instead of expressions. Then could
-            // have a straight map of references into projected row.
-            stream.fieldOffsets = null;
+            stream.fieldOffsets = new ColumnSourceFieldOffsets(project,
+                                                               stream.rowType);
             return stream;
         }
 

@@ -39,8 +39,8 @@ public class IsNullExpression extends AbstractUnaryExpression
         }
 
         @Override
-        protected AkType argumentType() {
-            return null;
+        protected AkType argumentType(AkType givenType) {
+            return givenType;
         }
 
         protected ExpressionType composeType(ExpressionType argument) {

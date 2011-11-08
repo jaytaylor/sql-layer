@@ -41,8 +41,11 @@ public final class InExpression extends AbstractCompositeExpression {
         }
 
         @Override
-        public AkType argumentType(int index) {
-            return null;
+        public void argumentTypes(List<AkType> argumentTypes) {
+            for (int i = 1; i < argumentTypes.size(); i++) {
+                // Everything should have type of LHS.
+                argumentTypes.set(i, argumentTypes.get(0));
+            }
         }
 
         @Override
