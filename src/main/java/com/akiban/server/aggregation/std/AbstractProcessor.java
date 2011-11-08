@@ -29,4 +29,5 @@ interface AbstractProcessor
     String process (String oldState, String input);
     
     void checkType (AkType type);
+    boolean infinityIsSignificant ();
 }

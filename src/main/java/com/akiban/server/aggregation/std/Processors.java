@@ -15,6 +15,7 @@
 
 package com.akiban.server.aggregation.std;
 
+import com.akiban.server.error.OverflowException;
 import com.akiban.server.types.AkType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -37,6 +38,9 @@ class Processors
 
     public final static AbstractProcessor sumProcessor = new AbstractProcessor ()
     {
+        @Override 
+        public boolean infinityIsSignificant () { return true;}
+        
         @Override
         public void checkType (AkType type)
         {
@@ -54,13 +58,22 @@ class Processors
         @Override
         public long process(long oldState, long input)
         {
-            return oldState + input;
+            long sum = oldState + input;
+            if (oldState > 0 && input > 0 && sum < 0)
+                throw new OverflowException();
+            else if (oldState < 0 && input < 0 && sum > 0)
+                throw new OverflowException();
+            else
+                return oldState + input;
         }
 
         @Override
         public double process(double oldState, double input)
         {
-            return oldState + input;
+            double sum = oldState + input;  
+            if (Double.isInfinite(sum))
+                throw new OverflowException();
+            else return sum;
         }
 
         @Override
@@ -92,6 +105,9 @@ class Processors
     private static abstract class MinMaxProcessor implements AbstractProcessor
     {
         abstract boolean condition (double a);
+        
+        @Override
+        public boolean infinityIsSignificant () { return false;};
 
         @Override
         public void checkType(AkType type)

@@ -16,6 +16,7 @@
 package com.akiban.server.aggregation.std;
 
 
+import com.akiban.server.error.OverflowException;
 import java.math.BigInteger;
 import java.math.BigDecimal;
 import com.akiban.server.aggregation.Aggregator;
@@ -119,6 +120,20 @@ public class MinMaxSumAggregatorsTest
         assertEquals( new ValueHolder(AkType.DOUBLE, 2.0), holder);
     }
     
+    @Test
+    public void testMinWithInfinity ()
+    {
+        aggregator = Aggregators.mins("min", AkType.DOUBLE).get();
+        
+        holder.putDouble(2);
+        aggregator.input(holder);
+        
+        holder.putDouble(Double.POSITIVE_INFINITY);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        assertEquals(2.0, holder.getDouble(), 0.001);
+    }
 
     // -----------------------test maxes ---------------------------------------
     @Test
@@ -197,6 +212,21 @@ public class MinMaxSumAggregatorsTest
         assertEquals(2, holder.getDouble(), 0.01);
     }
       
+    @Test
+    public void testMaxWithInfinity ()
+    {
+        aggregator = Aggregators.maxes("maxes", AkType.DOUBLE).get();
+        
+        holder.putDouble(2);
+        aggregator.input(holder);
+        
+        holder.putDouble(Double.NEGATIVE_INFINITY);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        assertEquals(2.0, holder.getDouble(), 0.001);
+        
+    }
     // ------------------------------- test sum -------------------------------
     @Test
     public void testSumWithNull()
@@ -220,7 +250,40 @@ public class MinMaxSumAggregatorsTest
 
         assertEquals(holder.getLong(), sum);
     }
+    
+    @Test (expected = OverflowException.class)
+    public void testSumWithDoubleOverflow ()
+    {
+        aggregator = Aggregators.sum("maxes", AkType.DOUBLE).get();
+        for (int n = 0; n < 3; ++n)
+        {
+              holder.putDouble(Double.MAX_VALUE);
+              aggregator.input(holder);
+        }
+        aggregator.output(holder);
+        assertEquals(Double.POSITIVE_INFINITY, holder.getDouble(), 0.001);
+    }
 
+    @Test (expected = OverflowException.class)
+    public void testSumWithLongOverflow ()
+    {
+        aggregator = Aggregators.sum("sum", AkType.LONG).get();
+        
+    }
+    
+    @Test // do not expect overflow
+    public void testSumWithInfinity () 
+    {
+        aggregator = Aggregators.sum("maxes", AkType.DOUBLE).get();
+        for (int n = 0; n < 3; ++n)
+        {
+            holder.putDouble(Double.POSITIVE_INFINITY);
+            aggregator.input(holder);
+        }
+        aggregator.output(holder);
+        assertEquals(Double.POSITIVE_INFINITY, holder.getDouble(), 0.001);
+    }
+    
     @Test(expected = UnsupportedOperationException.class)
     public void testSum ()
     {
