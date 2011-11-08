@@ -538,7 +538,7 @@ public class OperatorAssembler extends BaseRule
                 break;
             }
             stream.operator = API.aggregate_Partial(stream.operator, nkeys,
-                                                    rulesContext.getAggregatorRegistry(),
+                                                    rulesContext.getFunctionsRegistry(),
                                                     aggregateSource.getAggregateFunctions());
             stream.rowType = stream.operator.rowType();
             stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource,
