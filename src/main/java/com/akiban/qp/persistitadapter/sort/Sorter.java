@@ -30,14 +30,12 @@ import com.akiban.server.PersistitValueValueTarget;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.std.LiteralExpression;
-import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.util.ValueHolder;
 import com.persistit.Exchange;
 import com.persistit.Key;
-import com.persistit.KeyFilter;
 import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
@@ -76,7 +74,7 @@ public class Sorter
         // the ascending flag equal to that of some other sort field, we don't change an all-ASC or all-DESC sort
         // into a less efficient mixed-mode sort.
         this.ordering.append(DUMMY_EXPRESSION, ordering.ascending(0));
-        int nsort = this.ordering.sortFields();
+        int nsort = this.ordering.sortColumns();
         this.evaluations = new ArrayList<ExpressionEvaluation>(nsort);
         this.orderingTypes = new AkType[nsort];
         for (int i = 0; i < nsort; i++) {
@@ -137,7 +135,7 @@ public class Sorter
     private void createKey(Row row)
     {
         key.clear();
-        int sortFields = ordering.sortFields() - 1; // Don't include the artificial count field
+        int sortFields = ordering.sortColumns() - 1; // Don't include the artificial count field
         for (int i = 0; i < sortFields; i++) {
             ExpressionEvaluation evaluation = evaluations.get(i);
             evaluation.of(row);

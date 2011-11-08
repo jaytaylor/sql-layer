@@ -27,10 +27,10 @@ class SortCursorMixedOrderUnbounded extends SortCursorMixedOrder
     @Override
     public void initializeScanStates() throws PersistitException
     {
-        for (int f = 0; f < sortFields; f++) {
+        for (int f = 0; f < sortColumns(); f++) {
             scanStates.add(new MixedOrderScanStateUnbounded(this, scanStates.size()));
         }
-        if (sortFields < keyFields) {
+        if (sortColumns() < keyColumns()) {
             this.scanStates.add(new MixedOrderScanStateRestOfKey(this, scanStates.size()));
         }
     }

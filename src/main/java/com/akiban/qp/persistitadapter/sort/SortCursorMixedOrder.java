@@ -15,16 +15,12 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapterException;
 import com.akiban.qp.row.Row;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.types.NullValueSource;
-import com.akiban.server.types.ValueSource;
 import com.persistit.exception.PersistitException;
 
 import java.util.ArrayList;
@@ -94,10 +90,9 @@ public abstract class SortCursorMixedOrder extends SortCursor
         super(adapter, rowGenerator);
         this.keyRange = keyRange;
         this.ordering = ordering;
-        sortFields = ordering.sortFields();
-        keyFields =
+        keyColumns =
             keyRange == null
-            ? sortFields
+            ? ordering.sortColumns()
             : keyRange.indexRowType().index().indexRowComposition().getLength();
     }
 
@@ -111,6 +106,23 @@ public abstract class SortCursorMixedOrder extends SortCursor
     API.Ordering ordering()
     {
         return ordering;
+    }
+
+    // For use by subclasses
+
+    protected int sortColumns()
+    {
+        return ordering.sortColumns();
+    }
+
+    protected int boundColumns()
+    {
+        return keyRange.boundColumns();
+    }
+
+    protected int keyColumns()
+    {
+        return keyColumns;
     }
 
     // For use by this class
@@ -144,9 +156,8 @@ public abstract class SortCursorMixedOrder extends SortCursor
 
     protected final IndexKeyRange keyRange;
     protected final API.Ordering ordering;
-    protected final int sortFields; // Number of fields controlling output order.
-    protected final int keyFields; // Number of fields in the key. keyFields >= sortFields.
     protected final List<MixedOrderScanState> scanStates = new ArrayList<MixedOrderScanState>();
     protected Bindings bindings;
+    private final int keyColumns; // Number of columns in the key. keyFields >= sortColumns.
     private boolean more;
 }

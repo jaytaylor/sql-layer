@@ -16,6 +16,7 @@
 package com.akiban.qp.expression;
 
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.server.api.dml.ColumnSelector;
 
 public class IndexKeyRange
 {
@@ -66,15 +67,22 @@ public class IndexKeyRange
         return lo == null && hi == null;
     }
 
+    public int boundColumns()
+    {
+        return boundColumns;
+    }
+
     /**
      * Describes a range of keys between lo and hi. The bounds are inclusive or not depending on
-     * loInclusive and hiInclusive. If lo is null, then the lower bound is less than all values, and
-     * loInclusive must be false. If hi is null, then the upper bound is greater than all values, and
-     * hiInclusive must be false.
-     * @param lo Lower bound of the range.
-     * @param loInclusive True if the lower bound is inclusive, false if exclusive.
-     * @param hi Upper bound of the range.
-     * @param hiInclusive True if the upper bound is inclusive, false if exclusive.
+     * loInclusive and hiInclusive. lo and hi must both be non-null. There are constraints on the bounds:
+     * - The ColumnSelectors for lo and hi must select for the same columns.
+     * - The selected columns must be leading columns of the index.
+     *
+     * @param indexRowType The row type of index keys.
+     * @param lo           Lower bound of the range.
+     * @param loInclusive  True if the lower bound is inclusive, false if exclusive.
+     * @param hi           Upper bound of the range.
+     * @param hiInclusive  True if the upper bound is inclusive, false if exclusive.
      */
     public IndexKeyRange(IndexRowType indexRowType,
                          IndexBound lo,
@@ -82,12 +90,7 @@ public class IndexKeyRange
                          IndexBound hi,
                          boolean hiInclusive)
     {
-        if (lo == null && loInclusive) {
-            throw new IllegalArgumentException();
-        }
-        if (hi == null && hiInclusive) {
-            throw new IllegalArgumentException();
-        }
+        this.boundColumns = checkBounds(indexRowType, lo, hi);
         this.indexRowType = indexRowType;
         this.lo = lo;
         this.loInclusive = loInclusive;
@@ -95,9 +98,55 @@ public class IndexKeyRange
         this.hiInclusive = hiInclusive;
     }
 
+    /**
+     * Describes a full index scan.
+     * @param indexRowType The row type of index keys.
+     */
+    public IndexKeyRange(IndexRowType indexRowType)
+    {
+        this.boundColumns = 0;
+        this.indexRowType = indexRowType;
+        this.lo = null;
+        this.loInclusive = false;
+        this.hi = null;
+        this.hiInclusive = false;
+    }
+
+    // returns number of bound columns
+    private static int checkBounds(IndexRowType indexRowType, IndexBound lo, IndexBound hi)
+    {
+        if (lo == null || hi == null) {
+            throw new IllegalArgumentException("IndexBound arguments to IndexKeyRange constructor must not be null");
+        }
+        ColumnSelector loSelector = lo.columnSelector();
+        ColumnSelector hiSelector = hi.columnSelector();
+        boolean selected = true;
+        int boundColumns = 0;
+        for (int i = 0; i < indexRowType.nFields(); i++) {
+            if (loSelector.includesColumn(i) != hiSelector.includesColumn(i)) {
+                throw new IllegalArgumentException(
+                    String.format("IndexBound arguments specify different fields of index %s", indexRowType));
+            }
+            if (selected) {
+                boundColumns++;
+                if (!loSelector.includesColumn(i)) {
+                    selected = false;
+                }
+            } else {
+                if (loSelector.includesColumn(i)) {
+                    throw new IllegalArgumentException(
+                        String.format("IndexBound arguments for index %s specify non-leading fields", indexRowType));
+                }
+            }
+        }
+        assert boundColumns > 0;
+        return boundColumns;
+    }
+
     // Object state
 
     private final IndexRowType indexRowType;
+    private final int boundColumns;
     private final IndexBound lo;
     private final boolean loInclusive;
     private final IndexBound hi;

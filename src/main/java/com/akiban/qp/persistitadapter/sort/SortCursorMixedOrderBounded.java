@@ -19,8 +19,6 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.persistit.exception.PersistitException;
 
@@ -32,30 +30,23 @@ class SortCursorMixedOrderBounded extends SortCursorMixedOrder
     public void initializeScanStates() throws PersistitException
     {
         BoundExpressions lo = keyRange.lo().boundExpressions(bindings, adapter);
-        ColumnSelector loSelector = keyRange.lo().columnSelector();
         BoundExpressions hi = keyRange.hi().boundExpressions(bindings, adapter);
-        ColumnSelector hiSelector = keyRange.hi().columnSelector();
         // Set lo and hi bounds for each key segment
-        int lastBounded = -1;
-        for (int f = 0; f < sortFields; f++) {
-            boolean loBounded = loSelector.includesColumn(f);
-            boolean hiBounded = hiSelector.includesColumn(f);
-            ValueSource loSource = loBounded ? lo.eval(f) : NullValueSource.only();
-            ValueSource hiSource = hiBounded ? hi.eval(f) : NullValueSource.only();
-            if (loBounded || hiBounded) {
+        for (int f = 0; f < sortColumns(); f++) {
+            if (f < boundColumns()) {
+                ValueSource loSource = lo.eval(f);
+                ValueSource hiSource = hi.eval(f);
                 MixedOrderScanStateBounded scanState = new MixedOrderScanStateBounded(adapter, this, f);
                 scanStates.add(scanState);
                 scanState.setRange(loSource, hiSource);
-                lastBounded = f;
             } else {
                 MixedOrderScanStateUnbounded scanState = new MixedOrderScanStateUnbounded(this, f);
                 scanStates.add(scanState);
             }
         }
         // There should be at least one bounded field, or this would be a SortCursorMixedOrderUnbounded.
-        assert lastBounded != -1;
-        if (sortFields < keyFields) {
-            MixedOrderScanStateRestOfKey scanState = new MixedOrderScanStateRestOfKey(this, sortFields);
+        if (sortColumns() < keyColumns()) {
+            MixedOrderScanStateRestOfKey scanState = new MixedOrderScanStateRestOfKey(this, sortColumns());
             scanStates.add(scanState);
         }
         /*
@@ -76,14 +67,14 @@ class SortCursorMixedOrderBounded extends SortCursorMixedOrder
          * b since there are two inequalities (y != z, p != q). The optimizer shouldn't ask for such things.
          *
          * So for scanStates:
-         * - lo(f) = hi(f), f < lastBounded
-         * - lo(f) - hi(f) defines a range, with limits described by keyRange.lo/hiInclusive, f = lastBounded
+         * - lo(f) = hi(f), f < boundColumns() - 1
+         * - lo(f) - hi(f) defines a range, with limits described by keyRange.lo/hiInclusive, f = boundColumns() - 1
+         * The last argument to setRangeLimits determines which condition is checked.
          */
-        int f = 0;
-        while (f < lastBounded) {
-            scanState(f++).setRangeLimits(true, true);
+        for (int f = 0; f < boundColumns() - 1; f++) {
+            scanState(f++).setRangeLimits(true, true, false);
         }
-        scanState(lastBounded).setRangeLimits(keyRange().loInclusive(), keyRange().hiInclusive());
+        scanState(boundColumns() - 1).setRangeLimits(keyRange().loInclusive(), keyRange().hiInclusive(), true);
     }
 
     // SortCursorMixedOrderBounded interface

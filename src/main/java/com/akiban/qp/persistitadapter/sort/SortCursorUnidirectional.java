@@ -26,6 +26,9 @@ import com.akiban.qp.persistitadapter.PersistitAdapterException;
 import com.akiban.qp.row.Row;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.Comparison;
+import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
@@ -133,20 +136,22 @@ public class SortCursorUnidirectional extends SortCursor
         super(adapter, rowGenerator);
         this.bounded = true;
         this.adapter = adapter;
+        this.lo = keyRange.lo();
+        this.hi = keyRange.hi();
         if (ordering.allAscending()) {
             this.direction = FORWARD;
-            this.start = keyRange.lo();
+            this.start = this.lo;
             this.startInclusive = keyRange.loInclusive();
-            this.end = keyRange.hi();
+            this.end = this.hi;
             this.endInclusive = keyRange.hiInclusive();
             this.keyComparison = startInclusive ? Key.GTEQ : Key.GT;
             this.subsequentKeyComparison = Key.GT;
             this.startBoundary = Key.BEFORE;
         } else if (ordering.allDescending()) {
             this.direction = BACKWARD;
-            this.start = keyRange.hi();
+            this.start = this.hi;
             this.startInclusive = keyRange.hiInclusive();
-            this.end = keyRange.lo();
+            this.end = this.lo;
             this.endInclusive = keyRange.loInclusive();
             this.keyComparison = startInclusive ? Key.LTEQ : Key.LT;
             this.subsequentKeyComparison = Key.LT;
@@ -154,25 +159,12 @@ public class SortCursorUnidirectional extends SortCursor
         } else {
             assert false : ordering;
         }
-        this.startKey = start == null ? null : adapter.newKey();
-        this.endKey = end == null ? null : adapter.newKey();
-        // Compute number of sort fields
-        ColumnSelector loSelector = keyRange.lo() == null ? null : keyRange.lo().columnSelector();
-        ColumnSelector hiSelector = keyRange.hi() == null ? null : keyRange.hi().columnSelector();
-        boolean restriction = true;
-        sortFields = 0;
-        while (restriction && sortFields < ordering.sortFields()) {
-            if (loSelector != null && loSelector.includesColumn(sortFields) ||
-                hiSelector != null && hiSelector.includesColumn(sortFields)) {
-                sortFields++;
-            } else {
-                restriction = false;
-            }
-        }
-        //
-        this.types = new AkType[sortFields];
+        this.startKey = adapter.newKey();
+        this.endKey = adapter.newKey();
+        this.boundColumns = keyRange.boundColumns();
+        this.types = new AkType[boundColumns];
         List<IndexColumn> indexColumns = keyRange.indexRowType().index().getColumns();
-        for (int f = 0; f < sortFields; f++) {
+        for (int f = 0; f < boundColumns; f++) {
             this.types[f] = indexColumns.get(f).getColumn().getType().akType();
         }
     }
@@ -188,7 +180,7 @@ public class SortCursorUnidirectional extends SortCursor
             c) any remaining columns unbounded.
 
             By the time we get here, we've stopped paying attention to part c. Parts a and b occupy the first
-            sortFields columns of the index. Now about the nulls: For each field of parts a and b, we have a
+            sortColumns columns of the index. Now about the nulls: For each field of parts a and b, we have a
             lo value and a hi value. There are four cases:
 
             - both lo and hi are non-null: Just write the field values into startKey and endKey.
@@ -202,30 +194,46 @@ public class SortCursorUnidirectional extends SortCursor
             - lo and hi are both null: This is NOT an unbounded case. This means that we are restricting both
               lo and hi to be null, so write null, not Key.AFTER to endKey.
         */
-        boolean[] startNull = new boolean[sortFields];
-        if (startKey != null) {
-            startKey.clear();
-            keyTarget.attach(startKey);
-            BoundExpressions boundExpressions = start.boundExpressions(bindings, adapter);
-            for (int f = 0; f < sortFields; f++) {
-                ValueSource keySource = boundExpressions.eval(f);
-                startNull[f] = keySource.isNull();
-                keyTarget.expectingType(types[f]);
-                Converters.convert(keySource, keyTarget);
+        boolean[] startNull = new boolean[boundColumns];
+        startKey.clear();
+        keyTarget.attach(startKey);
+        // Check constraints on start and end
+        BoundExpressions loExpressions = lo.boundExpressions(bindings, adapter);
+        BoundExpressions hiExpressions = hi.boundExpressions(bindings, adapter);
+        for (int f = 0; f < boundColumns - 1; f++) {
+            Expression loEQHi =
+                Expressions.compare(Expressions.valueSource(loExpressions.eval(f)),
+                                    Comparison.EQ,
+                                    Expressions.valueSource(hiExpressions.eval(f)));
+            if (!loEQHi.evaluation().eval().getBool()) {
+                throw new IllegalArgumentException();
             }
         }
-        if (endKey != null) {
-            endKey.clear();
-            keyTarget.attach(endKey);
-            BoundExpressions boundExpressions = end.boundExpressions(bindings, adapter);
-            for (int f = 0; f < sortFields; f++) {
-                ValueSource keySource = boundExpressions.eval(f);
-                if (keySource.isNull() && !startNull[f]) {
-                    endKey.append(Key.AFTER);
-                } else {
-                    keyTarget.expectingType(types[f]);
-                    Converters.convert(keySource, keyTarget);
-                }
+        Expression loLEHi =
+            Expressions.compare(Expressions.valueSource(loExpressions.eval(boundColumns - 1)),
+                                Comparison.LE,
+                                Expressions.valueSource(hiExpressions.eval(boundColumns - 1)));
+        if (!loLEHi.evaluation().eval().getBool()) {
+            throw new IllegalArgumentException();
+        }
+        // Construct start and end keys
+        BoundExpressions startExpressions = start.boundExpressions(bindings, adapter);
+        for (int f = 0; f < boundColumns; f++) {
+            ValueSource keySource = startExpressions.eval(f);
+            startNull[f] = keySource.isNull();
+            keyTarget.expectingType(types[f]);
+            Converters.convert(keySource, keyTarget);
+        }
+        BoundExpressions endExpressions = end.boundExpressions(bindings, adapter);
+        endKey.clear();
+        keyTarget.attach(endKey);
+        for (int f = 0; f < boundColumns; f++) {
+            ValueSource keySource = endExpressions.eval(f);
+            if (keySource.isNull() && !startNull[f]) {
+                endKey.append(Key.AFTER);
+            } else {
+                keyTarget.expectingType(types[f]);
+                Converters.convert(keySource, keyTarget);
             }
         }
     }
@@ -265,8 +273,10 @@ public class SortCursorUnidirectional extends SortCursor
     private Key.Direction subsequentKeyComparison;
     private Key.EdgeValue startBoundary; // Start of a scan that is unbounded at the start
     // For bounded scans
-    private int sortFields; // Number of index fields with restrictions
+    private int boundColumns; // Number of index fields with restrictions
     private AkType[] types;
+    private IndexBound lo;
+    private IndexBound hi;
     private IndexBound start;
     private IndexBound end;
     private boolean startInclusive;

@@ -213,7 +213,7 @@ public class API
     @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType)
     {
-        return indexScan_Default(indexType, false, new IndexKeyRange(indexType, null, false, null, false));
+        return indexScan_Default(indexType, false, new IndexKeyRange(indexType));
     }
 
     /**
@@ -228,7 +228,7 @@ public class API
     @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType, boolean reverse)
     {
-        return indexScan_Default(indexType, reverse, new IndexKeyRange(indexType, null, false, null, false));
+        return indexScan_Default(indexType, reverse, new IndexKeyRange(indexType));
     }
 
     /**
@@ -488,7 +488,7 @@ public class API
             return buffer.toString();
         }
 
-        public int sortFields()
+        public int sortColumns()
         {
             return expressions.size();
         }
