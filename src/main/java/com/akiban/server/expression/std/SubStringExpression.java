@@ -45,11 +45,15 @@ public class SubStringExpression extends AbstractCompositeExpression
         @Override
         public void argumentTypes(List<AkType> argumentTypes) {
             argumentTypes.set(0, AkType.VARCHAR);
-            argumentTypes.set(1, AkType.LONG);
+            for (int i = 1; i < argumentTypes.size(); i++)
+                argumentTypes.set(i, AkType.LONG);
         }
 
         @Override
         public ExpressionType composeType(List<? extends ExpressionType> arguments) {
+            // In the three-arg case with constants, we'd know it's shorter.
+            // But such knowledge is in the optimizer, not here, so
+            // it'll have to be its responsibility.
             return arguments.get(0);
         }
     };

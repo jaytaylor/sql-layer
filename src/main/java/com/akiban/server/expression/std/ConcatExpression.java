@@ -54,7 +54,7 @@ public final class ConcatExpression extends AbstractCompositeExpression {
                     length += type.getPrecision();
                     break;
                 case NULL:
-                    break;
+                    return ExpressionTypes.NULL;
                 default:
                     throw new AkibanInternalException("VARCHAR required, given " + type);
                 }
