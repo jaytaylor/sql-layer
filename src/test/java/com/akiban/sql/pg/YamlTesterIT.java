@@ -24,10 +24,7 @@ import java.io.Writer;
 import static org.junit.Assert.fail;
 import org.junit.Test;
 
-/**
- * Run basic tests of the {@code YamlTester} for YAML files that specify
- * passing tests.
- */
+/** Test the {@code YamlTester} class. */
 public class YamlTesterIT extends PostgresServerYamlITBase {
 
     /* Tests */
@@ -137,6 +134,17 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     }
 
     @Test
+    public void testIncludeNestedFileNotFound() throws Exception {
+	File include = File.createTempFile("include", null);
+	include.deleteOnExit();
+	writeFile(include,
+		  "---\n" +
+		  "- Include: file-that-is-not-found");
+	testYamlFail("---\n" +
+		     "- Include: " + include);
+    }
+
+    @Test
     public void testIncludeNestedRelative() throws Exception {
 	File include1 = File.createTempFile("include1", null);
 	include1.deleteOnExit();
@@ -155,6 +163,24 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 		 "---\n" +
 		 "- Statement: SELECT * FROM c\n" +
 		 "- output: [[1], [2]]\n");
+    }
+
+    @Test
+    public void testIncludeHasError() throws Exception {
+	File include = File.createTempFile("include", null);
+	include.deleteOnExit();
+	writeFile(include,
+		  "---\n" +
+		  "- Properties: all\n" +
+		  "- prop_b: prop_b_value\n" +
+		  "---\n" +
+		  "- Statement: a b c\n" +
+		  "- unexpected_attribute: nope");
+	testYamlFail("---\n" +
+		     "- Properties: all\n" +
+		     "- prop_a: prop_a_value\n" +
+		     "---\n" +
+		     "- Include: " + include);
     }
 
     /* Test Properties */

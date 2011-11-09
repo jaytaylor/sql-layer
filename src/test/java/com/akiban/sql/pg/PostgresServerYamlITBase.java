@@ -30,13 +30,14 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 /**
- * A base class for integration tests that use data from a YAML file to specify
+ * A base class for integration tests that use data from YAML files to specify
  * the input and output expected from calls to the Postgres server.  Subclasses
  * should call {@link #testYaml} with the file to use for the test.
  */
 @Ignore
 public class PostgresServerYamlITBase {
 
+    /** Whether to enable debugging output. */
     protected static final boolean DEBUG = Boolean.getBoolean("test.DEBUG");
 
     private static final PostgresServerIT manageServer = new PostgresServerIT();
@@ -64,7 +65,12 @@ public class PostgresServerYamlITBase {
 	manageServer.accessDropAllTables();
     }
 
-    /** Run a test with YAML input from the specified file. */
+    /**
+     * Run a test with YAML input from the specified file.
+     *
+     * @param file the file
+     * @throws IOException if there is an error accessing the file
+     */
     protected void testYaml(File file) throws IOException {
 	if (DEBUG) {
 	    System.err.println("\nFile: " + file);
@@ -96,7 +102,10 @@ public class PostgresServerYamlITBase {
 	}
     }
 
-    /** Subclass of PostgresServerITBase to access non-public methods. */
+    /**
+     * Subclass of PostgresServerITBase to permit accessing its non-public
+     * methods.
+     */
     @Ignore
     private static class PostgresServerIT extends PostgresServerITBase {
 	void accessDropAllTables() throws InvalidOperationException {

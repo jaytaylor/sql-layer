@@ -57,12 +57,15 @@ import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.Tag;
 
 /**
- * A utility for testing SQL access based on the contents of a YAML file.
+ * A utility for testing SQL access over a Postgres server connection based on
+ * the contents of a YAML file.
  */
-/* General syntax:
+/* Here's an overview of the syntax of the YAML file.
 
-   - One or more YAML documents.
-   - Each document is a sequence whose first element is a map.
+  General:
+
+   - One or more YAML documents
+   - Each document is a sequence whose first element is a map
    - Key of first element's map is a command: a string with an uppercase first
      character
 
@@ -71,45 +74,42 @@ import org.yaml.snakeyaml.nodes.Tag;
    Include
    - Syntax:
      - Include: <file>
-   - If the file is relative, it is parsed relative to the containing file.
+   - If the file is relative, it is parsed relative to the referring file
 
    Properties
    - Syntax:
-     - Properties: <framework>
+     - Properties: <framework engine>
      - <property>: <value>
-   - The values that apply to this framework are: "all" (all frameworks) and
-     "it" (this integration test framework).
-   - The last property definition overrides previous ones.
+   - The frame engines that apply to this engine are: "all" (all frameworks) and
+     "it" (this integration test framework engine)
+   - A new property definition overrides any previous ones
 
    Statement
    - Syntax
      - Statement: <statement text>
-     - params:
-       - [<parameter value>, ...]
+     - params: [[<parameter value>, ...], ...]
      - param_types: [<column type>, ...]
-     - output:
-       - [<output value>, ...]
+     - output: [[<output value>, ...], ...]
      - row_count: <number of rows>
      - output_types: [<column type>, ...]
      - explain: <explain plan>
      - error: [<error code>, <error message>]
    - Attributes are optional and can appear at most once
-   - Only one statement in statement text
+   - Only one statement in statement text (not checked)
    - At least one row element in params, param_types, output, output_types
    - At least one row in params and output
    - Types for param_types and output_types listed in code below
-   - The value of row_count is non-negative
-   - The error message is optional
-   - param_types requires params
-   - Can't have error with output or row_count
    - param_types requires params
    - All rows same length for output and params
    - Same values for output row length, output_types length, and row_count
    - Same values for params row length and param_types length
+   - The value of row_count is non-negative
+   - The error message is optional
+   - Can't have error with output or row_count
    - YAML null for null value
    - !dc dc for don't care value in output
 */
-public class YamlTester {
+class YamlTester {
 
     private static final boolean DEBUG = Boolean.getBoolean("test.DEBUG");
     private static final Map<String, Integer> typeNameToNumber =
@@ -158,6 +158,7 @@ public class YamlTester {
 	this.connection = connection;
     }
 
+    /** Test the input specified in the constructor. */
     void test() {
 	test(in);
     }
@@ -193,9 +194,11 @@ public class YamlTester {
 	    if (commandNumber == 0) {
 		fail("Test file must not be empty");
 	    }
+	} catch (ContextAssertionError e) {
+	    throw e;
 	} catch (Throwable e) {
 	    /* Add context */
-	    throw initCause(new AssertionError(context() + e), e);
+	    throw new ContextAssertionError(e.toString(), e);
 	}
     }
 
@@ -203,7 +206,7 @@ public class YamlTester {
 	String includeValue = string(value, "Include value");
 	File include = new File(includeValue);
 	if (sequence.size() > 1) {
-	    throw new AssertionError(
+	    throw new ContextAssertionError(
 		"The Include command does not support attributes" +
 		"\nFound: " + sequence.get(1));
 	}
@@ -221,11 +224,8 @@ public class YamlTester {
 	try {
 	    in = new FileReader(include);
 	} catch (IOException e) {
-	    throw initCause(
-		new AssertionError(
-		    "Problem accessing include file " + include + ": " +
-		    e),
-		e);
+	    throw new ContextAssertionError(
+		"Problem accessing include file " + include + ": " + e, e);
 	}
 	int originalCommandNumber = commandNumber;
 	commandNumber = 0;
@@ -511,25 +511,22 @@ public class YamlTester {
 		    "\nException: " + sqlException);
 	    }
 	    if (!errorSpecified) {
-		throw initCause(new AssertionError(
-				    "Unexpected statement execution failure: " +
-				    sqlException),
-				sqlException);
+		throw new ContextAssertionError(
+		    "Unexpected statement execution failure: " + sqlException,
+		    sqlException);
 	    }
 	    if (!errorCode.equals(sqlException.getSQLState())) {
-		throw initCause(
-		    new AssertionError(
-			"Unexpected error code:" +
-			"\nExpected: " + errorCode +
-			"\n     got: " + sqlException.getSQLState()),
+		throw new ContextAssertionError(
+		    "Unexpected error code:" +
+		    "\nExpected: " + errorCode +
+		    "\n     got: " + sqlException.getSQLState(),
 		    sqlException);
 	    }
 	    if (errorMessage != null) {
 		if (!errorMessage.equals(sqlException.getMessage().trim())) {
-		    throw initCause(
-			new AssertionError(
-			    "Unexpected exception message:" +
-			    "Expected: '" + errorMessage + "'"),
+		    throw new ContextAssertionError(
+			"Unexpected exception message:" +
+			"Expected: '" + errorMessage + "'",
 			sqlException);
 		}
 	    }
@@ -573,7 +570,7 @@ public class YamlTester {
 		got++;
 	    }
 	    if (got > expected) {
-		throw new AssertionError(
+		throw new ContextAssertionError(
 		    "Too many output rows:" +
 		    "\nExpected: " + expected +
 		    "\n     got: " + got);
@@ -581,7 +578,7 @@ public class YamlTester {
 		       (params == null || paramsRow == params.size()) &&
 		       (got < expected))
 	    {
-		throw new AssertionError(
+		throw new ContextAssertionError(
 		    "Too few output rows:" +
 		    "\nExpected: " + expected +
 		    "\n     got: " + got);
@@ -619,7 +616,7 @@ public class YamlTester {
 			System.err.println(arrayString(resultsRow));
 		    }
 		    if (!rowsEqual(row, resultsRow)) {
-			throw new AssertionError(
+			throw new ContextAssertionError(
 			    "Unexpected output in row " + (outputRow + 1) +
 			    ":" +
 			    "\nExpected: " + arrayString(row) +
@@ -759,11 +756,6 @@ public class YamlTester {
 	}
     }
 
-    static <T extends Throwable> T initCause(T exception, Throwable cause) {
-	exception.initCause(cause);
-	return exception;
-    }
-
     static Object scalar(Object object, String desc) {
 	assertThat("The " + desc + " must be a scalar",
 		   object,
@@ -892,12 +884,13 @@ public class YamlTester {
 	}
     }
 
-    /** A snakeyaml constructor that converts dc tags to DontCare.INSTANCE. */
-    static class DontCareConstructor extends SafeConstructor {
-	public DontCareConstructor() {
+    /** A SnakeYAML constructor that converts dc tags to DontCare.INSTANCE. */
+    private static class DontCareConstructor extends SafeConstructor {
+	DontCareConstructor() {
 	    this.yamlConstructors.put(new Tag("!dc"), new ConstructDontCare());
 	}
 	private static class ConstructDontCare extends AbstractConstruct {
+	    @Override
 	    public Object construct(Node node) {
 		return DontCare.INSTANCE;
 	    }
@@ -915,6 +908,17 @@ public class YamlTester {
 
     private static Integer getTypeNumber(String typeName) {
 	return typeNameToNumber.get(typeName);
+    }
+
+    /** An assertion error that includes context information. */
+    private class ContextAssertionError extends AssertionError {
+	ContextAssertionError(String message) {
+	    super(context() + message);
+	}
+	ContextAssertionError(String message, Throwable cause) {
+	    super(context() + message);
+	    initCause(cause);
+	}
     }
 
     private String context() {

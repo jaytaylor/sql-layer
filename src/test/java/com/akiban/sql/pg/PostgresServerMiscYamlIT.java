@@ -30,8 +30,9 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /**
- * Run basic tests of {@code YamlTester} for YAML files that specify failing
- * tests.
+ * Run tests specified as YAML files in the yaml-misc resource directory that
+ * end with the .yaml extension.  By default, runs tests for files that start
+ * with 'test-'.
  */
 @RunWith(NamedParameterizedRunner.class)
 public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase {
