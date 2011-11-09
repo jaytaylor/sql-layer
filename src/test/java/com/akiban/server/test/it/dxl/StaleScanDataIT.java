@@ -62,13 +62,9 @@ public final class StaleScanDataIT extends ITBase
         //   BasicDMLFunctions.checkForModifiedCursors to retrieve a field from the old/new rows.
         // - There is a non-closed ScanData whose index contains columns from field positions that don't exist
         //   in the old/new rows, (set up using the t1 scan).
-        try {
-            dml().updateRow(session(),
-                            new LegacyRowWrapper(createNewRow(t2, 2, 2).toRowData(), store()),
-                            new LegacyRowWrapper(createNewRow(t2, 2, 999).toRowData(), store()),
-                            null);
-        } catch (ArrayIndexOutOfBoundsException e) {
-            fail();
-        }
+        dml().updateRow(session(),
+                        new LegacyRowWrapper(createNewRow(t2, 2, 2).toRowData(), store()),
+                        new LegacyRowWrapper(createNewRow(t2, 2, 999).toRowData(), store()),
+                        null);
     }
 }
