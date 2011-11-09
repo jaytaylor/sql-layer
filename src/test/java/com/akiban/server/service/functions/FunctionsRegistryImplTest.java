@@ -44,8 +44,8 @@ public final class FunctionsRegistryImplTest {
     public void findAggregatorFactory() {
         FunctionsRegistryImpl registry = registry(Good.class);
         assertEquals(expectedAggregatorFactories(), registry.getAllAggregators());
-        assertEquals("foo", AGGREGATOR_FACTORY, registry.get("foo", AkType.LONG));
-        assertEquals("FOO", AGGREGATOR_FACTORY, registry.get("FOO", AkType.LONG));
+        assertEquals("afoo", AGGREGATOR_FACTORY, registry.get("afoo", AkType.LONG));
+        assertEquals("AFOO", AGGREGATOR_FACTORY, registry.get("AFOO", AkType.LONG));
     }
 
     @Test
@@ -60,8 +60,8 @@ public final class FunctionsRegistryImplTest {
     public void findEnvironmentFactory() {
         FunctionsRegistryImpl registry = registry(Good.class);
         assertEquals(expectedEnvironmentFactories(), registry.getAllEnvironments());
-        assertEquals("foo", ENVIRONMENT_FACTORY, registry.environment("foo"));
-        assertEquals("FOO", ENVIRONMENT_FACTORY, registry.environment("FOO"));
+        assertEquals("efoo", ENVIRONMENT_FACTORY, registry.environment("efoo"));
+        assertEquals("EFOO", ENVIRONMENT_FACTORY, registry.environment("EFOO"));
     }
 
     @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
@@ -164,7 +164,7 @@ public final class FunctionsRegistryImplTest {
         Map<String,Map<AkType,AggregatorFactory>> expected = new HashMap<String, Map<AkType, AggregatorFactory>>();
         Map<AkType,AggregatorFactory> expectedInner = new EnumMap<AkType, AggregatorFactory>(AkType.class);
         expectedInner.put(AkType.LONG, AGGREGATOR_FACTORY);
-        expected.put("foo", expectedInner);
+        expected.put("afoo", expectedInner);
         return expected;
     }
 
@@ -173,7 +173,7 @@ public final class FunctionsRegistryImplTest {
     }
 
     static Map<String,EnvironmentExpressionFactory> expectedEnvironmentFactories() {
-        return Collections.singletonMap("foo", ENVIRONMENT_FACTORY);
+        return Collections.singletonMap("efoo", ENVIRONMENT_FACTORY);
     }
 
     // class state
@@ -224,13 +224,16 @@ public final class FunctionsRegistryImplTest {
     // good example
 
     public static class Good {
-        @Aggregate("FOO") // note, should be converted to lowercase
+        @Aggregate("AFOO") // note, should be converted to lowercase
         public static AggregatorFactory get(String name, AkType type) {
             return aggregatorFactoryMethod(name, type);
         }
 
         @Scalar("FOO") @SuppressWarnings("unused") // note, should be converted to lowercase
         public static final ExpressionComposer COMPOSER = GOOD_EXPRESSION_COMPOSER;
+
+        @EnvironmentValue("EFOO") @SuppressWarnings("unused") // note, should be converted to lowercase
+        public static final EnvironmentExpressionFactory ENVIRONMENT = ENVIRONMENT_FACTORY;
     }
 
     // bad scalars
