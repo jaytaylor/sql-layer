@@ -1,1 +1,0 @@
-Need HKEY_ORDERED product of flatten(user.customers, user.addresses) and flatten(flatten(user.customers, user.orders), user.items)

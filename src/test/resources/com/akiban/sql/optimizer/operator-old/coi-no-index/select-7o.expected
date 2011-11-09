@@ -1,6 +1,0 @@
-project([Field(4)])
-  Filter_Default([flatten(user.customers, user.orders)])
-    Flatten_HKeyOrdered(user.customers INNER user.orders)
-      Select_HKeyOrdered(user.orders, Field(2) > Literal(1029665))
-        GroupScan_Default(full scan on _akiban_customers)
-[order_date:date[DATE]]
