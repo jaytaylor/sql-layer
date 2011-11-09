@@ -526,8 +526,8 @@ public class IndexGoal implements Comparator<IndexScan>
 
     static class RequiredColumnsFiller implements PlanVisitor, ExpressionVisitor {
         private RequiredColumns requiredColumns;
-        private Map<PlanNode,Boolean> excludedPlanNodes;
-        private Map<ExpressionNode,Boolean> excludedExpressions;
+        private Map<PlanNode,Void> excludedPlanNodes, includedPlanNodes;
+        private Map<ExpressionNode,Void> excludedExpressions;
         private Deque<Boolean> excludeNodeStack = new ArrayDeque<Boolean>();
         private boolean excludeNode = false;
         private int excludeDepth = 0;
@@ -540,12 +540,18 @@ public class IndexGoal implements Comparator<IndexScan>
                                      Collection<PlanNode> excludedPlanNodes,
                                      Collection<ConditionExpression> excludedExpressions) {
             this.requiredColumns = requiredColumns;
-            this.excludedPlanNodes = new IdentityHashMap<PlanNode,Boolean>();
+            this.excludedPlanNodes = new IdentityHashMap<PlanNode,Void>();
             for (PlanNode planNode : excludedPlanNodes)
-                this.excludedPlanNodes.put(planNode, Boolean.TRUE);
-            this.excludedExpressions = new IdentityHashMap<ExpressionNode,Boolean>();
+                this.excludedPlanNodes.put(planNode, null);
+            this.excludedExpressions = new IdentityHashMap<ExpressionNode,Void>();
             for (ConditionExpression condition : excludedExpressions)
-                this.excludedExpressions.put(condition, Boolean.TRUE);
+                this.excludedExpressions.put(condition, null);
+        }
+
+        public void setIncludedPlanNodes(Collection<PlanNode> includedPlanNodes) {
+            this.includedPlanNodes = new IdentityHashMap<PlanNode,Void>();
+            for (PlanNode planNode : includedPlanNodes)
+                this.includedPlanNodes.put(planNode, null);
         }
 
         @Override
@@ -590,14 +596,18 @@ public class IndexGoal implements Comparator<IndexScan>
 
         // Should this plan node be excluded from the requirement?
         protected boolean exclude(PlanNode node) {
-            return ((excludedPlanNodes != null) &&
-                    (excludedPlanNodes.get(node) != null));
+            if (includedPlanNodes != null)
+                return !includedPlanNodes.containsKey(node);
+            else if (excludedPlanNodes != null)
+                return excludedPlanNodes.containsKey(node);
+            else
+                return false;
         }
         
         // Should this expression be excluded from requirement?
         protected boolean exclude(ExpressionNode expr) {
             return (((excludedExpressions != null) &&
-                     (excludedExpressions.get(expr) != null)) ||
+                     excludedExpressions.containsKey(expr)) ||
                     // Group join conditions are handled specially.
                     ((expr instanceof ConditionExpression) &&
                      (((ConditionExpression)expr).getImplementation() ==
@@ -625,8 +635,11 @@ public class IndexGoal implements Comparator<IndexScan>
         }
         // Add sort if not handled by the index.
         if ((ordering != null) &&
-            (index.getOrderEffectiveness() != IndexScan.OrderEffectiveness.SORTED))
+            (index.getOrderEffectiveness() != IndexScan.OrderEffectiveness.SORTED)) {
+            // Only this node, not its inputs.
+            filler.setIncludedPlanNodes(Collections.<PlanNode>singletonList(ordering));
             ordering.accept(filler);
+        }
             
         // Record what tables are required: within the index if any
         // columns still needed, others if joined at all. Do this

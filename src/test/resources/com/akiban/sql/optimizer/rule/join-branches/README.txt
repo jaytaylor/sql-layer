@@ -28,6 +28,8 @@ right-right: RIGHT join down.
 side-branch: Index on one branch and all results from another branch,
              including an ancestor of the index.
 
+side-branch-sorted: Side branch with sorting.
+
 single-table: Single ancestor of index.
 
 two-branches: Some fields on index ancestors and some from another branch.

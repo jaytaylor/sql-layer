@@ -50,6 +50,11 @@ public final class InExpression extends AbstractCompositeExpression {
         return new InnerEvaluation(childrenEvaluations());
     }
 
+    @Override
+    protected boolean nullIsContaminating() {
+        return false;
+    }
+
     public InExpression(Expression lhs, List<? extends Expression> rhs) {
         super(AkType.BOOL, combine(lhs, rhs));
         if (rhs.isEmpty())
