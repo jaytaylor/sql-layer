@@ -1,0 +1,30 @@
+# Test sum on data types that should not support it
+# BUG: Exception says the operation is not supported yet, but this
+# should never be supported.
+---
+- Include: all-types-schema.yaml
+---
+- Statement: SELECT sum(blob_field) FROM all_types
+- error: [0]
+---
+- Statement: SELECT sum(char_field) FROM all_types
+- error: [0]
+---
+- Statement: SELECT sum(char_multi_field) FROM all_types
+- error: [0]
+---
+- Statement: SELECT sum(clob_field) FROM all_types
+- error: [0]
+---
+- Statement: SELECT sum(date_field) FROM all_types
+- error: [0]
+---
+- Statement: SELECT sum(time_field) FROM all_types
+- error: [0]
+---
+- Statement: SELECT sum(timestamp_field) FROM all_types
+- error: [0]
+---
+- Statement: SELECT sum(varchar_field) FROM all_types
+- error: [0]
+...

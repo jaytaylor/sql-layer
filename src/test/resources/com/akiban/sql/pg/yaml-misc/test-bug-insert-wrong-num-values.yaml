@@ -1,0 +1,8 @@
+# Attempt to insert the wrong number of values
+# BUG: Gets an IndexOutOfBoundsException rather than a friendly message
+---
+- Statement: CREATE TABLE t (int_field int)
+---
+- Statement: INSERT INTO t (int_field) VALUES (1, 2)
+- error: [0]
+...

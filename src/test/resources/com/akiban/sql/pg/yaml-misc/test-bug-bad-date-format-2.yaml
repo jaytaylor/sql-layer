@@ -1,0 +1,11 @@
+# Test bad data format: 2001-1-1 (should be 2001-01-01)
+---
+- Statement:
+    CREATE TABLE all_types (date_field date)
+---
+- Statement: INSERT INTO all_types VALUES (2001-1-1)
+---
+- Statement: SELECT * FROM all_types
+- output: [['2001-01-01']]
+...
+

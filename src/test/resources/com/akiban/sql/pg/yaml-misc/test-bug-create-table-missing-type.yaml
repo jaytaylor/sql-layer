@@ -1,0 +1,6 @@
+# Create a table with a missing field type as the second field
+# BUG: Produces a NullPointerException
+---
+- Statement: CREATE TABLE t (i int, j)
+- error: [0]
+...

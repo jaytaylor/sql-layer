@@ -1,0 +1,7 @@
+# Test non-standard data type names
+- Statement: CREATE TABLE type_aliases (
+    double_precision_field double precision)
+---
+- Statement: SELECT * FROM type_aliases
+- output_types: [DOUBLE]
+...

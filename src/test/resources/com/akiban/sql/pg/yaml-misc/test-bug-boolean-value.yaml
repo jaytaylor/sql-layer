@@ -1,0 +1,10 @@
+# Test retrieving boolean value
+---
+- Statement: CREATE TABLE t (boolean_field boolean)
+---
+- Statement: INSERT INTO t VALUES (1)
+---
+- Statement: SELECT * FROM t
+- output: [[1]]
+...
+

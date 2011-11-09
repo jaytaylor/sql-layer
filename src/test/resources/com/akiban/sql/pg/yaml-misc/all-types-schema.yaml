@@ -1,0 +1,23 @@
+# Create a table with all supported data types
+# Not supported yet: tinyint, varbinary
+---
+- Statement:
+    CREATE TABLE all_types (
+      bigint_field bigint,
+      blob_field blob,
+      boolean_field boolean,
+      char_field char,
+      char_multi_field char(32),
+      clob_field clob,
+      date_field date,
+      decimal_field decimal,
+      double_field double,
+      float_field float,
+      integer_field integer,
+      numeric_field numeric,
+      real_field real,
+      smallint_field smallint,
+      time_field time,
+      timestamp_field timestamp,
+      varchar_field varchar(32))
+...
