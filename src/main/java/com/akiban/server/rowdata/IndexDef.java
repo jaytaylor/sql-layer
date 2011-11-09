@@ -59,6 +59,10 @@ public class IndexDef implements TreeLink {
         return fields.length;
     }
 
+    public Index getIndex() {
+        return index;
+    }
+
     @Override
     public String toString() {
         return index.toString() + "[" + getTreeName() + "]";

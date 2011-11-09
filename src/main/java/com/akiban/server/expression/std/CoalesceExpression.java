@@ -39,6 +39,14 @@ public final class CoalesceExpression extends AbstractCompositeExpression {
 
         @Override
         public void argumentTypes(List<AkType> argumentTypes) {
+            // Latch on to first non-null type.
+            AkType type = AkType.NULL;
+            for (int i = 0; i < argumentTypes.size(); i++) {
+                if (type != AkType.NULL)
+                    argumentTypes.set(i, type);
+                else
+                    type = argumentTypes.get(i);
+            }
         }
 
         @Override
