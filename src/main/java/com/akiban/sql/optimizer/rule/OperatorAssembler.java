@@ -489,7 +489,7 @@ public class OperatorAssembler extends BaseRule
                 else {
                     pstream.operator = API.product_NestedLoops(pstream.operator,
                                                                stream.operator,
-                                                               pstream.rowType,
+                                                               (AisRowType) pstream.rowType,
                                                                stream.rowType,
                                                                currentBindingPosition());
                     pstream.rowType = pstream.operator.rowType();

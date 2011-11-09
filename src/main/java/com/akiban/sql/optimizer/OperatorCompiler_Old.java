@@ -406,7 +406,7 @@ public class OperatorCompiler_Old
                         switch (productMethod) {
                         case BY_RUN:
                             resultOperator = product_ByRun(resultOperator,
-                                                           resultRowType,
+                                                           (AisRowType)resultRowType,
                                                            flr.getResultRowType());
                             break;
                         default:
@@ -416,7 +416,7 @@ public class OperatorCompiler_Old
                                                               flr.getResultRowType(), 
                                                                 cursor);
                         }
-                        resultRowType = resultOperator.rowType();
+                        resultRowType = (AisRowType) resultOperator.rowType();
                         fll.mergeTablesForProduct(flr);
                     }
                 }
@@ -830,12 +830,12 @@ public class OperatorCompiler_Old
     }
 
     static class FlattenState {
-        private RowType resultRowType;
+        private AisRowType resultRowType;
         private List<TableNode> tables;
         private Map<TableNode,Integer> fieldOffsets;
         int nfields;
 
-        public FlattenState(RowType resultRowType,
+        public FlattenState(AisRowType resultRowType,
                             List<TableNode> tables,
                             Map<TableNode,Integer> fieldOffsets,
                             int nfields) {
@@ -845,10 +845,10 @@ public class OperatorCompiler_Old
             this.nfields = nfields;
         }
         
-        public RowType getResultRowType() {
+        public AisRowType getResultRowType() {
             return resultRowType;
         }
-        public void setResultRowType(RowType resultRowType) {
+        public void setResultRowType(AisRowType resultRowType) {
             this.resultRowType = resultRowType;
         }
 
@@ -1004,7 +1004,7 @@ public class OperatorCompiler_Old
                         flattensDone.put(flkey, flattenedType);
                     }
                 }
-                fleft.setResultRowType(flattenedType);
+                fleft.setResultRowType((AisRowType)flattenedType);
                 fleft.mergeTablesForFlatten(fright);
                 return fleft;
             }

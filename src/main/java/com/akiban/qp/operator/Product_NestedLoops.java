@@ -17,6 +17,7 @@ package com.akiban.qp.operator;
 
 import com.akiban.qp.row.ProductRow;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.AisRowType;
 import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
@@ -79,7 +80,7 @@ class Product_NestedLoops extends Operator
 
     public Product_NestedLoops(Operator outerInputOperator,
                                Operator innerInputOperator,
-                               RowType outerType,
+                               AisRowType outerType,
                                RowType innerType,
                                int inputBindingPosition)
     {

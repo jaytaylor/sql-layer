@@ -15,43 +15,17 @@
 
 package com.akiban.qp.rowtype;
 
-import com.akiban.server.types.AkType;
-
-import java.util.Arrays;
-
-public class ValuesRowType extends DerivedRowType
-{
-    // Object interface
+public abstract class AisRowType extends RowType {
 
     @Override
-    public String toString()
-    {
-        return "values(" + Arrays.toString(types) + ')';
+    public Schema schema() {
+        return schema;
     }
 
-
-    // RowType interface
-
-    @Override
-    public int nFields()
-    {
-        return types.length;
+    public AisRowType(Schema schema, int typeId) {
+        super(typeId);
+        this.schema = schema;
     }
 
-    @Override
-    public AkType typeAt(int index) {
-        return types[index];
-    }
-
-    // ValuesRowType interface
-
-    public ValuesRowType(DerivedTypesSchema schema, int typeId, AkType... types)
-    {
-        super(schema, typeId);
-        this.types = types;
-    }
-
-    // Object state
-
-    private final AkType[] types;
+    private final Schema schema;
 }

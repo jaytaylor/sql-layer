@@ -18,6 +18,7 @@ package com.akiban.server.test.it.qp;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.AisRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -154,7 +155,7 @@ public class Product_NestedLoopsIT extends OperatorITBase
                 customerRowType,
                 addressRowType,
                 INNER_JOIN);
-        Operator plan = product_NestedLoops(flattenCO, flattenCA, flattenCO.rowType(), flattenCA.rowType(), 0);
+        Operator plan = product_NestedLoops(flattenCO, flattenCA, (AisRowType)flattenCO.rowType(), flattenCA.rowType(), 0);
         RowType coaRowType = plan.rowType();
         checkRowTypeFields(coaRowType, INT, VARCHAR, INT, INT, VARCHAR, INT, INT, VARCHAR);
         Cursor cursor = cursor(plan, adapter);
@@ -191,7 +192,7 @@ public class Product_NestedLoopsIT extends OperatorITBase
                 customerRowType,
                 addressRowType,
                 INNER_JOIN);
-        Operator plan = product_NestedLoops(flattenCO, flattenCA, flattenCO.rowType(), flattenCA.rowType(), 0);
+        Operator plan = product_NestedLoops(flattenCO, flattenCA, (AisRowType)flattenCO.rowType(), flattenCA.rowType(), 0);
         RowType coaRowType = plan.rowType();
         checkRowTypeFields(coaRowType, INT, VARCHAR, INT, INT, VARCHAR, INT, INT, VARCHAR);
         Cursor cursor = cursor(plan, adapter);
@@ -210,9 +211,9 @@ public class Product_NestedLoopsIT extends OperatorITBase
 
     // TODO: Test handling of rows whose type is not involved in product.
 
-    private Set<RowType> removeDescendentTypes(RowType type)
+    private Set<AisRowType> removeDescendentTypes(AisRowType type)
     {
-        Set<RowType> keepTypes = type.schema().userTableTypes();
+        Set<AisRowType> keepTypes = type.schema().userTableTypes();
         keepTypes.removeAll(Schema.descendentTypes(type, keepTypes));
         return keepTypes;
     }

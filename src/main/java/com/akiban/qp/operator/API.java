@@ -21,6 +21,7 @@ import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.AisRowType;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
@@ -270,7 +271,7 @@ public class API
 
     // Filter
 
-    public static Operator filter_Default(Operator inputOperator, Collection<RowType> keepTypes)
+    public static Operator filter_Default(Operator inputOperator, Collection<? extends RowType> keepTypes)
     {
         return new Filter_Default(inputOperator, keepTypes);
     }
@@ -281,7 +282,7 @@ public class API
      * @deprecated Use product_NestedLoops instead.
      */
     public static Operator product_ByRun(Operator input,
-                                                 RowType leftType,
+                                                 AisRowType leftType,
                                                  RowType rightType)
     {
         return new Product_ByRun(input, leftType, rightType);
@@ -289,7 +290,7 @@ public class API
 
     public static Operator product_NestedLoops(Operator outerInput,
                                                        Operator innerInput,
-                                                       RowType outerType,
+                                                       AisRowType outerType,
                                                        RowType innerType,
                                                        int inputBindingPosition)
     {
