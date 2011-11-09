@@ -56,7 +56,7 @@ public class ArithExpression extends AbstractBinaryExpression
         return new InnerEvaluation(op, topT, this.childrenEvaluations());
     }
 
-    private static AkType getTopType (AkType leftT, AkType rightT)
+    protected static AkType getTopType (AkType leftT, AkType rightT)
     {
         if (leftT == AkType.NULL || rightT == AkType.NULL)
             return AkType.NULL;

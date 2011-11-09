@@ -16,9 +16,11 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.Quote;
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
@@ -30,13 +32,39 @@ import java.util.List;
 
 public final class ConcatExpression extends AbstractCompositeExpression {
 
-    @Scalar("concatenate")
-    public static final ExpressionComposer COMPOSER = new ExpressionComposer() {
+    static class ConcatComposer implements ExpressionComposer {
         @Override
         public Expression compose(List<? extends Expression> arguments) {
             return new ConcatExpression(arguments);
         }
-    };
+
+        @Override
+        public void argumentTypes(List<AkType> argumentTypes) {
+            for (int i = 0; i < argumentTypes.size(); i++) {
+                argumentTypes.set(i, AkType.VARCHAR);
+            }
+        }
+
+        @Override
+        public ExpressionType composeType(List<? extends ExpressionType> argumentTypes) {
+            int length = 0;
+            for (ExpressionType type : argumentTypes) {
+                switch (type.getType()) {
+                case VARCHAR:
+                    length += type.getPrecision();
+                    break;
+                case NULL:
+                    return ExpressionTypes.NULL;
+                default:
+                    throw new AkibanInternalException("VARCHAR required, given " + type);
+                }
+            }
+            return ExpressionTypes.varchar(length);
+        }
+    }
+
+    @Scalar("concatenate")
+    public static final ExpressionComposer COMPOSER = new ConcatComposer();
     
     @Scalar("concat")
     public static final ExpressionComposer COMPOSER_ALIAS = COMPOSER;

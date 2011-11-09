@@ -18,6 +18,7 @@ package com.akiban.server.expression.std;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
@@ -34,6 +35,15 @@ public class InetatonExpression extends AbstractUnaryExpression
         protected Expression compose(Expression argument)
         {
             return new InetatonExpression(argument);
+        }
+
+        @Override
+        protected AkType argumentType(AkType givenType) {
+            return AkType.VARCHAR;
+        }
+
+        protected ExpressionType composeType(ExpressionType argument) {
+            return ExpressionTypes.LONG;
         }
     };
 
