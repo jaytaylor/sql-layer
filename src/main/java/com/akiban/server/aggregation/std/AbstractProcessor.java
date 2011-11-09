@@ -29,5 +29,12 @@ interface AbstractProcessor
     String process (String oldState, String input);
     
     void checkType (AkType type);
+    
+    /**
+     * 
+     * @return true if an input of infinity will lead to an output of infinity (E.g., sum (1 + 2 + infinity) = infinity 
+     * , return false otherwise. (E.g., max (-infinity, 2, 3) = 3 )
+     * 
+     */
     boolean infinityIsSignificant ();
 }

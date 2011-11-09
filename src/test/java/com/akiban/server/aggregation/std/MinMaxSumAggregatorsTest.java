@@ -213,7 +213,7 @@ public class MinMaxSumAggregatorsTest
     }
       
     @Test
-    public void testMaxWithInfinity ()
+    public void testMaxWithNegInfinity ()
     {
         aggregator = Aggregators.maxes("maxes", AkType.DOUBLE).get();
         
@@ -312,6 +312,22 @@ public class MinMaxSumAggregatorsTest
         aggregator.output(holder);
         assertEquals(Double.NaN, holder.getDouble(), 0.001);
         
+    }
+    
+    @Test // something added with NaN is simply NaN!
+    public void testSumWithNaNAndPosInf ()
+    {
+        aggregator = Aggregators.sum("sum", AkType.DOUBLE).get();
+        
+        holder.putDouble(Double.NaN);
+        aggregator.input(holder);
+        
+        holder.putDouble(Double.POSITIVE_INFINITY);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        
+        assertEquals(Double.NaN, holder.getDouble(),0.01);
     }
     
     @Test(expected = UnsupportedOperationException.class)
