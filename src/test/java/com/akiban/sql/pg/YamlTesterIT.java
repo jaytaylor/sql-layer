@@ -15,53 +15,20 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.server.error.InvalidOperationException;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.Writer;
-import java.sql.Connection;
 
-import org.junit.AfterClass;
 import static org.junit.Assert.fail;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /**
  * Run basic tests of the {@code YamlTester} for YAML files that specify
  * passing tests.
  */
-public class YamlTesterIT {
-
-    private static final boolean DEBUG =
-	Boolean.getBoolean(YamlTesterIT.class.getName() + ".DEBUG");
-
-    private static final PostgresServerIT manageServer = new PostgresServerIT();
-
-    private static Connection connection;
-
-    @BeforeClass
-    public static void openTheConnection() throws Exception {
-	manageServer.startTestServices();
-	manageServer.openTheConnection();
-	connection = manageServer.getConnection();
-    }
-
-    @AfterClass
-    public static void closeTheConnection() throws Exception {
-	manageServer.stopTestServices();
-	manageServer.closeTheConnection();
-	connection = null;
-    }
-
-    @Before
-    public void dropAllTables() {
-	manageServer.accessDropAllTables();
-    }
+public class YamlTesterIT extends PostgresServerYamlITBase {
 
     /* Tests */
 
@@ -128,8 +95,8 @@ public class YamlTesterIT {
     public void testIncludeUnexpectedAttributes() throws Exception {
 	File include = File.createTempFile("include", null);
 	include.deleteOnExit();
-	testYamlFail("- Include: " +
-		     "\n- foo: bar");
+	testYamlFail("- Include: somefile\n" +
+		     "- foo: bar");
     }
 
     @Test
@@ -263,68 +230,68 @@ public class YamlTesterIT {
 
     @Test
     public void testStatementUnknownAttribute() {
-	testYamlFail("- Statement: a b c" +
-		     "\n- unknown_attrib: x y z");
+	testYamlFail("- Statement: a b c\n" +
+		     "- unknown_attrib: x y z");
     }
 
     /* Test Statement params */
 
     @Test
     public void testStatementParamsNoValue() {
-	testYamlFail("- Statement: a b c" +
-		     "\n- params:");
+	testYamlFail("- Statement: a b c\n" +
+		     "- params:");
     }
 
     @Test
     public void testStatementParamsNotSequence() {
-	testYamlFail("- Statement: a b c" +
-		     "\n- params: 3");
+	testYamlFail("- Statement: a b c\n" +
+		     "- params: 3");
     }
 
     @Test
     public void testStatementParamsValueSequenceOfMaps() {
-	testYamlFail("- Statement: a b c" +
-		     "\n- params: [a: b]");
+	testYamlFail("- Statement: a b c\n" +
+		     "- params: [a: b]");
     }
 
     @Test
     public void testStatementParamsValueEmpty() {
-	testYamlFail("- Statement: a b c" +
-		     "\n- params: []");
+	testYamlFail("- Statement: a b c\n" +
+		     "- params: []");
     }
 
     @Test
     public void testStatementParamsValueEmptySequence() {
-	testYamlFail("- Statement: a b c" +
-		     "\n- params: [[], []]");
+	testYamlFail("- Statement: a b c\n" +
+		     "- params: [[], []]");
     }
 
     @Test
     public void testStatementParamsValueDifferentLengthParams() {
-	testYamlFail("- Statement: a b c" +
-		     "\n- params: [[a, b], [c, d, e]]");
+	testYamlFail("- Statement: a b c\n" +
+		     "- params: [[a, b], [c, d, e]]");
     }
 
     /* Test Statement param_types */
 
     @Test
     public void testStatementParamsTypesNoParams() {
-	testYamlFail("- Statement: a b c" +
-		     "\n- param_types: [CHAR]");
+	testYamlFail("- Statement: a b c\n" +
+		     "- param_types: [CHAR]");
     }
 
     @Test
     public void testStatementParamsTypesNoValue() {
-	testYamlFail("- Statement: a b c" +
-		     "\n- params: [[a, b]]" +
-		     "\n- param_types:");
+	testYamlFail("- Statement: a b c\n" +
+		     "- params: [[a, b]]\n" +
+		     "- param_types:");
     }
 
     @Test
     public void testStatementParamsTypesUnknown() {
-	testYamlFail("- Statement: a b c" +
-		     "\n- params: [[a, b]]" +
-		     "\n- param_types: [CHAR, WHATTYPE]");
+	testYamlFail("- Statement: a b c\n" +
+		     "- params: [[a, b]]\n" +
+		     "- param_types: [CHAR, WHATTYPE]");
     }
 
     @Test
@@ -342,9 +309,9 @@ public class YamlTesterIT {
 
     @Test
     public void testStatementParamsTypesTooFew() {
-	testYamlFail("- Statement: a b c" +
-		     "\n- params: [[a, b]]" +
-		     "\n- param_types: [CHAR]");
+	testYamlFail("- Statement: a b c\n" +
+		     "- params: [[a, b]]\n" +
+		     "- param_types: [CHAR]");
     }
 
     @Test
@@ -825,6 +792,14 @@ public class YamlTesterIT {
     }
 
     @Test
+    public void testStatementErrorCodeNotScalar() {
+	testYamlFail(
+	    "---\n" +
+	    "- Statement: a b c\n" +
+	    "- error: [[x, y], a, b]");
+    }
+
+    @Test
     public void testStatementErrorNotError() {
 	testYamlFail(
 	    "---\n" +
@@ -845,7 +820,7 @@ public class YamlTesterIT {
 	testYaml(
 	    "---\n" +
 	    "- Statement: CREATE TABLE a (i int\n" +
-	    "- error: [0]");
+	    "- error: [42000]");
     }
 
     @Test
@@ -853,7 +828,7 @@ public class YamlTesterIT {
 	testYamlFail(
 	    "---\n" +
 	    "- Statement: CREATE TABLE a (i int\n" +
-	    "- error: [0, nope]");
+	    "- error: [42000, nope]");
     }
 
     @Test
@@ -862,7 +837,7 @@ public class YamlTesterIT {
 	    "---\n" +
 	    "- Statement: CREATE TABLE a (i int\n" +
 	    "- error:\n" +
-	    "  - 0\n" +
+	    "  - 42000\n" +
 	    "  - |\n" +
 	    "    ERROR: [] com.akiban.sql.parser.ParseException: " +
 	    "Encountered \"<EOF>\" at line 1, column 21.\n" +
@@ -872,18 +847,7 @@ public class YamlTesterIT {
 	    "        : CREATE TABLE a (i int\n");
     }
 
-    /* Other methods and classes */
-
-    /** Subclass of PostgresServerITBase to access non-public methods. */
-    @Ignore
-    private static class PostgresServerIT extends PostgresServerITBase {
-	void accessDropAllTables() throws InvalidOperationException {
-	    dropAllTables();
-	}
-	Connection getConnection() {
-	    return connection;
-	}
-    }
+    /* Other methods */
 
     private void testYaml(String yaml) {
 	new YamlTester(null, new StringReader(yaml), connection).test();

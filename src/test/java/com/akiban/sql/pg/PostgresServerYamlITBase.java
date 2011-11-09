@@ -17,6 +17,7 @@ package com.akiban.sql.pg;
 
 import com.akiban.server.error.InvalidOperationException;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
@@ -31,7 +32,7 @@ import org.junit.Test;
 /**
  * A base class for integration tests that use data from a YAML file to specify
  * the input and output expected from calls to the Postgres server.  Subclasses
- * are expected to be parameterized on the name of the YAML file.
+ * should call {@link #testYaml} with the file to use for the test.
  */
 @Ignore
 public class PostgresServerYamlITBase {
@@ -40,9 +41,9 @@ public class PostgresServerYamlITBase {
 
     private static final PostgresServerIT manageServer = new PostgresServerIT();
 
-    private static Connection connection;
+    protected static Connection connection;
 
-    protected String filename;
+    protected PostgresServerYamlITBase() { }
 
     @BeforeClass
     public static void openTheConnection() throws Exception {
@@ -60,19 +61,19 @@ public class PostgresServerYamlITBase {
 
     @Before
     public void dropAllTables() {
-	if (DEBUG) {
-	    System.err.println("\nFilename: " + filename);
-	}
 	manageServer.accessDropAllTables();
     }
 
-    @Test
-    public void testYaml() throws IOException {
+    /** Run a test with YAML input from the specified file. */
+    protected void testYaml(File file) throws IOException {
+	if (DEBUG) {
+	    System.err.println("\nFile: " + file);
+	}
 	Throwable exception = null;
 	Reader in = null;
 	try {
-	    in = new FileReader(filename);
-	    new YamlTester(filename, in, connection).test();
+	    in = new FileReader(file);
+	    new YamlTester(file.toString(), in, connection).test();
 	    if (DEBUG) {
 		System.err.println("Test passed");
 	    }
@@ -93,11 +94,6 @@ public class PostgresServerYamlITBase {
 		in.close();
 	    }
 	}
-    }
-
-    /** Parameterized version. */
-    protected PostgresServerYamlITBase(String filename) {
-        this.filename = filename;
     }
 
     /** Subclass of PostgresServerITBase to access non-public methods. */

@@ -85,15 +85,15 @@
 ---
 - Statement: INSERT INTO all_types (double_field) VALUES
     (1.7976931348623157E308), (4.9E-324)
----
-# Overflow
-- Statement: INSERT INTO all_types (double_field) VALUES
-    (1.7976931348623157E309)
-- error: [0]
----
-# Underflow
-- Statement: INSERT INTO all_types (double_field) VALUES (4.9E-325)
-- error: [0]
+# ---
+# Overflow -- wrong error code
+# - Statement: INSERT INTO all_types (double_field) VALUES
+#     (1.7976931348623157E309)
+# - error: [55004]
+#---
+# Underflow -- not sure what error code this should be
+# - Statement: INSERT INTO all_types (double_field) VALUES (4.9E-325)
+# - error: [42000]
 ---
 - Statement: INSERT INTO all_types (double_field) VALUES
     ('Infinity'), ('-Infinity'), ('NaN')

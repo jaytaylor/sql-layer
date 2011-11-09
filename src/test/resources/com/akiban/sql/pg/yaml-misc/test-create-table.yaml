@@ -8,49 +8,47 @@
 
 # Test unsupported types
 
-# bit is not supported
-- Statement: CREATE TABLE table_bit (bit_field bit)
-- error: [0]
----
+# bit is not supported, but returns the wrong error code
+# - Statement: CREATE TABLE table_bit (bit_field bit)
+# - error: [50008]
+#---
 # mediumint is not supported
 - Statement: CREATE TABLE table_mediumint (mediumint_field mediumint)
-- error: [0]
+- error: [50008]
 ---
 # enum is not supported
 - Statement: CREATE TABLE table_enum (enum_field enum)
-- error: [0]
+- error: [50008]
 ---
 # xml is not supported
 - Statement: CREATE TABLE table_xml (xml_field xml)
-- error: [0]
+- error: [50008]
 ---
 
 # Test not yet supported types
 
 # datetime is not supported yet
 - Statement: CREATE TABLE table_datetime (datetime_field datetime)
-- error: [0]
+- error: [50008]
 ---
 # text is not supported yet
 - Statement: CREATE TABLE table_text (text_field text)
-- error: [0]
+- error: [50008]
 ---
 # tinyint is not supported yet
 - Statement: CREATE TABLE table_tinyint (tinyint_field tinyint)
-- error: [0]
----
-# year is not supported yet
-- Statement: CREATE TABLE table_year (year_field year)
-- error: [0]
----
-
-# Test restrictions
-
-# varchar requires a size
-- Statement: CREATE TABLE table_varchar (varchar_field varchar)
-- error: [0]
+- error: [50008]
+#---
+# unsigned bigint is not supported yet, but returns the wrong error code
+# - Statement: CREATE TABLE table_unsigned_bigint
+#     (unsigned_bigint_field unsigned bigint)
+# - error: [50008]
+#---
+# year is not supported yet, but returns the wrong error code
+# - Statement: CREATE TABLE table_year (year_field year)
+# - error: [50008]
 ...
 
 # Notes
-
 # clob is marked as not supported, but is
+

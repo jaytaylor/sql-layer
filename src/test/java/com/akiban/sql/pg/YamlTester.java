@@ -92,7 +92,7 @@ import org.yaml.snakeyaml.nodes.Tag;
      - row_count: <number of rows>
      - output_types: [<column type>, ...]
      - explain: <explain plan>
-     - error: [<error number>, <error message>]
+     - error: [<error code>, <error message>]
    - Attributes are optional and can appear at most once
    - Only one statement in statement text
    - At least one row element in params, param_types, output, output_types
@@ -272,7 +272,7 @@ public class YamlTester {
 	private int rowCount = -1;
 	private List<String> outputTypes;
 	private boolean errorSpecified;
-	private int errorNumber;
+	private String errorCode;
 	private String errorMessage;
 	private String explain;
 
@@ -407,7 +407,7 @@ public class YamlTester {
 	    errorSpecified = true;
 	    List<Object> errorInfo =
 		nonEmptyScalarSequence(value, "error value");
-	    errorNumber = integer(errorInfo.get(0), "error number");
+	    errorCode = scalar(errorInfo.get(0), "error code").toString();
 	    if (errorInfo.size() > 1) {
 		errorMessage = string(errorInfo.get(1), "error message").trim();
 		assertTrue("The error attribute can have at most two" +
@@ -506,7 +506,9 @@ public class YamlTester {
 
 	private void checkFailure(SQLException sqlException) {
 	    if (DEBUG) {
-		System.err.println("Generated error: " + sqlException);
+		System.err.println(
+		    "Generated error code: " + sqlException.getSQLState() +
+		    "\nException: " + sqlException);
 	    }
 	    if (!errorSpecified) {
 		throw initCause(new AssertionError(
@@ -514,12 +516,12 @@ public class YamlTester {
 				    sqlException),
 				sqlException);
 	    }
-	    if (errorNumber != sqlException.getErrorCode()) {
+	    if (!errorCode.equals(sqlException.getSQLState())) {
 		throw initCause(
 		    new AssertionError(
 			"Unexpected error code:" +
-			"\nExpected: " + errorNumber +
-			"\n     got: " + sqlException.getErrorCode()),
+			"\nExpected: " + errorCode +
+			"\n     got: " + sqlException.getSQLState()),
 		    sqlException);
 	    }
 	    if (errorMessage != null) {

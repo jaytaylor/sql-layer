@@ -22,9 +22,11 @@ import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.RegexFilenameFilter;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import org.junit.Test;
 import org.junit.runner.RunWith;
 
 /**
@@ -45,8 +47,15 @@ public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase {
     private static final File RESOURCE_DIR =
         new File(PostgresServerITBase.RESOURCE_DIR, "yaml-misc");
 
+    private final File file;
+
     public PostgresServerMiscYamlIT(String filename) {
-        super(filename);
+	file = new File(filename);
+    }
+
+    @Test
+    public void testYaml() throws IOException {
+	testYaml(file);
     }
 
     @TestParameters
