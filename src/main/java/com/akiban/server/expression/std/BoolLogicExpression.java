@@ -42,7 +42,7 @@ public final class BoolLogicExpression extends AbstractBinaryExpression {
 
     @Override
     protected boolean nullIsContaminating() {
-        return true;
+        return false;
     }
     
     // private ctor -- the composers will be exposed as package-private

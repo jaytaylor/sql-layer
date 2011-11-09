@@ -36,9 +36,13 @@ public abstract class AbstractCompositeExpression implements Expression {
         boolean hasNonConst = false;
         for (Expression child : children)
         {
-            if (child.valueType() == AkType.NULL && nullIsContaminating())
-                return true;
-            if(!child.isConstant()) hasNonConst = true;
+            if (child.valueType() == AkType.NULL && nullIsContaminating()) return true;
+            if(!child.isConstant())
+            {
+                if (!nullIsContaminating()) return false;
+                hasNonConst = true;
+            }
+           
         }
         return !hasNonConst;
     }
@@ -47,9 +51,12 @@ public abstract class AbstractCompositeExpression implements Expression {
     public boolean needsRow() {
         boolean needrow = false;
         for (Expression child : children) {
-            if (child.valueType() == AkType.NULL && nullIsContaminating())
-                return false;
-            if(child.needsRow()) needrow = true;
+            if (child.valueType() == AkType.NULL && nullIsContaminating()) return false;
+            if(child.needsRow()) 
+            {
+                if (!nullIsContaminating()) return true;
+                needrow = true;
+            }
         }
         return needrow;
     }
@@ -58,9 +65,12 @@ public abstract class AbstractCompositeExpression implements Expression {
     public boolean needsBindings() {
         boolean needBindings = false;
         for (Expression child : children) {
-            if (child.valueType() == AkType.NULL && nullIsContaminating())
-                return false;
-            if(child.needsBindings()) needBindings = true;
+            if (child.valueType() == AkType.NULL && nullIsContaminating()) return false;
+            if(child.needsBindings()) 
+            {
+                if (!nullIsContaminating()) return true;
+                needBindings = true;
+            }
         }
         return needBindings;
     }

@@ -25,17 +25,17 @@ public abstract class AbstractUnaryExpression implements Expression {
 
     @Override
     public boolean isConstant() {
-        return operand.isConstant() || operand.valueType() == AkType.NULL;
+        return operand.isConstant();
     }
 
     @Override
     public boolean needsBindings() {
-        return operand.needsBindings() && operand.valueType() != AkType.NULL;
+        return operand.needsBindings();
     }
 
     @Override
     public boolean needsRow() {
-        return operand.needsRow() && operand.valueType() != AkType.NULL;
+        return operand.needsRow();
     }
 
     @Override

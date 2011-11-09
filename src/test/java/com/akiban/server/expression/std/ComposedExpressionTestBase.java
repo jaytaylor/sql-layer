@@ -202,7 +202,7 @@ public abstract class ComposedExpressionTestBase {
         }
         Expression expression = getComposer().compose(children);
         Set<ExpressionAttribute> attributeSet = attributesSet(attributes);
-        assertEquals("isConstant", attributeSet.contains(IS_CONSTANT) || anyChildIsNull(children) && getTestInfo().nullIsContaminating , expression.isConstant());
+        assertEquals("isConstant", attributeSet.contains(IS_CONSTANT) || anyChildIsNull(children) && getTestInfo().nullIsContaminating() , expression.isConstant());
         assertEquals("needsRow", attributeSet.contains(NEEDS_ROW) && !(anyChildIsNull(children) && getTestInfo().nullIsContaminating()) , expression.needsRow());
         assertEquals("needsBindings", attributeSet.contains(NEEDS_BINDINGS) && !(anyChildIsNull(children) && getTestInfo().nullIsContaminating()), expression.needsBindings());
         return new EvaluationPair(expression.evaluation(), messages);
@@ -273,6 +273,11 @@ public abstract class ComposedExpressionTestBase {
             return type;
         }
 
+        @Override
+        public String toString () {
+            return getClass().getSimpleName() + " with " + requirements;
+        }
+        
         private DummyExpression(List<String> messages, AkType type, ExpressionAttribute... attributes) {
             requirements = attributesSet(attributes);
             this.messages = messages;

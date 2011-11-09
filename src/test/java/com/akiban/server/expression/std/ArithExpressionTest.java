@@ -135,12 +135,7 @@ public class ArithExpressionTest extends ComposedExpressionTestBase
         
         
     }
-     
-  //  @Override
-    protected int childrenCount() 
-    {
-        return 2;
-    }
+
 
     @Override
     protected ExpressionComposer getComposer()
