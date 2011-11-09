@@ -118,7 +118,7 @@ public class Product_ByRunIT extends OperatorITBase
                                 customerRowType,
                                 addressRowType,
                                 INNER_JOIN);
-        Operator plan = product_ByRun(flattenCA, (AisRowType)flattenCO.rowType(), flattenCA.rowType());
+        Operator plan = product_ByRun(flattenCA, flattenCO.rowType(), flattenCA.rowType());
         scan(cursor(plan, adapter));
     }
 
@@ -142,7 +142,7 @@ public class Product_ByRunIT extends OperatorITBase
                                 customerRowType,
                                 addressRowType,
                                 INNER_JOIN);
-        Operator plan = product_ByRun(flattenCA, (AisRowType)flattenCO.rowType(), flattenCA.rowType());
+        Operator plan = product_ByRun(flattenCA, flattenCO.rowType(), flattenCA.rowType());
         scan(cursor(plan, adapter));
     }
 
@@ -168,7 +168,7 @@ public class Product_ByRunIT extends OperatorITBase
                                 customerRowType,
                                 addressRowType,
                                 INNER_JOIN);
-        Operator plan = product_ByRun(flattenCA, (AisRowType)flattenCO.rowType(), flattenCA.rowType());
+        Operator plan = product_ByRun(flattenCA, flattenCO.rowType(), flattenCA.rowType());
         RowType coaRowType = plan.rowType();
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -206,7 +206,7 @@ public class Product_ByRunIT extends OperatorITBase
                                 customerRowType,
                                 addressRowType,
                                 INNER_JOIN);
-        Operator plan = product_ByRun(flattenCA, (AisRowType)flattenCO.rowType(), flattenCA.rowType());
+        Operator plan = product_ByRun(flattenCA, flattenCO.rowType(), flattenCA.rowType());
         RowType coaRowType = plan.rowType();
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{

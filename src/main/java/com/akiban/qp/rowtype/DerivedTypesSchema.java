@@ -51,7 +51,7 @@ public class DerivedTypesSchema {
         return new ProjectedRowType(this, nextTypeId(), columns);
     }
 
-    public ProductRowType newProductType(AisRowType leftType, RowType rightType)
+    public ProductRowType newProductType(RowType leftType, RowType rightType)
     {
         return new ProductRowType(this, nextTypeId(), leftType, rightType);
     }

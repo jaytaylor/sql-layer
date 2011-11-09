@@ -80,7 +80,7 @@ class Product_NestedLoops extends Operator
 
     public Product_NestedLoops(Operator outerInputOperator,
                                Operator innerInputOperator,
-                               AisRowType outerType,
+                               RowType outerType,
                                RowType innerType,
                                int inputBindingPosition)
     {

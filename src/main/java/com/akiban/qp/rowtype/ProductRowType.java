@@ -66,7 +66,7 @@ public class ProductRowType extends DerivedRowType
         return rightType;
     }
 
-    public ProductRowType(DerivedTypesSchema schema, int typeId, AisRowType leftType, RowType rightType)
+    public ProductRowType(DerivedTypesSchema schema, int typeId, RowType leftType, RowType rightType)
     {
         super(schema, typeId);
         assert leftType.schema() == schema : leftType;
@@ -81,7 +81,7 @@ public class ProductRowType extends DerivedRowType
 
     // For use by this class
 
-    private static RowType leafmostCommonType(AisRowType leftType, RowType rightType)
+    private static RowType leafmostCommonType(RowType leftType, RowType rightType)
     {
         Set<UserTable> common = new HashSet<UserTable>(leftType.typeComposition().tables());
         common.retainAll(rightType.typeComposition().tables());
@@ -92,7 +92,7 @@ public class ProductRowType extends DerivedRowType
             }
         }
         assert leafmostCommon != null : String.format("leftType: %s, rightType: %s", leftType, rightType);
-        return leftType.schema().userTableRowType(leafmostCommon);
+        return ((Schema)leftType.schema()).userTableRowType(leafmostCommon);
     }
 
     // Object state

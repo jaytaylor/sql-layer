@@ -18,7 +18,6 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.ProductRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.AisRowType;
 import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
@@ -75,7 +74,7 @@ class Product_ByRun extends Operator
 
     // Project_Default interface
 
-    public Product_ByRun(Operator inputOperator, AisRowType leftType, RowType rightType)
+    public Product_ByRun(Operator inputOperator, RowType leftType, RowType rightType)
     {
         ArgumentValidation.notNull("leftChildType", leftType);
         ArgumentValidation.notNull("rightChildType", rightType);

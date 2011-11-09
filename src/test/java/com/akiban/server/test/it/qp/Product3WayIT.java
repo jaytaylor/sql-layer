@@ -170,8 +170,8 @@ public class Product3WayIT extends OperatorITBase
                 rRowType,
                 aRowType,
                 INNER_JOIN);
-        Operator productRAB = product_ByRun(flattenRA, (AisRowType)flattenRA.rowType(), flattenRB.rowType());
-        Operator productRABC = product_ByRun(productRAB, (AisRowType)productRAB.rowType(), flattenRC.rowType());
+        Operator productRAB = product_ByRun(flattenRA, flattenRA.rowType(), flattenRB.rowType());
+        Operator productRABC = product_ByRun(productRAB, productRAB.rowType(), flattenRC.rowType());
         Cursor cursor = cursor(productRABC, adapter);
         RowType rabcRowType = productRABC.rowType();
         RowBase[] expected = new RowBase[]{
@@ -251,8 +251,8 @@ public class Product3WayIT extends OperatorITBase
                 rRowType,
                 cRowType,
                 INNER_JOIN);
-        Operator RAB = product_NestedLoops(RA, RB, (AisRowType)RA.rowType(), RB.rowType(), 0);
-        Operator RABC = product_NestedLoops(RAB, RC, (AisRowType)RAB.rowType(), RC.rowType(), 0);
+        Operator RAB = product_NestedLoops(RA, RB, RA.rowType(), RB.rowType(), 0);
+        Operator RABC = product_NestedLoops(RAB, RC, RAB.rowType(), RC.rowType(), 0);
         Cursor cursor = cursor(RABC, adapter);
         RowType rabcRowType = RABC.rowType();
         RowBase[] expected = new RowBase[]{
@@ -313,8 +313,8 @@ public class Product3WayIT extends OperatorITBase
                 rRowType,
                 cRowType,
                 INNER_JOIN);
-        Operator RAC = product_NestedLoops(RA, RC, (AisRowType)RA.rowType(), RC.rowType(), 0);
-        Operator RACB = product_NestedLoops(RAC, RB, (AisRowType)RAC.rowType(), RB.rowType(), 0);
+        Operator RAC = product_NestedLoops(RA, RC, RA.rowType(), RC.rowType(), 0);
+        Operator RACB = product_NestedLoops(RAC, RB, RAC.rowType(), RB.rowType(), 0);
         Cursor cursor = cursor(RACB, adapter);
         RowType racbRowType = RACB.rowType();
         RowBase[] expected = new RowBase[]{
@@ -381,9 +381,9 @@ public class Product3WayIT extends OperatorITBase
                 rRowType,
                 cRowType,
                 INNER_JOIN);
-        Operator RA = product_NestedLoops(rScan, flattenRA, (AisRowType)rRowType, flattenRA.rowType(), 0);
-        Operator RAB = product_NestedLoops(RA, flattenRB, (AisRowType)RA.rowType(), flattenRB.rowType(), 0);
-        Operator RABC = product_NestedLoops(RAB, flattenRC, (AisRowType)RAB.rowType(), flattenRC.rowType(), 0);
+        Operator RA = product_NestedLoops(rScan, flattenRA, rRowType, flattenRA.rowType(), 0);
+        Operator RAB = product_NestedLoops(RA, flattenRB, RA.rowType(), flattenRB.rowType(), 0);
+        Operator RABC = product_NestedLoops(RAB, flattenRC, RAB.rowType(), flattenRC.rowType(), 0);
         Cursor cursor = cursor(RABC, adapter);
         RowType rabcRowType = RABC.rowType();
         RowBase[] expected = new RowBase[]{
@@ -448,8 +448,8 @@ public class Product3WayIT extends OperatorITBase
                 rRowType,
                 cRowType,
                 INNER_JOIN);
-        Operator productRAB = product_ByRun(flattenRC, (AisRowType)flattenRA.rowType(), flattenRB.rowType());
-        Operator productRABC = product_ByRun(productRAB, (AisRowType)productRAB.rowType(), flattenRC.rowType());
+        Operator productRAB = product_ByRun(flattenRC, flattenRA.rowType(), flattenRB.rowType());
+        Operator productRABC = product_ByRun(productRAB, productRAB.rowType(), flattenRC.rowType());
         Cursor cursor = cursor(productRABC, adapter);
         RowType rabcRowType = productRABC.rowType();
         RowBase[] expected = new RowBase[]{

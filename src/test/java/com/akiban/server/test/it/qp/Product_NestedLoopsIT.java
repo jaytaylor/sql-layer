@@ -155,7 +155,7 @@ public class Product_NestedLoopsIT extends OperatorITBase
                 customerRowType,
                 addressRowType,
                 INNER_JOIN);
-        Operator plan = product_NestedLoops(flattenCO, flattenCA, (AisRowType)flattenCO.rowType(), flattenCA.rowType(), 0);
+        Operator plan = product_NestedLoops(flattenCO, flattenCA, flattenCO.rowType(), flattenCA.rowType(), 0);
         RowType coaRowType = plan.rowType();
         checkRowTypeFields(coaRowType, INT, VARCHAR, INT, INT, VARCHAR, INT, INT, VARCHAR);
         Cursor cursor = cursor(plan, adapter);
@@ -192,7 +192,7 @@ public class Product_NestedLoopsIT extends OperatorITBase
                 customerRowType,
                 addressRowType,
                 INNER_JOIN);
-        Operator plan = product_NestedLoops(flattenCO, flattenCA, (AisRowType)flattenCO.rowType(), flattenCA.rowType(), 0);
+        Operator plan = product_NestedLoops(flattenCO, flattenCA, flattenCO.rowType(), flattenCA.rowType(), 0);
         RowType coaRowType = plan.rowType();
         checkRowTypeFields(coaRowType, INT, VARCHAR, INT, INT, VARCHAR, INT, INT, VARCHAR);
         Cursor cursor = cursor(plan, adapter);

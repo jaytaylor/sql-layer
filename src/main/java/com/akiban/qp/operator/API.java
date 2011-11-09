@@ -282,7 +282,7 @@ public class API
      * @deprecated Use product_NestedLoops instead.
      */
     public static Operator product_ByRun(Operator input,
-                                                 AisRowType leftType,
+                                                 RowType leftType,
                                                  RowType rightType)
     {
         return new Product_ByRun(input, leftType, rightType);
@@ -290,7 +290,7 @@ public class API
 
     public static Operator product_NestedLoops(Operator outerInput,
                                                        Operator innerInput,
-                                                       AisRowType outerType,
+                                                       RowType outerType,
                                                        RowType innerType,
                                                        int inputBindingPosition)
     {
