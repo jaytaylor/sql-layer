@@ -90,23 +90,24 @@ public class FunctionsTypeComputer extends AISTypeComputer
         List<AkType> requiredTypes = new ArrayList<AkType>(origTypes);
         composer.argumentTypes(requiredTypes);
         for (int i = 0; i < nargs; i++) {
-            if (origTypes.get(i) != requiredTypes.get(i)) {
-                // Need a different type: add a CAST.
-                JavaValueNode arg = args[i];
-                ExpressionType castType = castType(argTypes.get(i),
-                                                   requiredTypes.get(i), 
-                                                   arg.getType());
-                if (arg instanceof SQLToJavaValueNode) {
-                    SQLToJavaValueNode jarg = (SQLToJavaValueNode)arg;
-                    ValueNode sqlArg = jarg.getSQLValueNode();
-                    ValueNode cast = (ValueNode)sqlArg.getNodeFactory()
-                        .getNode(NodeTypes.CAST_NODE, 
-                                 sqlArg, fromExpressionType(castType),
-                                 sqlArg.getParserContext());
-                    jarg.setSQLValueNode(cast);
-                }
-                argTypes.set(i, castType);
+            if ((origTypes.get(i) == requiredTypes.get(i)) ||
+                (origTypes.get(i) == AkType.NULL))
+                continue;
+            // Need a different type: add a CAST.
+            JavaValueNode arg = args[i];
+            ExpressionType castType = castType(argTypes.get(i),
+                                               requiredTypes.get(i), 
+                                               arg.getType());
+            if (arg instanceof SQLToJavaValueNode) {
+                SQLToJavaValueNode jarg = (SQLToJavaValueNode)arg;
+                ValueNode sqlArg = jarg.getSQLValueNode();
+                ValueNode cast = (ValueNode)sqlArg.getNodeFactory()
+                    .getNode(NodeTypes.CAST_NODE, 
+                             sqlArg, fromExpressionType(castType),
+                             sqlArg.getParserContext());
+                jarg.setSQLValueNode(cast);
             }
+            argTypes.set(i, castType);
         }
         ExpressionType resultType = composer.composeType(argTypes);
         if (resultType == null)
