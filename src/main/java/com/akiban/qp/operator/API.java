@@ -299,9 +299,14 @@ public class API
     // Count
 
     public static Operator count_Default(Operator input,
-                                                 RowType countType)
+                                         RowType countType)
     {
         return new Count_Default(input, countType);
+    }
+
+    public static Operator count_TableStatus(RowType tableType)
+    {
+        return new Count_TableStatus(tableType);
     }
 
     // Sort
