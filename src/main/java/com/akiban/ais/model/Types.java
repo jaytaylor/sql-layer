@@ -90,7 +90,6 @@ public class Types {
 	public static Type YEAR =         new Type("year", 0, true, 1L, "YEAR", AkType.YEAR);
 	public static Type TIME =         new Type("time", 0, true, 3L, "TIME", AkType.TIME);
 	public static Type TIMESTAMP =    new Type("timestamp", 0, true, 4L, "TIMESTAMP", AkType.TIMESTAMP);
-	public static Type INTERVAL =     new Type("interval", 0, true, 8L, "INTERVAL", AkType.INTERVAL);
         //
 	// VARCHAR and TEXT types. Maximum storage size is computed in Column, numbers
 	// here are not used. MaxByteSize numbers here are not used.
@@ -160,7 +159,7 @@ public class Types {
 		types.add(GEOMETRY);
 		types.add(GEOMETRYCOLLECTION);
 		types.add(INT);
-                types.add(INTERVAL);
+//                types.add(INTERVAL);
 		types.add(U_INT);
 		types.add(LINESTRING);
 		types.add(LONGBLOB);

@@ -42,6 +42,8 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Collection;
+import java.util.EnumSet;
+import java.util.Set;
 
 import static com.akiban.util.Strings.parseHex;
 
@@ -171,6 +173,8 @@ public final class RowDataConversionTest extends ConversionTestBase {
 
         @Override
         public void setUp(TestCase<?> testCase) {
+            if (testCase.type() == AkType.INTERVAL)
+                throw new UnsupportedOperationException();
             createEnvironment(testCase);
             byte[] bytes = new byte[128];
             target.bind(fieldDef, bytes, 0);
@@ -180,6 +184,11 @@ public final class RowDataConversionTest extends ConversionTestBase {
         @Override
         public void syncConversions() {
             source.setWidth(target.lastEncodedLength());
+        }
+
+        @Override
+        public Set<? extends AkType> unsupportedTypes() {
+            return EnumSet.of(AkType.INTERVAL);
         }
 
         private void createEnvironment(TestCase<?> testCase) {
@@ -207,9 +216,6 @@ public final class RowDataConversionTest extends ConversionTestBase {
             switch (akType) {
                 case LONG:
                     typeName = Types.BIGINT.name().toUpperCase();
-                    break;
-                case INTERVAL:
-                    typeName = Types.INTERVAL.name().toUpperCase();
                     break;
                 default:
                     typeName = akType.name();

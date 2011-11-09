@@ -17,6 +17,7 @@ package com.akiban.server.types.conversion;
 
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
@@ -28,6 +29,8 @@ import com.akiban.server.types.typestests.TestCase;
 import org.junit.Assert;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -67,6 +70,11 @@ public final class ObjectConversionTest extends ConversionTestBase {
         @Override
         public void syncConversions() {
             source.setExplicitly(target.lastConvertedValue(), target.getConversionType());
+        }
+
+        @Override
+        public Set<? extends AkType> unsupportedTypes() {
+            return Collections.emptySet();
         }
 
         private final FromObjectValueSource source = new FromObjectValueSource();
