@@ -23,9 +23,9 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionService;
 
 import java.util.Collection;
 import java.util.List;
@@ -37,9 +37,11 @@ public final class HookableDDLFunctions implements DDLFunctions {
 
     private final DDLFunctions delegate;
     private final DXLFunctionsHook hook;
+    private final SessionService sessionService;
 
-    public HookableDDLFunctions(DDLFunctions delegate, List<DXLFunctionsHook> hooks) {
+    public HookableDDLFunctions(DDLFunctions delegate, List<DXLFunctionsHook> hooks, SessionService sessionService) {
         this.delegate = delegate;
+        this.sessionService = sessionService;
         this.hook = hooks.size() == 1 ? hooks.get(0) : new CompositeHook(hooks);
     }
     
@@ -226,7 +228,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
 
     @Override
     public RowDef getRowDef(int tableId) {
-        Session session = ServiceManagerImpl.newSession();
+        Session session = sessionService.createSession();
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.GET_ROWDEF);
@@ -262,7 +264,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
 
     @Override
     public int getGeneration() {
-        Session session = ServiceManagerImpl.newSession();
+        Session session = sessionService.createSession();
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.GET_SCHEMA_ID);
@@ -282,7 +284,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
 
     @Override
     public void forceGenerationUpdate() {
-        Session session = ServiceManagerImpl.newSession();
+        Session session = sessionService.createSession();
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.FORCE_GENERATION_UPDATE);
