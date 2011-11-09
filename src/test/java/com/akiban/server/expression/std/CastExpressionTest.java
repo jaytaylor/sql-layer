@@ -20,6 +20,7 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import org.junit.Test;
 
@@ -37,8 +38,13 @@ public final class CastExpressionTest
 
     @Test
     public void testNull() {
-        assertTrue("result is null", 
-                   cast(NullValueSource.only(), AkType.VARCHAR).isNull());
+        ValueSource booleanNull = BoolValueSource.OF_NULL;
+        assertTrue("isNull but not AkType.NULL",
+                   (booleanNull.isNull() &&
+                    (booleanNull.getConversionType() != AkType.NULL)));
+        ValueSource result = cast(booleanNull, AkType.VARCHAR);
+        assertTrue("result is null", result.isNull());
+        assertTrue("result is NULL", (result.getConversionType() == AkType.NULL));
     }
 
     @Test
