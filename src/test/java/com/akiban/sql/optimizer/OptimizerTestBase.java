@@ -21,7 +21,6 @@ import com.akiban.sql.optimizer.AISBinder;
 import com.akiban.sql.optimizer.AISTypeComputer;
 import com.akiban.sql.optimizer.BindingNodeFactory;
 import com.akiban.sql.optimizer.BoundNodeToString;
-import com.akiban.sql.optimizer.Grouper;
 import com.akiban.sql.optimizer.SubqueryFlattener;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
@@ -61,7 +60,6 @@ public class OptimizerTestBase extends ASTTransformTestBase
     protected AISTypeComputer typeComputer;
     protected BooleanNormalizer booleanNormalizer;
     protected SubqueryFlattener subqueryFlattener;
-    protected Grouper grouper;
 
     @Before
     public void makeTransformers() throws Exception {
@@ -71,7 +69,6 @@ public class OptimizerTestBase extends ASTTransformTestBase
         typeComputer = new AISTypeComputer();
         booleanNormalizer = new BooleanNormalizer(parser);
         subqueryFlattener = new SubqueryFlattener(parser);
-        grouper = new Grouper(parser);
     }
 
     protected static AkibanInformationSchema parseSchema(File schema) throws Exception {
