@@ -51,6 +51,11 @@ public final class CompareExpression extends AbstractBinaryExpression {
         return new InnerEvaluation(childrenEvaluations(), comparison, op);
     }
 
+    @Override
+    protected boolean nullIsContaminating() {
+        return true;
+    }
+
     public CompareExpression(Expression lhs, Comparison comparison, Expression rhs) {
         super(AkType.BOOL, lhs, rhs);
         this.comparison = comparison;

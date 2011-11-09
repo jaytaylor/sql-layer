@@ -40,6 +40,11 @@ public final class BoolLogicExpression extends AbstractBinaryExpression {
         return new InternalEvaluation(logic, childrenEvaluations());
     }
 
+    @Override
+    protected boolean nullIsContaminating() {
+        return false;
+    }
+    
     // private ctor -- the composers will be exposed as package-private
 
     private BoolLogicExpression(Expression lhs, BooleanLogic logic, Expression rhs) {

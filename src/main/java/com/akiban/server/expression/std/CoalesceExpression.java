@@ -47,6 +47,11 @@ public final class CoalesceExpression extends AbstractCompositeExpression {
         return new InnerEvaluation(valueType(), childrenEvaluations());
     }
 
+    @Override
+    protected boolean nullIsContaminating() {
+        return false;
+    }
+
     public CoalesceExpression(List<? extends Expression> children) {
         super(childrenType(children), children);
     }

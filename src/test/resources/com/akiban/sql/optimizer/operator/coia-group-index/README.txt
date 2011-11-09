@@ -33,3 +33,7 @@ select-16: DISTINCT
 select-16s: DISTINCT with ORDER BY using Sort
 
 select-16g: DISTINCT with ORDER BY using group index
+
+select-17a: side branch with sort
+
+select-17b: side branch with sort and IN

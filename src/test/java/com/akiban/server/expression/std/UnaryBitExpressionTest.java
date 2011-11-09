@@ -158,9 +158,9 @@ public class UnaryBitExpressionTest extends ComposedExpressionTestBase
     }
     
     @Override
-    protected int childrenCount() 
+    protected CompositionTestInfo getTestInfo() 
     {
-       return 1;
+        return testInfo;
     }
 
     @Override
@@ -168,4 +168,6 @@ public class UnaryBitExpressionTest extends ComposedExpressionTestBase
     {
         return composer;
     }    
+ 
+    private final CompositionTestInfo testInfo = new CompositionTestInfo(1, AkType.LONG, true);
 }

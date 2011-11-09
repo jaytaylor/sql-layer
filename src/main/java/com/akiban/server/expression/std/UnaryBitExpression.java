@@ -27,7 +27,6 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
 import java.math.BigInteger;
-import java.util.logging.Logger;
 import org.slf4j.LoggerFactory;
 
 public class UnaryBitExpression extends AbstractUnaryExpression
