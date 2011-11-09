@@ -1,5 +1,3 @@
 PhysicalSelect[_SQL_COL_1:INTEGER NOT NULL]
   project([Field(0)])
-    Count_Default(user.customers)
-      Filter_Default([user.customers])
-        GroupScan_Default(full scan on _akiban_customers)
+    Count_TableStatus(user.customers)
