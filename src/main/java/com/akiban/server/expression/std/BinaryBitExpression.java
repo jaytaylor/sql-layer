@@ -117,19 +117,16 @@ public class BinaryBitExpression extends AbstractBinaryExpression
     protected static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
         private final BitOperator op;                
-        private final boolean topIsNull;
-
-        public InnerEvaluation (List<? extends ExpressionEvaluation> children, BitOperator op, boolean topIsNull)
+       
+        public InnerEvaluation (List<? extends ExpressionEvaluation> children, BitOperator op)
         {
             super(children);
             this.op = op;
-            this.topIsNull = topIsNull;
         }
  
         @Override
         public ValueSource eval() 
         {
-            if (topIsNull) return NullValueSource.only();
 
             BigInteger rst = BigInteger.ZERO;
             try
@@ -163,7 +160,15 @@ public class BinaryBitExpression extends AbstractBinaryExpression
 
     @Override
     public ExpressionEvaluation evaluation() 
-    {    
-        return new InnerEvaluation(childrenEvaluations(), op, valueType() == AkType.NULL);
+    {  
+        if (valueType() == AkType.NULL ) return LiteralExpression.forNull().evaluation();
+        return new InnerEvaluation(childrenEvaluations(), op);
     }    
+    
+    
+    @Override
+    public boolean nullIsContaminating ()
+    {
+        return true;
+    }
 }

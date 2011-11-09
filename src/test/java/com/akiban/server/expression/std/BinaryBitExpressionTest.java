@@ -16,7 +16,6 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.NullValueSource;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.junit.NamedParameterizedRunner;
@@ -25,6 +24,7 @@ import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.std.BinaryBitExpression.BitOperator;
 import com.akiban.server.types.AkType;
 
+import com.akiban.server.types.util.ValueHolder;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collection;
@@ -125,7 +125,7 @@ public class BinaryBitExpressionTest
         Expression rightEx = new LiteralExpression(AkType.LONG, 2L);
 
         ValueSource actual = composer.compose(Arrays.asList(leftEx, rightEx)).evaluation().eval();
-        ValueSource expected = NullValueSource.only();
+        ValueSource expected = ValueHolder.holdingNull(); 
 
         assertEquals(expected, actual);
     }
@@ -136,7 +136,7 @@ public class BinaryBitExpressionTest
         Expression nullEx = LiteralExpression.forNull();
 
         ValueSource actual = composer.compose(Arrays.asList(nullEx, nullEx)).evaluation().eval();
-        ValueSource expected = NullValueSource.only();
+        ValueSource expected = ValueHolder.holdingNull();
 
         assertEquals(expected, actual);
     }
