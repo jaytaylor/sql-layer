@@ -21,6 +21,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.server.types.util.ValueHolder;
@@ -44,7 +45,7 @@ public final class LiteralExpression implements Expression {
 
     @Override
     public ExpressionEvaluation evaluation() {
-        return evaluation;
+        return  evaluation;
     }
 
     @Override
@@ -57,23 +58,23 @@ public final class LiteralExpression implements Expression {
     }
 
     public LiteralExpression(AkType type, long value) throws ValueHolder.IllegalRawPutException {
-        this(new InternalEvaluation(new ValueHolder(type, value)));
+         this(type == AkType.NULL ? nullEval :new InternalEvaluation(new ValueHolder(type, value)));
     }
 
     public LiteralExpression(AkType type, double value) throws ValueHolder.IllegalRawPutException {
-        this(new InternalEvaluation(new ValueHolder(type, value)));
+         this(type == AkType.NULL ? nullEval :new InternalEvaluation(new ValueHolder(type, value)));
     }
 
     public LiteralExpression(AkType type, float value) throws ValueHolder.IllegalRawPutException {
-        this(new InternalEvaluation(new ValueHolder(type, value)));
+         this(type == AkType.NULL ? nullEval :new InternalEvaluation(new ValueHolder(type, value)));
     }
 
     public LiteralExpression(AkType type, boolean value) throws ValueHolder.IllegalRawPutException {
-        this(new InternalEvaluation(new ValueHolder(type, value)));
+         this(type == AkType.NULL ? nullEval :new InternalEvaluation(new ValueHolder(type, value)));
     }
 
     public LiteralExpression(AkType type, Object value) throws ValueHolder.IllegalRawPutException {
-        this(new InternalEvaluation(new ValueHolder(type, value)));
+        this(type == AkType.NULL ? nullEval :new InternalEvaluation(new ValueHolder(type, value)));
     }
     
     private LiteralExpression(InternalEvaluation evaluation) {
@@ -103,11 +104,11 @@ public final class LiteralExpression implements Expression {
     
     // const
     
-    private static Expression NULL_EXPRESSION = new LiteralExpression(new InternalEvaluation(ValueHolder.holdingNull()));
+    private  static final Expression NULL_EXPRESSION = new LiteralExpression(nullEval = new InternalEvaluation(NullValueSource.only()));
     private static Expression BOOL_TRUE = new LiteralExpression(new InternalEvaluation(BoolValueSource.OF_TRUE));
     private static Expression BOOL_FALSE = new LiteralExpression(new InternalEvaluation(BoolValueSource.OF_FALSE));
     private static Expression BOOL_NULL = new LiteralExpression(new InternalEvaluation(BoolValueSource.OF_NULL));
-
+    private  static final InternalEvaluation nullEval ;
     // nested classes
     
     private static class InternalEvaluation implements  ExpressionEvaluation {
