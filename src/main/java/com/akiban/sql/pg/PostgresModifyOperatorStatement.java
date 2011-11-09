@@ -30,7 +30,7 @@ import com.akiban.util.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.akiban.server.expression.std.EnvironmentExpression.EnvironmentValue;
+import com.akiban.server.expression.EnvironmentExpressionSetting;
 
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
 
@@ -50,8 +50,8 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
     public PostgresModifyOperatorStatement(String statementType,
                                            UpdatePlannable resultOperator,
                                            PostgresType[] parameterTypes,
-                                           List<EnvironmentValue> environmentValues) {
-        super(parameterTypes, environmentValues);
+                                           List<EnvironmentExpressionSetting> environmentSetting) {
+        super(parameterTypes, environmentSetting);
         this.statementType = statementType;
         this.resultOperator = resultOperator;
     }
@@ -104,8 +104,8 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         public BoundStatement(String statementType,
                               UpdatePlannable resultOperator,
                               Bindings bindings, int nparams,
-                              List<EnvironmentValue> environmentValues) {
-            super(statementType, resultOperator, null, environmentValues);
+                              List<EnvironmentExpressionSetting> environmentSetting) {
+            super(statementType, resultOperator, null, environmentSetting);
             this.bindings = bindings;
             this.nparams = nparams;
         }
@@ -131,6 +131,6 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
 
         return new BoundStatement(statementType, resultOperator, 
                                   getParameterBindings(parameters), parameters.length,
-                                  getEnvironmentValues());
+                                  getEnvironmentSettings());
     }
 }

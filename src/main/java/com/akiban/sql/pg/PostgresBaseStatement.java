@@ -22,7 +22,7 @@ import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
 import com.akiban.util.Tap;
 
-import static com.akiban.server.expression.std.EnvironmentExpression.EnvironmentValue;
+import com.akiban.server.expression.EnvironmentExpressionSetting;
 
 import java.io.IOException;
 import java.util.List;
@@ -35,22 +35,22 @@ public abstract class PostgresBaseStatement implements PostgresStatement
     private List<String> columnNames;
     private List<PostgresType> columnTypes;
     private PostgresType[] parameterTypes;
-    private List<EnvironmentValue> environmentValues;
+    private List<EnvironmentExpressionSetting> environmentSettings;
 
     protected PostgresBaseStatement(PostgresType[] parameterTypes,
-                                    List<EnvironmentValue> environmentValues) {
+                                    List<EnvironmentExpressionSetting> environmentSettings) {
         this.parameterTypes = parameterTypes;
-        this.environmentValues = environmentValues;
+        this.environmentSettings = environmentSettings;
     }
 
     protected PostgresBaseStatement(List<String> columnNames, 
                                     List<PostgresType> columnTypes,
                                     PostgresType[] parameterTypes,
-                                    List<EnvironmentValue> environmentValues) {
+                                    List<EnvironmentExpressionSetting> environmentSettings) {
         this.columnNames = columnNames;
         this.columnTypes = columnTypes;
         this.parameterTypes = parameterTypes;
-        this.environmentValues = environmentValues;
+        this.environmentSettings = environmentSettings;
     }
 
     public List<String> getColumnNames() {
@@ -69,8 +69,8 @@ public abstract class PostgresBaseStatement implements PostgresStatement
         return parameterTypes;
     }
 
-    public List<EnvironmentValue> getEnvironmentValues() {
-        return environmentValues;
+    public List<EnvironmentExpressionSetting> getEnvironmentSettings() {
+        return environmentSettings;
     }
 
     public void sendDescription(PostgresServerSession server, boolean always) 
@@ -123,10 +123,10 @@ public abstract class PostgresBaseStatement implements PostgresStatement
 
     protected void setEnvironmentBindings(PostgresServerSession session, 
                                           Bindings bindings) {
-        if (environmentValues != null) {
+        if (environmentSettings != null) {
             int position = getNParameters();
-            for (EnvironmentValue environmentValue : environmentValues) {
-                bindings.set(position++, session.getEnvironmentValue(environmentValue));
+            for (EnvironmentExpressionSetting environmentSetting : environmentSettings) {
+                bindings.set(position++, session.getEnvironmentValue(environmentSetting));
             }
         }
     }

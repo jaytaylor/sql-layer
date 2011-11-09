@@ -19,44 +19,53 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
-import com.akiban.server.service.functions.Scalar;
+import com.akiban.server.expression.EnvironmentExpressionFactory;
+import com.akiban.server.expression.EnvironmentExpressionSetting;
+import com.akiban.server.service.functions.EnvironmentValue;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 
 public class StringEnvironmentExpression extends EnvironmentExpression
 {
-    @Scalar("current_user")
-    public static final ExpressionComposer CURRENT_USER = 
-        new StringEnvironmentComposer(EnvironmentValue.CURRENT_USER);
+     @EnvironmentValue("current_user")
+     public static final EnvironmentExpressionFactory CURRENT_USER = 
+         new StringEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_USER);
+ 
+     @EnvironmentValue("session_user")
+     public static final EnvironmentExpressionFactory SESSION_USER = 
+         new StringEnvironmentFactory(EnvironmentExpressionSetting.SESSION_USER);
+ 
+     @EnvironmentValue("system_user")
+     public static final EnvironmentExpressionFactory SYSTEM_USER = 
+         new StringEnvironmentFactory(EnvironmentExpressionSetting.SYSTEM_USER);
+     
+     static class StringEnvironmentFactory implements EnvironmentExpressionFactory {
+         @Override
+         public EnvironmentExpressionSetting environmentSetting() {
+             return environmentSetting;
+         }
 
-    @Scalar("session_user")
-    public static final ExpressionComposer SESSION_USER = 
-        new StringEnvironmentComposer(EnvironmentValue.SESSION_USER);
+         @Override
+         public Expression get(int bindingPosition) {
+             return new StringEnvironmentExpression(environmentSetting, bindingPosition);
+         }
 
-    @Scalar("system_user")
-    public static final ExpressionComposer SYSTEM_USER = 
-        new StringEnvironmentComposer(EnvironmentValue.SYSTEM_USER);
-    
-    static class StringEnvironmentComposer extends EnvironmentComposer {
-        @Override
-        protected ExpressionType composeType() {
-            return ExpressionTypes.varchar(128);
-        }
+         @Override
+         public ExpressionType getType() {
+             return ExpressionTypes.varchar(128);
+         }
+ 
+         public StringEnvironmentFactory(EnvironmentExpressionSetting environmentSetting) {
+             this.environmentSetting = environmentSetting;
+         }
 
-        @Override
-        protected Expression compose(int bindingPosition) {
-            return new StringEnvironmentExpression(environmentValue(), bindingPosition);
-        }
+         private EnvironmentExpressionSetting environmentSetting;
+     }
 
-        public StringEnvironmentComposer(EnvironmentValue environmentValue) {
-            super(environmentValue);
-        }
-    }
-
-    public StringEnvironmentExpression(EnvironmentValue environmentValue,
-                                       int bindingPosition) {
-        super(AkType.VARCHAR, environmentValue, bindingPosition);
+    protected StringEnvironmentExpression(EnvironmentExpressionSetting environmentSetting,
+                                          int bindingPosition) {
+        super(AkType.VARCHAR, environmentSetting, bindingPosition);
     }
 
     @Override

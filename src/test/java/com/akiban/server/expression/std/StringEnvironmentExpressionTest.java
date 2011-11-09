@@ -15,8 +15,7 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.expression.std.EnvironmentExpression.EnvironmentValue;
-
+import com.akiban.server.expression.EnvironmentExpressionSetting;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
@@ -41,10 +40,10 @@ public final class StringEnvironmentExpressionTest
         List<Expression> expressions = new ArrayList<Expression>();
         List<String> values = new ArrayList<String>();
         int position = 0;
-        for (EnvironmentValue environmentValue : EnvironmentValue.values()) {
-            String value = environmentValue.toString();
+        for (EnvironmentExpressionSetting environmentSetting : EnvironmentExpressionSetting.values()) {
+            String value = environmentSetting.toString();
             bindings.set(position, value);
-            expressions.add(new StringEnvironmentExpression(environmentValue, position));
+            expressions.add(new StringEnvironmentExpression(environmentSetting, position));
             values.add(value);
             position++;
         }

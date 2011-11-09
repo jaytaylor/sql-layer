@@ -34,7 +34,7 @@ import com.akiban.server.error.ParseException;
 import com.akiban.server.service.EventTypes;
 import com.akiban.server.service.instrumentation.SessionTracer;
 
-import static com.akiban.server.expression.std.EnvironmentExpression.EnvironmentValue;
+import com.akiban.server.expression.EnvironmentExpressionSetting;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -147,13 +147,13 @@ public class PostgresOperatorCompiler extends OperatorCompiler
             }
         }
 
-        List<EnvironmentValue> environmentValues = result.getEnvironmentValues();        
+        List<EnvironmentExpressionSetting> environmentSettings = result.getEnvironmentSettings();        
 
         if (result.isUpdate()) {
             PhysicalUpdate update = (PhysicalUpdate)result;
             return new PostgresModifyOperatorStatement(stmt.statementToString(),
                                                        update.getUpdatePlannable(),
-                                                       parameterTypes, environmentValues);
+                                                       parameterTypes, environmentSettings);
         }
         else {
             PhysicalSelect select = (PhysicalSelect)result;
@@ -168,7 +168,7 @@ public class PostgresOperatorCompiler extends OperatorCompiler
             return new PostgresOperatorStatement(select.getResultOperator(),
                                                  select.getResultRowType(),
                                                  columnNames, columnTypes,
-                                                 parameterTypes, environmentValues,
+                                                 parameterTypes, environmentSettings,
                                                  // TODO: Assumes Limit operator used.
                                                  0, -1);
         }

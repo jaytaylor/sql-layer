@@ -15,11 +15,16 @@
 
 package com.akiban.server.expression;
 
-import java.util.List;
+public interface EnvironmentExpressionFactory {
+    /** Return the setting on which the value depends. */
+    EnvironmentExpressionSetting environmentSetting();
 
-public interface ExpressionComposerWithBindingPosition extends ExpressionComposer {
-    /** Return an expression with the given expressions as its arguments and the
-     * given position in the {@link com.akiban.qp.operator.Bindings}.
+    /** Return an expression accessing the requested {@link EnvironmentExpressionSetting}
+     * at the given position in the {@link com.akiban.qp.operator.Bindings}.
      */
-    Expression compose(int bindingPosition, List<? extends Expression> arguments);
+    Expression get(int bindingPosition);
+    
+    /** Return the full type of a expression.
+     */
+    ExpressionType getType();
 }

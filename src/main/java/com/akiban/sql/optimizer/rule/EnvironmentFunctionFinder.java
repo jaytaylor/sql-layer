@@ -21,10 +21,10 @@ import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.sql.optimizer.plan.*;
 import static com.akiban.sql.optimizer.plan.PlanContext.*;
 
+import com.akiban.server.expression.EnvironmentExpressionFactory;
+import com.akiban.server.expression.EnvironmentExpressionSetting;
 import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.ExpressionComposerWithBindingPosition;
 import com.akiban.server.expression.ExpressionType;
-import static com.akiban.server.expression.std.EnvironmentExpression.*;
 import com.akiban.server.service.functions.FunctionsRegistry;
 
 import org.slf4j.Logger;
@@ -44,11 +44,11 @@ public class EnvironmentFunctionFinder extends BaseRule
         return logger;
     }
 
-    public static final WhiteboardMarker<List<EnvironmentValue>> MARKER = 
-        new DefaultWhiteboardMarker<List<EnvironmentValue>>();
+    public static final WhiteboardMarker<List<EnvironmentExpressionSetting>> MARKER = 
+        new DefaultWhiteboardMarker<List<EnvironmentExpressionSetting>>();
 
-    /** Recover the {@link EnvironmentValue} list put on the whiteboard when loaded. */
-    public static List<EnvironmentValue> getEnvironmentValues(PlanContext plan) {
+    /** Recover the {@link EnvironmentExpressionSetting} list put on the whiteboard when loaded. */
+    public static List<EnvironmentExpressionSetting> getEnvironmentSettings(PlanContext plan) {
         return plan.getWhiteboard(MARKER);
     }
 
@@ -58,12 +58,12 @@ public class EnvironmentFunctionFinder extends BaseRule
             planContext.getRulesContext();
         Rewriter r = new Rewriter(rulesContext.getFunctionsRegistry());
         planContext.getPlan().accept(r);
-        if (r.environmentValues != null)
-            planContext.putWhiteboard(MARKER, r.environmentValues);
+        if (r.environmentSettings != null)
+            planContext.putWhiteboard(MARKER, r.environmentSettings);
     }
 
     static class Rewriter implements PlanVisitor, ExpressionRewriteVisitor {
-        List<EnvironmentValue> environmentValues = null;
+        List<EnvironmentExpressionSetting> environmentSettings = null;
         FunctionsRegistry functionsRegistry;
 
         public Rewriter(FunctionsRegistry functionsRegistry) {
@@ -106,29 +106,22 @@ public class EnvironmentFunctionFinder extends BaseRule
             catch (NoSuchFunctionException ex) {
                 return func;
             }
-            if (!(composer instanceof ExpressionComposerWithBindingPosition))
+            if (!(composer instanceof EnvironmentExpressionFactory))
                 return func;
             
-            // Needs bindings; figure out how.
-            if (composer instanceof EnvironmentComposer) {
-                EnvironmentValue environmentValue = ((EnvironmentComposer)composer).getEnvironmentValue();
-                if (environmentValues == null)
-                    environmentValues = new ArrayList<EnvironmentValue>();
-                int bindingPosition = environmentValues.indexOf(environmentValue);
-                if (bindingPosition < 0) {
-                    bindingPosition = environmentValues.size();
-                    environmentValues.add(environmentValue);
-                }
-                return new EnvironmentFunctionExpression(func.getFunction(),
-                                                         bindingPosition,
-                                                         func.getSQLtype(),
-                                                         func.getAkType(),
-                                                         func.getSQLsource());
+            EnvironmentExpressionSetting setting = ((EnvironmentExpressionFactory)composer).environmentSetting();
+            if (environmentSettings == null)
+                environmentSettings = new ArrayList<EnvironmentExpressionSetting>();
+            int bindingPosition = environmentSettings.indexOf(setting);
+            if (bindingPosition < 0) {
+                bindingPosition = environmentSettings.size();
+                environmentSettings.add(setting);
             }
-            else {
-                throw new UnsupportedSQLException("Needs bindings but don't know how",
-                                                  func.getSQLsource());
-            }
+            return new EnvironmentFunctionExpression(func.getFunction(),
+                                                     bindingPosition,
+                                                     func.getSQLtype(),
+                                                     func.getAkType(),
+                                                     func.getSQLsource());
         }
     }
 }

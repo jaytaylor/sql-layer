@@ -18,21 +18,14 @@ package com.akiban.server.expression.std;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.WrongExpressionArityException;
+import com.akiban.server.expression.EnvironmentExpressionSetting;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.expression.ExpressionComposerWithBindingPosition;
 import com.akiban.server.types.AkType;
 import java.util.List;
 
 public abstract class EnvironmentExpression extends AbstractNoArgExpression
 {
-    public enum EnvironmentValue {
-        CURRENT_DATE,
-        CURRENT_USER,
-        SESSION_USER,
-        SYSTEM_USER
-    }
-
     @Override
     public boolean isConstant() {
         return false;
@@ -45,13 +38,13 @@ public abstract class EnvironmentExpression extends AbstractNoArgExpression
 
     @Override
     public String name() {
-        return environmentValue().toString();
+        return environmentSetting().toString();
     }
 
     // for use by subclasses
 
-    protected EnvironmentValue environmentValue() {
-        return environmentValue;
+    protected EnvironmentExpressionSetting environmentSetting() {
+        return environmentSetting;
     }
 
     protected int bindingPosition() {
@@ -59,48 +52,15 @@ public abstract class EnvironmentExpression extends AbstractNoArgExpression
     }
 
     protected EnvironmentExpression(AkType type, 
-                                    EnvironmentValue environmentValue,
+                                    EnvironmentExpressionSetting environmentSetting,
                                     int bindingPosition) {
         super(type);
-        this.environmentValue = environmentValue;
+        this.environmentSetting = environmentSetting;
         this.bindingPosition = bindingPosition;
     }
 
-    private final EnvironmentValue environmentValue;
+    private final EnvironmentExpressionSetting environmentSetting;
     private final int bindingPosition;
-
-    public static abstract class EnvironmentComposer extends NoArgComposer
-                                                     implements ExpressionComposerWithBindingPosition {
-        public EnvironmentValue getEnvironmentValue() {
-            return environmentValue;
-        }
-
-        @Override
-        protected Expression compose() {
-            throw new AkibanInternalException("Should have been called with binding position");
-        }
-
-        // for use by subclasses
-
-        protected EnvironmentValue environmentValue() {
-            return environmentValue;
-        }
-
-        protected abstract Expression compose(int bindingPosition);
-
-        @Override
-        public Expression compose(int bindingPosition, List<? extends Expression> arguments) {
-            if (arguments.size() != 0)
-                throw new WrongExpressionArityException(0, arguments.size());
-            return compose(bindingPosition);
-        }
-        
-        protected EnvironmentComposer(EnvironmentValue environmentValue) {
-            this.environmentValue = environmentValue;
-        }
-
-        private final EnvironmentValue environmentValue;
-    }
 
     public static abstract class EnvironmentEvaluation extends AbstractNoArgExpressionEvaluation {
         

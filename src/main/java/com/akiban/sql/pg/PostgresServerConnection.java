@@ -17,8 +17,8 @@ package com.akiban.sql.pg;
 
 import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.server.error.*;
+import com.akiban.server.expression.EnvironmentExpressionSetting;
 import com.akiban.server.expression.ExpressionRegistry;
-import static com.akiban.server.expression.std.EnvironmentExpression.EnvironmentValue;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.store.Store;
@@ -842,8 +842,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     @Override
-    public Object getEnvironmentValue(EnvironmentValue environmentValue) {
-        switch (environmentValue) {
+    public Object getEnvironmentValue(EnvironmentExpressionSetting setting) {
+        switch (setting) {
         case CURRENT_DATE:
             if (transactionStartTime != null)
                 return transactionStartTime;
@@ -857,7 +857,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             return System.getProperty("user.name");
         default:
             throw new AkibanInternalException("Unknown environment value: " +
-                                              environmentValue);
+                                              setting);
         }
     }
 

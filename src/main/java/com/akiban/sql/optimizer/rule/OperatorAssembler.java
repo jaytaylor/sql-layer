@@ -34,7 +34,7 @@ import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.expression.std.LiteralExpression;
-import static com.akiban.server.expression.std.EnvironmentExpression.EnvironmentValue;
+import com.akiban.server.expression.EnvironmentExpressionSetting;
 import com.akiban.server.expression.subquery.AnySubqueryExpression;
 import com.akiban.server.expression.subquery.ExistsSubqueryExpression;
 import com.akiban.server.expression.subquery.ScalarSubqueryExpression;
@@ -123,7 +123,7 @@ public class OperatorAssembler extends BaseRule
                 resultColumns = getResultColumns(stream.rowType.nFields());
             }
             return new PhysicalSelect(stream.operator, stream.rowType, resultColumns, 
-                                      getParameterTypes(), getEnvironmentValues());
+                                      getParameterTypes(), getEnvironmentSettings());
         }
 
         protected PhysicalUpdate insertStatement(InsertStatement insertStatement) {
@@ -167,7 +167,7 @@ public class OperatorAssembler extends BaseRule
             stream.operator = API.project_Table(stream.operator, stream.rowType,
                                                 targetRowType, inserts);
             UpdatePlannable plan = API.insert_Default(stream.operator);
-            return new PhysicalUpdate(plan, getParameterTypes(), getEnvironmentValues());
+            return new PhysicalUpdate(plan, getParameterTypes(), getEnvironmentSettings());
         }
 
         protected PhysicalUpdate updateStatement(UpdateStatement updateStatement) {
@@ -192,14 +192,14 @@ public class OperatorAssembler extends BaseRule
             UpdateFunction updateFunction = 
                 new ExpressionRowUpdateFunction(updates, targetRowType);
             UpdatePlannable plan = API.update_Default(stream.operator, updateFunction);
-            return new PhysicalUpdate(plan, getParameterTypes(), getEnvironmentValues());
+            return new PhysicalUpdate(plan, getParameterTypes(), getEnvironmentSettings());
         }
 
         protected PhysicalUpdate deleteStatement(DeleteStatement deleteStatement) {
             RowStream stream = assembleQuery(deleteStatement.getQuery());
             assert (stream.rowType == tableRowType(deleteStatement.getTargetTable()));
             UpdatePlannable plan = API.delete_Default(stream.operator);
-            return new PhysicalUpdate(plan, getParameterTypes(), getEnvironmentValues());
+            return new PhysicalUpdate(plan, getParameterTypes(), getEnvironmentSettings());
         }
 
         // Assemble the top-level query. If there is a ResultSet at
@@ -857,8 +857,8 @@ public class OperatorAssembler extends BaseRule
         }
         
         // Get any list of enviroment values.
-        protected List<EnvironmentValue> getEnvironmentValues() {
-            return EnvironmentFunctionFinder.getEnvironmentValues(planContext);
+        protected List<EnvironmentExpressionSetting> getEnvironmentSettings() {
+            return EnvironmentFunctionFinder.getEnvironmentSettings(planContext);
         }
 
         /* Bindings-related state */
@@ -881,9 +881,9 @@ public class OperatorAssembler extends BaseRule
             loopBindingsOffset = expressionBindingsOffset;
                 
             // Then come expressions.
-            List<EnvironmentValue> environmentValues = EnvironmentFunctionFinder.getEnvironmentValues(planContext);
-            if (environmentValues != null) {
-                loopBindingsOffset += environmentValues.size();
+            List<EnvironmentExpressionSetting> environmentSettings = EnvironmentFunctionFinder.getEnvironmentSettings(planContext);
+            if (environmentSettings != null) {
+                loopBindingsOffset += environmentSettings.size();
             }
         }
 

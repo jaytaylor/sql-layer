@@ -23,7 +23,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.Tap;
 
-import static com.akiban.server.expression.std.EnvironmentExpression.EnvironmentValue;
+import com.akiban.server.expression.EnvironmentExpressionSetting;
 
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
 
@@ -49,10 +49,10 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                                      List<String> columnNames,
                                      List<PostgresType> columnTypes,
                                      PostgresType[] parameterTypes,
-                                     List<EnvironmentValue> environmentValues,
+                                     List<EnvironmentExpressionSetting> environmentSettings,
                                      int offset,
                                      int limit) {
-        super(columnNames, columnTypes, parameterTypes, environmentValues);
+        super(columnNames, columnTypes, parameterTypes, environmentSettings);
         this.resultOperator = resultOperator;
         this.resultRowType = resultRowType;
         this.offset = offset;
@@ -149,9 +149,9 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                               int offset, int limit,
                               Bindings bindings, int nparams,
                               boolean[] columnBinary, boolean defaultColumnBinary,
-                              List<EnvironmentValue> environmentValues) {
+                              List<EnvironmentExpressionSetting> environmentSettings) {
             super(resultOperator, resultRowType, columnNames, columnTypes, 
-                  null, environmentValues, offset, limit);
+                  null, environmentSettings, offset, limit);
             this.bindings = bindings;
             this.nparams = nparams;
             this.columnBinary = columnBinary;
@@ -197,6 +197,6 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                                   getColumnNames(), getColumnTypes(),
                                   offset, limit, bindings, nparams,
                                   columnBinary, defaultColumnBinary,
-                                  getEnvironmentValues());
+                                  getEnvironmentSettings());
     }
 }
