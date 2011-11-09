@@ -99,17 +99,14 @@ public class EnvironmentFunctionFinder extends BaseRule
         protected ExpressionNode functionExpression(FunctionExpression func) {
             if (!func.getOperands().isEmpty())
                 return func;
-            ExpressionComposer composer;
+            EnvironmentExpressionFactory factory;
             try {
-                composer = functionsRegistry.composer(func.getFunction());
+                factory = functionsRegistry.environment(func.getFunction());
             }
             catch (NoSuchFunctionException ex) {
                 return func;
             }
-            if (!(composer instanceof EnvironmentExpressionFactory))
-                return func;
-            
-            EnvironmentExpressionSetting setting = ((EnvironmentExpressionFactory)composer).environmentSetting();
+            EnvironmentExpressionSetting setting = factory.environmentSetting();
             if (environmentSettings == null)
                 environmentSettings = new ArrayList<EnvironmentExpressionSetting>();
             int bindingPosition = environmentSettings.indexOf(setting);

@@ -150,8 +150,7 @@ public class ExpressionAssembler
                                               node.getSQLsource());
         else if (node instanceof EnvironmentFunctionExpression) {
             EnvironmentFunctionExpression funcNode = (EnvironmentFunctionExpression)node;
-            EnvironmentExpressionFactory factory =
-                (EnvironmentExpressionFactory)functionsRegistry.composer(funcNode.getFunction());
+            EnvironmentExpressionFactory factory = functionsRegistry.environment(funcNode.getFunction());
             return factory.get(columnContext.getExpressionBindingsOffset() + funcNode.getBindingPosition());
         }
         else

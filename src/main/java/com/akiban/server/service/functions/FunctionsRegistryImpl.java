@@ -18,6 +18,7 @@ package com.akiban.server.service.functions;
 import com.akiban.server.aggregation.AggregatorFactory;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoSuchFunctionException;
+import com.akiban.server.expression.EnvironmentExpressionFactory;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
@@ -35,6 +36,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -56,6 +58,13 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service<F
     @Override
     public ExpressionComposer composer(String name) {
         return getSafe(roComposers, name);
+    }
+
+    // EnvironmentExpressionRegistry interface
+
+    @Override
+    public EnvironmentExpressionFactory environment(String name) {
+        return getSafe(roEnvironments, name);
     }
 
     // FunctionsRegistry interface
@@ -100,14 +109,18 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service<F
     FunctionsRegistryImpl(FunctionsClassFinder finder) {
         Map<String,Map<AkType,AggregatorFactory>> aggregators = new HashMap<String, Map<AkType, AggregatorFactory>>();
         Map<String,ExpressionComposer> composers = new HashMap<String, ExpressionComposer>();
+        Map<String,EnvironmentExpressionFactory> environments = new HashMap<String, EnvironmentExpressionFactory>();
+        Set<String> names = new HashSet<String>();
         for (Class<?> cls : finder.findClasses()) {
             if (!Modifier.isPublic(cls.getModifiers()))
                 continue;
-            findComposers(composers, cls);
-            findAggregators(aggregators, cls);
+            findComposers(composers, names, cls);
+            findAggregators(aggregators, names, cls);
+            findEnvironments(environments, names, cls);
         }
         this.roAggregators = aggregators;
         this.roComposers = composers;
+        this.roEnvironments = environments;
     }
 
     Map<String,Map<AkType,AggregatorFactory>> getAllAggregators() {
@@ -118,19 +131,23 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service<F
         return Collections.unmodifiableMap(roComposers);
     }
 
+    Map<String,EnvironmentExpressionFactory> getAllEnvironments() {
+        return Collections.unmodifiableMap(roEnvironments);
+    }
+
     // for use in this class
 
     private static void complain(String complaint) {
         throw new FunctionsRegistryException(complaint);
     }
 
-    private static void findAggregators(Map<String, Map<AkType, AggregatorFactory>> composers, Class<?> cls) {
+    private static void findAggregators(Map<String, Map<AkType, AggregatorFactory>> composers, Set<String> names, Class<?> cls) {
         for (Method method : cls.getDeclaredMethods()) {
             Aggregate annotation = method.getAnnotation(Aggregate.class);
             if (annotation != null) {
-                validate(method);
+                validateAggregator(method);
                 Map<AkType, AggregatorFactory> innerMap = new EnumMap<AkType, AggregatorFactory>(AkType.class);
-                String name = nameIsAvailable(composers, annotation.value());
+                String name = nameIsAvailable(names, annotation.value());
                 composers.put(name, innerMap);
                 for (AkType akType : AkType.values()) {
                     if (akType == AkType.UNSUPPORTED)
@@ -150,15 +167,32 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service<F
         }
     }
 
-    private static void findComposers(Map<String, ExpressionComposer> composers, Class<?> cls) {
+    private static void findComposers(Map<String, ExpressionComposer> composers, Set<String> names, Class<?> cls) {
         for (Field field : cls.getDeclaredFields()) {
             Scalar annotation = field.getAnnotation(Scalar.class);
             if (annotation != null) {
-                validate(field);
-                String name = nameIsAvailable(composers, annotation.value());
+                validateComposer(field);
+                String name = nameIsAvailable(names, annotation.value());
                 try {
                     ExpressionComposer composer = (ExpressionComposer) field.get(null);
                     ExpressionComposer old = composers.put(name, composer);
+                    assert old == null : old;
+                } catch (IllegalAccessException e) {
+                    throw new AkibanInternalException("while accessing field " + field, e);
+                }
+            }
+        }
+    }
+
+    private static void findEnvironments(Map<String, EnvironmentExpressionFactory> environments, Set<String> names, Class<?> cls) {
+        for (Field field : cls.getDeclaredFields()) {
+            EnvironmentValue annotation = field.getAnnotation(EnvironmentValue.class);
+            if (annotation != null) {
+                validateEnvironment(field);
+                String name = nameIsAvailable(names, annotation.value());
+                try {
+                    EnvironmentExpressionFactory factory = (EnvironmentExpressionFactory) field.get(null);
+                    EnvironmentExpressionFactory old = environments.put(name, factory);
                     assert old == null : old;
                 } catch (IllegalAccessException e) {
                     throw new AkibanInternalException("while accessing field " + field, e);
@@ -180,9 +214,9 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service<F
         return result;
     }
     
-    private static String nameIsAvailable(Map<String,?> map, String name) {
+    private static String nameIsAvailable(Set<String> names, String name) {
         name = normalize(name);
-        if (map.containsKey(name))
+        if (!names.add(name))
             complain("duplicate expression name: " + name);
         return name;
     }
@@ -191,7 +225,7 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service<F
         return in.toLowerCase();
     }
 
-    private static void validate(Method method) {
+    private static void validateAggregator(Method method) {
         validateMember(method);
         if(!Arrays.equals(AGGREGATE_FACTORY_PROVIDER_PARAMS, method.getParameterTypes()))
             complain("method " + method + " takes wrong param types");
@@ -199,10 +233,16 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service<F
             complain("method " + method + " must return " + AggregatorFactory.class.getSimpleName());
     }
 
-    private static void validate(Field field) {
+    private static void validateComposer(Field field) {
         validateMember(field);
         if (!ExpressionComposer.class.isAssignableFrom(field.getType()))
             complain("field " + field + " isn't a subclass of " + ExpressionComposer.class.getSimpleName());
+    }
+
+    private static void validateEnvironment(Field field) {
+        validateMember(field);
+        if (!EnvironmentExpressionFactory.class.isAssignableFrom(field.getType()))
+            complain("field " + field + " isn't a subclass of " + EnvironmentExpressionFactory.class.getSimpleName());
     }
 
     private static void validateMember(Member member) {
@@ -219,7 +259,8 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service<F
     // object state
 
     private final Map<String,Map<AkType,AggregatorFactory>> roAggregators;
-    private final Map<String,ExpressionComposer> roComposers ;
+    private final Map<String,ExpressionComposer> roComposers;
+    private final Map<String,EnvironmentExpressionFactory> roEnvironments;
 
     // class state
 
