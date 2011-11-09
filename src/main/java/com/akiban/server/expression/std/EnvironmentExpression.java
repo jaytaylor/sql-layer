@@ -62,7 +62,7 @@ public abstract class EnvironmentExpression extends AbstractNoArgExpression
     private final EnvironmentExpressionSetting environmentSetting;
     private final int bindingPosition;
 
-    public static abstract class EnvironmentEvaluation extends AbstractNoArgExpressionEvaluation {
+    public static abstract class EnvironmentEvaluation<T> extends AbstractNoArgExpressionEvaluation {
         
         @Override
         public void of(Bindings bindings) {
@@ -71,8 +71,8 @@ public abstract class EnvironmentExpression extends AbstractNoArgExpression
 
         // for use by subclasses
         
-        public Object environmentValue() {
-            return bindings.get(bindingsPosition);
+        public T environmentValue() {
+            return (T)bindings.get(bindingsPosition);
         }
 
         protected EnvironmentEvaluation(int bindingsPosition) {

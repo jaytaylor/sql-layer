@@ -148,7 +148,8 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service<F
                 validateAggregator(method);
                 Map<AkType, AggregatorFactory> innerMap = new EnumMap<AkType, AggregatorFactory>(AkType.class);
                 String name = nameIsAvailable(names, annotation.value());
-                composers.put(name, innerMap);
+                Map<AkType, AggregatorFactory> old = composers.put(name, innerMap);
+                assert old == null : old; // nameIsAvailable did actual error check
                 for (AkType akType : AkType.values()) {
                     if (akType == AkType.UNSUPPORTED)
                         continue;
@@ -176,7 +177,7 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service<F
                 try {
                     ExpressionComposer composer = (ExpressionComposer) field.get(null);
                     ExpressionComposer old = composers.put(name, composer);
-                    assert old == null : old;
+                    assert old == null : old; // nameIsAvailable did actual error check
                 } catch (IllegalAccessException e) {
                     throw new AkibanInternalException("while accessing field " + field, e);
                 }
@@ -193,7 +194,7 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service<F
                 try {
                     EnvironmentExpressionFactory factory = (EnvironmentExpressionFactory) field.get(null);
                     EnvironmentExpressionFactory old = environments.put(name, factory);
-                    assert old == null : old;
+                    assert old == null : old; // nameIsAvailable did actual error check
                 } catch (IllegalAccessException e) {
                     throw new AkibanInternalException("while accessing field " + field, e);
                 }

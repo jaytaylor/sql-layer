@@ -60,7 +60,7 @@ public class StringEnvironmentExpression extends EnvironmentExpression
              this.environmentSetting = environmentSetting;
          }
 
-         private EnvironmentExpressionSetting environmentSetting;
+         private final EnvironmentExpressionSetting environmentSetting;
      }
 
     protected StringEnvironmentExpression(EnvironmentExpressionSetting environmentSetting,
@@ -74,7 +74,7 @@ public class StringEnvironmentExpression extends EnvironmentExpression
         return new InnerEvaluation(bindingPosition());
     }
 
-    private static final class InnerEvaluation extends EnvironmentEvaluation
+    private static final class InnerEvaluation extends EnvironmentEvaluation<String>
     {
         public InnerEvaluation(int bindingsPosition) {
             super(bindingsPosition);
@@ -83,7 +83,7 @@ public class StringEnvironmentExpression extends EnvironmentExpression
         @Override
         public ValueSource eval() 
         {
-            return new ValueHolder(AkType.VARCHAR, (String)environmentValue());
+            return new ValueHolder(AkType.VARCHAR, environmentValue());
         }
     }
 }
