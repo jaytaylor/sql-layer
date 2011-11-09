@@ -102,14 +102,11 @@ public class UnaryBitExpression extends AbstractUnaryExpression
 
         @Override
         public ValueSource eval() 
-        {
-            ValueSource source;
-            if ((source = this.operand()).isNull()) return NullValueSource.only();
-            
+        {   
             BigInteger arg;
             try
             {
-                arg = Extractors.getUBigIntExtractor().getObject(source);
+                arg = Extractors.getUBigIntExtractor().getObject(operand());
             }
             catch (InconvertibleTypesException ex) 
             {
@@ -142,6 +139,7 @@ public class UnaryBitExpression extends AbstractUnaryExpression
     @Override
     public ExpressionEvaluation evaluation() 
     {
+        if (operand().valueType() == AkType.NULL) return LiteralExpression.forNull().evaluation();
         return new InnerEvaluation(operandEvaluation(), op);
     }    
 }
