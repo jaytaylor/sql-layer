@@ -1,5 +1,5 @@
 PhysicalUpdate
-  Insert_Default(project to table user.orders ([Literal(205), Field(0), Literal(com.akiban.server.types.NullValueSource@329b5c29)]))
-    project to table user.orders ([Literal(205), Field(0), Literal(com.akiban.server.types.NullValueSource@329b5c29)])
+  Insert_Default(project to table user.orders ([Literal(205), Field(0), Literal(NULL)]))
+    project to table user.orders ([Literal(205), Field(0), Literal(NULL)])
       AncestorLookup_Default(Index(user.customers.name[IndexColumn(name)]) -> [user.customers])
         IndexScan_Default(Index(user.customers.name[IndexColumn(name)]) (>=UnboundExpressions[Literal(Jones)],<=UnboundExpressions[Literal(Jones)]))

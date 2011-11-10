@@ -58,23 +58,23 @@ public final class LiteralExpression implements Expression {
     }
 
     public LiteralExpression(AkType type, long value) throws ValueHolder.IllegalRawPutException {
-         this(type == AkType.NULL ? nullEval :new InternalEvaluation(new ValueHolder(type, value)));
+        this(type == AkType.NULL ? NULL_EVAL :new InternalEvaluation(new ValueHolder(type, value)));
     }
 
     public LiteralExpression(AkType type, double value) throws ValueHolder.IllegalRawPutException {
-         this(type == AkType.NULL ? nullEval :new InternalEvaluation(new ValueHolder(type, value)));
+        this(type == AkType.NULL ? NULL_EVAL :new InternalEvaluation(new ValueHolder(type, value)));
     }
 
     public LiteralExpression(AkType type, float value) throws ValueHolder.IllegalRawPutException {
-         this(type == AkType.NULL ? nullEval :new InternalEvaluation(new ValueHolder(type, value)));
+        this(type == AkType.NULL ? NULL_EVAL :new InternalEvaluation(new ValueHolder(type, value)));
     }
 
     public LiteralExpression(AkType type, boolean value) throws ValueHolder.IllegalRawPutException {
-         this(type == AkType.NULL ? nullEval :new InternalEvaluation(new ValueHolder(type, value)));
+        this(type == AkType.NULL ? NULL_EVAL :new InternalEvaluation(new ValueHolder(type, value)));
     }
 
     public LiteralExpression(AkType type, Object value) throws ValueHolder.IllegalRawPutException {
-        this(type == AkType.NULL ? nullEval :new InternalEvaluation(new ValueHolder(type, value)));
+        this(type == AkType.NULL ? NULL_EVAL :new InternalEvaluation(new ValueHolder(type, value)));
     }
     
     private LiteralExpression(InternalEvaluation evaluation) {
@@ -103,12 +103,13 @@ public final class LiteralExpression implements Expression {
     private final ExpressionEvaluation evaluation;
     
     // const
+
+    private static final InternalEvaluation NULL_EVAL  = new InternalEvaluation(NullValueSource.only()) ;
+    private static final Expression NULL_EXPRESSION = new LiteralExpression(NULL_EVAL);
+    private static final Expression BOOL_TRUE = new LiteralExpression(new InternalEvaluation(BoolValueSource.OF_TRUE));
+    private static final Expression BOOL_FALSE = new LiteralExpression(new InternalEvaluation(BoolValueSource.OF_FALSE));
+    private static final Expression BOOL_NULL = new LiteralExpression(new InternalEvaluation(BoolValueSource.OF_NULL));
     
-    private  static final Expression NULL_EXPRESSION = new LiteralExpression(nullEval = new InternalEvaluation(NullValueSource.only()));
-    private static Expression BOOL_TRUE = new LiteralExpression(new InternalEvaluation(BoolValueSource.OF_TRUE));
-    private static Expression BOOL_FALSE = new LiteralExpression(new InternalEvaluation(BoolValueSource.OF_FALSE));
-    private static Expression BOOL_NULL = new LiteralExpression(new InternalEvaluation(BoolValueSource.OF_NULL));
-    private  static final InternalEvaluation nullEval ;
     // nested classes
     
     private static class InternalEvaluation implements  ExpressionEvaluation {
@@ -146,6 +147,10 @@ public final class LiteralExpression implements Expression {
             this.valueSource = valueSource;
         }
 
+        @Override
+        public String toString () {
+            return valueSource.getConversionType().toString();
+        }
         private final ValueSource valueSource;
     }
 }
