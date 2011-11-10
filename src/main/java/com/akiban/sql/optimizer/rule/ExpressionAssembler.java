@@ -16,12 +16,14 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionRegistry;
+import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.types.DataTypeDescriptor;
 
 import static com.akiban.server.expression.std.Expressions.*;
 import com.akiban.server.expression.std.InExpression;
+import com.akiban.server.types.AkType;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 
@@ -35,11 +37,11 @@ import java.util.List;
 /** Turn {@link ExpressionNode} into {@link Expression}. */
 public class ExpressionAssembler
 {
-    private ExpressionRegistry expressionRegistry;
+    private FunctionsRegistry functionsRegistry;
 
     public ExpressionAssembler(RulesContext rulesContext) {
-        this.expressionRegistry = ((SchemaRulesContext)
-                                  rulesContext).getExpressionRegistry();
+        this.functionsRegistry = ((SchemaRulesContext)
+                                  rulesContext).getFunctionsRegistry();
     }
 
     public interface ColumnExpressionToIndex {
@@ -71,15 +73,20 @@ public class ExpressionAssembler
     public Expression assembleExpression(ExpressionNode node,
                                          ColumnExpressionContext columnContext,
                                          SubqueryOperatorAssembler subqueryAssembler) {
-        if (node instanceof ConstantExpression)
-            return literal(((ConstantExpression)node).getValue());
+        if (node instanceof ConstantExpression) {
+            if (node.getAkType() == null)
+                return literal(((ConstantExpression)node).getValue());
+            else
+                return literal(((ConstantExpression)node).getValue(),
+                               node.getAkType());
+        }
         else if (node instanceof ColumnExpression)
             return assembleColumnExpression((ColumnExpression)node, columnContext);
         else if (node instanceof ParameterExpression)
             return variable(node.getAkType(), ((ParameterExpression)node).getPosition());
         else if (node instanceof BooleanOperationExpression) {
             BooleanOperationExpression bexpr = (BooleanOperationExpression)node;
-            return expressionRegistry
+            return functionsRegistry
                 .composer(bexpr.getOperation().getFunctionName())
                 .compose(Arrays.asList(assembleExpression(bexpr.getLeft(), 
                                                           columnContext, 
@@ -89,9 +96,8 @@ public class ExpressionAssembler
                                                           subqueryAssembler)));
         }
         else if (node instanceof CastExpression)
-            // TODO: Need actual cast.
-            return assembleExpression(((CastExpression)node).getOperand(),
-                                      columnContext, subqueryAssembler);
+            return assembleCastExpression((CastExpression)node,
+                                          columnContext, subqueryAssembler);
         else if (node instanceof ComparisonCondition) {
             ComparisonCondition cond = (ComparisonCondition)node;
             return compare(assembleExpression(cond.getLeft(), 
@@ -102,7 +108,7 @@ public class ExpressionAssembler
         }
         else if (node instanceof FunctionExpression) {
             FunctionExpression funcNode = (FunctionExpression)node;
-            return expressionRegistry
+            return functionsRegistry
                 .composer(funcNode.getFunction())
                 .compose(assembleExpressions(funcNode.getOperands(), 
                                              columnContext, subqueryAssembler));
@@ -110,7 +116,7 @@ public class ExpressionAssembler
         else if (node instanceof IfElseExpression) {
             IfElseExpression ifElse = (IfElseExpression)node;
             // TODO: Is this right?
-            return expressionRegistry
+            return functionsRegistry
                 .composer("ifThenElse")
                 .compose(Arrays.asList(assembleExpression(ifElse.getTestCondition(), 
                                                           columnContext, 
@@ -159,6 +165,42 @@ public class ExpressionAssembler
             }
         }
         throw new AkibanInternalException("Column not found " + column);
+    }
+
+    protected Expression assembleCastExpression(CastExpression castExpression,
+                                                ColumnExpressionContext columnContext,
+                                                SubqueryOperatorAssembler subqueryAssembler) {
+        ExpressionNode operand = castExpression.getOperand();
+        Expression expr = assembleExpression(operand, columnContext, subqueryAssembler);
+        AkType toType = castExpression.getAkType();
+        if (toType == null) return expr;
+        if (!toType.equals(operand.getAkType()))
+            // Do type conversion.
+            expr = new com.akiban.server.expression.std.CastExpression(toType, expr);
+        switch (toType) {
+        case VARCHAR:
+            {
+                DataTypeDescriptor fromSQL = operand.getSQLtype();
+                DataTypeDescriptor toSQL = castExpression.getSQLtype();
+                if ((toSQL != null) &&
+                    (toSQL.getMaximumWidth() > 0) &&
+                    ((fromSQL == null) ||
+                     (toSQL.getMaximumWidth() < fromSQL.getMaximumWidth())))
+                    // Cast to shorter VARCHAR.
+                    expr = new com.akiban.server.expression.std.TruncateStringExpression(toSQL.getMaximumWidth(), expr);
+            }
+            break;
+        case DECIMAL:
+            {
+                DataTypeDescriptor fromSQL = operand.getSQLtype();
+                DataTypeDescriptor toSQL = castExpression.getSQLtype();
+                if ((toSQL != null) && !toSQL.equals(fromSQL))
+                    // Cast to DECIMAL scale.
+                    expr = new com.akiban.server.expression.std.ScaleDecimalExpression(toSQL.getPrecision(), toSQL.getScale(), expr);
+            }
+            break;
+        }
+        return expr;
     }
 
     protected List<Expression> assembleExpressions(List<ExpressionNode> expressions,

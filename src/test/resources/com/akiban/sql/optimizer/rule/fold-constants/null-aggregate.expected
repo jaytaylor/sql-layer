@@ -1,5 +1,5 @@
 SelectQuery@19762f
   ResultSet@5d469658[_SQL_COL_1, _SQL_COL_2]
-    Project@45389b3f[null, 0]
+    Project@45389b3f[NULL, 0]
       Select@1797795[]
         ExpressionsSource@9ff0a8([[]])

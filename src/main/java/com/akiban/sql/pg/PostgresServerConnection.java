@@ -16,10 +16,9 @@
 package com.akiban.sql.pg;
 
 import com.akiban.qp.loadableplan.LoadablePlan;
-import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.error.*;
-import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.store.Store;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.SQLParser;
@@ -593,33 +592,17 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         // Temporary until completely removed.
         // TODO: Any way / need to ask AIS if schema exists and report error?
 
-        PostgresStatementGenerator compiler, explainer;
+        PostgresStatementGenerator compiler;
         {
-            Schema schema;
-            // TODO: Temporary choice of optimizer.
-            // There is an "options" property that psql allows in the
-            // connect string, but no way to pass it to the JDBC
-            // driver. So have to use what's available.
-            if ("old-optimizer".equals(properties.getProperty("user"))) {
-                logger.info("Using old optimizer!");
-                PostgresOperatorCompiler_Old oc = new PostgresOperatorCompiler_Old(this);
-                schema = oc.getSchema();
-                compiler = oc;
-                explainer = new PostgresExplainStatementGenerator_Old(this);
-            }
-            else {
-                PostgresOperatorCompiler nc = new PostgresOperatorCompiler(this);
-                schema = nc.getSchema();
-                compiler = nc;
-                explainer = new PostgresExplainStatementGenerator(this);
-            }
             final Store store = reqs.store();
             final PersistitStore persistitStore;
             if (store instanceof OperatorStore)
                 persistitStore = ((OperatorStore)store).getPersistitStore();
             else
                 persistitStore = (PersistitStore)store;
-            adapter = new PersistitAdapter(schema,
+            PostgresOperatorCompiler c = new PostgresOperatorCompiler(this);
+            compiler = c;
+            adapter = new PersistitAdapter(c.getSchema(),
                                            persistitStore,
                                            reqs.treeService(),
                                            session,
@@ -636,7 +619,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             new PostgresDDLStatementGenerator(this),
             new PostgresSessionStatementGenerator(this),
             new PostgresCallStatementGenerator(this),
-            explainer
+            new PostgresExplainStatementGenerator(this)
         };
     }
 
@@ -830,12 +813,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     @Override
-    public ExpressionRegistry expressionFactory() {
-        return reqs.expressionFactory();
-    }
-
-    @Override
-    public AggregatorRegistry aggregatorRegistry() {
-        return reqs.aggregatorRegistry();
+    public FunctionsRegistry functionsRegistry() {
+        return reqs.functionsRegistry();
     }
 }

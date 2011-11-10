@@ -513,21 +513,36 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected RowStream assembleAggregateSource(AggregateSource aggregateSource) {
-            RowStream stream = assembleStream(aggregateSource.getInput());
-            int nkeys = aggregateSource.getNGroupBy();
-            // TODO: Temporary until aggregate_Partial fully functional.
-            if (!aggregateSource.isProjectSplitOff()) {
-                assert ((nkeys == 0) &&
-                        (aggregateSource.getNAggregates() == 1));
-                stream.operator = API.count_Default(stream.operator, stream.rowType);
-                stream.rowType = stream.operator.rowType();
-                stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource, 
-                                                                   stream.rowType);
-                return stream;
-            }
             AggregateSource.Implementation impl = aggregateSource.getImplementation();
             if (impl == null)
               impl = AggregateSource.Implementation.SORT;
+            int nkeys = aggregateSource.getNGroupBy();
+            RowStream stream;
+            switch (impl) {
+            case COUNT_STAR:
+            case COUNT_TABLE_STATUS:
+                {
+                    assert !aggregateSource.isProjectSplitOff();
+                    assert ((nkeys == 0) &&
+                            (aggregateSource.getNAggregates() == 1));
+                    if (impl == AggregateSource.Implementation.COUNT_STAR) {
+                        stream = assembleStream(aggregateSource.getInput());
+                        // TODO: Could be removed, since aggregate_Partial works as well.
+                        stream.operator = API.count_Default(stream.operator, 
+                                                            stream.rowType);
+                    }
+                    else {
+                        stream = new RowStream();
+                        stream.operator = API.count_TableStatus(tableRowType(aggregateSource.getTable()));
+                    }
+                    stream.rowType = stream.operator.rowType();
+                    stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource, 
+                                                                       stream.rowType);
+                    return stream;
+                }                
+            }
+            assert aggregateSource.isProjectSplitOff();
+            stream = assembleStream(aggregateSource.getInput());
             switch (impl) {
             case PRESORTED:
             case UNGROUPED:
@@ -538,7 +553,7 @@ public class OperatorAssembler extends BaseRule
                 break;
             }
             stream.operator = API.aggregate_Partial(stream.operator, nkeys,
-                                                    rulesContext.getAggregatorRegistry(),
+                                                    rulesContext.getFunctionsRegistry(),
                                                     aggregateSource.getAggregateFunctions());
             stream.rowType = stream.operator.rowType();
             stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource,

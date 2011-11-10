@@ -62,7 +62,7 @@ public class ArithExpression extends AbstractBinaryExpression
         return true;
     }
     
-    private static AkType getTopType (AkType leftT, AkType rightT)
+    protected static AkType getTopType (AkType leftT, AkType rightT)
     {
         if (leftT == AkType.NULL || rightT == AkType.NULL)
             return AkType.NULL;

@@ -32,4 +32,8 @@ public class FixedCountLimit implements ScanLimit {
     public boolean limitReached(RowData previousRow) {
         return limit >= 0 && count++ >= limit;
     }
+
+    public int getLimit() {
+        return limit;
+    }
 }
