@@ -127,8 +127,14 @@ final class UnionAll_Default extends Operator {
             }
             else {
                 outputRow = currentCursor.next();
-                if (outputRow == null)
+                if (outputRow == null) {
+                    currentCursor.close();
                     outputRow = nextCursorFirstRow();
+                }
+            }
+            if (outputRow == null) {
+                close();
+                return null;
             }
             return wrapped(outputRow);
         }
@@ -174,17 +180,15 @@ final class UnionAll_Default extends Operator {
                     return nextRow;
                 }
             }
-            close();
             return null;
         }
 
         private Row wrapped(Row inputRow) {
-            if (inputRow == null)
-                return null;
+            assert inputRow != null;
             if (!inputRow.rowType().equals(currentInputRowType)) {
                 throw new WrongRowTypeException(inputRow, currentInputRowType);
             }
-            assert inputRow.rowType() == currentInputRowType : inputRow.rowType() + " != " + currentInputRowType;
+            assert inputRow.rowType().equals(currentInputRowType) : inputRow.rowType() + " != " + currentInputRowType;
             if (rowHolder.isEmpty() || rowHolder.isShared()) {
                 MasqueradingRow row = new MasqueradingRow(outputRowType, inputRow);
                 row.setRow(inputRow);
