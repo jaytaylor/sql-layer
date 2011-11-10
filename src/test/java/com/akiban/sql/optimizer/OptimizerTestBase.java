@@ -57,7 +57,6 @@ public class OptimizerTestBase extends ASTTransformTestBase
     protected TypeComputer typeComputer;
     protected BooleanNormalizer booleanNormalizer;
     protected SubqueryFlattener subqueryFlattener;
-    protected Grouper grouper;
 
     @Before
     public void makeTransformers() throws Exception {
@@ -67,7 +66,6 @@ public class OptimizerTestBase extends ASTTransformTestBase
         typeComputer = new FunctionsTypeComputer(new FunctionsRegistryImpl());
         booleanNormalizer = new BooleanNormalizer(parser);
         subqueryFlattener = new SubqueryFlattener(parser);
-        grouper = new Grouper(parser);
     }
 
     protected static AkibanInformationSchema parseSchema(File schema) throws Exception {
