@@ -58,7 +58,7 @@ public class OperatorCompiler extends SchemaRulesContext
         nodeFactory = parserContext.getNodeFactory();
         binder = new AISBinder(ais, defaultSchemaName);
         parser.setNodeFactory(new BindingNodeFactory(nodeFactory));
-        typeComputer = new AISTypeComputer();
+        typeComputer = new FunctionsTypeComputer(functionsRegistry);
         booleanNormalizer = new BooleanNormalizer(parser);
         subqueryFlattener = new SubqueryFlattener(parser);
     }

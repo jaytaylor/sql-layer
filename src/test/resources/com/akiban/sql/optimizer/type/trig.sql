@@ -1,0 +1,1 @@
+SELECT SIN(d) * COS(z) FROM t1
