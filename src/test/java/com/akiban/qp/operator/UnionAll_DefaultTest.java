@@ -16,7 +16,9 @@
 package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.DerivedTypesSchema;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.types.AkType;
 import org.junit.Test;
 
@@ -28,15 +30,16 @@ public final class UnionAll_DefaultTest {
     
     @Test
     public void unionTwoNormal() {
-        RowsBuilder first = new RowsBuilder(AkType.LONG, AkType.VARCHAR)
+        DerivedTypesSchema schema = new DerivedTypesSchema();
+        RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR)
                 .row(1L, "one")
                 .row(2L, "two")
                 .row(1L, "one");
-        RowsBuilder second = new RowsBuilder(AkType.LONG, AkType.VARCHAR)
+        RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR)
                 .row(3L, "three")
                 .row(1L, "one")
                 .row(2L, "deux");
-        RowsBuilder expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR)
+        RowsBuilder expected = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR)
                 .row(1L, "one")
                 .row(2L, "two")
                 .row(1L, "one")

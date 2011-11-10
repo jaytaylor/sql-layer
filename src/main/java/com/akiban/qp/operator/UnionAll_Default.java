@@ -158,8 +158,9 @@ final class UnionAll_Default extends Operator {
         private Row nextCursorFirstRow() {
             assert currentCursor == null  : currentCursor;
             assert bindings != null;
-            while (inputOperatorsIndex++ < inputOperators.size()) {
+            while (++inputOperatorsIndex < inputOperators.size()) {
                 Cursor nextCursor = inputOperators.get(inputOperatorsIndex).cursor(adapter);
+                nextCursor.open(bindings);
                 Row nextRow = nextCursor.next();
                 if (nextRow == null) {
                     nextCursor.close();
@@ -175,14 +176,18 @@ final class UnionAll_Default extends Operator {
         }
 
         private Row wrapped(Row inputRow) {
+            if (inputRow == null)
+                return null;
             assert inputRow.rowType() == currentInputRowType : inputRow.rowType() + " != " + currentInputRowType;
             if (rowHolder.isEmpty() || rowHolder.isShared()) {
-                rowHolder.hold(new MasqueradingRow(outputRowType));
+                MasqueradingRow row = new MasqueradingRow(outputRowType, inputRow);
+                row.setRow(inputRow);
+                rowHolder.hold(row);
             }
-            assert ! rowHolder.isShared() : rowHolder;
-            MasqueradingRow outputRow = rowHolder.get();
-            outputRow.setRow(inputRow);
-            return outputRow;
+            else {
+                rowHolder.get().setRow(inputRow);
+            }
+            return rowHolder.get();
         }
 
         private final StoreAdapter adapter;
@@ -190,7 +195,7 @@ final class UnionAll_Default extends Operator {
         private final List<? extends RowType> inputRowTypes;
         private final RowType outputRowType;
         private final ShareHolder<MasqueradingRow> rowHolder = new ShareHolder<MasqueradingRow>();
-        private int inputOperatorsIndex = 0;
+        private int inputOperatorsIndex = -1; // right before the first operator
         private Bindings bindings;
         private Cursor currentCursor;
         private RowType currentInputRowType;
@@ -240,29 +245,38 @@ final class UnionAll_Default extends Operator {
 
         @Override
         public void acquire() {
+            ++shares;
             delegate.acquire();
         }
 
         @Override
         public boolean isShared() {
-            return delegate.isShared();
+            return (shares > 1) || delegate.isShared();
         }
 
         @Override
         public void release() {
             delegate.release();
+            --shares;
+        }
+
+        @Override
+        public String toString() {
+            return delegate.toString() + " of type " + rowType;
         }
 
         void setRow(Row row) {
             this.delegate = row;
         }
 
-        private MasqueradingRow(RowType rowType) {
+        private MasqueradingRow(RowType rowType, Row wrapped) {
             this.rowType = rowType;
-            this.delegate = delegate;
+            this.delegate = wrapped;
+            shares = 0;
         }
 
         private Row delegate;
         private final RowType rowType;
+        private int shares;
     }
 }

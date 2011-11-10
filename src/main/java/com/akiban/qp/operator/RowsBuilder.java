@@ -20,6 +20,7 @@ import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.DerivedTypesSchema;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.ValuesRowType;
@@ -95,11 +96,12 @@ public final class RowsBuilder {
     }
 
     public RowsBuilder(AkType... types) {
-        this(null, types);
+        this.rowType = new ValuesRowType(null, COUNT.incrementAndGet(), types);
+        this.types = types;
     }
 
-    public RowsBuilder(Schema schema, AkType... types) {
-        rowType = new ValuesRowType(schema, COUNT.incrementAndGet(), types);
+    public RowsBuilder(DerivedTypesSchema schema, AkType... types) {
+        this.rowType = schema.newValuesType(types);
         this.types = types;
     }
 
