@@ -141,9 +141,14 @@ final class UnionAll_Default extends Operator {
 
         @Override
         public void close() {
+            inputOperatorsIndex = -1;
             this.bindings = null;
             if (currentCursor != null)
                 currentCursor.close();
+            else
+                currentCursor = null;
+            currentInputRowType = null;
+            rowHolder.release();
         }
 
         private Execution(StoreAdapter adapter,
@@ -191,7 +196,6 @@ final class UnionAll_Default extends Operator {
             assert inputRow.rowType().equals(currentInputRowType) : inputRow.rowType() + " != " + currentInputRowType;
             if (rowHolder.isEmpty() || rowHolder.isShared()) {
                 MasqueradingRow row = new MasqueradingRow(outputRowType, inputRow);
-                row.setRow(inputRow);
                 rowHolder.hold(row);
             }
             else {

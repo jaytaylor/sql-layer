@@ -80,10 +80,19 @@ public final class OperatorTestHelper {
         check(plan, expecteds, null);
     }
 
+    public static Cursor open(Operator plan) {
+        Cursor result = plan.cursor(ADAPTER);
+        reopen(result);
+        return result;
+    }
+
+    public static void reopen(Cursor cursor) {
+        cursor.open(new ArrayBindings(0));
+    }
+
     public static List<Row> execute(Operator plan) {
         List<Row> rows = new ArrayList<Row>();
-        Cursor cursor = plan.cursor(ADAPTER);
-        cursor.open(new ArrayBindings(0));
+        Cursor cursor = open(plan);
         try {
             for(Row row = cursor.next(); row != null; row = cursor.next()) {
                 row.acquire();

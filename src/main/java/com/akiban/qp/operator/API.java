@@ -21,7 +21,6 @@ import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.AisRowType;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
@@ -357,6 +356,14 @@ public class API
                                    outerJoinRowType,
                                    outerJoinRowExpressions,
                                    inputBindingPosition);
+    }
+
+    // Union
+    public static Operator unionAll(
+            Operator input1, RowType input1RowType,
+            Operator input2, RowType input2RowType
+    ) {
+        return new UnionAll_Default(input1, input1RowType, input2, input2RowType);
     }
 
     // Insert

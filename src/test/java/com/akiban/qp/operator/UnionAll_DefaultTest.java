@@ -103,6 +103,29 @@ public final class UnionAll_DefaultTest {
     }
 
     @Test
+    public void twoOpens() {
+        DerivedTypesSchema schema = new DerivedTypesSchema();
+        RowsBuilder first = new RowsBuilder(schema, AkType.LONG)
+                .row(1L);
+        RowsBuilder second = new RowsBuilder(schema, AkType.LONG)
+                .row(2L);
+        Operator union = union(first, second);
+        Cursor cursor = OperatorTestHelper.open(union);
+        int count = 0;
+        while(cursor.next() != null) {
+            ++count;
+        }
+        assertEquals("count", 2, count);
+        cursor.close();
+        count = 0;
+        OperatorTestHelper.reopen(cursor);
+        while(cursor.next() != null) {
+            ++count;
+        }
+        assertEquals("count", 2, count);
+    }
+
+    @Test
     public void bothInputsEmpty() {
         DerivedTypesSchema schema = new DerivedTypesSchema();
         RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
