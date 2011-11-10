@@ -55,5 +55,6 @@ public interface Expression {
      * {@link ValueSource#getConversionType()} method must return the same type as returned by this method (or NULL).
      * @return the AkType this expression's runtime instance will eventually have
      */
+    // TODO: Should this return ExpressionType? Or is the precision / scale not relevant?
     AkType valueType();
 }

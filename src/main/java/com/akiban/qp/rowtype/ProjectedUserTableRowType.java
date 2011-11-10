@@ -22,7 +22,7 @@ import com.akiban.server.expression.Expression;
 
 public class ProjectedUserTableRowType extends ProjectedRowType {
 
-    public ProjectedUserTableRowType(Schema schema, UserTable table, List<? extends Expression> projections) {
+    public ProjectedUserTableRowType(DerivedTypesSchema schema, UserTable table, List<? extends Expression> projections) {
         super(schema, table.getTableId(), projections);
         this.table = table;
     }
