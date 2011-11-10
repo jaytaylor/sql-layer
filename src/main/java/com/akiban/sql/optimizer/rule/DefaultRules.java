@@ -34,8 +34,10 @@ public class DefaultRules
         new BranchJoiner(),
         new SelectPreponer(),
         new AggregateSplitter(),
+        new SortSplitter(),
         new MapFolder(),
         new ExpressionCompactor(),
+        new EnvironmentFunctionFinder(),
         new OperatorAssembler()
      );
 

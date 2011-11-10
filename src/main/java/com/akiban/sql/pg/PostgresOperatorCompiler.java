@@ -34,6 +34,8 @@ import com.akiban.server.error.ParseException;
 import com.akiban.server.service.EventTypes;
 import com.akiban.server.service.instrumentation.SessionTracer;
 
+import com.akiban.server.expression.EnvironmentExpressionSetting;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,7 +53,7 @@ public class PostgresOperatorCompiler extends OperatorCompiler
 
     public PostgresOperatorCompiler(PostgresServerSession server) {
         super(server.getParser(), server.getAIS(), server.getDefaultSchemaName(),
-                server.expressionFactory(), server.aggregatorRegistry());
+              server.functionsRegistry());
 
         server.setAttribute("aisBinder", binder);
         server.setAttribute("compiler", this);
@@ -145,11 +147,13 @@ public class PostgresOperatorCompiler extends OperatorCompiler
             }
         }
 
+        List<EnvironmentExpressionSetting> environmentSettings = result.getEnvironmentSettings();        
+
         if (result.isUpdate()) {
             PhysicalUpdate update = (PhysicalUpdate)result;
             return new PostgresModifyOperatorStatement(stmt.statementToString(),
                                                        update.getUpdatePlannable(),
-                                                       parameterTypes);
+                                                       parameterTypes, environmentSettings);
         }
         else {
             PhysicalSelect select = (PhysicalSelect)result;
@@ -164,7 +168,7 @@ public class PostgresOperatorCompiler extends OperatorCompiler
             return new PostgresOperatorStatement(select.getResultOperator(),
                                                  select.getResultRowType(),
                                                  columnNames, columnTypes,
-                                                 parameterTypes,
+                                                 parameterTypes, environmentSettings,
                                                  // TODO: Assumes Limit operator used.
                                                  0, -1);
         }

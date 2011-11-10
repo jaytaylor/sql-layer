@@ -21,6 +21,7 @@ import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.AisRowType;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
@@ -110,31 +111,26 @@ public class API
 
     public static Operator groupScan_Default(GroupTable groupTable)
     {
-        return groupScan_Default(groupTable, NO_LIMIT);
-    }
-
-    public static Operator groupScan_Default(GroupTable groupTable, Limit limit)
-    {
-        return new GroupScan_Default(new GroupScan_Default.FullGroupCursorCreator(groupTable), limit);
+        return new GroupScan_Default(new GroupScan_Default.FullGroupCursorCreator(groupTable));
     }
 
     public static Operator groupScan_Default(GroupTable groupTable,
-                                             Limit limit,
                                              int hKeyBindingPosition,
                                              boolean deep,
                                              UserTable hKeyType,
                                              UserTable shortenUntil)
     {
         return new GroupScan_Default(
-                new GroupScan_Default.PositionalGroupCursorCreator(groupTable, hKeyBindingPosition, deep, hKeyType, shortenUntil),
-                limit
-        );
+                new GroupScan_Default.PositionalGroupCursorCreator(groupTable, hKeyBindingPosition, deep, hKeyType, shortenUntil));
     }
+
+    // ValuesScan
 
     public static Operator valuesScan_Default (Collection<? extends BindableRow> rows, RowType rowType)
     {
         return new ValuesScan_Default (rows, rowType);
     }
+    
     // BranchLookup
 
     public static Operator branchLookup_Default(Operator inputOperator,
@@ -330,7 +326,7 @@ public class API
 
     // Filter
 
-    public static Operator filter_Default(Operator inputOperator, Collection<RowType> keepTypes)
+    public static Operator filter_Default(Operator inputOperator, Collection<? extends RowType> keepTypes)
     {
         return new Filter_Default(inputOperator, keepTypes);
     }
@@ -359,9 +355,14 @@ public class API
     // Count
 
     public static Operator count_Default(Operator input,
-                                                 RowType countType)
+                                         RowType countType)
     {
         return new Count_Default(input, countType);
+    }
+
+    public static Operator count_TableStatus(RowType tableType)
+    {
+        return new Count_TableStatus(tableType);
     }
 
     // Sort

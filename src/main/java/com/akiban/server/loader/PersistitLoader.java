@@ -19,8 +19,8 @@ import java.sql.ResultSet;
 import java.util.Collections;
 import java.util.List;
 
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionService;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.exception.PersistitException;
 
@@ -28,12 +28,13 @@ public class PersistitLoader
 {
     private final static boolean BUILD_INDEXES_DEFERRED = true;
     
-    public PersistitLoader(PersistitStore store, DB db, Tracker tracker)
+    public PersistitLoader(PersistitStore store, DB db, Tracker tracker, SessionService sessionService)
             throws Exception
     {
         this.store = store;
         this.db = db;
         this.tracker = tracker;
+        this.sessionService = sessionService;
         // this.transaction = store.getDb().getTransaction();
     }
 
@@ -48,7 +49,7 @@ public class PersistitLoader
         	tracker.error("Caught exception while sorting finalTasks", e);
         }
 
-        Session session = ServiceManagerImpl.newSession();
+        Session session = sessionService.createSession();
         try {
             // TODO: Merge inputs from final tasks by hkey. This would require a
             // TODO: connection per table.
@@ -81,7 +82,7 @@ public class PersistitLoader
         boolean deferIndexes = store.isDeferIndexes();
         store.setDeferIndexes(true);
         try {
-            final PersistitAdapter persistitAdapter = new PersistitAdapter(store, task, tracker);
+            final PersistitAdapter persistitAdapter = new PersistitAdapter(store, task, tracker, sessionService);
             final int[] count = new int[1];
             connection.new Query(SQL_TEMPLATE, task.artifactTableName())
             {
@@ -108,5 +109,6 @@ public class PersistitLoader
     private final DB db;
     private final PersistitStore store;
     private final Tracker tracker;
+    private final SessionService sessionService;
     // private final Transaction transaction;
 }

@@ -28,7 +28,7 @@ class GroupScan_Default extends Operator
     @Override
     public String toString()
     {
-        return getClass().getSimpleName() + '(' + cursorCreator + ' ' + limit + ')';
+        return getClass().getSimpleName() + '(' + cursorCreator + ')';
     }
 
     // Operator interface
@@ -36,21 +36,19 @@ class GroupScan_Default extends Operator
     @Override
     protected Cursor cursor(StoreAdapter adapter)
     {
-        return new Execution(adapter, cursorCreator, limit);
+        return new Execution(adapter, cursorCreator);
     }
 
     // GroupScan_Default interface
 
-    public GroupScan_Default(GroupCursorCreator cursorCreator, Limit limit)
+    public GroupScan_Default(GroupCursorCreator cursorCreator)
     {
         ArgumentValidation.notNull("groupTable", cursorCreator);
-        this.limit = limit;
         this.cursorCreator = cursorCreator;
     }
 
     // Object state
 
-    private final Limit limit;
     private final GroupCursorCreator cursorCreator;
 
     // Inner classes
@@ -71,7 +69,7 @@ class GroupScan_Default extends Operator
         {
             checkQueryCancelation();
             Row row;
-            if ((row = cursor.next()) == null || limit.limitReached(row)) {
+            if ((row = cursor.next()) == null) {
                 close();
                 row = null;
             }
@@ -86,17 +84,15 @@ class GroupScan_Default extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, GroupCursorCreator cursorCreator, Limit limit)
+        Execution(StoreAdapter adapter, GroupCursorCreator cursorCreator)
         {
             super(adapter);
             this.cursor = cursorCreator.cursor(adapter);
-            this.limit = limit;
         }
 
         // Object state
 
         private final Cursor cursor;
-        private final Limit limit;
     }
 
     static interface GroupCursorCreator

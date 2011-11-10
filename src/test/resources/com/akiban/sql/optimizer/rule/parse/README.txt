@@ -64,6 +64,8 @@ string-functions-1: string functions
 
 subquery-expression: subquery for value
 
+trig-functions-1: trigonometric functions
+
 union-1: UNION
 
 update-1: change to literal

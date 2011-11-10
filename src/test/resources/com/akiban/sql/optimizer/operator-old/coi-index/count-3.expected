@@ -1,7 +1,0 @@
-Count_Default(flatten(flatten(user.customers, user.orders), user.items))
-  Flatten_HKeyOrdered(flatten(user.customers, user.orders) INNER user.items)
-    Flatten_HKeyOrdered(user.customers INNER user.orders)
-      Select_HKeyOrdered(user.items, Field(3) == Literal(100))
-        AncestorLookup_Default(Index(user.items.sku[IndexColumn(sku)]) -> [user.customers, user.orders, user.items])
-          IndexScan_Default(Index(user.items.sku[IndexColumn(sku)]) (>UnboundExpressions[Literal(NULL)],<UnboundExpressions[Literal(8888)]))
-[_SQL_COL_1:INTEGER NOT NULL]

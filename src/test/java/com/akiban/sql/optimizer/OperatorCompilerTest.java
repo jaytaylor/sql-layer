@@ -15,9 +15,7 @@
 
 package com.akiban.sql.optimizer;
 
-import com.akiban.server.aggregation.AggregatorRegistry;
-import com.akiban.server.aggregation.DummyAggregatorRegistry;
-import com.akiban.server.expression.ExpressionRegistry;
+import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
 import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.TestBase;
@@ -66,7 +64,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
         if (indexFile != null)
             OptimizerTestBase.loadGroupIndexes(ais, indexFile);
         compiler = TestOperatorCompiler.create(parser, ais, "user",
-                new FunctionsRegistryImpl(), new DummyAggregatorRegistry());
+                                               new FunctionsRegistryImpl());
     }
 
     static class TestResultColumn extends PhysicalResultColumn {
@@ -91,19 +89,16 @@ public class OperatorCompilerTest extends NamedParamsTestBase
         public static OperatorCompiler create(SQLParser parser, 
                                               AkibanInformationSchema ais, 
                                               String defaultSchemaName,
-                                              ExpressionRegistry expressionRegistry,
-                                              AggregatorRegistry aggregatorRegistry
-                                              ) {
+                                              FunctionsRegistry functionsRegistry) {
             RulesTestHelper.ensureRowDefs(ais);
-            return new TestOperatorCompiler(parser, ais, "user", expressionRegistry, aggregatorRegistry);
+            return new TestOperatorCompiler(parser, ais, "user", functionsRegistry);
         }
 
         private TestOperatorCompiler(SQLParser parser, 
                                      AkibanInformationSchema ais, 
                                      String defaultSchemaName,
-                                     ExpressionRegistry expressionRegistry,
-                                     AggregatorRegistry aggregatorRegistry) {
-            super(parser, ais, defaultSchemaName, expressionRegistry, aggregatorRegistry);
+                                     FunctionsRegistry functionsRegistry) {
+            super(parser, ais, defaultSchemaName, functionsRegistry);
         }
 
         @Override
@@ -165,7 +160,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     }
 
     @Override
-    public void checkResult(String result) throws IOException {
+    public void checkResult(String result) throws IOException{
         assertEqualsWithoutHashes(caseName, expected, result);
     }
 

@@ -16,11 +16,8 @@
 package com.akiban.server.expression.subquery;
 
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.expression.std.Comparison;
-import com.akiban.server.service.functions.FunctionsRegistryImpl;
 import static com.akiban.server.expression.std.Expressions.*;
-import static com.akiban.server.expression.std.LongOps.*;
 
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.OperatorTestHelper;

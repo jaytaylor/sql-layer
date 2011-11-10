@@ -15,13 +15,12 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.error.InvalidPortException;
 import com.akiban.server.error.ServiceStartupException;
-import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.InstrumentationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.SessionService;
@@ -43,11 +42,8 @@ public class PostgresServerManager implements PostgresService, Service<PostgresS
                                  SessionService sessionService,
                                  Store store,
                                  TreeService treeService,
-                                 ExpressionRegistry expressionRegistry,
-                                 AggregatorRegistry aggregatorRegistry
-    ) {
-        this.reqs = new PostgresServiceRequirements(dxlService, instrumentation, sessionService, store, treeService,
-                expressionRegistry, aggregatorRegistry, config);
+                                 FunctionsRegistry functionsRegistry) {
+        this.reqs = new PostgresServiceRequirements(dxlService, instrumentation, sessionService, store, treeService, functionsRegistry, config);
     }
 
     /*** Service<PostgresService> ***/

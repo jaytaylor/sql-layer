@@ -2,11 +2,11 @@ PhysicalSelect@1957a34[name, order_date, name]
   Map_NestedLoops
     Flatten_HKeyOrdered(user.customers INNER user.orders)
       AncestorLookup_Default(Index(user.orders.order_date[IndexColumn(order_date)]) -> [user.customers, user.orders])
-        IndexScan_Default(Index(user.orders.order_date[IndexColumn(order_date)]) (>UnboundExpressions[Literal(2011-01-01)],<UnboundExpressions[Literal(NULL)]))
+        IndexScan_Default(Index(user.orders.order_date[IndexColumn(order_date)]) (>UnboundExpressions[CAST_DATE(Literal(2011-01-01))],,<UnboundExpressions[Literal(NULL)]))
     Map_NestedLoops
       IndexScan_Default(Index(user.parent.name[IndexColumn(name)]) (>=UnboundExpressions[Bound(0,Field(1))],<=UnboundExpressions[Bound(0,Field(1))]))
       project([Bound(0,Field(1)), Bound(0,Field(4)), Field(2)])
         Select_HKeyOrdered(user.child, Field(2) != Literal(Smith))
           Select_HKeyOrdered(user.child, Field(2) == Bound(1,Field(0)))
             Filter_Default([user.child])
-              GroupScan_Default(full scan on _akiban_parent NO LIMIT)
+              GroupScan_Default(full scan on _akiban_parent)

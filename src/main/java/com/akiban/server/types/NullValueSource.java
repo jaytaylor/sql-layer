@@ -138,6 +138,11 @@ public final class NullValueSource implements ValueSource {
         return AkType.NULL;
     }
 
+    @Override
+    public String toString (){
+        return "NULL";
+    }
+
     // hidden ctor
 
     private NullValueSource() {}

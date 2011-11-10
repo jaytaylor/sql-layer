@@ -49,6 +49,8 @@ public abstract class StoreAdapter
 
     public abstract void checkQueryCancelation(long queryStartMsec);
 
+    public abstract long rowCount(RowType tableType);
+
     // For use by subclasses
 
     protected StoreAdapter(Schema schema)

@@ -15,7 +15,6 @@
 
 package com.akiban.sql.test;
 
-import com.akiban.server.aggregation.DummyAggregatorRegistry;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.compiler.BooleanNormalizer;
@@ -23,17 +22,9 @@ import com.akiban.sql.optimizer.AISBinder;
 import com.akiban.sql.optimizer.AISTypeComputer;
 import com.akiban.sql.optimizer.BindingNodeFactory;
 import com.akiban.sql.optimizer.BoundNodeToString;
-import com.akiban.sql.optimizer.Grouper;
-import com.akiban.sql.optimizer.OperatorCompiler_Old;
-import com.akiban.sql.optimizer.OperatorCompiler_OldTest;
 import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.OperatorCompilerTest;
 import com.akiban.sql.optimizer.SubqueryFlattener;
-import com.akiban.sql.optimizer.simplified.SimplifiedQuery;
-import com.akiban.sql.optimizer.simplified.SimplifiedDeleteStatement;
-import com.akiban.sql.optimizer.simplified.SimplifiedInsertStatement;
-import com.akiban.sql.optimizer.simplified.SimplifiedSelectQuery;
-import com.akiban.sql.optimizer.simplified.SimplifiedUpdateStatement;
 import com.akiban.sql.optimizer.plan.AST;
 import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PlanToString;
@@ -69,8 +60,7 @@ public class Tester
         PRINT_TREE, PRINT_SQL, PRINT_BOUND_SQL,
         BIND, COMPUTE_TYPES,
         BOOLEAN_NORMALIZE, FLATTEN_SUBQUERIES,
-        GROUP, GROUP_REWRITE, 
-        SIMPLIFY, SIMPLIFY_REORDER, PLAN, OPERATORS_OLD, OPERATORS
+        PLAN, OPERATORS
     }
 
     List<Action> actions;
@@ -80,8 +70,6 @@ public class Tester
     AISTypeComputer typeComputer;
     BooleanNormalizer booleanNormalizer;
     SubqueryFlattener subqueryFlattener;
-    Grouper grouper;
-    OperatorCompiler_Old operatorCompiler_Old;
     OperatorCompiler operatorCompiler;
     List<BaseRule> planRules;
     RulesContext rulesContext;
@@ -95,7 +83,6 @@ public class Tester
         typeComputer = new AISTypeComputer();
         booleanNormalizer = new BooleanNormalizer(parser);
         subqueryFlattener = new SubqueryFlattener(parser);
-        grouper = new Grouper(parser);
     }
 
     public void addAction(Action action) {
@@ -161,24 +148,6 @@ public class Tester
             case FLATTEN_SUBQUERIES:
                 stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
                 break;
-            case GROUP:
-                grouper.group(stmt);
-                break;
-            case GROUP_REWRITE:
-                grouper.group(stmt);
-                grouper.rewrite(stmt);
-                break;
-            case SIMPLIFY:
-            case SIMPLIFY_REORDER:
-                {
-                    SimplifiedQuery query = simplify((DMLStatementNode)stmt,
-                                                     grouper.getJoinConditions());
-                    if (action == Action.SIMPLIFY_REORDER)
-                        query.reorderJoins();
-                    if (!silent)
-                        System.out.println(query);
-                }
-                break;
             case PLAN:
                 {
                     PlanContext plan = 
@@ -187,15 +156,6 @@ public class Tester
                                                 parser.getParameterList()));
                     rulesContext.applyRules(plan);
                     System.out.println(PlanToString.of(plan.getPlan()));
-                }
-                break;
-            case OPERATORS_OLD:
-                {
-                    Object compiled = operatorCompiler_Old.compile(new PostgresSessionTracer(1, false),
-                                                               (DMLStatementNode)stmt,
-                                                               parser.getParameterList());
-                    if (!silent)
-                        System.out.println(compiled);
                 }
                 break;
             case OPERATORS:
@@ -210,34 +170,14 @@ public class Tester
         }
     }
 
-    private static SimplifiedQuery simplify(DMLStatementNode stmt,
-                                            Set<ValueNode> joinConditions) 
-            throws Exception {
-        switch (stmt.getNodeType()) {
-        case NodeTypes.CURSOR_NODE:
-            return new SimplifiedSelectQuery((CursorNode)stmt, joinConditions);
-        case NodeTypes.DELETE_NODE:
-            return new SimplifiedDeleteStatement((DeleteNode)stmt, joinConditions);
-        case NodeTypes.UPDATE_NODE:
-            return new SimplifiedUpdateStatement((UpdateNode)stmt, joinConditions);
-        case NodeTypes.INSERT_NODE:
-            return new SimplifiedInsertStatement((InsertNode)stmt, joinConditions);
-        default:
-            throw new StandardException("Unsupported statement type: " +
-                                        stmt.statementToString());
-        }
-    }
-
     public void setSchema(String sql) throws Exception {
         SchemaDef schemaDef = SchemaDef.parseSchema("use user; " + sql);
         SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
         AkibanInformationSchema ais = toAis.getAis();
         if (actions.contains(Action.BIND))
             binder = new AISBinder(ais, "user");
-        if (actions.contains(Action.OPERATORS_OLD))
-            operatorCompiler_Old = OperatorCompiler_OldTest.TestOperatorCompiler.create(parser, ais, "user");
         if (actions.contains(Action.OPERATORS))
-            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, ais, "user", new FunctionsRegistryImpl(), new DummyAggregatorRegistry());
+            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, ais, "user", new FunctionsRegistryImpl());
         if (actions.contains(Action.PLAN))
             rulesContext = new RulesTestContext(ais, planRules);
     }
@@ -287,7 +227,7 @@ public class Tester
     public static void main(String[] args) throws Exception {
         if (args.length == 0) {
             System.out.println("Usage: Tester " +
-                               "[-clone] [-bind] [-types] [-boolean] [-flatten] [-group] [-group-rewrite] [-simplify] [-simplify-reorder] [-plan @planfile] [-operators]" +
+                               "[-clone] [-bind] [-types] [-boolean] [-flatten] [-plan @planfile] [-operators]" +
                                "[-tree] [-print] [-print-bound]" +
                                "[-schema ddl] [-view ddl]..." +
                                "sql...");
@@ -324,14 +264,6 @@ public class Tester
                     tester.addAction(Action.BOOLEAN_NORMALIZE);
                 else if ("-flatten".equals(arg))
                     tester.addAction(Action.FLATTEN_SUBQUERIES);
-                else if ("-group".equals(arg))
-                    tester.addAction(Action.GROUP);
-                else if ("-group-rewrite".equals(arg))
-                    tester.addAction(Action.GROUP_REWRITE);
-                else if ("-simplify".equals(arg))
-                    tester.addAction(Action.SIMPLIFY);
-                else if ("-simplify-reorder".equals(arg))
-                    tester.addAction(Action.SIMPLIFY_REORDER);
                 else if ("-plan".equals(arg)) {
                     String rules = args[i++];
                     if (rules.startsWith("@"))
@@ -342,8 +274,6 @@ public class Tester
                         tester.parsePlanRules(rules);
                     tester.addAction(Action.PLAN);
                 }
-                else if ("-operators-old".equals(arg))
-                    tester.addAction(Action.OPERATORS_OLD);
                 else if ("-operators".equals(arg))
                     tester.addAction(Action.OPERATORS);
                 else if ("-repeat".equals(arg))

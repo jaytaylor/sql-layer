@@ -1,3 +1,0 @@
-Count_Default(Index(user.items.sku[IndexColumn(sku)]))
-  IndexScan_Default(Index(user.items.sku[IndexColumn(sku)]) (>UnboundExpressions[Literal(NULL)],<UnboundExpressions[Literal(8888)]))
-[_SQL_COL_1:INTEGER NOT NULL]

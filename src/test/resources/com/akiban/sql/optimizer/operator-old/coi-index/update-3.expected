@@ -1,4 +1,0 @@
-Update_Default(Filter_Default([user.items]) -> ExpressionRowUpdateFunction([null, null, null, Literal(66)]))
-  Filter_Default([user.items])
-    BranchLookup_Default(_akiban_customers Index(user.orders.order_date[IndexColumn(order_date)]) -> user.orders limit NO LIMIT)
-      IndexScan_Default(Index(user.orders.order_date[IndexColumn(order_date)]) (>UnboundExpressions[Literal(1029761)],<UnboundExpressions[Literal(NULL)]))

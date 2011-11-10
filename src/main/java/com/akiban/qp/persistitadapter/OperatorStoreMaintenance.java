@@ -139,11 +139,115 @@ final class OperatorStoreMaintenance {
     private final UserTableRowType rowType;
 
     enum Relationship {
-        PARENT, ID, CHILD
+        PARENT,
+        SELF, CHILD
     }
 
     // for use in this class
 
+    /**
+     * <p>Creates a struct that describes how GI maintenance works for a row of a given type. This struct contains
+     * two elements: a parameterized SELECT plan, and a boolean that specifies whether those parameters come from
+     * the row's PK or its grouping FK.</p>
+     *
+     * <p>Any action has three steps: GI cleanup, action, and GI (re)write. For instance, in an INSERT of an order when
+     * there's a C-O left join GI, we would have to:
+     * <ol>
+     *     <li><b>cleanup:</b> if this is the first order under this customer, delete the GI entry with NULL'ed out
+     *     order info</li>
+     *     <li><b>action:</b> do the insert, including maintenance of any table indexes</li>
+     *     <li><b>(re)write:</b> write the new GI entry</li>
+     * </ol>
+     * </p>
+     *
+     * <p>In a perfect world, we would only clean up those entries which we knew would be removed by the end, and we
+     * would only write those entries which we knew didn't exist before. Instead, we'll be deleting some rows that
+     * we'll soon need to re-write (which is why that third step isn't just called "write"). The level to which we can
+     * cut down on superfluous deletes and stores will have performance repercussions and is a potential point
+     * of optimization.</p>
+     *
+     * <p>For now, here's how it works. We start a scan from some table+index (more on this below), then do a deep
+     * branch lookup to the group table, then flatten all of the rows. The table we start from is either the incoming
+     * row's table, its parent or its child.
+     *
+     * <ul>
+     *     <li>if incoming row is <strong>below the GI</strong>, ignore this event</sup></li>
+     *     <li>if incoming row is <strong>above the GI (is an ancestor of the GI's rootmost table),</strong> always
+     *     look childward</li>
+     *     <li>if the incoming row is <strong>within the GI</strong>
+     *      <ul>
+     *          <li>in a <strong>LEFT JOIN</strong>, look parentward, capped at the GI's rootmost table</li>
+     *          <li>in a <strong>RIGHT JOIN</strong>, look childward, capped at the GI's leafmost table</li>
+     *      </ul>
+     *     </li>
+     * </ul>
+     * </p>
+     *
+     * <p>Motivating reasons:</p>
+     *
+     * <p>First, it's worth calling out everything an action may do to a GI. The actions apply only to INSERT and
+     * DELETE actions; UPDATE is treated as DELETE+INSERT.
+     * <ul>
+     *     <li>add an entry</li>
+     *     <li>... and possibly remove an outer GI entry in the process (an outer entry is one that represents the result
+     *     of an outer join that would not have been present in an inner join -- that is, a GI for which one of the rows
+     *     doesn't actually exist)</li>
+     *     <li>remove an entry</li>
+     *     <li>... and possibly create an outer GI entry in the process</li>
+     *     <li>update 1 or more rows' HKey segments (via adoption or orphaning)</li>
+     * </ul>
+     * </p>
+     *
+     * <p>With that in mind, here's an informal look at the motivation behind each of the above scenarios.</p>
+     *
+     * <h3>Incoming row is below the GI</h3>
+     *
+     * <p>Such a row can't affect the GI's HKey, since adoption and orphaning can only happen childward of a given row.
+     * It also can't add or remove an entry, since entries are agnostic to tables outside of the GI segment (other
+     * than for hkey maintenance). So this is a no-op in all situations.</p>
+     *
+     * <h3>Incoming row is above the GI</h3>
+     *
+     * <p>Such an action can only affect HKey maintenance. For an insert's cleanup, we have to start the scan at the
+     * incoming row's child, since the incoming row itself doesn't exist (if the child doesn't exist either, there's no
+     * HKey maintenance to do that will trickle up to the GI). For a delete's (re)write, we also have to start the
+     * scan at the newly-deleted row's child, since that row doesn't exist anymore. For the other two situations
+     * (insert's (re)write phase or delete's cleanup), we could start on the incoming row's table if we want, but
+     * because of RIGHT JOIN semantics there's no harm in starting on the child. In fact, it's a bit more selective
+     * and thus efficient.
+     *
+     * <h4>Incoming row is within the GI</h4>
+     *
+     * <p>Such an action can:<ul>
+     *     <li>insert a GI entry, possibly removing an outer GI entry</li>
+     *     <li>remove a GI entry, possibly inserting an outer GI entry</li>
+     * </ul>
+     * </p>
+     *
+     * <p>For <strong>LEFT JOIN GIs</strong>, we need to start at the incoming row's parent to clean up or insert any
+     * outer GIs (as part of an insert's cleanup or remove's (re)write, respectivley). On the other hand, if the
+     * incoming row is the rootmost table in the GI, then going to its parent isn't necessary for outer GI maintenance
+     * (there's nothing to do, since there can't be an outer GI), and it's wrong for regular GI maintenance, since it
+     * means that if hat parent row doesn't exist, we won't get any GI entries even though we should have at least one.
+     * Note that this problem doesn't hold true for tables further down the GI branch: if their parent doesn't exist,
+     * then there's nothing to do because of LEFT JOIN semantics, and starting the scan at the parent is fine (the scan
+     * will correctly return no rows). So we have the following situations:</p>
+     *
+     * <p>Putting all that together, we want to go to the incoming row's parent, unless the incoming row is of the
+     * rootmost table in the GI, in which we want to stay on that table. So, we want to go parentward but capped at
+     * the GI border.</p>
+     *
+     * <p>For </strong>RIGHT JOIN GIs</strong>, the situation is similar but reversed. Outer GI entries come from the
+     * child, so we need to look childward in order to maintain them. On the other hand, we can't look past the GI
+     * border, because if we did we'd be missing rows in the case of the leafmost table of a GI not having any children.
+     * So, we should be scanning starting from the child, but again capped at the GI.</p>
+     *
+     * @param branchTables 
+     * @param groupIndex
+     * @param rowType
+     * @param forStoring
+     * @return
+     */
     private static PlanCreationStruct createGroupIndexMaintenancePlan(
             BranchTables branchTables,
             GroupIndex groupIndex,
@@ -173,17 +277,16 @@ final class OperatorStoreMaintenance {
             scanFrom = Relationship.CHILD;
         }
         else if (groupIndex.getJoinType() == Index.JoinType.LEFT) {
-            // incoming row is within the GI; look rootward, and search on the row's FK.
             int indexWithinGI = branchTables.fromRootMost().indexOf(rowType) - 1;
             scanFrom = indexWithinGI < 0
-                    ? Relationship.ID
+                    ? Relationship.SELF
                     : Relationship.PARENT;
         }
         else if (groupIndex.getJoinType() == Index.JoinType.RIGHT) {
             int indexWithinGI = branchTables.fromRootMost().indexOf(rowType) + 1;
             scanFrom = indexWithinGI < branchTables.fromRootMost().size()
                     ? Relationship.CHILD
-                    : Relationship.ID;
+                    : Relationship.SELF;
         }
         else {
             throw new AssertionError(groupIndex + " has join " + groupIndex.getJoinType());
@@ -200,7 +303,7 @@ final class OperatorStoreMaintenance {
             startFromRowType = schema.userTableRowType(rowType.userTable().parentTable());
             startFromIndex = startFromRowType.userTable().getPrimaryKey().getIndex();
             break;
-        case ID:
+        case SELF:
             usePKs = true;
             startFromRowType = rowType;
             startFromIndex = startFromRowType.userTable().getPrimaryKey().getIndex();
