@@ -28,21 +28,21 @@ public final class UnionAll_DefaultTest {
     @Test
     public void unionTwoNormal() {
         DerivedTypesSchema schema = new DerivedTypesSchema();
-        RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR)
-                .row(1L, "one")
-                .row(2L, "two")
-                .row(1L, "one");
-        RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR)
-                .row(3L, "three")
-                .row(1L, "one")
-                .row(2L, "deux");
-        RowsBuilder expected = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR)
-                .row(1L, "one")
-                .row(2L, "two")
-                .row(1L, "one")
-                .row(3L, "three")
-                .row(1L, "one")
-                .row(2L, "deux");
+        RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR, AkType.NULL)
+                .row(1L, "one", null)
+                .row(2L, "two", null)
+                .row(1L, "one", null);
+        RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR, AkType.NULL)
+                .row(3L, "three", null)
+                .row(1L, "one", null)
+                .row(2L, "deux", null);
+        RowsBuilder expected = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR, AkType.NULL)
+                .row(1L, "one", null)
+                .row(2L, "two", null)
+                .row(1L, "one", null)
+                .row(3L, "three", null)
+                .row(1L, "one", null)
+                .row(2L, "deux", null);
         check(first, second, expected);
     }
 
