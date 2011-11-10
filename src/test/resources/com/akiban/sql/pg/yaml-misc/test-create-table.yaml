@@ -39,11 +39,6 @@
 - Statement: CREATE TABLE table_tinyint (tinyint_field tinyint)
 - error: [50008]
 #---
-# unsigned bigint is not supported yet, but returns the wrong error code
-# - Statement: CREATE TABLE table_unsigned_bigint
-#     (unsigned_bigint_field unsigned bigint)
-# - error: [50008]
-#---
 # year is not supported yet, but returns the wrong error code
 # - Statement: CREATE TABLE table_year (year_field year)
 # - error: [50008]

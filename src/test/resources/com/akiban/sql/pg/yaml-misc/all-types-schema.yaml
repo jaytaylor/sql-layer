@@ -4,6 +4,7 @@
 - Statement:
     CREATE TABLE all_types (
       bigint_field bigint,
+      bigint_unsigned_field bigint unsigned,
       blob_field blob,
       boolean_field boolean,
       char_field char,

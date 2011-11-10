@@ -1,6 +1,0 @@
-# Creating a table with an unsigned bigint field produces a parse
-# exception error code rather than an unsupported data type one.
----
-- Statement: CREATE TABLE t (unsigned_bigint_field unsigned bigint)
-- error: [50008]
-...
