@@ -15,186 +15,118 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.expression.EnvironmentExpressionFactory;
+import com.akiban.server.expression.EnvironmentExpressionSetting;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
-import com.akiban.server.service.functions.Scalar;
+import com.akiban.server.expression.std.EnvironmentExpression.EnvironmentEvaluation;
+import com.akiban.server.service.functions.EnvironmentValue;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
-import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 
-public class CurrentDateTimeExpression extends AbstractVoidParamExpression
+public class CurrentDateTimeExpression extends EnvironmentExpression
 {
     /**
-     * return current_date() expression in String
+     * return current_date() expression 
      */
-    @Scalar("current_date_s")
-    public static final ExpressionComposer CURRENT_DATE_S_COMPOSER = new VoidComposer ()
-    {
-        @Override
-        protected Expression compose()
-        {
-            return new CurrentDateTimeExpression(true,AkType.DATE, Context.NOW);
-        }
-    };
+    @EnvironmentValue("current_date")
+    public static final EnvironmentExpressionFactory CURRENT_DATE_COMPOSER 
+            = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_DATE, AkType.DATE);
     
     /**
-     * return current_date() expression in Long
+     * return current_time() expression 
      */
-    @Scalar("current_date_n")
-    public static final ExpressionComposer CURRENT_DATE_N_COMPOSER = new VoidComposer ()
-    {
-        @Override
-        protected Expression compose()
-        {
-            return new CurrentDateTimeExpression(false, AkType.DATE, Context.NOW);
-        }
-    };
-
-    /**
-     * return current_time() expression in String
-     */
-    @Scalar("current_time_s")
-    public static final ExpressionComposer CURRENT_TIME_S_COMPOSER = new VoidComposer ()
-    {
-        @Override
-        protected Expression compose()
-        {
-            return new CurrentDateTimeExpression(true, AkType.TIME, Context.NOW);
-        }
-
-        @Override
-        public void argumentTypes(List<AkType> argumentTypes) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public ExpressionType composeType(List<? extends ExpressionType> argumentTypes) {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-    };
+    @EnvironmentValue("current_time")
+    public static final EnvironmentExpressionFactory CURRENT_TIME_COMPOSER 
+            = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_DATE, AkType.TIME);
     
-    /**
-     *  return current_time() expression in Long
-     */
-    @Scalar("current_time_n")
-    public static final ExpressionComposer CURRENT_TIME_N_COMPOSER = new VoidComposer ()
-    {
-        @Override
-        protected Expression compose()
-        {
-            return new CurrentDateTimeExpression(false, AkType.TIME, Context.NOW);
-        }
-    };
-
     /**
      * return current_timestamp() expression in String
      */
-    @Scalar("current_timestamp_s")
-    public static final ExpressionComposer CURRENT_TIMESTAMP_S_COMPOSER = new VoidComposer ()
-    {
-        @Override
-        protected Expression compose()
-        {
-            return new CurrentDateTimeExpression(true, AkType.TIMESTAMP, Context.NOW);
-        }
-    };
+    @EnvironmentValue("current_timestamp")
+    public static final EnvironmentExpressionFactory CURRENT_TIMESTAMP_COMPOSER 
+            = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_DATE,  AkType.TIMESTAMP);
 
     /**
-     * return now() epxression  (an alias of current_timestamp()) in string
+     * return now() epxression  (an alias of current_timestamp())
      */
-    @Scalar ("now")
-    public static final ExpressionComposer CURRENT_TIMESTAMP_ALIAS = CURRENT_TIMESTAMP_S_COMPOSER;
-    
-    /**
-     * return current_timestamp() epxression in Long
-     */
-    @Scalar("current_timestamp_n")
-    public static final ExpressionComposer CURRENT_TIMESTAMP_N_COMPOSER = new VoidComposer ()
-    {
-        @Override
-        protected Expression compose()
-        {
-            return new CurrentDateTimeExpression(false, AkType.TIMESTAMP, Context.NOW);
-        }
-    };
+    @EnvironmentValue ("now")
+    public static final EnvironmentExpressionFactory CURRENT_TIMESTAMP_ALIAS = CURRENT_TIMESTAMP_COMPOSER;
 
-    
-    public static enum Context
-    {
-        NOW // need a better name!
-        {
-            @Override
-            public Date getCurrent() { return new Date(); }
-        }
-        
-        // TODO : add more "contexts", ie., decide what date() to return
-        // as opposed to just returning new Date()
-        ;
-        
-        protected abstract Date getCurrent();
-    }
-
-    private final boolean isString;
     private final AkType neededInfo;
-    private final Context context;
 
-    public CurrentDateTimeExpression (boolean isString, AkType neededInfo, Context context)
+    public CurrentDateTimeExpression (EnvironmentExpressionSetting environmentSetting, int bindingPos,
+            AkType neededInfo)
     {
-        super(isString? AkType.VARCHAR : AkType.LONG);
-        this.isString = isString;
+        super(checkType(neededInfo), environmentSetting, bindingPos);
         this.neededInfo = neededInfo;
-        this.context = context;
     }
 
-    private static final class InnerEvaluation extends AbstractVoidParamExpressionEvaluation
+    private static final class InnerEvaluation extends EnvironmentEvaluation<Date>
     {
-        private final boolean isString;
-        private final AkType neededInfo;
-        private final Context context;
-
-        protected InnerEvaluation (boolean isString, AkType neededInfo, Context context)
+        private  AkType neededInfo;
+        
+        public InnerEvaluation (int bindingPos, AkType neededInfo)
         {
-            this.isString = isString;
+            super(bindingPos);
             this.neededInfo = neededInfo;
-            this.context = context;
         }
 
         @Override
         public ValueSource eval()
-        {   
-            if (isString)
-                return new ValueHolder(AkType.VARCHAR, new SimpleDateFormat(getFormat()).format(context.getCurrent()));           
-            else
-                return new ValueHolder(AkType.LONG, Long.parseLong(new SimpleDateFormat(getFormat()).format(context.getCurrent())));
-
+        {  
+            return new ValueHolder(neededInfo, this.environmentValue());
+        }
+    }
+    
+    static class DateTimeEnvironmentFactory implements EnvironmentExpressionFactory 
+    {
+        private final EnvironmentExpressionSetting environmentSetting;
+        private final AkType neededInfo;
+        public DateTimeEnvironmentFactory (EnvironmentExpressionSetting environmentSetting,
+               AkType neededInfo)
+        {
+            this.environmentSetting = environmentSetting;
+            this.neededInfo = neededInfo;
         }
 
-        private String getFormat ()
+        @Override
+        public EnvironmentExpressionSetting environmentSetting() 
         {
-            switch(neededInfo)
+            return environmentSetting;
+        }
+
+        @Override
+        public Expression get(int bindingPosition) 
+        {
+            return new CurrentDateTimeExpression(environmentSetting, bindingPosition,
+                    neededInfo);
+        }
+        
+        @Override
+        public ExpressionType getType() 
+        {
+            switch (neededInfo)
             {
-                case DATE:      return isString ? "yyyy-MM-dd" : "yyyyMMdd";
-                case TIME:      return isString ? "HH:mm:ss" : "HHmmss";
-                case TIMESTAMP: return isString ? "yyyy-MM-dd HH:mm:ss" : "yyyyMMddHHmmss";
-                default:        throw new UnsupportedOperationException("CURRENT_" + neededInfo + " is not supported");
+                case DATE:  return ExpressionTypes.DATE;
+                case TIME:  return ExpressionTypes.TIME;
+                default:    return ExpressionTypes.TIMESTAMP;
             }
         }
     }
 
     @Override
-    protected String name()
-    {
-        return "CURRENT_" + neededInfo;
-    }
-
-    @Override
     public ExpressionEvaluation evaluation()
     {
-        return new InnerEvaluation (isString, neededInfo, context);
+        return new InnerEvaluation (bindingPosition(), neededInfo);
+    }
+    
+    private static AkType checkType (AkType input)
+    {
+        if (input == AkType.DATE  || input == AkType.TIME || input == AkType.TIMESTAMP) return input;
+        else throw new UnsupportedOperationException("CURRENT_" + input + " is not supported");
     }
 }
