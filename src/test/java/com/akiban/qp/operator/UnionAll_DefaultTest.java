@@ -77,6 +77,32 @@ public final class UnionAll_DefaultTest {
     }
 
     @Test
+    public void nullPromotedInSecondRowType() {
+        DerivedTypesSchema schema = new DerivedTypesSchema();
+        RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR)
+                .row(1, "one");
+        RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.NULL)
+                .row(2, null);
+        RowsBuilder expected = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR)
+                .row(1, "one")
+                .row(2, null);
+        check(first, second, expected);
+    }
+
+    @Test
+    public void nullPromotedInFirstRowType() {
+        DerivedTypesSchema schema = new DerivedTypesSchema();
+        RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.NULL)
+                .row(1, null);
+        RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR)
+                .row(2, "two");
+        RowsBuilder expected = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR)
+                .row(1, null)
+                .row(2, "two");
+        check(first, second, expected);
+    }
+
+    @Test
     public void bothInputsEmpty() {
         DerivedTypesSchema schema = new DerivedTypesSchema();
         RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
@@ -90,14 +116,6 @@ public final class UnionAll_DefaultTest {
         DerivedTypesSchema schema = new DerivedTypesSchema();
         RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
         RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.TEXT);
-        union(first, second);
-    }
-
-    @Test
-    public void nullIsNotWrongShape() {
-        DerivedTypesSchema schema = new DerivedTypesSchema();
-        RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
-        RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.NULL);
         union(first, second);
     }
 
@@ -155,12 +173,21 @@ public final class UnionAll_DefaultTest {
     private static void check(RowsBuilder rb1, RowsBuilder rb2, RowsBuilder expected) {
         Operator union = union(rb1, rb2);
         final RowType outputRowType = union.rowType();
+        checkRowTypes(expected.rowType(), outputRowType);
+
         OperatorTestHelper.check(union, expected.rows(), new OperatorTestHelper.RowCheck() {
             @Override
             public void check(Row row) {
                 assertEquals("row types", outputRowType, row.rowType());
             }
         });
+    }
+
+    private static void checkRowTypes(RowType expected, RowType actual) {
+        assertEquals("number of fields", expected.nFields(), actual.nFields());
+        for (int i=0; i < expected.nFields(); ++i) {
+            assertEquals("field " + i, expected.typeAt(i), actual.typeAt(i));
+        }
     }
 
     private static Operator union(RowsBuilder rb1, RowsBuilder rb2) {
