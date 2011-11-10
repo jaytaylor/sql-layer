@@ -24,7 +24,6 @@ import com.akiban.ais.model.Table;
 public class TableBinding 
 {
     private Table table;
-    private GroupBinding groupBinding;
     private boolean nullable;
         
     public TableBinding(Table table, boolean nullable) {
@@ -34,7 +33,6 @@ public class TableBinding
 
     public TableBinding(TableBinding other) {
         this.table = other.table;
-        this.groupBinding = other.groupBinding; // TODO: Or null?
     }
 
     public Table getTable() {
@@ -46,16 +44,6 @@ public class TableBinding
     }
 
     public String toString() {
-        if (groupBinding == null)
-            return table.toString();
-        else
-            return table.toString() + " in " + groupBinding.toString();
-    }
-
-    public GroupBinding getGroupBinding() {
-        return groupBinding;
-    }
-    public void setGroupBinding(GroupBinding groupBinding) {
-        this.groupBinding = groupBinding;
+        return table.toString();
     }
 }
