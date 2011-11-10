@@ -13,11 +13,10 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.functions;
+package com.akiban.server.expression;
 
-import com.akiban.server.aggregation.AggregatorRegistry;
-import com.akiban.server.expression.ExpressionRegistry;
-import com.akiban.server.expression.EnvironmentExpressionRegistry;
+import java.util.List;
 
-public interface FunctionsRegistry extends AggregatorRegistry, ExpressionRegistry, EnvironmentExpressionRegistry {
+public interface EnvironmentExpressionRegistry {
+    EnvironmentExpressionFactory environment(String name);
 }

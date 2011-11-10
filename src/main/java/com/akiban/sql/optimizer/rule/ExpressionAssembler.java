@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.EnvironmentExpressionFactory;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.optimizer.plan.*;
@@ -32,6 +33,7 @@ import com.akiban.server.error.UnsupportedSQLException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /** Turn {@link ExpressionNode} into {@link Expression}. */
@@ -62,7 +64,12 @@ public class ExpressionAssembler
         /** Get the index offset to be used for the deepest nested loop.
          * Normally this is the number of parameters to the query.
          */
-        public int getBindingsOffset();
+        public int getExpressionBindingsOffset();
+
+        /** Get the index offset to be used for the deepest nested loop.
+         * These come after any expressions.
+         */
+        public int getLoopBindingsOffset();
     }
 
     public interface SubqueryOperatorAssembler {
@@ -141,6 +148,11 @@ public class ExpressionAssembler
         else if (node instanceof AggregateFunctionExpression)
             throw new UnsupportedSQLException("Aggregate used as regular function", 
                                               node.getSQLsource());
+        else if (node instanceof EnvironmentFunctionExpression) {
+            EnvironmentFunctionExpression funcNode = (EnvironmentFunctionExpression)node;
+            EnvironmentExpressionFactory factory = functionsRegistry.environment(funcNode.getFunction());
+            return factory.get(columnContext.getExpressionBindingsOffset() + funcNode.getBindingPosition());
+        }
         else
             throw new UnsupportedSQLException("Unknown expression", node.getSQLsource());
     }
@@ -160,7 +172,7 @@ public class ExpressionAssembler
             if (boundRow == null) continue;
             int fieldIndex = boundRow.getIndex(column);
             if (fieldIndex >= 0) {
-                rowIndex += columnContext.getBindingsOffset();
+                rowIndex += columnContext.getLoopBindingsOffset();
                 return boundField(boundRow.getRowType(), rowIndex, fieldIndex);
             }
         }

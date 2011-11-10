@@ -45,7 +45,8 @@ public class PostgresLoadablePlan extends PostgresOperatorStatement
               null,
               loadablePlan.columnNames(),
               loadablePlan.columnTypes(),
-              NO_INPUTS,
+              NO_INPUTS, 
+              null,
               0,
               Integer.MAX_VALUE);
     }

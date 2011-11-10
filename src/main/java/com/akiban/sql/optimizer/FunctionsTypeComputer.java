@@ -47,6 +47,15 @@ public class FunctionsTypeComputer extends AISTypeComputer
         switch (node.getNodeType()) {
         case NodeTypes.JAVA_TO_SQL_VALUE_NODE:
             return javaValueNode(((JavaToSQLValueNode)node).getJavaValueNode());
+        case NodeTypes.USER_NODE:
+        case NodeTypes.CURRENT_USER_NODE:
+        case NodeTypes.SESSION_USER_NODE:
+        case NodeTypes.SYSTEM_USER_NODE:
+        case NodeTypes.CURRENT_ISOLATION_NODE:
+        case NodeTypes.IDENTITY_VAL_NODE:
+        case NodeTypes.CURRENT_SCHEMA_NODE:
+        case NodeTypes.CURRENT_ROLE_NODE:
+            return specialFunctionNode((SpecialFunctionNode)node);
         default:
             return super.computeType(node);
         }
@@ -113,6 +122,12 @@ public class FunctionsTypeComputer extends AISTypeComputer
         if (resultType == null)
             return null;
         return fromExpressionType(resultType);
+    }
+
+    protected DataTypeDescriptor specialFunctionNode(SpecialFunctionNode node)
+            throws StandardException {
+        // TODO: Where should we get the real max width from?
+        return new DataTypeDescriptor(TypeId.VARCHAR_ID, true, 128);
     }
 
     /* Yet another translator between type regimes. */

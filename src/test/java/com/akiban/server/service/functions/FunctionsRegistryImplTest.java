@@ -18,9 +18,12 @@ package com.akiban.server.service.functions;
 import com.akiban.server.aggregation.Aggregator;
 import com.akiban.server.aggregation.AggregatorFactory;
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.expression.EnvironmentExpressionFactory;
+import com.akiban.server.expression.EnvironmentExpressionSetting;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.types.AkType;
 import org.junit.Test;
 
@@ -41,8 +44,8 @@ public final class FunctionsRegistryImplTest {
     public void findAggregatorFactory() {
         FunctionsRegistryImpl registry = registry(Good.class);
         assertEquals(expectedAggregatorFactories(), registry.getAllAggregators());
-        assertEquals("foo", AGGREGATOR_FACTORY, registry.get("foo", AkType.LONG));
-        assertEquals("FOO", AGGREGATOR_FACTORY, registry.get("FOO", AkType.LONG));
+        assertEquals("afoo", AGGREGATOR_FACTORY, registry.get("afoo", AkType.LONG));
+        assertEquals("AFOO", AGGREGATOR_FACTORY, registry.get("AFOO", AkType.LONG));
     }
 
     @Test
@@ -51,6 +54,14 @@ public final class FunctionsRegistryImplTest {
         assertEquals(expectedExpressionFactories(), registry.getAllComposers());
         assertEquals("foo", GOOD_EXPRESSION_COMPOSER, registry.composer("foo"));
         assertEquals("FOO", GOOD_EXPRESSION_COMPOSER, registry.composer("FOO"));
+    }
+
+    @Test
+    public void findEnvironmentFactory() {
+        FunctionsRegistryImpl registry = registry(Good.class);
+        assertEquals(expectedEnvironmentFactories(), registry.getAllEnvironments());
+        assertEquals("efoo", ENVIRONMENT_FACTORY, registry.environment("efoo"));
+        assertEquals("EFOO", ENVIRONMENT_FACTORY, registry.environment("EFOO"));
     }
 
     @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
@@ -74,8 +85,8 @@ public final class FunctionsRegistryImplTest {
     }
 
     @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
-    public void scalarDuplicate() {
-        registry(ScalarDuplicateA.class, ScalarDuplicateB.class);
+    public void duplicateScalarAggregate() {
+        registry(ScalarDuplicate.class, AggDuplicate.class);
     }
 
     @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
@@ -98,14 +109,29 @@ public final class FunctionsRegistryImplTest {
         registry(AggWrongArgs.class);
     }
 
-    @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
-    public void aggregateDuplicateName() {
-        registry(AggDuplicateA.class, AggDuplicateB.class);
-    }
-
     @Test(expected = AkibanInternalException.class)
     public void aggregateThrowsException() {
         registry(AggThrowsException.class);
+    }
+
+    @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
+    public void environmentWrongType() {
+        registry(EnvironmentWrongType.class);
+    }
+
+    @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
+    public void environmentNotPublic() {
+        registry(EnvironmentNotPublic.class);
+    }
+
+    @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
+    public void environmentNotFinal() {
+        registry(EnvironmentNotFinal.class);
+    }
+
+    @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
+    public void environmentNotStatic() {
+        registry(EnvironmentNotStatic.class);
     }
 
     // use in this class
@@ -138,12 +164,16 @@ public final class FunctionsRegistryImplTest {
         Map<String,Map<AkType,AggregatorFactory>> expected = new HashMap<String, Map<AkType, AggregatorFactory>>();
         Map<AkType,AggregatorFactory> expectedInner = new EnumMap<AkType, AggregatorFactory>(AkType.class);
         expectedInner.put(AkType.LONG, AGGREGATOR_FACTORY);
-        expected.put("foo", expectedInner);
+        expected.put("afoo", expectedInner);
         return expected;
     }
 
     static Map<String,ExpressionComposer> expectedExpressionFactories() {
         return Collections.singletonMap("foo", GOOD_EXPRESSION_COMPOSER);
+    }
+
+    static Map<String,EnvironmentExpressionFactory> expectedEnvironmentFactories() {
+        return Collections.singletonMap("efoo", ENVIRONMENT_FACTORY);
     }
 
     // class state
@@ -156,6 +186,23 @@ public final class FunctionsRegistryImplTest {
         @Override
         public AkType outputType() {
             return AkType.NULL;
+        }
+    };
+
+    private static final EnvironmentExpressionFactory ENVIRONMENT_FACTORY = new EnvironmentExpressionFactory() {
+        @Override
+        public EnvironmentExpressionSetting environmentSetting() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Expression get(int bindingPosition) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public ExpressionType getType() {
+            return ExpressionTypes.NULL;
         }
     };
 
@@ -177,13 +224,16 @@ public final class FunctionsRegistryImplTest {
     // good example
 
     public static class Good {
-        @Aggregate("FOO") // note, should be converted to lowercase
+        @Aggregate("AFOO") // note, should be converted to lowercase
         public static AggregatorFactory get(String name, AkType type) {
             return aggregatorFactoryMethod(name, type);
         }
 
         @Scalar("FOO") @SuppressWarnings("unused") // note, should be converted to lowercase
         public static final ExpressionComposer COMPOSER = GOOD_EXPRESSION_COMPOSER;
+
+        @EnvironmentValue("EFOO") @SuppressWarnings("unused") // note, should be converted to lowercase
+        public static final EnvironmentExpressionFactory ENVIRONMENT = ENVIRONMENT_FACTORY;
     }
 
     // bad scalars
@@ -208,14 +258,9 @@ public final class FunctionsRegistryImplTest {
         public final ExpressionComposer COMPOSER = GOOD_EXPRESSION_COMPOSER;
     }
 
-    public static class ScalarDuplicateA {
+    public static class ScalarDuplicate {
         @Scalar("foo") @SuppressWarnings("unused")
         public static final ExpressionComposer COMPOSER_A = GOOD_EXPRESSION_COMPOSER;
-    }
-
-    public static class ScalarDuplicateB {
-        @Scalar("foo") @SuppressWarnings("unused")
-        public static final ExpressionComposer COMPOSER_B = GOOD_EXPRESSION_COMPOSER;
     }
 
     // bad aggregates
@@ -248,24 +293,39 @@ public final class FunctionsRegistryImplTest {
         }
     }
 
-    public static class AggDuplicateA {
+    public static class AggDuplicate {
         @Aggregate("foo") @SuppressWarnings("unused")
         public static AggregatorFactory getA(String name, AkType type) {
             return null;
         }
     }
-
-    public static class AggDuplicateB {
-        @Aggregate("foo") @SuppressWarnings("unused")
-        public static AggregatorFactory getA(String name, AkType type) {
-            return null;
-        }
-    }
-
     public static class AggThrowsException {
         @Aggregate("foo") @SuppressWarnings("unused")
         public static AggregatorFactory get(String name, AkType type) {
             throw new UnsupportedOperationException();
         }
     }
+
+    // bad enviroments
+
+    public static class EnvironmentWrongType {
+        @EnvironmentValue("blah") @SuppressWarnings("unused")
+        public static final Boolean WRONG = false;
+    }
+
+    public static class EnvironmentNotPublic {
+        @EnvironmentValue("blah") @SuppressWarnings("unused")
+        static final EnvironmentExpressionFactory COMPOSER = ENVIRONMENT_FACTORY;
+    }
+
+    public static class EnvironmentNotFinal {
+        @EnvironmentValue("blah") @SuppressWarnings("unused")
+        public static EnvironmentExpressionFactory COMPOSER = ENVIRONMENT_FACTORY;
+    }
+
+    public static class EnvironmentNotStatic {
+        @EnvironmentValue("blah") @SuppressWarnings("unused")
+        public final EnvironmentExpressionFactory COMPOSER = ENVIRONMENT_FACTORY;
+    }
+
 }

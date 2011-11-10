@@ -29,7 +29,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
 
-public final class ScaleDecimalExpressionTest {
+public final class ScaleDecimalExpressionTest
+{
     protected ValueSource scale(ValueSource source, int precision, int scale) {
         Expression expression = new ScaleDecimalExpression(precision, scale,
                                                            new LiteralExpression(source));

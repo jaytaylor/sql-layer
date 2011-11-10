@@ -12,4 +12,5 @@
 #- com.akiban.sql.optimizer.rule.SortSplitter
 - com.akiban.sql.optimizer.rule.MapFolder
 #- com.akiban.sql.optimizer.rule.ExpressionCompactor
+#- com.akiban.sql.optimizer.rule.EnvironmentFunctionFinder
 - com.akiban.sql.optimizer.rule.OperatorAssembler

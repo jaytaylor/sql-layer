@@ -17,6 +17,8 @@ package com.akiban.sql.pg;
 
 import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.server.error.*;
+import com.akiban.server.expression.EnvironmentExpressionSetting;
+import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.store.Store;
@@ -84,6 +86,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     private PostgresStatementGenerator[] parsedGenerators;
     private Thread thread;
     private Transaction transaction;
+    private Date transactionStartTime;
     
     private boolean instrumentationEnabled = false;
     private String sql;
@@ -232,6 +235,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             if (transaction != null) {
                 transaction.end();
                 transaction = null;
+                transactionStartTime = null;
             }
             server.removeConnection(pid);
         }
@@ -766,6 +770,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         if (transaction != null)
             throw new TransactionInProgressException ();
         transaction = reqs.treeService().getTransaction(session);
+        transactionStartTime = new Date();
         boolean transactionBegun = false;
         try {
             transaction.begin();
@@ -776,6 +781,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         } finally {
             if (!transactionBegun) {
                 transaction = null;
+                transactionStartTime = null;
             }
         }
     }
@@ -792,6 +798,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         finally {
             transaction.end();
             transaction = null;
+            transactionStartTime = null;
         }
     }
 
@@ -809,6 +816,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         finally {
             transaction.end();
             transaction = null;
+            transactionStartTime = null;
         }
     }
 
@@ -816,4 +824,25 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     public FunctionsRegistry functionsRegistry() {
         return reqs.functionsRegistry();
     }
+
+    @Override
+    public Object getEnvironmentValue(EnvironmentExpressionSetting setting) {
+        switch (setting) {
+        case CURRENT_DATE:
+            if (transactionStartTime != null)
+                return transactionStartTime;
+            else
+                return new Date();
+        case CURRENT_USER:
+            return defaultSchemaName;
+        case SESSION_USER:
+            return properties.getProperty("user");
+        case SYSTEM_USER:
+            return System.getProperty("user.name");
+        default:
+            throw new AkibanInternalException("Unknown environment value: " +
+                                              setting);
+        }
+    }
+
 }

@@ -29,7 +29,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.math.BigDecimal;
 
-public final class CastExpressionTest {
+public final class CastExpressionTest 
+{
     protected ValueSource cast(ValueSource source, AkType to) {
         Expression expression = new CastExpression(to, new LiteralExpression(source));
         return expression.evaluation().eval();
