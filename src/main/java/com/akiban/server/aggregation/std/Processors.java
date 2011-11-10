@@ -71,9 +71,10 @@ class Processors
         public double process(double oldState, double input)
         {
             double sum = oldState + input;  
-            if (Double.isInfinite(sum))
+            if (Double.isInfinite(sum) && !Double.isInfinite(oldState) && !Double.isInfinite(input))
                 throw new OverflowException();
-            else return sum;
+            else 
+                return sum;
         }
 
         @Override

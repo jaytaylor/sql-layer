@@ -266,7 +266,7 @@ public class MinMaxSumAggregatorsTest
 
     
     @Test // do not expect overflow
-    public void testSumWithInfinity () 
+    public void testSumWithPosInfinity () 
     {
         aggregator = Aggregators.sum("sum", AkType.DOUBLE).get();
         
@@ -281,6 +281,24 @@ public class MinMaxSumAggregatorsTest
         
         aggregator.output(holder);
         assertEquals(Double.POSITIVE_INFINITY, holder.getDouble(), 0.001);
+    }
+    
+    @Test // do not expect underflow
+    public void testSumWithNegInif ()
+    {
+        aggregator = Aggregators.sum("sum", AkType.DOUBLE).get();
+        
+        
+        for (int n = 0; n < 3; ++n)
+        {
+            holder.putDouble(n);
+            aggregator.input(holder);
+        }
+        holder.putDouble(Double.NEGATIVE_INFINITY);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        assertEquals(Double.NEGATIVE_INFINITY, holder.getDouble(), 0.001);
     }
     
     @Test // do not expect overflow, result is NaN
@@ -328,6 +346,40 @@ public class MinMaxSumAggregatorsTest
         aggregator.output(holder);
         
         assertEquals(Double.NaN, holder.getDouble(),0.01);
+    }
+    
+    @Test
+    public void testSumWithNegInfAndNaN ()
+    {
+        aggregator = Aggregators.sum("sum", AkType.DOUBLE).get();
+        
+        holder.putDouble(Double.NEGATIVE_INFINITY);
+        aggregator.input(holder);
+        
+        holder.putDouble(Double.NaN);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        
+        assertEquals(Double.NaN, holder.getDouble(),0.01);
+    }
+    
+    @Test
+    public void testSumWithPosInfConstAndNegInf ()
+    {
+        aggregator = Aggregators.sum("sum", AkType.DOUBLE).get();
+ 
+        holder.putDouble(Double.NEGATIVE_INFINITY);
+        aggregator.input(holder);
+
+        holder.putDouble(2);
+        aggregator.input(holder);
+        
+        holder.putDouble(Double.POSITIVE_INFINITY);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        assertEquals(Double.NaN, holder.getDouble(), 0.001);
     }
     
     @Test(expected = UnsupportedOperationException.class)

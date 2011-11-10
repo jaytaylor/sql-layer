@@ -40,7 +40,6 @@ class AbstractAggregator implements Aggregator
     protected  AkType type;
     protected AbstractProcessor processor;
     protected ValueHolder value;
-    protected boolean hasInfinity;
 
     private static final DoubleExtractor D_EXTRACTOR = Extractors.getDoubleExtractor();
     private static final LongExtractor L_EXTRACTOR = Extractors.getLongExtractor(AkType.LONG);
@@ -66,39 +65,31 @@ class AbstractAggregator implements Aggregator
         this.type = type;
         this.processor = processor;
         value = null;
-        hasInfinity = false;
     }
 
     @Override
     public void input(ValueSource input)
     {
-        if (!hasInfinity)
-            if (!input.isNull())
-            {
-                if (value == null)
-                    value = new ValueHolder(input);
-                else
-                    switch (type)
-                    {
-                        case DOUBLE:    double in = D_EXTRACTOR.getDouble(input);
-                                        double val = D_EXTRACTOR.getDouble(value);
-                                        if (hasInfinity = ((Double.isInfinite(in) || Double.isInfinite(val)) && processor.infinityIsSignificant()))
-                                            value.putDouble(in + val);
-                                        else 
-                                            value.putDouble(processor.process(val, in)); 
-                                        break;                      
-                        case INT:       
-                        case LONG:      value.putLong(processor.process(L_EXTRACTOR.getLong(value), L_EXTRACTOR.getLong(input))); break;
-                        case DECIMAL:   value.putDecimal(processor.process(DEC_EXTRACTOR.getObject(value), DEC_EXTRACTOR.getObject(input))); break;
-                        case U_BIGINT:  value.putUBigInt(processor.process(BIGINT_EXTRACTOR.getObject(value), BIGINT_EXTRACTOR.getObject(input))); break;
-                        case BOOL:      value.putBool(processor.process(B_EXTRACTOR.getBoolean(value, Boolean.TRUE), B_EXTRACTOR.getBoolean(input, Boolean.TRUE))); break;
-                        case DATE:      value.putDate(processor.process(DATE_EXTRACTOR.getLong(value), DATE_EXTRACTOR.getLong(input))); break;
-                        case TIME:      value.putTime(processor.process(TIME_EXTRACTOR.getLong(value), TIME_EXTRACTOR.getLong(input))); break;
-                        case VARCHAR:   value.putString(processor.process(S_EXTRACTOR.getObject(value), S_EXTRACTOR.getObject(input))); break;
-                        case DATETIME:  value.putDateTime(processor.process(DATETIME_EXTRACTOR.getLong(value), DATETIME_EXTRACTOR.getLong(input))); break;
-                        default: throw new UnsupportedOperationException("Not supported yet.");
-                    }         
-            }
+        if (!input.isNull())
+        {
+            if (value == null)
+                value = new ValueHolder(input);
+            else
+                switch (type)
+                {
+                    case DOUBLE:     value.putDouble(processor.process(D_EXTRACTOR.getDouble(value), D_EXTRACTOR.getDouble(input))); break;                      
+                    case INT:       
+                    case LONG:      value.putLong(processor.process(L_EXTRACTOR.getLong(value), L_EXTRACTOR.getLong(input))); break;
+                    case DECIMAL:   value.putDecimal(processor.process(DEC_EXTRACTOR.getObject(value), DEC_EXTRACTOR.getObject(input))); break;
+                    case U_BIGINT:  value.putUBigInt(processor.process(BIGINT_EXTRACTOR.getObject(value), BIGINT_EXTRACTOR.getObject(input))); break;
+                    case BOOL:      value.putBool(processor.process(B_EXTRACTOR.getBoolean(value, Boolean.TRUE), B_EXTRACTOR.getBoolean(input, Boolean.TRUE))); break;
+                    case DATE:      value.putDate(processor.process(DATE_EXTRACTOR.getLong(value), DATE_EXTRACTOR.getLong(input))); break;
+                    case TIME:      value.putTime(processor.process(TIME_EXTRACTOR.getLong(value), TIME_EXTRACTOR.getLong(input))); break;
+                    case VARCHAR:   value.putString(processor.process(S_EXTRACTOR.getObject(value), S_EXTRACTOR.getObject(input))); break;
+                    case DATETIME:  value.putDateTime(processor.process(DATETIME_EXTRACTOR.getLong(value), DATETIME_EXTRACTOR.getLong(input))); break;
+                    default: throw new UnsupportedOperationException("Not supported yet.");
+                 }
+        }
     }
 
     @Override
@@ -108,7 +99,6 @@ class AbstractAggregator implements Aggregator
 
         Converters.convert(value, output);
         value = null;
-        hasInfinity = false;
     }
 
     @Override
