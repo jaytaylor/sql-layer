@@ -1,4 +1,0 @@
-project([Field(1), Literal(1), Literal(foo)])
-  Filter_Default([user.customers])
-    GroupScan_Default(full scan on _akiban_customers)
-[name:varchar(32)[VARCHAR], _SQL_COL_1:INTEGER NOT NULL, _SQL_COL_2:CHAR(3) NOT NULL]

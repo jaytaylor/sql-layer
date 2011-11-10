@@ -1,1 +1,0 @@
-SELECT customers.name, 1 AS num, 'foo' AS str FROM customers
