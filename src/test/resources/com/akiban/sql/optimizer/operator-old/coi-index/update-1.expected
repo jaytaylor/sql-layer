@@ -1,3 +1,0 @@
-Update_Default(AncestorLookup_Default(Index(user.customers.name[IndexColumn(name)]) -> [user.customers]) -> ExpressionRowUpdateFunction([null, Literal(Smyth)]))
-  AncestorLookup_Default(Index(user.customers.name[IndexColumn(name)]) -> [user.customers])
-    IndexScan_Default(Index(user.customers.name[IndexColumn(name)]) (>=UnboundExpressions[Literal(Smith)],<=UnboundExpressions[Literal(Smith)]))

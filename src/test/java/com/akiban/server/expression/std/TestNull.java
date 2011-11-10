@@ -13,45 +13,29 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.rowtype;
+package com.akiban.server.expression.std;
 
+import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.NullValueSource;
+import org.junit.Test;
 
-import java.util.Arrays;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertEquals;
 
-public class ValuesRowType extends DerivedRowType
+public class TestNull 
 {
-    // Object interface
-
-    @Override
-    public String toString()
+    @Test
+    public void test_forNullEqualsNewLiteralNull()
     {
-        return "values(" + Arrays.toString(types) + ')';
+        Expression litNull = LiteralExpression.forNull();
+        Expression nullExp = new LiteralExpression(AkType.NULL, null);
+        assertSame(litNull.evaluation(), nullExp.evaluation());
     }
-
-
-    // RowType interface
-
-    @Override
-    public int nFields()
+    
+    @Test
+    public void test_LiteralForNullEvalEqualNullValueSouce ()
     {
-        return types.length;
+        assertEquals(LiteralExpression.forNull().evaluation().eval(), NullValueSource.only());
     }
-
-    @Override
-    public AkType typeAt(int index) {
-        return types[index];
-    }
-
-    // ValuesRowType interface
-
-    public ValuesRowType(DerivedTypesSchema schema, int typeId, AkType... types)
-    {
-        super(schema, typeId);
-        this.types = types;
-    }
-
-    // Object state
-
-    private final AkType[] types;
 }

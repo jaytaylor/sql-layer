@@ -63,7 +63,7 @@ class Filter_Default extends Operator
 
     // Filter_Default interface
 
-    public Filter_Default(Operator inputOperator, Collection<RowType> keepTypes)
+    public Filter_Default(Operator inputOperator, Collection<? extends RowType> keepTypes)
     {
         ArgumentValidation.notEmpty("keepTypes", keepTypes);
         this.inputOperator = inputOperator;
