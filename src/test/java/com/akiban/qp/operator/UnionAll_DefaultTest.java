@@ -18,11 +18,8 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.DerivedTypesSchema;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.types.AkType;
 import org.junit.Test;
-
-import java.util.Collection;
 
 import static org.junit.Assert.assertEquals;
 
@@ -46,28 +43,119 @@ public final class UnionAll_DefaultTest {
                 .row(3L, "three")
                 .row(1L, "one")
                 .row(2L, "deux");
-        check(first, second, expected.rows());
+        check(first, second, expected);
     }
 
     @Test
-    public void skipEmptyInputs() {
-        stub();
+    public void firstInputEmpty() {
+        DerivedTypesSchema schema = new DerivedTypesSchema();
+        RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
+        RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR)
+                .row(1L, "one")
+                .row(2L, "two")
+                .row(1L, "one");
+        RowsBuilder expected = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR)
+                .row(1L, "one")
+                .row(2L, "two")
+                .row(1L, "one");
+        check(first, second, expected);
     }
 
     @Test
-    public void noInputs() {
-        stub();
+    public void secondInputEmpty() {
+        DerivedTypesSchema schema = new DerivedTypesSchema();
+        RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR)
+                .row(1L, "one")
+                .row(2L, "two")
+                .row(1L, "one");
+        RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
+        RowsBuilder expected = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR)
+                .row(1L, "one")
+                .row(2L, "two")
+                .row(1L, "one");
+        check(first, second, expected);
     }
 
-    private static void check(RowsBuilder rb1, RowsBuilder rb2, Collection<? extends Row> expecteds) {
-        Operator union = new UnionAll_Default(
-                new TestOperator(rb1),
-                rb1.rowType(),
-                new TestOperator(rb2),
-                rb2.rowType()
-        );
+    @Test
+    public void bothInputsEmpty() {
+        DerivedTypesSchema schema = new DerivedTypesSchema();
+        RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
+        RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
+        RowsBuilder expected = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
+        check(first, second, expected);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void inputsNotOfRightShape() {
+        DerivedTypesSchema schema = new DerivedTypesSchema();
+        RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
+        RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.TEXT);
+        union(first, second);
+    }
+
+    @Test
+    public void nullIsNotWrongShape() {
+        DerivedTypesSchema schema = new DerivedTypesSchema();
+        RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
+        RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.NULL);
+        union(first, second);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void firstOperatorIsNull() {
+        DerivedTypesSchema schema = new DerivedTypesSchema();
+        RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
+        RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.NULL);
+        new UnionAll_Default(null, first.rowType(), new TestOperator(second), second.rowType());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void firstRowTypeIsNull() {
+        DerivedTypesSchema schema = new DerivedTypesSchema();
+        RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
+        RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.NULL);
+        new UnionAll_Default(new TestOperator(first), null, new TestOperator(second), second.rowType());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void secondOperatorIsNull() {
+        DerivedTypesSchema schema = new DerivedTypesSchema();
+        RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
+        RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.NULL);
+        new UnionAll_Default(new TestOperator(first), first.rowType(), null, second.rowType());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void secondRowTypeIsNull() {
+        DerivedTypesSchema schema = new DerivedTypesSchema();
+        RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
+        RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.NULL);
+        new UnionAll_Default(new TestOperator(first), first.rowType(), new TestOperator(second), null);
+    }
+
+    /**
+     * Tests what happens when one of the input streams outputs a rowType other than what we promised it would.
+     * To make this test a bit more interesting, the outputted row is actually of the same shape as the expected
+     * results: it just has a different rowTypeId.
+     */
+    @Test(expected = UnionAll_Default.WrongRowTypeException.class)
+    public void inputsContainUnspecifiedRows() {
+        DerivedTypesSchema schema = new DerivedTypesSchema();
+        RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
+        RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
+
+        RowsBuilder anotherStream = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR)
+                .row(3, "three");
+        first.rows().push(anotherStream.rows().pop());
+
+        Operator union = union(first, second);
+        OperatorTestHelper.execute(union);
+    }
+
+    private static void check(RowsBuilder rb1, RowsBuilder rb2, RowsBuilder expected) {
+        Operator union = union(rb1, rb2);
         final RowType outputRowType = union.rowType();
-        OperatorTestHelper.check(union, expecteds, new OperatorTestHelper.RowCheck() {
+        OperatorTestHelper.check(union, expected.rows(), new OperatorTestHelper.RowCheck() {
             @Override
             public void check(Row row) {
                 assertEquals("row types", outputRowType, row.rowType());
@@ -75,7 +163,12 @@ public final class UnionAll_DefaultTest {
         });
     }
 
-    private static void stub() {
-        throw new UnsupportedOperationException();
+    private static Operator union(RowsBuilder rb1, RowsBuilder rb2) {
+        return new UnionAll_Default(
+                    new TestOperator(rb1),
+                    rb1.rowType(),
+                    new TestOperator(rb2),
+                    rb2.rowType()
+            );
     }
 }

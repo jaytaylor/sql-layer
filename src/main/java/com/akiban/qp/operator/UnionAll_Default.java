@@ -20,8 +20,10 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.Strings;
 
@@ -58,6 +60,8 @@ final class UnionAll_Default extends Operator {
     }
 
     UnionAll_Default(Operator input1, RowType input1Type, Operator input2, RowType input2Type) {
+        ArgumentValidation.notNull("first input", input1);
+        ArgumentValidation.notNull("second input", input2);
         this.outputRowType = rowType(input1Type, input2Type);
         this.inputs = Arrays.asList(input1, input2);
         this.inputTypes = Arrays.asList(input1Type, input2Type);
@@ -156,7 +160,6 @@ final class UnionAll_Default extends Operator {
          * @return the first row of the next cursor that has a non-null row, or null if no such cursors remain
          */
         private Row nextCursorFirstRow() {
-            assert currentCursor == null  : currentCursor;
             assert bindings != null;
             while (++inputOperatorsIndex < inputOperators.size()) {
                 Cursor nextCursor = inputOperators.get(inputOperatorsIndex).cursor(adapter);
@@ -178,6 +181,9 @@ final class UnionAll_Default extends Operator {
         private Row wrapped(Row inputRow) {
             if (inputRow == null)
                 return null;
+            if (!inputRow.rowType().equals(currentInputRowType)) {
+                throw new WrongRowTypeException(inputRow, currentInputRowType);
+            }
             assert inputRow.rowType() == currentInputRowType : inputRow.rowType() + " != " + currentInputRowType;
             if (rowHolder.isEmpty() || rowHolder.isShared()) {
                 MasqueradingRow row = new MasqueradingRow(outputRowType, inputRow);
@@ -199,6 +205,12 @@ final class UnionAll_Default extends Operator {
         private Bindings bindings;
         private Cursor currentCursor;
         private RowType currentInputRowType;
+    }
+
+    static class WrongRowTypeException extends AkibanInternalException {
+        public WrongRowTypeException(Row row, RowType expected) {
+            super(row + ": expected row type " + expected + " but was " + row.rowType());
+        }
     }
 
     private static class MasqueradingRow implements Row {
