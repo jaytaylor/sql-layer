@@ -147,10 +147,6 @@ public final class LiteralExpression implements Expression {
             this.valueSource = valueSource;
         }
 
-        @Override
-        public String toString () {
-            return valueSource.getConversionType().toString();
-        }
         private final ValueSource valueSource;
     }
 }

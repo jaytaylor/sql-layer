@@ -139,8 +139,7 @@ public final class NullValueSource implements ValueSource {
     }
 
     @Override
-    public String toString ()
-    {
+    public String toString (){
         return "NULL";
     }
 
