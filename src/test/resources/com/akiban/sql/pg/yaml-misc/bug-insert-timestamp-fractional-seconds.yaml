@@ -1,4 +1,4 @@
-# Insert a timestamp with a fractional number of seconds
+# Insert a timestamp with a fractional number of seconds fails
 ---
 - Statement: CREATE TABLE t (timestamp_field timestamp)
 ---

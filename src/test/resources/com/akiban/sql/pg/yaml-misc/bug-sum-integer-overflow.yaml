@@ -1,4 +1,5 @@
 # Test integer overflow
+# Gets error for too-large value
 ---
 - Statement: CREATE TABLE t (integer_field integer)
 ---

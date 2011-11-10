@@ -1,4 +1,5 @@
 # Test smallint overflow
+# Sum of large values overflows incorrectly
 ---
 - Statement: CREATE TABLE t (smallint_field smallint)
 ---

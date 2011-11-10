@@ -1,3 +1,4 @@
+# Sum of real is not supported
 ---
 - Statement: CREATE TABLE t (real_field real)
 ---

@@ -1,4 +1,4 @@
-# Test boolean literal
+# Inserting boolean literal fails
 ---
 - Statement: CREATE TABLE t (b boolean)
 ---

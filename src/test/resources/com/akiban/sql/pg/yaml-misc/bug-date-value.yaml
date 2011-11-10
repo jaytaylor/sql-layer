@@ -1,4 +1,4 @@
-# Test date: 2001-01-01
+# Date value is garbled on retrieval
 ---
 - Statement:
     CREATE TABLE all_types (date_field date)

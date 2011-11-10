@@ -1,4 +1,4 @@
-# Test retrieving boolean value
+# Retrieving boolean value returns wrong value
 ---
 - Statement: CREATE TABLE t (boolean_field boolean)
 ---
