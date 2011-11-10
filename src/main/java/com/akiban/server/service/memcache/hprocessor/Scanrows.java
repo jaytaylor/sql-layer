@@ -166,6 +166,20 @@ public class Scanrows implements HapiProcessor {
             return ColumnSet.packToLegacy(projection);
         }
 
+        void ensureStartAndEndHaveSameFields()
+        {
+            Set<Integer> startOnly = new HashSet<Integer>(start.getFields().keySet());
+            startOnly.removeAll(end.getFields().keySet());
+            Set<Integer> endOnly = new HashSet<Integer>(end.getFields().keySet());
+            endOnly.removeAll(start.getFields().keySet());
+            for (Integer field : endOnly) {
+                start.put(field, null);
+            }
+            for (Integer field : startOnly) {
+                end.put(field, null);
+            }
+        }
+
         private static byte[] allColumnsBitmap(Table table) {
             Set<Integer> projection = new HashSet<Integer>();
             for (Column column : table.getColumns()) {
@@ -367,7 +381,7 @@ public class Scanrows implements HapiProcessor {
                     break;
             }
         }
-
+        ret.ensureStartAndEndHaveSameFields();
         return ret;
     }
 

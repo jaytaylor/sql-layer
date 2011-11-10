@@ -155,7 +155,7 @@ public final class GroupIndexScanIT extends ITBase {
 
     private IndexKeyRange unboundedRange(IndexRowType indexRowType)
     {
-        return new IndexKeyRange(indexRowType, null, false, null, false);
+        return new IndexKeyRange(indexRowType);
     }
 
     private Integer c, o, i, h;
