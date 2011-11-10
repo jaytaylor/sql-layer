@@ -51,7 +51,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("DXL", new DXLMXBeanImpl(this), DXLMXBean.class);
+        return new JmxObjectInfo("DXL", new DXLMXBeanImpl(this, store(), sessionService), DXLMXBean.class);
     }
 
     @Override
@@ -68,8 +68,9 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     public void start() {
         List<DXLFunctionsHook> hooks = getHooks();
         BasicDXLMiddleman middleman = BasicDXLMiddleman.create();
-        DDLFunctions localDdlFunctions = new HookableDDLFunctions(createDDLFunctions(middleman), hooks);
-        DMLFunctions localDmlFunctions = new HookableDMLFunctions(createDMLFunctions(middleman, localDdlFunctions), hooks);
+        DDLFunctions localDdlFunctions = new HookableDDLFunctions(createDDLFunctions(middleman), hooks, sessionService);
+        DMLFunctions localDmlFunctions = new HookableDMLFunctions(createDMLFunctions(middleman, localDdlFunctions),
+                hooks, sessionService);
         synchronized (MONITOR) {
             if (ddlFunctions != null) {
                 throw new ServiceStartupException("service already started");

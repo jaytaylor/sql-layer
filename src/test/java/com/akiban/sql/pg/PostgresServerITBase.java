@@ -61,8 +61,8 @@ public class PostgresServerITBase extends ITBase
     public static final String SCHEMA_NAME = "user";
     public static final String DRIVER_NAME = "org.postgresql.Driver";
     public static final String CONNECTION_URL = "jdbc:postgresql://localhost:%d/user";
-    public static final String USER_NAME = "user";
-    public static final String USER_PASSWORD = "user";
+    public static final String USER_NAME = "auser";
+    public static final String USER_PASSWORD = "apassword";
 
     public void loadDatabase(File dir) throws Exception {
         loadSchemaFile(new File(dir, "schema.ddl"));
@@ -155,7 +155,7 @@ public class PostgresServerITBase extends ITBase
                 String line = brdr.readLine();
                 if (line == null) break;
                 String[] cols = line.split("\t");
-                NewRow row = new NiceRow(tableId);
+                NewRow row = new NiceRow(tableId, store());
                 for (int i = 0; i < cols.length; i++)
                     row.put(i, cols[i]);
                 dml().writeRow(session(), row);

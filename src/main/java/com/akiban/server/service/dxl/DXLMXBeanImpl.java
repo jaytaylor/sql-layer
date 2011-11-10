@@ -29,8 +29,9 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionService;
+import com.akiban.server.store.Store;
 import com.akiban.server.util.GroupIndexCreator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,8 +44,10 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 class DXLMXBeanImpl implements DXLMXBean {
-    private DXLServiceImpl dxlService;
+    private final DXLServiceImpl dxlService;
+    private final Store store;
     private final AtomicReference<String> usingSchema = new AtomicReference<String>("test");
+    private final SessionService sessionService;
     private static final Logger LOG = LoggerFactory.getLogger(DXLMXBeanImpl.class);
     private static final String CREATE_GROUP_INDEX_LOG_FORMAT = "createGroupIndex failed: %s %s %s";
     private static final DXLService.GroupIndexRecreatePredicate ALL_GIS = new DXLService.GroupIndexRecreatePredicate() {
@@ -54,8 +57,10 @@ class DXLMXBeanImpl implements DXLMXBean {
         }
     };
 
-    public DXLMXBeanImpl(DXLServiceImpl dxlService) {
+    public DXLMXBeanImpl(DXLServiceImpl dxlService, Store store, SessionService sessionService) {
         this.dxlService = dxlService;
+        this.store = store;
+        this.sessionService = sessionService;
     }
 
     @Override
@@ -69,7 +74,7 @@ class DXLMXBeanImpl implements DXLMXBean {
     }
 
     public void createTable(String schema, String ddl) {
-        Session session = ServiceManagerImpl.newSession();
+        Session session = sessionService.createSession();
         try {
             dxlService.ddlFunctions().createTable(session, schema, ddl);
         } finally {
@@ -89,7 +94,7 @@ class DXLMXBeanImpl implements DXLMXBean {
 
     @Override
     public void createGroupIndex(String groupName, String indexName, String tableColumnList, Index.JoinType joinType) {
-        Session session = ServiceManagerImpl.newSession();
+        Session session = sessionService.createSession();
         try {
             DDLFunctions ddlFunctions = dxlService.ddlFunctions();
             AkibanInformationSchema ais = ddlFunctions.getAIS(session);
@@ -107,7 +112,7 @@ class DXLMXBeanImpl implements DXLMXBean {
     }
 
     public void dropTable(String schema, String tableName) {
-        Session session = ServiceManagerImpl.newSession();
+        Session session = sessionService.createSession();
         try {
             dxlService.ddlFunctions().dropTable(session, new TableName(schema, tableName));
         } finally {
@@ -122,7 +127,7 @@ class DXLMXBeanImpl implements DXLMXBean {
 
     @Override
     public void dropGroupIndex(String groupName, String indexName) {
-        Session session = ServiceManagerImpl.newSession();
+        Session session = sessionService.createSession();
         try {
             dxlService.ddlFunctions().dropGroupIndexes(session, groupName, Collections.singleton(indexName));
         } finally {
@@ -133,7 +138,7 @@ class DXLMXBeanImpl implements DXLMXBean {
     @Override
     public void dropGroupBySchema(String schemaName)
     {
-        final Session session = ServiceManagerImpl.newSession();
+        final Session session = sessionService.createSession();
         try {
             AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
             for(com.akiban.ais.model.Group group: ais.getGroups().values()) {
@@ -149,7 +154,7 @@ class DXLMXBeanImpl implements DXLMXBean {
 
     @Override
     public void dropGroup(String groupName) {
-        Session session = ServiceManagerImpl.newSession();
+        Session session = sessionService.createSession();
         try {
             dxlService.ddlFunctions().dropGroup(session, groupName);
         } finally {
@@ -159,7 +164,7 @@ class DXLMXBeanImpl implements DXLMXBean {
 
     @Override
     public void dropAllGroups() {
-        Session session = ServiceManagerImpl.newSession();
+        Session session = sessionService.createSession();
         try {
             for(String groupName : dxlService.ddlFunctions().getAIS(session).getGroups().keySet()) {
                 dropGroup(groupName);
@@ -176,7 +181,7 @@ class DXLMXBeanImpl implements DXLMXBean {
 
     @Override
     public String getGroupNameFromTableName(String schemaName, String tableName) {
-        Session session = ServiceManagerImpl.newSession();
+        Session session = sessionService.createSession();
         final AkibanInformationSchema ais;
         try {
             ais = dxlService.ddlFunctions().getAIS(session);
@@ -195,7 +200,7 @@ class DXLMXBeanImpl implements DXLMXBean {
 
     @Override
     public String printAIS() {
-        Session session = ServiceManagerImpl.newSession();
+        Session session = sessionService.createSession();
         try {
             AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
             return AISPrinter.toString(ais);
@@ -206,7 +211,7 @@ class DXLMXBeanImpl implements DXLMXBean {
     }
 
     public List<String> getGrouping(String schema) {
-        Session session = ServiceManagerImpl.newSession();
+        Session session = sessionService.createSession();
         try {
             AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
             Grouping grouping = GroupsBuilder.fromAis(ais, schema);
@@ -221,10 +226,10 @@ class DXLMXBeanImpl implements DXLMXBean {
     }
 
     public void writeRow(String schema, String table, String fields) {
-        final Session session = ServiceManagerImpl.newSession();
+        final Session session = sessionService.createSession();
         try {
             int tableId = dxlService.ddlFunctions().getTableId(session, new TableName(schema, table));
-            NewRow row = new NiceRow(tableId);
+            NewRow row = new NiceRow(tableId, store);
             String[] fieldsArray = fields.split(",\\s*");
             for (int i=0; i < fieldsArray.length; ++i) {
                 String field = java.net.URLDecoder.decode(fieldsArray[i], "UTF-8");

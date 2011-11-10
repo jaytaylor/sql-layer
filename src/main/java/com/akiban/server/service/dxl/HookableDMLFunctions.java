@@ -26,9 +26,9 @@ import com.akiban.server.api.dml.scan.LegacyRowOutput;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.ScanRequest;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionService;
 
 import java.util.List;
 import java.util.Set;
@@ -39,9 +39,11 @@ public final class HookableDMLFunctions implements DMLFunctions {
 
     private final DMLFunctions delegate;
     private final DXLFunctionsHook hook;
+    private final SessionService sessionService;
 
-    public HookableDMLFunctions(DMLFunctions delegate, List<DXLFunctionsHook> hooks) {
+    public HookableDMLFunctions(DMLFunctions delegate, List<DXLFunctionsHook> hooks, SessionService sessionService) {
         this.delegate = delegate;
+        this.sessionService = sessionService;
         this.hook = hooks.size() == 1 ? hooks.get(0) : new CompositeHook(hooks);
     }
 
@@ -184,7 +186,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
 
     @Override
     public RowData convertNewRow(NewRow row){
-        Session session = ServiceManagerImpl.newSession();
+        Session session = sessionService.createSession();
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.CONVERT_NEW_ROW);
@@ -208,7 +210,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
 
     @Override
     public NewRow convertRowData(RowData rowData) {
-        Session session = ServiceManagerImpl.newSession();
+        Session session = sessionService.createSession();
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.CONVERT_ROW_DATA);
@@ -232,7 +234,7 @@ public final class HookableDMLFunctions implements DMLFunctions {
 
     @Override
     public List<NewRow> convertRowDatas(List<RowData> rowDatas) {
-        Session session = ServiceManagerImpl.newSession();
+        Session session = sessionService.createSession();
         Throwable thrown = null;
         try {
             hook.hookFunctionIn(session, DXLFunction.CONVERT_ROW_DATAS);

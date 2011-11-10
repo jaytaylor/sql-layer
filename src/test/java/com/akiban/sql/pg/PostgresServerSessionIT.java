@@ -67,6 +67,9 @@ public class PostgresServerSessionIT extends PostgresServerITBase {
         String create  = "CREATE TABLE t1 (c2 integer not null primary key)";
         connection.createStatement().execute(create);
         
+        create  = "CREATE TABLE auser.t1 (c4 integer not null primary key)";
+        connection.createStatement().execute(create);
+        
         connection.createStatement().execute("SET SCHEMA TEST");
         
         connection.createStatement().execute("SET SCHEMA USER");

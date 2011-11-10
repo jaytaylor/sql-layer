@@ -1,4 +1,0 @@
-Count_Default(user.customers)
-  Filter_Default([user.customers])
-    GroupScan_Default(full scan on _akiban_customers NO LIMIT)
-[_SQL_COL_1:INTEGER NOT NULL]

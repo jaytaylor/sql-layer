@@ -30,20 +30,22 @@ import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;
-import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionService;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 
 public class PersistitAdapter
 {
-    public PersistitAdapter(PersistitStore store, GenerateFinalTask task, Tracker tracker)
+    public PersistitAdapter(PersistitStore store, GenerateFinalTask task, Tracker tracker, SessionService sessionService)
         throws PersistitException
     {
         this.tracker = tracker;
         this.store = store;
         this.task = task;
+        this.sessionService = sessionService;
+        this.session = sessionService.createSession();
         UserTable leafTable = task.table();
         hKeyFieldDefs = new FieldDef[leafTable.hKey().nColumns()];
         hKey = new Object[leafTable.hKey().nColumns()];
@@ -174,6 +176,7 @@ public class PersistitAdapter
     private final RowData rowData;
     private final Exchange exchange;
     private final Tracker tracker;
+    private final SessionService sessionService;
     private long rowCount = 0;
-    private Session session = ServiceManagerImpl.newSession();
+    private Session session;
 }

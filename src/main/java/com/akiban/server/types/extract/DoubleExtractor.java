@@ -15,31 +15,53 @@
 
 package com.akiban.server.types.extract;
 
+import com.akiban.server.error.OverflowException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueSourceIsNullException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 public final class DoubleExtractor extends AbstractExtractor {
 
     public double getDouble(ValueSource source) {
         if (source.isNull())
             throw new ValueSourceIsNullException();
+
         AkType type = source.getConversionType();
         switch (type) {
-        case DECIMAL:   return source.getDecimal().doubleValue();
+        case DECIMAL:   return getDecimalAsDouble(source);
         case DOUBLE:    return source.getDouble();
         case FLOAT:     return source.getFloat();
         case INT:       return source.getInt();
         case LONG:      return source.getLong();
         case VARCHAR:   return getDouble(source.getString());
         case TEXT:      return getDouble(source.getText());
-        case U_BIGINT:  return source.getUBigInt().doubleValue();
+        case U_BIGINT:  return getBigIntAsDouble(source);
         case U_DOUBLE:  return source.getUDouble();
         case U_FLOAT:   return source.getUFloat();
         case U_INT:     return source.getUInt();
         default:
             throw unsupportedConversion(type);
-        }
+        }                
+    }
+
+    private double getDecimalAsDouble (ValueSource source )
+    {
+        double d = source.getDecimal().doubleValue();
+        if (Double.isInfinite(d))
+            throw new OverflowException();        
+        else
+            return d;
+    }
+
+    private double getBigIntAsDouble (ValueSource source)
+    {
+        double d = source.getUBigInt().doubleValue();
+        if (Double.isInfinite(d))
+            throw new OverflowException();        
+        else
+            return d;
     }
 
     public double getDouble(String string) {

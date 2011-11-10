@@ -22,17 +22,18 @@ import com.akiban.qp.operator.Limit;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.UndefBindings;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.AisRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.AkServer;
-import com.akiban.server.AkServerInterface;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;
+import com.akiban.server.api.FixedCountLimit;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.memcache.hprocessor.PredicateLimit;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
@@ -178,7 +179,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
 
     // OperatorBasedRowCollector interface
 
-    public static OperatorBasedRowCollector newCollector(AkServerInterface akServer,
+    public static OperatorBasedRowCollector newCollector(ConfigurationService config,
                                                          Session session,
                                                          PersistitStore store,
                                                          int scanFlags,
@@ -201,7 +202,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         OperatorBasedRowCollector rowCollector =
             rowDef.isUserTable()
             // HAPI query root table = predicate table
-            ? new OneTableRowCollector(akServer,
+            ? new OneTableRowCollector(config,
                                        session,
                                        store,
                                        rowDef,
@@ -212,7 +213,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                                        end,
                                        endColumns)
             // HAPI query root table != predicate table
-            : new TwoTableRowCollector(akServer,
+            : new TwoTableRowCollector(config,
                                        session,
                                        store,
                                        rowDef,
@@ -230,12 +231,12 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         return rowCollector;
     }
     
-    protected OperatorBasedRowCollector(PersistitStore store, Session session, AkServerInterface akServer)
+    protected OperatorBasedRowCollector(PersistitStore store, Session session, ConfigurationService config)
     {
         this.schema = SchemaCache.globalSchema(store.getRowDefCache().ais());
         // Passing null to PersistitAdapter's TreeService argument. TreeService is only needed for sorting,
         // which OBRC doesn't use.
-        this.adapter = new PersistitAdapter(schema, store, null, session, akServer);
+        this.adapter = new PersistitAdapter(schema, store, null, session, config);
         this.rowCollectorId = idCounter.getAndIncrement();
     }
 
@@ -269,7 +270,14 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                     limit);
         } else {
             assert !descending;
-            plan = groupScan_Default(groupTable, limit);
+            plan = groupScan_Default(groupTable);
+            if (scanLimit != ScanLimit.NONE) {
+                if (scanLimit instanceof FixedCountLimit) {
+                    plan = limit_Default(plan, ((FixedCountLimit) scanLimit).getLimit());
+                } else if (scanLimit instanceof PredicateLimit) {
+                    plan = limit_Default(plan, ((PredicateLimit) scanLimit).getLimit());
+                }
+            }
         }
         // Fill in ancestors above predicate
         if (queryRootType != predicateType) {
@@ -285,8 +293,8 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             plan = filter_Default(plan, queryRootAndDescendents);
         }
         // Get rid of selected types below query root table.
-        Set<RowType> cutTypes = cutTypes(deep);
-        for (RowType cutType : cutTypes) {
+        Set<AisRowType> cutTypes = cutTypes(deep);
+        for (AisRowType cutType : cutTypes) {
             plan = filter_Default(plan, removeDescendentTypes(cutType, plan));
         }
         if (LOG.isInfoEnabled()) {
@@ -295,7 +303,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         this.operator = plan;
     }
 
-    private Set<RowType> removeDescendentTypes(RowType type, Operator plan)
+    private Set<RowType> removeDescendentTypes(AisRowType type, Operator plan)
     {
         Set<RowType> keepTypes = type.schema().allTableTypes();
         plan.findDerivedTypes(keepTypes);
@@ -317,9 +325,9 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         return ancestorTypes;
     }
 
-    private Set<RowType> cutTypes(boolean deep)
+    private Set<AisRowType> cutTypes(boolean deep)
     {
-        Set<RowType> cutTypes = new HashSet<RowType>();
+        Set<AisRowType> cutTypes = new HashSet<AisRowType>();
         if (!deep) {
             // Find the leafmost tables in requiredUserTables and cut everything below those. It is possible
             // that a column bit map includes, for example, customer and item but not order. This case is NOT

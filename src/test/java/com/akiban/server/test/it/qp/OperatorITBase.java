@@ -23,6 +23,7 @@ import com.akiban.qp.persistitadapter.PersistitIndexRow;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.AisRowType;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -34,8 +35,6 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.server.test.it.ITBase;
-import com.akiban.server.types.ToObjectValueTarget;
-import com.akiban.util.ShareHolder;
 import com.persistit.exception.PersistitException;
 import com.akiban.util.Strings;
 import org.junit.Before;
@@ -103,16 +102,7 @@ public class OperatorITBase extends ITBase
                           createNewRow(item, 212L, 21L),
                           createNewRow(item, 221L, 22L),
                           createNewRow(item, 222L, 22L)};
-        Store plainStore = store();
-        final PersistitStore persistitStore;
-        if (plainStore instanceof OperatorStore) {
-            OperatorStore operatorStore = (OperatorStore) plainStore;
-            persistitStore = operatorStore.getPersistitStore();
-        }
-        else {
-            persistitStore = (PersistitStore) plainStore;
-        }
-        adapter = new PersistitAdapter(schema, persistitStore, treeService(), session(), akServer());
+        adapter = persistitAdapter(schema);
     }
 
     protected void use(NewRow[] db)
@@ -171,7 +161,7 @@ public class OperatorITBase extends ITBase
 
     protected RowBase row(int tableId, Object... values /* alternating field position and value */)
     {
-        NiceRow niceRow = new NiceRow(tableId);
+        NiceRow niceRow = new NiceRow(tableId, store());
         int i = 0;
         while (i < values.length) {
             int position = (Integer) values[i++];
@@ -258,10 +248,10 @@ public class OperatorITBase extends ITBase
     protected int order;
     protected int item;
     protected int address;
-    protected RowType customerRowType;
-    protected RowType orderRowType;
-    protected RowType itemRowType;
-    protected RowType addressRowType;
+    protected AisRowType customerRowType;
+    protected AisRowType orderRowType;
+    protected AisRowType itemRowType;
+    protected AisRowType addressRowType;
     protected IndexRowType customerCidIndexRowType;
     protected IndexRowType customerNameIndexRowType;
     protected IndexRowType orderSalesmanIndexRowType;

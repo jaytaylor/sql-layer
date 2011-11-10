@@ -33,19 +33,5 @@ public interface ManageMXBean {
 
     void flushIndexes();
 
-    int getQueryTimeoutSec();
-
-    void setQueryTimeoutSec(int timeoutSec);
-
-    // TODO - temporary
-    //
-    String loadCustomQuery(String className, String path);
-
-    String runCustomQuery(String params);
-    
-    String showCustomQueryResult();
-    
-    String stopCustomQuery();
-
     String getVersionString();
 }

@@ -18,12 +18,14 @@ package com.akiban.server.expression.std;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
 public class CurrentDateTimeExpression extends AbstractVoidParamExpression
 {
@@ -63,6 +65,16 @@ public class CurrentDateTimeExpression extends AbstractVoidParamExpression
         protected Expression compose()
         {
             return new CurrentDateTimeExpression(true, AkType.TIME, Context.NOW);
+        }
+
+        @Override
+        public void argumentTypes(List<AkType> argumentTypes) {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public ExpressionType composeType(List<? extends ExpressionType> argumentTypes) {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
     };
     

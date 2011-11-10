@@ -14,14 +14,19 @@
 # along with this program.  If not, see http://www.gnu.org/licenses.
 #
 
-
-if [ $# -ne 1 ]; then
+if [ $# -lt 1 ]; then
     echo "Usage: ./build_packages.sh [debian|redhat]"
     exit 1
 fi
 
 platform=$1
 bzr_revno=`bzr revno`
+
+if [ -z "$2" ] ; then
+	epoch=`date +%s`
+else
+	epoch=$2
+fi
 
 if [ ${platform} == "debian" ]; then
     cp packages-common/* ${platform}
@@ -41,6 +46,7 @@ elif [ ${platform} == "redhat" ]; then
     popd
     gzip $tar_file
     cat ${PWD}/redhat/akiban-server.spec | sed "9,9s/REVISION/${bzr_revno}/g" > ${PWD}/redhat/akiban-server-${bzr_revno}.spec
+    sed -i "10,10s/EPOCH/${epoch}/g" ${PWD}/redhat/akiban-server-${bzr_revno}.spec
     rpmbuild --target=noarch --define "_topdir ${PWD}/redhat/rpmbuild" -ba ${PWD}/redhat/akiban-server-${bzr_revno}.spec
 else
     echo "Invalid Argument: ${platform}"

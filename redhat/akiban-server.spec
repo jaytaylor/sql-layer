@@ -7,6 +7,7 @@
 Name:           akiban-server
 Version:        0.9.0
 Release:        REVISION%{?dist}
+Epoch:		EPOCH
 Summary:        Akiban Server is the main server for the Akiban Orthogonal Architecture.
 
 Group:          Applications/Databases

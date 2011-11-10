@@ -1,7 +1,7 @@
 SelectQuery@60da5686
   ResultSet@1e66a917[name, order_date]
     Distinct@65e73498
-      Sort@2e2e1b6c[user.customers.name, user.orders.order_date]
+      Sort@2e2e1b6c[SELECT[0], SELECT[1]]
         Project@550a6723[user.customers.name, user.orders.order_date]
           Select@1df95673[]
             JoinNode@5c9aa764(INNER[user.orders.oid == user.items.oid])

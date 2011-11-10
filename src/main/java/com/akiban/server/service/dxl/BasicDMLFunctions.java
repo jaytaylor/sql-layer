@@ -26,15 +26,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.HKey;
-import com.akiban.ais.model.HKeyColumn;
-import com.akiban.ais.model.HKeySegment;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.*;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
@@ -153,7 +145,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         if (request.scanAllColumns()) {
             request = scanAllColumns(session, request);
         }
-        final CursorId cursorId = newUniqueCursor(request.getTableId());
+        final CursorId cursorId = newUniqueCursor(session.sessionId(), request.getTableId());
         reopen(session, cursorId, request, true);
 
         // double check our AIS generation. This is a bit superfluous since we're supposed to be in a DDL-DML r/w lock.
@@ -274,8 +266,8 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         return rowCollector;
     }
 
-    protected CursorId newUniqueCursor(int tableId) {
-        return new CursorId(cursorsCount.incrementAndGet(), tableId);
+    protected CursorId newUniqueCursor(long sessionId, int tableId) {
+        return new CursorId(sessionId, cursorsCount.incrementAndGet(), tableId);
     }
 
     @Override
@@ -689,6 +681,11 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                     indexDef = index != null ? (IndexDef)index.indexDef() : null;
                 }
                 if (indexDef != null) {
+                    assert indexDef.getIndex().isTableIndex();
+                    TableIndex index = (TableIndex) indexDef.getIndex();
+                    if (index.getTable().getTableId() != tableId) {
+                        continue;
+                    }
                     for (int field : indexDef.getFields()) {
                         if (columnSelector.includesColumn(field)
                                 && !AkServerUtil.equals(oldRow.get(field), newRow.get(field)))

@@ -120,12 +120,12 @@ public final class NiceRowTest {
     public void testEquality() {
         TreeMap<Integer,NiceRow> mapOne = new TreeMap<Integer, NiceRow>();
         TreeMap<Integer,NiceRow> mapTwo = new TreeMap<Integer, NiceRow>();
-        NiceRow rowOne = new NiceRow(1, null);
+        NiceRow rowOne = new NiceRow(1, (RowDef)null);
         rowOne.put(0, Long.valueOf(0l));
         rowOne.put(1, "hello world");
         mapOne.put(0, rowOne);
 
-        NiceRow rowTwo = new NiceRow(1, null);
+        NiceRow rowTwo = new NiceRow(1, (RowDef)null);
         rowTwo.put(0, Long.valueOf(0l));
         rowTwo.put(1, "hello world");
         mapTwo.put(0, rowTwo);

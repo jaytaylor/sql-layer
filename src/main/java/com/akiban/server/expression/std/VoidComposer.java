@@ -29,7 +29,7 @@ abstract class VoidComposer implements ExpressionComposer
     @Override
     public Expression compose(List<? extends Expression> arguments) 
     {
-        if (arguments.size() != 0)
+        if (!arguments.isEmpty())
             throw new WrongExpressionArityException(1, arguments.size());
         return compose();
     }
