@@ -116,7 +116,8 @@ public class IndexKeyRange
     private static int checkBounds(IndexRowType indexRowType, IndexBound lo, IndexBound hi)
     {
         if (lo == null || hi == null) {
-            throw new IllegalArgumentException("IndexBound arguments to IndexKeyRange constructor must not be null");
+            throw new IllegalArgumentException
+                ("IndexBound arguments to IndexKeyRange constructor must not be null");
         }
         ColumnSelector loSelector = lo.columnSelector();
         ColumnSelector hiSelector = hi.columnSelector();
@@ -128,8 +129,9 @@ public class IndexKeyRange
                     String.format("IndexBound arguments specify different fields of index %s", indexRowType));
             }
             if (selected) {
-                boundColumns++;
-                if (!loSelector.includesColumn(i)) {
+                if (loSelector.includesColumn(i)) {
+                    boundColumns++;
+                } else {
                     selected = false;
                 }
             } else {

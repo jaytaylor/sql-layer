@@ -25,7 +25,6 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapterException;
 import com.akiban.qp.row.Row;
 import com.akiban.server.PersistitKeyValueTarget;
-import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.expression.std.Expressions;
@@ -37,7 +36,7 @@ import com.persistit.exception.PersistitException;
 
 import java.util.List;
 
-public class SortCursorUnidirectional extends SortCursor
+class SortCursorUnidirectional extends SortCursor
 {
     // Cursor interface
 
@@ -51,10 +50,10 @@ public class SortCursorUnidirectional extends SortCursor
                 exchange.append(startBoundary);
             } else {
                 if (direction == FORWARD && !startInclusive || direction == BACKWARD && startInclusive) {
-                    // direction == 1 && !startInclusive: If the search key is (10, 5) and there are rows (10, 5, ...)
+                    // direction == FORWARD && !startInclusive: If the search key is (10, 5) and there are rows (10, 5, ...)
                     // then we do not want them if !startInclusive. Making the search key (10, 5, AFTER) will cause
                     // these records to be skipped.
-                    // direction == -1 && startInclusive: Similarly, going in the other direction, we do the
+                    // direction == BACKWARD && startInclusive: Similarly, going in the other direction, we do the
                     // (10, 5, ...) records if startInclusive. But an LTEQ traversal would miss it unless we search
                     // for (10, 5, AFTER).
                     startKey.append(Key.AFTER);
@@ -96,23 +95,23 @@ public class SortCursorUnidirectional extends SortCursor
     // SortCursorUnidirectional interface
 
     public static SortCursorUnidirectional create(PersistitAdapter adapter,
-                                                  RowGenerator rowGenerator,
+                                                  IterationHelper iterationHelper,
                                                   IndexKeyRange keyRange,
                                                   API.Ordering ordering)
     {
         return
             keyRange == null || keyRange.unbounded()
-            ? new SortCursorUnidirectional(adapter, rowGenerator, ordering)
-            : new SortCursorUnidirectional(adapter, rowGenerator, keyRange, ordering);
+            ? new SortCursorUnidirectional(adapter, iterationHelper, ordering)
+            : new SortCursorUnidirectional(adapter, iterationHelper, keyRange, ordering);
     }
 
     // For use by this class
 
     private SortCursorUnidirectional(PersistitAdapter adapter,
-                                     RowGenerator rowGenerator,
+                                     IterationHelper iterationHelper,
                                      API.Ordering ordering)
     {
-        super(adapter, rowGenerator);
+        super(adapter, iterationHelper);
         this.bounded = false;
         this.adapter = adapter;
         if (ordering.allAscending()) {
@@ -129,11 +128,11 @@ public class SortCursorUnidirectional extends SortCursor
     }
 
     private SortCursorUnidirectional(PersistitAdapter adapter,
-                                     RowGenerator rowGenerator,
+                                     IterationHelper iterationHelper,
                                      IndexKeyRange keyRange,
                                      API.Ordering ordering)
     {
-        super(adapter, rowGenerator);
+        super(adapter, iterationHelper);
         this.bounded = true;
         this.adapter = adapter;
         this.lo = keyRange.lo();
@@ -180,7 +179,7 @@ public class SortCursorUnidirectional extends SortCursor
             c) any remaining columns unbounded.
 
             By the time we get here, we've stopped paying attention to part c. Parts a and b occupy the first
-            sortColumns columns of the index. Now about the nulls: For each field of parts a and b, we have a
+            orderingColumns columns of the index. Now about the nulls: For each field of parts a and b, we have a
             lo value and a hi value. There are four cases:
 
             - both lo and hi are non-null: Just write the field values into startKey and endKey.
@@ -194,9 +193,6 @@ public class SortCursorUnidirectional extends SortCursor
             - lo and hi are both null: This is NOT an unbounded case. This means that we are restricting both
               lo and hi to be null, so write null, not Key.AFTER to endKey.
         */
-        boolean[] startNull = new boolean[boundColumns];
-        startKey.clear();
-        keyTarget.attach(startKey);
         // Check constraints on start and end
         BoundExpressions loExpressions = lo.boundExpressions(bindings, adapter);
         BoundExpressions hiExpressions = hi.boundExpressions(bindings, adapter);
@@ -209,31 +205,58 @@ public class SortCursorUnidirectional extends SortCursor
                 throw new IllegalArgumentException();
             }
         }
-        Expression loLEHi =
-            Expressions.compare(Expressions.valueSource(loExpressions.eval(boundColumns - 1)),
-                                Comparison.LE,
-                                Expressions.valueSource(hiExpressions.eval(boundColumns - 1)));
-        if (!loLEHi.evaluation().eval().getBool()) {
-            throw new IllegalArgumentException();
+        ValueSource loBound = loExpressions.eval(boundColumns - 1);
+        ValueSource hiBound = hiExpressions.eval(boundColumns - 1);
+        if (!loBound.isNull() && !hiBound.isNull()) {
+            Expression loLEHi =
+                Expressions.compare(Expressions.valueSource(loBound),
+                                    Comparison.LE,
+                                    Expressions.valueSource(hiBound));
+            if (!loLEHi.evaluation().eval().getBool()) {
+                throw new IllegalArgumentException();
+            }
         }
         // Construct start and end keys
         BoundExpressions startExpressions = start.boundExpressions(bindings, adapter);
-        for (int f = 0; f < boundColumns; f++) {
-            ValueSource keySource = startExpressions.eval(f);
-            startNull[f] = keySource.isNull();
-            keyTarget.expectingType(types[f]);
-            Converters.convert(keySource, keyTarget);
-        }
         BoundExpressions endExpressions = end.boundExpressions(bindings, adapter);
-        endKey.clear();
-        keyTarget.attach(endKey);
+        ValueSource[] startValues = new ValueSource[boundColumns];
+        ValueSource[] endValues = new ValueSource[boundColumns];
         for (int f = 0; f < boundColumns; f++) {
-            ValueSource keySource = endExpressions.eval(f);
-            if (keySource.isNull() && !startNull[f]) {
+            startValues[f] = startExpressions.eval(f);
+            endValues[f] = endExpressions.eval(f);
+        }
+        startKey.clear();
+        startKeyTarget.attach(startKey);
+        endKey.clear();
+        endKeyTarget.attach(endKey);
+        for (int f = 0; f < boundColumns; f++) {
+            boolean appendAFTERToStart;
+            boolean appendAFTERToEnd;
+            if (startValues[f].isNull() == endValues[f].isNull()) {
+                appendAFTERToStart = false;
+                appendAFTERToEnd = false;
+            } else {
+                // Either startValues[f].isNull or endValues[f].isNull
+                if (startValues[f].isNull()) {
+                    appendAFTERToStart = direction == BACKWARD;
+                    appendAFTERToEnd = false;
+                } else {
+                    // endValues[f].isNull
+                    appendAFTERToStart = false;
+                    appendAFTERToEnd = direction == FORWARD;
+                }
+            }
+            if (appendAFTERToStart) {
+                startKey.append(Key.AFTER);
+            } else {
+                startKeyTarget.expectingType(types[f]);
+                Converters.convert(startValues[f], startKeyTarget);
+            }
+            if (appendAFTERToEnd) {
                 endKey.append(Key.AFTER);
             } else {
-                keyTarget.expectingType(types[f]);
-                Converters.convert(keySource, keyTarget);
+                endKeyTarget.expectingType(types[f]);
+                Converters.convert(endValues[f], endKeyTarget);
             }
         }
     }
@@ -283,5 +306,6 @@ public class SortCursorUnidirectional extends SortCursor
     private boolean endInclusive;
     private Key startKey;
     private Key endKey;
-    private final PersistitKeyValueTarget keyTarget = new PersistitKeyValueTarget();
+    private final PersistitKeyValueTarget startKeyTarget = new PersistitKeyValueTarget();
+    private final PersistitKeyValueTarget endKeyTarget = new PersistitKeyValueTarget();
 }

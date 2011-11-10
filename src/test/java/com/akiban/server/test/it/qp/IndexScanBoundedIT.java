@@ -84,214 +84,12 @@ public class IndexScanBoundedIT extends OperatorITBase
     }
 
     // Test name: test_AB_CD
-    // A: Lo Inclusive/Exclusive/Unbounded
-    // B: Lo Bound is present/missing (relevant only if lo is not unbounded)
-    // C: Hi Inclusive/Exclusive/Unbounded
-    // D: Hi Bound is present/missing (relevant only if hi is not unbounded)
-    //
+    // A: Lo Inclusive/Exclusive
+    // B: Lo Bound is present/missing
+    // C: Hi Inclusive/Exclusive
+    // D: Hi Bound is present/missing
     // AB/CD combinations are not tested exhaustively because processing at
     // start and end of scan are independent.
-    // However, there is some testing around empty and single-key ranges.
-
-    @Test
-    public void test_U_IP()
-    {
-        // AAA
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, ASC, ASC),
-             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, 51, UNSPECIFIED),
-             ordering(ASC, ASC, ASC),
-             1000, 1001, 1002, 1003, 1004, 1005);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, 55, 555),
-             ordering(ASC, ASC, ASC),
-             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
-        // AA
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, ASC),
-             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, 51, UNSPECIFIED),
-             ordering(ASC, ASC),
-             1000, 1001, 1002, 1003, 1004, 1005);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, 55, 555),
-             ordering(ASC, ASC),
-             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
-        // A
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC),
-             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, 51, UNSPECIFIED),
-             ordering(ASC),
-             1000, 1001, 1002, 1003, 1004, 1005);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, 55, 555),
-             ordering(ASC),
-             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
-        // AAD
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, ASC, DESC),
-             1001, 1000, 1003, 1002);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 1, 15, UNSPECIFIED),
-             ordering(ASC, ASC, DESC),
-             1001, 1000, 1003, 1002);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 1, 15, 151),
-             ordering(ASC, ASC, DESC),
-             1001, 1000, 1002);
-        // AA
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, ASC),
-             1000, 1001, 1002, 1003);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 1, 15, UNSPECIFIED),
-             ordering(ASC, ASC),
-             1000, 1001, 1002, 1003);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 1, 15, 151),
-             ordering(ASC, ASC),
-             1000, 1001, 1002);
-        // A
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC),
-             1000, 1001, 1002, 1003);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 1, 15, UNSPECIFIED),
-             ordering(ASC),
-             1000, 1001, 1002, 1003);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 1, 15, 151),
-             ordering(ASC),
-             1000, 1001, 1002);
-        // ADA
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC, ASC),
-             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, 51, UNSPECIFIED),
-             ordering(ASC, DESC, ASC),
-             1002, 1003, 1000, 1001, 1004, 1005);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, 55, 551),
-             ordering(ASC, DESC, ASC),
-             1002, 1003, 1000, 1001, 1006, 1004, 1005);
-        // AD
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, 51, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1002, 1003, 1000, 1001, 1004, 1005);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, 55, 551),
-             ordering(ASC, DESC),
-             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
-        // A
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC),
-             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, 51, UNSPECIFIED),
-             ordering(ASC),
-             1000, 1001, 1002, 1003, 1004, 1005);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, 55, 551),
-             ordering(ASC),
-             1000, 1001, 1002, 1003, 1004, 1005, 1006);
-        // ADD
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC, DESC),
-             1003, 1002, 1001, 1000, 1007, 1006, 1005, 1004);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, 51, UNSPECIFIED),
-             ordering(ASC, DESC, DESC),
-             1003, 1002, 1001, 1000, 1005, 1004);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, 55, 551),
-             ordering(ASC, DESC, DESC),
-             1003, 1002, 1001, 1000, 1006, 1005, 1004);
-        // AD
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
-        dump(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, 51, UNSPECIFIED),
-             ordering(ASC, DESC),
-             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, 55, 551),
-             ordering(ASC, DESC),
-             1002, 1003, 1000, 1001, 1006);
-        // DAA
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC, ASC),
-             1000, 1001, 1002, 1003);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 1, 11, UNSPECIFIED),
-             ordering(DESC, ASC, ASC),
-             1000, 1001);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 1, 11, 111),
-             ordering(ASC, DESC, DESC),
-             1000);
-        // DAD
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, ASC, DESC),
-             1005, 1004, 1007, 1006, 1001, 1000, 1003, 1002);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, 51, UNSPECIFIED),
-             ordering(DESC, ASC, DESC),
-             1005, 1004, 1001, 1000, 1003, 1002);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, 51, 515),
-             ordering(DESC, ASC, DESC),
-             1005, 1004, 1001, 1000, 1003, 1002);
-        // DDA
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, DESC, ASC),
-             1006, 1007, 1004, 1005, 1002, 1003, 1000, 1001);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, 51, UNSPECIFIED),
-             ordering(DESC, DESC, ASC),
-             1004, 1005, 1002, 1003, 1000, 1001);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, 51, 515),
-             ordering(DESC, DESC, ASC),
-             1004, 1005, 1002, 1003, 1000, 1001);
-        // DDD
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
-             ordering(DESC, DESC, DESC),
-             1007, 1006, 1005, 1004, 1003, 1002, 1001, 1000);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, 51, UNSPECIFIED),
-             ordering(DESC, DESC, DESC),
-             1005, 1004, 1003, 1002, 1001, 1000);
-        test(range(EXCLUSIVE, UNSPECIFIED, UNSPECIFIED, UNSPECIFIED,
-                   INCLUSIVE, 5, 51, 515),
-             ordering(DESC, DESC, DESC),
-             1005, 1004, 1003, 1002, 1001, 1000);
-    }
 
     @Test
     public void test_IP_IP()
@@ -309,6 +107,32 @@ public class IndexScanBoundedIT extends OperatorITBase
                    INCLUSIVE, 1, 15, 155),
              ordering(ASC, ASC, ASC),
              1002, 1003);
+        // AA
+        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, ASC),
+             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
+        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
+                   INCLUSIVE, 1, 15, UNSPECIFIED),
+             ordering(ASC, ASC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 15, 151,
+                   INCLUSIVE, 1, 15, 155),
+             ordering(ASC, ASC),
+             1002, 1003);
+        // A
+        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC),
+             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
+        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
+                   INCLUSIVE, 1, 15, UNSPECIFIED),
+             ordering(ASC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 15, 151,
+                   INCLUSIVE, 1, 15, 155),
+             ordering(ASC),
+             1002, 1003);
         // AAD
         test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
                    INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
@@ -322,6 +146,7 @@ public class IndexScanBoundedIT extends OperatorITBase
                    INCLUSIVE, 1, 15, 155),
              ordering(ASC, ASC, DESC),
              1003, 1002);
+        // AA, A already tested
         // ADA
         test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
                    INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
@@ -335,6 +160,20 @@ public class IndexScanBoundedIT extends OperatorITBase
                    INCLUSIVE, 1, 15, 155),
              ordering(ASC, DESC, ASC),
              1002, 1003);
+        // AD
+        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC),
+             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
+        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
+                   INCLUSIVE, 1, 15, UNSPECIFIED),
+             ordering(ASC, DESC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 15, 151,
+                   INCLUSIVE, 1, 15, 155),
+             ordering(ASC, DESC),
+             1002, 1003);
+        // A already tested
         // ADD
         test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
                    INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
@@ -348,6 +187,7 @@ public class IndexScanBoundedIT extends OperatorITBase
                    INCLUSIVE, 1, 15, 155),
              ordering(ASC, DESC, DESC),
              1003, 1002);
+        // AD, A already tested
         // DAA
         test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
                    INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
@@ -361,6 +201,32 @@ public class IndexScanBoundedIT extends OperatorITBase
                    INCLUSIVE, 1, 15, 155),
              ordering(DESC, ASC, ASC),
              1002, 1003);
+        // DA
+        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC),
+             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
+        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
+                   INCLUSIVE, 1, 15, UNSPECIFIED),
+             ordering(DESC, ASC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 15, 151,
+                   INCLUSIVE, 1, 15, 155),
+             ordering(DESC, ASC),
+             1002, 1003);
+        // D
+        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC),
+             1007, 1006, 1005, 1004, 1003, 1002, 1001, 1000);
+        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
+                   INCLUSIVE, 1, 15, UNSPECIFIED),
+             ordering(DESC),
+             1003, 1002);
+        test(range(INCLUSIVE, 1, 15, 151,
+                   INCLUSIVE, 1, 15, 155),
+             ordering(DESC),
+             1003, 1002);
         // DAD
         test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
                    INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
@@ -374,6 +240,7 @@ public class IndexScanBoundedIT extends OperatorITBase
                    INCLUSIVE, 1, 15, 155),
              ordering(DESC, ASC, DESC),
              1003, 1002);
+        // DA, D already tested
         // DDA
         test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
                    INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
@@ -387,6 +254,20 @@ public class IndexScanBoundedIT extends OperatorITBase
                    INCLUSIVE, 1, 15, 155),
              ordering(DESC, DESC, ASC),
              1002, 1003);
+        // DD
+        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, DESC, ASC),
+             1006, 1007, 1004, 1005, 1002, 1003, 1000, 1001);
+        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
+                   INCLUSIVE, 1, 15, UNSPECIFIED),
+             ordering(DESC, DESC, ASC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 15, 151,
+                   INCLUSIVE, 1, 15, 155),
+             ordering(DESC, DESC, ASC),
+             1002, 1003);
+        // D already tested
         // DDD
         test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
                    INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
@@ -400,99 +281,1373 @@ public class IndexScanBoundedIT extends OperatorITBase
                    INCLUSIVE, 1, 15, 155),
              ordering(DESC, DESC, DESC),
              1003, 1002);
-    }
-
-/*
-    @Test
-    public void test_IP_IP_DDD()
-    {
-        {
-            Operator plan = indexScan_Default(idxRowType,
-                                              range(true, 1, UNSPECIFIED, UNSPECIFIED,
-                                                    true, 2, UNSPECIFIED, UNSPECIFIED),
-                                              ordering(A, DESC, B, DESC, C, DESC));
-            RowBase[] expected = new RowBase[]{
-                row(idxRowType, 2L, 22L, 222L, 1007L),
-                row(idxRowType, 2L, 22L, 221L, 1006L),
-                row(idxRowType, 2L, 21L, 212L, 1005L),
-                row(idxRowType, 2L, 21L, 211L, 1004L),
-                row(idxRowType, 1L, 12L, 122L, 1003L),
-                row(idxRowType, 1L, 12L, 121L, 1002L),
-                row(idxRowType, 1L, 11L, 112L, 1001L),
-                row(idxRowType, 1L, 11L, 111L, 1000L),
-            };
-            compareRows(expected, cursor(plan, adapter));
-        }
-        {
-            Operator plan = indexScan_Default(idxRowType,
-                                              range(true, 1, 12, UNSPECIFIED,
-                                                    true, 1, 12, UNSPECIFIED),
-                                              ordering(A, DESC, B, DESC, C, DESC));
-            RowBase[] expected = new RowBase[]{
-                row(idxRowType, 1L, 12L, 122L, 1003L),
-                row(idxRowType, 1L, 12L, 121L, 1002L),
-            };
-            compareRows(expected, cursor(plan, adapter));
-        }
-        {
-            Operator plan = indexScan_Default(idxRowType,
-                                              range(true, 1, 12, 121,
-                                                    true, 1, 12, 122),
-                                              ordering(A, DESC, B, DESC, C, DESC));
-            RowBase[] expected = new RowBase[]{
-                row(idxRowType, 1L, 12L, 122L, 1003L),
-                row(idxRowType, 1L, 12L, 121L, 1002L),
-            };
-            compareRows(expected, cursor(plan, adapter));
-        }
+        // DD, D already tested
     }
 
     @Test
-    public void test_IP_IM_AAA()
+    public void test_IM_IM()
     {
-        {
-            Operator plan = indexScan_Default(idxRowType,
-                                              range(true, 1, UNSPECIFIED, UNSPECIFIED,
-                                                    true, 4, UNSPECIFIED, UNSPECIFIED),
-                                              ordering(A, ASC, B, ASC, C, ASC));
-            RowBase[] expected = new RowBase[]{
-                row(idxRowType, 1L, 11L, 111L, 1000L),
-                row(idxRowType, 1L, 11L, 112L, 1001L),
-                row(idxRowType, 1L, 12L, 121L, 1002L),
-                row(idxRowType, 1L, 12L, 122L, 1003L),
-                row(idxRowType, 2L, 21L, 211L, 1004L),
-                row(idxRowType, 2L, 21L, 212L, 1005L),
-                row(idxRowType, 2L, 22L, 221L, 1006L),
-                row(idxRowType, 2L, 22L, 222L, 1007L),
-            };
-            compareRows(expected, cursor(plan, adapter));
-        }
-        {
-            Operator plan = indexScan_Default(idxRowType,
-                                              range(true, 1, 12, UNSPECIFIED,
-                                                    true, 1, 12, UNSPECIFIED),
-                                              ordering(A, ASC, B, ASC, C, ASC));
-            RowBase[] expected = new RowBase[]{
-                row(idxRowType, 1L, 12L, 121L, 1002L),
-                row(idxRowType, 1L, 12L, 122L, 1003L),
-            };
-            compareRows(expected, cursor(plan, adapter));
-        }
-        {
-            Operator plan = indexScan_Default(idxRowType,
-                                              range(true, 1, 12, 121,
-                                                    true, 1, 12, 122),
-                                              ordering(A, ASC, B, ASC, C, ASC));
-            RowBase[] expected = new RowBase[]{
-                row(idxRowType, 1L, 12L, 121L, 1002L),
-                row(idxRowType, 1L, 12L, 122L, 1003L),
-            };
-            compareRows(expected, cursor(plan, adapter));
-        }
+        // AAA
+        test(range(INCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, ASC, ASC),
+             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
+        test(range(INCLUSIVE, 1, 14, UNSPECIFIED,
+                   INCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(ASC, ASC, ASC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 15, 149,
+                   INCLUSIVE, 1, 15, 160),
+             ordering(ASC, ASC, ASC),
+             1002, 1003);
+        // AA
+        test(range(INCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, ASC),
+             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
+        test(range(INCLUSIVE, 1, 14, UNSPECIFIED,
+                   INCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(ASC, ASC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 15, 149,
+                   INCLUSIVE, 1, 15, 160),
+             ordering(ASC, ASC),
+             1002, 1003);
+        // A
+        test(range(INCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC),
+             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
+        test(range(INCLUSIVE, 1, 14, UNSPECIFIED,
+                   INCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(ASC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 15, 149,
+                   INCLUSIVE, 1, 15, 160),
+             ordering(ASC),
+             1002, 1003);
+        // AAD
+        test(range(INCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, ASC, DESC),
+             1001, 1000, 1003, 1002, 1005, 1004, 1007, 1006);
+        test(range(INCLUSIVE, 1, 14, UNSPECIFIED,
+                   INCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(ASC, ASC, DESC),
+             1003, 1002);
+        test(range(INCLUSIVE, 1, 15, 149,
+                   INCLUSIVE, 1, 15, 160),
+             ordering(ASC, ASC, DESC),
+             1003, 1002);
+        // AA, A already tested
+        // ADA
+        test(range(INCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC, ASC),
+             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
+        test(range(INCLUSIVE, 1, 14, UNSPECIFIED,
+                   INCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(ASC, DESC, ASC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 15, 149,
+                   INCLUSIVE, 1, 15, 160),
+             ordering(ASC, DESC, ASC),
+             1002, 1003);
+        // AD
+        test(range(INCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC),
+             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
+        test(range(INCLUSIVE, 1, 14, UNSPECIFIED,
+                   INCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(ASC, DESC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 15, 149,
+                   INCLUSIVE, 1, 15, 160),
+             ordering(ASC, DESC),
+             1002, 1003);
+        // A already tested
+        // ADD
+        test(range(INCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC, DESC),
+             1003, 1002, 1001, 1000, 1007, 1006, 1005, 1004);
+        test(range(INCLUSIVE, 1, 14, UNSPECIFIED,
+                   INCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(ASC, DESC, DESC),
+             1003, 1002);
+        test(range(INCLUSIVE, 1, 15, 149,
+                   INCLUSIVE, 1, 15, 160),
+             ordering(ASC, DESC, DESC),
+             1003, 1002);
+        // AD, A already tested
+        // DAA
+        test(range(INCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC, ASC),
+             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
+        test(range(INCLUSIVE, 1, 14, UNSPECIFIED,
+                   INCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(DESC, ASC, ASC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 15, 149,
+                   INCLUSIVE, 1, 15, 160),
+             ordering(DESC, ASC, ASC),
+             1002, 1003);
+        // DA
+        test(range(INCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC),
+             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
+        test(range(INCLUSIVE, 1, 14, UNSPECIFIED,
+                   INCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(DESC, ASC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 15, 149,
+                   INCLUSIVE, 1, 15, 160),
+             ordering(DESC, ASC),
+             1002, 1003);
+        // D
+        test(range(INCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC),
+             1007, 1006, 1005, 1004, 1003, 1002, 1001, 1000);
+        test(range(INCLUSIVE, 1, 14, UNSPECIFIED,
+                   INCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(DESC),
+             1003, 1002);
+        test(range(INCLUSIVE, 1, 15, 149,
+                   INCLUSIVE, 1, 15, 160),
+             ordering(DESC),
+             1003, 1002);
+        // DAD
+        test(range(INCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC, DESC),
+             1005, 1004, 1007, 1006, 1001, 1000, 1003, 1002);
+        test(range(INCLUSIVE, 1, 14, UNSPECIFIED,
+                   INCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(DESC, ASC, DESC),
+             1003, 1002);
+        test(range(INCLUSIVE, 1, 15, 149,
+                   INCLUSIVE, 1, 15, 160),
+             ordering(DESC, ASC, DESC),
+             1003, 1002);
+        // DA, D already tested
+        // DDA
+        test(range(INCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, DESC, ASC),
+             1006, 1007, 1004, 1005, 1002, 1003, 1000, 1001);
+        test(range(INCLUSIVE, 1, 14, UNSPECIFIED,
+                   INCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(DESC, DESC, ASC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 15, 149,
+                   INCLUSIVE, 1, 15, 160),
+             ordering(DESC, DESC, ASC),
+             1002, 1003);
+        // DD
+        test(range(INCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, DESC, ASC),
+             1006, 1007, 1004, 1005, 1002, 1003, 1000, 1001);
+        test(range(INCLUSIVE, 1, 14, UNSPECIFIED,
+                   INCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(DESC, DESC, ASC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 15, 149,
+                   INCLUSIVE, 1, 15, 160),
+             ordering(DESC, DESC, ASC),
+             1002, 1003);
+        // D already tested
+        // DDD
+        test(range(INCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, DESC, DESC),
+             1007, 1006, 1005, 1004, 1003, 1002, 1001, 1000);
+        test(range(INCLUSIVE, 1, 14, UNSPECIFIED,
+                   INCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(DESC, DESC, DESC),
+             1003, 1002);
+        test(range(INCLUSIVE, 1, 15, 149,
+                   INCLUSIVE, 1, 15, 160),
+             ordering(DESC, DESC, DESC),
+             1003, 1002);
+        // DD, D already tested
     }
-*/
+    
+    @Test
+    public void test_EP_EP()
+    {
+        // AAA
+        test(range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, ASC, ASC));
+        test(range(EXCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, 15, UNSPECIFIED),
+             ordering(ASC, ASC, ASC));
+        test(range(EXCLUSIVE, 1, 15, 151,
+                   EXCLUSIVE, 1, 15, 155),
+             ordering(ASC, ASC, ASC));
+        // AA
+        test(range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, ASC));
+        test(range(EXCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, 15, UNSPECIFIED),
+             ordering(ASC, ASC));
+        test(range(EXCLUSIVE, 1, 15, 151,
+                   EXCLUSIVE, 1, 15, 155),
+             ordering(ASC, ASC));
+        // A
+        test(range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC));
+        test(range(EXCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, 15, UNSPECIFIED),
+             ordering(ASC));
+        test(range(EXCLUSIVE, 1, 15, 151,
+                   EXCLUSIVE, 1, 15, 155),
+             ordering(ASC));
+        // AAD
+        test(range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, ASC, DESC));
+        test(range(EXCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, 15, UNSPECIFIED),
+             ordering(ASC, ASC, DESC));
+        test(range(EXCLUSIVE, 1, 15, 151,
+                   EXCLUSIVE, 1, 15, 155),
+             ordering(ASC, ASC, DESC));
+        // AA, A already tested
+        // ADA
+        test(range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC, ASC));
+        test(range(EXCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, 15, UNSPECIFIED),
+             ordering(ASC, DESC, ASC));
+        test(range(EXCLUSIVE, 1, 15, 151,
+                   EXCLUSIVE, 1, 15, 155),
+             ordering(ASC, DESC, ASC));
+        // AD
+        test(range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC));
+        test(range(EXCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, 15, UNSPECIFIED),
+             ordering(ASC, DESC));
+        test(range(EXCLUSIVE, 1, 15, 151,
+                   EXCLUSIVE, 1, 15, 155),
+             ordering(ASC, DESC));
+        // A already tested
+        // ADD
+        test(range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC, DESC));
+        test(range(EXCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, 15, UNSPECIFIED),
+             ordering(ASC, DESC, DESC));
+        test(range(EXCLUSIVE, 1, 15, 151,
+                   EXCLUSIVE, 1, 15, 155),
+             ordering(ASC, DESC, DESC));
+        // AD, A already tested
+        // DAA
+        test(range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC, ASC));
+        test(range(EXCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, 15, UNSPECIFIED),
+             ordering(DESC, ASC, ASC));
+        test(range(EXCLUSIVE, 1, 15, 151,
+                   EXCLUSIVE, 1, 15, 155),
+             ordering(DESC, ASC, ASC));
+        // DA
+        test(range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC));
+        test(range(EXCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, 15, UNSPECIFIED),
+             ordering(DESC, ASC));
+        test(range(EXCLUSIVE, 1, 15, 151,
+                   EXCLUSIVE, 1, 15, 155),
+             ordering(DESC, ASC));
+        // D
+        test(range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC));
+        test(range(EXCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, 15, UNSPECIFIED),
+             ordering(DESC));
+        test(range(EXCLUSIVE, 1, 15, 151,
+                   EXCLUSIVE, 1, 15, 155),
+             ordering(DESC));
+        // DAD
+        test(range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC, DESC));
+        test(range(EXCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, 15, UNSPECIFIED),
+             ordering(DESC, ASC, DESC));
+        test(range(EXCLUSIVE, 1, 15, 151,
+                   EXCLUSIVE, 1, 15, 155),
+             ordering(DESC, ASC, DESC));
+        // DA, D already tested
+        // DDA
+        test(range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, DESC, ASC));
+        test(range(EXCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, 15, UNSPECIFIED),
+             ordering(DESC, DESC, ASC));
+        test(range(EXCLUSIVE, 1, 15, 151,
+                   EXCLUSIVE, 1, 15, 155),
+             ordering(DESC, DESC, ASC));
+        // DD
+        test(range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, DESC, ASC));
+        test(range(EXCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, 15, UNSPECIFIED),
+             ordering(DESC, DESC, ASC));
+        test(range(EXCLUSIVE, 1, 15, 151,
+                   EXCLUSIVE, 1, 15, 155),
+             ordering(DESC, DESC, ASC));
+        // D already tested
+        // DDD
+        test(range(EXCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, DESC, DESC));
+        test(range(EXCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, 15, UNSPECIFIED),
+             ordering(DESC, DESC, DESC));
+        test(range(EXCLUSIVE, 1, 15, 151,
+                   EXCLUSIVE, 1, 15, 155),
+             ordering(DESC, DESC, DESC));
+        // DD, D already tested
+    }
+    
+    @Test
+    public void test_EM_EM()
+    {
+        // AAA
+        test(range(EXCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, ASC, ASC),
+             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 1, 14, UNSPECIFIED,
+                   EXCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(ASC, ASC, ASC),
+             1002, 1003);
+        test(range(EXCLUSIVE, 1, 15, 149,
+                   EXCLUSIVE, 1, 15, 160),
+             ordering(ASC, ASC, ASC),
+             1002, 1003);
+        // AA
+        test(range(EXCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, ASC),
+             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 1, 14, UNSPECIFIED,
+                   EXCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(ASC, ASC),
+             1002, 1003);
+        test(range(EXCLUSIVE, 1, 15, 149,
+                   EXCLUSIVE, 1, 15, 160),
+             ordering(ASC, ASC),
+             1002, 1003);
+        // A
+        test(range(EXCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC),
+             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 1, 14, UNSPECIFIED,
+                   EXCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(ASC),
+             1002, 1003);
+        test(range(EXCLUSIVE, 1, 15, 149,
+                   EXCLUSIVE, 1, 15, 160),
+             ordering(ASC),
+             1002, 1003);
+        // AAD
+        test(range(EXCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, ASC, DESC),
+             1001, 1000, 1003, 1002, 1005, 1004, 1007, 1006);
+        test(range(EXCLUSIVE, 1, 14, UNSPECIFIED,
+                   EXCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(ASC, ASC, DESC),
+             1003, 1002);
+        test(range(EXCLUSIVE, 1, 15, 149,
+                   EXCLUSIVE, 1, 15, 160),
+             ordering(ASC, ASC, DESC),
+             1003, 1002);
+        // AA, A already tested
+        // ADA
+        test(range(EXCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC, ASC),
+             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
+        test(range(EXCLUSIVE, 1, 14, UNSPECIFIED,
+                   EXCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(ASC, DESC, ASC),
+             1002, 1003);
+        test(range(EXCLUSIVE, 1, 15, 149,
+                   EXCLUSIVE, 1, 15, 160),
+             ordering(ASC, DESC, ASC),
+             1002, 1003);
+        // AD
+        test(range(EXCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC),
+             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
+        test(range(EXCLUSIVE, 1, 14, UNSPECIFIED,
+                   EXCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(ASC, DESC),
+             1002, 1003);
+        test(range(EXCLUSIVE, 1, 15, 149,
+                   EXCLUSIVE, 1, 15, 160),
+             ordering(ASC, DESC),
+             1002, 1003);
+        // A already tested
+        // ADD
+        test(range(EXCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC, DESC),
+             1003, 1002, 1001, 1000, 1007, 1006, 1005, 1004);
+        test(range(EXCLUSIVE, 1, 14, UNSPECIFIED,
+                   EXCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(ASC, DESC, DESC),
+             1003, 1002);
+        test(range(EXCLUSIVE, 1, 15, 149,
+                   EXCLUSIVE, 1, 15, 160),
+             ordering(ASC, DESC, DESC),
+             1003, 1002);
+        // AD, A already tested
+        // DAA
+        test(range(EXCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC, ASC),
+             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
+        test(range(EXCLUSIVE, 1, 14, UNSPECIFIED,
+                   EXCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(DESC, ASC, ASC),
+             1002, 1003);
+        test(range(EXCLUSIVE, 1, 15, 149,
+                   EXCLUSIVE, 1, 15, 160),
+             ordering(DESC, ASC, ASC),
+             1002, 1003);
+        // DA
+        test(range(EXCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC),
+             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
+        test(range(EXCLUSIVE, 1, 14, UNSPECIFIED,
+                   EXCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(DESC, ASC),
+             1002, 1003);
+        test(range(EXCLUSIVE, 1, 15, 149,
+                   EXCLUSIVE, 1, 15, 160),
+             ordering(DESC, ASC),
+             1002, 1003);
+        // D
+        test(range(EXCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC),
+             1007, 1006, 1005, 1004, 1003, 1002, 1001, 1000);
+        test(range(EXCLUSIVE, 1, 14, UNSPECIFIED,
+                   EXCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(DESC),
+             1003, 1002);
+        test(range(EXCLUSIVE, 1, 15, 149,
+                   EXCLUSIVE, 1, 15, 160),
+             ordering(DESC),
+             1003, 1002);
+        // DAD
+        test(range(EXCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC, DESC),
+             1005, 1004, 1007, 1006, 1001, 1000, 1003, 1002);
+        test(range(EXCLUSIVE, 1, 14, UNSPECIFIED,
+                   EXCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(DESC, ASC, DESC),
+             1003, 1002);
+        test(range(EXCLUSIVE, 1, 15, 149,
+                   EXCLUSIVE, 1, 15, 160),
+             ordering(DESC, ASC, DESC),
+             1003, 1002);
+        // DA, D already tested
+        // DDA
+        test(range(EXCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, DESC, ASC),
+             1006, 1007, 1004, 1005, 1002, 1003, 1000, 1001);
+        test(range(EXCLUSIVE, 1, 14, UNSPECIFIED,
+                   EXCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(DESC, DESC, ASC),
+             1002, 1003);
+        test(range(EXCLUSIVE, 1, 15, 149,
+                   EXCLUSIVE, 1, 15, 160),
+             ordering(DESC, DESC, ASC),
+             1002, 1003);
+        // DD
+        test(range(EXCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, DESC, ASC),
+             1006, 1007, 1004, 1005, 1002, 1003, 1000, 1001);
+        test(range(EXCLUSIVE, 1, 14, UNSPECIFIED,
+                   EXCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(DESC, DESC, ASC),
+             1002, 1003);
+        test(range(EXCLUSIVE, 1, 15, 149,
+                   EXCLUSIVE, 1, 15, 160),
+             ordering(DESC, DESC, ASC),
+             1002, 1003);
+        // D already tested
+        // DDD
+        test(range(EXCLUSIVE, 0, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 6, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, DESC, DESC),
+             1007, 1006, 1005, 1004, 1003, 1002, 1001, 1000);
+        test(range(EXCLUSIVE, 1, 14, UNSPECIFIED,
+                   EXCLUSIVE, 1, 16, UNSPECIFIED),
+             ordering(DESC, DESC, DESC),
+             1003, 1002);
+        test(range(EXCLUSIVE, 1, 15, 149,
+                   EXCLUSIVE, 1, 15, 160),
+             ordering(DESC, DESC, DESC),
+             1003, 1002);
+        // DD, D already tested
+    }
 
-        // For use by this class
+    // Test half-bounded ranges
+
+    @Test
+    public void testBoundedLeftInclusive()
+    {
+        // AAA
+        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, ASC, ASC),
+             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
+        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, null, UNSPECIFIED),
+             ordering(ASC, ASC, ASC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 11, 111,
+                   EXCLUSIVE, 1, 11, null),
+             ordering(ASC, ASC, ASC),
+             1000, 1001);
+        // AA
+        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, ASC),
+             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
+        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, null, UNSPECIFIED),
+             ordering(ASC, ASC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 11, 111,
+                   EXCLUSIVE, 1, 11, null),
+             ordering(ASC, ASC),
+             1000, 1001);
+        // A
+        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC),
+             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
+        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, null, UNSPECIFIED),
+             ordering(ASC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 11, 111,
+                   EXCLUSIVE, 1, 11, null),
+             ordering(ASC),
+             1000, 1001);
+        // AAD
+        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, ASC, DESC),
+             1001, 1000, 1003, 1002, 1005, 1004, 1007, 1006);
+        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, null, UNSPECIFIED),
+             ordering(ASC, ASC, DESC),
+             1003, 1002);
+        test(range(INCLUSIVE, 1, 11, 111,
+                   EXCLUSIVE, 1, 11, null),
+             ordering(ASC, ASC, DESC),
+             1001, 1000);
+        // AA, A already tested
+        // ADA
+        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC),
+             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
+        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, null, UNSPECIFIED),
+             ordering(ASC, DESC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 11, 111,
+                   EXCLUSIVE, 1, 11, null),
+             ordering(ASC, DESC),
+             1000, 1001);
+        // AD
+        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC),
+             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
+        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, null, UNSPECIFIED),
+             ordering(ASC, DESC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 11, 111,
+                   EXCLUSIVE, 1, 11, null),
+             ordering(ASC, DESC),
+             1000, 1001);
+        // A already tested
+        // ADD
+        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC, DESC),
+             1003, 1002, 1001, 1000, 1007, 1006, 1005, 1004);
+        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, null, UNSPECIFIED),
+             ordering(ASC, DESC, DESC),
+             1003, 1002);
+        test(range(INCLUSIVE, 1, 11, 111,
+                   EXCLUSIVE, 1, 11, null),
+             ordering(ASC, DESC, DESC),
+             1001, 1000);
+        // AD, A already tested
+        // DAA
+        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC, ASC),
+             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
+        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, null, UNSPECIFIED),
+             ordering(DESC, ASC, ASC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 11, 111,
+                   EXCLUSIVE, 1, 11, null),
+             ordering(DESC, ASC, ASC),
+             1000, 1001);
+        // DA
+        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC),
+             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
+        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, null, UNSPECIFIED),
+             ordering(DESC, ASC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 11, 111,
+                   EXCLUSIVE, 1, 11, null),
+             ordering(DESC, ASC),
+             1000, 1001);
+        // D
+        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC),
+             1007, 1006, 1005, 1004, 1003, 1002, 1001, 1000);
+        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, null, UNSPECIFIED),
+             ordering(DESC),
+             1003, 1002);
+        test(range(INCLUSIVE, 1, 11, 111,
+                   EXCLUSIVE, 1, 11, null),
+             ordering(DESC),
+             1001, 1000);
+        // DAD
+        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC, DESC),
+             1005, 1004, 1007, 1006, 1001, 1000, 1003, 1002);
+        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, null, UNSPECIFIED),
+             ordering(DESC, ASC, DESC),
+             1003, 1002);
+        test(range(INCLUSIVE, 1, 11, 111,
+                   EXCLUSIVE, 1, 11, null),
+             ordering(DESC, ASC, DESC),
+             1001, 1000);
+        // DA
+        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC),
+             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
+        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, null, UNSPECIFIED),
+             ordering(DESC, ASC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 11, 111,
+                   EXCLUSIVE, 1, 11, null),
+             ordering(DESC, ASC),
+             1000, 1001);
+        // D already tested
+        // DDA
+        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, DESC, ASC),
+             1006, 1007, 1004, 1005, 1002, 1003, 1000, 1001);
+        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, null, UNSPECIFIED),
+             ordering(DESC, DESC, ASC),
+             1002, 1003);
+        test(range(INCLUSIVE, 1, 11, 111,
+                   EXCLUSIVE, 1, 11, null),
+             ordering(DESC, DESC, ASC),
+             1000, 1001);
+        // DD
+        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, DESC),
+             1007, 1006, 1005, 1004, 1003, 1002, 1001, 1000);
+        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, null, UNSPECIFIED),
+             ordering(DESC, DESC),
+             1003, 1002);
+        test(range(INCLUSIVE, 1, 11, 111,
+                   EXCLUSIVE, 1, 11, null),
+             ordering(DESC, DESC),
+             1001, 1000);
+        // D already tested
+        // DDD
+        test(range(INCLUSIVE, 1, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, DESC, DESC),
+             1007, 1006, 1005, 1004, 1003, 1002, 1001, 1000);
+        test(range(INCLUSIVE, 1, 15, UNSPECIFIED,
+                   EXCLUSIVE, 1, null, UNSPECIFIED),
+             ordering(DESC, DESC, DESC),
+             1003, 1002);
+        test(range(INCLUSIVE, 1, 11, 111,
+                   EXCLUSIVE, 1, 11, null),
+             ordering(DESC, DESC, DESC),
+             1001, 1000);
+        // DD, D already tested
+    }
+
+    @Test
+    public void testBoundedLeftExclusive()
+    {
+        // AAA
+        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, ASC, ASC),
+             1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
+                   EXCLUSIVE, 5, null, UNSPECIFIED),
+             ordering(ASC, ASC, ASC),
+             1006, 1007);
+        test(range(EXCLUSIVE, 5, 51, 500,
+                   EXCLUSIVE, 5, 51, null),
+             ordering(ASC, ASC, ASC),
+             1004, 1005);
+        // AA
+        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, ASC),
+             1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
+                   EXCLUSIVE, 5, null, UNSPECIFIED),
+             ordering(ASC, ASC),
+             1006, 1007);
+        test(range(EXCLUSIVE, 5, 51, 500,
+                   EXCLUSIVE, 5, 51, null),
+             ordering(ASC, ASC),
+             1004, 1005);
+        // A
+        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC),
+             1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
+                   EXCLUSIVE, 5, null, UNSPECIFIED),
+             ordering(ASC),
+             1006, 1007);
+        test(range(EXCLUSIVE, 5, 51, 500,
+                   EXCLUSIVE, 5, 51, null),
+             ordering(ASC),
+             1004, 1005);
+        // AAD
+        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, ASC, DESC),
+             1005, 1004, 1007, 1006);
+        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
+                   EXCLUSIVE, 5, null, UNSPECIFIED),
+             ordering(ASC, ASC, DESC),
+             1007, 1006);
+        test(range(EXCLUSIVE, 5, 51, 500,
+                   EXCLUSIVE, 5, 51, null),
+             ordering(ASC, ASC, DESC),
+             1005, 1004);
+        // AA, A already tested
+        // ADA
+        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC),
+             1006, 1007, 1004, 1005);
+        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
+                   EXCLUSIVE, 5, null, UNSPECIFIED),
+             ordering(ASC, DESC),
+             1006, 1007);
+        test(range(EXCLUSIVE, 5, 51, 500,
+                   EXCLUSIVE, 5, 51, null),
+             ordering(ASC, DESC),
+             1004, 1005);
+        // AD
+        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC),
+             1006, 1007, 1004, 1005);
+        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
+                   EXCLUSIVE, 5, null, UNSPECIFIED),
+             ordering(ASC, DESC),
+             1006, 1007);
+        test(range(EXCLUSIVE, 5, 51, 500,
+                   EXCLUSIVE, 5, 51, null),
+             ordering(ASC, DESC),
+             1004, 1005);
+        // A already tested
+        // ADD
+        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC, DESC),
+             1007, 1006, 1005, 1004);
+        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
+                   EXCLUSIVE, 5, null, UNSPECIFIED),
+             ordering(ASC, DESC, DESC),
+             1007, 1006);
+        test(range(EXCLUSIVE, 5, 51, 500,
+                   EXCLUSIVE, 5, 51, null),
+             ordering(ASC, DESC, DESC),
+             1005, 1004);
+        // AD, A already tested
+        // DAA
+        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC, ASC),
+             1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
+                   EXCLUSIVE, 5, null, UNSPECIFIED),
+             ordering(DESC, ASC, ASC),
+             1006, 1007);
+        test(range(EXCLUSIVE, 5, 51, 500,
+                   EXCLUSIVE, 5, 51, null),
+             ordering(DESC, ASC, ASC),
+             1004, 1005);
+        // DA
+        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC),
+             1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
+                   EXCLUSIVE, 5, null, UNSPECIFIED),
+             ordering(DESC, ASC),
+             1006, 1007);
+        test(range(EXCLUSIVE, 5, 51, 500,
+                   EXCLUSIVE, 5, 51, null),
+             ordering(DESC, ASC),
+             1004, 1005);
+        // D
+        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC),
+             1007, 1006, 1005, 1004);
+        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
+                   EXCLUSIVE, 5, null, UNSPECIFIED),
+             ordering(DESC),
+             1007, 1006);
+        test(range(EXCLUSIVE, 5, 51, 500,
+                   EXCLUSIVE, 5, 51, null),
+             ordering(DESC),
+             1005, 1004);
+        // DAD
+        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC, DESC),
+             1005, 1004, 1007, 1006);
+        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
+                   EXCLUSIVE, 5, null, UNSPECIFIED),
+             ordering(DESC, ASC, DESC),
+             1007, 1006);
+        test(range(EXCLUSIVE, 5, 51, 500,
+                   EXCLUSIVE, 5, 51, null),
+             ordering(DESC, ASC, DESC),
+             1005, 1004);
+        // DA
+        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC),
+             1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
+                   EXCLUSIVE, 5, null, UNSPECIFIED),
+             ordering(DESC, ASC),
+             1006, 1007);
+        test(range(EXCLUSIVE, 5, 51, 500,
+                   EXCLUSIVE, 5, 51, null),
+             ordering(DESC, ASC),
+             1004, 1005);
+        // D already tested
+        // DDA
+        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, DESC, ASC),
+             1006, 1007, 1004, 1005);
+        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
+                   EXCLUSIVE, 5, null, UNSPECIFIED),
+             ordering(DESC, DESC, ASC),
+             1006, 1007);
+        test(range(EXCLUSIVE, 5, 51, 500,
+                   EXCLUSIVE, 5, 51, null),
+             ordering(DESC, DESC, ASC),
+             1004, 1005);
+        // DD
+        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, DESC),
+             1007, 1006, 1005, 1004);
+        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
+                   EXCLUSIVE, 5, null, UNSPECIFIED),
+             ordering(DESC, DESC),
+             1007, 1006);
+        test(range(EXCLUSIVE, 5, 51, 500,
+                   EXCLUSIVE, 5, 51, null),
+             ordering(DESC, DESC),
+             1005, 1004);
+        // D already tested
+        // DDD
+        test(range(EXCLUSIVE, 3, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, DESC, DESC),
+             1007, 1006, 1005, 1004);
+        test(range(EXCLUSIVE, 5, 53, UNSPECIFIED,
+                   EXCLUSIVE, 5, null, UNSPECIFIED),
+             ordering(DESC, DESC, DESC),
+             1007, 1006);
+        test(range(EXCLUSIVE, 5, 51, 500,
+                   EXCLUSIVE, 5, 51, null),
+             ordering(DESC, DESC, DESC),
+             1005, 1004);
+        // DD, D already tested
+    }
+
+    @Test
+    public void testBoundedRightInclusive()
+    {
+        // AAA
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, ASC, ASC),
+             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   INCLUSIVE, 5, 55, UNSPECIFIED),
+             ordering(ASC, ASC, ASC),
+             1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   INCLUSIVE, 5, 55, 551),
+             ordering(ASC, ASC, ASC),
+             1006);
+        // AA
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, ASC),
+             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   INCLUSIVE, 5, 55, UNSPECIFIED),
+             ordering(ASC, ASC),
+             1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   INCLUSIVE, 5, 55, 551),
+             ordering(ASC, ASC),
+             1006);
+        // A
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC),
+             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   INCLUSIVE, 5, 55, UNSPECIFIED),
+             ordering(ASC),
+             1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   INCLUSIVE, 5, 55, 551),
+             ordering(ASC),
+             1006);
+        // AAD
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, ASC, DESC),
+             1001, 1000, 1003, 1002, 1005, 1004, 1007, 1006);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   INCLUSIVE, 5, 55, UNSPECIFIED),
+             ordering(ASC, ASC, DESC),
+             1005, 1004, 1007, 1006);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   INCLUSIVE, 5, 55, 551),
+             ordering(ASC, ASC, DESC),
+             1006);
+        // AA, A already tested
+        // ADA
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC),
+             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   INCLUSIVE, 5, 55, UNSPECIFIED),
+             ordering(ASC, DESC),
+             1006, 1007, 1004, 1005);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   INCLUSIVE, 5, 55, 551),
+             ordering(ASC, DESC),
+             1006);
+        // AD
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC),
+             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   INCLUSIVE, 5, 55, UNSPECIFIED),
+             ordering(ASC, DESC),
+             1006, 1007, 1004, 1005);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   INCLUSIVE, 5, 55, 551),
+             ordering(ASC, DESC),
+             1006);
+        // A already tested
+        // ADD
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC, DESC),
+             1003, 1002, 1001, 1000, 1007, 1006, 1005, 1004);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   INCLUSIVE, 5, 55, UNSPECIFIED),
+             ordering(ASC, DESC, DESC),
+             1007, 1006, 1005, 1004);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   INCLUSIVE, 5, 55, 551),
+             ordering(ASC, DESC, DESC),
+             1006);
+        // AD, A already tested
+        // DAA
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC, ASC),
+             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   INCLUSIVE, 5, 55, UNSPECIFIED),
+             ordering(DESC, ASC, ASC),
+             1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   INCLUSIVE, 5, 55, 551),
+             ordering(DESC, ASC, ASC),
+             1006);
+        // DA
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC),
+             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   INCLUSIVE, 5, 55, UNSPECIFIED),
+             ordering(DESC, ASC),
+             1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   INCLUSIVE, 5, 55, 551),
+             ordering(DESC, ASC),
+             1006);
+        // D
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC),
+             1007, 1006, 1005, 1004, 1003, 1002, 1001, 1000);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   INCLUSIVE, 5, 55, UNSPECIFIED),
+             ordering(DESC),
+             1007, 1006, 1005, 1004);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   INCLUSIVE, 5, 55, 551),
+             ordering(DESC),
+             1006);
+        // DAD
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC, DESC),
+             1005, 1004, 1007, 1006, 1001, 1000, 1003, 1002);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   INCLUSIVE, 5, 55, UNSPECIFIED),
+             ordering(DESC, ASC, DESC),
+             1005, 1004, 1007, 1006);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   INCLUSIVE, 5, 55, 551),
+             ordering(DESC, ASC, DESC),
+             1006);
+        // DA
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC),
+             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   INCLUSIVE, 5, 55, UNSPECIFIED),
+             ordering(DESC, ASC),
+             1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   INCLUSIVE, 5, 55, 551),
+             ordering(DESC, ASC),
+             1006);
+        // D already tested
+        // DDA
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, DESC, ASC),
+             1006, 1007, 1004, 1005, 1002, 1003, 1000, 1001);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   INCLUSIVE, 5, 55, UNSPECIFIED),
+             ordering(DESC, DESC, ASC),
+             1006, 1007, 1004, 1005);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   INCLUSIVE, 5, 55, 551),
+             ordering(DESC, DESC, ASC),
+             1006);
+        // DD
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, DESC),
+             1007, 1006, 1005, 1004, 1003, 1002, 1001, 1000);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   INCLUSIVE, 5, 55, UNSPECIFIED),
+             ordering(DESC, DESC),
+             1007, 1006, 1005, 1004);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   INCLUSIVE, 5, 55, 551),
+             ordering(DESC, DESC),
+             1006);
+        // D already tested
+        // DDD
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   INCLUSIVE, 5, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, DESC, DESC),
+             1007, 1006, 1005, 1004, 1003, 1002, 1001, 1000);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   INCLUSIVE, 5, 55, UNSPECIFIED),
+             ordering(DESC, DESC, DESC),
+             1007, 1006, 1005, 1004);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   INCLUSIVE, 5, 55, 551),
+             ordering(DESC, DESC, DESC),
+             1006);
+        // DD, D already tested
+    }
+
+    @Test
+    public void testBoundedRightExclusive()
+    {
+        // AAA
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, ASC, ASC),
+             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   EXCLUSIVE, 5, 58, UNSPECIFIED),
+             ordering(ASC, ASC, ASC),
+             1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   EXCLUSIVE, 5, 55, 553),
+             ordering(ASC, ASC, ASC),
+             1006);
+        // AA
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, ASC),
+             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   EXCLUSIVE, 5, 58, UNSPECIFIED),
+             ordering(ASC, ASC),
+             1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   EXCLUSIVE, 5, 55, 553),
+             ordering(ASC, ASC),
+             1006);
+        // A
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC),
+             1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   EXCLUSIVE, 5, 58, UNSPECIFIED),
+             ordering(ASC),
+             1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   EXCLUSIVE, 5, 55, 553),
+             ordering(ASC),
+             1006);
+        // AAD
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, ASC, DESC),
+             1001, 1000, 1003, 1002, 1005, 1004, 1007, 1006);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   EXCLUSIVE, 5, 58, UNSPECIFIED),
+             ordering(ASC, ASC, DESC),
+             1005, 1004, 1007, 1006);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   EXCLUSIVE, 5, 55, 553),
+             ordering(ASC, ASC, DESC),
+             1006);
+        // AA, A already tested
+        // ADA
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC),
+             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   EXCLUSIVE, 5, 58, UNSPECIFIED),
+             ordering(ASC, DESC),
+             1006, 1007, 1004, 1005);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   EXCLUSIVE, 5, 55, 553),
+             ordering(ASC, DESC),
+             1006);
+        // AD
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC),
+             1002, 1003, 1000, 1001, 1006, 1007, 1004, 1005);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   EXCLUSIVE, 5, 58, UNSPECIFIED),
+             ordering(ASC, DESC),
+             1006, 1007, 1004, 1005);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   EXCLUSIVE, 5, 55, 553),
+             ordering(ASC, DESC),
+             1006);
+        // A already tested
+        // ADD
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
+             ordering(ASC, DESC, DESC),
+             1003, 1002, 1001, 1000, 1007, 1006, 1005, 1004);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   EXCLUSIVE, 5, 58, UNSPECIFIED),
+             ordering(ASC, DESC, DESC),
+             1007, 1006, 1005, 1004);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   EXCLUSIVE, 5, 55, 553),
+             ordering(ASC, DESC, DESC),
+             1006);
+        // AD, A already tested
+        // DAA
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC, ASC),
+             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   EXCLUSIVE, 5, 58, UNSPECIFIED),
+             ordering(DESC, ASC, ASC),
+             1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   EXCLUSIVE, 5, 55, 553),
+             ordering(DESC, ASC, ASC),
+             1006);
+        // DA
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC),
+             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   EXCLUSIVE, 5, 58, UNSPECIFIED),
+             ordering(DESC, ASC),
+             1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   EXCLUSIVE, 5, 55, 553),
+             ordering(DESC, ASC),
+             1006);
+        // D
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC),
+             1007, 1006, 1005, 1004, 1003, 1002, 1001, 1000);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   EXCLUSIVE, 5, 58, UNSPECIFIED),
+             ordering(DESC),
+             1007, 1006, 1005, 1004);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   EXCLUSIVE, 5, 55, 553),
+             ordering(DESC),
+             1006);
+        // DAD
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC, DESC),
+             1005, 1004, 1007, 1006, 1001, 1000, 1003, 1002);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   EXCLUSIVE, 5, 58, UNSPECIFIED),
+             ordering(DESC, ASC, DESC),
+             1005, 1004, 1007, 1006);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   EXCLUSIVE, 5, 55, 553),
+             ordering(DESC, ASC, DESC),
+             1006);
+        // DA
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, ASC),
+             1004, 1005, 1006, 1007, 1000, 1001, 1002, 1003);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   EXCLUSIVE, 5, 58, UNSPECIFIED),
+             ordering(DESC, ASC),
+             1004, 1005, 1006, 1007);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   EXCLUSIVE, 5, 55, 553),
+             ordering(DESC, ASC),
+             1006);
+        // D already tested
+        // DDA
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, DESC, ASC),
+             1006, 1007, 1004, 1005, 1002, 1003, 1000, 1001);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   EXCLUSIVE, 5, 58, UNSPECIFIED),
+             ordering(DESC, DESC, ASC),
+             1006, 1007, 1004, 1005);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   EXCLUSIVE, 5, 55, 553),
+             ordering(DESC, DESC, ASC),
+             1006);
+        // DD
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, DESC),
+             1007, 1006, 1005, 1004, 1003, 1002, 1001, 1000);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   EXCLUSIVE, 5, 58, UNSPECIFIED),
+             ordering(DESC, DESC),
+             1007, 1006, 1005, 1004);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   EXCLUSIVE, 5, 55, 553),
+             ordering(DESC, DESC),
+             1006);
+        // D already tested
+        // DDD
+        test(range(EXCLUSIVE, null, UNSPECIFIED, UNSPECIFIED,
+                   EXCLUSIVE, 8, UNSPECIFIED, UNSPECIFIED),
+             ordering(DESC, DESC, DESC),
+             1007, 1006, 1005, 1004, 1003, 1002, 1001, 1000);
+        test(range(EXCLUSIVE, 5, null, UNSPECIFIED,
+                   EXCLUSIVE, 5, 58, UNSPECIFIED),
+             ordering(DESC, DESC, DESC),
+             1007, 1006, 1005, 1004);
+        test(range(EXCLUSIVE, 5, 55, null,
+                   EXCLUSIVE, 5, 55, 553),
+             ordering(DESC, DESC, DESC),
+             1006);
+        // DD, D already tested
+    }
+
+    // For use by this class
 
     private void test(IndexKeyRange keyRange, API.Ordering ordering, int ... expectedIds)
     {
@@ -517,6 +1672,7 @@ public class IndexScanBoundedIT extends OperatorITBase
         IndexBound lo;
         if (aLo == UNSPECIFIED) {
             lo = null;
+            fail();
         } else if (bLo == UNSPECIFIED) {
             lo = new IndexBound(row(idxRowType, aLo), new SetColumnSelector(0));
         } else if (cLo == UNSPECIFIED) {
@@ -527,6 +1683,7 @@ public class IndexScanBoundedIT extends OperatorITBase
         IndexBound hi;
         if (aHi == UNSPECIFIED) {
             hi = null;
+            fail();
         } else if (bHi == UNSPECIFIED) {
             hi = new IndexBound(row(idxRowType, aHi), new SetColumnSelector(0));
         } else if (cHi == UNSPECIFIED) {

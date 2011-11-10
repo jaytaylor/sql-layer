@@ -22,6 +22,8 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.types.ValueSource;
 import com.persistit.exception.PersistitException;
 
+import static java.lang.Math.min;
+
 class SortCursorMixedOrderBounded extends SortCursorMixedOrder
 {
     // SortCursorMixedOrder interface
@@ -32,21 +34,25 @@ class SortCursorMixedOrderBounded extends SortCursorMixedOrder
         BoundExpressions lo = keyRange.lo().boundExpressions(bindings, adapter);
         BoundExpressions hi = keyRange.hi().boundExpressions(bindings, adapter);
         // Set lo and hi bounds for each key segment
-        for (int f = 0; f < sortColumns(); f++) {
-            if (f < boundColumns()) {
-                ValueSource loSource = lo.eval(f);
-                ValueSource hiSource = hi.eval(f);
-                MixedOrderScanStateBounded scanState = new MixedOrderScanStateBounded(adapter, this, f);
-                scanStates.add(scanState);
-                scanState.setRange(loSource, hiSource);
-            } else {
-                MixedOrderScanStateUnbounded scanState = new MixedOrderScanStateUnbounded(this, f);
-                scanStates.add(scanState);
-            }
+        int f = 0;
+        while (f < boundColumns()) {
+            ValueSource loSource = lo.eval(f);
+            ValueSource hiSource = hi.eval(f);
+            MixedOrderScanStateBounded scanState = new MixedOrderScanStateBounded
+                (this,
+                 f,
+                 f >= orderingColumns() || ordering.ascending(f));
+            scanState.setRange(loSource, hiSource);
+            scanStates.add(scanState);
+            f++;
         }
-        // There should be at least one bounded field, or this would be a SortCursorMixedOrderUnbounded.
-        if (sortColumns() < keyColumns()) {
-            MixedOrderScanStateRestOfKey scanState = new MixedOrderScanStateRestOfKey(this, sortColumns());
+        while (f < orderingColumns()) {
+            MixedOrderScanStateUnbounded scanState = new MixedOrderScanStateUnbounded(this, f);
+            scanStates.add(scanState);
+            f++;
+        }
+        if (f < keyColumns()) {
+            MixedOrderScanStateRestOfKey scanState = new MixedOrderScanStateRestOfKey(this, orderingColumns());
             scanStates.add(scanState);
         }
         /*
@@ -64,15 +70,17 @@ class SortCursorMixedOrderBounded extends SortCursorMixedOrder
          * is how we distinguish cases a and b.
          * 
          * The observant reader will wonder: what about >(x, y, p) and <(x, z, q)? This is a violation of condition
-         * b since there are two inequalities (y != z, p != q). The optimizer shouldn't ask for such things.
+         * b since there are two inequalities (y != z, p != q) and it should not be possible to get this far with
+         * such an IndexKeyRange.
          *
          * So for scanStates:
-         * - lo(f) = hi(f), f < boundColumns() - 1
-         * - lo(f) - hi(f) defines a range, with limits described by keyRange.lo/hiInclusive, f = boundColumns() - 1
+         * - lo(f) = hi(f), f < boundColumns - 1
+         * - lo(f) - hi(f) defines a range, with limits described by keyRange.lo/hiInclusive,
+         *   f = boundColumns - 1
          * The last argument to setRangeLimits determines which condition is checked.
          */
-        for (int f = 0; f < boundColumns() - 1; f++) {
-            scanState(f++).setRangeLimits(true, true, false);
+        for (f = 0; f < boundColumns() - 1; f++) {
+            scanState(f).setRangeLimits(true, true, false);
         }
         scanState(boundColumns() - 1).setRangeLimits(keyRange().loInclusive(), keyRange().hiInclusive(), true);
     }
@@ -80,11 +88,11 @@ class SortCursorMixedOrderBounded extends SortCursorMixedOrder
     // SortCursorMixedOrderBounded interface
 
     public SortCursorMixedOrderBounded(PersistitAdapter adapter,
-                                       RowGenerator rowGenerator,
+                                       IterationHelper iterationHelper,
                                        IndexKeyRange keyRange,
                                        API.Ordering ordering)
     {
-        super(adapter, rowGenerator, keyRange, ordering);
+        super(adapter, iterationHelper, keyRange, ordering);
     }
 
     // For use by this class

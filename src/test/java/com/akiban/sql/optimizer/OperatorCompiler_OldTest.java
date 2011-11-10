@@ -30,6 +30,7 @@ import com.akiban.sql.pg.PostgresSessionTracer;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.NamedParameterizedRunner.TestParameters;
 import com.akiban.junit.Parameterization;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import static junit.framework.Assert.*;
@@ -160,6 +161,7 @@ public class OperatorCompiler_OldTest extends NamedParamsTestBase
     }
 
     @Test
+    @Ignore
     public void testOperator() throws Exception {
         generateAndCheckResult();
     }

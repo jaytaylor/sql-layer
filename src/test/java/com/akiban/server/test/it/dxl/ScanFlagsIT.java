@@ -36,34 +36,6 @@ import static junit.framework.Assert.assertNotNull;
 
 public class ScanFlagsIT extends ITBase
 {
-/*
-    // Useful in profiling
-    @Test
-    public void testSameQueryManyTimes() throws InvalidOperationException
-    {
-        rowDefId = createTable("schema", "t", "id int key");
-        for (int x : new int[]{1, 2, 3, 4, 5}) {
-            dml().writeRow(session(), createNewRow(rowDefId, x));
-        }
-        final int N = 10000000;
-        for (int i = 0; i < N; i++) {
-            LegacyScanRequest request = new LegacyScanRequest(rowDefId,
-                                                              bound(2),
-                                                              null,
-                                                              bound(2),
-                                                              null,
-                                                              new byte[]{1},
-                                                              0, // index id, 0 = table scan
-                                                              DEFAULT,  // scan flags
-                                                              ScanLimit.NONE);
-            ListRowOutput output = new ListRowOutput();
-            CursorId cursorId = dml().openCursor(session(), aisGeneration(), request);
-            boolean more = dml().scanSome(session(), cursorId, output);
-            assertTrue(!more);
-        }
-    }
-*/
-
     @Test
     public void testFullScanAsc() throws InvalidOperationException
     {

@@ -15,15 +15,13 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.row.Row;
 import com.persistit.Exchange;
-import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitException;
 
-public interface RowGenerator
+public interface IterationHelper
 {
-    Row row() throws PersistitException; // row your boat, gently down the stream, merrily, merrily, merrily, merrily, life is but a dream.
+    Row row() throws PersistitException;
     void close();
     Exchange exchange();
 }

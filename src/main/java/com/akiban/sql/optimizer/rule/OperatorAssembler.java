@@ -757,7 +757,7 @@ public class OperatorAssembler extends BaseRule
             IndexRowType indexRowType = getIndexRowType(index);
             if ((equalityComparands == null) &&
                 (lowComparand == null) && (highComparand == null))
-                return new IndexKeyRange(indexRowType, null, false, null, false);
+                return new IndexKeyRange(indexRowType);
 
             int nkeys = index.getIndex().getColumns().size();
             Expression[] keys = new Expression[nkeys];
@@ -799,8 +799,16 @@ public class OperatorAssembler extends BaseRule
                     highKeys[hidx++] = assembleExpression(highComparand, fieldOffsets);
                     highInc = index.isHighInclusive();
                 }
-                IndexBound lo = getIndexBound(index.getIndex(), lowKeys, lidx);
-                IndexBound hi = getIndexBound(index.getIndex(), highKeys, hidx);
+                int bounded = lidx > hidx ? lidx : hidx;
+                IndexBound lo = getIndexBound(index.getIndex(), lowKeys, bounded);
+                IndexBound hi = getIndexBound(index.getIndex(), highKeys, bounded);
+                assert lo != null || hi != null;
+                if (lo == null) {
+                    lo = getNullIndexBound(index.getIndex(), hidx);
+                }
+                if (hi == null) {
+                    hi = getNullIndexBound(index.getIndex(), lidx);
+                }
                 return new IndexKeyRange(indexRowType, lo, lowInc, hi, highInc);
             }
         }
@@ -824,11 +832,29 @@ public class OperatorAssembler extends BaseRule
         /** Return an index bound for the given index and expressions.
          * @param index the index in use
          * @param keys {@link Expression}s for index lookup key
+         * @param nBoundKeys number of keys actually in use
+         */
+        protected IndexBound getIndexBound(Index index, Expression[] keys, int nBoundKeys) {
+            if (keys == null)
+                return null;
+            Expression[] boundKeys;
+            if (nBoundKeys < keys.length) {
+                boundKeys = new Expression[nBoundKeys];
+                System.arraycopy(keys, 0, boundKeys, 0, nBoundKeys);
+            } else {
+                boundKeys = keys;
+            }
+            return new IndexBound(getIndexExpressionRow(index, boundKeys),
+                                  getIndexColumnSelector(index, nBoundKeys));
+        }
+
+        /** Return an index bound for the given index containing all nulls.
+         * @param index the index in use
          * @param nkeys number of keys actually in use
          */
-        protected IndexBound getIndexBound(Index index, Expression[] keys, int nkeys) {
-            if (keys == null) 
-                return null;
+        protected IndexBound getNullIndexBound(Index index, int nkeys) {
+            Expression[] keys = new Expression[nkeys];
+            Arrays.fill(keys, LiteralExpression.forNull());
             return new IndexBound(getIndexExpressionRow(index, keys),
                                   getIndexColumnSelector(index, nkeys));
         }

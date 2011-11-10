@@ -127,7 +127,7 @@ public class Sorter
     private Cursor cursor()
     {
         exchange.clear();
-        SortCursor cursor = SortCursor.create(adapter, null, ordering, new SorterRowGenerator());
+        SortCursor cursor = SortCursor.create(adapter, null, ordering, new SorterIterationHelper());
         cursor.open(bindings);
         return cursor;
     }
@@ -184,7 +184,7 @@ public class Sorter
 
     // Inner classes
 
-    private class SorterRowGenerator implements RowGenerator
+    private class SorterIterationHelper implements IterationHelper
     {
         @Override
         public Row row()
@@ -211,7 +211,7 @@ public class Sorter
             return exchange;
         }
 
-        SorterRowGenerator()
+        SorterIterationHelper()
         {
             valueSource = new PersistitValueValueSource();
             valueSource.attach(value);

@@ -17,8 +17,7 @@ package com.akiban.sql.optimizer;
 
 import com.akiban.qp.operator.Operator;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.std.Comparison;
-import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.expression.std.*;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.simplified.*;
 import com.akiban.sql.optimizer.simplified.SimplifiedQuery.*;
@@ -30,6 +29,7 @@ import com.akiban.qp.expression.UnboundExpressions;
 import com.akiban.qp.rowtype.*;
 import com.akiban.qp.util.SchemaCache;
 
+import com.akiban.sql.optimizer.simplified.SimplifiedQuery.ColumnExpression;
 import com.akiban.sql.parser.*;
 import com.akiban.sql.compiler.*;
 import com.akiban.sql.types.DataTypeDescriptor;
@@ -747,7 +747,7 @@ public class OperatorCompiler_Old
             IndexRowType indexRowType = schema.indexRowType(index);
             if ((equalityConditions == null) &&
                 (lowCondition == null) && (highCondition == null))
-                return new IndexKeyRange(indexRowType, null, false, null, false);
+                return new IndexKeyRange(indexRowType);
 
             List<IndexColumn> indexColumns = index.getColumns();
             int nkeys = indexColumns.size();
@@ -790,8 +790,16 @@ public class OperatorCompiler_Old
                     highKeys[hidx++] = highCondition.getRight().generateExpression(null);
                     highInc = (highCondition.getOperation() == Comparison.LE);
                 }
-                IndexBound lo = getIndexBound(index, lowKeys, lidx);
-                IndexBound hi = getIndexBound(index, highKeys, hidx);
+                int bounded = lidx > hidx ? lidx : hidx;
+                IndexBound lo = getIndexBound(index, lowKeys, bounded);
+                IndexBound hi = getIndexBound(index, highKeys, bounded);
+                assert lo != null || hi != null;
+                if (lo == null) {
+                    lo = getNullIndexBound(index, hidx);
+                }
+                if (hi == null) {
+                    hi = getNullIndexBound(index, lidx);
+                }
                 return new IndexKeyRange(indexRowType, lo, lowInc, hi, highInc);
             }
         }
@@ -1071,11 +1079,29 @@ public class OperatorCompiler_Old
     /** Return an index bound for the given index and expressions.
      * @param index the index in use
      * @param keys {@link Expression}s for index lookup key
-     * @param nkeys number of keys actually in use
+     * @param nBoundKeys number of keys actually in use
      */
-    protected IndexBound getIndexBound(Index index, Expression[] keys, int nkeys) {
+    protected IndexBound getIndexBound(Index index, Expression[] keys, int nBoundKeys) {
         if (keys == null) 
             return null;
+        Expression[] boundKeys;
+        if (nBoundKeys < keys.length) {
+            boundKeys = new Expression[nBoundKeys];
+            System.arraycopy(keys, 0, boundKeys, 0, nBoundKeys);
+        } else {
+            boundKeys = keys;
+        }
+        return new IndexBound(getIndexExpressionRow(index, boundKeys),
+                              getIndexColumnSelector(index, nBoundKeys));
+    }
+
+    /** Return an index bound for the given index containing all nulls.
+     * @param index the index in use
+     * @param nkeys number of keys actually in use
+     */
+    protected IndexBound getNullIndexBound(Index index, int nkeys) {
+        Expression[] keys = new Expression[nkeys];
+        Arrays.fill(keys, com.akiban.server.expression.std.LiteralExpression.forNull());
         return new IndexBound(getIndexExpressionRow(index, keys),
                               getIndexColumnSelector(index, nkeys));
     }

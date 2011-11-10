@@ -107,7 +107,7 @@ public class BasicWriter implements WriteThread {
     }
 
     private BasicWriter(Set<SaisTable> initialRoots, RowGenerator rowGenerator, long msOfSetup, boolean checkMsSetup, Store store) {
-        ArgumentValidation.notNull("rowGenerator", rowGenerator);
+        ArgumentValidation.notNull("iterationHelper", rowGenerator);
         if (checkMsSetup) {
             ArgumentValidation.isGTE("msOfSetup", msOfSetup, 1);
         }

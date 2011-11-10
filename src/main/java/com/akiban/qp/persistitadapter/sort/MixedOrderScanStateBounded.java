@@ -15,7 +15,6 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.expression.Expression;
@@ -33,10 +32,11 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
     @Override
     public boolean startScan() throws PersistitException
     {
+        // About null handling: See comment in SortCursorUnidirectional.evaluateBoundaries.
         Key.Direction direction;
         if (ascending) {
             if (loSource.isNull()) {
-                cursor.exchange.append(Key.BEFORE);
+                cursor.exchange.append(null);
                 direction = Key.GT;
             } else {
                 keyTarget.expectingType(loSource.getConversionType());
@@ -46,9 +46,9 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
             if (!hiSource.isNull()) {
                 setupEndComparison(hiInclusive ? Comparison.LE : Comparison.LT, hiSource);
             }
+            // else: endComparison stays null, which causes pastEnd() to always return false.
         } else {
             if (hiSource.isNull()) {
-                // About null handling: See comment in SortCursorUnidirectional.evaluateBoundaries.
                 if (loSource.isNull()) {
                     cursor.exchange.append(null);
                 } else {
@@ -76,18 +76,26 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
 
     public void setRange(ValueSource lo, ValueSource hi)
     {
-        assert !(lo.isNull() && hi.isNull());
+        boolean loNull = lo.isNull();
+        boolean hiNull = hi.isNull();
+        assert !(loNull && hiNull);
+        boolean bothNonNull = !loNull && !hiNull;
         loSource = lo;
         hiSource = hi;
-        fieldType = loSource.isNull() ? hiSource.getConversionType() : loSource.getConversionType();
+        fieldType = loNull ? hiSource.getConversionType() : loSource.getConversionType();
         loLEHi =
-            Expressions.compare(Expressions.valueSource(loSource),
+            bothNonNull
+            ? Expressions.compare(Expressions.valueSource(loSource),
                                   Comparison.LE,
-                                  Expressions.valueSource(hiSource));
+                                  Expressions.valueSource(hiSource))
+            : null;
         loEQHi =
-            Expressions.compare(Expressions.valueSource(loSource),
-                                Comparison.EQ,
-                                Expressions.valueSource(hiSource));
+            bothNonNull
+            ? Expressions.compare(Expressions.valueSource(loSource),
+                                  Comparison.EQ,
+                                  Expressions.valueSource(hiSource))
+            : null;
+        endComparison = null;
     }
 
     public void setRangeLimits(boolean loInclusive, boolean hiInclusive, boolean inequalityOK)
@@ -95,20 +103,20 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
         this.loInclusive = loInclusive;
         this.hiInclusive = hiInclusive;
         if (inequalityOK) {
-            if (!loLEHi.evaluation().eval().getBool()) {
+            if (loLEHi != null && !loLEHi.evaluation().eval().getBool()) {
                 throw new IllegalArgumentException();
             }
         } else {
-            if (!loEQHi.evaluation().eval().getBool()) {
+            if (loEQHi != null && !loEQHi.evaluation().eval().getBool()) {
                 throw new IllegalArgumentException();
             }
         }
     }
 
-    public MixedOrderScanStateBounded(StoreAdapter adapter, SortCursorMixedOrder cursor, int field)
+    public MixedOrderScanStateBounded(SortCursorMixedOrder cursor, int field, boolean ascending)
         throws PersistitException
     {
-        super(cursor, field, cursor.ordering().ascending(field));
+        super(cursor, field, ascending);
         this.keyTarget = new PersistitKeyValueTarget();
         this.keyTarget.attach(cursor.exchange.getKey());
         this.keySource = new PersistitKeyValueSource();

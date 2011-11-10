@@ -27,10 +27,10 @@ class SortCursorMixedOrderUnbounded extends SortCursorMixedOrder
     @Override
     public void initializeScanStates() throws PersistitException
     {
-        for (int f = 0; f < sortColumns(); f++) {
+        for (int f = 0; f < orderingColumns(); f++) {
             scanStates.add(new MixedOrderScanStateUnbounded(this, scanStates.size()));
         }
-        if (sortColumns() < keyColumns()) {
+        if (orderingColumns() < keyColumns()) {
             this.scanStates.add(new MixedOrderScanStateRestOfKey(this, scanStates.size()));
         }
     }
@@ -38,10 +38,10 @@ class SortCursorMixedOrderUnbounded extends SortCursorMixedOrder
     // SortCursorMixedOrderUnbounded interface
 
     public SortCursorMixedOrderUnbounded(PersistitAdapter adapter,
-                                         RowGenerator rowGenerator,
+                                         IterationHelper iterationHelper,
                                          IndexKeyRange keyRange,
                                          API.Ordering ordering)
     {
-        super(adapter, rowGenerator, keyRange, ordering);
+        super(adapter, iterationHelper, keyRange, ordering);
     }
 }

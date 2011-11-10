@@ -15,10 +15,14 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.TableIndex;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -58,25 +62,56 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
         predicateType = queryRootType;
         if (predicateIndex != null) {
             // Index bounds
-            assert start == null || start.getRowDefId() == queryRootTable.getTableId();
-            assert end == null || end.getRowDefId() == queryRootTable.getTableId();
-            IndexBound lo =
-                start == null
-                ? null
-                : new IndexBound(new NewRowBackedIndexRow(queryRootType, new LegacyRowWrapper(start, store), predicateIndex),
-                                 indexSelectorFromTableSelector(predicateIndex, startColumns));
-            IndexBound hi =
-                end == null
-                ? null
-                : new IndexBound(new NewRowBackedIndexRow(queryRootType, new LegacyRowWrapper(end, store), predicateIndex),
-                                 indexSelectorFromTableSelector(predicateIndex, endColumns));
             IndexRowType indexRowType = schema.indexRowType(predicateIndex);
-            indexKeyRange = new IndexKeyRange
-                (indexRowType,
-                 lo,
-                 lo != null && (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0,
-                 hi,
-                 hi != null && (scanFlags & (SCAN_FLAGS_END_AT_EDGE | SCAN_FLAGS_END_EXCLUSIVE)) == 0);
+            if (start == null && end == null) {
+                indexKeyRange = new IndexKeyRange(indexRowType);
+            } else {
+                // The start and end selectors should match.
+                ColumnSelector tableSelector;
+                assert !(startColumns == null && endColumns == null);
+                if (startColumns == null) {
+                    tableSelector = endColumns;
+                } else if (endColumns == null) {
+                    tableSelector = startColumns;
+                } else {
+                    // Make sure the two selectors match
+                    for (int i = 0; i < queryRootTable.getColumns().size(); i++) {
+                        assert startColumns.includesColumn(i) == endColumns.includesColumn(i);
+                    }
+                    tableSelector = startColumns;
+                }
+                ColumnSelector columnSelector = indexSelectorFromTableSelector(predicateIndex, tableSelector);
+                IndexBound lo;
+                NewRow loRow;
+                if (start == null) {
+                    loRow = new NiceRow(queryRootTable.getTableId(), (RowDef) queryRootTable.rowDef());
+                    for (int i = 0; i < queryRootTable.getColumns().size(); i++) {
+                        loRow.put(i, null);
+                    }
+                } else {
+                    assert start.getRowDefId() == queryRootTable.getTableId();
+                    loRow = new LegacyRowWrapper(start, store);
+                }
+                lo = new IndexBound(new NewRowBackedIndexRow(queryRootType, loRow, predicateIndex), columnSelector);
+                IndexBound hi;
+                NewRow hiRow;
+                if (end == null) {
+                    hiRow = new NiceRow(queryRootTable.getTableId(), (RowDef) queryRootTable.rowDef());
+                    for (int i = 0; i < queryRootTable.getColumns().size(); i++) {
+                        hiRow.put(i, null);
+                    }
+                } else {
+                    assert end.getRowDefId() == queryRootTable.getTableId();
+                    hiRow = new LegacyRowWrapper(end, store);
+                }
+                hi = new IndexBound(new NewRowBackedIndexRow(queryRootType, hiRow, predicateIndex), columnSelector);
+                indexKeyRange =
+                    new IndexKeyRange(indexRowType,
+                                      lo,
+                                      start != null && (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0,
+                                      hi,
+                                      end != null && (scanFlags & (SCAN_FLAGS_END_AT_EDGE | SCAN_FLAGS_END_EXCLUSIVE)) == 0);
+            }
         }
     }
 }

@@ -26,7 +26,7 @@ import com.persistit.exception.PersistitException;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class SortCursorMixedOrder extends SortCursor
+abstract class SortCursorMixedOrder extends SortCursor
 {
     // Cursor interface
 
@@ -66,7 +66,7 @@ public abstract class SortCursorMixedOrder extends SortCursor
     // SortCursorMixedOrder interface
 
     public static SortCursorMixedOrder create(PersistitAdapter adapter,
-                                              RowGenerator rowGenerator,
+                                              IterationHelper iterationHelper,
                                               IndexKeyRange keyRange,
                                               API.Ordering ordering)
     {
@@ -74,8 +74,8 @@ public abstract class SortCursorMixedOrder extends SortCursor
             // keyRange == null occurs when Sorter is used, (to sort an arbitrary input stream). There is no
             // IndexRowType in that case, so an IndexKeyRange can't be created.
             keyRange == null || keyRange.unbounded()
-            ? new SortCursorMixedOrderUnbounded(adapter, rowGenerator, keyRange, ordering)
-            : new SortCursorMixedOrderBounded(adapter, rowGenerator, keyRange, ordering);
+            ? new SortCursorMixedOrderUnbounded(adapter, iterationHelper, keyRange, ordering)
+            : new SortCursorMixedOrderBounded(adapter, iterationHelper, keyRange, ordering);
     }
 
     public abstract void initializeScanStates() throws PersistitException;
@@ -83,11 +83,11 @@ public abstract class SortCursorMixedOrder extends SortCursor
     // For use by subclasses
 
     protected SortCursorMixedOrder(PersistitAdapter adapter,
-                                   RowGenerator rowGenerator,
+                                   IterationHelper iterationHelper,
                                    IndexKeyRange keyRange,
                                    API.Ordering ordering)
     {
-        super(adapter, rowGenerator);
+        super(adapter, iterationHelper);
         this.keyRange = keyRange;
         this.ordering = ordering;
         keyColumns =
@@ -110,7 +110,7 @@ public abstract class SortCursorMixedOrder extends SortCursor
 
     // For use by subclasses
 
-    protected int sortColumns()
+    protected int orderingColumns()
     {
         return ordering.sortColumns();
     }
@@ -158,6 +158,6 @@ public abstract class SortCursorMixedOrder extends SortCursor
     protected final API.Ordering ordering;
     protected final List<MixedOrderScanState> scanStates = new ArrayList<MixedOrderScanState>();
     protected Bindings bindings;
-    private final int keyColumns; // Number of columns in the key. keyFields >= sortColumns.
+    private final int keyColumns; // Number of columns in the key. keyFields >= orderingColumns.
     private boolean more;
 }

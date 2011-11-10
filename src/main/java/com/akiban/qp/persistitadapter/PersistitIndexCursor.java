@@ -18,19 +18,13 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.Index;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.persistitadapter.sort.RowGenerator;
+import com.akiban.qp.persistitadapter.sort.IterationHelper;
 import com.akiban.qp.persistitadapter.sort.SortCursor;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.server.error.QueryCanceledException;
 import com.akiban.util.ShareHolder;
 import com.persistit.Exchange;
-import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitException;
-import com.persistit.exception.PersistitIOException;
-import com.persistit.exception.PersistitInterruptedException;
-
-import java.io.InterruptedIOException;
 
 class PersistitIndexCursor implements Cursor
 {
@@ -41,7 +35,7 @@ class PersistitIndexCursor implements Cursor
     {
         assert exchange == null;
         exchange = adapter.takeExchange(indexRowType.index());
-        sortCursor = SortCursor.create(adapter, keyRange, ordering, new IndexScanRowGenerator());
+        sortCursor = SortCursor.create(adapter, keyRange, ordering, new IndexScanIterationHelper());
         sortCursor.open(bindings);
     }
 
@@ -130,7 +124,7 @@ class PersistitIndexCursor implements Cursor
 
     // Inner classes
 
-    private class IndexScanRowGenerator implements RowGenerator
+    private class IndexScanIterationHelper implements IterationHelper
     {
         @Override
         public Row row() throws PersistitException

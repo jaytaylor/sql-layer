@@ -30,7 +30,7 @@ public abstract class SortCursor implements Cursor
     @Override
     public final void close()
     {
-        rowGenerator.close();
+        iterationHelper.close();
     }
 
     // SortCursor interface
@@ -38,31 +38,31 @@ public abstract class SortCursor implements Cursor
     public static SortCursor create(PersistitAdapter adapter,
                                     IndexKeyRange keyRange,
                                     API.Ordering ordering,
-                                    RowGenerator rowGenerator)
+                                    IterationHelper iterationHelper)
     {
         return
             ordering.allAscending() || ordering.allDescending()
-            ? SortCursorUnidirectional.create(adapter, rowGenerator, keyRange, ordering)
-            : SortCursorMixedOrder.create(adapter, rowGenerator, keyRange, ordering);
+            ? SortCursorUnidirectional.create(adapter, iterationHelper, keyRange, ordering)
+            : SortCursorMixedOrder.create(adapter, iterationHelper, keyRange, ordering);
     }
 
     // For use by subclasses
 
-    protected SortCursor(PersistitAdapter adapter, RowGenerator rowGenerator)
+    protected SortCursor(PersistitAdapter adapter, IterationHelper iterationHelper)
     {
         this.adapter = adapter;
-        this.rowGenerator = rowGenerator;
-        this.exchange = rowGenerator.exchange();
+        this.iterationHelper = iterationHelper;
+        this.exchange = iterationHelper.exchange();
     }
 
     protected Row row() throws PersistitException
     {
-        return rowGenerator.row();
+        return iterationHelper.row();
     }
 
     // Object state
 
     protected final PersistitAdapter adapter;
     protected final Exchange exchange;
-    protected final RowGenerator rowGenerator;
+    protected final IterationHelper iterationHelper;
 }

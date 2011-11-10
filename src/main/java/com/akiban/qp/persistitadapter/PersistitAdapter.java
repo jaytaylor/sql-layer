@@ -237,22 +237,11 @@ public class PersistitAdapter extends StoreAdapter
                             Session session,
                             ConfigurationService config)
     {
-        this(schema, persistit, session, treeService, config, null);
-    }
-
-    PersistitAdapter(Schema schema,
-                     PersistitStore persistit,
-                     Session session,
-                     TreeService treeService,
-                     ConfigurationService config,
-                     PersistitFilterFactory.InternalHook hook)
-    {
         super(schema);
         this.config = config;
         this.persistit = persistit;
         this.session = session;
         this.treeService = treeService;
-        this.filterFactory = new PersistitFilterFactory(this, hook);
     }
 
     // Object state
@@ -261,5 +250,4 @@ public class PersistitAdapter extends StoreAdapter
     private final ConfigurationService config;
     final PersistitStore persistit;
     final Session session;
-    final PersistitFilterFactory filterFactory;
 }
