@@ -255,17 +255,31 @@ final class UnionAll_Default extends Operator {
             return delegate.eval(index);
         }
 
+        /**
+         * @see #isShared()
+         */
         @Override
         public void acquire() {
             ++shares;
             delegate.acquire();
         }
 
+        /**
+         * Returns this MasqueradingRow, or its delegate, are shared. It's not enough to only delegate this method
+         * (and the acquire/release methods that go along with it), because if the delegate row is never shared (as
+         * happens with an immutable row, for instance), we still want to mark this MasqueradingRow as shared.
+         * Without that, the Execution will reuse this wrapper -- by giving it a new delegate -- which will break
+         * the sharing contract.
+         * @return whether this row is shared
+         */
         @Override
         public boolean isShared() {
             return (shares > 1) || delegate.isShared();
         }
 
+        /**
+         * @see #isShared()
+         */
         @Override
         public void release() {
             delegate.release();
