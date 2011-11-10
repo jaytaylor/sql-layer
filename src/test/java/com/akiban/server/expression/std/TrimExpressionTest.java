@@ -34,7 +34,7 @@ public class TrimExpressionTest extends ComposedExpressionTestBase
     private String input;
     private String expected;
     private TrimExpression.TrimType trimType;
-
+    private final CompositionTestInfo testInfo = new CompositionTestInfo(1, AkType.VARCHAR, true);
     
     public TrimExpressionTest (String input, String expected, 
             TrimExpression.TrimType trimType)
@@ -96,9 +96,9 @@ public class TrimExpressionTest extends ComposedExpressionTestBase
     //private void check
 
     @Override
-    protected int childrenCount() 
+    protected CompositionTestInfo getTestInfo ()
     {
-        return 1;
+        return testInfo;
     }
 
     @Override
