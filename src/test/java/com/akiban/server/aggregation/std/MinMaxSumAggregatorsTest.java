@@ -134,6 +134,21 @@ public class MinMaxSumAggregatorsTest
         aggregator.output(holder);
         assertEquals(2.0, holder.getDouble(), 0.001);
     }
+    
+    @Test
+    public void testMinWithNegInfinity ()
+    {
+        aggregator = Aggregators.mins("min", AkType.DOUBLE).get();
+        
+        holder.putDouble(2);
+        aggregator.input(holder);
+        
+        holder.putDouble(Double.NEGATIVE_INFINITY);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        assertEquals(Double.NEGATIVE_INFINITY, holder.getDouble(), 0.001);
+    }
 
     // -----------------------test maxes ---------------------------------------
     @Test
@@ -227,6 +242,23 @@ public class MinMaxSumAggregatorsTest
         assertEquals(2.0, holder.getDouble(), 0.001);
         
     }
+    
+    @Test
+    public void testMaxWithPosInfinity ()
+    {
+        aggregator = Aggregators.maxes("maxes", AkType.DOUBLE).get();
+        
+        holder.putDouble(2);
+        aggregator.input(holder);
+        
+        holder.putDouble(Double.POSITIVE_INFINITY);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        assertEquals(Double.POSITIVE_INFINITY, holder.getDouble(), 0.001);
+        
+    }
+        
     // ------------------------------- test sum -------------------------------
     @Test
     public void testSumWithNull()
