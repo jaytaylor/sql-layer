@@ -19,6 +19,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.util.ValueHolder;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
@@ -87,7 +88,14 @@ public class ConstantExpression extends BaseExpression
 
     @Override
     public String toString() {
-        return String.valueOf(value);
+        ValueSource valueSource;
+        if (getAkType() == null)
+            valueSource = new FromObjectValueSource().setReflectively(value);
+        else
+            valueSource = new FromObjectValueSource().setExplicitly(value, getAkType());
+        // TODO: ValueHolder seems to be the only ValueSource that prints itself well.
+        valueSource = new ValueHolder(valueSource);
+        return valueSource.toString();
     }
 
     @Override
