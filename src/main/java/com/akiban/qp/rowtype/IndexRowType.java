@@ -23,7 +23,7 @@ import com.akiban.server.types.AkType;
 
 import java.util.List;
 
-public class IndexRowType extends RowType
+public class IndexRowType extends AisRowType
 {
     // Object interface
 
