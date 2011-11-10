@@ -74,10 +74,11 @@
 # - Statement: DELETE from all_types
 
 ---
-- Statement: INSERT INTO all_types (decimal_field) VALUES (1.0)
+- Statement: INSERT INTO all_types (decimal_field) VALUES (1.0), (123456.0),
+    (-123456.0), (1234567.0), (-1234567.0)
 ---
 - Statement: SELECT (decimal_field) from all_types
-- output: [[1.0]]
+- output: [[1.0], [123456.0], [-123456.0], [4822.0], [-4822.0]]
 - output_types: [DOUBLE]
 ---
 - Statement: DELETE from all_types

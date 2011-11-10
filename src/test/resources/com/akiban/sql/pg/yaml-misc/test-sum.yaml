@@ -1,5 +1,4 @@
 # Test the SUM aggregate function
-# Note that sum(real) is not currently working
 
 ---
 - Include: all-types-schema.yaml
@@ -202,7 +201,8 @@
 ---
 - Statement: INSERT INTO all_types (double_field) VALUES (1.0)
 ---
-- Statement: INSERT INTO all_types (double_field) VALUES ('NaN')
+- Statement: INSERT INTO all_types (double_field) VALUES ('Infinity'),
+    ('-Infinity'), ('NaN')
 ---
 - Statement: SELECT sum(double_field) FROM all_types
 - output: [[NaN]]
@@ -211,7 +211,8 @@
 ---
 - Statement: INSERT INTO all_types (float_field) VALUES (1.0)
 ---
-- Statement: INSERT INTO all_types (float_field) VALUES ('NaN')
+- Statement: INSERT INTO all_types (float_field) VALUES ('Infinity'),
+    ('-Infinity'), ('NaN')
 ---
 - Statement: SELECT sum(float_field) FROM all_types
 - output: [[NaN]]

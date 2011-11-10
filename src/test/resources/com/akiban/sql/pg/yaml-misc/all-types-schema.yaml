@@ -1,5 +1,4 @@
 # Create a table with all supported data types
-# Not supported yet: tinyint, varbinary
 ---
 - Statement:
     CREATE TABLE all_types (
