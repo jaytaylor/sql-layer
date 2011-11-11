@@ -1,0 +1,4 @@
+# The varbinary data type is not supported
+---
+- Statement: CREATE TABLE t (varbinary_field varbinary)
+...

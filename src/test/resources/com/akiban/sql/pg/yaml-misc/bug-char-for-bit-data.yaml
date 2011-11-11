@@ -1,0 +1,6 @@
+# Test char for bit data, alias for varbinary
+- Statement: CREATE TABLE t (char_for_bit_data_field char(32) for bit data)
+---
+- Statement: SELECT * FROM t
+- output_types: [VARCHAR]
+...
