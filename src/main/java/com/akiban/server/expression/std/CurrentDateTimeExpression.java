@@ -24,7 +24,9 @@ import com.akiban.server.expression.std.EnvironmentExpression.EnvironmentEvaluat
 import com.akiban.server.service.functions.EnvironmentValue;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class CurrentDateTimeExpression extends EnvironmentExpression
@@ -51,7 +53,7 @@ public class CurrentDateTimeExpression extends EnvironmentExpression
             = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_DATE,  AkType.TIMESTAMP);
 
     /**
-     * return now() epxression  (an alias of current_timestamp())
+     * return now() expression  (an alias of current_timestamp())
      */
     @EnvironmentValue ("now")
     public static final EnvironmentExpressionFactory CURRENT_TIMESTAMP_ALIAS = CURRENT_TIMESTAMP_COMPOSER;
@@ -68,7 +70,11 @@ public class CurrentDateTimeExpression extends EnvironmentExpression
     private static final class InnerEvaluation extends EnvironmentEvaluation<Date>
     {
         private  AkType neededInfo;
-        
+
+        private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
+        private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm:ss");
+        private static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
         public InnerEvaluation (int bindingPos, AkType neededInfo)
         {
             super(bindingPos);
@@ -78,7 +84,17 @@ public class CurrentDateTimeExpression extends EnvironmentExpression
         @Override
         public ValueSource eval()
         {  
-            return new ValueHolder(neededInfo, this.environmentValue());
+            return new ValueHolder(neededInfo, getLongFromDate());
+        }
+
+        private long getLongFromDate()
+        {
+            switch (neededInfo)
+            {
+                case DATE:  return Extractors.getLongExtractor(neededInfo).getLong(DATE_FORMAT.format(this.environmentValue()));
+                case TIME:  return Extractors.getLongExtractor(neededInfo).getLong(TIME_FORMAT.format(this.environmentValue()));
+                default:    return Extractors.getLongExtractor(neededInfo).getLong(TIMESTAMP_FORMAT.format(this.environmentValue())); 
+            }
         }
     }
     
@@ -102,19 +118,13 @@ public class CurrentDateTimeExpression extends EnvironmentExpression
         @Override
         public Expression get(int bindingPosition) 
         {
-            return new CurrentDateTimeExpression(environmentSetting, bindingPosition,
-                    neededInfo);
+            return new CurrentDateTimeExpression(environmentSetting, bindingPosition, neededInfo);
         }
         
         @Override
         public ExpressionType getType() 
         {
-            switch (neededInfo)
-            {
-                case DATE:  return ExpressionTypes.DATE;
-                case TIME:  return ExpressionTypes.TIME;
-                default:    return ExpressionTypes.TIMESTAMP;
-            }
+            return ExpressionTypes.newType(neededInfo, 0, 0);
         }
     }
 
@@ -123,7 +133,12 @@ public class CurrentDateTimeExpression extends EnvironmentExpression
     {
         return new InnerEvaluation (bindingPosition(), neededInfo);
     }
-    
+
+    @Override
+    public String name ()
+    {
+        return "CURRENT_" + neededInfo;
+    }
     private static AkType checkType (AkType input)
     {
         if (input == AkType.DATE  || input == AkType.TIME || input == AkType.TIMESTAMP) return input;
