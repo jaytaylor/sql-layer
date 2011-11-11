@@ -24,10 +24,9 @@ import com.akiban.server.expression.std.EnvironmentExpression.EnvironmentEvaluat
 import com.akiban.server.service.functions.EnvironmentValue;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.Calendar;
+import org.joda.time.DateTime;
 
 public class CurrentDateTimeExpression extends EnvironmentExpression
 {
@@ -36,21 +35,21 @@ public class CurrentDateTimeExpression extends EnvironmentExpression
      */
     @EnvironmentValue("current_date")
     public static final EnvironmentExpressionFactory CURRENT_DATE_COMPOSER 
-            = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_DATE, AkType.DATE);
+            = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_CALENDAR, AkType.DATE);
     
     /**
      * return current_time() expression 
      */
     @EnvironmentValue("current_time")
     public static final EnvironmentExpressionFactory CURRENT_TIME_COMPOSER 
-            = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_DATE, AkType.TIME);
+            = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_CALENDAR, AkType.TIME);
     
     /**
      * return current_timestamp() expression in String
      */
     @EnvironmentValue("current_timestamp")
     public static final EnvironmentExpressionFactory CURRENT_TIMESTAMP_COMPOSER 
-            = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_DATE,  AkType.TIMESTAMP);
+            = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_CALENDAR,  AkType.TIMESTAMP);
 
     /**
      * return now() expression  (an alias of current_timestamp())
@@ -67,13 +66,9 @@ public class CurrentDateTimeExpression extends EnvironmentExpression
         this.neededInfo = neededInfo;
     }
 
-    private static final class InnerEvaluation extends EnvironmentEvaluation<Date>
+    private static final class InnerEvaluation extends EnvironmentEvaluation<Calendar>
     {
         private  AkType neededInfo;
-
-        private static final SimpleDateFormat DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd");
-        private static final SimpleDateFormat TIME_FORMAT = new SimpleDateFormat("HH:mm:ss");
-        private static final SimpleDateFormat TIMESTAMP_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 
         public InnerEvaluation (int bindingPos, AkType neededInfo)
         {
@@ -84,17 +79,7 @@ public class CurrentDateTimeExpression extends EnvironmentExpression
         @Override
         public ValueSource eval()
         {  
-            return new ValueHolder(neededInfo, getLongFromDate());
-        }
-
-        private long getLongFromDate()
-        {
-            switch (neededInfo)
-            {
-                case DATE:  return Extractors.getLongExtractor(neededInfo).getLong(DATE_FORMAT.format(this.environmentValue()));
-                case TIME:  return Extractors.getLongExtractor(neededInfo).getLong(TIME_FORMAT.format(this.environmentValue()));
-                default:    return Extractors.getLongExtractor(neededInfo).getLong(TIMESTAMP_FORMAT.format(this.environmentValue())); 
-            }
+            return new ValueHolder(neededInfo, new DateTime(this.environmentValue()));
         }
     }
     
@@ -139,6 +124,7 @@ public class CurrentDateTimeExpression extends EnvironmentExpression
     {
         return "CURRENT_" + neededInfo;
     }
+    
     private static AkType checkType (AkType input)
     {
         if (input == AkType.DATE  || input == AkType.TIME || input == AkType.TIMESTAMP) return input;
