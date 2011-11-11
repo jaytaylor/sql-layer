@@ -178,12 +178,14 @@ public class PostgresType
         if ("VARCHAR".equals(encoding))
             oid = VARCHAR_TYPE_OID;
         else if ("INT".equals(encoding) ||
-                 "U_INT".equals(encoding)) {
+                 "U_INT".equals(encoding) ||
+                 "U_BIGINT".equals(encoding)) {
             switch (aisType.maxSizeBytes().intValue()) {
             case 1:
                 oid = INT2_TYPE_OID; // No INT1; this also could be BOOLEAN (TINYINT(1)).
                 break;
             case 2:
+            case 3:
                 oid = INT2_TYPE_OID;
                 break;
             case 4:
@@ -210,7 +212,7 @@ public class PostgresType
             oid = INT2_TYPE_OID; // No INT1
         else if ("DECIMAL".equals(encoding) ||
                  "U_DECIMAL".equals(encoding))
-            oid = MONEY_TYPE_OID;
+            oid = NUMERIC_TYPE_OID;
         else if ("FLOAT".equals(encoding) ||
                  "U_FLOAT".equals(encoding))
             oid = FLOAT4_TYPE_OID;
@@ -266,7 +268,7 @@ public class PostgresType
             break;
         case TypeId.FormatIds.DECIMAL_TYPE_ID:
         case TypeId.FormatIds.NUMERIC_TYPE_ID:
-            oid = MONEY_TYPE_OID;
+            oid = NUMERIC_TYPE_OID;
             break;
         case TypeId.FormatIds.DOUBLE_TYPE_ID:
             oid = FLOAT8_TYPE_OID;
