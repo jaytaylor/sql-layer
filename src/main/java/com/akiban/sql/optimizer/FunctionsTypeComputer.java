@@ -21,6 +21,7 @@ import com.akiban.sql.StandardException;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
+import com.akiban.server.expression.EnvironmentExpressionFactory;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.std.ExpressionTypes;
@@ -76,14 +77,54 @@ public class FunctionsTypeComputer extends AISTypeComputer
 
     protected DataTypeDescriptor methodCallNode(MethodCallNode methodCall)
             throws StandardException {
-        ExpressionComposer composer;
-        try {
-            composer = functionsRegistry.composer(methodCall.getMethodName());
+        if ((methodCall.getMethodParameters() == null) ||
+            (methodCall.getMethodParameters().length == 0)) {
+            return noArgFunction(methodCall.getMethodName());
         }
-        catch (NoSuchFunctionException ex) {
-            return null;
+        else {
+            ExpressionComposer composer;
+            try {
+                composer = functionsRegistry.composer(methodCall.getMethodName());
+            }
+            catch (NoSuchFunctionException ex) {
+                composer = null;
+            }
+            if (composer != null)
+                return expressionComposer(composer, methodCall.getMethodParameters());
         }
-        JavaValueNode[] args = methodCall.getMethodParameters();
+        return null;
+    }
+
+    protected DataTypeDescriptor noArgFunction(String functionName) 
+            throws StandardException {
+        {
+            ExpressionComposer composer;
+            try {
+                composer = functionsRegistry.composer(functionName);
+            }
+            catch (NoSuchFunctionException ex) {
+                composer = null;
+            }
+            if (composer != null)
+                return expressionComposer(composer, null);
+        }
+        {
+            EnvironmentExpressionFactory environment;
+            try {
+               environment = functionsRegistry.environment(functionName);
+            }
+            catch (NoSuchFunctionException ex) {
+                environment = null;
+            }
+            if (environment != null)
+                return fromExpressionType(environment.getType());
+        }
+        return null;
+    }
+
+    protected DataTypeDescriptor expressionComposer(ExpressionComposer composer,
+                                                    JavaValueNode[] args)
+            throws StandardException {
         int nargs = 0;
         if (args != null)
             nargs = args.length;
@@ -126,8 +167,45 @@ public class FunctionsTypeComputer extends AISTypeComputer
 
     protected DataTypeDescriptor specialFunctionNode(SpecialFunctionNode node)
             throws StandardException {
-        // TODO: Where should we get the real max width from?
-        return new DataTypeDescriptor(TypeId.VARCHAR_ID, true, 128);
+        return noArgFunction(specialFunctionName(node));
+    }
+
+    /** Return the name of a built-in special function. */
+    public static String specialFunctionName(SpecialFunctionNode node) {
+        switch (node.getNodeType()) {
+        case NodeTypes.USER_NODE:
+        case NodeTypes.CURRENT_USER_NODE:
+            return "current_user";
+        case NodeTypes.SESSION_USER_NODE:
+            return "session_user";
+        case NodeTypes.SYSTEM_USER_NODE:
+            return "system_user";
+        case NodeTypes.CURRENT_ISOLATION_NODE:
+        case NodeTypes.IDENTITY_VAL_NODE:
+        case NodeTypes.CURRENT_SCHEMA_NODE:
+        case NodeTypes.CURRENT_ROLE_NODE:
+        default:
+            return null;
+        }
+    }
+
+    protected DataTypeDescriptor currentDatetimeOperatorNode(CurrentDatetimeOperatorNode node)
+            throws StandardException {
+        return noArgFunction(currentDatetimeFunctionName(node));
+    }
+
+    /** Return the name of a built-in special function. */
+    public static String currentDatetimeFunctionName(CurrentDatetimeOperatorNode node) {
+        switch (node.getField()) {
+        case DATE:
+            return "current_date";
+        case TIME:
+            return "current_time";
+        case TIMESTAMP:
+            return "current_timestamp";
+        default:
+            return null;
+        }
     }
 
     /* Yet another translator between type regimes. */
