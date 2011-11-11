@@ -17,6 +17,7 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import org.junit.Test;
@@ -29,7 +30,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public final class ConcatExpressionTest extends ComposedExpressionTestBase {
+public final class ConcatExpressionTest  extends ComposedExpressionTestBase {
 
     @Test
     public void smoke() {
@@ -43,16 +44,18 @@ public final class ConcatExpressionTest extends ComposedExpressionTestBase {
         check(null, concat);
     }
 
+
     @Test
     public void allNumbers() {
         Expression concat = concat(lit(1), lit(2), lit(3.0));
         assertTrue("concat should be const", concat.isConstant());
         check("123.0", concat);
     }
+  
 
     @Test
     public void nonConstNullStillConstConcat() {
-        Expression concat = concat(lit(3), nonConst(3), constNull(AkType.VARCHAR));
+        Expression concat = concat(lit(3), nonConst(3), LiteralExpression.forNull());
         assertTrue("concat should be const", concat.isConstant());
         check(null, concat);
     }
@@ -62,19 +65,29 @@ public final class ConcatExpressionTest extends ComposedExpressionTestBase {
         concatAndCheck("");
     }
 
+    @Test
+    public void typeLength() {
+        ExpressionType concatType = 
+            getComposer().composeType(Arrays.asList(ExpressionTypes.varchar(6),
+                                                    ExpressionTypes.varchar(10),
+                                                    ExpressionTypes.varchar(4)));
+        assertEquals(AkType.VARCHAR, concatType.getType());
+        assertEquals(20, concatType.getPrecision());
+    }
+
     // ComposedExpressionTestBase
 
     @Override
-    protected int childrenCount() {
-        return 3; // why not!
+    protected CompositionTestInfo getTestInfo() {
+        return testInfo;
     }
 
     @Override
     protected ExpressionComposer getComposer() {
-        return new ExpressionComposer() {
+        return new ConcatExpression.ConcatComposer() {
             @Override
             public Expression compose(List<? extends Expression> arguments) {
-                return new ConcatExpression(arguments, false);
+                return new ConcatExpression(arguments);
             }
         };
     }
@@ -104,4 +117,5 @@ public final class ConcatExpressionTest extends ComposedExpressionTestBase {
         return new ConcatExpression(Arrays.asList(inputs));
     }
 
+    private final CompositionTestInfo testInfo = new CompositionTestInfo(3, AkType.VARCHAR, true);
 }

@@ -17,9 +17,12 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.error.DivisionByZeroException;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
+import com.akiban.server.types.AkType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.List;
 
 public class ArithOps 
 {
@@ -153,6 +156,20 @@ public class ArithOps
             return new ArithExpression(first, this, second);
         }
         
+        @Override
+        public void argumentTypes(List<AkType> argumentTypes) {
+            AkType type = ArithExpression.getTopType(argumentTypes.get(0),
+                                                     argumentTypes.get(1), this);
+            argumentTypes.set(0, type);
+            argumentTypes.set(1, type);
+        }
+
+        @Override
+        protected ExpressionType composeType(ExpressionType first, ExpressionType second) {
+            // TODO: Max decimal precision?
+            return first;
+        }
+
         @Override
         public String toString ()
         {

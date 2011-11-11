@@ -42,6 +42,7 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.api.dml.scan.ScanFlag;
+import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDefCache;
@@ -156,6 +157,7 @@ public class ApiTestBase {
             testServicesStarted = false;
             sm = createServiceManager( startupConfigProperties() );
             sm.startServices();
+            ServiceManagerImpl.setServiceManager(sm);
             session = sm.getSessionService().createSession();
             testServicesStarted = true;
             if (TAPS != null) {
@@ -188,6 +190,7 @@ public class ApiTestBase {
 
     @After
     public final void stopTestServices() throws Exception {
+        ServiceManagerImpl.setServiceManager(null);
         if (!testServicesStarted) {
             return;
         }

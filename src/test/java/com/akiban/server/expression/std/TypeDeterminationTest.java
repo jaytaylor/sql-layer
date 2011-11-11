@@ -22,7 +22,6 @@ import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -34,6 +33,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(NamedParameterizedRunner.class)
 public class TypeDeterminationTest
+
 {
     private AkType input1;
     private AkType input2;
@@ -158,10 +158,5 @@ public class TypeDeterminationTest
     public boolean exceptionExpected ()
     {
         return expected == null;
-    }
-      
-    protected ExpressionComposer getComposer() 
-    {
-        return (ExpressionComposer)op;
-    }    
+    } 
 }

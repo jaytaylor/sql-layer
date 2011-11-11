@@ -20,6 +20,7 @@ import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
@@ -40,6 +41,21 @@ public class SubStringExpression extends AbstractCompositeExpression
         public Expression compose(List<? extends Expression> arguments) {
             return new SubStringExpression(arguments);
         }        
+
+        @Override
+        public void argumentTypes(List<AkType> argumentTypes) {
+            argumentTypes.set(0, AkType.VARCHAR);
+            for (int i = 1; i < argumentTypes.size(); i++)
+                argumentTypes.set(i, AkType.LONG);
+        }
+
+        @Override
+        public ExpressionType composeType(List<? extends ExpressionType> arguments) {
+            // In the three-arg case with constants, we'd know it's shorter.
+            // But such knowledge is in the optimizer, not here, so
+            // it'll have to be its responsibility.
+            return arguments.get(0);
+        }
     };
     
     @Scalar("substr")
@@ -123,5 +139,11 @@ public class SubStringExpression extends AbstractCompositeExpression
     public ExpressionEvaluation evaluation() 
     {
         return new InnerEvaluation(this.childrenEvaluations());
-    }    
+    }
+
+    @Override
+    protected boolean nullIsContaminating()
+    {
+        return true;
+    }
 }

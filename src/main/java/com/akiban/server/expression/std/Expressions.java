@@ -58,6 +58,11 @@ public class Expressions
         return new LiteralExpression(new FromObjectValueSource().setReflectively(value));
     }
 
+    public static Expression literal(Object value, AkType type)
+    {
+        return new LiteralExpression(new FromObjectValueSource().setExplicitly(value, type));
+    }
+
     public static Expression variable(AkType type, int position)
     {
         return new VariableExpression(type, position);

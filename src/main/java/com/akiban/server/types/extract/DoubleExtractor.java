@@ -49,22 +49,20 @@ public final class DoubleExtractor extends AbstractExtractor {
 
     private double getDecimalAsDouble (ValueSource source )
     {
-        BigDecimal x = source.getDecimal();
-        if (x.compareTo(BigDecimal.valueOf(Double.MAX_VALUE)) > 0
-                || x.compareTo(BigDecimal.valueOf(Double.MIN_VALUE)) < 0)
+        double d = source.getDecimal().doubleValue();
+        if (Double.isInfinite(d))
             throw new OverflowException();        
         else
-            return x.doubleValue();
+            return d;
     }
 
     private double getBigIntAsDouble (ValueSource source)
     {
-        BigInteger x = source.getUBigInt();
-        if (x.compareTo(BigInteger.valueOf((long)Double.MAX_VALUE)) > 0
-                || x.compareTo(BigInteger.valueOf((long)Double.MIN_VALUE)) < 0)
-            throw new OverflowException();                              
+        double d = source.getUBigInt().doubleValue();
+        if (Double.isInfinite(d))
+            throw new OverflowException();        
         else
-            return x.doubleValue();
+            return d;
     }
 
     public double getDouble(String string) {

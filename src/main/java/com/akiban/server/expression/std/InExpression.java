@@ -18,6 +18,7 @@ package com.akiban.server.expression.std;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
@@ -38,6 +39,19 @@ public final class InExpression extends AbstractCompositeExpression {
         public Expression compose(List<? extends Expression> arguments) {
             return new InExpression(arguments.get(0), arguments.subList(0, arguments.size()));
         }
+
+        @Override
+        public void argumentTypes(List<AkType> argumentTypes) {
+            for (int i = 1; i < argumentTypes.size(); i++) {
+                // Everything should have type of LHS.
+                argumentTypes.set(i, argumentTypes.get(0));
+            }
+        }
+
+        @Override
+        public ExpressionType composeType(List<? extends ExpressionType> argumentTypes) {
+            return ExpressionTypes.BOOL;
+        }
     };
 
     @Override
@@ -48,6 +62,11 @@ public final class InExpression extends AbstractCompositeExpression {
     @Override
     public ExpressionEvaluation evaluation() {
         return new InnerEvaluation(childrenEvaluations());
+    }
+
+    @Override
+    protected boolean nullIsContaminating() {
+        return false;
     }
 
     public InExpression(Expression lhs, List<? extends Expression> rhs) {

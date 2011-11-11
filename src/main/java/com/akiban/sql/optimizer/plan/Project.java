@@ -18,7 +18,7 @@ package com.akiban.sql.optimizer.plan;
 import java.util.List;
 
 /** An list of expressions making up new rows. */
-public class Project extends BasePlanWithInput
+public class Project extends BasePlanWithInput implements ColumnSource
 {
     private List<ExpressionNode> fields;
 
@@ -29,6 +29,11 @@ public class Project extends BasePlanWithInput
 
     public List<ExpressionNode> getFields() {
         return fields;
+    }
+
+    @Override
+    public String getName() {
+        return "SELECT";
     }
 
     @Override

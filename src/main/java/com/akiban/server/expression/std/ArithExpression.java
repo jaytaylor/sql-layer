@@ -79,7 +79,6 @@ public class ArithExpression extends AbstractBinaryExpression
         return new InnerEvaluation(op, topT, this.childrenEvaluations());
     }
 
-    //--------------------------------------------------------------------------
     /**
      * Date/time types:
      *      DATE - DATE, TIME - TIME, YEAR - YEAR , DATETIME - DATETIME, => result is an INTERVAL
@@ -131,7 +130,7 @@ public class ArithExpression extends AbstractBinaryExpression
      *                  in which case, throw an exception
      *              else if sum is even => unsupported and a numeric => return the numeric type
      */
-    private static AkType getTopType (AkType leftT, AkType rightT, ArithOp op)
+    protected static AkType getTopType (AkType leftT, AkType rightT, ArithOp op)
     {
        if (leftT == AkType.NULL || rightT == AkType.NULL)  return AkType.NULL;
        String msg = leftT.name() + " " + op.opName() + " " + rightT.name();
@@ -171,6 +170,13 @@ public class ArithExpression extends AbstractBinaryExpression
         }   
     }
 
+    @Override
+    protected boolean nullIsContaminating()
+    {
+        return true;
+    }
+    
+  
     private static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
         @Override

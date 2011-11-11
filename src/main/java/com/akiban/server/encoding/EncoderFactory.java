@@ -45,7 +45,6 @@ public final class EncoderFactory {
     public static final Encoding TIME = LongEncoder.INSTANCE;
     public static final Encoding DATETIME = LongEncoder.INSTANCE;
     public static final Encoding TIMESTAMP = LongEncoder.INSTANCE;
-    public static final Encoding INTERVAL = LongEncoder.INSTANCE;
     public static final Encoding YEAR = LongEncoder.INSTANCE;
 
     private static final Object ENCODING_MAP_LOCK = EncoderFactory.class;

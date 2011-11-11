@@ -1,0 +1,6 @@
+# Inserting boolean literal fails
+---
+- Statement: CREATE TABLE t (b boolean)
+---
+- Statement: INSERT INTO t VALUES (true)
+...

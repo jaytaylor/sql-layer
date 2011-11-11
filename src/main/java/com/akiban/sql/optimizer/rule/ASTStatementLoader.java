@@ -255,9 +255,10 @@ public class ASTStatementLoader extends BaseRule
                 throw new UnsupportedSQLException("WINDOW", selectNode);
         
             if (selectNode.isDistinct()) {
-                query = new Project(query, projects);
+                Project project = new Project(query, projects);
+                query = project;
                 if (!sorts.isEmpty()) {
-                    query = new Sort(query, sortsForDistinct(sorts, projects));
+                    query = new Sort(query, sortsForDistinct(sorts, project));
                     query = new Distinct(query, Distinct.Implementation.PRESORTED);
                 }
                 else
@@ -468,8 +469,8 @@ public class ASTStatementLoader extends BaseRule
                 break;
             case NodeTypes.IS_NULL_NODE:
             case NodeTypes.IS_NOT_NULL_NODE:
-                addFunctionCondition(conditions,
-                                     (UnaryOperatorNode)condition);
+                addIsNullCondition(conditions,
+                                   (IsNullNode)condition);
                 break;
 
             case NodeTypes.IS_NODE:
@@ -733,6 +734,28 @@ public class ASTStatementLoader extends BaseRule
                                                  ternary.getType(), ternary));
         }
 
+        protected void addIsNullCondition(List<ConditionExpression> conditions,
+                                          IsNullNode isNull)
+                throws StandardException {
+            List<ExpressionNode> operands = new ArrayList<ExpressionNode>(1);
+            operands.add(toExpression(isNull.getOperand()));
+            String function = isNull.getMethodName();
+            boolean negated = false;
+            if ("isNotNull".equals(function)) {
+                function = "isNull";
+                negated = true;
+            }
+            FunctionCondition cond = new FunctionCondition(function, operands,
+                                                           isNull.getType(), isNull);
+            if (negated) {
+                List<ConditionExpression> noperands = new ArrayList<ConditionExpression>(1);
+                noperands.add(cond);
+                cond = new LogicalFunctionCondition("not", noperands,
+                                                    isNull.getType(), isNull);
+            }
+            conditions.add(cond);
+        }
+
         protected void addIsCondition(List<ConditionExpression> conditions,
                                       IsNode is)
                 throws StandardException {
@@ -845,23 +868,34 @@ public class ASTStatementLoader extends BaseRule
                                                     condition.getType(), condition);
         }
 
-        /** SELECT DISTINCT with sorting adds extra columns so as to
-         * only sort once.
+        /** SELECT DISTINCT with sorting sorts by an input Project and
+         * adds extra columns so as to only sort once for both
+         * Distinct and the requested ordering.
          */
         protected List<OrderByExpression> sortsForDistinct(List<OrderByExpression> sorts,
-                                                           List<ExpressionNode> projects)
+                                                           Project project)
                 throws StandardException {
-            BitSet used = new BitSet(projects.size());
+            List<ExpressionNode> exprs = project.getFields();
+            BitSet used = new BitSet(exprs.size());
             for (OrderByExpression orderBy : sorts) {
-                int idx = projects.indexOf(orderBy.getExpression());
+                ExpressionNode expr = orderBy.getExpression();
+                int idx = exprs.indexOf(expr);
                 if (idx < 0)
                     throw new UnsupportedSQLException("SELECT DISTINCT requires that ORDER BY expressions be in the select list",
-                                                      orderBy.getExpression().getSQLsource());
+                                                      expr.getSQLsource());
+                ExpressionNode cexpr = new ColumnExpression(project, idx,
+                                                            expr.getSQLtype(),
+                                                            expr.getSQLsource());
+                orderBy.setExpression(cexpr);
                 used.set(idx);
             }
-            for (int i = 0; i < projects.size(); i++) {
+            for (int i = 0; i < exprs.size(); i++) {
                 if (!used.get(i)) {
-                    OrderByExpression orderBy = new OrderByExpression(projects.get(i),
+                    ExpressionNode expr = exprs.get(i);
+                    ExpressionNode cexpr = new ColumnExpression(project, i,
+                                                                expr.getSQLtype(),
+                                                                expr.getSQLsource());
+                    OrderByExpression orderBy = new OrderByExpression(cexpr,
                                                                       sorts.get(0).isAscending());
                     sorts.add(orderBy);
                 }
@@ -1080,14 +1114,38 @@ public class ASTStatementLoader extends BaseRule
                 String functionName = null;
                 switch (((CurrentDatetimeOperatorNode)valueNode).getField()) {
                 case DATE:
-                    functionName = "currentDate";
+                    functionName = "current_date";
                     break;
                 case TIME:
-                    functionName = "currentTime";
+                    functionName = "current_time";
                     break;
                 case TIMESTAMP:
-                    functionName = "currentTimestamp";
+                    functionName = "current_timestamp";
                     break;
+                }
+                return new FunctionExpression(functionName,
+                                              Collections.<ExpressionNode>emptyList(),
+                                              valueNode.getType(), valueNode);
+            }
+            else if (valueNode instanceof SpecialFunctionNode) {
+                String functionName = null;
+                switch (valueNode.getNodeType()) {
+                case NodeTypes.USER_NODE:
+                case NodeTypes.CURRENT_USER_NODE:
+                    functionName = "current_user";
+                    break;
+                case NodeTypes.SESSION_USER_NODE:
+                    functionName = "session_user";
+                    break;
+                case NodeTypes.SYSTEM_USER_NODE:
+                    functionName = "system_user";
+                    break;
+                case NodeTypes.CURRENT_ISOLATION_NODE:
+                case NodeTypes.IDENTITY_VAL_NODE:
+                case NodeTypes.CURRENT_SCHEMA_NODE:
+                case NodeTypes.CURRENT_ROLE_NODE:
+                default:
+                    throw new UnsupportedSQLException("Unsupported special function", valueNode);
                 }
                 return new FunctionExpression(functionName,
                                               Collections.<ExpressionNode>emptyList(),

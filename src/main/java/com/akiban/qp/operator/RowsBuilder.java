@@ -15,13 +15,11 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.AbstractRow;
-import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.DerivedTypesSchema;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
@@ -33,7 +31,6 @@ import com.akiban.util.Strings;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -75,31 +72,13 @@ public final class RowsBuilder {
         return this;
     }
 
-    public RowsBuilder addRow(Row row) {
-        List<ValueHolder> values = new ArrayList<ValueHolder>();
-        for (int i = 0; i < rowType.nFields(); ++i) {
-            ValueSource rowSource = row.eval(i);
-            ValueHolder holder = new ValueHolder(rowSource);
-            values.add(holder);
-        }
-        InternalRow newRow = new InternalRow(rowType, values);
-        rows.add(newRow);
-        return this;
-    }
-
-    public RowsBuilder addRows(Collection<? extends Row> rowsToAdd) {
-        for (Row row : rowsToAdd) {
-            addRow(row);
-        }
-        return this;
-    }
-
     public RowsBuilder(AkType... types) {
-        this(null, types);
+        this.rowType = new ValuesRowType(null, COUNT.incrementAndGet(), types);
+        this.types = types;
     }
 
-    public RowsBuilder(Schema schema, AkType... types) {
-        rowType = new ValuesRowType(schema, COUNT.incrementAndGet(), types);
+    public RowsBuilder(DerivedTypesSchema schema, AkType... types) {
+        this.rowType = schema.newValuesType(types);
         this.types = types;
     }
 

@@ -96,9 +96,9 @@ public class Types {
 	//
 	public static Type VARBINARY =    new Type("varbinary", 1, false, 65535L, "VARBINARY", AkType.VARBINARY);
 	public static Type BINARY =       new Type("binary", 1, false, 255L, "VARBINARY", AkType.VARBINARY);
-    public static Type VARCHAR =      new Type("varchar", 1, false, 65535L, "VARCHAR", AkType.VARCHAR);
+        public static Type VARCHAR =      new Type("varchar", 1, false, 65535L, "VARCHAR", AkType.VARCHAR);
 	public static Type CHAR =         new Type("char", 1, false, 767L, "VARCHAR", AkType.VARCHAR);
-    //
+        //
 	// BLOB and TEXT types.  Currently handled identically. The maxByteSize values
 	// here are used in computing the correct prefix size.  The maximum allow size
 	// is constrained in Column.
@@ -159,7 +159,6 @@ public class Types {
 		types.add(GEOMETRY);
 		types.add(GEOMETRYCOLLECTION);
 		types.add(INT);
-//                types.add(INTERVAL);
 		types.add(U_INT);
 		types.add(LINESTRING);
 		types.add(LONGBLOB);
