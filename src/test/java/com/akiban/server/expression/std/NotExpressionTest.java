@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.types.AkType;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.extract.Extractors;
 import org.junit.Test;
@@ -22,6 +23,8 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 public final class NotExpressionTest extends ComposedExpressionTestBase {
+
+    private final CompositionTestInfo testInfo = new CompositionTestInfo(1, AkType.BOOL, true);
 
     @Test
     public void notTrue() {
@@ -41,8 +44,8 @@ public final class NotExpressionTest extends ComposedExpressionTestBase {
     // ComposedExpressionTestBase interface
 
     @Override
-    protected int childrenCount() {
-        return 1;
+    protected CompositionTestInfo getTestInfo() {
+        return testInfo;
     }
 
     @Override

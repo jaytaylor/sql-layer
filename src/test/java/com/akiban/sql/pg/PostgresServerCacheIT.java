@@ -33,7 +33,7 @@ import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 
-public class PostgresServerCacheIT extends PostgresServerITBase
+public class PostgresServerCacheIT extends PostgresServerFilesITBase
 {
     public static final String QUERY = "SELECT id FROM t1 WHERE id = %d";
     public static final int NROWS = 100;

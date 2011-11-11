@@ -33,7 +33,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertTrue; 
 
 @RunWith(NamedParameterizedRunner.class)
-public class TypeDeterminationTest extends ComposedExpressionTestBase
+public class TypeDeterminationTest 
 {
     private AkType input1;
     private AkType input2;
@@ -130,18 +130,5 @@ public class TypeDeterminationTest extends ComposedExpressionTestBase
     public boolean exceptionExpected ()
     {
         return expected == null;
-    }
-    
-    @Override
-    protected int childrenCount() 
-    {
-       return 2;
-    }
-
-    @Override
-    protected ExpressionComposer getComposer() 
-    {
-        return ArithOps.ADD;
-    }
-    
+    }    
 }

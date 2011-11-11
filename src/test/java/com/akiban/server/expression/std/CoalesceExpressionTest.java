@@ -64,13 +64,13 @@ public final class CoalesceExpressionTest extends ComposedExpressionTestBase {
     // ComposedExpressionTestBase
 
     @Override
-    protected int childrenCount() {
-        return 2; // it's as good as any other number
+    protected ExpressionComposer getComposer() {
+        return CoalesceExpression.COMPOSER;
     }
 
     @Override
-    protected ExpressionComposer getComposer() {
-        return CoalesceExpression.COMPOSER;
+    protected CompositionTestInfo getTestInfo () {
+        return testInfo;
     }
 
     // for use in this class
@@ -85,4 +85,6 @@ public final class CoalesceExpressionTest extends ComposedExpressionTestBase {
     private void check(ValueSource expected, Expression... children) {
         check(expected, expected.getConversionType(), children);
     }
+
+    private final CompositionTestInfo testInfo = new CompositionTestInfo(2, AkType.LONG, false);
 }
