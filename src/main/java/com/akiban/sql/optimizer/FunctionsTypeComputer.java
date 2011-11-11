@@ -57,6 +57,8 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case NodeTypes.CURRENT_SCHEMA_NODE:
         case NodeTypes.CURRENT_ROLE_NODE:
             return specialFunctionNode((SpecialFunctionNode)node);
+        case NodeTypes.CURRENT_DATETIME_OPERATOR_NODE:
+            return currentDatetimeOperatorNode((CurrentDatetimeOperatorNode)node);
         default:
             return super.computeType(node);
         }
