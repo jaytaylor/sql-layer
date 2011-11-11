@@ -469,8 +469,8 @@ public class ASTStatementLoader extends BaseRule
                 break;
             case NodeTypes.IS_NULL_NODE:
             case NodeTypes.IS_NOT_NULL_NODE:
-                addFunctionCondition(conditions,
-                                     (UnaryOperatorNode)condition);
+                addIsNullCondition(conditions,
+                                   (IsNullNode)condition);
                 break;
 
             case NodeTypes.IS_NODE:
@@ -732,6 +732,28 @@ public class ASTStatementLoader extends BaseRule
             conditions.add(new FunctionCondition(ternary.getMethodName(),
                                                  operands,
                                                  ternary.getType(), ternary));
+        }
+
+        protected void addIsNullCondition(List<ConditionExpression> conditions,
+                                          IsNullNode isNull)
+                throws StandardException {
+            List<ExpressionNode> operands = new ArrayList<ExpressionNode>(1);
+            operands.add(toExpression(isNull.getOperand()));
+            String function = isNull.getMethodName();
+            boolean negated = false;
+            if ("isNotNull".equals(function)) {
+                function = "isNull";
+                negated = true;
+            }
+            FunctionCondition cond = new FunctionCondition(function, operands,
+                                                           isNull.getType(), isNull);
+            if (negated) {
+                List<ConditionExpression> noperands = new ArrayList<ConditionExpression>(1);
+                noperands.add(cond);
+                cond = new LogicalFunctionCondition("not", noperands,
+                                                    isNull.getType(), isNull);
+            }
+            conditions.add(cond);
         }
 
         protected void addIsCondition(List<ConditionExpression> conditions,
@@ -1092,14 +1114,38 @@ public class ASTStatementLoader extends BaseRule
                 String functionName = null;
                 switch (((CurrentDatetimeOperatorNode)valueNode).getField()) {
                 case DATE:
-                    functionName = "currentDate";
+                    functionName = "current_date";
                     break;
                 case TIME:
-                    functionName = "currentTime";
+                    functionName = "current_time";
                     break;
                 case TIMESTAMP:
-                    functionName = "currentTimestamp";
+                    functionName = "current_timestamp";
                     break;
+                }
+                return new FunctionExpression(functionName,
+                                              Collections.<ExpressionNode>emptyList(),
+                                              valueNode.getType(), valueNode);
+            }
+            else if (valueNode instanceof SpecialFunctionNode) {
+                String functionName = null;
+                switch (valueNode.getNodeType()) {
+                case NodeTypes.USER_NODE:
+                case NodeTypes.CURRENT_USER_NODE:
+                    functionName = "current_user";
+                    break;
+                case NodeTypes.SESSION_USER_NODE:
+                    functionName = "session_user";
+                    break;
+                case NodeTypes.SYSTEM_USER_NODE:
+                    functionName = "system_user";
+                    break;
+                case NodeTypes.CURRENT_ISOLATION_NODE:
+                case NodeTypes.IDENTITY_VAL_NODE:
+                case NodeTypes.CURRENT_SCHEMA_NODE:
+                case NodeTypes.CURRENT_ROLE_NODE:
+                default:
+                    throw new UnsupportedSQLException("Unsupported special function", valueNode);
                 }
                 return new FunctionExpression(functionName,
                                               Collections.<ExpressionNode>emptyList(),

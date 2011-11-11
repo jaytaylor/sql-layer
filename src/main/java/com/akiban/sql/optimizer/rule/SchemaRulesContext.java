@@ -15,8 +15,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.server.aggregation.AggregatorRegistry;
-import com.akiban.server.expression.ExpressionRegistry;
+import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 
@@ -31,16 +30,14 @@ import java.util.List;
 public class SchemaRulesContext extends RulesContext
 {
     private Schema schema;
-    private AggregatorRegistry aggregatorRegistry;
-    private ExpressionRegistry expressionRegistry;
+    private FunctionsRegistry functionsRegistry;
 
     public SchemaRulesContext(AkibanInformationSchema ais,
-                              ExpressionRegistry expressionRegistry, AggregatorRegistry aggregatorRegistry,
+                              FunctionsRegistry functionsRegistry,
                               List<BaseRule> rules) {
         super(rules);
         schema = SchemaCache.globalSchema(ais);
-        this.aggregatorRegistry = aggregatorRegistry;
-        this.expressionRegistry = expressionRegistry;
+        this.functionsRegistry = functionsRegistry;
     }
 
     public Schema getSchema() {
@@ -51,12 +48,8 @@ public class SchemaRulesContext extends RulesContext
         return new PhysicalResultColumn(field.getName());
     }
 
-    public ExpressionRegistry getExpressionRegistry() {
-        return expressionRegistry;
-    }
-
-    public AggregatorRegistry getAggregatorRegistry() {
-        return aggregatorRegistry;
+    public FunctionsRegistry getFunctionsRegistry() {
+        return functionsRegistry;
     }
       
 }

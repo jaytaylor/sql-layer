@@ -16,8 +16,8 @@
 package com.akiban.server.expression.subquery;
 
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.expression.std.Comparison;
+import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
 import static com.akiban.server.expression.std.Expressions.*;
 
@@ -38,7 +38,7 @@ import java.util.Deque;
 
 public class ScalarSubqueryExpressionTest {
 
-    private ExpressionRegistry expressionRegistry = new FunctionsRegistryImpl();
+    private FunctionsRegistry functionsRegistry = new FunctionsRegistryImpl();
 
     @Test
     public void testScalar() {
@@ -59,7 +59,7 @@ public class ScalarSubqueryExpressionTest {
                                     Comparison.NE,
                                     field(inner.rowType(), 0));
         Operator innerPlan = select_HKeyOrdered(inner, inner.rowType(), equals);
-        Expression expression = expressionRegistry
+        Expression expression = functionsRegistry
             .composer("plus")
             .compose(Arrays.asList(boundField(outer.rowType(), 1, 0),
                                    field(inner.rowType(), 0)));

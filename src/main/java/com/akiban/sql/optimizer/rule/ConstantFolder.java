@@ -186,9 +186,7 @@ public class ConstantFolder extends BaseRule
         protected ExpressionNode functionExpression(FunctionExpression fun) {
             String fname = fun.getFunction();
             if ("isNull".equals(fname))
-                return isNullExpression(fun, false);
-            if ("isNotNull".equals(fname))
-                return isNullExpression(fun, true);
+                return isNullExpression(fun);
             else if ("isTrue".equals(fname))
                 return isTrueExpression(fun);
             else if ("isFalse".equals(fname))
@@ -280,15 +278,14 @@ public class ConstantFolder extends BaseRule
                      "RAND".equals(fname));
         }
 
-        protected ExpressionNode isNullExpression(FunctionExpression fun,
-                                                  boolean not) {
+        protected ExpressionNode isNullExpression(FunctionExpression fun) {
             ExpressionNode operand = fun.getOperands().get(0);
             if (isConstant(operand) != Constantness.VARIABLE)
                 return evalNow(fun);
             // pkey IS NULL is FALSE, for instance.
             if ((operand.getSQLtype() != null) &&
                 !operand.getSQLtype().isNullable())
-                return new BooleanConstantExpression(not, 
+                return new BooleanConstantExpression(Boolean.FALSE, 
                                                      fun.getSQLtype(), 
                                                      fun.getSQLsource());
             return fun;

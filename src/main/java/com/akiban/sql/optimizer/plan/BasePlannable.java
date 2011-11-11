@@ -20,6 +20,8 @@ import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.exec.Plannable;
 
+import com.akiban.server.expression.EnvironmentExpressionSetting;
+
 import java.util.List;
 import java.util.ArrayList;
 
@@ -28,11 +30,14 @@ public abstract class BasePlannable extends BasePlanNode
 {
     private Plannable plannable;
     private DataTypeDescriptor[] parameterTypes;
+    private List<EnvironmentExpressionSetting> environmentSettings;
     
     protected BasePlannable(Plannable plannable,
-                            DataTypeDescriptor[] parameterTypes) {
+                            DataTypeDescriptor[] parameterTypes,
+                            List<EnvironmentExpressionSetting> environmentSettings) {
         this.plannable = plannable;
         this.parameterTypes = parameterTypes;
+        this.environmentSettings = environmentSettings;
     }
 
     public Plannable getPlannable() {
@@ -40,6 +45,9 @@ public abstract class BasePlannable extends BasePlanNode
     }
     public DataTypeDescriptor[] getParameterTypes() {
         return parameterTypes;
+    }
+    public List<EnvironmentExpressionSetting> getEnvironmentSettings() {
+        return environmentSettings;
     }
 
     public abstract boolean isUpdate();

@@ -35,7 +35,7 @@ public final class AggregatedRowType extends DerivedRowType {
             return aggregatorFactories.get(index - inputsIndex).outputType();
     }
 
-    public AggregatedRowType(Schema schema, int typeId, 
+    public AggregatedRowType(DerivedTypesSchema schema, int typeId,
                              RowType base, int inputsIndex, List<AggregatorFactory> aggregatorFactories) {
         super(schema, typeId);
         this.base = base;

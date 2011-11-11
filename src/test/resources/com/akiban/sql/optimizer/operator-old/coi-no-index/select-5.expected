@@ -1,3 +1,0 @@
-** SORT THIS **
-Flatten_HKeyOrdered(user.customers INNER user.orders)
-  GroupScan_Default(_akiban_customers NO LIMIT)

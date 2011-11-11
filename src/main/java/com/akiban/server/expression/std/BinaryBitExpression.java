@@ -19,9 +19,9 @@ import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.LongExtractor;
@@ -112,12 +112,25 @@ public class BinaryBitExpression extends AbstractBinaryExpression
         {
             return new BinaryBitExpression(first, op,second);
         }
+
+        @Override
+        protected ExpressionType composeType(ExpressionType first, ExpressionType second)
+        {
+            return ExpressionTypes.U_BIGINT;
+        }
+
+        @Override
+        public void argumentTypes(List<AkType> argumentTypes)
+        {
+            argumentTypes.set(0, AkType.U_BIGINT);
+            argumentTypes.set(1, op.ordinal() >= BitOperator.LEFT_SHIFT.ordinal() ? AkType.LONG : AkType.U_BIGINT );
+        }
     }
 
     protected static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
         private final BitOperator op;                
-       
+        private static final BigInteger n64 = new BigInteger("FFFFFFFFFFFFFFFF", 16);
         public InnerEvaluation (List<? extends ExpressionEvaluation> children, BitOperator op)
         {
             super(children);
@@ -127,7 +140,6 @@ public class BinaryBitExpression extends AbstractBinaryExpression
         @Override
         public ValueSource eval() 
         {
-
             BigInteger rst = BigInteger.ZERO;
             try
             {
@@ -140,7 +152,7 @@ public class BinaryBitExpression extends AbstractBinaryExpression
             }            
             finally
             {
-                return new ValueHolder(AkType.U_BIGINT, rst.and(new BigInteger("FFFFFFFFFFFFFFFF", 16)));
+                return new ValueHolder(AkType.U_BIGINT, rst.and(n64));
             }
         }
     }
@@ -164,8 +176,7 @@ public class BinaryBitExpression extends AbstractBinaryExpression
         if (valueType() == AkType.NULL ) return LiteralExpression.forNull().evaluation();
         return new InnerEvaluation(childrenEvaluations(), op);
     }    
-    
-    
+        
     @Override
     public boolean nullIsContaminating ()
     {

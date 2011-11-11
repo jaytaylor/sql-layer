@@ -37,6 +37,7 @@ public class DefaultRules
         new SortSplitter(),
         new MapFolder(),
         new ExpressionCompactor(),
+        new EnvironmentFunctionFinder(),
         new OperatorAssembler()
      );
 

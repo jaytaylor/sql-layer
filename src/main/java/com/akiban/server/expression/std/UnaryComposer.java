@@ -18,6 +18,8 @@ package com.akiban.server.expression.std;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
+import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.types.AkType;
 
 import java.util.List;
 
@@ -25,10 +27,28 @@ abstract class UnaryComposer implements ExpressionComposer {
 
     protected abstract Expression compose(Expression argument);
 
+    protected abstract AkType argumentType(AkType givenType);
+
+    protected abstract ExpressionType composeType(ExpressionType argumentType);
+
     @Override
     public Expression compose(List<? extends Expression> arguments) {
         if (arguments.size() != 1)
             throw new WrongExpressionArityException(1, arguments.size());
         return compose(arguments.get(0));
+    }
+
+    @Override
+    public void argumentTypes(List<AkType> argumentTypes) {
+        if (argumentTypes.size() != 1)
+            throw new WrongExpressionArityException(1, argumentTypes.size());
+        argumentTypes.set(0, argumentType(argumentTypes.get(0)));
+    }
+
+    @Override
+    public ExpressionType composeType(List<? extends ExpressionType> arguments) {
+        if (arguments.size() != 1)
+            throw new WrongExpressionArityException(1, arguments.size());
+        return composeType(arguments.get(0));
     }
 }
