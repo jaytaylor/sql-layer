@@ -833,6 +833,14 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 return transactionStartTime;
             else
                 return new Date();
+        case CURRENT_CALENDAR:
+            if (transactionStartTime != null) {
+                Calendar result = Calendar.getInstance();
+                result.setTime(transactionStartTime);
+                return result;
+            }
+            else
+                return Calendar.getInstance();
         case CURRENT_USER:
             return defaultSchemaName;
         case SESSION_USER:
