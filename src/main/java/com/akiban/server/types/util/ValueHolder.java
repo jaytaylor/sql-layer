@@ -29,9 +29,13 @@ import com.akiban.util.ByteSource;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Calendar;
 import java.util.Collections;
+import java.util.Date;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Set;
+import java.util.TimeZone;
 
 public final class ValueHolder implements ValueSource, ValueTarget {
 
@@ -441,6 +445,12 @@ public final class ValueHolder implements ValueSource, ValueTarget {
         putBool(value);
     }
 
+    public ValueHolder(AkType type, Date value) {
+        if (type != AkType.DATE && type != AkType.TIME && type != AkType.TIMESTAMP && type != AkType.DATETIME)
+            throw new IllegalRawPutException("Date() to " + type);
+        putRaw(type, DATE_TIME.get(type).toLong(value));
+    }
+
     public ValueHolder(AkType type, Object value) {
         if (value == null) {
             putRawNull();
@@ -472,6 +482,58 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     }
 
     // nested classes
+    protected interface ToLong {
+        long toLong (Date date);
+    }
+
+    private static final HashMap<AkType, ToLong> DATE_TIME = new HashMap<AkType, ToLong>();
+    static{
+        DATE_TIME.put(AkType.DATE, new ToLong () {
+            @Override // DD + 32 * MM + 512 * YYYY
+            public long toLong(Date date){
+                Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+                cal.setTime(date);
+                int d = cal.get(Calendar.DAY_OF_MONTH);
+                int m = cal.get(Calendar.MONTH) + 1;
+                int y = cal.get(Calendar.YEAR);
+                return d + m * 32 + y * 512;
+            }
+        });
+
+        DATE_TIME.put(AkType.TIME, new ToLong () {
+            @Override //HH*10000 + MM*100 + SS.
+            public long toLong(Date date){
+                Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+                cal.setTime(date);
+                int h = cal.get(Calendar.HOUR_OF_DAY);
+                int m = cal.get(Calendar.MINUTE); 
+                int s = cal.get(Calendar.SECOND);
+                return h*10000 + m*100 + s;
+            }
+        });
+
+        DATE_TIME.put(AkType.DATETIME, new ToLong(){
+            @Override //(YY*10000 MM*100 + DD)*1000000 + (HH*10000 + MM*100 + SS)
+            public long toLong(Date date){
+                Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+                cal.setTime(date);
+                int yy = cal.get(Calendar.YEAR);
+                int mm = cal.get(Calendar.MONTH) + 1;
+                int dd = cal.get(Calendar.DAY_OF_MONTH);
+                int h = cal.get(Calendar.HOUR_OF_DAY);
+                int m = cal.get(Calendar.MINUTE); 
+                int s = cal.get(Calendar.SECOND);              
+                return (long)(yy * 10000 + mm * 100 + dd) *1000000 + h*10000 + m*100 + s;
+            }
+        });
+
+        DATE_TIME.put(AkType.TIMESTAMP, new ToLong() {
+            @Override
+            public long toLong(Date date){
+                return date.getTime() / 1000;
+            }
+        });
+    }
 
     private enum StateType {
         LONG_VAL (AkType.DATE, AkType.DATETIME, AkType.INT, AkType.LONG, AkType.TIME, AkType.TIMESTAMP, AkType.U_INT, AkType.YEAR),
@@ -524,6 +586,10 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     public static class IllegalRawPutException extends RuntimeException {
         private IllegalRawPutException(StateType requiredStateType, AkType seenType) {
             super("illegal put of " + seenType + " to " + requiredStateType);
+        }
+
+        private IllegalRawPutException(String required) {
+            super("illegal put of " + required);
         }
     }
 }
