@@ -29,13 +29,12 @@ import com.akiban.util.ByteSource;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Calendar;
 import java.util.Collections;
-import java.util.Date;
+import java.util.EnumMap;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.Set;
-import java.util.TimeZone;
+
+import org.joda.time.DateTime;
 
 public final class ValueHolder implements ValueSource, ValueTarget {
 
@@ -445,10 +444,10 @@ public final class ValueHolder implements ValueSource, ValueTarget {
         putBool(value);
     }
 
-    public ValueHolder(AkType type, Date value) {
+    public ValueHolder(AkType type, DateTime value) {
         if (type != AkType.DATE && type != AkType.TIME && type != AkType.TIMESTAMP && type != AkType.DATETIME)
             throw new IllegalRawPutException("Date() to " + type);
-        putRaw(type, DATE_TIME.get(type).toLong(value));
+        putRaw(type, AKTYPE_CONVERTERS.get(type).toLong(value));
     }
 
     public ValueHolder(AkType type, Object value) {
@@ -482,55 +481,49 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     }
 
     // nested classes
-    protected interface ToLong {
-        long toLong (Date date);
+    protected interface JodaDateToLong {
+        long toLong (DateTime date);
     }
 
-    private static final HashMap<AkType, ToLong> DATE_TIME = new HashMap<AkType, ToLong>();
+    private static final EnumMap<AkType, JodaDateToLong> AKTYPE_CONVERTERS = new EnumMap(AkType.class);
     static{
-        DATE_TIME.put(AkType.DATE, new ToLong () {
+        AKTYPE_CONVERTERS.put(AkType.DATE, new JodaDateToLong () {
             @Override // DD + 32 * MM + 512 * YYYY
-            public long toLong(Date date){
-                Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-                cal.setTime(date);
-                int d = cal.get(Calendar.DAY_OF_MONTH);
-                int m = cal.get(Calendar.MONTH) + 1;
-                int y = cal.get(Calendar.YEAR);
+            public long toLong(DateTime date){
+                int d = date.getDayOfMonth();
+                int m = date.getMonthOfYear();
+                int y = date.getYear();
                 return d + m * 32 + y * 512;
             }
         });
 
-        DATE_TIME.put(AkType.TIME, new ToLong () {
+        AKTYPE_CONVERTERS.put(AkType.TIME, new JodaDateToLong () {
             @Override //HH*10000 + MM*100 + SS.
-            public long toLong(Date date){
-                Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-                cal.setTime(date);
-                int h = cal.get(Calendar.HOUR_OF_DAY);
-                int m = cal.get(Calendar.MINUTE); 
-                int s = cal.get(Calendar.SECOND);
+            public long toLong(DateTime date){
+                int h = date.getHourOfDay(); 
+                int m = date.getMinuteOfHour(); 
+                int s = date.getSecondOfMinute();
                 return h*10000 + m*100 + s;
             }
         });
 
-        DATE_TIME.put(AkType.DATETIME, new ToLong(){
+        AKTYPE_CONVERTERS.put(AkType.DATETIME, new JodaDateToLong(){
             @Override //(YY*10000 MM*100 + DD)*1000000 + (HH*10000 + MM*100 + SS)
-            public long toLong(Date date){
-                Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-                cal.setTime(date);
-                int yy = cal.get(Calendar.YEAR);
-                int mm = cal.get(Calendar.MONTH) + 1;
-                int dd = cal.get(Calendar.DAY_OF_MONTH);
-                int h = cal.get(Calendar.HOUR_OF_DAY);
-                int m = cal.get(Calendar.MINUTE); 
-                int s = cal.get(Calendar.SECOND);              
+            public long toLong(DateTime date){
+                int yy = date.getYear(); 
+                int mm = date.getMonthOfYear(); 
+                int dd = date.getDayOfMonth(); 
+                int h = date.getHourOfDay(); 
+                int m = date.getMinuteOfHour(); 
+                int s = date.getSecondOfMinute();               
                 return (long)(yy * 10000 + mm * 100 + dd) *1000000 + h*10000 + m*100 + s;
             }
         });
 
-        DATE_TIME.put(AkType.TIMESTAMP, new ToLong() {
+        AKTYPE_CONVERTERS.put(AkType.TIMESTAMP, new JodaDateToLong() {
             @Override
-            public long toLong(Date date){
-                return date.getTime() / 1000;
+            public long toLong(DateTime date){
+                return date.getMillis()  / 1000;
             }
         });
     }

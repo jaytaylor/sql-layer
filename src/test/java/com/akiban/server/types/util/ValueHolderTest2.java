@@ -20,9 +20,10 @@ import java.util.Calendar;
 import java.util.Date;
 import com.akiban.server.types.AkType;
 import org.junit.Test;
+import org.joda.time.DateTime;
 
+import org.joda.time.DateTimeZone;
 import static org.junit.Assert.assertEquals;
-
 
 public class ValueHolderTest2 
 {
@@ -30,7 +31,7 @@ public class ValueHolderTest2
     public void testValueHolderDate ()
     {
         ValueHolder expected = new ValueHolder(AkType.DATE,1008673L ); // JAN - 01 - 1970
-        ValueHolder actual = new ValueHolder(AkType.DATE, new Date(0));
+        ValueHolder actual = new ValueHolder(AkType.DATE, new DateTime(0, DateTimeZone.UTC));
 
         assertEquals(expected.getDate(), actual.getDate());
     }
@@ -44,7 +45,7 @@ public class ValueHolderTest2
         time.set(Calendar.HOUR_OF_DAY, 12);
         time.set(Calendar.MINUTE, 30);
         time.set(Calendar.SECOND, 10);
-        ValueHolder actual = new ValueHolder(AkType.TIME, time.getTime());
+        ValueHolder actual = new ValueHolder(AkType.TIME, new DateTime(time.getTimeInMillis(), DateTimeZone.UTC));
 
         assertEquals(expected.getTime(), actual.getTime());
     }
@@ -53,7 +54,6 @@ public class ValueHolderTest2
     public void testValueHolderDateTime ()
     {
         ValueHolder expected = new ValueHolder(AkType.DATETIME, 20061107123010L); //2006-11-07 12:30:10
-
         Calendar datetime = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
         datetime.set(Calendar.YEAR, 2006);
         datetime.set(Calendar.MONTH, 10); // month in Calendar is 0-based
@@ -61,7 +61,7 @@ public class ValueHolderTest2
         datetime.set(Calendar.HOUR_OF_DAY, 12);
         datetime.set(Calendar.MINUTE, 30);
         datetime.set(Calendar.SECOND, 10);
-        ValueHolder actual = new ValueHolder(AkType.DATETIME, datetime.getTime());
+        ValueHolder actual = new ValueHolder(AkType.DATETIME, new DateTime(datetime.getTime(), DateTimeZone.UTC));
 
         assertEquals(expected.getDateTime(), actual.getDateTime());
     }
@@ -70,8 +70,9 @@ public class ValueHolderTest2
     public void testValueHolderTimestamp ()
     {
         ValueHolder expected = new ValueHolder (AkType.TIMESTAMP,0L); // epoch
-        ValueHolder actual = new ValueHolder(AkType.TIMESTAMP, new Date(0));
+        ValueHolder actual = new ValueHolder(AkType.TIMESTAMP, new DateTime(0, DateTimeZone.UTC));
 
         assertEquals(expected.getTimestamp(), actual.getTimestamp());
     }
+     
 }
