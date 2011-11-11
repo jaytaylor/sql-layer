@@ -41,17 +41,17 @@ public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase {
      * A regular expression matching the names of the YAML files in the
      * resource directory, not including the extension, to use for tests.
      */
-    private static final String FILENAME_REGEXP =
+    private static final String CASE_NAME_REGEXP =
 	System.getProperty(PostgresServerMiscYamlIT.class.getName() +
-			   ".FILENAME_REGEXP", "test-.*");
+			   ".CASE_NAME_REGEXP", "test-.*");
 
     private static final File RESOURCE_DIR =
         new File(PostgresServerITBase.RESOURCE_DIR, "yaml-misc");
 
     private final File file;
 
-    public PostgresServerMiscYamlIT(String filename) {
-	file = new File(filename);
+    public PostgresServerMiscYamlIT(String caseName) {
+	file = new File(RESOURCE_DIR, caseName + ".yaml");
     }
 
     @Test
@@ -63,9 +63,10 @@ public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase {
     public static Collection<Parameterization> queries() throws Exception {
 	Collection<Object[]> params = new ArrayList<Object[]>();
 	File[] files = RESOURCE_DIR.listFiles(
-	    new RegexFilenameFilter(FILENAME_REGEXP + "[.]yaml"));
+	    new RegexFilenameFilter(CASE_NAME_REGEXP + "[.]yaml"));
 	for (File file : files) {
-	    params.add(new Object[] { file.toString() });
+	    String name = file.getName();
+	    params.add(new Object[] { name.substring(0, name.length() - 5) });
 	}
 	return NamedParamsTestBase.namedCases(params);
     }
