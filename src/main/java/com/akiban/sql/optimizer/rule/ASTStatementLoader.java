@@ -35,6 +35,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
 
+import com.akiban.server.error.InsertWrongCountException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ParseException;
 import com.akiban.server.error.UnsupportedSQLException;
@@ -138,8 +139,11 @@ public class ASTStatementLoader extends BaseRule
                 query = ((ResultSet)query).getInput();
             TableNode targetTable = getTargetTable(insertNode);
             List<Column> targetColumns;
+            int ncols = insertNode.getResultSetNode().getResultColumns().size();
             ResultColumnList rcl = insertNode.getTargetColumnList();
             if (rcl != null) {
+                if (ncols != rcl.size())
+                    throw new InsertWrongCountException(rcl.size(), ncols);
                 targetColumns = new ArrayList<Column>(rcl.size());
                 for (ResultColumn resultColumn : rcl) {
                     Column column = getColumnReferenceColumn(resultColumn.getReference(),
@@ -149,7 +153,6 @@ public class ASTStatementLoader extends BaseRule
             }
             else {
                 // No explicit column list: use DDL order.
-                int ncols = insertNode.getResultSetNode().getResultColumns().size();
                 List<Column> aisColumns = targetTable.getTable().getColumns();
                 // TODO: Warning? Error?
                 if (ncols > aisColumns.size())
