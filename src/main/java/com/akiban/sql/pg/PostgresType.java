@@ -181,7 +181,7 @@ public class PostgresType
                  "U_INT".equals(encoding)) {
             switch (aisType.maxSizeBytes().intValue()) {
             case 1:
-                oid = BYTEA_TYPE_OID;
+                oid = INT2_TYPE_OID; // No INT1; this also could be BOOLEAN (TINYINT(1)).
                 break;
             case 2:
                 oid = INT2_TYPE_OID;
@@ -207,7 +207,7 @@ public class PostgresType
                  "TEXT".equals(encoding))
             oid = TEXT_TYPE_OID;
         else if ("YEAR".equals(encoding))
-            oid = BYTEA_TYPE_OID;
+            oid = INT2_TYPE_OID; // No INT1
         else if ("DECIMAL".equals(encoding) ||
                  "U_DECIMAL".equals(encoding))
             oid = MONEY_TYPE_OID;
@@ -301,7 +301,7 @@ public class PostgresType
             converter = Extractors.getLongExtractor(AkType.TIMESTAMP);
             break;
         case TypeId.FormatIds.TINYINT_TYPE_ID:
-            oid = BYTEA_TYPE_OID;
+            oid = INT2_TYPE_OID; // No INT1
             break;
         case TypeId.FormatIds.VARBIT_TYPE_ID:
             oid = VARBIT_TYPE_OID;
