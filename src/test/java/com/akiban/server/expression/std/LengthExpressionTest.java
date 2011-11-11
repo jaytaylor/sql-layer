@@ -29,6 +29,8 @@ import static org.junit.Assert.*;
 
 public class LengthExpressionTest extends ComposedExpressionTestBase
 {
+    private final CompositionTestInfo testInfo = new CompositionTestInfo(1, AkType.LONG, true);
+
     public LengthExpressionTest ()
     {
         super();
@@ -59,9 +61,9 @@ public class LengthExpressionTest extends ComposedExpressionTestBase
     
    
     @Override
-    protected int childrenCount() 
+    protected CompositionTestInfo getTestInfo()
     {
-        return 1;
+        return testInfo;
     }
 
     @Override

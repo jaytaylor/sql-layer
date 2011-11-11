@@ -82,12 +82,13 @@ public class ColumnBinding
                 return new DataTypeDescriptor(typeId, nullable, 
                                               column.getTypeParameter1().intValue());
             case 2:
-                return new DataTypeDescriptor(typeId,
-                                              column.getTypeParameter1().intValue(), 
-                                              column.getTypeParameter2().intValue(),
-                                              nullable, 
-                                              // TODO: max width
-                                              -1);
+                {
+                    int precision = column.getTypeParameter1().intValue();
+                    int scale = column.getTypeParameter2().intValue();
+                    int maxWidth = DataTypeDescriptor.computeMaxWidth(precision, scale);
+                    return new DataTypeDescriptor(typeId, precision, scale, 
+                                                  nullable, maxWidth);
+                }
             default:
                 assert false;
                 return new DataTypeDescriptor(typeId, nullable);

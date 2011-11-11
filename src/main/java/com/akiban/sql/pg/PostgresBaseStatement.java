@@ -22,6 +22,8 @@ import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
 import com.akiban.util.Tap;
 
+import com.akiban.server.expression.EnvironmentExpressionSetting;
+
 import java.io.IOException;
 import java.util.List;
 
@@ -33,17 +35,22 @@ public abstract class PostgresBaseStatement implements PostgresStatement
     private List<String> columnNames;
     private List<PostgresType> columnTypes;
     private PostgresType[] parameterTypes;
+    private List<EnvironmentExpressionSetting> environmentSettings;
 
-    protected PostgresBaseStatement(PostgresType[] parameterTypes) {
+    protected PostgresBaseStatement(PostgresType[] parameterTypes,
+                                    List<EnvironmentExpressionSetting> environmentSettings) {
         this.parameterTypes = parameterTypes;
+        this.environmentSettings = environmentSettings;
     }
 
     protected PostgresBaseStatement(List<String> columnNames, 
                                     List<PostgresType> columnTypes,
-                                    PostgresType[] parameterTypes) {
+                                    PostgresType[] parameterTypes,
+                                    List<EnvironmentExpressionSetting> environmentSettings) {
         this.columnNames = columnNames;
         this.columnTypes = columnTypes;
         this.parameterTypes = parameterTypes;
+        this.environmentSettings = environmentSettings;
     }
 
     public List<String> getColumnNames() {
@@ -60,6 +67,10 @@ public abstract class PostgresBaseStatement implements PostgresStatement
 
     public PostgresType[] getParameterTypes() {
         return parameterTypes;
+    }
+
+    public List<EnvironmentExpressionSetting> getEnvironmentSettings() {
+        return environmentSettings;
     }
 
     public void sendDescription(PostgresServerSession server, boolean always) 
@@ -93,6 +104,13 @@ public abstract class PostgresBaseStatement implements PostgresStatement
         return new ArrayBindings(0);
     }
 
+    protected int getNParameters() {
+        if (parameterTypes == null)
+            return 0;
+        else
+            return parameterTypes.length;
+    }
+
     protected Bindings getParameterBindings(String[] parameters) {
         ArrayBindings bindings = new ArrayBindings(parameters.length);
         for (int i = 0; i < parameters.length; i++) {
@@ -101,6 +119,16 @@ public abstract class PostgresBaseStatement implements PostgresStatement
                                              : pgType.decodeParameter(parameters[i]));
         }
         return bindings;
+    }
+
+    protected void setEnvironmentBindings(PostgresServerSession session, 
+                                          Bindings bindings) {
+        if (environmentSettings != null) {
+            int position = getNParameters();
+            for (EnvironmentExpressionSetting environmentSetting : environmentSettings) {
+                bindings.set(position++, session.getEnvironmentValue(environmentSetting));
+            }
+        }
     }
 
     protected abstract Tap.InOutTap executeTap();

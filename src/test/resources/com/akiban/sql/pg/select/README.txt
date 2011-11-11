@@ -76,6 +76,8 @@ select-24: RIGHT join
 
 select-24g: RIGHT join group index
 
+select-25u: USER environment functions
+
 types: select all typed fields
 
 types_a_date: match literal

@@ -198,4 +198,10 @@ public class TrigExpression extends AbstractCompositeExpression
     {
        return new InnerEvaluation (this.childrenEvaluations(), name);
     }
+
+    @Override
+    protected boolean nullIsContaminating()
+    {
+        return true;
+    }
 }

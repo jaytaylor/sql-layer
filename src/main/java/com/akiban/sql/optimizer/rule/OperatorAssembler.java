@@ -34,6 +34,7 @@ import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.expression.std.LiteralExpression;
+import com.akiban.server.expression.EnvironmentExpressionSetting;
 import com.akiban.server.expression.subquery.AnySubqueryExpression;
 import com.akiban.server.expression.subquery.ExistsSubqueryExpression;
 import com.akiban.server.expression.subquery.ScalarSubqueryExpression;
@@ -89,6 +90,7 @@ public class OperatorAssembler extends BaseRule
             rulesContext = (SchemaRulesContext)planContext.getRulesContext();
             schema = rulesContext.getSchema();
             expressionAssembler = new ExpressionAssembler(rulesContext);
+            computeBindingsOffsets();
         }
 
         public void apply() {
@@ -120,8 +122,8 @@ public class OperatorAssembler extends BaseRule
                 // VALUES results in column1, column2, ...
                 resultColumns = getResultColumns(stream.rowType.nFields());
             }
-            return new PhysicalSelect(stream.operator, stream.rowType,
-                                      resultColumns, getParameterTypes());
+            return new PhysicalSelect(stream.operator, stream.rowType, resultColumns, 
+                                      getParameterTypes(), getEnvironmentSettings());
         }
 
         protected PhysicalUpdate insertStatement(InsertStatement insertStatement) {
@@ -165,7 +167,7 @@ public class OperatorAssembler extends BaseRule
             stream.operator = API.project_Table(stream.operator, stream.rowType,
                                                 targetRowType, inserts);
             UpdatePlannable plan = API.insert_Default(stream.operator);
-            return new PhysicalUpdate(plan, getParameterTypes());
+            return new PhysicalUpdate(plan, getParameterTypes(), getEnvironmentSettings());
         }
 
         protected PhysicalUpdate updateStatement(UpdateStatement updateStatement) {
@@ -190,14 +192,14 @@ public class OperatorAssembler extends BaseRule
             UpdateFunction updateFunction = 
                 new ExpressionRowUpdateFunction(updates, targetRowType);
             UpdatePlannable plan = API.update_Default(stream.operator, updateFunction);
-            return new PhysicalUpdate(plan, getParameterTypes());
+            return new PhysicalUpdate(plan, getParameterTypes(), getEnvironmentSettings());
         }
 
         protected PhysicalUpdate deleteStatement(DeleteStatement deleteStatement) {
             RowStream stream = assembleQuery(deleteStatement.getQuery());
             assert (stream.rowType == tableRowType(deleteStatement.getTargetTable()));
             UpdatePlannable plan = API.delete_Default(stream.operator);
-            return new PhysicalUpdate(plan, getParameterTypes());
+            return new PhysicalUpdate(plan, getParameterTypes(), getEnvironmentSettings());
         }
 
         // Assemble the top-level query. If there is a ResultSet at
@@ -869,31 +871,38 @@ public class OperatorAssembler extends BaseRule
             return result;
         }
         
+        // Get any list of enviroment values.
+        protected List<EnvironmentExpressionSetting> getEnvironmentSettings() {
+            return EnvironmentFunctionFinder.getEnvironmentSettings(planContext);
+        }
+
         /* Bindings-related state */
 
-        protected int bindingsOffset = -1;
-        protected Stack<ColumnExpressionToIndex> boundRows = null; // Needs to be List<>.
+        protected int expressionBindingsOffset, loopBindingsOffset;
+        protected Stack<ColumnExpressionToIndex> boundRows = new Stack<ColumnExpressionToIndex>(); // Needs to be List<>.
 
-        protected void ensureBoundRows() {
-            if (boundRows == null) {
-                boundRows = new Stack<ColumnExpressionToIndex>();
-                
-                // Binding positions are shared with parameter positions.
-                AST ast = ASTStatementLoader.getAST(planContext);
-                if (ast == null)
-                    bindingsOffset = 0;
-                else {
-                    List<ParameterNode> params = ast.getParameters();
-                    if (params == null)
-                        bindingsOffset = 0;
-                    else
-                        bindingsOffset = ast.getParameters().size();
+        protected void computeBindingsOffsets() {
+            expressionBindingsOffset = 0;
+
+            // Binding positions start with parameter positions.
+            AST ast = ASTStatementLoader.getAST(planContext);
+            if (ast != null) {
+                List<ParameterNode> params = ast.getParameters();
+                if (params != null) {
+                    expressionBindingsOffset = ast.getParameters().size();
                 }
+            }
+
+            loopBindingsOffset = expressionBindingsOffset;
+                
+            // Then come expressions.
+            List<EnvironmentExpressionSetting> environmentSettings = EnvironmentFunctionFinder.getEnvironmentSettings(planContext);
+            if (environmentSettings != null) {
+                loopBindingsOffset += environmentSettings.size();
             }
         }
 
         protected void pushBoundRow(ColumnExpressionToIndex boundRow) {
-            ensureBoundRows();
             boundRows.push(boundRow);
         }
 
@@ -902,8 +911,7 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected int currentBindingPosition() {
-            ensureBoundRows();
-            return bindingsOffset + boundRows.size() - 1;
+            return loopBindingsOffset + boundRows.size() - 1;
         }
 
         class ColumnBoundRows implements ColumnExpressionContext {
@@ -916,13 +924,17 @@ public class OperatorAssembler extends BaseRule
 
             @Override
             public List<ColumnExpressionToIndex> getBoundRows() {
-                ensureBoundRows();
                 return boundRows;
             }
 
             @Override
-            public int getBindingsOffset() {
-                return bindingsOffset;
+            public int getExpressionBindingsOffset() {
+                return expressionBindingsOffset;
+            }
+
+            @Override
+            public int getLoopBindingsOffset() {
+                return loopBindingsOffset;
             }
         }
         

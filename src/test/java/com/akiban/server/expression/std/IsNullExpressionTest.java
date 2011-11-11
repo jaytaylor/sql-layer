@@ -28,6 +28,8 @@ import static org.junit.Assert.assertFalse;
 
 public class IsNullExpressionTest extends ComposedExpressionTestBase
 {
+    private final CompositionTestInfo testInfo = new CompositionTestInfo(1, AkType.BOOL, false);
+
     @Test
     public void testNullExpression ()
     {
@@ -45,9 +47,9 @@ public class IsNullExpressionTest extends ComposedExpressionTestBase
     }
     
     @Override
-    protected int childrenCount() 
+    protected CompositionTestInfo getTestInfo()
     {
-        return 1;
+        return testInfo;
     }
 
     @Override

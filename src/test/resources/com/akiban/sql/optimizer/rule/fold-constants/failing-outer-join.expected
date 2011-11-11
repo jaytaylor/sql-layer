@@ -1,6 +1,6 @@
 SelectQuery@6e4bb3c
   ResultSet@1532021a[name, order_date, sku]
-    Project@62803d5[user.customers.name, user.orders.order_date, null]
+    Project@62803d5[user.customers.name, user.orders.order_date, NULL]
       Select@14cffc79[]
         JoinNode@375e293a(INNER[user.customers.cid == user.orders.cid])
           TableSource@3bf8bd0d(user.customers)

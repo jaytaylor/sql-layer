@@ -25,6 +25,8 @@ import static org.junit.Assert.assertTrue;
 
 public class InetatonExpressionTest  extends ComposedExpressionTestBase
 {
+    private final CompositionTestInfo testInfo = new CompositionTestInfo(1, AkType.LONG, true);
+
     @Test
     public void test4Quads ()
     {
@@ -92,9 +94,9 @@ public class InetatonExpressionTest  extends ComposedExpressionTestBase
     }
     
     @Override
-    protected int childrenCount()
+    protected CompositionTestInfo getTestInfo()
     {
-        return 1;
+        return testInfo;
     }
 
     @Override
