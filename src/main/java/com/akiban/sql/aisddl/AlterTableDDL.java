@@ -41,16 +41,12 @@ public class AlterTableDDL {
         }
 
         if (alterTable.isUpdateStatistics()) {
-            analyze(ddlFunctions, tableName,
-                    alterTable.isUpdateStatisticsAll() ? null : 
-                    Collections.singletonList(alterTable.getIndexNameForUpdateStatistics()));
+            Collection<String> indexes = null;
+            if (!alterTable.isUpdateStatisticsAll())
+                indexes = Collections.singletonList(alterTable.getIndexNameForUpdateStatistics());
+            ddlFunctions.updateTableStatistics(session, tableName, indexes);
             return;
         }
         throw new UnsupportedSQLException (alterTable.statementToString(), alterTable);
-    }
-
-    protected static void analyze(DDLFunctions ddlFunctions, 
-                                  TableName tableName, Collection<String> indexNames) {
-        
     }
 }
