@@ -21,6 +21,7 @@ import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.types.AkType;
 
 import java.sql.Types;
 import java.util.Arrays;
@@ -28,6 +29,19 @@ import java.util.Arrays;
 import static com.akiban.qp.operator.API.groupScan_Default;
 import static com.akiban.qp.operator.API.project_Default;
 
+/** <pre>
+psql "host=localhost port=15432 sslmode=disable user=user password=pass" test <<EOF
+DROP TABLE test;
+CREATE TABLE test(id INT PRIMARY KEY NOT NULL, value VARCHAR(10));
+INSERT INTO test VALUES(1, 'aaa'), (2, 'bbb');
+EOF
+java -jar jmxterm-1.0-alpha-4-uber.jar -l localhost:8082 -n <<EOF
+run -b com.akiban:type=PostgresServer loadPlan `pwd`/`ls target/akiban-server-*-SNAPSHOT-tests.jar` com.akiban.server.test.it.qp.TestPlan
+EOF
+psql "host=localhost port=15432 sslmode=disable user=user password=pass" test <<EOF
+call test('666')
+EOF
+ </pre> */
 public class TestPlan extends LoadablePlan
 {
     @Override
@@ -39,7 +53,7 @@ public class TestPlan extends LoadablePlan
     @Override
     public Operator plan()
     {
-        // select id, value from test
+        // select id, value, $1 from test
         GroupTable groupTable = ais().getGroup("test").getGroupTable();
         UserTable testTable = ais().getUserTable("test", "test");
         RowType testRowType = schema().userTableRowType(testTable);
@@ -48,7 +62,8 @@ public class TestPlan extends LoadablePlan
                 groupScan_Default(groupTable),
                 testRowType,
                 Arrays.asList(Expressions.field(testRowType, 0),
-                              Expressions.field(testRowType, 1)));
+                              Expressions.field(testRowType, 1),
+                              Expressions.variable(AkType.LONG, 0)));
     }
 
     @Override
@@ -57,5 +72,5 @@ public class TestPlan extends LoadablePlan
         return TYPES;
     }
 
-    private static final int[] TYPES = new int[]{Types.INTEGER, Types.VARCHAR};
+    private static final int[] TYPES = new int[]{Types.INTEGER, Types.VARCHAR, Types.INTEGER};
 }
