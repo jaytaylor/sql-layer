@@ -29,7 +29,8 @@ import java.util.Arrays;
 import static com.akiban.qp.operator.API.groupScan_Default;
 import static com.akiban.qp.operator.API.project_Default;
 
-/** <pre>
+/** A loadable operator plan.
+ * <code><pre>
 psql "host=localhost port=15432 sslmode=disable user=user password=pass" test <<EOF
 DROP TABLE test;
 CREATE TABLE test(id INT PRIMARY KEY NOT NULL, value VARCHAR(10));
@@ -41,7 +42,8 @@ EOF
 psql "host=localhost port=15432 sslmode=disable user=user password=pass" test <<EOF
 call test('666')
 EOF
- </pre> */
+ * </pre></code> 
+ */
 public class TestPlan extends LoadablePlan
 {
     @Override
