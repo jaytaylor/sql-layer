@@ -75,4 +75,16 @@ class ExtractorsForLong extends LongExtractor {
     private ExtractorsForLong(AkType targetConversionType) {
         super(targetConversionType);
     }
+
+    @Override
+    public long stdLongToUnix(long longVal)
+    {
+        throw new UnsupportedOperationException("Unsupported! Only works for date/time types");
+    }
+
+    @Override
+    public long unixToStdLong(long unixVal)
+    {
+        throw new UnsupportedOperationException("Unsupported! Only works for date/time types");
+    }
 }
