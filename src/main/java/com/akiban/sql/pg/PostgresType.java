@@ -219,6 +219,8 @@ public class PostgresType
         else if ("DOUBLE".equals(encoding) ||
                  "U_DOUBLE".equals(encoding))
             oid = FLOAT8_TYPE_OID;
+        else if ("VARBINARY".equals(encoding))
+            oid = BYTEA_TYPE_OID;
         else
             throw new UnknownDataTypeException (encoding);
 

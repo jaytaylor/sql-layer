@@ -657,7 +657,8 @@ class YamlTester {
 		int columnType = metaData.getColumnType(i);
 		String columnTypeName = getTypeName(columnType);
 		if (columnTypeName == null) {
-		    columnTypeName = "<unknown " + columnTypeName + ">";
+		    columnTypeName = "<unknown " + metaData.getColumnTypeName(i) + " (" +
+                                                   columnType + ")>";
 		}
 		assertEquals("Wrong output type for column " + i + ":",
 			     outputTypes.get(i - 1), columnTypeName);
