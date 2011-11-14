@@ -71,7 +71,7 @@ class Sort_Tree extends Operator
     public Sort_Tree(Operator inputOperator, RowType sortType, API.Ordering ordering)
     {
         ArgumentValidation.notNull("sortType", sortType);
-        ArgumentValidation.isGT("ordering.columns()", ordering.sortFields(), 0);
+        ArgumentValidation.isGT("ordering.columns()", ordering.sortColumns(), 0);
         this.inputOperator = inputOperator;
         this.sortType = sortType;
         this.ordering = ordering;

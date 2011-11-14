@@ -135,7 +135,7 @@ public class Product_NestedLoopsIT extends OperatorITBase
                 filter_Default(
                     branchLookup_Default(
                         ancestorLookup_Default(
-                            indexScan_Default(customerNameIndexRowType, false, null),
+                            indexScan_Default(customerNameIndexRowType, false),
                             coi,
                             customerNameIndexRowType,
                             Collections.singleton(customerRowType),
@@ -178,7 +178,7 @@ public class Product_NestedLoopsIT extends OperatorITBase
         Operator flattenCO =
             flatten_HKeyOrdered(
                 ancestorLookup_Default(
-                    indexScan_Default(orderSalesmanIndexRowType, false, null),
+                    indexScan_Default(orderSalesmanIndexRowType, false),
                     coi,
                     orderSalesmanIndexRowType,
                     Arrays.asList(orderRowType, customerRowType),

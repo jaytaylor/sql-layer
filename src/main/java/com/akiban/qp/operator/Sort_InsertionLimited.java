@@ -77,7 +77,7 @@ class Sort_InsertionLimited extends Operator
                                  int limit)
     {
         ArgumentValidation.notNull("sortType", sortType);
-        ArgumentValidation.isGT("ordering.columns()", ordering.sortFields(), 0);
+        ArgumentValidation.isGT("ordering.columns()", ordering.sortColumns(), 0);
         ArgumentValidation.isGT("limit", limit, 0);
         this.inputOperator = inputOperator;
         this.sortType = sortType;
@@ -185,7 +185,7 @@ class Sort_InsertionLimited extends Operator
         {
             super(adapter);
             this.input = input;
-            int nsort = ordering.sortFields();
+            int nsort = ordering.sortColumns();
             evaluations = new ArrayList<ExpressionEvaluation>(nsort);
             for (int i = 0; i < nsort; i++) {
                 ExpressionEvaluation evaluation = ordering.expression(i).evaluation();
@@ -221,7 +221,7 @@ class Sort_InsertionLimited extends Operator
             row = new ShareHolder<Row>();
             row.hold(arow);
 
-            values = new Comparable[ordering.sortFields()];
+            values = new Comparable[ordering.sortColumns()];
             for (int i = 0; i < values.length; i++) {
                 ExpressionEvaluation evaluation = evaluations.get(i);
                 evaluation.of(arow);

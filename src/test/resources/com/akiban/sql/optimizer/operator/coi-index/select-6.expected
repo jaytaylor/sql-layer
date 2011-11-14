@@ -6,4 +6,4 @@ PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE]]
           AncestorLookup_Default(user.orders -> [user.customers])
             Select_HKeyOrdered(user.items, Field(3) > Literal(100))
               BranchLookup_Default(_akiban_customers Index(user.orders.order_date[IndexColumn(order_date)]) -> user.orders limit NO LIMIT)
-                IndexScan_Default(Index(user.orders.order_date[IndexColumn(order_date)]) (,) reverse)
+                IndexScan_Default(Index(user.orders.order_date[IndexColumn(order_date)]) (,) (Field(0) DESC))
