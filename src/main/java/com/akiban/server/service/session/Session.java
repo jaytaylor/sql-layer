@@ -30,6 +30,11 @@ public final class Session
     private final long sessionId = idGenerator.getAndIncrement();
     private volatile boolean cancelCurrentQuery = false;
 
+    public String toString()
+    {
+        return String.format("Session(%s)", sessionId);
+    }
+
     Session(SessionEventListener listener) {
         this.listener = listener;
     }
