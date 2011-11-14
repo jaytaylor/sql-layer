@@ -85,14 +85,14 @@ public abstract class AbstractArithValueSource implements ValueSource
     public long getDate()
     {
         check (AkType.DATE);
-        return rawLong();
+        return rawInterval();
     }
 
     @Override
     public long getDateTime()
     {
         check (AkType.DATETIME);
-        return rawLong();
+        return rawInterval();
     }
 
     @Override
@@ -113,14 +113,14 @@ public abstract class AbstractArithValueSource implements ValueSource
     public long getTime()
     {
        check(AkType.TIME);
-       return rawLong();
+       return rawInterval();
     }
 
     @Override
     public long getTimestamp()
     {
         check(AkType.TIMESTAMP);
-        return rawLong();
+        return rawInterval();
     }
 
     @Override
@@ -140,7 +140,7 @@ public abstract class AbstractArithValueSource implements ValueSource
     public long getYear()
     {
         check(AkType.YEAR);
-        return rawLong();
+        return rawInterval();
     }
 
     @Override

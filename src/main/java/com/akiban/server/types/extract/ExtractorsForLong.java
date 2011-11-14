@@ -77,14 +77,12 @@ class ExtractorsForLong extends LongExtractor {
     }
 
     @Override
-    public long stdLongToUnix(long longVal)
-    {
+    public long stdLongToUnix(long longVal) {
         throw new UnsupportedOperationException("Unsupported! Only works for date/time types");
     }
 
     @Override
-    public long unixToStdLong(long unixVal)
-    {
+    public long unixToStdLong(long unixVal) {
         throw new UnsupportedOperationException("Unsupported! Only works for date/time types");
     }
 }

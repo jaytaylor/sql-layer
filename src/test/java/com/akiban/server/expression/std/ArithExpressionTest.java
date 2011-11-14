@@ -36,7 +36,6 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
     protected ArithOp ex =  ArithOps.MINUS;
     private final CompositionTestInfo testInfo = new CompositionTestInfo(2, AkType.DOUBLE, true);
 
-
     @Test
     public void longMinusDouble ()
     {
@@ -128,53 +127,73 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
     @Test
     public void yearMinusYear ()
     {
-        Expression left = new LiteralExpression (AkType.YEAR,2006);
-        Expression right = new LiteralExpression (AkType.YEAR,1991);
-        Expression top = new ArithExpression (left, ex = ArithOps.MINUS, right);
+        Expression year1 = new LiteralExpression (AkType.YEAR,2006);
+        Expression year2 = new LiteralExpression (AkType.YEAR,1991);
+        Expression interval = new ArithExpression (year1, ex = ArithOps.MINUS, year2);
 
-        assertTrue("Top is const", top.isConstant());
-        ValueSource actual = new ValueHolder(top.evaluation().eval());
-        ValueSource expected = new ValueHolder(AkType.INTERVAL, 15L); // 15 years
-        assertEquals("actuall = expected", expected, actual);
+        Expression datetime = new LiteralExpression (AkType.DATETIME, 19940229123010L); // 1994-02-29 12:30:10
+        Expression rst = new ArithExpression (datetime, ex = ArithOps.ADD, interval);
+
+        // 2006 minus 1991 plus 1994-02-29 12:30:10 equals 2009-03-01 12:30:10L (1994 is a leap year, while 2009 is NOT)
+        assertEquals(20090301123010L, rst.evaluation().eval().getDateTime());
     }
 
 
     @Test
-    public void dateMinusDate ()
+    public void dateMinusDatePlusDate ()
     {
-        Expression left = new LiteralExpression (AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2006-11-07"));
-        Expression right = new LiteralExpression (AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2006-10-07"));
-        Expression top = new ArithExpression (left, ex = ArithOps.MINUS, right);
+        Expression date1 = new LiteralExpression (AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2006-11-07"));
+        Expression date2 = new LiteralExpression (AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2006-11-06"));
+        Expression interval = new ArithExpression (date1, ex = ArithOps.MINUS, date2);
+       
+        Expression date08 = new LiteralExpression (AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2008-02-28"));
+        Expression rst1 = new ArithExpression(interval, ex = ArithOps.ADD, date08);
 
-        assertTrue("Top is const", top.isConstant());
-        ValueSource actual = new ValueHolder(top.evaluation().eval());
-        ValueSource expected = new ValueHolder(AkType.INTERVAL, 32L); // 32 days
-        assertEquals("actuall = expected", expected, actual);
+        Expression date09 = new LiteralExpression (AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2009-02-28"));
+        Expression rst2 = new ArithExpression(interval, ex = ArithOps.ADD, date09);
+
+        // 2006-11-07 minus 2006-11-06 plus 2006-12-12 equals 2008-02-29 (2008 is a leap year)
+        assertEquals("2008-02-29", Extractors.getLongExtractor(AkType.DATE).asString(rst1.evaluation().eval().getDate()));
+
+        // 2006-11-07 minus 2006-11-06 plus 2006-12-12 equals 2009-03-01 (2009 is NOT a leap year)
+        assertEquals("2009-03-01", Extractors.getLongExtractor(AkType.DATE).asString(rst2.evaluation().eval().getDate()));
     }
 
     @Test
-    public void timePlusInterval ()
+    public void testDateMinusDatePlusTime ()
     {
-        Expression left = new LiteralExpression (AkType.TIME, 45L);
-        Expression right = new LiteralExpression (AkType.INTERVAL, 10L);
-        Expression top = new ArithExpression (left, ex = ArithOps.ADD, right);
+        // date - date => interval
+        Expression date1 = new LiteralExpression (AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2006-11-07"));
+        Expression date2 = new LiteralExpression (AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2006-10-07"));
+        Expression interval = new ArithExpression(date1, ex = ArithOps.MINUS, date2);
+
+        // time + interval => time
+        Expression left = new LiteralExpression (AkType.TIME, 123010L);        
+        Expression top = new ArithExpression (left, ex = ArithOps.ADD, interval);
 
         assertTrue("Top is const", top.isConstant());
-        ValueSource actual = new ValueHolder (top.evaluation().eval());
-        ValueSource expected = new ValueHolder(AkType.TIME, 55L);
-        assertEquals("actual == expected", expected, actual);
+
+        // 12:30:10 plus (2006-11-07 minus 2006-11-06) equals 12:30:10 => time doesn't change
+        assertEquals(123010L, top.evaluation().eval().getTime());
     }
 
     @Test
-    public void testTimeMinusTime ()
+    public void testTimeMinusTimePlusDatetime ()
     {
-        Expression left = new LiteralExpression (AkType.TIME, Extractors.getLongExtractor(AkType.TIME).getLong("12:30:25"));
-        Expression right = new LiteralExpression (AkType.TIME, Extractors.getLongExtractor(AkType.TIME).getLong("12:30:30"));
-        Expression top = new ArithExpression(right, ex = ArithOps.MINUS, left);
+        Expression time1 = new LiteralExpression (AkType.TIME, Extractors.getLongExtractor(AkType.TIME).getLong("12:30:25"));
+        Expression time2 = new LiteralExpression (AkType.TIME, Extractors.getLongExtractor(AkType.TIME).getLong("12:30:30"));
+        Expression interval = new ArithExpression(time2, ex = ArithOps.MINUS, time1); // interval of 5 secs
 
-        ValueSource actual = new ValueHolder(top.evaluation().eval());
-        ValueSource expected = new ValueHolder(AkType.INTERVAL, 5L); // 5 secs
-        assertEquals("actuall == expected", expected, actual);
+        Expression datetime1 = new LiteralExpression (AkType.DATETIME, 20080228235956L); // 2008-02-28 23:59:56
+        Expression datetime2 = new LiteralExpression (AkType.DATETIME, 20090228235956L); // 2009-02-28 23:59:56
+        Expression rst1 = new ArithExpression(datetime1, ex = ArithOps.ADD, interval);
+        Expression rst2 = new ArithExpression(datetime2, ex = ArithOps.ADD, interval);
+                
+        // 2008-02-28 23:59:56 plus 5 secs equals 2008-02-29 00:00:01  (2008 is a leap year)
+        assertEquals(20080229000001L, rst1.evaluation().eval().getDateTime());
+
+        // 2009-02-28 23:59:56 plus 5 secs equals 2009-03-01 00:00:01  (2009 is NOT a leap year)
+        assertEquals(20090301000001L, rst2.evaluation().eval().getDateTime());
     }
 
     @Test (expected = OverflowException.class)      

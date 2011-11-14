@@ -20,6 +20,7 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.util.AbstractArithValueSource;
 import com.akiban.util.ArgumentValidation;
 import java.math.BigDecimal;
@@ -266,7 +267,8 @@ public class ArithExpression extends AbstractBinaryExpression
                     : must be date/times => rawLong
              *
              */
-            switch (SUPPORTED_TYPES.get(left.getConversionType()) - SUPPORTED_TYPES.get(right.getConversionType()))
+            int pos = SUPPORTED_TYPES.get(left.getConversionType()) - SUPPORTED_TYPES.get(right.getConversionType());
+            switch (pos)
             {
                 case -1:
                 case 1:     return rawDecimal().longValue();
@@ -274,7 +276,12 @@ public class ArithExpression extends AbstractBinaryExpression
                 case 3:     return (long)rawDouble();
                 case -5:
                 case 5:     return rawBigInteger().longValue();
-                default:    return rawLong();
+                default:    LongExtractor lEx = Extractors.getLongExtractor(left.getConversionType());
+                            LongExtractor rEx = Extractors.getLongExtractor(right.getConversionType());
+                            long leftUnix = lEx.stdLongToUnix(lEx.getLong(left));
+                            long rightUnix = rEx.stdLongToUnix(rEx.getLong(right));               
+                            return Extractors.getLongExtractor(SUPPORTED_TYPES.get(pos >= 0 ? pos : -pos)).
+                                    unixToStdLong(op.evaluate(leftUnix, rightUnix));
             }
         }
 

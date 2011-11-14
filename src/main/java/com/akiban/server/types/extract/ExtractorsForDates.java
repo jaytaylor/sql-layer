@@ -79,9 +79,6 @@ abstract class ExtractorsForDates extends LongExtractor {
 
         @Override
         public long unixToStdLong(long unixVal) {
-            /*long year = Calculator.getYear(unixVal);
-            long month = Calculator.getMonth(unixVal);
-            long day = Calculator.getDay(unixVal); */
             int ymd[] = Calculator.getYearMonthDay(unixVal);
             return (long)ymd[0] * 512 + (long)ymd[1] *32 + ymd[2];
         }
@@ -144,7 +141,7 @@ abstract class ExtractorsForDates extends LongExtractor {
         public long stdLongToUnix(long longVal) {
             long year = longVal / DATETIME_YEAR_SCALE;
             long month = longVal / DATETIME_MONTH_SCALE % 100;
-            long day = longVal / DATETIME_DAY_SCALE % 10;
+            long day = longVal / DATETIME_DAY_SCALE % 100;
             long hour = longVal / DATETIME_HOUR_SCALE % 100;
             long minute = longVal / DATETIME_MIN_SCALE % 100;
             long second = longVal / DATETIME_SEC_SCALE % 100;
@@ -153,13 +150,8 @@ abstract class ExtractorsForDates extends LongExtractor {
 
         @Override
         public long unixToStdLong(long unixVal) {
-            long year = Calculator.getYear(unixVal);
-            long month = Calculator.getMonth(unixVal);
-            long day = Calculator.getDay(unixVal);
-            long hour = Calculator.getHour(unixVal);
-            long min = Calculator.getMinute(unixVal);
-            long sec = Calculator.getSec(unixVal);
-            return (year * 10000 + month * 100 + day) *1000000L + hour * 10000 + min * 100 + sec;
+            int rst[] = Calculator.getYMDHMS(unixVal);
+            return (rst[0] * 10000 + rst[1] * 100 + rst[2]) *1000000L + rst[3] * 10000 + rst[4] * 100 + rst[5];
         }
     };
 
@@ -228,11 +220,8 @@ abstract class ExtractorsForDates extends LongExtractor {
 
         @Override
         public long unixToStdLong(long unixVal) {
-            int hours = Calculator.getHour(unixVal);
-            int minutes = Calculator.getMinute(unixVal);
-            int seconds = Calculator.getSec(unixVal);
-
-            return hours* TIME_HOURS_SCALE + minutes* TIME_MINUTES_SCALE + seconds;
+            int rst[] = Calculator.getHrMinSec(unixVal);
+            return rst[0]* TIME_HOURS_SCALE + rst[1]* TIME_MINUTES_SCALE + rst[2];
         }
     };
 
