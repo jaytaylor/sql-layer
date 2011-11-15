@@ -415,6 +415,14 @@ public class API
                                    inputBindingPosition);
     }
 
+    // Union
+    public static Operator unionAll(
+            Operator input1, RowType input1RowType,
+            Operator input2, RowType input2RowType
+    ) {
+        return new UnionAll_Default(input1, input1RowType, input2, input2RowType);
+    }
+
     // Insert
 
     public static UpdatePlannable insert_Default(Operator inputOperator)

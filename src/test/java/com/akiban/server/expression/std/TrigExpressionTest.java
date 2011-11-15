@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.types.AkType;
 import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.OnlyIf;
 import com.akiban.server.error.OverflowException;
@@ -156,9 +157,9 @@ public class TrigExpressionTest extends ComposedExpressionTestBase
     
     
     @Override
-    protected int childrenCount() 
+    protected CompositionTestInfo getTestInfo()
     {        
-        return (name.equals(TrigExpression.TrigName.ATAN2) ? 2 : 1); 
+        return new CompositionTestInfo(name.equals(TrigExpression.TrigName.ATAN2) ? 2 : 1, AkType.DOUBLE, true);
     }
 
     @Override

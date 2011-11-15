@@ -39,6 +39,7 @@ public class CaseConvertExpressionTest extends ComposedExpressionTestBase
     private String input;
     private String expected;
     private CaseConvertExpression.ConversionType convertType;
+    private final CompositionTestInfo testInfo = new CompositionTestInfo(1, AkType.VARCHAR, true);
 
     private static boolean alreadyExecuted = false;
     
@@ -124,14 +125,7 @@ public class CaseConvertExpressionTest extends ComposedExpressionTestBase
      public void notExpectingExceptionTest() {
          test();
      }
-     
- 
-    @Override
-    protected int childrenCount() 
-    {
-        return 1;
-    }
-
+      
     @Override
     protected ExpressionComposer getComposer() 
     {
@@ -139,8 +133,14 @@ public class CaseConvertExpressionTest extends ComposedExpressionTestBase
                 CaseConvertExpression.TOLOWER_COMPOSER:
                 CaseConvertExpression.TOUPPER_COMPOSER);
     }
-    
-      public boolean expectNullException() 
+
+    @Override
+    protected CompositionTestInfo getTestInfo()
+    {
+        return testInfo;
+    }
+
+    public boolean expectNullException() 
     {
         return (input == null);
     }

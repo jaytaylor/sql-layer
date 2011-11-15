@@ -38,7 +38,36 @@ import static com.akiban.server.expression.std.ComposedExpressionTestBase.Expres
 import static org.junit.Assert.*;
 
 public abstract class ComposedExpressionTestBase {
-    protected abstract int childrenCount();
+    protected static class CompositionTestInfo
+    {
+        private final int childrenCount;
+        private final AkType childrenType;
+        private final boolean nullIsContaminating;
+
+        public CompositionTestInfo (int argc, AkType type, boolean nullCont)
+        {
+            childrenCount = argc;
+            childrenType = type;
+            nullIsContaminating = nullCont;
+        }
+
+        public int getChildrenCount ()
+        {
+            return childrenCount;
+        }
+
+        public AkType getChildrenType ()
+        {
+            return childrenType;
+        }
+
+        public boolean nullIsContaminating ()
+        {
+            return nullIsContaminating;
+        }
+    }
+
+    protected abstract CompositionTestInfo getTestInfo ();
     protected abstract ExpressionComposer getComposer();
 
     @Test
@@ -148,7 +177,7 @@ public abstract class ComposedExpressionTestBase {
 
     private void checkMessages(List<String> messages, String singleMessage) {
         List<String> expected = new ArrayList<String>();
-        int children = childrenCount();
+        int children = getTestInfo().getChildrenCount();
         assert children > 0 : children;
         for (int i=0; i < children; ++i) {
             expected.add(singleMessage);
@@ -161,24 +190,30 @@ public abstract class ComposedExpressionTestBase {
         return evaluationPair(attributes).evaluation;
     }
 
-    private EvaluationPair evaluationPair(ExpressionAttribute... attributes) {
-        int childrenCount = childrenCount();
+    private EvaluationPair evaluationPair(ExpressionAttribute... attributes) {        
+        int childrenCount = getTestInfo().getChildrenCount();
         if (childrenCount < 1)
             throw new UnsupportedOperationException("childrenCount() must be > 0");
         List<String> messages = new ArrayList<String>();
         List<Expression> children = new ArrayList<Expression>();
-        children.add(new DummyExpression(messages, attributes));
+        children.add(new DummyExpression(messages, getTestInfo().getChildrenType(), attributes));
         for (int i=1; i < childrenCount; ++i) {
-            children.add(new DummyExpression(messages, IS_CONSTANT));
+            children.add(new DummyExpression(messages, getTestInfo().getChildrenType(),IS_CONSTANT));
         }
         Expression expression = getComposer().compose(children);
         Set<ExpressionAttribute> attributeSet = attributesSet(attributes);
-        assertEquals("isConstant", attributeSet.contains(IS_CONSTANT), expression.isConstant());
-        assertEquals("needsRow", attributeSet.contains(NEEDS_ROW), expression.needsRow());
-        assertEquals("needsBindings", attributeSet.contains(NEEDS_BINDINGS), expression.needsBindings());
+        assertEquals("isConstant", attributeSet.contains(IS_CONSTANT) || anyChildIsNull(children) && getTestInfo().nullIsContaminating() , expression.isConstant());
+        assertEquals("needsRow", attributeSet.contains(NEEDS_ROW) && !(anyChildIsNull(children) && getTestInfo().nullIsContaminating()) , expression.needsRow());
+        assertEquals("needsBindings", attributeSet.contains(NEEDS_BINDINGS) && !(anyChildIsNull(children) && getTestInfo().nullIsContaminating()), expression.needsBindings());
         return new EvaluationPair(expression.evaluation(), messages);
     }
 
+    private boolean anyChildIsNull (List<Expression> children)
+    {
+        for (Expression child: children)
+            if (child.valueType() == AkType.NULL) return true;
+        return false;
+    }
     private void expectEvalError(ExpressionEvaluation evaluation) {
         try {
             evaluation.eval().isNull();
@@ -235,16 +270,23 @@ public abstract class ComposedExpressionTestBase {
 
         @Override
         public AkType valueType() {
-            return AkType.NULL;
+            return type;
         }
 
-        private DummyExpression(List<String> messages, ExpressionAttribute... attributes) {
+        @Override
+        public String toString () {
+            return getClass().getSimpleName() + " with " + requirements;
+        }
+        
+        private DummyExpression(List<String> messages, AkType type, ExpressionAttribute... attributes) {
             requirements = attributesSet(attributes);
             this.messages = messages;
+            this.type = type;
         }
 
         private final Set<ExpressionAttribute> requirements;
         private final List<String> messages;
+        private final AkType type;
     }
 
     private static class DummyExpressionEvaluation implements ExpressionEvaluation {

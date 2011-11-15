@@ -28,6 +28,8 @@ import static org.junit.Assert.*;
 
 public class SubStringExpressionTest extends ComposedExpressionTestBase
 {
+    private final CompositionTestInfo testInfo = new CompositionTestInfo(3, AkType.VARCHAR, true);
+
     @Test (expected=WrongExpressionArityException.class)
     public void testIllegalArg() 
     {
@@ -63,9 +65,9 @@ public class SubStringExpressionTest extends ComposedExpressionTestBase
    
 
     @Override
-    protected int childrenCount() 
+    protected CompositionTestInfo getTestInfo()
     {
-        return 3;
+        return testInfo;
     }
 
     @Override
