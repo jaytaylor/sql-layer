@@ -223,11 +223,11 @@ public class IndexGoal implements Comparator<IndexScan>
         List<OrderByExpression> indexOrdering = index.getOrdering();
         BitSet reverse = new BitSet(indexOrdering.size());
         List<ExpressionNode> equalityComparands = index.getEqualityComparands();
+        int nequals = (equalityComparands == null) ? 0 : equalityComparands.size();
         IndexScan.OrderEffectiveness result = IndexScan.OrderEffectiveness.NONE;
         if (indexOrdering == null) return result;
         try_sorted:
         if (ordering != null) {
-            int nequals = (equalityComparands == null) ? 0 : equalityComparands.size();
             int idx = nequals;
             for (OrderByExpression targetColumn : ordering.getOrderBy()) {
                 ExpressionNode targetExpression = targetColumn.getExpression();
@@ -280,9 +280,9 @@ public class IndexGoal implements Comparator<IndexScan>
             List<ExpressionNode> groupBy = grouping.getGroupBy();
             for (ExpressionNode targetExpression : groupBy) {
                 int found = -1;
-                for (int i = 0; i < indexOrdering.size(); i++) {
+                for (int i = nequals; i < indexOrdering.size(); i++) {
                     if (targetExpression.equals(indexOrdering.get(i).getExpression())) {
-                        found = i;
+                        found = i - nequals;
                         break;
                     }
                 }
@@ -315,9 +315,9 @@ public class IndexGoal implements Comparator<IndexScan>
             List<ExpressionNode> distinct = projectDistinct.getFields();
             for (ExpressionNode targetExpression : distinct) {
                 int found = -1;
-                for (int i = 0; i < indexOrdering.size(); i++) {
+                for (int i = nequals; i < indexOrdering.size(); i++) {
                     if (targetExpression.equals(indexOrdering.get(i).getExpression())) {
-                        found = i;
+                        found = i - nequals;
                         break;
                     }
                 }
