@@ -52,14 +52,14 @@ public class CurrentDateTimeExpressionTest
     @Test
     public void testCurrentTimestamp ()
     {
-        test(RIGHT_NOW, AkType.TIMESTAMP, "yyyy-MM-dd HH:mm:ss");
-        test(EPOCH, AkType.TIMESTAMP, "yyyy-MM-dd HH:mm:ss");
+        test(RIGHT_NOW, AkType.DATETIME, "yyyy-MM-dd HH:mm:ss");
+        test(EPOCH, AkType.DATETIME, "yyyy-MM-dd HH:mm:ss");
     }
 
     private void test (DateTime when, AkType current_, String strFrm)
     {   
-        bindings.set(position, when.toDate());
-        Expression ex = new CurrentDateTimeExpression(EnvironmentExpressionSetting.CURRENT_CALENDAR, position, current_);
+        bindings.set(position, when);
+        Expression ex = new CurrentDateTimeExpression(EnvironmentExpressionSetting.CURRENT_DATETIME, position, current_);
         ExpressionEvaluation eval = ex.evaluation();
         eval.of(bindings);
 

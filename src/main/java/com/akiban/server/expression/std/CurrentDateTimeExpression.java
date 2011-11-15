@@ -25,7 +25,6 @@ import com.akiban.server.service.functions.EnvironmentValue;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
-import java.util.Calendar;
 import org.joda.time.DateTime;
 
 public class CurrentDateTimeExpression extends EnvironmentExpression
@@ -49,7 +48,7 @@ public class CurrentDateTimeExpression extends EnvironmentExpression
      */
     @EnvironmentValue("current_timestamp")
     public static final EnvironmentExpressionFactory CURRENT_TIMESTAMP_COMPOSER 
-            = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_CALENDAR,  AkType.TIMESTAMP);
+            = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_CALENDAR,  AkType.DATETIME);
 
     /**
      * return now() expression  (an alias of current_timestamp())
@@ -57,41 +56,41 @@ public class CurrentDateTimeExpression extends EnvironmentExpression
     @EnvironmentValue ("now")
     public static final EnvironmentExpressionFactory CURRENT_TIMESTAMP_ALIAS = CURRENT_TIMESTAMP_COMPOSER;
 
-    private final AkType neededInfo;
+    private final AkType currentType;
 
     public CurrentDateTimeExpression (EnvironmentExpressionSetting environmentSetting, int bindingPos,
-            AkType neededInfo)
+            AkType currentType)
     {
-        super(checkType(neededInfo), environmentSetting, bindingPos);
-        this.neededInfo = neededInfo;
+        super(checkType(currentType), environmentSetting, bindingPos);
+        this.currentType = currentType;
     }
 
-    private static final class InnerEvaluation extends EnvironmentEvaluation<Calendar>
+    private static final class InnerEvaluation extends EnvironmentEvaluation<DateTime>
     {
-        private  AkType neededInfo;
+        private  AkType currentType;
 
-        public InnerEvaluation (int bindingPos, AkType neededInfo)
+        public InnerEvaluation (int bindingPos, AkType currentType)
         {
             super(bindingPos);
-            this.neededInfo = neededInfo;
+            this.currentType = currentType;
         }
 
         @Override
         public ValueSource eval()
         {  
-            return new ValueHolder(neededInfo, new DateTime(this.environmentValue()));
+            return new ValueHolder(currentType, environmentValue());
         }
     }
     
     static class DateTimeEnvironmentFactory implements EnvironmentExpressionFactory 
     {
         private final EnvironmentExpressionSetting environmentSetting;
-        private final AkType neededInfo;
+        private final AkType currentType;
         public DateTimeEnvironmentFactory (EnvironmentExpressionSetting environmentSetting,
-               AkType neededInfo)
+               AkType currentType)
         {
             this.environmentSetting = environmentSetting;
-            this.neededInfo = neededInfo;
+            this.currentType = currentType;
         }
 
         @Override
@@ -103,31 +102,31 @@ public class CurrentDateTimeExpression extends EnvironmentExpression
         @Override
         public Expression get(int bindingPosition) 
         {
-            return new CurrentDateTimeExpression(environmentSetting, bindingPosition, neededInfo);
+            return new CurrentDateTimeExpression(environmentSetting, bindingPosition, currentType);
         }
         
         @Override
         public ExpressionType getType() 
         {
-            return ExpressionTypes.newType(neededInfo, 0, 0);
+            return ExpressionTypes.newType(currentType, 0, 0);
         }
     }
 
     @Override
     public ExpressionEvaluation evaluation()
     {
-        return new InnerEvaluation (bindingPosition(), neededInfo);
+        return new InnerEvaluation (bindingPosition(), currentType);
     }
 
     @Override
     public String name ()
     {
-        return "CURRENT_" + neededInfo;
+        return "CURRENT_" + currentType;
     }
     
     private static AkType checkType (AkType input)
     {
-        if (input == AkType.DATE  || input == AkType.TIME || input == AkType.TIMESTAMP) return input;
+        if (input == AkType.DATE  || input == AkType.TIME || input == AkType.DATETIME) return input;
         else throw new UnsupportedOperationException("CURRENT_" + input + " is not supported");
     }
 }

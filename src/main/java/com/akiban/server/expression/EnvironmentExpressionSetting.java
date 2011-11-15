@@ -19,6 +19,7 @@ package com.akiban.server.expression;
 public enum EnvironmentExpressionSetting {
     CURRENT_DATE,               // Date: start of current transaction
     CURRENT_CALENDAR,           // Calendar: ditto
+    CURRENT_DATETIME,           // Datetime: ditto
     CURRENT_USER,               // String: default schema
     SESSION_USER,               // String: connection user
     SYSTEM_USER                 // String: O/S user running server
