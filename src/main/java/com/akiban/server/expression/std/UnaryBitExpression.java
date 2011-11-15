@@ -20,9 +20,9 @@ import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
@@ -86,6 +86,18 @@ public class UnaryBitExpression extends AbstractUnaryExpression
         protected Expression compose(Expression argument) 
         {
             return new UnaryBitExpression(argument, op);
+        }
+
+        @Override
+        protected AkType argumentType(AkType givenType) 
+        {
+            return givenType;
+        }
+
+        @Override
+        protected ExpressionType composeType(ExpressionType argumentType) 
+        {
+            return op == UnaryBitOperator.COUNT ? ExpressionTypes.LONG : ExpressionTypes.U_BIGINT;
         }
     }
             

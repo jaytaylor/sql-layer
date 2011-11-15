@@ -82,7 +82,7 @@ public class BulkLoaderCOITest extends TestCase
         throws ClassNotFoundException, SQLException
     {
         TaskGenerator.Actions actions = new MySQLTaskGeneratorActions(ais);
-        BulkLoader bulkLoader = new BulkLoader(ais, "coi", "bulkload", actions);
+        BulkLoader bulkLoader = new BulkLoader(null, ais, "coi", "bulkload", actions);
         bulkLoader.run();
         return bulkLoader.tasks();
     }

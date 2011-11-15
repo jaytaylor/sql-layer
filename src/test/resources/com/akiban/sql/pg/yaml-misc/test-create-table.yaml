@@ -1,0 +1,49 @@
+# Test creating tables
+---
+
+# Test supported types
+
+- Include: all-types-schema.yaml
+---
+
+# Test unsupported types
+
+# bit is not supported, but returns the wrong error code
+# - Statement: CREATE TABLE table_bit (bit_field bit)
+# - error: [50008]
+#---
+# mediumint is not supported
+- Statement: CREATE TABLE table_mediumint (mediumint_field mediumint)
+- error: [50008]
+---
+# enum is not supported
+- Statement: CREATE TABLE table_enum (enum_field enum)
+- error: [50008]
+---
+# xml is not supported
+- Statement: CREATE TABLE table_xml (xml_field xml)
+- error: [50008]
+---
+
+# Test not yet supported types
+
+# datetime is not supported yet
+- Statement: CREATE TABLE table_datetime (datetime_field datetime)
+- error: [50008]
+---
+# text is not supported yet
+- Statement: CREATE TABLE table_text (text_field text)
+- error: [50008]
+---
+# tinyint is not supported yet
+- Statement: CREATE TABLE table_tinyint (tinyint_field tinyint)
+- error: [50008]
+#---
+# year is not supported yet, but returns the wrong error code
+# - Statement: CREATE TABLE table_year (year_field year)
+# - error: [50008]
+...
+
+# Notes
+# clob is marked as not supported, but is
+

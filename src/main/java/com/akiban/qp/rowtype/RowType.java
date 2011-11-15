@@ -46,10 +46,7 @@ public abstract class RowType
 
     // RowType interface
 
-    public final Schema schema()
-    {
-        return schema;
-    }
+    public abstract DerivedTypesSchema schema();
 
     public final int typeId()
     {
@@ -152,15 +149,13 @@ public abstract class RowType
         }
     }
 
-    protected RowType(Schema schema, int typeId)
+    protected RowType(int typeId)
     {
-        this.schema = schema;
         this.typeId = typeId;
     }
 
     // Object state
 
-    private final Schema schema;
     private final int typeId;
     private TypeComposition typeComposition;
 }

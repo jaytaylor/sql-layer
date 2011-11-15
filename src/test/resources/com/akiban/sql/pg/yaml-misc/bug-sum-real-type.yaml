@@ -1,0 +1,9 @@
+# Sum of real is not supported
+---
+- Statement: CREATE TABLE t (real_field real)
+---
+- Statement: INSERT INTO t VALUES (1.0)
+---
+- Statement: SELECT sum(real_field) FROM t
+- output: [[1.0]]
+...

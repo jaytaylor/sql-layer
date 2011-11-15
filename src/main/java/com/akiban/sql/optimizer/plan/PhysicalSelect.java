@@ -19,6 +19,8 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.sql.types.DataTypeDescriptor;
 
+import com.akiban.server.expression.EnvironmentExpressionSetting;
+
 import java.util.List;
 import java.util.Arrays;
 
@@ -48,8 +50,9 @@ public class PhysicalSelect extends BasePlannable
     
     public PhysicalSelect(Operator resultOperator, RowType rowType,
                           List<PhysicalResultColumn> resultColumns,
-                          DataTypeDescriptor[] parameterTypes) {
-        super(resultOperator, parameterTypes);
+                          DataTypeDescriptor[] parameterTypes,
+                          List<EnvironmentExpressionSetting> environmentSettings) {
+        super(resultOperator, parameterTypes, environmentSettings);
         this.rowType = rowType;
         this.resultColumns = resultColumns;
     }
@@ -75,6 +78,8 @@ public class PhysicalSelect extends BasePlannable
     protected String withIndentedExplain(StringBuilder str) {
         if (getParameterTypes() != null)
             str.append(Arrays.toString(getParameterTypes()));
+        if (getEnvironmentSettings() != null)
+            str.append(getEnvironmentSettings());
         str.append(resultColumns);
         return super.withIndentedExplain(str);
     }

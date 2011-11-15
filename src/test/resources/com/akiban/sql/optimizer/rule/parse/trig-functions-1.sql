@@ -1,0 +1,1 @@
+SELECT COS(1) + SIN(3.14e0) + TAN(name) FROM child

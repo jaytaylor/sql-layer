@@ -141,7 +141,7 @@ public class UnaryBitExpressionTest extends ComposedExpressionTestBase
     {
         Expression arg = new LiteralExpression(AkType.NULL, null);
         
-        assertEquals(ValueHolder.holdingNull(), getActualSource(arg));
+        assertEquals(NullValueSource.only(), getActualSource(arg));
     }
     
     @Test

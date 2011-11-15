@@ -1,0 +1,2 @@
+SELECT CURRENT_USER AS "schema", SESSION_USER AS "user" FROM items
+ WHERE iid = ?
