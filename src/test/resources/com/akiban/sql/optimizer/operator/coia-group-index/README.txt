@@ -10,6 +10,8 @@ select-3: group index for ordering only
 
 select-3l: group index for ordering only with left join
 
+select-3m: group index in mixed mode
+
 select-4: covering group index
 
 select-7l: literal in result list
