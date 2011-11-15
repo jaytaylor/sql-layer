@@ -10,7 +10,7 @@
     AVG(smallint_field) FROM all_types
 - output: [[null, null, null, null, null, null, null]]
 
-# Test with null row
+# Test with null row => null
 ---
 - Statement: INSERT INTO all_types (bigint_field, decimal_field, double_field,
     float_field, integer_field, numeric_field, smallint_field)
@@ -45,7 +45,7 @@
     AVG(smallint_field) FROM all_types
 - output: [[1, 1.0, 1.0, 1.0, 1, 1.0, 1]]
 
-# Rounding
+# Rounding (1+1+2+2)/4 = 6/4 = 1.5
 ---
 - Statement: INSERT INTO all_types
     (bigint_field, decimal_field, double_field, float_field, integer_field,
@@ -72,7 +72,24 @@
     AVG(smallint_field) FROM all_types
 - output: [[0, 0.0, 0.0, 0.0, 0, 0.0, 0]]
 
+---
+- Statement: DELETE FROM all_types
+
+# Underflow
+---
+- Statement: INSERT INTO all_types (double_field, float_field)
+    VALUES (4.9E-324, 4.9E-324), (0.0E1, 0.0E1)
+---
+- Statement: SELECT AVG(double_field), AVG(float_field) FROM all_types
+- output: [[0.0, 0.0]]
+
+---
+- Statement: DELETE FROM all_types
+
 # Infinity and NaN
+---
+- Statement: INSERT INTO all_types (double_field, float_field)
+    VALUES (-1000.0, -1000.0)
 ---
 - Statement: INSERT INTO all_types (double_field, float_field)
     VALUES ('Infinity', 'Infinity')
@@ -80,17 +97,32 @@
 - Statement: SELECT AVG(double_field), AVG(float_field) FROM all_types
 - output: [[Infinity, Infinity]]
 ---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (double_field, float_field)
+    VALUES (1000.0, 1000.0)
+---
 - Statement: INSERT INTO all_types (double_field, float_field)
     VALUES ('-Infinity', '-Infinity')
-# ---
-# - Statement: SELECT AVG(double_field), AVG(float_field) FROM all_types
-# - output: [[0, 0]]
+---
+- Statement: SELECT AVG(double_field), AVG(float_field) FROM all_types
+- output: [[-Infinity, -Infinity]]
+---
+- Statement: INSERT INTO all_types (double_field, float_field)
+    VALUES ('Infinity', 'Infinity')
+---
+- Statement: SELECT AVG(double_field), AVG(float_field) FROM all_types
+- output: [[NaN, NaN]]
+---
+- Statement: DELETE FROM all_types
 
+---
+- Statement: INSERT INTO all_types (double_field, float_field)
+    VALUES (1.0, 1.0)
 ---
 - Statement: INSERT INTO all_types (double_field, float_field)
     VALUES ('NaN', 'NaN')
 ---
-
 - Statement: SELECT AVG(double_field), AVG(float_field) FROM all_types
 - output: [[NaN, NaN]]
 
