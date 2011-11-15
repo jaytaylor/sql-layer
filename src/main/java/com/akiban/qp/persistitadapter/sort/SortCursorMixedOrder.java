@@ -39,6 +39,7 @@ abstract class SortCursorMixedOrder extends SortCursor
         try {
             initializeScanStates();
             repositionExchange(0);
+            justOpened = true;
         } catch (PersistitException e) {
             close();
             throw new PersistitAdapterException(e);
@@ -50,9 +51,14 @@ abstract class SortCursorMixedOrder extends SortCursor
     {
         Row next = null;
         try {
+            if (justOpened) {
+                // Exchange is already positioned
+                justOpened = false;
+            } else {
+                advance(scanStates.size() - 1);
+            }
             if (more) {
                 next = row();
-                advance(scanStates.size() - 1);
             } else {
                 close();
             }

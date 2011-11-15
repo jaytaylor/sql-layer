@@ -22,8 +22,6 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.types.ValueSource;
 import com.persistit.exception.PersistitException;
 
-import static java.lang.Math.min;
-
 class SortCursorMixedOrderBounded extends SortCursorMixedOrder
 {
     // SortCursorMixedOrder interface

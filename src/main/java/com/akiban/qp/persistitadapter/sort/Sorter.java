@@ -15,12 +15,12 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.qp.operator.OperatorExecutionBase;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.persistitadapter.PersistitAdapterException;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.OperatorExecutionBase;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.persistitadapter.PersistitAdapterException;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.RowType;
@@ -41,9 +41,9 @@ import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Sorter
 {

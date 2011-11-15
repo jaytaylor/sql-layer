@@ -21,18 +21,19 @@ import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.AisRowType;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
-
 import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.aggregation.Aggregators;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.types.AkType;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.List;
 
 public class API
 {
@@ -76,7 +77,7 @@ public class API
                                                        RowType childType,
                                                        JoinType joinType)
     {
-        return flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, EnumSet.noneOf(FlattenOption.class));
+        return flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, NO_FLATTEN_OPTIONS);
     }
 
     public static Operator flatten_HKeyOrdered(Operator inputOperator,
@@ -445,6 +446,8 @@ public class API
         return new TopLevelWrappingCursor(adapter, root.cursor(adapter));
     }
 
+    private static final EnumSet<FlattenOption> NO_FLATTEN_OPTIONS = EnumSet.noneOf(FlattenOption.class);
+
     // Options
 
     // Flattening flags
@@ -458,8 +461,7 @@ public class API
 
     public static enum FlattenOption {
         KEEP_PARENT,
-        KEEP_CHILD,
-        LEFT_JOIN_SHORTENS_HKEY
+        KEEP_CHILD
     }
 
     // Lookup flags

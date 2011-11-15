@@ -70,8 +70,7 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
     @Override
     public boolean advance() throws PersistitException
     {
-        boolean advanced = super.advance();
-        return advanced && !pastEnd();
+        return super.advance() && !pastEnd();
     }
 
     public void setRange(ValueSource lo, ValueSource hi)
