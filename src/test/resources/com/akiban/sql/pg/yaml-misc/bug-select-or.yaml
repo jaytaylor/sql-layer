@@ -1,0 +1,8 @@
+# OR not recognized in SELECT clause
+---
+- Statement: CREATE TABLE t (bigint_field bigint)
+---
+- Statement: SELECT bigint_field > 1 OR bigint_field < -1
+- row_count: 0
+...
+
