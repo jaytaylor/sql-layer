@@ -6,6 +6,8 @@ select-1: columns from same branch as group index
 
 select-2: group index for matching and ordering
 
+select-2r: group index for matching and reverse ordering
+
 select-3: group index for ordering only
 
 select-3l: group index for ordering only with left join
