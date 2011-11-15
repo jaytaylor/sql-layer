@@ -166,4 +166,5 @@ abstract class SortCursorMixedOrder extends SortCursor
     protected Bindings bindings;
     private final int keyColumns; // Number of columns in the key. keyFields >= orderingColumns.
     private boolean more;
+    private boolean justOpened;
 }
