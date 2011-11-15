@@ -1,0 +1,10 @@
+# IN function fails with conversion from double to varchar
+---
+- Statement: CREATE TABLE t (double_field double, varchar_field varchar(32))
+---
+- Statement: INSERT INTO t (double_field, varchar_field)
+    VALUES (1.0, '1.0'), (2.0, 'harvey')
+---
+- Statement: SELECT double_field FROM t WHERE double_field IN (varchar_field)
+- output: [[1.0]]
+...

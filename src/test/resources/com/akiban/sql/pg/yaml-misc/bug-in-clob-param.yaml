@@ -1,0 +1,10 @@
+# Problem with IN function with parameter
+---
+- Statement: CREATE TABLE t (clob_field clob)
+---
+- Statement: INSERT INTO t VALUES ('dead')
+---
+- Statement: SELECT clob_field FROM t WHERE clob_field IN (?)
+- params: [[dead]]
+- output: [[dead]]
+...

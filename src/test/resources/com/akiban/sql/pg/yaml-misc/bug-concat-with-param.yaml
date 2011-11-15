@@ -1,0 +1,10 @@
+# Parameter to function in SELECT produces NullPointerException
+---
+- Statement: CREATE TABLE t (x varchar(32))
+---
+- Statement: INSERT INTO t VALUES ('cat')
+---
+- Statement: SELECT CONCAT(x, ?) FROM t
+- params: [[dog]]
+- output: [[catdog]]
+...
