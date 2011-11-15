@@ -147,9 +147,15 @@ public class IndexGoal implements Comparator<IndexScan>
         List<IndexColumn> indexColumns = index.getIndex().getColumns();
         int ncols = indexColumns.size();
         List<ExpressionNode> indexExpressions = new ArrayList<ExpressionNode>(ncols);
-        for (IndexColumn indexColumn : indexColumns)
-            indexExpressions.add(getIndexExpression(index, indexColumn));
+        List<OrderByExpression> orderBy = new ArrayList<OrderByExpression>(ncols);
+        for (IndexColumn indexColumn : indexColumns) {
+            ExpressionNode indexExpression = getIndexExpression(index, indexColumn);
+            indexExpressions.add(indexExpression);
+            orderBy.add(new OrderByExpression(indexExpression,
+                                              indexColumn.isAscending()));
+        }
         index.setColumns(indexExpressions);
+        index.setOrdering(orderBy);
         int nequals = 0;
         while (nequals < ncols) {
             ExpressionNode indexExpression = indexExpressions.get(nequals);
@@ -201,15 +207,6 @@ public class IndexGoal implements Comparator<IndexScan>
                     }
                 }
             }
-            List<OrderByExpression> orderBy = 
-                new ArrayList<OrderByExpression>(ncols - nequals);
-            for (int i = nequals; i < ncols; i++) {
-                indexExpression = indexExpressions.get(i);
-                if (indexExpression == null) break;
-                orderBy.add(new OrderByExpression(indexExpression, 
-                                                  indexColumns.get(i).isAscending()));
-            }
-            index.setOrdering(orderBy);
         }
         index.setOrderEffectiveness(determineOrderEffectiveness(index));
         if ((index.getOrderEffectiveness() == IndexScan.OrderEffectiveness.NONE) &&
@@ -220,18 +217,18 @@ public class IndexGoal implements Comparator<IndexScan>
     }
 
     // Determine how well this index does against the target.
-    // Also, reverse the scan order if that helps. 
-    // TODO: But see the comment on that field.
+    // Also, correct traversal order to match sort if possible.
     protected IndexScan.OrderEffectiveness
         determineOrderEffectiveness(IndexScan index) {
         List<OrderByExpression> indexOrdering = index.getOrdering();
+        BitSet reverse = new BitSet(indexOrdering.size());
         List<ExpressionNode> equalityComparands = index.getEqualityComparands();
         IndexScan.OrderEffectiveness result = IndexScan.OrderEffectiveness.NONE;
         if (indexOrdering == null) return result;
         try_sorted:
         if (ordering != null) {
-            Boolean reverse = null;
-            int idx = 0;
+            int nequals = (equalityComparands == null) ? 0 : equalityComparands.size();
+            int idx = nequals;
             for (OrderByExpression targetColumn : ordering.getOrderBy()) {
                 ExpressionNode targetExpression = targetColumn.getExpression();
                 if (targetExpression.isColumn() &&
@@ -241,17 +238,22 @@ public class IndexGoal implements Comparator<IndexScan>
                     }
                 }
                 OrderByExpression indexColumn = null;
-                if (idx < indexOrdering.size())
+                if (idx < indexOrdering.size()) {
                     indexColumn = indexOrdering.get(idx);
+                    if (indexColumn.getExpression() == null)
+                        indexColumn = null; // Index sorts by unknown column.
+                }
                 if ((indexColumn != null) && 
                     indexColumn.getExpression().equals(targetExpression)) {
-                    if (reverse == null)
-                        reverse = Boolean.valueOf(indexColumn.isAscending() != 
-                                                  targetColumn.isAscending());
-                    else if (reverse.booleanValue() != 
-                             (indexColumn.isAscending() != targetColumn.isAscending()))
-                        // Only good enough up to reversal of scan.
-                        break try_sorted;
+                    if (indexColumn.isAscending() != targetColumn.isAscending()) {
+                        // To avoid mixed mode as much as possible,
+                        // defer changing the index order until
+                        // certain it will be effective.
+                        reverse.set(idx, true);
+                        if (idx == nequals)
+                            // Likewise reverse the initial equals segment.
+                            reverse.set(0, nequals, true);
+                    }
                     idx++;
                     continue;
                 }
@@ -265,8 +267,12 @@ public class IndexGoal implements Comparator<IndexScan>
                 }
                 break try_sorted;
             }
-            if (reverse != null)
-                index.setReverseScan(reverse.booleanValue());
+            for (int i = 0; i < reverse.size(); i++) {
+                if (reverse.get(i)) {
+                    OrderByExpression indexColumn = indexOrdering.get(i);
+                    indexColumn.setAscending(!indexColumn.isAscending());
+                }
+            }
             result = IndexScan.OrderEffectiveness.SORTED;
         }
         if (grouping != null) {
