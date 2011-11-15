@@ -7,7 +7,7 @@
 - Statement: SELECT COALESCE() FROM all_types
 - error: [42000]
 
-# Test single element lists with no results
+# Test single element lists with an empty table
 ---
 - Statement: SELECT COALESCE(bigint_field) FROM all_types
 - row_count: 0
@@ -66,23 +66,14 @@
 # Insert values on the diagonal
 ---
 - Statement: INSERT INTO all_types (bigint_field) VALUES (1)
-# Select on bigint unsigned not working
-#---
-#- Statement: INSERT INTO all_types (unsigned_bigint_field) VALUES (1)
 ---
 - Statement: INSERT INTO all_types (blob_field) VALUES ('deadbeef')
-# Select on boolean not working
-#---
-#- Statement: INSERT INTO all_types (boolean_field) VALUES (1)
 ---
 - Statement: INSERT INTO all_types (char_field) VALUES ('c')
 ---
 - Statement: INSERT INTO all_types (char_multi_field) VALUES ('abc')
 ---
 - Statement: INSERT INTO all_types (clob_field) VALUES ('1234abcd')
-# Select on date not working
-#---
-#- Statement: INSERT INTO all_types (date_field) VALUES ('2001-01-01')
 ---
 - Statement: INSERT INTO all_types (double_field) VALUES (0.0)
 ---
