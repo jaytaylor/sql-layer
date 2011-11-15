@@ -4,6 +4,9 @@
 ---
 - Statement: INSERT INTO t VALUES ('127.0.0.1'), ('1.2.3.4')
 ---
+- Statement: SELECT INET_ATON('1.2.3.4.5') FROM t
+- output: [[null], [null]]
+---
 - Statement: SELECT INET_ATON(s) FROM t
 - output: [[2130706433], [16909060]]
 ---

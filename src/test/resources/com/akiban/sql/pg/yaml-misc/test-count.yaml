@@ -11,6 +11,9 @@
 
 # Test empty
 ---
+- Statement: SELECT COUNT(bigint_field) FROM all_types
+- output: [[0]]
+---
 - Statement: SELECT COUNT(bigint_unsigned_field) FROM all_types
 - output: [[0]]
 ---
@@ -64,8 +67,10 @@
 
 # Test null
 ---
-- Statement: INSERT INTO all_types VALUES (null, null, null, null, null, null,
-    null, null, null, null, null, null, null, null, null, null, null, null)
+- Statement: INSERT INTO all_types VALUES (null)
+---
+- Statement: SELECT COUNT(bigint_field) FROM all_types
+- output: [[0]]
 ---
 - Statement: SELECT COUNT(bigint_unsigned_field) FROM all_types
 - output: [[0]]

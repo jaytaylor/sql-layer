@@ -12,6 +12,9 @@
     (9223372036854775807, 2.0),
     (-9223372036854775808, 3.0)
 ---
+- Statement: SELECT bigint_field FROM all_types WHERE bigint_field IN ()
+- error: [42000]
+---
 - Statement: SELECT bigint_field FROM all_types WHERE bigint_field IN (0)
 - output: [[0]]
 ---
@@ -364,7 +367,7 @@
 - Statement: SELECT real_field FROM all_types
     WHERE real_field IN (1.0, -1.0)
 - output: [[1.0], [-1.0]]
-# Reduced precision
+# Precision is getting (incorrectly) reduced
 # ---
 # - Statement: SELECT real_field FROM all_types
 #     WHERE real_field IN (3.4028234663852886E38, 1.401298464324817E-45)
@@ -468,7 +471,8 @@
     WHERE timestamp_field IN ('1970-01-01 08:30:00', '2001-02-03 12:34:56')
 - output: [['1970-01-01 08:30:00.0'], ['2001-02-03 12:34:56.0']]
 ---
-- Statement: SELECT timestamp_field FROM all_types WHERE timestamp_field IN (varchar_field)
+- Statement: SELECT timestamp_field FROM all_types
+    WHERE timestamp_field IN (varchar_field)
 - output: [['0001-01-01 00:00:01.0'], ['1970-01-01 08:30:00.0']]
 ---
 - Statement: SELECT timestamp_field FROM all_types WHERE timestamp_field IN (?)

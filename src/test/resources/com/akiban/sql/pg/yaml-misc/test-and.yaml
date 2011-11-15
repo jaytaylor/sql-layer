@@ -2,7 +2,7 @@
 ---
 - Include: all-types-schema.yaml
 
-
+# Empty table
 ---
 - Statement: SELECT bigint_field FROM all_types WHERE
      bigint_field > 0 AND double_field > 0.0
