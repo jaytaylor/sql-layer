@@ -197,13 +197,22 @@
 - Statement: SELECT sum(float_field) FROM all_types
 - output: [[-Infinity]]
 
+---
+- Statement: DELETE FROM all_types
+
 # Test NaN
 ---
 - Statement: INSERT INTO all_types (double_field, float_field)
     VALUES (1.0, 1.0)
 ---
 - Statement: INSERT INTO all_types (double_field, float_field)
-    VALUES ('Infinity', 'Infinity'), ('-Infinity', '-Infinity')
+    VALUES ('Infinity', 'Infinity')
+---
+- Statement: SELECT sum(double_field), sum(float_field) FROM all_types
+- output: [[Infinity, Infinity]]
+---
+- Statement: INSERT INTO all_types (double_field, float_field)
+    VALUES ('-Infinity', '-Infinity')
 ---
 - Statement: SELECT sum(double_field), sum(float_field) FROM all_types
 - output: [[NaN, NaN]]
