@@ -17,7 +17,6 @@ package com.akiban.server.types.util;
 
 import java.util.TimeZone;
 import java.util.Calendar;
-import java.util.Date;
 import com.akiban.server.types.AkType;
 import org.junit.Test;
 import org.joda.time.DateTime;
@@ -25,6 +24,11 @@ import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import static org.junit.Assert.assertEquals;
 
+/**
+ * Non-parameterised tests for ValueHolder.
+ * Mainly to test the conversion between a Joda DateTime() and AkType.DATE/TIME/DATETIME or TIMESTAMP
+ *
+ */
 public class ValueHolderTest2 
 {
     @Test

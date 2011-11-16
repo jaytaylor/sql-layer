@@ -445,9 +445,10 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     }
 
     public ValueHolder(AkType type, DateTime value) {
-        if (type != AkType.DATE && type != AkType.TIME && type != AkType.TIMESTAMP && type != AkType.DATETIME)
-            throw new IllegalRawPutException("Date() to " + type);
-        putRaw(type, AKTYPE_CONVERTERS.get(type).toLong(value));
+        JodaDateToLong jdToLong = AKTYPE_CONVERTERS.get(type);
+        if (jdToLong == null)
+            throw new IllegalRawPutException("DateTime() to " + type);
+        putRaw(type, jdToLong.toLong(value));
     }
 
     public ValueHolder(AkType type, Object value) {
