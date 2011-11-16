@@ -90,15 +90,15 @@ public class Types {
 	public static Type YEAR =         new Type("year", 0, true, 1L, "YEAR", AkType.YEAR);
 	public static Type TIME =         new Type("time", 0, true, 3L, "TIME", AkType.TIME);
 	public static Type TIMESTAMP =    new Type("timestamp", 0, true, 4L, "TIMESTAMP", AkType.TIMESTAMP);
-	//
+        //
 	// VARCHAR and TEXT types. Maximum storage size is computed in Column, numbers
 	// here are not used. MaxByteSize numbers here are not used.
 	//
 	public static Type VARBINARY =    new Type("varbinary", 1, false, 65535L, "VARBINARY", AkType.VARBINARY);
 	public static Type BINARY =       new Type("binary", 1, false, 255L, "VARBINARY", AkType.VARBINARY);
-    public static Type VARCHAR =      new Type("varchar", 1, false, 65535L, "VARCHAR", AkType.VARCHAR);
+        public static Type VARCHAR =      new Type("varchar", 1, false, 65535L, "VARCHAR", AkType.VARCHAR);
 	public static Type CHAR =         new Type("char", 1, false, 767L, "VARCHAR", AkType.VARCHAR);
-    //
+        //
 	// BLOB and TEXT types.  Currently handled identically. The maxByteSize values
 	// here are used in computing the correct prefix size.  The maximum allow size
 	// is constrained in Column.
@@ -142,7 +142,7 @@ public class Types {
 	private static List<Type> listOfTypes() {
 	    List<Type> types = new ArrayList<Type>();
 		types.add(BIGINT);
-        types.add(U_BIGINT);
+                types.add(U_BIGINT);
 		types.add(BINARY);
 		types.add(BIT);
 		types.add(BLOB);

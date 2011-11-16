@@ -42,6 +42,7 @@ final class ExtractorForString extends ObjectExtractor<String> {
         case DATETIME:  return longExtractor(AkType.DATETIME).asString(source.getDateTime());
         case DECIMAL:   return String.valueOf(source.getDecimal());
         case VARBINARY: return String.valueOf(source.getVarBinary());
+        case INTERVAL:  return longExtractor(AkType.INTERVAL).asString(source.getInterval());
         default:
             throw unsupportedConversion(type);
         }

@@ -139,6 +139,13 @@ public final class AllowedConversionsTest {
         }
 
         @Override
+        public long getInterval()
+        {
+            checkType(AkType.INTERVAL);
+            return 0;
+        }
+
+        @Override
         public long getInt() {
             checkType(AkType.INT);
             return 0;
@@ -220,6 +227,9 @@ public final class AllowedConversionsTest {
             case YEAR:
                 stringValue = "2004";
                 break;
+            case INTERVAL:
+                stringValue = "1234567";
+                break;
             case DECIMAL:
             case DOUBLE:
             case FLOAT:
@@ -294,6 +304,10 @@ public final class AllowedConversionsTest {
         public void putTimestamp(long value) {
         }
 
+        @Override
+        public void putInterval(long value) {
+        }
+        
         @Override
         public void putUBigInt(BigInteger value) {
         }
