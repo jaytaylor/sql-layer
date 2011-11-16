@@ -15,27 +15,32 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.types.AkType;
 import java.util.EnumMap;
-import java.util.Hashtable;
+import java.util.HashMap;
 
 /**
  * BidirectionalMap: implements a simple bi-directional  map: AkType <--> Integer
  * (To be used in ArithExpression.java)
  */
-public class BidirectionalMap
+class BidirectionalMap
 {
     private EnumMap<AkType,Integer> map2Int;
-    private Hashtable<Integer,AkType> map2Ak;
+    private HashMap<Integer,AkType> map2Ak;
 
     public BidirectionalMap (int size, float lf)
     {
         map2Int = new EnumMap<AkType,Integer>(AkType.class);
-        map2Ak = new Hashtable<Integer, AkType>(size, lf);
+        map2Ak = new HashMap<Integer, AkType>(size, lf);
     }
 
     public void put (AkType type, int k)
     {
+       if (k < 0 ) throw new UnsupportedOperationException("int key has to be non-negative");
+       if (get(type) == k && get(k) == type) return;
+       if (map2Int.containsKey(type) || map2Ak.containsKey(k)|| map2Int.get(type) != null || map2Ak.get(k) != null)
+            throw new  UnsupportedOperationException ("Duplicated key/value");
         map2Int.put(type, k);
         map2Ak.put(k, type);
     }
