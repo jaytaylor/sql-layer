@@ -84,7 +84,6 @@ public final class RangeSegment {
         //
         // When comparing starts, WILD <= anything; and when comparing ends, WILD >= anything.
         RangeSegment previous = null;
-        
         for (ListIterator<RangeSegment> iterator = segments.listIterator(); iterator.hasNext(); ) {
             RangeSegment currentSegment = iterator.next();
             final RangeSegment nextPrevious;
@@ -92,21 +91,33 @@ public final class RangeSegment {
                 nextPrevious = currentSegment;
             }
             else {
-                ComparisonResult comparison = compareEndpoints(previous.getEnd(), currentSegment.getStart(), WILD_IS_LOW);
-                if (comparison == ComparisonResult.LT || comparison == ComparisonResult.GT) {
-                    ComparisonResult endsComparison = compareEndpoints(previous.getEnd(), currentSegment.getEnd(), WILD_IS_HIGH);
-                    if (endsComparison == ComparisonResult.LT || endsComparison == ComparisonResult.GT) {
+                RangeEndpoint previousEnd = previous.getEnd();
+                RangeEndpoint currentStart = currentSegment.getStart();
+                // "start" and "end" are relative to the previous. So, startsOverlap specifies whether
+                // the current's end is less than the previous start; and endsOverlap specifies whether the current's
+                // end is less than the previous end
+                boolean startsOverlap = findOverlap(previousEnd, currentStart, WILD_IS_LOW);
+                boolean endsOverlap = findOverlap(previousEnd, currentSegment.getEnd(), WILD_IS_HIGH);
+                if (startsOverlap || endsOverlap) {
+                    if (endsOverlap) {
                         iterator.remove();
                         nextPrevious = previous;
                     }
+                    // previous end is < current end; extend by taking previous start and current end
                     else {
-                        RangeSegment prev2 = iterator.previous();
-                        assert prev2 == previous : prev2 + " != " + previous;
-                        iterator.remove();
-                        RangeSegment curr2 = iterator.next();
-                        assert curr2 == currentSegment : curr2 + " != " + currentSegment;
                         nextPrevious = new RangeSegment(previous.getStart(), currentSegment.getEnd());
+                        // now, replace the previous two with this one
                         iterator.set(nextPrevious);
+                        // go back one; now looking at what we just set
+                        RangeSegment prev2 = iterator.previous();
+                        assert prev2 == nextPrevious : prev2 + " != " + nextPrevious;
+                        // go back again; now looking at the previous iteration's RangeSegment
+                        RangeSegment prev3 = iterator.previous();
+                        assert prev3 == previous : prev3 + " != " + previous;
+                        iterator.remove();
+                        // go forward one; now back to looking at the one we just created
+                        RangeSegment curr2 = iterator.next();
+                        assert curr2 == nextPrevious : curr2 + " != " + nextPrevious;
                     }
                 }
                 else {
@@ -116,6 +127,37 @@ public final class RangeSegment {
             previous = nextPrevious;
         }
         return segments;
+    }
+
+    /**
+     * Compares two RangePoints for overlap. The two overlap if high < low, or if the two are equal and at least
+     * one of them is inclusive or wild.
+     * @param low the RangePoint which should be lower, if the two are not to overlap
+     * @param high the RangePoint which should be higher, if the two are not to overlap
+     * @param wildFlag whether WILD is considered high or low
+     * @return whether the two points overlap
+     */
+    private static boolean findOverlap(RangeEndpoint low, RangeEndpoint high, boolean wildFlag) {
+        ComparisonResult comparison = compareEndpoints(low, high, wildFlag);
+        final boolean haveOverlap;
+        if (comparison == ComparisonResult.GT) {
+            haveOverlap = true; // previous end is >= current start; we have overlap
+        }
+        else if (comparison == ComparisonResult.EQ) {
+            // only have overlap in certain situations...
+            if (high.isWild() || low.isWild()) {
+                haveOverlap = true;
+            }
+            else {
+                RangeEndpoint.ValueEndpoint previousEndValuePoint = low.asValueEndpoint();
+                RangeEndpoint.ValueEndpoint currentStartValuePoint = high.asValueEndpoint();
+                haveOverlap = previousEndValuePoint.isInclusive() || currentStartValuePoint.isInclusive();
+            }
+        }
+        else {
+            haveOverlap = false;
+        }
+        return haveOverlap;
     }
 
     static List<RangeSegment> orRanges(List<RangeSegment> leftRanges, List<RangeSegment> rightRanges) {

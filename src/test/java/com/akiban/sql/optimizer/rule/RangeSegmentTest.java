@@ -147,8 +147,8 @@ public final class RangeSegmentTest {
     @Test
     public void sacOverlapWildEnd() {
         List<RangeSegment> original = Arrays.asList(
-                segment(RangeEndpoint.exclusive("apple"), RangeEndpoint.exclusive("person")),
-                segment(RangeEndpoint.inclusive("aardvark"), RangeEndpoint.WILD)
+                segment(RangeEndpoint.inclusive("aardvark"), RangeEndpoint.WILD),
+                segment(RangeEndpoint.exclusive("apple"), RangeEndpoint.exclusive("person"))
         );
         sacAndCheck(
                 original,
