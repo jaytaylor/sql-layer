@@ -829,19 +829,6 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     @Override
     public Object getEnvironmentValue(EnvironmentExpressionSetting setting) {
         switch (setting) {
-        case CURRENT_DATE:
-            if (transactionStartTime != null)
-                return transactionStartTime;
-            else
-                return new Date();
-        case CURRENT_CALENDAR:
-            if (transactionStartTime != null) {
-                Calendar result = Calendar.getInstance();
-                result.setTime(transactionStartTime);
-                return result;
-            }
-            else
-                return Calendar.getInstance();
         case CURRENT_DATETIME:
             if (transactionStartTime != null) 
                 return new DateTime(transactionStartTime.getTime());

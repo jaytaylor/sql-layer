@@ -34,21 +34,21 @@ public class CurrentDateTimeExpression extends EnvironmentExpression
      */
     @EnvironmentValue("current_date")
     public static final EnvironmentExpressionFactory CURRENT_DATE_COMPOSER 
-            = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_CALENDAR, AkType.DATE);
+            = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_DATETIME, AkType.DATE);
     
     /**
      * return current_time() expression 
      */
     @EnvironmentValue("current_time")
     public static final EnvironmentExpressionFactory CURRENT_TIME_COMPOSER 
-            = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_CALENDAR, AkType.TIME);
+            = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_DATETIME, AkType.TIME);
     
     /**
      * return current_timestamp() expression in String
      */
     @EnvironmentValue("current_timestamp")
     public static final EnvironmentExpressionFactory CURRENT_TIMESTAMP_COMPOSER 
-            = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_CALENDAR,  AkType.DATETIME);
+            = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_DATETIME,  AkType.DATETIME);
 
     /**
      * return now() expression  (an alias of current_timestamp())
