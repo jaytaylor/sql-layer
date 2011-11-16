@@ -140,7 +140,6 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
         } else {
             // hiComparisonExpression depends on exchange's key, but we need to compare the correct key segment.
             Key key = cursor.exchange.getKey();
-            int keyDepth = key.getDepth();
             int keySize = key.getEncodedSize();
             keySource.attach(key, field, fieldType);
             if (keySource.isNull()) {
@@ -149,7 +148,6 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
                 ExpressionEvaluation evaluation = endComparison.evaluation();
                 pastEnd = !evaluation.eval().getBool();
                 key.setEncodedSize(keySize);
-                key.setDepth(keyDepth);
             }
         }
         return pastEnd;

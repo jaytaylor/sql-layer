@@ -261,8 +261,6 @@ class SortCursorUnidirectional extends SortCursor
         }
     }
 
-    // TODO: Revisit comparison logic. Checking prefix should work.
-
     private boolean pastEnd()
     {
         boolean pastEnd;
@@ -270,14 +268,9 @@ class SortCursorUnidirectional extends SortCursor
             pastEnd = false;
         } else {
             Key key = exchange.getKey();
-            int keyDepth = key.getDepth();
-            int keySize = key.getEncodedSize();
             assert key.getDepth() >= endKey.getDepth();
-            key.setDepth(endKey.getDepth());
-            int c = key.compareTo(endKey) * direction;
+            int c = key.compareKeyFragment(endKey, 0, endKey.getEncodedSize()) * direction;
             pastEnd = c > 0 || c == 0 && !endInclusive;
-            key.setEncodedSize(keySize);
-            key.setDepth(keyDepth);
         }
         return pastEnd;
     }
