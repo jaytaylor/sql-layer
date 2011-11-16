@@ -33,7 +33,7 @@ import java.io.IOException;
 import java.util.Collection;
 
 @RunWith(NamedParameterizedRunner.class)
-public class PostgresServerMultipleUpdateIT extends PostgresServerITBase 
+public class PostgresServerMultipleUpdateIT extends PostgresServerFilesITBase 
                                             implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 

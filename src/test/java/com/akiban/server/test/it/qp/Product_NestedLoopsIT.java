@@ -18,6 +18,7 @@ package com.akiban.server.test.it.qp;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.AisRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -210,9 +211,9 @@ public class Product_NestedLoopsIT extends OperatorITBase
 
     // TODO: Test handling of rows whose type is not involved in product.
 
-    private Set<RowType> removeDescendentTypes(RowType type)
+    private Set<AisRowType> removeDescendentTypes(AisRowType type)
     {
-        Set<RowType> keepTypes = type.schema().userTableTypes();
+        Set<AisRowType> keepTypes = type.schema().userTableTypes();
         keepTypes.removeAll(Schema.descendentTypes(type, keepTypes));
         return keepTypes;
     }

@@ -18,6 +18,7 @@ package com.akiban.server.expression.std;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
@@ -32,6 +33,16 @@ public final class NotExpression extends AbstractUnaryExpression {
         @Override
         protected Expression compose(Expression argument) {
             return new NotExpression(argument);
+        }
+
+        @Override
+        protected AkType argumentType(AkType givenType) {
+            return AkType.BOOL;
+        }
+
+        @Override
+        protected ExpressionType composeType(ExpressionType argumentType) {
+            return ExpressionTypes.BOOL;
         }
     };
 

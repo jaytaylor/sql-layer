@@ -16,6 +16,7 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.error.StalePlanException;
+import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.parser.*;
 
 import java.util.List;
@@ -36,9 +37,27 @@ public class PostgresCallStatementGenerator extends PostgresBaseStatementGenerat
     {
         PostgresLoadablePlan statement = null;
         if (stmt instanceof CallStatementNode) {
-            CallStatementNode call = (CallStatementNode) stmt;
-            String planName = ((StaticMethodCallNode) call.methodCall().getJavaValueNode()).getMethodName();
-            statement = PostgresLoadablePlan.statement(server, planName);
+            CallStatementNode call = (CallStatementNode)stmt;
+            StaticMethodCallNode methodCall = (StaticMethodCallNode)call.methodCall().getJavaValueNode();
+            String planName = methodCall.getMethodName();
+            Object[] args = null;
+            JavaValueNode[] margs = methodCall.getMethodParameters();
+            if (margs != null) {
+                args = new Object[margs.length];
+                for (int i = 0; i < margs.length; i++) {
+                    JavaValueNode marg = margs[i];
+                    if (marg instanceof SQLToJavaValueNode) {
+                        ValueNode sqlArg = ((SQLToJavaValueNode)marg).getSQLValueNode();
+                        if (sqlArg instanceof ConstantNode) {
+                            args[i] = ((ConstantNode)sqlArg).getValue();
+                            continue;
+                        }
+                    }
+                    throw new UnsupportedSQLException("CALL parameter must be constant",
+                                                      marg);
+                }
+            }
+            statement = PostgresLoadablePlan.statement(server, planName, args);
             if (statement == null) {
                 throw new StalePlanException(planName);
             }

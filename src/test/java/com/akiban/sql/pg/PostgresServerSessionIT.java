@@ -25,7 +25,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.api.DDLFunctions;
 import org.postgresql.util.PSQLException;
 
-public class PostgresServerSessionIT extends PostgresServerITBase {
+public class PostgresServerSessionIT extends PostgresServerFilesITBase {
 
     @Before
     public void createSimpleSchema() throws SQLException {
@@ -65,6 +65,9 @@ public class PostgresServerSessionIT extends PostgresServerITBase {
     @Test 
     public void useUserSchema() throws SQLException {
         String create  = "CREATE TABLE t1 (c2 integer not null primary key)";
+        connection.createStatement().execute(create);
+        
+        create  = "CREATE TABLE auser.t1 (c4 integer not null primary key)";
         connection.createStatement().execute(create);
         
         connection.createStatement().execute("SET SCHEMA TEST");

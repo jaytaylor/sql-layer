@@ -270,7 +270,7 @@ public class API
 
     // Filter
 
-    public static Operator filter_Default(Operator inputOperator, Collection<RowType> keepTypes)
+    public static Operator filter_Default(Operator inputOperator, Collection<? extends RowType> keepTypes)
     {
         return new Filter_Default(inputOperator, keepTypes);
     }
@@ -299,9 +299,14 @@ public class API
     // Count
 
     public static Operator count_Default(Operator input,
-                                                 RowType countType)
+                                         RowType countType)
     {
         return new Count_Default(input, countType);
+    }
+
+    public static Operator count_TableStatus(RowType tableType)
+    {
+        return new Count_TableStatus(tableType);
     }
 
     // Sort
@@ -351,6 +356,14 @@ public class API
                                    outerJoinRowType,
                                    outerJoinRowExpressions,
                                    inputBindingPosition);
+    }
+
+    // Union
+    public static Operator unionAll(
+            Operator input1, RowType input1RowType,
+            Operator input2, RowType input2RowType
+    ) {
+        return new UnionAll_Default(input1, input1RowType, input2, input2RowType);
     }
 
     // Insert

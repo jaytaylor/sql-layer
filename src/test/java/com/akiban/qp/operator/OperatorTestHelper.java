@@ -37,7 +37,7 @@ public final class OperatorTestHelper {
 
     // OperatorTestHelper interface
 
-    public static void check(Operator plan, Collection<Row> expecteds) {
+    public static void check(Operator plan, Collection<? extends Row> expecteds, RowCheck additionalCheck) {
         List<Row> actuals = execute(plan);
         if (expecteds.size() != actuals.size()) {
             assertEquals("output", Strings.join(expecteds), Strings.join(actuals));
@@ -45,10 +45,12 @@ public final class OperatorTestHelper {
         }
         int rowCount = 0;
         try {
-            Iterator<Row> expectedsIter = expecteds.iterator();
+            Iterator<? extends Row> expectedsIter = expecteds.iterator();
             for (Row actual : actuals) {
                 Row expected = expectedsIter.next();
-                for (int i = 0; i < plan.rowType().nFields(); ++i) {
+                int actualWidth = actual.rowType().nFields();
+                assertEquals("row width", expected.rowType().nFields(), actualWidth);
+                for (int i = 0; i < actualWidth; ++i) {
                     ValueHolder actualHolder = new ValueHolder(actual.eval(i));
                     ValueHolder expectedHolder = new ValueHolder(expected.eval(i));
 
@@ -62,6 +64,8 @@ public final class OperatorTestHelper {
                         throw new AssertionError("should have failed by now!");
                     }
                 }
+                if (additionalCheck != null)
+                    additionalCheck.check(actual);
                 ++rowCount;
             }
         }
@@ -72,10 +76,23 @@ public final class OperatorTestHelper {
         }
     }
 
+    public static void check(Operator plan, Collection<? extends Row> expecteds) {
+        check(plan, expecteds, null);
+    }
+
+    public static Cursor open(Operator plan) {
+        Cursor result = plan.cursor(ADAPTER);
+        reopen(result);
+        return result;
+    }
+
+    public static void reopen(Cursor cursor) {
+        cursor.open(new ArrayBindings(0));
+    }
+
     public static List<Row> execute(Operator plan) {
         List<Row> rows = new ArrayList<Row>();
-        Cursor cursor = plan.cursor(ADAPTER);
-        cursor.open(new ArrayBindings(0));
+        Cursor cursor = open(plan);
         try {
             for(Row row = cursor.next(); row != null; row = cursor.next()) {
                 row.acquire();
@@ -104,6 +121,10 @@ public final class OperatorTestHelper {
     static final TestAdapter ADAPTER = new TestAdapter();
 
     // nested classes
+
+    public interface RowCheck {
+        void check(Row row);
+    }
 
     private static class TestAdapter extends StoreAdapter
     {
@@ -152,6 +173,12 @@ public final class OperatorTestHelper {
         @Override
         public void checkQueryCancelation(long startTimeMsec)
         {
+        }
+
+        @Override
+        public long rowCount(RowType tableType)
+        {
+            throw new UnsupportedOperationException();
         }
 
         public TestAdapter()

@@ -19,6 +19,7 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
@@ -49,6 +50,11 @@ public final class CompareExpression extends AbstractBinaryExpression {
     @Override
     public ExpressionEvaluation evaluation() {
         return new InnerEvaluation(childrenEvaluations(), comparison, op);
+    }
+
+    @Override
+    protected boolean nullIsContaminating() {
+        return true;
     }
 
     public CompareExpression(Expression lhs, Comparison comparison, Expression rhs) {
@@ -210,6 +216,19 @@ public final class CompareExpression extends AbstractBinaryExpression {
         @Override
         protected Expression compose(Expression first, Expression second) {
             return new CompareExpression(first, comparison, second);
+        }
+
+        @Override
+        public void argumentTypes(List<AkType> argumentTypes) {
+            // This is what the code does, using childrenType().
+            // The actual rule applied by the SQL parser is that,
+            // e.g. string op number is a numeric comparison.
+            argumentTypes.set(1, argumentTypes.get(0));
+        }
+
+        @Override
+        protected ExpressionType composeType(ExpressionType first, ExpressionType second) {
+            return ExpressionTypes.BOOL;
         }
 
         private InnerComposer(Comparison comparison) {

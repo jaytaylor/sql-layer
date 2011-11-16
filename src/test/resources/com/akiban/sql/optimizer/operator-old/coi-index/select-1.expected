@@ -1,4 +1,0 @@
-project([Field(0), Field(1)])
-  Filter_Default([user.customers])
-    GroupScan_Default(full scan on _akiban_customers)
-[cid:int[INT], name:varchar(32)[VARCHAR]]

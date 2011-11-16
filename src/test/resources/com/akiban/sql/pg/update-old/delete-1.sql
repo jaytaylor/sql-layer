@@ -1,1 +1,0 @@
-DELETE FROM items WHERE iid = 1012

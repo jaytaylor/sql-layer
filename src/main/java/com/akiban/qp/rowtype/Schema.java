@@ -26,7 +26,7 @@ import static java.lang.Math.max;
 
 // UserTable RowTypes are indexed by the UserTable's RowDef's ordinal. Derived RowTypes get higher values.
 
-public class Schema
+public class Schema extends DerivedTypesSchema
 {
     public synchronized UserTableRowType userTableRowType(UserTable table)
     {
@@ -46,35 +46,10 @@ public class Schema
             : groupIndexRowType((GroupIndex) index);
     }
 
-    public synchronized AggregatedRowType newAggregateType(RowType parent, int inputsIndex, List<AggregatorFactory> aggregatorFactories)
+    public synchronized Set<AisRowType> userTableTypes()
     {
-        return new AggregatedRowType(this, nextTypeId(), parent, inputsIndex, aggregatorFactories);
-    }
-
-    public synchronized FlattenedRowType newFlattenType(RowType parent, RowType child)
-    {
-        return new FlattenedRowType(this, nextTypeId(), parent, child);
-    }
-
-    public synchronized ProjectedRowType newProjectType(List<Expression> columns)
-    {
-        return new ProjectedRowType(this, nextTypeId(), columns);
-    }
-
-    public ProductRowType newProductType(RowType leftType, RowType rightType)
-    {
-        return new ProductRowType(this, nextTypeId(), leftType, rightType);
-    }
-
-    public synchronized ValuesRowType newValuesType(AkType... fields)
-    {
-        return new ValuesRowType(this, nextTypeId(), fields);
-    }
-
-    public synchronized Set<RowType> userTableTypes()
-    {
-        Set<RowType> userTableTypes = new HashSet<RowType>();
-        for (RowType rowType : rowTypes.values()) {
+        Set<AisRowType> userTableTypes = new HashSet<AisRowType>();
+        for (AisRowType rowType : rowTypes.values()) {
             if (rowType instanceof UserTableRowType) {
                 if (!rowType.userTable().isAISTable()) {
                     userTableTypes.add(rowType);
@@ -95,27 +70,15 @@ public class Schema
         return userTableTypes;
     }
 
-    public static Set<RowType> descendentTypes(RowType ancestorType, Set<RowType> allTypes)
-    {
-        Set<RowType> descendentTypes = new HashSet<RowType>();
-        for (RowType type : allTypes) {
-            if (type != ancestorType && ancestorType.ancestorOf(type)) {
-                descendentTypes.add(type);
-            }
-        }
-        return descendentTypes;
-    }
-
     public Schema(AkibanInformationSchema ais)
     {
         this.ais = ais;
-        this.typeIdCounter = -1;
         // Create RowTypes for AIS UserTables
         for (UserTable userTable : ais.getUserTables().values()) {
             UserTableRowType userTableRowType = new UserTableRowType(this, userTable);
             int tableTypeId = userTableRowType.typeId();
             rowTypes.put(tableTypeId, userTableRowType);
-            typeIdCounter = max(typeIdCounter, userTableRowType.typeId());
+            typeIdToLeast(userTableRowType.typeId());
         }
         // Create RowTypes for AIS TableIndexes
         for (UserTable userTable : ais.getUserTables().values()) {
@@ -144,11 +107,6 @@ public class Schema
 
     // For use by this package
 
-    synchronized int nextTypeId()
-    {
-        return ++typeIdCounter;
-    }
-
     // For use by this class
 
     private IndexRowType groupIndexRowType(GroupIndex groupIndex)
@@ -164,7 +122,6 @@ public class Schema
     // Object state
 
     private final AkibanInformationSchema ais;
-    private final Map<Integer, RowType> rowTypes = new HashMap<Integer, RowType>();
+    private final Map<Integer, AisRowType> rowTypes = new HashMap<Integer, AisRowType>();
     private final List<IndexRowType> groupIndexRowTypes = new ArrayList<IndexRowType>();
-    private volatile int typeIdCounter = 0;
 }

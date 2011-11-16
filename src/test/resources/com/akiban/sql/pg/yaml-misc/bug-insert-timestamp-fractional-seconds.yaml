@@ -1,0 +1,6 @@
+# Insert a timestamp with a fractional number of seconds fails
+---
+- Statement: CREATE TABLE t (timestamp_field timestamp)
+---
+- Statement: INSERT INTO t (timestamp_field) VALUES ('2000-01-02 04:00:00.0')
+...
