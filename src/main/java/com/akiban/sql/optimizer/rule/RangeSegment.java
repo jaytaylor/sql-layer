@@ -220,6 +220,21 @@ public final class RangeSegment {
         return start + " to " + end;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        RangeSegment that = (RangeSegment) o;
+        return end.equals(that.end) && start.equals(that.start);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = start.hashCode();
+        result = 31 * result + end.hashCode();
+        return result;
+    }
+
     public RangeSegment(RangeEndpoint start, RangeEndpoint end) {
         this.start = start;
         this.end = end;
@@ -227,8 +242,6 @@ public final class RangeSegment {
 
     private RangeEndpoint start;
     private RangeEndpoint end;
-
-
 
     private enum RangePointComparison {
         MIN {

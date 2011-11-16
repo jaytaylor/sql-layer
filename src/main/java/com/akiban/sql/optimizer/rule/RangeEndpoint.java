@@ -54,8 +54,6 @@ public abstract class RangeEndpoint {
         }
     };
 
-    public static final ValueEndpoint NULL_INCLUSIVE = inclusive(null);
-
     public static class ValueEndpoint extends RangeEndpoint {
 
         public Object getValue() {
@@ -79,6 +77,22 @@ public abstract class RangeEndpoint {
         @Override
         public String toString() {
             return value + (inclusive ? " inclusive" : " exclusive");
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ValueEndpoint that = (ValueEndpoint) o;
+            return inclusive == that.inclusive && !(value != null ? !value.equals(that.value) : that.value != null);
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = value != null ? value.hashCode() : 0;
+            result = 31 * result + (inclusive ? 1 : 0);
+            return result;
         }
 
         private ValueEndpoint(Object value, boolean inclusive) {
