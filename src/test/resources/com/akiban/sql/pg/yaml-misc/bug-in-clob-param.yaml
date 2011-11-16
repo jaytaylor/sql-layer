@@ -1,4 +1,4 @@
-# Problem with IN function with parameter
+# Problem with IN function with clob parameter
 ---
 - Statement: CREATE TABLE t (clob_field clob)
 ---

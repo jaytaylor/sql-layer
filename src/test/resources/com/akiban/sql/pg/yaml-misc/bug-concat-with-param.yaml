@@ -1,4 +1,4 @@
-# Parameter to function in SELECT produces NullPointerException
+# Parameter to CONCAT in SELECT produces NullPointerException
 ---
 - Statement: CREATE TABLE t (x varchar(32))
 ---

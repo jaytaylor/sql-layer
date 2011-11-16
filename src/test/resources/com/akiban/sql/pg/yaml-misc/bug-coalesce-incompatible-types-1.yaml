@@ -1,4 +1,4 @@
-# Coalescing incompatible types produces wrong error code
+# Coalescing incompatible types produces wrong exception
 ---
 - Statement: CREATE TABLE t (varchar_field varchar(32), integer_field integer)
 ---

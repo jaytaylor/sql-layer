@@ -1,4 +1,4 @@
-# IN function fails with conversion from double to varchar
+# IN function conversion from double to varchar produces wrong error
 ---
 - Statement: CREATE TABLE t (double_field double, varchar_field varchar(32))
 ---
@@ -6,5 +6,5 @@
     VALUES (1.0, '1.0'), (2.0, 'harvey')
 ---
 - Statement: SELECT double_field FROM t WHERE double_field IN (varchar_field)
-- output: [[1.0]]
+- error: [55003]
 ...
