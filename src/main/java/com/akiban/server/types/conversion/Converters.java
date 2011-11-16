@@ -78,6 +78,7 @@ public final class Converters {
         result.put(TEXT, ConverterForString.TEXT);
         result.put(TIME, LongConverter.TIME);
         result.put(TIMESTAMP, LongConverter.TIMESTAMP);
+        result.put(INTERVAL, LongConverter.INTERVAL);
         result.put(U_BIGINT, ConverterForBigInteger.INSTANCE);
         result.put(U_DOUBLE, ConverterForDouble.UNSIGNED);
         result.put(U_FLOAT, ConverterForFloat.UNSIGNED);
@@ -106,6 +107,7 @@ public final class Converters {
                 U_BIGINT,
                 TIME,
                 TIMESTAMP,
+                INTERVAL,
                 YEAR,
                 DATE,
                 DATETIME,
@@ -114,13 +116,16 @@ public final class Converters {
         );
         builder.legalConversions(U_BIGINT,
                 DECIMAL,
+                DOUBLE,
                 VARCHAR,
-                LONG
+                LONG,
+                INTERVAL
         );
         builder.legalConversions(DECIMAL,
                 U_BIGINT,
                 VARCHAR,
                 LONG,
+                INTERVAL,
                 FLOAT,
                 DOUBLE
         );
@@ -129,21 +134,24 @@ public final class Converters {
                 DECIMAL,
                 LONG,
                 U_BIGINT,
-                VARCHAR
+                VARCHAR,
+                INTERVAL
         );
         builder.legalConversions(FLOAT,
                 DOUBLE,
                 DECIMAL,
                 LONG,
                 U_BIGINT,
-                VARCHAR
+                VARCHAR,
+                INTERVAL
         );
         builder.legalConversions(LONG,
                 DOUBLE,
                 FLOAT,
                 U_BIGINT,
                 DECIMAL,
-                VARCHAR
+                VARCHAR,
+                INTERVAL
         );
         builder.legalConversions(DATE,
                 VARCHAR,
@@ -168,6 +176,14 @@ public final class Converters {
         builder.legalConversions(BOOL,
                 VARCHAR,
                 LONG
+        );
+
+        builder.legalConversions(INTERVAL,
+                DOUBLE,
+                DECIMAL,
+                U_BIGINT,                
+                LONG,
+                VARCHAR               
         );
 
         return builder.result();

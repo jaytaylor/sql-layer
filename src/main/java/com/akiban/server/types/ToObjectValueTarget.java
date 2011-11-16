@@ -109,6 +109,11 @@ public final class ToObjectValueTarget implements ValueTarget {
     public void putTimestamp(long value) {
         internalPut(value, AkType.TIMESTAMP);
     }
+    
+    @Override
+    public void putInterval(long value){
+        internalPut(value, AkType.INTERVAL);
+    }
 
     @Override
     public void putUBigInt(BigInteger value) {
