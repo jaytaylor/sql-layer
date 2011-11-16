@@ -81,19 +81,19 @@ public class BinaryBitExpression extends AbstractBinaryExpression
         private static LongExtractor lExtractor = Extractors.getLongExtractor(AkType.LONG);
     }
     
-    @Scalar("&")
+    @Scalar("bitand")
     public static final ExpressionComposer B_AND_COMPOSER = new InternalComposer(BitOperator.BITWISE_AND);
     
-    @Scalar("|")
+    @Scalar("bitor")
     public static final ExpressionComposer B_OR_COMPOSER = new InternalComposer(BitOperator.BITWISE_OR);
     
-    @Scalar("^")
+    @Scalar("bitxor")
     public static final ExpressionComposer B_XOR_COMPOSER = new InternalComposer(BitOperator.BITWISE_XOR);
     
-    @Scalar("<<")
+    @Scalar("leftshift")
     public static final ExpressionComposer LEFT_SHIFT_COMPOSER = new InternalComposer(BitOperator.LEFT_SHIFT);
     
-    @Scalar(">>")
+    @Scalar("rightshift")
     public static final ExpressionComposer RIGHT_SHIFT_COMPOSER = new InternalComposer(BitOperator.RIGHT_SHIFT);
         
     private final BitOperator op;
