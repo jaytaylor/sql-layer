@@ -53,7 +53,9 @@ class PersistitIndexCursor implements Cursor
                                     // TODO: It would be better to limit the use of exchange to SortCursor, which means
                                     // TODO: that the selector would need to be pushed down. Alternatively, the exchange's
                                     // TODO: value could be made available here in PersistitIndexRow.
-                                    selector.matchesAll() || selector.matches(exchange.fetch().getValue().getLong()));
+                                    selector.matchesAll() ||
+                                    (exchange.getKey().getEncodedSize() > 0 &&
+                                     selector.matches(exchange.fetch().getValue().getLong())));
                 } else {
                     close();
                     needAnother = false;

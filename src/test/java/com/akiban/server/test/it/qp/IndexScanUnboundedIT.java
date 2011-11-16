@@ -15,7 +15,6 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
@@ -25,7 +24,6 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.store.PersistitStore;
@@ -97,7 +95,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     // DESCRIPTION: description of test case
 
     @Test
-    public void testUnboundedAscAll()
+    public void testAscAll()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, ASC, B, ASC, C, ASC, ID, ASC));
         RowBase[] expected = new RowBase[]{
@@ -122,7 +120,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     }
 
     @Test
-    public void testUnboundedAscSome_ABC()
+    public void testAscSome_ABC()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, ASC, B, ASC, C, ASC));
         RowBase[] expected = new RowBase[]{
@@ -147,7 +145,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     }
 
     @Test
-    public void testUnboundedAscSome_AB()
+    public void testAscSome_AB()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, ASC, B, ASC));
         RowBase[] expected = new RowBase[]{
@@ -172,7 +170,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     }
 
     @Test
-    public void testUnboundedAscSome_A()
+    public void testAscSome_A()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, ASC));
         RowBase[] expected = new RowBase[]{
@@ -197,7 +195,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     }
 
     @Test
-    public void testUnboundedDescAll()
+    public void testDescAll()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, DESC, B, DESC, C, DESC, ID, DESC));
         RowBase[] expected = new RowBase[]{
@@ -222,7 +220,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     }
 
     @Test
-    public void testUnboundedDescSome_ABC()
+    public void testDescSome_ABC()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, DESC, B, DESC, C, DESC));
         RowBase[] expected = new RowBase[]{
@@ -247,7 +245,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     }
 
     @Test
-    public void testUnboundedDescSome_AB()
+    public void testDescSome_AB()
     {
         // All specified orderings are DESC, so a unidirectional traversal is done. That's why everything
         // is in reverse order, not just the columns listed explicitly in the ordering.
@@ -274,7 +272,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     }
 
     @Test
-    public void testUnboundedDescSome_A()
+    public void testDescSome_A()
     {
         // All specified orderings are DESC, so a unidirectional traversal is done. That's why everything
         // is in reverse order, not just the columns listed explicitly in the ordering.
@@ -301,7 +299,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     }
 
     @Test
-    public void testUnboundedMixedAll_AADA()
+    public void testMixedAll_AADA()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, ASC, B, ASC, C, DESC, ID, ASC));
         RowBase[] expected = new RowBase[]{
@@ -326,7 +324,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     }
 
     @Test
-    public void testUnboundedMixedSome_AAD()
+    public void testMixedSome_AAD()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, ASC, B, ASC, C, DESC));
         RowBase[] expected = new RowBase[]{
@@ -351,7 +349,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     }
 
     @Test
-    public void testUnboundedMixedAll_ADAA()
+    public void testMixedAll_ADAA()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, ASC, B, DESC, C, ASC, ID, ASC));
         RowBase[] expected = new RowBase[]{
@@ -376,7 +374,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     }
 
     @Test
-    public void testUnboundedMixedSome_ADA()
+    public void testMixedSome_ADA()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, ASC, B, DESC, C, ASC));
         RowBase[] expected = new RowBase[]{
@@ -401,7 +399,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     }
 
     @Test
-    public void testUnboundedMixedSome_AD()
+    public void testMixedSome_AD()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, ASC, B, DESC));
         RowBase[] expected = new RowBase[]{
@@ -426,7 +424,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     }
 
     @Test
-    public void testUnboundedMixedAll_ADDA()
+    public void testMixedAll_ADDA()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, ASC, B, DESC, C, DESC, ID, ASC));
         RowBase[] expected = new RowBase[]{
@@ -451,7 +449,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     }
 
     @Test
-    public void testUnboundedMixedSome_ADD()
+    public void testMixedSome_ADD()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, ASC, B, DESC, C, DESC));
         RowBase[] expected = new RowBase[]{
@@ -476,7 +474,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     }
 
     @Test
-    public void testUnboundedMixedAll_DAAA()
+    public void testMixedAll_DAAA()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, DESC, B, ASC, C, ASC, ID, ASC));
         RowBase[] expected = new RowBase[]{
@@ -501,7 +499,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     }
 
     @Test
-    public void testUnboundedMixedSome_DAA()
+    public void testMixedSome_DAA()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, DESC, B, ASC, C, ASC));
         RowBase[] expected = new RowBase[]{
@@ -526,7 +524,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     }
 
     @Test
-    public void testUnboundedMixedSome_DA()
+    public void testMixedSome_DA()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, DESC, B, ASC));
         RowBase[] expected = new RowBase[]{
@@ -551,7 +549,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     }
 
     @Test
-    public void testUnboundedMixedAll_DADA()
+    public void testMixedAll_DADA()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, DESC, B, ASC, C, DESC, ID, ASC));
         RowBase[] expected = new RowBase[]{
@@ -576,7 +574,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     }
 
     @Test
-    public void testUnboundedMixedSome_DAD()
+    public void testMixedSome_DAD()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, DESC, B, ASC, C, DESC));
         RowBase[] expected = new RowBase[]{
@@ -601,7 +599,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     }
 
     @Test
-    public void testUnboundedMixedAll_DDAA()
+    public void testMixedAll_DDAA()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, DESC, B, DESC, C, ASC, ID, ASC));
         RowBase[] expected = new RowBase[]{
@@ -626,7 +624,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     }
 
     @Test
-    public void testUnboundedMixedSome_DDA()
+    public void testMixedSome_DDA()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, DESC, B, DESC, C, ASC));
         RowBase[] expected = new RowBase[]{
@@ -651,7 +649,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
     }
 
     @Test
-    public void testUnboundedMixedAll_DDDA()
+    public void testMixedAll_DDDA()
     {
         Operator plan = indexScan_Default(idxRowType, unbounded(), ordering(A, DESC, B, DESC, C, DESC, ID, ASC));
         RowBase[] expected = new RowBase[]{

@@ -24,14 +24,16 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
-
 import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.aggregation.Aggregators;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.types.AkType;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.List;
 
 public class API
 {

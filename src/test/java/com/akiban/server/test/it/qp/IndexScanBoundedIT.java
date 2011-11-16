@@ -1730,7 +1730,7 @@ public class IndexScanBoundedIT extends OperatorITBase
     private static final boolean DESC = false;
     private static final boolean EXCLUSIVE = false;
     private static final boolean INCLUSIVE = true;
-    private static final Integer UNSPECIFIED = new Integer(Integer.MIN_VALUE);
+    private static final Integer UNSPECIFIED = new Integer(Integer.MIN_VALUE); // Relying on == comparisons
 
     private int t;
     private RowType tRowType;
