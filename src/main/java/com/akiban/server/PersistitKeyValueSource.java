@@ -37,6 +37,8 @@ public final class PersistitKeyValueSource implements ValueSource {
     }
 
     public void attach(Key key, int depth, AkType type) {
+        if (type == AkType.INTERVAL)
+            throw new UnsupportedOperationException();
         this.key = key;
         this.key.indexTo(depth);
         this.akType = type;
@@ -114,6 +116,11 @@ public final class PersistitKeyValueSource implements ValueSource {
     @Override
     public long getTimestamp() {
         return as(Long.class, AkType.TIMESTAMP);
+    }
+    
+    @Override
+    public long getInterval() {
+        throw new UnsupportedOperationException("interval not supported yet");
     }
 
     @Override

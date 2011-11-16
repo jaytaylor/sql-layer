@@ -30,7 +30,9 @@ import com.persistit.Persistit;
 
 import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Iterator;
+import java.util.Set;
 
 public final class PersistitKeyConversionTest extends ConversionTestBase {
 
@@ -74,6 +76,11 @@ public final class PersistitKeyConversionTest extends ConversionTestBase {
         @Override
         public ValueTarget linkedTarget() {
             return target;
+        }
+
+        @Override
+        public Set<? extends AkType> unsupportedTypes() {
+            return EnumSet.of(AkType.INTERVAL);
         }
 
         @Override
