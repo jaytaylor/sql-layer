@@ -42,21 +42,21 @@ public interface Store extends Service<Store> {
 
     RowDefCache getRowDefCache();
 
-    void writeRow(final Session session, final RowData rowData) throws PersistitException;
+    void writeRow(Session session, RowData rowData) throws PersistitException;
 
-    void writeRowForBulkLoad(final Session session, final Exchange hEx,
-            final RowDef rowDef, final RowData rowData, final int[] ordinals,
-            final int[] nKeyColumns, final FieldDef[] fieldDefs,
-            final Object[] hKey) throws PersistitException;
+    void writeRowForBulkLoad(Session session, Exchange hEx,
+            RowDef rowDef, RowData rowData, int[] ordinals,
+            int[] nKeyColumns, FieldDef[] fieldDefs,
+            Object[] hKey) throws PersistitException;
 
-    void updateTableStats(final Session session, final RowDef rowDef,
+    void updateTableStats(Session session, RowDef rowDef,
             long rowCount);
 
-    void deleteRow(final Session session, final RowData rowData) throws PersistitException;
+    void deleteRow(Session session, RowData rowData) throws PersistitException;
 
-    void updateRow(final Session session, final RowData oldRowData,
-                   final RowData newRowData,
-                   final ColumnSelector columnSelector) throws PersistitException;
+    void updateRow(Session session, RowData oldRowData,
+                   RowData newRowData,
+                   ColumnSelector columnSelector) throws PersistitException;
 
     /**
      * See {@link #newRowCollector(Session, int, int, int, byte[], RowData, ColumnSelector, RowData, ColumnSelector, ScanLimit)}
@@ -106,7 +106,7 @@ public interface Store extends Service<Store> {
      * @param tableId
      * @return
      */
-    RowCollector getSavedRowCollector(final Session session, final int tableId);
+    RowCollector getSavedRowCollector(Session session, int tableId);
 
 
     /**
@@ -115,7 +115,7 @@ public interface Store extends Service<Store> {
      * 
      * @param rc
      */
-    void addSavedRowCollector(final Session session, final RowCollector rc);
+    void addSavedRowCollector(Session session, RowCollector rc);
 
     /***
      * Remove a previously saved RowCollector. Must the the most recently added
@@ -123,14 +123,14 @@ public interface Store extends Service<Store> {
      * 
      * @param rc
      */
-    void removeSavedRowCollector(final Session session, final RowCollector rc);
+    void removeSavedRowCollector(Session session, RowCollector rc);
 
-    long getRowCount(final Session session, final boolean exact,
-            final RowData start, final RowData end, final byte[] columnBitMap);
+    long getRowCount(Session session, boolean exact,
+            RowData start, RowData end, byte[] columnBitMap);
 
-    TableStatistics getTableStatistics(final Session session, final int tableId);
+    TableStatistics getTableStatistics(Session session, int tableId);
 
-    void truncateGroup(final Session session, final int rowDefId) throws PersistitException;
+    void truncateGroup(Session session, int rowDefId) throws PersistitException;
 
     void truncateTableStatus(Session session, int rowDefId) throws RollbackException, PersistitException;
 
@@ -142,11 +142,12 @@ public interface Store extends Service<Store> {
      * @throws PersistitException 
      * @throws Exception 
      */
-    void analyzeTable(final Session session, int tableId);
-    void analyzeTable(final Session session, int tableId, int sampleSize);
+    void analyzeTable(Session session, int tableId);
+    void analyzeTable(Session session, int tableId, int sampleSize);
+    void analyzeIndexes(Session session, Collection<? extends Index> indexes);
 
     boolean isDeferIndexes();
-    void setDeferIndexes(final boolean b);
+    void setDeferIndexes(boolean b);
     void flushIndexes(Session session);
     void deleteIndexes(Session session, Collection<? extends Index> indexes);
     void buildAllIndexes(Session session, boolean deferIndexes);
