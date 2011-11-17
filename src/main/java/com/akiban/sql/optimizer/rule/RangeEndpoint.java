@@ -19,9 +19,9 @@ public abstract class RangeEndpoint {
 
     public abstract boolean isLowerWild();
     public abstract boolean isUpperWild();
-    public abstract ValueEndpoint asValueEndpoint();
     public abstract boolean hasValue();
-
+    public abstract Object getValue();
+    public abstract boolean isInclusive();
 
     public final boolean isEitherWild() {
         return isLowerWild() || isUpperWild();
@@ -57,13 +57,18 @@ public abstract class RangeEndpoint {
         }
 
         @Override
-        public ValueEndpoint asValueEndpoint() {
+        public boolean hasValue() {
+            return false;
+        }
+
+        @Override
+        public Object getValue() {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public boolean hasValue() {
-            return false;
+        public boolean isInclusive() {
+            throw new UnsupportedOperationException();
         }
 
         @Override
@@ -78,12 +83,14 @@ public abstract class RangeEndpoint {
         private final boolean isLower;
     }
 
-    public static class ValueEndpoint extends RangeEndpoint {
+    private static class ValueEndpoint extends RangeEndpoint {
 
+        @Override
         public Object getValue() {
             return value;
         }
 
+        @Override
         public boolean isInclusive() {
             return inclusive;
         }
@@ -101,11 +108,6 @@ public abstract class RangeEndpoint {
         @Override
         public boolean hasValue() {
             return true;
-        }
-
-        @Override
-        public ValueEndpoint asValueEndpoint() {
-            return this;
         }
 
         @Override

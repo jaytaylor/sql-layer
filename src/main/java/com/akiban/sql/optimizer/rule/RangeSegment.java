@@ -143,23 +143,11 @@ public final class RangeSegment {
         if (comparison == ComparisonResult.INVALID)
             return null;
         final boolean haveOverlap;
-        if (comparison == ComparisonResult.GT) {
-            haveOverlap = true; // previous end is >= current start; we have overlap
-        }
-        else if (comparison == ComparisonResult.EQ) {
-            // only have overlap in certain situations...
-            if (high.isEitherWild() || low.isEitherWild()) {
-                haveOverlap = true;
-            }
-            else {
-                RangeEndpoint.ValueEndpoint previousEndValuePoint = low.asValueEndpoint();
-                RangeEndpoint.ValueEndpoint currentStartValuePoint = high.asValueEndpoint();
-                haveOverlap = previousEndValuePoint.isInclusive() || currentStartValuePoint.isInclusive();
-            }
-        }
-        else {
-            haveOverlap = false;
-        }
+        haveOverlap
+                = comparison == ComparisonResult.GT
+                || (comparison == ComparisonResult.EQ
+                    && (high.isEitherWild() || low.isEitherWild() || low.isInclusive() || high.isInclusive())
+                );
         return haveOverlap;
     }
 
@@ -198,12 +186,10 @@ public final class RangeSegment {
         if (two.isEitherWild())
             return comparison.getAssociatedWild().equals(two) ? two : one;
 
-        RangeEndpoint.ValueEndpoint oneValue = one.asValueEndpoint();
-        RangeEndpoint.ValueEndpoint twoValue = two.asValueEndpoint();
-        Object resultValue = comparison.get(oneValue.getValue(), twoValue.getValue());
+        Object resultValue = comparison.get(one.getValue(), two.getValue());
         if (resultValue == null)
             return null;
-        boolean resultInclusive = oneValue.isInclusive() && twoValue.isInclusive();
+        boolean resultInclusive = one.isInclusive() && two.isInclusive();
         return RangeEndpoint.of(resultValue, resultInclusive);
     }
 
@@ -247,9 +233,7 @@ public final class RangeSegment {
 
         assert ! point1.isEitherWild() : point1;
         assert ! point2.isEitherWild() : point2;
-        RangeEndpoint.ValueEndpoint value1 = point1.asValueEndpoint();
-        RangeEndpoint.ValueEndpoint value2 = point2.asValueEndpoint();
-        return compareObjects(value1.getValue(), value2.getValue());
+        return compareObjects(point1.getValue(), point2.getValue());
     }
 
     public RangeEndpoint getStart() {
