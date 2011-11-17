@@ -96,8 +96,10 @@ public final class RangeSegment {
                 // "start" and "end" are relative to the previous. So, startsOverlap specifies whether
                 // the current's end is less than the previous start; and endsOverlap specifies whether the current's
                 // end is less than the previous end
-                boolean startsOverlap = findOverlap(previousEnd, currentStart);
-                boolean endsOverlap = findOverlap(previousEnd, currentSegment.getEnd());
+                Boolean startsOverlap = findOverlap(previousEnd, currentStart);
+                Boolean endsOverlap = findOverlap(previousEnd, currentSegment.getEnd());
+                if (startsOverlap == null || endsOverlap == null)
+                    return null;
                 if (startsOverlap || endsOverlap) {
                     if (endsOverlap) {
                         iterator.remove();
@@ -136,8 +138,10 @@ public final class RangeSegment {
      * @param high the RangePoint which should be higher, if the two are not to overlap
      * @return whether the two points overlap
      */
-    private static boolean findOverlap(RangeEndpoint low, RangeEndpoint high) {
+    private static Boolean findOverlap(RangeEndpoint low, RangeEndpoint high) {
         ComparisonResult comparison = compareEndpoints(low, high);
+        if (comparison == ComparisonResult.INVALID)
+            return null;
         final boolean haveOverlap;
         if (comparison == ComparisonResult.GT) {
             haveOverlap = true; // previous end is >= current start; we have overlap

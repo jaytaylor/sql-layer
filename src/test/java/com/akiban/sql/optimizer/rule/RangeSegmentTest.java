@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.akiban.util.AssertUtils.assertCollectionEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 
 public final class RangeSegmentTest {
@@ -189,6 +190,30 @@ public final class RangeSegmentTest {
                 original,
                 segment(RangeEndpoint.inclusive("aardvark"), RangeEndpoint.exclusive("zebra"))
         );
+    }
+
+    @Test
+    public void sacIncomparableTypesForSorting() {
+        List<RangeSegment> original = Arrays.asList(
+                segment(RangeEndpoint.inclusive("aardvark"), RangeEndpoint.inclusive("person")),
+                segment(RangeEndpoint.inclusive(1L), RangeEndpoint.exclusive("zebra"))
+        );
+        List<RangeSegment> copy = new ArrayList<RangeSegment>(original);
+        List<RangeSegment> sorted = RangeSegment.sortAndCombine(copy);
+        assertCollectionEquals(original, copy);
+        assertNull("sorted list should be null", sorted);
+    }
+
+    @Test
+    public void sacIncomparableTypesForMerging() {
+        List<RangeSegment> original = Arrays.asList(
+                segment(RangeEndpoint.inclusive("aardvark"), RangeEndpoint.inclusive(1L)),
+                segment(RangeEndpoint.inclusive("cat"), RangeEndpoint.exclusive(1L))
+        );
+        List<RangeSegment> copy = new ArrayList<RangeSegment>(original);
+        List<RangeSegment> sorted = RangeSegment.sortAndCombine(copy);
+        assertCollectionEquals(original, copy);
+        assertNull("sorted list should be null", sorted);
     }
 
     /**
