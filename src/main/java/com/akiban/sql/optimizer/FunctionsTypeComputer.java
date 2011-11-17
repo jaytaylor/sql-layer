@@ -29,6 +29,7 @@ import com.akiban.server.service.functions.FunctionsRegistry;
 
 import com.akiban.server.types.AkType;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoSuchFunctionException;
 
 import java.util.ArrayList;
@@ -290,7 +291,6 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case BOOL:
             return new DataTypeDescriptor(TypeId.BOOLEAN_ID, true);
         case INT:
-        case YEAR:
             return new DataTypeDescriptor(TypeId.INTEGER_ID, true);
         case LONG:
             return new DataTypeDescriptor(TypeId.BIGINT_ID, true);
@@ -310,7 +310,6 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return new DataTypeDescriptor(TypeId.DATE_ID, true);
         case TIME:
             return new DataTypeDescriptor(TypeId.TIME_ID, true);
-        case DATETIME:
         case TIMESTAMP:
             return new DataTypeDescriptor(TypeId.TIMESTAMP_ID, true);
         case VARCHAR:
@@ -327,8 +326,21 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return new DataTypeDescriptor(TypeId.LONGVARCHAR_ID, true);
         case VARBINARY:
             return new DataTypeDescriptor(TypeId.LONGVARBIT_ID, true);
-        default:
+        case NULL:
             return null;
+        case DATETIME:
+        case YEAR:
+        default:
+            try {
+                return new DataTypeDescriptor(TypeId.getUserDefinedTypeId(null,
+                                                                          resultType.getType().name(),
+                                                                          null),
+                                              true);
+            }
+            catch (StandardException ex) {
+                throw new AkibanInternalException("Cannot make type for " + resultType,
+                                                  ex);
+            }
         }
     }
 
