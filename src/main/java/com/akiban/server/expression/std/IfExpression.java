@@ -23,8 +23,10 @@ import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.AkType.UnderlyingType;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.extract.Extractors;
+import java.math.BigDecimal;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -65,18 +67,21 @@ public class IfExpression extends AbstractCompositeExpression
 
         AkType o1 = children.get(1).valueType();
         AkType o2 = children.get(2).valueType();
-        if (!Converters.isConversionAllowed(o2, o2)) throw new UnsupportedOperationException("Inconvertible types " + o1 + " <=> " + o2);
-        UnderlyingType op1 = children.get(1).valueType().underlyingTypeOrNull();
-        UnderlyingType op2 = children.get(2).valueType().underlyingTypeOrNull();
-
+        
         if (o1 == o2) return o1;
-        else if (STRING.contains(o1) || STRING.contains(o2)) return AkType.VARCHAR;
-        else if (op1 == UnderlyingType.DOUBLE_AKTYPE || op2 == UnderlyingType.DOUBLE_AKTYPE) return AkType.DOUBLE;
-        else if (op1 == UnderlyingType.FLOAT_AKTYPE || op2 == UnderlyingType.FLOAT_AKTYPE) return AkType.FLOAT;
+        else if (!Converters.isConversionAllowed(o2, o2)) throw new UnsupportedOperationException("Inconvertible types " + o1 + " <=> " + o2);
+        
+        UnderlyingType under_o1 = o1.underlyingTypeOrNull();
+        UnderlyingType under_o2 = o2.underlyingTypeOrNull();
 
+        
+        if (STRING.contains(o1) || STRING.contains(o2)) return AkType.VARCHAR;
+        else if (o1 == AkType.DECIMAL || o2 == AkType.DECIMAL) return AkType.DECIMAL;
+        else if (under_o1 == UnderlyingType.DOUBLE_AKTYPE || under_o2 == UnderlyingType.DOUBLE_AKTYPE) return AkType.DOUBLE;
+        else if (under_o1 == UnderlyingType.FLOAT_AKTYPE || under_o2 == UnderlyingType.FLOAT_AKTYPE) return AkType.FLOAT;
+        else if (under_o1 == UnderlyingType.LONG_AKTYPE || under_o2 == UnderlyingType.LONG_AKTYPE) return AkType.LONG;
+        else return AkType.NULL;
 
-            
-        return AkType.LONG;
     }
 
     private static int checkArgs (List<? extends Expression> children)
@@ -122,6 +127,66 @@ public class IfExpression extends AbstractCompositeExpression
         }    
     }
  
+    private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
+    {
+        private AkType topType;
+        private IfExpression exp;
+        public InnerEvaluation (AkType type, IfExpression ex)
+        {
+            super(ex.childrenEvaluations());
+            topType = type;
+            exp = ex;
+        }
+
+        @Override
+        public ValueSource eval() 
+        {
+            ValueSource condition = this.children().get(0).eval();
+            AkType condType = condition.getConversionType();
+            int i ;
+            
+            if ( condition.isNull()) 
+                i = 1;
+            else
+                switch (condType)
+                {
+                    case BOOL:      i = condition.getBool() ? 1 : 2; break;
+                    case DATETIME:  
+                    case DATE:
+                    case TIME:
+                    case INT:
+                    case U_INT:
+                    case U_BIGINT:
+                    case TIMESTAMP:
+                    case YEAR:
+                    case LONG:      i = Extractors.getLongExtractor(condType).getLong(condition) != 0 ? 1 : 2; break;
+                    case FLOAT:
+                    case DOUBLE:
+                    case U_FLOAT:
+                    case U_DOUBLE:  i = Extractors.getDoubleExtractor().getDouble(condition) != 0.0 ? 1 : 2; break;
+                    case DECIMAL:   i = condition.getDecimal().equals(BigDecimal.ZERO) ? 2 : 1;
+                    case VARCHAR:
+                    case TEXT:      String st = Extractors.getStringExtractor().getObject(condition); 
+                                    double l;
+                                    try
+                                    {
+                                        l = Double.parseDouble(st);
+                                        i = l != 0.0 ? 1 : 2;
+                                    }
+                                    catch (NumberFormatException e)
+                                    {
+                                        i = 1;
+                                    }  
+                    default:        i = 2;
+                }
+            
+            CastExpression rst = new CastExpression (topType, exp.children().get(i));
+            return rst.evaluation().eval();
+        }
+        
+    }
+    
+    
     @Override
     protected boolean nullIsContaminating()
     {
@@ -137,7 +202,7 @@ public class IfExpression extends AbstractCompositeExpression
     @Override
     public ExpressionEvaluation evaluation()
     {
-      //  return getReturnExp().evaluation();
+       return new InnerEvaluation(this.valueType(), this);
     }
 
 }

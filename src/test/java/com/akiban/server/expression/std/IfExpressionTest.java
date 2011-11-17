@@ -15,12 +15,35 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.expression.Expression;
+import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
+
+import com.akiban.server.types.conversion.Converters;
+import java.util.Arrays;
+import org.junit.Test;
+import static org.junit.Assert.assertTrue;
 
 public class IfExpressionTest extends ComposedExpressionTestBase
 {
     private static final CompositionTestInfo testInfo = new CompositionTestInfo(3, AkType.LONG, false);
+
+    @Test
+    public void test ()
+    {
+       Expression cond = new LiteralExpression(AkType.BOOL, true);
+       Expression trueExp = new LiteralExpression(AkType.LONG, 1L);
+       Expression falseExp = new LiteralExpression(AkType.LONG, 2L);
+       
+       Expression ifExp = new IfExpression(Arrays.asList(cond, trueExp, falseExp));
+       
+       assertTrue(ifExp.evaluation().eval().getLong() == 1L);
+       
+        
+    }
+    
 
     @Override
     protected CompositionTestInfo getTestInfo()
@@ -28,9 +51,10 @@ public class IfExpressionTest extends ComposedExpressionTestBase
         return testInfo;
     }
 
-    @Override
+  @Override
     protected ExpressionComposer getComposer()
     {
         return IfExpression.COMPOSER;
     }
+   
 }
