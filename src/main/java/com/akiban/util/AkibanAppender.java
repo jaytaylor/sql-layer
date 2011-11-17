@@ -230,6 +230,11 @@ public abstract class AkibanAppender {
         public void putTimestamp(long value) {
             throw new UnsupportedOperationException();
         }
+        
+        @Override
+        public void putInterval(long value) {
+            throw new UnsupportedOperationException();
+        }
 
         @Override
         public void putUBigInt(BigInteger value) {

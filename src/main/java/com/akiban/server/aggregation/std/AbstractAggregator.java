@@ -69,7 +69,7 @@ class AbstractAggregator implements Aggregator
 
     @Override
     public void input(ValueSource input)
-    { 
+    {
         if (!input.isNull())
         {
             if (value == null)
@@ -77,8 +77,8 @@ class AbstractAggregator implements Aggregator
             else
                 switch (type)
                 {
-                    case DOUBLE:    value.putDouble(processor.process(D_EXTRACTOR.getDouble(value), D_EXTRACTOR.getDouble(input))); break;
-                    case INT:
+                    case DOUBLE:     value.putDouble(processor.process(D_EXTRACTOR.getDouble(value), D_EXTRACTOR.getDouble(input))); break;                      
+                    case INT:       
                     case LONG:      value.putLong(processor.process(L_EXTRACTOR.getLong(value), L_EXTRACTOR.getLong(input))); break;
                     case DECIMAL:   value.putDecimal(processor.process(DEC_EXTRACTOR.getObject(value), DEC_EXTRACTOR.getObject(input))); break;
                     case U_BIGINT:  value.putUBigInt(processor.process(BIGINT_EXTRACTOR.getObject(value), BIGINT_EXTRACTOR.getObject(input))); break;
@@ -88,7 +88,7 @@ class AbstractAggregator implements Aggregator
                     case VARCHAR:   value.putString(processor.process(S_EXTRACTOR.getObject(value), S_EXTRACTOR.getObject(input))); break;
                     case DATETIME:  value.putDateTime(processor.process(DATETIME_EXTRACTOR.getLong(value), DATETIME_EXTRACTOR.getLong(input))); break;
                     default: throw new UnsupportedOperationException("Not supported yet.");
-                }         
+                 }
         }
     }
 

@@ -34,6 +34,8 @@ public final class PersistitKeyValueTarget implements ValueTarget {
     }
 
     public PersistitKeyValueTarget expectingType(AkType type) {
+        if (type == AkType.INTERVAL)
+            throw new UnsupportedOperationException();
         this.type = type;
         return this;
     }
@@ -126,6 +128,11 @@ public final class PersistitKeyValueTarget implements ValueTarget {
         checkState(AkType.TIMESTAMP);
         key.append(value);
         invalidate();
+    }
+    
+    @Override
+    public void putInterval(long value) {
+        throw new UnsupportedOperationException("interval not supported yet");
     }
 
     @Override

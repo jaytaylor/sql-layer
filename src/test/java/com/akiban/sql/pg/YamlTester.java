@@ -311,7 +311,7 @@ class YamlTester {
 		} else if ("explain".equals(attribute)) {
 		    parseExplain(attributeValue);
 		} else {
-		    fail("The " + attribute + " attribute name was not" +
+		    fail("The '" + attribute + "' attribute name was not" +
 			 " recognized");
 		}
 	    }
