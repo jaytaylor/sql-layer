@@ -84,48 +84,6 @@ public class IfExpression extends AbstractCompositeExpression
 
     }
 
-    private static int checkArgs (List<? extends Expression> children)
-    {
-        if (children.size() != 3) throw new WrongExpressionArityException(3, children.size());
-
-        Expression condition = children.get(0);
-        AkType type = condition.valueType();
-        if (condition.evaluation().eval().isNull() || type.underlyingTypeOrNull() == null ) return 2;
-
-        switch (type)
-        {
-            case BOOL:      return condition.evaluation().eval().getBool() ? 1 : 2;
-            case DATETIME:
-            case DATE:
-            case TIME:
-            case INT:
-            case U_INT:
-            case U_BIGINT:
-            case TIMESTAMP:
-            case YEAR:
-            case LONG:       return Extractors.getLongExtractor(type).getLong(condition.evaluation().eval()) != 0 ? 1 : 2;
-            case FLOAT:
-            case DOUBLE:
-            case U_FLOAT:
-            case U_DOUBLE:
-            case DECIMAL:
-                return Extractors.getDoubleExtractor().getDouble(condition.evaluation().eval()) != 0.0 ? 1 : 2;
-            case VARCHAR:
-            case TEXT:      String st = Extractors.getStringExtractor().getObject(condition.evaluation().eval());
-                            long l;
-                            try
-                            {
-                                l = Long.parseLong(st);
-                            }
-                            catch (NumberFormatException e)
-                            {
-                                return 1;
-                            }
-                            return l != 0 ? 1 : 2;
-            default:
-                return condition.evaluation().eval().getVarBinary().byteArrayLength() != 0 ? 1 : 2;
-        }    
-    }
  
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
