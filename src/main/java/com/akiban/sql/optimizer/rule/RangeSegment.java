@@ -288,28 +288,28 @@ public final class RangeSegment {
     private enum RangePointComparison {
         MIN {
             @Override
-            protected Object select(Object one, Object two, int comparison) {
-                return comparison < 0 ? one : two;
+            protected Object select(Object one, Object two, ComparisonResult comparison) {
+                return comparison == ComparisonResult.LT ? one : two;
             }
         },
         MAX {
             @Override
-            protected Object select(Object one, Object two, int comparison) {
-                return comparison > 0 ? one : two;
+            protected Object select(Object one, Object two, ComparisonResult comparison) {
+                return comparison == ComparisonResult.GT ? one : two;
             }
         }
         ;
 
-        protected abstract Object select(Object one, Object two, int comparison);
+        protected abstract Object select(Object one, Object two, ComparisonResult comparison);
 
         public Object get(Object one, Object two) {
             ComparisonResult compareResult = RangeSegment.compareObjects(one, two);
             switch (compareResult) {
             case EQ:
-            case LT:
                 return one;
+            case LT:
             case GT:
-                return two;
+                return select(one, two, compareResult);
             case INVALID:
                 return null;
             default:
