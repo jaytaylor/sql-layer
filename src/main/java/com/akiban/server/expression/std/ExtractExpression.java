@@ -35,6 +35,9 @@ public class ExtractExpression extends AbstractUnaryExpression
     @Scalar ("date")
     public static final ExpressionComposer DATE_COMPOSER = new InternalComposer(TargetExtractType.DATE);
 
+    @Scalar ("timestamp")
+    public static final ExpressionComposer DATETIME_COMPOSER = new InternalComposer(TargetExtractType.DATETIME);
+    
     @Scalar ("day")
     public static final ExpressionComposer DAY_COMPOSER = new InternalComposer(TargetExtractType.DAY);
 
@@ -63,7 +66,7 @@ public class ExtractExpression extends AbstractUnaryExpression
     @Scalar ("time")
     public static final ExpressionComposer TIME_COMPOSER = new InternalComposer(TargetExtractType.TIME);
 
-    @Scalar ("timestamp")
+    @Scalar ("ak_timestamp")
     public static final ExpressionComposer TIMESTAMP_COMPOSER = new InternalComposer(TargetExtractType.TIMESTAMP);
 
     @Scalar ("year")
@@ -99,6 +102,48 @@ public class ExtractExpression extends AbstractUnaryExpression
                     default:        return -1;
                 }
             }
+        },
+             
+        DATETIME(AkType.DATETIME)
+        {
+            @Override
+            public long extract (ValueSource source)
+            {
+                AkType type = source.getConversionType();
+                long rawLong;
+                long y = 1970;
+                long m = 1;
+                long d = 1;
+                long hr = 0;
+                long min = 0;
+                long sec = 0;
+                switch (type)
+                {
+                    case DATE:      rawLong = source.getDate();
+                                    y = rawLong / 512;
+                                    m = rawLong / 32 % 16;
+                                    d = rawLong % 32;
+                                    return vallidDayMonth(y,m,d) ? y * 10000000000L + m * 100000000L + d * 1000000L : -1;                        
+                    case TIME:      return -1;                        
+                    case DATETIME:  rawLong = source.getDateTime();
+                                    y = rawLong / 10000000000L;
+                                    m = rawLong / 100000000L % 100;
+                                    d = rawLong / 1000000L % 100;
+                                    return vallidDayMonth(y,m,d) ? rawLong : -1;
+                    case TIMESTAMP: rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
+                                    Calendar calendar = Calendar.getInstance();
+                                    calendar.setTimeInMillis(rawLong * 1000);
+                                    y = calendar.get(Calendar.YEAR);
+                                    m = calendar.get(Calendar.MONTH) +1; // month in calendar is 0-based
+                                    d = calendar.get(Calendar.DAY_OF_MONTH);
+                                    hr = calendar.get(Calendar.HOUR_OF_DAY);
+                                    min = calendar.get(Calendar.MINUTE);
+                                    sec = calendar.get(Calendar.SECOND);
+                                    return y * 10000000000L + m * 100000000L + d * 1000000L + hr * 10000 + min * 100 + sec;
+                    default:        return -1;
+                }
+            }
+            
         },
         DAY(AkType.LONG)
         {
@@ -394,6 +439,7 @@ public class ExtractExpression extends AbstractUnaryExpression
                     case DATE:      
                     case DAY:
                     case TIMESTAMP:
+                    case DATETIME:
                     case YEAR:
                     case MONTH:     if (DATES.contains(source.getConversionType()))
                                         raw = type.extract(source);
