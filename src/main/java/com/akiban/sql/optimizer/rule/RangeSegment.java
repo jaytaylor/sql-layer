@@ -198,9 +198,9 @@ public final class RangeSegment {
 
     static RangeEndpoint rangeEndpoint(RangeEndpoint one, RangeEndpoint two, RangePointComparison comparison) {
         if (one.isEitherWild())
-            return comparison.getWild().equals(one) ? one : two;
+            return comparison.getAssociatedWild().equals(one) ? one : two;
         if (two.isEitherWild())
-            return comparison.getWild().equals(two) ? two : one;
+            return comparison.getAssociatedWild().equals(two) ? two : one;
 
         RangeEndpoint.ValueEndpoint oneValue = one.asValueEndpoint();
         RangeEndpoint.ValueEndpoint twoValue = two.asValueEndpoint();
@@ -324,7 +324,7 @@ public final class RangeSegment {
             }
         }
 
-        public RangeEndpoint getWild() {
+        public RangeEndpoint getAssociatedWild() {
             return associatedWild;
         }
 
