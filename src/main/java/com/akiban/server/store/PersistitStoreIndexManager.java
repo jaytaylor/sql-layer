@@ -16,6 +16,8 @@
 package com.akiban.server.store;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import com.akiban.ais.model.Index;
@@ -106,7 +108,16 @@ public class PersistitStoreIndexManager implements IndexManager {
      */
     @Override
     public void analyzeTable(final Session session, final RowDef rowDef, final int sampleSize) {
-        for (Index index : rowDef.getIndexes()) {
+        analyzeIndexes(session, Arrays.asList(rowDef.getIndexes()), sampleSize);
+    }
+
+    @Override
+    public void analyzeIndexes(final Session session, final Collection<? extends Index> indexes) {
+        analyzeIndexes(session, indexes, DEFAULT_SAMPLE_SIZE - 1);
+    }
+
+    public void analyzeIndexes(final Session session, final Collection<? extends Index> indexes, final int sampleSize) {
+        for (Index index : indexes) {
             try {
                 analyzeIndex(session, index, sampleSize);
             } catch (PersistitException e) {
