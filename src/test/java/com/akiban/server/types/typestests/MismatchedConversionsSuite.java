@@ -37,6 +37,7 @@ public final class MismatchedConversionsSuite {
         List<AkType> validTypes = new ArrayList<AkType>();
         Collections.addAll(validTypes, AkType.values());
         validTypes.removeAll(invalidTypes);
+        validTypes.removeAll(baseConversion.unsupportedTypes());
         validTypes = Collections.unmodifiableList(validTypes); // sanity check
 
         List<AkType> scratchPad = new ArrayList<AkType>(validTypes);
@@ -95,6 +96,7 @@ public final class MismatchedConversionsSuite {
         map.put(TEXT, TestCase.forText("world", 5, "US-ASCII", NO_STATE));
         map.put(TIME, TestCase.forTime(0, NO_STATE));
         map.put(TIMESTAMP, TestCase.forTimestamp(0, NO_STATE));
+        map.put(INTERVAL, TestCase.forInterval(0, NO_STATE));
         map.put(U_BIGINT, TestCase.forUBigInt(BigInteger.TEN, NO_STATE));
         map.put(U_DOUBLE, TestCase.forUDouble(0, NO_STATE));
         map.put(U_FLOAT, TestCase.forUFloat(0, NO_STATE));
@@ -170,6 +172,11 @@ public final class MismatchedConversionsSuite {
         @Override
         public void checkPut(Switcher expected) {
             throw new UnsupportedOperationException("this shouldn't be called!");
+        }
+
+        @Override
+        public Set<? extends AkType> unsupportedTypes() {
+            return delegate.unsupportedTypes();
         }
 
         private DelegateLinkedConversion(LinkedConversion<?> delegate) {
