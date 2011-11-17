@@ -75,10 +75,13 @@
 # Infinity and NaN
 ---
 - Statement: INSERT INTO all_types (double_field, float_field)
-    VALUES (1.0, 1.0);
+    VALUES ('-Infinity', '-Infinity');
+---
+- Statement: SELECT MAX(double_field), MAX(float_field) FROM all_types
+- output: [[-Infinity, -Infinity]]
 ---
 - Statement: INSERT INTO all_types (double_field, float_field)
-    VALUES ('-Infinity', '-Infinity');
+    VALUES (1.0, 1.0);
 ---
 - Statement: SELECT MAX(double_field), MAX(float_field) FROM all_types
 - output: [[1.0, 1.0]]
