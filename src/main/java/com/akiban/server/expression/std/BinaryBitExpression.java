@@ -145,15 +145,16 @@ public class BinaryBitExpression extends AbstractBinaryExpression
             {
                 rst = op.exc(left(), right());
             }
-            catch (InconvertibleTypesException ex)
+            catch (InconvertibleTypesException ex) // acceptable error where the result will simply be 0
             {
                 // if invalid types are supplied, 0 is assumed to be input
                LoggerFactory.getLogger(BinaryBitExpression.class).debug(ex.getShortMessage() + " - assume 0 as input");
-            }            
-            finally
+            }   
+            catch (NumberFormatException exc ) // acceptable error where the result will simply be 0
             {
-                return new ValueHolder(AkType.U_BIGINT, rst.and(n64));
+                LoggerFactory.getLogger(BinaryBitExpression.class).debug(exc.getMessage() + " - assume 0 as input"); 
             }
+            return new ValueHolder(AkType.U_BIGINT, rst.and(n64));
         }
     }
     
