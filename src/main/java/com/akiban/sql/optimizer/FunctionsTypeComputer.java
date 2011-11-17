@@ -32,6 +32,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.error.NoSuchFunctionException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /** Calculate types from expression composers. */
@@ -59,6 +60,12 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return specialFunctionNode((SpecialFunctionNode)node);
         case NodeTypes.CURRENT_DATETIME_OPERATOR_NODE:
             return currentDatetimeOperatorNode((CurrentDatetimeOperatorNode)node);
+        case NodeTypes.DB2_LENGTH_OPERATOR_NODE:
+        case NodeTypes.EXTRACT_OPERATOR_NODE:
+        case NodeTypes.CHAR_LENGTH_OPERATOR_NODE:
+        case NodeTypes.SIMPLE_STRING_OPERATOR_NODE:
+        case NodeTypes.UNARY_DATE_TIMESTAMP_OPERATOR_NODE:
+            return unaryOperatorFunction((UnaryOperatorNode)node);
         default:
             return super.computeType(node);
         }
@@ -161,6 +168,26 @@ public class FunctionsTypeComputer extends AISTypeComputer
             }
             argTypes.set(i, castType);
         }
+        ExpressionType resultType = composer.composeType(argTypes);
+        if (resultType == null)
+            return null;
+        return fromExpressionType(resultType);
+    }
+
+    protected DataTypeDescriptor unaryOperatorFunction(UnaryOperatorNode node) 
+            throws StandardException {
+        ExpressionComposer composer;
+        try {
+            composer = functionsRegistry.composer(node.getMethodName());
+        }
+        catch (NoSuchFunctionException ex) {
+            return null;
+        }
+        DataTypeDescriptor argType = node.getOperand().getType();
+        if (argType == null)
+            return null;
+        List<ExpressionType> argTypes = 
+            Collections.singletonList(toExpressionType(argType));
         ExpressionType resultType = composer.composeType(argTypes);
         if (resultType == null)
             return null;
