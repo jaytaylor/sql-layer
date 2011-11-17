@@ -22,10 +22,13 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.AkType.UnderlyingType;
+import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.extract.Extractors;
+import java.util.EnumSet;
 import java.util.List;
 
-public class IfExpression extends AbstractIFExpression
+public class IfExpression extends AbstractCompositeExpression
 {
     @Scalar("if()")
     public static final ExpressionComposer COMPOSER = new ExpressionComposer ()
@@ -48,15 +51,31 @@ public class IfExpression extends AbstractIFExpression
             return new IfExpression(arguments);
         }
     };
+
     public IfExpression (List <? extends Expression> children)
     {
-        super(checkArgs(children), children);
+        super(getTopType(children), children);
     }
+
+    protected static final EnumSet<AkType> STRING = EnumSet.of(AkType.VARCHAR, AkType.TEXT);
 
     protected static AkType getTopType (List<? extends Expression> children)
     {
         if (children.size() != 3) throw new WrongExpressionArityException(3, children.size());
 
+        AkType o1 = children.get(1).valueType();
+        AkType o2 = children.get(2).valueType();
+        if (!Converters.isConversionAllowed(o2, o2)) throw new UnsupportedOperationException("Inconvertible types " + o1 + " <=> " + o2);
+        UnderlyingType op1 = children.get(1).valueType().underlyingTypeOrNull();
+        UnderlyingType op2 = children.get(2).valueType().underlyingTypeOrNull();
+
+        if (o1 == o2) return o1;
+        else if (STRING.contains(o1) || STRING.contains(o2)) return AkType.VARCHAR;
+        else if (op1 == UnderlyingType.DOUBLE_AKTYPE || op2 == UnderlyingType.DOUBLE_AKTYPE) return AkType.DOUBLE;
+        else if (op1 == UnderlyingType.FLOAT_AKTYPE || op2 == UnderlyingType.FLOAT_AKTYPE) return AkType.FLOAT;
+
+
+            
         return AkType.LONG;
     }
 
@@ -118,7 +137,7 @@ public class IfExpression extends AbstractIFExpression
     @Override
     public ExpressionEvaluation evaluation()
     {
-        return getReturnExp().evaluation();
+      //  return getReturnExp().evaluation();
     }
 
 }
