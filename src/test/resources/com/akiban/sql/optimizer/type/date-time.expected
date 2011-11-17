@@ -1,0 +1,194 @@
+com.akiban.sql.parser.CursorNode@177ba38f
+name: null
+updateMode: UNSPECIFIED
+statementType: SELECT
+resultSet: 	
+	com.akiban.sql.parser.SelectNode@362f0d54
+	isDistinct: false
+	resultColumns: 		
+		com.akiban.sql.parser.ResultColumnList@4b142196
+
+		[0]:		
+		com.akiban.sql.parser.ResultColumn@16a9255c
+		exposedName: _SQL_COL_1
+		name: _SQL_COL_1
+		tableName: null
+		isDefaultColumn: false
+		type: DATE
+		expression: 			
+			com.akiban.sql.parser.UnaryDateTimestampOperatorNode@3ad3c6a3
+			operator: date
+			methodName: getDate
+			type: DATE
+			operand: 				
+				com.akiban.sql.parser.CharConstantNode@25961581
+				value: 2011-01-01
+				type: CHAR(10) NOT NULL
+		[1]:		
+		com.akiban.sql.parser.ResultColumn@205ddb6e
+		exposedName: _SQL_COL_2
+		name: _SQL_COL_2
+		tableName: null
+		isDefaultColumn: false
+		type: TIME
+		expression: 			
+			com.akiban.sql.parser.CastNode@71f1235b
+			castTarget: TIME
+			type: TIME
+			castOperand: 				
+				com.akiban.sql.parser.CharConstantNode@e4865ce
+				value: 12:59
+				type: CHAR(5) NOT NULL
+		[2]:		
+		com.akiban.sql.parser.ResultColumn@3313beb5
+		exposedName: _SQL_COL_3
+		name: _SQL_COL_3
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.TimestampOperatorNode@554d7745
+			operator: timestamp
+			methodName: getTimestamp
+			type: null
+			leftOperand: 				
+				com.akiban.sql.parser.CharConstantNode@50d17ec3
+				value: 2011-01-01
+				type: CHAR(10) NOT NULL
+			rightOperand: 				
+				com.akiban.sql.parser.CharConstantNode@69d95da8
+				value: 01:01:01
+				type: CHAR(8) NOT NULL
+		[3]:		
+		com.akiban.sql.parser.ResultColumn@3d93f6e2
+		exposedName: _SQL_COL_4
+		name: _SQL_COL_4
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ExtractOperatorNode@3d358f03
+			fieldName: YEAR
+			operator: EXTRACT YEAR
+			methodName: getYear
+			type: null
+			operand: 				
+				com.akiban.sql.parser.ColumnReference@7402d5a
+				columnName: t
+				tableName: null
+				type: TIMESTAMP
+				userData: t1.t from com.akiban.sql.parser.FromBaseTable@26659db7
+		[4]:		
+		com.akiban.sql.parser.ResultColumn@661736e
+		exposedName: _SQL_COL_5
+		name: _SQL_COL_5
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ExtractOperatorNode@67e13e07
+			fieldName: MONTH
+			operator: EXTRACT MONTH
+			methodName: getMonth
+			type: null
+			operand: 				
+				com.akiban.sql.parser.ColumnReference@74af72d8
+				columnName: t
+				tableName: null
+				type: TIMESTAMP
+				userData: t1.t from com.akiban.sql.parser.FromBaseTable@26659db7
+		[5]:		
+		com.akiban.sql.parser.ResultColumn@2a9cfec1
+		exposedName: _SQL_COL_6
+		name: _SQL_COL_6
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ExtractOperatorNode@291946c2
+			fieldName: DAY
+			operator: EXTRACT DAY
+			methodName: getDate
+			type: null
+			operand: 				
+				com.akiban.sql.parser.ColumnReference@3a747fa2
+				columnName: t
+				tableName: null
+				type: TIMESTAMP
+				userData: t1.t from com.akiban.sql.parser.FromBaseTable@26659db7
+		[6]:		
+		com.akiban.sql.parser.ResultColumn@366782a9
+		exposedName: _SQL_COL_7
+		name: _SQL_COL_7
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ExtractOperatorNode@45b34126
+			fieldName: HOUR
+			operator: EXTRACT HOUR
+			methodName: getHours
+			type: null
+			operand: 				
+				com.akiban.sql.parser.CurrentDatetimeOperatorNode@7b7a4989
+				methodName: CURRENT TIME
+				type: null
+		[7]:		
+		com.akiban.sql.parser.ResultColumn@197200b4
+		exposedName: _SQL_COL_8
+		name: _SQL_COL_8
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ExtractOperatorNode@b8c3679
+			fieldName: MINUTE
+			operator: EXTRACT MINUTE
+			methodName: getMinutes
+			type: null
+			operand: 				
+				com.akiban.sql.parser.CurrentDatetimeOperatorNode@224c47db
+				methodName: CURRENT TIME
+				type: null
+		[8]:		
+		com.akiban.sql.parser.ResultColumn@3e018c74
+		exposedName: _SQL_COL_9
+		name: _SQL_COL_9
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ExtractOperatorNode@57ac3379
+			fieldName: SECOND
+			operator: EXTRACT SECOND
+			methodName: getSeconds
+			type: null
+			operand: 				
+				com.akiban.sql.parser.CurrentDatetimeOperatorNode@6a6779e6
+				methodName: CURRENT TIMESTAMP
+				type: null
+		[9]:		
+		com.akiban.sql.parser.ResultColumn@2f74219d
+		exposedName: _SQL_COL_10
+		name: _SQL_COL_10
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.JavaToSQLValueNode@714ae2c1
+			type: null
+			javaNode: 				
+				com.akiban.sql.parser.StaticMethodCallNode@6b6d2702
+				javaClassName: null
+				methodName: now
+	fromList: 		
+		com.akiban.sql.parser.FromList@4b1c2b67
+
+		[0]:		
+		com.akiban.sql.parser.FromBaseTable@26659db7
+		tableName: t1
+		updateOrDelete: null
+		null
+		correlation Name: null
+		null
+		userData: user.t1

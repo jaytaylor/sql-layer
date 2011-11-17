@@ -350,6 +350,24 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         // TODO: checkCursorsForDDLModification ?
     }
 
+    @Override
+    public void updateTableStatistics(Session session, TableName tableName, Collection<String> indexesToUpdate) {
+        final Table table = getTable(session, tableName);
+        if (indexesToUpdate == null) {
+            store().analyzeTable(session, table.getTableId());
+            return;
+        }
+        Collection<Index> indexes = new HashSet<Index>();
+        for(String indexName : indexesToUpdate) {
+            Index index = table.getIndex(indexName);
+            if(index == null) {
+                throw new NoSuchIndexException (indexName);
+            }
+            indexes.add(index);
+        }
+        store().analyzeIndexes(session, indexes);
+    }
+
     private void checkCursorsForDDLModification(Session session, Table table) {
         Map<CursorId,BasicDXLMiddleman.ScanData> cursorsMap = getScanDataMap(session);
         if (cursorsMap == null) {

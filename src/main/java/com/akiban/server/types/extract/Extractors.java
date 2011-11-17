@@ -88,6 +88,7 @@ public final class Extractors {
         result.put(AkType.TIMESTAMP, ExtractorsForDates.TIMESTAMP);
         result.put(AkType.U_INT, ExtractorsForLong.U_INT);
         result.put(AkType.YEAR, ExtractorsForDates.YEAR);
+        result.put(AkType.INTERVAL, ExtractorsForDates.INTERVAL);
         return result;
     }
 

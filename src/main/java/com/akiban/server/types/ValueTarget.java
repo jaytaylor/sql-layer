@@ -33,6 +33,7 @@ public interface ValueTarget {
     void putText(String value);
     void putTime(long value);
     void putTimestamp(long value);
+    void putInterval(long value);
     void putUBigInt(BigInteger value);
     void putUDouble(double value);
     void putUFloat(float value);

@@ -1,0 +1,43 @@
+# Test the OR function
+---
+- Include: all-types-schema.yaml
+
+# Empty table
+---
+- Statement: SELECT bigint_field FROM all_types WHERE
+     bigint_field > 0 OR double_field > 0.0
+- row_count: 0
+
+---
+- Statement: INSERT INTO all_types (bigint_field, double_field)
+    VALUES (null, null)
+---
+- Statement: INSERT INTO all_types (bigint_field) VALUES (1), (-1)
+---
+- Statement: INSERT INTO all_types (double_field) VALUES (10.0), (-10.0)
+---
+- Statement: INSERT INTO all_types (bigint_field, double_field)
+    VALUES (2, 20.0), (3, -30.0), (-4, 40.0), (-5, -50.0)
+---
+- Statement: SELECT bigint_field, double_field FROM all_types
+    WHERE bigint_field > 0 OR double_field < 0.0
+- output: [[1, null], [null, -10.0], [2, 20.0], [3, -30.0], [-5, -50.0]]
+---
+- Statement: SELECT bigint_field, double_field FROM all_types
+    WHERE bigint_field > 0 OR double_field > 0.0
+- output: [[1, null], [null, 10.0], [2, 20.0], [3, -30.0], [-4, 40.0]]
+# OR not recognized in SELECT clause
+# ---
+# - Statement: SELECT bigint_field > 0 OR double_field > 0.0 FROM all_types
+# - output: [[null], [true], [null], [true], [null], [true], [true], [true],
+#            [false]]
+# ---
+# - Statement: SELECT bigint_field > 0 OR false FROM all_types
+# - output: [[null], [true], [null], [true], [true], [false], [false]]
+# ---
+# - Statement: SELECT bigint_field > 0 OR ? FROM all_types
+# - params: [[1], [0]]
+# - output: [[true], [true], [true], [true], [true], [true], [true],
+#            [null], [true], [null], [true], [true], [null], [null]]
+
+...

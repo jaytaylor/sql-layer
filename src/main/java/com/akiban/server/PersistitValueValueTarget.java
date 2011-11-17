@@ -128,6 +128,11 @@ public final class PersistitValueValueTarget implements ValueTarget {
         this.value.put(value);
         invalidate();
     }
+    
+    @Override
+    public void putInterval(long value) {
+        throw new UnsupportedOperationException("interval not supported yet");
+    }
 
     @Override
     public void putUBigInt(BigInteger value) {

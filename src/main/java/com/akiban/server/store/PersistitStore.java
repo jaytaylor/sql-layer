@@ -1067,6 +1067,11 @@ public class PersistitStore implements Store {
         indexManager.analyzeTable(session, rowDef, sampleSize);
     }
 
+    @Override
+    public void analyzeIndexes(Session session, Collection<? extends Index> indexes) {
+        indexManager.analyzeIndexes(session, indexes);
+    }
+
     boolean hasNullIndexSegments(final RowData rowData, final Index index) {
         IndexDef indexDef = (IndexDef)index.indexDef();
         assert indexDef.getRowDef().getRowDefId() == rowData.getRowDefId();
