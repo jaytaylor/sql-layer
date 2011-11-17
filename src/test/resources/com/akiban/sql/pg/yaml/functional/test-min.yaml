@@ -49,7 +49,7 @@
     MIN(float_field), MIN(integer_field), MIN(numeric_field),
     MIN(smallint_field), MIN(time_field), MIN(timestamp_field) FROM
     all_types
-- output: [[1, 1, 1.0, 1.0, 1.0, 1.0, 1, 1.0, 1, '01:01:01', '1000-01-01
+- output: [[1, 1, 1.0, 1, 1.0, 1.0, 1, 1, 1, '01:01:01', '1000-01-01
   01:01:01.0']]
 
 # Insert another row
@@ -66,7 +66,7 @@
     MIN(float_field), MIN(integer_field), MIN(numeric_field),
     MIN(smallint_field), MIN(time_field), MIN(timestamp_field) FROM
     all_types
-- output: [[1, 1, 1.0, 1.0, 1.0, 1.0, 1, 1.0, 1, '01:01:01', '1000-01-01
+- output: [[1, 1, 1.0, 1, 1.0, 1.0, 1, 1, 1, '01:01:01', '1000-01-01
   01:01:01.0']]
 
 ---
