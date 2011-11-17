@@ -300,6 +300,9 @@ public class TableDDLTest {
         public UserTable getUserTable(Session session, TableName tableName) {
             return null;
         }
+
+        @Override
+        public void updateTableStatistics(Session session, TableName tableName, Collection<String> indexesToUpdate) {}
     } // END class DDLFunctionsMock
 
     /*"CREATE TABLE t1 (c1 INT)";*/
