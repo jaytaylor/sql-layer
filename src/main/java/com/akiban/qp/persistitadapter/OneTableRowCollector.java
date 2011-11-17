@@ -63,11 +63,17 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
         if (predicateIndex != null) {
             // Index bounds
             IndexRowType indexRowType = schema.indexRowType(predicateIndex);
+            ColumnSelector tableSelector;
+            if (start != null && start.isAllNull()) {
+                start = null;
+            }
+            if (end != null && end.isAllNull()) {
+                end = null;
+            }
             if (start == null && end == null) {
                 indexKeyRange = new IndexKeyRange(indexRowType);
             } else {
                 // The start and end selectors should match.
-                ColumnSelector tableSelector;
                 assert !(startColumns == null && endColumns == null);
                 if (startColumns == null) {
                     tableSelector = endColumns;
