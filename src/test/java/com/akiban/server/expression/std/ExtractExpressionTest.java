@@ -12,30 +12,18 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.akiban.server.expression.std;
 
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.Expression;
-import java.util.Date;
-import com.akiban.server.types.util.ValueHolder;
-import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.extract.Extractors;
 import java.util.Arrays;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-/**
- *
- * @author vnguyen
- */
 public class ExtractExpressionTest extends ComposedExpressionTestBase
 {
     private static final CompositionTestInfo testInfo = new CompositionTestInfo(1, AkType.DATE, false);
@@ -44,122 +32,754 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     public void getDateFromDate()
     {
         Expression arg = new LiteralExpression(AkType.DATE, 1234L);
-        Expression top =  ExtractExpression.DATE_COMPOSER.compose(Arrays.asList(arg));
-
-        assertEquals (1234L, top.evaluation().eval().getDate());
-    }
-    
-    @Test
-    public void getDateFromDateTime ()
-    {
-        Expression arg = new LiteralExpression(AkType.DATETIME, 20091208123010L);
-        Expression top =  ExtractExpression.DATE_COMPOSER.compose(Arrays.asList(arg));
-
-        assertEquals ("2009-12-08", Extractors.getLongExtractor(AkType.DATE).asString(top.evaluation().eval().getDate()));
-    }
-
-    @Test 
-    public void getDateFromTimestamp ()
-    {
-        Expression arg = new LiteralExpression (AkType.TIMESTAMP,
-                Extractors.getLongExtractor(AkType.TIMESTAMP).getLong("2009-12-30 12:30:10"));
         Expression top = ExtractExpression.DATE_COMPOSER.compose(Arrays.asList(arg));
-        
-        assertEquals("2009-12-30", Extractors.getLongExtractor(AkType.DATE).asString(top.evaluation().eval().getDate()));
+
+        assertEquals(1234L, top.evaluation().eval().getDate());
     }
-    
-    
-    
+
     @Test
-    public void getDateFromVarchar ()
+    public void getDateFromDateTime()
+    {
+        Expression top = getTopExp(ExtractExpression.DATE_COMPOSER, getDatetime());
+
+        assertEquals("2009-08-30", Extractors.getLongExtractor(AkType.DATE).asString(top.evaluation().eval().getDate()));
+    }
+
+    @Test
+    public void getDateFromTimestamp()
+    {
+        Expression top = getTopExp(ExtractExpression.DATE_COMPOSER, getTimestamp());
+        assertEquals("2009-08-30", Extractors.getLongExtractor(AkType.DATE).asString(top.evaluation().eval().getDate()));
+    }
+
+    @Test
+    public void getDateFromVarchar()
     {
         Expression arg = new LiteralExpression(AkType.VARCHAR, "2009-12-30 12:30:10");
-        Expression top = ExtractExpression.DATE_COMPOSER.compose(Arrays.asList(arg));
-        
-        assertEquals ("2009-12-30" , Extractors.getLongExtractor(AkType.DATE).asString(top.evaluation().eval().getDate()));
+        Expression top = getTopExp(ExtractExpression.DATE_COMPOSER, arg);
+
+        assertEquals("2009-12-30", Extractors.getLongExtractor(AkType.DATE).asString(top.evaluation().eval().getDate()));
     }
-    
+
     @Test
-    public void getDateFromBadlyFormattedString ()
+    public void getDateFromBadString()
     {
         Expression arg = new LiteralExpression(AkType.VARCHAR, "2009-30-30 12:30:10");
-        Expression top = ExtractExpression.DATE_COMPOSER.compose(Arrays.asList(arg));
-        
-        assertTrue (top.evaluation().eval().isNull());
+        Expression top = getTopExp(ExtractExpression.DATE_COMPOSER, arg);
+
+        assertTrue(top.evaluation().eval().isNull());
     }
-    
+
     @Test
-    public void getDateFromLong ()
+    public void getDateFromLong()
     {
         Expression arg = new LiteralExpression(AkType.LONG, 20091230123045L);
-        Expression top = ExtractExpression.DATE_COMPOSER.compose(Arrays.asList(arg));
-        
-        assertEquals ("2009-12-30" , Extractors.getLongExtractor(AkType.DATE).asString(top.evaluation().eval().getDate()));
-    
+        Expression top = getTopExp(ExtractExpression.DATE_COMPOSER, arg);
+
+        assertEquals("2009-12-30", Extractors.getLongExtractor(AkType.DATE).asString(top.evaluation().eval().getDate()));
+
     }
-    
-    @Test 
-    public void getDateFromDouble ()
+
+    @Test
+    public void getDateFromDouble()
     {
         Expression arg = new LiteralExpression(AkType.DOUBLE, 2345.5);
-        Expression top = ExtractExpression.DATE_COMPOSER.compose(Arrays.asList(arg));
-        
-        assertTrue (top.evaluation().eval().isNull()); 
+        Expression top = getTopExp(ExtractExpression.DATE_COMPOSER, arg);
+
+        assertTrue(top.evaluation().eval().isNull());
     }
-    
+
     @Test
-    public void getDayFromDate ()
+    public void getDateFromYear()
     {
-        Expression arg = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2009-12-30"));
-        Expression top = ExtractExpression.DAY_COMPOSER.compose(Arrays.asList(arg));
-        
-        assertEquals(30, top.evaluation().eval().getLong()); 
-        
+        Expression top = getTopExp(ExtractExpression.DATE_COMPOSER, getYear());
+        assertTrue(top.evaluation().eval().isNull());
     }
-    
+
     @Test
-    public void getDatyFromDateTime()
+    public void getDateFromNull ()
+    {
+        Expression top = getTopExp(ExtractExpression.DATE_COMPOSER, LiteralExpression.forNull());
+        assertTrue (top.evaluation().eval().isNull());
+    }
+
+    //----------------------- GET DAY-------------------------------------------
+    @Test
+    public void getDayFromDate()
+    {
+        Expression top = getTopExp(ExtractExpression.DAY_COMPOSER, getDate());
+        assertEquals(30L, top.evaluation().eval().getLong());
+
+    }
+
+    @Test
+    public void getDayFromDateTime()
     {
         Expression top = getTopExp(ExtractExpression.DAY_COMPOSER, getDatetime());
+        assertEquals(30L, top.evaluation().eval().getLong());
+    }
+
+    @Test
+    public void getDayFromTime()
+    {
+        Expression top = getTopExp(ExtractExpression.DAY_COMPOSER, getTime());
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getDayFromTimestamp()
+    {
+        Expression top = getTopExp(ExtractExpression.DAY_COMPOSER, getTimestamp());
+        assertEquals(30L, top.evaluation().eval().getLong());
+    }
+
+    @Test
+    public void getDayFromVarchar()
+    {
+        Expression arg = new LiteralExpression(AkType.VARCHAR, "2009-12-30 12:30:10");
+        Expression top = getTopExp(ExtractExpression.DAY_COMPOSER, arg);
+
+        assertEquals(30L, top.evaluation().eval().getLong());
+    }
+
+    @Test
+    public void getDayFromBadString()
+    {
+        Expression arg = new LiteralExpression(AkType.VARCHAR, "2009-30-30 12:30:10");
+        Expression top = getTopExp(ExtractExpression.DAY_COMPOSER, arg);
+
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getDayFromLong()
+    {
+        Expression arg = new LiteralExpression(AkType.LONG, 20091230123045L);
+        Expression top = getTopExp(ExtractExpression.DAY_COMPOSER, arg);
+
+        assertEquals(30L, top.evaluation().eval().getLong());
+    }
+
+    @Test
+    public void getDayFromDouble()
+    {
+        Expression arg = new LiteralExpression(AkType.DOUBLE, 2345.5);
+        Expression top = getTopExp(ExtractExpression.DAY_COMPOSER, arg);
+
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getDayFromYear()
+    {
+        Expression top = getTopExp(ExtractExpression.DATE_COMPOSER, getYear());
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getDayFromNull ()
+    {
+        Expression top = getTopExp(ExtractExpression.DAY_COMPOSER, LiteralExpression.forNull());
+        assertTrue (top.evaluation().eval().isNull());
+    }
+
+    // ------------------------ GET HOUR (or HOUR_OF_DAY)-----------------------
+    @Test
+    public void getHourFromDate()
+    {
+        Expression top = getTopExp(ExtractExpression.HOUR_COMPOSER, getDate());
+        assertTrue(top.evaluation().eval().isNull());
+
+    }
+
+    @Test
+    public void getHourFromDateTime()
+    {
+        Expression top = getTopExp(ExtractExpression.HOUR_COMPOSER, getDatetime());
+        assertEquals(11L, top.evaluation().eval().getLong());
+    }
+
+    @Test
+    public void getHourFromTime()
+    {
+        Expression top = getTopExp(ExtractExpression.HOUR_COMPOSER, getTime());
+        assertEquals(11L, top.evaluation().eval().getLong());
+    }
+
+    @Test
+    public void getHourFromTimestamp()
+    {
+        Expression top = getTopExp(ExtractExpression.HOUR_COMPOSER, getTimestamp());
+        assertEquals(11L, top.evaluation().eval().getLong());
+    }
+
+    @Test
+    public void getHourFromVarchar()
+    {
+        Expression arg = new LiteralExpression(AkType.VARCHAR, "2009-12-30 12:30:10");
+        Expression top = getTopExp(ExtractExpression.HOUR_COMPOSER, arg);
+
+        assertEquals(12L, top.evaluation().eval().getLong());
+    }
+
+    @Test
+    public void getHourFromBadString()
+    {
+        Expression arg = new LiteralExpression(AkType.VARCHAR, "2009-30-30 12:30:10");
+        Expression top = getTopExp(ExtractExpression.HOUR_COMPOSER, arg);
+
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getHourFromLong()
+    {
+        Expression arg = new LiteralExpression(AkType.LONG, 20091230123045L);
+        Expression top = getTopExp(ExtractExpression.HOUR_COMPOSER, arg);
+
+        assertEquals(12L, top.evaluation().eval().getLong());
+    }
+
+    @Test
+    public void getHourFromDouble()
+    {
+        Expression arg = new LiteralExpression(AkType.DOUBLE, 2345.5);
+        Expression top = getTopExp(ExtractExpression.HOUR_COMPOSER, arg);
+
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getHourFromYear()
+    {
+        Expression top = getTopExp(ExtractExpression.HOUR_COMPOSER, getYear());
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getHourFromNull ()
+    {
+        Expression top = getTopExp(ExtractExpression.HOUR_COMPOSER, LiteralExpression.forNull());
+        assertTrue (top.evaluation().eval().isNull());
+    }
+    //-----------------------------GET MINUTE-----------------------------------
+    @Test
+    public void getMinuteFromDate()
+    {
+        Expression top = getTopExp(ExtractExpression.MINUTE_COMPOSER, getDate());
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getMinuteFromDateTime()
+    {
+        Expression top = getTopExp(ExtractExpression.MINUTE_COMPOSER, getDatetime());
+        assertEquals(30L, top.evaluation().eval().getLong());
+    }
+
+    @Test
+    public void getMinuteFromTime()
+    {
+        Expression top = getTopExp(ExtractExpression.MINUTE_COMPOSER, getTime());
+        assertEquals(30L, top.evaluation().eval().getLong());
+    }
+
+    @Test
+    public void getMinuteFromTimestamp()
+    {
+        Expression top = getTopExp(ExtractExpression.MINUTE_COMPOSER, getTimestamp());
+        assertEquals(30L, top.evaluation().eval().getLong());
+    }
+
+    @Test
+    public void getMinuteFromVarchar()
+    {
+        Expression arg = new LiteralExpression(AkType.VARCHAR, "2009-12-30 12:30:10");
+        Expression top = getTopExp(ExtractExpression.MINUTE_COMPOSER, arg);
+
+        assertEquals(30L, top.evaluation().eval().getLong());
+    }
+
+    @Test
+    public void getMinuteFromBadString()
+    {
+        Expression arg = new LiteralExpression(AkType.VARCHAR, "2009-30-30 12:30:10");
+        Expression top = getTopExp(ExtractExpression.MINUTE_COMPOSER, arg);
+
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getMinuteFromLong()
+    {
+        Expression arg = new LiteralExpression(AkType.LONG, 20091230123045L);
+        Expression top = getTopExp(ExtractExpression.MINUTE_COMPOSER, arg);
+
+        assertEquals(30L, top.evaluation().eval().getLong());
+    }
+
+    @Test
+    public void getMinuteFromDouble()
+    {
+        Expression arg = new LiteralExpression(AkType.DOUBLE, 2345.5);
+        Expression top = getTopExp(ExtractExpression.MINUTE_COMPOSER, arg);
+
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getMinuteFromYear()
+    {
+        Expression top = getTopExp(ExtractExpression.MINUTE_COMPOSER, getYear());
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getMinuteFromNull ()
+    {
+        Expression top = getTopExp(ExtractExpression.MINUTE_COMPOSER, LiteralExpression.forNull());
+        assertTrue (top.evaluation().eval().isNull());
+    }
+    // ----------------------- GET MONTH----------------------------------------
+    @Test
+    public void getMonthFromDate()
+    {
+        Expression top = getTopExp(ExtractExpression.MONTH_COMPOSER, getDate());
+        assertEquals(8L, top.evaluation().eval().getLong());
+
+    }
+
+    @Test
+    public void getMonthFromDateTime()
+    {
+        Expression top = getTopExp(ExtractExpression.MONTH_COMPOSER, getDatetime());
         assertEquals(8L, top.evaluation().eval().getLong());
     }
-            
+
+    @Test
+    public void getMonthFromTime()
+    {
+        Expression top = getTopExp(ExtractExpression.MONTH_COMPOSER, getTime());
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getMonthFromTimestamp()
+    {
+        Expression top = getTopExp(ExtractExpression.MONTH_COMPOSER, getTimestamp());
+        assertEquals(8L, top.evaluation().eval().getLong());
+    }
+
+    @Test
+    public void getMonthFromVarchar()
+    {
+        Expression arg = new LiteralExpression(AkType.VARCHAR, "2009-08-30 12:30:10");
+        Expression top = getTopExp(ExtractExpression.MONTH_COMPOSER, arg);
+
+        assertEquals(8L, top.evaluation().eval().getLong());
+    }
+
+    @Test
+    public void getMonthFromBadString()
+    {
+        Expression arg = new LiteralExpression(AkType.VARCHAR, "2009-30-30 12:30:10");
+        Expression top = getTopExp(ExtractExpression.MONTH_COMPOSER, arg);
+
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getMonthFromLong()
+    {
+        Expression arg = new LiteralExpression(AkType.LONG, 20091230123045L);
+        Expression top = getTopExp(ExtractExpression.DAY_COMPOSER, arg);
+
+        assertEquals(30L, top.evaluation().eval().getLong());
+    }
+
+    @Test
+    public void getMonthFromDouble()
+    {
+        Expression arg = new LiteralExpression(AkType.DOUBLE, 2345.5);
+        Expression top = getTopExp(ExtractExpression.DAY_COMPOSER, arg);
+
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getMonthFromYear()
+    {
+        Expression top = getTopExp(ExtractExpression.DATE_COMPOSER, getYear());
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getMonthFromNull ()
+    {
+        Expression top = getTopExp(ExtractExpression.MONTH_COMPOSER, LiteralExpression.forNull());
+        assertTrue (top.evaluation().eval().isNull());
+    }
+    // ----------------------- GET SECOND---------------------------------------
+    @Test
+    public void getSecondFromDate()
+    {
+        Expression top = getTopExp(ExtractExpression.SECOND_COMPOSER, getDate());
+        assertTrue(top.evaluation().eval().isNull());
+
+    }
+
+    @Test
+    public void getSecondFromDateTime()
+    {
+        Expression top = getTopExp(ExtractExpression.SECOND_COMPOSER, getDatetime());
+        assertEquals(45L, top.evaluation().eval().getLong());
+    }
+
+    @Test
+    public void getSecondFromTime()
+    {
+        Expression top = getTopExp(ExtractExpression.SECOND_COMPOSER, getTime());
+        assertEquals(45L, top.evaluation().eval().getLong());
+    }
+
+    @Test
+    public void getSecondFromTimestamp()
+    {
+        Expression top = getTopExp(ExtractExpression.SECOND_COMPOSER, getTimestamp());
+        assertEquals(45L, top.evaluation().eval().getLong());
+    }
+
+    @Test
+    public void getSecondFromVarchar()
+    {
+        Expression arg = new LiteralExpression(AkType.VARCHAR, "2009-12-30 12:30:10");
+        Expression top = getTopExp(ExtractExpression.SECOND_COMPOSER, arg);
+
+        assertEquals(10L, top.evaluation().eval().getLong());
+    }
+
+    @Test
+    public void getSecondFromBadString()
+    {
+        Expression arg = new LiteralExpression(AkType.VARCHAR, "2009-30-30 12:30:10");
+        Expression top = getTopExp(ExtractExpression.SECOND_COMPOSER, arg);
+
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getSecondFromLong()
+    {
+        Expression arg = new LiteralExpression(AkType.LONG, 20091230123045L);
+        Expression top = getTopExp(ExtractExpression.SECOND_COMPOSER, arg);
+
+        assertEquals(45L, top.evaluation().eval().getLong());
+    }
+
+    @Test
+    public void getSecondFromDouble()
+    {
+        Expression arg = new LiteralExpression(AkType.DOUBLE, 2345.5);
+        Expression top = getTopExp(ExtractExpression.SECOND_COMPOSER, arg);
+
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getSecondFromYear()
+    {
+        Expression top = getTopExp(ExtractExpression.SECOND_COMPOSER, getYear());
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+
+    @Test
+    public void getSecondFromNull ()
+    {
+        Expression top = getTopExp(ExtractExpression.SECOND_COMPOSER, LiteralExpression.forNull());
+        assertTrue (top.evaluation().eval().isNull());
+    }
+    // -------------------------GET TIME----------------------------------------
+
+    @Test
+    public void getTimeFromTime()
+    {
+        Expression top = getTopExp(ExtractExpression.TIME_COMPOSER, new LiteralExpression(AkType.TIME, 1234L));
+        assertEquals(1234L, top.evaluation().eval().getTime());
+    }
+
+    @Test
+    public void getTimeFromDate()
+    {
+        Expression top = getTopExp(ExtractExpression.TIME_COMPOSER, getDate());
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getTimeFromDateTime()
+    {
+        Expression top = getTopExp(ExtractExpression.TIME_COMPOSER, getDatetime());
+        assertEquals("11:30:45", Extractors.getLongExtractor(AkType.TIME).asString(top.evaluation().eval().getTime()));
+    }
+
+    @Test
+    public void getTimeFromTimestamp()
+    {
+        Expression top = getTopExp(ExtractExpression.TIME_COMPOSER, getTimestamp());
+        assertEquals("11:30:45", Extractors.getLongExtractor(AkType.TIME).asString(top.evaluation().eval().getTime()));
+    }
+
+    @Test
+    public void getTimeFromVarchar()
+    {
+        Expression arg = new LiteralExpression(AkType.VARCHAR, "2009-12-30 12:30:10");
+        Expression top = getTopExp(ExtractExpression.TIME_COMPOSER, arg);
+
+        assertEquals("12:30:10", Extractors.getLongExtractor(AkType.TIME).asString(top.evaluation().eval().getTime()));
+    }
+
+    @Test
+    public void getTimeFromBadString()
+    {
+        Expression arg = new LiteralExpression(AkType.VARCHAR, "2009-30-30 12:30:10");
+        Expression top = getTopExp(ExtractExpression.TIME_COMPOSER, arg);
+
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getTimeFromLong()
+    {
+        Expression arg = new LiteralExpression(AkType.LONG, 20091230123045L);
+        Expression top = getTopExp(ExtractExpression.TIME_COMPOSER, arg);
+
+        assertEquals("12:30:45", Extractors.getLongExtractor(AkType.TIME).asString(top.evaluation().eval().getTime()));
+
+    }
+
+    @Test
+    public void getTimeFromDouble()
+    {
+        Expression arg = new LiteralExpression(AkType.DOUBLE, 2345.5);
+        Expression top = getTopExp(ExtractExpression.TIME_COMPOSER, arg);
+
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getTimeFromYear()
+    {
+        Expression top = getTopExp(ExtractExpression.TIME_COMPOSER, getYear());
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getTimeFromNull ()
+    {
+        Expression top = getTopExp(ExtractExpression.TIME_COMPOSER, LiteralExpression.forNull());
+        assertTrue (top.evaluation().eval().isNull());
+    }
+    // ----------------------- GET TIMESTAMP------------------------------------
+    @Test
+    public void getTimestampFromTimestamp()
+    {
+        Expression top = getTopExp(ExtractExpression.TIMESTAMP_COMPOSER, new LiteralExpression(AkType.TIMESTAMP, 1234L));
+        assertEquals(1234L, top.evaluation().eval().getTimestamp());
+    }
+
+    @Test
+    public void getTimestampFromDate()
+    {
+        Expression top = getTopExp(ExtractExpression.TIMESTAMP_COMPOSER, getDate());
+        assertEquals("2009-08-30 00:00:00", Extractors.getLongExtractor(AkType.TIMESTAMP).asString(top.evaluation().eval().getTimestamp()));
+   }
+
+    @Test
+    public void getTimestampFromDateTime()
+    {
+        Expression top = getTopExp(ExtractExpression.TIMESTAMP_COMPOSER, getDatetime());
+        assertEquals("2009-08-30 11:30:45", Extractors.getLongExtractor(AkType.TIMESTAMP).asString(top.evaluation().eval().getTimestamp()));
+    }
+
+    @Test
+    public void getTimestampFromTime()
+    {
+        Expression top = getTopExp(ExtractExpression.TIMESTAMP_COMPOSER, getTime());
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getTimestampFromVarchar()
+    {
+        Expression arg = new LiteralExpression(AkType.VARCHAR, "2009-12-30 12:30:10");
+        Expression top = getTopExp(ExtractExpression.TIMESTAMP_COMPOSER, arg);
+
+        assertEquals("2009-12-30 12:30:10", Extractors.getLongExtractor(AkType.TIMESTAMP).asString(top.evaluation().eval().getTimestamp()));
+    }
+
+    @Test
+    public void getTimestampFromBadString()
+    {
+        Expression arg = new LiteralExpression(AkType.VARCHAR, "2009-30-30 12:30:10");
+        Expression top = getTopExp(ExtractExpression.TIME_COMPOSER, arg);
+
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getTimestampFromLong()
+    {
+        Expression arg = new LiteralExpression(AkType.LONG, 20091230123045L);
+        Expression top = getTopExp(ExtractExpression.TIMESTAMP_COMPOSER, arg);
+
+        assertEquals("2009-12-30 12:30:45", Extractors.getLongExtractor(AkType.TIMESTAMP).asString(top.evaluation().eval().getTimestamp()));
+
+    }
+
+    @Test
+    public void getTimestampFromDouble()
+    {
+        Expression arg = new LiteralExpression(AkType.DOUBLE, 2345.5);
+        Expression top = getTopExp(ExtractExpression.TIME_COMPOSER, arg);
+
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getTimestampFromYear()
+    {
+        Expression top = getTopExp(ExtractExpression.TIME_COMPOSER, getYear());
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+
+    @Test
+    public void getTimestampFromNull ()
+    {
+        Expression top = getTopExp(ExtractExpression.TIMESTAMP_COMPOSER, LiteralExpression.forNull());
+        assertTrue (top.evaluation().eval().isNull());
+    }
+    // ------------------------GET YEAR-----------------------------------------
+    @Test
+    public void getYearFromTimestamp()
+    {
+        Expression top = getTopExp(ExtractExpression.YEAR_COMPOSER, getTimestamp());
+        assertEquals(2009L, top.evaluation().eval().getYear());
+    }
+
+    @Test
+    public void getYearFromDate()
+    {
+        Expression top = getTopExp(ExtractExpression.YEAR_COMPOSER, getDate());
+        assertEquals(2009L, top.evaluation().eval().getYear());
+   }
+
+    @Test
+    public void getYearstampFromDateTime()
+    {
+        Expression top = getTopExp(ExtractExpression.YEAR_COMPOSER, getDatetime());
+        assertEquals(2009L, top.evaluation().eval().getYear());
+    }
+
+    @Test
+    public void getYearFromTime()
+    {
+        Expression top = getTopExp(ExtractExpression.YEAR_COMPOSER, getTime());
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getYearFromVarchar()
+    {
+        Expression arg = new LiteralExpression(AkType.VARCHAR, "2009-12-30 12:30:10");
+        Expression top = getTopExp(ExtractExpression.YEAR_COMPOSER, arg);
+
+        assertEquals(2009L, top.evaluation().eval().getYear());
+    }
+
+    @Test
+    public void getYearFromBadString()
+    {
+        Expression arg = new LiteralExpression(AkType.VARCHAR, "2009-30-30 12:30:10");
+        Expression top = getTopExp(ExtractExpression.YEAR_COMPOSER, arg);
+
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getYearFromLong()
+    {
+        Expression arg = new LiteralExpression(AkType.LONG, 20091230123045L);
+        Expression top = getTopExp(ExtractExpression.YEAR_COMPOSER, arg);
+
+        assertEquals(2009L, top.evaluation().eval().getYear());
+
+    }
+
+    @Test
+    public void getYearFromDouble()
+    {
+        Expression arg = new LiteralExpression(AkType.DOUBLE, 2345.5);
+        Expression top = getTopExp(ExtractExpression.YEAR_COMPOSER, arg);
+
+        assertTrue(top.evaluation().eval().isNull());
+    }
+
+    @Test
+    public void getYearFromYear()
+    {
+        Expression top = getTopExp(ExtractExpression.YEAR_COMPOSER, getYear());
+        assertEquals ("2009", Extractors.getLongExtractor(AkType.YEAR).asString(top.evaluation().eval().getYear()));
+    }
+
+    @Test
+    public void getYearFromNull ()
+    {
+        Expression top = getTopExp(ExtractExpression.YEAR_COMPOSER, LiteralExpression.forNull());
+        assertTrue (top.evaluation().eval().isNull());
+    }
+    //--------------------------------------------------------------------------
 
     @Override
-    protected CompositionTestInfo getTestInfo() 
+    protected CompositionTestInfo getTestInfo()
     {
         return testInfo;
     }
 
     @Override
-    protected ExpressionComposer getComposer() 
+    protected ExpressionComposer getComposer()
     {
         return ExtractExpression.DATE_COMPOSER;
     }
-    
-    private Expression getDatetime ()
+
+    private Expression getDatetime()
     {
-        return new LiteralExpression(AkType.DATETIME, 20091208123010L);
+        return new LiteralExpression(AkType.DATETIME, 20090830113045L);
     }
-    
-    private Expression getDate ()
+
+    private Expression getDate()
     {
-        return new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2009-12-30"));
+        return new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2009-08-30"));
     }
-    
-    private Expression getTime ()
+
+    private Expression getTime()
     {
-        return new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.TIME).getLong("11:30:45"));
+        return new LiteralExpression(AkType.TIME, Extractors.getLongExtractor(AkType.TIME).getLong("11:30:45"));
     }
-    
+
     private Expression getTimestamp()
     {
-        return new LiteralExpression (AkType.TIMESTAMP,
-                Extractors.getLongExtractor(AkType.TIMESTAMP).getLong("2009-12-30 12:30:10"));
+        return new LiteralExpression(AkType.TIMESTAMP,
+                Extractors.getLongExtractor(AkType.TIMESTAMP).getLong("2009-08-30 11:30:45"));
     }
-    private Expression getTopExp (ExpressionComposer composer, Expression arg)
+
+    private Expression getYear()
+    {
+        return new LiteralExpression(AkType.YEAR, 109L);
+    }
+
+    private Expression getTopExp(ExpressionComposer composer, Expression arg)
     {
         return composer.compose(Arrays.asList(arg));
     }
-    
 }
