@@ -17,10 +17,14 @@ package com.akiban.sql.optimizer.rule;
 
 public abstract class RangeEndpoint {
 
-    public abstract boolean isWild();
+    public abstract boolean isLowerWild();
+    public abstract boolean isUpperWild();
     public abstract ValueEndpoint asValueEndpoint();
-    public final boolean hasValue() {
-        return !isWild();
+    public abstract boolean hasValue();
+
+
+    public final boolean isEitherWild() {
+        return isLowerWild() || isUpperWild();
     }
 
     private RangeEndpoint() {}
@@ -37,10 +41,19 @@ public abstract class RangeEndpoint {
         return new ValueEndpoint(value, inclusive);
     }
 
-    public static final RangeEndpoint WILD = new RangeEndpoint() {
+    public static final RangeEndpoint LOWER_WILD = new Wild(true);
+    public static final RangeEndpoint UPPER_WILD = new Wild(false);
+
+    private static class Wild extends RangeEndpoint {
+
         @Override
-        public boolean isWild() {
-            return true;
+        public boolean isLowerWild() {
+            return isLower;
+        }
+
+        @Override
+        public boolean isUpperWild() {
+            return !isLower;
         }
 
         @Override
@@ -49,10 +62,21 @@ public abstract class RangeEndpoint {
         }
 
         @Override
-        public String toString() {
-            return "*";
+        public boolean hasValue() {
+            return false;
         }
-    };
+
+        @Override
+        public String toString() {
+            return isLower ? "(* LOW)" : "(* HIGH)";
+        }
+
+        private Wild(boolean lower) {
+            isLower = lower;
+        }
+
+        private final boolean isLower;
+    }
 
     public static class ValueEndpoint extends RangeEndpoint {
 
@@ -65,8 +89,18 @@ public abstract class RangeEndpoint {
         }
 
         @Override
-        public boolean isWild() {
+        public boolean isLowerWild() {
             return false;
+        }
+
+        @Override
+        public boolean isUpperWild() {
+            return false;
+        }
+
+        @Override
+        public boolean hasValue() {
+            return true;
         }
 
         @Override

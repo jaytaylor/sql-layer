@@ -36,9 +36,9 @@ public final class RangeSegmentTest {
     @Test
     public void sacUnchanged() {
         List<RangeSegment> original = Arrays.asList(
-                segment(RangeEndpoint.WILD, RangeEndpoint.exclusive("apple")),
+                segment(RangeEndpoint.LOWER_WILD, RangeEndpoint.exclusive("apple")),
                 segment(RangeEndpoint.exclusive("apple"), RangeEndpoint.exclusive("orange")),
-                segment(RangeEndpoint.exclusive("orange"), RangeEndpoint.WILD)
+                segment(RangeEndpoint.exclusive("orange"), RangeEndpoint.UPPER_WILD)
         );
         List<RangeSegment> copy = new ArrayList<RangeSegment>(original);
         sacAndCheck(original, copy);
@@ -48,14 +48,14 @@ public final class RangeSegmentTest {
     public void sacSortNoCombine() {
         List<RangeSegment> original = Arrays.asList(
                 segment(RangeEndpoint.exclusive("apple"), RangeEndpoint.exclusive("orange")),
-                segment(RangeEndpoint.exclusive("orange"), RangeEndpoint.WILD),
-                segment(RangeEndpoint.WILD, RangeEndpoint.exclusive("apple"))
+                segment(RangeEndpoint.exclusive("orange"), RangeEndpoint.UPPER_WILD),
+                segment(RangeEndpoint.LOWER_WILD, RangeEndpoint.exclusive("apple"))
         );
         sacAndCheck(
                 original,
-                segment(RangeEndpoint.WILD, RangeEndpoint.exclusive("apple")),
+                segment(RangeEndpoint.LOWER_WILD, RangeEndpoint.exclusive("apple")),
                 segment(RangeEndpoint.exclusive("apple"), RangeEndpoint.exclusive("orange")),
-                segment(RangeEndpoint.exclusive("orange"), RangeEndpoint.WILD)
+                segment(RangeEndpoint.exclusive("orange"), RangeEndpoint.UPPER_WILD)
         );
     }
 
@@ -136,23 +136,23 @@ public final class RangeSegmentTest {
     public void sacOverlapWildStart() {
         List<RangeSegment> original = Arrays.asList(
                 segment(RangeEndpoint.exclusive("apple"), RangeEndpoint.exclusive("person")),
-                segment(RangeEndpoint.WILD, RangeEndpoint.inclusive("zebra"))
+                segment(RangeEndpoint.LOWER_WILD, RangeEndpoint.inclusive("zebra"))
         );
         sacAndCheck(
                 original,
-                segment(RangeEndpoint.WILD, RangeEndpoint.inclusive("zebra"))
+                segment(RangeEndpoint.LOWER_WILD, RangeEndpoint.inclusive("zebra"))
         );
     }
 
     @Test
     public void sacOverlapWildEnd() {
         List<RangeSegment> original = Arrays.asList(
-                segment(RangeEndpoint.inclusive("aardvark"), RangeEndpoint.WILD),
+                segment(RangeEndpoint.inclusive("aardvark"), RangeEndpoint.UPPER_WILD),
                 segment(RangeEndpoint.exclusive("apple"), RangeEndpoint.exclusive("person"))
         );
         sacAndCheck(
                 original,
-                segment(RangeEndpoint.inclusive("aardvark"), RangeEndpoint.WILD)
+                segment(RangeEndpoint.inclusive("aardvark"), RangeEndpoint.UPPER_WILD)
         );
     }
 

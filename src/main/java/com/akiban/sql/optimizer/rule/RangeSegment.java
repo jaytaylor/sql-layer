@@ -39,20 +39,20 @@ public final class RangeSegment {
             startPoint = endPoint = RangeEndpoint.inclusive(constantValue);
             break;
         case LT:
-            startPoint = RangeEndpoint.WILD;
+            startPoint = RangeEndpoint.LOWER_WILD;
             endPoint = RangeEndpoint.exclusive(constantValue);
             break;
         case LE:
-            startPoint = RangeEndpoint.WILD;
+            startPoint = RangeEndpoint.LOWER_WILD;
             endPoint = RangeEndpoint.inclusive(constantValue);
             break;
         case GT:
             startPoint = RangeEndpoint.exclusive(constantValue);
-            endPoint = RangeEndpoint.WILD;
+            endPoint = RangeEndpoint.UPPER_WILD;
             break;
         case GE:
             startPoint = RangeEndpoint.inclusive(constantValue);
-            endPoint = RangeEndpoint.WILD;
+            endPoint = RangeEndpoint.UPPER_WILD;
             break;
         case NE:
             List<RangeSegment> result = new ArrayList<RangeSegment>(2);
@@ -96,8 +96,8 @@ public final class RangeSegment {
                 // "start" and "end" are relative to the previous. So, startsOverlap specifies whether
                 // the current's end is less than the previous start; and endsOverlap specifies whether the current's
                 // end is less than the previous end
-                boolean startsOverlap = findOverlap(previousEnd, currentStart, WILD_IS_LOW);
-                boolean endsOverlap = findOverlap(previousEnd, currentSegment.getEnd(), WILD_IS_HIGH);
+                boolean startsOverlap = findOverlap(previousEnd, currentStart);
+                boolean endsOverlap = findOverlap(previousEnd, currentSegment.getEnd());
                 if (startsOverlap || endsOverlap) {
                     if (endsOverlap) {
                         iterator.remove();
@@ -134,18 +134,17 @@ public final class RangeSegment {
      * one of them is inclusive or wild.
      * @param low the RangePoint which should be lower, if the two are not to overlap
      * @param high the RangePoint which should be higher, if the two are not to overlap
-     * @param wildFlag whether WILD is considered high or low
      * @return whether the two points overlap
      */
-    private static boolean findOverlap(RangeEndpoint low, RangeEndpoint high, boolean wildFlag) {
-        ComparisonResult comparison = compareEndpoints(low, high, wildFlag);
+    private static boolean findOverlap(RangeEndpoint low, RangeEndpoint high) {
+        ComparisonResult comparison = compareEndpoints(low, high);
         final boolean haveOverlap;
         if (comparison == ComparisonResult.GT) {
             haveOverlap = true; // previous end is >= current start; we have overlap
         }
         else if (comparison == ComparisonResult.EQ) {
             // only have overlap in certain situations...
-            if (high.isWild() || low.isWild()) {
+            if (high.isEitherWild() || low.isEitherWild()) {
                 haveOverlap = true;
             }
             else {
@@ -198,10 +197,11 @@ public final class RangeSegment {
     }
 
     static RangeEndpoint rangeEndpoint(RangeEndpoint one, RangeEndpoint two, RangePointComparison comparison) {
-        if (one.isWild())
-            return two;
-        if (two.isWild())
-            return one;
+        if (one.isEitherWild())
+            return comparison.getWild().equals(one) ? one : two;
+        if (two.isEitherWild())
+            return comparison.getWild().equals(two) ? two : one;
+
         RangeEndpoint.ValueEndpoint oneValue = one.asValueEndpoint();
         RangeEndpoint.ValueEndpoint twoValue = two.asValueEndpoint();
         Object resultValue = comparison.get(oneValue.getValue(), twoValue.getValue());
@@ -234,16 +234,23 @@ public final class RangeSegment {
             return ComparisonResult.EQ;
     }
 
-    static ComparisonResult compareEndpoints(RangeEndpoint point1, RangeEndpoint point2, boolean wildIsHigh) {
-        boolean point1Wild = point1.isWild();
-        boolean point2Wild = point2.isWild();
-        if (point1Wild && point2Wild)
+    static ComparisonResult compareEndpoints(RangeEndpoint point1, RangeEndpoint point2) {
+        if (point1.equals(point2))
             return ComparisonResult.EQ;
-        if (point1Wild) // point 2 isn't
-            return wildIsHigh ? ComparisonResult.GT : ComparisonResult.LT;
-        if (point2Wild) // point 1 isn't
-            return wildIsHigh ? ComparisonResult.LT : ComparisonResult.GT;
-        // neither point is wild
+        // the next four ifs follow a simple pattern. For instance, in the first one,
+        // we know that the two aren't equal wilds; so if point1 is lower wild, which is less than everything except
+        // another lower wild, and point2 isn't lower wild (or they'd be equal), then the answer is LT.
+        if (point1.isLowerWild())
+            return ComparisonResult.LT;
+        if (point2.isLowerWild())
+            return ComparisonResult.GT;
+        if (point1.isUpperWild())
+            return ComparisonResult.GT;
+        if (point2.isUpperWild())
+            return ComparisonResult.LT;
+
+        assert ! point1.isEitherWild() : point1;
+        assert ! point2.isEitherWild() : point2;
         RangeEndpoint.ValueEndpoint value1 = point1.asValueEndpoint();
         RangeEndpoint.ValueEndpoint value2 = point2.asValueEndpoint();
         return compareObjects(value1.getValue(), value2.getValue());
@@ -286,13 +293,13 @@ public final class RangeSegment {
     private RangeEndpoint end;
 
     private enum RangePointComparison {
-        MIN {
+        MIN(RangeEndpoint.LOWER_WILD) {
             @Override
             protected Object select(Object one, Object two, ComparisonResult comparison) {
                 return comparison == ComparisonResult.LT ? one : two;
             }
         },
-        MAX {
+        MAX(RangeEndpoint.UPPER_WILD) {
             @Override
             protected Object select(Object one, Object two, ComparisonResult comparison) {
                 return comparison == ComparisonResult.GT ? one : two;
@@ -316,6 +323,16 @@ public final class RangeSegment {
                 throw new AssertionError(compareResult.name());
             }
         }
+
+        public RangeEndpoint getWild() {
+            return associatedWild;
+        }
+
+        private RangePointComparison(RangeEndpoint associatedWild) {
+            this.associatedWild = associatedWild;
+        }
+
+        private final RangeEndpoint associatedWild;
     }
 
     private enum ComparisonResult {
@@ -327,7 +344,7 @@ public final class RangeSegment {
         public int compare(RangeSegment segment1, RangeSegment segment2) {
             RangeEndpoint start1 = segment1.getStart();
             RangeEndpoint start2 = segment2.getStart();
-            ComparisonResult comparisonResult = RangeSegment.compareEndpoints(start1, start2, WILD_IS_LOW);
+            ComparisonResult comparisonResult = RangeSegment.compareEndpoints(start1, start2);
             switch (comparisonResult) {
             case EQ: return 0;
             case LT: return -1;
@@ -345,7 +362,4 @@ public final class RangeSegment {
             ));
         }
     }
-
-    private static boolean WILD_IS_HIGH = true;
-    private static boolean WILD_IS_LOW = false;
 }
