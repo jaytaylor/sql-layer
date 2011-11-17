@@ -307,7 +307,7 @@ public class PostgresType
             oid = TIMESTAMP_TYPE_OID;
             // TODO: AkType.TIMESTAMP is MYSQL_TIMESTAMP, another way
             // of representing seconds precision.
-            converter = Extractors.getLongExtractor(AkType.DATETIME);
+            converter = Extractors.getLongExtractor(AkType.TIMESTAMP);
             break;
         case TypeId.FormatIds.TINYINT_TYPE_ID:
             oid = INT2_TYPE_OID; // No INT1
