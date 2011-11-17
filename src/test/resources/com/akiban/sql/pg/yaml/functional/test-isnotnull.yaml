@@ -117,7 +117,7 @@
     (-123456.0)
 ---
 - Statement: SELECT decimal_field FROM all_types WHERE decimal_field IS NOT NULL
-- output: [[1.0], [123456.0], [-123456.0]]
+- output: [[1], [123456], [-123456]]
 ---
 - Statement: DELETE FROM all_types
 
@@ -189,7 +189,7 @@
     (-123456.0)
 ---
 - Statement: SELECT numeric_field FROM all_types WHERE numeric_field IS NOT NULL
-- output: [[1.0], [123456.0], [-123456.0]]
+- output: [[1], [123456], [-123456]]
 ---
 - Statement: DELETE FROM all_types
 
