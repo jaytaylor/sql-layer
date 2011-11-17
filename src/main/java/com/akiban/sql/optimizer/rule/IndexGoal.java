@@ -183,6 +183,7 @@ public class IndexGoal implements Comparator<IndexScan>
         if (nequals < ncols) {
             ExpressionNode indexExpression = indexExpressions.get(nequals);
             if (indexExpression != null) {
+                boolean foundInequalityCondition = false;
                 for (ConditionExpression condition : conditions) {
                     if (condition instanceof ComparisonCondition) {
                         ComparisonCondition ccond = (ComparisonCondition)condition;
@@ -197,6 +198,17 @@ public class IndexGoal implements Comparator<IndexScan>
                             index.addInequalityCondition(condition,
                                                          ccond.getOperation(),
                                                          otherComparand);
+                            foundInequalityCondition = true;
+                        }
+                    }
+                }
+                if (!foundInequalityCondition) {
+                    // TODO we can only support one Range, but we should be smarter about selecting which one
+                    for (ConditionExpression condition : conditions) {
+                        Range range = Range.rangeAtNode(condition);
+                        if (range != null) {
+                            index.addRangeCondition(range);
+                            break;
                         }
                     }
                 }
@@ -213,7 +225,7 @@ public class IndexGoal implements Comparator<IndexScan>
         }
         index.setOrderEffectiveness(determineOrderEffectiveness(index));
         if ((index.getOrderEffectiveness() == IndexScan.OrderEffectiveness.NONE) &&
-            (index.getConditions() == null))
+            (!index.hasConditions()))
             return false;
         index.setCovering(determineCovering(index));
         return true;
@@ -687,15 +699,11 @@ public class IndexGoal implements Comparator<IndexScan>
     public void installUpstream(IndexScan index) {
         if (index.getConditions() != null) {
             for (ConditionExpression condition : index.getConditions()) {
-                for (ConditionList conditionSource : conditionSources) {
-                    if (conditionSource.remove(condition))
-                        break;
-                }
-                if (condition instanceof ComparisonCondition) {
-                    ((ComparisonCondition)condition).setImplementation(ConditionExpression.Implementation.INDEX);
-                }
+                conditionSatisfiedByIndex(condition, false);
             }
         }
+        if (index.getConditionRange() != null)
+            conditionSatisfiedByIndex(index.getConditionRange().getAssociatedCondition(), true);
         if (grouping != null) {
             AggregateSource.Implementation implementation;
             switch (index.getOrderEffectiveness()) {
@@ -732,5 +740,24 @@ public class IndexGoal implements Comparator<IndexScan>
             distinct.setImplementation(implementation);
         }
     }
-    
+
+    private void conditionSatisfiedByIndex(ConditionExpression condition, boolean recurse) {
+        for (ConditionList conditionSource : conditionSources) {
+            if (conditionSource.remove(condition))
+                break;
+        }
+        markConditionAsSatisfied(condition, recurse);
+    }
+
+    private void markConditionAsSatisfied(ConditionExpression condition, boolean recurse) {
+        if (condition instanceof ComparisonCondition) {
+            ((ComparisonCondition)condition).setImplementation(ConditionExpression.Implementation.INDEX);
+        }
+        else if (recurse && (condition instanceof LogicalFunctionCondition)) {
+            LogicalFunctionCondition logicalCondition = (LogicalFunctionCondition) condition;
+            markConditionAsSatisfied(logicalCondition.getLeft(), true);
+            markConditionAsSatisfied(logicalCondition.getRight(), true);
+        }
+    }
+
 }

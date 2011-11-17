@@ -274,11 +274,30 @@ public class OperatorAssembler extends BaseRule
                                                       index);
                 }
             }
-            stream.operator = API.indexScan_Default(indexRowType, 
-                                                    indexScan.isReverseScan(),
-                                                    assembleIndexKeyRange(indexScan, null),
-                                                    selector);
-            stream.rowType = indexRowType;
+            if (indexScan.getConditionRange() == null) {
+                stream.operator = API.indexScan_Default(indexRowType,
+                                                        indexScan.isReverseScan(),
+                                                        assembleIndexKeyRange(indexScan, (ColumnExpressionToIndex)null),
+                                                        selector);
+                stream.rowType = indexRowType;
+            }
+            else {
+                Range range = indexScan.getConditionRange();
+                for (RangeSegment rangeSegment : range.getSegments()) {
+                    Operator scan = API.indexScan_Default(indexRowType,
+                                                          indexScan.isReverseScan(),
+                                                          assembleIndexKeyRange(indexScan, rangeSegment),
+                                                          selector);
+                    if (stream.operator == null) {
+                        stream.operator = scan;
+                        stream.rowType = indexRowType;
+                    }
+                    else {
+                        stream.operator = API.unionAll(stream.operator, stream.rowType, scan, indexRowType);
+                        stream.rowType = stream.operator.rowType();
+                    }
+                }
+            }
             stream.fieldOffsets = new IndexFieldOffsets(indexScan, indexRowType);
             return stream;
         }
@@ -804,6 +823,10 @@ public class OperatorAssembler extends BaseRule
                 IndexBound hi = getIndexBound(index.getIndex(), highKeys, hidx);
                 return new IndexKeyRange(lo, lowInc, hi, highInc);
             }
+        }
+
+        protected IndexKeyRange assembleIndexKeyRange(IndexScan index, RangeSegment segment) {
+            throw new UnsupportedOperationException();
         }
 
         protected UserTableRowType tableRowType(TableSource table) {

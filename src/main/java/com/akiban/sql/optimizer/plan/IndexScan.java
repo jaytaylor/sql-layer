@@ -19,6 +19,7 @@ import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 
 import com.akiban.ais.model.Index;
+import com.akiban.sql.optimizer.rule.Range;
 
 import java.util.*;
 
@@ -44,6 +45,8 @@ public class IndexScan extends BasePlanNode
     // TODO: This doesn't work for merging: consider x < ? AND x <= ?. 
     // May need building of index keys in the expressions subsystem.
     private boolean lowInclusive, highInclusive;
+
+    private Range conditionRange;
 
     // This is how the indexed result will be ordered from using this index.
     // TODO: Is this right? Are we allowed to switch directions
@@ -109,8 +112,14 @@ public class IndexScan extends BasePlanNode
     public List<ConditionExpression> getConditions() {
         return conditions;
     }
+
+    public Range getConditionRange() {
+        return conditionRange;
+    }
+
     public boolean hasConditions() {
-        return ((conditions != null) && !conditions.isEmpty());
+        return ((conditions != null) && !conditions.isEmpty())
+                || (conditionRange != null);
     }
 
     public List<ExpressionNode> getEqualityComparands() {
@@ -186,6 +195,11 @@ public class IndexScan extends BasePlanNode
         if (conditions == null)
             conditions = new ArrayList<ConditionExpression>();
         conditions.add(condition);
+    }
+
+    public void addRangeCondition(Range range) {
+        assert conditionRange == null : conditionRange;
+        conditionRange = range;
     }
 
     public List<ExpressionNode> getColumns() {

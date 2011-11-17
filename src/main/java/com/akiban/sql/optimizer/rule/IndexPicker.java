@@ -130,8 +130,6 @@ public class IndexPicker extends BaseRule
                 ConditionList conds = ((Select)input).getConditions();
                 if (!conds.isEmpty()) {
                     conditionSources.add(conds);
-                    for (ConditionExpression cond : conds)
-                        Range.rangesRootedAt(cond);
                 }
             }
             input = input.getOutput();

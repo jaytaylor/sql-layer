@@ -18,44 +18,31 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.ColumnExpression;
 import com.akiban.sql.optimizer.plan.ComparisonCondition;
+import com.akiban.sql.optimizer.plan.ConditionExpression;
 import com.akiban.sql.optimizer.plan.ConstantExpression;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.FunctionCondition;
 import com.akiban.sql.optimizer.plan.LogicalFunctionCondition;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public final class Range {
 
-    public static Map<ExpressionNode,Range> rangesRootedAt(ExpressionNode node) {
-        Map<ExpressionNode,Range> results = new HashMap<ExpressionNode, Range>();
-        Range topRange = nodeRange(node, results);
-        insertIntoMap(node, topRange, results);
-        return results;
-    }
-
-    private static Range nodeRange(ExpressionNode node, Map<ExpressionNode,Range> resultsMap) {
-        assert !resultsMap.containsKey(node) : "possible circular reference with " + node + " in " + resultsMap;
+    public static Range rangeAtNode(ConditionExpression node) {
         if (node instanceof ComparisonCondition) {
             ComparisonCondition comparisonCondition = (ComparisonCondition) node;
             return comparisonToRange(comparisonCondition);
         }
         else if (node instanceof LogicalFunctionCondition) {
             LogicalFunctionCondition condition = (LogicalFunctionCondition) node;
-            Range leftRange = nodeRange(condition.getLeft(), resultsMap);
-            Range rightRange = nodeRange(condition.getRight(), resultsMap);
-            if (leftRange != null)
-                insertIntoMap(condition.getLeft(), leftRange, resultsMap);
-            if (rightRange != null)
-                insertIntoMap(condition.getRight(), rightRange, resultsMap);
+            Range leftRange = rangeAtNode(condition.getLeft());
+            Range rightRange = rangeAtNode(condition.getRight());
             if (leftRange != null && rightRange != null) {
                 List<RangeSegment> combinedSegments = combineBool(leftRange, rightRange, condition.getFunction());
                 if (combinedSegments != null) {
                     boolean includeNull = leftRange.isIncludingNull() || rightRange.isIncludingNull();
-                    return new Range(leftRange.getColumnExpression(), combinedSegments, includeNull);
+                    return new Range(leftRange.getColumnExpression(), condition, combinedSegments, includeNull);
                 }
             }
         }
@@ -66,7 +53,7 @@ public final class Range {
                     ExpressionNode operand = condition.getOperands().get(0);
                     if (operand instanceof ColumnExpression) {
                         ColumnExpression operandColumn = (ColumnExpression) operand;
-                        return new Range(operandColumn, Collections.<RangeSegment>emptyList(), true);
+                        return new Range(operandColumn, condition, Collections.<RangeSegment>emptyList(), true);
                     }
                 }
             }
@@ -92,9 +79,8 @@ public final class Range {
         return result;
     }
 
-    private static void insertIntoMap(ExpressionNode node, Range range, Map<ExpressionNode, Range> results) {
-        Range old = results.put(node, range);
-        assert old == null : old;
+    public ConditionExpression getAssociatedCondition() {
+        return rootCondition;
     }
 
     public List<RangeSegment> getSegments() {
@@ -117,8 +103,10 @@ public final class Range {
         return sb.toString();
     }
 
-    public Range(ColumnExpression columnExpression, List<RangeSegment> segments, boolean includingNull) {
+    public Range(ColumnExpression columnExpression, ConditionExpression rootCondition,
+                 List<RangeSegment> segments, boolean includingNull) {
         this.columnExpression = columnExpression;
+        this.rootCondition = rootCondition;
         this.segments = segments;
         this.includingNull = includingNull;
     }
@@ -141,7 +129,7 @@ public final class Range {
             ConstantExpression constant = (ConstantExpression) other;
             Comparison op = comparisonCondition.getOperation();
             List<RangeSegment> rangeSegments = RangeSegment.fromComparison(op, constant);
-            return new Range(columnExpression, rangeSegments, false);
+            return new Range(columnExpression, comparisonCondition, rangeSegments, false);
         }
         else {
             return null;
@@ -149,6 +137,7 @@ public final class Range {
     }
 
     private ColumnExpression columnExpression;
+    private ConditionExpression rootCondition;
     private List<RangeSegment> segments;
     private boolean includingNull;
 }
