@@ -68,7 +68,7 @@ public abstract class RangeEndpoint {
 
         @Override
         public String toString() {
-            return isLower ? "(* LOW)" : "(* HIGH)";
+            return isLower ? "(-Wild)" : "(+Wild)";
         }
 
         private Wild(boolean lower) {

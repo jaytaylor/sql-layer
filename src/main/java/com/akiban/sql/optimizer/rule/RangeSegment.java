@@ -180,18 +180,10 @@ public final class RangeSegment {
     static RangeSegment andRangeSegment(RangeSegment left, RangeSegment right) {
         RangeEndpoint start = rangeEndpoint(left.getStart(), right.getStart(), RangePointComparison.MAX);
         RangeEndpoint end = rangeEndpoint(left.getEnd(), right.getEnd(), RangePointComparison.MIN);
-        if (
-                start == null
-                || end == null
-                || (start.hasValue()
-                    && end.hasValue()
-                    && (
-                            RangePointComparison.MIN.get(
-                                    start.asValueEndpoint().getValue(),
-                                    end.asValueEndpoint().getValue()
-                            ) != start.asValueEndpoint().getValue())
-                    )
-            )
+        // if either null, a comparison failed and we should bail
+        // otherwise, if start < end, this is an empty range and we should bail; another iteration of the loop
+        // will give us the correct order
+        if (start == null || end == null || (ComparisonResult.LT == compareEndpoints(start, end)) )
             return null;
         return new RangeSegment(start, end);
     }
