@@ -13,33 +13,22 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package com.akiban.server.expression.std;
 
-import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.extract.Extractors;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import org.junit.Test;
 
-/**
- *
- * @author Vy Thao Nguyen
- */
-public class ITest
+public class IfExpressionCompositionTest extends ComposedExpressionTestBase
 {
-    @Test
-    public void test()
+    @Override
+    protected CompositionTestInfo getTestInfo()
     {
-        Expression b = new LiteralExpression(AkType.DATE, 23L);
-
-       double d = b.evaluation().eval().getLong();
-
+        return new CompositionTestInfo(3, AkType.LONG, false);
     }
 
+    @Override
+    public ExpressionComposer getComposer()
+    {
+        return IfExpression.COMPOSER;
+    }
 }
