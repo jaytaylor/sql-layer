@@ -34,11 +34,9 @@ case "$1" in
                 akiban
         fi
 
-        if [ -n $2 ] && dpkg --compare-versions "$2" le 0.6.4-2; then
-            chown -R akiban: /var/lib/akiban
-            chown -R akiban: /var/log/akiban
-            chown -R akiban: /var/run/akiban
-        fi
+	chown -R akiban: /var/lib/akiban
+	chown -R akiban: /var/log/akiban
+	chown -R akiban: /var/run/akiban
     ;;
 
     abort-upgrade|abort-remove|abort-deconfigure)
