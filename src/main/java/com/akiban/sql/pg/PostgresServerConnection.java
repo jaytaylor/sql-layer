@@ -49,6 +49,7 @@ import org.slf4j.LoggerFactory;
 import java.net.*;
 import java.io.*;
 import java.util.*;
+import org.joda.time.DateTime;
 
 /**
  * Connection to a Postgres server client.
@@ -829,11 +830,11 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     @Override
     public Object getEnvironmentValue(EnvironmentExpressionSetting setting) {
         switch (setting) {
-        case CURRENT_DATE:
-            if (transactionStartTime != null)
-                return transactionStartTime;
+        case CURRENT_DATETIME:
+            if (transactionStartTime != null) 
+                return new DateTime(transactionStartTime.getTime());
             else
-                return new Date();
+                return new DateTime();
         case CURRENT_USER:
             return defaultSchemaName;
         case SESSION_USER:

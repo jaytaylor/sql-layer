@@ -13,12 +13,10 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.expression;
+package com.akiban.server.error;
 
-/** The particular environment setting this environment function depends on. */
-public enum EnvironmentExpressionSetting {
-    CURRENT_DATETIME,           // Datetime: start of current transaction
-    CURRENT_USER,               // String: default schema
-    SESSION_USER,               // String: connection user
-    SYSTEM_USER                 // String: O/S user running server
+public final class InsertWrongCountException extends InvalidOperationException {
+    public InsertWrongCountException(int ntarget, int nexpr) {
+        super(ErrorCode.INSERT_WRONG_COUNT, ntarget, nexpr);
+    }
 }
