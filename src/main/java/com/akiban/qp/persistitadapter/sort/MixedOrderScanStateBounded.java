@@ -112,13 +112,17 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
         }
     }
 
-    public MixedOrderScanStateBounded(SortCursorMixedOrder cursor, int field, boolean ascending)
+    public MixedOrderScanStateBounded(SortCursorMixedOrder cursor,
+                                      int field,
+                                      boolean ascending,
+                                      boolean lastBoundedColumn)
         throws PersistitException
     {
         super(cursor, field, ascending);
         this.keyTarget = new PersistitKeyValueTarget();
         this.keyTarget.attach(cursor.exchange.getKey());
         this.keySource = new PersistitKeyValueSource();
+        this.lastBoundedColumn = lastBoundedColumn;
     }
 
     private void setupEndComparison(Comparison comparison, ValueSource bound)
@@ -155,6 +159,7 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
 
     private final PersistitKeyValueTarget keyTarget;
     private final PersistitKeyValueSource keySource;
+    private final boolean lastBoundedColumn;
     private ValueSource loSource;
     private ValueSource hiSource;
     private boolean loInclusive;

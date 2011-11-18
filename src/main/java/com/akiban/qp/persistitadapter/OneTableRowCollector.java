@@ -15,9 +15,7 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.ais.model.Column;
 import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -64,12 +62,6 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
             // Index bounds
             IndexRowType indexRowType = schema.indexRowType(predicateIndex);
             ColumnSelector tableSelector;
-            if (start != null && start.isAllNull()) {
-                start = null;
-            }
-            if (end != null && end.isAllNull()) {
-                end = null;
-            }
             if (start == null && end == null) {
                 indexKeyRange = new IndexKeyRange(indexRowType);
             } else {
@@ -86,6 +78,8 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
                     }
                     tableSelector = startColumns;
                 }
+                // tableSelector is in terms of table column positions. Need a ColumnSelector based
+                // on index column positions.
                 ColumnSelector columnSelector = indexSelectorFromTableSelector(predicateIndex, tableSelector);
                 IndexBound lo;
                 NewRow loRow;
@@ -111,13 +105,16 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
                     hiRow = new LegacyRowWrapper(end, store);
                 }
                 hi = new IndexBound(new NewRowBackedIndexRow(queryRootType, hiRow, predicateIndex), columnSelector);
+                boolean loInclusive = start != null && (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0;
+                boolean hiInclusive = end != null && (scanFlags & (SCAN_FLAGS_END_AT_EDGE | SCAN_FLAGS_END_EXCLUSIVE)) == 0;
                 indexKeyRange =
                     new IndexKeyRange(indexRowType,
                                       lo,
-                                      start != null && (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0,
+                                      loInclusive,
                                       hi,
-                                      end != null && (scanFlags & (SCAN_FLAGS_END_AT_EDGE | SCAN_FLAGS_END_EXCLUSIVE)) == 0);
+                                      hiInclusive);
             }
         }
     }
+
 }
