@@ -743,21 +743,21 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     public void getYearFromTimestamp()
     {
         Expression top = getTopExp(ExtractExpression.YEAR_COMPOSER, getTimestamp());
-        assertEquals(2009L, top.evaluation().eval().getYear());
+        assertEquals(2009L, top.evaluation().eval().getYear() +1900);
     }
 
     @Test
     public void getYearFromDate()
     {
         Expression top = getTopExp(ExtractExpression.YEAR_COMPOSER, getDate());
-        assertEquals(2009L, top.evaluation().eval().getYear());
+        assertEquals(2009L, top.evaluation().eval().getYear() +1900);
    }
 
     @Test
     public void getYearstampFromDateTime()
     {
         Expression top = getTopExp(ExtractExpression.YEAR_COMPOSER, getDatetime());
-        assertEquals(2009L, top.evaluation().eval().getYear());
+        assertEquals(2009L, top.evaluation().eval().getYear() +1900);
     }
 
     @Test
@@ -773,7 +773,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
         Expression arg = new LiteralExpression(AkType.VARCHAR, "2009-12-30 12:30:10");
         Expression top = getTopExp(ExtractExpression.YEAR_COMPOSER, arg);
 
-        assertEquals(2009L, top.evaluation().eval().getYear());
+        assertEquals(2009L, top.evaluation().eval().getYear() +1900);
     }
 
     @Test
@@ -791,7 +791,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
         Expression arg = new LiteralExpression(AkType.LONG, 20091230123045L);
         Expression top = getTopExp(ExtractExpression.YEAR_COMPOSER, arg);
 
-        assertEquals(2009L, top.evaluation().eval().getYear());
+        assertEquals(2009L, top.evaluation().eval().getYear() +1900);
 
     }
 
