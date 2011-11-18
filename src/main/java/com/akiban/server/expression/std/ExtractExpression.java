@@ -35,7 +35,7 @@ public class ExtractExpression extends AbstractUnaryExpression
     @Scalar ("date")
     public static final ExpressionComposer DATE_COMPOSER = new InternalComposer(TargetExtractType.DATE);
 
-    @Scalar ("timestamp")
+    @Scalar ("datetime")
     public static final ExpressionComposer DATETIME_COMPOSER = new InternalComposer(TargetExtractType.DATETIME);
     
     @Scalar ("day")
@@ -66,7 +66,7 @@ public class ExtractExpression extends AbstractUnaryExpression
     @Scalar ("time")
     public static final ExpressionComposer TIME_COMPOSER = new InternalComposer(TargetExtractType.TIME);
 
-    @Scalar ("ak_timestamp")
+    @Scalar ("timestamp")
     public static final ExpressionComposer TIMESTAMP_COMPOSER = new InternalComposer(TargetExtractType.TIMESTAMP);
 
     @Scalar ("year")
