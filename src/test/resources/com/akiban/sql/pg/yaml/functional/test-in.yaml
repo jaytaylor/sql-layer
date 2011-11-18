@@ -166,23 +166,23 @@
 ---
 - Statement: SELECT decimal_field FROM all_types
     WHERE decimal_field IN (0.0)
-- output: [[0.0]]
+- output: [[0]]
 ---
 - Statement: SELECT decimal_field FROM all_types
     WHERE decimal_field IN (1.0, -1.0)
-- output: [[1.0], [-1.0]]
+- output: [[1], [-1]]
 ---
 - Statement: SELECT decimal_field FROM all_types
     WHERE decimal_field IN (123456.0, -123456.0)
-- output: [[123456.0], [-123456.0]]
+- output: [[123456], [-123456]]
 ---
 - Statement: SELECT decimal_field FROM all_types
     WHERE decimal_field IN (double_field)
-- output: [[0.0], [1.0], [-1.0]]
+- output: [[0], [1], [-1]]
 ---
 - Statement: SELECT decimal_field FROM all_types WHERE decimal_field IN (?)
 - params: [[-1.0], [1.0]]
-- output: [[-1.0], [1.0]]
+- output: [[-1], [1]]
 ---
 - Statement: SELECT decimal_field IN (double_field) FROM all_types
 - output: [[null], [true], [true], [true], [false], [false]]
@@ -322,23 +322,23 @@
 ---
 - Statement: SELECT numeric_field FROM all_types
     WHERE numeric_field IN (0.0)
-- output: [[0.0]]
+- output: [[0]]
 ---
 - Statement: SELECT numeric_field FROM all_types
     WHERE numeric_field IN (1.0, -1.0)
-- output: [[1.0], [-1.0]]
+- output: [[1], [-1]]
 ---
 - Statement: SELECT numeric_field FROM all_types
     WHERE numeric_field IN (123456.0, -123456.0)
-- output: [[123456.0], [-123456.0]]
+- output: [[123456], [-123456]]
 ---
 - Statement: SELECT numeric_field FROM all_types
     WHERE numeric_field IN (double_field)
-- output: [[0.0], [1.0], [-1.0]]
+- output: [[0], [1], [-1]]
 ---
 - Statement: SELECT numeric_field FROM all_types WHERE numeric_field IN (?)
 - params: [[-1.0], [1.0]]
-- output: [[-1.0], [1.0]]
+- output: [[-1], [1]]
 ---
 - Statement: SELECT numeric_field IN (double_field) FROM all_types
 - output: [[null], [true], [true], [true], [false], [false]]
