@@ -26,6 +26,9 @@ import com.akiban.server.types.typestests.TestCase;
 
 import java.util.Collection;
 
+/**
+ * Parameterised tests for ValueHolder
+ */
 public final class ValueHolderTest extends ConversionTestBase {
 
     @NamedParameterizedRunner.TestParameters

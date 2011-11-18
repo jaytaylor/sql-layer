@@ -31,7 +31,7 @@
 - Statement: SELECT AVG(bigint_field), AVG(decimal_field), AVG(double_field),
     AVG(float_field), AVG(integer_field), AVG(numeric_field),
     AVG(smallint_field) FROM all_types
-- output: [[1, 1.0, 1.0, 1.0, 1, 1.0, 1]]
+- output: [[1, 1, 1.0, 1.0, 1, 1, 1]]
 
 # Insert duplicate row
 ---
@@ -43,7 +43,7 @@
 - Statement: SELECT AVG(bigint_field), AVG(decimal_field), AVG(double_field),
     AVG(float_field), AVG(integer_field), AVG(numeric_field),
     AVG(smallint_field) FROM all_types
-- output: [[1, 1.0, 1.0, 1.0, 1, 1.0, 1]]
+- output: [[1, 1, 1.0, 1.0, 1, 1, 1]]
 
 # Rounding (1+1+2+2)/4 = 6/4 = 1.5
 ---
@@ -70,7 +70,7 @@
 - Statement: SELECT AVG(bigint_field), AVG(decimal_field), AVG(double_field),
     AVG(float_field), AVG(integer_field), AVG(numeric_field),
     AVG(smallint_field) FROM all_types
-- output: [[0, 0.0, 0.0, 0.0, 0, 0.0, 0]]
+- output: [[0, 0, 0.0, 0.0, 0, 0, 0]]
 
 ---
 - Statement: DELETE FROM all_types

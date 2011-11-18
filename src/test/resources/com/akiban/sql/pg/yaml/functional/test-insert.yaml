@@ -78,8 +78,8 @@
     (-123456.0), (1234567.0), (-1234567.0)
 ---
 - Statement: SELECT (decimal_field) from all_types
-- output: [[1.0], [123456.0], [-123456.0], [4822.0], [-4822.0]]
-- output_types: [DOUBLE]
+- output: [[1], [123456], [-123456], [4822], [-4822]]
+- output_types: [NUMERIC]
 ---
 - Statement: DELETE from all_types
 
@@ -139,8 +139,8 @@
 - Statement: INSERT INTO all_types (numeric_field) VALUES (1.0)
 ---
 - Statement: SELECT (numeric_field) from all_types
-- output: [[1.0]]
-- output_types: [DOUBLE]
+- output: [[1]]
+- output_types: [NUMERIC]
 ---
 - Statement: DELETE from all_types
 

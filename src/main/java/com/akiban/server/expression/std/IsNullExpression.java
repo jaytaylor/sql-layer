@@ -24,7 +24,6 @@ import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.BoolValueSource;
-import com.akiban.server.types.util.ValueHolder;
 
 
 public class IsNullExpression extends AbstractUnaryExpression
