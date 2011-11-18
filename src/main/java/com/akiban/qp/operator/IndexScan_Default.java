@@ -15,10 +15,13 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,8 +36,9 @@ class IndexScan_Default extends Operator
         StringBuilder str = new StringBuilder(getClass().getSimpleName());
         str.append("(").append(index);
         str.append(" ").append(indexKeyRange);
-        if (reverse)
-            str.append(" reverse");
+        if (!ordering.allAscending()) {
+            str.append(" ").append(ordering);
+        }
         str.append(scanSelector.describe());
         str.append(")");
         return str.toString();
@@ -51,13 +55,13 @@ class IndexScan_Default extends Operator
     // IndexScan_Default interface
 
     public IndexScan_Default(IndexRowType indexType,
-                             boolean reverse,
                              IndexKeyRange indexKeyRange,
+                             API.Ordering ordering,
                              IndexScanSelector scanSelector)
     {
         ArgumentValidation.notNull("indexType", indexType);
         this.index = indexType.index();
-        this.reverse = reverse;
+        this.ordering = ordering;
         this.indexKeyRange = indexKeyRange;
         this.scanSelector = scanSelector;
     }
@@ -69,7 +73,7 @@ class IndexScan_Default extends Operator
     // Object state
 
     private final Index index;
-    private final boolean reverse;
+    private final API.Ordering ordering;
     private final IndexKeyRange indexKeyRange;
     private final IndexScanSelector scanSelector;
 
@@ -114,7 +118,7 @@ class IndexScan_Default extends Operator
         Execution(StoreAdapter adapter)
         {
             super(adapter);
-            this.cursor = adapter.newIndexCursor(index, reverse, indexKeyRange, scanSelector);
+            this.cursor = adapter.newIndexCursor(index, indexKeyRange, ordering, scanSelector);
         }
 
         // Object state

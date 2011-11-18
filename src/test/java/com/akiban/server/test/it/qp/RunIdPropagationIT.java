@@ -61,7 +61,7 @@ public class RunIdPropagationIT extends OperatorITBase
     @Test
     public void testIndexScan()
     {
-        Operator plan = indexScan_Default(orderSalesmanIndexRowType, false, null);
+        Operator plan = indexScan_Default(orderSalesmanIndexRowType, false);
         Cursor cursor = cursor(plan, adapter);
         cursor.open(NO_BINDINGS);
         int expectedRunId = 0;
@@ -77,7 +77,7 @@ public class RunIdPropagationIT extends OperatorITBase
     {
         Operator plan =
             ancestorLookup_Default(
-                indexScan_Default(itemIidIndexRowType, false, null),
+                indexScan_Default(itemIidIndexRowType, false),
                 coi,
                 itemIidIndexRowType,
                 Arrays.asList(customerRowType, orderRowType, itemRowType),
@@ -109,7 +109,7 @@ public class RunIdPropagationIT extends OperatorITBase
     {
         Operator plan =
             branchLookup_Default(
-                indexScan_Default(itemIidIndexRowType, false, null),
+                indexScan_Default(itemIidIndexRowType, false),
                 coi,
                 itemIidIndexRowType,
                 customerRowType,
@@ -146,7 +146,7 @@ public class RunIdPropagationIT extends OperatorITBase
         Operator plan =
             filter_Default(
                 branchLookup_Default(
-                    indexScan_Default(customerNameIndexRowType, false, null),
+                    indexScan_Default(customerNameIndexRowType, false),
                     coi,
                     customerNameIndexRowType,
                     customerRowType,
@@ -169,7 +169,7 @@ public class RunIdPropagationIT extends OperatorITBase
         Operator plan =
             filter_Default(
                 branchLookup_Default(
-                    indexScan_Default(customerNameIndexRowType, false, null),
+                    indexScan_Default(customerNameIndexRowType, false),
                     coi,
                     customerNameIndexRowType,
                     customerRowType,
@@ -207,7 +207,7 @@ public class RunIdPropagationIT extends OperatorITBase
             flatten_HKeyOrdered(
                 filter_Default(
                     branchLookup_Default(
-                        indexScan_Default(customerNameIndexRowType, false, null),
+                        indexScan_Default(customerNameIndexRowType, false),
                         coi,
                         customerNameIndexRowType,
                         customerRowType,
@@ -243,7 +243,7 @@ public class RunIdPropagationIT extends OperatorITBase
             project_Default(
                 filter_Default(
                     branchLookup_Default(
-                        indexScan_Default(customerNameIndexRowType, false, null),
+                        indexScan_Default(customerNameIndexRowType, false),
                         coi,
                         customerNameIndexRowType,
                         customerRowType,

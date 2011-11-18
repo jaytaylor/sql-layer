@@ -15,23 +15,25 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.qp.operator.OperatorExecutionBase;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.persistitadapter.PersistitAdapterException;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.OperatorExecutionBase;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.persistitadapter.PersistitAdapterException;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.PersistitKeyValueTarget;
+import com.akiban.server.PersistitValueValueSource;
 import com.akiban.server.PersistitValueValueTarget;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.std.LiteralExpression;
-import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types.util.ValueHolder;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Value;
@@ -39,9 +41,9 @@ import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class Sorter
 {
@@ -72,7 +74,7 @@ public class Sorter
         // the ascending flag equal to that of some other sort field, we don't change an all-ASC or all-DESC sort
         // into a less efficient mixed-mode sort.
         this.ordering.append(DUMMY_EXPRESSION, ordering.ascending(0));
-        int nsort = this.ordering.sortFields();
+        int nsort = this.ordering.sortColumns();
         this.evaluations = new ArrayList<ExpressionEvaluation>(nsort);
         this.orderingTypes = new AkType[nsort];
         for (int i = 0; i < nsort; i++) {
@@ -124,18 +126,8 @@ public class Sorter
 
     private Cursor cursor()
     {
-        boolean allAscending = true;
-        boolean allDescending = true;
-        for (int i = 0; i < ordering.sortFields(); i++) {
-            if (ordering.ascending(i)) {
-                allDescending = false;
-            } else {
-                allAscending = false;
-            }
-        }
         exchange.clear();
-        SortCursor cursor = allAscending ? new SortCursorAscending(this) :
-                            allDescending ? new SortCursorDescending(this) : new SortCursorMixedOrder(this);
+        SortCursor cursor = SortCursor.create(adapter, null, ordering, new SorterIterationHelper());
         cursor.open(bindings);
         return cursor;
     }
@@ -143,7 +135,7 @@ public class Sorter
     private void createKey(Row row)
     {
         key.clear();
-        int sortFields = ordering.sortFields() - 1; // Don't include the artificial count field
+        int sortFields = ordering.sortColumns() - 1; // Don't include the artificial count field
         for (int i = 0; i < sortFields; i++) {
             ExpressionEvaluation evaluation = evaluations.get(i);
             evaluation.of(row);
@@ -189,4 +181,42 @@ public class Sorter
     Exchange exchange;
     long rowCount = 0;
     long queryStartTimeMsec;
+
+    // Inner classes
+
+    private class SorterIterationHelper implements IterationHelper
+    {
+        @Override
+        public Row row()
+        {
+            ValuesHolderRow row = new ValuesHolderRow(rowType);
+            value.setStreamMode(true);
+            for (int i = 0; i < rowFields; i++) {
+                ValueHolder valueHolder = row.holderAt(i);
+                valueSource.expectedType(fieldTypes[i]);
+                valueHolder.copyFrom(valueSource);
+            }
+            return row;
+        }
+
+        @Override
+        public void close()
+        {
+            Sorter.this.close();
+        }
+
+        @Override
+        public Exchange exchange()
+        {
+            return exchange;
+        }
+
+        SorterIterationHelper()
+        {
+            valueSource = new PersistitValueValueSource();
+            valueSource.attach(value);
+        }
+
+        private final PersistitValueValueSource valueSource;
+    }
 }
