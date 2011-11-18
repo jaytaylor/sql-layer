@@ -344,6 +344,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         status.put("server_encoding", messenger.getEncoding());
         status.put("server_version", "8.4.7"); // Not sure what the min it'll accept is.
         status.put("session_authorization", user);
+        status.put("DateStyle", "ISO, MDY");
         
         {
             messenger.beginMessage(PostgresMessages.AUTHENTICATION_TYPE.code());

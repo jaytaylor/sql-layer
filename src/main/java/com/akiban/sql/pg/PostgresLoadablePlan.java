@@ -16,6 +16,7 @@
 package com.akiban.sql.pg;
 
 import com.akiban.qp.loadableplan.LoadablePlan;
+import com.akiban.qp.operator.Bindings;
 import com.akiban.util.Tap;
 
 public class PostgresLoadablePlan extends PostgresOperatorStatement
@@ -30,16 +31,16 @@ public class PostgresLoadablePlan extends PostgresOperatorStatement
         return ACQUIRE_LOCK_TAP;
     }
 
-    public static PostgresLoadablePlan statement(PostgresServerSession server, String sql)
+    public static PostgresLoadablePlan statement(PostgresServerSession server, String planName, Object[] args)
     {
-        LoadablePlan loadablePlan = server.loadablePlan(sql);
+        LoadablePlan loadablePlan = server.loadablePlan(planName);
         if (loadablePlan != null) {
             loadablePlan.ais(server.getAIS());
         }
-        return loadablePlan == null ? null : new PostgresLoadablePlan(loadablePlan);
+        return loadablePlan == null ? null : new PostgresLoadablePlan(loadablePlan, args);
     }
 
-    private PostgresLoadablePlan(LoadablePlan loadablePlan)
+    private PostgresLoadablePlan(LoadablePlan loadablePlan, Object[] args)
     {
         super(loadablePlan.plan(),
               null,
@@ -49,7 +50,21 @@ public class PostgresLoadablePlan extends PostgresOperatorStatement
               null,
               0,
               Integer.MAX_VALUE);
+        this.args = args;
     }
+
+    @Override
+    public Bindings getBindings() {
+        Bindings bindings = super.getBindings();
+        if (args != null) {
+            for (int i = 0; i < args.length; i++) {
+                bindings.set(i, args[i]);
+            }
+        }
+        return bindings;
+    }
+    
+    private Object[] args;
 
     private static final Tap.InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadablePlan: execute shared");
     private static final Tap.InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadablePlan: acquire shared lock");

@@ -140,6 +140,11 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     }
 
     @Override
+    public long getInterval() {
+        return rawLong(AkType.INTERVAL);
+    }
+    
+    @Override
     public long getUInt() {
         return rawLong(AkType.U_INT);
     }
@@ -238,6 +243,11 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     @Override
     public void putTimestamp(long value) {
         putRaw(AkType.TIMESTAMP, value);
+    }
+    
+    @Override
+    public void putInterval(long value) {
+        putRaw(AkType.INTERVAL, value);
     }
 
     @Override
@@ -530,7 +540,7 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     }
 
     private enum StateType {
-        LONG_VAL (AkType.DATE, AkType.DATETIME, AkType.INT, AkType.LONG, AkType.TIME, AkType.TIMESTAMP, AkType.U_INT, AkType.YEAR),
+        LONG_VAL (AkType.DATE, AkType.DATETIME, AkType.INT, AkType.LONG, AkType.TIME, AkType.TIMESTAMP, AkType.INTERVAL, AkType.U_INT, AkType.YEAR),
         DOUBLE_VAL(AkType.DOUBLE, AkType.U_DOUBLE),
         FLOAT_VAL(AkType.FLOAT, AkType.U_FLOAT),
         OBJECT_VAL(AkType.DECIMAL, AkType.VARCHAR, AkType.TEXT, AkType.U_BIGINT, AkType.VARBINARY),

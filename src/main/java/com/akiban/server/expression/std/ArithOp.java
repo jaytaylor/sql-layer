@@ -15,7 +15,6 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.types.AkType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -33,4 +32,6 @@ public interface ArithOp
     
     // BigInteger
     BigInteger evaluate (BigInteger one, BigInteger two);
+
+    abstract char opName ();
 }

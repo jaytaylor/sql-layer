@@ -22,7 +22,6 @@ import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -30,19 +29,22 @@ import java.util.Collection;
 import org.junit.runner.RunWith;
 import org.junit.Test;
 
-import static org.junit.Assert.assertTrue; 
+import static org.junit.Assert.assertTrue;
 
 @RunWith(NamedParameterizedRunner.class)
-public class TypeDeterminationTest 
+public class TypeDeterminationTest
+
 {
     private AkType input1;
     private AkType input2;
     private AkType expected;
+    private ArithOp op;
     
-    public TypeDeterminationTest (AkType input1, AkType input2, AkType expected)
+    public TypeDeterminationTest (AkType input1, ArithOp op,  AkType input2, AkType expected)
     {
         this.input1 = input1;
         this.input2 = input2;
+        this.op = op;
         this.expected = expected;
     }
     
@@ -50,46 +52,69 @@ public class TypeDeterminationTest
     public static Collection<Parameterization> params()
     {
         ParameterizationBuilder pb = new ParameterizationBuilder();
-        /*
-         * basic idea: if any of the two operand is 
-         *                   decimal =>  result = decimal
-         *              else if it's
-         *                   double => double
-         *              else if it's
-         *                    U_BIGINT => U_BIGINT
-         *              else (long) = > long
-         */
-        
+
         // decimal
-        param(pb, AkType.DECIMAL, AkType.DECIMAL, AkType.DECIMAL);
-        param(pb, AkType.U_BIGINT, AkType.DECIMAL, AkType.DECIMAL);
-        param(pb, AkType.DOUBLE, AkType.DECIMAL, AkType.DECIMAL);
-        param(pb, AkType.LONG, AkType.DECIMAL, AkType.DECIMAL);
+        param(pb, AkType.DECIMAL, ArithOps.ADD, AkType.DECIMAL, AkType.DECIMAL);
+        param(pb, AkType.U_BIGINT, ArithOps.DIVIDE, AkType.DECIMAL, AkType.DECIMAL);
+        param(pb, AkType.DOUBLE, ArithOps.MINUS, AkType.DECIMAL, AkType.DECIMAL);
+        param(pb, AkType.LONG, ArithOps.MULTIPLY, AkType.DECIMAL, AkType.DECIMAL);
+        param(pb, AkType.DECIMAL, ArithOps.ADD, AkType.VARCHAR, AkType.DECIMAL);
         
         // double
-        param (pb, AkType.DOUBLE, AkType.U_BIGINT, AkType.DOUBLE);
-        param(pb, AkType.LONG, AkType.DOUBLE, AkType.DOUBLE);
-        param(pb, AkType.DOUBLE, AkType.DOUBLE, AkType.DOUBLE);
+        param (pb, AkType.DOUBLE, ArithOps.MULTIPLY, AkType.U_BIGINT, AkType.DOUBLE);
+        param(pb, AkType.LONG, ArithOps.ADD, AkType.DOUBLE, AkType.DOUBLE);
+        param(pb, AkType.DOUBLE, ArithOps.DIVIDE, AkType.DOUBLE, AkType.DOUBLE);
         
         // u_bigint
-        param(pb, AkType.U_BIGINT, AkType.U_BIGINT, AkType.U_BIGINT);
-        param(pb, AkType.LONG, AkType.U_BIGINT, AkType.U_BIGINT);
+        param(pb, AkType.U_BIGINT, ArithOps.MINUS, AkType.U_BIGINT, AkType.U_BIGINT);
+        param(pb, AkType.LONG, ArithOps.MULTIPLY, AkType.U_BIGINT, AkType.U_BIGINT);
         
         //long
-        param(pb, AkType.LONG, AkType.LONG, AkType.LONG);
-        
-        // exeptions
-        param(pb, AkType.DATE, AkType.TIME, null);
-        param(pb, AkType.DOUBLE, AkType.DATE, null);
-        
+        param(pb, AkType.LONG, ArithOps.ADD, AkType.LONG, AkType.LONG);
+
+        // date
+        param(pb, AkType.DATE, ArithOps.MINUS, AkType.DATE, AkType.INTERVAL);
+        param(pb, AkType.DATE, ArithOps.MINUS, AkType.INTERVAL, AkType.DATE);
+        param(pb, AkType.DATE, ArithOps.ADD, AkType.INTERVAL, AkType.DATE);
+        param(pb, AkType.INTERVAL, ArithOps.ADD, AkType.DATE, AkType.DATE);
+        param(pb, AkType.INTERVAL, ArithOps.MINUS, AkType.DATE, null); // expect exception
+        param(pb, AkType.DATE, ArithOps.DIVIDE, AkType.INTERVAL, null); // expect exception
+        param(pb, AkType.DATE, ArithOps.ADD, AkType.DATE, null); // expect exception
+
+        // time
+        param(pb, AkType.TIME, ArithOps.MINUS, AkType.TIME, AkType.INTERVAL);
+        param(pb, AkType.TIME, ArithOps.ADD, AkType.INTERVAL, AkType.TIME);
+        param(pb, AkType.TIME, ArithOps.MINUS, AkType.INTERVAL, AkType.TIME);
+        param(pb, AkType.INTERVAL, ArithOps.ADD, AkType.TIME, AkType.TIME);
+        param(pb, AkType.INTERVAL, ArithOps.MINUS, AkType.TIME, null); // expect exception
+
+        // year
+        param(pb, AkType.YEAR, ArithOps.MINUS, AkType.YEAR, AkType.INTERVAL);
+        param(pb, AkType.YEAR, ArithOps.ADD, AkType.INTERVAL, AkType.YEAR);
+        param(pb, AkType.YEAR, ArithOps.MINUS, AkType.INTERVAL, AkType.YEAR);
+        param(pb, AkType.INTERVAL, ArithOps.ADD, AkType.YEAR, AkType.YEAR);
+
+        // INTERVAL
+        param(pb, AkType.INTERVAL, ArithOps.ADD, AkType.INTERVAL, AkType.INTERVAL);
+        param(pb, AkType.INTERVAL, ArithOps.MINUS, AkType.INTERVAL, AkType.INTERVAL);
+        param(pb, AkType.INTERVAL, ArithOps.MULTIPLY, AkType.LONG, AkType.INTERVAL);
+        param(pb, AkType.DECIMAL, ArithOps.MULTIPLY, AkType.INTERVAL, AkType.INTERVAL);
+        param(pb, AkType.INTERVAL, ArithOps.DIVIDE, AkType.U_BIGINT, AkType.INTERVAL);
+        param(pb, AkType.LONG, ArithOps.DIVIDE, AkType.INTERVAL, null); // expect exception
+        param(pb, AkType.INTERVAL, ArithOps.DIVIDE, AkType.INTERVAL, null); // expect exception
+        param(pb, AkType.INTERVAL, ArithOps.MULTIPLY, AkType.INTERVAL, null); // expect exception
+
+        // exceptions
+        param(pb, AkType.DATE, ArithOps.MINUS, AkType.TIME, null);
+        param(pb, AkType.LONG, ArithOps.ADD, AkType.DATE, null);
+        param(pb, AkType.YEAR, ArithOps.MULTIPLY, AkType.LONG, null);
+
         return pb.asList();
     }
     
-    private static void param(ParameterizationBuilder pb, AkType input1, AkType input2,
-            AkType expected)
+    private static void param(ParameterizationBuilder pb, AkType input1, ArithOp op, AkType input2, AkType expected)
     {
-        pb.add(input1.name() + " AND " + input2.name(), input1, input2, expected);
-        pb.add(input2.name() + " AND " + input1.name() + "(2)", input2, input1, expected); // just to document the symetry
+        pb.add(input1.name() +  op.opName() + input2.name(), input1, op, input2, expected);       
     }
 
     @OnlyIfNot("exceptionExpected()")
@@ -98,9 +123,9 @@ public class TypeDeterminationTest
     {
         Expression left = getExp(input1);
         Expression right = getExp(input2);
-        ArithExpression top = new ArithExpression(left, ArithOps.ADD, right);
-       
-        assertTrue(top.topT == expected); 
+        ArithExpression top = new ArithExpression(left, op, right);               
+        top.evaluation().eval();
+        assertTrue(top.topT == expected);
     }
     
     @OnlyIf("exceptionExpected()")
@@ -109,7 +134,7 @@ public class TypeDeterminationTest
     {
         Expression left = getExp(input1);
         Expression right = getExp(input2);
-        ArithExpression top = new ArithExpression(left, ArithOps.ADD, right);
+        ArithExpression top = new ArithExpression(left, op, right);
     }
     
     private Expression getExp (AkType type)
@@ -122,6 +147,9 @@ public class TypeDeterminationTest
             case U_BIGINT: return new LiteralExpression(type, BigInteger.ONE);
             case DATE: return new LiteralExpression(type, 1L);
             case TIME: return new LiteralExpression(type, 1L);
+            case INTERVAL: return new LiteralExpression(type, 1L);
+            case YEAR: return new LiteralExpression(type, 1L);
+            case VARCHAR: return new LiteralExpression (type, "1");
             case NULL: return new LiteralExpression(type, null);
             default: return new LiteralExpression(AkType.UNSUPPORTED, null);
         }
@@ -130,5 +158,5 @@ public class TypeDeterminationTest
     public boolean exceptionExpected ()
     {
         return expected == null;
-    }    
+    } 
 }

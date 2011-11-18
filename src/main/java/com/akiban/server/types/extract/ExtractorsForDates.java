@@ -23,6 +23,8 @@ import com.akiban.server.types.ValueSourceIsNullException;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+
+import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
@@ -65,6 +67,20 @@ abstract class ExtractorsForDates extends LongExtractor {
             final long month = (value / 32) % 16;
             final long day = value % 32;
             return String.format("%04d-%02d-%02d", year, month, day);
+        }
+
+        @Override
+        public long stdLongToUnix(long longVal) {
+            long year = longVal / 512;
+            long month = longVal / 32 % 16;
+            long day = longVal % 32;
+            return Calculator.getMillis((int)year, (int)month, (int)day, 0, 0, 0);
+        }
+
+        @Override
+        public long unixToStdLong(long unixVal) {
+            int ymd[] = Calculator.getYearMonthDay(unixVal);
+            return (long)ymd[0] * 512 + (long)ymd[1] *32 + ymd[2];
         }
     };
 
@@ -120,6 +136,23 @@ abstract class ExtractorsForDates extends LongExtractor {
             return String.format("%04d-%02d-%02d %02d:%02d:%02d",
                     year, month, day, hour, minute, second);
         }
+
+        @Override
+        public long stdLongToUnix(long longVal) {
+            long year = longVal / DATETIME_YEAR_SCALE;
+            long month = longVal / DATETIME_MONTH_SCALE % 100;
+            long day = longVal / DATETIME_DAY_SCALE % 100;
+            long hour = longVal / DATETIME_HOUR_SCALE % 100;
+            long minute = longVal / DATETIME_MIN_SCALE % 100;
+            long second = longVal / DATETIME_SEC_SCALE % 100;
+            return Calculator.getMillis((int)year, (int)month, (int)day, (int)hour, (int)minute, (int)second);
+        }
+
+        @Override
+        public long unixToStdLong(long unixVal) {
+            int rst[] = Calculator.getYMDHMS(unixVal);
+            return (rst[0] * 10000 + rst[1] * 100 + rst[2]) *1000000L + rst[3] * 10000 + rst[4] * 100 + rst[5];
+        }
     };
 
     /**
@@ -172,6 +205,24 @@ abstract class ExtractorsForDates extends LongExtractor {
             final long second = abs - hour* TIME_HOURS_SCALE - minute* TIME_MINUTES_SCALE;
             return String.format("%s%02d:%02d:%02d", abs != value ? "-" : "", hour, minute, second);
         }
+
+        @Override
+        public long stdLongToUnix(long longVal) {
+            boolean pos;
+            long abs = ((pos = longVal >= 0L) ? longVal : -longVal);
+            long hour = abs / TIME_HOURS_SCALE;
+            long minute = (abs - hour* TIME_HOURS_SCALE) / TIME_MINUTES_SCALE;
+            long second = abs - hour* TIME_HOURS_SCALE - minute* TIME_MINUTES_SCALE;
+
+            // .TIME doesn't have date field, so assume 1970,1,1 as the date
+            return Calculator.getMillis(1970, 1, 1, (int)hour, (int)minute, (int)second) * (pos ? 1 :-1);
+        }
+
+        @Override
+        public long unixToStdLong(long unixVal) {
+            int rst[] = Calculator.getHrMinSec(unixVal);
+            return rst[0]* TIME_HOURS_SCALE + rst[1]* TIME_MINUTES_SCALE + rst[2];
+        }
     };
 
     /**
@@ -200,6 +251,16 @@ abstract class ExtractorsForDates extends LongExtractor {
                     ? TIMESTAMP_ZERO_STRING
                     : timestampFormat().format(new Date(value * 1000));
         }
+
+        @Override
+        public long stdLongToUnix(long longVal) {
+            return longVal * 1000;
+        }
+
+        @Override
+        public long unixToStdLong(long unixVal) {
+            return unixVal / 1000;
+        }
     };
 
     /**
@@ -227,7 +288,133 @@ abstract class ExtractorsForDates extends LongExtractor {
             final long year = (value == 0) ? 0 : (1900 + value);
             return String.format("%04d", year);
         }
+
+        @Override
+        public long stdLongToUnix(long longVal) {
+            return Calculator.getMillis((int)longVal, 1, 1, 0, 0, 0);
+        }
+
+        @Override
+        public long unixToStdLong(long unixVal) {
+           return Calculator.getYear(unixVal);
+        }
     };
+
+    final static ExtractorsForDates INTERVAL = new ExtractorsForDates(AkType.INTERVAL)
+    {
+        @Override
+        protected long doGetLong(ValueSource source){
+            AkType type = source.getConversionType();
+            switch (type){
+                case INTERVAL:  return source.getInterval();
+                case DECIMAL:   return source.getDecimal().longValue();
+                case DOUBLE:    return (long)source.getDouble();
+                case U_BIGINT:  return source.getUBigInt().longValue();
+                case VARCHAR:   return getLong(source.getString());
+                case TEXT:      return getLong(source.getText());
+                case LONG:      return source.getLong();
+                case INT:       return source.getInt();
+                case U_INT:     return source.getUInt();
+                case U_DOUBLE:  return (long)source.getUDouble();
+                default:        throw unsupportedConversion(type);
+            }
+        }
+
+        /**
+         * format: millisecs between two events
+         */
+        @Override
+        public long getLong (String st){
+            // TO DO: parse string to get DAY, MONTH, ....
+
+            // for now, assume milisec
+              try {
+                long value = Long.parseLong(st);
+                return value;
+            } catch (NumberFormatException ex) {
+                throw new InvalidDateFormatException ("interval", st);
+            }
+        }
+
+        /*
+         * return interval in milisec
+         */
+        @Override
+        public String asString (long value){
+            return value + "";
+        }
+
+        @Override
+        public long stdLongToUnix(long longVal) {
+             return longVal; // interval is already in millisec
+        }
+
+        @Override
+        public long unixToStdLong(long unixVal) {
+            return unixVal; 
+        }
+    };
+
+    private static class Calculator {
+        private static Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT")); // Assume timezone is UTC for now
+
+        public static long getMillis (int year, int mon, int day, int hr, int min, int sec) {
+            calendar.set(Calendar.YEAR, year);
+            calendar.set(Calendar.MONTH, mon -1); // month in calendar is 0-based
+            calendar.set(Calendar.DAY_OF_MONTH, day );
+            calendar.set(Calendar.HOUR_OF_DAY, hr);
+            calendar.set(Calendar.MINUTE, min);
+            calendar.set(Calendar.SECOND, sec);
+            calendar.set(Calendar.MILLISECOND, 0);
+            
+            return calendar.getTimeInMillis();
+        }
+
+        public static long getYear (long millis)  {
+            calendar.setTimeInMillis(millis);
+            return calendar.get(Calendar.YEAR);
+        }
+
+        public static int getMonth (long millis) {
+            calendar.setTimeInMillis(millis);
+            return calendar.get(Calendar.MONTH) + 1; // month in Calendar is 0-based
+        }
+
+        public static int getDay (long millis) {
+            calendar.setTimeInMillis(millis);
+            return calendar.get(Calendar.DAY_OF_MONTH);
+        }
+
+        public static int getHour (long millis) {
+            calendar.setTimeInMillis(millis);
+            return calendar.get(Calendar.HOUR_OF_DAY);
+        }
+
+        public static int getMinute (long millis) {
+            calendar.setTimeInMillis(millis);
+            return calendar.get(Calendar.MINUTE);
+        }
+
+        public static int getSec (long millis) {
+            calendar.setTimeInMillis(millis);
+            return calendar.get(Calendar.SECOND);
+        }
+
+        public static int[] getYearMonthDay (long millis) {
+            calendar.setTimeInMillis(millis);
+            return new int[] {calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) +1, calendar.get(Calendar.DAY_OF_MONTH)};
+        }
+
+        public static int[] getHrMinSec (long millis) {
+            calendar.setTimeInMillis(millis);
+            return new int[] {calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND)};
+        }
+        public static int[] getYMDHMS (long millis) {
+            calendar.setTimeInMillis(millis);
+            return new int[] {calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) +1, calendar.get(Calendar.DAY_OF_MONTH),
+                calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND)};
+        }
+    }
 
     protected abstract long doGetLong(ValueSource source);
 
@@ -236,7 +423,7 @@ abstract class ExtractorsForDates extends LongExtractor {
         if (source.isNull())
             throw new ValueSourceIsNullException();
         AkType type = source.getConversionType();
-        if (type == targetConversionType()) {
+        if (type == targetConversionType() || targetConversionType() == AkType.INTERVAL) {
             return doGetLong(source);
         }
         switch (type) {

@@ -1,0 +1,9 @@
+# Coalescing incompatible types produces bad error message
+---
+- Statement: CREATE TABLE t (blob_field blob, char_field char)
+---
+- Statement: INSERT INTO t VALUES ('abc', 'a')
+---
+- Statement: SELECT COALESCE(blob_field, char_field) FROM t
+- error: [42000]
+...
