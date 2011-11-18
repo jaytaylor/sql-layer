@@ -759,7 +759,7 @@ public class OperatorAssembler extends BaseRule
             IndexRowType indexRowType = getIndexRowType(index);
             if ((equalityComparands == null) &&
                 (lowComparand == null) && (highComparand == null))
-                return new IndexKeyRange(indexRowType);
+                return IndexKeyRange.unbounded(indexRowType);
 
             int nkeys = index.getIndex().getColumns().size();
             Expression[] keys = new Expression[nkeys];
@@ -774,7 +774,7 @@ public class OperatorAssembler extends BaseRule
 
             if ((lowComparand == null) && (highComparand == null)) {
                 IndexBound eq = getIndexBound(index.getIndex(), keys, kidx);
-                return new IndexKeyRange(indexRowType, eq, true, eq, true);
+                return IndexKeyRange.bounded(indexRowType, eq, true, eq, true);
             }
             else {
                 Expression[] lowKeys = null, highKeys = null;
@@ -811,7 +811,7 @@ public class OperatorAssembler extends BaseRule
                 if (hi == null) {
                     hi = getNullIndexBound(index.getIndex(), lidx);
                 }
-                return new IndexKeyRange(indexRowType, lo, lowInc, hi, highInc);
+                return IndexKeyRange.bounded(indexRowType, lo, lowInc, hi, highInc);
             }
         }
 

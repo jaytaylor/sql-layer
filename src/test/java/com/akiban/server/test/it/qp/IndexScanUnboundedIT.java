@@ -677,7 +677,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
 
     private IndexKeyRange unbounded()
     {
-        return new IndexKeyRange(idxRowType);
+        return IndexKeyRange.unbounded(idxRowType);
     }
     
     private API.Ordering ordering(Object ... ord) // alternating column positions and asc/desc

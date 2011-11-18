@@ -330,7 +330,7 @@ final class OperatorStoreMaintenance {
         UnboundExpressions unboundExpressions = new RowBasedUnboundExpressions(startFromRowType, pkExpressions);
         IndexBound bound = new IndexBound(unboundExpressions, ConstantColumnSelector.ALL_ON);
         IndexRowType startFromIndexRowType = schema.indexRowType(startFromIndex);
-        IndexKeyRange range = new IndexKeyRange(startFromIndexRowType, bound, true, bound, true);
+        IndexKeyRange range = IndexKeyRange.bounded(startFromIndexRowType, bound, true, bound, true);
 
         // the scan, main table and flattens
 

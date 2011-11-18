@@ -1691,7 +1691,7 @@ public class IndexScanBoundedIT extends OperatorITBase
         } else {
             hi = new IndexBound(row(idxRowType, aHi, bHi, cHi), new SetColumnSelector(0, 1, 2));
         }
-        return new IndexKeyRange(idxRowType, lo, loInclusive, hi, hiInclusive);
+        return IndexKeyRange.bounded(idxRowType, lo, loInclusive, hi, hiInclusive);
     }
 
     private API.Ordering ordering(boolean... directions)

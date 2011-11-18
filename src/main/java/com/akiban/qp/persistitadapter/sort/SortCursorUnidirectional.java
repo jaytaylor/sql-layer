@@ -50,12 +50,12 @@ class SortCursorUnidirectional extends SortCursor
                 exchange.append(startBoundary);
             } else {
                 if (direction == FORWARD && !startInclusive || direction == BACKWARD && startInclusive) {
-                    // direction == FORWARD && !startInclusive: If the search key is (10, 5) and there are rows (10, 5, ...)
-                    // then we do not want them if !startInclusive. Making the search key (10, 5, AFTER) will cause
-                    // these records to be skipped.
-                    // direction == BACKWARD && startInclusive: Similarly, going in the other direction, we do the
-                    // (10, 5, ...) records if startInclusive. But an LTEQ traversal would miss it unless we search
-                    // for (10, 5, AFTER).
+                    // - direction == FORWARD && !startInclusive: If the search key is (10, 5) and there are
+                    //   rows (10, 5, ...) then we do not want them if !startInclusive. Making the search key
+                    //   (10, 5, AFTER) will cause these records to be skipped.
+                    // - direction == BACKWARD && startInclusive: Similarly, going in the other direction, we do the
+                    //   (10, 5, ...) records if startInclusive. But an LTEQ traversal would miss it unless we search
+                    //   for (10, 5, AFTER).
                     startKey.append(Key.AFTER);
                 }
                 startKey.copyTo(exchange.getKey());
@@ -105,32 +105,12 @@ class SortCursorUnidirectional extends SortCursor
             : new SortCursorUnidirectional(adapter, iterationHelper, keyRange, ordering);
     }
 
-    // For use by this class
+    // For use by this subclasses
 
-    private SortCursorUnidirectional(PersistitAdapter adapter,
-                                     IterationHelper iterationHelper,
-                                     API.Ordering ordering)
-    {
-        super(adapter, iterationHelper);
-        this.bounded = false;
-        this.adapter = adapter;
-        if (ordering.allAscending()) {
-            this.startBoundary = Key.BEFORE;
-            this.keyComparison = Key.GT;
-            this.subsequentKeyComparison = Key.GT;
-        } else if (ordering.allDescending()) {
-            this.startBoundary = Key.AFTER;
-            this.keyComparison = Key.LT;
-            this.subsequentKeyComparison = Key.LT;
-        } else {
-            assert false : ordering;
-        }
-    }
-
-    private SortCursorUnidirectional(PersistitAdapter adapter,
-                                     IterationHelper iterationHelper,
-                                     IndexKeyRange keyRange,
-                                     API.Ordering ordering)
+    protected SortCursorUnidirectional(PersistitAdapter adapter,
+                                      IterationHelper iterationHelper,
+                                      IndexKeyRange keyRange,
+                                      API.Ordering ordering)
     {
         super(adapter, iterationHelper);
         this.bounded = true;
@@ -168,7 +148,7 @@ class SortCursorUnidirectional extends SortCursor
         }
     }
 
-    private void evaluateBoundaries(Bindings bindings)
+    protected void evaluateBoundaries(Bindings bindings)
     {
         /*
             Null bounds are slightly tricky. An index restriction is described by an IndexKeyRange which contains
@@ -317,7 +297,7 @@ class SortCursorUnidirectional extends SortCursor
         }
     }
 
-    private boolean pastEnd()
+    protected boolean pastEnd()
     {
         boolean pastEnd;
         if (endKey == null) {
@@ -331,6 +311,28 @@ class SortCursorUnidirectional extends SortCursor
         return pastEnd;
     }
 
+    // For use by this class
+
+    private SortCursorUnidirectional(PersistitAdapter adapter,
+                                     IterationHelper iterationHelper,
+                                     API.Ordering ordering)
+    {
+        super(adapter, iterationHelper);
+        this.bounded = false;
+        this.adapter = adapter;
+        if (ordering.allAscending()) {
+            this.startBoundary = Key.BEFORE;
+            this.keyComparison = Key.GT;
+            this.subsequentKeyComparison = Key.GT;
+        } else if (ordering.allDescending()) {
+            this.startBoundary = Key.AFTER;
+            this.keyComparison = Key.LT;
+            this.subsequentKeyComparison = Key.LT;
+        } else {
+            assert false : ordering;
+        }
+    }
+
     // Class state
 
     private static final int FORWARD = 1;
@@ -338,23 +340,23 @@ class SortCursorUnidirectional extends SortCursor
 
     // Object state
 
-    private final PersistitAdapter adapter;
-    private final boolean bounded; // true for a scan with restrictions, false for a full scan
-    private int direction; // +1 = ascending, -1 = descending
-    private Key.Direction keyComparison;
-    private Key.Direction subsequentKeyComparison;
-    private Key.EdgeValue startBoundary; // Start of a scan that is unbounded at the start
+    protected final PersistitAdapter adapter;
+    protected final boolean bounded; // true for a scan with restrictions, false for a full scan
+    protected int direction; // +1 = ascending, -1 = descending
+    protected Key.Direction keyComparison;
+    protected Key.Direction subsequentKeyComparison;
+    protected Key.EdgeValue startBoundary; // Start of a scan that is unbounded at the start
     // For bounded scans
-    private int boundColumns; // Number of index fields with restrictions
-    private AkType[] types;
-    private IndexBound lo;
-    private IndexBound hi;
-    private IndexBound start;
-    private IndexBound end;
-    private boolean startInclusive;
-    private boolean endInclusive;
-    private Key startKey;
-    private Key endKey;
-    private final PersistitKeyValueTarget startKeyTarget = new PersistitKeyValueTarget();
-    private final PersistitKeyValueTarget endKeyTarget = new PersistitKeyValueTarget();
+    protected int boundColumns; // Number of index fields with restrictions
+    protected AkType[] types;
+    protected IndexBound lo;
+    protected IndexBound hi;
+    protected IndexBound start;
+    protected IndexBound end;
+    protected boolean startInclusive;
+    protected boolean endInclusive;
+    protected Key startKey;
+    protected Key endKey;
+    protected final PersistitKeyValueTarget startKeyTarget = new PersistitKeyValueTarget();
+    protected final PersistitKeyValueTarget endKeyTarget = new PersistitKeyValueTarget();
 }

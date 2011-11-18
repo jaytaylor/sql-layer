@@ -67,9 +67,26 @@ public class IndexKeyRange
         return lo == null && hi == null;
     }
 
+    // Indicates a mysql-style index scan, e.g. start at (10, 15) and keep going, even past index records
+    // starting with 10.
+    public boolean semiBounded()
+    {
+        return (lo == null || hi == null) && lo != hi;
+    }
+
     public int boundColumns()
     {
         return boundColumns;
+    }
+
+    /**
+     * Describes a full index scan.
+     * @param indexRowType The row type of index keys.
+     * @return IndexKeyRange covering all keys of the index.
+     */
+    public static IndexKeyRange unbounded(IndexRowType indexRowType)
+    {
+        return new IndexKeyRange(indexRowType);
     }
 
     /**
@@ -83,26 +100,58 @@ public class IndexKeyRange
      * @param loInclusive  True if the lower bound is inclusive, false if exclusive.
      * @param hi           Upper bound of the range.
      * @param hiInclusive  True if the upper bound is inclusive, false if exclusive.
+     * @return IndexKeyRange covering the keys lying between lo and hi, subject to the loInclusive and
+     * hiInclusive flags.
      */
-    public IndexKeyRange(IndexRowType indexRowType,
-                         IndexBound lo,
-                         boolean loInclusive,
-                         IndexBound hi,
-                         boolean hiInclusive)
+    public static IndexKeyRange bounded(IndexRowType indexRowType,
+                                        IndexBound lo,
+                                        boolean loInclusive,
+                                        IndexBound hi,
+                                        boolean hiInclusive)
     {
-        this.boundColumns = checkBounds(indexRowType, lo, hi);
-        this.indexRowType = indexRowType;
-        this.lo = lo;
-        this.loInclusive = loInclusive;
-        this.hi = hi;
-        this.hiInclusive = hiInclusive;
+        if (lo == null || hi == null) {
+            throw new IllegalArgumentException("IndexBound arguments must not be null");
+        }
+        return new IndexKeyRange(indexRowType, lo, loInclusive, hi, hiInclusive);
     }
 
     /**
-     * Describes a full index scan.
+     * Describes all keys in the index starting at or after lo, depending on loInclusive.
+     *
      * @param indexRowType The row type of index keys.
+     * @param lo           Lower bound of the range.
+     * @param loInclusive  True if the lower bound is inclusive, false if exclusive.
+     * @return IndexKeyRange covering the keys starting at or after lo.
      */
-    public IndexKeyRange(IndexRowType indexRowType)
+    public static IndexKeyRange startingAt(IndexRowType indexRowType,
+                                           IndexBound lo,
+                                           boolean loInclusive)
+    {
+        if (lo == null) {
+            throw new IllegalArgumentException("IndexBound argument must not be null");
+        }
+        return new IndexKeyRange(indexRowType, lo, loInclusive, null, false);
+    }
+
+    /**
+     * Describes all keys in the index starting at or after lo, depending on loInclusive.
+     *
+     * @param indexRowType The row type of index keys.
+     * @param hi           Upper bound of the range.
+     * @param hiInclusive  True if the upper bound is inclusive, false if exclusive.
+     * @return IndexKeyRange covering the keys ending at or before lo.
+     */
+    public static IndexKeyRange endingAt(IndexRowType indexRowType,
+                                         IndexBound hi,
+                                         boolean hiInclusive)
+    {
+        if (hi == null) {
+            throw new IllegalArgumentException("IndexBound argument must not be null");
+        }
+        return new IndexKeyRange(indexRowType, null, false, hi, hiInclusive);
+    }
+
+    private IndexKeyRange(IndexRowType indexRowType)
     {
         this.boundColumns = 0;
         this.indexRowType = indexRowType;
@@ -112,13 +161,27 @@ public class IndexKeyRange
         this.hiInclusive = false;
     }
 
-    // returns number of bound columns
-    private static int checkBounds(IndexRowType indexRowType, IndexBound lo, IndexBound hi)
+    private IndexKeyRange(IndexRowType indexRowType,
+                          IndexBound lo,
+                          boolean loInclusive,
+                          IndexBound hi,
+                          boolean hiInclusive)
     {
-        if (lo == null || hi == null) {
-            throw new IllegalArgumentException
-                ("IndexBound arguments to IndexKeyRange constructor must not be null");
-        }
+        this.boundColumns =
+            lo == null
+            ? boundColumns(indexRowType, hi) :
+            hi == null
+            ? boundColumns(indexRowType, lo)
+            : boundColumns(indexRowType, lo, hi);
+        this.indexRowType = indexRowType;
+        this.lo = lo;
+        this.loInclusive = loInclusive;
+        this.hi = hi;
+        this.hiInclusive = hiInclusive;
+    }
+
+    private static int boundColumns(IndexRowType indexRowType, IndexBound lo, IndexBound hi)
+    {
         ColumnSelector loSelector = lo.columnSelector();
         ColumnSelector hiSelector = hi.columnSelector();
         boolean selected = true;
@@ -136,6 +199,29 @@ public class IndexKeyRange
                 }
             } else {
                 if (loSelector.includesColumn(i)) {
+                    throw new IllegalArgumentException(
+                        String.format("IndexBound arguments for index %s specify non-leading fields", indexRowType));
+                }
+            }
+        }
+        assert boundColumns > 0;
+        return boundColumns;
+    }
+
+    private static int boundColumns(IndexRowType indexRowType, IndexBound bound)
+    {
+        ColumnSelector selector = bound.columnSelector();
+        boolean selected = true;
+        int boundColumns = 0;
+        for (int i = 0; i < indexRowType.nFields(); i++) {
+            if (selected) {
+                if (selector.includesColumn(i)) {
+                    boundColumns++;
+                } else {
+                    selected = false;
+                }
+            } else {
+                if (selector.includesColumn(i)) {
                     throw new IllegalArgumentException(
                         String.format("IndexBound arguments for index %s specify non-leading fields", indexRowType));
                 }

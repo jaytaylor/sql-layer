@@ -43,13 +43,13 @@ public class IndexScanIT extends OperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testNullLoBound()
     {
-        new IndexKeyRange(itemIidIndexRowType, null, false, iidBound(0), false);
+        IndexKeyRange.bounded(itemIidIndexRowType, null, false, iidBound(0), false);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testNullHiBound()
     {
-        new IndexKeyRange(itemOidIidIndexRowType, iidBound(0), false, null, false);
+        IndexKeyRange.bounded(itemOidIidIndexRowType, iidBound(0), false, null, false);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -57,7 +57,7 @@ public class IndexScanIT extends OperatorITBase
     {
         IndexBound loBound = new IndexBound(row(itemOidIidIndexRowType, 0, 0), new SetColumnSelector(0));
         IndexBound hiBound = new IndexBound(row(itemOidIidIndexRowType, 0, 0), new SetColumnSelector(1));
-        new IndexKeyRange(itemOidIidIndexRowType, loBound, false, hiBound, false);
+        IndexKeyRange.bounded(itemOidIidIndexRowType, loBound, false, hiBound, false);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -65,7 +65,7 @@ public class IndexScanIT extends OperatorITBase
     {
         IndexBound loBound = new IndexBound(row(itemOidIidIndexRowType, 0, 0), new SetColumnSelector(1));
         IndexBound hiBound = new IndexBound(row(itemOidIidIndexRowType, 0, 0), new SetColumnSelector(1));
-        new IndexKeyRange(itemOidIidIndexRowType, loBound, false, hiBound, false);
+        IndexKeyRange.bounded(itemOidIidIndexRowType, loBound, false, hiBound, false);
     }
 
     @Test
@@ -73,7 +73,7 @@ public class IndexScanIT extends OperatorITBase
     {
         IndexBound loBound = new IndexBound(row(itemOidIidIndexRowType, 0, 0), new SetColumnSelector(0));
         IndexBound hiBound = new IndexBound(row(itemOidIidIndexRowType, 0, 0), new SetColumnSelector(0));
-        new IndexKeyRange(itemOidIidIndexRowType, loBound, false, hiBound, false);
+        IndexKeyRange.bounded(itemOidIidIndexRowType, loBound, false, hiBound, false);
     }
 
     // Check invalid ranges (can only be done when cursor is opened)
@@ -83,7 +83,7 @@ public class IndexScanIT extends OperatorITBase
     {
         IndexBound loBound = new IndexBound(row(itemOidIidIndexRowType, 10, 10), new SetColumnSelector(0, 1));
         IndexBound hiBound = new IndexBound(row(itemOidIidIndexRowType, 20, 20), new SetColumnSelector(0, 1));
-        IndexKeyRange keyRange = new IndexKeyRange(itemOidIidIndexRowType, loBound, false, hiBound, false);
+        IndexKeyRange keyRange = IndexKeyRange.bounded(itemOidIidIndexRowType, loBound, false, hiBound, false);
         Operator indexScan = indexScan_Default(itemOidIidIndexRowType, false, keyRange);
         String[] expected = new String[]{};
         compareRenderedHKeys(expected, cursor(indexScan, adapter));
@@ -94,7 +94,7 @@ public class IndexScanIT extends OperatorITBase
     {
         IndexBound loBound = new IndexBound(row(itemOidIidIndexRowType, 10, 10), new SetColumnSelector(0, 1));
         IndexBound hiBound = new IndexBound(row(itemOidIidIndexRowType, 10, 5), new SetColumnSelector(0, 1));
-        IndexKeyRange keyRange = new IndexKeyRange(itemOidIidIndexRowType, loBound, false, hiBound, false);
+        IndexKeyRange keyRange = IndexKeyRange.bounded(itemOidIidIndexRowType, loBound, false, hiBound, false);
         Operator indexScan = indexScan_Default(itemOidIidIndexRowType, false, keyRange);
         String[] expected = new String[]{};
         compareRenderedHKeys(expected, cursor(indexScan, adapter));
@@ -105,7 +105,7 @@ public class IndexScanIT extends OperatorITBase
     {
         IndexBound loBound = new IndexBound(row(itemOidIidIndexRowType, 10, 10), new SetColumnSelector(0, 1));
         IndexBound hiBound = new IndexBound(row(itemOidIidIndexRowType, 20, 20), new SetColumnSelector(0, 1));
-        IndexKeyRange keyRange = new IndexKeyRange(itemOidIidIndexRowType, loBound, false, hiBound, false);
+        IndexKeyRange keyRange = IndexKeyRange.bounded(itemOidIidIndexRowType, loBound, false, hiBound, false);
         API.Ordering ordering = new API.Ordering();
         ordering.append(Expressions.field(itemOidIidIndexRowType, 0), true);
         ordering.append(Expressions.field(itemOidIidIndexRowType, 1), false);
@@ -119,7 +119,7 @@ public class IndexScanIT extends OperatorITBase
     {
         IndexBound loBound = new IndexBound(row(itemOidIidIndexRowType, 10, 10), new SetColumnSelector(0, 1));
         IndexBound hiBound = new IndexBound(row(itemOidIidIndexRowType, 10, 5), new SetColumnSelector(0, 1));
-        IndexKeyRange keyRange = new IndexKeyRange(itemOidIidIndexRowType, loBound, false, hiBound, false);
+        IndexKeyRange keyRange = IndexKeyRange.bounded(itemOidIidIndexRowType, loBound, false, hiBound, false);
         API.Ordering ordering = new API.Ordering();
         ordering.append(Expressions.field(itemOidIidIndexRowType, 0), true);
         ordering.append(Expressions.field(itemOidIidIndexRowType, 1), false);
@@ -203,7 +203,7 @@ public class IndexScanIT extends OperatorITBase
         ordering.append(new FieldExpression(itemOidIidIndexRowType, 0), true);
         ordering.append(new FieldExpression(itemOidIidIndexRowType, 1), false);
         Operator indexScan = indexScan_Default(itemOidIidIndexRowType,
-                                               new IndexKeyRange(itemOidIidIndexRowType),
+                                               IndexKeyRange.unbounded(itemOidIidIndexRowType),
                                                ordering,
                                                itemOidIidIndexRowType.tableType());
         Cursor cursor = cursor(indexScan, adapter);
@@ -548,7 +548,7 @@ public class IndexScanIT extends OperatorITBase
 
     private IndexKeyRange iidKeyRange(int lo, boolean loInclusive, int hi, boolean hiInclusive)
     {
-        return new IndexKeyRange(itemIidIndexRowType, iidBound(lo), loInclusive, iidBound(hi), hiInclusive);
+        return IndexKeyRange.bounded(itemIidIndexRowType, iidBound(lo), loInclusive, iidBound(hi), hiInclusive);
     }
 
     private IndexBound iidBound(int iid)

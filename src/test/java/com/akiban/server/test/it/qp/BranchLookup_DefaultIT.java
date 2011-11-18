@@ -408,25 +408,25 @@ public class BranchLookup_DefaultIT extends OperatorITBase
     private IndexKeyRange customerNameEQ(String name)
     {
         IndexBound bound = customerNameIndexBound(name);
-        return new IndexKeyRange(customerNameIndexRowType, bound, true, bound, true);
+        return IndexKeyRange.bounded(customerNameIndexRowType, bound, true, bound, true);
     }
 
     private IndexKeyRange addressAddressEQ(String address)
     {
         IndexBound bound = addressAddressIndexBound(address);
-        return new IndexKeyRange(addressAddressIndexRowType, bound, true, bound, true);
+        return IndexKeyRange.bounded(addressAddressIndexRowType, bound, true, bound, true);
     }
 
     private IndexKeyRange orderSalesmanEQ(String salesman)
     {
         IndexBound bound = orderSalesmanIndexBound(salesman);
-        return new IndexKeyRange(orderSalesmanIndexRowType, bound, true, bound, true);
+        return IndexKeyRange.bounded(orderSalesmanIndexRowType, bound, true, bound, true);
     }
 
     private IndexKeyRange itemIidEQ(long iid)
     {
         IndexBound bound = itemIidIndexBound(iid);
-        return new IndexKeyRange(itemIidIndexRowType, bound, true, bound, true);
+        return IndexKeyRange.bounded(itemIidIndexRowType, bound, true, bound, true);
     }
 
     private IndexBound customerNameIndexBound(String name)
