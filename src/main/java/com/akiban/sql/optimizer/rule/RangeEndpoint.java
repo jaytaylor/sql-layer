@@ -15,11 +15,14 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.sql.optimizer.plan.ConstantExpression;
+import com.akiban.sql.optimizer.plan.ExpressionNode;
+
 public abstract class RangeEndpoint {
 
     public abstract boolean isLowerWild();
     public abstract boolean isUpperWild();
-    public abstract boolean hasValue();
+    public abstract ConstantExpression getValueExpression();
     public abstract Object getValue();
     public abstract boolean isInclusive();
 
@@ -29,15 +32,15 @@ public abstract class RangeEndpoint {
 
     private RangeEndpoint() {}
 
-    public static ValueEndpoint inclusive(Object value) {
+    public static ValueEndpoint inclusive(ConstantExpression value) {
         return new ValueEndpoint(value, true);
     }
 
-    public static  ValueEndpoint exclusive(Object value) {
+    public static  ValueEndpoint exclusive(ConstantExpression value) {
         return new ValueEndpoint(value, false);
     }
 
-    public static RangeEndpoint of(Object value, boolean inclusive) {
+    public static RangeEndpoint of(ConstantExpression value, boolean inclusive) {
         return new ValueEndpoint(value, inclusive);
     }
 
@@ -57,18 +60,18 @@ public abstract class RangeEndpoint {
         }
 
         @Override
-        public boolean hasValue() {
-            return false;
-        }
-
-        @Override
         public Object getValue() {
             throw new UnsupportedOperationException();
         }
 
         @Override
+        public ConstantExpression getValueExpression() {
+            return null;
+        }
+
+        @Override
         public boolean isInclusive() {
-            throw new UnsupportedOperationException();
+            return false;
         }
 
         @Override
@@ -86,8 +89,13 @@ public abstract class RangeEndpoint {
     private static class ValueEndpoint extends RangeEndpoint {
 
         @Override
+        public ConstantExpression getValueExpression() {
+            return valueExpression;
+        }
+
+        @Override
         public Object getValue() {
-            return value;
+            return valueExpression.getValue();
         }
 
         @Override
@@ -106,13 +114,8 @@ public abstract class RangeEndpoint {
         }
 
         @Override
-        public boolean hasValue() {
-            return true;
-        }
-
-        @Override
         public String toString() {
-            return value + (inclusive ? " inclusive" : " exclusive");
+            return valueExpression + (inclusive ? " inclusive" : " exclusive");
         }
 
         @Override
@@ -120,23 +123,23 @@ public abstract class RangeEndpoint {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             ValueEndpoint that = (ValueEndpoint) o;
-            return inclusive == that.inclusive && !(value != null ? !value.equals(that.value) : that.value != null);
+            return inclusive == that.inclusive && !(valueExpression != null ? !valueExpression.equals(that.valueExpression) : that.valueExpression != null);
 
         }
 
         @Override
         public int hashCode() {
-            int result = value != null ? value.hashCode() : 0;
+            int result = valueExpression != null ? valueExpression.hashCode() : 0;
             result = 31 * result + (inclusive ? 1 : 0);
             return result;
         }
 
-        private ValueEndpoint(Object value, boolean inclusive) {
-            this.value = value;
+        private ValueEndpoint(ConstantExpression valueExpression, boolean inclusive) {
+            this.valueExpression = valueExpression;
             this.inclusive = inclusive;
         }
 
-        private Object value;
+        private ConstantExpression valueExpression;
         private boolean inclusive;
     }
 }

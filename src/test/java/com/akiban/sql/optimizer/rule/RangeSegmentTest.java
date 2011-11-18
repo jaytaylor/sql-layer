@@ -15,6 +15,8 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.types.AkType;
+import com.akiban.sql.optimizer.plan.ConstantExpression;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -37,9 +39,9 @@ public final class RangeSegmentTest {
     @Test
     public void sacUnchanged() {
         List<RangeSegment> original = Arrays.asList(
-                segment(RangeEndpoint.LOWER_WILD, RangeEndpoint.exclusive("apple")),
-                segment(RangeEndpoint.exclusive("apple"), RangeEndpoint.exclusive("orange")),
-                segment(RangeEndpoint.exclusive("orange"), RangeEndpoint.UPPER_WILD)
+                segment(RangeEndpoint.LOWER_WILD, exclusive("apple")),
+                segment(exclusive("apple"), exclusive("orange")),
+                segment(exclusive("orange"), RangeEndpoint.UPPER_WILD)
         );
         List<RangeSegment> copy = new ArrayList<RangeSegment>(original);
         sacAndCheck(original, copy);
@@ -48,155 +50,155 @@ public final class RangeSegmentTest {
     @Test
     public void sacSortNoCombine() {
         List<RangeSegment> original = Arrays.asList(
-                segment(RangeEndpoint.exclusive("apple"), RangeEndpoint.exclusive("orange")),
-                segment(RangeEndpoint.exclusive("orange"), RangeEndpoint.UPPER_WILD),
-                segment(RangeEndpoint.LOWER_WILD, RangeEndpoint.exclusive("apple"))
+                segment(exclusive("apple"), exclusive("orange")),
+                segment(exclusive("orange"), RangeEndpoint.UPPER_WILD),
+                segment(RangeEndpoint.LOWER_WILD, exclusive("apple"))
         );
         sacAndCheck(
                 original,
-                segment(RangeEndpoint.LOWER_WILD, RangeEndpoint.exclusive("apple")),
-                segment(RangeEndpoint.exclusive("apple"), RangeEndpoint.exclusive("orange")),
-                segment(RangeEndpoint.exclusive("orange"), RangeEndpoint.UPPER_WILD)
+                segment(RangeEndpoint.LOWER_WILD, exclusive("apple")),
+                segment(exclusive("apple"), exclusive("orange")),
+                segment(exclusive("orange"), RangeEndpoint.UPPER_WILD)
         );
     }
 
     @Test
     public void sacCombineInclusiveInclusive() {
         List<RangeSegment> original = Arrays.asList(
-                segment(RangeEndpoint.exclusive("aardvark"), RangeEndpoint.inclusive("apple")),
-                segment(RangeEndpoint.inclusive("apple"), RangeEndpoint.inclusive("orange"))
+                segment(exclusive("aardvark"), inclusive("apple")),
+                segment(inclusive("apple"), inclusive("orange"))
         );
         sacAndCheck(
                 original,
-                segment(RangeEndpoint.exclusive("aardvark"), RangeEndpoint.inclusive("orange"))
+                segment(exclusive("aardvark"), inclusive("orange"))
         );
     }
 
     @Test
     public void sacCombineInclusiveExclusive() {
         List<RangeSegment> original = Arrays.asList(
-                segment(RangeEndpoint.exclusive("aardvark"), RangeEndpoint.inclusive("apple")),
-                segment(RangeEndpoint.exclusive("apple"), RangeEndpoint.inclusive("orange"))
+                segment(exclusive("aardvark"), inclusive("apple")),
+                segment(exclusive("apple"), inclusive("orange"))
         );
         sacAndCheck(
                 original,
-                segment(RangeEndpoint.exclusive("aardvark"), RangeEndpoint.inclusive("orange"))
+                segment(exclusive("aardvark"), inclusive("orange"))
         );
     }
 
     @Test
     public void sacCombineExclusiveExclusive() {
         List<RangeSegment> original = Arrays.asList(
-                segment(RangeEndpoint.exclusive("aardvark"), RangeEndpoint.exclusive("apple")),
-                segment(RangeEndpoint.exclusive("apple"), RangeEndpoint.inclusive("orange"))
+                segment(exclusive("aardvark"), exclusive("apple")),
+                segment(exclusive("apple"), inclusive("orange"))
         );
         sacAndCheck(
                 original,
-                segment(RangeEndpoint.exclusive("aardvark"), RangeEndpoint.exclusive("apple")),
-                segment(RangeEndpoint.exclusive("apple"), RangeEndpoint.inclusive("orange"))
+                segment(exclusive("aardvark"), exclusive("apple")),
+                segment(exclusive("apple"), inclusive("orange"))
         );
     }
 
     @Test
     public void sacCombineExclusiveInclusive() {
         List<RangeSegment> original = Arrays.asList(
-                segment(RangeEndpoint.exclusive("aardvark"), RangeEndpoint.exclusive("apple")),
-                segment(RangeEndpoint.inclusive("apple"), RangeEndpoint.inclusive("orange"))
+                segment(exclusive("aardvark"), exclusive("apple")),
+                segment(inclusive("apple"), inclusive("orange"))
         );
         sacAndCheck(
                 original,
-                segment(RangeEndpoint.exclusive("aardvark"), RangeEndpoint.inclusive("orange"))
+                segment(exclusive("aardvark"), inclusive("orange"))
         );
     }
 
     @Test
     public void sacSubset() {
         List<RangeSegment> original = Arrays.asList(
-                segment(RangeEndpoint.exclusive("apple"), RangeEndpoint.exclusive("zebra")),
-                segment(RangeEndpoint.inclusive("cactus"), RangeEndpoint.inclusive("person"))
+                segment(exclusive("apple"), exclusive("zebra")),
+                segment(inclusive("cactus"), inclusive("person"))
         );
         sacAndCheck(
                 original,
-                segment(RangeEndpoint.exclusive("apple"), RangeEndpoint.exclusive("zebra"))
+                segment(exclusive("apple"), exclusive("zebra"))
         );
     }
 
     @Test
     public void sacOverlapNoWilds() {
         List<RangeSegment> original = Arrays.asList(
-                segment(RangeEndpoint.exclusive("apple"), RangeEndpoint.exclusive("person")),
-                segment(RangeEndpoint.inclusive("cactus"), RangeEndpoint.inclusive("zebra"))
+                segment(exclusive("apple"), exclusive("person")),
+                segment(inclusive("cactus"), inclusive("zebra"))
         );
         sacAndCheck(
                 original,
-                segment(RangeEndpoint.exclusive("apple"), RangeEndpoint.inclusive("zebra"))
+                segment(exclusive("apple"), inclusive("zebra"))
         );
     }
 
     @Test
     public void sacOverlapWildStart() {
         List<RangeSegment> original = Arrays.asList(
-                segment(RangeEndpoint.exclusive("apple"), RangeEndpoint.exclusive("person")),
-                segment(RangeEndpoint.LOWER_WILD, RangeEndpoint.inclusive("zebra"))
+                segment(exclusive("apple"), exclusive("person")),
+                segment(RangeEndpoint.LOWER_WILD, inclusive("zebra"))
         );
         sacAndCheck(
                 original,
-                segment(RangeEndpoint.LOWER_WILD, RangeEndpoint.inclusive("zebra"))
+                segment(RangeEndpoint.LOWER_WILD, inclusive("zebra"))
         );
     }
 
     @Test
     public void sacOverlapWildEnd() {
         List<RangeSegment> original = Arrays.asList(
-                segment(RangeEndpoint.inclusive("aardvark"), RangeEndpoint.UPPER_WILD),
-                segment(RangeEndpoint.exclusive("apple"), RangeEndpoint.exclusive("person"))
+                segment(inclusive("aardvark"), RangeEndpoint.UPPER_WILD),
+                segment(exclusive("apple"), exclusive("person"))
         );
         sacAndCheck(
                 original,
-                segment(RangeEndpoint.inclusive("aardvark"), RangeEndpoint.UPPER_WILD)
+                segment(inclusive("aardvark"), RangeEndpoint.UPPER_WILD)
         );
     }
 
     @Test
     public void sacKeepStartAndEndInclusivity() {
         List<RangeSegment> original = Arrays.asList(
-                segment(RangeEndpoint.inclusive("aardvark"), RangeEndpoint.inclusive("person")),
-                segment(RangeEndpoint.inclusive("cat"), RangeEndpoint.inclusive("zebra"))
+                segment(inclusive("aardvark"), inclusive("person")),
+                segment(inclusive("cat"), inclusive("zebra"))
         );
         sacAndCheck(
                 original,
-                segment(RangeEndpoint.inclusive("aardvark"), RangeEndpoint.inclusive("zebra"))
+                segment(inclusive("aardvark"), inclusive("zebra"))
         );
     }
     @Test
     public void sacKeepStartExclusivity() {
         List<RangeSegment> original = Arrays.asList(
-                segment(RangeEndpoint.exclusive("aardvark"), RangeEndpoint.inclusive("person")),
-                segment(RangeEndpoint.inclusive("cat"), RangeEndpoint.inclusive("zebra"))
+                segment(exclusive("aardvark"), inclusive("person")),
+                segment(inclusive("cat"), inclusive("zebra"))
         );
         sacAndCheck(
                 original,
-                segment(RangeEndpoint.exclusive("aardvark"), RangeEndpoint.inclusive("zebra"))
+                segment(exclusive("aardvark"), inclusive("zebra"))
         );
     }
     
     @Test
     public void sacKeepEndExclusivity() {
         List<RangeSegment> original = Arrays.asList(
-                segment(RangeEndpoint.inclusive("aardvark"), RangeEndpoint.inclusive("person")),
-                segment(RangeEndpoint.inclusive("cat"), RangeEndpoint.exclusive("zebra"))
+                segment(inclusive("aardvark"), inclusive("person")),
+                segment(inclusive("cat"), exclusive("zebra"))
         );
         sacAndCheck(
                 original,
-                segment(RangeEndpoint.inclusive("aardvark"), RangeEndpoint.exclusive("zebra"))
+                segment(inclusive("aardvark"), exclusive("zebra"))
         );
     }
 
     @Test
     public void sacIncomparableTypesForSorting() {
         List<RangeSegment> original = Arrays.asList(
-                segment(RangeEndpoint.inclusive("aardvark"), RangeEndpoint.inclusive("person")),
-                segment(RangeEndpoint.inclusive(1L), RangeEndpoint.exclusive("zebra"))
+                segment(inclusive("aardvark"), inclusive("person")),
+                segment(inclusive(1L), exclusive("zebra"))
         );
         List<RangeSegment> copy = new ArrayList<RangeSegment>(original);
         List<RangeSegment> sorted = RangeSegment.sortAndCombine(copy);
@@ -207,8 +209,8 @@ public final class RangeSegmentTest {
     @Test
     public void sacIncomparableTypesForMerging() {
         List<RangeSegment> original = Arrays.asList(
-                segment(RangeEndpoint.inclusive("aardvark"), RangeEndpoint.inclusive(1L)),
-                segment(RangeEndpoint.inclusive("cat"), RangeEndpoint.exclusive(1L))
+                segment(inclusive("aardvark"), inclusive(1L)),
+                segment(inclusive("cat"), exclusive(1L))
         );
         List<RangeSegment> copy = new ArrayList<RangeSegment>(original);
         List<RangeSegment> sorted = RangeSegment.sortAndCombine(copy);
@@ -242,4 +244,19 @@ public final class RangeSegmentTest {
         return new RangeSegment(start, end);
     }
 
+    private RangeEndpoint inclusive(Long value) {
+        return RangeEndpoint.inclusive(new ConstantExpression(value, AkType.LONG));
+    }
+
+    private RangeEndpoint exclusive(Long value) {
+        return RangeEndpoint.exclusive(new ConstantExpression(value, AkType.LONG));
+    }
+
+    private RangeEndpoint inclusive(String value) {
+        return RangeEndpoint.inclusive(new ConstantExpression(value, AkType.VARCHAR));
+    }
+
+    private RangeEndpoint exclusive(String value) {
+        return RangeEndpoint.exclusive(new ConstantExpression(value, AkType.VARCHAR));
+    }
 }

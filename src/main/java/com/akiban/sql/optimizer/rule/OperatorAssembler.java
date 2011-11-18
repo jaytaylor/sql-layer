@@ -277,7 +277,7 @@ public class OperatorAssembler extends BaseRule
             if (indexScan.getConditionRange() == null) {
                 stream.operator = API.indexScan_Default(indexRowType,
                                                         indexScan.isReverseScan(),
-                                                        assembleIndexKeyRange(indexScan, (ColumnExpressionToIndex)null),
+                                                        assembleIndexKeyRange(indexScan, null),
                                                         selector);
                 stream.rowType = indexRowType;
             }
@@ -286,7 +286,7 @@ public class OperatorAssembler extends BaseRule
                 for (RangeSegment rangeSegment : range.getSegments()) {
                     Operator scan = API.indexScan_Default(indexRowType,
                                                           indexScan.isReverseScan(),
-                                                          assembleIndexKeyRange(indexScan, rangeSegment),
+                                                          assembleIndexKeyRange(indexScan, null, rangeSegment),
                                                           selector);
                     if (stream.operator == null) {
                         stream.operator = scan;
@@ -770,16 +770,43 @@ public class OperatorAssembler extends BaseRule
         }
 
         // Generate key range bounds.
-        protected IndexKeyRange assembleIndexKeyRange(IndexScan index,
-                                                      ColumnExpressionToIndex fieldOffsets) {
+        protected IndexKeyRange assembleIndexKeyRange(IndexScan index, ColumnExpressionToIndex fieldOffsets) {
+            return assembleIndexKeyRange(
+                    index,
+                    fieldOffsets,
+                    index.getLowComparand(),
+                    index.isLowInclusive(),
+                    index.getHighComparand(),
+                    index.isHighInclusive()
+            );
+        }
+
+        protected IndexKeyRange assembleIndexKeyRange(IndexScan index, ColumnExpressionToIndex fieldOffsets,
+                                                      RangeSegment segment)
+        {
+            return assembleIndexKeyRange(
+                    index,
+                    fieldOffsets,
+                    segment.getStart().getValueExpression(),
+                    segment.getStart().isInclusive(),
+                    segment.getEnd().getValueExpression(),
+                    segment.getEnd().isInclusive()
+            );
+        }
+
+        private IndexKeyRange assembleIndexKeyRange(IndexScan index,
+                                                    ColumnExpressionToIndex fieldOffsets,
+                                                    ExpressionNode lowComparand,
+                                                    boolean lowInclusive, ExpressionNode highComparand,
+                                                    boolean highInclusive)
+        {
             List<ExpressionNode> equalityComparands = index.getEqualityComparands();
-            ExpressionNode lowComparand = index.getLowComparand();
-            ExpressionNode highComparand = index.getHighComparand();
+            Index aisIndex = index.getIndex();
             if ((equalityComparands == null) &&
-                (lowComparand == null) && (highComparand == null))
+                    (lowComparand == null) && (highComparand == null))
                 return new IndexKeyRange(null, false, null, false);
 
-            int nkeys = index.getIndex().getColumns().size();
+            int nkeys = aisIndex.getColumns().size();
             Expression[] keys = new Expression[nkeys];
             Arrays.fill(keys, LiteralExpression.forNull());
 
@@ -791,7 +818,7 @@ public class OperatorAssembler extends BaseRule
             }
 
             if ((lowComparand == null) && (highComparand == null)) {
-                IndexBound eq = getIndexBound(index.getIndex(), keys, kidx);
+                IndexBound eq = getIndexBound(aisIndex, keys, kidx);
                 return new IndexKeyRange(eq, true, eq, true);
             }
             else {
@@ -813,20 +840,16 @@ public class OperatorAssembler extends BaseRule
                 }
                 if (lowComparand != null) {
                     lowKeys[lidx++] = assembleExpression(lowComparand, fieldOffsets);
-                    lowInc = index.isLowInclusive();
+                    lowInc = lowInclusive;
                 }
                 if (highComparand != null) {
                     highKeys[hidx++] = assembleExpression(highComparand, fieldOffsets);
-                    highInc = index.isHighInclusive();
+                    highInc = highInclusive;
                 }
-                IndexBound lo = getIndexBound(index.getIndex(), lowKeys, lidx);
-                IndexBound hi = getIndexBound(index.getIndex(), highKeys, hidx);
+                IndexBound lo = getIndexBound(aisIndex, lowKeys, lidx);
+                IndexBound hi = getIndexBound(aisIndex, highKeys, hidx);
                 return new IndexKeyRange(lo, lowInc, hi, highInc);
             }
-        }
-
-        protected IndexKeyRange assembleIndexKeyRange(IndexScan index, RangeSegment segment) {
-            throw new UnsupportedOperationException();
         }
 
         protected UserTableRowType tableRowType(TableSource table) {

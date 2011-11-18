@@ -46,7 +46,7 @@ public final class Range {
                 }
             }
         }
-        else if(node instanceof FunctionCondition) {
+        else if (node instanceof FunctionCondition) {
             FunctionCondition condition = (FunctionCondition) node;
             if ("isNull".equals(condition.getFunction())) {
                 if (condition.getOperands().size() == 1) {

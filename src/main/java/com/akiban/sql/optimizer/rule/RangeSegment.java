@@ -33,25 +33,24 @@ public final class RangeSegment {
     public static List<RangeSegment> fromComparison(Comparison op, ConstantExpression constantExpression) {
         final RangeEndpoint startPoint;
         final RangeEndpoint endPoint;
-        Object constantValue = constantExpression.getValue();
         switch (op) {
         case EQ:
-            startPoint = endPoint = RangeEndpoint.inclusive(constantValue);
+            startPoint = endPoint = RangeEndpoint.inclusive(constantExpression);
             break;
         case LT:
             startPoint = RangeEndpoint.LOWER_WILD;
-            endPoint = RangeEndpoint.exclusive(constantValue);
+            endPoint = RangeEndpoint.exclusive(constantExpression);
             break;
         case LE:
             startPoint = RangeEndpoint.LOWER_WILD;
-            endPoint = RangeEndpoint.inclusive(constantValue);
+            endPoint = RangeEndpoint.inclusive(constantExpression);
             break;
         case GT:
-            startPoint = RangeEndpoint.exclusive(constantValue);
+            startPoint = RangeEndpoint.exclusive(constantExpression);
             endPoint = RangeEndpoint.UPPER_WILD;
             break;
         case GE:
-            startPoint = RangeEndpoint.inclusive(constantValue);
+            startPoint = RangeEndpoint.inclusive(constantExpression);
             endPoint = RangeEndpoint.UPPER_WILD;
             break;
         case NE:
@@ -173,9 +172,9 @@ public final class RangeSegment {
         RangeEndpoint start = rangeEndpoint(left.getStart(), right.getStart(), RangePointComparison.MAX);
         RangeEndpoint end = rangeEndpoint(left.getEnd(), right.getEnd(), RangePointComparison.MIN);
         // if either null, a comparison failed and we should bail
-        // otherwise, if start < end, this is an empty range and we should bail; another iteration of the loop
+        // otherwise, if start > end, this is an empty range and we should bail; another iteration of the loop
         // will give us the correct order
-        if (start == null || end == null || (ComparisonResult.LT == compareEndpoints(start, end)) )
+        if (start == null || end == null || (ComparisonResult.GT == compareEndpoints(start, end)) )
             return null;
         return new RangeSegment(start, end);
     }
@@ -190,7 +189,17 @@ public final class RangeSegment {
         if (resultValue == null)
             return null;
         boolean resultInclusive = one.isInclusive() && two.isInclusive();
-        return RangeEndpoint.of(resultValue, resultInclusive);
+        ConstantExpression resultExpression;
+        if (resultValue == one.getValue())
+            resultExpression = one.getValueExpression();
+        else if (resultValue == two.getValue())
+            resultExpression = two.getValueExpression();
+        else
+            throw new AssertionError(String.valueOf(resultValue));
+        return RangeEndpoint.of(
+                resultExpression,
+                resultInclusive
+        );
     }
 
     static ComparisonResult compareObjects(Object one, Object two) {
