@@ -89,6 +89,9 @@ public class IndexGoal implements Comparator<IndexScan>
     // Where they came from.
     private List<ConditionList> conditionSources;
 
+    // mapping of Range-expressible conditions, by their column. lazy loaded.
+    private Map<ColumnExpression,Range> columnsToRanges;
+
     // If both grouping and ordering are present, they must be
     // compatible. Something satisfying the ordering would also handle
     // the grouping. All the order by columns must also be group by
@@ -203,14 +206,9 @@ public class IndexGoal implements Comparator<IndexScan>
                     }
                 }
                 if (!foundInequalityCondition) {
-                    // TODO we can only support one Range, but we should be smarter about selecting which one
-                    for (ConditionExpression condition : conditions) {
-                        Range range = Range.rangeAtNode(condition);
-                        if (range != null) {
-                            index.addRangeCondition(range);
-                            break;
-                        }
-                    }
+                    Range range = rangeForIndex(indexExpression);
+                    if (range != null)
+                        index.addRangeCondition(range);
                 }
             }
             List<OrderByExpression> orderBy = 
@@ -760,4 +758,22 @@ public class IndexGoal implements Comparator<IndexScan>
         }
     }
 
+    private Range rangeForIndex(ExpressionNode expressionNode) {
+        if (expressionNode instanceof ColumnExpression) {
+            if (columnsToRanges == null) {
+                columnsToRanges = new HashMap<ColumnExpression, Range>();
+                for (ConditionExpression condition : conditions) {
+                    Range range = Range.rangeAtNode(condition);
+                    if (range != null) {
+                        ColumnExpression rangeColumn = range.getColumnExpression();
+                        // TODO test if this rangeColumn is already in the map, and figure out which one is better
+                        columnsToRanges.put(rangeColumn, range);
+                    }
+                }
+            }
+            ColumnExpression columnExpression = (ColumnExpression) expressionNode;
+            return columnsToRanges.get(columnExpression);
+        }
+        return null;
+    }
 }
