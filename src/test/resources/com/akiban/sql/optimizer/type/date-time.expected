@@ -18,7 +18,7 @@ resultSet:
 		expression: 			
 			com.akiban.sql.parser.UnaryDateTimestampOperatorNode@3ad3c6a3
 			operator: date
-			methodName: getDate
+			methodName: date
 			type: DATE
 			operand: 				
 				com.akiban.sql.parser.CharConstantNode@25961581
@@ -32,10 +32,11 @@ resultSet:
 		isDefaultColumn: false
 		type: TIME
 		expression: 			
-			com.akiban.sql.parser.CastNode@71f1235b
-			castTarget: TIME
+			com.akiban.sql.parser.UnaryDateTimestampOperatorNode@456dfa45
+			operator: time
+			methodName: time
 			type: TIME
-			castOperand: 				
+			operand: 				
 				com.akiban.sql.parser.CharConstantNode@e4865ce
 				value: 12:59
 				type: CHAR(5) NOT NULL
@@ -49,7 +50,7 @@ resultSet:
 		expression: 			
 			com.akiban.sql.parser.TimestampOperatorNode@554d7745
 			operator: timestamp
-			methodName: getTimestamp
+			methodName: timestamp
 			type: null
 			leftOperand: 				
 				com.akiban.sql.parser.CharConstantNode@50d17ec3
@@ -70,7 +71,7 @@ resultSet:
 			com.akiban.sql.parser.ExtractOperatorNode@3d358f03
 			fieldName: YEAR
 			operator: EXTRACT YEAR
-			methodName: getYear
+			methodName: year
 			type: null
 			operand: 				
 				com.akiban.sql.parser.ColumnReference@7402d5a
@@ -89,7 +90,7 @@ resultSet:
 			com.akiban.sql.parser.ExtractOperatorNode@67e13e07
 			fieldName: MONTH
 			operator: EXTRACT MONTH
-			methodName: getMonth
+			methodName: month
 			type: null
 			operand: 				
 				com.akiban.sql.parser.ColumnReference@74af72d8
@@ -108,7 +109,7 @@ resultSet:
 			com.akiban.sql.parser.ExtractOperatorNode@291946c2
 			fieldName: DAY
 			operator: EXTRACT DAY
-			methodName: getDate
+			methodName: day
 			type: null
 			operand: 				
 				com.akiban.sql.parser.ColumnReference@3a747fa2
@@ -127,7 +128,7 @@ resultSet:
 			com.akiban.sql.parser.ExtractOperatorNode@45b34126
 			fieldName: HOUR
 			operator: EXTRACT HOUR
-			methodName: getHours
+			methodName: hour
 			type: null
 			operand: 				
 				com.akiban.sql.parser.CurrentDatetimeOperatorNode@7b7a4989
@@ -144,7 +145,7 @@ resultSet:
 			com.akiban.sql.parser.ExtractOperatorNode@b8c3679
 			fieldName: MINUTE
 			operator: EXTRACT MINUTE
-			methodName: getMinutes
+			methodName: minute
 			type: null
 			operand: 				
 				com.akiban.sql.parser.CurrentDatetimeOperatorNode@224c47db
@@ -161,7 +162,7 @@ resultSet:
 			com.akiban.sql.parser.ExtractOperatorNode@57ac3379
 			fieldName: SECOND
 			operator: EXTRACT SECOND
-			methodName: getSeconds
+			methodName: second
 			type: null
 			operand: 				
 				com.akiban.sql.parser.CurrentDatetimeOperatorNode@6a6779e6
