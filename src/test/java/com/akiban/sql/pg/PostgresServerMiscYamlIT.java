@@ -40,7 +40,7 @@ import org.junit.runner.RunWith;
 public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase {
 
     private static final String CLASSNAME =
-	PostgresServerYamlITBase.class.getName();
+	PostgresServerMiscYamlIT.class.getName();
 
     /**
      * A regular expression matching the names of the YAML files in the

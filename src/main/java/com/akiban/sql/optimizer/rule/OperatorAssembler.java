@@ -782,16 +782,13 @@ public class OperatorAssembler extends BaseRule
                 int lidx = kidx, hidx = kidx;
                 if ((lidx > 0) || (lowComparand != null)) {
                     lowKeys = keys;
-                    lowInc = true;
                     if ((hidx > 0) || (highComparand != null)) {
                         highKeys = new Expression[nkeys];
-                        highInc = true;
                         System.arraycopy(keys, 0, highKeys, 0, nkeys);
                     }
                 }
-                else if ((hidx > 0) || (highComparand != null)) {
+                else if (highComparand != null) {
                     highKeys = keys;
-                    highInc = true;
                 }
                 if (lowComparand != null) {
                     lowKeys[lidx++] = assembleExpression(lowComparand, fieldOffsets);

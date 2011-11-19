@@ -21,13 +21,13 @@
 ---
 - Statement: SELECT bigint_field, decimal_field, double_field, float_field,
      integer_field, numeric_field, smallint_field FROM all_types
-- output: [[1, 2.0, 3.0, 4.0, 5, 6.0, 7]]
+- output: [[1, 2, 3.0, 4.0, 5, 6, 7]]
 
 ---
 - Statement: SELECT sum(bigint_field), sum(decimal_field), sum(double_field),
     sum(float_field), sum(integer_field), sum(numeric_field),
     sum(smallint_field) FROM all_types
-- output: [[1, 2.0, 3.0, 4.0, 5, 6.0, 7]]
+- output: [[1, 2, 3.0, 4.0, 5, 6, 7]]
 
 # Insert a row of nulls
 ---
@@ -40,7 +40,7 @@
 - Statement: SELECT sum(bigint_field), sum(decimal_field), sum(double_field),
     sum(float_field), sum(integer_field), sum(numeric_field),
     sum(smallint_field) FROM all_types
-- output: [[1, 2.0, 3.0, 4.0, 5, 6.0, 7]]
+- output: [[1, 2, 3.0, 4.0, 5, 6, 7]]
 
 ---
 - Statement: INSERT INTO all_types
@@ -52,7 +52,7 @@
 - Statement: SELECT sum(bigint_field), sum(decimal_field), sum(double_field),
     sum(float_field), sum(integer_field), sum(numeric_field),
     sum(smallint_field) FROM all_types
-- output: [[2, 4.0, 6.0, 8.0, 10, 12.0, 14]]
+- output: [[2, 4, 6.0, 8.0, 10, 12, 14]]
 
 ---
 - Statement: INSERT INTO all_types
@@ -64,7 +64,7 @@
 - Statement: SELECT sum(bigint_field), sum(decimal_field), sum(double_field),
     sum(float_field), sum(integer_field), sum(numeric_field),
     sum(smallint_field) FROM all_types
-- output: [[-2, -4.0, -6.0, -8.0, -10, -12.0, -14]]
+- output: [[-2, -4, -6.0, -8.0, -10, -12, -14]]
 
 ---
 - Statement: INSERT INTO all_types
@@ -76,7 +76,7 @@
 - Statement: SELECT sum(bigint_field), sum(decimal_field), sum(double_field),
     sum(float_field), sum(integer_field), sum(numeric_field),
     sum(smallint_field) FROM all_types
-- output: [[0, 0.0, 0.0, 0.0, 0, 0.0, 0]]
+- output: [[0, 0, 0.0, 0.0, 0, 0, 0]]
 
 ---
 - Statement: DELETE from all_types
@@ -91,12 +91,19 @@
 - Statement: INSERT INTO all_types (bigint_field) VALUES (1)
 ---
 - Statement: SELECT sum(bigint_field) FROM all_types
+- error: [55004]
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (bigint_field) VALUES (-9223372036854775808)
+---
+- Statement: SELECT sum(bigint_field) FROM all_types
 - output: [[-9223372036854775808]]
 ---
 - Statement: INSERT INTO all_types (bigint_field) VALUES (-1)
 ---
 - Statement: SELECT sum(bigint_field) FROM all_types
-- output: [[9223372036854775807]]
+- error: [55004]
 
 # Test double overflow
 ---
@@ -108,7 +115,7 @@
 - Statement: INSERT INTO all_types (double_field) VALUES (1.7976931348623157E308)
 ---
 - Statement: SELECT sum(double_field) FROM all_types
-- output: [[Infinity]]
+- error: [55004]
 ---
 - Statement: DELETE FROM all_types
 ---
@@ -122,7 +129,7 @@
     (-1.7976931348623157E308)
 ---
 - Statement: SELECT sum(double_field) FROM all_types
-- output: [[-Infinity]]
+- error: [55004]
 ---
 - Statement: DELETE FROM all_types
 ---
