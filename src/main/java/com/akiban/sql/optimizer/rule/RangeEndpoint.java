@@ -15,20 +15,14 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.plan.ConstantExpression;
-import com.akiban.sql.optimizer.plan.ExpressionNode;
 
 public abstract class RangeEndpoint {
-
-    public abstract boolean isLowerWild();
     public abstract boolean isUpperWild();
     public abstract ConstantExpression getValueExpression();
     public abstract Object getValue();
     public abstract boolean isInclusive();
-
-    public final boolean isEitherWild() {
-        return isLowerWild() || isUpperWild();
-    }
 
     private RangeEndpoint() {}
 
@@ -44,19 +38,15 @@ public abstract class RangeEndpoint {
         return new ValueEndpoint(value, inclusive);
     }
 
-    public static final RangeEndpoint LOWER_WILD = new Wild(true);
-    public static final RangeEndpoint UPPER_WILD = new Wild(false);
+    public static final RangeEndpoint UPPER_WILD = new Wild();
+    public static final RangeEndpoint NULL_EXCLUSIVE = exclusive(new ConstantExpression(null, AkType.NULL));
+    public static final RangeEndpoint NULL_INCLUSIVE = inclusive(NULL_EXCLUSIVE.getValueExpression());
 
     private static class Wild extends RangeEndpoint {
 
         @Override
-        public boolean isLowerWild() {
-            return isLower;
-        }
-
-        @Override
         public boolean isUpperWild() {
-            return !isLower;
+            return true;
         }
 
         @Override
@@ -76,14 +66,8 @@ public abstract class RangeEndpoint {
 
         @Override
         public String toString() {
-            return isLower ? "(-Wild)" : "(+Wild)";
+            return "(*)";
         }
-
-        private Wild(boolean lower) {
-            isLower = lower;
-        }
-
-        private final boolean isLower;
     }
 
     private static class ValueEndpoint extends RangeEndpoint {
@@ -101,11 +85,6 @@ public abstract class RangeEndpoint {
         @Override
         public boolean isInclusive() {
             return inclusive;
-        }
-
-        @Override
-        public boolean isLowerWild() {
-            return false;
         }
 
         @Override

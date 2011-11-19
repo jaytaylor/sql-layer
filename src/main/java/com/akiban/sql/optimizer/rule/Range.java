@@ -41,8 +41,7 @@ public final class Range {
             if (leftRange != null && rightRange != null) {
                 List<RangeSegment> combinedSegments = combineBool(leftRange, rightRange, condition.getFunction());
                 if (combinedSegments != null) {
-                    boolean includeNull = leftRange.isIncludingNull() || rightRange.isIncludingNull();
-                    return new Range(leftRange.getColumnExpression(), condition, combinedSegments, includeNull);
+                    return new Range(leftRange.getColumnExpression(), condition, combinedSegments);
                 }
             }
         }
@@ -53,7 +52,7 @@ public final class Range {
                     ExpressionNode operand = condition.getOperands().get(0);
                     if (operand instanceof ColumnExpression) {
                         ColumnExpression operandColumn = (ColumnExpression) operand;
-                        return new Range(operandColumn, condition, Collections.<RangeSegment>emptyList(), true);
+                        return new Range(operandColumn, condition, Collections.singletonList(RangeSegment.ONLY_NULL));
                     }
                 }
             }
@@ -91,24 +90,15 @@ public final class Range {
         return columnExpression;
     }
 
-    public boolean isIncludingNull() {
-        return includingNull;
-    }
-
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("Range ").append(columnExpression).append(' ').append(segments);
-        if (isIncludingNull())
-            sb.append(" or NULL");
-        return sb.toString();
+        return "Range " + columnExpression + ' ' + segments;
     }
 
-    public Range(ColumnExpression columnExpression, ConditionExpression rootCondition,
-                 List<RangeSegment> segments, boolean includingNull) {
+    public Range(ColumnExpression columnExpression, ConditionExpression rootCondition, List<RangeSegment> segments) {
         this.columnExpression = columnExpression;
         this.rootCondition = rootCondition;
         this.segments = segments;
-        this.includingNull = includingNull;
     }
 
     private static Range comparisonToRange(ComparisonCondition comparisonCondition) {
@@ -129,7 +119,7 @@ public final class Range {
             ConstantExpression constant = (ConstantExpression) other;
             Comparison op = comparisonCondition.getOperation();
             List<RangeSegment> rangeSegments = RangeSegment.fromComparison(op, constant);
-            return new Range(columnExpression, comparisonCondition, rangeSegments, false);
+            return new Range(columnExpression, comparisonCondition, rangeSegments);
         }
         else {
             return null;
@@ -139,5 +129,4 @@ public final class Range {
     private ColumnExpression columnExpression;
     private ConditionExpression rootCondition;
     private List<RangeSegment> segments;
-    private boolean includingNull;
 }

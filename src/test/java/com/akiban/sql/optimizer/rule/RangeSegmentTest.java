@@ -39,7 +39,7 @@ public final class RangeSegmentTest {
     @Test
     public void sacUnchanged() {
         List<RangeSegment> original = Arrays.asList(
-                segment(RangeEndpoint.LOWER_WILD, exclusive("apple")),
+                segment(RangeEndpoint.NULL_EXCLUSIVE, exclusive("apple")),
                 segment(exclusive("apple"), exclusive("orange")),
                 segment(exclusive("orange"), RangeEndpoint.UPPER_WILD)
         );
@@ -52,11 +52,11 @@ public final class RangeSegmentTest {
         List<RangeSegment> original = Arrays.asList(
                 segment(exclusive("apple"), exclusive("orange")),
                 segment(exclusive("orange"), RangeEndpoint.UPPER_WILD),
-                segment(RangeEndpoint.LOWER_WILD, exclusive("apple"))
+                segment(RangeEndpoint.NULL_EXCLUSIVE, exclusive("apple"))
         );
         sacAndCheck(
                 original,
-                segment(RangeEndpoint.LOWER_WILD, exclusive("apple")),
+                segment(RangeEndpoint.NULL_EXCLUSIVE, exclusive("apple")),
                 segment(exclusive("apple"), exclusive("orange")),
                 segment(exclusive("orange"), RangeEndpoint.UPPER_WILD)
         );
@@ -112,6 +112,78 @@ public final class RangeSegmentTest {
     }
 
     @Test
+    public void sacCombineStartExclusiveInclusiveNulls() {
+        List<RangeSegment> original = Arrays.asList(
+                segment(RangeEndpoint.NULL_EXCLUSIVE, exclusive("apple")),
+                segment(RangeEndpoint.NULL_INCLUSIVE, inclusive("banana"))
+        );
+        sacAndCheck(
+                original,
+                segment(RangeEndpoint.NULL_INCLUSIVE, inclusive("banana"))
+        );
+    }
+
+    @Test
+    public void sacCombineStartInclusiveExclusiveNulls() {
+        List<RangeSegment> original = Arrays.asList(
+                segment(RangeEndpoint.NULL_INCLUSIVE, exclusive("apple")),
+                segment(RangeEndpoint.NULL_EXCLUSIVE, inclusive("banana"))
+        );
+        sacAndCheck(
+                original,
+                segment(RangeEndpoint.NULL_INCLUSIVE, inclusive("banana"))
+        );
+    }
+
+    @Test
+    public void sacCombineStartExclusiveInclusiveStrings() {
+        List<RangeSegment> original = Arrays.asList(
+                segment(exclusive("apple"), exclusive("banana")),
+                segment(inclusive("apple"), inclusive("mango"))
+        );
+        sacAndCheck(
+                original,
+                segment(inclusive("apple"), inclusive("mango"))
+        );
+    }
+
+    @Test
+    public void sacCombineStartInclusiveExclusiveStrings() {
+        List<RangeSegment> original = Arrays.asList(
+                segment(inclusive("apple"), exclusive("banana")),
+                segment(exclusive("apple"), inclusive("mango"))
+        );
+        sacAndCheck(
+                original,
+                segment(inclusive("apple"), inclusive("mango"))
+        );
+    }
+
+    @Test
+    public void sacCombineEndExclusiveInclusiveStrings() {
+        List<RangeSegment> original = Arrays.asList(
+                segment(exclusive("apple"), exclusive("mango")),
+                segment(inclusive("banana"), inclusive("mango"))
+        );
+        sacAndCheck(
+                original,
+                segment(exclusive("apple"), inclusive("mango"))
+        );
+    }
+
+    @Test
+    public void sacCombineEndInclusiveExclusiveStrings() {
+        List<RangeSegment> original = Arrays.asList(
+                segment(exclusive("apple"), inclusive("mango")),
+                segment(inclusive("banana"), exclusive("mango"))
+        );
+        sacAndCheck(
+                original,
+                segment(exclusive("apple"), inclusive("mango"))
+        );
+    }
+
+    @Test
     public void sacSubset() {
         List<RangeSegment> original = Arrays.asList(
                 segment(exclusive("apple"), exclusive("zebra")),
@@ -139,11 +211,11 @@ public final class RangeSegmentTest {
     public void sacOverlapWildStart() {
         List<RangeSegment> original = Arrays.asList(
                 segment(exclusive("apple"), exclusive("person")),
-                segment(RangeEndpoint.LOWER_WILD, inclusive("zebra"))
+                segment(RangeEndpoint.NULL_EXCLUSIVE, inclusive("zebra"))
         );
         sacAndCheck(
                 original,
-                segment(RangeEndpoint.LOWER_WILD, inclusive("zebra"))
+                segment(RangeEndpoint.NULL_EXCLUSIVE, inclusive("zebra"))
         );
     }
 
