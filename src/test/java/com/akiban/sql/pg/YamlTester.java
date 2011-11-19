@@ -311,7 +311,7 @@ class YamlTester {
 		} else if ("explain".equals(attribute)) {
 		    parseExplain(attributeValue);
 		} else {
-		    fail("The " + attribute + " attribute name was not" +
+		    fail("The '" + attribute + "' attribute name was not" +
 			 " recognized");
 		}
 	    }
@@ -657,7 +657,8 @@ class YamlTester {
 		int columnType = metaData.getColumnType(i);
 		String columnTypeName = getTypeName(columnType);
 		if (columnTypeName == null) {
-		    columnTypeName = "<unknown " + columnTypeName + ">";
+		    columnTypeName = "<unknown " + metaData.getColumnTypeName(i) + " (" +
+                                                   columnType + ")>";
 		}
 		assertEquals("Wrong output type for column " + i + ":",
 			     outputTypes.get(i - 1), columnTypeName);

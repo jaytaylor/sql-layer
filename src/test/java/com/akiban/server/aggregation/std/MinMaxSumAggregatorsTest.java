@@ -16,6 +16,7 @@
 package com.akiban.server.aggregation.std;
 
 
+import com.akiban.server.error.OverflowException;
 import java.math.BigInteger;
 import java.math.BigDecimal;
 import com.akiban.server.aggregation.Aggregator;
@@ -38,7 +39,14 @@ public class MinMaxSumAggregatorsTest
         aggregator = Aggregators.mins("min", AkType.DOUBLE).get();
         assertEquals(0, aggregateDouble(), 0.01);
     }
-    
+
+    @Test
+    public void testMinFloat ()
+    {
+        aggregator = Aggregators.mins("min", AkType.FLOAT).get();
+        assertEquals(0f, aggregateFloat(), 0.01f);
+    }
+
     @Test
     public void testMinString ()
     {
@@ -118,7 +126,66 @@ public class MinMaxSumAggregatorsTest
         aggregator.output(holder);
         assertEquals( new ValueHolder(AkType.DOUBLE, 2.0), holder);
     }
+
+    @Test
+    public void testMinWithFloatNegInfinity ()
+    {
+        aggregator = Aggregators.mins("min", AkType.FLOAT).get();
+
+        holder.putFloat(2f);
+        aggregator.input(holder);
+
+        holder.putFloat(Float.NEGATIVE_INFINITY);
+        aggregator.input(holder);
+
+        aggregator.output(holder);
+        assertEquals(Float.NEGATIVE_INFINITY, holder.getFloat(), 0.001);
+    }
+
+    @Test
+    public void testMinWithFloatInfinity ()
+    {
+        aggregator = Aggregators.mins("min", AkType.FLOAT).get();
+        
+        holder.putFloat(2);
+        aggregator.input(holder);
+        
+        holder.putFloat(Float.POSITIVE_INFINITY);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        assertEquals(2.0f, holder.getFloat(), 0.001);
+    }
+
+    @Test
+    public void testMinWithInfinity ()
+    {
+        aggregator = Aggregators.mins("min", AkType.DOUBLE).get();
+
+        holder.putDouble(2);
+        aggregator.input(holder);
+
+        holder.putDouble(Double.POSITIVE_INFINITY);
+        aggregator.input(holder);
+
+        aggregator.output(holder);
+        assertEquals(2.0, holder.getDouble(), 0.001);
+    }
     
+    @Test
+    public void testMinWithNegInfinity ()
+    {
+        aggregator = Aggregators.mins("min", AkType.DOUBLE).get();
+        
+        holder.putDouble(2);
+        aggregator.input(holder);
+        
+        holder.putDouble(Double.NEGATIVE_INFINITY);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        assertEquals(Double.NEGATIVE_INFINITY, holder.getDouble(), 0.001);
+    }
 
     // -----------------------test maxes ---------------------------------------
     @Test
@@ -127,7 +194,14 @@ public class MinMaxSumAggregatorsTest
         aggregator = Aggregators.maxes("maxes", AkType.DOUBLE).get();
         assertEquals(MAX, aggregateDouble(), 0.01);
     }
-    
+
+    @Test
+    public void TestMaxFloat ()
+    {
+        aggregator = Aggregators.maxes("maxes", AkType.FLOAT).get();
+        assertEquals((float)MAX, aggregateFloat(), 0.01);
+    }
+
     @Test
     public void testMaxString ()
     {
@@ -196,12 +270,75 @@ public class MinMaxSumAggregatorsTest
         aggregator.output(holder);
         assertEquals(2, holder.getDouble(), 0.01);
     }
-      
+
+    @Test
+    public void testMaxWithFloatNegInfinity ()
+    {
+        aggregator = Aggregators.maxes("maxes", AkType.FLOAT).get();
+        
+        holder.putFloat(2f);
+        aggregator.input(holder);
+        
+        holder.putFloat(Float.NEGATIVE_INFINITY);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        assertEquals(2.0f, holder.getFloat(), 0.001);
+        
+    }
+    
+    @Test
+    public void testMaxWithFloatPosInfinity ()
+    {
+        aggregator = Aggregators.maxes("maxes", AkType.FLOAT).get();
+        
+        holder.putFloat(2f);
+        aggregator.input(holder);
+        
+        holder.putFloat(Float.POSITIVE_INFINITY);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        assertEquals(Float.POSITIVE_INFINITY, holder.getFloat(), 0.001);
+        
+    }
+
+    @Test
+    public void testMaxWithNegInfinity ()
+    {
+        aggregator = Aggregators.maxes("maxes", AkType.DOUBLE).get();
+        
+        holder.putDouble(2);
+        aggregator.input(holder);
+        
+        holder.putDouble(Double.NEGATIVE_INFINITY);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        assertEquals(2.0, holder.getDouble(), 0.001);        
+    }
+    
+    @Test
+    public void testMaxWithPosInfinity ()
+    {
+        aggregator = Aggregators.maxes("maxes", AkType.DOUBLE).get();
+        
+        holder.putDouble(2);
+        aggregator.input(holder);
+        
+        holder.putDouble(Double.POSITIVE_INFINITY);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        assertEquals(Double.POSITIVE_INFINITY, holder.getDouble(), 0.001);
+        
+    }
+        
     // ------------------------------- test sum -------------------------------
     @Test
     public void testSumWithNull()
     {
-        aggregator = Aggregators.sum("maxes", AkType.LONG).get();
+        aggregator = Aggregators.sum("sum", AkType.LONG).get();
         long sum = 0;
         for (int n = 0; n < MAX; ++n)
         {
@@ -220,7 +357,138 @@ public class MinMaxSumAggregatorsTest
 
         assertEquals(holder.getLong(), sum);
     }
+    
+    @Test (expected = OverflowException.class)
+    public void testSumWithDoubleOverflow ()
+    {
+        aggregator = Aggregators.sum("sum", AkType.DOUBLE).get();
+        for (int n = 0; n < 3; ++n)
+        {
+              holder.putDouble(Double.MAX_VALUE);
+              aggregator.input(holder);
+        }
+        aggregator.output(holder);
+        assertEquals(Double.POSITIVE_INFINITY, holder.getDouble(), 0.001);
+    }
 
+    
+    @Test // do not expect overflow
+    public void testSumWithPosInfinity () 
+    {
+        aggregator = Aggregators.sum("sum", AkType.DOUBLE).get();
+        
+        
+        for (int n = 0; n < 3; ++n)
+        {
+            holder.putDouble(n);
+            aggregator.input(holder);
+        }
+        holder.putDouble(Double.POSITIVE_INFINITY);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        assertEquals(Double.POSITIVE_INFINITY, holder.getDouble(), 0.001);
+    }
+    
+    @Test // do not expect underflow
+    public void testSumWithNegInif ()
+    {
+        aggregator = Aggregators.sum("sum", AkType.DOUBLE).get();
+        
+        
+        for (int n = 0; n < 3; ++n)
+        {
+            holder.putDouble(n);
+            aggregator.input(holder);
+        }
+        holder.putDouble(Double.NEGATIVE_INFINITY);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        assertEquals(Double.NEGATIVE_INFINITY, holder.getDouble(), 0.001);
+    }
+    
+    @Test // do not expect overflow, result is NaN
+    public void testSumWithNegInfiAndPosInfi ()
+    {
+        aggregator = Aggregators.sum("sum", AkType.DOUBLE).get();
+ 
+        holder.putDouble(Double.NEGATIVE_INFINITY);
+        aggregator.input(holder);
+
+        holder.putDouble(Double.POSITIVE_INFINITY);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        assertEquals(Double.NaN, holder.getDouble(), 0.001);
+    }
+    
+    @Test
+    public void testSumWithNaN ()
+    {
+        aggregator = Aggregators.sum("sum", AkType.DOUBLE).get();
+ 
+        holder.putDouble(2.3);
+        aggregator.input(holder);
+
+        holder.putDouble(Double.NaN);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        assertEquals(Double.NaN, holder.getDouble(), 0.001);
+        
+    }
+    
+    @Test // something added with NaN is simply NaN!
+    public void testSumWithNaNAndPosInf ()
+    {
+        aggregator = Aggregators.sum("sum", AkType.DOUBLE).get();
+        
+        holder.putDouble(Double.NaN);
+        aggregator.input(holder);
+        
+        holder.putDouble(Double.POSITIVE_INFINITY);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        
+        assertEquals(Double.NaN, holder.getDouble(),0.01);
+    }
+    
+    @Test
+    public void testSumWithNegInfAndNaN ()
+    {
+        aggregator = Aggregators.sum("sum", AkType.DOUBLE).get();
+        
+        holder.putDouble(Double.NEGATIVE_INFINITY);
+        aggregator.input(holder);
+        
+        holder.putDouble(Double.NaN);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        
+        assertEquals(Double.NaN, holder.getDouble(),0.01);
+    }
+    
+    @Test
+    public void testSumWithPosInfConstAndNegInf ()
+    {
+        aggregator = Aggregators.sum("sum", AkType.DOUBLE).get();
+ 
+        holder.putDouble(Double.NEGATIVE_INFINITY);
+        aggregator.input(holder);
+
+        holder.putDouble(2);
+        aggregator.input(holder);
+        
+        holder.putDouble(Double.POSITIVE_INFINITY);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        assertEquals(Double.NaN, holder.getDouble(), 0.001);
+    }
+    
     @Test(expected = UnsupportedOperationException.class)
     public void testSum ()
     {
@@ -243,6 +511,32 @@ public class MinMaxSumAggregatorsTest
         }
        assertEquals(sum, holder.getLong());
     }
+    
+    @Test (expected = OverflowException.class)
+    public void testSumWithLongOverflow ()
+    {
+        holder.clear();
+        aggregator = Aggregators.sum("sum", AkType.LONG).get();
+        
+        holder.putLong(Long.MAX_VALUE);
+        aggregator.input(holder);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+    }
+    
+    @Test (expected = OverflowException.class)
+    public void testSumWithLongUnderflow()
+    {
+        holder.clear();
+        aggregator = Aggregators.sum("sum", AkType.LONG).get();
+        
+        holder.putLong(Long.MIN_VALUE);
+        aggregator.input(holder);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+    }
  
     //--------------------------- private methods ------------------------------
     private double aggregateDouble ()
@@ -256,7 +550,19 @@ public class MinMaxSumAggregatorsTest
         aggregator.output(holder);
         return holder.getDouble();
     }
-        
+
+    private float aggregateFloat ()
+    {
+        holder.clear();
+        for (int n  = 0; n < 20; ++n)
+        {
+            holder.putFloat(n);
+            aggregator.input(holder);
+        }
+        aggregator.output(holder);
+        return holder.getFloat();
+    }
+
     private long aggregateLong()
     {
         holder.clear();

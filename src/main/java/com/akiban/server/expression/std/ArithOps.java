@@ -89,7 +89,7 @@ public class ArithOps
        public long evaluate (long one, long two)
        {
            if (two == 0)
-                throw new DivisionByZeroException(); 
+                throw new DivisionByZeroException();
            return one / two;
        }
        
@@ -97,7 +97,7 @@ public class ArithOps
        public double evaluate (double one, double two) 
        {
            if (two == 0)
-                throw new DivisionByZeroException(); 
+                throw new DivisionByZeroException();
            return one / two;
        }
        
@@ -159,7 +159,7 @@ public class ArithOps
         @Override
         public void argumentTypes(List<AkType> argumentTypes) {
             AkType type = ArithExpression.getTopType(argumentTypes.get(0),
-                                                     argumentTypes.get(1));
+                                                     argumentTypes.get(1), this);
             argumentTypes.set(0, type);
             argumentTypes.set(1, type);
         }
@@ -175,7 +175,10 @@ public class ArithOps
         {
             return (name + "");
         }
-        
+
+        @Override
+        public char opName () { return name;}
+
         protected ArithOpComposer (char name)
         {
             this.name = name;

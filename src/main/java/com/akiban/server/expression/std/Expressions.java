@@ -51,7 +51,7 @@ public class Expressions
 
     public static IndexKeyRange indexKeyRange(IndexRowType indexRowType, IndexBound lo, boolean loInclusive, IndexBound hi, boolean hiInclusive)
     {
-        return new IndexKeyRange(indexRowType, lo, loInclusive, hi, hiInclusive);
+        return IndexKeyRange.bounded(indexRowType, lo, loInclusive, hi, hiInclusive);
     }
 
     public static Expression literal(Object value)

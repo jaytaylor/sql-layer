@@ -6,7 +6,17 @@ select-1: columns from same branch as group index
 
 select-2: group index for matching and ordering
 
-select-2r: group index for matching and reverse ordering
+select-2bt: BETWEEN condition
+
+select-2eq: = condition
+
+select-2ge: >= condition
+
+select-2le: <= condition
+
+select-2lt: < condition
+
+select-2r: reverse ordering
 
 select-3: group index for ordering only
 

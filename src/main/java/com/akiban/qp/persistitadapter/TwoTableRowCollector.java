@@ -117,12 +117,11 @@ public class TwoTableRowCollector extends OperatorBasedRowCollector
                                  indexSelectorFromTableSelector(predicateIndex, userColumnSelector(predicateTable,
                                                                                                    endColumns)));
             IndexRowType indexRowType = schema.indexRowType(predicateIndex);
-            indexKeyRange = new IndexKeyRange
-                (indexRowType,
-                 lo,
-                 lo != null && (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0,
-                 hi,
-                 hi != null && (scanFlags & (SCAN_FLAGS_END_AT_EDGE | SCAN_FLAGS_END_EXCLUSIVE)) == 0);
+            indexKeyRange = IndexKeyRange.bounded(indexRowType,
+                                                  lo,
+                                                  lo != null && (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0,
+                                                  hi,
+                                                  hi != null && (scanFlags & (SCAN_FLAGS_END_AT_EDGE | SCAN_FLAGS_END_EXCLUSIVE)) == 0);
         }
     }
 

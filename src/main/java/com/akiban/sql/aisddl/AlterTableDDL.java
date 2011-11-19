@@ -14,18 +14,39 @@
  */
 package com.akiban.sql.aisddl;
 
+import com.akiban.ais.model.TableName;
 import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.AlterTableNode;
 
+import java.util.Collection;
+import java.util.Collections;
+
 public class AlterTableDDL {
     private AlterTableDDL() {}
     
-    public static void alterTable (DDLFunctions ddlFunctions,
+    public static void alterTable(DDLFunctions ddlFunctions,
                                   Session session, 
                                   String defaultSchemaName,
                                   AlterTableNode alterTable) {
+
+        com.akiban.sql.parser.TableName sqlName = alterTable.getObjectName();
+        String schemaName = sqlName.hasSchema() ? sqlName.getSchemaName() : defaultSchemaName;
+        TableName tableName = TableName.create(schemaName, sqlName.getTableName());
+        if (ddlFunctions.getAIS(session).getUserTable(tableName) == null) {
+            throw new NoSuchTableException(tableName.getSchemaName(), 
+                                           tableName.getTableName());
+        }
+
+        if (alterTable.isUpdateStatistics()) {
+            Collection<String> indexes = null;
+            if (!alterTable.isUpdateStatisticsAll())
+                indexes = Collections.singletonList(alterTable.getIndexNameForUpdateStatistics());
+            ddlFunctions.updateTableStatistics(session, tableName, indexes);
+            return;
+        }
         throw new UnsupportedSQLException (alterTable.statementToString(), alterTable);
     }
 }

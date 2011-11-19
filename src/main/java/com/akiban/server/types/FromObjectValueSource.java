@@ -127,6 +127,11 @@ public final class FromObjectValueSource implements ValueSource {
     public long getTimestamp() {
         return as(Long.class, AkType.TIMESTAMP);
     }
+    
+    @Override
+    public long getInterval() {
+        return as(Long.class, AkType.INTERVAL);
+    }
 
     @Override
     public long getUInt() {
@@ -220,6 +225,7 @@ public final class FromObjectValueSource implements ValueSource {
         case DATE:
         case DATETIME:
         case TIMESTAMP:
+        case INTERVAL:
         case INT:
         case LONG:
         case TIME:

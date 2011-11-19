@@ -15,9 +15,8 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.ais.model.Column;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -63,11 +62,11 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
         if (predicateIndex != null) {
             // Index bounds
             IndexRowType indexRowType = schema.indexRowType(predicateIndex);
+            ColumnSelector tableSelector;
             if (start == null && end == null) {
-                indexKeyRange = new IndexKeyRange(indexRowType);
+                indexKeyRange = IndexKeyRange.unbounded(indexRowType);
             } else {
                 // The start and end selectors should match.
-                ColumnSelector tableSelector;
                 assert !(startColumns == null && endColumns == null);
                 if (startColumns == null) {
                     tableSelector = endColumns;
@@ -80,37 +79,33 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
                     }
                     tableSelector = startColumns;
                 }
-                ColumnSelector columnSelector = indexSelectorFromTableSelector(predicateIndex, tableSelector);
-                IndexBound lo;
-                NewRow loRow;
-                if (start == null) {
-                    loRow = new NiceRow(queryRootTable.getTableId(), (RowDef) queryRootTable.rowDef());
-                    for (int i = 0; i < queryRootTable.getColumns().size(); i++) {
-                        loRow.put(i, null);
-                    }
-                } else {
+                // tableSelector is in terms of table column positions. Need a ColumnSelector based
+                // on index column positions.
+                ColumnSelector indexSelector = indexSelectorFromTableSelector(predicateIndex, tableSelector);
+                IndexBound lo = null;
+                if (start != null) {
                     assert start.getRowDefId() == queryRootTable.getTableId();
-                    loRow = new LegacyRowWrapper(start, store);
+                    NewRow loRow = new LegacyRowWrapper(start, store);
+                    lo = new IndexBound(new NewRowBackedIndexRow(queryRootType, loRow, predicateIndex), indexSelector);
                 }
-                lo = new IndexBound(new NewRowBackedIndexRow(queryRootType, loRow, predicateIndex), columnSelector);
-                IndexBound hi;
-                NewRow hiRow;
-                if (end == null) {
-                    hiRow = new NiceRow(queryRootTable.getTableId(), (RowDef) queryRootTable.rowDef());
-                    for (int i = 0; i < queryRootTable.getColumns().size(); i++) {
-                        hiRow.put(i, null);
-                    }
-                } else {
+                IndexBound hi = null;
+                if (end != null) {
                     assert end.getRowDefId() == queryRootTable.getTableId();
-                    hiRow = new LegacyRowWrapper(end, store);
+                    NewRow hiRow = new LegacyRowWrapper(end, store);
+                    hi = new IndexBound(new NewRowBackedIndexRow(queryRootType, hiRow, predicateIndex), indexSelector);
                 }
-                hi = new IndexBound(new NewRowBackedIndexRow(queryRootType, hiRow, predicateIndex), columnSelector);
+                boolean loInclusive = start != null && (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0;
+                boolean hiInclusive = end != null && (scanFlags & (SCAN_FLAGS_END_AT_EDGE | SCAN_FLAGS_END_EXCLUSIVE)) == 0;
                 indexKeyRange =
-                    new IndexKeyRange(indexRowType,
-                                      lo,
-                                      start != null && (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0,
-                                      hi,
-                                      end != null && (scanFlags & (SCAN_FLAGS_END_AT_EDGE | SCAN_FLAGS_END_EXCLUSIVE)) == 0);
+                    lo == null
+                    ? IndexKeyRange.endingAt(indexRowType, hi, hiInclusive) :
+                    hi == null
+                    ? IndexKeyRange.startingAt(indexRowType, lo, loInclusive)
+                    : IndexKeyRange.bounded(indexRowType,
+                                            lo,
+                                            loInclusive,
+                                            hi,
+                                            hiInclusive);
             }
         }
     }

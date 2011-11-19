@@ -18,7 +18,6 @@ package com.akiban.server.test.it.qp;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
@@ -155,7 +154,7 @@ public final class GroupIndexScanIT extends ITBase {
 
     private IndexKeyRange unboundedRange(IndexRowType indexRowType)
     {
-        return new IndexKeyRange(indexRowType);
+        return IndexKeyRange.unbounded(indexRowType);
     }
 
     private Integer c, o, i, h;

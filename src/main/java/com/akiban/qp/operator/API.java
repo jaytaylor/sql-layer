@@ -210,7 +210,7 @@ public class API
     @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType)
     {
-        return indexScan_Default(indexType, false, new IndexKeyRange(indexType));
+        return indexScan_Default(indexType, false, IndexKeyRange.unbounded(indexType));
     }
 
     /**
@@ -225,7 +225,7 @@ public class API
     @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType, boolean reverse)
     {
-        return indexScan_Default(indexType, reverse, new IndexKeyRange(indexType));
+        return indexScan_Default(indexType, reverse, IndexKeyRange.unbounded(indexType));
     }
 
     /**

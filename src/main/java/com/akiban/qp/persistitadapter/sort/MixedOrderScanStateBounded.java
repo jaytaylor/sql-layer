@@ -112,13 +112,17 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
         }
     }
 
-    public MixedOrderScanStateBounded(SortCursorMixedOrder cursor, int field, boolean ascending)
+    public MixedOrderScanStateBounded(SortCursorMixedOrder cursor,
+                                      int field,
+                                      boolean ascending,
+                                      boolean lastBoundedColumn)
         throws PersistitException
     {
         super(cursor, field, ascending);
         this.keyTarget = new PersistitKeyValueTarget();
         this.keyTarget.attach(cursor.exchange.getKey());
         this.keySource = new PersistitKeyValueSource();
+        this.lastBoundedColumn = lastBoundedColumn;
     }
 
     private void setupEndComparison(Comparison comparison, ValueSource bound)
@@ -140,7 +144,6 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
         } else {
             // hiComparisonExpression depends on exchange's key, but we need to compare the correct key segment.
             Key key = cursor.exchange.getKey();
-            int keyDepth = key.getDepth();
             int keySize = key.getEncodedSize();
             keySource.attach(key, field, fieldType);
             if (keySource.isNull()) {
@@ -149,7 +152,6 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
                 ExpressionEvaluation evaluation = endComparison.evaluation();
                 pastEnd = !evaluation.eval().getBool();
                 key.setEncodedSize(keySize);
-                key.setDepth(keyDepth);
             }
         }
         return pastEnd;
@@ -157,6 +159,7 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
 
     private final PersistitKeyValueTarget keyTarget;
     private final PersistitKeyValueSource keySource;
+    private final boolean lastBoundedColumn;
     private ValueSource loSource;
     private ValueSource hiSource;
     private boolean loInclusive;

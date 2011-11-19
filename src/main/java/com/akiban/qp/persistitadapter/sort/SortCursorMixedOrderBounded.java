@@ -39,7 +39,8 @@ class SortCursorMixedOrderBounded extends SortCursorMixedOrder
             MixedOrderScanStateBounded scanState = new MixedOrderScanStateBounded
                 (this,
                  f,
-                 f >= orderingColumns() || ordering.ascending(f));
+                 f >= orderingColumns() || ordering.ascending(f),
+                 f == boundColumns() - 1);
             scanState.setRange(loSource, hiSource);
             scanStates.add(scanState);
             f++;

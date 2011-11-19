@@ -351,7 +351,7 @@ public class AncestorLookupIT extends OperatorITBase
     private IndexKeyRange itemIidEQ(int iid)
     {
         IndexBound bound = itemIidIndexBound(iid);
-        return new IndexKeyRange(itemIidIndexRowType, bound, true, bound, true);
+        return IndexKeyRange.bounded(itemIidIndexRowType, bound, true, bound, true);
     }
 
     private IndexBound itemIidIndexBound(int iid)

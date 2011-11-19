@@ -249,7 +249,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
                         1,
                         new FieldExpression(cidValueRowType, 0)))),
                 new SetColumnSelector(0));
-        IndexKeyRange cidRange = new IndexKeyRange(customerCidIndexRowType, cidBound, true, cidBound, true);
+        IndexKeyRange cidRange = IndexKeyRange.bounded(customerCidIndexRowType, cidBound, true, cidBound, true);
         Operator plan =
             map_NestedLoops(
                 valuesScan_Default(
