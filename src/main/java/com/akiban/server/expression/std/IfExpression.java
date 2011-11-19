@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -68,7 +69,10 @@ public class IfExpression extends AbstractCompositeExpression
     static protected AkType getTopType (AkType o1, AkType o2)
     {
         if (o1 == o2) return o1;
-        else if (!Converters.isConversionAllowed(o2, o2)) throw new UnsupportedOperationException("Inconvertible types " + o1 + " <=> " + o2);
+        else if (!Converters.isConversionAllowed(o1, o2))
+            throw new InconvertibleTypesException(o1, o2);
+        else if(! Converters.isConversionAllowed(o2, o1))
+            throw new InconvertibleTypesException(o2, o1);
 
         UnderlyingType under_o1 = o1.underlyingTypeOrNull();
         UnderlyingType under_o2 = o2.underlyingTypeOrNull();
