@@ -40,9 +40,15 @@ select-9g: LEFT join covering group index
 
 select-10: group index for condition and ordering
 
+select-10r: reverse ordering
+
 select-11: group index ordering only
 
-select-12: group index ordering with limit
+select-11m: mixed-mode ordering
+
+select-11r: reverse ordering
+
+select-12: reverse sort multiple fields
 
 select-13: sorting without limit
 

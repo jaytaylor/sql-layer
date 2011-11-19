@@ -77,7 +77,7 @@ public class API
                                                        RowType childType,
                                                        JoinType joinType)
     {
-        return flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, NO_FLATTEN_OPTIONS);
+        return flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, EnumSet.noneOf(FlattenOption.class));
     }
 
     public static Operator flatten_HKeyOrdered(Operator inputOperator,
@@ -454,8 +454,6 @@ public class API
         return new TopLevelWrappingCursor(adapter, root.cursor(adapter));
     }
 
-    private static final EnumSet<FlattenOption> NO_FLATTEN_OPTIONS = EnumSet.noneOf(FlattenOption.class);
-
     // Options
 
     // Flattening flags
@@ -469,7 +467,8 @@ public class API
 
     public static enum FlattenOption {
         KEEP_PARENT,
-        KEEP_CHILD
+        KEEP_CHILD,
+        LEFT_JOIN_SHORTENS_HKEY
     }
 
     // Lookup flags
