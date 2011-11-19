@@ -79,7 +79,7 @@ class AbstractAggregator implements Aggregator
                 switch (type)
                 {
                     case FLOAT:     
-                    case U_FLOAT:   value.putDouble(processor.process((float)D_EXTRACTOR.getDouble(value), (float)D_EXTRACTOR.getDouble(input))); break;
+                    case U_FLOAT:   value.putFloat(processor.process((float)D_EXTRACTOR.getDouble(value), (float)D_EXTRACTOR.getDouble(input))); break;
                     case U_DOUBLE:
                     case DOUBLE:    value.putDouble(processor.process(D_EXTRACTOR.getDouble(value), D_EXTRACTOR.getDouble(input))); break;                      
                     case U_INT:     
