@@ -60,7 +60,7 @@ public class IfExpressionTest
         for (AkType t : AkType.values())
         {
            // skip NULL, UNSUPPORTED AND VARBINARY
-            if (t == AkType.NULL || t == AkType.VARBINARY || t == AkType.UNSUPPORTED) continue;
+            if (t == AkType.NULL  || t == AkType.UNSUPPORTED || t == AkType.VARBINARY) continue;
 
             param(pb, t, AkType.LONG, AkType.LONG, true, new ValueHolder(AkType.LONG, 1L));
             param(pb, t, AkType.LONG, AkType.VARCHAR, true, new ValueHolder(AkType.VARCHAR, "1"));
@@ -80,17 +80,19 @@ public class IfExpressionTest
             param(pb, t, AkType.DATE, AkType.DOUBLE, true, null);
         }
 
-        // condition is NULL
-        param(pb, AkType.NULL, AkType.LONG, AkType.LONG, false, new ValueHolder(AkType.LONG, 0L));
-        param(pb, AkType.NULL, AkType.LONG, AkType.VARCHAR, true, new ValueHolder(AkType.VARCHAR, "0"));
-        param(pb, AkType.NULL, AkType.DOUBLE, AkType.LONG, false, new ValueHolder(AkType.DOUBLE, 0.0));
-        param(pb, AkType.NULL, AkType.VARCHAR, AkType.DOUBLE, false, new ValueHolder(AkType.VARCHAR, "0.0"));
-        param(pb, AkType.NULL, AkType.VARCHAR, AkType.VARCHAR, true, new ValueHolder(AkType.VARCHAR, "0"));
-        param(pb, AkType.NULL, AkType.DATE, AkType.DATE, true, new ValueHolder(AkType.DATE, 0L));
-        param(pb, AkType.NULL, AkType.VARCHAR, AkType.DATE, false, new ValueHolder(AkType.VARCHAR, Extractors.getLongExtractor(AkType.DATE).asString(0L)));
-        param(pb, AkType.NULL, AkType.DECIMAL, AkType.VARCHAR, true, new ValueHolder(AkType.VARCHAR, "0"));
-        param(pb, AkType.NULL, AkType.DECIMAL, AkType.LONG, false, new ValueHolder(AkType.DECIMAL, BigDecimal.ZERO));
+        // condition is NULL or UNSUPPORTED => always false
+        paramNullAndUnsupported(pb, AkType.LONG, AkType.LONG, false, new ValueHolder(AkType.LONG, 0L));
+        paramNullAndUnsupported(pb, AkType.LONG, AkType.VARCHAR, false, new ValueHolder(AkType.VARCHAR, "0"));
+        paramNullAndUnsupported(pb, AkType.DOUBLE, AkType.LONG, false, new ValueHolder(AkType.DOUBLE, 0.0));
+        paramNullAndUnsupported(pb, AkType.VARCHAR, AkType.DOUBLE, false, new ValueHolder(AkType.VARCHAR, "0.0"));
+        paramNullAndUnsupported(pb, AkType.VARCHAR, AkType.VARCHAR, false, new ValueHolder(AkType.VARCHAR, "0"));
+        paramNullAndUnsupported(pb, AkType.DATE, AkType.DATE, false, new ValueHolder(AkType.DATE, 0L));
+        paramNullAndUnsupported(pb, AkType.VARCHAR, AkType.DATE, false, new ValueHolder(AkType.VARCHAR, Extractors.getLongExtractor(AkType.DATE).asString(0L)));
+        paramNullAndUnsupported(pb, AkType.DECIMAL, AkType.VARCHAR, false, new ValueHolder(AkType.VARCHAR, "0"));
+        paramNullAndUnsupported(pb, AkType.DECIMAL, AkType.LONG, false, new ValueHolder(AkType.DECIMAL, BigDecimal.ZERO));
 
+        //TODO: VARBINARY: can't deal with it yet
+        
         return pb.asList();
     }
 
@@ -100,7 +102,15 @@ public class IfExpressionTest
         pb.add("if(" + condType + ", " + trueExType + ", " + falseExType + ")===>" + evaluateRes,
                 condType, trueExType, falseExType, evaluateRes, expected);
     }
-    
+
+    private static void paramNullAndUnsupported (ParameterizationBuilder pb, AkType trueExType,
+            AkType falseExType, boolean evaluateRes, ValueHolder expected)
+    {
+        pb.add("if(" + AkType.NULL + ", " + trueExType + ", " + falseExType + ")===>" + evaluateRes,
+                AkType.NULL, trueExType, falseExType, evaluateRes, expected);
+        pb.add("if(" + AkType.UNSUPPORTED + ", " + trueExType + ", " + falseExType + ")===>" + evaluateRes,
+                AkType.UNSUPPORTED, trueExType, falseExType, evaluateRes, expected);
+    }
     private void test()
     {        
         Expression cond = getExp(condType, evaluateRes);

@@ -26,8 +26,6 @@ import com.akiban.server.types.AkType.UnderlyingType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.extract.Extractors;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -39,7 +37,9 @@ public class IfExpression extends AbstractCompositeExpression
         @Override
         public void argumentTypes(List<AkType> argumentTypes)
         {
-           
+            int size = argumentTypes.size();
+            if ( size != 3)  throw new WrongExpressionArityException(3, size);
+            else argumentTypes.set(0, AkType.BOOL);
         }
 
         @Override
@@ -84,60 +84,18 @@ public class IfExpression extends AbstractCompositeExpression
 
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
-        private AkType topType;
-        private IfExpression exp;
+        private final IfExpression exp;
         public InnerEvaluation ( IfExpression ex)
         {
             super(ex.childrenEvaluations());
-            topType = ex.valueType();
             exp = ex;
         }
 
         @Override
         public ValueSource eval() 
         {
-            ValueSource condition = this.children().get(0).eval();
-            AkType condType = condition.getConversionType();
-            int i ;
-            
-            if ( condition.isNull()) 
-                i = 2;
-            else
-                switch (condType)
-                {
-                    case BOOL:      i = condition.getBool() ? 1 : 2; break;
-                    case DATETIME:  
-                    case DATE:
-                    case TIME:
-                    case INT:
-                    case U_INT:                    
-                    case TIMESTAMP:
-                    case YEAR:
-                    case LONG:      i = Extractors.getLongExtractor(condType).getLong(condition) != 0 ? 1 : 2; break;
-                    case FLOAT:
-                    case DOUBLE:
-                    case U_FLOAT:
-                    case U_DOUBLE:  i = Extractors.getDoubleExtractor().getDouble(condition) != 0.0 ? 1 : 2; break;
-                    case DECIMAL:   i = condition.getDecimal().equals(BigDecimal.ZERO) ? 2 : 1; break;
-                    case U_BIGINT:  i = condition.getUBigInt().equals(BigInteger.ZERO) ? 2 : 1; break;
-                    case VARCHAR:
-                    case TEXT:      String st = Extractors.getStringExtractor().getObject(condition); 
-                                    double l;
-                                    try
-                                    {
-                                        l = Double.parseDouble(st);
-                                        i = l != 0.0 ? 1 : 2;
-                                    }
-                                    catch (NumberFormatException e)
-                                    {
-                                        i = 1;
-                                    }
-                                    break;                   
-                    default:        i = 2;
-
-                    //TODO: case VARBINARY:
-                }            
-            return new CastExpression (topType, exp.children().get(i)).evaluation().eval();
+            return new CastExpression (exp.valueType(), exp.children().get(Extractors.getBooleanExtractor()
+                    .getBoolean(this.children().get(0).eval(), false).booleanValue() ? 1 :2)).evaluation().eval();
         }        
     }
     

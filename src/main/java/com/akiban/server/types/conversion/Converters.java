@@ -167,7 +167,16 @@ public final class Converters {
         );
         builder.legalConversions(BOOL,
                 VARCHAR,
-                LONG
+                LONG,
+                DOUBLE,
+                FLOAT,
+                DECIMAL,
+                U_BIGINT,
+                DATE,
+                TIME,
+                DATETIME,
+                TIMESTAMP,
+                YEAR
         );
 
         return builder.result();
