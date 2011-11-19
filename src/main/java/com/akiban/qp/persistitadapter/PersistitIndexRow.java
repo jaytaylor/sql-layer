@@ -17,13 +17,11 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.PersistitKeyValueSource;
-import com.akiban.server.store.PersistitKeyAppender;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.conversion.Converters;
@@ -31,8 +29,6 @@ import com.akiban.util.AkibanAppender;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
-
-import java.util.Iterator;
 
 public class PersistitIndexRow extends AbstractRow
 {
@@ -65,25 +61,14 @@ public class PersistitIndexRow extends AbstractRow
     @Override
     public ValueSource eval(int i) {
         IndexColumn column = index().getColumns().get(i);
-        valueSource.attach(indexRow, column);
-        return valueSource;
+        keySource.attach(indexRow, column);
+        return keySource;
     }
 
     @Override
     public HKey hKey()
     {
         return hKey;
-    }
-
-    // For use by OperatorIT
-    public PersistitIndexRow(PersistitAdapter adapter, IndexRowType indexRowType, Object... values) throws PersistitException
-    {
-        this(adapter, indexRowType);
-        Iterator<IndexColumn> columnIt = index().getColumns().iterator();
-        PersistitKeyAppender appender = new PersistitKeyAppender(indexRow);
-        for(Object o : values) {
-            appender.append(o, columnIt.next().getColumn());
-        }
     }
 
     // PersistitIndexRow interface
@@ -94,7 +79,7 @@ public class PersistitIndexRow extends AbstractRow
         this.indexRowType = indexRowType;
         this.indexRow = adapter.persistit.getKey(adapter.session);
         this.hKey = new PersistitHKey(adapter, index().hKey());
-        this.valueSource = new PersistitKeyValueSource();
+        this.keySource = new PersistitKeyValueSource();
     }
 
     // For use by this package
@@ -120,7 +105,7 @@ public class PersistitIndexRow extends AbstractRow
 
     private final PersistitAdapter adapter;
     private final IndexRowType indexRowType;
-    private final PersistitKeyValueSource valueSource;
+    private final PersistitKeyValueSource keySource;
     private final Key indexRow;
     private PersistitHKey hKey;
 }

@@ -67,11 +67,22 @@ class ExtractorsForLong extends LongExtractor {
                 throw new InvalidCharToNumException (source.getString());
             }
         case DECIMAL:   return source.getDecimal().longValue();
+        case INTERVAL:  return source.getInterval();
         default: throw unsupportedConversion(type);
         }
     }
 
     private ExtractorsForLong(AkType targetConversionType) {
         super(targetConversionType);
+    }
+
+    @Override
+    public long stdLongToUnix(long longVal) {
+        throw new UnsupportedOperationException("Unsupported! Only works for date/time types");
+    }
+
+    @Override
+    public long unixToStdLong(long unixVal) {
+        throw new UnsupportedOperationException("Unsupported! Only works for date/time types");
     }
 }

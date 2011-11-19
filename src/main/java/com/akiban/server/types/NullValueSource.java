@@ -99,6 +99,11 @@ public final class NullValueSource implements ValueSource {
     public long getTimestamp() {
         throw new ValueSourceIsNullException();
     }
+    
+    @Override
+    public long getInterval() {
+        throw new ValueSourceIsNullException();
+    }
 
     @Override
     public long getUInt() {

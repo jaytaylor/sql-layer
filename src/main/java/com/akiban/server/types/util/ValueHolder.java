@@ -30,8 +30,11 @@ import com.akiban.util.ByteSource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Set;
+
+import org.joda.time.DateTime;
 
 public final class ValueHolder implements ValueSource, ValueTarget {
 
@@ -137,6 +140,11 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     }
 
     @Override
+    public long getInterval() {
+        return rawLong(AkType.INTERVAL);
+    }
+    
+    @Override
     public long getUInt() {
         return rawLong(AkType.U_INT);
     }
@@ -235,6 +243,11 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     @Override
     public void putTimestamp(long value) {
         putRaw(AkType.TIMESTAMP, value);
+    }
+    
+    @Override
+    public void putInterval(long value) {
+        putRaw(AkType.INTERVAL, value);
     }
 
     @Override
@@ -441,6 +454,13 @@ public final class ValueHolder implements ValueSource, ValueTarget {
         putBool(value);
     }
 
+    public ValueHolder(AkType type, DateTime value) {
+        JodaDateToLong jdToLong = AKTYPE_CONVERTERS.get(type);
+        if (jdToLong == null)
+            throw new IllegalRawPutException("DateTime() to " + type);
+        putRaw(type, jdToLong.toLong(value));
+    }
+
     public ValueHolder(AkType type, Object value) {
         if (value == null) {
             putRawNull();
@@ -472,9 +492,55 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     }
 
     // nested classes
+    protected interface JodaDateToLong {
+        long toLong (DateTime date);
+    }
+
+    private static final EnumMap<AkType, JodaDateToLong> AKTYPE_CONVERTERS = new EnumMap(AkType.class);
+    static{
+        AKTYPE_CONVERTERS.put(AkType.DATE, new JodaDateToLong () {
+            @Override // DD + 32 * MM + 512 * YYYY
+            public long toLong(DateTime date){
+                int d = date.getDayOfMonth();
+                int m = date.getMonthOfYear();
+                int y = date.getYear();
+                return d + m * 32 + y * 512;
+            }
+        });
+
+        AKTYPE_CONVERTERS.put(AkType.TIME, new JodaDateToLong () {
+            @Override //HH*10000 + MM*100 + SS.
+            public long toLong(DateTime date){
+                int h = date.getHourOfDay(); 
+                int m = date.getMinuteOfHour(); 
+                int s = date.getSecondOfMinute();
+                return h*10000 + m*100 + s;
+            }
+        });
+
+        AKTYPE_CONVERTERS.put(AkType.DATETIME, new JodaDateToLong(){
+            @Override //(YY*10000 MM*100 + DD)*1000000 + (HH*10000 + MM*100 + SS)
+            public long toLong(DateTime date){
+                int yy = date.getYear(); 
+                int mm = date.getMonthOfYear(); 
+                int dd = date.getDayOfMonth(); 
+                int h = date.getHourOfDay(); 
+                int m = date.getMinuteOfHour(); 
+                int s = date.getSecondOfMinute();               
+                return (long)(yy * 10000 + mm * 100 + dd) *1000000 + h*10000 + m*100 + s;
+            }
+        });
+
+        AKTYPE_CONVERTERS.put(AkType.TIMESTAMP, new JodaDateToLong() {
+            @Override
+            public long toLong(DateTime date){
+                return date.getMillis()  / 1000;
+            }
+        });
+    }
 
     private enum StateType {
-        LONG_VAL (AkType.DATE, AkType.DATETIME, AkType.INT, AkType.LONG, AkType.TIME, AkType.TIMESTAMP, AkType.U_INT, AkType.YEAR),
+        LONG_VAL (AkType.DATE, AkType.DATETIME, AkType.INT, AkType.LONG, AkType.TIME, AkType.TIMESTAMP, AkType.INTERVAL, AkType.U_INT, AkType.YEAR),
         DOUBLE_VAL(AkType.DOUBLE, AkType.U_DOUBLE),
         FLOAT_VAL(AkType.FLOAT, AkType.U_FLOAT),
         OBJECT_VAL(AkType.DECIMAL, AkType.VARCHAR, AkType.TEXT, AkType.U_BIGINT, AkType.VARBINARY),
@@ -524,6 +590,10 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     public static class IllegalRawPutException extends RuntimeException {
         private IllegalRawPutException(StateType requiredStateType, AkType seenType) {
             super("illegal put of " + seenType + " to " + requiredStateType);
+        }
+
+        private IllegalRawPutException(String required) {
+            super("illegal put of " + required);
         }
     }
 }

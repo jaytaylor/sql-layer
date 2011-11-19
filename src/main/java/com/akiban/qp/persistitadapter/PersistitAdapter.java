@@ -42,6 +42,7 @@ import com.akiban.server.store.PersistitStore;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.persistit.Exchange;
+import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
 
@@ -65,11 +66,11 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange, IndexScanSelector selector)
+    public Cursor newIndexCursor(Index index, IndexKeyRange keyRange, API.Ordering ordering, IndexScanSelector selector)
     {
         Cursor cursor;
         try {
-            cursor = new PersistitIndexCursor(this, schema.indexRowType(index), reverse, keyRange, selector);
+            cursor = new PersistitIndexCursor(this, schema.indexRowType(index), keyRange, ordering, selector);
         } catch (PersistitException e) {
             handlePersistitException(e);
             throw new AssertionError();
@@ -216,6 +217,11 @@ public class PersistitAdapter extends StoreAdapter
         return treeService.getExchange(session, treeLink);
     }
 
+    public Key newKey()
+    {
+        return new Key(persistit.getDb());
+    }
+
     public void handlePersistitException(PersistitException e)
     {
         if (e instanceof PersistitInterruptedException ||
@@ -237,22 +243,11 @@ public class PersistitAdapter extends StoreAdapter
                             Session session,
                             ConfigurationService config)
     {
-        this(schema, persistit, session, treeService, config, null);
-    }
-
-    PersistitAdapter(Schema schema,
-                     PersistitStore persistit,
-                     Session session,
-                     TreeService treeService,
-                     ConfigurationService config,
-                     PersistitFilterFactory.InternalHook hook)
-    {
         super(schema);
         this.config = config;
         this.persistit = persistit;
         this.session = session;
         this.treeService = treeService;
-        this.filterFactory = new PersistitFilterFactory(this, hook);
     }
 
     // Object state
@@ -261,5 +256,4 @@ public class PersistitAdapter extends StoreAdapter
     private final ConfigurationService config;
     final PersistitStore persistit;
     final Session session;
-    final PersistitFilterFactory filterFactory;
 }

@@ -35,6 +35,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
 
+import com.akiban.server.error.InsertWrongCountException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ParseException;
 import com.akiban.server.error.UnsupportedSQLException;
@@ -138,8 +139,11 @@ public class ASTStatementLoader extends BaseRule
                 query = ((ResultSet)query).getInput();
             TableNode targetTable = getTargetTable(insertNode);
             List<Column> targetColumns;
+            int ncols = insertNode.getResultSetNode().getResultColumns().size();
             ResultColumnList rcl = insertNode.getTargetColumnList();
             if (rcl != null) {
+                if (ncols != rcl.size())
+                    throw new InsertWrongCountException(rcl.size(), ncols);
                 targetColumns = new ArrayList<Column>(rcl.size());
                 for (ResultColumn resultColumn : rcl) {
                     Column column = getColumnReferenceColumn(resultColumn.getReference(),
@@ -149,7 +153,6 @@ public class ASTStatementLoader extends BaseRule
             }
             else {
                 // No explicit column list: use DDL order.
-                int ncols = insertNode.getResultSetNode().getResultColumns().size();
                 List<Column> aisColumns = targetTable.getTable().getColumns();
                 // TODO: Warning? Error?
                 if (ncols > aisColumns.size())
@@ -1111,42 +1114,17 @@ public class ASTStatementLoader extends BaseRule
                                     false);
             }
             else if (valueNode instanceof CurrentDatetimeOperatorNode) {
-                String functionName = null;
-                switch (((CurrentDatetimeOperatorNode)valueNode).getField()) {
-                case DATE:
-                    functionName = "current_date";
-                    break;
-                case TIME:
-                    functionName = "current_time";
-                    break;
-                case TIMESTAMP:
-                    functionName = "current_timestamp";
-                    break;
-                }
+                String functionName = FunctionsTypeComputer.currentDatetimeFunctionName((CurrentDatetimeOperatorNode)valueNode);
+                if (functionName == null)
+                    throw new UnsupportedSQLException("Unsupported datetime function", valueNode);
                 return new FunctionExpression(functionName,
                                               Collections.<ExpressionNode>emptyList(),
                                               valueNode.getType(), valueNode);
             }
             else if (valueNode instanceof SpecialFunctionNode) {
-                String functionName = null;
-                switch (valueNode.getNodeType()) {
-                case NodeTypes.USER_NODE:
-                case NodeTypes.CURRENT_USER_NODE:
-                    functionName = "current_user";
-                    break;
-                case NodeTypes.SESSION_USER_NODE:
-                    functionName = "session_user";
-                    break;
-                case NodeTypes.SYSTEM_USER_NODE:
-                    functionName = "system_user";
-                    break;
-                case NodeTypes.CURRENT_ISOLATION_NODE:
-                case NodeTypes.IDENTITY_VAL_NODE:
-                case NodeTypes.CURRENT_SCHEMA_NODE:
-                case NodeTypes.CURRENT_ROLE_NODE:
-                default:
+                String functionName = FunctionsTypeComputer.specialFunctionName((SpecialFunctionNode)valueNode);
+                if (functionName == null)
                     throw new UnsupportedSQLException("Unsupported special function", valueNode);
-                }
                 return new FunctionExpression(functionName,
                                               Collections.<ExpressionNode>emptyList(),
                                               valueNode.getType(), valueNode);

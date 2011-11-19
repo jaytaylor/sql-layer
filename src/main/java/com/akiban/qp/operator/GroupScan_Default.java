@@ -174,7 +174,11 @@ class GroupScan_Default extends Operator
 
         // PositionalGroupCursorCreator interface
 
-        PositionalGroupCursorCreator(GroupTable groupTable, int hKeyBindingPosition, boolean deep, UserTable hKeyType, UserTable shortenUntil)
+        PositionalGroupCursorCreator(GroupTable groupTable,
+                                     int hKeyBindingPosition,
+                                     boolean deep,
+                                     UserTable hKeyType,
+                                     UserTable shortenUntil)
         {
             super(groupTable);
             this.hKeyBindingPosition = hKeyBindingPosition;

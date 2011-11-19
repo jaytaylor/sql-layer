@@ -129,7 +129,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
             delegate.dropGroup(session, groupName);
         } catch (Throwable t) {
             thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.DROP_GROUP, t);
+            hook.hookFunctionCatch(session, DXLFunction.DROP_GROUP, t);
             throw throwAlways(t);
         } finally {
             hook.hookFunctionFinally(session, DXLFunction.DROP_GROUP, thrown);
@@ -140,7 +140,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     public AkibanInformationSchema getAIS(final Session session) {
         Throwable thrown = null;
         try {
-            hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.GET_AIS);
+            hook.hookFunctionIn(session, DXLFunction.GET_AIS);
             return delegate.getAIS(session);
         } catch (Throwable t) {
             thrown = t;
@@ -155,14 +155,14 @@ public final class HookableDDLFunctions implements DDLFunctions {
     public int getTableId(Session session, TableName tableName) {
         Throwable thrown = null;
         try {
-            hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.GET_TABLE_ID);
+            hook.hookFunctionIn(session, DXLFunction.GET_TABLE_ID);
             return delegate.getTableId(session, tableName);
         } catch (Throwable t) {
             thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_TABLE_ID, t);
+            hook.hookFunctionCatch(session, DXLFunction.GET_TABLE_ID, t);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.GET_TABLE_ID, thrown);
+            hook.hookFunctionFinally(session, DXLFunction.GET_TABLE_ID, thrown);
         }
     }
 
@@ -185,7 +185,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     public Table getTable(Session session, TableName tableName) {
         Throwable thrown = null;
         try {
-            hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.GET_TABLE_BY_NAME);
+            hook.hookFunctionIn(session, DXLFunction.GET_TABLE_BY_NAME);
             return delegate.getTable(session, tableName);
         } catch (Throwable t) {
             thrown = t;
@@ -200,7 +200,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     public UserTable getUserTable(Session session, TableName tableName) {
         Throwable thrown = null;
         try {
-            hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.GET_USER_TABLE_BY_NAME);
+            hook.hookFunctionIn(session, DXLFunction.GET_USER_TABLE_BY_NAME);
             return delegate.getUserTable(session, tableName);
         } catch (Throwable t) {
             thrown = t;
@@ -235,7 +235,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
             return delegate.getRowDef(tableId);
         } catch (Throwable t) {
             thrown = t;
-            hook.hookFunctionCatch(session, DXLFunctionsHook.DXLFunction.GET_ROWDEF, t);
+            hook.hookFunctionCatch(session, DXLFunction.GET_ROWDEF, t);
             throw throwAlways(t);
         } finally {
             try {
@@ -250,7 +250,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     public List<String> getDDLs(final Session session) throws InvalidOperationException {
         Throwable thrown = null;
         try {
-            hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.GET_DDLS);
+            hook.hookFunctionIn(session, DXLFunction.GET_DDLS);
             return delegate.getDDLs(session);
         } catch (Throwable t) {
             thrown = t;
@@ -258,7 +258,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
             throwIfInstanceOf(t, InvalidOperationException.class);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.GET_DDLS, thrown);
+            hook.hookFunctionFinally(session, DXLFunction.GET_DDLS, thrown);
         }
     }
 
@@ -295,7 +295,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
             throw throwAlways(t);
         } finally {
             try {
-                hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.FORCE_GENERATION_UPDATE, thrown);
+                hook.hookFunctionFinally(session, DXLFunction.FORCE_GENERATION_UPDATE, thrown);
             } finally {
                 session.close();
             }
@@ -306,14 +306,14 @@ public final class HookableDDLFunctions implements DDLFunctions {
     public void createIndexes(final Session session, Collection<? extends Index> indexesToAdd) {
         Throwable thrown = null;
         try {
-            hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.CREATE_INDEXES);
+            hook.hookFunctionIn(session, DXLFunction.CREATE_INDEXES);
             delegate.createIndexes(session, indexesToAdd);
         } catch (Throwable t) {
             thrown = t;
             hook.hookFunctionCatch(session, DXLFunction.CREATE_INDEXES, t);
             throw throwAlways(t);
         } finally {
-            hook.hookFunctionFinally(session, DXLFunctionsHook.DXLFunction.CREATE_INDEXES, thrown);
+            hook.hookFunctionFinally(session, DXLFunction.CREATE_INDEXES, thrown);
         }
     }
 
@@ -321,7 +321,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     public void dropTableIndexes(final Session session, TableName tableName, Collection<String> indexNamesToDrop) {
         Throwable thrown = null;
         try {
-            hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.DROP_INDEXES);
+            hook.hookFunctionIn(session, DXLFunction.DROP_INDEXES);
             delegate.dropTableIndexes(session, tableName, indexNamesToDrop);
         } catch (Throwable t) {
             thrown = t;
@@ -336,7 +336,7 @@ public final class HookableDDLFunctions implements DDLFunctions {
     public void dropGroupIndexes(Session session, String groupName, Collection<String> indexesToDrop) {
         Throwable thrown = null;
         try {
-            hook.hookFunctionIn(session, DXLFunctionsHook.DXLFunction.DROP_INDEXES);
+            hook.hookFunctionIn(session, DXLFunction.DROP_INDEXES);
             delegate.dropGroupIndexes(session, groupName, indexesToDrop);
         } catch (Throwable t) {
             thrown = t;
@@ -346,4 +346,20 @@ public final class HookableDDLFunctions implements DDLFunctions {
             hook.hookFunctionFinally(session, DXLFunction.DROP_INDEXES, thrown);
         }
     }
+
+    @Override
+    public void updateTableStatistics(Session session, TableName tableName, Collection<String> indexesToUpdate) {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.UPDATE_TABLE_STATISTICS);
+            delegate.updateTableStatistics(session, tableName, indexesToUpdate);
+        } catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.UPDATE_TABLE_STATISTICS, t);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunction.UPDATE_TABLE_STATISTICS, thrown);
+        }
+    }
+
 }

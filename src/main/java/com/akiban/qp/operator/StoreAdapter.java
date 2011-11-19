@@ -28,8 +28,8 @@ public abstract class StoreAdapter
     public abstract GroupCursor newGroupCursor(GroupTable groupTable);
 
     public abstract Cursor newIndexCursor(Index index,
-                                          boolean reverse,
                                           IndexKeyRange keyRange,
+                                          API.Ordering ordering,
                                           IndexScanSelector scanSelector);
 
     public abstract HKey newHKey(RowType rowType);

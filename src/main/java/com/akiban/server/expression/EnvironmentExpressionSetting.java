@@ -17,8 +17,8 @@ package com.akiban.server.expression;
 
 /** The particular environment setting this environment function depends on. */
 public enum EnvironmentExpressionSetting {
-    CURRENT_DATE,
-    CURRENT_USER,
-    SESSION_USER,
-    SYSTEM_USER
+    CURRENT_DATETIME,           // Datetime: start of current transaction
+    CURRENT_USER,               // String: default schema
+    SESSION_USER,               // String: connection user
+    SYSTEM_USER                 // String: O/S user running server
 }

@@ -42,6 +42,10 @@ public class NewRowBackedIndexRow implements RowBase
         this.rowType = rowType;
         this.row = row;
         this.index = index;
+        this.sources = new FromObjectValueSource[rowType.nFields()];
+        for (int f = 0; f < rowType.nFields(); f++) {
+            this.sources[f] = new FromObjectValueSource();
+        }
     }
 
     // RowBase interface
@@ -55,6 +59,7 @@ public class NewRowBackedIndexRow implements RowBase
     public ValueSource eval(int i) {
         FieldDef fieldDef = (FieldDef) index.getColumns().get(i).getColumn().getFieldDef();
         int fieldPos = fieldDef.getFieldIndex();
+        FromObjectValueSource source = sources[i];
         if (row.isColumnNull(fieldPos)) {
             source.setNull();
         }
@@ -99,5 +104,5 @@ public class NewRowBackedIndexRow implements RowBase
     private final NewRow row;
     private final RowType rowType;
     private final TableIndex index;
-    private final FromObjectValueSource source = new FromObjectValueSource();
+    private final FromObjectValueSource[] sources;
 }

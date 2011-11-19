@@ -40,14 +40,12 @@ public interface DDLFunctions {
      * @throws ParseException if the given schema is <tt>null</tt> and no schema is provided in the DDL;
      *  or if there is some other parse error
      * exists
-     * @throws Exception 
      */
     void createTable(Session session, String schema, String ddlText);
     /**
      * 
      * @param session the session to run the Create under
      * @param table - new user table to add to the existing system
-     * @throws Exception 
      */
     void createTable (Session session, UserTable table);
 
@@ -56,21 +54,18 @@ public interface DDLFunctions {
      * @param session Session
      * @param currentName Current name of the table
      * @param newName Desired name of the table
-     * @throws Exception 
      */
     void renameTable(Session session, TableName currentName, TableName newName);
 
     /**
      * Drops a table if it exists.
      * @param tableName the table to drop
-     * @throws Exception 
      * @throws NullPointerException if tableName is null
      */
     void dropTable(Session session, TableName tableName);
     /**
      * Drops a table if it exists, and possibly its children.
      * @param schemaName the schema to drop
-     * @throws Exception 
      * @throws NullPointerException if schemaName is null
      */
     void dropSchema(Session session, String schemaName);
@@ -78,7 +73,6 @@ public interface DDLFunctions {
      /**
      * Drops all tables associated with the group
      * @param groupName the group to drop
-     * @throws Exception 
      * @throws NullPointerException if groupName is null
      */
     void dropGroup(Session session, String groupName);
@@ -164,7 +158,6 @@ public interface DDLFunctions {
      * are recalculated later. Blocks until the actual index data has been created.
      *
      * @param indexesToAdd a list of indexes to add to the existing AIS
-     * @throws Exception
      * @throws InvalidOperationException
      */
     void createIndexes(Session session, Collection<? extends Index> indexesToAdd);
@@ -173,7 +166,6 @@ public interface DDLFunctions {
      * Drop indexes on an existing table.
      * @param tableName the table containing the indexes to drop
      * @param indexesToDrop list of indexes to drop
-     * @throws Exception 
      * @throws InvalidOperationException
      */
     void dropTableIndexes(Session session, TableName tableName, Collection<String> indexesToDrop);
@@ -181,8 +173,15 @@ public interface DDLFunctions {
     /**
      * Drop indexes on an existing group.
      * @param indexesToDrop
-     * @throws Exception 
      * @throws InvalidOperationException
      */
     void dropGroupIndexes(Session session, String groupName, Collection<String> indexesToDrop);
+
+    /**
+     * Update statistics for the given table.
+     * @param tableName the table whose statistics should be updated.
+     * @param indexesToUpdate specific indexes to update. If <code>null</code>, all indexes are analyzed.
+     * @throws InvalidOperationException
+     */
+    void updateTableStatistics(Session session, TableName tableName, Collection<String> indexesToUpdate);
 }
