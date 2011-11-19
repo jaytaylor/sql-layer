@@ -63,7 +63,7 @@ public final class Range {
     }
 
     public static Range andRanges(Range left, Range right) {
-        List<RangeSegment> combinedSegments = combineBool(left, right, "and");
+        List<RangeSegment> combinedSegments = combineBool(left, right, true);
         if (combinedSegments == null)
             return null;
         List<ConditionExpression> combinedConditions = new ArrayList<ConditionExpression>(left.getConditions());
@@ -71,22 +71,29 @@ public final class Range {
         return new Range(left.getColumnExpression(), combinedConditions, combinedSegments);
     }
 
-    private static List<RangeSegment> combineBool(Range leftRange, Range rightRange, String logicOp) {
+    private static List<RangeSegment> combineBool(Range leftRange, Range rightRange, boolean isAnd) {
         if (!leftRange.getColumnExpression().equals(rightRange.getColumnExpression()))
             return null;
-        logicOp = logicOp.toLowerCase();
         List<RangeSegment> leftSegments = leftRange.getSegments();
         List<RangeSegment> rightSegments = rightRange.getSegments();
         List<RangeSegment> result;
-        if ("and".endsWith(logicOp))
+        if (isAnd)
             result = RangeSegment.andRanges(leftSegments, rightSegments);
-        else if ("or".equals(logicOp))
-            result = RangeSegment.orRanges(leftSegments, rightSegments);
         else
-            result = null;
+            result = RangeSegment.orRanges(leftSegments, rightSegments);
         if (result != null)
             result = RangeSegment.sortAndCombine(result);
         return result;
+    }
+    
+    private static List<RangeSegment> combineBool(Range leftRange, Range rightRange, String logicOp) {
+        logicOp = logicOp.toLowerCase();
+        if ("and".endsWith(logicOp))
+            return combineBool(leftRange, rightRange, true);
+        else if ("or".equals(logicOp))
+            return combineBool(leftRange, rightRange, false);
+        else
+            return null;
     }
 
     public Collection<? extends ConditionExpression> getConditions() {
