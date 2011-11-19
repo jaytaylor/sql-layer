@@ -240,7 +240,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         this.rowCollectorId = idCounter.getAndIncrement();
     }
 
-    protected static ColumnSelector indexSelectorFromTableSelector(Index index, final ColumnSelector tableSelector) {
+    protected static ColumnSelector indexSelectorFromTableSelector(final Index index, final ColumnSelector tableSelector) {
         final IndexRowComposition rowComp = index.indexRowComposition();
         return new ColumnSelector() {
             @Override
@@ -260,8 +260,8 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         Operator plan;
         if (useIndex) {
             Operator indexScan = indexScan_Default(predicateType.indexRowType(predicateIndex),
-                                                           descending,
-                                                           indexKeyRange);
+                                                   descending,
+                                                   indexKeyRange);
             plan = branchLookup_Default(indexScan,
                     groupTable,
                     predicateType.indexRowType(predicateIndex),

@@ -135,7 +135,7 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public Cursor newIndexCursor(Index index, boolean reverse, IndexKeyRange keyRange, IndexScanSelector selector)
+        public Cursor newIndexCursor(Index index, IndexKeyRange keyRange, API.Ordering ordering, IndexScanSelector selector)
         {
             throw new UnsupportedOperationException();
         }

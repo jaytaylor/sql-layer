@@ -15,26 +15,31 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.*;
+import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
-import com.akiban.qp.persistitadapter.PersistitIndexRow;
-import com.akiban.qp.operator.*;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.AisRowType;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.server.types.util.ValueHolder;
 import com.persistit.exception.PersistitException;
 import com.akiban.util.Strings;
 import org.junit.Before;
@@ -44,7 +49,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.akiban.qp.operator.API.cursor;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public class OperatorITBase extends ITBase
 {
@@ -68,6 +74,7 @@ public class OperatorITBase extends ITBase
             "schema", "item",
             "iid int not null key",
             "oid int",
+            "index(oid, iid)",
             "constraint __akiban_io foreign key __akiban_io(oid) references order(oid)");
         address = createTable(
             "schema", "address",
@@ -84,6 +91,7 @@ public class OperatorITBase extends ITBase
         customerNameIndexRowType = indexType(customer, "name");
         orderSalesmanIndexRowType = indexType(order, "salesman");
         itemOidIndexRowType = indexType(item, "oid");
+        itemOidIidIndexRowType = indexType(item, "oid", "iid");
         itemIidIndexRowType = indexType(item, "iid");
         customerCidIndexRowType = indexType(customer, "cid");
         addressAddressIndexRowType = indexType(address, "address");
@@ -172,11 +180,32 @@ public class OperatorITBase extends ITBase
     }
 
     protected RowBase row(IndexRowType indexRowType, Object... values) {
+/*
         try {
+*/
+            ValuesHolderRow row = new ValuesHolderRow(indexRowType);
+            for (int i = 0; i < values.length; i++) {
+                Object value = values[i];
+                ValueHolder valueHolder = row.holderAt(i);
+                if (value == null) {
+                    valueHolder.putRawNull();
+                } else if (value instanceof Integer) {
+                    valueHolder.putInt((Integer) value);
+                } else if (value instanceof Long) {
+                    valueHolder.putInt((Long) value);
+                } else if (value instanceof String) {
+                    valueHolder.putString((String) value);
+                } else {
+                    fail();
+                }
+            }
+            return row;
+/*
             return new PersistitIndexRow(adapter, indexRowType, values);
         } catch(PersistitException e) {
             throw new RuntimeException(e);
         }
+*/
     }
 
     // Useful when scanning is expected to throw an exception
@@ -256,6 +285,7 @@ public class OperatorITBase extends ITBase
     protected IndexRowType customerNameIndexRowType;
     protected IndexRowType orderSalesmanIndexRowType;
     protected IndexRowType itemOidIndexRowType;
+    protected IndexRowType itemOidIidIndexRowType;
     protected IndexRowType itemIidIndexRowType;
     protected IndexRowType addressAddressIndexRowType;
     protected GroupTable coi;
