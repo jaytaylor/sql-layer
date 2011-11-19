@@ -23,18 +23,11 @@ interface AbstractProcessor
 {
     long process (long oldState, long input);
     double process (double oldState, double input);
+    float process (float oldState, float input);
     BigDecimal process (BigDecimal oldState, BigDecimal input);
     BigInteger process (BigInteger oldState, BigInteger input);
     boolean process (boolean oldState, boolean input);
     String process (String oldState, String input);
     
-    void checkType (AkType type);
-    
-    /**
-     * 
-     * @return true if an input of infinity will lead to an output of infinity (E.g., sum (1 + 2 + infinity) = infinity 
-     * , return false otherwise. (E.g., max (-infinity, 2, 3) = 3 )
-     * 
-     */
-    boolean infinityIsSignificant ();
+    void checkType (AkType type);    
 }
