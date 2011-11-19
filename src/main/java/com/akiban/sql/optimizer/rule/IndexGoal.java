@@ -190,6 +190,8 @@ public class IndexGoal implements Comparator<IndexScan>
                 for (ConditionExpression condition : conditions) {
                     if (condition instanceof ComparisonCondition) {
                         ComparisonCondition ccond = (ComparisonCondition)condition;
+                        if (ccond.getOperation().equals(Comparison.NE))
+                            continue; // ranges are better suited for !=
                         ExpressionNode otherComparand = null;
                         if (indexExpression.equals(ccond.getLeft())) {
                             otherComparand = ccond.getRight();
@@ -700,8 +702,11 @@ public class IndexGoal implements Comparator<IndexScan>
                 conditionSatisfiedByIndex(condition, false);
             }
         }
-        if (index.getConditionRange() != null)
-            conditionSatisfiedByIndex(index.getConditionRange().getAssociatedCondition(), true);
+        if (index.getConditionRange() != null) {
+            for (ConditionExpression condition : index.getConditionRange().getConditions()) {
+                conditionSatisfiedByIndex(condition, true);
+            }
+        }
         if (grouping != null) {
             AggregateSource.Implementation implementation;
             switch (index.getOrderEffectiveness()) {
@@ -766,7 +771,9 @@ public class IndexGoal implements Comparator<IndexScan>
                     Range range = Range.rangeAtNode(condition);
                     if (range != null) {
                         ColumnExpression rangeColumn = range.getColumnExpression();
-                        // TODO test if this rangeColumn is already in the map, and figure out which one is better
+                        Range oldRange = columnsToRanges.get(rangeColumn);
+                        if (oldRange != null)
+                            range = Range.andRanges(range, oldRange);
                         columnsToRanges.put(rangeColumn, range);
                     }
                 }

@@ -24,6 +24,8 @@ import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.FunctionCondition;
 import com.akiban.sql.optimizer.plan.LogicalFunctionCondition;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -60,7 +62,16 @@ public final class Range {
         return null;
     }
 
-    static List<RangeSegment> combineBool(Range leftRange, Range rightRange, String logicOp) {
+    public static Range andRanges(Range left, Range right) {
+        List<RangeSegment> combinedSegments = combineBool(left, right, "and");
+        if (combinedSegments == null)
+            return null;
+        List<ConditionExpression> combinedConditions = new ArrayList<ConditionExpression>(left.getConditions());
+        combinedConditions.addAll(right.getConditions());
+        return new Range(left.getColumnExpression(), combinedConditions, combinedSegments);
+    }
+
+    private static List<RangeSegment> combineBool(Range leftRange, Range rightRange, String logicOp) {
         if (!leftRange.getColumnExpression().equals(rightRange.getColumnExpression()))
             return null;
         logicOp = logicOp.toLowerCase();
@@ -78,8 +89,8 @@ public final class Range {
         return result;
     }
 
-    public ConditionExpression getAssociatedCondition() {
-        return rootCondition;
+    public Collection<? extends ConditionExpression> getConditions() {
+        return rootConditions;
     }
 
     public List<RangeSegment> getSegments() {
@@ -95,10 +106,14 @@ public final class Range {
         return "Range " + columnExpression + ' ' + segments;
     }
 
-    public Range(ColumnExpression columnExpression, ConditionExpression rootCondition, List<RangeSegment> segments) {
+    public Range(ColumnExpression columnExpression, Collection<? extends ConditionExpression> rootConditions, List<RangeSegment> segments) {
         this.columnExpression = columnExpression;
-        this.rootCondition = rootCondition;
+        this.rootConditions = rootConditions;
         this.segments = segments;
+    }
+
+    public Range(ColumnExpression columnExpression, ConditionExpression rootCondition, List<RangeSegment> segments) {
+        this(columnExpression, Collections.singletonList(rootCondition), segments);
     }
 
     private static Range comparisonToRange(ComparisonCondition comparisonCondition) {
@@ -127,6 +142,6 @@ public final class Range {
     }
 
     private ColumnExpression columnExpression;
-    private ConditionExpression rootCondition;
+    private Collection<? extends ConditionExpression> rootConditions;
     private List<RangeSegment> segments;
 }

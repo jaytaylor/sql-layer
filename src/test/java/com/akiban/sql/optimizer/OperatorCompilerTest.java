@@ -32,6 +32,7 @@ import com.akiban.sql.optimizer.rule.RulesTestHelper;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.NamedParameterizedRunner.TestParameters;
 import com.akiban.junit.Parameterization;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -161,7 +162,14 @@ public class OperatorCompilerTest extends NamedParamsTestBase
 
     @Override
     public void checkResult(String result) throws IOException{
-        assertEqualsWithoutHashes(caseName, expected, result);
+        try {
+
+            assertEqualsWithoutHashes(caseName, expected, result);
+        }
+        catch (AssertionError e)
+        {
+            Assert.assertEquals(caseName, expected, result);
+        }
     }
 
 }
