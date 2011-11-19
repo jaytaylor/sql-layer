@@ -162,14 +162,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
 
     @Override
     public void checkResult(String result) throws IOException{
-        try {
-
-            assertEqualsWithoutHashes(caseName, expected, result);
-        }
-        catch (AssertionError e)
-        {
-            Assert.assertEquals(caseName, expected, result);
-        }
+        assertEqualsWithoutHashes(caseName, expected, result);
     }
 
 }
