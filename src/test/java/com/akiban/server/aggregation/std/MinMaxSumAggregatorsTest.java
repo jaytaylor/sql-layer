@@ -39,7 +39,14 @@ public class MinMaxSumAggregatorsTest
         aggregator = Aggregators.mins("min", AkType.DOUBLE).get();
         assertEquals(0, aggregateDouble(), 0.01);
     }
-    
+
+    @Test
+    public void testMinFloat ()
+    {
+        aggregator = Aggregators.mins("min", AkType.FLOAT).get();
+        assertEquals(0f, aggregateFloat(), 0.01f);
+    }
+
     @Test
     public void testMinString ()
     {
@@ -475,7 +482,19 @@ public class MinMaxSumAggregatorsTest
         aggregator.output(holder);
         return holder.getDouble();
     }
-        
+
+    private float aggregateFloat ()
+    {
+        holder.clear();
+        for (int n  = 0; n < 20; ++n)
+        {
+            holder.putFloat(n);
+            aggregator.input(holder);
+        }
+        aggregator.output(holder);
+        return holder.getFloat();
+    }
+
     private long aggregateLong()
     {
         holder.clear();
