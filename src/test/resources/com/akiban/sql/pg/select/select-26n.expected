@@ -1,6 +1,4 @@
 name	order_date
 null	2010-01-01
-Jones	2011-02-28
-Jones	2011-03-03
 Smith	2011-03-01
-Smith	2011-03-02
+Jones	2011-03-03
