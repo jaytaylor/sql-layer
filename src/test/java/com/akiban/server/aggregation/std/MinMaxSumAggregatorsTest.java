@@ -126,18 +126,48 @@ public class MinMaxSumAggregatorsTest
         aggregator.output(holder);
         assertEquals( new ValueHolder(AkType.DOUBLE, 2.0), holder);
     }
-    
+
+    @Test
+    public void testMinWithFloatNegInfinity ()
+    {
+        aggregator = Aggregators.mins("min", AkType.FLOAT).get();
+
+        holder.putFloat(2f);
+        aggregator.input(holder);
+
+        holder.putFloat(Float.NEGATIVE_INFINITY);
+        aggregator.input(holder);
+
+        aggregator.output(holder);
+        assertEquals(Float.NEGATIVE_INFINITY, holder.getFloat(), 0.001);
+    }
+
+    @Test
+    public void testMinWithFloatInfinity ()
+    {
+        aggregator = Aggregators.mins("min", AkType.FLOAT).get();
+        
+        holder.putFloat(2);
+        aggregator.input(holder);
+        
+        holder.putFloat(Float.POSITIVE_INFINITY);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        assertEquals(2.0f, holder.getFloat(), 0.001);
+    }
+
     @Test
     public void testMinWithInfinity ()
     {
         aggregator = Aggregators.mins("min", AkType.DOUBLE).get();
-        
+
         holder.putDouble(2);
         aggregator.input(holder);
-        
+
         holder.putDouble(Double.POSITIVE_INFINITY);
         aggregator.input(holder);
-        
+
         aggregator.output(holder);
         assertEquals(2.0, holder.getDouble(), 0.001);
     }
@@ -164,7 +194,14 @@ public class MinMaxSumAggregatorsTest
         aggregator = Aggregators.maxes("maxes", AkType.DOUBLE).get();
         assertEquals(MAX, aggregateDouble(), 0.01);
     }
-    
+
+    @Test
+    public void TestMaxFloat ()
+    {
+        aggregator = Aggregators.maxes("maxes", AkType.FLOAT).get();
+        assertEquals((float)MAX, aggregateFloat(), 0.01);
+    }
+
     @Test
     public void testMaxString ()
     {
@@ -233,7 +270,39 @@ public class MinMaxSumAggregatorsTest
         aggregator.output(holder);
         assertEquals(2, holder.getDouble(), 0.01);
     }
-      
+
+    @Test
+    public void testMaxWithFloatNegInfinity ()
+    {
+        aggregator = Aggregators.maxes("maxes", AkType.FLOAT).get();
+        
+        holder.putFloat(2f);
+        aggregator.input(holder);
+        
+        holder.putFloat(Float.NEGATIVE_INFINITY);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        assertEquals(2.0f, holder.getFloat(), 0.001);
+        
+    }
+    
+    @Test
+    public void testMaxWithFloatPosInfinity ()
+    {
+        aggregator = Aggregators.maxes("maxes", AkType.FLOAT).get();
+        
+        holder.putFloat(2f);
+        aggregator.input(holder);
+        
+        holder.putFloat(Float.POSITIVE_INFINITY);
+        aggregator.input(holder);
+        
+        aggregator.output(holder);
+        assertEquals(Float.POSITIVE_INFINITY, holder.getFloat(), 0.001);
+        
+    }
+
     @Test
     public void testMaxWithNegInfinity ()
     {
@@ -246,8 +315,7 @@ public class MinMaxSumAggregatorsTest
         aggregator.input(holder);
         
         aggregator.output(holder);
-        assertEquals(2.0, holder.getDouble(), 0.001);
-        
+        assertEquals(2.0, holder.getDouble(), 0.001);        
     }
     
     @Test
