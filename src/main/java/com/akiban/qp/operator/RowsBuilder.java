@@ -82,6 +82,14 @@ public final class RowsBuilder {
         this.types = types;
     }
 
+    public RowsBuilder(RowType rowType) {
+        this.rowType = rowType;
+        types = new AkType[this.rowType.nFields()];
+        for (int i=0; i < types.length; ++i) {
+            types[i] = this.rowType.typeAt(i);
+        }
+    }
+
     // object state
 
     private final RowType rowType;

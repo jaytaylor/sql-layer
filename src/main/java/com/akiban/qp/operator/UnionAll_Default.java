@@ -70,6 +70,8 @@ final class UnionAll_Default extends Operator {
     // for use in this package (in ctor and unit tests)
 
     static RowType rowType(RowType rowType1, RowType rowType2) {
+        if (rowType1 == rowType2)
+            return rowType1;
         if (rowType1.nFields() != rowType2.nFields())
             throw notSameShape(rowType1, rowType2);
         AkType[] types = new AkType[rowType1.nFields()];
