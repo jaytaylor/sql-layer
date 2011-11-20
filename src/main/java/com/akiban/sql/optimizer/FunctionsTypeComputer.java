@@ -141,8 +141,13 @@ public class FunctionsTypeComputer extends AISTypeComputer
         List<AkType> origTypes = new ArrayList<AkType>(nargs);
         for (int i = 0; i < nargs; i++) {
             JavaValueNode arg = args[i];
-            DataTypeDescriptor sqlType = arg.getType();
-            ExpressionType argType = toExpressionType(sqlType);
+            ExpressionType argType;
+            if (arg instanceof SQLToJavaValueNode)
+                argType = valueExpressionType(((SQLToJavaValueNode)arg).getSQLValueNode());
+            else
+                argType = toExpressionType(arg.getType());
+            if (argType == null)
+                return null;
             argTypes.add(argType);
             origTypes.add(argType.getType());
         }
@@ -183,11 +188,10 @@ public class FunctionsTypeComputer extends AISTypeComputer
         catch (NoSuchFunctionException ex) {
             return null;
         }
-        DataTypeDescriptor argType = node.getOperand().getType();
+        ExpressionType argType = valueExpressionType(node.getOperand());
         if (argType == null)
             return null;
-        List<ExpressionType> argTypes = 
-            Collections.singletonList(toExpressionType(argType));
+        List<ExpressionType> argTypes = Collections.singletonList(argType);
         ExpressionType resultType = composer.composeType(argTypes);
         if (resultType == null)
             return null;
@@ -237,9 +241,22 @@ public class FunctionsTypeComputer extends AISTypeComputer
         }
     }
 
+    protected ExpressionType valueExpressionType(ValueNode value) {
+        DataTypeDescriptor type = value.getType();
+        if (type == null) {
+            if (value instanceof UntypedNullConstantNode) {
+                // Give composer a change to establish type of null.
+                return ExpressionTypes.NULL;
+            }
+        }
+        return toExpressionType(type);
+    }
+
     /* Yet another translator between type regimes. */
 
     protected ExpressionType toExpressionType(DataTypeDescriptor sqlType) {
+        if (sqlType == null)
+            return null;
         TypeId typeId = sqlType.getTypeId();
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.BOOLEAN_TYPE_ID:

@@ -25,6 +25,10 @@ impossible-is-null: A NOT NULL column cannot satisfy IS NULL.
 
 possible-is-null: A NOT NULL column on an outer join can.
 
+if-1: IF() special null handling.
+
+if-2: IF() with constant.
+
 in-duplicates: IN list with duplicate literals.
 
 in-expressions: IN list with expressions.
