@@ -40,7 +40,13 @@ public class IfExpression extends AbstractCompositeExpression
         {
             int size = argumentTypes.size();
             if ( size != 3)  throw new WrongExpressionArityException(3, size);
-            else argumentTypes.set(0, AkType.BOOL);
+            else
+            {
+                argumentTypes.set(0, AkType.BOOL);
+                AkType t = getTopType(argumentTypes.get(1), argumentTypes.get(2));
+                argumentTypes.set(1, t);
+                argumentTypes.set(2, t);
+            }
         }
 
         @Override
@@ -48,7 +54,9 @@ public class IfExpression extends AbstractCompositeExpression
         {
             int size = argumentTypes.size();
             if ( size != 3)  throw new WrongExpressionArityException(3, size);
-            else return ExpressionTypes.newType(getTopType(argumentTypes.get(1).getType(), argumentTypes.get(2).getType()), 0, 0);
+            else return ExpressionTypes.newType(getTopType(argumentTypes.get(1).getType(), argumentTypes.get(2).getType()),
+                                Math.max(argumentTypes.get(1).getPrecision() , argumentTypes.get(2).getPrecision()),
+                                Math.max(argumentTypes.get(1).getScale(), argumentTypes.get(2).getScale()));
         }
 
         @Override
@@ -88,18 +96,15 @@ public class IfExpression extends AbstractCompositeExpression
 
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
-        private final IfExpression exp;
-        public InnerEvaluation ( IfExpression ex)
+        public InnerEvaluation ( List< ? extends ExpressionEvaluation> eva)
         {
-            super(ex.childrenEvaluations());
-            exp = ex;
+            super(eva);
         }
 
         @Override
         public ValueSource eval() 
         {
-            return new CastExpression (exp.valueType(), exp.children().get(Extractors.getBooleanExtractor()
-                    .getBoolean(this.children().get(0).eval(), false).booleanValue() ? 1 :2)).evaluation().eval();
+            return children().get(Extractors.getBooleanExtractor().getBoolean(children().get(0).eval(), false).booleanValue() ? 1: 2).eval();
         }        
     }
     
@@ -123,6 +128,6 @@ public class IfExpression extends AbstractCompositeExpression
     @Override
     public ExpressionEvaluation evaluation()
     {
-       return new InnerEvaluation(this);
+        return new InnerEvaluation(childrenEvaluations());
     }
 }

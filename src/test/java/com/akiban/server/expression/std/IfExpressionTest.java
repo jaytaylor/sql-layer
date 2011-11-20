@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import java.util.List;
 import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.OnlyIf;
@@ -75,6 +76,7 @@ public class IfExpressionTest
 
             // expect inconvertible type
             param(pb, t, AkType.BOOL, AkType.LONG, true, null);
+            param(pb, t, AkType.LONG, AkType.BOOL, true, null);
             param(pb, t, AkType.DATE, AkType.LONG, true, null);
             param(pb, t, AkType.TIME, AkType.DATE, true, null);
             param(pb, t, AkType.DATE, AkType.DOUBLE, true, null);
@@ -90,7 +92,7 @@ public class IfExpressionTest
         paramNullAndUnsupported(pb, AkType.VARCHAR, AkType.DATE, false, new ValueHolder(AkType.VARCHAR, Extractors.getLongExtractor(AkType.DATE).asString(0L)));
         paramNullAndUnsupported(pb, AkType.DECIMAL, AkType.VARCHAR, false, new ValueHolder(AkType.VARCHAR, "0"));
         paramNullAndUnsupported(pb, AkType.DECIMAL, AkType.LONG, false, new ValueHolder(AkType.DECIMAL, BigDecimal.ZERO));
-
+       
         //TODO: VARBINARY: can't deal with it yet
         
         return pb.asList();
@@ -111,13 +113,21 @@ public class IfExpressionTest
         pb.add("if(" + AkType.UNSUPPORTED + ", " + trueExType + ", " + falseExType + ")===>" + evaluateRes,
                 AkType.UNSUPPORTED, trueExType, falseExType, evaluateRes, expected);
     }
+
     private void test()
     {        
         Expression cond = getExp(condType, evaluateRes);
         Expression trExp = getExp(trueExType, true);
         Expression faExp = getExp(falseExType, false);
 
+        // cast second and third args as necessary
+        List<AkType> argTypes = Arrays.asList(condType, trueExType, falseExType);
+        IfExpression.COMPOSER.argumentTypes(argTypes);        
+        trExp = new CastExpression(argTypes.get(1), trExp);
+        faExp = new CastExpression(argTypes.get(2), faExp);
+
         Expression ifExp = new IfExpression(Arrays.asList(cond, trExp, faExp));
+        
         assertEquals (expected, new ValueHolder(ifExp.evaluation().eval()));
     }
 
