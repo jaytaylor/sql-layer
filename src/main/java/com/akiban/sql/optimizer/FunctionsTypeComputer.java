@@ -21,6 +21,7 @@ import com.akiban.sql.StandardException;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
+import com.akiban.server.expression.EnvironmentExpressionFactory;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.std.ExpressionTypes;
@@ -31,6 +32,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.error.NoSuchFunctionException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /** Calculate types from expression composers. */
@@ -56,6 +58,14 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case NodeTypes.CURRENT_SCHEMA_NODE:
         case NodeTypes.CURRENT_ROLE_NODE:
             return specialFunctionNode((SpecialFunctionNode)node);
+        case NodeTypes.CURRENT_DATETIME_OPERATOR_NODE:
+            return currentDatetimeOperatorNode((CurrentDatetimeOperatorNode)node);
+        case NodeTypes.DB2_LENGTH_OPERATOR_NODE:
+        case NodeTypes.EXTRACT_OPERATOR_NODE:
+        case NodeTypes.CHAR_LENGTH_OPERATOR_NODE:
+        case NodeTypes.SIMPLE_STRING_OPERATOR_NODE:
+        case NodeTypes.UNARY_DATE_TIMESTAMP_OPERATOR_NODE:
+            return unaryOperatorFunction((UnaryOperatorNode)node);
         default:
             return super.computeType(node);
         }
@@ -76,14 +86,54 @@ public class FunctionsTypeComputer extends AISTypeComputer
 
     protected DataTypeDescriptor methodCallNode(MethodCallNode methodCall)
             throws StandardException {
-        ExpressionComposer composer;
-        try {
-            composer = functionsRegistry.composer(methodCall.getMethodName());
+        if ((methodCall.getMethodParameters() == null) ||
+            (methodCall.getMethodParameters().length == 0)) {
+            return noArgFunction(methodCall.getMethodName());
         }
-        catch (NoSuchFunctionException ex) {
-            return null;
+        else {
+            ExpressionComposer composer;
+            try {
+                composer = functionsRegistry.composer(methodCall.getMethodName());
+            }
+            catch (NoSuchFunctionException ex) {
+                composer = null;
+            }
+            if (composer != null)
+                return expressionComposer(composer, methodCall.getMethodParameters());
         }
-        JavaValueNode[] args = methodCall.getMethodParameters();
+        return null;
+    }
+
+    protected DataTypeDescriptor noArgFunction(String functionName) 
+            throws StandardException {
+        {
+            ExpressionComposer composer;
+            try {
+                composer = functionsRegistry.composer(functionName);
+            }
+            catch (NoSuchFunctionException ex) {
+                composer = null;
+            }
+            if (composer != null)
+                return expressionComposer(composer, null);
+        }
+        {
+            EnvironmentExpressionFactory environment;
+            try {
+               environment = functionsRegistry.environment(functionName);
+            }
+            catch (NoSuchFunctionException ex) {
+                environment = null;
+            }
+            if (environment != null)
+                return fromExpressionType(environment.getType());
+        }
+        return null;
+    }
+
+    protected DataTypeDescriptor expressionComposer(ExpressionComposer composer,
+                                                    JavaValueNode[] args)
+            throws StandardException {
         int nargs = 0;
         if (args != null)
             nargs = args.length;
@@ -124,10 +174,67 @@ public class FunctionsTypeComputer extends AISTypeComputer
         return fromExpressionType(resultType);
     }
 
+    protected DataTypeDescriptor unaryOperatorFunction(UnaryOperatorNode node) 
+            throws StandardException {
+        ExpressionComposer composer;
+        try {
+            composer = functionsRegistry.composer(node.getMethodName());
+        }
+        catch (NoSuchFunctionException ex) {
+            return null;
+        }
+        DataTypeDescriptor argType = node.getOperand().getType();
+        if (argType == null)
+            return null;
+        List<ExpressionType> argTypes = 
+            Collections.singletonList(toExpressionType(argType));
+        ExpressionType resultType = composer.composeType(argTypes);
+        if (resultType == null)
+            return null;
+        return fromExpressionType(resultType);
+    }
+
     protected DataTypeDescriptor specialFunctionNode(SpecialFunctionNode node)
             throws StandardException {
-        // TODO: Where should we get the real max width from?
-        return new DataTypeDescriptor(TypeId.VARCHAR_ID, true, 128);
+        return noArgFunction(specialFunctionName(node));
+    }
+
+    /** Return the name of a built-in special function. */
+    public static String specialFunctionName(SpecialFunctionNode node) {
+        switch (node.getNodeType()) {
+        case NodeTypes.USER_NODE:
+        case NodeTypes.CURRENT_USER_NODE:
+            return "current_user";
+        case NodeTypes.SESSION_USER_NODE:
+            return "session_user";
+        case NodeTypes.SYSTEM_USER_NODE:
+            return "system_user";
+        case NodeTypes.CURRENT_ISOLATION_NODE:
+        case NodeTypes.IDENTITY_VAL_NODE:
+        case NodeTypes.CURRENT_SCHEMA_NODE:
+        case NodeTypes.CURRENT_ROLE_NODE:
+        default:
+            return null;
+        }
+    }
+
+    protected DataTypeDescriptor currentDatetimeOperatorNode(CurrentDatetimeOperatorNode node)
+            throws StandardException {
+        return noArgFunction(currentDatetimeFunctionName(node));
+    }
+
+    /** Return the name of a built-in special function. */
+    public static String currentDatetimeFunctionName(CurrentDatetimeOperatorNode node) {
+        switch (node.getField()) {
+        case DATE:
+            return "current_date";
+        case TIME:
+            return "current_time";
+        case TIMESTAMP:
+            return "current_timestamp";
+        default:
+            return null;
+        }
     }
 
     /* Yet another translator between type regimes. */

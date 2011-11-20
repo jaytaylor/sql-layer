@@ -15,6 +15,7 @@
 
 package com.akiban.server.aggregation.std;
 
+import com.akiban.server.error.OverflowException;
 import com.akiban.server.types.AkType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -36,31 +37,54 @@ class Processors
     };
 
     public final static AbstractProcessor sumProcessor = new AbstractProcessor ()
-    {
+    {        
         @Override
         public void checkType (AkType type)
         {
             switch (type)
             {
                 case DOUBLE:
+                case U_INT:
+                case FLOAT:
+                case U_FLOAT:
                 case INT:
                 case LONG:
                 case DECIMAL:
                 case U_BIGINT: return;
-                default: throw new UnsupportedOperationException("Not supported yet.");
+                default: throw new UnsupportedOperationException("sum of " + type + " is not supported yet.");
             }
         }
 
         @Override
         public long process(long oldState, long input)
         {
-            return oldState + input;
+            long sum = oldState + input;
+            if (oldState > 0 && input > 0 && sum <= 0)
+                throw new OverflowException();
+            else if (oldState < 0 && input < 0 && sum >= 0)
+                throw new OverflowException();
+            else
+                return oldState + input;
         }
 
         @Override
         public double process(double oldState, double input)
         {
-            return oldState + input;
+            double sum = oldState + input;  
+            if (Double.isInfinite(sum) && !Double.isInfinite(oldState) && !Double.isInfinite(input))
+                throw new OverflowException();
+            else 
+                return sum;
+        }
+
+        @Override
+        public float process (float oldState, float input)
+        {
+            float sum = oldState  + input;
+            if (Float.isInfinite(sum) && !Float.isInfinite(oldState) && !Float.isInfinite(input))
+                throw new OverflowException();
+            else
+                    return sum;
         }
 
         @Override
@@ -91,7 +115,7 @@ class Processors
     // nested class
     private static abstract class MinMaxProcessor implements AbstractProcessor
     {
-        abstract boolean condition (double a);
+        abstract boolean condition (double a);       
 
         @Override
         public void checkType(AkType type)
@@ -99,16 +123,21 @@ class Processors
             switch (type)
             {
                 case DOUBLE:
+                case FLOAT:
                 case INT:
+                case U_FLOAT:
+                case U_INT:
                 case LONG:
                 case DECIMAL:
                 case U_BIGINT:
                 case VARCHAR:
+                case TEXT:
+                case TIMESTAMP:
                 case DATE:
                 case BOOL:
                 case DATETIME:
                 case TIME:      return;
-                default:        throw new UnsupportedOperationException("Not supported yet.");
+                default:        throw new UnsupportedOperationException(type + " is not supported yet.");
             }            
         }
 
@@ -120,6 +149,12 @@ class Processors
 
         @Override
         public double process(double oldState, double input)
+        {
+            return (condition(oldState - input) ? oldState : input);
+        }
+
+        @Override
+        public float process (float oldState, float input)
         {
             return (condition(oldState - input) ? oldState : input);
         }

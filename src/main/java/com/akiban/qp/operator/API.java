@@ -24,13 +24,16 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
-
 import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.aggregation.Aggregators;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.types.AkType;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.EnumSet;
+import java.util.List;
 
 public class API
 {
@@ -74,7 +77,7 @@ public class API
                                                        RowType childType,
                                                        JoinType joinType)
     {
-        return flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, NO_FLATTEN_OPTIONS);
+        return flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, EnumSet.noneOf(FlattenOption.class));
     }
 
     public static Operator flatten_HKeyOrdered(Operator inputOperator,
@@ -100,7 +103,7 @@ public class API
                                                        RowType parentType,
                                                        RowType childType,
                                                        JoinType joinType,
-                                                       Set<FlattenOption> flags)
+                                                       EnumSet<FlattenOption> flags)
     {
         return new Flatten_HKeyOrdered(inputOperator, parentType, childType, joinType, flags);
     }
@@ -122,17 +125,13 @@ public class API
                 new GroupScan_Default.PositionalGroupCursorCreator(groupTable, hKeyBindingPosition, deep, hKeyType, shortenUntil));
     }
 
-    public static Operator groupScan_Default(GroupTable groupTable,
-                                                     int hKeyBindingPosition,
-                                                     boolean deep)
-    {
-        return groupScan_Default(groupTable, hKeyBindingPosition, deep, null, null);
-    }
+    // ValuesScan
 
     public static Operator valuesScan_Default (Collection<? extends BindableRow> rows, RowType rowType)
     {
         return new ValuesScan_Default (rows, rowType);
     }
+    
     // BranchLookup
 
     public static Operator branchLookup_Default(Operator inputOperator,
@@ -201,17 +200,32 @@ public class API
     // IndexScan
 
     /**
-     * Creates a full scan operator for the given index, non-reversing, using LEFT JOIN semantics after the indexType's
+     * Creates a full ascending scan operator for the given index using LEFT JOIN semantics after the indexType's
      * tableType
      * @param indexType the index to scan
      * @return the scan operator
-     * @deprecated use {@link #indexScan_Default(IndexRowType, boolean, IndexKeyRange, IndexScanSelector)}
+     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
      */
     @Deprecated
     @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType)
     {
-        return indexScan_Default(indexType, false, null, indexType.tableType());
+        return indexScan_Default(indexType, false, IndexKeyRange.unbounded(indexType));
+    }
+
+    /**
+     * Creates a full ascending scan operator for the given index using LEFT JOIN semantics after the indexType's
+     * tableType
+     * @param indexType the index to scan
+     * @param reverse whether to scan in reverse order
+     * @return the scan operator
+     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
+     */
+    @Deprecated
+    @SuppressWarnings("deprecation")
+    public static Operator indexScan_Default(IndexRowType indexType, boolean reverse)
+    {
+        return indexScan_Default(indexType, reverse, IndexKeyRange.unbounded(indexType));
     }
 
     /**
@@ -220,7 +234,7 @@ public class API
      * @param reverse whether to scan in reverse order
      * @param indexKeyRange the scan range
      * @return the scan operator
-     * @deprecated use {@link #indexScan_Default(IndexRowType, boolean, IndexKeyRange, IndexScanSelector)}
+     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
      */
     @Deprecated
     @SuppressWarnings("deprecation")
@@ -236,27 +250,70 @@ public class API
      * @param indexKeyRange the scan range
      * @param innerJoinUntilRowType the table after which the scan should start using LEFT JOIN GI semantics.
      * @return the scan operator
-     * @deprecated use {@link #indexScan_Default(IndexRowType, boolean, IndexKeyRange, IndexScanSelector)}
+     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
      */
     @Deprecated
     public static Operator indexScan_Default(IndexRowType indexType,
-                                                     boolean reverse,
-                                                     IndexKeyRange indexKeyRange,
-                                                     UserTableRowType innerJoinUntilRowType)
+                                             boolean reverse,
+                                             IndexKeyRange indexKeyRange,
+                                             UserTableRowType innerJoinUntilRowType)
     {
-        return indexScan_Default(
-                indexType,
-                reverse,
-                indexKeyRange,
-                IndexScanSelector.leftJoinAfter(indexType.index(), innerJoinUntilRowType.userTable())
-        );
+        Ordering ordering = new Ordering();
+        int fields = indexType.nFields();
+        for (int f = 0; f < fields; f++) {
+            ordering.append(new FieldExpression(indexType, f), !reverse);
+        }
+        return indexScan_Default(indexType, indexKeyRange, ordering, innerJoinUntilRowType);
     }
+
+    /**
+     * Creates a scan operator for the given index, using LEFT JOIN semantics after the given table type.
+     * @param indexType the index to scan
+     * @param reverse whether to scan in reverse order
+     * @param indexKeyRange the scan range
+     * @param indexScanSelector
+     * @return the scan operator
+     * @deprecated use {@link #indexScan_Default(IndexRowType, IndexKeyRange, Ordering, IndexScanSelector)}
+     */
+    @Deprecated
     public static Operator indexScan_Default(IndexRowType indexType,
                                              boolean reverse,
                                              IndexKeyRange indexKeyRange,
                                              IndexScanSelector indexScanSelector)
     {
-        return new IndexScan_Default(indexType, reverse, indexKeyRange, indexScanSelector);
+        Ordering ordering = new Ordering();
+        int fields = indexType.nFields();
+        for (int f = 0; f < fields; f++) {
+            ordering.append(new FieldExpression(indexType, f), !reverse);
+        }
+        return indexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector);
+    }
+
+    public static Operator indexScan_Default(IndexRowType indexType,
+                                             IndexKeyRange indexKeyRange,
+                                             Ordering ordering)
+    {
+        return indexScan_Default(indexType, indexKeyRange, ordering, indexType.tableType());
+    }
+
+    public static Operator indexScan_Default(IndexRowType indexType,
+                                             IndexKeyRange indexKeyRange,
+                                             Ordering ordering,
+                                             UserTableRowType innerJoinUntilRowType)
+    {
+        return indexScan_Default(indexType,
+                                 indexKeyRange,
+                                 ordering,
+                                 IndexScanSelector.leftJoinAfter(indexType.index(),
+                                                                 innerJoinUntilRowType.userTable()));
+    }
+
+    public static Operator indexScan_Default(IndexRowType indexType,
+                                             IndexKeyRange indexKeyRange,
+                                             Ordering ordering,
+                                             IndexScanSelector indexScanSelector)
+    {
+        return new IndexScan_Default(indexType, indexKeyRange, ordering, indexScanSelector);
     }
 
     // Select
@@ -397,8 +454,6 @@ public class API
         return new TopLevelWrappingCursor(adapter, root.cursor(adapter));
     }
 
-    private static final EnumSet<FlattenOption> NO_FLATTEN_OPTIONS = EnumSet.noneOf(FlattenOption.class);
-
     // Options
 
     // Flattening flags
@@ -412,7 +467,8 @@ public class API
 
     public static enum FlattenOption {
         KEEP_PARENT,
-        KEEP_CHILD
+        KEEP_CHILD,
+        LEFT_JOIN_SHORTENS_HKEY
     }
 
     // Lookup flags
@@ -429,6 +485,7 @@ public class API
         public String toString()
         {
             StringBuilder buffer = new StringBuilder();
+            buffer.append('(');
             for (int i = 0; i < expressions.size(); i++) {
                 if (i > 0) {
                     buffer.append(", ");
@@ -437,10 +494,11 @@ public class API
                 buffer.append(' ');
                 buffer.append(directions.get(i) ? "ASC" : "DESC");
             }
+            buffer.append(')');
             return buffer.toString();
         }
 
-        public int sortFields()
+        public int sortColumns()
         {
             return expressions.size();
         }
@@ -457,6 +515,28 @@ public class API
         public boolean ascending(int i)
         {
             return directions.get(i);
+        }
+
+        public boolean allAscending()
+        {
+            boolean allAscending = true;
+            for (Boolean direction : directions) {
+                if (!direction) {
+                    allAscending = false;
+                }
+            }
+            return allAscending;
+        }
+
+        public boolean allDescending()
+        {
+            boolean allDescending = true;
+            for (Boolean direction : directions) {
+                if (direction) {
+                    allDescending = false;
+                }
+            }
+            return allDescending;
         }
 
         public void append(Expression expression, boolean ascending)

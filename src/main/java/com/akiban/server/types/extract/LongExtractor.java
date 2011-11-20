@@ -26,6 +26,10 @@ public abstract class LongExtractor extends AbstractExtractor {
     public abstract String asString(long value);
     public abstract long getLong(String string);
 
+    // for date/times only
+    public abstract long stdLongToUnix (long longVal);
+    public abstract long unixToStdLong (long unixVal);
+    
     // package-private ctor
     LongExtractor(AkType targetConversionType) {
         super(targetConversionType);

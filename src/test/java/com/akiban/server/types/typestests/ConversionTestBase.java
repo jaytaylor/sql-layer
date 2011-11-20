@@ -20,6 +20,7 @@ import com.akiban.junit.OnlyIf;
 import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.extract.ConverterTestUtils;
@@ -30,18 +31,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 @RunWith(NamedParameterizedRunner.class)
 public abstract class ConversionTestBase {
 
     @Test
-    @OnlyIfNot("isMismatch()")
+    @OnlyIf("isGood()")
     public void putAndCheck() {
         suite.putAndCheck(indexWithinSuite);
     }
 
     @Test
-    @OnlyIfNot("isMismatch()")
+    @OnlyIf("isGood()")
     public void targetAlwaysAcceptsNull() {
         suite.targetAlwaysAcceptsNull(indexWithinSuite);
     }
@@ -58,9 +60,36 @@ public abstract class ConversionTestBase {
         suite.putMismatch(indexWithinSuite);
     }
 
+    @Test(expected = UnsupportedOperationException.class)
+    @OnlyIfNot("isSupported()")
+    public void setupUnsupported() {
+        suite.setupUnsupported(indexWithinSuite);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    @OnlyIfNot("isSupported()")
+    public void putUnsupported() {
+        suite.putUnsupported(indexWithinSuite);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    @OnlyIfNot("isSupported()")
+    public void getUnsupported() {
+        suite.getUnsupported(indexWithinSuite);
+    }
+
     public boolean isMismatch() {
         Class<?> linkedConversionClass = suite.linkedConversion().getClass();
         return linkedConversionClass.equals(MismatchedConversionsSuite.DelegateLinkedConversion.class);
+    }
+
+    public boolean isGood() {
+        return !(isMismatch()) && isSupported();
+    }
+
+    public boolean isSupported() {
+        TestCase<?> testCase = suite.testCaseAt(indexWithinSuite);
+        return ! suite.linkedConversion().unsupportedTypes().contains(testCase.type());
     }
 
     protected static Collection<Parameterization> params(ConversionSuite<?>... suites) {
@@ -146,6 +175,11 @@ public abstract class ConversionTestBase {
         @Override
         public void syncConversions() {
             delegate.syncConversions();
+        }
+
+        @Override
+        public Set<? extends AkType> unsupportedTypes() {
+            return delegate.unsupportedTypes();
         }
 
         NoCheckLinkedConversion(LinkedConversion<?> delegate) {

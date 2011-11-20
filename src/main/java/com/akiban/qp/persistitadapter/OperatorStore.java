@@ -95,7 +95,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         IndexRowType indexType = tableType.indexRowType(index);
         IndexBound bound = new IndexBound(new NewRowBackedIndexRow(tableType, new LegacyRowWrapper(oldRowData, this), index),
                                           ConstantColumnSelector.ALL_ON);
-        IndexKeyRange range = new IndexKeyRange(bound, true, bound, true);
+        IndexKeyRange range = IndexKeyRange.bounded(indexType, bound, true, bound, true);
 
         Operator indexScan = indexScan_Default(indexType, false, range);
         Operator scanOp;

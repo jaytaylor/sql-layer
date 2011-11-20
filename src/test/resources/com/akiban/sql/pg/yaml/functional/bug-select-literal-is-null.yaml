@@ -1,0 +1,5 @@
+# Select of literal is null fails
+---
+- Statement: SELECT null IS NULL
+- output: [[1]]
+...

@@ -236,6 +236,7 @@ public enum ErrorCode {
     ORDER_GROUP_BY_INTEGER_OUT_OF_RANGE("42", "50F", Importance.DEBUG, OrderGroupByIntegerOutOfRange.class),
     MISSING_GROUP_INDEX_JOIN("42", "510", Importance.DEBUG, MissingGroupIndexJoinTypeException.class),
     TABLE_INDEX_JOIN        ("42", "511", Importance.DEBUG, TableIndexJoinTypeException.class),
+    INSERT_WRONG_COUNT      ("42", "512", Importance.DEBUG, InsertWrongCountException.class),
 
     // Class 44 - with check option violation
     
@@ -343,7 +344,7 @@ public enum ErrorCode {
     UNABLE_TO_EXPLAIN       ("56", "000", Importance.DEBUG, UnableToExplainException.class),
 
     // Class 57 - Insert, Update, Delete processing exceptions
-    NO_SUCH_ROW             ("57", "001", Importance.DEBUG,  NoSuchRowException.class),
+    NO_SUCH_ROW             ("57", "001", Importance.DEBUG, NoSuchRowException.class),
     CONCURRENT_MODIFICATION ("57", "002", Importance.DEBUG, ConcurrentScanAndUpdateException.class),
     NO_ROWS_UPDATED         ("57", "003", Importance.DEBUG, NoRowsUpdatedException.class),    
     TOO_MANY_ROWS_UPDATED   ("57", "004", Importance.DEBUG, TooManyRowsUpdatedException.class),  

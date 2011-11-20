@@ -49,6 +49,7 @@ import org.slf4j.LoggerFactory;
 import java.net.*;
 import java.io.*;
 import java.util.*;
+import org.joda.time.DateTime;
 
 /**
  * Connection to a Postgres server client.
@@ -211,8 +212,10 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                         break;
                     }
                 } catch (QueryCanceledException ex) {
-                    logger.warn(ex.getMessage());
-                    logger.warn("StackTrace: {}", ex);
+                    if (!reqs.config().testing()) {
+                        logger.warn(ex.getMessage());
+                        logger.warn("StackTrace: {}", ex);
+                    }
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
                     sendErrorResponse(type, ex, ErrorCode.QUERY_CANCELED, message);
                 } catch (InvalidOperationException ex) {
@@ -343,6 +346,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         status.put("server_encoding", messenger.getEncoding());
         status.put("server_version", "8.4.7"); // Not sure what the min it'll accept is.
         status.put("session_authorization", user);
+        status.put("DateStyle", "ISO, MDY");
         
         {
             messenger.beginMessage(PostgresMessages.AUTHENTICATION_TYPE.code());
@@ -828,11 +832,11 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     @Override
     public Object getEnvironmentValue(EnvironmentExpressionSetting setting) {
         switch (setting) {
-        case CURRENT_DATE:
-            if (transactionStartTime != null)
-                return transactionStartTime;
+        case CURRENT_DATETIME:
+            if (transactionStartTime != null) 
+                return new DateTime(transactionStartTime.getTime());
             else
-                return new Date();
+                return new DateTime();
         case CURRENT_USER:
             return defaultSchemaName;
         case SESSION_USER:
