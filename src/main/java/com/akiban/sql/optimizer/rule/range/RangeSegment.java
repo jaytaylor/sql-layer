@@ -150,7 +150,7 @@ public final class RangeSegment {
      * @return whether the two points overlap
      */
     private static Boolean findOverlap(RangeEndpoint low, RangeEndpoint high, boolean loose) {
-        ComparisonResult comparison = compareEndpoints(low, high);
+        ComparisonResult comparison = RangeEndpoint.compareEndpoints(low, high);
         switch (comparison) {
         case GT_BARELY: return loose;             // low > high only because of inclusiveness. Use the looseness.
         case EQ:        return low.isInclusive(); // if they're (both) exclusive, it's a discontinuity
@@ -192,7 +192,7 @@ public final class RangeSegment {
         // to GT
         if (start == null || end == null)
             return null;
-        ComparisonResult comparison = compareEndpoints(start, end);
+        ComparisonResult comparison = RangeEndpoint.compareEndpoints(start, end);
         switch (comparison) {
         case GT:
         case GT_BARELY:
@@ -223,57 +223,6 @@ public final class RangeSegment {
                 resultExpression,
                 resultInclusive
         );
-    }
-
-    static ComparisonResult compareObjects(Object one, Object two) {
-        // if both are null, they're equal. Otherwise, at most one can be null; if either is null, we know the
-        // answer. Otherwise, we know neither is null, and we can test their values (after checking the classes)
-        if (one == two)
-            return ComparisonResult.EQ;
-        if (one == null)
-            return ComparisonResult.LT;
-        if (two == null)
-            return ComparisonResult.GT;
-        if (!one.getClass().equals(two.getClass()) || !Comparable.class.isInstance(one))
-            return ComparisonResult.INVALID;
-        Comparable oneT = (Comparable) one;
-        Comparable twoT = (Comparable) two;
-        @SuppressWarnings("unchecked") // we know that oneT and twoT are both Comparables of the same class
-        int compareResult = (oneT).compareTo(twoT);
-        if (compareResult < 0)
-            return ComparisonResult.LT;
-        else if (compareResult > 0)
-            return ComparisonResult.GT;
-        else
-            return ComparisonResult.EQ;
-    }
-
-    /**
-     * Returns whether the two endpoints are LT, GT or EQ to each other.
-     * @param point1 the first point
-     * @param point2 the second point
-     * @return LT if point1 is less than point2; GT if point1 is greater than point2; EQ if point1 is greater than
-     * point2; and INVALID if the two points can't be compared
-     */
-    static ComparisonResult compareEndpoints(RangeEndpoint point1, RangeEndpoint point2)
-    {
-        if (point1.equals(point2))
-            return ComparisonResult.EQ;
-        // At this point we know they're not both upper wild. If either one is, we know the answer.
-        if (point1.isUpperWild())
-            return ComparisonResult.GT;
-        if (point2.isUpperWild())
-            return ComparisonResult.LT;
-
-        // neither is wild
-        ComparisonResult comparison = compareObjects(point1.getValue(), point2.getValue());
-        if (comparison == ComparisonResult.EQ && (point1.isInclusive() != point2.isInclusive())) {
-            if (point1.isInclusive())
-                return ComparisonResult.LT_BARELY;
-            assert point2.isInclusive() : point2;
-            return ComparisonResult.GT_BARELY;
-        }
-        return comparison;
     }
 
     public RangeEndpoint getStart() {
@@ -337,7 +286,7 @@ public final class RangeSegment {
         protected abstract Object select(Object one, Object two, ComparisonResult comparison);
 
         public Object get(Object one, Object two) {
-            ComparisonResult comparisonResult = RangeSegment.compareObjects(one, two);
+            ComparisonResult comparisonResult = RangeEndpoint.compareObjects(one, two);
             switch (comparisonResult) {
             case EQ:
                 return one;
@@ -356,30 +305,12 @@ public final class RangeSegment {
         private static final Object INVALID_COMPARISON = new Object();
     }
 
-    private enum ComparisonResult {
-        LT,
-        LT_BARELY,
-        GT,
-        GT_BARELY,
-        EQ,
-        INVALID
-        ;
-
-        public ComparisonResult normalize() {
-            switch (this) {
-            case LT_BARELY: return LT;
-            case GT_BARELY: return GT;
-            default: return this;
-            }
-        }
-    }
-
     private static final Comparator<? super RangeSegment> RANGE_SEGMENTS_BY_START = new Comparator<RangeSegment>() {
         @Override
         public int compare(RangeSegment segment1, RangeSegment segment2) {
             RangeEndpoint start1 = segment1.getStart();
             RangeEndpoint start2 = segment2.getStart();
-            ComparisonResult comparisonResult = RangeSegment.compareEndpoints(start1, start2);
+            ComparisonResult comparisonResult = RangeEndpoint.compareEndpoints(start1, start2);
             switch (comparisonResult) {
             case EQ: return 0;
             case LT_BARELY:
