@@ -267,6 +267,9 @@ public class IndexGoal implements Comparator<IndexScan>
                 }
                 break try_sorted;
             }
+            if ((idx > 0) && (idx < indexOrdering.size()) && reverse.get(idx))
+                // Reverse after ORDER BY if reversed last one.
+                reverse.set(idx, indexOrdering.size(), true);
             for (int i = 0; i < reverse.size(); i++) {
                 if (reverse.get(i)) {
                     OrderByExpression indexColumn = indexOrdering.get(i);
