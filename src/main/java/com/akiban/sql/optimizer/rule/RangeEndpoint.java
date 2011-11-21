@@ -23,6 +23,7 @@ public abstract class RangeEndpoint {
     public abstract ConstantExpression getValueExpression();
     public abstract Object getValue();
     public abstract boolean isInclusive();
+    public abstract String describeValue();
 
     private RangeEndpoint() {}
 
@@ -68,6 +69,11 @@ public abstract class RangeEndpoint {
         public String toString() {
             return "(*)";
         }
+
+        @Override
+        public String describeValue() {
+            return "*";
+        }
     }
 
     private static class ValueEndpoint extends RangeEndpoint {
@@ -95,6 +101,12 @@ public abstract class RangeEndpoint {
         @Override
         public String toString() {
             return valueExpression + (inclusive ? " inclusive" : " exclusive");
+        }
+
+        @Override
+        public String describeValue() {
+            Object value = getValue();
+            return value == null ? "NULL" : value.toString();
         }
 
         @Override

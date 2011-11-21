@@ -301,6 +301,10 @@ public class IndexScan extends BasePlanNode
             str.append((highInclusive) ? "<=" : "<");
             str.append(highComparand);
         }
+        if (conditionRange != null) {
+            str.append(", UNIONs of ");
+            str.append(conditionRange.describeRanges());
+        }
         str.append(")");
         return str.toString();
     }

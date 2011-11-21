@@ -108,6 +108,10 @@ public final class Range {
         return columnExpression;
     }
 
+    public String describeRanges() {
+        return segments.toString();
+    }
+
     @Override
     public String toString() {
         return "Range " + columnExpression + ' ' + segments;

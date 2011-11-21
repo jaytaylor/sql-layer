@@ -286,7 +286,14 @@ public final class RangeSegment {
 
     @Override
     public String toString() {
-        return start + " to " + end;
+        StringBuilder sb = new StringBuilder();
+        sb.append(start.describeValue());
+        sb.append(start.isInclusive() ? " ≤ _ " : " < _ ");
+        if (!end.isUpperWild()) {
+            sb.append(end.isInclusive() ? "≤ " : "< ");
+            sb.append(end.describeValue());
+        }
+        return sb.toString();
     }
 
     @Override
