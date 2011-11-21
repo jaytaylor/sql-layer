@@ -32,10 +32,17 @@ import java.util.regex.Pattern;
 
 public class StrToDateExpression extends AbstractBinaryExpression
 {
+    /**
+     * Specifiers for str_to_date
+     * See http://dev.mysql.com/doc/refman/5.5/en/date-and-time-functions.html
+     */    
     protected static enum Field
     {
 
-        a // abbre. abbWeekday name (Sun, Sat,...)
+        /**
+         * abbreviated weekday name: Sun, Sat, Fri, ...
+         */
+        a 
         {
             @Override
             public long [] get(String str)
@@ -49,7 +56,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 1;
             }
         },
-        b // abbre. month name (Jan, Dec ,...)
+        
+        /**
+         * abbreviated month name: Dec, Nov, Oct, ...
+         */
+        b 
         {
             @Override
             public long [] get(String str)
@@ -63,7 +74,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 1;
             }
         },
-        c // month numeric
+        
+        /**
+         * month in numeric: 12, 11, 10, ...
+         */
+        c 
         {
             @Override
             public long [] get(String str)
@@ -78,7 +93,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 1;
             }
         },
-        D // day with suffix (of month)
+        
+        /**
+         * day with suffix: 31st, 30th, 29th, ...
+         */
+        D 
         {
             @Override
             public long [] get(String str)
@@ -92,7 +111,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 1;
             }
         },
-        d // day numeric
+        
+        /**
+         * day in numeric: 31, 30, 29, ...
+         */
+        d 
         {
             @Override
             public long [] get(String str)
@@ -107,7 +130,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 1;
             }
         },
-        e // same as d
+        
+        /**
+         * same as d: day in numeric
+         */
+        e 
         {
             @Override
             public long [] get(String str)
@@ -122,7 +149,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 1;
             }
         },
-        f // micro secs
+        
+        /**
+         * micro seconds
+         */
+        f 
         {
             @Override
             public long [] get(String str)
@@ -135,7 +166,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 2;
             }
         },
-        H // 24-h hour
+        
+        /**
+         * hour in 24-hr format
+         */
+        H 
         {
             @Override
             public long [] get(String str)
@@ -150,7 +185,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 2;
             }
         },
-        h // 12-h hour
+        
+        /**
+         * hour in 12-hr format
+         */
+        h 
         {
             @Override
             public long [] get(String str)
@@ -165,7 +204,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 2;
             }
         },
-        I // same as h
+        
+        /**
+         * I same as h: hour in 12-hr format
+         */
+        I 
         {
             @Override
             public long [] get(String str)
@@ -180,7 +223,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 2;
             }
         },
-        i //minute
+        
+        /**
+         * minute
+         */
+        i 
         {
             @Override
             public long [] get(String str)
@@ -195,7 +242,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 2;
             }
         },
-        j // day of year
+        
+        /**
+         * day of year in numeric
+         */
+        j 
         {
             @Override
             public long [] get(String str)
@@ -209,8 +260,13 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 1;
             }
         },
+        
         // TODO: k, l same as H, h
-        M // Month January, ...
+        
+        /**
+         * month name: December, November, ...
+         */
+        M 
         {
             @Override
             public long [] get(String str)
@@ -226,7 +282,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 1;
             }
         },
-        m // month numeric
+        
+        /**
+         * month in numeric: 12, 11, 10, ...
+         */
+        m 
         {
             @Override
             public long [] get(String str)
@@ -241,7 +301,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 1;
             }
         },
-        p // pm or am
+        
+        /**
+         * specify pm or am
+         */        
+        p 
         {
             @Override
             public long [] get (String str)
@@ -255,7 +319,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 2;
             }
         },
-        r // Time hh:mm:ss 12 hr format
+        
+        /**
+         * Time hh:mm:ss 12hr format
+         */
+        r 
         {
             @Override
             public long [] get(String str)
@@ -270,6 +338,29 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 2;
             }
         },
+   
+        /**
+         * second
+         */
+        S // second, same as S
+        {
+            @Override
+            public long [] get(String str)
+            {
+                int i;
+                return new long[] { Long.parseLong(str.substring(0,i = 2 <= str.length() ? 2 :1)), i};
+            }
+
+             @Override
+            public int getFieldType ()
+            {
+                 return 2;
+            }
+        },
+        
+        /**
+         * second, same as S
+         */
         s // second, same as S
         {
             @Override
@@ -285,7 +376,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 2;
             }
         },
-        T // time in 24 hr (similar to r)
+        
+        /**
+         * Time: hh:mm:ss in 24hr format.
+         */
+        T 
         {
             @Override
             public long [] get(String str)
@@ -299,7 +394,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 2;
             }
         },
-        U // week of year, sunday is the first day
+        
+        /**
+         * week of year, Sunday is the first day of week
+         */
+        U 
         {
             @Override
             public long [] get(String str)
@@ -314,7 +413,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 1;
             }
         },
-        u // week of yr, monday is the first day
+        
+        /**
+         * week of year, Monday is the first day of week
+         */
+        u 
         {
             @Override
             public long [] get(String str)
@@ -329,6 +432,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 1;
             }
         },
+        
+        /**
+         * week: 0, ....53: where Sunday is the first day
+         * to be used with %X
+         */
         V // (0 ...53) where Sunday is the first day, use with X
         {
             @Override
@@ -344,7 +452,12 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 1;
             }
         },
-        v // ... use with x
+        
+        /**
+         * week 0, ...53: where Monday is the first day
+         * to be used with %x
+         */
+        v 
         {
             @Override
             public long [] get(String str)
@@ -359,7 +472,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 1;
             }
         },
-        W // Weekday name : Sunday, Saturday,.
+        
+        /**
+         * week day name: Sunday, Saturday, ...
+         */
+        W 
         {
             @Override
             public long [] get(String str)
@@ -373,7 +490,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 1;
             }
         },
-        w // day of week
+        
+        /**
+         * week day in numeric: Sunday = 0, .... Saturday = 6
+         */
+        w 
         {
             @Override
             public long [] get(String str)
@@ -387,7 +508,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 1;
             }
         },
-        X // year for the week, always use with W
+        
+        /**
+         * year for the week, to be used with %V: Sunday is the first day
+         */
+        X 
         {
             @Override
             public long [] get(String str)
@@ -401,7 +526,29 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 1;
             }
         },
-        y // year , 2 digits
+        
+        /**
+         * year for the week, to be used with %v: Monday is the first day
+         */
+        x 
+        {
+            @Override
+            public long [] get(String str)
+            {
+                throw new UnsupportedOperationException ("year week is not supported yet");
+            }
+
+            @Override
+            public int getFieldType ()
+            {
+                 return 1;
+            }
+        },
+        
+        /**
+         * year : 2 digits, relative to 2000
+         */
+        y 
         {
             @Override
             public long [] get(String str)
@@ -416,7 +563,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
                  return 1;
             }
         },
-        Y // year , 4 digits
+        
+        /**
+         *  year: 4 digits 
+         */
+        Y 
         {
             @Override
             public long [] get(String str)
@@ -433,7 +584,10 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
         },
 
-        percent // literal %
+        /**
+         * literal %
+         */
+        percent 
         {
             @Override
             public long [] get(String str)
@@ -446,8 +600,8 @@ public class StrToDateExpression extends AbstractBinaryExpression
             {
                  throw new UnsupportedOperationException("percent is not supported yet");
             }
-        }
-        ;
+        };
+        
         abstract long [] get(String str);
         abstract int getFieldType ();
 
@@ -513,10 +667,17 @@ public class StrToDateExpression extends AbstractBinaryExpression
             else return new ValueHolder(topType, l);
         }
 
+        /**
+         * 
+         * @param str
+         * @param format
+         * @return match str with format to get date/time info, enconde to appropriate type and return long
+         */
         private long getDate(String str, String format) 
         {
             // trim leading/trailing in str.
             str = str.trim();
+           
             // split format
             String formatList[] = format.split("\\%");
 
@@ -554,18 +715,19 @@ public class StrToDateExpression extends AbstractBinaryExpression
                 valuesMap.put(field, field.get(str)[0]);
 
             }
-            catch (IllegalStateException iexc)
+            catch (IllegalStateException iexc) // str and format do not match
             {
                 return -1;
             }
-            catch (NullPointerException nex)
+            catch (NullPointerException nex) // str does not contains enough info specified by format
             {
                 return -1;
             }
-            catch (NumberFormatException nbEx)
+            catch (NumberFormatException nbEx) // str contains bad input, ie. str_to_date("33-12-2009", "%d-%m-%Y")
             {
                 return -1;
             }
+            
             Long y = 0L;
             Long m = 0L;
             Long d = 0L;
@@ -660,27 +822,22 @@ public class StrToDateExpression extends AbstractBinaryExpression
 
         private static boolean validYMD(long y, long m, long d)
         {
-            if (y < 0 || m < 0 || d < 0)
-                return false;
+            if (y < 0 || m < 0 || d < 0) return false;
             switch ((int) m)
             {
-                case 2:
-                    return d <= (y % 4 == 0 ? 29L : 28L);
+                case 2:     return d <= (y % 4 == 0 ? 29L : 28L);
                 case 4:
                 case 6:
                 case 9:
-                case 11:
-                    return d <= 30;
+                case 11:    return d <= 30;
                 case 3:
                 case 1:
                 case 5:
                 case 7:
                 case 8:
                 case 10:
-                case 12:
-                    return d <= 31;
-                default:
-                    return false;
+                case 12:    return d <= 31;
+                default:    return false;
             }
         }
 
@@ -727,5 +884,4 @@ public class StrToDateExpression extends AbstractBinaryExpression
         if (valueType() == AkType.NULL) return LiteralExpression.forNull().evaluation();
         return new InnerEvaluation(valueType(),childrenEvaluations());
     }
-
 }
