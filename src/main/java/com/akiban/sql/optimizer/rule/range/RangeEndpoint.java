@@ -18,13 +18,31 @@ package com.akiban.sql.optimizer.rule.range;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.plan.ConstantExpression;
 
-abstract class RangeEndpoint {
+public abstract class RangeEndpoint implements Comparable<RangeEndpoint> {
 
     public abstract boolean isUpperWild();
     public abstract ConstantExpression getValueExpression();
     public abstract Object getValue();
     public abstract boolean isInclusive();
     public abstract String describeValue();
+
+    @Override
+    public int compareTo(RangeEndpoint o) {
+        ComparisonResult comparison = compareEndpoints(this, o);
+        switch (comparison) {
+        case LT:
+        case LT_BARELY:
+            return -1;
+        case GT:
+        case GT_BARELY:
+            return 1;
+        case EQ:
+            return 0;
+        case INVALID:
+        default:
+            throw new IllegalComparisonException(this.getValue(), o.getValue());
+        }
+    }
 
     public static ValueEndpoint inclusive(ConstantExpression value) {
         return new ValueEndpoint(value, true);
@@ -184,5 +202,14 @@ abstract class RangeEndpoint {
 
         private ConstantExpression valueExpression;
         private boolean inclusive;
+    }
+
+    static class IllegalComparisonException extends RuntimeException {
+        private IllegalComparisonException(Object one, Object two) {
+            super(String.format("couldn't sort objects <%s> and <%s>",
+                    one,
+                    two
+            ));
+        }
     }
 }

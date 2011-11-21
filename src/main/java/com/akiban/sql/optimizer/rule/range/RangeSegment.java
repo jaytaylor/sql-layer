@@ -70,7 +70,7 @@ public final class RangeSegment {
     static List<RangeSegment> sortAndCombine(List<RangeSegment> segments) {
         try {
             Collections.sort(segments, RANGE_SEGMENTS_BY_START);
-        } catch (IllegalComparisonException e) {
+        } catch (RangeEndpoint.IllegalComparisonException e) {
             log.warn("illegal comparison in sorting/combining range segments", e);
             return null;
         }
@@ -308,26 +308,7 @@ public final class RangeSegment {
     private static final Comparator<? super RangeSegment> RANGE_SEGMENTS_BY_START = new Comparator<RangeSegment>() {
         @Override
         public int compare(RangeSegment segment1, RangeSegment segment2) {
-            RangeEndpoint start1 = segment1.getStart();
-            RangeEndpoint start2 = segment2.getStart();
-            ComparisonResult comparisonResult = RangeEndpoint.compareEndpoints(start1, start2);
-            switch (comparisonResult) {
-            case EQ: return 0;
-            case LT_BARELY:
-            case LT: return -1;
-            case GT_BARELY:
-            case GT: return 1;
-            default: throw new IllegalComparisonException(segment1, segment2);
-            }
+            return segment1.getStart().compareTo(segment2.getStart());
         }
     };
-
-    private static class IllegalComparisonException extends RuntimeException {
-        public IllegalComparisonException(Object one, Object two) {
-            super(String.format("couldn't sort objects <%s> and <%s>",
-                    one,
-                    two
-            ));
-        }
-    }
 }
