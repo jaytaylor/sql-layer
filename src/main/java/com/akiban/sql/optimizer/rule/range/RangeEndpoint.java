@@ -44,6 +44,10 @@ public abstract class RangeEndpoint implements Comparable<RangeEndpoint> {
         }
     }
 
+    public ComparisonResult comparePreciselyTo(RangeEndpoint other) {
+        return compareEndpoints(this, other);
+    }
+
     public static ValueEndpoint inclusive(ConstantExpression value) {
         return new ValueEndpoint(value, true);
     }
