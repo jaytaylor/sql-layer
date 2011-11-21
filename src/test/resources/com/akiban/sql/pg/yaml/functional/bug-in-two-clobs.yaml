@@ -1,6 +1,6 @@
 # Problem with IN function with two literal clob arguments
 ---
-- Statement: CREATE TABLE t (clob_field clob)
+- CreateTable: t (clob_field clob)
 ---
 - Statement: INSERT INTO t VALUES ('dead')
 ---

@@ -1,6 +1,6 @@
 # MIN of REAL fails
 ---
-- Statement: CREATE TABLE t (real_field real)
+- CreateTable: t (real_field real)
 ---
 - Statement: SELECT MIN(real_field) FROM t
 - output: [[null]]

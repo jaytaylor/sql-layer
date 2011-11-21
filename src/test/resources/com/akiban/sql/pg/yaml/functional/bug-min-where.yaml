@@ -1,6 +1,6 @@
 # MIN in WHERE clause fails
 ---
-- Statement: CREATE TABLE t (bigint_field bigint)
+- CreateTable: t (bigint_field bigint)
 ---
 - Statement: SELECT * FROM t WHERE MIN(bigint_field) > 0
 - row_count: 0

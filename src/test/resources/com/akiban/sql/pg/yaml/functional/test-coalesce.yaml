@@ -122,7 +122,7 @@
 
 # blob
 ---
-- Statement: CREATE TABLE blobs (x blob, y blob)
+- CreateTable: blobs (x blob, y blob)
 ---
 - Statement: INSERT INTO blobs VALUES (null, null)
 ---
@@ -137,7 +137,7 @@
 
 # clob
 ---
-- Statement: CREATE TABLE clobs (x clob, y clob)
+- CreateTable: clobs (x clob, y clob)
 ---
 - Statement: INSERT INTO clobs VALUES (null, null)
 ---
@@ -152,7 +152,7 @@
 
 # time
 ---
-- Statement: CREATE TABLE times (x time, y time)
+- CreateTable: times (x time, y time)
 ---
 - Statement: INSERT INTO times VALUES (null, null)
 ---
@@ -167,7 +167,7 @@
 
 # timestamp
 ---
-- Statement: CREATE TABLE timestamps (x timestamp, y timestamp)
+- CreateTable: timestamps (x timestamp, y timestamp)
 ---
 - Statement: INSERT INTO timestamps VALUES (null, null)
 ---

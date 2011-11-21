@@ -2,7 +2,7 @@
 # BUG: Gets an IndexOutOfBoundsException rather than a friendly message,
 # and the wrong error code
 ---
-- Statement: CREATE TABLE t (int_field int)
+- CreateTable: t (int_field int)
 ---
 - Statement: INSERT INTO t (int_field) VALUES (1, 2)
 - error: [42000]

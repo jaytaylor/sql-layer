@@ -1,4 +1,4 @@
 # The tinyint data type is not supported
 ---
-- Statement: CREATE TABLE t (tinyint_field tinyint)
+- CreateTable: t (tinyint_field tinyint)
 ...

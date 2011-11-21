@@ -1,6 +1,6 @@
 # AVG of REAL is not supported
 ---
-- Statement: CREATE TABLE t (real_field real)
+- CreateTable: t (real_field real)
 ---
 - Statement: SELECT AVG(real_field) FROM t
 - output: [[null]]

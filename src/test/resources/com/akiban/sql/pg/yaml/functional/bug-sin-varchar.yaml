@@ -1,6 +1,6 @@
 # SIN of VARCHAR produces wrong error
 ---
-- Statement: CREATE TABLE t (varchar_field varchar(32))
+- CreateTable: t (varchar_field varchar(32))
 ---
 - Statement: INSERT INTO t VALUES ('abc')
 ---

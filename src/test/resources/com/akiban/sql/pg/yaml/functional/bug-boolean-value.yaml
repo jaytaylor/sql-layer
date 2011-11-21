@@ -1,6 +1,6 @@
 # Retrieving boolean value returns wrong value
 ---
-- Statement: CREATE TABLE t (boolean_field boolean)
+- CreateTable: t (boolean_field boolean)
 ---
 - Statement: INSERT INTO t VALUES (1)
 ---

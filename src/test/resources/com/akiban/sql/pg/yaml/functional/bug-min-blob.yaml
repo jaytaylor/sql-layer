@@ -1,6 +1,6 @@
 # MIN of BLOB fails
 ---
-- Statement: CREATE TABLE t (blob_field blob)
+- CreateTable: t (blob_field blob)
 ---
 - Statement: SELECT MIN(blob_field) FROM t
 - output: [[null]]

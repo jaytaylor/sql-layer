@@ -1,6 +1,6 @@
 # MIN of CLOB fails
 ---
-- Statement: CREATE TABLE t (clob_field clob)
+- CreateTable: t (clob_field clob)
 ---
 - Statement: SELECT MIN(clob_field) FROM t
 - output: [[null]]
