@@ -24,10 +24,11 @@ import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.FunctionCondition;
 import com.akiban.sql.optimizer.plan.LogicalFunctionCondition;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public final class ColumnRanges {
 
@@ -66,7 +67,7 @@ public final class ColumnRanges {
         List<RangeSegment> combinedSegments = combineBool(left, right, true);
         if (combinedSegments == null)
             return null;
-        List<ConditionExpression> combinedConditions = new ArrayList<ConditionExpression>(left.getConditions());
+        Set<ConditionExpression> combinedConditions = new HashSet<ConditionExpression>(left.getConditions());
         combinedConditions.addAll(right.getConditions());
         return new ColumnRanges(left.getColumnExpression(), combinedConditions, combinedSegments);
     }
@@ -113,11 +114,32 @@ public final class ColumnRanges {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ColumnRanges that = (ColumnRanges) o;
+
+        return columnExpression.equals(that.columnExpression)
+                && rootConditions.equals(that.rootConditions)
+                && segments.equals(that.segments);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = columnExpression.hashCode();
+        result = 31 * result + rootConditions.hashCode();
+        result = 31 * result + segments.hashCode();
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "Range " + columnExpression + ' ' + segments;
     }
 
-    public ColumnRanges(ColumnExpression columnExpression, Collection<? extends ConditionExpression> rootConditions,
+    public ColumnRanges(ColumnExpression columnExpression, Set<? extends ConditionExpression> rootConditions,
                         List<RangeSegment> segments)
     {
         this.columnExpression = columnExpression;
@@ -127,7 +149,7 @@ public final class ColumnRanges {
 
     public ColumnRanges(ColumnExpression columnExpression, ConditionExpression rootCondition,
                         List<RangeSegment> segments) {
-        this(columnExpression, Collections.singletonList(rootCondition), segments);
+        this(columnExpression, Collections.singleton(rootCondition), segments);
     }
 
     private static ColumnRanges comparisonToRange(ComparisonCondition comparisonCondition) {
@@ -156,6 +178,6 @@ public final class ColumnRanges {
     }
 
     private ColumnExpression columnExpression;
-    private Collection<? extends ConditionExpression> rootConditions;
+    private Set<? extends ConditionExpression> rootConditions;
     private List<RangeSegment> segments;
 }

@@ -44,23 +44,23 @@ final class TUtils {
         return new ConstantExpression(value, AkType.LONG);
     }
 
-    public ConditionExpression compare(ColumnExpression column, Comparison comparison, ConstantExpression value) {
+    public static ConditionExpression compare(ColumnExpression column, Comparison comparison, ConstantExpression value) {
         return new ComparisonCondition(comparison, column, value, null, null);
     }
 
-    public ConditionExpression isNull(ColumnExpression column) {
+    public static ConditionExpression isNull(ColumnExpression column) {
         return new FunctionCondition("isNull", Collections.<ExpressionNode>singletonList(column), null, null);
     }
 
-    public ExpressionNode or(ConditionExpression left, ConditionExpression right) {
+    public static ExpressionNode or(ConditionExpression left, ConditionExpression right) {
         return new LogicalFunctionCondition("or", Arrays.asList(left, right), null, null);
     }
 
-    public ExpressionNode and(ConditionExpression left, ConditionExpression right) {
+    public static ExpressionNode and(ConditionExpression left, ConditionExpression right) {
         return new LogicalFunctionCondition("and", Arrays.asList(left, right), null, null);
     }
 
-    public ConditionExpression sin(ColumnExpression column) {
+    public static ConditionExpression sin(ColumnExpression column) {
         return new FunctionCondition("sin", Collections.<ExpressionNode>singletonList(column), null, null);
     }
 
@@ -84,8 +84,8 @@ final class TUtils {
         return RangeEndpoint.exclusive(constant(value));
     }
 
-    private static final ColumnExpression lastName;
-    private static final ColumnExpression firstName;
+    public static final ColumnExpression lastName;
+    public static final ColumnExpression firstName;
 
     static {
         AkibanInformationSchema ais = AISBBasedBuilder.create("s")
