@@ -166,11 +166,16 @@ public class FunctionsTypeComputer extends AISTypeComputer
             if (arg instanceof SQLToJavaValueNode) {
                 SQLToJavaValueNode jarg = (SQLToJavaValueNode)arg;
                 ValueNode sqlArg = jarg.getSQLValueNode();
-                ValueNode cast = (ValueNode)sqlArg.getNodeFactory()
-                    .getNode(NodeTypes.CAST_NODE, 
-                             sqlArg, fromExpressionType(castType),
-                             sqlArg.getParserContext());
-                jarg.setSQLValueNode(cast);
+                DataTypeDescriptor sqlType = fromExpressionType(castType);
+                if (sqlArg instanceof ParameterNode) {
+                    sqlArg.setType(sqlType);
+                }
+                else {
+                    ValueNode cast = (ValueNode)sqlArg.getNodeFactory()
+                        .getNode(NodeTypes.CAST_NODE, 
+                                 sqlArg, sqlType, sqlArg.getParserContext());
+                    jarg.setSQLValueNode(cast);
+                }
             }
             argTypes.set(i, castType);
         }
@@ -248,6 +253,10 @@ public class FunctionsTypeComputer extends AISTypeComputer
             if (value instanceof UntypedNullConstantNode) {
                 // Give composer a change to establish type of null.
                 return ExpressionTypes.NULL;
+            }
+            if (value instanceof ParameterNode) {
+                // Likewise parameters.
+                return ExpressionTypes.UNSUPPORTED;
             }
         }
         return toExpressionType(type);
