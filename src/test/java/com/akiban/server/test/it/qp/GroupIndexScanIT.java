@@ -17,7 +17,7 @@ package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
@@ -39,7 +39,7 @@ public final class GroupIndexScanIT extends ITBase {
 
     @Test
     public void scanAtLeastO () {
-        Operator plan = API.indexScan_Default(giRowType, false, null, uTableRowType(o));
+        Operator plan = API.indexScan_Default(giRowType, false, unboundedRange(giRowType), uTableRowType(o));
         compareResults(plan,
                 array("01-01-2001", null),
                 array("02-02-2002", "1111"),
@@ -50,7 +50,7 @@ public final class GroupIndexScanIT extends ITBase {
 
     @Test
     public void scanAtLeastI () {
-        Operator plan = API.indexScan_Default(giRowType, false, null, uTableRowType(i));
+        Operator plan = API.indexScan_Default(giRowType, false, unboundedRange(giRowType), uTableRowType(i));
         compareResults(plan,
                 array("02-02-2002", "1111"),
                 array("03-03-2003", null),
@@ -60,8 +60,8 @@ public final class GroupIndexScanIT extends ITBase {
 
     @Test
     public void defaultDepth() {
-        Operator explicit = API.indexScan_Default(giRowType, false, null, uTableRowType(i));
-        Operator defaulted = API.indexScan_Default(giRowType, false, null);
+        Operator explicit = API.indexScan_Default(giRowType, false, unboundedRange(giRowType), uTableRowType(i));
+        Operator defaulted = API.indexScan_Default(giRowType, false, unboundedRange(giRowType));
 
         List<List<?>> explicitList = planToList(explicit);
         List<List<?>> defaultedList = planToList(defaulted);
@@ -150,6 +150,11 @@ public final class GroupIndexScanIT extends ITBase {
             listList.add(Arrays.asList(array));
         }
         return listList;
+    }
+
+    private IndexKeyRange unboundedRange(IndexRowType indexRowType)
+    {
+        return IndexKeyRange.unbounded(indexRowType);
     }
 
     private Integer c, o, i, h;

@@ -507,8 +507,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
                 branchLookup_Default(
                     indexScan_Default(
                         parentPidIndexType,
-                        true,
-                        null),
+                        true),
                     group,
                     parentPidIndexType,
                     parentRowType,

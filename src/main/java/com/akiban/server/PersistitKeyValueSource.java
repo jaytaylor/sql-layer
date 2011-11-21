@@ -36,6 +36,15 @@ public final class PersistitKeyValueSource implements ValueSource {
         attach(key, indexColumn.getPosition(), indexColumn.getColumn().getType().akType());
     }
 
+    public void attach(Key key, int depth, AkType type) {
+        if (type == AkType.INTERVAL)
+            throw new UnsupportedOperationException();
+        this.key = key;
+        this.key.indexTo(depth);
+        this.akType = type;
+        clear();
+    }
+
     // ValueSource interface
 
     @Override
@@ -158,17 +167,6 @@ public final class PersistitKeyValueSource implements ValueSource {
     @Override
     public String toString() {
         return key.toString() + " bound to depth " + key.getDepth();
-    }
-
-    // for use in this package
-
-    void attach(Key key, int depth, AkType type) {
-        if (type == AkType.INTERVAL)
-            throw new UnsupportedOperationException();
-        this.key = key;
-        this.key.indexTo(depth);
-        this.akType = type;
-        clear();
     }
 
     // for use by this class
