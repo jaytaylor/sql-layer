@@ -154,6 +154,7 @@ public class QueryCancelationIT extends PostgresServerITBase
         {
             paused = false;
             done = true;
+            interrupt();
             notify();
         }
 
