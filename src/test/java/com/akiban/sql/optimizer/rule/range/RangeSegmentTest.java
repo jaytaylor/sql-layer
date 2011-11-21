@@ -15,8 +15,6 @@
 
 package com.akiban.sql.optimizer.rule.range;
 
-import com.akiban.server.types.AkType;
-import com.akiban.sql.optimizer.plan.ConstantExpression;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -24,6 +22,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static com.akiban.sql.optimizer.rule.range.ExpressionBuilder.constant;
 import static com.akiban.util.AssertUtils.assertCollectionEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -316,19 +315,19 @@ public final class RangeSegmentTest {
         return new RangeSegment(start, end);
     }
 
-    private RangeEndpoint inclusive(Long value) {
-        return RangeEndpoint.inclusive(new ConstantExpression(value, AkType.LONG));
+    private RangeEndpoint inclusive(long value) {
+        return RangeEndpoint.inclusive(constant(value));
     }
 
-    private RangeEndpoint exclusive(Long value) {
-        return RangeEndpoint.exclusive(new ConstantExpression(value, AkType.LONG));
+    private RangeEndpoint exclusive(long value) {
+        return RangeEndpoint.exclusive(constant(value));
     }
 
     private RangeEndpoint inclusive(String value) {
-        return RangeEndpoint.inclusive(new ConstantExpression(value, AkType.VARCHAR));
+        return RangeEndpoint.inclusive(constant(value));
     }
 
     private RangeEndpoint exclusive(String value) {
-        return RangeEndpoint.exclusive(new ConstantExpression(value, AkType.VARCHAR));
+        return RangeEndpoint.exclusive(constant(value));
     }
 }

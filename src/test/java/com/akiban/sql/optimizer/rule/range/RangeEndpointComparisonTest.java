@@ -18,14 +18,13 @@ package com.akiban.sql.optimizer.rule.range;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.server.types.AkType;
-import com.akiban.sql.optimizer.plan.ConstantExpression;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
 
 import static com.akiban.sql.optimizer.rule.range.ComparisonResult.*;
+import static com.akiban.sql.optimizer.rule.range.ExpressionBuilder.constant;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(NamedParameterizedRunner.class)
@@ -96,18 +95,18 @@ public final class RangeEndpointComparisonTest {
     }
 
     private static RangeEndpoint inclusive(String value) {
-        return RangeEndpoint.inclusive(new ConstantExpression(value, AkType.VARCHAR));
+        return RangeEndpoint.inclusive(constant(value));
     }
 
     private static RangeEndpoint exclusive(String value) {
-        return RangeEndpoint.exclusive(new ConstantExpression(value, AkType.VARCHAR));
+        return RangeEndpoint.exclusive(constant(value));
     }
 
     private static RangeEndpoint inclusive(long value) {
-        return RangeEndpoint.inclusive(new ConstantExpression(value, AkType.LONG));
+        return RangeEndpoint.inclusive(constant(value));
     }
     private static RangeEndpoint exclusive(long value) {
-        return RangeEndpoint.exclusive(new ConstantExpression(value, AkType.LONG));
+        return RangeEndpoint.exclusive(constant(value));
     }
 
     private static String AARDVARK = "aardvark";

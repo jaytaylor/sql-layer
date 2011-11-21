@@ -60,6 +60,8 @@ public abstract class RangeEndpoint implements Comparable<RangeEndpoint> {
         return new ValueEndpoint(value, inclusive);
     }
 
+    private RangeEndpoint() {}
+
     /**
      * Returns whether the two endpoints are LT, GT or EQ to each other.
      * @param point1 the first point
@@ -87,8 +89,6 @@ public abstract class RangeEndpoint implements Comparable<RangeEndpoint> {
         }
         return comparison;
     }
-
-    private RangeEndpoint() {}
 
     private static ComparisonResult compareObjects(Object one, Object two) {
         // if both are null, they're equal. Otherwise, at most one can be null; if either is null, we know the
