@@ -16,35 +16,66 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.types.extract.LongExtractor;
+import com.akiban.junit.ParameterizationBuilder;
+import com.akiban.junit.Parameterization;
+import java.util.Collection;
+import org.junit.runner.RunWith;
+import com.akiban.junit.NamedParameterizedRunner;
+import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.AkType;
 import com.akiban.server.expression.Expression;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
-public class StrToDateExpressionTest
+@RunWith(NamedParameterizedRunner.class)
+public class StrToDateExpressionTest 
 {
-    @Test
-    public void testDateStrToDate ()
-    {
-        Expression strExp = new LiteralExpression(AkType.VARCHAR, "2009-12-28");
-        Expression frmExp = new LiteralExpression (AkType.VARCHAR, "%Y-%m-%d");
+    private String str;
+    private String format;
+    private String expected;
+    private AkType type;
 
-        Expression top = new StrToDateExpression(strExp, frmExp);
-        assertTrue(AkType.DATE == top.evaluation().eval().getConversionType());
-        assertEquals(2009L * 512 + 12L * 32 + 28L * 16, top.evaluation().eval().getDate());
+    public StrToDateExpressionTest (String str, String format, String expected, AkType type)
+    {
+        this.str = str;
+        this.format = format;
+        this.expected = expected;
+        this.type = type;
+    }
+
+    @NamedParameterizedRunner.TestParameters
+    public static Collection<Parameterization> params()
+    {
+        ParameterizationBuilder pb = new ParameterizationBuilder();
+
+        param(pb, "Test date to date, std delimeter", "2009-12-28", "%Y-%m-%d", "2009-12-28", AkType.DATE);
+        param(pb, "Test date to date, delimeter is [abc]", "2009abc12abc28", "%Yabc%mabc%d", "2009-12-28", AkType.DATE);
+        param(pb, "Test date to date, using different delimeters", "2009~12/28", "%Y~%m/%d", "2009-12-28", AkType.DATE);
+        param(pb, "Test date to date, no delimeters", "090812", "%y%d%m", "2009-12-08", AkType.DATE);
+        param(pb, "Test year to date", "2009", "%Y", "2009-00-00", AkType.DATE);
+        param(pb, "Test year-month to date", "09Mar", "%y%b", "2009-03-00", AkType.DATE);
+        param(pb, "Test year-mont-hour to datetime", "09 Mar13", "%y %b%H", "2009-03-00 13:00:00", AkType.DATETIME);
+        param(pb, "Test datetime to datetime, different dels", "09~23Mar=01455", "%y~%H%b=%d%i%s", "2009-03-01 23:45:05", AkType.DATETIME);
+        return pb.asList();
 
     }
 
-    @Test
-    public void testDateStrToDate2 ()
+    private static void param(ParameterizationBuilder pb, String testName, String str, String format, String expected, AkType type)
     {
-        Expression strExp = new LiteralExpression(AkType.VARCHAR, "2009abc12abc28");
-        Expression frmExp = new LiteralExpression (AkType.VARCHAR, "%Yabc%mabc%d");
-
-        Expression top = new StrToDateExpression(strExp, frmExp);
-        assertTrue(AkType.DATE == top.evaluation().eval().getConversionType());
-        assertEquals(2009L * 512 + 12L * 32 + 28L * 16, top.evaluation().eval().getDate());
+        pb.add(testName + ": str_to_date(" + str + ", " + format + ") = " + expected, str, format, expected, type);
     }
 
-    // TODO: need more tests ,
+    @Test
+    public void test ()
+    {
+        Expression strExp = new LiteralExpression(AkType.VARCHAR, str);
+        Expression fmExp = new LiteralExpression (AkType.VARCHAR, format);
+        Expression top = new StrToDateExpression(strExp, fmExp);
+
+        assertTrue(top.valueType() == type);
+        LongExtractor extractor = Extractors.getLongExtractor(type);
+        assertEquals(expected, extractor.asString(extractor.getLong(top.evaluation().eval())));
+    }   
+
 }

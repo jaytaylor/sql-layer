@@ -16,8 +16,11 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
@@ -32,6 +35,35 @@ import java.util.regex.Pattern;
 
 public class StrToDateExpression extends AbstractBinaryExpression
 {
+    public static final ExpressionComposer COMPOSER = new BinaryComposer ()
+    {
+        @Override
+        protected Expression compose(Expression first, Expression second)
+        {
+            return new StrToDateExpression(first, second);
+        }
+
+        @Override
+        protected ExpressionType composeType(ExpressionType first, ExpressionType second)
+        {
+            //TODO: can still return a TIME or TIMESTAMP depending on the format
+            // which can only be known at evaluation time.... => ????
+            if (first.getType() == AkType.NULL || second.getType() == AkType.NULL ) return ExpressionTypes.NULL;
+            else return ExpressionTypes.DATE;
+        }
+
+        @Override
+        public void argumentTypes(List<AkType> argumentTypes)
+        {
+            int size = argumentTypes.size();
+            if (size != 2)  throw new WrongExpressionArityException(2, size);
+
+            for (int n = 0; n < size; ++n)
+                argumentTypes.set(n, AkType.VARCHAR);
+        }
+
+    };
+
     /**
      * Specifiers for str_to_date
      * See http://dev.mysql.com/doc/refman/5.5/en/date-and-time-functions.html
@@ -660,6 +692,8 @@ public class StrToDateExpression extends AbstractBinaryExpression
         @Override
         public ValueSource eval()
         {
+            if (left().isNull() || right().isNull()) return NullValueSource.only();
+            
             ObjectExtractor<String> extractor = Extractors.getStringExtractor();
             long l = getDate(extractor.getObject(left()), extractor.getObject(right()));
 
@@ -685,11 +719,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
             Field field = null;
             try
             {
-                for (int n = 0; n < formatList.length - 2; ++n)
+                for (int n = 1; n < formatList.length - 1; ++n)
                 {
-                    String fName = formatList[n + 1].charAt(0) + "";
+                    String fName = formatList[n].charAt(0) + "";
                     field = Field.valueOf(fName);
-                    String del = formatList[n + 1].substring(1);
+                    String del = formatList[n].substring(1);
                     if (del.length() == 0)
                     {
                         long[] num = field.get(str);
@@ -740,7 +774,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
                 // date
                 case DATE:
                     if (valuesMap.containsKey(Field.y) && valuesMap.containsKey(Field.Y)
-                            || valuesMap.containsKey(Field.m) && valuesMap.containsKey(Field.M)
+                            || valuesMap.containsKey(Field.m) && valuesMap.containsKey(Field.M) && valuesMap.containsKey(Field.b)
                             || valuesMap.containsKey(Field.d) && valuesMap.containsKey(Field.D))
                         return -1;
                     // year
@@ -749,16 +783,17 @@ public class StrToDateExpression extends AbstractBinaryExpression
                     y = (y == null ? 0L : y);
                     // month
                     if ((m = valuesMap.get(Field.m)) == null)
-                        m = valuesMap.get(Field.Y);
+                        if ((m = valuesMap.get(Field.M)) == null)
+                            m = valuesMap.get(Field.b);
                     m = (m == null ? 0L : m);
-
+                    // day
                     if ((d = valuesMap.get(Field.d)) == null)
                         d = valuesMap.get(Field.D);
                     d = (d == null ? 0L : d);
-
+                    
                     // TODO: date specified by week,year and weekday
 
-                    return validYMD(y, m, d) ? y * 512 + m * 32 + d * 16 : -1;
+                    return validYMD(y, m, d) ? y * 512 + m * 32 + d : -1;
 
                 case TIME:
                     if (valuesMap.containsKey(Field.H) && valuesMap.containsKey(Field.h))
@@ -780,7 +815,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
 
                 default:
                     if (valuesMap.containsKey(Field.y) && valuesMap.containsKey(Field.Y)
-                            || valuesMap.containsKey(Field.m) && valuesMap.containsKey(Field.M)
+                            || valuesMap.containsKey(Field.m) && valuesMap.containsKey(Field.M) && valuesMap.containsKey(Field.b)
                             || valuesMap.containsKey(Field.d) && valuesMap.containsKey(Field.D))
                         return -1;
                     // year
@@ -789,9 +824,10 @@ public class StrToDateExpression extends AbstractBinaryExpression
                     y = (y == null ? 0L : y);
                     // month
                     if ((m = valuesMap.get(Field.m)) == null)
-                        m = valuesMap.get(Field.Y);
+                        if ((m = valuesMap.get(Field.M)) == null)
+                            m = valuesMap.get(Field.b);
                     m = (m == null ? 0L : m);
-
+                    // day
                     if ((d = valuesMap.get(Field.d)) == null)
                         d = valuesMap.get(Field.D);
                     d = (d == null ? 0L : d);
@@ -825,6 +861,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             if (y < 0 || m < 0 || d < 0) return false;
             switch ((int) m)
             {
+                case 0:     return d <= 31;
                 case 2:     return d <= (y % 4 == 0 ? 29L : 28L);
                 case 4:
                 case 6:
