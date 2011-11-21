@@ -122,9 +122,8 @@ public class ExpressionAssembler
         }
         else if (node instanceof IfElseExpression) {
             IfElseExpression ifElse = (IfElseExpression)node;
-            // TODO: Is this right?
             return functionsRegistry
-                .composer("ifThenElse")
+                .composer("if")
                 .compose(Arrays.asList(assembleExpression(ifElse.getTestCondition(), 
                                                           columnContext, 
                                                           subqueryAssembler),
