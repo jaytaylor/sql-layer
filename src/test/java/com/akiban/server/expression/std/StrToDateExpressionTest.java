@@ -57,8 +57,10 @@ public class StrToDateExpressionTest
         param(pb, "Test year-month to date", "09Mar", "%y%b", "2009-03-00", AkType.DATE);
         param(pb, "Test year-mont-hour to datetime", "09 Mar13", "%y %b%H", "2009-03-00 13:00:00", AkType.DATETIME);
         param(pb, "Test datetime to datetime, different dels", "09~23Mar=01455", "%y~%H%b=%d%i%s", "2009-03-01 23:45:05", AkType.DATETIME);
+        param(pb, "Test mis-matched str and format, expected null", "2009-12-30", "%Y/%m/%d", "", AkType.DATE);
+        param(pb, "Test hour-minute to time", "9-18", "%h-%i", "09:18:00", AkType.TIME);
+        param(pb, "Test time to time", "09569", "%H%i%s", "09:56:09", AkType.TIME);
         return pb.asList();
-
     }
 
     private static void param(ParameterizationBuilder pb, String testName, String str, String format, String expected, AkType type)
@@ -74,8 +76,12 @@ public class StrToDateExpressionTest
         Expression top = new StrToDateExpression(strExp, fmExp);
 
         assertTrue(top.valueType() == type);
-        LongExtractor extractor = Extractors.getLongExtractor(type);
-        assertEquals(expected, extractor.asString(extractor.getLong(top.evaluation().eval())));
-    }   
-
+        if (expected.equals(""))
+            assertTrue(top.evaluation().eval().isNull());
+        else
+        {
+            LongExtractor extractor = Extractors.getLongExtractor(type);
+            assertEquals(expected, extractor.asString(extractor.getLong(top.evaluation().eval())));
+        }
+    }
 }
