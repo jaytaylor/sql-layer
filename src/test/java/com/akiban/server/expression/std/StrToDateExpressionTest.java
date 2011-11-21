@@ -60,6 +60,8 @@ public class StrToDateExpressionTest
         param(pb, "Test mis-matched str and format, expected null", "2009-12-30", "%Y/%m/%d", "", AkType.DATE);
         param(pb, "Test hour-minute to time", "9-18", "%h-%i", "09:18:00", AkType.TIME);
         param(pb, "Test time to time", "09569", "%H%i%s", "09:56:09", AkType.TIME);
+        param(pb, "Test unparsable string", "abcd1208", "%Y%m%d", "", AkType.DATE);
+        param(pb, "Test duplicate fields, expecting null", "20090910", "%Y%y%m", "", AkType.DATE);
         return pb.asList();
     }
 
