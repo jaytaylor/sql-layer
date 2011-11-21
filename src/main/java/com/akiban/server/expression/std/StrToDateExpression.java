@@ -108,7 +108,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
                 return new long [] {abbMonth.get(str.substring(0, 3).toUpperCase()), 3};
             }
 
-             @Override
+            @Override
             public int getFieldType ()
             {
                  return 1;
@@ -228,7 +228,9 @@ public class StrToDateExpression extends AbstractBinaryExpression
             @Override
             public long [] get(String str)
             {
-                throw new UnsupportedOperationException("micro seconds is not supported yet");
+                int n = 0;
+                while (n < str.length() && Character.isDigit(str.charAt(n))) ++n;
+                return new long[] {month.get(str.substring(0, n).toUpperCase()),n};
             }
              @Override
             public int getFieldType ()
@@ -816,7 +818,12 @@ public class StrToDateExpression extends AbstractBinaryExpression
                 return Field.percent;
             }
         };
-        
+
+        /**
+         * parse str to get value for this field.
+         * return an array of long where array[0] is the parsed value, and array[1] is n where
+         * str.substring(0,n) contains the parsed value. This is used to remove parsed field from str.
+         */
         abstract long [] get(String str);
 
         /**
@@ -833,18 +840,20 @@ public class StrToDateExpression extends AbstractBinaryExpression
          *              %y and %Y  => %Y
          */
         abstract Field underlyingField ();
+
+        // class static data fields
         static protected HashMap<String, Integer> abbWeekday = new HashMap<String, Integer>();
         static protected HashMap<String, Integer> abbMonth = new HashMap<String, Integer>();
         static protected HashMap<String, Integer> month = new HashMap<String, Integer>();
         static
         {
-            abbWeekday.put("MON", 1);
-            abbWeekday.put("TUE", 2);
-            abbWeekday.put("WED", 3);
-            abbWeekday.put("THU", 4);
-            abbWeekday.put("FRI", 5);
-            abbWeekday.put("SAT", 6);
-            abbWeekday.put("SUN", 7);
+            abbWeekday.put("MON", 0);
+            abbWeekday.put("TUE", 1);
+            abbWeekday.put("WED", 2);
+            abbWeekday.put("THU", 3);
+            abbWeekday.put("FRI", 4);
+            abbWeekday.put("SAT", 5);
+            abbWeekday.put("SUN", 6);
 
             abbMonth.put("JAN", 1);
             abbMonth.put("FEB", 2);
@@ -956,10 +965,15 @@ public class StrToDateExpression extends AbstractBinaryExpression
             {
                 return -1;
             }
-            catch (NumberFormatException nbEx) // str contains bad input, ie. str_to_date("33-12-2009", "%d-%m-%Y")
+            catch (NumberFormatException nbEx) // str contains bad input, ie. str_to_date("33-abc-2009", "%d-%m-%Y")
             {
                 return -1;
             }
+            catch (ArrayIndexOutOfBoundsException oexc) // str does not contains enough info specified by format
+            {
+                return -1;
+            }
+
             
             Long y = 0L;
             Long m = 0L;
