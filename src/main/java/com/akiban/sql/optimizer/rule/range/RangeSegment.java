@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer.rule.range;
 
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.ConstantExpression;
+import com.akiban.util.ArgumentValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -261,6 +262,8 @@ public final class RangeSegment {
     }
 
     public RangeSegment(RangeEndpoint start, RangeEndpoint end) {
+        ArgumentValidation.notNull("start", start);
+        ArgumentValidation.notNull("end", end);
         this.start = start;
         this.end = end;
     }

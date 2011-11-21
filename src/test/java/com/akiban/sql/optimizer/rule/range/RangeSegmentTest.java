@@ -291,6 +291,16 @@ public final class RangeSegmentTest {
         assertNull("sorted list should be null", sorted);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void startIsNull() {
+        segment(null, inclusive(1));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void endIsNull() {
+        segment(inclusive(1), null);
+    }
+
     /**
      * checks sortAndCombine (aka sac) by sac'ing (a copy of) the given list, asserting that what comes out
      * is the same instance, and checking it for equality against a list created from the given expected RangeSegments.
