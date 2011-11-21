@@ -212,8 +212,10 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                         break;
                     }
                 } catch (QueryCanceledException ex) {
-                    logger.warn(ex.getMessage());
-                    logger.warn("StackTrace: {}", ex);
+                    if (!reqs.config().testing()) {
+                        logger.warn(ex.getMessage());
+                        logger.warn("StackTrace: {}", ex);
+                    }
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
                     sendErrorResponse(type, ex, ErrorCode.QUERY_CANCELED, message);
                 } catch (InvalidOperationException ex) {

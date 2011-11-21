@@ -46,6 +46,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     private final Object INTERNAL_LOCK = new Object();
     
     private volatile long queryTimeoutSec = -1L; // No timeout
+    private volatile boolean testing = false;
 
     @Override
     public long queryTimeoutSec()
@@ -57,6 +58,12 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     public void queryTimeoutSec(long queryTimeoutSec)
     {
         this.queryTimeoutSec = queryTimeoutSec;
+    }
+
+    @Override
+    public boolean testing()
+    {
+        return testing;
     }
 
     @Override
@@ -161,6 +168,12 @@ public class ConfigurationServiceImpl implements ConfigurationService,
     @Override
     public Class<ConfigurationService> castClass() {
         return ConfigurationService.class;
+    }
+
+    @Override
+    public void testing(boolean testing)
+    {
+        this.testing = testing;
     }
 
     private Map<String, Property> internalLoadProperties()

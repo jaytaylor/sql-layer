@@ -294,7 +294,7 @@ public class OperatorIT extends OperatorITBase
         Index idxOrderSalesman = orderSalesmanIndexRowType.index();
         IndexBound lo = indexBound(row(orderSalesmanIndexRowType, "jack"), columnSelector(idxOrderSalesman));
         IndexBound hi = indexBound(row(orderSalesmanIndexRowType, "tom"), columnSelector(idxOrderSalesman));
-        IndexKeyRange range = indexKeyRange(lo, true, hi, false);
+        IndexKeyRange range = indexKeyRange(orderSalesmanIndexRowType, lo, true, hi, false);
         Operator indexScan = indexScan_Default(orderSalesmanIndexRowType, false, range);
         // TODO: Can't compare rows, because we can't yet obtain fields from index rows. So compare hkeys instead
         String[] expected = new String[]{"{1,(long)2,2,(long)22}",
@@ -307,7 +307,7 @@ public class OperatorIT extends OperatorITBase
     {
         Index idxOrderSalesman = orderSalesmanIndexRowType.index();
         IndexBound tom = indexBound(row(orderSalesmanIndexRowType, "tom"), columnSelector(idxOrderSalesman));
-        IndexKeyRange matchTom = indexKeyRange(tom, true, tom, true);
+        IndexKeyRange matchTom = indexKeyRange(orderSalesmanIndexRowType, tom, true, tom, true);
         Operator indexScan = indexScan_Default(orderSalesmanIndexRowType, false, matchTom);
         Operator lookup = branchLookup_Default(indexScan,
                                                        coi,
@@ -327,7 +327,7 @@ public class OperatorIT extends OperatorITBase
         // Find customers associated with salesman tom
         Index idxOrderSalesman = orderSalesmanIndexRowType.index();
         IndexBound tom = indexBound(row(orderSalesmanIndexRowType, "tom"), columnSelector(idxOrderSalesman));
-        IndexKeyRange matchTom = indexKeyRange(tom, true, tom, true);
+        IndexKeyRange matchTom = indexKeyRange(orderSalesmanIndexRowType, tom, true, tom, true);
         Operator indexScan = indexScan_Default(orderSalesmanIndexRowType, false, matchTom);
         Operator ancestorLookup = ancestorLookup_Default(indexScan,
                                                                  coi,

@@ -79,7 +79,7 @@ public class GroupScanIT extends OperatorITBase
         // GroupCursor or GroupCursor.rebind).
         use(db);
         IndexBound tom = orderSalesmanIndexBound("tom");
-        IndexKeyRange indexKeyRange = new IndexKeyRange(tom, true, tom, true);
+        IndexKeyRange indexKeyRange = IndexKeyRange.bounded(orderSalesmanIndexRowType, tom, true, tom, true);
         Operator groupScan = indexScan_Default(orderSalesmanIndexRowType, false, indexKeyRange);
         Operator ancestorLookup = ancestorLookup_Default(groupScan,
                                                                  coi,
@@ -106,7 +106,7 @@ public class GroupScanIT extends OperatorITBase
         // GroupCursor or GroupCursor.rebind).
         use(db);
         IndexBound tom = orderSalesmanIndexBound("tom");
-        IndexKeyRange indexKeyRange = new IndexKeyRange(tom, true, tom, true);
+        IndexKeyRange indexKeyRange = IndexKeyRange.bounded(orderSalesmanIndexRowType, tom, true, tom, true);
         Operator groupScan = indexScan_Default(orderSalesmanIndexRowType, false, indexKeyRange);
         Operator lookup = branchLookup_Default(groupScan, coi, orderSalesmanIndexRowType, orderRowType, LookupOption.DISCARD_INPUT  );
         Cursor cursor = cursor(lookup, adapter);

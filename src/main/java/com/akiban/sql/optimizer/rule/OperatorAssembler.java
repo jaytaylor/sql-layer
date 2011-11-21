@@ -275,8 +275,8 @@ public class OperatorAssembler extends BaseRule
                 }
             }
             stream.operator = API.indexScan_Default(indexRowType, 
-                                                    indexScan.isReverseScan(),
                                                     assembleIndexKeyRange(indexScan, null),
+                                                    assembleIndexOrdering(indexScan, indexRowType),
                                                     selector);
             stream.rowType = indexRowType;
             stream.fieldOffsets = new IndexFieldOffsets(indexScan, indexRowType);
@@ -756,9 +756,10 @@ public class OperatorAssembler extends BaseRule
             List<ExpressionNode> equalityComparands = index.getEqualityComparands();
             ExpressionNode lowComparand = index.getLowComparand();
             ExpressionNode highComparand = index.getHighComparand();
+            IndexRowType indexRowType = getIndexRowType(index);
             if ((equalityComparands == null) &&
                 (lowComparand == null) && (highComparand == null))
-                return new IndexKeyRange(null, false, null, false);
+                return IndexKeyRange.unbounded(indexRowType);
 
             int nkeys = index.getIndex().getColumns().size();
             Expression[] keys = new Expression[nkeys];
@@ -773,7 +774,7 @@ public class OperatorAssembler extends BaseRule
 
             if ((lowComparand == null) && (highComparand == null)) {
                 IndexBound eq = getIndexBound(index.getIndex(), keys, kidx);
-                return new IndexKeyRange(eq, true, eq, true);
+                return IndexKeyRange.bounded(indexRowType, eq, true, eq, true);
             }
             else {
                 Expression[] lowKeys = null, highKeys = null;
@@ -781,16 +782,13 @@ public class OperatorAssembler extends BaseRule
                 int lidx = kidx, hidx = kidx;
                 if ((lidx > 0) || (lowComparand != null)) {
                     lowKeys = keys;
-                    lowInc = true;
                     if ((hidx > 0) || (highComparand != null)) {
                         highKeys = new Expression[nkeys];
-                        highInc = true;
                         System.arraycopy(keys, 0, highKeys, 0, nkeys);
                     }
                 }
-                else if ((hidx > 0) || (highComparand != null)) {
+                else if (highComparand != null) {
                     highKeys = keys;
-                    highInc = true;
                 }
                 if (lowComparand != null) {
                     lowKeys[lidx++] = assembleExpression(lowComparand, fieldOffsets);
@@ -800,10 +798,29 @@ public class OperatorAssembler extends BaseRule
                     highKeys[hidx++] = assembleExpression(highComparand, fieldOffsets);
                     highInc = index.isHighInclusive();
                 }
-                IndexBound lo = getIndexBound(index.getIndex(), lowKeys, lidx);
-                IndexBound hi = getIndexBound(index.getIndex(), highKeys, hidx);
-                return new IndexKeyRange(lo, lowInc, hi, highInc);
+                int bounded = lidx > hidx ? lidx : hidx;
+                IndexBound lo = getIndexBound(index.getIndex(), lowKeys, bounded);
+                IndexBound hi = getIndexBound(index.getIndex(), highKeys, bounded);
+                assert lo != null || hi != null;
+                if (lo == null) {
+                    lo = getNullIndexBound(index.getIndex(), hidx);
+                }
+                if (hi == null) {
+                    hi = getNullIndexBound(index.getIndex(), lidx);
+                }
+                return IndexKeyRange.bounded(indexRowType, lo, lowInc, hi, highInc);
             }
+        }
+
+        protected API.Ordering assembleIndexOrdering(IndexScan index,
+                                                     IndexRowType indexRowType) {
+            API.Ordering ordering = API.ordering();
+            List<OrderByExpression> indexOrdering = index.getOrdering();
+            for (int i = 0; i < indexOrdering.size(); i++) {
+                ordering.append(Expressions.field(indexRowType, i),
+                                indexOrdering.get(i).isAscending());
+            }
+            return ordering;
         }
 
         protected UserTableRowType tableRowType(TableSource table) {
@@ -817,15 +834,37 @@ public class OperatorAssembler extends BaseRule
         protected ValuesRowType valuesRowType(AkType[] fields) {
             return schema.newValuesType(fields);
         }
-    
+
+        protected IndexRowType getIndexRowType(IndexScan index) {
+            return schema.indexRowType(index.getIndex());
+        }
+
         /** Return an index bound for the given index and expressions.
          * @param index the index in use
          * @param keys {@link Expression}s for index lookup key
+         * @param nBoundKeys number of keys actually in use
+         */
+        protected IndexBound getIndexBound(Index index, Expression[] keys, int nBoundKeys) {
+            if (keys == null)
+                return null;
+            Expression[] boundKeys;
+            if (nBoundKeys < keys.length) {
+                boundKeys = new Expression[nBoundKeys];
+                System.arraycopy(keys, 0, boundKeys, 0, nBoundKeys);
+            } else {
+                boundKeys = keys;
+            }
+            return new IndexBound(getIndexExpressionRow(index, boundKeys),
+                                  getIndexColumnSelector(index, nBoundKeys));
+        }
+
+        /** Return an index bound for the given index containing all nulls.
+         * @param index the index in use
          * @param nkeys number of keys actually in use
          */
-        protected IndexBound getIndexBound(Index index, Expression[] keys, int nkeys) {
-            if (keys == null) 
-                return null;
+        protected IndexBound getNullIndexBound(Index index, int nkeys) {
+            Expression[] keys = new Expression[nkeys];
+            Arrays.fill(keys, LiteralExpression.forNull());
             return new IndexBound(getIndexExpressionRow(index, keys),
                                   getIndexColumnSelector(index, nkeys));
         }

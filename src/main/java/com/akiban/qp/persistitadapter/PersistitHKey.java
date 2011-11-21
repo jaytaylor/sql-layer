@@ -119,7 +119,7 @@ class PersistitHKey implements HKey
 
     public PersistitHKey(PersistitAdapter adapter, com.akiban.ais.model.HKey hKeyMetadata)
     {
-        this.hKey = new Key(adapter.persistit.getDb());
+        this.hKey = adapter.newKey();
         this.hKeySegments = hKeyMetadata.segments().size();
         this.keyDepth = hKeyMetadata.keyDepth();
     }

@@ -137,7 +137,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
     {
         Operator plan =
             map_NestedLoops(
-                indexScan_Default(itemOidIndexRowType, false, null),
+                indexScan_Default(itemOidIndexRowType, false),
                 ancestorLookup_Nested(coi, itemOidIndexRowType, Collections.singleton(itemRowType), 0),
                 0);
         RowBase[] expected = new RowBase[]{
@@ -249,7 +249,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
                         1,
                         new FieldExpression(cidValueRowType, 0)))),
                 new SetColumnSelector(0));
-        IndexKeyRange cidRange = new IndexKeyRange(cidBound, true, cidBound, true);
+        IndexKeyRange cidRange = IndexKeyRange.bounded(customerCidIndexRowType, cidBound, true, cidBound, true);
         Operator plan =
             map_NestedLoops(
                 valuesScan_Default(

@@ -13,20 +13,22 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.persistitadapter;
+package com.akiban.server.expression.std;
 
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.tree.TreeService;
-import com.akiban.server.store.PersistitStore;
+import com.akiban.server.expression.ExpressionComposer;
+import com.akiban.server.types.AkType;
 
-public final class HookablePersistitAdapter extends PersistitAdapter {
-
-    public interface FilterFactoryHook extends PersistitFilterFactory.InternalHook {
-        // empty interface; just promoting visibility
+public class IfExpressionCompositionTest extends ComposedExpressionTestBase
+{
+    @Override
+    protected CompositionTestInfo getTestInfo()
+    {
+        return new CompositionTestInfo(3, AkType.LONG, false);
     }
 
-    public HookablePersistitAdapter(Schema schema, PersistitStore persistit, Session session, TreeService treeService, FilterFactoryHook hook) {
-        super(schema, persistit, session, treeService, null, hook);
+    @Override
+    public ExpressionComposer getComposer()
+    {
+        return IfExpression.COMPOSER;
     }
 }

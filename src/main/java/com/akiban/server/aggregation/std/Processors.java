@@ -37,16 +37,16 @@ class Processors
     };
 
     public final static AbstractProcessor sumProcessor = new AbstractProcessor ()
-    {
-        @Override 
-        public boolean infinityIsSignificant () { return true;}
-        
+    {        
         @Override
         public void checkType (AkType type)
         {
             switch (type)
             {
                 case DOUBLE:
+                case U_INT:
+                case FLOAT:
+                case U_FLOAT:
                 case INT:
                 case LONG:
                 case DECIMAL:
@@ -78,6 +78,16 @@ class Processors
         }
 
         @Override
+        public float process (float oldState, float input)
+        {
+            float sum = oldState  + input;
+            if (Float.isInfinite(sum) && !Float.isInfinite(oldState) && !Float.isInfinite(input))
+                throw new OverflowException();
+            else
+                    return sum;
+        }
+
+        @Override
         public BigDecimal process(BigDecimal oldState, BigDecimal input)
         {
             return oldState.add(input);
@@ -105,10 +115,7 @@ class Processors
     // nested class
     private static abstract class MinMaxProcessor implements AbstractProcessor
     {
-        abstract boolean condition (double a);
-        
-        @Override
-        public boolean infinityIsSignificant () { return false;};
+        abstract boolean condition (double a);       
 
         @Override
         public void checkType(AkType type)
@@ -116,11 +123,16 @@ class Processors
             switch (type)
             {
                 case DOUBLE:
+                case FLOAT:
                 case INT:
+                case U_FLOAT:
+                case U_INT:
                 case LONG:
                 case DECIMAL:
                 case U_BIGINT:
                 case VARCHAR:
+                case TEXT:
+                case TIMESTAMP:
                 case DATE:
                 case BOOL:
                 case DATETIME:
@@ -137,6 +149,12 @@ class Processors
 
         @Override
         public double process(double oldState, double input)
+        {
+            return (condition(oldState - input) ? oldState : input);
+        }
+
+        @Override
+        public float process (float oldState, float input)
         {
             return (condition(oldState - input) ? oldState : input);
         }

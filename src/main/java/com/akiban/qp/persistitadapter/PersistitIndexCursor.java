@@ -16,23 +16,15 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.Index;
-import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.IndexScanSelector;
-import com.akiban.qp.operator.StoreAdapterRuntimeException;
+import com.akiban.qp.operator.*;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.persistitadapter.sort.IterationHelper;
+import com.akiban.qp.persistitadapter.sort.SortCursor;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.server.error.QueryCanceledException;
 import com.akiban.util.ShareHolder;
 import com.persistit.Exchange;
-import com.persistit.Key;
-import com.persistit.KeyFilter;
 import com.persistit.exception.PersistitException;
-import com.persistit.exception.PersistitIOException;
-import com.persistit.exception.PersistitInterruptedException;
-
-import java.io.InterruptedIOException;
 
 class PersistitIndexCursor implements Cursor
 {
@@ -42,31 +34,28 @@ class PersistitIndexCursor implements Cursor
     public void open(Bindings bindings)
     {
         assert exchange == null;
-        exchange = adapter.takeExchange(indexRowType.index()).clear().append(boundary);
-        if (keyRange != null) {
-            indexFilter = adapter.filterFactory.computeIndexFilter(exchange.getKey(), index(), keyRange, bindings);
-        }
+        exchange = adapter.takeExchange(indexRowType.index());
+        sortCursor = SortCursor.create(adapter, keyRange, ordering, new IndexScanIterationHelper());
+        sortCursor.open(bindings);
     }
 
     @Override
     public Row next()
     {
+        Row next;
         try {
             boolean needAnother;
             do {
-                if (exchange != null &&
-                    (indexFilter == null
-                     ? exchange.traverse(direction, true)
-                     : exchange.traverse(direction, indexFilter, FETCH_NO_BYTES))) {
-                    if (selector.matchesAll() || selector.matches(exchange.fetch().getValue().getLong())) {
-                        // The value of a group index is the depth at which it's defined, as an int.
-                        // See OperatorStoreGIHandler, search for "Description of group index entry values"
-                        unsharedRow().get().copyFromExchange(exchange);
-                        needAnother = false;
-                    }
-                    else {
-                        needAnother = true;
-                    }
+                if ((next = sortCursor.next()) != null) {
+                    needAnother = !(isTableIndex ||
+                                    // The value of a group index is the depth at which it's defined, as an int.
+                                    // See OperatorStoreGIHandler, search for "Description of group index entry values"
+                                    // TODO: It would be better to limit the use of exchange to SortCursor, which means
+                                    // TODO: that the selector would need to be pushed down. Alternatively, the exchange's
+                                    // TODO: value could be made available here in PersistitIndexRow.
+                                    selector.matchesAll() ||
+                                    (exchange.getKey().getEncodedSize() > 0 &&
+                                     selector.matches(exchange.fetch().getValue().getLong())));
                 } else {
                     close();
                     needAnother = false;
@@ -74,8 +63,8 @@ class PersistitIndexCursor implements Cursor
             } while (needAnother);
         } catch (PersistitException e) {
             adapter.handlePersistitException(e);
+            throw new AssertionError();
         }
-        PersistitIndexRow next = exchange == null ? null : row.get();
         assert (next == null) == (exchange == null);
         return next;
     }
@@ -86,7 +75,6 @@ class PersistitIndexCursor implements Cursor
         if (exchange != null) {
             adapter.returnExchange(exchange);
             exchange = null;
-            indexFilter = null;
             row.release();
         }
     }
@@ -95,23 +83,18 @@ class PersistitIndexCursor implements Cursor
 
     PersistitIndexCursor(PersistitAdapter adapter,
                          IndexRowType indexRowType,
-                         boolean reverse,
                          IndexKeyRange keyRange,
+                         API.Ordering ordering,
                          IndexScanSelector selector)
         throws PersistitException
     {
         this.keyRange = keyRange;
+        this.ordering = ordering;
         this.adapter = adapter;
         this.indexRowType = indexRowType;
         this.row = new ShareHolder<PersistitIndexRow>(adapter.newIndexRow(indexRowType));
+        this.isTableIndex = indexRowType.index().isTableIndex();
         this.selector = selector;
-        if (reverse) {
-            boundary = Key.AFTER;
-            direction = Key.LT;
-        } else {
-            boundary = Key.BEFORE;
-            direction = Key.GT;
-        }
     }
 
     // For use by this class
@@ -129,26 +112,39 @@ class PersistitIndexCursor implements Cursor
         return indexRowType.index();
     }
 
-    PersistitAdapter adapter() {
-        return adapter;
-    }
-
-    Exchange exchange() {
-        return exchange;
-    }
-
     // Object state
 
     private final PersistitAdapter adapter;
     private final IndexRowType indexRowType;
     private final ShareHolder<PersistitIndexRow> row;
-    private final Key.EdgeValue boundary;
-    private final Key.Direction direction;
     private final IndexKeyRange keyRange;
-    private final IndexScanSelector selector;
+    private final API.Ordering ordering;
+    private final boolean isTableIndex;
+    private IndexScanSelector selector;
     private Exchange exchange;
-    private KeyFilter indexFilter;
+    private SortCursor sortCursor;
 
-    // consts
-    private static final int FETCH_NO_BYTES = 0;
+    // Inner classes
+
+    private class IndexScanIterationHelper implements IterationHelper
+    {
+        @Override
+        public Row row() throws PersistitException
+        {
+            unsharedRow().get().copyFromExchange(exchange);
+            return row.get();
+        }
+
+        @Override
+        public void close()
+        {
+            PersistitIndexCursor.this.close();
+        }
+
+        @Override
+        public Exchange exchange()
+        {
+            return PersistitIndexCursor.this.exchange;
+        }
+    }
 }
