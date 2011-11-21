@@ -29,21 +29,21 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-public final class Range {
+public final class ColumnRanges {
 
-    public static Range rangeAtNode(ConditionExpression node) {
+    public static ColumnRanges rangeAtNode(ConditionExpression node) {
         if (node instanceof ComparisonCondition) {
             ComparisonCondition comparisonCondition = (ComparisonCondition) node;
             return comparisonToRange(comparisonCondition);
         }
         else if (node instanceof LogicalFunctionCondition) {
             LogicalFunctionCondition condition = (LogicalFunctionCondition) node;
-            Range leftRange = rangeAtNode(condition.getLeft());
-            Range rightRange = rangeAtNode(condition.getRight());
+            ColumnRanges leftRange = rangeAtNode(condition.getLeft());
+            ColumnRanges rightRange = rangeAtNode(condition.getRight());
             if (leftRange != null && rightRange != null) {
                 List<RangeSegment> combinedSegments = combineBool(leftRange, rightRange, condition.getFunction());
                 if (combinedSegments != null) {
-                    return new Range(leftRange.getColumnExpression(), condition, combinedSegments);
+                    return new ColumnRanges(leftRange.getColumnExpression(), condition, combinedSegments);
                 }
             }
         }
@@ -54,7 +54,7 @@ public final class Range {
                     ExpressionNode operand = condition.getOperands().get(0);
                     if (operand instanceof ColumnExpression) {
                         ColumnExpression operandColumn = (ColumnExpression) operand;
-                        return new Range(operandColumn, condition, Collections.singletonList(RangeSegment.ONLY_NULL));
+                        return new ColumnRanges(operandColumn, condition, Collections.singletonList(RangeSegment.ONLY_NULL));
                     }
                 }
             }
@@ -62,16 +62,16 @@ public final class Range {
         return null;
     }
 
-    public static Range andRanges(Range left, Range right) {
+    public static ColumnRanges andRanges(ColumnRanges left, ColumnRanges right) {
         List<RangeSegment> combinedSegments = combineBool(left, right, true);
         if (combinedSegments == null)
             return null;
         List<ConditionExpression> combinedConditions = new ArrayList<ConditionExpression>(left.getConditions());
         combinedConditions.addAll(right.getConditions());
-        return new Range(left.getColumnExpression(), combinedConditions, combinedSegments);
+        return new ColumnRanges(left.getColumnExpression(), combinedConditions, combinedSegments);
     }
 
-    private static List<RangeSegment> combineBool(Range leftRange, Range rightRange, boolean isAnd) {
+    private static List<RangeSegment> combineBool(ColumnRanges leftRange, ColumnRanges rightRange, boolean isAnd) {
         if (!leftRange.getColumnExpression().equals(rightRange.getColumnExpression()))
             return null;
         List<RangeSegment> leftSegments = leftRange.getSegments();
@@ -86,7 +86,7 @@ public final class Range {
         return result;
     }
     
-    private static List<RangeSegment> combineBool(Range leftRange, Range rightRange, String logicOp) {
+    private static List<RangeSegment> combineBool(ColumnRanges leftRange, ColumnRanges rightRange, String logicOp) {
         logicOp = logicOp.toLowerCase();
         if ("and".endsWith(logicOp))
             return combineBool(leftRange, rightRange, true);
@@ -117,17 +117,20 @@ public final class Range {
         return "Range " + columnExpression + ' ' + segments;
     }
 
-    public Range(ColumnExpression columnExpression, Collection<? extends ConditionExpression> rootConditions, List<RangeSegment> segments) {
+    public ColumnRanges(ColumnExpression columnExpression, Collection<? extends ConditionExpression> rootConditions,
+                        List<RangeSegment> segments)
+    {
         this.columnExpression = columnExpression;
         this.rootConditions = rootConditions;
         this.segments = segments;
     }
 
-    public Range(ColumnExpression columnExpression, ConditionExpression rootCondition, List<RangeSegment> segments) {
+    public ColumnRanges(ColumnExpression columnExpression, ConditionExpression rootCondition,
+                        List<RangeSegment> segments) {
         this(columnExpression, Collections.singletonList(rootCondition), segments);
     }
 
-    private static Range comparisonToRange(ComparisonCondition comparisonCondition) {
+    private static ColumnRanges comparisonToRange(ComparisonCondition comparisonCondition) {
         final ColumnExpression columnExpression;
         final ExpressionNode other;
         if (comparisonCondition.getLeft() instanceof ColumnExpression) {
@@ -145,7 +148,7 @@ public final class Range {
             ConstantExpression constant = (ConstantExpression) other;
             Comparison op = comparisonCondition.getOperation();
             List<RangeSegment> rangeSegments = RangeSegment.fromComparison(op, constant);
-            return new Range(columnExpression, comparisonCondition, rangeSegments);
+            return new ColumnRanges(columnExpression, comparisonCondition, rangeSegments);
         }
         else {
             return null;

@@ -90,7 +90,7 @@ public class IndexGoal implements Comparator<IndexScan>
     private List<ConditionList> conditionSources;
 
     // mapping of Range-expressible conditions, by their column. lazy loaded.
-    private Map<ColumnExpression,Range> columnsToRanges;
+    private Map<ColumnExpression,ColumnRanges> columnsToRanges;
 
     // If both grouping and ordering are present, they must be
     // compatible. Something satisfying the ordering would also handle
@@ -208,7 +208,7 @@ public class IndexGoal implements Comparator<IndexScan>
                     }
                 }
                 if (!foundInequalityCondition) {
-                    Range range = rangeForIndex(indexExpression);
+                    ColumnRanges range = rangeForIndex(indexExpression);
                     if (range != null)
                         index.addRangeCondition(range);
                 }
@@ -763,17 +763,17 @@ public class IndexGoal implements Comparator<IndexScan>
         }
     }
 
-    private Range rangeForIndex(ExpressionNode expressionNode) {
+    private ColumnRanges rangeForIndex(ExpressionNode expressionNode) {
         if (expressionNode instanceof ColumnExpression) {
             if (columnsToRanges == null) {
-                columnsToRanges = new HashMap<ColumnExpression, Range>();
+                columnsToRanges = new HashMap<ColumnExpression, ColumnRanges>();
                 for (ConditionExpression condition : conditions) {
-                    Range range = Range.rangeAtNode(condition);
+                    ColumnRanges range = ColumnRanges.rangeAtNode(condition);
                     if (range != null) {
                         ColumnExpression rangeColumn = range.getColumnExpression();
-                        Range oldRange = columnsToRanges.get(rangeColumn);
+                        ColumnRanges oldRange = columnsToRanges.get(rangeColumn);
                         if (oldRange != null)
-                            range = Range.andRanges(range, oldRange);
+                            range = ColumnRanges.andRanges(range, oldRange);
                         columnsToRanges.put(rangeColumn, range);
                     }
                 }

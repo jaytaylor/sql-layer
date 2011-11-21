@@ -282,7 +282,7 @@ public class OperatorAssembler extends BaseRule
                 stream.rowType = indexRowType;
             }
             else {
-                Range range = indexScan.getConditionRange();
+                ColumnRanges range = indexScan.getConditionRange();
                 for (RangeSegment rangeSegment : range.getSegments()) {
                     Operator scan = API.indexScan_Default(indexRowType,
                                                           indexScan.isReverseScan(),

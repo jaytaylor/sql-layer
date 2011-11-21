@@ -19,7 +19,7 @@ import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 
 import com.akiban.ais.model.Index;
-import com.akiban.sql.optimizer.rule.Range;
+import com.akiban.sql.optimizer.rule.ColumnRanges;
 
 import java.util.*;
 
@@ -46,7 +46,7 @@ public class IndexScan extends BasePlanNode
     // May need building of index keys in the expressions subsystem.
     private boolean lowInclusive, highInclusive;
 
-    private Range conditionRange;
+    private ColumnRanges conditionRange;
 
     // This is how the indexed result will be ordered from using this index.
     // TODO: Is this right? Are we allowed to switch directions
@@ -113,7 +113,7 @@ public class IndexScan extends BasePlanNode
         return conditions;
     }
 
-    public Range getConditionRange() {
+    public ColumnRanges getConditionRange() {
         return conditionRange;
     }
 
@@ -197,7 +197,7 @@ public class IndexScan extends BasePlanNode
         conditions.add(condition);
     }
 
-    public void addRangeCondition(Range range) {
+    public void addRangeCondition(ColumnRanges range) {
         assert conditionRange == null : conditionRange;
         conditionRange = range;
     }
