@@ -288,9 +288,9 @@ public final class RangeSegment {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(start.describeValue());
-        sb.append(start.isInclusive() ? " ≤ _ " : " < _ ");
+        sb.append(start.isInclusive() ? " <= % " : " < % ");
         if (!end.isUpperWild()) {
-            sb.append(end.isInclusive() ? "≤ " : "< ");
+            sb.append(end.isInclusive() ? "<= " : "< ");
             sb.append(end.describeValue());
         }
         return sb.toString();
