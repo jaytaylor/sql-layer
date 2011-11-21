@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Stack;
+import java.util.regex.Pattern;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -54,6 +55,7 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.nodes.Node;
+import org.yaml.snakeyaml.nodes.ScalarNode;
 import org.yaml.snakeyaml.nodes.Tag;
 
 /**
@@ -179,7 +181,7 @@ class YamlTester {
 
     private void test(Reader in) {
 	try {
-	    Yaml yaml = new Yaml(new DontCareConstructor());
+	    Yaml yaml = new Yaml(new RegisterTags());
 	    Iterator<Object> documents = yaml.loadAll(in).iterator();
 	    while (documents.hasNext()) {
 		++commandNumber;
@@ -736,8 +738,8 @@ class YamlTester {
 		int columnType = metaData.getColumnType(i);
 		String columnTypeName = getTypeName(columnType);
 		if (columnTypeName == null) {
-		    columnTypeName = "<unknown " + metaData.getColumnTypeName(i) + " (" +
-                                                   columnType + ")>";
+		    columnTypeName = "<unknown " +
+			metaData.getColumnTypeName(i) + " (" + columnType + ")>";
 		}
 		assertEquals("Wrong output type for column " + i + ":",
 			     outputTypes.get(i - 1), columnTypeName);
@@ -751,16 +753,17 @@ class YamlTester {
 	    }
 	    for (int i = 0; i < size; i++) {
 		Object patternElem = pattern.get(i);
-		if (patternElem != DontCare.INSTANCE) {
-		    Object rowElem = row.get(i);
-		    if (patternElem == null) {
-			if (rowElem != null) {
-			    return false;
-			}
-		    } else if (!arrayElementString(patternElem).equals(
-				   arrayElementString(rowElem))) {
+		Object rowElem = row.get(i);
+		if (patternElem instanceof OutputComparator) {
+		    return ((OutputComparator) patternElem).compareOutput(
+			rowElem);
+		} else if (patternElem == null) {
+		    if (rowElem != null) {
 			return false;
 		    }
+		} else if (!arrayElementString(patternElem).equals(
+			       arrayElementString(rowElem))) {
+		    return false;
 		}
 	    }
 	    return true;
@@ -952,27 +955,105 @@ class YamlTester {
 	return rows;
     }
 
+    /** Support comparing this object to expected output. */
+    interface OutputComparator {
+	/**
+	 * Compares the specified output with this object, which represents the
+	 * expected output.
+	 *
+	 * @param output the output
+	 * @return whether the output matches the expected output
+	 */
+	boolean compareOutput(Object output);
+    }
+
     /**
      * An object that represents a don't care value specified in the expected
      * output.
      */
-    static class DontCare {
-	private DontCare() { }
+    static class DontCare implements OutputComparator {
 	static final DontCare INSTANCE = new DontCare();
+	private DontCare() { }
+        public boolean compareOutput(Object output) {
+	    return true;
+	}
 	public String toString() {
 	    return "!dc";
 	}
     }
 
-    /** A SnakeYAML constructor that converts dc tags to DontCare.INSTANCE. */
-    private static class DontCareConstructor extends SafeConstructor {
-	DontCareConstructor() {
-	    this.yamlConstructors.put(new Tag("!dc"), new ConstructDontCare());
+    /**
+     * A class that represents a regular expression specified in the expected
+     * output.
+     */
+    static class Regexp implements OutputComparator {
+	private final Pattern pattern;
+	Regexp(String pattern) {
+	    this.pattern = Pattern.compile(convertPattern(pattern));
+	    if (DEBUG) {
+		System.err.println("Regexp: '" + pattern + "' => '" +
+				   this.pattern + "'");
+	    }
+	}
+	public boolean compareOutput(Object object) {
+	    boolean result = pattern.matcher(String.valueOf(object)).matches();
+	    if (DEBUG) {
+		System.err.println("Regexp.compareOutput pattern='" + pattern +
+				   "', object='" + object + "' => '" + result +
+				   "'");
+	    }
+	    return result;
+	}
+	public String toString() {
+	    return "!re '" + pattern + "'";
+	}
+    }
+
+    /**
+     * Convert a pattern from the input format, with {N} for captured groups,
+     * to the \N format used by Java regexps.
+     */
+    static String convertPattern(String pattern) {
+	if (pattern.indexOf("{") == -1) {
+	    return pattern;
+	} else {
+	    /*
+	     * Replace {N} with \N.  To make sure that the '{' is not escaped,
+	     * require that the brace is either at the beginning of the input,
+	     * right after the last match, that the previous character is not a
+	     * backslash, or that the previous two characters are backslashes,
+	     * for an escaped backslash.  Note that backslashes need to be
+	     * doubled to get them into the string, and then doubled again for
+	     * regexp processing to treat them as literals.
+	     */
+	    return pattern.replaceAll(
+		"(\\A|\\G|[^\\\\]|\\\\\\\\)[{]([0-9]+)[}]", "$1\\\\$2");
+	}
+    }
+
+    /**
+     * A SnakeYAML constructor that converts dc tags to DontCare.INSTANCE and
+     * re tags to Regexp instances.
+     */
+    private static class RegisterTags extends SafeConstructor {
+	RegisterTags() {
+	    yamlConstructors.put(new Tag("!dc"), new ConstructDontCare());
+	    yamlConstructors.put(new Tag("!re"), new ConstructRegexp());
 	}
 	private static class ConstructDontCare extends AbstractConstruct {
 	    @Override
 	    public Object construct(Node node) {
 		return DontCare.INSTANCE;
+	    }
+	}
+	private static class ConstructRegexp extends AbstractConstruct {
+	    @Override
+	    public Object construct(Node node) {
+		if (!(node instanceof ScalarNode)) {
+		    fail("The value of the regular expression (!re) tag must" +
+			 " be a scalar");
+		}
+		return new Regexp(((ScalarNode) node).getValue());
 	    }
 	}
     }
