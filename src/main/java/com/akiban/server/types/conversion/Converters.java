@@ -176,6 +176,7 @@ public final class Converters {
         );
         builder.legalConversions(BOOL,
                 VARCHAR,
+                INTERVAL,
                 LONG,
                 DOUBLE,
                 FLOAT,

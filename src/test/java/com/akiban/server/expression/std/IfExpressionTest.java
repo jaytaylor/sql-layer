@@ -168,6 +168,7 @@ public class IfExpressionTest
             case TIMESTAMP:
             case INT:
             case U_INT:
+            case INTERVAL:
             case LONG:      return new LiteralExpression(type, tf? 1L : 0L);
             case NULL:      return  LiteralExpression.forNull();
             case VARCHAR:
