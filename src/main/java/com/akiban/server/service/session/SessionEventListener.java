@@ -15,6 +15,6 @@
 
 package com.akiban.server.service.session;
 
-interface SessionEventListener {
-    void sessionClosing();
+public interface SessionEventListener {
+    void sessionClosing(Session session);
 }

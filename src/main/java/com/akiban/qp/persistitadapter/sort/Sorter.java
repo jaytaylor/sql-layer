@@ -48,6 +48,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class Sorter
 {
     public Sorter(PersistitAdapter adapter, Cursor input, RowType rowType, API.Ordering ordering, Bindings bindings)
+        throws PersistitException
     {
         this.adapter = adapter;
         this.input = input;
@@ -57,8 +58,11 @@ public class Sorter
         this.rowType = rowType;
         this.ordering = ordering.copy();
         this.bindings = bindings;
-        this.exchange = adapter.takeExchangeForSorting
-            (new SortTreeLink(SORT_TREE_NAME_PREFIX + SORTER_ID_GENERATOR.getAndIncrement()));
+        String sortTreeName = SORT_TREE_NAME_PREFIX + SORTER_ID_GENERATOR.getAndIncrement();
+        this.exchange =
+            SORT_USING_TEMP_VOLUME
+            ? adapter.takeExchangeForSorting(sortTreeName)
+            : adapter.takeExchangeForSorting(new SortTreeLink(sortTreeName));
         this.key = exchange.getKey();
         this.keyTarget = new PersistitKeyValueTarget();
         this.keyTarget.attach(this.key);
@@ -96,7 +100,11 @@ public class Sorter
     {
         if (exchange != null) {
             try {
-                exchange.removeTree();
+                if (SORT_USING_TEMP_VOLUME) {
+                    exchange.removeAll();
+                } else {
+                    exchange.removeTree();
+                }
             } catch (PersistitException e) {
                 throw new PersistitAdapterException(e);
             } finally {
@@ -163,6 +171,8 @@ public class Sorter
     private static final Expression DUMMY_EXPRESSION = LiteralExpression.forNull();
     private static final String SORT_TREE_NAME_PREFIX = "sort.";
     private static final AtomicLong SORTER_ID_GENERATOR = new AtomicLong(0);
+    private static final boolean SORT_USING_TEMP_VOLUME =
+        System.getProperty("sorttemp", "true").toLowerCase().equals("true");
 
     // Object state
 

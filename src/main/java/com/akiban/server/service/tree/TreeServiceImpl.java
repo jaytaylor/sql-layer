@@ -28,6 +28,7 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import com.akiban.server.service.session.SessionEventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,8 +54,9 @@ import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
 import com.persistit.logging.Slf4jAdapter;
 
-public class TreeServiceImpl implements TreeService, Service<TreeService>,
-        JmxManageable {
+public class TreeServiceImpl
+    implements TreeService, Service<TreeService>, JmxManageable, SessionEventListener
+{
 
     private final static Session.Key<Map<Tree, List<Exchange>>> EXCHANGE_MAP = Session.Key
             .named("exchangemap");
@@ -67,6 +69,8 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     private static final String DATAPATH_PROP_NAME = "datapath";
 
     private static final String BUFFER_SIZE_PROP_NAME = "buffersize";
+
+    private static final Session.Key<Volume> TEMP_VOLUME = Session.Key.named("TEMP_VOLUME");
 
     // Must be one of 1024, 2048, 4096, 8192, 16384:
     static final int DEFAULT_BUFFER_SIZE = 16384;
@@ -314,6 +318,21 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
         } else {
             return list.remove(list.size() - 1);
         }
+    }
+
+    @Override
+    public Exchange getTemporaryExchange(Session session, String treeName) throws PersistitException
+    {
+        Volume volume;
+        synchronized (TEMP_VOLUME) {
+            volume = session.get(TEMP_VOLUME);
+            if (volume == null) {
+                volume = getDb().createTemporaryVolume();
+                session.put(TEMP_VOLUME, volume);
+                session.addListener(this);
+            }
+        }
+        return new Exchange(getDb(), volume, treeName, true);
     }
 
     @Override
@@ -666,5 +685,16 @@ public class TreeServiceImpl implements TreeService, Service<TreeService>,
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
         return new JmxObjectInfo("TreeService", bean, TreeServiceMXBean.class);
+    }
+
+    @Override
+    public void sessionClosing(Session session)
+    {
+        Volume tempVolume = session.get(TEMP_VOLUME);
+        try {
+            tempVolume.close();
+        } catch (PersistitException e) {
+            LOG.error("PersistitException while closing temporary volume", e);
+        }
     }
 }

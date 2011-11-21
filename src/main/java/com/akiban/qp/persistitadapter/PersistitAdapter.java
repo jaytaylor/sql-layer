@@ -212,6 +212,11 @@ public class PersistitAdapter extends StoreAdapter
         return persistit.getExchange(session, index);
     }
 
+    public Exchange takeExchangeForSorting(String treeName) throws PersistitException
+    {
+        return treeService.getTemporaryExchange(session, treeName);
+    }
+
     public Exchange takeExchangeForSorting(TreeLink treeLink)
     {
         return treeService.getExchange(session, treeLink);

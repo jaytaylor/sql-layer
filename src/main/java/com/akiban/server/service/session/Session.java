@@ -15,10 +15,7 @@
 
 package com.akiban.server.service.session;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class Session
@@ -26,7 +23,7 @@ public final class Session
     private final static AtomicLong idGenerator = new AtomicLong(0);
 
     private final Map<Key<?>,Object> map = new HashMap<Key<?>, Object>();
-    private final SessionEventListener listener;
+    private final List<SessionEventListener> listeners = new ArrayList<SessionEventListener>();
     private final long sessionId = idGenerator.getAndIncrement();
     private volatile boolean cancelCurrentQuery = false;
 
@@ -36,11 +33,15 @@ public final class Session
     }
 
     Session(SessionEventListener listener) {
-        this.listener = listener;
+        this.listeners.add(listener);
     }
 
     public long sessionId() {
         return sessionId;
+    }
+
+    public void addListener(SessionEventListener listener) {
+        listeners.add(listener);
     }
 
     public <T> T get(Session.Key<T> key) {
@@ -106,8 +107,8 @@ public final class Session
 
     public void close()
     {
-        if (listener != null) {
-            listener.sessionClosing();
+        for (SessionEventListener listener : listeners) {
+            listener.sessionClosing(this);
         }
         // For now do nothing to any cached resources.
         // Later, we'll close any "resource" that is added to the session.
