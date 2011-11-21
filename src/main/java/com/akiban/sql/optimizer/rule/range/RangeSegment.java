@@ -182,8 +182,8 @@ public final class RangeSegment {
     }
 
     static RangeSegment andRangeSegment(RangeSegment left, RangeSegment right) {
-        RangeEndpoint start = rangeEndpoint(left.getStart(), right.getStart(), RangePointComparison.MAX);
-        RangeEndpoint end = rangeEndpoint(left.getEnd(), right.getEnd(), RangePointComparison.MIN);
+        RangeEndpoint start = rangeEndpoint(left.getStart(), right.getStart(), RangeEndpoint.RangePointComparison.MAX);
+        RangeEndpoint end = rangeEndpoint(left.getEnd(), right.getEnd(), RangeEndpoint.RangePointComparison.MIN);
         // if either null, a comparison failed and we should bail
         // otherwise, if start > end, this is an empty range and we should bail; another iteration of the loop
         // will give us the correct order
@@ -202,14 +202,14 @@ public final class RangeSegment {
         return new RangeSegment(start, end);
     }
 
-    static RangeEndpoint rangeEndpoint(RangeEndpoint one, RangeEndpoint two, RangePointComparison comparison) {
+    static RangeEndpoint rangeEndpoint(RangeEndpoint one, RangeEndpoint two, RangeEndpoint.RangePointComparison comparison) {
         if (one.isUpperWild())
-            return comparison == RangePointComparison.MAX ? one : two;
+            return comparison == RangeEndpoint.RangePointComparison.MAX ? one : two;
         if (two.isUpperWild())
-            return comparison == RangePointComparison.MIN ? one : two;
+            return comparison == RangeEndpoint.RangePointComparison.MIN ? one : two;
 
         Object resultValue = comparison.get(one.getValue(), two.getValue());
-        if (resultValue == RangePointComparison.INVALID_COMPARISON)
+        if (resultValue == RangeEndpoint.RangePointComparison.INVALID_COMPARISON)
             return null;
         boolean resultInclusive = one.isInclusive() || two.isInclusive();
         ConstantExpression resultExpression;
@@ -267,43 +267,6 @@ public final class RangeSegment {
 
     private RangeEndpoint start;
     private RangeEndpoint end;
-
-    private enum RangePointComparison {
-        MIN() {
-            @Override
-            protected Object select(Object one, Object two, ComparisonResult comparison) {
-                return comparison == ComparisonResult.LT ? one : two;
-            }
-        },
-        MAX() {
-            @Override
-            protected Object select(Object one, Object two, ComparisonResult comparison) {
-                return comparison == ComparisonResult.GT ? one : two;
-            }
-        }
-        ;
-
-        protected abstract Object select(Object one, Object two, ComparisonResult comparison);
-
-        public Object get(Object one, Object two) {
-            ComparisonResult comparisonResult = RangeEndpoint.compareObjects(one, two);
-            switch (comparisonResult) {
-            case EQ:
-                return one;
-            case LT_BARELY:
-            case LT:
-            case GT_BARELY:
-            case GT:
-                return select(one, two, comparisonResult.normalize());
-            case INVALID:
-                return null;
-            default:
-                throw new AssertionError(comparisonResult.name());
-            }
-        }
-
-        private static final Object INVALID_COMPARISON = new Object();
-    }
 
     private static final Comparator<? super RangeSegment> RANGE_SEGMENTS_BY_START = new Comparator<RangeSegment>() {
         @Override

@@ -86,7 +86,7 @@ public abstract class RangeEndpoint implements Comparable<RangeEndpoint> {
 
     private RangeEndpoint() {}
 
-    static ComparisonResult compareObjects(Object one, Object two) {
+    private static ComparisonResult compareObjects(Object one, Object two) {
         // if both are null, they're equal. Otherwise, at most one can be null; if either is null, we know the
         // answer. Otherwise, we know neither is null, and we can test their values (after checking the classes)
         if (one == two)
@@ -211,5 +211,42 @@ public abstract class RangeEndpoint implements Comparable<RangeEndpoint> {
                     two
             ));
         }
+    }
+
+    enum RangePointComparison {
+        MIN() {
+            @Override
+            protected Object select(Object one, Object two, ComparisonResult comparison) {
+                return comparison == ComparisonResult.LT ? one : two;
+            }
+        },
+        MAX() {
+            @Override
+            protected Object select(Object one, Object two, ComparisonResult comparison) {
+                return comparison == ComparisonResult.GT ? one : two;
+            }
+        }
+        ;
+
+        protected abstract Object select(Object one, Object two, ComparisonResult comparison);
+
+        public Object get(Object one, Object two) {
+            ComparisonResult comparisonResult = compareObjects(one, two);
+            switch (comparisonResult) {
+            case EQ:
+                return one;
+            case LT_BARELY:
+            case LT:
+            case GT_BARELY:
+            case GT:
+                return select(one, two, comparisonResult.normalize());
+            case INVALID:
+                return null;
+            default:
+                throw new AssertionError(comparisonResult.name());
+            }
+        }
+
+        public static final Object INVALID_COMPARISON = new Object();
     }
 }
