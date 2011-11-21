@@ -1,0 +1,22 @@
+# Test the INET_ATON function
+---
+- Statement: CREATE TABLE t (s varchar(32))
+---
+- Statement: INSERT INTO t VALUES ('127.0.0.1'), ('1.2.3.4')
+---
+- Statement: SELECT INET_ATON('1.2.3.4.5') FROM t
+- output: [[null], [null]]
+---
+- Statement: SELECT INET_ATON(s) FROM t
+- output: [[2130706433], [16909060]]
+---
+- Statement: DELETE FROM t
+---
+- Statement: INSERT INTO t VALUES ('1.2.3.4.5'), ('-1.2.3.4'),
+    ('1.-2.3.4'), ('1.2.-3.4'), ('1.2.3.-4'), ('a.2.3.4'), ('1.b.3.4'),
+    ('1.2.c.4'), ('1.2.3.d'), ('howie'), (''), (null)
+---
+- Statement: SELECT INET_ATON(s) FROM t
+- output: [[null], [null], [null], [null], [null], [null], [null], [null],
+    [null], [null], [null], [null]]
+...

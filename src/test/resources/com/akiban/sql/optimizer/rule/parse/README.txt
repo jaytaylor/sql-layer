@@ -46,6 +46,12 @@ insert-1: from VALUES
 
 insert-2: from SELECT
 
+insert-3l: too few columns
+
+insert-3g: too many columns
+
+insert-4: too few columns
+
 joins-1: complex join tree
 
 joins-2: join between correlated subqueries

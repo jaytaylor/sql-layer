@@ -16,6 +16,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types.AkType;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -44,8 +45,8 @@ public class IsNullExpressionTest extends ComposedExpressionTestBase
         Expression expression = new IsNullExpression (new LiteralExpression(AkType.DOUBLE, 1.0));
         ValueSource source = expression.evaluation().eval();
         assertFalse(source.getBool());
-    }
-    
+    }   
+ 
     @Override
     protected CompositionTestInfo getTestInfo()
     {

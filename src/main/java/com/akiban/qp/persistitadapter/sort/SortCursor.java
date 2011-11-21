@@ -15,48 +15,56 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.ValuesHolderRow;
-import com.akiban.server.PersistitValueValueSource;
-import com.akiban.server.types.util.ValueHolder;
 import com.persistit.Exchange;
+import com.persistit.exception.PersistitException;
 
-abstract class SortCursor implements Cursor
+public abstract class SortCursor implements Cursor
 {
     // Cursor interface
 
     @Override
     public final void close()
     {
-        sorter.close();
+        iterationHelper.close();
+    }
+
+    // SortCursor interface
+
+    public static SortCursor create(PersistitAdapter adapter,
+                                    IndexKeyRange keyRange,
+                                    API.Ordering ordering,
+                                    IterationHelper iterationHelper)
+    {
+        return
+            ordering.allAscending() || ordering.allDescending()
+            ? (keyRange != null && keyRange.semiBounded()
+               ? SortCursorUnidirectionalSemiBounded.create(adapter, iterationHelper, keyRange, ordering)
+               : SortCursorUnidirectional.create(adapter, iterationHelper, keyRange, ordering))
+            : SortCursorMixedOrder.create(adapter, iterationHelper, keyRange, ordering);
     }
 
     // For use by subclasses
 
-    protected SortCursor(Sorter sorter)
+    protected SortCursor(PersistitAdapter adapter, IterationHelper iterationHelper)
     {
-        this.sorter = sorter;
-        this.exchange = sorter.exchange;
-        this.valueSource = new PersistitValueValueSource();
-        this.valueSource.attach(sorter.value);
+        this.adapter = adapter;
+        this.iterationHelper = iterationHelper;
+        this.exchange = iterationHelper.exchange();
     }
 
-    protected Row row()
+    protected Row row() throws PersistitException
     {
-        ValuesHolderRow row = new ValuesHolderRow(sorter.rowType);
-        sorter.value.setStreamMode(true);
-        for (int i = 0; i < sorter.rowFields; i++) {
-            ValueHolder valueHolder = row.holderAt(i);
-            valueSource.expectedType(sorter.fieldTypes[i]);
-            valueHolder.copyFrom(valueSource);
-        }
-        return row;
+        return iterationHelper.row();
     }
 
     // Object state
 
-    protected final Sorter sorter;
+    protected final PersistitAdapter adapter;
     protected final Exchange exchange;
-    private final PersistitValueValueSource valueSource;
+    protected final IterationHelper iterationHelper;
 }

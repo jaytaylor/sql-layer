@@ -34,7 +34,7 @@ import java.io.File;
 import java.util.Collection;
 
 @RunWith(NamedParameterizedRunner.class)
-public class PostgresServerSelectIT extends PostgresServerITBase 
+public class PostgresServerSelectIT extends PostgresServerFilesITBase 
                                     implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 

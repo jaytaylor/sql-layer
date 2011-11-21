@@ -38,6 +38,7 @@ public enum AkType {
     VARBINARY(OBJECT_AKTYPE),
     YEAR(LONG_AKTYPE),
     BOOL(BOOLEAN_AKTYPE),
+    INTERVAL(LONG_AKTYPE),
     NULL(null),
     UNSUPPORTED(null),
     ;

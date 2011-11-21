@@ -1,0 +1,9 @@
+# SIN of VARCHAR produces wrong error
+---
+- Statement: CREATE TABLE t (varchar_field varchar(32))
+---
+- Statement: INSERT INTO t VALUES ('abc')
+---
+- Statement: SELECT SIN(varchar_field) FROM t
+- error: [42000]
+...

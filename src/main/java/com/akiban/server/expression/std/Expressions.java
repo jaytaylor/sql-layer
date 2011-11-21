@@ -16,15 +16,16 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.ais.model.Column;
-import com.akiban.qp.expression.*;
+import com.akiban.qp.expression.IndexBound;
+import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
-
-import java.util.Arrays;
+import com.akiban.server.types.ValueSource;
 
 public class Expressions
 {
@@ -48,9 +49,9 @@ public class Expressions
         return new IndexBound(row, columnSelector);
     }
 
-    public static IndexKeyRange indexKeyRange(IndexBound lo, boolean loInclusive, IndexBound hi, boolean hiInclusive)
+    public static IndexKeyRange indexKeyRange(IndexRowType indexRowType, IndexBound lo, boolean loInclusive, IndexBound hi, boolean hiInclusive)
     {
-        return new IndexKeyRange(lo, loInclusive, hi, hiInclusive);
+        return IndexKeyRange.bounded(indexRowType, lo, loInclusive, hi, hiInclusive);
     }
 
     public static Expression literal(Object value)
@@ -66,6 +67,11 @@ public class Expressions
     public static Expression variable(AkType type, int position)
     {
         return new VariableExpression(type, position);
+    }
+
+    public static Expression valueSource(ValueSource valueSource)
+    {
+        return new ValueSourceExpression(valueSource);
     }
 
     public static Expression boundField(RowType rowType, int rowPosition, int fieldPosition)

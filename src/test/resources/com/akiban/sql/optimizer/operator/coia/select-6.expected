@@ -3,7 +3,7 @@ PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE], state:char(2)[V
     Product_NestedLoops(flatten(user.customers, user.orders) x flatten(user.customers, user.addresses))
       Flatten_HKeyOrdered(user.customers INNER user.orders)
         AncestorLookup_Default(Index(user.orders.order_date[IndexColumn(order_date)]) -> [user.customers, user.orders])
-          IndexScan_Default(Index(user.orders.order_date[IndexColumn(order_date)]) (>UnboundExpressions[Literal(2011-01-01)],))
+          IndexScan_Default(Index(user.orders.order_date[IndexColumn(order_date)]) (>UnboundExpressions[Literal(2011-01-01)],<UnboundExpressions[Literal(NULL)]))
       Filter_Default([flatten(user.customers, user.addresses)])
         Flatten_HKeyOrdered(user.customers INNER user.addresses)
           BranchLookup_Nested(_akiban_customers user.customers -> user.addresses)

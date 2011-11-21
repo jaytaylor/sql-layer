@@ -1,0 +1,10 @@
+# Inserting 'Infinity' after '0.0' into a double fails
+---
+- Statement: CREATE TABLE t (double_field double)
+---
+- Statement: INSERT INTO t (double_field) VALUES (0.0), ('Infinity')
+---
+- Statement: SELECT * from t
+- output: [[0.0], [Infinity]]
+- output_types: [DOUBLE]
+...

@@ -13,20 +13,10 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.persistitadapter;
+package com.akiban.server.error;
 
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.tree.TreeService;
-import com.akiban.server.store.PersistitStore;
-
-public final class HookablePersistitAdapter extends PersistitAdapter {
-
-    public interface FilterFactoryHook extends PersistitFilterFactory.InternalHook {
-        // empty interface; just promoting visibility
-    }
-
-    public HookablePersistitAdapter(Schema schema, PersistitStore persistit, Session session, TreeService treeService, FilterFactoryHook hook) {
-        super(schema, persistit, session, treeService, null, hook);
+public final class InsertWrongCountException extends InvalidOperationException {
+    public InsertWrongCountException(int ntarget, int nexpr) {
+        super(ErrorCode.INSERT_WRONG_COUNT, ntarget, nexpr);
     }
 }

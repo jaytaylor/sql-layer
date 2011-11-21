@@ -3,4 +3,4 @@ PhysicalSelect[VARCHAR(32)][name:varchar(32)[VARCHAR], order_date:date[DATE], sk
     Flatten_HKeyOrdered(flatten(user.customers, user.orders) INNER user.items)
       Flatten_HKeyOrdered(user.customers INNER user.orders)
         AncestorLookup_Default(Index(user.items.sku[IndexColumn(sku)]) -> [user.customers, user.orders, user.items])
-          IndexScan_Default(Index(user.items.sku[IndexColumn(sku)]) (,<UnboundExpressions[Variable(pos=0)]))
+          IndexScan_Default(Index(user.items.sku[IndexColumn(sku)]) (>UnboundExpressions[Literal(NULL)],<UnboundExpressions[Variable(pos=0)]))

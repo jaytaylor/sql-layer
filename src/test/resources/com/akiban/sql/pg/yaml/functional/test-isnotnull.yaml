@@ -1,0 +1,281 @@
+# Test the IS NOT NULL operator
+---
+- Include: all-types-schema.yaml
+
+# bigint
+---
+- Statement: SELECT bigint_field FROM all_types WHERE bigint_field IS NOT NULL
+- row_count: 0
+---
+- Statement: INSERT INTO all_types (bigint_field) VALUES (null)
+---
+- Statement: INSERT INTO all_types (bigint_field) VALUES (0), (1), (-1),
+    (9223372036854775807), (-9223372036854775808)
+---
+- Statement: SELECT bigint_field FROM all_types WHERE bigint_field IS NOT NULL
+- output: [[0], [1], [-1], [9223372036854775807], [-9223372036854775808]]
+---
+- Statement: DELETE FROM all_types
+
+# bigint unsigned -- SELECT not supported
+
+# blob
+---
+- Statement: SELECT blob_field FROM all_types WHERE blob_field IS NOT NULL
+- row_count: 0
+---
+- Statement: INSERT INTO all_types (blob_field) VALUES (null)
+---
+- Statement: INSERT INTO all_types (blob_field) VALUES (''), ('deadbeef')
+---
+- Statement: SELECT blob_field FROM all_types WHERE blob_field IS NOT NULL
+- output: [[''], ['deadbeef']]
+---
+- Statement: DELETE FROM all_types
+
+# boolean
+# Selecting a boolean returns the wrong value
+# ---
+# - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS NOT NULL
+# - row_count: 0
+# ---
+# - Statement: INSERT INTO all_types (boolean_field) VALUES (null)
+# ---
+# - Statement: INSERT INTO all_types (boolean_field) VALUES (0), (1)
+# ---
+# - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS NOT NULL
+# - output: [[0], [1]]
+# ---
+# - Statement: DELETE FROM all_types
+
+# char
+---
+- Statement: SELECT char_field FROM all_types WHERE char_field IS NOT NULL
+- row_count: 0
+---
+- Statement: INSERT INTO all_types (char_field) VALUES (null)
+---
+- Statement: INSERT INTO all_types (char_field) VALUES (''), ('a')
+---
+- Statement: SELECT char_field FROM all_types WHERE char_field IS NOT NULL
+- output: [[''], ['a']]
+---
+- Statement: DELETE FROM all_types
+
+# char(32)
+---
+- Statement: SELECT char_multi_field FROM all_types
+    WHERE char_multi_field IS NOT NULL
+- row_count: 0
+---
+- Statement: INSERT INTO all_types (char_multi_field) VALUES (null)
+---
+- Statement: INSERT INTO all_types (char_multi_field) VALUES (''), ('abc')
+---
+- Statement: SELECT char_multi_field FROM all_types
+    WHERE char_multi_field IS NOT NULL
+- output: [[''], ['abc']]
+---
+- Statement: DELETE FROM all_types
+
+# clob
+---
+- Statement: SELECT clob_field FROM all_types WHERE clob_field IS NOT NULL
+- row_count: 0
+---
+- Statement: INSERT INTO all_types (clob_field) VALUES (null)
+---
+- Statement: INSERT INTO all_types (clob_field) VALUES (''), ('deadbeef')
+---
+- Statement: SELECT clob_field FROM all_types WHERE clob_field IS NOT NULL
+- output: [[''], ['deadbeef']]
+---
+- Statement: DELETE FROM all_types
+
+# date
+---
+- Statement: SELECT date_field FROM all_types WHERE date_field IS NOT NULL
+- row_count: 0
+---
+- Statement: INSERT INTO all_types (date_field) VALUES (null)
+---
+- Statement: INSERT INTO all_types (date_field) VALUES ('2001-11-11')
+---
+- Statement: SELECT date_field FROM all_types WHERE date_field IS NOT NULL
+- output: [['2001-11-11']]
+---
+- Statement: DELETE FROM all_types
+
+# decimal
+---
+- Statement: SELECT decimal_field FROM all_types WHERE decimal_field IS NOT NULL
+- row_count: 0
+---
+- Statement: INSERT INTO all_types (decimal_field) VALUES (null)
+---
+- Statement: INSERT INTO all_types (decimal_field) VALUES (1.0), (123456.0),
+    (-123456.0)
+---
+- Statement: SELECT decimal_field FROM all_types WHERE decimal_field IS NOT NULL
+- output: [[1], [123456], [-123456]]
+---
+- Statement: DELETE FROM all_types
+
+# double
+---
+- Statement: SELECT double_field FROM all_types WHERE double_field IS NOT NULL
+- row_count: 0
+---
+- Statement: INSERT INTO all_types (double_field) VALUES (null)
+---
+- Statement: INSERT INTO all_types (double_field) VALUES (0.0), (1.0), (-1.0)
+---
+- Statement: INSERT INTO all_types (double_field) VALUES
+    (1.7976931348623157E308), (4.9E-324)
+---
+- Statement: INSERT INTO all_types (double_field) VALUES
+    ('Infinity'), ('-Infinity'), ('NaN')
+---
+- Statement: SELECT double_field FROM all_types WHERE double_field IS NOT NULL
+- output: [[0.0], [1.0], [-1.0], [1.7976931348623157E308], [4.9E-324],
+           [Infinity], [-Infinity], [NaN]]
+---
+- Statement: DELETE FROM all_types
+
+# float
+---
+- Statement: SELECT float_field FROM all_types WHERE float_field IS NOT NULL
+- row_count: 0
+---
+- Statement: INSERT INTO all_types (float_field) VALUES (null)
+---
+- Statement: INSERT INTO all_types (float_field) VALUES (0.0), (1.0), (-1.0)
+---
+- Statement: INSERT INTO all_types (float_field) VALUES
+    (3.4028234663852886E38), (1.401298464324817E-45)
+---
+- Statement: INSERT INTO all_types (float_field) VALUES
+    ('Infinity'), ('-Infinity'), ('NaN')
+---
+- Statement: SELECT float_field FROM all_types WHERE float_field IS NOT NULL
+- output: [[0.0], [1.0], [-1.0], [3.4028234663852886E38],
+          [1.401298464324817E-45], [Infinity], [-Infinity], [NaN]]
+---
+- Statement: DELETE FROM all_types
+
+# integer
+---
+- Statement: SELECT integer_field FROM all_types WHERE integer_field IS NOT NULL
+- row_count: 0
+---
+- Statement: INSERT INTO all_types (integer_field) VALUES (null)
+---
+- Statement: INSERT INTO all_types (integer_field) VALUES (0), (1), (-1),
+    (2147483647), (-2147483648)
+---
+- Statement: SELECT integer_field FROM all_types WHERE integer_field IS NOT NULL
+- output: [[0], [1], [-1], [2147483647], [-2147483648]]
+---
+- Statement: DELETE FROM all_types
+
+# numeric
+---
+- Statement: SELECT numeric_field FROM all_types WHERE numeric_field IS NOT NULL
+- row_count: 0
+---
+- Statement: INSERT INTO all_types (numeric_field) VALUES (null)
+---
+- Statement: INSERT INTO all_types (numeric_field) VALUES (1.0), (123456.0),
+    (-123456.0)
+---
+- Statement: SELECT numeric_field FROM all_types WHERE numeric_field IS NOT NULL
+- output: [[1], [123456], [-123456]]
+---
+- Statement: DELETE FROM all_types
+
+# real
+---
+- Statement: SELECT real_field FROM all_types WHERE real_field IS NOT NULL
+- row_count: 0
+---
+- Statement: INSERT INTO all_types (real_field) VALUES (null)
+---
+- Statement: INSERT INTO all_types (real_field) VALUES (0.0), (1.0), (-1.0)
+# Real fields have their accuracy truncated
+# ---
+# - Statement: INSERT INTO all_types (real_field) VALUES
+#     (3.4028234663852886E38), (1.401298464324817E-45)
+---
+- Statement: INSERT INTO all_types (real_field) VALUES
+    ('Infinity'), ('-Infinity'), ('NaN')
+---
+- Statement: SELECT real_field FROM all_types WHERE real_field IS NOT NULL
+- output: [[0.0], [1.0], [-1.0],
+#          [3.4028234663852886E38], [1.401298464324817E-45],
+           [Infinity], [-Infinity], [NaN]]
+---
+- Statement: DELETE FROM all_types
+
+# smallint
+---
+- Statement: SELECT smallint_field FROM all_types
+    WHERE smallint_field IS NOT NULL
+- row_count: 0
+---
+- Statement: INSERT INTO all_types (smallint_field) VALUES (null)
+---
+- Statement: INSERT INTO all_types (smallint_field) VALUES (0), (1), (-1),
+    (32767), (-32768)
+---
+- Statement: SELECT smallint_field FROM all_types
+    WHERE smallint_field IS NOT NULL
+- output: [[0], [1], [-1], [32767], [-32768]]
+---
+- Statement: DELETE FROM all_types
+
+# time
+---
+- Statement: SELECT time_field FROM all_types WHERE time_field IS NOT NULL
+- row_count: 0
+---
+- Statement: INSERT INTO all_types (time_field) VALUES (null)
+---
+- Statement: INSERT INTO all_types (time_field) VALUES ('12:34:56')
+---
+- Statement: SELECT time_field FROM all_types WHERE time_field IS NOT NULL
+- output: [['12:34:56']]
+---
+- Statement: DELETE FROM all_types
+
+# timestamp
+---
+- Statement: SELECT timestamp_field FROM all_types
+    WHERE timestamp_field IS NOT NULL
+- row_count: 0
+---
+- Statement: INSERT INTO all_types (timestamp_field) VALUES (null)
+---
+- Statement: INSERT INTO all_types (timestamp_field) VALUES
+    ('1234-05-06 12:34:56')
+---
+- Statement: SELECT timestamp_field FROM all_types
+    WHERE timestamp_field IS NOT NULL
+- output: [['1234-05-06 12:34:56.0']]
+---
+- Statement: DELETE FROM all_types
+
+# varchar
+---
+- Statement: SELECT varchar_field FROM all_types WHERE varchar_field IS NOT NULL
+- row_count: 0
+---
+- Statement: INSERT INTO all_types (varchar_field) VALUES (null)
+---
+- Statement: INSERT INTO all_types (varchar_field) VALUES (''), ('abc')
+---
+- Statement: SELECT varchar_field FROM all_types WHERE varchar_field IS NOT NULL
+- output: [[''], ['abc']]
+---
+- Statement: DELETE FROM all_types
+
+...

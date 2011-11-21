@@ -32,7 +32,7 @@ import java.io.File;
 import java.util.Collection;
 
 @RunWith(NamedParameterizedRunner.class)
-public class PostgresServerUpdateIT extends PostgresServerITBase 
+public class PostgresServerUpdateIT extends PostgresServerFilesITBase 
                                     implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 

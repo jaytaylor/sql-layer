@@ -15,44 +15,27 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.qp.persistitadapter.PersistitAdapterException;
-import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.row.Row;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
-class SortCursorDescending extends SortCursor
+class  MixedOrderScanStateUnbounded extends MixedOrderScanState
 {
-    // Cursor interface
-
     @Override
-    public void open(Bindings bindings)
+    public boolean startScan() throws PersistitException
     {
-        exchange.clear();
-        exchange.append(Key.AFTER);
-    }
-
-    @Override
-    public Row next()
-    {
-        Row next = null;
-        try {
-            if (exchange.previous(true)) {
-                next = row();
-            } else {
-                close();
-            }
-        } catch (PersistitException e) {
-            close();
-            throw new PersistitAdapterException(e);
+        Key.Direction direction;
+        if (ascending) {
+            cursor.exchange.append(Key.BEFORE);
+            direction = Key.GT;
+        } else {
+            cursor.exchange.append(Key.AFTER);
+            direction = Key.LT;
         }
-        return next;
+        return cursor.exchange.traverse(direction, false);
     }
 
-    // SortCursorAscending interface
-
-    public SortCursorDescending(Sorter sorter)
+    public MixedOrderScanStateUnbounded(SortCursorMixedOrder cursor, int field) throws PersistitException
     {
-        super(sorter);
+        super(cursor, field, cursor.ordering().ascending(field));
     }
 }

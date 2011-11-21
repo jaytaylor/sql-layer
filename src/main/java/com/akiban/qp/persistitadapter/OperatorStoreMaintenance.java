@@ -329,17 +329,17 @@ final class OperatorStoreMaintenance {
         }
         UnboundExpressions unboundExpressions = new RowBasedUnboundExpressions(startFromRowType, pkExpressions);
         IndexBound bound = new IndexBound(unboundExpressions, ConstantColumnSelector.ALL_ON);
-        IndexKeyRange range = new IndexKeyRange(bound, true, bound, true);
+        IndexRowType startFromIndexRowType = schema.indexRowType(startFromIndex);
+        IndexKeyRange range = IndexKeyRange.bounded(startFromIndexRowType, bound, true, bound, true);
 
         // the scan, main table and flattens
 
         Operator plan;
-        IndexRowType pkRowType = schema.indexRowType(startFromIndex);
-        plan = API.indexScan_Default(pkRowType, false, range);
+        plan = API.indexScan_Default(startFromIndexRowType, false, range);
         plan = API.branchLookup_Default(
                 plan,
                 startFrom.getGroup().getGroupTable(),
-                pkRowType,
+                startFromIndexRowType,
                 branchTables.allTablesForBranch.get(0),
                 API.LookupOption.DISCARD_INPUT
         );

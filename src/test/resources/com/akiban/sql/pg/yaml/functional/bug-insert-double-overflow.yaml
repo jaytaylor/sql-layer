@@ -1,0 +1,7 @@
+# Inserting an overflow double produces the wrong error code
+---
+- Statement: CREATE TABLE t (double_field double)
+---
+- Statement: INSERT INTO t VALUES (1.7976931348623157E309)
+- error: [55004]
+...

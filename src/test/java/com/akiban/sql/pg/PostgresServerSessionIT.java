@@ -25,7 +25,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.api.DDLFunctions;
 import org.postgresql.util.PSQLException;
 
-public class PostgresServerSessionIT extends PostgresServerITBase {
+public class PostgresServerSessionIT extends PostgresServerFilesITBase {
 
     @Before
     public void createSimpleSchema() throws SQLException {

@@ -178,12 +178,14 @@ public class PostgresType
         if ("VARCHAR".equals(encoding))
             oid = VARCHAR_TYPE_OID;
         else if ("INT".equals(encoding) ||
-                 "U_INT".equals(encoding)) {
+                 "U_INT".equals(encoding) ||
+                 "U_BIGINT".equals(encoding)) {
             switch (aisType.maxSizeBytes().intValue()) {
             case 1:
-                oid = BYTEA_TYPE_OID;
+                oid = INT2_TYPE_OID; // No INT1; this also could be BOOLEAN (TINYINT(1)).
                 break;
             case 2:
+            case 3:
                 oid = INT2_TYPE_OID;
                 break;
             case 4:
@@ -207,16 +209,18 @@ public class PostgresType
                  "TEXT".equals(encoding))
             oid = TEXT_TYPE_OID;
         else if ("YEAR".equals(encoding))
-            oid = BYTEA_TYPE_OID;
+            oid = INT2_TYPE_OID; // No INT1
         else if ("DECIMAL".equals(encoding) ||
                  "U_DECIMAL".equals(encoding))
-            oid = MONEY_TYPE_OID;
+            oid = NUMERIC_TYPE_OID;
         else if ("FLOAT".equals(encoding) ||
                  "U_FLOAT".equals(encoding))
             oid = FLOAT4_TYPE_OID;
         else if ("DOUBLE".equals(encoding) ||
                  "U_DOUBLE".equals(encoding))
             oid = FLOAT8_TYPE_OID;
+        else if ("VARBINARY".equals(encoding))
+            oid = BYTEA_TYPE_OID;
         else
             throw new UnknownDataTypeException (encoding);
 
@@ -266,7 +270,7 @@ public class PostgresType
             break;
         case TypeId.FormatIds.DECIMAL_TYPE_ID:
         case TypeId.FormatIds.NUMERIC_TYPE_ID:
-            oid = MONEY_TYPE_OID;
+            oid = NUMERIC_TYPE_OID;
             break;
         case TypeId.FormatIds.DOUBLE_TYPE_ID:
             oid = FLOAT8_TYPE_OID;
@@ -277,7 +281,10 @@ public class PostgresType
             break;
         case TypeId.FormatIds.LONGINT_TYPE_ID:
             oid = INT8_TYPE_OID;
-            converter = Extractors.getLongExtractor(AkType.INT);
+            // TODO: U_BIGINT is represented by BigInteger, so a
+            // LongExtractor won't work.  See comment above.
+            if (!typeId.isUnsigned())
+                converter = Extractors.getLongExtractor(AkType.INT);
             break;
         case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
             oid = TEXT_TYPE_OID;
@@ -298,10 +305,12 @@ public class PostgresType
             break;
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
             oid = TIMESTAMP_TYPE_OID;
+            // TODO: AkType.TIMESTAMP is MYSQL_TIMESTAMP, another way
+            // of representing seconds precision.
             converter = Extractors.getLongExtractor(AkType.TIMESTAMP);
             break;
         case TypeId.FormatIds.TINYINT_TYPE_ID:
-            oid = BYTEA_TYPE_OID;
+            oid = INT2_TYPE_OID; // No INT1
             break;
         case TypeId.FormatIds.VARBIT_TYPE_ID:
             oid = VARBIT_TYPE_OID;
