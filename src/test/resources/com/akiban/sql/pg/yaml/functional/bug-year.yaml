@@ -1,6 +1,6 @@
 # YEAR function fails
 ---
-- Statement: CREATE TABLE t (varchar_field varchar(32))
+- CreateTable: t (varchar_field varchar(32))
 ---
 - Statement: INSERT INTO t (varchar_field) VALUES ('1999-06-21')
 ---

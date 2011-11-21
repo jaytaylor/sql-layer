@@ -606,7 +606,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementOutputRegexp() {
     	testYaml(
     	    "---\n" +
-    	    "- Statement: CREATE TABLE t (name varchar(32))\n" +
+    	    "- CreateTable: t (name varchar(32))\n" +
     	    "---\n" +
     	    "- Statement: INSERT INTO t VALUES\n" +
 	    "    ('hubba-hubba'), ('abc123')\n" +
@@ -1017,8 +1017,8 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "- error:\n" +
 	    "  - 42000\n" +
 	    "  - |\n" +
-	    "    ERROR: [] com.akiban.sql.parser.ParseException:" +
-	    " Encountered \" <IDENTIFIER> \"FR \"\" at line 1, column 10.\n" +
+	    "    ERROR: [] com.akiban.sql.parser.ParseException: " +
+	    "Encountered \" <IDENTIFIER> \"FR \"\" at line 1, column 10.\n" +
 	    "    Was expecting one of:\n" +
 	    "        \"from\" ...\n" +
 	    "        \",\" ...\n" +
