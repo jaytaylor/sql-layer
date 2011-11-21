@@ -26,6 +26,7 @@ import com.akiban.ais.model.Index.JoinType;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
+import com.akiban.sql.optimizer.rule.range.ColumnRanges;
 
 import java.util.*;
 

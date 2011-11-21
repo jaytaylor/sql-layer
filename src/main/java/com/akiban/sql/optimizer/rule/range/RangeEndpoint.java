@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.akiban.sql.optimizer.rule.range;
 
 import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.plan.ConstantExpression;

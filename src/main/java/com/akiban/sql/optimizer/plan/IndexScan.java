@@ -19,7 +19,7 @@ import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 
 import com.akiban.ais.model.Index;
-import com.akiban.sql.optimizer.rule.ColumnRanges;
+import com.akiban.sql.optimizer.rule.range.ColumnRanges;
 
 import java.util.*;
 

@@ -25,6 +25,8 @@ import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 
+import com.akiban.sql.optimizer.rule.range.ColumnRanges;
+import com.akiban.sql.optimizer.rule.range.RangeSegment;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ParameterNode;
 
