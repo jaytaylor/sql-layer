@@ -24,7 +24,8 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 
 import static com.akiban.sql.optimizer.rule.range.ComparisonResult.*;
-import static com.akiban.sql.optimizer.rule.range.ExpressionBuilder.constant;
+import static com.akiban.sql.optimizer.rule.range.TUtils.exclusive;
+import static com.akiban.sql.optimizer.rule.range.TUtils.inclusive;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(NamedParameterizedRunner.class)
@@ -92,21 +93,6 @@ public final class RangeEndpointComparisonTest {
         if (!flippedName.equals(name)) { // e.g. we don't need to reflect inclusive("A") == inclusive("A")
             pb.add(flippedName, two, one, flippedExpected);
         }
-    }
-
-    private static RangeEndpoint inclusive(String value) {
-        return RangeEndpoint.inclusive(constant(value));
-    }
-
-    private static RangeEndpoint exclusive(String value) {
-        return RangeEndpoint.exclusive(constant(value));
-    }
-
-    private static RangeEndpoint inclusive(long value) {
-        return RangeEndpoint.inclusive(constant(value));
-    }
-    private static RangeEndpoint exclusive(long value) {
-        return RangeEndpoint.exclusive(constant(value));
     }
 
     private static String AARDVARK = "aardvark";

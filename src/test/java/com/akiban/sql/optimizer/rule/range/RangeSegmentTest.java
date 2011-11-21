@@ -22,7 +22,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static com.akiban.sql.optimizer.rule.range.ExpressionBuilder.constant;
+import static com.akiban.sql.optimizer.rule.range.TUtils.exclusive;
+import static com.akiban.sql.optimizer.rule.range.TUtils.inclusive;
+import static com.akiban.sql.optimizer.rule.range.TUtils.segment;
 import static com.akiban.util.AssertUtils.assertCollectionEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
@@ -307,27 +309,5 @@ public final class RangeSegmentTest {
         expectedsList.add(first);
         Collections.addAll(expectedsList, expecteds);
         sacAndCheck(list, expectedsList);
-    }
-
-    // purely for convenience
-
-    private static RangeSegment segment(RangeEndpoint start, RangeEndpoint end) {
-        return new RangeSegment(start, end);
-    }
-
-    private RangeEndpoint inclusive(long value) {
-        return RangeEndpoint.inclusive(constant(value));
-    }
-
-    private RangeEndpoint exclusive(long value) {
-        return RangeEndpoint.exclusive(constant(value));
-    }
-
-    private RangeEndpoint inclusive(String value) {
-        return RangeEndpoint.inclusive(constant(value));
-    }
-
-    private RangeEndpoint exclusive(String value) {
-        return RangeEndpoint.exclusive(constant(value));
     }
 }

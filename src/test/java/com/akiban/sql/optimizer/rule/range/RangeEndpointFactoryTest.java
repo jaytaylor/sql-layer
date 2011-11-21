@@ -15,18 +15,5 @@
 
 package com.akiban.sql.optimizer.rule.range;
 
-import com.akiban.server.types.AkType;
-import com.akiban.sql.optimizer.plan.ConstantExpression;
-
-public final class ExpressionBuilder {
-
-    public static ConstantExpression constant(String value) {
-        return new ConstantExpression(value, AkType.VARCHAR);
-    }
-
-    public static ConstantExpression constant(long value) {
-        return new ConstantExpression(value, AkType.LONG);
-    }
-
-    private ExpressionBuilder() {}
+public final class RangeEndpointFactoryTest {
 }
