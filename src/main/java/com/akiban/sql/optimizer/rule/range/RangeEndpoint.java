@@ -67,7 +67,7 @@ public abstract class RangeEndpoint implements Comparable<RangeEndpoint> {
      * @return LT if point1 is less than point2; GT if point1 is greater than point2; EQ if point1 is greater than
      * point2; and INVALID if the two points can't be compared
      */
-    public static ComparisonResult compareEndpoints(RangeEndpoint point1, RangeEndpoint point2)
+    private static ComparisonResult compareEndpoints(RangeEndpoint point1, RangeEndpoint point2)
     {
         if (point1.equals(point2))
             return ComparisonResult.EQ;

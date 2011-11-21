@@ -150,7 +150,7 @@ public final class RangeSegment {
      * @return whether the two points overlap
      */
     private static Boolean findOverlap(RangeEndpoint low, RangeEndpoint high, boolean loose) {
-        ComparisonResult comparison = RangeEndpoint.compareEndpoints(low, high);
+        ComparisonResult comparison = low.comparePreciselyTo(high);
         switch (comparison) {
         case GT_BARELY: return loose;             // low > high only because of inclusiveness. Use the looseness.
         case EQ:        return low.isInclusive(); // if they're (both) exclusive, it's a discontinuity
@@ -192,7 +192,7 @@ public final class RangeSegment {
         // to GT
         if (start == null || end == null)
             return null;
-        ComparisonResult comparison = RangeEndpoint.compareEndpoints(start, end);
+        ComparisonResult comparison = start.comparePreciselyTo(end);
         switch (comparison) {
         case GT:
         case GT_BARELY:
