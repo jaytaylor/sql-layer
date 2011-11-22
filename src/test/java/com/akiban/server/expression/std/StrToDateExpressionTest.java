@@ -49,19 +49,40 @@ public class StrToDateExpressionTest
     {
         ParameterizationBuilder pb = new ParameterizationBuilder();
 
-        param(pb, "Test date to date, std delimeter", "2009-12-28", "%Y-%m-%d", "2009-12-28", AkType.DATE);
-        param(pb, "Test date to date, delimeter is [abc]", "2009abc12abc28", "%Yabc%mabc%d", "2009-12-28", AkType.DATE);
-        param(pb, "Test date to date, using different delimeters", "2009~12/28", "%Y~%m/%d", "2009-12-28", AkType.DATE);
-        param(pb, "Test date to date, no delimeters", "090812", "%y%d%m", "2009-12-08", AkType.DATE);
-        param(pb, "Test year to date", "2009", "%Y", "2009-00-00", AkType.DATE);
-        param(pb, "Test year-month to date", "09Mar", "%y%b", "2009-03-00", AkType.DATE);
-        param(pb, "Test year-mont-hour to datetime", "09 Mar13", "%y %b%H", "2009-03-00 13:00:00", AkType.DATETIME);
-        param(pb, "Test datetime to datetime, different dels", "09~23Mar=01455", "%y~%H%b=%d%i%s", "2009-03-01 23:45:05", AkType.DATETIME);
-        param(pb, "Test mis-matched str and format, expected null", "2009-12-30", "%Y/%m/%d", "", AkType.DATE);
-        param(pb, "Test hour-minute to time", "9-18", "%h-%i", "09:18:00", AkType.TIME);
-        param(pb, "Test time to time", "09569", "%H%i%s", "09:56:09", AkType.TIME);
-        param(pb, "Test unparsable string", "abcd1208", "%Y%m%d", "", AkType.DATE);
-        param(pb, "Test duplicate fields, expecting null", "20090910", "%Y%y%m", "", AkType.DATE);
+        // DATE
+        param(pb, "date to date, std delimeter", "2009-12-28", "%Y-%m-%d", "2009-12-28", AkType.DATE);
+        param(pb, "date to date, delimeter is [abc]", "2009abc12abc28", "%Yabc%mabc%d", "2009-12-28", AkType.DATE);
+        param(pb, "date to date, using different delimeters", "2009~12/28", "%Y~%m/%d", "2009-12-28", AkType.DATE);
+        param(pb, "date to date, no delimeters", "090812", "%y%d%m", "2009-12-08", AkType.DATE);
+        param(pb, "year to date", "2009", "%Y", "2009-00-00", AkType.DATE);
+        param(pb, "year-month to date", "09Mar", "%y%b", "2009-03-00", AkType.DATE);
+        param(pb, "month-year-day", "November0912", "%M%y%d", "2009-11-12", AkType.DATE);
+        param(pb, "datetime to datetime, different dels", "09~23Mar=01455", "%y~%H%b=%d%i%s", "2009-03-01 23:45:05", AkType.DATETIME);
+        param(pb, "mis-matched str and format, expected null", "2009-12-30", "%Y/%m/%d", "", AkType.DATE);
+        param(pb, "unparsable string", "abcd1208", "%Y%m%d", "", AkType.DATE);
+        param(pb, "duplicate fields, expecting null", "20090910", "%Y%y%m", "", AkType.DATE);
+        param(pb, "week year to date", "200442 Mon", "%X%V %a", "2004-10-18", AkType.DATE);
+
+                //200442 Monday', '%X%V %W');
+        //-> '2004-10-18'
+        // TIME
+        param(pb, "hour-minute to time", "9-18", "%h-%i", "09:18:00", AkType.TIME);
+        param(pb, "minute-sec to time", "09    18", "%i %s", "00:09:18", AkType.TIME);
+        param(pb, "time to time", "09569", "%H%i%s", "09:56:09", AkType.TIME);
+        param(pb, "time with duplicate fields to time", "12:20:10:13", "%H:%i:%h:%s", "", AkType.TIME);
+        param(pb, "%r to time", "11:30:10", "%r", "11:30:10", AkType.TIME);
+        param(pb, "%r and time to time" , "12:30:40 11:25:35", "%r %H:%i:%s", "00:30:40", AkType.TIME); // second part is simply ignored
+        param(pb, "time with AM/PM", "12:30:10 am", "%r %p", "00:30:10", AkType.TIME);
+        param(pb, "%r time with AM/PM", "12:30:10 pm", "%r %p", "12:30:10", AkType.TIME);
+        param(pb, "12hr time wiht AM/PM", "8:20:10 am", "%h:%i:%s %p", "08:20:10", AkType.TIME);
+        param(pb, "24hr time with AM/PM, expect null", "0:20:10 PM", "%H:%i:%s %p", "", AkType.TIME);
+
+        //DATETIME
+        param(pb, "year-month-hour to datetime", "09 Mar13", "%y %b%H", "2009-03-00 13:00:00", AkType.DATETIME);
+        param(pb, "%r - year-month-day to datetime", "00:30:10 2006~07Nov", "%r %Y~%d%b", "2006-11-07 00:30:10", AkType.DATETIME);
+
+        // unknown specifier
+        param(pb, "unknown specifier %z", "2009-01-01", "%Y-%z-%d", "", AkType.NULL);
         return pb.asList();
     }
 

@@ -27,11 +27,13 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.ObjectExtractor;
 import com.akiban.server.types.util.ValueHolder;
+import java.util.Calendar;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.joda.time.DateTime;
 
 public class StrToDateExpression extends AbstractBinaryExpression
 {
@@ -90,7 +92,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.W;
             }
@@ -115,7 +117,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.m;
             }
@@ -140,14 +142,14 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.m;
             }
         },
         
         /**
-         * day with suffix: 31st, 30th, 29th, ...
+         * day of month with suffix: 31st, 30th, 29th, ...
          */
         D 
         {
@@ -164,14 +166,14 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.d;
             }
         },
         
         /**
-         * day in numeric: 31, 30, 29, ...
+         * day of month in numeric: 31, 30, 29, ...
          */
         d 
         {
@@ -189,7 +191,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.d;
             }
@@ -214,7 +216,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.d;
             }
@@ -239,7 +241,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.f;
             }
@@ -264,7 +266,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.H;
             }
@@ -278,18 +280,22 @@ public class StrToDateExpression extends AbstractBinaryExpression
             @Override
             public long [] get(String str)
             {
-                int i;
-                return new long [] {Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2 : 1)), i};
+                int i = 2 <= str.length() ? 2 : 1;
+                // adjust hour to 24hr format
+                long h = Long.parseLong(str.substring(0, i));
+                if (h > 12) throw new NumberFormatException();
+                h %= 12;
+                return new long [] {h, i};
             }
 
-             @Override
+            @Override
             public int getFieldType ()
             {
                  return 2;
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.H;
             }
@@ -314,9 +320,9 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
-                return Field.h;
+                return Field.H;
             }
         },
         
@@ -339,7 +345,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.i;
             }
@@ -363,7 +369,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.j;
             }
@@ -391,7 +397,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
              @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.m;
             }
@@ -416,7 +422,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.m;
             }
@@ -431,7 +437,9 @@ public class StrToDateExpression extends AbstractBinaryExpression
             @Override
             public long [] get (String str)
             {
-                throw new UnsupportedOperationException(" am pm is not supported yet");
+                String ap = str.substring(0, 2);
+                return new long[] {ap.equalsIgnoreCase("am") ? 0 : ap.equalsIgnoreCase("pm") ? 12 : -1
+                    , 2};
             }
 
              @Override
@@ -441,7 +449,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.p;
             }
@@ -456,7 +464,15 @@ public class StrToDateExpression extends AbstractBinaryExpression
             public long [] get(String str)
             {
                 String time = str.substring(0, 8);
-                throw new UnsupportedOperationException(" r is not supported yet");
+                String t[] = time.split("\\:");
+
+                // adjust time to 24hr format
+                long hr = Long.parseLong(t[0]);
+                if (hr > 12) throw new NumberFormatException();
+                hr %= 12;
+                long m = Long.parseLong(t[1]);
+                long s = Long.parseLong(t[2]);
+                return new long [] {10000L * hr + 100 * m + s, 8};
             }
 
              @Override
@@ -466,16 +482,16 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
-                return Field.r;
+                return Field.T;
             }
         },
    
         /**
-         * second
+         * second, same as s
          */
-        S // second, same as s
+        S 
         {
             @Override
             public long [] get(String str)
@@ -484,23 +500,23 @@ public class StrToDateExpression extends AbstractBinaryExpression
                 return new long[] { Long.parseLong(str.substring(0,i = 2 <= str.length() ? 2 :1)), i};
             }
 
-             @Override
+            @Override
             public int getFieldType ()
             {
                  return 2;
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.s;
             }
         },
         
         /**
-         * second, same as S
+         * second,
          */
-        s // second, same as S
+        s 
         {
             @Override
             public long [] get(String str)
@@ -516,7 +532,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.s;
             }
@@ -530,7 +546,9 @@ public class StrToDateExpression extends AbstractBinaryExpression
             @Override
             public long [] get(String str)
             {
-                throw new UnsupportedOperationException(" T is ot supported yet");
+                String time = str.substring(0, 8);
+                String t[] = time.split("\\:");
+                return new long [] {10000L * Long.parseLong(t[0]) + 100 * Long.parseLong(t[1]) + Long.parseLong(t[2]), 8};
             }
 
             @Override
@@ -540,7 +558,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.T;
             }
@@ -565,7 +583,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.U;
             }
@@ -590,7 +608,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.u;
             }
@@ -616,7 +634,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.V;
             }
@@ -642,7 +660,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.v;
             }
@@ -666,7 +684,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.W;
             }
@@ -683,14 +701,14 @@ public class StrToDateExpression extends AbstractBinaryExpression
                 return new long[] { Long.parseLong(str.charAt(0) + ""), 1};
             }
 
-             @Override
+            @Override
             public int getFieldType ()
             {
                  return 1;
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.W;
             }
@@ -704,7 +722,9 @@ public class StrToDateExpression extends AbstractBinaryExpression
             @Override
             public long [] get(String str)
             {
-                throw new UnsupportedOperationException ("year week is not supported yet");
+                int i = 4 % str.length();
+                i = (i == 0 ? 4 :i);
+                return new long[] { Long.parseLong(str.substring(0, i)),i };
             }
 
             @Override
@@ -714,7 +734,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.X;
             }
@@ -728,7 +748,9 @@ public class StrToDateExpression extends AbstractBinaryExpression
             @Override
             public long [] get(String str)
             {
-                throw new UnsupportedOperationException ("year week is not supported yet");
+                int i = 4 % str.length();
+                i = (i == 0 ? 4 :i);
+                return new long[] { Long.parseLong(str.substring(0, i)),i };
             }
 
             @Override
@@ -738,7 +760,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.x;
             }
@@ -763,7 +785,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.Y;
             }
@@ -789,7 +811,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.Y;
             }
@@ -813,7 +835,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
 
             @Override
-            public Field underlyingField ()
+            public Field equivalentField ()
             {
                 return Field.percent;
             }
@@ -835,11 +857,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
 
         /**
          * 
-         * @return the underlying field (that's ultimately used to map values to)
-         * For example, %b, %m, and %M are all referred to as %m
-         *              %y and %Y  => %Y
+         * @return the equivalent field (that's ultimately used to map values to)
+         * For example, %b, %m, and %M are all referred to as %m because the all mean day of month
+         *              %y and %Y  => %Y year
          */
-        abstract Field underlyingField ();
+        abstract Field equivalentField ();
 
         // class static data fields
         static protected HashMap<String, Integer> abbWeekday = new HashMap<String, Integer>();
@@ -847,13 +869,13 @@ public class StrToDateExpression extends AbstractBinaryExpression
         static protected HashMap<String, Integer> month = new HashMap<String, Integer>();
         static
         {
-            abbWeekday.put("MON", 0);
-            abbWeekday.put("TUE", 1);
-            abbWeekday.put("WED", 2);
-            abbWeekday.put("THU", 3);
-            abbWeekday.put("FRI", 4);
-            abbWeekday.put("SAT", 5);
-            abbWeekday.put("SUN", 6);
+            abbWeekday.put("SUN", 0);
+            abbWeekday.put("MON", 1);
+            abbWeekday.put("TUE", 2);
+            abbWeekday.put("WED", 3);
+            abbWeekday.put("THU", 4);
+            abbWeekday.put("FRI", 5);
+            abbWeekday.put("SAT", 6);
 
             abbMonth.put("JAN", 1);
             abbMonth.put("FEB", 2);
@@ -915,25 +937,25 @@ public class StrToDateExpression extends AbstractBinaryExpression
         private long getDate(String str, String format) 
         {
             // trim leading/trailing in str.
-            str = str.trim();
-           
+            str = str.trim();           
             // split format
             String formatList[] = format.split("\\%");
-
             String sVal = "";
             Field field = null;
+            boolean has24Hr = false;
             try
             {
                 for (int n = 1; n < formatList.length - 1; ++n)
                 {
                     String fName = formatList[n].charAt(0) + "";
                     field = Field.valueOf(fName);
+                    has24Hr |= field.equals(Field.H) || field.equals(Field.T);
                     String del = formatList[n].substring(1);
-                    if (del.length() == 0)
+                    if (del.length() == 0) // no delimeter
                     {
                         long[] num = field.get(str);
-                        if (valuesMap.containsKey(field.underlyingField())) return -1; // duplicate field
-                        valuesMap.put(field.underlyingField(), num[0]);
+                        if (valuesMap.containsKey(field.equivalentField())) return -1; // duplicate field
+                        valuesMap.put(field.equivalentField(), num[0]);
                         sVal = str.substring(0, (int) num[1]);
                         str = str.replaceFirst(sVal, "");
                         continue;
@@ -947,21 +969,21 @@ public class StrToDateExpression extends AbstractBinaryExpression
                     Matcher m = Pattern.compile("^.*?(?=" + del + ")").matcher(str);
                     m.find();
                     sVal = m.group();
-                    if (valuesMap.containsKey(field.underlyingField())) return -1;
-                    valuesMap.put(field.underlyingField(), field.get(sVal)[0]);
+                    if (valuesMap.containsKey(field.equivalentField())) return -1;
+                    valuesMap.put(field.equivalentField(), field.get(sVal)[0]);
                     str = str.replaceFirst(sVal + del, "");
                     str = str.trim();
                 }
                 field = Field.valueOf(formatList[formatList.length - 1]);
-                if (valuesMap.containsKey(field.underlyingField())) return -1;
-                valuesMap.put(field.underlyingField(), field.get(str)[0]);
+                if (valuesMap.containsKey(field.equivalentField())) return -1;
+                valuesMap.put(field.equivalentField(), field.get(str)[0]);
 
             }
             catch (IllegalStateException iexc) // str and format do not match
             {
                 return -1;
             }
-            catch (NullPointerException nex) // str does not contains enough info specified by format
+            catch (NullPointerException nex) // format specifier not found
             {
                 return -1;
             }
@@ -973,7 +995,10 @@ public class StrToDateExpression extends AbstractBinaryExpression
             {
                 return -1;
             }
-
+            catch (ArithmeticException aexc) // trying to put 0hr to a 12hr format
+            {
+                return -1;
+            }
             
             Long y = 0L;
             Long m = 0L;
@@ -987,52 +1012,137 @@ public class StrToDateExpression extends AbstractBinaryExpression
                 // date
                 case DATE:
                     // year
-                    if ((y = valuesMap.get(Field.Y.underlyingField())) == null) y = 0L;
+                    if ((y = valuesMap.get(Field.Y.equivalentField())) == null) y = 0L;
                     // month
-                    if ((m = valuesMap.get(Field.m.underlyingField())) == null) m = 0L;
+                    if ((m = valuesMap.get(Field.m.equivalentField())) == null) m = 0L;
                     // day
-                    if ((d = valuesMap.get(Field.d.underlyingField())) == null) d = 0L;
+                    if ((d = valuesMap.get(Field.d.equivalentField())) == null) d = 0L;
                     
-                    // TODO: date specified by week,year and weekday
+                    // get date specified by week,year and weekday if year, month or day field is not available
+                    if ( y*m*d == 0)
+                    {
+                        Long yr = valuesMap.get(Field.v);
+                        Long wk;
+                        Long dWeek;
+                        if (yr == null)
+                        {
+                            if ((yr = valuesMap.get(Field.V)) == null || (wk = valuesMap.get(Field.X)) == null
+                                    || (dWeek = valuesMap.get(Field.W)) == null)
+                                return validYMD(y, m, d) ? y * 512 + m * 32 + d : -1;
+                        }
+                        else if ((wk = valuesMap.get(Field.x)) == null
+                                    || (dWeek = valuesMap.get(Field.W)) == null)
+                                return validYMD(y, m, d) ? y * 512 + m * 32 + d : -1;
 
+                        Calendar cal = Calendar.getInstance();
+                        cal.set(Calendar.YEAR, yr.intValue());
+                        cal.set(Calendar.WEEK_OF_YEAR, wk.intValue());
+                        cal.set(Calendar.DAY_OF_WEEK, dWeek.intValue() + 1);
+                        y = (long) cal.get(Calendar.YEAR);
+                        m = (long) cal.get(Calendar.MONTH) +1; // month in Calendar is 0-based
+                        d = (long) cal.get(Calendar.DAY_OF_MONTH);
+                    }
                     return validYMD(y, m, d) ? y * 512 + m * 32 + d : -1;
 
                 case TIME:
+                    Long t = valuesMap.get(Field.T);
+                    Long ap = valuesMap.get(Field.p);
+                    if (ap != null && (ap < 0L || has24Hr)) return -1;
+                    
+                    if (t != null)
+                    {
+                        hr = t / 10000L + (ap != null ? ap : 0L);
+                        min = t / 100 % 100;
+                        sec = t % 100;
+                        return validHMS(hr,min,sec) ? hr * 10000L + min * 100L + sec : -1;
+                    }
+
                     // hour
-                    if ((hr = valuesMap.get(Field.h.underlyingField())) == null) hr = 0L;
+                    if ((hr = valuesMap.get(Field.h.equivalentField())) == null) hr = 0L;
+                    if (ap != null && hr > 0L) hr += ap;
+
                     // minute
-                    if ((min = valuesMap.get(Field.i.underlyingField())) == null) min = 0L;
+                    if ((min = valuesMap.get(Field.i.equivalentField())) == null) min = 0L;
                     // second
-                    if ((sec = valuesMap.get(Field.s.underlyingField())) == null) sec = 0L;
+                    if ((sec = valuesMap.get(Field.s.equivalentField())) == null) sec = 0L;
 
-                    // TODO: millis sec
+                    // TODO: millis sec (???)
 
-                    return hr * 10000L + min * 100L + sec;
+                    return validHMS(hr,min,sec) ? hr * 10000L + min * 100L + sec : -1;
 
                 default:
                     // year
-                    if ((y = valuesMap.get(Field.Y.underlyingField())) == null) y = 0L;
+                    if ((y = valuesMap.get(Field.Y.equivalentField())) == null) y = 0L;
                     // month
-                    if ((m = valuesMap.get(Field.m.underlyingField())) == null) m = 0L;
+                    if ((m = valuesMap.get(Field.m.equivalentField())) == null) m = 0L;
                     // day
-                    if ((d = valuesMap.get(Field.d.underlyingField())) == null) d = 0L;
-                    // TODO: date specified by week,year and weekday
+                    if ((d = valuesMap.get(Field.d.equivalentField())) == null) d = 0L;
+
+                    // get date specified by week,year and weekday if year, month or day field is not available
+                    if ( y*m*d == 0)
+                    {
+                        Long yr = valuesMap.get(Field.v);
+                        Long wk = 0L;
+                        Long dWeek = 0L;
+                        Calendar cal = Calendar.getInstance();
+                        if (yr == null)
+                        {
+                            if ((yr = valuesMap.get(Field.V)) != null && (wk = valuesMap.get(Field.X)) != null
+                                    || (dWeek = valuesMap.get(Field.W)) != null)
+
+                            {
+                                cal.set(Calendar.YEAR, yr.intValue());
+                                cal.setFirstDayOfWeek(Calendar.SUNDAY);
+                                cal.set(Calendar.WEEK_OF_YEAR, wk.intValue());
+                                cal.set(Calendar.DAY_OF_WEEK, dWeek.intValue() + 1);
+                                y = (long) cal.get(Calendar.YEAR);
+                                m = (long) cal.get(Calendar.MONTH) +1;
+                                d = (long) cal.get(Calendar.DAY_OF_MONTH);
+                            }
+                                
+                        }
+                        else if ((wk = valuesMap.get(Field.x)) != null
+                                    || (dWeek = valuesMap.get(Field.W)) != null)
+                        {
+                            cal.set(Calendar.YEAR, yr.intValue());
+                            cal.setFirstDayOfWeek(Calendar.MONDAY);
+                            cal.set(Calendar.WEEK_OF_YEAR, wk.intValue());
+                            cal.set(Calendar.DAY_OF_WEEK, dWeek.intValue() + 1);
+                            y = (long) cal.get(Calendar.YEAR);
+                            m = (long) cal.get(Calendar.MONTH) +1;
+                            d = (long) cal.get(Calendar.DAY_OF_MONTH);
+                        }
+                    }
 
                     if (!validYMD(y, m, d))
                         return -1;
 
                     // --------------- hh:mm:ss
+                    Long ti = valuesMap.get(Field.T);
+                    Long am  = valuesMap.get(Field.p);
+                    if (am != null && (am < 0L || has24Hr)) return -1;
+
+                    if (ti != null)
+                    {
+                        hr = ti / 10000L + (am != null ? am : 0L);
+                        min = ti / 100 % 100;
+                        sec = ti % 100;
+
+                        return validHMS(hr,min,sec) ? y * 10000000000L + m * 100000000L + d * 1000000L + ti : -1;
+                    }
+
                     // hour
-                    if ((hr = valuesMap.get(Field.h.underlyingField())) == null) hr = 0L;
+                    if ((hr = valuesMap.get(Field.h.equivalentField())) == null) hr = 0L;
+                    if (am != null && hr > 0L) hr = hr + am;
                     // minute
-                    if ((min = valuesMap.get(Field.i.underlyingField())) == null) min = 0L;
+                    if ((min = valuesMap.get(Field.i.equivalentField())) == null) min = 0L;
                     // second
-                    if ((sec = valuesMap.get(Field.s.underlyingField())) == null) sec = 0L;
+                    if ((sec = valuesMap.get(Field.s.equivalentField())) == null) sec = 0L;
 
                     // TODO: millis sec
-
+                    
                     // yyyyMMddHHmmss
-                    return y * 10000000000L + m * 100000000L + d * 1000000L + hr * 10000L + min * 100 + sec;
+                    return validHMS(hr,min,sec)? y * 10000000000L + m * 100000000L + d * 1000000L + hr * 10000L + min * 100 + sec: -1;
             }
         }
 
@@ -1058,6 +1168,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
         }
 
+        private static boolean validHMS (long h, long m, long sec)
+        {
+            return !(h < 0 || h > 23 || m < 0 || m > 59 || sec < 0 || sec > 59);
+        }
+
     }
    
     public StrToDateExpression (Expression l, Expression r)
@@ -1073,13 +1188,20 @@ public class StrToDateExpression extends AbstractBinaryExpression
         String format = Extractors.getStringExtractor().getObject(formatS);
         String formatList[] = format.split("\\%");
         int bit = 0;
-        for (int n = 1; n < formatList.length; ++n)
-            bit |= Field.valueOf(formatList[n].charAt(0) + "").getFieldType();
-        switch(bit)
+        try
         {
-            case 1:     return AkType.DATE;
-            case 2:     return AkType.TIME;
-            default:    return AkType.DATETIME;
+            for (int n = 1; n < formatList.length; ++n)
+                bit |= Field.valueOf(formatList[n].charAt(0) + "").getFieldType();
+            switch(bit)
+            {
+                case 1:     return AkType.DATE;
+                case 2:     return AkType.TIME;
+                default:    return AkType.DATETIME;
+            }
+        }
+        catch (IllegalArgumentException  ex)
+        {
+            return AkType.NULL;
         }
     }
 

@@ -57,14 +57,14 @@ public class CurrentDateTimeExpressionTest
     }
 
     private void test (DateTime when, AkType current_, String strFrm)
-    {   
+    {
         bindings.set(position, when);
         Expression ex = new CurrentDateTimeExpression(EnvironmentExpressionSetting.CURRENT_DATETIME, position, current_);
         ExpressionEvaluation eval = ex.evaluation();
         eval.of(bindings);
 
         assertEquals(Extractors.getLongExtractor(current_).getLong(eval.eval()),
-                Extractors.getLongExtractor(current_).getLong(when.toString(DateTimeFormat.forPattern(strFrm)))); 
-        
+                Extractors.getLongExtractor(current_).getLong(when.toString(DateTimeFormat.forPattern(strFrm))));
+
     }
 }
