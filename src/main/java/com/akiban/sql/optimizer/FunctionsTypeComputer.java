@@ -404,11 +404,17 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case TEXT:
             return ExpressionTypes.TEXT;
         case VARCHAR:
-            return ExpressionTypes.varchar(sqlType.getMaximumWidth());
+            if (sqlType != null)
+                return ExpressionTypes.varchar(sqlType.getMaximumWidth());
+            else
+                return ExpressionTypes.varchar(TypeId.VARCHAR_ID.getMaximumMaximumWidth());
         case VARBINARY:
-            return ExpressionTypes.varbinary(sqlType.getMaximumWidth());
+            if (sqlType != null)
+                return ExpressionTypes.varbinary(sqlType.getMaximumWidth());
+            else
+                return ExpressionTypes.varbinary(TypeId.VARBIT_ID.getMaximumMaximumWidth());
         case DECIMAL:
-            {
+            if (sqlType != null) {
                 TypeId typeId = sqlType.getTypeId();
                 if (typeId.isNumericTypeId())
                     return ExpressionTypes.decimal(sqlType.getPrecision(),
@@ -417,6 +423,9 @@ public class FunctionsTypeComputer extends AISTypeComputer
                     return ExpressionTypes.decimal(typeId.getMaximumPrecision(),
                                                    typeId.getMaximumScale());
             }
+            else
+                return ExpressionTypes.decimal(TypeId.DECIMAL_ID.getMaximumPrecision(),
+                                               TypeId.DECIMAL_ID.getMaximumScale());
         default:
             return ExpressionTypes.newType(toType, 0, 0);
         }
