@@ -118,8 +118,7 @@ public class IndexScan extends BasePlanNode
     }
 
     public boolean hasConditions() {
-        return ((conditions != null) && !conditions.isEmpty())
-                || (conditionRange != null);
+        return ((conditions != null) && !conditions.isEmpty());
     }
 
     public List<ExpressionNode> getEqualityComparands() {
@@ -200,6 +199,9 @@ public class IndexScan extends BasePlanNode
     public void addRangeCondition(ColumnRanges range) {
         assert conditionRange == null : conditionRange;
         conditionRange = range;
+        if (conditions == null)
+            conditions = new ArrayList<ConditionExpression>();
+        conditions.addAll(range.getConditions());
     }
 
     public List<ExpressionNode> getColumns() {

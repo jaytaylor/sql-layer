@@ -700,12 +700,10 @@ public class IndexGoal implements Comparator<IndexScan>
     public void installUpstream(IndexScan index) {
         if (index.getConditions() != null) {
             for (ConditionExpression condition : index.getConditions()) {
-                conditionSatisfiedByIndex(condition, false);
-            }
-        }
-        if (index.getConditionRange() != null) {
-            for (ConditionExpression condition : index.getConditionRange().getConditions()) {
-                conditionSatisfiedByIndex(condition, true);
+                for (ConditionList conditionSource : conditionSources) {
+                    if (conditionSource.remove(condition))
+                        break;
+                }
             }
         }
         if (grouping != null) {
@@ -742,25 +740,6 @@ public class IndexGoal implements Comparator<IndexScan>
                 break;
             }
             distinct.setImplementation(implementation);
-        }
-    }
-
-    private void conditionSatisfiedByIndex(ConditionExpression condition, boolean recurse) {
-        for (ConditionList conditionSource : conditionSources) {
-            if (conditionSource.remove(condition))
-                break;
-        }
-        markConditionAsSatisfied(condition, recurse);
-    }
-
-    private void markConditionAsSatisfied(ConditionExpression condition, boolean recurse) {
-        if (condition instanceof ComparisonCondition) {
-            ((ComparisonCondition)condition).setImplementation(ConditionExpression.Implementation.INDEX);
-        }
-        else if (recurse && (condition instanceof LogicalFunctionCondition)) {
-            LogicalFunctionCondition logicalCondition = (LogicalFunctionCondition) condition;
-            markConditionAsSatisfied(logicalCondition.getLeft(), true);
-            markConditionAsSatisfied(logicalCondition.getRight(), true);
         }
     }
 
