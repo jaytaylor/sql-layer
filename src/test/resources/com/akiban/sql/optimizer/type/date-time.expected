@@ -1,174 +1,175 @@
-com.akiban.sql.parser.CursorNode@5e2c17f7
+com.akiban.sql.parser.CursorNode@177ba38f
 name: null
 updateMode: UNSPECIFIED
 statementType: SELECT
 resultSet: 	
-	com.akiban.sql.parser.SelectNode@20d9896e
+	com.akiban.sql.parser.SelectNode@362f0d54
 	isDistinct: false
 	resultColumns: 		
-		com.akiban.sql.parser.ResultColumnList@29cda59b
+		com.akiban.sql.parser.ResultColumnList@4b142196
 
 		[0]:		
-		com.akiban.sql.parser.ResultColumn@7c33788d
+		com.akiban.sql.parser.ResultColumn@16a9255c
 		exposedName: _SQL_COL_1
 		name: _SQL_COL_1
 		tableName: null
 		isDefaultColumn: false
 		type: DATE
 		expression: 			
-			com.akiban.sql.parser.UnaryDateTimestampOperatorNode@172fb0af
+			com.akiban.sql.parser.UnaryDateTimestampOperatorNode@3ad3c6a3
 			operator: date
-			methodName: getDate
+			methodName: date
 			type: DATE
 			operand: 				
-				com.akiban.sql.parser.CharConstantNode@3bf8bd0d
+				com.akiban.sql.parser.CharConstantNode@25961581
 				value: 2011-01-01
 				type: CHAR(10) NOT NULL
 		[1]:		
-		com.akiban.sql.parser.ResultColumn@4743bf3d
+		com.akiban.sql.parser.ResultColumn@205ddb6e
 		exposedName: _SQL_COL_2
 		name: _SQL_COL_2
 		tableName: null
 		isDefaultColumn: false
 		type: TIME
 		expression: 			
-			com.akiban.sql.parser.CastNode@30c06258
-			castTarget: TIME
+			com.akiban.sql.parser.UnaryDateTimestampOperatorNode@456dfa45
+			operator: time
+			methodName: time
 			type: TIME
-			castOperand: 				
-				com.akiban.sql.parser.CharConstantNode@26789869
+			operand: 				
+				com.akiban.sql.parser.CharConstantNode@e4865ce
 				value: 12:59
 				type: CHAR(5) NOT NULL
 		[2]:		
-		com.akiban.sql.parser.ResultColumn@375e293a
+		com.akiban.sql.parser.ResultColumn@3313beb5
 		exposedName: _SQL_COL_3
 		name: _SQL_COL_3
 		tableName: null
 		isDefaultColumn: false
 		type: null
 		expression: 			
-			com.akiban.sql.parser.TimestampOperatorNode@6e4bb3c
+			com.akiban.sql.parser.TimestampOperatorNode@554d7745
 			operator: timestamp
-			methodName: getTimestamp
+			methodName: timestamp
 			type: null
 			leftOperand: 				
-				com.akiban.sql.parser.CharConstantNode@12c063ad
+				com.akiban.sql.parser.CharConstantNode@50d17ec3
 				value: 2011-01-01
 				type: CHAR(10) NOT NULL
 			rightOperand: 				
-				com.akiban.sql.parser.CharConstantNode@14cffc79
+				com.akiban.sql.parser.CharConstantNode@69d95da8
 				value: 01:01:01
 				type: CHAR(8) NOT NULL
 		[3]:		
-		com.akiban.sql.parser.ResultColumn@62c8769b
+		com.akiban.sql.parser.ResultColumn@3d93f6e2
 		exposedName: _SQL_COL_4
 		name: _SQL_COL_4
 		tableName: null
 		isDefaultColumn: false
-		type: null
+		type: INTEGER
 		expression: 			
-			com.akiban.sql.parser.ExtractOperatorNode@56e2ecc7
+			com.akiban.sql.parser.ExtractOperatorNode@3d358f03
 			fieldName: YEAR
 			operator: EXTRACT YEAR
-			methodName: getYear
-			type: null
+			methodName: year
+			type: INTEGER
 			operand: 				
-				com.akiban.sql.parser.ColumnReference@4c272961
+				com.akiban.sql.parser.ColumnReference@7402d5a
 				columnName: t
 				tableName: null
 				type: TIMESTAMP
-				userData: t1.t from com.akiban.sql.parser.FromBaseTable@288b567c
+				userData: t1.t from com.akiban.sql.parser.FromBaseTable@26659db7
 		[4]:		
-		com.akiban.sql.parser.ResultColumn@1f0dc656
+		com.akiban.sql.parser.ResultColumn@661736e
 		exposedName: _SQL_COL_5
 		name: _SQL_COL_5
 		tableName: null
 		isDefaultColumn: false
-		type: null
+		type: BIGINT
 		expression: 			
-			com.akiban.sql.parser.ExtractOperatorNode@41584807
+			com.akiban.sql.parser.ExtractOperatorNode@67e13e07
 			fieldName: MONTH
 			operator: EXTRACT MONTH
-			methodName: getMonth
-			type: null
+			methodName: month
+			type: BIGINT
 			operand: 				
-				com.akiban.sql.parser.ColumnReference@ae0e515
+				com.akiban.sql.parser.ColumnReference@74af72d8
 				columnName: t
 				tableName: null
 				type: TIMESTAMP
-				userData: t1.t from com.akiban.sql.parser.FromBaseTable@288b567c
+				userData: t1.t from com.akiban.sql.parser.FromBaseTable@26659db7
 		[5]:		
-		com.akiban.sql.parser.ResultColumn@32dfcb47
+		com.akiban.sql.parser.ResultColumn@2a9cfec1
 		exposedName: _SQL_COL_6
 		name: _SQL_COL_6
 		tableName: null
 		isDefaultColumn: false
-		type: null
+		type: BIGINT
 		expression: 			
-			com.akiban.sql.parser.ExtractOperatorNode@29abc69
+			com.akiban.sql.parser.ExtractOperatorNode@291946c2
 			fieldName: DAY
 			operator: EXTRACT DAY
-			methodName: getDate
-			type: null
+			methodName: day
+			type: BIGINT
 			operand: 				
-				com.akiban.sql.parser.ColumnReference@7cc792d4
+				com.akiban.sql.parser.ColumnReference@3a747fa2
 				columnName: t
 				tableName: null
 				type: TIMESTAMP
-				userData: t1.t from com.akiban.sql.parser.FromBaseTable@288b567c
+				userData: t1.t from com.akiban.sql.parser.FromBaseTable@26659db7
 		[6]:		
-		com.akiban.sql.parser.ResultColumn@1278dc4c
+		com.akiban.sql.parser.ResultColumn@366782a9
 		exposedName: _SQL_COL_7
 		name: _SQL_COL_7
 		tableName: null
 		isDefaultColumn: false
-		type: null
+		type: BIGINT
 		expression: 			
-			com.akiban.sql.parser.ExtractOperatorNode@3cc70b0d
+			com.akiban.sql.parser.ExtractOperatorNode@45b34126
 			fieldName: HOUR
 			operator: EXTRACT HOUR
-			methodName: getHours
-			type: null
+			methodName: hour
+			type: BIGINT
 			operand: 				
-				com.akiban.sql.parser.CurrentDatetimeOperatorNode@2fa6a1a7
+				com.akiban.sql.parser.CurrentDatetimeOperatorNode@7b7a4989
 				methodName: CURRENT TIME
 				type: TIME
 		[7]:		
-		com.akiban.sql.parser.ResultColumn@64bef361
+		com.akiban.sql.parser.ResultColumn@197200b4
 		exposedName: _SQL_COL_8
 		name: _SQL_COL_8
 		tableName: null
 		isDefaultColumn: false
-		type: null
+		type: BIGINT
 		expression: 			
-			com.akiban.sql.parser.ExtractOperatorNode@345c98f3
+			com.akiban.sql.parser.ExtractOperatorNode@b8c3679
 			fieldName: MINUTE
 			operator: EXTRACT MINUTE
-			methodName: getMinutes
-			type: null
+			methodName: minute
+			type: BIGINT
 			operand: 				
-				com.akiban.sql.parser.CurrentDatetimeOperatorNode@2b3d9460
+				com.akiban.sql.parser.CurrentDatetimeOperatorNode@224c47db
 				methodName: CURRENT TIME
 				type: TIME
 		[8]:		
-		com.akiban.sql.parser.ResultColumn@57d840cd
+		com.akiban.sql.parser.ResultColumn@3e018c74
 		exposedName: _SQL_COL_9
 		name: _SQL_COL_9
 		tableName: null
 		isDefaultColumn: false
-		type: null
+		type: BIGINT
 		expression: 			
-			com.akiban.sql.parser.ExtractOperatorNode@36867fc9
+			com.akiban.sql.parser.ExtractOperatorNode@57ac3379
 			fieldName: SECOND
 			operator: EXTRACT SECOND
-			methodName: getSeconds
-			type: null
+			methodName: second
+			type: BIGINT
 			operand: 				
-				com.akiban.sql.parser.CurrentDatetimeOperatorNode@382f8116
+				com.akiban.sql.parser.CurrentDatetimeOperatorNode@6a6779e6
 				methodName: CURRENT TIMESTAMP
 				type: DATETIME
 		[9]:		
-		com.akiban.sql.parser.ResultColumn@36c3e82b
+		com.akiban.sql.parser.ResultColumn@2f74219d
 		exposedName: _SQL_COL_10
 		name: _SQL_COL_10
 		tableName: null
@@ -178,14 +179,14 @@ resultSet:
 			com.akiban.sql.parser.JavaToSQLValueNode@77bf7b23
 			type: DATETIME
 			javaNode: 				
-				com.akiban.sql.parser.StaticMethodCallNode@3c2d7440
+				com.akiban.sql.parser.StaticMethodCallNode@6b6d2702
 				javaClassName: null
 				methodName: now
 	fromList: 		
-		com.akiban.sql.parser.FromList@4c2b349d
+		com.akiban.sql.parser.FromList@4b1c2b67
 
 		[0]:		
-		com.akiban.sql.parser.FromBaseTable@288b567c
+		com.akiban.sql.parser.FromBaseTable@26659db7
 		tableName: t1
 		updateOrDelete: null
 		null
