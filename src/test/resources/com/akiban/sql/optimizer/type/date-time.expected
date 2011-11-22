@@ -166,17 +166,17 @@ resultSet:
 			operand: 				
 				com.akiban.sql.parser.CurrentDatetimeOperatorNode@382f8116
 				methodName: CURRENT TIMESTAMP
-				type: TIMESTAMP
+				type: DATETIME
 		[9]:		
 		com.akiban.sql.parser.ResultColumn@36c3e82b
 		exposedName: _SQL_COL_10
 		name: _SQL_COL_10
 		tableName: null
 		isDefaultColumn: false
-		type: TIMESTAMP
+		type: DATETIME
 		expression: 			
 			com.akiban.sql.parser.JavaToSQLValueNode@77bf7b23
-			type: TIMESTAMP
+			type: DATETIME
 			javaNode: 				
 				com.akiban.sql.parser.StaticMethodCallNode@3c2d7440
 				javaClassName: null
