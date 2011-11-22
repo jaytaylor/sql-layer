@@ -61,10 +61,9 @@ public class StrToDateExpressionTest
         param(pb, "mis-matched str and format, expected null", "2009-12-30", "%Y/%m/%d", "", AkType.DATE);
         param(pb, "unparsable string", "abcd1208", "%Y%m%d", "", AkType.DATE);
         param(pb, "duplicate fields, expecting null", "20090910", "%Y%y%m", "", AkType.DATE);
-        param(pb, "week year to date", "200442 Mon", "%X%V %a", "2004-10-18", AkType.DATE);
-
-                //200442 Monday', '%X%V %W');
-        //-> '2004-10-18'
+        param(pb, "week - year - weekday to date", "200442 Mon", "%X%V %a", "2004-10-18", AkType.DATE);
+        param(pb, "week year weekday to date", "201203 Tue", "%X%V %a", "2012-01-17", AkType.DATE);
+        
         // TIME
         param(pb, "hour-minute to time", "9-18", "%h-%i", "09:18:00", AkType.TIME);
         param(pb, "minute-sec to time", "09    18", "%i %s", "00:09:18", AkType.TIME);
@@ -80,9 +79,11 @@ public class StrToDateExpressionTest
         //DATETIME
         param(pb, "year-month-hour to datetime", "09 Mar13", "%y %b%H", "2009-03-00 13:00:00", AkType.DATETIME);
         param(pb, "%r - year-month-day to datetime", "00:30:10 2006~07Nov", "%r %Y~%d%b", "2006-11-07 00:30:10", AkType.DATETIME);
-
+        param(pb, "%T - week - day to datetime", "12:30:40201203 Tue", "%T%X%V %a", "2012-01-17 12:30:40", AkType.DATETIME);
+        
         // unknown specifier
         param(pb, "unknown specifier %z", "2009-01-01", "%Y-%z-%d", "", AkType.NULL);
+ 
         return pb.asList();
     }
 

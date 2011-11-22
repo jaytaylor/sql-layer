@@ -33,7 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.joda.time.DateTime;
+
 
 public class StrToDateExpression extends AbstractBinaryExpression
 {
@@ -910,6 +910,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
     {
         private final AkType topType;
         private EnumMap<Field, Long> valuesMap = new EnumMap<Field,Long>(Field.class);
+        private boolean has24Hr;
         public InnerEvaluation (AkType type, List<? extends ExpressionEvaluation> childrenEval)
         {
             super(childrenEval);
@@ -922,27 +923,27 @@ public class StrToDateExpression extends AbstractBinaryExpression
             if (left().isNull() || right().isNull()) return NullValueSource.only();
             
             ObjectExtractor<String> extractor = Extractors.getStringExtractor();
-            long l = getDate(extractor.getObject(left()), extractor.getObject(right()));
+            long l = getValue(extractor.getObject(left()), extractor.getObject(right()));
 
             if (l < 0) return NullValueSource.only();
             else return new ValueHolder(topType, l);
         }
 
-        /**
-         * 
-         * @param str
-         * @param format
-         * @return match str with format to get date/time info, enconde to appropriate type and return long
-         */
-        private long getDate(String str, String format) 
+        private long getValue (String str, String format)
         {
-            // trim leading/trailing in str.
+            if (parseString(str, format)) return getLong();
+            else return -1;
+        }
+        
+        private boolean parseString (String str, String format)
+        {
+            // trim unnecessary spaces in str.
             str = str.trim();           
             // split format
             String formatList[] = format.split("\\%");
             String sVal = "";
             Field field = null;
-            boolean has24Hr = false;
+            has24Hr = false;
             try
             {
                 for (int n = 1; n < formatList.length - 1; ++n)
@@ -954,197 +955,236 @@ public class StrToDateExpression extends AbstractBinaryExpression
                     if (del.length() == 0) // no delimeter
                     {
                         long[] num = field.get(str);
-                        if (valuesMap.containsKey(field.equivalentField())) return -1; // duplicate field
+                        if (valuesMap.containsKey(field.equivalentField())) return false; // duplicate field
                         valuesMap.put(field.equivalentField(), num[0]);
                         sVal = str.substring(0, (int) num[1]);
                         str = str.replaceFirst(sVal, "");
                         continue;
                     }
 
-                    if (del.matches("^\\s*"))
-                        del = " ";
-                    else
-                        del = del.trim();
+                    if (del.matches("^\\s*")) del = " "; // delimeter is only space(s)
+                    else del = del.trim(); // delimeter is non-space, then trim all leading/trailing spaces
 
                     Matcher m = Pattern.compile("^.*?(?=" + del + ")").matcher(str);
                     m.find();
                     sVal = m.group();
-                    if (valuesMap.containsKey(field.equivalentField())) return -1;
+                    if (valuesMap.containsKey(field.equivalentField())) return false;
                     valuesMap.put(field.equivalentField(), field.get(sVal)[0]);
                     str = str.replaceFirst(sVal + del, "");
                     str = str.trim();
                 }
                 field = Field.valueOf(formatList[formatList.length - 1]);
-                if (valuesMap.containsKey(field.equivalentField())) return -1;
+                if (valuesMap.containsKey(field.equivalentField())) return false;
                 valuesMap.put(field.equivalentField(), field.get(str)[0]);
-
             }
             catch (IllegalStateException iexc) // str and format do not match
             {
-                return -1;
+                return false;
             }
             catch (NullPointerException nex) // format specifier not found
             {
-                return -1;
+                return false;
             }
             catch (NumberFormatException nbEx) // str contains bad input, ie. str_to_date("33-abc-2009", "%d-%m-%Y")
             {
-                return -1;
+                return false;
             }
             catch (ArrayIndexOutOfBoundsException oexc) // str does not contains enough info specified by format
             {
-                return -1;
+                return false;
             }
             catch (ArithmeticException aexc) // trying to put 0hr to a 12hr format
             {
-                return -1;
+                return false;
             }
-            
-            Long y = 0L;
-            Long m = 0L;
-            Long d = 0L;
+            return true; // parse sucessfully
+        }
+        
+        private long getLong ()
+        {
+            switch (topType) 
+            {
+                case DATE:  return findDate();
+                case TIME:  return findTime();
+                default:    return findDateTime();
+
+            }
+        }
+        
+        private long findDate ()
+        {
+             Long y = 0L;
+             Long m = 0L;
+             Long d = 0L;
+             
+              // year
+              if ((y = valuesMap.get(Field.Y.equivalentField())) == null) y = 0L;
+
+              // month
+              if ((m = valuesMap.get(Field.m.equivalentField())) == null) m = 0L;
+                    
+              // day
+              if ((d = valuesMap.get(Field.d.equivalentField())) == null) d = 0L;
+              
+              // get date specified by week,year and weekday if year, month or day field is not available
+              if ( y*m*d == 0)
+              {
+                  Long yr = valuesMap.get(Field.x);
+                  Long wk;
+                  Long dWeek;
+                  Calendar cal = Calendar.getInstance();
+                  cal.setMinimalDaysInFirstWeek(7);
+                  if (yr == null)
+                  {
+                      if ((yr = valuesMap.get(Field.X)) == null || (wk = valuesMap.get(Field.V)) == null
+                              || (dWeek = valuesMap.get(Field.W)) == null)
+                          return validYMD(y, m, d) ? y * 512 + m * 32 + d : -1;
+                          cal.setFirstDayOfWeek(Calendar.SUNDAY);
+                   }
+                  else
+                  {
+                      if ((wk = valuesMap.get(Field.v)) == null
+                              || (dWeek = valuesMap.get(Field.W)) == null)
+                          return validYMD(y, m, d) ? y * 512 + m * 32 + d : -1;
+                      cal.setFirstDayOfWeek(Calendar.MONDAY); 
+                  }
+                  cal.set(Calendar.YEAR, yr.intValue()); 
+                  cal.set(Calendar.WEEK_OF_YEAR, wk.intValue() ); // week in calendar start at 1
+                  cal.set(Calendar.DAY_OF_WEEK, dWeek.intValue() +1);
+
+                  y = (long) cal.get(Calendar.YEAR);
+                  m = (long) cal.get(Calendar.MONTH) +1; // month in Calendar is 0-based
+                  d = (long) cal.get(Calendar.DAY_OF_MONTH);
+              }
+              return validYMD(y, m, d) ? y * 512 + m * 32 + d : -1;
+        }
+       
+        private long findTime ()
+        {
             Long hr = 0L;
             Long min = 0L;
             Long sec = 0L;
-
-            switch (topType)
-            {
-                // date
-                case DATE:
-                    // year
-                    if ((y = valuesMap.get(Field.Y.equivalentField())) == null) y = 0L;
-                    // month
-                    if ((m = valuesMap.get(Field.m.equivalentField())) == null) m = 0L;
-                    // day
-                    if ((d = valuesMap.get(Field.d.equivalentField())) == null) d = 0L;
+            
+            Long t = valuesMap.get(Field.T);
+            Long ap = valuesMap.get(Field.p);
+            if (ap != null && (ap < 0L || has24Hr)) return -1;
                     
-                    // get date specified by week,year and weekday if year, month or day field is not available
-                    if ( y*m*d == 0)
-                    {
-                        Long yr = valuesMap.get(Field.v);
-                        Long wk;
-                        Long dWeek;
-                        if (yr == null)
-                        {
-                            if ((yr = valuesMap.get(Field.V)) == null || (wk = valuesMap.get(Field.X)) == null
-                                    || (dWeek = valuesMap.get(Field.W)) == null)
-                                return validYMD(y, m, d) ? y * 512 + m * 32 + d : -1;
-                        }
-                        else if ((wk = valuesMap.get(Field.x)) == null
-                                    || (dWeek = valuesMap.get(Field.W)) == null)
-                                return validYMD(y, m, d) ? y * 512 + m * 32 + d : -1;
+            if (t != null)
+            {
+                hr = t / 10000L + (ap != null ? ap : 0L);
+                min = t / 100 % 100;
+                sec = t % 100;
+                return validHMS(hr,min,sec) ? hr * 10000L + min * 100L + sec : -1;
+             }
 
-                        Calendar cal = Calendar.getInstance();
+            // hour
+            if ((hr = valuesMap.get(Field.h.equivalentField())) == null) hr = 0L;
+            if (ap != null && hr > 0L) hr += ap;
+
+            // minute
+            if ((min = valuesMap.get(Field.i.equivalentField())) == null) min = 0L;
+            // second
+            if ((sec = valuesMap.get(Field.s.equivalentField())) == null) sec = 0L;
+
+            // TODO: millis sec (???)
+
+            return validHMS(hr,min,sec) ? hr * 10000L + min * 100L + sec : -1;
+
+        }
+        
+        private long findDateTime ()
+        {
+            Long y = 0L;
+            Long m = 0L;
+            Long d = 0L;
+            
+            Long hr = 0L;
+            Long min = 0L;
+            Long sec = 0L;
+             
+            // year
+            if ((y = valuesMap.get(Field.Y.equivalentField())) == null) y = 0L;
+            
+            // month
+            if ((m = valuesMap.get(Field.m.equivalentField())) == null) m = 0L;
+            
+            // day
+            if ((d = valuesMap.get(Field.d.equivalentField())) == null) d = 0L;
+
+            // get date specified by week,year and weekday if year, month or day field is not available
+            if (y * m * d == 0) 
+            {
+                Long yr = valuesMap.get(Field.x);
+                Long wk = 1L;
+                Long dWeek = 1L;
+                Calendar cal = Calendar.getInstance();
+                cal.setMinimalDaysInFirstWeek(7);
+                if (yr == null)
+                {
+                    if ((yr = valuesMap.get(Field.X)) != null 
+                            && (wk = valuesMap.get(Field.V)) != null
+                            && (dWeek = valuesMap.get(Field.W)) != null)
+                    {
+                        cal.setFirstDayOfWeek(Calendar.SUNDAY);
                         cal.set(Calendar.YEAR, yr.intValue());
                         cal.set(Calendar.WEEK_OF_YEAR, wk.intValue());
                         cal.set(Calendar.DAY_OF_WEEK, dWeek.intValue() + 1);
                         y = (long) cal.get(Calendar.YEAR);
-                        m = (long) cal.get(Calendar.MONTH) +1; // month in Calendar is 0-based
+                        m = (long) cal.get(Calendar.MONTH) + 1;
                         d = (long) cal.get(Calendar.DAY_OF_MONTH);
                     }
-                    return validYMD(y, m, d) ? y * 512 + m * 32 + d : -1;
-
-                case TIME:
-                    Long t = valuesMap.get(Field.T);
-                    Long ap = valuesMap.get(Field.p);
-                    if (ap != null && (ap < 0L || has24Hr)) return -1;
-                    
-                    if (t != null)
+   
+                } 
+                else 
+                {
+                    if ((wk = valuesMap.get(Field.v)) != null
+                            && (dWeek = valuesMap.get(Field.W)) != null) 
                     {
-                        hr = t / 10000L + (ap != null ? ap : 0L);
-                        min = t / 100 % 100;
-                        sec = t % 100;
-                        return validHMS(hr,min,sec) ? hr * 10000L + min * 100L + sec : -1;
+                        cal.setFirstDayOfWeek(Calendar.MONDAY);
+                        cal.set(Calendar.YEAR, yr.intValue());
+                        cal.set(Calendar.WEEK_OF_YEAR, wk.intValue());
+                        cal.set(Calendar.DAY_OF_WEEK, dWeek.intValue() + 1);
+                        y = (long) cal.get(Calendar.YEAR);
+                        m = (long) cal.get(Calendar.MONTH) + 1;
+                        d = (long) cal.get(Calendar.DAY_OF_MONTH);
                     }
-
-                    // hour
-                    if ((hr = valuesMap.get(Field.h.equivalentField())) == null) hr = 0L;
-                    if (ap != null && hr > 0L) hr += ap;
-
-                    // minute
-                    if ((min = valuesMap.get(Field.i.equivalentField())) == null) min = 0L;
-                    // second
-                    if ((sec = valuesMap.get(Field.s.equivalentField())) == null) sec = 0L;
-
-                    // TODO: millis sec (???)
-
-                    return validHMS(hr,min,sec) ? hr * 10000L + min * 100L + sec : -1;
-
-                default:
-                    // year
-                    if ((y = valuesMap.get(Field.Y.equivalentField())) == null) y = 0L;
-                    // month
-                    if ((m = valuesMap.get(Field.m.equivalentField())) == null) m = 0L;
-                    // day
-                    if ((d = valuesMap.get(Field.d.equivalentField())) == null) d = 0L;
-
-                    // get date specified by week,year and weekday if year, month or day field is not available
-                    if ( y*m*d == 0)
-                    {
-                        Long yr = valuesMap.get(Field.v);
-                        Long wk = 0L;
-                        Long dWeek = 0L;
-                        Calendar cal = Calendar.getInstance();
-                        if (yr == null)
-                        {
-                            if ((yr = valuesMap.get(Field.V)) != null && (wk = valuesMap.get(Field.X)) != null
-                                    || (dWeek = valuesMap.get(Field.W)) != null)
-
-                            {
-                                cal.set(Calendar.YEAR, yr.intValue());
-                                cal.setFirstDayOfWeek(Calendar.SUNDAY);
-                                cal.set(Calendar.WEEK_OF_YEAR, wk.intValue());
-                                cal.set(Calendar.DAY_OF_WEEK, dWeek.intValue() + 1);
-                                y = (long) cal.get(Calendar.YEAR);
-                                m = (long) cal.get(Calendar.MONTH) +1;
-                                d = (long) cal.get(Calendar.DAY_OF_MONTH);
-                            }
-                                
-                        }
-                        else if ((wk = valuesMap.get(Field.x)) != null
-                                    || (dWeek = valuesMap.get(Field.W)) != null)
-                        {
-                            cal.set(Calendar.YEAR, yr.intValue());
-                            cal.setFirstDayOfWeek(Calendar.MONDAY);
-                            cal.set(Calendar.WEEK_OF_YEAR, wk.intValue());
-                            cal.set(Calendar.DAY_OF_WEEK, dWeek.intValue() + 1);
-                            y = (long) cal.get(Calendar.YEAR);
-                            m = (long) cal.get(Calendar.MONTH) +1;
-                            d = (long) cal.get(Calendar.DAY_OF_MONTH);
-                        }
-                    }
-
-                    if (!validYMD(y, m, d))
-                        return -1;
-
-                    // --------------- hh:mm:ss
-                    Long ti = valuesMap.get(Field.T);
-                    Long am  = valuesMap.get(Field.p);
-                    if (am != null && (am < 0L || has24Hr)) return -1;
-
-                    if (ti != null)
-                    {
-                        hr = ti / 10000L + (am != null ? am : 0L);
-                        min = ti / 100 % 100;
-                        sec = ti % 100;
-
-                        return validHMS(hr,min,sec) ? y * 10000000000L + m * 100000000L + d * 1000000L + ti : -1;
-                    }
-
-                    // hour
-                    if ((hr = valuesMap.get(Field.h.equivalentField())) == null) hr = 0L;
-                    if (am != null && hr > 0L) hr = hr + am;
-                    // minute
-                    if ((min = valuesMap.get(Field.i.equivalentField())) == null) min = 0L;
-                    // second
-                    if ((sec = valuesMap.get(Field.s.equivalentField())) == null) sec = 0L;
-
-                    // TODO: millis sec
-                    
-                    // yyyyMMddHHmmss
-                    return validHMS(hr,min,sec)? y * 10000000000L + m * 100000000L + d * 1000000L + hr * 10000L + min * 100 + sec: -1;
+                }
             }
+
+            if (!validYMD(y, m, d)) return -1;
+
+            // --------------- hh:mm:ss
+            Long ti = valuesMap.get(Field.T);
+            Long am = valuesMap.get(Field.p);
+               if (am != null && (am < 0L || has24Hr)) return -1;
+
+               if (ti != null)
+               {
+                   hr = ti / 10000L + (am != null ? am : 0L);
+                   min = ti / 100 % 100;
+                   sec = ti % 100;
+
+                   return validHMS(hr, min, sec) ? y * 10000000000L + m * 100000000L + d * 1000000L + ti : -1;
+               }
+
+                    
+               // hour
+               if ((hr = valuesMap.get(Field.h.equivalentField())) == null) hr = 0L;
+               if (am != null && hr > 0L) hr = hr + am;
+               
+               // minute
+               if ((min = valuesMap.get(Field.i.equivalentField())) == null) min = 0L;
+                 
+               // second 
+               if ((sec = valuesMap.get(Field.s.equivalentField())) == null) sec = 0L;
+               
+               // TODO: millis sec
+                       
+               // yyyyMMddHHmmss
+               return validHMS(hr, min, sec) ? y * 10000000000L + m * 100000000L + d * 1000000L + hr * 10000L + min * 100 + sec : -1;
         }
+        
+     
 
         private static boolean validYMD(long y, long m, long d)
         {
