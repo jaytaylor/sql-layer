@@ -1,0 +1,9 @@
+# IF function fails
+---
+- Statement: CREATE TABLE t (bigint_field bigint)
+---
+- Statement: INSERT INTO t VALUES (1), (2)
+---
+- Statement: SELECT IF(bigint_field = 1, 'yup', 'nope') FROM t
+- output: [[yup], [nope]]
+...

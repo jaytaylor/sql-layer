@@ -479,6 +479,48 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     }
 
     @Test
+    public void testStatementOutputDontCareMissingValue() {
+	testYamlFail(
+	    "---\n" +
+	    "- Statement: SELECT * FROM customers\n" +
+	    "- output:\n" +
+	    "  - [!dc]\n");
+    }
+
+    @Test
+    public void testStatementOutputRegexp() {
+    	testYaml(
+    	    "---\n" +
+    	    "- Statement: CREATE TABLE t (name varchar(32))\n" +
+    	    "---\n" +
+    	    "- Statement: INSERT INTO t VALUES\n" +
+	    "    ('hubba-hubba'), ('abc123')\n" +
+    	    "---\n" +
+    	    "- Statement: SELECT * FROM t\n" +
+    	    "- output:\n" +
+    	    "  - [!re '([^-]*)-{1}']\n" +
+    	    "  - [!re '[a-z]+[0-9]+']\n");
+    }
+
+    @Test
+    public void testStatementOutputRegexpMissingValue() {
+    	testYamlFail(
+    	    "---\n" +
+    	    "- Statement: SELECT * FROM t\n" +
+    	    "- output:\n" +
+    	    "  - [!re]\n");
+    }
+
+    @Test
+    public void testStatementOutputRegexpNonScalarValue() {
+    	testYamlFail(
+    	    "---\n" +
+    	    "- Statement: SELECT * FROM t\n" +
+    	    "- output:\n" +
+    	    "  - [!re [a, b, c]]\n");
+    }
+
+    @Test
     public void testStatementOutputNullAndEmpty() {
 	testYaml(
 	    "---\n" +
