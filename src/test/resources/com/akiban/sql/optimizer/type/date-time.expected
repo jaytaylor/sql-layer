@@ -66,13 +66,13 @@ resultSet:
 		name: _SQL_COL_4
 		tableName: null
 		isDefaultColumn: false
-		type: INTEGER
+		type: YEAR
 		expression: 			
 			com.akiban.sql.parser.ExtractOperatorNode@3d358f03
 			fieldName: YEAR
 			operator: EXTRACT YEAR
 			methodName: year
-			type: INTEGER
+			type: YEAR
 			operand: 				
 				com.akiban.sql.parser.ColumnReference@7402d5a
 				columnName: t

@@ -1,7 +1,7 @@
 SelectQuery@76027982
   ResultSet@79226a77[cid, name, oid, cid, order_date]
     Project@427be8c2[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date]
-      Select@6a0da90c[year(user.orders.order_date) > 2000]
+      Select@6a0da90c[month(user.orders.order_date) > 6]
         JoinNode@26d58939(INNER[user.customers.cid == user.orders.cid])
           TableSource@d24111a(user.customers)
           TableSource@3adec8b3(user.orders)
