@@ -49,11 +49,7 @@ public class IndexScan extends BasePlanNode
     private ColumnRanges conditionRange;
 
     // This is how the indexed result will be ordered from using this index.
-    // TODO: Is this right? Are we allowed to switch directions
-    // between segments, in which case something else figures out
-    // reverse? Cf. mixed mode in Sort operator cursor.
     private List<OrderByExpression> ordering;
-    private boolean reverseScan;
 
     private OrderEffectiveness orderEffectiveness;
 
@@ -225,19 +221,6 @@ public class IndexScan extends BasePlanNode
         this.orderEffectiveness = orderEffectiveness;
     }
 
-    public boolean isReverseScan() {
-        return reverseScan;
-    }
-    public void setReverseScan(boolean reverseScan) {
-        if (this.reverseScan != reverseScan) {
-            this.reverseScan = reverseScan;
-            // And toggle ascending for each column.
-            for (OrderByExpression column : ordering) {
-                column.setAscending(!column.isAscending());
-            }
-        }
-    }
-
     public boolean isCovering() {
         return covering;
     }
@@ -285,8 +268,26 @@ public class IndexScan extends BasePlanNode
         if (covering)
             str.append("covering/");
         str.append(orderEffectiveness);
-        if (reverseScan)
-            str.append("/reverse");
+        {
+            boolean anyReverse = false, allReverse = true;
+            for (int i = 0; i < ordering.size(); i++) {
+                if (ordering.get(i).isAscending() != 
+                    index.getColumns().get(i).isAscending())
+                    anyReverse = true;
+                else
+                    allReverse = false;
+            }
+            if (anyReverse) {
+                if (allReverse)
+                    str.append("/reverse");
+                else {
+                    for (int i = 0; i < ordering.size(); i++) {
+                        str.append((i == 0) ? "/" : ",");
+                        str.append(ordering.get(i).isAscending() ? "ASC" : "DESC");
+                    }
+                }
+            }
+        }
         if (equalityComparands != null) {
             for (ExpressionNode expression : equalityComparands) {
                 str.append(", =");

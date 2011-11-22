@@ -278,8 +278,8 @@ public class OperatorAssembler extends BaseRule
             }
             if (indexScan.getConditionRange() == null) {
                 stream.operator = API.indexScan_Default(indexRowType,
-                                                        indexScan.isReverseScan(),
                                                         assembleIndexKeyRange(indexScan, null),
+                                                        assembleIndexOrdering(indexScan, indexRowType),
                                                         selector);
                 stream.rowType = indexRowType;
             }
@@ -287,8 +287,8 @@ public class OperatorAssembler extends BaseRule
                 ColumnRanges range = indexScan.getConditionRange();
                 for (RangeSegment rangeSegment : range.getSegments()) {
                     Operator scan = API.indexScan_Default(indexRowType,
-                                                          indexScan.isReverseScan(),
                                                           assembleIndexKeyRange(indexScan, null, rangeSegment),
+                                                          assembleIndexOrdering(indexScan, indexRowType),
                                                           selector);
                     if (stream.operator == null) {
                         stream.operator = scan;
@@ -857,6 +857,17 @@ public class OperatorAssembler extends BaseRule
                 }
                 return IndexKeyRange.bounded(indexRowType, lo, lowInc, hi, highInc);
             }
+        }
+
+        protected API.Ordering assembleIndexOrdering(IndexScan index,
+                                                     IndexRowType indexRowType) {
+            API.Ordering ordering = API.ordering();
+            List<OrderByExpression> indexOrdering = index.getOrdering();
+            for (int i = 0; i < indexOrdering.size(); i++) {
+                ordering.append(Expressions.field(indexRowType, i),
+                                indexOrdering.get(i).isAscending());
+            }
+            return ordering;
         }
 
         protected UserTableRowType tableRowType(TableSource table) {
