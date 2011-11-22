@@ -1033,19 +1033,21 @@ public class StrToDateExpression extends AbstractBinaryExpression
                   Long wk;
                   Long dWeek;
                   Calendar cal = Calendar.getInstance();
-                  cal.setMinimalDaysInFirstWeek(7);
+                 
                   if (yr == null)
                   {
                       if ((yr = valuesMap.get(Field.X)) == null || (wk = valuesMap.get(Field.V)) == null
                               || (dWeek = valuesMap.get(Field.W)) == null)
                           return validYMD(y, m, d) ? y * 512 + m * 32 + d : -1;
-                          cal.setFirstDayOfWeek(Calendar.SUNDAY);
+                       cal.setMinimalDaysInFirstWeek(7);
+                       cal.setFirstDayOfWeek(Calendar.SUNDAY);
                    }
                   else
                   {
                       if ((wk = valuesMap.get(Field.v)) == null
                               || (dWeek = valuesMap.get(Field.W)) == null)
                           return validYMD(y, m, d) ? y * 512 + m * 32 + d : -1;
+                      cal.setMinimalDaysInFirstWeek(1);
                       cal.setFirstDayOfWeek(Calendar.MONDAY); 
                   }
                   cal.set(Calendar.YEAR, yr.intValue()); 
@@ -1118,13 +1120,14 @@ public class StrToDateExpression extends AbstractBinaryExpression
                 Long wk = 1L;
                 Long dWeek = 1L;
                 Calendar cal = Calendar.getInstance();
-                cal.setMinimalDaysInFirstWeek(7);
+               
                 if (yr == null)
                 {
                     if ((yr = valuesMap.get(Field.X)) != null 
                             && (wk = valuesMap.get(Field.V)) != null
                             && (dWeek = valuesMap.get(Field.W)) != null)
                     {
+                        cal.setMinimalDaysInFirstWeek(7);
                         cal.setFirstDayOfWeek(Calendar.SUNDAY);
                         cal.set(Calendar.YEAR, yr.intValue());
                         cal.set(Calendar.WEEK_OF_YEAR, wk.intValue());
@@ -1140,6 +1143,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
                     if ((wk = valuesMap.get(Field.v)) != null
                             && (dWeek = valuesMap.get(Field.W)) != null) 
                     {
+                        cal.setMinimalDaysInFirstWeek(1);
                         cal.setFirstDayOfWeek(Calendar.MONDAY);
                         cal.set(Calendar.YEAR, yr.intValue());
                         cal.set(Calendar.WEEK_OF_YEAR, wk.intValue());
@@ -1163,8 +1167,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
                    hr = ti / 10000L + (am != null ? am : 0L);
                    min = ti / 100 % 100;
                    sec = ti % 100;
-
-                   return validHMS(hr, min, sec) ? y * 10000000000L + m * 100000000L + d * 1000000L + ti : -1;
+                   return validHMS(hr, min, sec) ?y * 10000000000L + m * 100000000L + d * 1000000L + hr * 10000L + min * 100 + sec : -1;
                }
 
                     
