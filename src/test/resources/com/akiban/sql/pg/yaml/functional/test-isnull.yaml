@@ -17,7 +17,22 @@
 ---
 - Statement: DELETE FROM all_types
 
-# bigint unsigned -- SELECT not supported
+# bigint unsigned
+---
+- Statement: SELECT bigint_unsigned_field FROM all_types
+    WHERE bigint_unsigned_field IS NULL
+- row_count: 0
+---
+- Statement: INSERT INTO all_types (bigint_unsigned_field) VALUES (null)
+---
+- Statement: INSERT INTO all_types (bigint_unsigned_field)
+    VALUES (0), (1), (9223372036854775807)
+---
+- Statement: SELECT bigint_unsigned_field FROM all_types
+    WHERE bigint_unsigned_field IS NULL
+- output: [[null]]
+---
+- Statement: DELETE FROM all_types
 
 # blob
 ---

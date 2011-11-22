@@ -6,6 +6,11 @@
 - Include: all-types-schema.yaml
 ---
 
+# Test with missing field type as the second field
+- Statement: CREATE TABLE (i int, j)
+- error: [42000]
+---
+
 # Test unsupported types
 
 # bit is not supported, but returns the wrong error code

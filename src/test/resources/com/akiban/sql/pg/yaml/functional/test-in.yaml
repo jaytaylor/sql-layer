@@ -39,6 +39,45 @@
 ---
 - Statement: DELETE FROM all_types
 
+# bigint unsigned
+---
+- Statement: INSERT INTO all_types (bigint_unsigned_field, bigint_field)
+    VALUES (null, null)
+---
+- Statement: INSERT INTO all_types (bigint_unsigned_field, bigint_field) VALUES
+    (0, 0), (1, 1), (9223372036854775807, 2)
+---
+- Statement: SELECT bigint_unsigned_field FROM all_types
+    WHERE bigint_unsigned_field IN ()
+- error: [42000]
+---
+- Statement: SELECT bigint_unsigned_field FROM all_types
+    WHERE bigint_unsigned_field IN (0)
+- output: [[0]]
+---
+- Statement: SELECT bigint_unsigned_field FROM all_types
+    WHERE bigint_unsigned_field IN (1, 9223372036854775807)
+- output: [[1], [9223372036854775807]]
+---
+- Statement: SELECT bigint_unsigned_field FROM all_types
+    WHERE bigint_unsigned_field IN (9223372036854775807)
+- output: [[9223372036854775807]]
+---
+- Statement: SELECT bigint_unsigned_field FROM all_types WHERE
+    bigint_unsigned_field IN (bigint_field)
+- output: [[0], [1]]
+---
+- Statement: SELECT bigint_unsigned_field FROM all_types
+    WHERE bigint_unsigned_field IN (?)
+- params: [[1], [9223372036854775807]]
+- output: [[1], [9223372036854775807]]
+---
+- Statement: SELECT bigint_unsigned_field IN (bigint_field) FROM all_types
+- output: [[null], [true], [true], [false]]
+
+---
+- Statement: DELETE FROM all_types
+
 # blob
 ---
 - Statement: INSERT INTO all_types (blob_field, clob_field) VALUES (null, null)

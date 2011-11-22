@@ -5,78 +5,86 @@
 
 # Test sum with no rows => null
 ---
-- Statement: SELECT sum(bigint_field), sum(decimal_field), sum(double_field),
-    sum(float_field), sum(integer_field), sum(numeric_field),
+- Statement: SELECT sum(bigint_field), sum(bigint_unsigned_field),
+    sum(decimal_field), sum(double_field), sum(float_field),
+    sum(integer_field), sum(numeric_field), sum(real_field),
     sum(smallint_field) FROM all_types
-- output: [[null, null, null, null, null, null, null]]
+- output: [[null, null, null, null, null, null, null, null, null]]
 
 # Test sum with inserted rows
 
 ---
 - Statement: INSERT INTO all_types
-    (bigint_field, decimal_field, double_field, float_field, integer_field,
-     numeric_field, smallint_field)
-    VALUES
-    (1, 2.0, 3.0, 4.0, 5, 6.0, 7)
+    (bigint_field, bigint_unsigned_field, decimal_field, double_field,
+     float_field, integer_field, numeric_field, real_field,
+     smallint_field)
+    VALUES (1, 2, 3.0, 4.0, 5.0, 6, 7.0, 8.0, 9)
 ---
-- Statement: SELECT bigint_field, decimal_field, double_field, float_field,
-     integer_field, numeric_field, smallint_field FROM all_types
-- output: [[1, 2, 3.0, 4.0, 5, 6, 7]]
+- Statement: SELECT bigint_field, bigint_unsigned_field, decimal_field,
+     double_field, float_field, integer_field, numeric_field,
+     real_field, smallint_field FROM all_types
+- output: [[1, 2, 3, 4.0, 5.0, 6, 7, 8.0, 9]]
 
 ---
-- Statement: SELECT sum(bigint_field), sum(decimal_field), sum(double_field),
-    sum(float_field), sum(integer_field), sum(numeric_field),
+- Statement: SELECT sum(bigint_field), sum(bigint_unsigned_field),
+    sum(decimal_field), sum(double_field), sum(float_field),
+    sum(integer_field), sum(numeric_field), sum(real_field),
     sum(smallint_field) FROM all_types
-- output: [[1, 2, 3.0, 4.0, 5, 6, 7]]
+- output: [[1, 2, 3, 4.0, 5.0, 6, 7, 8.0, 9]]
 
 # Insert a row of nulls
 ---
 - Statement: INSERT INTO all_types
-    (bigint_field, decimal_field, double_field, float_field, integer_field,
-     numeric_field, smallint_field)
+    (bigint_field, bigint_unsigned_field, decimal_field, double_field,
+     float_field, integer_field, numeric_field, real_field,
+     smallint_field)
     VALUES
-    (null, null, null, null, null, null, null)
+    (null, null, null, null, null, null, null, null, null)
 ---
-- Statement: SELECT sum(bigint_field), sum(decimal_field), sum(double_field),
-    sum(float_field), sum(integer_field), sum(numeric_field),
+- Statement: SELECT sum(bigint_field), sum(bigint_unsigned_field),
+    sum(decimal_field), sum(double_field), sum(float_field),
+    sum(integer_field), sum(numeric_field), sum(real_field),
     sum(smallint_field) FROM all_types
-- output: [[1, 2, 3.0, 4.0, 5, 6, 7]]
+- output: [[1, 2, 3, 4.0, 5.0, 6, 7, 8.0, 9]]
 
 ---
 - Statement: INSERT INTO all_types
-    (bigint_field, decimal_field, double_field, float_field, integer_field,
-     numeric_field, smallint_field)
+    (bigint_field, bigint_unsigned_field, decimal_field, double_field,
+     float_field, integer_field, numeric_field, real_field,
+     smallint_field)
     VALUES
-    (1, 2.0, 3.0, 4.0, 5, 6.0, 7)
+    (1, 2, 3.0, 4.0, 5.0, 6, 7.0, 8.0, 9)
 ---
-- Statement: SELECT sum(bigint_field), sum(decimal_field), sum(double_field),
-    sum(float_field), sum(integer_field), sum(numeric_field),
+- Statement: SELECT sum(bigint_field), sum(bigint_unsigned_field),
+    sum(decimal_field), sum(double_field), sum(float_field),
+    sum(integer_field), sum(numeric_field), sum(real_field),
     sum(smallint_field) FROM all_types
-- output: [[2, 4, 6.0, 8.0, 10, 12, 14]]
+- output: [[2, 4, 6, 8.0, 10.0, 12, 14, 16.0, 18]]
 
 ---
 - Statement: INSERT INTO all_types
-    (bigint_field, decimal_field, double_field, float_field, integer_field,
-     numeric_field, smallint_field)
+    (bigint_field, decimal_field, double_field, float_field,
+     integer_field, numeric_field, real_field, smallint_field)
     VALUES
-    (-4, -8.0, -12.0, -16.0, -20, -24.0, -28)
+    (-4, -12.0, -16.0, -20.0, -24, -28.0, -32.0, -36)
 ---
-- Statement: SELECT sum(bigint_field), sum(decimal_field), sum(double_field),
-    sum(float_field), sum(integer_field), sum(numeric_field),
-    sum(smallint_field) FROM all_types
-- output: [[-2, -4, -6.0, -8.0, -10, -12, -14]]
+- Statement: SELECT sum(bigint_field), sum(decimal_field),
+    sum(double_field), sum(float_field), sum(integer_field),
+    sum(numeric_field), sum(real_field), sum(smallint_field) FROM
+    all_types
+- output: [[-2, -6, -8.0, -10.0, -12, -14, -16.0, -18]]
 
 ---
 - Statement: INSERT INTO all_types
-    (bigint_field, decimal_field, double_field, float_field, integer_field,
-     numeric_field, smallint_field)
+    (bigint_field, decimal_field, double_field, float_field,
+     integer_field, numeric_field, real_field, smallint_field)
     VALUES
-    (2, 4.0, 6.0, 8.0, 10, 12.0, 14)
+    (2, 6.0, 8.0, 10.0, 12, 14.0, 16.0, 18)
 ---
 - Statement: SELECT sum(bigint_field), sum(decimal_field), sum(double_field),
     sum(float_field), sum(integer_field), sum(numeric_field),
-    sum(smallint_field) FROM all_types
-- output: [[0, 0, 0.0, 0.0, 0, 0, 0]]
+    sum(real_field), sum(smallint_field) FROM all_types
+- output: [[0, 0, 0.0, 0.0, 0, 0, 0.0, 0]]
 
 ---
 - Statement: DELETE from all_types
@@ -104,6 +112,21 @@
 ---
 - Statement: SELECT sum(bigint_field) FROM all_types
 - error: [55004]
+
+# Test unsigned integer overflow
+---
+- Statement: INSERT INTO all_types (bigint_unsigned_field)
+    VALUES (9223372036854775807), (9223372036854775807)
+---
+- Statement: SELECT sum(bigint_unsigned_field) FROM all_types
+- output: [[what]]
+---
+- Statement: INSERT INTO all_types (bigint_unsigned_field) VALUES (1)
+---
+- Statement: SELECT sum(bigint_unsigned_field) FROM all_types
+- error: [55004]
+---
+- Statement: DELETE FROM all_types
 
 # Test double overflow
 ---
@@ -207,29 +230,82 @@
 ---
 - Statement: DELETE FROM all_types
 
-# Test NaN
+# Test real overflow
 ---
-- Statement: INSERT INTO all_types (double_field, float_field)
-    VALUES (1.0, 1.0)
+- Statement: INSERT INTO all_types (real_field) VALUES (1.7976931348623157E308)
 ---
-- Statement: INSERT INTO all_types (double_field, float_field)
-    VALUES ('Infinity', 'Infinity')
+- Statement: SELECT sum(real_field) FROM all_types
+- output: [[1.7976931348623157E308]]
 ---
-- Statement: SELECT sum(double_field), sum(float_field) FROM all_types
-- output: [[Infinity, Infinity]]
+- Statement: INSERT INTO all_types (real_field) VALUES (1.7976931348623157E308)
 ---
-- Statement: INSERT INTO all_types (double_field, float_field)
-    VALUES ('-Infinity', '-Infinity')
----
-- Statement: SELECT sum(double_field), sum(float_field) FROM all_types
-- output: [[NaN, NaN]]
+- Statement: SELECT sum(real_field) FROM all_types
+- error: [55004]
 ---
 - Statement: DELETE FROM all_types
 ---
-- Statement: INSERT INTO all_types (double_field, float_field)
-    VALUES ('Infinity', 'Infinity'), ('NaN', 'NaN')
+- Statement: INSERT INTO all_types (real_field) VALUES
+    (-1.7976931348623157E308)
 ---
-- Statement: SELECT sum(double_field), sum(float_field) FROM all_types
-- output: [[NaN, NaN]]
+- Statement: SELECT sum(real_field) FROM all_types
+- output: [[-1.7976931348623157E308]]
+---
+- Statement: INSERT INTO all_types (real_field) VALUES
+    (-1.7976931348623157E308)
+---
+- Statement: SELECT sum(real_field) FROM all_types
+- error: [55004]
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (real_field) VALUES ('Infinity')
+---
+- Statement: SELECT sum(real_field) FROM all_types
+- output: [[Infinity]]
+---
+- Statement: INSERT INTO all_types (real_field) VALUES ('33')
+---
+- Statement: SELECT sum(real_field) FROM all_types
+- output: [[Infinity]]
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (real_field) VALUES ('-Infinity')
+---
+- Statement: SELECT sum(real_field) FROM all_types
+- output: [[-Infinity]]
+---
+- Statement: INSERT INTO all_types (real_field) VALUES ('-33')
+---
+- Statement: SELECT sum(real_field) FROM all_types
+- output: [[-Infinity]]
+
+# Test NaN
+---
+- Statement: INSERT INTO all_types (double_field, float_field, real_field)
+    VALUES (1.0, 1.0, 1.0)
+---
+- Statement: INSERT INTO all_types (double_field, float_field, real_field)
+    VALUES ('Infinity', 'Infinity', 'Infinity')
+---
+- Statement: SELECT sum(double_field), sum(float_field), sum(real_field)
+    FROM all_types
+- output: [[Infinity, Infinity, Infinity]]
+---
+- Statement: INSERT INTO all_types (double_field, float_field, real_field)
+    VALUES ('-Infinity', '-Infinity', '-Infinity')
+---
+- Statement: SELECT sum(double_field), sum(float_field), sum(real_field)
+    FROM all_types
+- output: [[NaN, NaN, NaN]]
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (double_field, float_field, real_field)
+    VALUES ('Infinity', 'Infinity', 'Infinity'), ('NaN', 'NaN', 'NaN')
+---
+- Statement: SELECT sum(double_field), sum(float_field), sum(real_field)
+    FROM all_types
+- output: [[NaN, NaN, NaN]]
 
 ...
