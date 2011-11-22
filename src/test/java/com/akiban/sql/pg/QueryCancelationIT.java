@@ -171,6 +171,7 @@ public class QueryCancelationIT extends PostgresServerITBase
             assert state == TestThreadState.PAUSED;
             state = TestThreadState.TERMINATE;
             done = true;
+            interrupt();
             notify();
         }
 
