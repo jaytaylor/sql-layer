@@ -78,6 +78,7 @@ public class QueryCancelationIT extends PostgresServerITBase
             cancelThread.go();
         }
         Thread.sleep(5000);
+        // System.out.println("About to pause threads");
         queryThread.pause();
         System.out.println(String.format("queries: %s, canceled: %s",
                                          queryThread.queryCount, queryThread.cancelCount));
@@ -112,6 +113,8 @@ public class QueryCancelationIT extends PostgresServerITBase
     private QueryThread queryThread;
     private CancelThread cancelThread;
 
+    enum TestThreadState { PAUSED, RUNNING, STOP, TERMINATE }
+
     public abstract class TestThread extends Thread
     {
         @Override
@@ -120,16 +123,22 @@ public class QueryCancelationIT extends PostgresServerITBase
             try {
                 while (!done) {
                     synchronized (this) {
-                        while (paused) {
+                        while (state == TestThreadState.PAUSED) {
+                            // System.out.println(String.format("%s: wait ...", this));
                             wait();
                         }
                     }
                     if (!done) {
-                        while (!paused) {
+                        while (state == TestThreadState.RUNNING) {
+                            action();
                             synchronized (this) {
-                                action();
+                                if (state == TestThreadState.STOP) {
+                                    state = TestThreadState.PAUSED;
+                                    notify();
+                                }
                             }
                         }
+                        // System.out.println(String.format("%s: about to wait", this));
                     }
                 }
             } catch (Throwable e) {
@@ -141,28 +150,36 @@ public class QueryCancelationIT extends PostgresServerITBase
 
         public synchronized final void go() throws InterruptedException
         {
-            paused = false;
+            // System.out.println(String.format("%s: go", this));
+            state = TestThreadState.RUNNING;
             notify();
         }
 
-        public final void pause() throws InterruptedException
+        public synchronized final void pause() throws InterruptedException
         {
-            paused = true;
+            // System.out.println(String.format("%s: pausing", this));
+            state = TestThreadState.STOP;
+            while (state != TestThreadState.PAUSED) {
+                wait();
+            }
+            // System.out.println(String.format("%s: paused", this));
         }
 
         public synchronized final void terminate()
         {
-            paused = false;
+            // System.out.println(String.format("%s: terminate", this));
+            assert state == TestThreadState.PAUSED;
+            state = TestThreadState.TERMINATE;
             done = true;
             notify();
         }
 
         public TestThread()
         {
-            paused = true;
+            state = TestThreadState.PAUSED;
         }
 
-        private volatile boolean paused;
+        private volatile TestThreadState state;
         private volatile boolean done = false;
         Throwable termination;
     }
@@ -201,6 +218,7 @@ public class QueryCancelationIT extends PostgresServerITBase
 
         public QueryThread() throws Exception
         {
+            setName("QueryThread");
             connection = openConnection();
             statement = connection.createStatement();
         }
@@ -218,12 +236,13 @@ public class QueryCancelationIT extends PostgresServerITBase
         public void action() throws InterruptedException, SQLException
         {
             victim.statement.cancel();
-            Thread.sleep(100);
+            Thread.sleep(5);
         }
 
         public CancelThread(QueryThread victim) throws Exception
         {
             this.victim = victim;
+            setName("CancelThread");
         }
 
         private QueryThread victim;
