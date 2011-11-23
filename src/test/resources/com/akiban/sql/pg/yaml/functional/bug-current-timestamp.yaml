@@ -1,6 +1,6 @@
 # CURRENT_TIMESTAMP and NOW() return the wrong year
 ---
-- Statement: CREATE TABLE t (bigint_field bigint)
+- CreateTable: t (bigint_field bigint)
 ---
 - Statement: INSERT INTO t VALUES (0)
 ---

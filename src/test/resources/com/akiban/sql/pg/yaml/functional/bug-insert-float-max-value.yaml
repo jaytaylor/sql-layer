@@ -1,6 +1,6 @@
 # Inserting the max value after '0.0' into a float fails
 ---
-- Statement: CREATE TABLE t (float_field float)
+- CreateTable: t (float_field float)
 ---
 - Statement: INSERT INTO t (float_field) VALUES (0.0), (3.4028234663852886E38)
 ---

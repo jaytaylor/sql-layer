@@ -1,6 +1,6 @@
 # Problem with IN function with blob parameter
 ---
-- Statement: CREATE TABLE t (blob_field blob)
+- CreateTable: t (blob_field blob)
 ---
 - Statement: INSERT INTO t VALUES ('dead')
 ---

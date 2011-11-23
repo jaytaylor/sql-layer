@@ -1,6 +1,6 @@
 # SIN with parameter argument fails
 ---
-- Statement: CREATE TABLE t (double_field double)
+- CreateTable: t (double_field double)
 ---
 - Statement: INSERT INTO t VALUES (0.0)
 ---
