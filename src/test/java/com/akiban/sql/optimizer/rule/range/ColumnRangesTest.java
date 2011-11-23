@@ -139,7 +139,7 @@ public final class ColumnRangesTest {
     @Test
     public void valueEqCol() {
         ConstantExpression value = constant("joe");
-        ConditionExpression compare = compare(value, Comparison.GE, firstName);
+        ConditionExpression compare = compare(value, Comparison.EQ, firstName);
         ColumnRanges expected = new ColumnRanges(
                 firstName,
                 Collections.singleton(compare),
@@ -147,9 +147,6 @@ public final class ColumnRangesTest {
         );
         assertEquals(expected, ColumnRanges.rangeAtNode(compare));
     }
-
-    ///
-
 
     @Test
     public void colNeValue() {

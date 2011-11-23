@@ -155,13 +155,16 @@ public final class ColumnRanges {
     private static ColumnRanges comparisonToRange(ComparisonCondition comparisonCondition) {
         final ColumnExpression columnExpression;
         final ExpressionNode other;
+        final boolean columnIsRight;
         if (comparisonCondition.getLeft() instanceof ColumnExpression) {
             columnExpression = (ColumnExpression) comparisonCondition.getLeft();
             other = comparisonCondition.getRight();
+            columnIsRight = false;
         }
         else if (comparisonCondition.getRight() instanceof ColumnExpression) {
             columnExpression = (ColumnExpression) comparisonCondition.getRight();
             other = comparisonCondition.getLeft();
+            columnIsRight = true;
         }
         else {
             return null;
@@ -169,11 +172,26 @@ public final class ColumnRanges {
         if (other instanceof ConstantExpression) {
             ConstantExpression constant = (ConstantExpression) other;
             Comparison op = comparisonCondition.getOperation();
+            if (columnIsRight) {
+                op = flip(op);
+            }
             List<RangeSegment> rangeSegments = RangeSegment.fromComparison(op, constant);
             return new ColumnRanges(columnExpression, comparisonCondition, rangeSegments);
         }
         else {
             return null;
+        }
+    }
+
+    private static Comparison flip(Comparison op) {
+        switch (op) {
+            case LT:    return Comparison.GT;
+            case LE:    return Comparison.GE;
+            case GT:    return Comparison.LT;
+            case GE:    return Comparison.LE;
+            case EQ:
+            case NE:    return op;
+            default:    throw new AssertionError(op.name());
         }
     }
 
