@@ -48,6 +48,10 @@ final class TUtils {
         return new ComparisonCondition(comparison, column, value, null, null);
     }
 
+    public static ConditionExpression compare(ConstantExpression value, Comparison comparison, ColumnExpression column) {
+        return new ComparisonCondition(comparison, value, column, null, null);
+    }
+
     public static ConditionExpression isNull(ColumnExpression column) {
         return new FunctionCondition("isNull", Collections.<ExpressionNode>singletonList(column), null, null);
     }

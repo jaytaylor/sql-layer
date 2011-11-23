@@ -23,25 +23,160 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collections;
 
-import static com.akiban.sql.optimizer.rule.range.TUtils.compare;
-import static com.akiban.sql.optimizer.rule.range.TUtils.constant;
-import static com.akiban.sql.optimizer.rule.range.TUtils.exclusive;
-import static com.akiban.sql.optimizer.rule.range.TUtils.firstName;
-import static com.akiban.sql.optimizer.rule.range.TUtils.isNull;
-import static com.akiban.sql.optimizer.rule.range.TUtils.segment;
-import static com.akiban.sql.optimizer.rule.range.TUtils.sin;
+import static com.akiban.sql.optimizer.rule.range.TUtils.*;
 import static org.junit.Assert.assertEquals;
 
 public final class ColumnRangesTest {
 
     @Test
-    public void columnComparison() {
+    public void colLtValue() {
         ConstantExpression value = constant("joe");
         ConditionExpression compare = compare(firstName, Comparison.LT, value);
         ColumnRanges expected = new ColumnRanges(
                 firstName,
                 Collections.singleton(compare),
                 Arrays.asList(segment(RangeEndpoint.NULL_EXCLUSIVE, exclusive("joe")))
+        );
+        assertEquals(expected, ColumnRanges.rangeAtNode(compare));
+    }
+
+    @Test
+    public void valueLtCol() {
+        ConstantExpression value = constant("joe");
+        ConditionExpression compare = compare(value, Comparison.LT, firstName);
+        ColumnRanges expected = new ColumnRanges(
+                firstName,
+                Collections.singleton(compare),
+                Arrays.asList(segment(exclusive("joe"), RangeEndpoint.UPPER_WILD))
+        );
+        assertEquals(expected, ColumnRanges.rangeAtNode(compare));
+    }
+
+    @Test
+    public void colLeValue() {
+        ConstantExpression value = constant("joe");
+        ConditionExpression compare = compare(firstName, Comparison.LE, value);
+        ColumnRanges expected = new ColumnRanges(
+                firstName,
+                Collections.singleton(compare),
+                Arrays.asList(segment(RangeEndpoint.NULL_EXCLUSIVE, inclusive("joe")))
+        );
+        assertEquals(expected, ColumnRanges.rangeAtNode(compare));
+    }
+
+    @Test
+    public void valueLeCol() {
+        ConstantExpression value = constant("joe");
+        ConditionExpression compare = compare(value, Comparison.LE, firstName);
+        ColumnRanges expected = new ColumnRanges(
+                firstName,
+                Collections.singleton(compare),
+                Arrays.asList(segment(inclusive("joe"), RangeEndpoint.UPPER_WILD))
+        );
+        assertEquals(expected, ColumnRanges.rangeAtNode(compare));
+    }
+
+    @Test
+    public void colGtValue() {
+        ConstantExpression value = constant("joe");
+        ConditionExpression compare = compare(firstName, Comparison.GT, value);
+        ColumnRanges expected = new ColumnRanges(
+                firstName,
+                Collections.singleton(compare),
+                Arrays.asList(segment(exclusive("joe"), RangeEndpoint.UPPER_WILD))
+        );
+        assertEquals(expected, ColumnRanges.rangeAtNode(compare));
+    }
+
+    @Test
+    public void valueGtCol() {
+        ConstantExpression value = constant("joe");
+        ConditionExpression compare = compare(value, Comparison.GT, firstName);
+        ColumnRanges expected = new ColumnRanges(
+                firstName,
+                Collections.singleton(compare),
+                Arrays.asList(segment(RangeEndpoint.NULL_EXCLUSIVE, exclusive("joe")))
+        );
+        assertEquals(expected, ColumnRanges.rangeAtNode(compare));
+    }
+
+    @Test
+    public void colGeValue() {
+        ConstantExpression value = constant("joe");
+        ConditionExpression compare = compare(firstName, Comparison.GE, value);
+        ColumnRanges expected = new ColumnRanges(
+                firstName,
+                Collections.singleton(compare),
+                Arrays.asList(segment(inclusive("joe"), RangeEndpoint.UPPER_WILD))
+        );
+        assertEquals(expected, ColumnRanges.rangeAtNode(compare));
+    }
+
+    @Test
+    public void valueGeCol() {
+        ConstantExpression value = constant("joe");
+        ConditionExpression compare = compare(value, Comparison.GE, firstName);
+        ColumnRanges expected = new ColumnRanges(
+                firstName,
+                Collections.singleton(compare),
+                Arrays.asList(segment(RangeEndpoint.NULL_EXCLUSIVE, inclusive("joe")))
+        );
+        assertEquals(expected, ColumnRanges.rangeAtNode(compare));
+    }
+
+    @Test
+    public void colEqValue() {
+        ConstantExpression value = constant("joe");
+        ConditionExpression compare = compare(firstName, Comparison.EQ, value);
+        ColumnRanges expected = new ColumnRanges(
+                firstName,
+                Collections.singleton(compare),
+                Arrays.asList(segment(inclusive("joe"), inclusive("joe")))
+        );
+        assertEquals(expected, ColumnRanges.rangeAtNode(compare));
+    }
+
+    @Test
+    public void valueEqCol() {
+        ConstantExpression value = constant("joe");
+        ConditionExpression compare = compare(value, Comparison.GE, firstName);
+        ColumnRanges expected = new ColumnRanges(
+                firstName,
+                Collections.singleton(compare),
+                Arrays.asList(segment(inclusive("joe"), inclusive("joe")))
+        );
+        assertEquals(expected, ColumnRanges.rangeAtNode(compare));
+    }
+
+    ///
+
+
+    @Test
+    public void colNeValue() {
+        ConstantExpression value = constant("joe");
+        ConditionExpression compare = compare(firstName, Comparison.NE, value);
+        ColumnRanges expected = new ColumnRanges(
+                firstName,
+                Collections.singleton(compare),
+                Arrays.asList(
+                        segment(RangeEndpoint.NULL_EXCLUSIVE, exclusive("joe")),
+                        segment(exclusive("joe"), RangeEndpoint.UPPER_WILD)
+                )
+        );
+        assertEquals(expected, ColumnRanges.rangeAtNode(compare));
+    }
+
+    @Test
+    public void valueNeCol() {
+        ConstantExpression value = constant("joe");
+        ConditionExpression compare = compare(value, Comparison.NE, firstName);
+        ColumnRanges expected = new ColumnRanges(
+                firstName,
+                Collections.singleton(compare),
+                Arrays.asList(
+                        segment(RangeEndpoint.NULL_EXCLUSIVE, exclusive("joe")),
+                        segment(exclusive("joe"), RangeEndpoint.UPPER_WILD)
+                )
         );
         assertEquals(expected, ColumnRanges.rangeAtNode(compare));
     }
@@ -56,15 +191,11 @@ public final class ColumnRangesTest {
         );
         assertEquals(expected, ColumnRanges.rangeAtNode(isNull));
     }
+
     @Test
     public void sinOfColumn() {
         ConditionExpression isNull = sin(firstName);
         ColumnRanges expected = null;
         assertEquals(expected, ColumnRanges.rangeAtNode(isNull));
-    }
-
-    @Test
-    public void tbd() {
-        throw new RuntimeException("need testing!");
     }
 }
