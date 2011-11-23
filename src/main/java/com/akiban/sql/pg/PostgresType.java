@@ -333,7 +333,7 @@ public class PostgresType
                 // TODO: Need to reconcile.
                 String name = typeId.getSQLTypeName();
                 for (Type aisType : Types.types()) {
-                    if (aisType.name().equals(name)) {
+                    if (aisType.name().equalsIgnoreCase(name)) {
                         return fromAIS(aisType, null);
                     }
                 }

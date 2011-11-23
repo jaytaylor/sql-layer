@@ -66,13 +66,13 @@ resultSet:
 		name: _SQL_COL_4
 		tableName: null
 		isDefaultColumn: false
-		type: INTEGER
+		type: YEAR
 		expression: 			
 			com.akiban.sql.parser.ExtractOperatorNode@3d358f03
 			fieldName: YEAR
 			operator: EXTRACT YEAR
 			methodName: year
-			type: INTEGER
+			type: YEAR
 			operand: 				
 				com.akiban.sql.parser.ColumnReference@7402d5a
 				columnName: t
@@ -167,17 +167,17 @@ resultSet:
 			operand: 				
 				com.akiban.sql.parser.CurrentDatetimeOperatorNode@6a6779e6
 				methodName: CURRENT TIMESTAMP
-				type: TIMESTAMP
+				type: DATETIME
 		[9]:		
 		com.akiban.sql.parser.ResultColumn@2f74219d
 		exposedName: _SQL_COL_10
 		name: _SQL_COL_10
 		tableName: null
 		isDefaultColumn: false
-		type: TIMESTAMP
+		type: DATETIME
 		expression: 			
-			com.akiban.sql.parser.JavaToSQLValueNode@714ae2c1
-			type: TIMESTAMP
+			com.akiban.sql.parser.JavaToSQLValueNode@77bf7b23
+			type: DATETIME
 			javaNode: 				
 				com.akiban.sql.parser.StaticMethodCallNode@6b6d2702
 				javaClassName: null
