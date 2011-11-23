@@ -65,6 +65,8 @@ public class StrToDateExpressionTest
         param(pb, "week year with %x%v", "200442 Mon", "%x%v %a", "2004-10-11", AkType.DATE);
         param(pb, "date with leading strings", "at date 09-10-13", "at date %y-%m-%d", "2009-10-13", AkType.DATE);
         param(pb, "date with trailing strings", "2009-10-14at date", "%Y-%m-%d at date", "2009-10-14", AkType.DATE);
+        param(pb, "year, day of year to date", "2009 59", "%Y %j", "2009-02-28", AkType.DATE);
+        param(pb, "year, day of year to date with day of month field", "09-59-3", "%y-%j-%d", "2009-02-28", AkType.DATE);
         
         // TIME
         param(pb, "hour-minute to time", "9-18", "%h-%i", "09:18:00", AkType.TIME);

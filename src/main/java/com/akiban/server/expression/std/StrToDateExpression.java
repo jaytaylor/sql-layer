@@ -361,9 +361,8 @@ public class StrToDateExpression extends AbstractBinaryExpression
             public long [] get(String str)
             {
                 int i = 0;
-                for (; i < 3 && str.charAt(i) >= '0' && str.charAt(i) <= '9'; ++i);
+                for (; i < 3 && i < str.length() && str.charAt(i) >= '0' && str.charAt(i) <= '9'; ++i);
                 return new long[] {Long.parseLong(str.substring(0,i)), i};
-                //throw new UnsupportedOperationException ("day of year not supported yet");
             }
 
             @Override
@@ -633,6 +632,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             @Override
             public long [] get(String str)
             {
+                // TO DO: not sure how this actually gets used
                 throw new UnsupportedOperationException("%U is not supported yet");
                 /*
                 int i;
@@ -1111,7 +1111,23 @@ public class StrToDateExpression extends AbstractBinaryExpression
               // day
               if ((d = valuesMap.get(Field.d.equivalentField())) == null) d = 0L;
               
-              // get date specified by week,year and weekday if year, month or day field is not available
+              // get date specified by day of year, year, if year, month or day is not available
+              if ( m * d == 0 && y != 0)
+              {
+                  Long dayOfYear = valuesMap.get(Field.j);
+                  if (dayOfYear != null && dayOfYear.intValue() >= 0)
+                  {
+                      Calendar cal = Calendar.getInstance();
+                      cal.set(Calendar.YEAR, y.intValue());
+                      cal.set(Calendar.DAY_OF_YEAR, dayOfYear.intValue());
+                      y = (long)cal.get(Calendar.YEAR);
+                      m = (long)cal.get(Calendar.MONTH) +1;
+                      d = (long)cal.get(Calendar.DAY_OF_MONTH);
+                  }
+              }
+
+              
+              // get date specified by week,year and weekday if year, month or day field is still not available
               if ( y*m*d == 0)
               {
                   Long yr = valuesMap.get(Field.x);
@@ -1181,6 +1197,21 @@ public class StrToDateExpression extends AbstractBinaryExpression
         
         private long findDateTime ()
         {
+            
+            long date = findDate();
+            
+            if (date < 0) return -1;
+            {
+                long y = date / 512;
+                long m = date / 32 % 16;
+                long d = date %32;
+                date = y * 10000L + m * 100 + d;
+            }
+            long time = findTime();
+            if (time < 0) return -1;
+            
+            return date * 1000000L + time;
+        /*    
             Long y = 0L;
             Long m = 0L;
             Long d = 0L;
@@ -1276,6 +1307,8 @@ public class StrToDateExpression extends AbstractBinaryExpression
                        
                // yyyyMMddHHmmss
                return validHMS(hr, min, sec) ? y * 10000000000L + m * 100000000L + d * 1000000L + hr * 10000L + min * 100 + sec : -1;
+         * 
+         */
         }
         
      
@@ -1367,3 +1400,4 @@ public class StrToDateExpression extends AbstractBinaryExpression
         return new InnerEvaluation(valueType(),childrenEvaluations());
     }
 }
+
