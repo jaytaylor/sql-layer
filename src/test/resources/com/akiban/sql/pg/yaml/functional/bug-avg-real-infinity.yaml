@@ -1,0 +1,9 @@
+# AVG of REAL Infinity fails
+---
+- Statement: CREATE TABLE t (real_field real)
+---
+- Statement: INSERT INTO t VALUES ('Infinity')
+---
+- Statement: SELECT AVG(real_field) FROM t
+- output: [[Infinity]]
+...
