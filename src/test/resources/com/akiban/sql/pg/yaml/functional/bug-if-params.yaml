@@ -1,6 +1,6 @@
 # IF function with parameters fails
 ---
-- Statement: CREATE TABLE t (bigint_field bigint)
+- CreateTable: t (bigint_field bigint)
 ---
 - Statement: INSERT INTO t VALUES (1)
 ---

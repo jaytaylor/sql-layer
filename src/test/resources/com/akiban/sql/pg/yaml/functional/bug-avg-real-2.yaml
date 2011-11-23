@@ -1,6 +1,6 @@
 # AVG of REAL fails
 ---
-- Statement: CREATE TABLE t (real_field real)
+- CreateTable: t (real_field real)
 ---
 - Statement: INSERT INTO t VALUES (1.0)
 ---

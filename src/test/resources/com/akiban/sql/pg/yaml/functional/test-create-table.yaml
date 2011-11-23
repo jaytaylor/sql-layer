@@ -7,7 +7,7 @@
 ---
 
 # Test with missing field type as the second field
-- Statement: CREATE TABLE (i int, j)
+- CreateTable: t (i int, j)
 - error: [42000]
 ---
 

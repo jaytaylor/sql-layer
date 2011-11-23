@@ -1,6 +1,6 @@
 # SUM of REAL overflow does not produce error
 ---
-- Statement: CREATE TABLE t (real_field real)
+- CreateTable: t (real_field real)
 ---
 - Statement: INSERT INTO t VALUES (1.7976931348623157E308), (1.0E0)
 ---
