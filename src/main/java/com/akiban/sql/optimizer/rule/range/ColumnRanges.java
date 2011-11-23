@@ -39,6 +39,8 @@ public final class ColumnRanges {
         }
         else if (node instanceof LogicalFunctionCondition) {
             LogicalFunctionCondition condition = (LogicalFunctionCondition) node;
+            if (condition.getOperands().size() != 2)
+                return null;
             ColumnRanges leftRange = rangeAtNode(condition.getLeft());
             ColumnRanges rightRange = rangeAtNode(condition.getRight());
             if (leftRange != null && rightRange != null) {

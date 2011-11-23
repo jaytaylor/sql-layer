@@ -56,12 +56,16 @@ final class TUtils {
         return new FunctionCondition("isNull", Collections.<ExpressionNode>singletonList(column), null, null);
     }
 
-    public static ExpressionNode or(ConditionExpression left, ConditionExpression right) {
+    public static ConditionExpression or(ConditionExpression left, ConditionExpression right) {
         return new LogicalFunctionCondition("or", Arrays.asList(left, right), null, null);
     }
 
-    public static ExpressionNode and(ConditionExpression left, ConditionExpression right) {
+    public static ConditionExpression and(ConditionExpression left, ConditionExpression right) {
         return new LogicalFunctionCondition("and", Arrays.asList(left, right), null, null);
+    }
+
+    public static ConditionExpression not(ConditionExpression expression) {
+        return new LogicalFunctionCondition("not", Arrays.asList(expression), null, null);
     }
 
     public static ConditionExpression sin(ColumnExpression column) {
