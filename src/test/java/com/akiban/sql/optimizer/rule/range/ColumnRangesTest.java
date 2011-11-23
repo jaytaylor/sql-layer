@@ -23,6 +23,8 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import static com.akiban.sql.optimizer.rule.range.TUtils.*;
 import static org.junit.Assert.assertEquals;
@@ -195,6 +197,85 @@ public final class ColumnRangesTest {
     }
 
     @Test
+    public void differentColumns() {
+        ConditionExpression firstNameLtJoe = compare(firstName, Comparison.LT, constant("joe"));
+        ConditionExpression lastNameLtSmith = compare(lastName, Comparison.LT, constant("smith"));
+        ConditionExpression either = or(firstNameLtJoe, lastNameLtSmith);
+        ColumnRanges expected = null;
+        assertEquals(expected, ColumnRanges.rangeAtNode(either));
+    }
+
+    // the and/or tests are pretty sparse, since RangeSegmentTest is more exhaustive about
+    // the overlaps and permutations.
+
+    @Test
+    public void orNoOverlap() {
+        ConditionExpression nameLtAbe = compare(firstName, Comparison.LT, constant("abe"));
+        ConditionExpression nameGeJoe = compare(firstName, Comparison.GE, constant("joe"));
+        ConditionExpression either = or(nameLtAbe, nameGeJoe);
+        ColumnRanges expected = columnRanges(
+                firstName,
+                either,
+                segment(RangeEndpoint.NULL_EXCLUSIVE, exclusive("abe")),
+                segment(inclusive("joe"), RangeEndpoint.UPPER_WILD)
+        );
+        assertEquals(expected, ColumnRanges.rangeAtNode(either));
+    }
+
+    @Test
+    public void orWithOverlap() {
+        ConditionExpression nameLtAbe = compare(firstName, Comparison.LT, constant("joe"));
+        ConditionExpression nameGeJoe = compare(firstName, Comparison.GE, constant("abe"));
+        ConditionExpression either = or(nameLtAbe, nameGeJoe);
+        ColumnRanges expected = columnRanges(
+                firstName,
+                either,
+                segment(RangeEndpoint.NULL_EXCLUSIVE, RangeEndpoint.UPPER_WILD)
+        );
+        assertEquals(expected, ColumnRanges.rangeAtNode(either));
+    }
+
+    @Test
+    public void andNoOverlap() {
+        ConditionExpression nameLtAbe = compare(firstName, Comparison.LT, constant("abe"));
+        ConditionExpression nameGeJoe = compare(firstName, Comparison.GE, constant("joe"));
+        ConditionExpression both = and(nameLtAbe, nameGeJoe);
+        ColumnRanges expected = columnRanges(
+                firstName,
+                both
+        );
+        assertEquals(expected, ColumnRanges.rangeAtNode(both));
+    }
+
+    @Test
+    public void andWithOverlap() {
+        ConditionExpression nameLtAbe = compare(firstName, Comparison.LT, constant("joe"));
+        ConditionExpression nameGeJoe = compare(firstName, Comparison.GE, constant("abe"));
+        ConditionExpression both = and(nameLtAbe, nameGeJoe);
+        ColumnRanges expected = columnRanges(
+                firstName,
+                both,
+                segment(inclusive("abe"), exclusive("joe"))
+        );
+        assertEquals(expected, ColumnRanges.rangeAtNode(both));
+    }
+
+    @Test
+    public void explicitAnd() {
+        ConditionExpression nameLtAbe = compare(firstName, Comparison.LT, constant("joe"));
+        ConditionExpression nameGeJoe = compare(firstName, Comparison.GE, constant("abe"));
+        ColumnRanges nameLtAbeRanges = ColumnRanges.rangeAtNode(nameLtAbe);
+        ColumnRanges nameGeJoeRanges = ColumnRanges.rangeAtNode(nameGeJoe);
+        ColumnRanges expected = columnRanges(
+                firstName,
+                set(nameLtAbe, nameGeJoe),
+                segment(inclusive("abe"), exclusive("joe"))
+        );
+        assertEquals(expected, ColumnRanges.andRanges(nameLtAbeRanges, nameGeJoeRanges));
+        assertEquals(expected, ColumnRanges.andRanges(nameGeJoeRanges, nameLtAbeRanges));
+    }
+
+    @Test
     public void sinOfColumn() {
         ConditionExpression isNull = sin(firstName);
         ColumnRanges expected = null;
@@ -207,5 +288,19 @@ public final class ColumnRangesTest {
                 Collections.singleton(condition),
                 Arrays.asList(segments)
         );
+    }
+
+    private ColumnRanges columnRanges(ColumnExpression col, Set<ConditionExpression> conditions, RangeSegment... segs) {
+        return new ColumnRanges(
+                col,
+                conditions,
+                Arrays.asList(segs)
+        );
+    }
+
+    private <T> Set<T> set(T... args) {
+        Set<T> result = new HashSet<T>();
+        Collections.addAll(result, args);
+        return result;
     }
 }
