@@ -1307,27 +1307,32 @@ public class StrToDateExpression extends AbstractBinaryExpression
     protected static AkType getTopType (ExpressionEvaluation strE, ExpressionEvaluation formatE)
     {
         ValueSource formatS = formatE.eval();
-      //  if (strE.eval().isNull() || formatS.isNull()) return AkType.DATETIME;
-try{
-        String format = Extractors.getStringExtractor().getObject(formatS);
-        String formatList[] = format.split("\\%");
-        int bit = 0;
+
         try
         {
-            for (int n = 1; n < formatList.length; ++n)
-                bit |= Field.valueOf(formatList[n].charAt(0) + "").getFieldType();
-            switch(bit)
+            String format = Extractors.getStringExtractor().getObject(formatS);
+            String formatList[] = format.split("\\%");
+            int bit = 0;
+            try
             {
-                case 1:     return AkType.DATE;
-                case 2:     return AkType.TIME;
-                default:    return AkType.DATETIME;
+                for (int n = 1; n < formatList.length; ++n)
+                    bit |= Field.valueOf(formatList[n].charAt(0) + "").getFieldType();
+                switch (bit)
+                {
+                    case 1:
+                        return AkType.DATE;
+                    case 2:
+                        return AkType.TIME;
+                    default:
+                        return AkType.DATETIME;
+                }
+            }
+            catch (IllegalArgumentException ex)
+            {
+                return AkType.NULL;
             }
         }
-        catch (IllegalArgumentException  ex)
-        {
-            return AkType.NULL;
-        }
-        }catch (ValueSourceIsNullException e)
+        catch (ValueSourceIsNullException e)
         {
             return AkType.NULL;
         }
