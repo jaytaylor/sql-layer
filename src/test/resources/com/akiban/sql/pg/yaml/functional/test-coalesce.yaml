@@ -67,6 +67,8 @@
 ---
 - Statement: INSERT INTO all_types (bigint_field) VALUES (1)
 ---
+- Statement: INSERT INTO all_types (bigint_unsigned_field) VALUES (1)
+---
 - Statement: INSERT INTO all_types (blob_field) VALUES ('deadbeef')
 ---
 - Statement: INSERT INTO all_types (char_field) VALUES ('c')
@@ -96,21 +98,23 @@
 
 # Now retreive
 ---
-- Statement: SELECT COALESCE(bigint_field, double_field, float_field,
-        integer_field, numeric_field, real_field, smallint_field)
-        FROM all_types
-- output: [[1.0], [null], [null], [null], [null], [0.0], [1.0], [2.0], [3.0],
-          [4.0], [5.0], [null], [null], [null]]
+- Statement: SELECT COALESCE(bigint_field, bigint_unsigned_field,
+        double_field, float_field, integer_field, numeric_field,
+        real_field, smallint_field) FROM all_types
+- output: [[1.0], [1.0], [null], [null], [null], [null], [0.0], [1.0],
+          [2.0], [3.0], [4.0], [5.0], [null], [null], [null]]
 ---
 - Statement: SELECT COALESCE(char_field, char_multi_field, varchar_field)
     FROM all_types
-- output: [[null], [null], ['c'], ['abc'], [null], [null], [null],
-           [null], [null], [null], [null], [null], [null], ['yup']]
+- output: [[null], [null], [null], ['c'], ['abc'], [null], [null],
+           [null], [null], [null], [null], [null], [null], [null],
+           ['yup']]
 
 # Use literal
 ---
 - Statement: SELECT COALESCE(char_field, 'x') FROM all_types
-- output: [[x], [x], [c], [x], [x], [x], [x], [x], [x], [x], [x], [x], [x], [x]]
+- output: [[x], [x], [x], [c], [x], [x], [x], [x], [x], [x], [x], [x],
+    [x], [x], [x]]
 
 # Use parameter -- not working
 #---
@@ -122,7 +126,7 @@
 
 # blob
 ---
-- Statement: CREATE TABLE blobs (x blob, y blob)
+- CreateTable: blobs (x blob, y blob)
 ---
 - Statement: INSERT INTO blobs VALUES (null, null)
 ---
@@ -137,7 +141,7 @@
 
 # clob
 ---
-- Statement: CREATE TABLE clobs (x clob, y clob)
+- CreateTable: clobs (x clob, y clob)
 ---
 - Statement: INSERT INTO clobs VALUES (null, null)
 ---
@@ -152,7 +156,7 @@
 
 # time
 ---
-- Statement: CREATE TABLE times (x time, y time)
+- CreateTable: times (x time, y time)
 ---
 - Statement: INSERT INTO times VALUES (null, null)
 ---
@@ -167,7 +171,7 @@
 
 # timestamp
 ---
-- Statement: CREATE TABLE timestamps (x timestamp, y timestamp)
+- CreateTable: timestamps (x timestamp, y timestamp)
 ---
 - Statement: INSERT INTO timestamps VALUES (null, null)
 ---

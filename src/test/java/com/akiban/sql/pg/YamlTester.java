@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Stack;
+import java.util.regex.Pattern;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -54,6 +55,7 @@ import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.yaml.snakeyaml.nodes.Node;
+import org.yaml.snakeyaml.nodes.ScalarNode;
 import org.yaml.snakeyaml.nodes.Tag;
 
 /**
@@ -84,6 +86,16 @@ import org.yaml.snakeyaml.nodes.Tag;
      "it" (this integration test framework engine)
    - A new property definition overrides any previous ones
 
+   CreateTable
+   - Syntax:
+     - CreateTable: <table name> <create table arguments>...
+     - error: [<error code>, <error message>]
+   - The error message is optional
+   - This command has the same behavior as would specifying a CREATE TABLE
+     statement with a Statement command, but it lets the test framework know
+     which tables have been created, so it can drop them after the test is
+     completed
+
    Statement
    - Syntax
      - Statement: <statement text>
@@ -108,6 +120,10 @@ import org.yaml.snakeyaml.nodes.Tag;
    - Can't have error with output or row_count
    - YAML null for null value
    - !dc dc for don't care value in output
+   - !re regular-expression for regular expression patterns that should match
+     output
+   - The statement text should not create a table -- use the CreateTable
+     command for that purpose
 */
 class YamlTester {
 
@@ -165,7 +181,7 @@ class YamlTester {
 
     private void test(Reader in) {
 	try {
-	    Yaml yaml = new Yaml(new DontCareConstructor());
+	    Yaml yaml = new Yaml(new RegisterTags());
 	    Iterator<Object> documents = yaml.loadAll(in).iterator();
 	    while (documents.hasNext()) {
 		++commandNumber;
@@ -181,6 +197,8 @@ class YamlTester {
 		    includeCommand(value, sequence);
 		} else if ("Properties".equals(commandName)) {
 		    propertiesCommand(value, sequence);
+		} else if ("CreateTable".equals(commandName)) {
+		    createTableCommand(value, sequence);
 		} else if ("Statement".equals(commandName)) {
 		    statementCommand(value, sequence);
 		} else {
@@ -258,22 +276,129 @@ class YamlTester {
 	}
     }
 
+    /** Implements common behavior of commands that execute statements. */
+    private abstract class AbstractStatementCommand {
+	final String statement;
+	boolean errorSpecified;
+	String errorCode;
+	String errorMessage;
+
+	/** Handle a statement with the specified statement text. */
+	AbstractStatementCommand(String statement) {
+	    this.statement = statement;
+	}
+
+	/** Parse an error attribute with the specified value. */
+	void parseError(Object value) {
+	    assertFalse("The error attribute must not appear more than once",
+			errorSpecified);
+	    errorSpecified = true;
+	    List<Object> errorInfo =
+		nonEmptyScalarSequence(value, "error value");
+	    errorCode = scalar(errorInfo.get(0), "error code").toString();
+	    if (errorInfo.size() > 1) {
+		errorMessage = string(errorInfo.get(1), "error message").trim();
+		assertTrue("The error attribute can have at most two" +
+			   " elements",
+			   errorInfo.size() < 3);
+	    }
+	}
+
+	/**
+	 * Check the specified exception against the error attribute specified
+	 * earlier, if any.
+	 */
+	void checkFailure(SQLException sqlException) {
+	    if (DEBUG) {
+		System.err.println(
+		    "Generated error code: " + sqlException.getSQLState() +
+		    "\nException: " + sqlException);
+	    }
+	    if (!errorSpecified) {
+		throw new ContextAssertionError(
+		    "Unexpected statement execution failure: " + sqlException,
+		    sqlException);
+	    }
+	    if (!errorCode.equals(sqlException.getSQLState())) {
+		throw new ContextAssertionError(
+		    "Unexpected error code:" +
+		    "\nExpected: " + errorCode +
+		    "\n     got: " + sqlException.getSQLState(),
+		    sqlException);
+	    }
+	    if (errorMessage != null) {
+		if (!errorMessage.equals(sqlException.getMessage().trim())) {
+		    throw new ContextAssertionError(
+			"Unexpected exception message:" +
+			"\nExpected: '" + errorMessage + "'",
+			sqlException);
+		}
+	    }
+	}
+    }
+
+    private void createTableCommand(Object value, List<Object> sequence)
+	    throws SQLException
+    {
+	new CreateTableCommand(value, sequence).execute();
+    }
+
+    private class CreateTableCommand extends AbstractStatementCommand {
+
+	CreateTableCommand(Object value, List<Object> sequence) {
+	    super("CREATE TABLE " + string(value, "CreateTable argument"));
+	    for (int i = 1; i < sequence.size(); i++) {
+		Entry<Object, Object> map =
+		    onlyEntry(sequence.get(i), "CreateTable attribute");
+		String attribute =
+		    string(map.getKey(), "CreateTable attribute name");
+		Object attributeValue = map.getValue();
+		if ("error".equals(attribute)) {
+		    parseError(attributeValue);
+		} else {
+		    fail("The '" + attribute + "' attribute name was not" +
+			 " recognized");
+		}
+	    }
+	}
+
+	void execute() throws SQLException {
+	    Statement stmt = connection.createStatement();
+	    if (DEBUG) {
+		System.err.println("Executing statement: " + statement);
+	    }
+	    try {
+		stmt.execute(statement);
+		if (DEBUG) {
+		    System.err.println("Statement executed successfully");
+		}
+	    } catch (SQLException e) {
+		if (DEBUG) {
+		    System.err.println(
+			"Generated error code: " + e.getSQLState() +
+			"\nException: " + e);
+		}
+		checkFailure(e);
+		return;
+	    }
+	    assertFalse("Statement execution succeeded, but was expected" +
+			" to generate an error",
+			errorSpecified);
+	}
+    }
+
     private void statementCommand(Object value, List<Object> sequence)
 	throws SQLException
     {
 	new StatementCommand(value, sequence).execute();
     }
 
-    private class StatementCommand {
-	private final String statement;
+    private class StatementCommand extends AbstractStatementCommand {
 	private List<List<Object>> params;
 	private List<Integer> paramTypes;
 	private List<List<Object>> output;
 	private int rowCount = -1;
 	private List<String> outputTypes;
-	private boolean errorSpecified;
-	private String errorCode;
-	private String errorMessage;
 	private String explain;
 
 	/**
@@ -289,7 +414,12 @@ class YamlTester {
 	private int outputRow = 0;
 
 	StatementCommand(Object value, List<Object> sequence) {
-	    statement = string(value, "Statement value");
+	    super(string(value, "Statement value"));
+	    if (statement.regionMatches(true, 0, "CREATE TABLE", 0, 12)) {
+		throw new ContextAssertionError(
+		    "The Statement command should not be used for CREATE" +
+		    " TABLE statements");
+	    }
 	    for (int i = 1; i < sequence.size(); i++) {
 		Entry<Object, Object> map =
 		    onlyEntry(sequence.get(i), "Statement attribute");
@@ -401,28 +531,13 @@ class YamlTester {
 	    }
 	}
 
-	private void parseError(Object value) {
-	    assertFalse("The error attribute must not appear more than once",
-			errorSpecified);
-	    errorSpecified = true;
-	    List<Object> errorInfo =
-		nonEmptyScalarSequence(value, "error value");
-	    errorCode = scalar(errorInfo.get(0), "error code").toString();
-	    if (errorInfo.size() > 1) {
-		errorMessage = string(errorInfo.get(1), "error message").trim();
-		assertTrue("The error attribute can have at most two" +
-			   " elements",
-			   errorInfo.size() < 3);
-	    }
-	}
-
 	private void parseExplain(Object value) {
 	    assertNull("The explain attribute must not appear more than once",
 		       explain);
 	    explain = string(value, "explain value").trim();
 	}
 
-	private void execute() throws SQLException {
+	void execute() throws SQLException {
 	    if (explain != null) {
 		checkExplain();
 	    }
@@ -501,34 +616,6 @@ class YamlTester {
 		assertEquals("Explain results do not match:", explain, got);
 	    } finally {
 		stmt.close();
-	    }
-	}
-
-	private void checkFailure(SQLException sqlException) {
-	    if (DEBUG) {
-		System.err.println(
-		    "Generated error code: " + sqlException.getSQLState() +
-		    "\nException: " + sqlException);
-	    }
-	    if (!errorSpecified) {
-		throw new ContextAssertionError(
-		    "Unexpected statement execution failure: " + sqlException,
-		    sqlException);
-	    }
-	    if (!errorCode.equals(sqlException.getSQLState())) {
-		throw new ContextAssertionError(
-		    "Unexpected error code:" +
-		    "\nExpected: " + errorCode +
-		    "\n     got: " + sqlException.getSQLState(),
-		    sqlException);
-	    }
-	    if (errorMessage != null) {
-		if (!errorMessage.equals(sqlException.getMessage().trim())) {
-		    throw new ContextAssertionError(
-			"Unexpected exception message:" +
-			"Expected: '" + errorMessage + "'",
-			sqlException);
-		}
 	    }
 	}
 
@@ -657,8 +744,8 @@ class YamlTester {
 		int columnType = metaData.getColumnType(i);
 		String columnTypeName = getTypeName(columnType);
 		if (columnTypeName == null) {
-		    columnTypeName = "<unknown " + metaData.getColumnTypeName(i) + " (" +
-                                                   columnType + ")>";
+		    columnTypeName = "<unknown " +
+			metaData.getColumnTypeName(i) + " (" + columnType + ")>";
 		}
 		assertEquals("Wrong output type for column " + i + ":",
 			     outputTypes.get(i - 1), columnTypeName);
@@ -672,16 +759,17 @@ class YamlTester {
 	    }
 	    for (int i = 0; i < size; i++) {
 		Object patternElem = pattern.get(i);
-		if (patternElem != DontCare.INSTANCE) {
-		    Object rowElem = row.get(i);
-		    if (patternElem == null) {
-			if (rowElem != null) {
-			    return false;
-			}
-		    } else if (!arrayElementString(patternElem).equals(
-				   arrayElementString(rowElem))) {
+		Object rowElem = row.get(i);
+		if (patternElem instanceof OutputComparator) {
+		    return ((OutputComparator) patternElem).compareOutput(
+			rowElem);
+		} else if (patternElem == null) {
+		    if (rowElem != null) {
 			return false;
 		    }
+		} else if (!arrayElementString(patternElem).equals(
+			       arrayElementString(rowElem))) {
+		    return false;
 		}
 	    }
 	    return true;
@@ -873,27 +961,105 @@ class YamlTester {
 	return rows;
     }
 
+    /** Support comparing this object to expected output. */
+    interface OutputComparator {
+	/**
+	 * Compares the specified output with this object, which represents the
+	 * expected output.
+	 *
+	 * @param output the output
+	 * @return whether the output matches the expected output
+	 */
+	boolean compareOutput(Object output);
+    }
+
     /**
      * An object that represents a don't care value specified in the expected
      * output.
      */
-    static class DontCare {
-	private DontCare() { }
+    static class DontCare implements OutputComparator {
 	static final DontCare INSTANCE = new DontCare();
+	private DontCare() { }
+        public boolean compareOutput(Object output) {
+	    return true;
+	}
 	public String toString() {
 	    return "!dc";
 	}
     }
 
-    /** A SnakeYAML constructor that converts dc tags to DontCare.INSTANCE. */
-    private static class DontCareConstructor extends SafeConstructor {
-	DontCareConstructor() {
-	    this.yamlConstructors.put(new Tag("!dc"), new ConstructDontCare());
+    /**
+     * A class that represents a regular expression specified in the expected
+     * output.
+     */
+    static class Regexp implements OutputComparator {
+	private final Pattern pattern;
+	Regexp(String pattern) {
+	    this.pattern = Pattern.compile(convertPattern(pattern));
+	    if (DEBUG) {
+		System.err.println("Regexp: '" + pattern + "' => '" +
+				   this.pattern + "'");
+	    }
+	}
+	public boolean compareOutput(Object object) {
+	    boolean result = pattern.matcher(String.valueOf(object)).matches();
+	    if (DEBUG) {
+		System.err.println("Regexp.compareOutput pattern='" + pattern +
+				   "', object='" + object + "' => '" + result +
+				   "'");
+	    }
+	    return result;
+	}
+	public String toString() {
+	    return "!re '" + pattern + "'";
+	}
+    }
+
+    /**
+     * Convert a pattern from the input format, with {N} for captured groups,
+     * to the \N format used by Java regexps.
+     */
+    static String convertPattern(String pattern) {
+	if (pattern.indexOf("{") == -1) {
+	    return pattern;
+	} else {
+	    /*
+	     * Replace {N} with \N.  To make sure that the '{' is not escaped,
+	     * require that the brace is either at the beginning of the input,
+	     * right after the last match, that the previous character is not a
+	     * backslash, or that the previous two characters are backslashes,
+	     * for an escaped backslash.  Note that backslashes need to be
+	     * doubled to get them into the string, and then doubled again for
+	     * regexp processing to treat them as literals.
+	     */
+	    return pattern.replaceAll(
+		"(\\A|\\G|[^\\\\]|\\\\\\\\)[{]([0-9]+)[}]", "$1\\\\$2");
+	}
+    }
+
+    /**
+     * A SnakeYAML constructor that converts dc tags to DontCare.INSTANCE and
+     * re tags to Regexp instances.
+     */
+    private static class RegisterTags extends SafeConstructor {
+	RegisterTags() {
+	    yamlConstructors.put(new Tag("!dc"), new ConstructDontCare());
+	    yamlConstructors.put(new Tag("!re"), new ConstructRegexp());
 	}
 	private static class ConstructDontCare extends AbstractConstruct {
 	    @Override
 	    public Object construct(Node node) {
 		return DontCare.INSTANCE;
+	    }
+	}
+	private static class ConstructRegexp extends AbstractConstruct {
+	    @Override
+	    public Object construct(Node node) {
+		if (!(node instanceof ScalarNode)) {
+		    fail("The value of the regular expression (!re) tag must" +
+			 " be a scalar");
+		}
+		return new Regexp(((ScalarNode) node).getValue());
 	    }
 	}
     }

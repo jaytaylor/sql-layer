@@ -1,7 +1,7 @@
 # Test integer overflow
 # Gets error for too-large value
 ---
-- Statement: CREATE TABLE t (integer_field integer)
+- CreateTable: t (integer_field integer)
 ---
 - Statement: INSERT INTO t (integer_field) VALUES (2147483647)
 ---
