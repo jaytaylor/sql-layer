@@ -96,11 +96,9 @@ public class NiceRow extends NewRow {
         }
 
         NewRow retval = new NiceRow(rowDef.getRowDefId(), rowDef);
+        RowDataExtractor extractor = new RowDataExtractor(origData, rowDef);
         for (int pos : activeColumns) {
-            // TODO: The extractor used to be shared across fields, but that led to aliasing
-            // TODO: problems. Is there a better way?
-            RowDataExtractor extractor = new RowDataExtractor();
-            Object value = extractor.get(rowDef.getFieldDef(pos), origData);
+            Object value = extractor.get(rowDef.getFieldDef(pos));
             Object old = retval.put(pos, value);
             assert old == null : String.format("put(%s, %s) --> %s", pos, value, old);
         }

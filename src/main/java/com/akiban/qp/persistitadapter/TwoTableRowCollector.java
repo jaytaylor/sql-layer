@@ -58,6 +58,8 @@ public class TwoTableRowCollector extends OperatorBasedRowCollector
         UserTable predicateTable = null;
         int columnPosition = 0;
         int columnBitMapSize = columnBitMap.length * 8;
+        RowDataExtractor startExtractor = start == null ? null : new RowDataExtractor(start, rowDef);
+        RowDataExtractor endExtractor = end == null ? null : new RowDataExtractor(end, rowDef);
         while (columnPosition < columnBitMapSize) {
             if ((columnBitMap[columnPosition / 8] & (1 << (columnPosition % 8))) != 0) {
                 Column groupColumn = groupTable.getColumnsIncludingInternal().get(columnPosition);
@@ -82,10 +84,10 @@ public class TwoTableRowCollector extends OperatorBasedRowCollector
                     }
                     FieldDef fieldDef = rowDef.getFieldDef(groupColumn.getPosition());
                     if (userTableStart != null) {
-                        userTableStart.put(userColumn.getPosition(), extractor.get(fieldDef, start));
+                        userTableStart.put(userColumn.getPosition(), startExtractor.get(fieldDef));
                     }
                     if (userTableEnd != null) {
-                        userTableEnd.put(userColumn.getPosition(), extractor.get(fieldDef, end));
+                        userTableEnd.put(userColumn.getPosition(), endExtractor.get(fieldDef));
                     }
                 }
             }
@@ -138,6 +140,4 @@ public class TwoTableRowCollector extends OperatorBasedRowCollector
         }
         return new ByteArrayColumnSelector(columnBitMap);
     }
-
-    private final RowDataExtractor extractor = new RowDataExtractor();
 }

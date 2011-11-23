@@ -719,8 +719,6 @@ public class PersistitStore implements Store {
                     if (--retries < 0) {
                         throw new TransactionFailedException();
                     }
-                } catch (DuplicateKeyException e) {
-                    rollback(transaction);
                 } finally {
                     transaction.end();
                 }
