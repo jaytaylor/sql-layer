@@ -40,6 +40,7 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.util.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -438,6 +439,7 @@ public class PersistitStore implements Store {
                     uniqueId = constructHKey(session, hEx, rowDef, rowData,
                             true);
                     if (hEx.isValueDefined()) {
+                        rollback(transaction);
                         throw new DuplicateKeyException("PRIMARY", hEx.getKey());
                     }
 
@@ -661,7 +663,6 @@ public class PersistitStore implements Store {
         checkNoGroupIndexes(rowDef.table());
         Exchange hEx = null;
         final Transaction transaction = treeService.getTransaction(session);
-
         try {
             hEx = getExchange(session, rowDef);
             int retries = MAX_TRANSACTION_RETRY_COUNT;
@@ -695,7 +696,7 @@ public class PersistitStore implements Store {
                             || !fieldsEqual(rowDef, oldRowData, mergedRowData,
                                             rowDef.getParentJoinFields())) {
                         deleteRow(session, oldRowData);
-                        writeRow(session, mergedRowData);
+                        writeRow(session, mergedRowData); // May throw DuplicateKeyException
                     } else {
                         packRowData(hEx, rowDef, mergedRowData);
                         // Store the h-row
@@ -712,13 +713,14 @@ public class PersistitStore implements Store {
                     }
 
                     transaction.commit(forceToDisk);
-
                     return;
                 } catch (RollbackException re) {
                     TX_RETRY_TAP.hit();
                     if (--retries < 0) {
                         throw new TransactionFailedException();
                     }
+                } catch (DuplicateKeyException e) {
+                    rollback(transaction);
                 } finally {
                     transaction.end();
                 }
@@ -1454,6 +1456,15 @@ public class PersistitStore implements Store {
             }
         }
         return mergedRow.toRowData();
+    }
+
+    private void rollback(Transaction transaction) throws PersistitException
+    {
+        try {
+            transaction.rollback();
+        } catch (RollbackException expectedRollbackException) {
+            // Nothing to do
+        }
     }
 
     @Override
