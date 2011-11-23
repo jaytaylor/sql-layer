@@ -360,7 +360,10 @@ public class StrToDateExpression extends AbstractBinaryExpression
             @Override
             public long [] get(String str)
             {
-                throw new UnsupportedOperationException ("day of year not supported yet");
+                int i = 0;
+                for (; i < 3 && str.charAt(i) >= '0' && str.charAt(i) <= '9'; ++i);
+                return new long[] {Long.parseLong(str.substring(0,i)), i};
+                //throw new UnsupportedOperationException ("day of year not supported yet");
             }
 
             @Override
@@ -659,6 +662,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             @Override
             public long [] get(String str)
             {
+                // TO DO: not sure how this actually gets used
                 throw new UnsupportedOperationException("%u is not supported yet");
                 /*
                 int i;
@@ -1193,6 +1197,12 @@ public class StrToDateExpression extends AbstractBinaryExpression
             
             // day
             if ((d = valuesMap.get(Field.d.equivalentField())) == null) d = 0L;
+
+            // get date specified by day of year, year, if year, month or day is not available
+            if (y * m * d == 0)
+            {
+                
+            }
 
             // get date specified by week,year and weekday if year, month or day field is not available
             if (y * m * d == 0) 
