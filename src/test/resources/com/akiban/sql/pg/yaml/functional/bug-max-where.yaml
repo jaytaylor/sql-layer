@@ -1,7 +1,0 @@
-# MAX in WHERE clause fails
----
-- CreateTable: t (bigint_field bigint)
----
-- Statement: SELECT * FROM t WHERE MAX(bigint_field) > 0
-- row_count: 0
-...

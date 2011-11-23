@@ -1,7 +1,0 @@
-# MAX of CLOB fails
----
-- CreateTable: t (clob_field clob)
----
-- Statement: SELECT MAX(clob_field) FROM t
-- output: [[null]]
-...

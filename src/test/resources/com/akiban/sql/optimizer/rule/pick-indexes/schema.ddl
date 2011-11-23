@@ -40,3 +40,12 @@ CREATE TABLE addresses
   city VARCHAR(100),
   CONSTRAINT `__akiban_fk_2` FOREIGN KEY `__akiban_fk_2` (cid) REFERENCES customers(cid)
 ) engine=akibandb;
+
+CREATE TABLE books
+(
+  bid int NOT NULL auto_increment, 
+  name VARCHAR(50) NOT NULL, 
+  copyright YEAR, 
+  author VARCHAR(50) NOT NULL,
+  KEY(copyright,author,name)
+) engine=akibandb;

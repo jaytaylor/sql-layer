@@ -1,0 +1,10 @@
+# IF function with parameters fails
+---
+- Statement: CREATE TABLE t (bigint_field bigint)
+---
+- Statement: INSERT INTO t VALUES (1)
+---
+- Statement: SELECT IF(?, 'yup', 'nope') FROM t
+- params: [[1]]
+- output: [[yup]]
+...

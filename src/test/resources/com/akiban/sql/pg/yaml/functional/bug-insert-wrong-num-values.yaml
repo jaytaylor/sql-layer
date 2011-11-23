@@ -1,9 +1,0 @@
-# Attempt to insert the wrong number of values
-# BUG: Gets an IndexOutOfBoundsException rather than a friendly message,
-# and the wrong error code
----
-- CreateTable: t (int_field int)
----
-- Statement: INSERT INTO t (int_field) VALUES (1, 2)
-- error: [42000]
-...

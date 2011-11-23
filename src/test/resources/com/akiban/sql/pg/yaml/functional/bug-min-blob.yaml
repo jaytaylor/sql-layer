@@ -1,7 +1,0 @@
-# MIN of BLOB fails
----
-- CreateTable: t (blob_field blob)
----
-- Statement: SELECT MIN(blob_field) FROM t
-- output: [[null]]
-...

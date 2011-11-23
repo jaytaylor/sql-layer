@@ -1,7 +1,0 @@
-# MAX of REAL fails
----
-- CreateTable: t (real_field real)
----
-- Statement: SELECT MAX(real_field) FROM t
-- output: [[null]]
-...

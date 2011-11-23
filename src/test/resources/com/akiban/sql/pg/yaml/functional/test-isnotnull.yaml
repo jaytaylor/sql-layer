@@ -17,7 +17,22 @@
 ---
 - Statement: DELETE FROM all_types
 
-# bigint unsigned -- SELECT not supported
+# bigint unsigned
+---
+- Statement: SELECT bigint_unsigned_field FROM all_types
+    WHERE bigint_unsigned_field IS NOT NULL
+- row_count: 0
+---
+- Statement: INSERT INTO all_types (bigint_unsigned_field) VALUES (null)
+---
+- Statement: INSERT INTO all_types (bigint_unsigned_field)
+    VALUES (0), (1), (9223372036854775807)
+---
+- Statement: SELECT bigint_unsigned_field FROM all_types
+    WHERE bigint_unsigned_field IS NOT NULL
+- output: [[0], [1], [9223372036854775807]]
+---
+- Statement: DELETE FROM all_types
 
 # blob
 ---
@@ -34,19 +49,18 @@
 - Statement: DELETE FROM all_types
 
 # boolean
-# Selecting a boolean returns the wrong value
-# ---
-# - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS NOT NULL
-# - row_count: 0
-# ---
-# - Statement: INSERT INTO all_types (boolean_field) VALUES (null)
-# ---
-# - Statement: INSERT INTO all_types (boolean_field) VALUES (0), (1)
-# ---
-# - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS NOT NULL
-# - output: [[0], [1]]
-# ---
-# - Statement: DELETE FROM all_types
+---
+- Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS NOT NULL
+- row_count: 0
+---
+- Statement: INSERT INTO all_types (boolean_field) VALUES (null)
+---
+- Statement: INSERT INTO all_types (boolean_field) VALUES (0), (1)
+---
+- Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS NOT NULL
+- output: [[0], [1]]
+---
+- Statement: DELETE FROM all_types
 
 # char
 ---

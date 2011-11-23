@@ -67,6 +67,8 @@
 ---
 - Statement: INSERT INTO all_types (bigint_field) VALUES (1)
 ---
+- Statement: INSERT INTO all_types (bigint_unsigned_field) VALUES (1)
+---
 - Statement: INSERT INTO all_types (blob_field) VALUES ('deadbeef')
 ---
 - Statement: INSERT INTO all_types (char_field) VALUES ('c')
@@ -96,21 +98,23 @@
 
 # Now retreive
 ---
-- Statement: SELECT COALESCE(bigint_field, double_field, float_field,
-        integer_field, numeric_field, real_field, smallint_field)
-        FROM all_types
-- output: [[1.0], [null], [null], [null], [null], [0.0], [1.0], [2.0], [3.0],
-          [4.0], [5.0], [null], [null], [null]]
+- Statement: SELECT COALESCE(bigint_field, bigint_unsigned_field,
+        double_field, float_field, integer_field, numeric_field,
+        real_field, smallint_field) FROM all_types
+- output: [[1.0], [1.0], [null], [null], [null], [null], [0.0], [1.0],
+          [2.0], [3.0], [4.0], [5.0], [null], [null], [null]]
 ---
 - Statement: SELECT COALESCE(char_field, char_multi_field, varchar_field)
     FROM all_types
-- output: [[null], [null], ['c'], ['abc'], [null], [null], [null],
-           [null], [null], [null], [null], [null], [null], ['yup']]
+- output: [[null], [null], [null], ['c'], ['abc'], [null], [null],
+           [null], [null], [null], [null], [null], [null], [null],
+           ['yup']]
 
 # Use literal
 ---
 - Statement: SELECT COALESCE(char_field, 'x') FROM all_types
-- output: [[x], [x], [c], [x], [x], [x], [x], [x], [x], [x], [x], [x], [x], [x]]
+- output: [[x], [x], [x], [c], [x], [x], [x], [x], [x], [x], [x], [x],
+    [x], [x], [x]]
 
 # Use parameter -- not working
 #---
