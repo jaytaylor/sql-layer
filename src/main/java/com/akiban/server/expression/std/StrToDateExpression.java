@@ -24,6 +24,7 @@ import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.ValueSourceIsNullException;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.ObjectExtractor;
 import com.akiban.server.types.util.ValueHolder;
@@ -52,7 +53,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             // which can only be known at evaluation time....
             // thus this method returns a LONG, since LONG could be casted to all of the types mentioned above (???)
             if (first.getType() == AkType.NULL || second.getType() == AkType.NULL ) return ExpressionTypes.NULL;
-            else return ExpressionTypes.LONG;
+            else return ExpressionTypes.DATETIME;
         }
 
         @Override
@@ -480,7 +481,6 @@ public class StrToDateExpression extends AbstractBinaryExpression
             {
                 return Field.m;
             }
-
         },
         
         /**
@@ -1307,8 +1307,8 @@ public class StrToDateExpression extends AbstractBinaryExpression
     protected static AkType getTopType (ExpressionEvaluation strE, ExpressionEvaluation formatE)
     {
         ValueSource formatS = formatE.eval();
-        if (strE.eval().isNull() || formatS.isNull()) return AkType.NULL;
-
+      //  if (strE.eval().isNull() || formatS.isNull()) return AkType.DATETIME;
+try{
         String format = Extractors.getStringExtractor().getObject(formatS);
         String formatList[] = format.split("\\%");
         int bit = 0;
@@ -1324,6 +1324,10 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
         }
         catch (IllegalArgumentException  ex)
+        {
+            return AkType.NULL;
+        }
+        }catch (ValueSourceIsNullException e)
         {
             return AkType.NULL;
         }
