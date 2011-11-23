@@ -1,6 +1,7 @@
-PhysicalUpdate@64e8606c
+PhysicalUpdate@55a7b0bf
   Insert_Default(project to table user.child ([Literal(NULL), Field(0), Field(1)]))
     project to table user.child ([Literal(NULL), Field(0), Field(1)])
-      Select_HKeyOrdered(user.parent, Field(1) != Literal(IGNORE))
-        Filter_Default([user.parent])
-          GroupScan_Default(full scan on _akiban_parent)
+      AncestorLookup_Default(Index(user.parent.name[IndexColumn(name)]) -> [user.parent])
+        com.akiban.qp.operator.UnionAll_Default@7444f787
+          IndexScan_Default(Index(user.parent.name[IndexColumn(name)]) (>UnboundExpressions[Literal(NULL)],<UnboundExpressions[Literal(IGNORE)]))
+          IndexScan_Default(Index(user.parent.name[IndexColumn(name)]) (>UnboundExpressions[Literal(IGNORE)],<UnboundExpressions[Literal(NULL)]))
