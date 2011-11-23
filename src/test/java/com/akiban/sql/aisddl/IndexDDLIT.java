@@ -297,6 +297,14 @@ public class IndexDDLIT extends PostgresServerITBase {
         connection.createStatement().execute(sql);
     }
     
+    @Test (expected=PSQLException.class)
+    public void createCrossGroupIndex() throws SQLException {
+        createUngroupedTables(); 
+        
+        String sql = "CREATE INDEX t1_t2 ON test.t1(c1, test.t2.c1) USING LEFT JOIN";
+        connection.createStatement().execute(sql);
+    }
+    
     private void createTable () throws SQLException {
         String sql = "CREATE TABLE test.t1 (c1 integer not null primary key, " +
             " c2 integer, c3 integer, c4 integer, c5 integer)";
@@ -340,7 +348,15 @@ public class IndexDDLIT extends PostgresServerITBase {
         connection.createStatement().execute(sql2);
     }
 
-    
+    private void createUngroupedTables()  throws SQLException {
+        String sql1 = "CREATE TABLE test.t1 (c1 integer not null primary key," +
+                "c2 integer not null)";
+        String sql2 = "CREATE TABLE test.t2 (c1 integer not null primary key, " +
+                "c2 integer not null)";
+        
+        connection.createStatement().execute(sql1);
+        connection.createStatement().execute(sql2);
+    }
     
     protected DDLFunctions ddlServer() {
         return serviceManager().getDXL().ddlFunctions();
