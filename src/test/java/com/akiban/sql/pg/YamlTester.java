@@ -91,9 +91,9 @@ import org.yaml.snakeyaml.nodes.Tag;
      - CreateTable: <table name> <create table arguments>...
      - error: [<error code>, <error message>]
    - The error message is optional
-   - This command has the same behavior has specifying a CREATE TABLE statement
-     with a Statement command, but it makes sure that the test framework knows
-     which tables have been created, so it can tear them down after the test is
+   - This command has the same behavior as would specifying a CREATE TABLE
+     statement with a Statement command, but it lets the test framework know
+     which tables have been created, so it can drop them after the test is
      completed
 
    Statement
@@ -122,8 +122,8 @@ import org.yaml.snakeyaml.nodes.Tag;
    - !dc dc for don't care value in output
    - !re regular-expression for regular expression patterns that should match
      output
-   - The statement text should not create table -- use the CreateTable command
-     for that purpose
+   - The statement text should not create a table -- use the CreateTable
+     command for that purpose
 */
 class YamlTester {
 
@@ -283,10 +283,12 @@ class YamlTester {
 	String errorCode;
 	String errorMessage;
 
+	/** Handle a statement with the specified statement text. */
 	AbstractStatementCommand(String statement) {
 	    this.statement = statement;
 	}
 
+	/** Parse an error attribute with the specified value. */
 	void parseError(Object value) {
 	    assertFalse("The error attribute must not appear more than once",
 			errorSpecified);
@@ -302,6 +304,10 @@ class YamlTester {
 	    }
 	}
 
+	/**
+	 * Check the specified exception against the error attribute specified
+	 * earlier, if any.
+	 */
 	void checkFailure(SQLException sqlException) {
 	    if (DEBUG) {
 		System.err.println(

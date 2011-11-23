@@ -261,11 +261,6 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     }
 
     @Test
-    public void testCreateTableBadArgumentSyntax() {
-	testYamlFail("- CreateTable: foo (int_field int");
-    }
-
-    @Test
     public void testCreateTableSuccess() {
 	testYaml("- CreateTable: foo (int_field int)");
     }
@@ -315,6 +310,11 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "---\n" +
 	    "- CreateTable: a (i int)\n" +
 	    "- error: [1]");
+    }
+
+    @Test
+    public void testCreateTableNotErrorError() {
+	testYamlFail("- CreateTable: a (int_field int");
     }
 
     @Test
