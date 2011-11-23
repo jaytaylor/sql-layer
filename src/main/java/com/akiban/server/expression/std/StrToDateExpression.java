@@ -375,7 +375,61 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
         },
         
-        // TODO: k, l same as H, h
+        /**
+         * hour : 24-hr format.
+         * Same as H
+         */
+        k
+        {
+            @Override
+            public long [] get(String str)
+            {
+                int i;
+                return new long[] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2 :1)), i};
+            }
+
+            @Override
+            public int getFieldType ()
+            {
+                 return 2;
+            }
+
+            @Override
+            public Field equivalentField ()
+            {
+                return Field.H;
+            }
+        },
+
+        /**
+         * hour: 12-hr format
+         * Same as h
+         */
+        l
+        {
+            @Override
+            public long [] get(String str)
+            {
+                int i = 2 <= str.length() ? 2 : 1;
+                // adjust hour to 24hr format
+                long h = Long.parseLong(str.substring(0, i));
+                if (h > 12) throw new NumberFormatException();
+                h %= 12;
+                return new long [] {h, i};
+            }
+
+            @Override
+            public int getFieldType ()
+            {
+                 return 2;
+            }
+
+            @Override
+            public Field equivalentField ()
+            {
+                return Field.H;
+            }
+        },
         
         /**
          * month name: December, November, ...
@@ -431,6 +485,8 @@ public class StrToDateExpression extends AbstractBinaryExpression
         
         /**
          * specify pm or am
+         * to be used with %r (12-hr format time) or %h (12-hr format hour)
+         * return NULL if used with %T (24-hr format time) or %H (24-hr format hour)
          */        
         p 
         {
@@ -463,7 +519,8 @@ public class StrToDateExpression extends AbstractBinaryExpression
             @Override
             public long [] get(String str)
             {
-                String time = str.substring(0, 8);
+                int i =  Math.min(8, str.length());
+                String time = str.substring(0,i);
                 String t[] = time.split("\\:");
 
                 // adjust time to 24hr format
@@ -472,7 +529,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
                 hr %= 12;
                 long m = Long.parseLong(t[1]);
                 long s = Long.parseLong(t[2]);
-                return new long [] {10000L * hr + 100 * m + s, 8};
+                return new long [] {10000L * hr + 100 * m + s, i};
             }
 
              @Override
@@ -546,9 +603,10 @@ public class StrToDateExpression extends AbstractBinaryExpression
             @Override
             public long [] get(String str)
             {
-                String time = str.substring(0, 8);
+                int i = Math.min(8, str.length());
+                String time = str.substring(0, i);
                 String t[] = time.split("\\:");
-                return new long [] {10000L * Long.parseLong(t[0]) + 100 * Long.parseLong(t[1]) + Long.parseLong(t[2]), 8};
+                return new long [] {10000L * Long.parseLong(t[0]) + 100 * Long.parseLong(t[1]) + Long.parseLong(t[2]), i};
             }
 
             @Override
@@ -565,15 +623,19 @@ public class StrToDateExpression extends AbstractBinaryExpression
         },
         
         /**
-         * week of year, Sunday is the first day of week
+         * week of year [0,...53], Sunday is the first day of week
          */
         U 
         {
             @Override
             public long [] get(String str)
             {
+                throw new UnsupportedOperationException("%U is not supported yet");
+                /*
                 int i;
                 return new long [] { Long.parseLong(str.substring(0,i = 2 <= str.length() ? 2 :1)), i};
+                 *
+                 */
             }
 
             @Override
@@ -590,15 +652,19 @@ public class StrToDateExpression extends AbstractBinaryExpression
         },
         
         /**
-         * week of year, Monday is the first day of week
+         * week of year [0...53], Monday is the first day of week
          */
         u 
         {
             @Override
             public long [] get(String str)
             {
+                throw new UnsupportedOperationException("%u is not supported yet");
+                /*
                 int i;
                 return new long [] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2 :1)), i};
+                 *
+                 */
             }
 
             @Override
@@ -615,7 +681,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
         },
         
         /**
-         * week: 0, ....53: where Sunday is the first day
+         * week of year: [1,..,53]: where Sunday is the first day
          * to be used with %X
          */
         V // (0 ...53) where Sunday is the first day, use with X
@@ -641,7 +707,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
         },
         
         /**
-         * week 0, ...53: where Monday is the first day
+         * week of year [0,..,53]: where Monday is the first day
          * to be used with %x
          */
         v 
@@ -674,7 +740,9 @@ public class StrToDateExpression extends AbstractBinaryExpression
             @Override
             public long [] get(String str)
             {
-                throw new UnsupportedOperationException ("week day name is not supportd yet");
+                int n = 0;
+                while (n < str.length() && !Character.isDigit(str.charAt(n))) ++n;
+                return new long[] {weekDay.get(str.substring(0, n).toUpperCase()),n};
             }
 
              @Override
@@ -864,11 +932,21 @@ public class StrToDateExpression extends AbstractBinaryExpression
         abstract Field equivalentField ();
 
         // class static data fields
-        static protected HashMap<String, Integer> abbWeekday = new HashMap<String, Integer>();
-        static protected HashMap<String, Integer> abbMonth = new HashMap<String, Integer>();
-        static protected HashMap<String, Integer> month = new HashMap<String, Integer>();
+        static protected final HashMap<String, Integer> abbWeekday = new HashMap<String, Integer>();
+        static protected final HashMap<String, Integer> weekDay = new HashMap<String, Integer>();
+        static protected final HashMap<String, Integer> abbMonth = new HashMap<String, Integer>();
+        static protected final HashMap<String, Integer> month = new HashMap<String, Integer>();
         static
         {
+            weekDay.put("SUNDAY", 0);
+            weekDay.put("MONDAY", 1);
+            weekDay.put("TUESDAY", 2);
+            weekDay.put("WEDNESDAY", 3);
+            weekDay.put("THURSDAY", 4);
+            weekDay.put("FRIDAY", 5);
+            weekDay.put("SATURDAY", 6);
+            weekDay.put("SUNDAY", 7);
+
             abbWeekday.put("SUN", 0);
             abbWeekday.put("MON", 1);
             abbWeekday.put("TUE", 2);
@@ -902,7 +980,6 @@ public class StrToDateExpression extends AbstractBinaryExpression
             month.put("OCTOBER", 10);
             month.put("NOVEMBER", 11);
             month.put("DECEMBER", 12);
-
         }
     }
 
@@ -936,11 +1013,15 @@ public class StrToDateExpression extends AbstractBinaryExpression
         }
         
         private boolean parseString (String str, String format)
-        {
-            // trim unnecessary spaces in str.
-            str = str.trim();           
+        {           
             // split format
             String formatList[] = format.split("\\%");
+
+            // remove [matched] leading string
+            str = str.replaceFirst(formatList[0], "");
+
+            // trim unnecessary spaces in str.
+            str = str.trim();
             String sVal = "";
             Field field = null;
             has24Hr = false;
@@ -973,7 +1054,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
                     str = str.replaceFirst(sVal + del, "");
                     str = str.trim();
                 }
-                field = Field.valueOf(formatList[formatList.length - 1]);
+                field = Field.valueOf(formatList[formatList.length - 1].charAt(0) + "");
                 if (valuesMap.containsKey(field.equivalentField())) return false;
                 valuesMap.put(field.equivalentField(), field.get(str)[0]);
             }
