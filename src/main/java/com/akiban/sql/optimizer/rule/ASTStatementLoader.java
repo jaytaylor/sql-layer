@@ -863,12 +863,16 @@ public class ASTStatementLoader extends BaseRule
                 throws StandardException {
             List<ConditionExpression> conditions = new ArrayList<ConditionExpression>(1);
             addCondition(conditions, condition);
-            if (conditions.size() == 1)
+            switch (conditions.size()) {
+            case 0:
+                return new BooleanConstantExpression(Boolean.TRUE);
+            case 1:
                 return conditions.get(0);
-            // CASE WHEN x BETWEEN a AND b means multiple conditions from single one in AST.
-            else
+            default:
+                // CASE WHEN x BETWEEN a AND b means multiple conditions from single one in AST.
                 return new LogicalFunctionCondition("and", conditions,
                                                     condition.getType(), condition);
+            }
         }
 
         /** SELECT DISTINCT with sorting sorts by an input Project and
