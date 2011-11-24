@@ -167,7 +167,13 @@ public class ArithOps
         @Override
         protected ExpressionType composeType(ExpressionType first, ExpressionType second) {
             // TODO: Max decimal precision?
-            return first;
+            AkType top = ArithExpression.getTopType(first.getType(), second.getType(), this);
+            int scale = 0;
+            if ( top.underlyingTypeOrNull() == AkType.UnderlyingType.DOUBLE_AKTYPE ||
+                    top.underlyingTypeOrNull() == AkType.UnderlyingType.FLOAT_AKTYPE)
+                scale = Math.max(first.getScale(), second.getScale());
+            int pre = first.getPrecision() + second.getPrecision();
+            return ExpressionTypes.newType(top, pre, scale);
         }
 
         @Override
