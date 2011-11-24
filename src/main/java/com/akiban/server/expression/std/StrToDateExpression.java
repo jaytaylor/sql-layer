@@ -13,7 +13,6 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-
 package com.akiban.server.expression.std;
 
 import com.akiban.server.error.WrongExpressionArityException;
@@ -157,7 +156,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
             @Override
             public long [] get(String str)
             {
-                throw new UnsupportedOperationException(" day with suffix is not supported yet");
+                int n = 0;
+                int limit = Math.min(4, str.length());
+                for (n = 0; n < limit && str.charAt(n) >= '0' && str.charAt(n) <= '9'; ++n );
+                return new long[] { Long.parseLong(str.substring(0, n)), n +2 };
+
             }
 
              @Override
@@ -633,7 +636,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             public long [] get(String str)
             {
                 // TO DO: not sure how this actually gets used
-                throw new UnsupportedOperationException("%U is not supported yet");
+                throw new UnsupportedOperationException("%U is not supported in str_to_date yet");
                 /*
                 int i;
                 return new long [] { Long.parseLong(str.substring(0,i = 2 <= str.length() ? 2 :1)), i};
@@ -663,7 +666,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             public long [] get(String str)
             {
                 // TO DO: not sure how this actually gets used
-                throw new UnsupportedOperationException("%u is not supported yet");
+                throw new UnsupportedOperationException("%u is not supported in str_to_date yet");
                 /*
                 int i;
                 return new long [] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2 :1)), i};
@@ -688,7 +691,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
          * week of year: [1,..,53]: where Sunday is the first day
          * to be used with %X
          */
-        V // (0 ...53) where Sunday is the first day, use with X
+        V 
         {
             @Override
             public long [] get(String str)
@@ -892,18 +895,18 @@ public class StrToDateExpression extends AbstractBinaryExpression
         /**
          * literal %
          */
-        percent 
+        percent
         {
             @Override
             public long [] get(String str)
             {
-                throw new UnsupportedOperationException("percent is not supported yet");
+                throw new UnsupportedOperationException("literal % is not supported in str_to_date");
             }
 
             @Override
             public int getFieldType ()
             {
-                 throw new UnsupportedOperationException("percent is not supported yet");
+                 throw new UnsupportedOperationException("literal % is not supported yet");
             }
 
             @Override
@@ -913,6 +916,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
         };
 
+        
         /**
          * parse str to get value for this field.
          * return an array of long where array[0] is the parsed value, and array[1] is n where
@@ -1125,7 +1129,6 @@ public class StrToDateExpression extends AbstractBinaryExpression
                       d = (long)cal.get(Calendar.DAY_OF_MONTH);
                   }
               }
-
               
               // get date specified by week,year and weekday if year, month or day field is still not available
               if ( y*m*d == 0)
@@ -1186,6 +1189,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
 
             // minute
             if ((min = valuesMap.get(Field.i.equivalentField())) == null) min = 0L;
+            
             // second
             if ((sec = valuesMap.get(Field.s.equivalentField())) == null) sec = 0L;
 
@@ -1196,8 +1200,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
         }
         
         private long findDateTime ()
-        {
-            
+        {            
             long date = findDate();
             
             if (date < 0) return -1;
@@ -1211,107 +1214,8 @@ public class StrToDateExpression extends AbstractBinaryExpression
             if (time < 0) return -1;
             
             return date * 1000000L + time;
-        /*    
-            Long y = 0L;
-            Long m = 0L;
-            Long d = 0L;
-            
-            Long hr = 0L;
-            Long min = 0L;
-            Long sec = 0L;
-             
-            // year
-            if ((y = valuesMap.get(Field.Y.equivalentField())) == null) y = 0L;
-            
-            // month
-            if ((m = valuesMap.get(Field.m.equivalentField())) == null) m = 0L;
-            
-            // day
-            if ((d = valuesMap.get(Field.d.equivalentField())) == null) d = 0L;
-
-            // get date specified by day of year, year, if year, month or day is not available
-            if (y * m * d == 0)
-            {
-                
-            }
-
-            // get date specified by week,year and weekday if year, month or day field is not available
-            if (y * m * d == 0) 
-            {
-                Long yr = valuesMap.get(Field.x);
-                Long wk = 1L;
-                Long dWeek = 1L;
-                Calendar cal = Calendar.getInstance();
-               
-                if (yr == null)
-                {
-                    if ((yr = valuesMap.get(Field.X)) != null 
-                            && (wk = valuesMap.get(Field.V)) != null
-                            && (dWeek = valuesMap.get(Field.W)) != null)
-                    {
-                        cal.setMinimalDaysInFirstWeek(7);
-                        cal.setFirstDayOfWeek(Calendar.SUNDAY);
-                        cal.set(Calendar.YEAR, yr.intValue());
-                        cal.set(Calendar.WEEK_OF_YEAR, wk.intValue());
-                        cal.set(Calendar.DAY_OF_WEEK, dWeek.intValue() + 1);
-                        y = (long) cal.get(Calendar.YEAR);
-                        m = (long) cal.get(Calendar.MONTH) + 1;
-                        d = (long) cal.get(Calendar.DAY_OF_MONTH);
-                    }
-   
-                } 
-                else 
-                {
-                    if ((wk = valuesMap.get(Field.v)) != null
-                            && (dWeek = valuesMap.get(Field.W)) != null) 
-                    {
-                        cal.setMinimalDaysInFirstWeek(1);
-                        cal.setFirstDayOfWeek(Calendar.MONDAY);
-                        cal.set(Calendar.YEAR, yr.intValue());
-                        cal.set(Calendar.WEEK_OF_YEAR, wk.intValue());
-                        cal.set(Calendar.DAY_OF_WEEK, dWeek.intValue() + 1);
-                        y = (long) cal.get(Calendar.YEAR);
-                        m = (long) cal.get(Calendar.MONTH) + 1;
-                        d = (long) cal.get(Calendar.DAY_OF_MONTH);
-                    }
-                }
-            }
-
-            if (!validYMD(y, m, d)) return -1;
-
-            // --------------- hh:mm:ss
-            Long ti = valuesMap.get(Field.T);
-            Long am = valuesMap.get(Field.p);
-               if (am != null && (am < 0L || has24Hr)) return -1;
-
-               if (ti != null)
-               {
-                   hr = ti / 10000L + (am != null ? am : 0L);
-                   min = ti / 100 % 100;
-                   sec = ti % 100;
-                   return validHMS(hr, min, sec) ?y * 10000000000L + m * 100000000L + d * 1000000L + hr * 10000L + min * 100 + sec : -1;
-               }
-
-                    
-               // hour
-               if ((hr = valuesMap.get(Field.h.equivalentField())) == null) hr = 0L;
-               if (am != null && hr > 0L) hr = hr + am;
-               
-               // minute
-               if ((min = valuesMap.get(Field.i.equivalentField())) == null) min = 0L;
-                 
-               // second 
-               if ((sec = valuesMap.get(Field.s.equivalentField())) == null) sec = 0L;
-               
-               // TODO: millis sec
-                       
-               // yyyyMMddHHmmss
-               return validHMS(hr, min, sec) ? y * 10000000000L + m * 100000000L + d * 1000000L + hr * 10000L + min * 100 + sec : -1;
-         * 
-         */
-        }
-        
-     
+       
+        }             
 
         private static boolean validYMD(long y, long m, long d)
         {
@@ -1362,12 +1266,9 @@ public class StrToDateExpression extends AbstractBinaryExpression
                     bit |= Field.valueOf(formatList[n].charAt(0) + "").getFieldType();
                 switch (bit)
                 {
-                    case 1:
-                        return AkType.DATE;
-                    case 2:
-                        return AkType.TIME;
-                    default:
-                        return AkType.DATETIME;
+                    case 1:     return AkType.DATE;
+                    case 2:     return AkType.TIME;
+                    default:    return AkType.DATETIME;
                 }
             }
             catch (IllegalArgumentException ex)

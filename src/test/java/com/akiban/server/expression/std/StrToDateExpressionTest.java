@@ -67,6 +67,10 @@ public class StrToDateExpressionTest
         param(pb, "date with trailing strings", "2009-10-14at date", "%Y-%m-%d at date", "2009-10-14", AkType.DATE);
         param(pb, "year, day of year to date", "2009 59", "%Y %j", "2009-02-28", AkType.DATE);
         param(pb, "year, day of year to date with day of month field", "09-59-3", "%y-%j-%d", "2009-02-28", AkType.DATE);
+        param(pb, "month to date", "3", "%m", "0000-03-00", AkType.DATE);
+        param(pb, "day with suffix to date", "March 2nd, 2009", "%M %D,%Y", "2009-03-02", AkType.DATE);
+        param(pb, "day with suffix to date", "095th12", "%y%D%m", "2009-12-05", AkType.DATE);
+        param(pb, "month name day with numeric year to date", "28thMarch,9", "%D%M,%y", "2009-03-28", AkType.DATE);
         
         // TIME
         param(pb, "hour-minute to time", "9-18", "%h-%i", "09:18:00", AkType.TIME);
