@@ -405,13 +405,14 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         private final RowData newRowData;
         private final ColumnSelector columnSelector;
         private final RowDef rowDef;
-        private final RowDataExtractor extractor = new RowDataExtractor();
+        private final RowDataExtractor extractor;
 
         private InternalUpdateFunction(PersistitAdapter adapter, RowDef rowDef, RowData newRowData, ColumnSelector columnSelector) {
             this.newRowData = newRowData;
             this.columnSelector = columnSelector;
             this.rowDef = rowDef;
             this.adapter = adapter;
+            this.extractor = new RowDataExtractor(newRowData, rowDef);
         }
 
         @Override
@@ -440,7 +441,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             ToObjectValueTarget target = new ToObjectValueTarget();
             for (int i=0; i < original.rowType().nFields(); ++i) {
                 if (columnSelector.includesColumn(i)) {
-                    Object value = extractor.get(rowDef.getFieldDef(i), newRowData);
+                    Object value = extractor.get(rowDef.getFieldDef(i));
                     newRow.put(i, value);
                 }
                 else {

@@ -95,10 +95,10 @@ public class NiceRow extends NewRow {
             }
         }
 
-        RowDataExtractor extractor = new RowDataExtractor();
         NewRow retval = new NiceRow(rowDef.getRowDefId(), rowDef);
+        RowDataExtractor extractor = new RowDataExtractor(origData, rowDef);
         for (int pos : activeColumns) {
-            Object value = extractor.get(rowDef.getFieldDef(pos), origData);
+            Object value = extractor.get(rowDef.getFieldDef(pos));
             Object old = retval.put(pos, value);
             assert old == null : String.format("put(%s, %s) --> %s", pos, value, old);
         }
