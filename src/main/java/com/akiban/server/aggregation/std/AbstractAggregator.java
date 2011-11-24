@@ -94,7 +94,7 @@ class AbstractAggregator implements Aggregator
                     case VARCHAR:   value.putString(processor.process(S_EXTRACTOR.getObject(value), S_EXTRACTOR.getObject(input))); break;
                     case DATETIME:  value.putDateTime(processor.process(DATETIME_EXTRACTOR.getLong(value), DATETIME_EXTRACTOR.getLong(input))); break;
                     case TIMESTAMP: value.putTimestamp(processor.process(TIMESTAMP_EXTRACTOR.getLong(value), TIMESTAMP_EXTRACTOR.getLong(input))); break;
-                    default: throw new UnsupportedOperationException("Not supported yet.");
+                    default: throw new UnsupportedOperationException( processor.toString() + " of " + type + " is not supported yet.");
                  }
         }
     }
