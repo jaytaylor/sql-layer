@@ -16,6 +16,7 @@
 package com.akiban.server.aggregation.std;
 
 import com.akiban.server.aggregation.Aggregator;
+import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
@@ -94,7 +95,7 @@ class AbstractAggregator implements Aggregator
                     case VARCHAR:   value.putString(processor.process(S_EXTRACTOR.getObject(value), S_EXTRACTOR.getObject(input))); break;
                     case DATETIME:  value.putDateTime(processor.process(DATETIME_EXTRACTOR.getLong(value), DATETIME_EXTRACTOR.getLong(input))); break;
                     case TIMESTAMP: value.putTimestamp(processor.process(TIMESTAMP_EXTRACTOR.getLong(value), TIMESTAMP_EXTRACTOR.getLong(input))); break;
-                    default: throw new UnsupportedOperationException( processor.toString() + " of " + type + " is not supported yet.");
+                    default: throw new InvalidArgumentTypeException( processor.toString() + " of " + type + " is not supported yet.");
                  }
         }
     }
