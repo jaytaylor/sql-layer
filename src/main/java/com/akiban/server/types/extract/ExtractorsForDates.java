@@ -291,12 +291,13 @@ abstract class ExtractorsForDates extends LongExtractor {
 
         @Override
         public long stdLongToUnix(long longVal) {
-            return Calculator.getMillis((int)longVal, 1, 1, 0, 0, 0);
+            return Calculator.getMillis(longVal == 0 ? 0 :1900 + (int)longVal, 1, 1, 0, 0, 0);
         }
 
         @Override
         public long unixToStdLong(long unixVal) {
-           return Calculator.getYear(unixVal);
+           long yr = Calculator.getYear(unixVal);
+           return yr == 0L ? 0 : yr - 1900 ;
         }
     };
 
