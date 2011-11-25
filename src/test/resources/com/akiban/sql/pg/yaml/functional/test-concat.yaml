@@ -1,6 +1,6 @@
 # Test the CONCAT function
 ---
-- Statement: CREATE TABLE t (x varchar(32), y integer, z double)
+- CreateTable: t (x varchar(32), y integer, z double)
 ---
 - Statement: INSERT INTO t (x) VALUES ('a0')
 ---

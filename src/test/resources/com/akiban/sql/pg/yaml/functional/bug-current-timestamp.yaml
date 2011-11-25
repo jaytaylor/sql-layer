@@ -1,0 +1,12 @@
+# CURRENT_TIMESTAMP and NOW() return the wrong year
+---
+- CreateTable: t (bigint_field bigint)
+---
+- Statement: INSERT INTO t VALUES (0)
+---
+- Statement: SELECT CURRENT_TIMESTAMP FROM t
+- output: [[!re '20[0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9][.]0']]
+---
+- Statement: SELECT NOW() FROM all_types
+- output: [[!re '20[0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9][.]0']]
+...

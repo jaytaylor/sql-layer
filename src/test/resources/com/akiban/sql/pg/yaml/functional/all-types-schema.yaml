@@ -1,7 +1,6 @@
 # Create a table with all supported data types
 ---
-- Statement:
-    CREATE TABLE all_types (
+- CreateTable: all_types (
       bigint_field bigint,
       bigint_unsigned_field bigint unsigned,
       blob_field blob,

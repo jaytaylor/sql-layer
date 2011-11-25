@@ -1,6 +1,6 @@
 # INSERT for a BIGINT UNSIGNED only supports the largest signed value
 ---
-- Statement: CREATE TABLE t (bigint_unsigned_field bigint unsigned)
+- CreateTable: t (bigint_unsigned_field bigint unsigned)
 ---
 # Insert max unsigned value
 - Statement: INSERT INTO t VALUES (18446744073709551615)
