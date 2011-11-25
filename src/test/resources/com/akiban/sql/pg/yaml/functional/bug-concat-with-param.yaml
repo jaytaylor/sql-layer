@@ -1,6 +1,6 @@
 # Parameter to CONCAT in SELECT produces NullPointerException
 ---
-- Statement: CREATE TABLE t (x varchar(32))
+- CreateTable: t (x varchar(32))
 ---
 - Statement: INSERT INTO t VALUES ('cat')
 ---

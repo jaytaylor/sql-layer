@@ -32,6 +32,7 @@ import com.akiban.sql.optimizer.rule.RulesTestHelper;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.NamedParameterizedRunner.TestParameters;
 import com.akiban.junit.Parameterization;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
