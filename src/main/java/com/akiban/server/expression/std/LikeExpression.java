@@ -52,6 +52,12 @@ public class LikeExpression extends AbstractBinaryExpression
         }
 
         @Override
+        public String toString ()
+        {
+            return "LIKE " + mode;
+        }
+
+        @Override
         public void argumentTypes(List<AkType> argumentTypes)
         {
             for (int n = 0; n < argumentTypes.size(); ++n)
@@ -93,7 +99,7 @@ public class LikeExpression extends AbstractBinaryExpression
             String left = Extractors.getStringExtractor().getObject(l);
             String right = Extractors.getStringExtractor().getObject(r);
 
-            boolean matched = false;
+            boolean matched = false;  
             switch (mode)
             {
                 case CASE_INSENSITIVE: matched = compareS(left.toUpperCase(), right.toUpperCase()); break;
@@ -137,7 +143,7 @@ public class LikeExpression extends AbstractBinaryExpression
                         while (l < lLimit) // loop1: attempt to find a matching sequence in left that starts with afterP
                         {
                             lchar = left.charAt(l++);
-                            if (lchar == afterP || afterP == '_' ) // found a *potentially* matching sequence
+                            if (lchar == afterP || afterP == '_' && !esc ) // found a *potentially* matching sequence
                             {
                                 --l;
                                 int oldR = r;
