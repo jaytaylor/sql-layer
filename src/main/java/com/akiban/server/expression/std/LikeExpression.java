@@ -104,69 +104,53 @@ public class LikeExpression extends AbstractBinaryExpression
             return new ValueHolder(AkType.BOOL, matched);
         }
 
-        private static boolean compareS(String leftS, String rightS)
+        // TODO: could use another escape character, rather than using only backslash
+        // TODO: could be replaced with recursion (as opposed to loops), which is more elegant, but more expensive?
+        private static boolean compareS(String left, String right)
         {
             int l = 0, r = 0;
-            int d = 0;
-            char [] left = leftS.toCharArray();
-            char [] right = rightS.toCharArray();
+            int lLimit = left.length(), rLimit = right.length();
+            if (rLimit == 0) return lLimit == 0;
 
-            int lLimit = left.length, rLimit = right.length;
-            if (rLimit == 0)
-            {
-                if (lLimit != 0 ) return false;
-                else return true;
-            }
-            else if (rLimit == 1) //01, 11
-            {
-                if (right[0] == '%') return true;
-                else if ((right[0] == '_' || right[0] == left[0])&& lLimit == 1) return true;
-                else return false;
-            }
-
-            if (right[right.length-2] == '\\')
-            {
-                if (right[right.length-1] != left[left.length-1]) return false;
-                lLimit = left.length -1;
-                rLimit = right.length -2;
-            }
             Loop2:
             while (l < lLimit && r < rLimit)
             {
-                char lchar = left[l];
-                char rchar = right[r];
-                boolean esp = false;
+                char lchar = left.charAt(l);
+                char rchar = right.charAt(r);
+
                 switch(rchar)
                 {
                     case '%':
                         char afterP;
+                        boolean esc = false;
                         do
                         {
                             if (r + 1 == rLimit) return true;
-                            afterP = right[++r];
+                            afterP = right.charAt(++r);
                         }
-                        while (afterP == '_' || afterP == '%');
-                        if (afterP == '\\' && (right[r+1] == '%' || right[r+1] == '_'))
+                        while (afterP == '%'); // %%%% is no different than %, so skip multiple %s
+                        if (afterP == '\\' && r +1 < rLimit && (right.charAt(r+1) == '%' || right.charAt(r+1) == '_'))
                         {
-                            afterP = right[++r];
-                            esp = true;
+                            afterP = right.charAt(++r);
+                            esc = true;
                         }
 
-                        while (l < lLimit)
+                        while (l < lLimit) // loop1: attempt to find a matching sequence in left that starts with afterP
                         {
-                            lchar = left[l++];
-                            if (lchar == afterP)
+                            lchar = left.charAt(l++);
+                            if (lchar == afterP || afterP == '_' ) // found a *potentially* matching sequence
                             {
                                 --l;
                                 int oldR = r;
                                 while (l < lLimit && r < rLimit)
                                 {
-                                    lchar = left[l];
-                                    rchar = right[r];
-                                    if ((rchar == '_' || rchar == '%' ) && !esp) continue Loop2;
-                                    esp = false;
-                                    if (rchar == '\\' && (right[r+1] == '%' || right[r+1] == '_') )
-                                        rchar = right[++r];
+                                    lchar = left.charAt(l);
+                                    rchar = right.charAt(r);
+                                    if ((rchar == '_' || rchar == '%' ) && !esc) // encounter a wildcard char , meaning the sequence indeed matched
+                                        continue Loop2; // move on to next search
+                                    esc = false;
+                                    if (rchar == '\\' && r +1 <rLimit && (right.charAt(r+1) == '%' || right.charAt(r+1) == '_'))
+                                        rchar = right.charAt(++r);
 
                                     if (lchar == rchar)
                                     {
@@ -175,35 +159,22 @@ public class LikeExpression extends AbstractBinaryExpression
                                     }
                                     else
                                     {
-                                        if (l >= lLimit) return false;
+                                        if (l >= lLimit) return false; // end of left string, lchar didn't match => false
                                         r = oldR;
                                         break;
                                     }
                                 }
-                                if (l == lLimit)
-                                {
-                                   break Loop2;
-                                }
-                                else
-                                {
-                                    r = oldR;
-                                }
+                                if (l == lLimit) break Loop2; // end of left string (the sequence is matching so far)
+                                else r = oldR; // the sequence didn't match, reset counter, search for next sequence
                             }
                         }
-
-                        return false; // the only way to amke it out of loop1 is for left to end earlier than right not matching enoujgh
-
+                        return false; // the only way to make it out of loop1 is for left to end earlier than right not matching ANY char at all
                     case '_':
                         ++r;
                         ++l;
                         break;
                     case '\\':
-                        if (right[r+1] == '_' || right[r+1] == '%')
-                        {
-                            ++d;
-                            rchar = right[++r];
-                        }
-
+                        if ( r + 1 < rLimit && (right.charAt(r+1) == '_' || right.charAt(r+1) == '%')) rchar = right.charAt(++r);//fall thru
                     default:
                         if (lchar != rchar)   return false;
                         else
@@ -215,38 +186,15 @@ public class LikeExpression extends AbstractBinaryExpression
             }
 
             if (l == lLimit)
-            {
-                if (r == rLimit -1)
-                {
-                    if ((right[r] == '%' || right[r] == '_') && right[r-2] != '\\') return true;
-                    else return false;
-
-                }
-                else if(r < rLimit)
+                if (r < rLimit)
                 {
                     while (r < rLimit)
-                    {
-                        if (right[r++] != '%') return false;
-                    }
+                        if (right.charAt(r++) != '%') return false; // and r-1 != \\
                     return true;
                 }
-                else
-                {
-                    if (left[l-1] == right[r-1] || right[r-1] == '_' || right[r-1] == '%') return true;
-                    else return false;
-                }
-
-            }
-            else
-            {
-                if (l == lLimit -1 && ((right[r-1] == '_' || right[r-1] == '%') && right[r-2] != '\\'))
-                {
-                    return true;
-                }
-                else return false;
-            }
+                else return left.charAt(l - 1) == right.charAt(r - 1) || right.charAt(r - 1) == '_' || right.charAt(r - 1) == '%';
+            else return false;
         }
-
     }
 
     private final LikeMode mode;
