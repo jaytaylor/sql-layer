@@ -31,4 +31,10 @@ public class IfExpressionCompositionTest extends ComposedExpressionTestBase
     {
         return IfExpression.COMPOSER;
     }
+
+    @Override
+    protected boolean alreadyExc()
+    {
+        return false;
+    }
 }

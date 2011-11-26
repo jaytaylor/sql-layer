@@ -218,4 +218,10 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
     {
         return testInfo;
     }
+
+    @Override
+    public boolean alreadyExc()
+    {
+        return false;
+    }
 }

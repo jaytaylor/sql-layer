@@ -109,9 +109,7 @@ public class CaseConvertExpressionTest extends ComposedExpressionTestBase
         getComposer().compose(getArgList());
         
         // null argument
-        getComposer().compose(getArgList(ExprUtil.constNull(AkType.VARCHAR)));
-    
-        alreadyExecuted = true;
+        getComposer().compose(getArgList(ExprUtil.constNull(AkType.VARCHAR)));            
      }
     
      @OnlyIf("expectNullException()")
@@ -164,6 +162,13 @@ public class CaseConvertExpressionTest extends ComposedExpressionTestBase
         String actual = result.getString();
         
         assertTrue("Actual equals expected", actual.equals(expected));
+        alreadyExecuted = true;
+    }
+
+    @Override
+    public boolean alreadyExc()
+    {
+        return alreadyExecuted;
     }
     
 }

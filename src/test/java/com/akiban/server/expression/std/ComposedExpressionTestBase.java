@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.junit.OnlyIfNot;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.operator.UndefBindings;
@@ -69,19 +70,23 @@ public abstract class ComposedExpressionTestBase {
 
     protected abstract CompositionTestInfo getTestInfo ();
     protected abstract ExpressionComposer getComposer();
+    protected abstract boolean alreadyExc ();
 
+    @OnlyIfNot("alreadyExc()")
     @Test
     public void childrenAreConst() {
         ExpressionEvaluation evaluation = evaluation(IS_CONSTANT);
         expectEvalSuccess(evaluation);
     }
 
+    @OnlyIfNot("alreadyExc()")
     @Test
     public void childrenNeedRowAndBindings_HasNeither() {
         ExpressionEvaluation evaluation = evaluation(NEEDS_BINDINGS, NEEDS_ROW);
         expectEvalError(evaluation);
     }
 
+    @OnlyIfNot("alreadyExc()")
     @Test
     public void childrenNeedRowAndBindings_HasOnlyBindings() {
         ExpressionEvaluation evaluation = evaluation(NEEDS_BINDINGS, NEEDS_ROW);
@@ -89,6 +94,7 @@ public abstract class ComposedExpressionTestBase {
         expectEvalError(evaluation);
     }
 
+    @OnlyIfNot("alreadyExc()")
     @Test
     public void childrenNeedRowAndBindings_HasOnlyRow() {
         ExpressionEvaluation evaluation = evaluation(NEEDS_BINDINGS, NEEDS_ROW);
@@ -96,6 +102,7 @@ public abstract class ComposedExpressionTestBase {
         expectEvalError(evaluation);
     }
 
+    @OnlyIfNot("alreadyExc()")
     @Test
     public void childrenNeedRowAndBindings_HasBoth() {
         ExpressionEvaluation evaluation = evaluation(NEEDS_BINDINGS, NEEDS_ROW);
@@ -104,12 +111,14 @@ public abstract class ComposedExpressionTestBase {
         expectEvalSuccess(evaluation);
     }
 
+    @OnlyIfNot("alreadyExc()")
     @Test
     public void childrenNeedBindings_ButMissing() {
         ExpressionEvaluation evaluation = evaluation(NEEDS_BINDINGS);
         expectEvalError(evaluation);
     }
 
+    @OnlyIfNot("alreadyExc()")
     @Test
     public void childrenNeedBindings_AndHave() {
         ExpressionEvaluation evaluation = evaluation(NEEDS_BINDINGS);
@@ -117,12 +126,14 @@ public abstract class ComposedExpressionTestBase {
         expectEvalSuccess(evaluation);
     }
 
+    @OnlyIfNot("alreadyExc()")
     @Test
     public void childrenNeedRow_ButMissing() {
         ExpressionEvaluation evaluation = evaluation(NEEDS_ROW);
         expectEvalError(evaluation);
     }
 
+    @OnlyIfNot("alreadyExc()")
     @Test
     public void childrenNeedRow_AndHave() {
         ExpressionEvaluation evaluation = evaluation(NEEDS_ROW);
@@ -130,12 +141,14 @@ public abstract class ComposedExpressionTestBase {
         expectEvalSuccess(evaluation);
     }
 
+    @OnlyIfNot("alreadyExc()")
     @Test
     public void mutableNoArg() {
         ExpressionEvaluation evaluation = evaluation();
         expectEvalSuccess(evaluation);
     }
 
+    @OnlyIfNot("alreadyExc()")
     @Test
     public void testSharing() {
         EvaluationPair pair = evaluationPair();
@@ -166,6 +179,7 @@ public abstract class ComposedExpressionTestBase {
         assertEquals("isShared", false, evaluation.isShared());
     }
 
+    @OnlyIfNot("alreadyExc()")
     @Test
     public void releasingWhenUnshared() {
         EvaluationPair pair = evaluationPair();

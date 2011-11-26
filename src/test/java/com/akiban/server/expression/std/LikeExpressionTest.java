@@ -24,57 +24,51 @@ import java.util.Collection;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-@RunWith(NamedParameterizedRunner.class)
-public class BinaryBitExpressionCompTest extends ComposedExpressionTestBase
-{
-    private final ExpressionComposer composer;
-    private static final CompositionTestInfo testInfo = new CompositionTestInfo(2, AkType.LONG, true);
-    private static boolean alreadyExc = false;
-    public BinaryBitExpressionCompTest (ExpressionComposer composer)
-    {
-        this.composer = composer;
-    }
 
+@RunWith(NamedParameterizedRunner.class)
+public class LikeExpressionTest extends ComposedExpressionTestBase
+{
+    private static final CompositionTestInfo info = new CompositionTestInfo(2, AkType.VARCHAR, true);
+  //  private ExpressionComposer ex;
+   // private String left;
+
+    protected static boolean already = false;
+    public LikeExpressionTest ()
+    {
+
+    }
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params()
     {
         ParameterizationBuilder pb = new ParameterizationBuilder();
+        pb.add("test1");
+        pb.add("test2");
+        pb.add("test3");
 
-        param(pb, "&", BinaryBitExpression.B_AND_COMPOSER);
-        param(pb, "|", BinaryBitExpression.B_OR_COMPOSER);
-        param(pb, "^", BinaryBitExpression.B_XOR_COMPOSER);
-        param(pb, "<<", BinaryBitExpression.LEFT_SHIFT_COMPOSER);
-        param(pb, ">>", BinaryBitExpression.RIGHT_SHIFT_COMPOSER);
-        
         return pb.asList();
-    }
-    
-    private static void param(ParameterizationBuilder pb, String name, ExpressionComposer c)
-    {
-        pb.add(name, c);
     }
 
     @Test
-    public void testdummy ()
+    public void dummyTest()
     {
-        alreadyExc = true;
+        already = true;
+    }
+
+    @Override
+    public boolean alreadyExc ()
+    {
+        return already;
+    }
+    @Override
+    protected CompositionTestInfo getTestInfo()
+    {
+        return info;
     }
 
     @Override
     protected ExpressionComposer getComposer()
     {
-        return composer;
+        return LikeExpression.ILIKE_COMPOSER;
     }
 
-    @Override
-    protected CompositionTestInfo getTestInfo() 
-    {
-        return testInfo;
-    }
-
-    @Override
-    public boolean alreadyExc()
-    {
-        return alreadyExc;
-    }
 }

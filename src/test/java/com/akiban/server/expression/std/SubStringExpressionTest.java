@@ -111,4 +111,10 @@ public class SubStringExpressionTest extends ComposedExpressionTestBase
         return new SubStringExpression(getArgList(ExprUtil.lit(st), 
                 ExprUtil.lit(from), ExprUtil.lit(length)));
     }
+
+    @Override
+    public boolean alreadyExc()
+    {
+        return false;
+    }
 }
