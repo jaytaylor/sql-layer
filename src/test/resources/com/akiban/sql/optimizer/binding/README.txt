@@ -26,5 +26,11 @@ select-6q: Column wildcard from correlated subquery
 
 select-6v: Column wildcard from VALUES
 
+select-7: Nested subquery
+
+select-7a: Ambiguous column
+
+select-7aj: Ambiguous column with explicit join
+
 update-1: Columns of target table.
 
