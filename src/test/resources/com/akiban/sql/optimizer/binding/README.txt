@@ -32,5 +32,6 @@ select-7a: Ambiguous column
 
 select-7aj: Ambiguous column with explicit join
 
-update-1: Columns of target table.
+select-7n: Non-ambiguous column
 
+update-1: Columns of target table.
