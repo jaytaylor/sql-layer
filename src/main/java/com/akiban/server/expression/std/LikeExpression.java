@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -28,7 +29,7 @@ import com.akiban.server.types.util.ValueHolder;
 import java.util.List;
 
 
-public class LikeExpression extends AbstractBinaryExpression
+public class LikeExpression extends AbstractCompositeExpression
 {
     @Scalar("ilike")
     public static final ExpressionComposer ILIKE_COMPOSER = new InnerComposer(LikeMode.CASE_INSENSITIVE);
@@ -42,10 +43,9 @@ public class LikeExpression extends AbstractBinaryExpression
         CASE_INSENSITIVE, CASE_SENSITIVE
     }
 
-    private static final class InnerComposer extends BinaryComposer
+    private static final class InnerComposer implements ExpressionComposer
     {
         private final LikeMode mode;
-
         public InnerComposer (LikeMode mode)
         {
             this.mode = mode;
@@ -66,22 +66,26 @@ public class LikeExpression extends AbstractBinaryExpression
 
 
         @Override
-        protected Expression compose(Expression first, Expression second)
+        public ExpressionType composeType(List<? extends ExpressionType> argumentTypes) 
         {
-            return new LikeExpression(first, second, mode);
+            int s = argumentTypes.size();
+            if (s!= 2 && s != 3) throw new WrongExpressionArityException(2, s);
+            return ExpressionTypes.BOOL;
         }
 
         @Override
-        protected ExpressionType composeType(ExpressionType first, ExpressionType second)
+        public Expression compose(List<? extends Expression> arguments)
         {
-            return ExpressionTypes.BOOL;
+            return new LikeExpression(arguments, mode);
         }
 
     }
 
-    private static final class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
+    private static final class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
         private final LikeMode mode;
+        private char esca = '\\';
+        private boolean noWildcard = false;
 
         public InnerEvaluation (List<? extends ExpressionEvaluation> childrenEval, LikeMode mode)
         {
@@ -92,13 +96,19 @@ public class LikeExpression extends AbstractBinaryExpression
         @Override
         public ValueSource eval()
         {
-            ValueSource l = left();
-            ValueSource r = right();
+            ValueSource l = this.children().get(0).eval();
+            ValueSource r = this.children().get(1).eval();
             if (l.isNull() || r.isNull()) return NullValueSource.only();
 
             String left = Extractors.getStringExtractor().getObject(l);
             String right = Extractors.getStringExtractor().getObject(r);
 
+            if (children().size() == 3)
+            {
+                esca = children().get(2).eval().getString().charAt(0);
+            }
+            noWildcard = esca == '_' || esca == '%';
+            
             boolean matched = false;  
             switch (mode)
             {
@@ -109,9 +119,9 @@ public class LikeExpression extends AbstractBinaryExpression
             return new ValueHolder(AkType.BOOL, matched);
         }
 
-        // TODO: could use another escape character, rather than using only backslash
+        // TODO: if esc == % or _
         // TODO: could be replaced with recursion (as opposed to loops), which is more elegant, but more expensive?
-        private static boolean compareS(String left, String right)
+        private  boolean compareS(String left, String right)
         {
             int l = 0, r = 0;
             int lLimit = left.length(), rLimit = right.length();
@@ -123,70 +133,81 @@ public class LikeExpression extends AbstractBinaryExpression
                 char lchar = left.charAt(l);
                 char rchar = right.charAt(r);
 
-                switch(rchar)
+                if(rchar == '%' && !noWildcard)
                 {
-                    case '%':
-                        char afterP;
-                        boolean esc = false;
-                        do
-                        {
-                            if (r + 1 == rLimit) return true;
-                            afterP = right.charAt(++r);
-                        }
-                        while (afterP == '%'); // %%%% is no different than %, so skip multiple %s
-                        if (afterP == '\\' && r +1 < rLimit && (right.charAt(r+1) == '%' || right.charAt(r+1) == '_'))
-                        {
-                            afterP = right.charAt(++r);
-                            esc = true;
-                        }
+                    char afterP;
+                    boolean esc = false;
+                    do
+                    {
+                        if (r + 1 == rLimit) return true;
+                        afterP = right.charAt(++r);
+                    }
+                    while (afterP == '%'); // %%%% is no different than %, so skip multiple %s
+                    if (afterP == esca && r +1 < rLimit && (right.charAt(r+1) == '%' || right.charAt(r+1) == '_' || right.charAt(r+1) == esca))
+                    {
+                        afterP = right.charAt(++r);
+                        esc = afterP != esca;
+                    }
 
-                        while (l < lLimit) // loop1: attempt to find a matching sequence in left that starts with afterP
+                    while (l < lLimit) // loop1: attempt to find a matching sequence in left that starts with afterP
+                    {
+                        lchar = left.charAt(l++);
+                        if (lchar == afterP || afterP == '_' && !esc ) // found a *potentially* matching sequence
                         {
-                            lchar = left.charAt(l++);
-                            if (lchar == afterP || afterP == '_' && !esc ) // found a *potentially* matching sequence
+                            --l;
+                            int oldR = r;
+                            while (l < lLimit && r < rLimit)
                             {
-                                --l;
-                                int oldR = r;
-                                while (l < lLimit && r < rLimit)
-                                {
-                                    lchar = left.charAt(l);
-                                    rchar = right.charAt(r);
-                                    if ((rchar == '_' || rchar == '%' ) && !esc) // encounter a wildcard char , meaning the sequence indeed matched
-                                        continue Loop2; // move on to next search
-                                    esc = false;
-                                    if (rchar == '\\' && r +1 <rLimit && (right.charAt(r+1) == '%' || right.charAt(r+1) == '_'))
-                                        rchar = right.charAt(++r);
+                                lchar = left.charAt(l);
+                                rchar = right.charAt(r);
+                                if ((rchar == '_' || rchar == '%' ) && !esc) // encounter a wildcard char , meaning the sequence indeed matched
+                                    continue Loop2; // move on to next search
+                                esc = false;
+                                if (rchar == esca && r +1 <rLimit && (right.charAt(r+1) == '%' || right.charAt(r+1) == '_' || right.charAt(r+1) == esca))
+                                    rchar = right.charAt(++r);
 
-                                    if (lchar == rchar)
-                                    {
-                                        ++l;
-                                        ++r;
-                                    }
-                                    else
-                                    {
-                                        if (l >= lLimit) return false; // end of left string, lchar didn't match => false
-                                        r = oldR;
-                                        break;
-                                    }
+                                if (lchar == rchar)
+                                {
+                                    ++l;
+                                    ++r;
                                 }
-                                if (l == lLimit) break Loop2; // end of left string (the sequence is matching so far)
-                                else r = oldR; // the sequence didn't match, reset counter, search for next sequence
+                                else
+                                {
+                                    if (l >= lLimit) return false; // end of left string, lchar didn't match => false
+                                    r = oldR;
+                                    break;
+                                }
                             }
+                            if (l == lLimit) break Loop2; // end of left string (the sequence is matching so far)
+                            else r = oldR; // the sequence didn't match, reset counter, search for next sequence
                         }
-                        return false; // the only way to make it out of loop1 is for left to end earlier than right not matching ANY char at all
-                    case '_':
-                        ++r;
+                    }
+                    return false; // the only way to make it out of loop1 is for left to end earlier than right not matching ANY char at all
+                }
+                else if (rchar == '_' && !noWildcard)
+                {
+                    ++r;
+                    ++l;
+                }
+                else if (rchar == esca)
+                {
+                    if ( r + 1 < rLimit && (right.charAt(r+1) == '_' || right.charAt(r+1) == '%' || right.charAt(r+1) == esca)) rchar = right.charAt(++r);//fall thru
+                
+                    if (lchar != rchar)   return false;
+                    else
+                    {
                         ++l;
-                        break;
-                    case '\\':
-                        if ( r + 1 < rLimit && (right.charAt(r+1) == '_' || right.charAt(r+1) == '%')) rchar = right.charAt(++r);//fall thru
-                    default:
-                        if (lchar != rchar)   return false;
-                        else
-                        {
-                            ++l;
-                            ++r;
-                        }
+                        ++r;
+                    }
+                }
+                else
+                {
+                    if (lchar != rchar)   return false;
+                    else
+                    {
+                        ++l;
+                        ++r;
+                    }
                 }
             }
 
@@ -194,7 +215,7 @@ public class LikeExpression extends AbstractBinaryExpression
                 if (r < rLimit)
                 {
                     while (r < rLimit)
-                        if (right.charAt(r++) != '%') return false; // and r-1 != \\
+                        if (right.charAt(r++) != '%') return false; // and r-1 != escape
                     return true;
                 }
                 else return left.charAt(l - 1) == right.charAt(r - 1) || right.charAt(r - 1) == '_' || right.charAt(r - 1) == '%';
@@ -203,13 +224,20 @@ public class LikeExpression extends AbstractBinaryExpression
     }
 
     private final LikeMode mode;
+  //  private final char esc;
 
-    public LikeExpression (Expression left, Expression right, LikeMode mode)
+    public LikeExpression (List <? extends Expression> children, LikeMode mode)
     {
-        super(AkType.BOOL, left, right);
+        super(AkType.BOOL, checkArgs(children));
         this.mode = mode;
     }
 
+    private static List<? extends Expression> checkArgs(List<? extends Expression> children)
+    {
+        int s = children.size();
+        if (s != 2 && s != 3) throw new WrongExpressionArityException(2, s);
+        return children;
+    }
 
     @Override
     protected boolean nullIsContaminating()
@@ -227,6 +255,6 @@ public class LikeExpression extends AbstractBinaryExpression
     @Override
     public ExpressionEvaluation evaluation()
     {
-        return new InnerEvaluation(this.childrenEvaluations(), mode);
+        return new InnerEvaluation(childrenEvaluations(), mode);
     }
 }

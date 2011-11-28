@@ -35,15 +35,17 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
     private ExpressionComposer ex;
     private String left;
     private String right;
+    private String esc;
     private boolean expected;
     private boolean expectNull;
 
     protected static boolean already = false;
-    public LikeExpressionTest (ExpressionComposer ex, String left, String right, boolean expected, boolean expectNull)
+    public LikeExpressionTest (ExpressionComposer ex, String left, String right, String esc, boolean expected, boolean expectNull)
     {
         this.ex = ex;
         this.left = left;
         this.right = right;
+        this.esc = esc;
         this.expected = expected;
         this.expectNull = expectNull;
     }
@@ -52,65 +54,78 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
     public static Collection<Parameterization> params()
     {
         ParameterizationBuilder pb = new ParameterizationBuilder();
-
-        param(pb, LikeExpression.ILIKE_COMPOSER, "xyz", "XYZ%", true, false);
-        param(pb, LikeExpression.BLIKE_COMPOSER, "xyz", "XYZ%", false, false);
-
-        param(pb, LikeExpression.ILIKE_COMPOSER, "John Smith", "j%h", true, false);
-        param(pb, LikeExpression.BLIKE_COMPOSER, "John Smith", "j%h", false, false);
-
-        param(pb, LikeExpression.ILIKE_COMPOSER, "abc_", "%\\_", true, false);
-        param(pb, LikeExpression.BLIKE_COMPOSER, "abc_", "%\\_", true, false);
         
-        param(pb, LikeExpression.ILIKE_COMPOSER, "_abc", "_%", true, false);
-        param(pb, LikeExpression.BLIKE_COMPOSER, "_abc", "_%", true, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "xyz", "XYZ%", "\\", true, false);
+        param(pb, LikeExpression.BLIKE_COMPOSER, "xyz", "XYZ%", "\\", false, false);
 
-        param(pb, LikeExpression.ILIKE_COMPOSER, "ab", "a\\%", false, false);
-        param(pb, LikeExpression.BLIKE_COMPOSER, "ab", "a\\%", false, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "John Smith", "j%h", "\\", true, false);
+        param(pb, LikeExpression.BLIKE_COMPOSER, "John Smith", "j%h", "\\",false, false);
 
-        param(pb, LikeExpression.ILIKE_COMPOSER, "ab", "a\\_", false, false);
-        param(pb, LikeExpression.BLIKE_COMPOSER, "ab", "a\\_", false, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abc_", "%=_", "=", true, false);
+        param(pb, LikeExpression.BLIKE_COMPOSER, "abc_", "%=_", "=", true, false);
+        
+        param(pb, LikeExpression.ILIKE_COMPOSER, "_abc", "_%", "=",true, false);
+        param(pb, LikeExpression.BLIKE_COMPOSER, "_abc", "_%", "\\",true, false);
 
-        param(pb, LikeExpression.ILIKE_COMPOSER, "Ab", "a_", true, false);
-        param(pb, LikeExpression.BLIKE_COMPOSER, "Ab", "a_", false, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "ab", "a=%",  "=",false, false);
+        param(pb, LikeExpression.BLIKE_COMPOSER, "ab", "a=%", "=",false, false);
 
-        param(pb, LikeExpression.ILIKE_COMPOSER, "Ab", "A%", true, false);
-        param(pb, LikeExpression.BLIKE_COMPOSER, "Ab", "A%", true, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "ab", "a=_", "=", false, false);
+        param(pb, LikeExpression.BLIKE_COMPOSER, "ab", "a=_", "=",false, false);
 
-        param(pb, LikeExpression.ILIKE_COMPOSER, "A%", "a\\%", true, false);
-        param(pb, LikeExpression.BLIKE_COMPOSER, "A%", "a\\%", false, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "Ab", "a_","\\", true, false);
+        param(pb, LikeExpression.BLIKE_COMPOSER, "Ab", "a_", "\\",false, false);
 
-        param(pb, LikeExpression.ILIKE_COMPOSER, "a_", "a\\_", true, false);
-        param(pb, LikeExpression.BLIKE_COMPOSER, "a_", "a\\_", true, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "Ab", "A%", "\\",true, false);
+        param(pb, LikeExpression.BLIKE_COMPOSER, "Ab", "A%", "=",true, false);
 
-        param(pb, LikeExpression.ILIKE_COMPOSER, "C:\\java\\", "_:%\\", true, false);
-        param(pb, LikeExpression.BLIKE_COMPOSER, "C:\\java\\", "_:%\\", true, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "A%", "a=%", "=",true, false);
+        param(pb, LikeExpression.BLIKE_COMPOSER, "A%", "a=%", "=",false, false);
 
-        param(pb, LikeExpression.ILIKE_COMPOSER, "", "", true, false);
-        param(pb, LikeExpression.BLIKE_COMPOSER, "", "", true, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "a_", "a=_", "=", true, false);
+        param(pb, LikeExpression.BLIKE_COMPOSER, "a_", "a=_", "=",true, false);
 
-        param(pb, LikeExpression.ILIKE_COMPOSER, "", "%", true,  false);
-        param(pb, LikeExpression.BLIKE_COMPOSER, "", "%", true,  false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "C:\\java\\", "_:%\\", "\\", true, false);
+        param(pb, LikeExpression.BLIKE_COMPOSER, "C:\\java\\", "_:%\\", "\\",true, false);
 
-        param(pb, LikeExpression.ILIKE_COMPOSER, "", "_", false, false);
-        param(pb, LikeExpression.BLIKE_COMPOSER, "", "_", false, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "", "", "\\",true, false);
+        param(pb, LikeExpression.BLIKE_COMPOSER, "", "", "\\",true, false);
 
-        param(pb, LikeExpression.ILIKE_COMPOSER, "abc", "", false, true);
-        param(pb, LikeExpression.BLIKE_COMPOSER, "abc", "", false, true);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "", "%", "\\",true,  false);
+        param(pb, LikeExpression.BLIKE_COMPOSER, "", "%", "\\",true,  false);
+
+        param(pb, LikeExpression.ILIKE_COMPOSER, "", "_", "\\",false, false);
+        param(pb, LikeExpression.BLIKE_COMPOSER, "", "_", "\\",false, false);
+
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abc", "", "\\",false, true);
+        param(pb, LikeExpression.BLIKE_COMPOSER, "abc", "", "\\",false, true);
+        
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abc=_", "abc===_", "==",true, false);
+        
+        // underscore as escape
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abc_", "abc__", "_", true, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abc%", "abc_%", "_", true, false);
+        
+        // percent as escape
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abc_", "abc%_", "%", true, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abc%", "abc%%", "%", true, false);
+        
+        
 
         return pb.asList();
     }
 
     private static void param(ParameterizationBuilder pb, ExpressionComposer ex,
-            String left, String right, boolean expected, boolean expectNull)
+            String left, String right,String esc, boolean expected, boolean expectNull)
     {
-        pb.add(left + " " + ex.toString() + " " + right, ex, left, right, expected, expectNull );
+        pb.add(left + " " + ex.toString() + " " + right, ex, left, right, esc, expected, expectNull );
     }
 
     @Test
     public void test()
     {
         Expression l = new LiteralExpression(AkType.VARCHAR, left);
+        Expression es = new LiteralExpression(AkType.VARCHAR, esc);
         Expression r;
 
         if (expectNull)
@@ -118,7 +133,7 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
         else
             r = new LiteralExpression(AkType.VARCHAR, right);
 
-        Expression top = getComposer().compose(Arrays.asList(l, r));
+        Expression top = getComposer().compose(Arrays.asList(l, r, es));
 
         if (expectNull)
             assertTrue(top.evaluation().eval().isNull());
@@ -128,7 +143,7 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
         already = true;
     }
 
-    @Override
+   // @Override
     public boolean alreadyExc ()
     {
         return already;
@@ -145,3 +160,4 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
         return ex;
     }
 }
+
