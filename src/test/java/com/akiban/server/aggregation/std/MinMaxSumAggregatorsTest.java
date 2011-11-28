@@ -16,6 +16,7 @@
 package com.akiban.server.aggregation.std;
 
 
+import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.OverflowException;
 import java.math.BigInteger;
 import java.math.BigDecimal;
@@ -489,7 +490,7 @@ public class MinMaxSumAggregatorsTest
         assertEquals(Double.NaN, holder.getDouble(), 0.001);
     }
     
-    @Test(expected = UnsupportedOperationException.class)
+    @Test(expected = InvalidArgumentTypeException.class)
     public void testSum ()
     {
         holder.clear();
