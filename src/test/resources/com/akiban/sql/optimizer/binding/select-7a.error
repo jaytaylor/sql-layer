@@ -1,0 +1,1 @@
+com.akiban.server.error.AmbiguousColumNameException: AMBIGUOUS_COLUMN_NAME: Column `x` is ambiguous
