@@ -135,6 +135,16 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     public List<Column> getColumns()
     {
         ensureColumnsUpToDate();
+        // TODO: This is temporary, remove it when we're done with bug 893804
+        if (!ais.cacheRemoveInternalColumns()) {
+            columnsWithoutInternal.clear();
+            for (Column column : columns) {
+                if (!column.isAkibanPKColumn()) {
+                    columnsWithoutInternal.add(column);
+                }
+            }
+        }
+        // TODO: end
         return columnsWithoutInternal;
     }
 
