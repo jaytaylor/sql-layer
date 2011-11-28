@@ -42,7 +42,7 @@ public class LocateExpression extends AbstractCompositeExpression
             if (s!= 2 && s != 3) throw new WrongExpressionArityException(2, s);
             argumentTypes.set(0, AkType.VARCHAR);
             argumentTypes.set(1, AkType.VARCHAR);
-            if (s == 3) argumentTypes.add(2, AkType.LONG);
+            if (s == 3) argumentTypes.set(2, AkType.LONG);
         }
 
         @Override
