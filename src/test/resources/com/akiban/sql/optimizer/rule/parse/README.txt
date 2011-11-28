@@ -56,6 +56,10 @@ joins-1: complex join tree
 
 joins-2: join between correlated subqueries
 
+like-1: LIKE without escape
+
+like-2: LIKE with escape
+
 logical-functions-1: boolean functions
 
 or-false: degenerate condition as parameter
