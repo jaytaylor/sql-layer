@@ -17,6 +17,7 @@ package com.akiban.ais.model;
 
 import java.io.Serializable;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.akiban.ais.model.validation.AISInvariants;
 
@@ -136,11 +137,13 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     {
         ensureColumnsUpToDate();
         // TODO: This is temporary, remove it when we're done with bug 893804
-        if (!ais.cacheRemoveInternalColumns()) {
-            columnsWithoutInternal.clear();
-            for (Column column : columns) {
-                if (!column.isAkibanPKColumn()) {
-                    columnsWithoutInternal.add(column);
+        synchronized (columnsStale) {
+            if (!ais.cacheRemoveInternalColumns()) {
+                columnsWithoutInternal.clear();
+                for (Column column : columns) {
+                    if (!column.isAkibanPKColumn()) {
+                        columnsWithoutInternal.add(column);
+                    }
                 }
             }
         }
@@ -203,7 +206,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     protected void addColumn(Column column)
     {
         columnMap.put(column.getName().toLowerCase(), column);
-        columnsStale = true;
+        columnsStale.set(true);
     }
 
     protected void addIndex(TableIndex index)
@@ -226,7 +229,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     protected void dropColumns()
     {
         columnMap.clear();
-        columnsStale = true;
+        columnsStale.set(true);
     }
 
     protected Table()
@@ -330,7 +333,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
                 out.add("name mismatch, expected <" + name + "> for column " + column);
             }
         }
-        if (!columnsStale) {
+        if (!columnsStale.get()) {
             for (Column column : columns) {
                 if (column == null) {
                     out.add("null column in columns list");
@@ -386,25 +389,27 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
 
     private void ensureColumnsUpToDate()
     {
-        if (columnsStale) {
-            columns.clear();
-            columns.addAll(columnMap.values());
-            Collections.sort(columns,
-                             new Comparator<Column>()
-                             {
-                                 @Override
-                                 public int compare(Column x, Column y)
+        synchronized (columnsStale) {
+            if (columnsStale.get()) {
+                columns.clear();
+                columns.addAll(columnMap.values());
+                Collections.sort(columns,
+                                 new Comparator<Column>()
                                  {
-                                     return x.getPosition() - y.getPosition();
-                                 }
-                             });
-            columnsWithoutInternal.clear();
-            for (Column column : columns) {
-                if (!column.isAkibanPKColumn()) {
-                    columnsWithoutInternal.add(column);
+                                     @Override
+                                     public int compare(Column x, Column y)
+                                     {
+                                         return x.getPosition() - y.getPosition();
+                                     }
+                                 });
+                columnsWithoutInternal.clear();
+                for (Column column : columns) {
+                    if (!column.isAkibanPKColumn()) {
+                        columnsWithoutInternal.add(column);
+                    }
                 }
+                columnsStale.set(false);
             }
-            columnsStale = false;
         }
     }
 
@@ -422,7 +427,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     protected Group group;
     protected TableName tableName;
     private Integer tableId;
-    private boolean columnsStale = true;
+    private final AtomicBoolean columnsStale = new AtomicBoolean(true);
     private List<Column> columns = new ArrayList<Column>();
     private List<Column> columnsWithoutInternal = new ArrayList<Column>();
     private final Map<String, TableIndex> indexMap;
