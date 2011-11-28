@@ -2,6 +2,8 @@
 ---
 - CreateTable: t (char_field char)
 ---
+- Statement: INSERT INTO t VALUES (null)
+---
 - Statement: INSERT INTO t VALUES ('c')
 ---
 - Statement: SELECT COALESCE(char_field, ?) FROM t
