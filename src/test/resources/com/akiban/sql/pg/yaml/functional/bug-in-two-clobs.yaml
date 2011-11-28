@@ -1,9 +1,0 @@
-# Problem with IN function with two literal clob arguments
----
-- CreateTable: t (clob_field clob)
----
-- Statement: INSERT INTO t VALUES ('dead')
----
-- Statement: SELECT clob_field FROM t WHERE clob_field IN ('dead', 'beef')
-- output: [[dead]]
-...

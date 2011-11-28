@@ -19,11 +19,10 @@
 - output: [[null, a0-foo, null], [null, null, null], [null, null, 30.0],
            [a11, a1-foo, 31.0], [a22, a2-foo, 32.0]]
 
-# Params not working
-# ---
-# - Statement: SELECT CONCAT(x, ?, y) FROM t
-# - params: [[cat], [dog]]
-# - output: [[null], [null], [null], [a1catb1], [a2catb2],
-#            [null], [null], [null], [a1dogb1], [a2dogb2]]
+---
+- Statement: SELECT CONCAT(x, ?, y) FROM t
+- params: [[cat], [dog]]
+- output: [[null], [null], [null], [a1cat1], [a2cat2],
+           [null], [null], [null], [a1dog1], [a2dog2]]
 
 ...

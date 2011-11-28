@@ -1,9 +1,0 @@
-# Date value is garbled on retrieval
----
-- CreateTable: all_types (date_field date)
----
-- Statement: INSERT INTO all_types VALUES (2001-01-01)
----
-- Statement: SELECT * FROM all_types
-- output: [['2001-01-01']]
-...
