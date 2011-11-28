@@ -23,7 +23,7 @@ public final class Session
     private final static AtomicLong idGenerator = new AtomicLong(0);
 
     private final Map<Key<?>,Object> map = new HashMap<Key<?>, Object>();
-    private final List<SessionEventListener> listeners = new ArrayList<SessionEventListener>();
+    private final SessionEventListener listener;
     private final long sessionId = idGenerator.getAndIncrement();
     private volatile boolean cancelCurrentQuery = false;
 
@@ -33,15 +33,11 @@ public final class Session
     }
 
     Session(SessionEventListener listener) {
-        this.listeners.add(listener);
+        this.listener = listener;
     }
 
     public long sessionId() {
         return sessionId;
-    }
-
-    public void addListener(SessionEventListener listener) {
-        listeners.add(listener);
     }
 
     public <T> T get(Session.Key<T> key) {
@@ -107,8 +103,8 @@ public final class Session
 
     public void close()
     {
-        for (SessionEventListener listener : listeners) {
-            listener.sessionClosing(this);
+        if (listener != null) {
+            listener.sessionClosing();
         }
         // For now do nothing to any cached resources.
         // Later, we'll close any "resource" that is added to the session.

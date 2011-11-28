@@ -30,13 +30,12 @@ import com.akiban.server.PersistitValueValueTarget;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.std.LiteralExpression;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.util.ValueHolder;
-import com.persistit.Exchange;
-import com.persistit.Key;
-import com.persistit.Value;
+import com.persistit.*;
 import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +60,7 @@ public class Sorter
         String sortTreeName = SORT_TREE_NAME_PREFIX + SORTER_ID_GENERATOR.getAndIncrement();
         this.exchange =
             SORT_USING_TEMP_VOLUME
-            ? adapter.takeExchangeForSorting(sortTreeName)
+            ? exchange(adapter, sortTreeName)
             : adapter.takeExchangeForSorting(new SortTreeLink(sortTreeName));
         this.key = exchange.getKey();
         this.keyTarget = new PersistitKeyValueTarget();
@@ -101,7 +100,13 @@ public class Sorter
         if (exchange != null) {
             try {
                 if (SORT_USING_TEMP_VOLUME) {
-                    exchange.removeAll();
+                    TempVolumeState tempVolumeState = adapter.session().get(TEMP_VOLUME_STATE);
+                    int sortsInProgress = tempVolumeState.endSort();
+                    if (sortsInProgress == 0) {
+                        // Returns disk space used by the volume
+                        tempVolumeState.volume().close();
+                        adapter.session().remove(TEMP_VOLUME_STATE);
+                    }
                 } else {
                     exchange.removeTree();
                 }
@@ -165,6 +170,20 @@ public class Sorter
         }
     }
 
+    private static Exchange exchange(PersistitAdapter adapter, String treeName) throws PersistitException
+    {
+        Session session = adapter.session();
+        Persistit persistit = adapter.persistit().getDb();
+        TempVolumeState tempVolumeState = session.get(TEMP_VOLUME_STATE);
+        if (tempVolumeState == null) {
+            Volume volume = persistit.createTemporaryVolume();
+            tempVolumeState = new TempVolumeState(volume);
+            session.put(TEMP_VOLUME_STATE, tempVolumeState);
+        }
+        tempVolumeState.startSort();
+        return new Exchange(persistit, tempVolumeState.volume(), treeName, true);
+    }
+
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(Sorter.class);
@@ -173,6 +192,7 @@ public class Sorter
     private static final AtomicLong SORTER_ID_GENERATOR = new AtomicLong(0);
     private static final boolean SORT_USING_TEMP_VOLUME =
         System.getProperty("sorttemp", "true").toLowerCase().equals("true");
+    private static final Session.Key<TempVolumeState> TEMP_VOLUME_STATE = Session.Key.named("TEMP_VOLUME_STATE");
 
     // Object state
 
@@ -228,5 +248,40 @@ public class Sorter
         }
 
         private final PersistitValueValueSource valueSource;
+    }
+
+    // public so that tests can see it
+    public static class TempVolumeState
+    {
+        public TempVolumeState(Volume volume)
+        {
+            this.volume = volume;
+            sortsInProgress = 0;
+        }
+
+        public Volume volume()
+        {
+            return volume;
+        }
+
+        public void startSort()
+        {
+            sortsInProgress++;
+        }
+
+        public int endSort()
+        {
+            sortsInProgress--;
+            assert sortsInProgress >= 0;
+            return sortsInProgress;
+        }
+
+        public int sortsInProgress()
+        {
+            return sortsInProgress;
+        }
+
+        private final Volume volume;
+        private int sortsInProgress;
     }
 }

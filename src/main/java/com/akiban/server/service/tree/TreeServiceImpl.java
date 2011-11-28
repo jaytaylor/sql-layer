@@ -55,7 +55,7 @@ import com.persistit.exception.PersistitInterruptedException;
 import com.persistit.logging.Slf4jAdapter;
 
 public class TreeServiceImpl
-    implements TreeService, Service<TreeService>, JmxManageable, SessionEventListener
+    implements TreeService, Service<TreeService>, JmxManageable
 {
 
     private final static Session.Key<Map<Tree, List<Exchange>>> EXCHANGE_MAP = Session.Key
@@ -318,21 +318,6 @@ public class TreeServiceImpl
         } else {
             return list.remove(list.size() - 1);
         }
-    }
-
-    @Override
-    public Exchange getTemporaryExchange(Session session, String treeName) throws PersistitException
-    {
-        Volume volume;
-        synchronized (TEMP_VOLUME) {
-            volume = session.get(TEMP_VOLUME);
-            if (volume == null) {
-                volume = getDb().createTemporaryVolume();
-                session.put(TEMP_VOLUME, volume);
-                session.addListener(this);
-            }
-        }
-        return new Exchange(getDb(), volume, treeName, true);
     }
 
     @Override
@@ -685,16 +670,5 @@ public class TreeServiceImpl
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
         return new JmxObjectInfo("TreeService", bean, TreeServiceMXBean.class);
-    }
-
-    @Override
-    public void sessionClosing(Session session)
-    {
-        Volume tempVolume = session.get(TEMP_VOLUME);
-        try {
-            tempVolume.close();
-        } catch (PersistitException e) {
-            LOG.error("PersistitException while closing temporary volume", e);
-        }
     }
 }

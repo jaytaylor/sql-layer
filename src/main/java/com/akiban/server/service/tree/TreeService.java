@@ -53,8 +53,6 @@ public interface TreeService extends Service<TreeService> {
 
     Exchange getExchange(Session session, Tree tree);
 
-    Exchange getTemporaryExchange(Session session, String treeName) throws PersistitException;
-
     Key getKey(Session session);
 
     void releaseExchange(Session session, Exchange exchange);

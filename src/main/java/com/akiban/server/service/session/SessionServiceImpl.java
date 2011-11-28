@@ -46,7 +46,7 @@ public final class SessionServiceImpl implements SessionService, Service<Session
     // SessionEventListener interface
 
     @Override
-    public void sessionClosing(Session session) {
+    public void sessionClosing() {
         sessionsClosed.incrementAndGet();
     }
 
