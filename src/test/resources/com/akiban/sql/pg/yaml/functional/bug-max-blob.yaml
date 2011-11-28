@@ -1,7 +1,0 @@
-# MAX of BLOB fails
----
-- Statement: CREATE TABLE t (blob_field blob)
----
-- Statement: SELECT MAX(blob_field) FROM t
-- output: [[null]]
-...

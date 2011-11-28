@@ -193,6 +193,8 @@ public class ConstantFolder extends BaseRule
                 return isFalseExpression(fun);
             else if ("COALESCE".equals(fname))
                 return coalesceExpression(fun);
+            else if ("if".equals(fname))
+                return ifFunction(fun);
 
             boolean allConstant = true, anyNull = false;
             for (ExpressionNode operand : fun.getOperands()) {
@@ -347,6 +349,18 @@ public class ConstantFolder extends BaseRule
                 return cond.getThenExpression();
             else
                 return cond;
+        }
+
+        protected ExpressionNode ifFunction(FunctionExpression fun) {
+            List<ExpressionNode> operands = fun.getOperands();
+            Constantness c = isConstant(operands.get(0));
+            if (c != Constantness.VARIABLE) {
+              if (((ConstantExpression)operands.get(0)).getValue() == Boolean.TRUE)
+                return operands.get(1);
+              else
+                return operands.get(2);
+            }
+            return fun;
         }
 
         protected ExpressionNode columnExpression(ColumnExpression col) {

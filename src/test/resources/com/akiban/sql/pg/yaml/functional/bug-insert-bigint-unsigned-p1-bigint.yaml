@@ -1,0 +1,8 @@
+# INSERT for a BIGINT UNSIGNED of max BIGINT plus 1 generates wrong error
+---
+- CreateTable: t (bigint_unsigned_field bigint unsigned)
+---
+# Insert max signed value plus 1
+- Statement: INSERT INTO t VALUES (9223372036854775808)
+- error: [55004]
+...

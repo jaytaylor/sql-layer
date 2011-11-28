@@ -43,7 +43,13 @@ public final class TypesTranslation {
         case Types.VARBINARY: return AkType.VARBINARY;
         case Types.VARCHAR: return AkType.VARCHAR;
         case Types.JAVA_OBJECT:
-            return AkType.valueOf(descriptor.getFullSQLTypeName().toUpperCase());
+            String name = descriptor.getFullSQLTypeName();
+            for (com.akiban.ais.model.Type aisType : com.akiban.ais.model.Types.types()) {
+                if (aisType.name().equalsIgnoreCase(name)) {
+                    return aisType.akType();
+                }
+            }
+            return AkType.valueOf(name.toUpperCase());
         default:
             throw new UnsupportedOperationException(
                     "unsupported type id: " + descriptor.getJDBCTypeId()

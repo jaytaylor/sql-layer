@@ -1,0 +1,10 @@
+# Coalesce with parameter produces exception
+---
+- CreateTable: t (char_field char)
+---
+- Statement: INSERT INTO t VALUES ('c')
+---
+- Statement: SELECT COALESCE(char_field, ?) FROM t
+- params: [[x]]
+- output: [[c]]
+...

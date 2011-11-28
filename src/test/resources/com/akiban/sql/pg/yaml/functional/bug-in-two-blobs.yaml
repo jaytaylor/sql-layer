@@ -1,9 +1,0 @@
-# Problem with IN function with two literal blob arguments
----
-- Statement: CREATE TABLE t (blob_field blob)
----
-- Statement: INSERT INTO t VALUES ('dead')
----
-- Statement: SELECT blob_field FROM t WHERE blob_field IN ('dead', 'beef')
-- output: [[dead]]
-...

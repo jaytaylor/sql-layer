@@ -1,6 +1,6 @@
 # Inserting a NaN into a decimal is not supported
 ---
-- Statement: CREATE TABLE t (decimal_field decimal)
+- CreateTable: t (decimal_field decimal)
 ---
 - Statement: INSERT INTO t VALUES ('NaN')
 ---

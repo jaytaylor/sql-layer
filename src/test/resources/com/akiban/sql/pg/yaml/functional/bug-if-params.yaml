@@ -1,0 +1,10 @@
+# IF function with boolean parameter produces wrong result
+---
+- CreateTable: t (bigint_field bigint)
+---
+- Statement: INSERT INTO t VALUES (1)
+---
+- Statement: SELECT IF(?, 'yup', 'nope') FROM t
+- params: [[1]]
+- output: [[yup]]
+...

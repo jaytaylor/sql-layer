@@ -70,6 +70,8 @@ final class UnionAll_Default extends Operator {
     // for use in this package (in ctor and unit tests)
 
     static RowType rowType(RowType rowType1, RowType rowType2) {
+        if (rowType1 == rowType2)
+            return rowType1;
         if (rowType1.nFields() != rowType2.nFields())
             throw notSameShape(rowType1, rowType2);
         AkType[] types = new AkType[rowType1.nFields()];
@@ -194,14 +196,18 @@ final class UnionAll_Default extends Operator {
                 throw new WrongRowTypeException(inputRow, currentInputRowType);
             }
             assert inputRow.rowType().equals(currentInputRowType) : inputRow.rowType() + " != " + currentInputRowType;
+            MasqueradingRow row;
             if (rowHolder.isEmpty() || rowHolder.isShared()) {
-                MasqueradingRow row = new MasqueradingRow(outputRowType, inputRow);
+                row = new MasqueradingRow(outputRowType, inputRow);
                 rowHolder.hold(row);
             }
             else {
-                rowHolder.get().setRow(inputRow);
+                row = rowHolder.get();
+                rowHolder.release();
+                row.setRow(inputRow);
             }
-            return rowHolder.get();
+            rowHolder.hold(row);
+            return row;
         }
 
         private final StoreAdapter adapter;
@@ -290,6 +296,7 @@ final class UnionAll_Default extends Operator {
          */
         @Override
         public void release() {
+            assert shares > 0 : shares;
             delegate.release();
             --shares;
         }
@@ -300,6 +307,7 @@ final class UnionAll_Default extends Operator {
         }
 
         void setRow(Row row) {
+            assert shares == 0;
             this.delegate = row;
         }
 

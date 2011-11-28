@@ -33,6 +33,7 @@ public class ExpressionTypes
     public static final ExpressionType TEXT = newType(AkType.TEXT);
     public static final ExpressionType TIME = newType(AkType.TIME);
     public static final ExpressionType TIMESTAMP = newType(AkType.TIMESTAMP);
+    public static final ExpressionType UNSUPPORTED = newType(AkType.UNSUPPORTED);
     public static final ExpressionType U_BIGINT = newType(AkType.U_BIGINT);
     public static final ExpressionType U_DOUBLE = newType(AkType.U_DOUBLE);
     public static final ExpressionType U_FLOAT = newType(AkType.U_FLOAT);

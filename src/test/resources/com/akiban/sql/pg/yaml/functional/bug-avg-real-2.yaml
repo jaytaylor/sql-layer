@@ -1,0 +1,8 @@
+# AVG of REAL fails
+---
+- CreateTable: t (real_field real)
+---
+- Statement: INSERT INTO t VALUES (1.0)
+---
+- Statement: SELECT AVG(real_field) FROM t
+...

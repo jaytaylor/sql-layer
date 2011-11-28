@@ -1,0 +1,18 @@
+# Test the CURRENT_DATE, CURRENT_TIME, CURRENT_TIMESTAMP, and NOW functions
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field) VALUES (null)
+---
+- Statement: SELECT CURRENT_DATE FROM all_types
+- output: [[!re '20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]']]
+---
+- Statement: SELECT CURRENT_TIME FROM all_types
+- output: [[!re '[0-9][0-9]:[0-9][0-9]:[0-9][0-9]']]
+---
+- Statement: SELECT CURRENT_TIMESTAMP FROM all_types
+- output: [[!re '20[0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9][.]0']]
+---
+- Statement: SELECT NOW() FROM all_types
+- output: [[!re '20[0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9][.]0']]
+...

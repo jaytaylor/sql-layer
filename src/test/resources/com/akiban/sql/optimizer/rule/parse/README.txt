@@ -58,6 +58,8 @@ joins-2: join between correlated subqueries
 
 logical-functions-1: boolean functions
 
+or-false: degenerate condition as parameter
+
 order-by-1: ORDER BY expressions
 
 order-by-2: ORDER BY column numbers

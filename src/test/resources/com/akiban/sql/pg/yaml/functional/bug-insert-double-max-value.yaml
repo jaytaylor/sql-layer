@@ -1,6 +1,6 @@
 # Inserting the max value after '0.0' into a double fails
 ---
-- Statement: CREATE TABLE t (double_field double)
+- CreateTable: t (double_field double)
 ---
 - Statement: INSERT INTO t (double_field) VALUES (0.0), (1.7976931348623157E308)
 ---
