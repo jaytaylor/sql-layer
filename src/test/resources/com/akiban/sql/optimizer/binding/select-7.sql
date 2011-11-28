@@ -1,0 +1,1 @@
+SELECT t1_1.x, (SELECT MAX(t1_2.x) FROM t1 t1_2) FROM t1 t1_1

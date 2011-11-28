@@ -533,14 +533,19 @@ public class AISBinder implements Visitor
         }
         else {
             for (BindingContext bindingContext : bindingContexts) {
+                ColumnBinding contextBinding = null;
                 for (FromTable fromTable : bindingContext.tables) {
-                    ColumnBinding aColumnBinding = getColumnBinding(fromTable, columnName);
-                    if (aColumnBinding != null) {
-                        if (columnBinding != null)
+                    ColumnBinding tableBinding = getColumnBinding(fromTable, columnName);
+                    if (tableBinding != null) {
+                        if (contextBinding != null)
                             throw new AmbiguousColumNameException (columnName);
                         else
-                            columnBinding = aColumnBinding;
+                            contextBinding = tableBinding;
                     }
+                }
+                if (contextBinding != null) {
+                    columnBinding = contextBinding;
+                    break;
                 }
             }
             if (columnBinding == null) {
