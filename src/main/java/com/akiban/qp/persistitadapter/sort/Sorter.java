@@ -176,6 +176,11 @@ public class Sorter
         Persistit persistit = adapter.persistit().getDb();
         TempVolumeState tempVolumeState = session.get(TEMP_VOLUME_STATE);
         if (tempVolumeState == null) {
+            // Persistit creates a temp volume per "Persistit session", and these are currently one-to-one with threads.
+            // Conveniently, server sessions and threads are also one-to-one. If either of these relationships ever
+            // change, then the use of session resources and temp volumes will need to be revisited. But for now,
+            // persistit.createTemporaryVolume creates a temp volume that is private to the persistit session and
+            // therefore to the server session.
             Volume volume = persistit.createTemporaryVolume();
             tempVolumeState = new TempVolumeState(volume);
             session.put(TEMP_VOLUME_STATE, tempVolumeState);
