@@ -26,6 +26,7 @@ import com.akiban.ais.model.Index.JoinType;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
+import com.akiban.sql.optimizer.rule.range.ColumnRanges;
 
 import java.util.*;
 
@@ -88,6 +89,9 @@ public class IndexGoal implements Comparator<IndexScan>
     private List<ConditionExpression> conditions;
     // Where they came from.
     private List<ConditionList> conditionSources;
+
+    // mapping of Range-expressible conditions, by their column. lazy loaded.
+    private Map<ColumnExpression,ColumnRanges> columnsToRanges;
 
     // If both grouping and ordering are present, they must be
     // compatible. Something satisfying the ordering would also handle
@@ -189,9 +193,12 @@ public class IndexGoal implements Comparator<IndexScan>
         if (nequals < ncols) {
             ExpressionNode indexExpression = indexExpressions.get(nequals);
             if (indexExpression != null) {
+                boolean foundInequalityCondition = false;
                 for (ConditionExpression condition : conditions) {
                     if (condition instanceof ComparisonCondition) {
                         ComparisonCondition ccond = (ComparisonCondition)condition;
+                        if (ccond.getOperation().equals(Comparison.NE))
+                            continue; // ranges are better suited for !=
                         ExpressionNode otherComparand = null;
                         if (indexExpression.equals(ccond.getLeft())) {
                             otherComparand = ccond.getRight();
@@ -203,14 +210,20 @@ public class IndexGoal implements Comparator<IndexScan>
                             index.addInequalityCondition(condition,
                                                          ccond.getOperation(),
                                                          otherComparand);
+                            foundInequalityCondition = true;
                         }
                     }
+                }
+                if (!foundInequalityCondition) {
+                    ColumnRanges range = rangeForIndex(indexExpression);
+                    if (range != null)
+                        index.addRangeCondition(range);
                 }
             }
         }
         index.setOrderEffectiveness(determineOrderEffectiveness(index));
         if ((index.getOrderEffectiveness() == IndexScan.OrderEffectiveness.NONE) &&
-            (index.getConditions() == null))
+            (!index.hasConditions()))
             return false;
         index.setCovering(determineCovering(index));
         return true;
@@ -700,9 +713,6 @@ public class IndexGoal implements Comparator<IndexScan>
                     if (conditionSource.remove(condition))
                         break;
                 }
-                if (condition instanceof ComparisonCondition) {
-                    ((ComparisonCondition)condition).setImplementation(ConditionExpression.Implementation.INDEX);
-                }
             }
         }
         if (grouping != null) {
@@ -741,5 +751,25 @@ public class IndexGoal implements Comparator<IndexScan>
             distinct.setImplementation(implementation);
         }
     }
-    
+
+    private ColumnRanges rangeForIndex(ExpressionNode expressionNode) {
+        if (expressionNode instanceof ColumnExpression) {
+            if (columnsToRanges == null) {
+                columnsToRanges = new HashMap<ColumnExpression, ColumnRanges>();
+                for (ConditionExpression condition : conditions) {
+                    ColumnRanges range = ColumnRanges.rangeAtNode(condition);
+                    if (range != null) {
+                        ColumnExpression rangeColumn = range.getColumnExpression();
+                        ColumnRanges oldRange = columnsToRanges.get(rangeColumn);
+                        if (oldRange != null)
+                            range = ColumnRanges.andRanges(range, oldRange);
+                        columnsToRanges.put(rangeColumn, range);
+                    }
+                }
+            }
+            ColumnExpression columnExpression = (ColumnExpression) expressionNode;
+            return columnsToRanges.get(columnExpression);
+        }
+        return null;
+    }
 }

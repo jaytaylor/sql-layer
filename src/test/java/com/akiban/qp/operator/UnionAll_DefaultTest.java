@@ -22,6 +22,7 @@ import com.akiban.server.types.AkType;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 
 public final class UnionAll_DefaultTest {
     
@@ -134,6 +135,22 @@ public final class UnionAll_DefaultTest {
         check(first, second, expected);
     }
 
+    @Test
+    public void bothInputsSameRowType() {
+        DerivedTypesSchema schema = new DerivedTypesSchema();
+        RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR)
+                .row(1L, "one");
+        RowsBuilder second = new RowsBuilder(first.rowType())
+                .row(2L, "two");
+
+        RowsBuilder expected = new RowsBuilder(first.rowType())
+                .row(1L, "one")
+                .row(2L, "two");
+        Operator union = union(first, second);
+        assertSame("rowType", first.rowType(), union.rowType());
+        check(first, second, expected);
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void inputsNotOfRightShape() {
         DerivedTypesSchema schema = new DerivedTypesSchema();
@@ -193,8 +210,7 @@ public final class UnionAll_DefaultTest {
         OperatorTestHelper.execute(union);
     }
 
-    private static void check(RowsBuilder rb1, RowsBuilder rb2, RowsBuilder expected) {
-        Operator union = union(rb1, rb2);
+    private static void check(Operator union, RowsBuilder expected) {
         final RowType outputRowType = union.rowType();
         checkRowTypes(expected.rowType(), outputRowType);
 
@@ -204,6 +220,10 @@ public final class UnionAll_DefaultTest {
                 assertEquals("row types", outputRowType, row.rowType());
             }
         });
+    }
+
+    private static void check(RowsBuilder rb1, RowsBuilder rb2, RowsBuilder expected) {
+        check(union(rb1, rb2), expected);
     }
 
     private static void checkRowTypes(RowType expected, RowType actual) {

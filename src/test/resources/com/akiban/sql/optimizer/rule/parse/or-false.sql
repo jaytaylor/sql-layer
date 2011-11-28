@@ -1,0 +1,1 @@
+SELECT f(TRUE OR FALSE) FROM child
