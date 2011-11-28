@@ -79,6 +79,7 @@ import org.yaml.snakeyaml.nodes.Tag;
    - Syntax:
      - Include: <file>
    - If the file is relative, it is parsed relative to the referring file
+   - If the file argument is missing or null, the command will be ignored
 
    Properties
    - Syntax:
@@ -93,6 +94,8 @@ import org.yaml.snakeyaml.nodes.Tag;
      - CreateTable: <table name> <create table arguments>...
      - error: [<error code>, <error message>]
    - The error message is optional
+   - If the error code is missing or null, then the attribute and its value
+     will be ignored
    - This command has the same behavior as would specifying a CREATE TABLE
      statement with a Statement command, but it lets the test framework know
      which tables have been created, so it can drop them after the test is
@@ -108,7 +111,10 @@ import org.yaml.snakeyaml.nodes.Tag;
      - output_types: [<column type>, ...]
      - explain: <explain plan>
      - error: [<error code>, <error message>]
+   - If the statement text is missing or null, the command will be ignored
    - Attributes are optional and can appear at most once
+   - If the value of any attribute is missing or null, then the attribute and
+     its value will be ignored
    - Only one statement in statement text (not checked)
    - At least one row element in params, param_types, output, output_types
    - At least one row in params and output

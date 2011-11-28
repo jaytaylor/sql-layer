@@ -246,6 +246,12 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     }
 
     @Test
+    public void testPropertiesNullValue() {
+	testYamlFail("---\n" +
+		     "- Properties: null\n");
+    }
+
+    @Test
     public void testPropertiesValueNotString() {
 	testYamlFail("---\n" +
 		     "- Properties: 33\n");
@@ -421,7 +427,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	testYaml(
 	    "---\n" +
 	    "- CreateTable: a (i int\n" +
-	    "- error: !select-engine { it: [42000], sys: [33] }");
+	    "- error: !select-engine { it: [42000], sys-aksql: [33] }");
     }
 
     /* Test Statement */
@@ -612,6 +618,20 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "- output: [[1]]");
     }
 
+    @Test
+    public void testStatementParamTypesSelectEngine() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: c (cid int)\n" +
+	    "---\n" +
+	    "- Statement: INSERT INTO c VALUES (1), (2)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM c where cid = ?\n" +
+	    "- params: [[1]]\n" +
+	    "- param_types: !select-engine { it: [DECIMAL], foo: bar }\n" +
+	    "- output: [[1]]");
+    }
+
     /* Test Statement output */
 
     @Test
@@ -796,9 +816,9 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     	    "---\n" +
     	    "- Statement: SELECT * FROM t\n" +
     	    "- output:\n" +
-	    "  !select-engine\n" +
-	    "    it: [[!re '[a-z]+'], [!re '[0-9]+']]\n" +
-	    "    foo: bar\n");
+	    "    !select-engine\n" +
+	    "      it: [[!re '[a-z]+'], [!re '[0-9]+']]\n" +
+	    "      foo: bar\n");
     }
 
     @Test
@@ -922,10 +942,22 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 
     @Test
     public void testStatementRowCountNoValue() {
-	testYamlFail(
+	testYaml(
 	    "---\n" +
-	    "- Statement: a b c\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
 	    "- row_count:");
+    }
+
+    @Test
+    public void testStatementRowCountNullValue() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
+	    "- row_count: null");
     }
 
     @Test
@@ -975,14 +1007,37 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "- row_count: 2\n");
     }
 
+    @Test
+    public void testStatementRowCountSelectEngine() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: customers (cid int, name varchar(32));\n" +
+	    "---\n" +
+	    "- Statement:\n" +
+	    "    INSERT INTO customers VALUES (1, 'Smith'), (2, 'Jones');\n" +
+	    "- row_count: !select-engine { foo: 7, all: 2}\n");
+    }
+
     /* Test Statement output_types */
 
     @Test
     public void testStatementOutputTypesNoValue() {
-	testYamlFail(
+	testYaml(
 	    "---\n" +
-	    "- Statement: a b c\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
 	    "- output_types:");
+    }
+
+    @Test
+    public void testStatementOutputTypesNullValue() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
+	    "- output_types: null");
     }
 
     @Test
@@ -1054,14 +1109,38 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "- output_types: [INTEGER, VARCHAR]");
     }
 
+    @Test
+    public void testStatementOutputTypesSelectEngine() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: c (cid int, name varchar(32))\n" +
+	    "---\n" +
+	    "- Statement: INSERT INTO c VALUES (1, 'Smith'), (2, 'Jones')\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM c\n" +
+	    "- output_types: [INTEGER, !select-engine { it: VARCHAR }]");
+    }
+
     /* Test Statement explain */
 
     @Test
     public void testStatementExplainNoValue() {
-	testYamlFail(
+	testYaml(
 	    "---\n" +
-	    "- Statement: a b c\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
 	    "- explain:");
+    }
+
+    @Test
+    public void testStatementExplainNullValue() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
+	    "- explain: null");
     }
 
     @Test
@@ -1099,14 +1178,38 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "        GroupScan_Default(full scan on _akiban_c)\n");
     }
 
+    @Test
+    public void testStatementExplainSelectEngine() {
+	testYamlFail(
+	    "---\n" +
+	    "- CreateTable: c (cid int, name varchar(32))\n" +
+	    "---\n" +
+	    "- Statement: INSERT INTO c VALUES (1, 'Smith'), (2, 'Jones')\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM c\n" +
+	    "- explain: !select-engine { all: stuff }");
+    }
+
     /* Test Statement error */
 
     @Test
     public void testStatementErrorNoValue() {
-	testYamlFail(
+	testYaml(
 	    "---\n" +
-	    "- Statement: a b c\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
 	    "- error:");
+    }
+
+    @Test
+    public void testStatementErrorNullValue() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
+	    "- error: null");
     }
 
     @Test
@@ -1189,6 +1292,30 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "        \"from\" ...\n" +
 	    "        \",\" ...\n" +
 	    "        : SELECT * FR");
+    }
+
+    @Test
+    public void testStatementErrorSelectEngineNoMatch() {
+	testYamlFail(
+	    "---\n" +
+	    "- Statement: SELECT * FR\n" +
+	    "- error: !select-engine { foo: [bar] }");
+    }
+
+    @Test
+    public void testStatementErrorSelectEngineNoMatchWithMessage() {
+	testYamlFail(
+	    "---\n" +
+	    "- Statement: SELECT * FR\n" +
+	    "- error: [!select-engine { foo: bar }, Hello]");
+    }
+
+    @Test
+    public void testStatementErrorSelectEngineMatch() {
+	testYaml(
+	    "---\n" +
+	    "- Statement: SELECT * FR\n" +
+	    "- error: [!select-engine { it: 42000, all: 42 }]");
     }
 
     /* Other methods */
