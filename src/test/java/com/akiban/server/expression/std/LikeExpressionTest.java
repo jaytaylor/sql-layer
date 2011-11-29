@@ -114,9 +114,12 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
         // percent as escape
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc_", "abc%_", "%", true, false);
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc%", "abc%%", "%", true, false);
-        param(pb, LikeExpression.ILIKE_COMPOSER, "abcxyz", "abc%", "%", true, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abcxyz", "abc%", "%", true, false); // % stands by itself => still a wildcard
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abc", "abc%%", "%", false, false); // two %s => not a wildcard
+        param(pb, LikeExpression.ILIKE_COMPOSER, "ab%c%cde", "ab%%c%%%", "%", true, false); 
         
-        
+        // null as escape, then \\ is used
+        param(pb, LikeExpression.ILIKE_COMPOSER, "a%bc_dxyz", "a\\%bc\\_d%", null, true, false);
 
         return pb.asList();
     }
@@ -131,7 +134,7 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
     public void test()
     {
         Expression l = new LiteralExpression(AkType.VARCHAR, left);
-        Expression es = new LiteralExpression(AkType.VARCHAR, esc);
+        Expression es = new LiteralExpression(esc == null ? AkType.NULL :AkType.VARCHAR, esc == null ? "": esc);
         Expression r;
 
         if (expectNull)

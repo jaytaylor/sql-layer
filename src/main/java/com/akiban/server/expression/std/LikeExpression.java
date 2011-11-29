@@ -106,7 +106,8 @@ public class LikeExpression extends AbstractCompositeExpression
 
             if (children().size() == 3)
             {
-                esca = children().get(2).eval().getString().charAt(0);
+                ValueSource escapSource = children().get(2).eval();
+                if (!escapSource.isNull()) esca = children().get(2).eval().getString().charAt(0);
             }
             noWildcardU = esca == '_';
             noWildcardP = esca == '%';
@@ -179,7 +180,7 @@ public class LikeExpression extends AbstractCompositeExpression
                                 }
                             }
                             if (l == lLimit) break Loop2; // end of left string (the sequence is matching so far)
-                            else r = oldR; // the sequence didn't match, reset counter, search for next sequence
+                            else r = oldR; // the sequence didn't match, reset counter, search for next sequence in left
                         }
                     }
                     return false; // the only way to make it out of loop1 is for left to end earlier than right not matching ANY char at all
@@ -215,7 +216,11 @@ public class LikeExpression extends AbstractCompositeExpression
                 if (r < rLimit)
                 {
                     while (r < rLimit)
-                        if (right.charAt(r++) != '%') return false; // and r-1 != escape // POTENTIALLY BE ESCAPED?
+                    {
+                        if (right.charAt(r) != '%') return false; // and r-1 != escape 
+                        else if (r + 1 < rLimit && right.charAt(r+1) == '%' && noWildcardP) return false; // % is  escaped
+                        ++r;
+                    }
                     return true;
                 }
                 else return left.charAt(l - 1) == right.charAt(r - 1) || right.charAt(r - 1) == '_' || right.charAt(r - 1) == '%';
