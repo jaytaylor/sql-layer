@@ -101,30 +101,6 @@ public class ManageMXBeanImpl implements ManageMXBean {
         return AkServer.VERSION_STRING;
     }
 
-    @Override
-    public boolean getCacheRemoveInternalColumns()
-    {
-        Session session = createSession();
-        try {
-            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-            return ais.cacheRemoveInternalColumns();
-        } finally {
-            session.close();
-        }
-    }
-
-    @Override
-    public void setCacheRemoveInternalColumns(boolean cacheRemoveInternalColumns)
-    {
-        Session session = createSession();
-        try {
-            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-            ais.cacheRemoveInternalColumns(cacheRemoveInternalColumns);
-        } finally {
-            session.close();
-        }
-    }
-
     private Store getStore() {
         return store;
     }
