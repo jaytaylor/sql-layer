@@ -1,0 +1,11 @@
+# AND with boolean parameter fails
+---
+- CreateTable: t (bigint_field bigint)
+---
+- Statement: INSERT INTO t (bigint_field) VALUES (1), (-1)
+---
+- Statement: SELECT bigint_field > 0 AND ? FROM t
+- params: [[1]]
+- output: [[1]]
+
+...

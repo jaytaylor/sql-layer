@@ -76,14 +76,13 @@
 ---
 - Statement: DELETE from all_types
 
-# Not working
-# ---
-# - Statement: INSERT INTO all_types (date_field) VALUES (2011-11-08)
-# ---
-# - Statement: SELECT (date_field) from all_types
-# - output: [['2011-11-08']]
-# ---
-# - Statement: DELETE from all_types
+---
+- Statement: INSERT INTO all_types (date_field) VALUES ('2011-11-08')
+---
+- Statement: SELECT (date_field) from all_types
+- output: [['2011-11-08']]
+---
+- Statement: DELETE from all_types
 
 ---
 - Statement: INSERT INTO all_types (decimal_field) VALUES (1.0), (123456.0),

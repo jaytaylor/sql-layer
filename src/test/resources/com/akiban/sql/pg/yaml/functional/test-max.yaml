@@ -111,10 +111,4 @@
     FROM all_types
 - output: [[NaN, NaN, NaN]]
 
-# MAX not supported in WHERE clause
-# Test in WHERE clause
-# ---
-# - Statement: SELECT * FROM all_types WHERE MAX(bigint_field) > 0
-# - row_count: 0
-
 ...

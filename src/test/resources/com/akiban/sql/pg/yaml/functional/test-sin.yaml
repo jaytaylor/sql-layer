@@ -48,4 +48,14 @@
 - Statement: SELECT SIN(0) FROM all_types
 - output: [[0.0], [0.0], [0.0]]
 
+# Parameters
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (double_field) VALUES (1.0)
+---
+- Statement: SELECT SIN(?) FROM all_types
+- params: [[0.0], [1.0]]
+- output: [[0.0], [0.8414709848078965]]
+
 ...

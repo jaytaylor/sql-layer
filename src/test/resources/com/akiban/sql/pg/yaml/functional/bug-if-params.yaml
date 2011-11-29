@@ -1,4 +1,4 @@
-# IF function with parameters fails
+# IF function with boolean parameter produces wrong result
 ---
 - CreateTable: t (bigint_field bigint)
 ---
