@@ -17,7 +17,6 @@ package com.akiban.ais.model;
 
 import java.io.Serializable;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.akiban.ais.model.validation.AISInvariants;
 
@@ -136,19 +135,20 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     public List<Column> getColumns()
     {
         ensureColumnsUpToDate();
+        if (ais.cacheRemoveInternalColumns()) {
+            return columnsWithoutInternal;
+        } else {
         // TODO: This is temporary, remove it when we're done with bug 893804
-        synchronized (columnsStale) {
-            if (!ais.cacheRemoveInternalColumns()) {
-                columnsWithoutInternal.clear();
-                for (Column column : columns) {
-                    if (!column.isAkibanPKColumn()) {
-                        columnsWithoutInternal.add(column);
-                    }
+            List<Column> declaredColumns = new ArrayList<Column>(columns);
+            for (Iterator<Column> iterator = declaredColumns.iterator(); iterator.hasNext();) {
+                Column column = iterator.next();
+                if (column.isAkibanPKColumn()) {
+                    iterator.remove();
                 }
             }
-        }
+            return declaredColumns;
         // TODO: end
-        return columnsWithoutInternal;
+        }
     }
 
     public List<Column> getColumnsIncludingInternal()
@@ -206,7 +206,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     protected void addColumn(Column column)
     {
         columnMap.put(column.getName().toLowerCase(), column);
-        columnsStale.set(true);
+        columnsStale = true;
     }
 
     protected void addIndex(TableIndex index)
@@ -229,7 +229,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     protected void dropColumns()
     {
         columnMap.clear();
-        columnsStale.set(true);
+        columnsStale = true;
     }
 
     protected Table()
@@ -333,7 +333,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
                 out.add("name mismatch, expected <" + name + "> for column " + column);
             }
         }
-        if (!columnsStale.get()) {
+        if (!columnsStale) {
             for (Column column : columns) {
                 if (column == null) {
                     out.add("null column in columns list");
@@ -389,26 +389,28 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
 
     private void ensureColumnsUpToDate()
     {
-        synchronized (columnsStale) {
-            if (columnsStale.get()) {
-                columns.clear();
-                columns.addAll(columnMap.values());
-                Collections.sort(columns,
-                                 new Comparator<Column>()
-                                 {
-                                     @Override
-                                     public int compare(Column x, Column y)
+        if (columnsStale) {
+            synchronized (columnsStaleLock) {
+                if (columnsStale) {
+                    columns.clear();
+                    columns.addAll(columnMap.values());
+                    Collections.sort(columns,
+                                     new Comparator<Column>()
                                      {
-                                         return x.getPosition() - y.getPosition();
-                                     }
-                                 });
-                columnsWithoutInternal.clear();
-                for (Column column : columns) {
-                    if (!column.isAkibanPKColumn()) {
-                        columnsWithoutInternal.add(column);
+                                         @Override
+                                         public int compare(Column x, Column y)
+                                         {
+                                             return x.getPosition() - y.getPosition();
+                                         }
+                                     });
+                    columnsWithoutInternal.clear();
+                    for (Column column : columns) {
+                        if (!column.isAkibanPKColumn()) {
+                            columnsWithoutInternal.add(column);
+                        }
                     }
+                    columnsStale = false;
                 }
-                columnsStale.set(false);
             }
         }
     }
@@ -427,7 +429,8 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     protected Group group;
     protected TableName tableName;
     private Integer tableId;
-    private final AtomicBoolean columnsStale = new AtomicBoolean(true);
+    private volatile boolean columnsStale = true;
+    private final Object columnsStaleLock = new Object();
     private List<Column> columns = new ArrayList<Column>();
     private List<Column> columnsWithoutInternal = new ArrayList<Column>();
     private final Map<String, TableIndex> indexMap;
