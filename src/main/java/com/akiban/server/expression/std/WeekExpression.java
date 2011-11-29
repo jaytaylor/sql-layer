@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -185,8 +186,7 @@ public class WeekExpression extends AbstractCompositeExpression
 
                 mode = (int)sOp.getInt();
             }
-            if (mode < 0 || mode > 7) throw new UnsupportedOperationException("MODE of" + mode + " is not valid in WEEK expression");
-
+            if (mode < 0 || mode > 7) throw new InvalidParameterValueException();
             return new ValueHolder(AkType.INT, modes[(int)mode].getWeek(new MutableDateTime(), yr, mo, da));
         }
     }
