@@ -1,0 +1,1 @@
+SELECT x FROM t1 t1_1 INNER JOIN t1 t1_2 ON t1_1.y = t1_2.y

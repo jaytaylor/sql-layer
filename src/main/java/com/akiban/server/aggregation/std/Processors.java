@@ -15,6 +15,7 @@
 
 package com.akiban.server.aggregation.std;
 
+import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.OverflowException;
 import com.akiban.server.types.AkType;
 import java.math.BigDecimal;
@@ -25,6 +26,12 @@ class Processors
     public final static AbstractProcessor maxProcessor = new MinMaxProcessor()
     {
         @Override
+        public String toString ()
+        {
+            return "MAX";
+        }
+
+        @Override
         public boolean condition (double a) { return a > 0; }
 
     };
@@ -32,18 +39,30 @@ class Processors
     public final static AbstractProcessor minProcessor = new MinMaxProcessor()
     {
         @Override
+        public String toString ()
+        {
+            return "MIN";
+        }
+
+        @Override
         public boolean condition(double a) { return a < 0; }
 
     };
 
     public final static AbstractProcessor sumProcessor = new AbstractProcessor ()
-    {        
+    {   
+        @Override
+        public String toString ()
+        {
+            return "SUM";
+        }
         @Override
         public void checkType (AkType type)
         {
             switch (type)
             {
                 case DOUBLE:
+                case U_DOUBLE:
                 case U_INT:
                 case FLOAT:
                 case U_FLOAT:
@@ -51,7 +70,7 @@ class Processors
                 case LONG:
                 case DECIMAL:
                 case U_BIGINT: return;
-                default: throw new UnsupportedOperationException("sum of " + type + " is not supported yet.");
+                default:  throw new InvalidArgumentTypeException("Sum of " +type + " is not supported");
             }
         }
 
@@ -102,20 +121,20 @@ class Processors
         @Override
         public boolean process(boolean oldState, boolean input)
         {
-            throw new UnsupportedOperationException("Not supported yet.");
+            throw new InvalidArgumentTypeException("Sum of BOOL is not supported");
         }
 
         @Override
         public String process(String oldState, String input)
         {
-            throw new UnsupportedOperationException("Not supported yet.");
+             throw new InvalidArgumentTypeException("Sum of VARCHAR is not supported");
         }
     };
 
     // nested class
     private static abstract class MinMaxProcessor implements AbstractProcessor
     {
-        abstract boolean condition (double a);       
+        abstract boolean condition (double a);
 
         @Override
         public void checkType(AkType type)

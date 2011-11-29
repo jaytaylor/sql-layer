@@ -725,7 +725,8 @@ public class ASTStatementLoader extends BaseRule
             List<ExpressionNode> operands = new ArrayList<ExpressionNode>(3);
             operands.add(toExpression(ternary.getReceiver()));
             operands.add(toExpression(ternary.getLeftOperand()));
-            operands.add(toExpression(ternary.getRightOperand()));
+            if (ternary.getRightOperand() != null)
+                operands.add(toExpression(ternary.getRightOperand()));
             conditions.add(new FunctionCondition(ternary.getMethodName(),
                                                  operands,
                                                  ternary.getType(), ternary));

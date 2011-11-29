@@ -17,12 +17,10 @@ package com.akiban.server;
 
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSourceHelper;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueSourceIsNullException;
+import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
-import com.akiban.util.WrappingByteSource;
 import com.persistit.Key;
 
 import java.math.BigDecimal;
@@ -49,103 +47,102 @@ public final class PersistitKeyValueSource implements ValueSource {
 
     @Override
     public boolean isNull() {
-        return decode() == null;
+        return decode().isNull();
     }
 
     @Override
     public BigDecimal getDecimal() {
-        return as(BigDecimal.class, AkType.DECIMAL);
+        return decode().getDecimal();
     }
 
     @Override
     public BigInteger getUBigInt() {
-        return as(BigInteger.class, AkType.U_BIGINT);
+        return decode().getUBigInt();
     }
 
     @Override
     public ByteSource getVarBinary() {
-        byte[] bytes = as(byte[].class, AkType.VARBINARY);
-        return bytes == null ? null : byteSource.wrap(bytes);
+        return decode().getVarBinary();
     }
 
     @Override
     public double getDouble() {
-        return as(Double.class, AkType.DOUBLE);
+        return decode().getDouble();
     }
 
     @Override
     public double getUDouble() {
-        return as(Double.class, AkType.U_DOUBLE);
+        return decode().getUDouble();
     }
 
     @Override
     public float getFloat() {
-        return as(Float.class, AkType.FLOAT);
+        return decode().getFloat();
     }
 
     @Override
     public float getUFloat() {
-        return as(Float.class, AkType.U_FLOAT);
+        return decode().getUFloat();
     }
 
     @Override
     public long getDate() {
-        return as(Long.class, AkType.DATE);
+        return decode().getDate();
     }
 
     @Override
     public long getDateTime() {
-        return as(Long.class, AkType.DATETIME);
+        return decode().getDateTime();
     }
 
     @Override
     public long getInt() {
-        return as(Long.class, AkType.INT);
+        return decode().getInt();
     }
 
     @Override
     public long getLong() {
-        return as(Long.class, AkType.LONG);
+        return decode().getLong();
     }
 
     @Override
     public long getTime() {
-        return as(Long.class, AkType.TIME);
+        return decode().getTime();
     }
 
     @Override
     public long getTimestamp() {
-        return as(Long.class, AkType.TIMESTAMP);
+        return decode().getTimestamp();
     }
     
     @Override
     public long getInterval() {
-        throw new UnsupportedOperationException("interval not supported yet");
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public long getUInt() {
-        return as(Long.class, AkType.U_INT);
+        return decode().getUInt();
     }
 
     @Override
     public long getYear() {
-        return as(Long.class, AkType.YEAR);
+        return decode().getYear();
     }
 
     @Override
     public String getString() {
-        return as(String.class, AkType.VARCHAR);
+        return decode().getString();
     }
 
     @Override
     public String getText() {
-        return as(String.class, AkType.TEXT);
+        return decode().getText();
     }
 
     @Override
     public boolean getBool() {
-        return as(Boolean.class, AkType.BOOL);
+        return decode().getBool();
     }
 
     @Override
@@ -171,38 +168,37 @@ public final class PersistitKeyValueSource implements ValueSource {
 
     // for use by this class
     
-    private Object decode() {
+    private ValueSource decode() {
         if (needsDecoding) {
             int oldIndex = key.getIndex();
-            decoded = key.decode();
+            if (key.isNull()) {
+                valueHolder.putNull();
+            }
+            else
+            {
+                switch (akType.underlyingType()) {
+                    case BOOLEAN_AKTYPE:valueHolder.putBool(key.decodeBoolean());       break;
+                    case LONG_AKTYPE:   valueHolder.putRaw(akType, key.decodeLong());   break;
+                    case FLOAT_AKTYPE:  valueHolder.putRaw(akType, key.decodeFloat());  break;
+                    case DOUBLE_AKTYPE: valueHolder.putRaw(akType, key.decodeDouble()); break;
+                    case OBJECT_AKTYPE: valueHolder.putRaw(akType, key.decode());       break;
+                    default: throw new UnsupportedOperationException(akType.name());
+                }
+            }
             key.indexTo(oldIndex);
             needsDecoding = false;
         }
-        return decoded;
+        return valueHolder;
     }
     
     private void clear() {
         needsDecoding = true;
     }
 
-    private <T> T as(Class<T> castClass, AkType type) {
-        ValueSourceHelper.checkType(akType, type);
-        Object o = decode();
-        if (o == null) {
-            throw new ValueSourceIsNullException();
-        }
-        try {
-            return castClass.cast(o);
-        } catch (ClassCastException e) {
-            throw new ClassCastException("casting " + o.getClass() + " to " + castClass);
-        }
-    }
-
     // object state
 
     private Key key;
     private AkType akType = AkType.UNSUPPORTED;
-    private Object decoded;
+    private ValueHolder valueHolder = new ValueHolder();
     private boolean needsDecoding = true;
-    private final WrappingByteSource byteSource = new WrappingByteSource();
 }

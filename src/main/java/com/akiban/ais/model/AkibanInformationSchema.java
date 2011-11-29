@@ -550,7 +550,7 @@ public class AkibanInformationSchema implements Serializable, Traversable
     private Map<String, Join> joins = new TreeMap<String, Join>();
     private Map<String, Type> types = new TreeMap<String, Type>();
     private CharsetAndCollation charsetAndCollation;
-    
+
     private boolean isFrozen = false;
 
     private static class AISFailureList extends AISValidationResults implements AISValidationOutput {

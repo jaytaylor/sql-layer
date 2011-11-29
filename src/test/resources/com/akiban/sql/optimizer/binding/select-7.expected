@@ -1,0 +1,81 @@
+com.akiban.sql.parser.CursorNode@a0b1cd0
+name: null
+updateMode: UNSPECIFIED
+statementType: SELECT
+resultSet: 	
+	com.akiban.sql.parser.SelectNode@5f90a0d6
+	isDistinct: false
+	resultColumns: 		
+		com.akiban.sql.parser.ResultColumnList@102f729e
+
+		[0]:		
+		com.akiban.sql.parser.ResultColumn@1b0deb5f
+		exposedName: x
+		name: x
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ColumnReference@2ed7b7d9
+			columnName: x
+			tableName: t1_1
+			type: null
+			userData: t1.x from com.akiban.sql.parser.FromBaseTable@4cdada24
+		[1]:		
+		com.akiban.sql.parser.ResultColumn@54671f95
+		exposedName: _SQL_COL_1
+		name: _SQL_COL_1
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.SubqueryNode@3e4a9a7d
+			subqueryType: EXPRESSION
+			type: null
+			resultSet: 				
+				com.akiban.sql.parser.SelectNode@13e4a47e
+				isDistinct: false
+				resultColumns: 					
+					com.akiban.sql.parser.ResultColumnList@7eb5666
+
+					[0]:					
+					com.akiban.sql.parser.ResultColumn@6b754699
+					exposedName: _SQL_COL_2
+					name: _SQL_COL_2
+					tableName: null
+					isDefaultColumn: false
+					type: null
+					expression: 						
+						com.akiban.sql.parser.AggregateNode@606e1dec
+						aggregateName: MAX
+						operator: null
+						methodName: null
+						type: null
+						operand: 							
+							com.akiban.sql.parser.ColumnReference@5d6ea269
+							columnName: x
+							tableName: t1_2
+							type: null
+							userData: t1.x from com.akiban.sql.parser.FromBaseTable@6602e323
+				fromList: 					
+					com.akiban.sql.parser.FromList@a68cb6b
+
+					[0]:					
+					com.akiban.sql.parser.FromBaseTable@6602e323
+					tableName: t1
+					updateOrDelete: null
+					null
+					correlation Name: t1_2
+					t1_2
+					userData: user.t1
+	fromList: 		
+		com.akiban.sql.parser.FromList@478e4327
+
+		[0]:		
+		com.akiban.sql.parser.FromBaseTable@4cdada24
+		tableName: t1
+		updateOrDelete: null
+		null
+		correlation Name: t1_1
+		t1_1
+		userData: user.t1
