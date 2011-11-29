@@ -44,17 +44,6 @@ import static org.junit.Assert.fail;
 
 public final class NewGiUpdateIT extends ITBase {
 
-    @Test
-    public void t() {
-        createGroupIndex(groupName, "gi1", "c.name,o.when", Index.JoinType.LEFT);
-        writeRow(c, 1L, "John");
-        checker()
-                .gi("gi1")
-                .entry("John, null, 1, null").backedBy(c)
-                .gi("gi2")
-        .done();
-    }
-
     @Before
     public final void createTables() {
         c = createTable(SCHEMA, "c", "cid int key, name varchar(32)");
@@ -62,7 +51,6 @@ public final class NewGiUpdateIT extends ITBase {
         i = createTable(SCHEMA, "i", "iid int key, o_id int, sku int", akibanFK("o_id", "o", "oid") );
         h = createTable(SCHEMA, "h", "sid int key, i_id int, handling_instructions varchar(32)", akibanFK("i_id", "i", "iid") );
         a = createTable(SCHEMA, "a", "oid int key, c_id int, street varchar(56)", akibanFK("c_id", "c", "cid") );
-        groupName = getUserTable(c).getGroup().getName();
     }
 
     @After
@@ -83,7 +71,6 @@ public final class NewGiUpdateIT extends ITBase {
         i = null;
         h = null;
         a = null;
-        groupName = null;
         assertEquals(Collections.<GisChecker>emptySet(), unfinishedCheckers);
     }
 
@@ -96,11 +83,10 @@ public final class NewGiUpdateIT extends ITBase {
     }
 
     private Group group() {
-        return ddl().getAIS(session()).getGroup(groupName);
+        return getUserTable(c).getGroup();
     }
 
-    private String groupName;
-    private Integer c;
+        private Integer c;
     private Integer o;
     private Integer i;
     private Integer h;
