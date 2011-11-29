@@ -25,14 +25,38 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
-import java.util.Calendar;
+import java.util.Arrays;
 import java.util.List;
+import org.joda.time.MutableDateTime;
 
 public class WeekExpression extends AbstractCompositeExpression
 {
     @Scalar("week")
     public static final ExpressionComposer WEEK_COMPOSER = new InternalComposer();
 
+    @Scalar("week_of_year")
+    public static final ExpressionComposer WEEK_OF_YEAR_COMPOSER = new UnaryComposer ()
+    {
+
+        @Override
+        protected Expression compose(Expression argument)
+        {
+            return new WeekExpression(Arrays.asList(argument));
+        }
+
+        @Override
+        protected AkType argumentType(AkType givenType)
+        {
+            return AkType.DATE;
+        }
+
+        @Override
+        protected ExpressionType composeType(ExpressionType argumentType)
+        {
+            return ExpressionTypes.INT;
+        }
+    };
+    
     private static final class InternalComposer implements ExpressionComposer
     {
         @Override
@@ -59,44 +83,50 @@ public class WeekExpression extends AbstractCompositeExpression
 
     private static final class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
+        private static final class DayOfWeek
+        {
+            public static final int MON = 1;
+            public static final int TUE = 2;
+            public static final int WED = 3;
+            public static final int THU = 4;
+            public static final int FRI = 5;
+            public static final int SAT = 6;
+            public static final int SUN = 7;
+        }
         private static interface Modes
         {
-            int getWeek(Calendar cal, int yr, int mo, int da);
+            int getWeek(MutableDateTime cal, int yr, int mo, int da);
         }
 
         private static final Modes[] modes = new Modes[]
         {
-          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, Calendar.SUNDAY, 8);}}, //0
-          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, Calendar.SUNDAY,8);}},  //1
-          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, Calendar.SUNDAY, 0);}}, //2
-          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, Calendar.SUNDAY, 1);}}, //3
-          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, Calendar.SATURDAY,8);}},//4
-          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, Calendar.MONDAY, 8);}}, //5
-          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, Calendar.SATURDAY,4);}},//6
-          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, Calendar.MONDAY,5);}},  //7
-          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return 0;}} // dummy always return 0-lowestval
+          new Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, DayOfWeek.SUN, 8);}}, //0
+          new Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, DayOfWeek.SUN,8);}},  //1
+          new Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, DayOfWeek.SUN, 0);}}, //2
+          new Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, DayOfWeek.SUN, 1);}}, //3
+          new Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, DayOfWeek.SAT,8);}},//4
+          new Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, DayOfWeek.MON, 8);}}, //5
+          new Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, DayOfWeek.SAT,4);}},//6
+          new Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, DayOfWeek.MON,5);}},  //7
+          new Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return 0;}} // dummy always return 0-lowestval
         };
 
-        private static int getMode1346(Calendar cal, int yr, int mo, int da, int firstDay, int lowestVal)
+        private static int getMode1346(MutableDateTime cal, int yr, int mo, int da, int firstDay, int lowestVal)
         {
-            cal.clear();
+            cal.setYear(yr);
+            cal.setMonthOfYear(1);
+            cal.setDayOfMonth(1);
 
-            // find date of first Sat/Sun:
-            cal.set(Calendar.YEAR, yr);
-            cal.set(Calendar.MONTH, 0);
-            cal.set(Calendar.DAY_OF_MONTH, 1);
             int firstD = 1;
 
-            while (cal.get(Calendar.DAY_OF_WEEK) != firstDay)
-                cal.set(Calendar.DAY_OF_MONTH, ++firstD);
+            while (cal.getDayOfWeek() != firstDay) 
+                cal.setDayOfMonth(++firstD);
 
-            cal.set(Calendar.YEAR, yr);
-            cal.set(Calendar.MONTH, mo -1);
-            cal.set(Calendar.DAY_OF_MONTH, da);
+            cal.setYear(yr);
+            cal.setMonthOfYear(mo);
+            cal.setDayOfMonth(da);
 
-            int week;
-
-            week = cal.get(Calendar.DAY_OF_YEAR) - (firstD +1 ); // Sun/Mon
+            int week = cal.getDayOfYear() - (firstD +1 ); // Sun/Mon
             if (firstD < 4)
             {
                 if (week < 0) return modes[lowestVal].getWeek(cal, yr-1, 12, 31);
@@ -107,28 +137,23 @@ public class WeekExpression extends AbstractCompositeExpression
                 if (week < 0) return 1;
                 else return week / 7 + 2;
             }
-
         }
 
-        private static int getMode0257(Calendar cal, int yr, int mo, int da, int firstDay, int lowestVal)
+        private static int getMode0257(MutableDateTime cal, int yr, int mo, int da, int firstDay, int lowestVal)
         {
-            cal.clear();
-
-            // find date of first Sun/Mon:
-            cal.set(Calendar.YEAR, yr);
-            cal.set(Calendar.MONTH, 0);
-            cal.set(Calendar.DAY_OF_MONTH, 1);
+            cal.setYear(yr);
+            cal.setMonthOfYear(1);
+            cal.setDayOfMonth(1);
             int firstD = 1;
 
-            while (cal.get(Calendar.DAY_OF_WEEK) != firstDay)
-                cal.set(Calendar.DAY_OF_MONTH, ++firstD);
+            while (cal.getDayOfWeek() != firstDay)
+                cal.setDayOfMonth(++firstD);
 
-            cal.clear();
-            cal.set(Calendar.YEAR, yr);
-            cal.set(Calendar.MONTH, mo -1);
-            cal.set(Calendar.DAY_OF_MONTH, da);
+            cal.setYear(yr); 
+            cal.setMonthOfYear(mo); 
+            cal.setDayOfMonth(da); 
 
-            int dayOfYear = cal.get(Calendar.DAY_OF_YEAR);
+            int dayOfYear = cal.getDayOfYear(); 
 
             if (dayOfYear < firstD) return modes[lowestVal].getWeek(cal, yr-1, 12, 31);
             else return (dayOfYear - firstD) / 7 +1;
@@ -158,14 +183,12 @@ public class WeekExpression extends AbstractCompositeExpression
                 ValueSource sOp = children().get(1).eval();
                 if (sOp.isNull()) return NullValueSource.only();
 
-                mode = (int)sOp.getLong();
+                mode = (int)sOp.getInt();
             }
-
             if (mode < 0 || mode > 7) throw new UnsupportedOperationException("MODE of" + mode + " is not valid in WEEK expression");
 
-            return new ValueHolder(AkType.INT, modes[(int)mode].getWeek(Calendar.getInstance(), yr, mo, da));
+            return new ValueHolder(AkType.INT, modes[(int)mode].getWeek(new MutableDateTime(), yr, mo, da));
         }
-
     }
 
     protected WeekExpression (List<? extends Expression> children)

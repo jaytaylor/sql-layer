@@ -15,7 +15,6 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.types.ValueSourceIsNullException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
