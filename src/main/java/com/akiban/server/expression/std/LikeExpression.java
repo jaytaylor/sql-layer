@@ -85,7 +85,8 @@ public class LikeExpression extends AbstractCompositeExpression
     {
         private final LikeMode mode;
         private char esca = '\\';
-        private boolean noWildcard = false;
+        private boolean noWildcardU = false;
+        private boolean noWildcardP = false;
 
         public InnerEvaluation (List<? extends ExpressionEvaluation> childrenEval, LikeMode mode)
         {
@@ -107,7 +108,8 @@ public class LikeExpression extends AbstractCompositeExpression
             {
                 esca = children().get(2).eval().getString().charAt(0);
             }
-            noWildcard = esca == '_' || esca == '%';
+            noWildcardU = esca == '_';
+            noWildcardP = esca == '%';
             
             boolean matched = false;  
             switch (mode)
@@ -119,8 +121,6 @@ public class LikeExpression extends AbstractCompositeExpression
             return new ValueHolder(AkType.BOOL, matched);
         }
 
-        // TODO: if esc == % or _
-        // TODO: could be replaced with recursion (as opposed to loops), which is more elegant, but more expensive?
         private  boolean compareS(String left, String right)
         {
             int l = 0, r = 0;
@@ -133,7 +133,7 @@ public class LikeExpression extends AbstractCompositeExpression
                 char lchar = left.charAt(l);
                 char rchar = right.charAt(r);
 
-                if(rchar == '%' && !noWildcard)
+                if(rchar == '%' && (!noWildcardP || r + 1 == rLimit || right.charAt(r+1) != '%'))
                 {
                     char afterP;
                     boolean esc = false;
@@ -143,7 +143,7 @@ public class LikeExpression extends AbstractCompositeExpression
                         afterP = right.charAt(++r);
                     }
                     while (afterP == '%'); // %%%% is no different than %, so skip multiple %s
-                    if (afterP == esca && r +1 < rLimit && (right.charAt(r+1) == '%' || right.charAt(r+1) == '_' || right.charAt(r+1) == esca))
+                    if (afterP == esca && r +1 < rLimit && (right.charAt(r+1) == '%' || right.charAt(r+1) == '_'  || right.charAt(r+1) == esca))
                     {
                         afterP = right.charAt(++r);
                         esc = afterP != esca;
@@ -160,7 +160,7 @@ public class LikeExpression extends AbstractCompositeExpression
                             {
                                 lchar = left.charAt(l);
                                 rchar = right.charAt(r);
-                                if ((rchar == '_' || rchar == '%' ) && !esc) // encounter a wildcard char , meaning the sequence indeed matched
+                                if ((rchar == '_' && !noWildcardU || rchar == '%' ) && !esc) // encounter a wildcard char , meaning the sequence indeed matched
                                     continue Loop2; // move on to next search
                                 esc = false;
                                 if (rchar == esca && r +1 <rLimit && (right.charAt(r+1) == '%' || right.charAt(r+1) == '_' || right.charAt(r+1) == esca))
@@ -184,14 +184,14 @@ public class LikeExpression extends AbstractCompositeExpression
                     }
                     return false; // the only way to make it out of loop1 is for left to end earlier than right not matching ANY char at all
                 }
-                else if (rchar == '_' && !noWildcard)
+                else if (rchar == '_' && (!noWildcardU || r + 1 == rLimit || right.charAt(r+1) != '_' ))
                 {
                     ++r;
                     ++l;
                 }
                 else if (rchar == esca)
                 {
-                    if ( r + 1 < rLimit && (right.charAt(r+1) == '_' || right.charAt(r+1) == '%' || right.charAt(r+1) == esca)) rchar = right.charAt(++r);//fall thru
+                    if ( r + 1 < rLimit && (right.charAt(r+1) == '_' || right.charAt(r+1) == '%' || right.charAt(r+1) == esca)) rchar = right.charAt(++r);
                 
                     if (lchar != rchar)   return false;
                     else
@@ -215,7 +215,7 @@ public class LikeExpression extends AbstractCompositeExpression
                 if (r < rLimit)
                 {
                     while (r < rLimit)
-                        if (right.charAt(r++) != '%') return false; // and r-1 != escape
+                        if (right.charAt(r++) != '%') return false; // and r-1 != escape // POTENTIALLY BE ESCAPED?
                     return true;
                 }
                 else return left.charAt(l - 1) == right.charAt(r - 1) || right.charAt(r - 1) == '_' || right.charAt(r - 1) == '%';

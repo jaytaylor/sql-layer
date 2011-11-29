@@ -105,10 +105,16 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
         // underscore as escape
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc_", "abc__", "_", true, false);
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc%", "abc_%", "_", true, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abc%def", "abc_%def", "_", true, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abc_%def", "abc___%def", "_", true, false);        
+        param(pb, LikeExpression.BLIKE_COMPOSER, "axybc", "a%bc", "_", true, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abcd", "abc_", "_", true, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abcxde", "abc_de", "_", true, false);        
         
         // percent as escape
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc_", "abc%_", "%", true, false);
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc%", "abc%%", "%", true, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abcxyz", "abc%", "%", true, false);
         
         
 
@@ -143,7 +149,7 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
         already = true;
     }
 
-   // @Override
+    @Override
     public boolean alreadyExc ()
     {
         return already;
