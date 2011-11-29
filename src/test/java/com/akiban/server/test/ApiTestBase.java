@@ -408,6 +408,12 @@ public class ApiTestBase {
         return scanAll(new ScanAllRequest(index.getTable().getTableId(), columns, index.getIndexId(), null));
     }
 
+    protected final void writeRow(int tableId, Object... values) {
+        writeRows(
+                createNewRow(tableId, values)
+        );
+    }
+
     protected final int writeRows(NewRow... rows) throws InvalidOperationException {
         for (NewRow row : rows) {
             dml().writeRow(session(), row);
