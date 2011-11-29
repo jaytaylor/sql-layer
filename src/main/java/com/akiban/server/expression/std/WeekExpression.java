@@ -24,7 +24,6 @@ import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
 import java.util.Calendar;
 import java.util.List;
@@ -67,14 +66,14 @@ public class WeekExpression extends AbstractCompositeExpression
 
         private static final Modes[] modes = new Modes[]
         {
-          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, Calendar.SUNDAY, 8);}},   // TODO;
-          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, Calendar.SUNDAY,8);}},   // TODO;
-          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, Calendar.SUNDAY, 0);}},   // TODO;
-          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, Calendar.SUNDAY, 1);}},   // TODO;
-          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, Calendar.SATURDAY,8);}},   // TODO;
-          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, Calendar.MONDAY, 8);}},   // TODO;
-          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, Calendar.SATURDAY,4);}},   // TODO;
-          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, Calendar.MONDAY,5);}},   // TODO;
+          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, Calendar.SUNDAY, 8);}}, //0
+          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, Calendar.SUNDAY,8);}},  //1
+          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, Calendar.SUNDAY, 0);}}, //2
+          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, Calendar.SUNDAY, 1);}}, //3
+          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, Calendar.SATURDAY,8);}},//4
+          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, Calendar.MONDAY, 8);}}, //5
+          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, Calendar.SATURDAY,4);}},//6
+          new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, Calendar.MONDAY,5);}},  //7
           new Modes() {public int getWeek(Calendar cal, int yr, int mo, int da){return 0;}} // dummy always return 0-lowestval
         };
 
@@ -147,7 +146,7 @@ public class WeekExpression extends AbstractCompositeExpression
             ValueSource fOp = children().get(0).eval();
             if (fOp.isNull()) return NullValueSource.only();
 
-            long date = Extractors.getLongExtractor(AkType.DATE).getLong(fOp);
+            long date = fOp.getDate();
             int yr = (int)(date / 512);
             int mo = (int)(date / 32 % 16);
             int da = (int)(date % 32);
@@ -159,7 +158,7 @@ public class WeekExpression extends AbstractCompositeExpression
                 ValueSource sOp = children().get(1).eval();
                 if (sOp.isNull()) return NullValueSource.only();
 
-                mode = Extractors.getLongExtractor(AkType.INT).getLong(sOp);
+                mode = (int)sOp.getLong();
             }
 
             if (mode < 0 || mode > 7) throw new UnsupportedOperationException("MODE of" + mode + " is not valid in WEEK expression");
