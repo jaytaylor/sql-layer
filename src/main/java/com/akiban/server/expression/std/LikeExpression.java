@@ -37,6 +37,8 @@ public class LikeExpression extends AbstractCompositeExpression
     @Scalar("blike")
     public static final ExpressionComposer BLIKE_COMPOSER = new InnerComposer(LikeMode.CASE_SENSITIVE);
 
+    @Scalar("like")
+    public static final ExpressionComposer LIKE_COMPOSER = ILIKE_COMPOSER;
 
     public static enum LikeMode
     {
