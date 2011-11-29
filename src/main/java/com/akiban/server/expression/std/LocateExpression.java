@@ -78,8 +78,8 @@ public class LocateExpression extends AbstractCompositeExpression
             ValueSource strOp = children().get(1).eval();
             if (substrOp.isNull()) return NullValueSource.only();
             
-            String str = (String) Extractors.getObjectExtractor(AkType.VARCHAR).getObject(strOp);
-            String substr = (String)Extractors.getObjectExtractor(AkType.VARCHAR).getObject(substrOp);
+            String str = strOp.getString();
+            String substr = substrOp.getString();
            
             // optional pos operand
             long pos = 0;
@@ -87,11 +87,10 @@ public class LocateExpression extends AbstractCompositeExpression
             {
                 ValueSource posOp = children().get(2).eval();
                 if (posOp.isNull()) return NullValueSource.only();
-                pos = Extractors.getLongExtractor(AkType.LONG).getLong(posOp) -1;
+                pos = posOp.getLong() -1;
                 if (pos < 0 || pos > str.length()) return new ValueHolder(AkType.LONG, 0L);
             }
-            
-             
+                         
             return new ValueHolder(AkType.LONG, 1 + (long)str.indexOf(substr, (int)pos));
         }
         

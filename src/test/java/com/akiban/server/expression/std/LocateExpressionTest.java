@@ -22,10 +22,10 @@ import java.util.Arrays;
 import org.junit.Test;
 
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 public class LocateExpressionTest extends ComposedExpressionTestBase 
-{
-    
+{    
     @Test
     public void test() 
     {
@@ -39,13 +39,14 @@ public class LocateExpressionTest extends ComposedExpressionTestBase
         testLocate( "bar", null, 0);
         
         // test 3 args
-        testLocate("bar", "foobarbar", 5, 7);
-        testLocate("bar", "foobarbar", -5, 0);
-        testLocate("", "foobarbar", 1,1);
-        testLocate("", "", 1,1);
-        testLocate("", "", 3, 0);
-        testLocate(null, "abc", 3, 0);
-        testLocate("abc", null, 3,0);
+        testLocate("bar", "foobarbar", 5L, 7);
+        testLocate("bar", "foobarbar", -5L, 0);
+        testLocate("", "foobarbar", 1L,1);
+        testLocate("", "", 1L,1);
+        testLocate("", "", 3L, 0);
+        testLocate(null, "abc", 3L, 0);
+        testLocate("abc", null, 3L,0);
+        testLocate("abc", "abcd", null, 0);
         
     }
     
@@ -62,35 +63,28 @@ public class LocateExpressionTest extends ComposedExpressionTestBase
         Expression strEx = new LiteralExpression((expectNull = str == null) ? AkType.NULL : AkType.VARCHAR, str);
         Expression subEx = new LiteralExpression((expectNull |= substr == null) ? AkType.NULL : AkType.VARCHAR, substr);
         
-        Expression top = new LocateExpression(Arrays.asList(subEx, strEx));
-        
-        if (expectNull) 
-            assertTrue("expect locate (" + substr + ", " + str + ", " + "), expect null, but was not null", top.evaluation().eval().isNull());
-        else 
-        {
-            long actual = top.evaluation().eval().getLong();
-            assertTrue("expect locate (" + substr + ", " + str + ") = " + expected + " but was " + actual,
-                    actual == expected);
-        }
+        check(expectNull, expected, subEx, strEx);
     }
     
-    private static void testLocate(String substr, String str, int pos, long expected) 
+    private static void testLocate(String substr, String str, Long pos, long expected)
     {
         boolean expectNull;
         Expression strEx = new LiteralExpression((expectNull = str == null) ? AkType.NULL : AkType.VARCHAR, str);
         Expression subEx = new LiteralExpression((expectNull |= substr == null) ? AkType.NULL : AkType.VARCHAR, substr);
-        Expression posEx = new LiteralExpression(AkType.LONG, (long) pos);
-        
-        Expression top = new LocateExpression(Arrays.asList(subEx, strEx, posEx));
-        if (expectNull) 
-            assertTrue("expect locate (" + substr + ", " + str + ", " + pos + "), expect null, but was not null", top.evaluation().eval().isNull()); 
-        else {
-            long actual = top.evaluation().eval().getLong();
-            assertTrue("expect locate (" + substr + ", " + str + ", " + pos + ") = " + expected + " but was " + actual,
-                    actual == expected);
-        }
+        Expression posEx = new LiteralExpression((expectNull |= pos == null) ? AkType.NULL : AkType.LONG,  pos == null ? 0L : (long)pos);
+                
+        check(expectNull, expected, subEx, strEx, posEx);
     }
-    
+
+    private static void check ( boolean expectNull, long expected ,Expression ... ex)
+    {
+        Expression top = new LocateExpression(Arrays.asList(ex));
+        if (expectNull)
+            assertTrue (ex.toString(), top.evaluation().eval().isNull());
+        else        
+            assertEquals(ex.toString(), expected, top.evaluation().eval().getLong());        
+    }
+
     @Override
     protected CompositionTestInfo getTestInfo() 
     {
