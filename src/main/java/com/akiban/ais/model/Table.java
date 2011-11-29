@@ -135,7 +135,20 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     public List<Column> getColumns()
     {
         ensureColumnsUpToDate();
-        return columnsWithoutInternal;
+        if (ais.cacheRemoveInternalColumns()) {
+            return columnsWithoutInternal;
+        } else {
+        // TODO: This is temporary, remove it when we're done with bug 893804
+            List<Column> declaredColumns = new ArrayList<Column>(columns);
+            for (Iterator<Column> iterator = declaredColumns.iterator(); iterator.hasNext();) {
+                Column column = iterator.next();
+                if (column.isAkibanPKColumn()) {
+                    iterator.remove();
+                }
+            }
+            return declaredColumns;
+        // TODO: end
+        }
     }
 
     public List<Column> getColumnsIncludingInternal()
@@ -377,24 +390,28 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     private void ensureColumnsUpToDate()
     {
         if (columnsStale) {
-            columns.clear();
-            columns.addAll(columnMap.values());
-            Collections.sort(columns,
-                             new Comparator<Column>()
-                             {
-                                 @Override
-                                 public int compare(Column x, Column y)
-                                 {
-                                     return x.getPosition() - y.getPosition();
-                                 }
-                             });
-            columnsWithoutInternal.clear();
-            for (Column column : columns) {
-                if (!column.isAkibanPKColumn()) {
-                    columnsWithoutInternal.add(column);
+            synchronized (columnsStaleLock) {
+                if (columnsStale) {
+                    columns.clear();
+                    columns.addAll(columnMap.values());
+                    Collections.sort(columns,
+                                     new Comparator<Column>()
+                                     {
+                                         @Override
+                                         public int compare(Column x, Column y)
+                                         {
+                                             return x.getPosition() - y.getPosition();
+                                         }
+                                     });
+                    columnsWithoutInternal.clear();
+                    for (Column column : columns) {
+                        if (!column.isAkibanPKColumn()) {
+                            columnsWithoutInternal.add(column);
+                        }
+                    }
+                    columnsStale = false;
                 }
             }
-            columnsStale = false;
         }
     }
 
@@ -412,7 +429,8 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     protected Group group;
     protected TableName tableName;
     private Integer tableId;
-    private boolean columnsStale = true;
+    private volatile boolean columnsStale = true;
+    private final Object columnsStaleLock = new Object();
     private List<Column> columns = new ArrayList<Column>();
     private List<Column> columnsWithoutInternal = new ArrayList<Column>();
     private final Map<String, TableIndex> indexMap;

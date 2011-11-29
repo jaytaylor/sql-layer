@@ -504,6 +504,18 @@ public class AkibanInformationSchema implements Serializable, Traversable
        return isFrozen;
    }
 
+    // TODO: This is temporary, remove it when we're done with bug 893804
+    public void cacheRemoveInternalColumns(boolean cacheRemoveInternalColumns)
+    {
+        this.cacheRemoveInternalColumns = cacheRemoveInternalColumns;
+    }
+    public boolean cacheRemoveInternalColumns()
+    {
+        return cacheRemoveInternalColumns;
+    }
+    // TODO: end
+
+
    /** For use within the AIS package; throws an exception if isFrozen is false */
    void checkMutability() throws IllegalStateException {
        if (isFrozen) {
@@ -550,7 +562,9 @@ public class AkibanInformationSchema implements Serializable, Traversable
     private Map<String, Join> joins = new TreeMap<String, Join>();
     private Map<String, Type> types = new TreeMap<String, Type>();
     private CharsetAndCollation charsetAndCollation;
-    
+    // TODO: This is temporary, remove it when we're done with bug 893804
+    private volatile boolean cacheRemoveInternalColumns = false;
+
     private boolean isFrozen = false;
 
     private static class AISFailureList extends AISValidationResults implements AISValidationOutput {
