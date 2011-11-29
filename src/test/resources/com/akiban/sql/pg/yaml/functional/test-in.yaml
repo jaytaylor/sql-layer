@@ -504,19 +504,22 @@
 ---
 - Statement: SELECT timestamp_field FROM all_types
     WHERE timestamp_field IN ('0001-01-01 00:00:01')
-- output: [['0001-01-01 00:00:01.0']]
+- output: [[!re '0001-01-01 00:00:01([.]0)?']]
 ---
 - Statement: SELECT timestamp_field FROM all_types
     WHERE timestamp_field IN ('1970-01-01 08:30:00', '2001-02-03 12:34:56')
-- output: [['1970-01-01 08:30:00.0'], ['2001-02-03 12:34:56.0']]
+- output: [[!re '1970-01-01 08:30:00([.]0)?'],
+    [!re '2001-02-03 12:34:56([.]0)?']]
 ---
 - Statement: SELECT timestamp_field FROM all_types
     WHERE timestamp_field IN (varchar_field)
-- output: [['0001-01-01 00:00:01.0'], ['1970-01-01 08:30:00.0']]
+- output: [[!re '0001-01-01 00:00:01([.]0)?'],
+    [!re '1970-01-01 08:30:00([.]0)?']]
 ---
 - Statement: SELECT timestamp_field FROM all_types WHERE timestamp_field IN (?)
 - params: [['2001-02-03 12:34:56'], ['0001-01-01 00:00:01']]
-- output: [['2001-02-03 12:34:56.0'], ['0001-01-01 00:00:01.0']]
+- output: [[!re '2001-02-03 12:34:56([.]0)?'],
+    [!re '0001-01-01 00:00:01([.]0)?']]
 ---
 - Statement: SELECT timestamp_field IN (varchar_field) FROM all_types
 - output: [[null], [true], [true], [false]]

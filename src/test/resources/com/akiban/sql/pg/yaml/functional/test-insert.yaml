@@ -188,7 +188,7 @@
     VALUES ('2000-01-02 04:00:00')
 ---
 - Statement: SELECT (timestamp_field) from all_types
-- output: [['2000-01-02 04:00:00.0']]
+- output: [[!re '2000-01-02 04:00:00([.]0)?']]
 - output_types: [TIMESTAMP]
 ---
 - Statement: DELETE from all_types
