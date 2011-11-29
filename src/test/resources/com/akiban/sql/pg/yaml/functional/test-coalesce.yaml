@@ -117,10 +117,11 @@
     [x], [x], [x]]
 
 # Use parameter -- not working
-#---
-#- Statement: SELECT COALESCE(char_field, ?) FROM all_types
-#- params: [[x]]
-#- output: [[x], [x], [c], [x], [x], [x], [x], [x], [x], [x], [x], [x], [x], [x]]
+---
+- Statement: SELECT COALESCE(char_field, ?) FROM all_types
+- params: [[x]]
+- output: [[x], [x], [x], [c], [x], [x], [x], [x], [x], [x], [x], [x], [x],
+           [x], [x]]
 
 # Define separate tables for types that don't support conversion:
 
