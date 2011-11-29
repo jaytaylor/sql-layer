@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -73,7 +74,7 @@ public class WeekExpressionTest extends ComposedExpressionTestBase
                 new LiteralExpression(AkType.INT, 4)));
     }
 
-    @Test (expected = UnsupportedOperationException.class)
+    @Test (expected = InvalidParameterValueException.class)
     public void testInvalidMode()
     {
         test("2009-12-2", 10, 0);
