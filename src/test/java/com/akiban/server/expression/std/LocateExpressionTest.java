@@ -94,6 +94,6 @@ public class LocateExpressionTest extends ComposedExpressionTestBase
     @Override
     protected ExpressionComposer getComposer() 
     {
-        return LocateExpression.COMPOSER;
+        return LocateExpression.LOCATE_COMPOSER;
     }
 }

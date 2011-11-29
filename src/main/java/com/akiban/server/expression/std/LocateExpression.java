@@ -25,14 +25,40 @@ import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
+import java.util.Arrays;
 import java.util.List;
 
 public class LocateExpression extends AbstractCompositeExpression
 {
+    @Scalar ("position")
+    public static final ExpressionComposer POSITION_COMPOSER = new BinaryComposer ()
+    {
+
+        @Override
+        protected Expression compose(Expression first, Expression second) 
+        {
+            return new LocateExpression(Arrays.asList(first, second));
+        }
+
+        @Override
+        protected ExpressionType composeType(ExpressionType first, ExpressionType second) 
+        {
+            return ExpressionTypes.LONG;
+        }
+
+        @Override
+        public void argumentTypes(List<AkType> argumentTypes) 
+        {
+            if (argumentTypes.size() != 2) throw new WrongExpressionArityException(2, argumentTypes.size());
+            argumentTypes.set(0, AkType.VARCHAR);
+            argumentTypes.set(0, AkType.VARCHAR);
+        }
+        
+    };
+    
     @Scalar ("locate")
-    public static final ExpressionComposer COMPOSER = new ExpressionComposer ()
+    public static final ExpressionComposer LOCATE_COMPOSER = new ExpressionComposer ()
     {
 
         @Override
