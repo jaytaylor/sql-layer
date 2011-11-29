@@ -157,7 +157,7 @@ public class WeekExpression extends AbstractCompositeExpression
             if (children().size() == 2)
             {
                 ValueSource sOp = children().get(1).eval();
-                if (fOp.isNull()) return NullValueSource.only();
+                if (sOp.isNull()) return NullValueSource.only();
 
                 mode = Extractors.getLongExtractor(AkType.INT).getLong(sOp);
             }

@@ -57,13 +57,13 @@ public class WeekExpressionTest extends ComposedExpressionTestBase
         test(st,0,19);
     }
 
-    @Test (expected = ValueSourceIsNullException.class)
+    @Test 
     public void testNull ()
     {
         Expression week = new WeekExpression(Arrays.asList(new LiteralExpression(AkType.DATE, 12345L),
                 LiteralExpression.forNull()));
-        assertTrue("Top is INT: ", week.valueType() == AkType.INT);
-        int wk = (int)week.evaluation().eval().getInt();
+        assertEquals(AkType.INT,week.valueType());
+        assertTrue(week.evaluation().eval().isNull());
     }
 
     @Test (expected = WrongExpressionArityException.class)
@@ -79,6 +79,7 @@ public class WeekExpressionTest extends ComposedExpressionTestBase
     {
         test("2009-12-2", 10, 0);
     }
+
     private void test(String dateS, int mode, int exp)
     {
         long date = Extractors.getLongExtractor(AkType.DATE).getLong(dateS);
@@ -88,8 +89,8 @@ public class WeekExpressionTest extends ComposedExpressionTestBase
         Expression week = new WeekExpression(Arrays.asList(d, m));
 
         int actual = (int)week.evaluation().eval().getInt();
-        assertTrue("assertTopType == INT: ", week.valueType() == AkType.INT);
-        assertTrue(dateS + ", mode: " + mode + ", expect " + exp + " but was " + actual, actual == exp);
+        assertEquals(AkType.INT, week.valueType());
+        assertEquals("DATE: " + date + ", mode " + mode, actual, exp);
     }
 
     @Override
