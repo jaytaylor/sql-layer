@@ -232,9 +232,13 @@ public final class NewGiUpdateIT extends ITBase {
 
     // nested classes
 
+    private interface GisChecker {
+        public void check();
+    }
+
     private interface GisCheckBuilder {
         GiCheckBuilder gi(String giName);
-        public void done();
+        public GisChecker done();
     }
 
     private interface GiCheckBuilder extends GisCheckBuilder {
@@ -298,7 +302,34 @@ public final class NewGiUpdateIT extends ITBase {
             return this;
         }
 
-        public void done() {
+        public GisChecker done() {
+            unfinishedCheckBuilders.remove(this);
+            GisChecker checker = new GisCheckerImpl(expectedStrings);
+            checker.check();
+            return checker;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%s at line %d", frame.getMethodName(), frame.getLineNumber());
+        }
+
+        private GiCheckBuilderImpl(StackTraceElement frame) {
+            this.frame = frame;
+            this.scratch = new StringBuilder();
+            this.expectedStrings = new HashMap<GroupIndex, List<String>>();
+        }
+
+        private final StackTraceElement frame;
+        private final Map<GroupIndex,List<String>> expectedStrings;
+        private GroupIndex giToCheck;
+        private final StringBuilder scratch;
+    }
+
+    private class GisCheckerImpl implements GisChecker {
+
+        @Override
+        public void check() {
             Collection<GroupIndex> gis = group().getIndexes();
             Set<GroupIndex> uncheckedGis = new HashSet<GroupIndex>(gis);
             if (gis.size() != uncheckedGis.size())
@@ -318,12 +349,6 @@ public final class NewGiUpdateIT extends ITBase {
                 }
                 fail("unchecked GIs: " + uncheckedGiNames.toString());
             }
-            unfinishedCheckBuilders.remove(this);
-        }
-
-        @Override
-        public String toString() {
-            return String.format("%s at line %d", frame.getMethodName(), frame.getLineNumber());
         }
 
         private void checkIndex(GroupIndex groupIndex, List<String> expected) {
@@ -349,16 +374,11 @@ public final class NewGiUpdateIT extends ITBase {
             }
         }
 
-        private GiCheckBuilderImpl(StackTraceElement frame) {
-            this.frame = frame;
-            this.scratch = new StringBuilder();
-            this.expectedStrings = new HashMap<GroupIndex, List<String>>();
+        private GisCheckerImpl(Map<GroupIndex, List<String>> expectedStrings) {
+            this.expectedStrings = new HashMap<GroupIndex, List<String>>(expectedStrings);
         }
 
-        private final StackTraceElement frame;
         private final Map<GroupIndex,List<String>> expectedStrings;
-        private GroupIndex giToCheck;
-        private final StringBuilder scratch;
     }
 
     private static class StringsIndexScanner extends IndexRecordVisitor {
