@@ -415,7 +415,15 @@ public class API
                                    inputBindingPosition);
     }
 
+    // IfEmpty
+
+    public static Operator ifEmpty_Default(Operator input, RowType rowType, List<? extends Expression> expressions)
+    {
+        return new IfEmpty_Default(input, rowType, expressions);
+    }
+
     // Union
+
     public static Operator unionAll(
             Operator input1, RowType input1RowType,
             Operator input2, RowType input2RowType
