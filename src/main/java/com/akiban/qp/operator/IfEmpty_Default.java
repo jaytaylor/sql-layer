@@ -89,6 +89,7 @@ class IfEmpty_Default extends Operator
         ArgumentValidation.notNull("inputOperator", inputOperator);
         ArgumentValidation.notNull("rowType", rowType);
         ArgumentValidation.notNull("expressions", expressions);
+        ArgumentValidation.notEmpty("expressions", expressions);
         this.inputOperator = inputOperator;
         this.rowType = rowType;
         this.expressions = new ArrayList<Expression>(expressions);
