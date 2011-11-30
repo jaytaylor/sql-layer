@@ -409,9 +409,7 @@ public class ApiTestBase {
     }
 
     protected final void writeRow(int tableId, Object... values) {
-        writeRows(
-                createNewRow(tableId, values)
-        );
+        dml().writeRow(session(), createNewRow(tableId, values));
     }
 
     protected final int writeRows(NewRow... rows) throws InvalidOperationException {
@@ -419,6 +417,10 @@ public class ApiTestBase {
             dml().writeRow(session(), row);
         }
         return rows.length;
+    }
+
+    protected final void deleteRow(int tableId, Object... values) {
+        dml().deleteRow(session(), createNewRow(tableId, values));
     }
 
     protected final void expectRows(ScanRequest request, NewRow... expectedRows) throws InvalidOperationException {
