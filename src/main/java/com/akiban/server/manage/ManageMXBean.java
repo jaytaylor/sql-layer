@@ -34,8 +34,4 @@ public interface ManageMXBean {
     void flushIndexes();
 
     String getVersionString();
-
-    // TODO: This is temporary, remove it when we're done with bug 893804
-    boolean getCacheRemoveInternalColumns();
-    void setCacheRemoveInternalColumns(boolean cacheRemoveInternalColumns);
 }
