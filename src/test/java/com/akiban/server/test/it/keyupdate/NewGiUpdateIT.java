@@ -195,26 +195,26 @@ public final class NewGiUpdateIT extends ITBase {
         dml().truncateTable(session(), o);
         dml().truncateTable(session(), c);
 
-        GisChecker emptyChecker = checker();
+        GisCheckBuilder emptyCheckBuilder = checker();
         for (GroupIndex gi : group().getIndexes()) {
-            emptyChecker.gi(gi.getIndexName().getName());
+            emptyCheckBuilder.gi(gi.getIndexName().getName());
         }
-        emptyChecker.done();
+        emptyCheckBuilder.done();
 
         c = null;
         o = null;
         i = null;
         h = null;
         a = null;
-        assertEquals(Collections.<GisChecker>emptySet(), unfinishedCheckers);
+        assertEquals(Collections.<GisCheckBuilder>emptySet(), unfinishedCheckBuilders);
     }
 
-    private GisChecker checker() {
+    private GisCheckBuilder checker() {
         StackTraceElement callerFrame = Thread.currentThread().getStackTrace()[2];
-        GisChecker checker = new GiCheckerImpl(callerFrame);
-        boolean added = unfinishedCheckers.add(checker);
-        assert added : unfinishedCheckers;
-        return checker;
+        GisCheckBuilder checkBuilder = new GiCheckBuilderImpl(callerFrame);
+        boolean added = unfinishedCheckBuilders.add(checkBuilder);
+        assert added : unfinishedCheckBuilders;
+        return checkBuilder;
     }
 
     private Group group() {
@@ -226,29 +226,29 @@ public final class NewGiUpdateIT extends ITBase {
     private Integer i;
     private Integer h;
     private Integer a;
-    private final Set<GisChecker> unfinishedCheckers = new HashSet<GisChecker>();
+    private final Set<GisCheckBuilder> unfinishedCheckBuilders = new HashSet<GisCheckBuilder>();
 
     private static final String SCHEMA = "coia";
 
     // nested classes
 
-    private interface GisChecker {
-        GiChecker gi(String giName);
+    private interface GisCheckBuilder {
+        GiCheckBuilder gi(String giName);
         public void done();
     }
 
-    private interface GiChecker extends GisChecker {
+    private interface GiCheckBuilder extends GisCheckBuilder {
         public GiTablesChecker entry(String key);
     }
 
     private interface GiTablesChecker {
-        GiChecker backedBy(int firstTableId, int... tableIds);
+        GiCheckBuilder backedBy(int firstTableId, int... tableIds);
     }
 
-    private class GiCheckerImpl implements GiChecker, GiTablesChecker {
+    private class GiCheckBuilderImpl implements GiCheckBuilder, GiTablesChecker {
 
         @Override
-        public GiChecker gi(String giName) {
+        public GiCheckBuilder gi(String giName) {
             assertEquals("", scratch.toString());
             giToCheck = group().getIndex(giName);
             assertNotNull("no GI named " + giName, giToCheck);
@@ -265,7 +265,7 @@ public final class NewGiUpdateIT extends ITBase {
         }
 
         @Override
-        public GiChecker backedBy(int firstTableId, int... tableIds) {
+        public GiCheckBuilder backedBy(int firstTableId, int... tableIds) {
             String scratchString = scratch.toString();
             assertTrue(scratchString, scratchString.endsWith(" => "));
             assertNotNull(giToCheck);
@@ -318,7 +318,7 @@ public final class NewGiUpdateIT extends ITBase {
                 }
                 fail("unchecked GIs: " + uncheckedGiNames.toString());
             }
-            unfinishedCheckers.remove(this);
+            unfinishedCheckBuilders.remove(this);
         }
 
         @Override
@@ -349,7 +349,7 @@ public final class NewGiUpdateIT extends ITBase {
             }
         }
 
-        private GiCheckerImpl(StackTraceElement frame) {
+        private GiCheckBuilderImpl(StackTraceElement frame) {
             this.frame = frame;
             this.scratch = new StringBuilder();
             this.expectedStrings = new HashMap<GroupIndex, List<String>>();
