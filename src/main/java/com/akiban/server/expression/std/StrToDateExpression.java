@@ -50,9 +50,8 @@ public class StrToDateExpression extends AbstractBinaryExpression
         {
             //TODO: str_to_date  return type coudl be a DATE, TIME or DATETIME depending on the format specifiers
             // which can only be known at evaluation time....
-            // thus this method returns a LONG, since LONG could be casted to all of the types mentioned above (???)
-            if (first.getType() == AkType.NULL || second.getType() == AkType.NULL ) return ExpressionTypes.NULL;
-            else return ExpressionTypes.DATETIME;
+            // For now, this method returns a DATETIME. (so does StrToDateExpression.getValueType())
+            return ExpressionTypes.DATETIME;
         }
 
         @Override
@@ -993,13 +992,13 @@ public class StrToDateExpression extends AbstractBinaryExpression
 
     private static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
-        private final AkType topType;
+        private  int topType;
         private EnumMap<Field, Long> valuesMap = new EnumMap<Field,Long>(Field.class);
         private boolean has24Hr;
         public InnerEvaluation (AkType type, List<? extends ExpressionEvaluation> childrenEval)
         {
             super(childrenEval);
-            topType = type;
+            //topType = type;
         }
 
         @Override
@@ -1011,7 +1010,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             long l = getValue(extractor.getObject(left()), extractor.getObject(right()));
 
             if (l < 0) return NullValueSource.only();
-            else return new ValueHolder(topType, l);
+            else return new ValueHolder(AkType.DATETIME, l);
         }
 
         private long getValue (String str, String format)
@@ -1032,6 +1031,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             str = str.trim();
             String sVal = "";
             Field field = null;
+            topType = 0;
             has24Hr = false;
             try
             {
@@ -1040,6 +1040,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
                     String fName = formatList[n].charAt(0) + "";
                     field = Field.valueOf(fName);
                     has24Hr |= field.equals(Field.H) || field.equals(Field.T);
+                    topType |= field.getFieldType();
                     String del = formatList[n].substring(1);
                     if (del.length() == 0) // no delimeter
                     {
@@ -1063,6 +1064,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
                     str = str.trim();
                 }
                 field = Field.valueOf(formatList[formatList.length - 1].charAt(0) + "");
+                topType |= field.getFieldType();
                 if (valuesMap.containsKey(field.equivalentField())) return false;
                 valuesMap.put(field.equivalentField(), field.get(str)[0]);
             }
@@ -1070,11 +1072,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             {
                 return false;
             }
-            catch (NullPointerException nex) // format specifier not found
-            {
-                return false;
-            }
-            catch (NumberFormatException nbEx) // str contains bad input, ie. str_to_date("33-abc-2009", "%d-%m-%Y")
+            catch (IllegalArgumentException nex) // format specifier not found, or str contains bad input (NumberFormatException)
             {
                 return false;
             }
@@ -1093,9 +1091,9 @@ public class StrToDateExpression extends AbstractBinaryExpression
         {
             switch (topType) 
             {
-                case DATE:  return findDate();
-                case TIME:  return findTime();
-                default:    return findDateTime();
+                case 1:  return findDate() * 1000000L; // datetime without time
+                case 2:  return findTime(); // datetime without date
+                default:    return findDateTime(); // full datetime
 
             }
         }
@@ -1142,7 +1140,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
                   {
                       if ((yr = valuesMap.get(Field.X)) == null || (wk = valuesMap.get(Field.V)) == null
                               || (dWeek = valuesMap.get(Field.W)) == null)
-                          return validYMD(y, m, d) ? y * 512 + m * 32 + d : -1;
+                          return validYMD(y, m, d) ? y * 10000L + m * 100 + d : -1;
                        cal.setMinimalDaysInFirstWeek(7);
                        cal.setFirstDayOfWeek(Calendar.SUNDAY);
                    }
@@ -1150,7 +1148,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
                   {
                       if ((wk = valuesMap.get(Field.v)) == null
                               || (dWeek = valuesMap.get(Field.W)) == null)
-                          return validYMD(y, m, d) ? y * 512 + m * 32 + d : -1;
+                          return validYMD(y, m, d) ? y * 10000L + m * 100 + d: -1;
                       cal.setMinimalDaysInFirstWeek(1);
                       cal.setFirstDayOfWeek(Calendar.MONDAY); 
                   }
@@ -1162,7 +1160,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
                   m = (long) cal.get(Calendar.MONTH) +1; // month in Calendar is 0-based
                   d = (long) cal.get(Calendar.DAY_OF_MONTH);
               }
-              return validYMD(y, m, d) ? y * 512 + m * 32 + d : -1;
+              return validYMD(y, m, d) ? y * 10000L + m * 100 + d : -1;
         }
        
         private long findTime ()
@@ -1201,15 +1199,9 @@ public class StrToDateExpression extends AbstractBinaryExpression
         
         private long findDateTime ()
         {            
-            long date = findDate();
-            
+            long date = findDate();  
             if (date < 0) return -1;
-            {
-                long y = date / 512;
-                long m = date / 32 % 16;
-                long d = date %32;
-                date = y * 10000L + m * 100 + d;
-            }
+            
             long time = findTime();
             if (time < 0) return -1;
             
@@ -1248,7 +1240,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
    
     public StrToDateExpression (Expression l, Expression r)
     {
-        super(getTopType(l.evaluation(),r.evaluation()),l, r);
+        super(AkType.DATETIME,l, r);
     }
 
     protected static AkType getTopType (ExpressionEvaluation strE, ExpressionEvaluation formatE)
