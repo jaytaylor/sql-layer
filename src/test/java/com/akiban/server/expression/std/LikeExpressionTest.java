@@ -57,7 +57,7 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
     public static Collection<Parameterization> params()
     {
         ParameterizationBuilder pb = new ParameterizationBuilder();
-        
+
         param(pb, LikeExpression.ILIKE_COMPOSER, "xyz", "XYZ%", "\\", true, false, false);
         param(pb, LikeExpression.BLIKE_COMPOSER, "xyz", "XYZ%", "\\", false, false, false);
 
@@ -66,7 +66,7 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
 
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc_", "%=_", "=", true, false, false);
         param(pb, LikeExpression.BLIKE_COMPOSER, "abc_", "%=_", "=", true, false, false);
-        
+
         param(pb, LikeExpression.ILIKE_COMPOSER, "_abc", "_%", "=",true, false, false);
         param(pb, LikeExpression.BLIKE_COMPOSER, "_abc", "_%", "\\",true, false, false);
 
@@ -90,10 +90,12 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
 
         param(pb, LikeExpression.ILIKE_COMPOSER, "C:\\java\\", "_:%\\\\", "\\", true, false, false);
         param(pb, LikeExpression.BLIKE_COMPOSER, "C:\\java\\", "_:%\\\\", "\\",true, false, false);
-        
+
+        param(pb, LikeExpression.ILIKE_COMPOSER, "x===b", "_=====__", "=", false, false, false);
+
         param(pb, LikeExpression.ILIKE_COMPOSER, "Axydam", "A%d=am", "=", false, false, true); // invalide escape sequence =a
-        param(pb, LikeExpression.ILIKE_COMPOSER, "Ja%vas", "J_\\%%", "\\", true, false, false); 
-        
+        param(pb, LikeExpression.ILIKE_COMPOSER, "Ja%vas", "J_\\%%", "\\", true, false, false);
+
         param(pb, LikeExpression.ILIKE_COMPOSER, "", "", "\\",true, false, false);
         param(pb, LikeExpression.BLIKE_COMPOSER, "", "", "\\",true, false, false);
 
@@ -105,29 +107,43 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
 
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc", "", "\\",false, true, false);
         param(pb, LikeExpression.BLIKE_COMPOSER, "abc", "", "\\",false, true, false);
-        
+
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc=_", "abc===_", "==",true, false, false);
-        
+
         // underscore as escape
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc_", "abc__", "_", true, false, false);
         param(pb, LikeExpression.ILIKE_COMPOSER, "123a", "123__", "_", false, false, false);
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc%", "abc_%", "_", true, false, false);
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc%def", "abc_%def", "_", true, false,false);
-        param(pb, LikeExpression.ILIKE_COMPOSER, "abc_%def", "abc___%def", "_", true, false, false);        
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abc_%def", "abc___%def", "_", true, false, false);
         param(pb, LikeExpression.BLIKE_COMPOSER, "axybc", "a%bc", "_", true, false, false);
         param(pb, LikeExpression.ILIKE_COMPOSER, "abcd", "abc_", "_", true, false, true); // exception invalid escape sequence
-        param(pb, LikeExpression.ILIKE_COMPOSER, "abcxde", "abc_de", "_", true, false, true);  // exception      
-        
-        
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abcxde", "abc_de", "_", true, false, true);  // exception
+
+
         // percent as escape
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc_", "abc%_", "%", true, false, false);
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc%", "abc%%", "%", true, false, false);
         param(pb, LikeExpression.ILIKE_COMPOSER, "abcxyz", "abc%", "%", true, false, true); // % by itself exception
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc", "abc%%", "%", false, false, false); // two %s => not a wildcard anymore
         param(pb, LikeExpression.ILIKE_COMPOSER, "ab%c%cde", "ab%%c%%%", "%", true, false, true);  // exception be thrown
-        
+
         // null as escape, then \\ is used
         param(pb, LikeExpression.ILIKE_COMPOSER, "a%bc_dxyz", "a\\%bc\\_d%", null, true, true, false); // null value source
+
+        // 'a!c' like 'a%!_' vs. 'a_c' like 'a%$__' escape '$'
+        param(pb, LikeExpression.ILIKE_COMPOSER, "a!c", "a%!_", "\\", true, false, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "a_c", "a%$__", "$", true, false, false);
+
+        //'abbbc' like 'a%_' vs  'ac' like 'a%_' vs.
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abbbc", "ab%_", "\\", true, false, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "ac", "a%_", "\\", true, false, false);
+
+        // 'a' like 'a%_' => false
+        param(pb, LikeExpression.ILIKE_COMPOSER, "a", "a%_", "\\", false, false, false);
+
+        // "a124b123" LIKE "a%12_"
+        param(pb, LikeExpression.ILIKE_COMPOSER, "a124b123", "a%12_", "\\", true, false, false);
 
         return pb.asList();
     }

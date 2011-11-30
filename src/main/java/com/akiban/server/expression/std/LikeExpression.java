@@ -80,7 +80,6 @@ public class LikeExpression extends AbstractCompositeExpression
         {
             return new LikeExpression(arguments, mode);
         }
-
     }
 
     private static final class InnerEvaluation extends AbstractCompositeExpressionEvaluation
@@ -146,7 +145,7 @@ public class LikeExpression extends AbstractCompositeExpression
                         if (r + 1 == rLimit) return true;
                         afterP = right.charAt(++r);
                     }
-                    while (afterP == '%'); // %%%% is no different than %, so skip multiple %s
+                    while (afterP == '%' || afterP == '_' && !noWildcardU); // or %_ %%%% is no different than %, so skip multiple %s
                     if (afterP == esca )
                         if (r +1 < rLimit && (right.charAt(r+1) == '%' || right.charAt(r+1) == '_'  || right.charAt(r+1) == esca))
                         {
@@ -154,22 +153,19 @@ public class LikeExpression extends AbstractCompositeExpression
                             esc = true;
                         }
                         else throw new UnsupportedOperationException("invalid escape sequence");
-                    
-                    
+                                        
                     while (l < lLimit) // loop1: attempt to find a matching sequence in left that starts with afterP
                     {
                         lchar = left.charAt(l++);
-                        if (lchar == afterP || afterP == '_' && !esc ) // found a *potentially* matching sequence
+                        if (lchar == afterP || afterP == '_' && !noWildcardU && !esc ) // found a *potentially* matching sequence
                         {
                             --l;
                             int oldR = r;
+                            boolean oldEsc = esc;
                             while (l < lLimit && r < rLimit) 
                             {
                                 lchar = left.charAt(l);
                                 rchar = right.charAt(r);
-                                if ((rchar == '_' && !noWildcardU || rchar == '%' ) && !esc) // encounter a wildcard char , meaning the sequence indeed matched
-                                    continue Loop2; // move on to next search
-                                
                                
                                 if (rchar == esca && !esc)
                                 {
@@ -178,15 +174,16 @@ public class LikeExpression extends AbstractCompositeExpression
                                         rchar = right.charAt(++r);
                                          esc = true;
                                     }
-                                     else throw new UnsupportedOperationException ("invalid escape sequence");
-                                   
+                                     else throw new UnsupportedOperationException ("invalid escape sequence");                                   
                                 }
-                               
-                                
-                                if (lchar == rchar)
+
+                                if (rchar == '%' && !esc) continue Loop2;
+                                             
+                                if (lchar == rchar || rchar == '_' && !esc && !noWildcardU)
                                 {
                                     ++l;
                                     ++r;
+                                    esc = false;
                                 }
                                 else
                                 {
@@ -196,7 +193,11 @@ public class LikeExpression extends AbstractCompositeExpression
                                 }
                             }
                             if (l == lLimit) break Loop2; // end of left string (the sequence is matching so far)
-                            else r = oldR; // the sequence didn't match, reset counter, search for next sequence in left
+                            else
+                            {
+                                esc = oldEsc;
+                                r = oldR;
+                            }// the sequence didn't match, reset to initial state, search for next sequence in left
                         }
                     }
                     return false; // the only way to make it out of loop1 is for left to end earlier than right not matching ANY char at all
