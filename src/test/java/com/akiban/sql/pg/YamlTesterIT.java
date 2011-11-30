@@ -71,11 +71,54 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	testYamlFail("- UnknownCommand:");
     }
 
+    /* Test !select-engine general syntax */
+
+    @Test
+    public void testSelectEngineMissingValue() {
+	testYamlFail("- Statement: !select-engine");
+    }
+
+    @Test
+    public void testSelectEngineScalarValue() {
+	testYamlFail("- Statement: !select-engine foo");
+    }
+
+    @Test
+    public void testSelectEngineSequenceValue() {
+	testYamlFail("- Statement: !select-engine [foo, bar]");
+    }
+
+    @Test
+    public void testSelectEngineKeyNotScalar() {
+	testYamlFail("- Statement: !select-engine { [foo, bar]: baz }");
+    }
+
+    @Test
+    public void testSelectEngineMatch() {
+	testYaml("---\n" +
+		 "- CreateTable: t (bigint_field bigint)\n" +
+		 "---\n" +
+		 "- Statement: !select-engine\n" +
+		 "    { foo: bar,\n" +
+		 "      it: INSERT INTO t VALUES (1) }\n" +
+		 "...");
+    }
+
+    @Test
+    public void testSelectEngineNoMatch() {
+	testYaml("- Statement: !select-engine { foo: bar }");
+    }
+
     /* Test Include */
 
     @Test
     public void testIncludeMissingValue() {
-	testYamlFail("- Include:");
+	testYaml("- Include:");
+    }
+
+    @Test
+    public void testIncludeNullValue() {
+	testYaml("- Include: null");
     }
 
     @Test
@@ -90,8 +133,6 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 
     @Test
     public void testIncludeUnexpectedAttributes() throws Exception {
-	File include = File.createTempFile("include", null);
-	include.deleteOnExit();
 	testYamlFail("- Include: somefile\n" +
 		     "- foo: bar");
     }
@@ -102,7 +143,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	include.deleteOnExit();
 	writeFile(include,
 		  "---\n" +
-		  "- Statement: CREATE TABLE c (cid int)\n" +
+		  "- CreateTable: c (cid int)\n" +
 		  "---\n" +
 		  "- Statement: INSERT INTO c VALUES (1), (2)\n");
 	testYaml("---\n" +
@@ -125,7 +166,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 		  "- Statement: INSERT INTO c VALUES (1), (2)\n");
 	writeFile(include2,
 		  "---\n" +
-		  "- Statement: CREATE TABLE c (cid int)\n");
+		  "- CreateTable: c (cid int)\n");
 	testYaml("---\n" +
 		 "- Include: " + include1 + "\n" +
 		 "---\n" +
@@ -157,7 +198,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 		  "- Statement: INSERT INTO c VALUES (1), (2)\n");
 	writeFile(include2,
 		  "---\n" +
-		  "- Statement: CREATE TABLE c (cid int)\n");
+		  "- CreateTable: c (cid int)\n");
 	testYaml("---\n" +
 		 "- Include: " + include1 + "\n" +
 		 "---\n" +
@@ -183,12 +224,31 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 		     "- Include: " + include);
     }
 
+    @Test
+    public void testIncludeSelectEngine() throws Exception {
+	File include = File.createTempFile("include", null);
+	include.deleteOnExit();
+	writeFile(include, "- CreateTable: t (bigint_field bigint)\n");
+	testYaml("---\n" +
+		 "- Include: !select-engine { foo: bar, it: " + include +
+		 " }\n" +
+		 "---\n" +
+		 "- Statement: SELECT bigint_field FROM t\n" +
+		 "...");
+    }
+
     /* Test Properties */
 
     @Test
     public void testPropertiesNoValue() {
 	testYamlFail("---\n" +
 		     "- Properties:\n");
+    }
+
+    @Test
+    public void testPropertiesNullValue() {
+	testYamlFail("---\n" +
+		     "- Properties: null\n");
     }
 
     @Test
@@ -242,7 +302,145 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 		 "- Never seen!\n");
     }
 
+    /* Test CreateTable */
+
+    @Test
+    public void testCreateTableNoValue() {
+	testYamlFail("- CreateTable:");
+    }
+
+    @Test
+    public void testCreateTableNullValue() {
+	testYamlFail("- CreateTable: null");
+    }
+
+    @Test
+    public void testCreateTableSequenceValue() {
+	testYamlFail("- CreateTable: [a, b, c]");
+    }
+
+    @Test
+    public void testCreateTableUnexpectedAttribute() {
+	testYamlFail("- CreateTable: foo (int_field int)\n" +
+		     "- unexpected_attribute: quux");
+    }
+
+    @Test
+    public void testCreateTableSuccess() {
+	testYaml("- CreateTable: foo (int_field int)");
+    }
+
+    /* Test CreateTable error */
+
+    @Test
+    public void testCreateTableErrorNoValue() {
+	testYamlFail(
+	    "- CreateTable: a b c\n" +
+	    "- error:");
+    }
+
+    @Test
+    public void testCreateTableErrorNotSequence() {
+	testYamlFail(
+	    "- CreateTable: a b c\n" +
+	    "- error: fooey");
+    }
+
+    @Test
+    public void testCreateTableErrorEmptySequence() {
+	testYamlFail(
+	    "- CreateTable: a b c\n" +
+	    "- error: []");
+    }
+
+    @Test
+    public void testCreateTableErrorSequenceTooLong() {
+	testYamlFail(
+	    "---\n" +
+	    "- CreateTable: a b c\n" +
+	    "- error: [1, a, b]");
+    }
+
+    @Test
+    public void testCreateTableErrorCodeNotScalar() {
+	testYamlFail(
+	    "---\n" +
+	    "- CreateTable: a b c\n" +
+	    "- error: [[x, y], a, b]");
+    }
+
+    @Test
+    public void testCreateTableErrorNotError() {
+	testYamlFail(
+	    "---\n" +
+	    "- CreateTable: a (i int)\n" +
+	    "- error: [1]");
+    }
+
+    @Test
+    public void testCreateTableNotErrorError() {
+	testYamlFail("- CreateTable: a (int_field int");
+    }
+
+    @Test
+    public void testCreateTableErrorWrongError() {
+	testYamlFail(
+	    "---\n" +
+	    "- CreateTable: a (i int\n" +
+	    "- error: [37]");
+    }
+
+    @Test
+    public void testCreateTableErrorRightError() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: a (i int\n" +
+	    "- error: [42000]");
+    }
+
+    @Test
+    public void testCreateTableErrorWrongErrorMessage() {
+	testYamlFail(
+	    "---\n" +
+	    "- CreateTable: a (i int\n" +
+	    "- error: [42000, nope]");
+    }
+
+    @Test
+    public void testCreateTableErrorRightErrorMessage() {
+	testYaml(
+	    "---\n" +
+	    "- Statement: SELECT * FR\n" +
+	    "- error:\n" +
+	    "  - 42000\n" +
+	    "  - |\n" +
+	    "    ERROR: [] com.akiban.sql.parser.ParseException:" +
+	    " Encountered \" <IDENTIFIER> \"FR \"\" at line 1, column 10.\n" +
+	    "    Was expecting one of:\n" +
+	    "        \"from\" ...\n" +
+	    "        \",\" ...\n" +
+	    "        : SELECT * FR");
+    }
+
+    @Test
+    public void testCreateTableErrorSelectEngine() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: a (i int\n" +
+	    "- error: !select-engine { it: [42000], sys-aksql: [33] }");
+    }
+
     /* Test Statement */
+
+    @Test
+    public void testStatementNoValue() {
+	testYaml("- Statement:");
+    }
+
+    @Test
+    public void testStatementNullValue() {
+	testYaml("- Statement: null");
+    }
 
     @Test
     public void testStatementValueInteger() {
@@ -260,12 +458,46 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 		     "- unknown_attrib: x y z");
     }
 
+    @Test
+    public void testStatementCreateTable() {
+	testYamlFail("- Statement: create TABLE foo (int_field int)");
+    }
+
+    @Test
+    public void testStatementSelectEngineMatch() {
+	testYaml("- Statement: !select-engine { it: MORP }\n" +
+		 "- error: [42000]");
+    }
+
+    @Test
+    public void testStatementSelectEngineMatchAll() {
+	testYaml("- Statement: !select-engine { all: MORP }\n" +
+		 "- error: [42000]");
+    }
+
+    @Test
+    public void testStatementSelectEngineNoMatch() {
+	testYaml("- Statement: !select-engine { sys: MORP }");
+    }
+
     /* Test Statement params */
 
     @Test
     public void testStatementParamsNoValue() {
-	testYamlFail("- Statement: a b c\n" +
-		     "- params:");
+	testYaml("---\n" +
+		 "- CreateTable: t (bigint_field bigint)\n" +
+		 "---\n" +
+		 "- Statement: SELECT * FROM t\n" +
+		 "- params:");
+    }
+
+    @Test
+    public void testStatementParamsNullValue() {
+	testYaml("---\n" +
+		 "- CreateTable: t (bigint_field bigint)\n" +
+		 "---\n" +
+		 "- Statement: SELECT * FROM t\n" +
+		 "- params: null");
     }
 
     @Test
@@ -307,10 +539,42 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     }
 
     @Test
+    public void testStatementParamsTypesNoParamsNoValue() {
+	testYaml("---\n" +
+		 "- CreateTable: t (bigint_field bigint)\n" +
+		 "---\n" +
+		 "- Statement: SELECT * FROM t\n" +
+		 "- param_types:");
+    }
+
+    @Test
+    public void testStatementParamsTypesNullParamsNullValue() {
+	testYaml("---\n" +
+		 "- CreateTable: t (bigint_field bigint)\n" +
+		 "---\n" +
+		 "- Statement: SELECT * FROM t\n" +
+		 "- params: null\n" +
+		 "- param_types: null");
+    }
+ 
+    @Test
     public void testStatementParamsTypesNoValue() {
-	testYamlFail("- Statement: a b c\n" +
-		     "- params: [[a, b]]\n" +
-		     "- param_types:");
+	testYaml("---\n" +
+		 "- CreateTable: t (bigint_field bigint)\n" +
+		 "---\n" +
+		 "- Statement: SELECT * FROM t WHERE bigint_field = ?\n" +
+		 "- params: [[1]]\n" +
+		 "- param_types:");
+    }
+
+    @Test
+    public void testStatementParamsTypesNullValue() {
+	testYaml("---\n" +
+		 "- CreateTable: t (bigint_field bigint)\n" +
+		 "---\n" +
+		 "- Statement: SELECT * FROM t WHERE bigint_field = ?\n" +
+		 "- params: [[1]]\n" +
+		 "- param_types: null");
     }
 
     @Test
@@ -344,7 +608,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementParamTypesSuccess() {
 	testYaml(
 	    "---\n" +
-	    "- Statement: CREATE TABLE c (cid int)\n" +
+	    "- CreateTable: c (cid int)\n" +
 	    "---\n" +
 	    "- Statement: INSERT INTO c VALUES (1), (2)\n" +
 	    "---\n" +
@@ -354,12 +618,38 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "- output: [[1]]");
     }
 
+    @Test
+    public void testStatementParamTypesSelectEngine() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: c (cid int)\n" +
+	    "---\n" +
+	    "- Statement: INSERT INTO c VALUES (1), (2)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM c where cid = ?\n" +
+	    "- params: [[1]]\n" +
+	    "- param_types: !select-engine { it: [DECIMAL], foo: bar }\n" +
+	    "- output: [[1]]");
+    }
+
     /* Test Statement output */
 
     @Test
     public void testStatementOutputNoValue() {
-	testYamlFail("- Statement: a b c\n" +
-		     "- output:");
+	testYaml("---\n" +
+		 "- CreateTable: t (id int)\n" +
+		 "---\n" +
+		 "- Statement: SELECT * FROM t\n" +
+		 "- output:");
+    }
+
+    @Test
+    public void testStatementOutputNullValue() {
+	testYaml("---\n" +
+		 "- CreateTable: t (id int)\n" +
+		 "---\n" +
+		 "- Statement: SELECT * FROM t\n" +
+		 "- output: null");
     }
 
     @Test
@@ -402,8 +692,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementOutputWrongResults() {
 	testYamlFail(
 	    "---\n" +
-	    "- Statement:\n" +
-	    "    CREATE TABLE customers (cid int, name varchar(32));\n" +
+	    "- CreateTable: customers (cid int, name varchar(32));\n" +
 	    "---\n" +
 	    "- Statement:\n" +
 	    "    INSERT INTO customers VALUES (1, 'Smith'), (2, 'Jones');\n" +
@@ -418,8 +707,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementOutputMissingRow() {
 	testYamlFail(
 	    "---\n" +
-	    "- Statement:\n" +
-	    "    CREATE TABLE customers (cid int, name varchar(32));\n" +
+	    "- CreateTable: customers (cid int, name varchar(32));\n" +
 	    "---\n" +
 	    "- Statement:\n" +
 	    "    INSERT INTO customers VALUES (1, 'Smith'), (2, 'Jones');\n" +
@@ -433,8 +721,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementOutputExtraRow() {
 	testYamlFail(
 	    "---\n" +
-	    "- Statement:\n" +
-	    "    CREATE TABLE customers (cid int, name varchar(32));\n" +
+	    "- CreateTable: customers (cid int, name varchar(32));\n" +
 	    "---\n" +
 	    "- Statement:\n" +
 	    "    INSERT INTO customers VALUES (1, 'Smith'), (2, 'Jones');\n" +
@@ -450,8 +737,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementOutputRightResults() {
 	testYaml(
 	    "---\n" +
-	    "- Statement:\n" +
-	    "    CREATE TABLE customers (cid int, name varchar(32));\n" +
+	    "- CreateTable: customers (cid int, name varchar(32));\n" +
 	    "---\n" +
 	    "- Statement:\n" +
 	    "    INSERT INTO customers VALUES (1, 'Smith'), (2, 'Jones');\n" +
@@ -466,8 +752,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementOutputDontCare() {
 	testYaml(
 	    "---\n" +
-	    "- Statement:\n" +
-	    "    CREATE TABLE customers (cid int, name varchar(32))\n" +
+	    "- CreateTable: customers (cid int, name varchar(32))\n" +
 	    "---\n" +
 	    "- Statement:\n" +
 	    "    INSERT INTO customers VALUES (1, 'Smith'), (2, 'Jones');\n" +
@@ -479,10 +764,68 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     }
 
     @Test
+    public void testStatementOutputDontCareMissingValue() {
+	testYamlFail(
+	    "---\n" +
+	    "- Statement: SELECT * FROM customers\n" +
+	    "- output:\n" +
+	    "  - [!dc]\n");
+    }
+
+    @Test
+    public void testStatementOutputRegexp() {
+    	testYaml(
+    	    "---\n" +
+    	    "- CreateTable: t (name varchar(32))\n" +
+    	    "---\n" +
+    	    "- Statement: INSERT INTO t VALUES\n" +
+	    "    ('hubba-hubba'), ('abc123')\n" +
+    	    "---\n" +
+    	    "- Statement: SELECT * FROM t\n" +
+    	    "- output:\n" +
+    	    "  - [!re '([^-]*)-{1}']\n" +
+    	    "  - [!re '[a-z]+[0-9]+']\n");
+    }
+
+    @Test
+    public void testStatementOutputRegexpMissingValue() {
+    	testYamlFail(
+    	    "---\n" +
+    	    "- Statement: SELECT * FROM t\n" +
+    	    "- output:\n" +
+    	    "  - [!re]\n");
+    }
+
+    @Test
+    public void testStatementOutputRegexpNonScalarValue() {
+    	testYamlFail(
+    	    "---\n" +
+    	    "- Statement: SELECT * FROM t\n" +
+    	    "- output:\n" +
+    	    "  - [!re [a, b, c]]\n");
+    }
+
+    @Test
+    public void testStatementOutputRegexpSelectEngine() {
+    	testYaml(
+    	    "---\n" +
+    	    "- CreateTable: t (name varchar(32))\n" +
+    	    "---\n" +
+    	    "- Statement: INSERT INTO t VALUES\n" +
+	    "    ('abc'), ('123')\n" +
+    	    "---\n" +
+    	    "- Statement: SELECT * FROM t\n" +
+    	    "- output:\n" +
+	    "    !select-engine\n" +
+	    "      it: [[!re '[a-z]+'], [!re '[0-9]+']]\n" +
+	    "      foo: bar\n");
+    }
+
+    @Test
     public void testStatementOutputNullAndEmpty() {
 	testYaml(
 	    "---\n" +
-	    "- Statement: CREATE TABLE customers (cid int, name varchar(32))\n" +
+	    "- CreateTable: customers (cid int, name varchar(32))\n" +
 	    "---\n" +
 	    "- Statement: INSERT INTO customers (name)\n" +
 	    "    VALUES ('Smith'), (''), ('null')\n" +
@@ -502,8 +845,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementOutputParamsRightResults() {
 	testYaml(
 	    "---\n" +
-	    "- Statement:\n" +
-	    "    CREATE TABLE customers (cid int, name varchar(32))\n" +
+	    "- CreateTable: customers (cid int, name varchar(32))\n" +
 	    "---\n" +
 	    "- Statement:\n" +
 	    "    INSERT INTO customers VALUES (1, 'Smith'), (2, 'Jones');\n" +
@@ -520,8 +862,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementOutputParamsExtraResultsOneCall() {
 	testYamlFail(
 	    "---\n" +
-	    "- Statement:\n" +
-	    "    CREATE TABLE parts (part varchar(32), product varchar(32))\n" +
+	    "- CreateTable: parts (part varchar(32), product varchar(32))\n" +
 	    "---\n" +
 	    "- Statement:\n" +
 	    "    INSERT INTO parts VALUES\n" +
@@ -540,8 +881,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementOutputParamsExtraResultsExtraCall() {
 	testYamlFail(
 	    "---\n" +
-	    "- Statement:\n" +
-	    "    CREATE TABLE parts (part varchar(32), product varchar(32))\n" +
+	    "- CreateTable: parts (part varchar(32), product varchar(32))\n" +
 	    "---\n" +
 	    "- Statement:\n" +
 	    "    INSERT INTO parts VALUES\n" +
@@ -561,8 +901,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementOutputParamsExtraOutputOneCall() {
 	testYamlFail(
 	    "---\n" +
-	    "- Statement:\n" +
-	    "    CREATE TABLE parts (part varchar(32), product varchar(32))\n" +
+	    "- CreateTable: parts (part varchar(32), product varchar(32))\n" +
 	    "---\n" +
 	    "- Statement:\n" +
 	    "    INSERT INTO parts VALUES\n" +
@@ -583,8 +922,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementOutputParamsWrongOutput() {
 	testYamlFail(
 	    "---\n" +
-	    "- Statement:\n" +
-	    "    CREATE TABLE parts (part varchar(32), product varchar(32))\n" +
+	    "- CreateTable: parts (part varchar(32), product varchar(32))\n" +
 	    "---\n" +
 	    "- Statement:\n" +
 	    "    INSERT INTO parts VALUES\n" +
@@ -604,10 +942,22 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 
     @Test
     public void testStatementRowCountNoValue() {
-	testYamlFail(
+	testYaml(
 	    "---\n" +
-	    "- Statement: a b c\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
 	    "- row_count:");
+    }
+
+    @Test
+    public void testStatementRowCountNullValue() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
+	    "- row_count: null");
     }
 
     @Test
@@ -630,8 +980,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementRowCountWrongValue() {
 	testYamlFail(
 	    "---\n" +
-	    "- Statement:\n" +
-	    "    CREATE TABLE customers (cid int, name varchar(32));\n" +
+	    "- CreateTable: customers (cid int, name varchar(32));\n" +
 	    "---\n" +
 	    "- Statement:\n" +
 	    "    INSERT INTO customers VALUES (1, 'Smith'), (2, 'Jones');\n" +
@@ -651,22 +1000,44 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementRowCountCorrect() {
 	testYaml(
 	    "---\n" +
-	    "- Statement:\n" +
-	    "    CREATE TABLE customers (cid int, name varchar(32));\n" +
+	    "- CreateTable: customers (cid int, name varchar(32));\n" +
 	    "---\n" +
 	    "- Statement:\n" +
 	    "    INSERT INTO customers VALUES (1, 'Smith'), (2, 'Jones');\n" +
 	    "- row_count: 2\n");
     }
 
+    @Test
+    public void testStatementRowCountSelectEngine() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: customers (cid int, name varchar(32));\n" +
+	    "---\n" +
+	    "- Statement:\n" +
+	    "    INSERT INTO customers VALUES (1, 'Smith'), (2, 'Jones');\n" +
+	    "- row_count: !select-engine { foo: 7, all: 2}\n");
+    }
+
     /* Test Statement output_types */
 
     @Test
     public void testStatementOutputTypesNoValue() {
-	testYamlFail(
+	testYaml(
 	    "---\n" +
-	    "- Statement: a b c\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
 	    "- output_types:");
+    }
+
+    @Test
+    public void testStatementOutputTypesNullValue() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
+	    "- output_types: null");
     }
 
     @Test
@@ -706,7 +1077,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementOutputTypesWrongNumberOfTypes() {
 	testYamlFail(
 	    "---\n" +
-	    "- Statement: CREATE TABLE c (cid int, name varchar(32))\n" +
+	    "- CreateTable: c (cid int, name varchar(32))\n" +
 	    "---\n" +
 	    "- Statement: INSERT INTO c VALUES (1, 'Smith'), (2, 'Jones')\n" +
 	    "---\n" +
@@ -718,7 +1089,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementOutputTypesWrongType() {
 	testYamlFail(
 	    "---\n" +
-	    "- Statement: CREATE TABLE c (cid int, name varchar(32))\n" +
+	    "- CreateTable: c (cid int, name varchar(32))\n" +
 	    "---\n" +
 	    "- Statement: INSERT INTO c VALUES (1, 'Smith'), (2, 'Jones')\n" +
 	    "---\n" +
@@ -730,7 +1101,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementOutputTypesCorrectTypes() {
 	testYaml(
 	    "---\n" +
-	    "- Statement: CREATE TABLE c (cid int, name varchar(32))\n" +
+	    "- CreateTable: c (cid int, name varchar(32))\n" +
 	    "---\n" +
 	    "- Statement: INSERT INTO c VALUES (1, 'Smith'), (2, 'Jones')\n" +
 	    "---\n" +
@@ -738,14 +1109,38 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "- output_types: [INTEGER, VARCHAR]");
     }
 
+    @Test
+    public void testStatementOutputTypesSelectEngine() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: c (cid int, name varchar(32))\n" +
+	    "---\n" +
+	    "- Statement: INSERT INTO c VALUES (1, 'Smith'), (2, 'Jones')\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM c\n" +
+	    "- output_types: [INTEGER, !select-engine { it: VARCHAR }]");
+    }
+
     /* Test Statement explain */
 
     @Test
     public void testStatementExplainNoValue() {
-	testYamlFail(
+	testYaml(
 	    "---\n" +
-	    "- Statement: a b c\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
 	    "- explain:");
+    }
+
+    @Test
+    public void testStatementExplainNullValue() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
+	    "- explain: null");
     }
 
     @Test
@@ -760,7 +1155,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementExplainWrong() {
 	testYamlFail(
 	    "---\n" +
-	    "- Statement: CREATE TABLE c (cid int, name varchar(32))\n" +
+	    "- CreateTable: c (cid int, name varchar(32))\n" +
 	    "---\n" +
 	    "- Statement: INSERT INTO c VALUES (1, 'Smith'), (2, 'Jones')\n" +
 	    "---\n" +
@@ -772,7 +1167,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementExplainRight() {
 	testYaml(
 	    "---\n" +
-	    "- Statement: CREATE TABLE c (cid int, name varchar(32))\n" +
+	    "- CreateTable: c (cid int, name varchar(32))\n" +
 	    "---\n" +
 	    "- Statement: INSERT INTO c VALUES (1, 'Smith'), (2, 'Jones')\n" +
 	    "---\n" +
@@ -783,14 +1178,38 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "        GroupScan_Default(full scan on _akiban_c)\n");
     }
 
+    @Test
+    public void testStatementExplainSelectEngine() {
+	testYamlFail(
+	    "---\n" +
+	    "- CreateTable: c (cid int, name varchar(32))\n" +
+	    "---\n" +
+	    "- Statement: INSERT INTO c VALUES (1, 'Smith'), (2, 'Jones')\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM c\n" +
+	    "- explain: !select-engine { all: stuff }");
+    }
+
     /* Test Statement error */
 
     @Test
     public void testStatementErrorNoValue() {
-	testYamlFail(
+	testYaml(
 	    "---\n" +
-	    "- Statement: a b c\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
 	    "- error:");
+    }
+
+    @Test
+    public void testStatementErrorNullValue() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
+	    "- error: null");
     }
 
     @Test
@@ -829,7 +1248,9 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementErrorNotError() {
 	testYamlFail(
 	    "---\n" +
-	    "- Statement: CREATE TABLE a (i int)\n" +
+	    "- CreateTable a (i int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM a\n" +
 	    "- error: [1]");
     }
 
@@ -837,7 +1258,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementErrorWrongError() {
 	testYamlFail(
 	    "---\n" +
-	    "- Statement: CREATE TABLE a (i int\n" +
+	    "- Statement: SELECT * FR\n" +
 	    "- error: [37]");
     }
 
@@ -845,7 +1266,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementErrorRightError() {
 	testYaml(
 	    "---\n" +
-	    "- Statement: CREATE TABLE a (i int\n" +
+	    "- Statement: SELECT * FR\n" +
 	    "- error: [42000]");
     }
 
@@ -853,7 +1274,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementErrorWrongErrorMessage() {
 	testYamlFail(
 	    "---\n" +
-	    "- Statement: CREATE TABLE a (i int\n" +
+	    "- Statement: SELECT * FR\n" +
 	    "- error: [42000, nope]");
     }
 
@@ -861,22 +1282,72 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testStatementErrorRightErrorMessage() {
 	testYaml(
 	    "---\n" +
-	    "- Statement: CREATE TABLE a (i int\n" +
+	    "- Statement: SELECT * FR\n" +
 	    "- error:\n" +
 	    "  - 42000\n" +
 	    "  - |\n" +
 	    "    ERROR: [] com.akiban.sql.parser.ParseException: " +
-	    "Encountered \"<EOF>\" at line 1, column 21.\n" +
+	    "Encountered \" <IDENTIFIER> \"FR \"\" at line 1, column 10.\n" +
 	    "    Was expecting one of:\n" +
-	    "        \")\" ...\n" +
+	    "        \"from\" ...\n" +
 	    "        \",\" ...\n" +
-	    "        : CREATE TABLE a (i int\n");
+	    "        : SELECT * FR");
+    }
+
+    @Test
+    public void testStatementErrorSelectEngineNoMatch() {
+	testYamlFail(
+	    "---\n" +
+	    "- Statement: SELECT * FR\n" +
+	    "- error: !select-engine { foo: [bar] }");
+    }
+
+    @Test
+    public void testStatementErrorSelectEngineNoMatchWithMessage() {
+	testYamlFail(
+	    "---\n" +
+	    "- Statement: SELECT * FR\n" +
+	    "- error: [!select-engine { foo: bar }, Hello]");
+    }
+
+    @Test
+    public void testStatementErrorSelectEngineMatch() {
+	testYaml(
+	    "---\n" +
+	    "- Statement: SELECT * FR\n" +
+	    "- error: [!select-engine { it: 42000, all: 42 }]");
     }
 
     /* Other methods */
 
     private void testYaml(String yaml) {
-	new YamlTester(null, new StringReader(yaml), connection).test();
+	if (DEBUG) {
+	    StackTraceElement[] callStack =
+		Thread.currentThread().getStackTrace();
+	    if (callStack.length > 2) {
+		String testMethod = callStack[2].getMethodName();
+		System.err.println(testMethod + ": ");
+	    }
+	}
+	try {
+	    new YamlTester(null, new StringReader(yaml), connection).test();
+	} catch (RuntimeException e) {
+	    if (DEBUG) {
+		System.err.println("Test failed:");
+		e.printStackTrace();
+	    }
+	    throw e;
+	} catch (Error e) {
+	    if (DEBUG) {
+		System.err.println("Test failed:");
+		e.printStackTrace();
+	    }
+	    throw e;
+	}
+	if (DEBUG) {
+	    System.err.println("Test passed");
+	}
+
     }
 
     private void testYamlFail(String yaml) {
@@ -889,7 +1360,10 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    }
 	}
 	try {
-	    testYaml(yaml);
+	    new YamlTester(null, new StringReader(yaml), connection).test();
+	    if (DEBUG) {
+		System.err.println("Test failed: Expected exception");
+	    }
 	} catch (Throwable t) {
 	    if (DEBUG) {
 		System.err.println(t);

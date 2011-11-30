@@ -72,7 +72,7 @@ public class KeyUpdateIT extends KeyUpdateBase
             dbUpdate(oldRow, newRow);
             fail();
         } catch (InvalidOperationException e) {
-            assertEquals(e.getCode(), ErrorCode.DUPLICATE_KEY);
+            assertEquals(ErrorCode.DUPLICATE_KEY, e.getCode());
         }
         checkDB();
         checkInitialState();
@@ -151,7 +151,7 @@ public class KeyUpdateIT extends KeyUpdateBase
             dbUpdate(oldRow, newRow);
             fail();
         } catch (InvalidOperationException e) {
-            assertEquals(e.getCode(), ErrorCode.DUPLICATE_KEY);
+            assertEquals(ErrorCode.DUPLICATE_KEY, e.getCode());
         }
         checkDB();
     }
@@ -182,7 +182,7 @@ public class KeyUpdateIT extends KeyUpdateBase
             dbUpdate(oldCustomerRow, newCustomerRow);
             fail();
         } catch (InvalidOperationException e) {
-            assertEquals(e.getCode(), ErrorCode.DUPLICATE_KEY);
+            assertEquals(ErrorCode.DUPLICATE_KEY, e.getCode());
         }
         checkDB();
     }

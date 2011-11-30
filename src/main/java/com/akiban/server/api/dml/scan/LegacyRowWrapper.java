@@ -57,6 +57,7 @@ public final class LegacyRowWrapper extends NewRow
             : String.format("rowData: %s, rowDef: %s", rowData, rowDef);
         this.rowData = rowData;
         this.niceRow = null;
+        this.extractor = null;
     }
 
     @Override
@@ -82,7 +83,7 @@ public final class LegacyRowWrapper extends NewRow
             object =
                 niceRow != null
                 ? niceRow.get(columnId)
-                : extractor.get(rowDef.getFieldDef(columnId), rowData);
+                : extractor().get(rowDef.getFieldDef(columnId));
         }
         return object;
     }
@@ -110,6 +111,7 @@ public final class LegacyRowWrapper extends NewRow
     {
         if (rowData == null && niceRow != null) {
             rowData = niceRow.toRowData();
+            extractor = null;
             niceRow = null;
         }
         return rowData;
@@ -167,6 +169,7 @@ public final class LegacyRowWrapper extends NewRow
         if (niceRow == null) {
             niceRow = (NiceRow) NiceRow.fromRowData(rowData, rowDef);
             rowData = null;
+            extractor = null;
         }
         return niceRow;
     }
@@ -178,5 +181,13 @@ public final class LegacyRowWrapper extends NewRow
         niceRow = null;
     }
 
-    private final RowDataExtractor extractor = new RowDataExtractor();
+    private RowDataExtractor extractor()
+    {
+        if (extractor == null) {
+            extractor = new RowDataExtractor(rowData, rowDef);
+        }
+        return extractor;
+    }
+
+    private RowDataExtractor extractor;
 }

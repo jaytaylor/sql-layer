@@ -1,0 +1,9 @@
+# SUM of bigint unsigned overflow produces wrong error
+---
+- CreateTable: t (bigint_unsigned_field bigint unsigned)
+---
+- Statement: INSERT INTO t (bigint_unsigned_field)
+    VALUES (9223372036854775807), (1)
+---
+- Statement: SELECT sum(bigint_unsigned_field) FROM t
+...

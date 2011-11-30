@@ -1,6 +1,6 @@
 # Creating a table with a bit field produces a parse exception error
 # code rather than an unsupported data type one.
 ---
-- Statement: CREATE TABLE t (bit_field bit)
+- CreateTable: t (bit_field bit)
 - error: [50008]
 ...

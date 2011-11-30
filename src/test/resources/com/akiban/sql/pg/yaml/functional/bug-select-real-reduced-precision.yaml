@@ -1,6 +1,6 @@
 # Reduced precision for SELECT on REAL
 ---
-- Statement: CREATE TABLE t (real_field real)
+- CreateTable: t (real_field real)
 ---
 - Statement: INSERT INTO t (real_field)
     VALUES (3.4028234663852886E38), (1.401298464324817E-45)

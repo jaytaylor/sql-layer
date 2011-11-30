@@ -128,8 +128,9 @@ public class IndexPicker extends BaseRule
             }
             if (input instanceof Select) {
                 ConditionList conds = ((Select)input).getConditions();
-                if (!conds.isEmpty())
+                if (!conds.isEmpty()) {
                     conditionSources.add(conds);
+                }
             }
             input = input.getOutput();
             if (input instanceof Sort) {

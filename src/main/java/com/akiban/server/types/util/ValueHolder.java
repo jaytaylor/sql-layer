@@ -16,6 +16,7 @@
 package com.akiban.server.types.util;
 
 import com.akiban.server.Quote;
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
@@ -34,6 +35,7 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Set;
 
+import com.akiban.util.WrappingByteSource;
 import org.joda.time.DateTime;
 
 public final class ValueHolder implements ValueSource, ValueTarget {
@@ -394,6 +396,9 @@ public final class ValueHolder implements ValueSource, ValueTarget {
         }
         else {
             type = newType;
+            if (newType == AkType.VARBINARY && value.getClass().equals(byte[].class)) {
+                value = new WrappingByteSource((byte[])value);
+            }
             objectVal = value;
             stateType = StateType.OBJECT_VAL;
         }
@@ -404,22 +409,22 @@ public final class ValueHolder implements ValueSource, ValueTarget {
         stateType = StateType.NULL_VAL;
     }
 
-    private <T> T rawObject(AkType expectedType, Class<T> asClass) {
+    public <T> T rawObject(AkType expectedType, Class<T> asClass) {
         checkForGet(expectedType);
         return asClass.cast(objectVal);
     }
 
-    private double rawDouble(AkType expectedType) {
+    public double rawDouble(AkType expectedType) {
         checkForGet(expectedType);
         return doubleVal;
     }
 
-    private float rawFloat(AkType expectedType) {
+    public float rawFloat(AkType expectedType) {
         checkForGet(expectedType);
         return floatVal;
     }
 
-    private long rawLong(AkType expectedType) {
+    public long rawLong(AkType expectedType) {
         checkForGet(expectedType);
         return longVal;
     }

@@ -25,6 +25,8 @@ import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.plan.UpdateStatement.UpdateColumn;
 
+import com.akiban.sql.optimizer.rule.range.ColumnRanges;
+import com.akiban.sql.optimizer.rule.range.RangeSegment;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ParameterNode;
 
@@ -274,11 +276,30 @@ public class OperatorAssembler extends BaseRule
                                                       index);
                 }
             }
-            stream.operator = API.indexScan_Default(indexRowType, 
-                                                    assembleIndexKeyRange(indexScan, null),
-                                                    assembleIndexOrdering(indexScan, indexRowType),
-                                                    selector);
-            stream.rowType = indexRowType;
+            if (indexScan.getConditionRange() == null) {
+                stream.operator = API.indexScan_Default(indexRowType,
+                                                        assembleIndexKeyRange(indexScan, null),
+                                                        assembleIndexOrdering(indexScan, indexRowType),
+                                                        selector);
+                stream.rowType = indexRowType;
+            }
+            else {
+                ColumnRanges range = indexScan.getConditionRange();
+                for (RangeSegment rangeSegment : range.getSegments()) {
+                    Operator scan = API.indexScan_Default(indexRowType,
+                                                          assembleIndexKeyRange(indexScan, null, rangeSegment),
+                                                          assembleIndexOrdering(indexScan, indexRowType),
+                                                          selector);
+                    if (stream.operator == null) {
+                        stream.operator = scan;
+                        stream.rowType = indexRowType;
+                    }
+                    else {
+                        stream.operator = API.unionAll(stream.operator, stream.rowType, scan, indexRowType);
+                        stream.rowType = stream.operator.rowType();
+                    }
+                }
+            }
             stream.fieldOffsets = new IndexFieldOffsets(indexScan, indexRowType);
             return stream;
         }
@@ -751,14 +772,40 @@ public class OperatorAssembler extends BaseRule
         }
 
         // Generate key range bounds.
-        protected IndexKeyRange assembleIndexKeyRange(IndexScan index,
-                                                      ColumnExpressionToIndex fieldOffsets) {
+        protected IndexKeyRange assembleIndexKeyRange(IndexScan index, ColumnExpressionToIndex fieldOffsets) {
+            return assembleIndexKeyRange(
+                    index,
+                    fieldOffsets,
+                    index.getLowComparand(),
+                    index.isLowInclusive(),
+                    index.getHighComparand(),
+                    index.isHighInclusive()
+            );
+        }
+
+        protected IndexKeyRange assembleIndexKeyRange(IndexScan index, ColumnExpressionToIndex fieldOffsets,
+                                                      RangeSegment segment)
+        {
+            return assembleIndexKeyRange(
+                    index,
+                    fieldOffsets,
+                    segment.getStart().getValueExpression(),
+                    segment.getStart().isInclusive(),
+                    segment.getEnd().getValueExpression(),
+                    segment.getEnd().isInclusive()
+            );
+        }
+
+        private IndexKeyRange assembleIndexKeyRange(IndexScan index,
+                                                    ColumnExpressionToIndex fieldOffsets,
+                                                    ExpressionNode lowComparand,
+                                                    boolean lowInclusive, ExpressionNode highComparand,
+                                                    boolean highInclusive)
+        {
             List<ExpressionNode> equalityComparands = index.getEqualityComparands();
-            ExpressionNode lowComparand = index.getLowComparand();
-            ExpressionNode highComparand = index.getHighComparand();
             IndexRowType indexRowType = getIndexRowType(index);
             if ((equalityComparands == null) &&
-                (lowComparand == null) && (highComparand == null))
+                    (lowComparand == null) && (highComparand == null))
                 return IndexKeyRange.unbounded(indexRowType);
 
             int nkeys = index.getIndex().getColumns().size();
@@ -792,11 +839,11 @@ public class OperatorAssembler extends BaseRule
                 }
                 if (lowComparand != null) {
                     lowKeys[lidx++] = assembleExpression(lowComparand, fieldOffsets);
-                    lowInc = index.isLowInclusive();
+                    lowInc = lowInclusive;
                 }
                 if (highComparand != null) {
                     highKeys[hidx++] = assembleExpression(highComparand, fieldOffsets);
-                    highInc = index.isHighInclusive();
+                    highInc = highInclusive;
                 }
                 int bounded = lidx > hidx ? lidx : hidx;
                 IndexBound lo = getIndexBound(index.getIndex(), lowKeys, bounded);

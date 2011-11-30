@@ -1,0 +1,9 @@
+PhysicalSelect[name:varchar(32)[VARCHAR]]
+  project([Field(0)])
+    com.akiban.qp.operator.UnionAll_Default@11cdc190
+      com.akiban.qp.operator.UnionAll_Default@5b5ede11
+        com.akiban.qp.operator.UnionAll_Default@31455cf4
+          IndexScan_Default(Index(user.customers.name[IndexColumn(name)]) (>UnboundExpressions[Literal(NULL)],<UnboundExpressions[Literal(Arthur)]))
+          IndexScan_Default(Index(user.customers.name[IndexColumn(name)]) (>UnboundExpressions[Literal(Arthur)],<UnboundExpressions[Literal(John)]))
+        IndexScan_Default(Index(user.customers.name[IndexColumn(name)]) (>UnboundExpressions[Literal(John)],<UnboundExpressions[Literal(Victor)]))
+      IndexScan_Default(Index(user.customers.name[IndexColumn(name)]) (>UnboundExpressions[Literal(Victor)],<UnboundExpressions[Literal(NULL)]))

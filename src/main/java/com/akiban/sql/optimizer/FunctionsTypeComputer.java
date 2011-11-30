@@ -29,6 +29,7 @@ import com.akiban.server.service.functions.FunctionsRegistry;
 
 import com.akiban.server.types.AkType;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoSuchFunctionException;
 
 import java.util.ArrayList;
@@ -141,8 +142,13 @@ public class FunctionsTypeComputer extends AISTypeComputer
         List<AkType> origTypes = new ArrayList<AkType>(nargs);
         for (int i = 0; i < nargs; i++) {
             JavaValueNode arg = args[i];
-            DataTypeDescriptor sqlType = arg.getType();
-            ExpressionType argType = toExpressionType(sqlType);
+            ExpressionType argType;
+            if (arg instanceof SQLToJavaValueNode)
+                argType = valueExpressionType(((SQLToJavaValueNode)arg).getSQLValueNode());
+            else
+                argType = toExpressionType(arg.getType());
+            if (argType == null)
+                return null;
             argTypes.add(argType);
             origTypes.add(argType.getType());
         }
@@ -160,11 +166,16 @@ public class FunctionsTypeComputer extends AISTypeComputer
             if (arg instanceof SQLToJavaValueNode) {
                 SQLToJavaValueNode jarg = (SQLToJavaValueNode)arg;
                 ValueNode sqlArg = jarg.getSQLValueNode();
-                ValueNode cast = (ValueNode)sqlArg.getNodeFactory()
-                    .getNode(NodeTypes.CAST_NODE, 
-                             sqlArg, fromExpressionType(castType),
-                             sqlArg.getParserContext());
-                jarg.setSQLValueNode(cast);
+                DataTypeDescriptor sqlType = fromExpressionType(castType);
+                if (sqlArg instanceof ParameterNode) {
+                    sqlArg.setType(sqlType);
+                }
+                else {
+                    ValueNode cast = (ValueNode)sqlArg.getNodeFactory()
+                        .getNode(NodeTypes.CAST_NODE, 
+                                 sqlArg, sqlType, sqlArg.getParserContext());
+                    jarg.setSQLValueNode(cast);
+                }
             }
             argTypes.set(i, castType);
         }
@@ -183,11 +194,10 @@ public class FunctionsTypeComputer extends AISTypeComputer
         catch (NoSuchFunctionException ex) {
             return null;
         }
-        DataTypeDescriptor argType = node.getOperand().getType();
+        ExpressionType argType = valueExpressionType(node.getOperand());
         if (argType == null)
             return null;
-        List<ExpressionType> argTypes = 
-            Collections.singletonList(toExpressionType(argType));
+        List<ExpressionType> argTypes = Collections.singletonList(argType);
         ExpressionType resultType = composer.composeType(argTypes);
         if (resultType == null)
             return null;
@@ -237,9 +247,26 @@ public class FunctionsTypeComputer extends AISTypeComputer
         }
     }
 
+    protected ExpressionType valueExpressionType(ValueNode value) {
+        DataTypeDescriptor type = value.getType();
+        if (type == null) {
+            if (value instanceof UntypedNullConstantNode) {
+                // Give composer a change to establish type of null.
+                return ExpressionTypes.NULL;
+            }
+            if (value instanceof ParameterNode) {
+                // Likewise parameters.
+                return ExpressionTypes.UNSUPPORTED;
+            }
+        }
+        return toExpressionType(type);
+    }
+
     /* Yet another translator between type regimes. */
 
     protected ExpressionType toExpressionType(DataTypeDescriptor sqlType) {
+        if (sqlType == null)
+            return null;
         TypeId typeId = sqlType.getTypeId();
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.BOOLEAN_TYPE_ID:
@@ -290,7 +317,6 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case BOOL:
             return new DataTypeDescriptor(TypeId.BOOLEAN_ID, true);
         case INT:
-        case YEAR:
             return new DataTypeDescriptor(TypeId.INTEGER_ID, true);
         case LONG:
             return new DataTypeDescriptor(TypeId.BIGINT_ID, true);
@@ -310,7 +336,6 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return new DataTypeDescriptor(TypeId.DATE_ID, true);
         case TIME:
             return new DataTypeDescriptor(TypeId.TIME_ID, true);
-        case DATETIME:
         case TIMESTAMP:
             return new DataTypeDescriptor(TypeId.TIMESTAMP_ID, true);
         case VARCHAR:
@@ -327,8 +352,21 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return new DataTypeDescriptor(TypeId.LONGVARCHAR_ID, true);
         case VARBINARY:
             return new DataTypeDescriptor(TypeId.LONGVARBIT_ID, true);
-        default:
+        case NULL:
             return null;
+        case DATETIME:
+        case YEAR:
+        default:
+            try {
+                return new DataTypeDescriptor(TypeId.getUserDefinedTypeId(null,
+                                                                          resultType.getType().name(),
+                                                                          null),
+                                              true);
+            }
+            catch (StandardException ex) {
+                throw new AkibanInternalException("Cannot make type for " + resultType,
+                                                  ex);
+            }
         }
     }
 
@@ -366,11 +404,17 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case TEXT:
             return ExpressionTypes.TEXT;
         case VARCHAR:
-            return ExpressionTypes.varchar(sqlType.getMaximumWidth());
+            if (sqlType != null)
+                return ExpressionTypes.varchar(sqlType.getMaximumWidth());
+            else
+                return ExpressionTypes.varchar(TypeId.VARCHAR_ID.getMaximumMaximumWidth());
         case VARBINARY:
-            return ExpressionTypes.varbinary(sqlType.getMaximumWidth());
+            if (sqlType != null)
+                return ExpressionTypes.varbinary(sqlType.getMaximumWidth());
+            else
+                return ExpressionTypes.varbinary(TypeId.VARBIT_ID.getMaximumMaximumWidth());
         case DECIMAL:
-            {
+            if (sqlType != null) {
                 TypeId typeId = sqlType.getTypeId();
                 if (typeId.isNumericTypeId())
                     return ExpressionTypes.decimal(sqlType.getPrecision(),
@@ -379,6 +423,9 @@ public class FunctionsTypeComputer extends AISTypeComputer
                     return ExpressionTypes.decimal(typeId.getMaximumPrecision(),
                                                    typeId.getMaximumScale());
             }
+            else
+                return ExpressionTypes.decimal(TypeId.DECIMAL_ID.getMaximumPrecision(),
+                                               TypeId.DECIMAL_ID.getMaximumScale());
         default:
             return ExpressionTypes.newType(toType, 0, 0);
         }

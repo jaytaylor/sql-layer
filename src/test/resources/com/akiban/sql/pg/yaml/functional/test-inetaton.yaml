@@ -1,6 +1,6 @@
 # Test the INET_ATON function
 ---
-- Statement: CREATE TABLE t (s varchar(32))
+- CreateTable: t (s varchar(32))
 ---
 - Statement: INSERT INTO t VALUES ('127.0.0.1'), ('1.2.3.4')
 ---

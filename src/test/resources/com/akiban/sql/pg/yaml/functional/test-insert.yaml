@@ -2,6 +2,11 @@
 ---
 - Include: all-types-schema.yaml
 
+# Test insert with wrong number of values
+---
+- Statement: INSERT INTO all_types (bigint_field) VALUES (1, 2)
+- error: [42512]
+
 ---
 - Statement: INSERT INTO all_types (bigint_field) VALUES (0), (1), (-1),
     (9223372036854775807), (-9223372036854775808)
@@ -16,7 +21,15 @@
 ---
 - Statement: DELETE from all_types
 
-# SELECT on BIGINT UNSIGNED doesn't work, so don't do any inserts
+---
+- Statement: INSERT INTO all_types (bigint_unsigned_field)
+    VALUES (0), (1), (9223372036854775807)
+---
+- Statement: SELECT (bigint_unsigned_field) from all_types
+- output: [[0], [1], [9223372036854775807]]
+- output_types: [BIGINT]
+---
+- Statement: DELETE from all_types
 
 ---
 - Statement: INSERT INTO all_types (blob_field) VALUES ('deadbeef')
@@ -27,15 +40,14 @@
 ---
 - Statement: DELETE from all_types
 
-# Not working
-# ---
-# - Statement: INSERT INTO all_types (boolean_field) VALUES (1)
-# ---
-# - Statement: SELECT (boolean_field) from all_types
-# - output: [[1]]
-# - output_type: [TINYINT]
-# ---
-# - Statement: DELETE from all_types
+---
+- Statement: INSERT INTO all_types (boolean_field) VALUES (1)
+---
+- Statement: SELECT (boolean_field) from all_types
+- output: [[1]]
+- output_types: [SMALLINT]
+---
+- Statement: DELETE from all_types
 
 ---
 - Statement: INSERT INTO all_types (char_field) VALUES ('d')
@@ -64,14 +76,13 @@
 ---
 - Statement: DELETE from all_types
 
-# Not working
-# ---
-# - Statement: INSERT INTO all_types (date_field) VALUES (2011-11-08)
-# ---
-# - Statement: SELECT (date_field) from all_types
-# - output: [['2011-11-08']]
-# ---
-# - Statement: DELETE from all_types
+---
+- Statement: INSERT INTO all_types (date_field) VALUES ('2011-11-08')
+---
+- Statement: SELECT (date_field) from all_types
+- output: [['2011-11-08']]
+---
+- Statement: DELETE from all_types
 
 ---
 - Statement: INSERT INTO all_types (decimal_field) VALUES (1.0), (123456.0),
@@ -176,7 +187,7 @@
     VALUES ('2000-01-02 04:00:00')
 ---
 - Statement: SELECT (timestamp_field) from all_types
-- output: [['2000-01-02 04:00:00.0']]
+- output: [[!re '2000-01-02 04:00:00([.]0)?']]
 - output_types: [TIMESTAMP]
 ---
 - Statement: DELETE from all_types

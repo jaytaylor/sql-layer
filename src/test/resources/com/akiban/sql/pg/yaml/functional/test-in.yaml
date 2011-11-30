@@ -39,6 +39,45 @@
 ---
 - Statement: DELETE FROM all_types
 
+# bigint unsigned
+---
+- Statement: INSERT INTO all_types (bigint_unsigned_field, bigint_field)
+    VALUES (null, null)
+---
+- Statement: INSERT INTO all_types (bigint_unsigned_field, bigint_field) VALUES
+    (0, 0), (1, 1), (9223372036854775807, 2)
+---
+- Statement: SELECT bigint_unsigned_field FROM all_types
+    WHERE bigint_unsigned_field IN ()
+- error: [42000]
+---
+- Statement: SELECT bigint_unsigned_field FROM all_types
+    WHERE bigint_unsigned_field IN (0)
+- output: [[0]]
+---
+- Statement: SELECT bigint_unsigned_field FROM all_types
+    WHERE bigint_unsigned_field IN (1, 9223372036854775807)
+- output: [[1], [9223372036854775807]]
+---
+- Statement: SELECT bigint_unsigned_field FROM all_types
+    WHERE bigint_unsigned_field IN (9223372036854775807)
+- output: [[9223372036854775807]]
+---
+- Statement: SELECT bigint_unsigned_field FROM all_types WHERE
+    bigint_unsigned_field IN (bigint_field)
+- output: [[0], [1]]
+---
+- Statement: SELECT bigint_unsigned_field FROM all_types
+    WHERE bigint_unsigned_field IN (?)
+- params: [[1], [9223372036854775807]]
+- output: [[1], [9223372036854775807]]
+---
+- Statement: SELECT bigint_unsigned_field IN (bigint_field) FROM all_types
+- output: [[null], [true], [true], [false]]
+
+---
+- Statement: DELETE FROM all_types
+
 # blob
 ---
 - Statement: INSERT INTO all_types (blob_field, clob_field) VALUES (null, null)
@@ -48,19 +87,17 @@
 ---
 - Statement: SELECT blob_field FROM all_types WHERE blob_field IN ('')
 - output: [['']]
-# Two blob arguments not working
-# ---
-# - Statement: SELECT blob_field FROM all_types WHERE blob_field
-#     IN ('dead', 'beef')
-# - output: [['dead'], ['beef']]
+---
+- Statement: SELECT blob_field FROM all_types WHERE blob_field
+    IN ('dead', 'beef')
+- output: [['dead'], ['beef']]
 ---
 - Statement: SELECT blob_field FROM all_types WHERE blob_field IN (clob_field)
 - output: [[''], ['dead']]
-# Parameters not working
-# ---
-# - Statement: SELECT blob_field FROM all_types WHERE blob_field IN (?)
-# - params: [['beef'], ['dead']]
-# - output: [['beef'], ['dead']]
+---
+- Statement: SELECT blob_field FROM all_types WHERE blob_field IN (?)
+- params: [['beef'], ['dead']]
+- output: [['beef'], ['dead']]
 ---
 - Statement: SELECT blob_field IN (clob_field) FROM all_types
 - output: [[null], [true], [true], [false]]
@@ -135,19 +172,17 @@
 ---
 - Statement: SELECT clob_field FROM all_types WHERE clob_field IN ('')
 - output: [['']]
-# Two clob arguments not working
-# ---
-# - Statement: SELECT clob_field FROM all_types WHERE clob_field
-#     IN ('dead', 'beef')
-# - output: [['dead'], ['beef']]
+---
+- Statement: SELECT clob_field FROM all_types WHERE clob_field
+    IN ('dead', 'beef')
+- output: [['dead'], ['beef']]
 ---
 - Statement: SELECT clob_field FROM all_types WHERE clob_field IN (blob_field)
 - output: [[''], ['dead']]
-# Parameters not working
-# ---
-# - Statement: SELECT clob_field FROM all_types WHERE clob_field IN (?)
-# - params: [['beef'], ['dead']]
-# - output: [['beef'], ['dead']]
+---
+- Statement: SELECT clob_field FROM all_types WHERE clob_field IN (?)
+- params: [['beef'], ['dead']]
+- output: [['beef'], ['dead']]
 ---
 - Statement: SELECT blob_field IN (clob_field) FROM all_types
 - output: [[null], [true], [true], [false]]
@@ -355,7 +390,7 @@
     VALUES (0.0, 0.0), (1.0, 1.0), (-1.0, -1.0)
 ---
 - Statement: INSERT INTO all_types (real_field, float_field)
-    VALUES (3.4028234663852886E38, 2.0), (1.401298464324817E-45, 3.0)
+    VALUES (3.4028235E38, 2.0), (1.40E-45, 3.0)
 ---
 - Statement: INSERT INTO all_types (real_field, float_field)
     VALUES ('Infinity', '4.0'), ('-Infinity', '5.0'), ('NaN', '6.0')
@@ -367,11 +402,12 @@
 - Statement: SELECT real_field FROM all_types
     WHERE real_field IN (1.0, -1.0)
 - output: [[1.0], [-1.0]]
-# Precision is getting (incorrectly) reduced
-# ---
-# - Statement: SELECT real_field FROM all_types
-#     WHERE real_field IN (3.4028234663852886E38, 1.401298464324817E-45)
-# - output: [[3.4028234663852886E38], [1.401298464324817E-45]]
+# Confusion over single vs. double precision makes this test hard to get
+# working
+#---
+#- Statement: SELECT real_field FROM all_types
+#    WHERE real_field IN (3.4028235E38, 1.40E-45)
+#- output: [[3.4028235E38], [1.40E-45]]
 ---
 - Statement: SELECT real_field FROM all_types
     WHERE real_field IN ('Infinity', 'NaN')
@@ -465,19 +501,22 @@
 ---
 - Statement: SELECT timestamp_field FROM all_types
     WHERE timestamp_field IN ('0001-01-01 00:00:01')
-- output: [['0001-01-01 00:00:01.0']]
+- output: [[!re '0001-01-01 00:00:01([.]0)?']]
 ---
 - Statement: SELECT timestamp_field FROM all_types
     WHERE timestamp_field IN ('1970-01-01 08:30:00', '2001-02-03 12:34:56')
-- output: [['1970-01-01 08:30:00.0'], ['2001-02-03 12:34:56.0']]
+- output: [[!re '1970-01-01 08:30:00([.]0)?'],
+    [!re '2001-02-03 12:34:56([.]0)?']]
 ---
 - Statement: SELECT timestamp_field FROM all_types
     WHERE timestamp_field IN (varchar_field)
-- output: [['0001-01-01 00:00:01.0'], ['1970-01-01 08:30:00.0']]
+- output: [[!re '0001-01-01 00:00:01([.]0)?'],
+    [!re '1970-01-01 08:30:00([.]0)?']]
 ---
 - Statement: SELECT timestamp_field FROM all_types WHERE timestamp_field IN (?)
 - params: [['2001-02-03 12:34:56'], ['0001-01-01 00:00:01']]
-- output: [['2001-02-03 12:34:56.0'], ['0001-01-01 00:00:01.0']]
+- output: [[!re '2001-02-03 12:34:56([.]0)?'],
+    [!re '0001-01-01 00:00:01([.]0)?']]
 ---
 - Statement: SELECT timestamp_field IN (varchar_field) FROM all_types
 - output: [[null], [true], [true], [false]]
