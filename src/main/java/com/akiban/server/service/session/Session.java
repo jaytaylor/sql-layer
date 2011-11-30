@@ -15,10 +15,7 @@
 
 package com.akiban.server.service.session;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
 public final class Session
