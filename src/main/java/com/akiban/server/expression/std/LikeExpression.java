@@ -145,7 +145,7 @@ public class LikeExpression extends AbstractCompositeExpression
                         if (r + 1 == rLimit) return true;
                         afterP = right.charAt(++r);
                     }
-                    while (afterP == '%' || afterP == '_' && !noWildcardU); // or %_ %%%% is no different than %, so skip multiple %s
+                    while (afterP == '%' );// %%%% is no different than %, so skip multiple %s
                     if (afterP == esca )
                         if (r +1 < rLimit && (right.charAt(r+1) == '%' || right.charAt(r+1) == '_'  || right.charAt(r+1) == esca))
                         {

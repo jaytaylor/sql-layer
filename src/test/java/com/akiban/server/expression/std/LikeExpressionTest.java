@@ -144,7 +144,12 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
 
         // "a124b123" LIKE "a%12_"
         param(pb, LikeExpression.ILIKE_COMPOSER, "a124b123", "a%12_", "\\", true, false, false);
+        
+        // "abx" LIKE "ab%_x
 
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abx", "ab%_x", "\\", false, false, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abx", "a%_x", "\\", true, false, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abcx", "a%_x", "\\", true, false, false);
         return pb.asList();
     }
 
