@@ -149,9 +149,11 @@ public class ApiTestBase {
     private int aisGeneration;
     private int akibanFKCount;
     private boolean testServicesStarted;
+    private final Set<RowUpdater> unfinishedRowUpdaters = new HashSet<RowUpdater>();
 
     @Before
     public final void startTestServices() throws Exception {
+        assertTrue("some row updaters were left over: " + unfinishedRowUpdaters, unfinishedRowUpdaters.isEmpty());
         try {
             ConverterTestUtils.setGlobalTimezone("UTC");
             testServicesStarted = false;
@@ -190,6 +192,8 @@ public class ApiTestBase {
 
     @After
     public final void stopTestServices() throws Exception {
+        Set<RowUpdater> localUnfinishedUpdaters = new HashSet<RowUpdater>(unfinishedRowUpdaters);
+        unfinishedRowUpdaters.clear();
         ServiceManagerImpl.setServiceManager(null);
         if (!testServicesStarted) {
             return;
@@ -228,6 +232,7 @@ public class ApiTestBase {
             fail(openCursorsMessage);
         }
         testServicesStarted = false;
+        assertTrue("not all updaters were used: " + localUnfinishedUpdaters, localUnfinishedUpdaters.isEmpty());
     }
     
     public final void crashTestServices() throws Exception {
@@ -410,6 +415,13 @@ public class ApiTestBase {
 
     protected final void writeRow(int tableId, Object... values) {
         dml().writeRow(session(), createNewRow(tableId, values));
+    }
+
+    protected final RowUpdater update(int tableId, Object... values) {
+        NewRow oldRow = createNewRow(tableId, values);
+        RowUpdater updater = new RowUpdaterImpl(oldRow);
+        unfinishedRowUpdaters.add(updater);
+        return updater;
     }
 
     protected final int writeRows(NewRow... rows) throws InvalidOperationException {
@@ -661,5 +673,30 @@ public class ApiTestBase {
             actualColumns.add(indexColumn.getColumn().getName());
         }
         assertEquals(indexName + " columns", actualColumns, expectedColumnsList);
+    }
+
+    public interface RowUpdater {
+        void to(Object... values);
+    }
+
+    private class RowUpdaterImpl implements RowUpdater {
+        @Override
+        public void to(Object... values) {
+            NewRow newRow = createNewRow(oldRow.getTableId(), values);
+            dml().updateRow(session(), oldRow, newRow, null);
+            boolean removed = unfinishedRowUpdaters.remove(this);
+            assertTrue("couldn't remove row updater " + toString(), removed);
+        }
+
+        @Override
+        public String toString() {
+            return "RowUpdater for " + oldRow;
+        }
+
+        private RowUpdaterImpl(NewRow oldRow) {
+            this.oldRow = oldRow;
+        }
+
+        private final NewRow oldRow;
     }
 }

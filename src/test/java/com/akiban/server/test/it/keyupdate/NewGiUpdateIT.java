@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -173,351 +174,859 @@ public final class NewGiUpdateIT extends ITBase {
                 .done();
     }
 
-    private GisChecker initO() {
-        throw u();
+    private GisChecker init_o() {
+        writeRow(o, 11L, 1L, "2001-01-01");
+
+        return checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
     }
 
     @Test
     public void o_add_c() {
-        GisChecker initState = initO();
-        u();
+        GisChecker initState = init_o();
+
+        writeRow(c, 1L, "Bob");
+        checker()
+                .gi("name_when_left")
+                .entry("Bob, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(c, 1L);
+        initState.check();
     }
 
     @Test
     public void o_add_o() {
-        GisChecker initState = initO();
-        u();
+        GisChecker initState = init_o();
+
+        writeRow(o, 21L, 1L, "2002-02-02");
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(o, 21L, 1L);
+        initState.check();
     }
 
     @Test
     public void o_add_I() {
-        GisChecker initState = initO();
-        u();
+        GisChecker initState = init_o();
+
+        writeRow(i, 111L, 11L, "1234");
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(i, 111L, 11L);
+        initState.check();
     }
 
     @Test
     public void o_add_h() {
-        GisChecker initState = initO();
-        u();
+        GisChecker initState = init_o();
+
+        writeRow(h, 1111L, 111L, "careful");
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(h, 1111L, 111L);
+        initState.check();
     }
 
     @Test
     public void o_add_a() {
-        GisChecker initState = initO();
-        u();
+        GisChecker initState = init_o();
+
+        writeRow(a, 11L, 1L, "Harrison Ave");
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .entry("Harrison Ave, null, 1, 11").backedBy(a)
+                .done();
+
+        deleteRow(a, 11L, 1L);
+        initState.check();
     }
 
-    @Test
-    public void o_del_o() {
-        GisChecker initState = initO();
-        u();
-    }
+    private GisChecker init_oo() {
+        writeRow(o, 11L, 1L, "2001-01-01");
+        writeRow(o, 21L, 1L, "2002-02-02");
 
-    private GisChecker initOO() {
-        throw u();
+        return checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
     }
 
     @Test
     public void oo_add_c() {
-        GisChecker initState = initOO();
-        u();
+        GisChecker initState = init_oo();
+
+        writeRow(c, 1L, "John");
+        checker()
+                .gi("name_when_left")
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .entry("John, 2002-02-02, 1, 21").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(c, 1L);
+        initState.check();
     }
 
     @Test
-    public void oo_add_I() {
-        GisChecker initState = initOO();
-        u();
+    public void oo_add_i() {
+        GisChecker initState = init_oo();
+
+        writeRow(i, 111L, 11L, "1234");
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(i, 111L, 11L);
+        initState.check();
     }
 
     @Test
     public void oo_add_h() {
-        GisChecker initState = initOO();
-        u();
+        GisChecker initState = init_oo();
+
+        writeRow(h, 1111L, 111L, "careful");
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(h, 1111L, 111L);
+        initState.check();
     }
 
     @Test
     public void oo_del_o() {
-        GisChecker initState = initOO();
-        u();
+        init_oo();
+
+        deleteRow(o, 11L, 1L);
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
     }
 
-    private GisChecker initI() {
-        throw u();
-    }
-
-    @Test
-    public void I_add_c() {
-        GisChecker initState = initI();
-        u();
-    }
-
-    @Test
-    public void I_add_o() {
-        GisChecker initState = initI();
-        u();
+    private GisChecker init_i() {
+        writeRow(i, 111L, 11L, "1234");
+        return checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
     }
 
     @Test
-    public void I_add_I() {
-        GisChecker initState = initI();
-        u();
+    public void i_add_c() {
+        GisChecker initState = init_i();
+
+        writeRow(c, 1L, "John");
+        checker()
+                .gi("name_when_left")
+                .entry("John, null, 1, null").backedBy(c)
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(c, 1L);
+        initState.check();
     }
 
     @Test
-    public void I_add_h() {
-        GisChecker initState = initI();
-        u();
+    public void i_add_o() {
+        GisChecker initState = init_i();
+
+        writeRow(o, 11L, 1L, "2001-01-01");
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(o, 11L, 1L);
+        initState.check();
     }
 
     @Test
-    public void I_add_a() {
-        GisChecker initState = initI();
-        u();
+    public void i_add_i() {
+        GisChecker initState = init_i();
+
+        writeRow(i, 211L, 11L, "5678");
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(i, 211L, 11L);
+        initState.check();
     }
 
     @Test
-    public void I_del_I() {
-        GisChecker initState = initI();
-        u();
+    public void i_add_h() {
+        GisChecker initState = init_i();
+
+        writeRow(h, 1111L, 111L, "don't drop");
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(h, 1111L, 111L);
+        initState.check();
     }
 
-    private GisChecker initII() {
-        throw u();
+    @Test
+    public void i_add_a() {
+        GisChecker initState = init_i();
+
+        writeRow(a, 11L, 1L, "Mass Ave");
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .entry("Mass Ave, null, 1, 11").backedBy(a)
+                .done();
+
+        deleteRow(a, 11L, 1L);
+        initState.check();
+    }
+
+    private GisChecker init_ii() {
+        writeRow(i, 111L, 11L, "1234");
+        writeRow(i, 211L, 11L, "5678");
+
+        return checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
     }
 
     @Test
     public void ii_add_c() {
-        GisChecker initState = initII();
-        u();
+        GisChecker initState = init_ii();
+
+        writeRow(c, 1L, "John");
+        checker()
+                .gi("name_when_left")
+                .entry("John, null, 1, null").backedBy(c)
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(c, 1L);
+        initState.check();
     }
 
     @Test
     public void ii_add_o() {
-        GisChecker initState = initII();
-        u();
+        GisChecker initState = init_ii();
+
+        writeRow(o, 11L, 1L, "2001-01-01");
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(o, 11L, 1L);
+        initState.check();
     }
 
     @Test
     public void ii_add_h() {
-        GisChecker initState = initII();
-        u();
+        init_ii();
+
+        writeRow(h, 1111L, 111L, "dont drop!");
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(h, 1111L, 111L);
     }
 
     @Test
-    public void ii_del_I() {
-        GisChecker initState = initII();
-        u();
+    public void ii_del_i() {
+        init_ii();
+
+        deleteRow(i, 111L, 11L);
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
     }
 
     private GisChecker initH() {
-        throw u();
+        writeRow(h, 1111L, 111L, "don't let it break");
+        return checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
     }
 
     @Test
     public void h_add_c() {
         GisChecker initState = initH();
-        u();
+
+        writeRow(c, 1L, "John");
+        checker()
+                .gi("name_when_left")
+                .entry("John, null, 1, null").backedBy(c)
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(c, 1L, "John");
+        initState.check();
     }
 
     @Test
     public void h_add_o() {
         GisChecker initState = initH();
-        u();
+
+        writeRow(o, 11L, 1L, "2001-01-01");
+        initState.check();
+
+        deleteRow(o, 11L, 1L);
+        initState.check();
     }
 
     @Test
-    public void h_add_I() {
+    public void h_add_i() {
         GisChecker initState = initH();
-        u();
+
+        writeRow(i, 111L, 11L, "1234");
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(i, 111L, 11L);
+        initState.check();
     }
 
     @Test
     public void h_add_h() {
         GisChecker initState = initH();
-        u();
+
+        writeRow(h, 2111L, 111L, "it's fine if it breaks");
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(h, 2111L, 111L);
+        initState.check();
     }
 
-    @Test
-    public void h_add_a() {
-        GisChecker initState = initH();
-        u();
-    }
-
-    private GisChecker initCO() {
-        throw u();
+    private GisChecker init_co() {
+        writeRow(o, 11L, 1L, "2001-01-01");
+        writeRow(c, 1L, "John");
+        return checker()
+                .gi("name_when_left")
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
     }
 
     @Test
     public void co_add_o() {
-        GisChecker initState = initCO();
-        u();
+        GisChecker initState = init_co();
+        
+        writeRow(o, 21L, 1L, "2002-02-02");
+        checker()
+                .gi("name_when_left")
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .entry("John, 2002-02-02, 1, 21").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(o, 21L, 1L);
+        initState.check();
     }
 
     @Test
-    public void co_add_I() {
-        GisChecker initState = initCO();
-        u();
+    public void co_add_i() {
+        GisChecker initState = init_co();
+
+        writeRow(i, 111L, 11L, "1234");
+        checker()
+                .gi("name_when_left")
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(i, 111L, 11L);
+        initState.check();
     }
 
     @Test
     public void co_add_h() {
-        GisChecker initState = initCO();
-        u();
+        GisChecker initState = init_co();
+
+        writeRow(h, 1111L, 111L, "don't drop");
+        checker()
+                .gi("name_when_left")
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(h, 1111L, 111L);
+        initState.check();
     }
 
     @Test
     public void co_del_c() {
-        GisChecker initState = initCO();
-        u();
+        init_co();
+
+        deleteRow(c, 1L);
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
     }
 
     @Test
     public void co_del_o() {
-        GisChecker initState = initCO();
-        u();
+        init_co();
+
+        deleteRow(o, 11L, 1L);
+        checker()
+                .gi("name_when_left")
+                .entry("John, null, 1, null").backedBy(c)
+                .gi("street_name_right")
+                .done();
     }
 
-    private GisChecker initCI() {
-        throw u();
+    private GisChecker init_ci() {
+        writeRow(c, 1L, "John");
+        writeRow(i, 111L, 11L, "1234");
+        return checker()
+                .gi("name_when_left")
+                .entry("John, null, 1, null").backedBy(c)
+                .gi("street_name_right")
+                .done();
     }
 
 
     @Test
     public void ci_add_o() {
-        GisChecker initState = initCI();
-        u();
+        GisChecker initState = init_ci();
+
+        writeRow(o, 11L, 1L, "2001-01-01");
+        checker()
+                .gi("name_when_left")
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(o, 11L, 1L);
+        initState.check();
     }
 
     @Test
     public void ci_add_h() {
-        GisChecker initState = initCI();
-        u();
+        GisChecker initState = init_ci();
+
+        writeRow(h, 1111L, 111L, "don't drop");
+        checker()
+                .gi("name_when_left")
+                .entry("John, null, 1, null").backedBy(c)
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(h, 1111L, 111L);
+        initState.check();
     }
 
-    private GisChecker initOI() {
-        throw u();
+    private GisChecker init_oi() {
+        writeRow(o, 11L, 1L, "2001-01-01");
+        writeRow(i, 111L, 11L, "1234");
+        return checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
     }
 
     @Test
     public void oi_add_c() {
-        GisChecker initState = initOI();
-        u();
+        GisChecker initState = init_oi();
+
+        writeRow(c, 1L, "John");
+        checker()
+                .gi("name_when_left")
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(c, 1L, "John");
+        initState.check();
     }
 
     @Test
     public void oi_add_h() {
-        GisChecker initState = initOI();
-        u();
+        GisChecker initState = init_oi();
+
+        writeRow(h, 1111L, 111L, "don't drop");
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(h, 1111L, 111L);
+        initState.check();
     }
 
     @Test
     public void oi_del_o() {
-        GisChecker initState = initOI();
-        u();
+        init_oi();
+
+        deleteRow(o, 11L, 1L);
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
     }
 
     @Test
-    public void oi_del_I() {
-        GisChecker initState = initOI();
-        u();
-    }
+    public void oi_del_i() {
+        init_oi();
 
-    private GisChecker initIH() {
-        throw u();
+        deleteRow(i, 111L, 11L);
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
     }
 
     @Test
     public void ih_add_o() {
-        GisChecker initState = initIH();
-        u();
+        writeRow(i, 111L, 11L, "1234");
+        writeRow(h, 1111L, 111L, "don't drop");
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
+
+        writeRow(o, 11L, 1L, "2001-01-01");
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
     }
 
-    private GisChecker initCOI() {
-        throw u();
+    private GisChecker init_coi() {
+        writeRow(c, 1L, "John");
+        writeRow(o, 11L, 1L, "2001-01-01");
+        writeRow(i, 111L, 11L, "1234");
+        return checker()
+                .gi("name_when_left")
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
     }
 
     @Test
     public void coi_add_h() {
-        GisChecker initState = initCOI();
-        u();
+        GisChecker initState = init_coi();
+
+        writeRow(h, 1111L, 111L, "don't drop");
+        checker()
+                .gi("name_when_left")
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(h, 1111L, 111L);
+        initState.check();
     }
 
     @Test
     public void coi_add_a() {
-        GisChecker initState = initCOI();
-        u();
-    }
+        GisChecker initState = init_coi();
 
-    private GisChecker initCOH() {
-        throw u();
+        writeRow(a, 11L, 1L, "Harrison");
+        checker()
+                .gi("name_when_left")
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .entry("Harrison, John, 1, 11").backedBy(c, a)
+                .done();
+
+        deleteRow(a, 11L, 1L);
+        initState.check();
     }
 
     @Test
-    public void coh_add_I() {
-        GisChecker initState = initCOH();
-        u();
+    public void coh_add_i() {
+        writeRow(c, 1L, "John");
+        writeRow(o, 11L, 1L, "2001-01-01");
+        writeRow(h, 1111L, 111L, "don't drop");
+        GisChecker initState = checker()
+                .gi("name_when_left")
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+
+        writeRow(i, 111L, 11L, "1234");
+        checker()
+                .gi("name_when_left")
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(i, 111L, 11L);
+        initState.check();
     }
 
-    private GisChecker initCOIH() {
-        throw u();
+    private GisChecker init_coih() {
+        writeRow(c, 1L, "John");
+        writeRow(o, 11L, 1L, "2001-01-01");
+        writeRow(i, 111L, 11L, "1234");
+        writeRow(h, 1111L, 111L, "don't drop");
+        return checker()
+                .gi("name_when_left")
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+    }
+
+    @Test
+    public void coih_add_c() {
+        GisChecker initState = init_coih();
+
+        writeRow(c, 2L, "Bob");
+        checker()
+                .gi("name_when_left")
+                .entry("Bob, null, 2, null").backedBy(c)
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(c, 2L);
+        initState.check();
+    }
+
+    @Test
+    public void coih_add_o() {
+        GisChecker initState = init_coih();
+
+        writeRow(o, 21L, 1L, "2002-02-02");
+        checker()
+                .gi("name_when_left")
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .entry("John, 2002-02-02, 1, 21").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(o, 21L, 1L);
+        initState.check();
+    }
+
+    @Test
+    public void coih_add_i() {
+        GisChecker initState = init_coih();
+
+        writeRow(i, 211L, 11L, "5678");
+        checker()
+                .gi("name_when_left")
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(i, 211L, 11L);
+        initState.check();
     }
 
     @Test
     public void coih_add_h() {
-        GisChecker initState = initCOIH();
-        u();
+        GisChecker initState = init_coih();
+
+        writeRow(h, 2111L, 111L, "fine if it drops");
+        checker()
+                .gi("name_when_left")
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(h, 2111L, 111L);
+        initState.check();
     }
 
     @Test
     public void coih_add_a() {
-        GisChecker initState = initCOIH();
-        u();
+        GisChecker initState = init_coih();
+
+        writeRow(a, 11L, 1L, "Mass Ave");
+        checker()
+                .gi("name_when_left")
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .entry("Mass Ave, John, 1, 11").backedBy(c, a)
+                .done();
+
+        deleteRow(a, 11L, 1L);
+        initState.check();
     }
 
     @Test
     public void coih_del_c() {
-        GisChecker initState = initCOIH();
-        u();
+        init_coih();
+
+        deleteRow(c, 1L);
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
     }
 
     @Test
     public void coih_del_o() {
-        GisChecker initState = initCOIH();
-        u();
+        init_coih();
+
+        deleteRow(o, 11L, 1L);
+        checker()
+                .gi("name_when_left")
+                .entry("John, null, 1, null").backedBy(c)
+                .gi("street_name_right")
+                .done();
     }
 
     @Test
-    public void coih_del_I() {
-        GisChecker initState = initCOIH();
-        u();
+    public void coih_del_i() {
+        init_coih();
+
+        deleteRow(i, 111L, 11L);
+        checker()
+                .gi("name_when_left")
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
     }
 
     @Test
     public void coih_del_h() {
-        GisChecker initState = initCOIH();
-        u();
+        init_coih();
+
+        deleteRow(h, 1111L, 111L);
+        checker()
+                .gi("name_when_left")
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+    }
+
+    private void init_coih_COIH(int... which) {
+        init_coih();
+        Set<Integer> whichSet = new HashSet<Integer>();
+        for (int whichInt : which)
+            whichSet.add(whichInt);
+        assertFalse("no COIH tables provided", whichSet.isEmpty());
+        for (int whichInt : whichSet) {
+            if (whichInt == c)
+                writeRow(c, 2L, "Bob");
+            else if (whichInt == o)
+                writeRow(o, 12L, 2L, "2002-02-02");
+            else if (whichInt == i)
+                writeRow(i, 112L, 12L, "5678");
+            else if (whichInt == h)
+                writeRow(h, 1112L, 112L, "be careful");
+            else
+                throw new RuntimeException("unknown table id: " + whichInt);
+        }
     }
 
     @Test
     public void coihOIH_move_c() {
-        u();
+        init_coih_COIH(o, i, h);
+        GisChecker initState = checker()
+                .gi("name_when_left")
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+
+        update(c, 1L, "John").to(2L, "Johnny");
+        checker()
+                .gi("name_when_left")
+                .entry("Johnny, 2002-02-02, 2, 12").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+
+        update(c, 2L, "Johnny").to(1L, "John");
+        initState.check();
     }
 
     @Test
     public void coihCIH_move_o() {
-        u();
+        init_coih_COIH(c, i, h);
+        GisChecker initState = checker()
+                .gi("name_when_left")
+                .entry("Bob, null, 2, null").backedBy(c)
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+
+        update(o, 11L, 1L, "2001-01-1").to(12L, 2L, "1999-12-31");
+        checker()
+                .gi("name_when_left")
+                .entry("Bob, 1999-12-31, 2, 12").backedBy(c, o)
+                .entry("John, null, 1, null").backedBy(c)
+                .gi("street_name_right")
+                .done();
+
+        update(o, 12L, 2L, "1999-12-31").to(11L, 1L, "2001-01-01");
+        initState.check();
     }
 
     @Test
     public void coihCOH_move_I() {
-        u();
+        init_coih_COIH(c, o, h);
+        GisChecker initState = checker()
+                .gi("name_when_left")
+                .entry("Bob, 2002-02-02, 2, 12").backedBy(c, o)
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+
+        update(i, 111L, 11L, "1234").to(112L, 12L, "3456");
+        checker()
+                .gi("name_when_left")
+                .entry("Bob, 2002-02-02, 2, 12").backedBy(c, o)
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+
+        update(i, 112L, 12L, "3456").to(111L, 11L, "1234");
+        initState.check();
     }
 
     @Test
     public void coihCOI_move_h() {
-        u();
-    }
+        init_coih_COIH(c, o, i);
+        GisChecker initState = checker()
+                .gi("name_when_left")
+                .entry("Bob, 2002-02-02, 2, 12").backedBy(c, o)
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
 
+        update(h, 1111L, 111L, "don't drop").to(1112L, 112L, "handle with care");
+        checker()
+                .gi("name_when_left")
+                .entry("Bob, 2002-02-02, 2, 12").backedBy(c, o)
+                .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+        
+        update(h, 1112L, 112L, "handle with care").to(1111L, 111L, "don't drop");
+        initState.check();
+    }
 
     @Before
     public final void createTables() { // TODO not really a todo, but serves as a nice bookmark :)
