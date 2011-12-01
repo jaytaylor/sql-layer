@@ -186,7 +186,8 @@ public class SelectPreponer extends BaseRule
         }
 
         // Return where this condition can move.
-        // TODO: Can move to after subset of joins once enough tables are joined.
+        // TODO: Can move to after subset of joins once enough tables are joined
+        // or if all condition tables come in at once via BranchLookup.
         protected PlanNode canMove(ConditionExpression condition) {
             TableSource table = getSingleTableConditionTable(condition);
             if (table == null)
@@ -245,8 +246,10 @@ public class SelectPreponer extends BaseRule
         }
         else if (condition instanceof LogicalFunctionCondition) {
             TableSource single = null;
-            for (ExpressionNode operand : ((LogicalFunctionCondition)condition).getOperands()) {
-                TableSource osingle = getSingleTableConditionTable((ConditionExpression)operand);
+            for (ExpressionNode operand : ((LogicalFunctionCondition)
+                                           condition).getOperands()) {
+                TableSource osingle = getSingleTableConditionTable((ConditionExpression)
+                                                                   operand);
                 if (single == null) {
                     if (osingle == null)
                         return null;
