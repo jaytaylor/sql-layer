@@ -46,59 +46,131 @@ public final class NewGiUpdateIT extends ITBase {
 
     private GisChecker initC() {
         writeRow(c, 117L, "John");
-        return checker().done();
+        return checker()
+                .gi("name_when_left")
+                .entry("John, null, 117, null").backedBy(c)
+                .gi("street_name_right")
+                .done();
     }
 
     @Test
     public void c_add_c() {
         GisChecker initState = initC();
-        u();
+
+        writeRow(c, 6L, "Noble");
+        checker()
+                .gi("name_when_left")
+                .entry("John, null, 117, null").backedBy(c)
+                .entry("Noble, null, 6, null").backedBy(c)
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(c, 6L);
+        initState.check();
     }
 
     @Test
     public void c_add_o() {
         GisChecker initState = initC();
-        u();
+
+        writeRow(o, 7L, 117L, "2552-08-30");
+        checker()
+                .gi("name_when_left")
+                .entry("John, 2552-08-30, 117, 7").backedBy(c, o)
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(o, 7L, 117L);
+        initState.check();
     }
 
     @Test
     public void c_add_I() {
         GisChecker initState = initC();
-        u();
+
+        writeRow(i, 101L, 7L, "1234");
+        initState.check();
+
+        deleteRow(i, 101L, 7L);
+        initState.check();
     }
 
     @Test
     public void c_add_h() {
         GisChecker initState = initC();
-        u();
+
+        writeRow(h, 1001L, 101L, "don't drop");
+        initState.check();
+        
+        deleteRow(h, 1001L, 101L);
+        initState.check();
     }
 
     @Test
     public void c_add_a() {
         GisChecker initState = initC();
-        u();
+
+        writeRow(a, 40L, 117L, "Reach");
+        checker()
+                .gi("name_when_left")
+                .entry("John, null, 117, null").backedBy(c)
+                .gi("street_name_right")
+                .entry("Reach, John, 117, 40").backedBy(c, a)
+                .done();
+
+        deleteRow(a, 40L, 117L);
+        initState.check();
     }
 
     @Test
     public void c_del_c() {
-        GisChecker initState = initC();
-        u();
+        initC();
+
+        deleteRow(c, 117L);
+        checker()
+                .gi("name_when_left")
+                .gi("street_name_right")
+                .done();
     }
 
-    private GisChecker initCC() {
-        throw u();
+    private GisChecker init_cC() {
+        writeRow(c, 6L, "Noble");
+        writeRow(c, 117L, "John");
+
+        return checker()
+                .gi("name_when_left")
+                .entry("John, null, 117, null").backedBy(c)
+                .entry("Noble, null, 6, null").backedBy(c)
+                .gi("street_name_right")
+                .done();
     }
 
     @Test
     public void cC_add_o() {
-        GisChecker initState = initCC();
-        u();
+        GisChecker initState = init_cC();
+
+        writeRow(o, 10L, 117L, "1970-01-01");
+        checker()
+                .gi("name_when_left")
+                .entry("John, 1970-01-01, 117, 10").backedBy(c, o)
+                .entry("Noble, null, 6, null").backedBy(c)
+                .gi("street_name_right")
+                .done();
+
+        deleteRow(o, 10L, 117L);
+        initState.check();
     }
 
     @Test
     public void cC_del_c() {
-        GisChecker initState = initCC();
-        u();
+        init_cC();
+
+        deleteRow(c, 117L);
+        checker()
+                .gi("name_when_left")
+                .entry("Noble, null, 6, null").backedBy(c)
+                .gi("street_name_right")
+                .done();
     }
 
     private GisChecker initO() {
@@ -448,7 +520,7 @@ public final class NewGiUpdateIT extends ITBase {
 
 
     @Before
-    public final void createTables() {
+    public final void createTables() { // TODO not really a todo, but serves as a nice bookmark :)
         c = createTable(SCHEMA, "c", "cid int key, name varchar(32)");
         o = createTable(SCHEMA, "o", "oid int key, c_id int, when varchar(32)", akibanFK("c_id", "c", "cid") );
         i = createTable(SCHEMA, "i", "iid int key, o_id int, sku int", akibanFK("o_id", "o", "oid") );
@@ -457,7 +529,8 @@ public final class NewGiUpdateIT extends ITBase {
 
         String groupName = group().getName();
 
-        createGroupIndex(groupName, "co_left", "c.name,o.when", Index.JoinType.LEFT);
+        createGroupIndex(groupName, "name_when_left", "c.name,o.when", Index.JoinType.LEFT);
+        createGroupIndex(groupName, "street_name_right", "a.street,c.name", Index.JoinType.RIGHT);
     }
 
     @After
@@ -536,7 +609,7 @@ public final class NewGiUpdateIT extends ITBase {
         @Override
         public GiTablesChecker entry(String key) {
             assertEquals("", scratch.toString());
-            scratch.append(key).append(" => ");
+            scratch.append('[').append(key).append("] => ");
             return this;
         }
 
@@ -629,14 +702,6 @@ public final class NewGiUpdateIT extends ITBase {
                 scanner= persistitStore().traverse(session(), groupIndex, new StringsIndexScanner());
             } catch (PersistitException e) {
                 throw new RuntimeException(e);
-            }
-            // convert "a, b, c => d" to "[a, b, c] => d"
-            for (int i = 0; i < expected.size(); ++i) {
-                String original = expected.get(i);
-                int arrow = original.indexOf(" => ");
-                String keys = original.substring(0, arrow);
-                String value = original.substring(arrow + " => ".length());
-                expected.set(i, String.format("[%s] => %s", keys, value));
             }
 
             if (!expected.equals(scanner.strings())) {
