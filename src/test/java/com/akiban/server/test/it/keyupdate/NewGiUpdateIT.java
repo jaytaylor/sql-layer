@@ -48,131 +48,402 @@ public final class NewGiUpdateIT extends ITBase {
         u();
     }
 
-    @Test public void c_add_c() { initC(); u(); }
-    @Test public void c_add_o() { initC(); u(); }
-    @Test public void c_add_I() { initC(); u(); }
-    @Test public void c_add_h() { initC(); u(); }
-    @Test public void c_add_a() { initC(); u(); }
-    @Test public void c_del_c() { initC(); u(); }
+    @Test
+    public void c_add_c() {
+        initC();
+        u();
+    }
+
+    @Test
+    public void c_add_o() {
+        initC();
+        u();
+    }
+
+    @Test
+    public void c_add_I() {
+        initC();
+        u();
+    }
+
+    @Test
+    public void c_add_h() {
+        initC();
+        u();
+    }
+
+    @Test
+    public void c_add_a() {
+        initC();
+        u();
+    }
+
+    @Test
+    public void c_del_c() {
+        initC();
+        u();
+    }
 
     private void initCC() {
         u();
     }
 
-    @Test public void cC_add_o() { initCC(); u(); }
-    @Test public void cC_del_c() { initCC(); u(); }
+    @Test
+    public void cC_add_o() {
+        initCC();
+        u();
+    }
+
+    @Test
+    public void cC_del_c() {
+        initCC();
+        u();
+    }
 
     private void initO() {
         u();
     }
 
-    @Test public void o_add_c() { initO(); u(); }
-    @Test public void o_add_o() { initO(); u(); }
-    @Test public void o_add_I() { initO(); u(); }
-    @Test public void o_add_h() { initO(); u(); }
-    @Test public void o_add_a() { initO(); u(); }
-    @Test public void o_del_o() { initO(); u(); }
+    @Test
+    public void o_add_c() {
+        initO();
+        u();
+    }
+
+    @Test
+    public void o_add_o() {
+        initO();
+        u();
+    }
+
+    @Test
+    public void o_add_I() {
+        initO();
+        u();
+    }
+
+    @Test
+    public void o_add_h() {
+        initO();
+        u();
+    }
+
+    @Test
+    public void o_add_a() {
+        initO();
+        u();
+    }
+
+    @Test
+    public void o_del_o() {
+        initO();
+        u();
+    }
 
     private void initOO() {
         u();
     }
 
-    @Test public void oo_add_c() { initOO(); u(); }
-    @Test public void oo_add_I() { initOO(); u(); }
-    @Test public void oo_add_h() { initOO(); u(); }
-    @Test public void oo_del_o() { initOO(); u(); }
+    @Test
+    public void oo_add_c() {
+        initOO();
+        u();
+    }
+
+    @Test
+    public void oo_add_I() {
+        initOO();
+        u();
+    }
+
+    @Test
+    public void oo_add_h() {
+        initOO();
+        u();
+    }
+
+    @Test
+    public void oo_del_o() {
+        initOO();
+        u();
+    }
 
     private void initI() {
         u();
     }
 
-    @Test public void I_add_c() { initI(); u(); }
-    @Test public void I_add_o() { initI(); u(); }
-    @Test public void I_add_I() { initI(); u(); }
-    @Test public void I_add_h() { initI(); u(); }
-    @Test public void I_add_a() { initI(); u(); }
-    @Test public void I_del_I() { initI(); u(); }
+    @Test
+    public void I_add_c() {
+        initI();
+        u();
+    }
+
+    @Test
+    public void I_add_o() {
+        initI();
+        u();
+    }
+
+    @Test
+    public void I_add_I() {
+        initI();
+        u();
+    }
+
+    @Test
+    public void I_add_h() {
+        initI();
+        u();
+    }
+
+    @Test
+    public void I_add_a() {
+        initI();
+        u();
+    }
+
+    @Test
+    public void I_del_I() {
+        initI();
+        u();
+    }
 
     private void initII() {
         u();
     }
 
-    @Test public void ii_add_c() { initII(); u(); }
-    @Test public void ii_add_o() { initII(); u(); }
-    @Test public void ii_add_h() { initII(); u(); }
-    @Test public void ii_del_I() { initII(); u(); }
+    @Test
+    public void ii_add_c() {
+        initII();
+        u();
+    }
+
+    @Test
+    public void ii_add_o() {
+        initII();
+        u();
+    }
+
+    @Test
+    public void ii_add_h() {
+        initII();
+        u();
+    }
+
+    @Test
+    public void ii_del_I() {
+        initII();
+        u();
+    }
 
     private void initH() {
         u();
     }
 
-    @Test public void h_add_c() { initH(); u(); }
-    @Test public void h_add_o() { initH(); u(); }
-    @Test public void h_add_I() { initH(); u(); }
-    @Test public void h_add_h() { initH(); u(); }
-    @Test public void h_add_a() { initH(); u(); }
+    @Test
+    public void h_add_c() {
+        initH();
+        u();
+    }
+
+    @Test
+    public void h_add_o() {
+        initH();
+        u();
+    }
+
+    @Test
+    public void h_add_I() {
+        initH();
+        u();
+    }
+
+    @Test
+    public void h_add_h() {
+        initH();
+        u();
+    }
+
+    @Test
+    public void h_add_a() {
+        initH();
+        u();
+    }
 
     private void initCO() {
         u();
     }
 
-    @Test public void co_add_o() { initCO(); u(); }
-    @Test public void co_add_I() { initCO(); u(); }
-    @Test public void co_add_h() { initCO(); u(); }
-    @Test public void co_del_c() { initCO(); u(); }
-    @Test public void co_del_o() { initCO(); u(); }
+    @Test
+    public void co_add_o() {
+        initCO();
+        u();
+    }
+
+    @Test
+    public void co_add_I() {
+        initCO();
+        u();
+    }
+
+    @Test
+    public void co_add_h() {
+        initCO();
+        u();
+    }
+
+    @Test
+    public void co_del_c() {
+        initCO();
+        u();
+    }
+
+    @Test
+    public void co_del_o() {
+        initCO();
+        u();
+    }
 
     private void initCI() {
         u();
     }
 
 
-    @Test public void ci_add_o() { initCI(); u(); }
-    @Test public void ci_add_h() { initCI(); u(); }
+    @Test
+    public void ci_add_o() {
+        initCI();
+        u();
+    }
+
+    @Test
+    public void ci_add_h() {
+        initCI();
+        u();
+    }
 
     private void initOI() {
         u();
     }
 
-    @Test public void oi_add_c() { initOI(); u(); }
-    @Test public void oi_add_h() { initOI(); u(); }
-    @Test public void oi_del_o() { initOI(); u(); }
-    @Test public void oi_del_I() { initOI(); u(); }
+    @Test
+    public void oi_add_c() {
+        initOI();
+        u();
+    }
+
+    @Test
+    public void oi_add_h() {
+        initOI();
+        u();
+    }
+
+    @Test
+    public void oi_del_o() {
+        initOI();
+        u();
+    }
+
+    @Test
+    public void oi_del_I() {
+        initOI();
+        u();
+    }
 
     private void initIH() {
         u();
     }
 
-    @Test public void ih_add_o() { initIH(); u(); }
+    @Test
+    public void ih_add_o() {
+        initIH();
+        u();
+    }
 
     private void initCOI() {
         u();
     }
 
-    @Test public void coi_add_h() { initCOI(); u(); }
-    @Test public void coi_add_a() { initCOI(); u(); }
+    @Test
+    public void coi_add_h() {
+        initCOI();
+        u();
+    }
+
+    @Test
+    public void coi_add_a() {
+        initCOI();
+        u();
+    }
 
     private void initCOH() {
         u();
     }
 
-    @Test public void coh_add_I() { initCOH(); u(); }
+    @Test
+    public void coh_add_I() {
+        initCOH();
+        u();
+    }
 
     private void initCOIH() {
         u();
     }
 
-    @Test public void coih_add_h() { initCOIH(); u(); }
-    @Test public void coih_add_a() { initCOIH(); u(); }
-    @Test public void coih_del_c() { initCOIH(); u(); }
-    @Test public void coih_del_o() { initCOIH(); u(); }
-    @Test public void coih_del_I() { initCOIH(); u(); }
-    @Test public void coih_del_h() { initCOIH(); u(); }
+    @Test
+    public void coih_add_h() {
+        initCOIH();
+        u();
+    }
 
-    @Test public void coihOIH_move_c() { u(); }
-    @Test public void coihCIH_move_o() { u(); }
-    @Test public void coihCOH_move_I() { u(); }
-    @Test public void coihCOI_move_h() { u(); }
+    @Test
+    public void coih_add_a() {
+        initCOIH();
+        u();
+    }
+
+    @Test
+    public void coih_del_c() {
+        initCOIH();
+        u();
+    }
+
+    @Test
+    public void coih_del_o() {
+        initCOIH();
+        u();
+    }
+
+    @Test
+    public void coih_del_I() {
+        initCOIH();
+        u();
+    }
+
+    @Test
+    public void coih_del_h() {
+        initCOIH();
+        u();
+    }
+
+    @Test
+    public void coihOIH_move_c() {
+        u();
+    }
+
+    @Test
+    public void coihCIH_move_o() {
+        u();
+    }
+
+    @Test
+    public void coihCOH_move_I() {
+        u();
+    }
+
+    @Test
+    public void coihCOI_move_h() {
+        u();
+    }
 
 
     @Before
