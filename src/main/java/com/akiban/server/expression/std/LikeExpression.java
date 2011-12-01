@@ -68,7 +68,7 @@ public class LikeExpression extends AbstractCompositeExpression
 
 
         @Override
-        public ExpressionType composeType(List<? extends ExpressionType> argumentTypes) 
+        public ExpressionType composeType(List<? extends ExpressionType> argumentTypes)
         {
             int s = argumentTypes.size();
             if (s!= 2 && s != 3) throw new WrongExpressionArityException(2, s);
@@ -113,8 +113,8 @@ public class LikeExpression extends AbstractCompositeExpression
             }
             noWildcardU = esca == '_';
             noWildcardP = esca == '%';
-            
-            boolean matched = false;  
+
+            boolean matched = false;
             switch (mode)
             {
                 case CASE_INSENSITIVE: matched = compareS(left.toUpperCase(), right.toUpperCase()); break;
@@ -153,7 +153,7 @@ public class LikeExpression extends AbstractCompositeExpression
                             esc = true;
                         }
                         else throw new UnsupportedOperationException("invalid escape sequence");
-                                        
+
                     while (l < lLimit) // loop1: attempt to find a matching sequence in left that starts with afterP
                     {
                         lchar = left.charAt(l++);
@@ -162,11 +162,11 @@ public class LikeExpression extends AbstractCompositeExpression
                             --l;
                             int oldR = r;
                             boolean oldEsc = esc;
-                            while (l < lLimit && r < rLimit) 
+                            while (l < lLimit && r < rLimit)
                             {
                                 lchar = left.charAt(l);
                                 rchar = right.charAt(r);
-                               
+
                                 if (rchar == esca && !esc)
                                 {
                                     if (r +1 <rLimit && (right.charAt(r+1) == '%' || right.charAt(r+1) == '_' || right.charAt(r+1) == esca))
@@ -174,11 +174,11 @@ public class LikeExpression extends AbstractCompositeExpression
                                         rchar = right.charAt(++r);
                                          esc = true;
                                     }
-                                     else throw new UnsupportedOperationException ("invalid escape sequence");                                   
+                                     else throw new UnsupportedOperationException ("invalid escape sequence");
                                 }
 
                                 if (rchar == '%' && !esc) continue Loop2;
-                                             
+
                                 if (lchar == rchar || rchar == '_' && !esc && !noWildcardU)
                                 {
                                     ++l;
@@ -211,7 +211,7 @@ public class LikeExpression extends AbstractCompositeExpression
                 {
                     if ( r + 1 < rLimit && (right.charAt(r+1) == '_' || right.charAt(r+1) == '%' || right.charAt(r+1) == esca)) rchar = right.charAt(++r);
                     else throw new UnsupportedOperationException("invalid escape sequence"); // TODO: replaced with invalid parameter value
-                    
+
                     if (lchar != rchar)   return false;
                     else
                     {
@@ -235,14 +235,14 @@ public class LikeExpression extends AbstractCompositeExpression
                 {
                     while (r < rLimit)
                     {
-                        if (right.charAt(r) != '%') return false; // and r-1 != escape 
-                        else if (r + 1 < rLimit && right.charAt(r+1) == '%' && noWildcardP) return false; // % is  escaped
+                        if (right.charAt(r) != '%') return false; // and r-1 != escape
+                        else if (r + 1 < rLimit && (right.charAt(r+1) == '%'  || right.charAt(r+1) == '_')&& noWildcardP) return false; // % is  escaped
                         else if (noWildcardP) throw new UnsupportedOperationException("invalid escape sequence"); // % is by itself (invalide escape sequence)
                         ++r;
                     }
                     return true;
                 }
-                else return left.charAt(l - 1) == right.charAt(r - 1) || right.charAt(r - 1) == '_' || right.charAt(r - 1) == '%';
+                else return true;
             else return false;
         }
     }

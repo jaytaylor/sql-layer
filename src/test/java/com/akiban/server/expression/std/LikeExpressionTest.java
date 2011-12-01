@@ -40,7 +40,7 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
     private String esc;
     private boolean expected;
     private boolean expectNull;
-    private boolean invalidExc; 
+    private boolean invalidExc;
     protected static boolean already = false;
     public LikeExpressionTest (ExpressionComposer ex, String left, String right, String esc, boolean expected, boolean expectNull, boolean expectExc)
     {
@@ -144,12 +144,19 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
 
         // "a124b123" LIKE "a%12_"
         param(pb, LikeExpression.ILIKE_COMPOSER, "a124b123", "a%12_", "\\", true, false, false);
-        
+
         // "abx" LIKE "ab%_x
         param(pb, LikeExpression.ILIKE_COMPOSER, "abx", "ab%_x", "\\", false, false, false);
         param(pb, LikeExpression.ILIKE_COMPOSER, "abx", "a%_x", "\\", true, false, false);
         param(pb, LikeExpression.ILIKE_COMPOSER, "abcx", "a%_x", "\\", true, false, false);
-        
+
+        // "a123b124" LIKE "a%12%";
+        param(pb, LikeExpression.ILIKE_COMPOSER, "a123b124", "a%124%", "\\", true, false, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "a123b124x", "a%124_", "\\", true, false, false);
+
+        //'%' like '%%%_' escape '%'
+        param(pb, LikeExpression.ILIKE_COMPOSER, "%", "%%%_", "%", false, false, false);
+
         return pb.asList();
     }
 
@@ -166,14 +173,14 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
     {
        test();
     }
-    
+
     @OnlyIf("expectExc()")
     @Test(expected = UnsupportedOperationException.class)
     public void testWithExc()
     {
         test();
     }
-    
+
     private void test()
     {
         Expression l = new LiteralExpression(AkType.VARCHAR, left);
@@ -191,7 +198,7 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
             assertTrue(top.evaluation().eval().isNull());
         else
             assertTrue (top.evaluation().eval().getBool() == expected);
-       
+
         already = true;
     }
 
@@ -199,13 +206,13 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
     {
         return invalidExc;
     }
-    
+
     @Override
     public boolean alreadyExc ()
     {
         return already;
     }
-    
+
     @Override
     protected CompositionTestInfo getTestInfo()
     {
