@@ -57,7 +57,7 @@
     MIN(numeric_field), MIN(real_field), MIN(smallint_field),
     MIN(time_field), MIN(timestamp_field) FROM all_types
 - output: [[1, 1, 1.0, 1, 1, 1.0, 1.0, 1, 1.0, 1.0, 1, 1, 1.0, 1,
-  '01:01:01', '1000-01-01 01:01:01.0']]
+  '01:01:01', !re '1000-01-01 01:01:01([.]0)?']]
 
 # Insert another row
 ---
@@ -76,7 +76,7 @@
     MIN(numeric_field), MIN(real_field), MIN(smallint_field),
     MIN(time_field), MIN(timestamp_field) FROM all_types
 - output: [[1, 1, 1.0, 0, 1, 1.0, 1.0, 1, 1.0, 1.0, 1, 1, 1.0, 1,
-  '01:01:01', '1000-01-01 01:01:01.0']]
+  '01:01:01', !re '1000-01-01 01:01:01([.]0)?']]
 
 ---
 - Statement: DELETE FROM all_types
@@ -110,11 +110,5 @@
 - Statement: SELECT MIN(double_field), MIN(float_field), MIN(real_field)
     FROM all_types
 - output: [[NaN, NaN, NaN]]
-
-# MIN not supported in WHERE clause
-# Test in WHERE clause
-# ---
-# - Statement: SELECT * FROM all_types WHERE MIN(bigint_field) > 0
-# - row_count: 0
 
 ...

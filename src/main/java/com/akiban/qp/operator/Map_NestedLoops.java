@@ -22,6 +22,8 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.Tap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,6 +100,7 @@ class Map_NestedLoops extends Operator
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(BranchLookup_Nested.class);
+    private static final Tap.PointTap MAP_NL_COUNT = Tap.createCount("operator: map_nested_loops", true);
 
     // Object state
 
@@ -116,6 +119,7 @@ class Map_NestedLoops extends Operator
         @Override
         public void open(Bindings bindings)
         {
+       	    MAP_NL_COUNT.hit();
             this.bindings = bindings;
             this.outerInput.open(bindings);
             this.closed = false;

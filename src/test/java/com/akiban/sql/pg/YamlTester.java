@@ -54,7 +54,9 @@ import static org.junit.Assert.fail;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
+import org.yaml.snakeyaml.nodes.MappingNode;
 import org.yaml.snakeyaml.nodes.Node;
+import org.yaml.snakeyaml.nodes.NodeTuple;
 import org.yaml.snakeyaml.nodes.ScalarNode;
 import org.yaml.snakeyaml.nodes.Tag;
 
@@ -77,6 +79,7 @@ import org.yaml.snakeyaml.nodes.Tag;
    - Syntax:
      - Include: <file>
    - If the file is relative, it is parsed relative to the referring file
+   - If the file argument is missing or null, the command will be ignored
 
    Properties
    - Syntax:
@@ -91,6 +94,8 @@ import org.yaml.snakeyaml.nodes.Tag;
      - CreateTable: <table name> <create table arguments>...
      - error: [<error code>, <error message>]
    - The error message is optional
+   - If the error code is missing or null, then the attribute and its value
+     will be ignored
    - This command has the same behavior as would specifying a CREATE TABLE
      statement with a Statement command, but it lets the test framework know
      which tables have been created, so it can drop them after the test is
@@ -106,7 +111,10 @@ import org.yaml.snakeyaml.nodes.Tag;
      - output_types: [<column type>, ...]
      - explain: <explain plan>
      - error: [<error code>, <error message>]
+   - If the statement text is missing or null, the command will be ignored
    - Attributes are optional and can appear at most once
+   - If the value of any attribute is missing or null, then the attribute and
+     its value will be ignored
    - Only one statement in statement text (not checked)
    - At least one row element in params, param_types, output, output_types
    - At least one row in params and output
@@ -221,6 +229,9 @@ class YamlTester {
     }
 
     private void includeCommand(Object value, List<Object> sequence) {
+	if (value == null) {
+	    return;
+	}
 	String includeValue = string(value, "Include value");
 	File include = new File(includeValue);
 	if (sequence.size() > 1) {
@@ -265,7 +276,7 @@ class YamlTester {
 
     private void propertiesCommand(Object value, List<Object> sequence) {
 	String engine = string(value, "Properties framework engine");
-	if ("all".equals(engine) || "it".equals(engine)) {
+	if (matchesCurrentEngine(engine)) {
 	    for (Object elem : sequence) {
 		Entry<Object, Object> entry =
 		    onlyEntry(elem, "Properties entry");
@@ -290,6 +301,9 @@ class YamlTester {
 
 	/** Parse an error attribute with the specified value. */
 	void parseError(Object value) {
+	    if (value == null) {
+		return;
+	    }
 	    assertFalse("The error attribute must not appear more than once",
 			errorSpecified);
 	    errorSpecified = true;
@@ -390,7 +404,9 @@ class YamlTester {
     private void statementCommand(Object value, List<Object> sequence)
 	throws SQLException
     {
-	new StatementCommand(value, sequence).execute();
+	if (value != null) {
+	    new StatementCommand(value, sequence).execute();
+	}
     }
 
     private class StatementCommand extends AbstractStatementCommand {
@@ -486,12 +502,18 @@ class YamlTester {
 	}
 
 	private void parseParams(Object value) {
+	    if (value == null) {
+		return;
+	    }
 	    assertNull("The params attribute must not appear more than once",
 		       params);
 	    params = rows(value, "params value");
 	}
 
 	private void parseParamTypes(Object value) {
+	    if (value == null) {
+		return;
+	    }
 	    assertNull(
 		"The param_types attribute must not appear more than once",
 		paramTypes);
@@ -507,12 +529,18 @@ class YamlTester {
 	}
 
 	private void parseOutput(Object value) {
+	    if (value == null) {
+		return;
+	    }
 	    assertNull("The output attribute must not appear more than once",
 		       output);
 	    output = rows(value, "output value");
 	}
 
 	private void parseRowCount(Object value) {
+	    if (value == null) {
+		return;
+	    }
 	    assertTrue("The row_count attribute must not appear more than once",
 		       rowCount == -1);
 	    rowCount = integer(value, "row_count value");
@@ -521,6 +549,9 @@ class YamlTester {
 	}
 
 	private void parseOutputTypes(Object value) {
+	    if (value == null) {
+		return;
+	    }
 	    assertNull(
 		"The output_types attribute must not appear more than once",
 		paramTypes);
@@ -532,6 +563,9 @@ class YamlTester {
 	}
 
 	private void parseExplain(Object value) {
+	    if (value == null) {
+		return;
+	    }
 	    assertNull("The explain attribute must not appear more than once",
 		       explain);
 	    explain = string(value, "explain value").trim();
@@ -961,6 +995,11 @@ class YamlTester {
 	return rows;
     }
 
+    /** Returns true if the argument matches the current engine. */
+    static boolean matchesCurrentEngine(String engine) {
+	return "all".equals(engine) || "it".equals(engine);
+    }
+
     /** Support comparing this object to expected output. */
     interface OutputComparator {
 	/**
@@ -1045,6 +1084,8 @@ class YamlTester {
 	RegisterTags() {
 	    yamlConstructors.put(new Tag("!dc"), new ConstructDontCare());
 	    yamlConstructors.put(new Tag("!re"), new ConstructRegexp());
+	    yamlConstructors.put(new Tag("!select-engine"),
+				 new ConstructSelectEngine());
 	}
 	private static class ConstructDontCare extends AbstractConstruct {
 	    @Override
@@ -1060,6 +1101,35 @@ class YamlTester {
 			 " be a scalar");
 		}
 		return new Regexp(((ScalarNode) node).getValue());
+	    }
+	}
+	private class ConstructSelectEngine extends AbstractConstruct {
+	    @Override
+	    public Object construct(Node node) {
+		if (!(node instanceof MappingNode)) {
+		    fail("The value of the !select-engine tag must be a map" +
+			 "\nGot: " + node);
+		}
+		for (NodeTuple tuple : ((MappingNode) node).getValue()) {
+		    Node keyNode = tuple.getKeyNode();
+		    if (!(keyNode instanceof ScalarNode)) {
+			fail("The key in a !select-engine map must be a scalar" +
+			     "\nGot: " + constructObject(keyNode));
+		    }
+		    String key = ((ScalarNode) keyNode).getValue();
+		    if (matchesCurrentEngine(key)) {
+			Object result = constructObject(tuple.getValueNode());
+			if (DEBUG) {
+			    System.err.println("Select engine: '" + key +
+					       "' => '" + result + "'");
+			}
+			return result;
+		    }
+		}
+		if (DEBUG) {
+		    System.err.println("Select engine: no match");
+		}
+		return null;
 	    }
 	}
     }

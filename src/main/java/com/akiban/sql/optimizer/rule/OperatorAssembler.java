@@ -61,6 +61,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.GroupTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.util.Tap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,6 +71,11 @@ import java.util.*;
 public class OperatorAssembler extends BaseRule
 {
     private static final Logger logger = LoggerFactory.getLogger(OperatorAssembler.class);
+    private static final Tap.PointTap SELECT_COUNT = Tap.createCount("sql: select", true);
+    private static final Tap.PointTap INSERT_COUNT = Tap.createCount("sql: insert", true);
+    private static final Tap.PointTap UPDATE_COUNT = Tap.createCount("sql: update", true);
+    private static final Tap.PointTap DELETE_COUNT = Tap.createCount("sql: delete", true);
+
 
     @Override
     protected Logger getLogger() {
@@ -100,15 +106,19 @@ public class OperatorAssembler extends BaseRule
         }
         
         protected BasePlannable assembleStatement(BaseStatement plan) {
-            if (plan instanceof SelectQuery)
+            if (plan instanceof SelectQuery) {
+                SELECT_COUNT.hit();
                 return selectQuery((SelectQuery)plan);
-            else if (plan instanceof InsertStatement)
+            } else if (plan instanceof InsertStatement) {
+                INSERT_COUNT.hit();
                 return insertStatement((InsertStatement)plan);
-            else if (plan instanceof UpdateStatement)
+            } else if (plan instanceof UpdateStatement) {
+                UPDATE_COUNT.hit();
                 return updateStatement((UpdateStatement)plan);
-            else if (plan instanceof DeleteStatement)
+            } else if (plan instanceof DeleteStatement) {
+                DELETE_COUNT.hit();
                 return deleteStatement((DeleteStatement)plan);
-            else
+            } else
                 throw new UnsupportedSQLException("Cannot assemble plan: " + plan, null);
         }
 

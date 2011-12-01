@@ -21,6 +21,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.types.AkType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.Tap;
 
 import java.util.Collections;
 import java.util.List;
@@ -78,6 +79,10 @@ class Count_Default extends Operator
         this.countType = countType;
         this.resultType = countType.schema().newValuesType(AkType.LONG);
     }
+    
+    // Class state
+    
+    private static final Tap.PointTap COUNT_COUNT = Tap.createCount("operator: count", true);
 
     // Object state
 
@@ -94,6 +99,7 @@ class Count_Default extends Operator
         @Override
         public void open(Bindings bindings)
         {
+            COUNT_COUNT.hit();
             input.open(bindings);
             count = 0;
             closed = false;

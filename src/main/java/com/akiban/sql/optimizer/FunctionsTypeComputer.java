@@ -166,11 +166,16 @@ public class FunctionsTypeComputer extends AISTypeComputer
             if (arg instanceof SQLToJavaValueNode) {
                 SQLToJavaValueNode jarg = (SQLToJavaValueNode)arg;
                 ValueNode sqlArg = jarg.getSQLValueNode();
-                ValueNode cast = (ValueNode)sqlArg.getNodeFactory()
-                    .getNode(NodeTypes.CAST_NODE, 
-                             sqlArg, fromExpressionType(castType),
-                             sqlArg.getParserContext());
-                jarg.setSQLValueNode(cast);
+                DataTypeDescriptor sqlType = fromExpressionType(castType);
+                if (sqlArg instanceof ParameterNode) {
+                    sqlArg.setType(sqlType);
+                }
+                else {
+                    ValueNode cast = (ValueNode)sqlArg.getNodeFactory()
+                        .getNode(NodeTypes.CAST_NODE, 
+                                 sqlArg, sqlType, sqlArg.getParserContext());
+                    jarg.setSQLValueNode(cast);
+                }
             }
             argTypes.set(i, castType);
         }
@@ -248,6 +253,10 @@ public class FunctionsTypeComputer extends AISTypeComputer
             if (value instanceof UntypedNullConstantNode) {
                 // Give composer a change to establish type of null.
                 return ExpressionTypes.NULL;
+            }
+            if (value instanceof ParameterNode) {
+                // Likewise parameters.
+                return ExpressionTypes.UNSUPPORTED;
             }
         }
         return toExpressionType(type);
@@ -395,11 +404,17 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case TEXT:
             return ExpressionTypes.TEXT;
         case VARCHAR:
-            return ExpressionTypes.varchar(sqlType.getMaximumWidth());
+            if (sqlType != null)
+                return ExpressionTypes.varchar(sqlType.getMaximumWidth());
+            else
+                return ExpressionTypes.varchar(TypeId.VARCHAR_ID.getMaximumMaximumWidth());
         case VARBINARY:
-            return ExpressionTypes.varbinary(sqlType.getMaximumWidth());
+            if (sqlType != null)
+                return ExpressionTypes.varbinary(sqlType.getMaximumWidth());
+            else
+                return ExpressionTypes.varbinary(TypeId.VARBIT_ID.getMaximumMaximumWidth());
         case DECIMAL:
-            {
+            if (sqlType != null) {
                 TypeId typeId = sqlType.getTypeId();
                 if (typeId.isNumericTypeId())
                     return ExpressionTypes.decimal(sqlType.getPrecision(),
@@ -408,6 +423,9 @@ public class FunctionsTypeComputer extends AISTypeComputer
                     return ExpressionTypes.decimal(typeId.getMaximumPrecision(),
                                                    typeId.getMaximumScale());
             }
+            else
+                return ExpressionTypes.decimal(TypeId.DECIMAL_ID.getMaximumPrecision(),
+                                               TypeId.DECIMAL_ID.getMaximumScale());
         default:
             return ExpressionTypes.newType(toType, 0, 0);
         }

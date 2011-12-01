@@ -57,7 +57,7 @@
     MAX(numeric_field), MAX(real_field), MAX(smallint_field),
     MAX(time_field), MAX(timestamp_field) FROM all_types
 - output: [[1, 1, 1.0, 1, 1, 1.0, 1.0, 1, 1.0, 1.0, 1, 1, 1.0, 1,
-    '01:01:01', '1000-01-01 01:01:01.0']]
+    '01:01:01', !re '1000-01-01 01:01:01([.]0)?']]
 
 # Insert another row
 ---
@@ -76,7 +76,7 @@
     MAX(numeric_field), MAX(real_field), MAX(smallint_field),
     MAX(time_field), MAX(timestamp_field) FROM all_types
 - output: [[2, 2, 2.0, 1, 2, 2.0, 2.0, 2, 2.0, 2.0, 2, 2, 2.0, 2,
-    '02:02:02', '2000-02-02 02:02:02.0']]
+    '02:02:02', !re '2000-02-02 02:02:02([.]0)?']]
 
 ---
 - Statement: DELETE FROM all_types
@@ -110,11 +110,5 @@
 - Statement: SELECT MAX(double_field), MAX(float_field), MAX(real_field)
     FROM all_types
 - output: [[NaN, NaN, NaN]]
-
-# MAX not supported in WHERE clause
-# Test in WHERE clause
-# ---
-# - Statement: SELECT * FROM all_types WHERE MAX(bigint_field) > 0
-# - row_count: 0
 
 ...

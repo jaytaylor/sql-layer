@@ -488,13 +488,7 @@ public class ASTStatementLoader extends BaseRule
                 break;
 
             case NodeTypes.BOOLEAN_CONSTANT_NODE:
-                if (!condition.isBooleanTrue()) {
-                    // FALSE = TRUE
-                    conditions.add(new ComparisonCondition(Comparison.EQ,
-                                                           toExpression(condition),
-                                                           new BooleanConstantExpression(Boolean.TRUE),
-                                                           condition.getType(), condition));
-                }
+                conditions.add(new BooleanConstantExpression(((BooleanConstantNode)condition).getBooleanValue()));
                 break;
             case NodeTypes.CAST_NODE:
                 assert condition.getType().getTypeId().isBooleanTypeId();
@@ -731,7 +725,8 @@ public class ASTStatementLoader extends BaseRule
             List<ExpressionNode> operands = new ArrayList<ExpressionNode>(3);
             operands.add(toExpression(ternary.getReceiver()));
             operands.add(toExpression(ternary.getLeftOperand()));
-            operands.add(toExpression(ternary.getRightOperand()));
+            if (ternary.getRightOperand() != null)
+                operands.add(toExpression(ternary.getRightOperand()));
             conditions.add(new FunctionCondition(ternary.getMethodName(),
                                                  operands,
                                                  ternary.getType(), ternary));
@@ -823,6 +818,17 @@ public class ASTStatementLoader extends BaseRule
                 }
                 addCondition(operands, leftOperand);
                 addCondition(operands, rightOperand);
+                switch (operands.size()) {
+                case 0:
+                    if (functionName.equals("or"))
+                        conditions.add(new BooleanConstantExpression(Boolean.FALSE));
+                    return;
+                case 1:
+                    conditions.add(operands.get(0));
+                    return;
+                default:
+                    break;
+                }
             }
             else
                 throw new UnsupportedSQLException("Unsuported condition", condition);
@@ -863,12 +869,16 @@ public class ASTStatementLoader extends BaseRule
                 throws StandardException {
             List<ConditionExpression> conditions = new ArrayList<ConditionExpression>(1);
             addCondition(conditions, condition);
-            if (conditions.size() == 1)
+            switch (conditions.size()) {
+            case 0:
+                return new BooleanConstantExpression(Boolean.TRUE);
+            case 1:
                 return conditions.get(0);
-            // CASE WHEN x BETWEEN a AND b means multiple conditions from single one in AST.
-            else
+            default:
+                // CASE WHEN x BETWEEN a AND b means multiple conditions from single one in AST.
                 return new LogicalFunctionCondition("and", conditions,
                                                     condition.getType(), condition);
+            }
         }
 
         /** SELECT DISTINCT with sorting sorts by an input Project and

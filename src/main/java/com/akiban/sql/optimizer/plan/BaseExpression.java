@@ -35,7 +35,7 @@ public abstract class BaseExpression extends BasePlanElement implements Expressi
     }
 
     protected BaseExpression(DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        this(sqlType, TypesTranslation.sqlTypeToAkType(sqlType), sqlSource);
+        this(sqlType, (sqlType != null) ? TypesTranslation.sqlTypeToAkType(sqlType) : AkType.UNSUPPORTED, sqlSource);
     }
 
     @Override

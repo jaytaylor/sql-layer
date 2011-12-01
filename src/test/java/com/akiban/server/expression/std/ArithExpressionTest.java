@@ -127,8 +127,8 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
     @Test
     public void yearMinusYear ()
     {
-        Expression year1 = new LiteralExpression (AkType.YEAR,2006);
-        Expression year2 = new LiteralExpression (AkType.YEAR,1991);
+        Expression year1 = new LiteralExpression (AkType.YEAR,Extractors.getLongExtractor(AkType.YEAR).getLong("2006"));
+        Expression year2 = new LiteralExpression (AkType.YEAR,Extractors.getLongExtractor(AkType.YEAR).getLong("1991"));
         Expression interval = new ArithExpression (year1, ex = ArithOps.MINUS, year2);
 
         Expression datetime = new LiteralExpression (AkType.DATETIME, 19940229123010L); // 1994-02-29 12:30:10

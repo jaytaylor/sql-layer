@@ -31,10 +31,9 @@
 - Statement: SELECT IF(1, double_field, varchar_field) FROM all_types
 - output: [[null], [1.0], [2.0]]
 
-# Params fails
-# ---
-# - Statement: SELECT IF(?, double_field, varchar_field) FROM all_types
-# - params: [[0]]
-# - output: [[null], [one], [two]]
+---
+- Statement: SELECT IF(?, double_field, varchar_field) FROM all_types
+- params: [[0]]
+- output: [[null], [one], [two]]
 
 ...
