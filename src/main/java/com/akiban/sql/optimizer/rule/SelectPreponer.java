@@ -191,7 +191,7 @@ public class SelectPreponer extends BaseRule
             TableSource table = getSingleTableConditionTable(condition);
             if (table == null)
                 return null;
-            if (indexColumns != null) {
+            if ((indexColumns != null) && (condition instanceof ComparisonCondition)) {
                 // Can check the index column before it's used for lookup.
                 PlanNode loader = indexColumns.get(((ComparisonCondition)
                                                     condition).getLeft());
@@ -242,6 +242,20 @@ public class SelectPreponer extends BaseRule
             TableSource left = getSingleTableConditionTable(bexpr.getLeft());
             TableSource right = getSingleTableConditionTable(bexpr.getRight());
             if (left == right) return left;
+        }
+        else if (condition instanceof LogicalFunctionCondition) {
+            TableSource single = null;
+            for (ExpressionNode operand : ((LogicalFunctionCondition)condition).getOperands()) {
+                TableSource osingle = getSingleTableConditionTable((ConditionExpression)operand);
+                if (single == null) {
+                    if (osingle == null)
+                        return null;
+                    single = osingle;
+                }
+                else if (single != osingle)
+                    return null;
+            }
+            return single;
         }
         return null;
     }
