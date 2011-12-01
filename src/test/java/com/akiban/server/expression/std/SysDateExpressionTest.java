@@ -13,16 +13,34 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package com.akiban.server.expression.std;
 
-/**
- *
- * @author vnguyen
- */
-public class SysDateExpressionTest {
+import com.akiban.server.expression.Expression;
+import com.akiban.server.types.util.ValueHolder;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class SysDateExpressionTest 
+{
+    @Test
+    public void test() throws InterruptedException
+    {
+        int dt = 4;
+        
+        ValueHolder date1 = new ValueHolder(new SysDateExpression().evaluation().eval());
+        Thread.sleep(dt * 1000);
+        
+        ValueHolder date2 = new ValueHolder(new SysDateExpression().evaluation().eval());
+        
+        assertEquals(date1.getDateTime(), date2.getDateTime() - dt); // the first and second call to SysDate() are 4 secs away
+    }
+    
+    @Test
+    public void testConst()
+    {
+        Expression sys = new SysDateExpression();
+        assertFalse(sys.isConstant());
+    }
     
 }
