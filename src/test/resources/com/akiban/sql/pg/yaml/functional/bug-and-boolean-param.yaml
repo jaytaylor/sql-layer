@@ -6,6 +6,6 @@
 ---
 - Statement: SELECT bigint_field > 0 AND ? FROM t
 - params: [[1]]
-- output: [[1]]
+- output: [[true],[false]]
 
 ...

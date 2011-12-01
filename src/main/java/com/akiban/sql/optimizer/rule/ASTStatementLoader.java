@@ -30,6 +30,7 @@ import com.akiban.sql.optimizer.*;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.*;
 import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
@@ -489,6 +490,13 @@ public class ASTStatementLoader extends BaseRule
 
             case NodeTypes.BOOLEAN_CONSTANT_NODE:
                 conditions.add(new BooleanConstantExpression(((BooleanConstantNode)condition).getBooleanValue()));
+                break;
+            case NodeTypes.PARAMETER_NODE:
+                if (condition.getType() == null)
+                    condition.setType(new DataTypeDescriptor(TypeId.BOOLEAN_ID, true));
+                conditions.add(new ParameterCondition(((ParameterNode)condition)
+                                                      .getParameterNumber(),
+                                                      condition.getType(), condition));
                 break;
             case NodeTypes.CAST_NODE:
                 assert condition.getType().getTypeId().isBooleanTypeId();
