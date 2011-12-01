@@ -24,6 +24,7 @@ import com.akiban.server.api.dml.scan.LegacyScanRequest;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.store.RowCollector;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
@@ -129,6 +130,7 @@ public class ScanFlagsIT extends ITBase
         for (int x : values) {
             dml().writeRow(session(), createNewRow(rowDefId, x, x));
         }
+        flags |= RowCollector.SCAN_FLAGS_LEXICOGRAPHIC;
         LegacyScanRequest request = new LegacyScanRequest(rowDefId,
                                                           bound(start),
                                                           null,
