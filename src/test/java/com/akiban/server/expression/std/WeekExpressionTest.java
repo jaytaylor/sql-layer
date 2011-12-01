@@ -68,9 +68,18 @@ public class WeekExpressionTest extends ComposedExpressionTestBase
         test(st,0,-1);
         
     }
+    
+    @Test 
+    public void testNullFirst ()
+    {
+        Expression week = new WeekExpression(Arrays.asList(LiteralExpression.forNull(),
+                new LiteralExpression(AkType.LONG, 4)));
+        assertEquals(AkType.INT,week.valueType());
+        assertTrue(week.evaluation().eval().isNull());
+    }
 
     @Test 
-    public void testNull ()
+    public void testNullSecond ()
     {
         Expression week = new WeekExpression(Arrays.asList(new LiteralExpression(AkType.DATE, 12345L),
                 LiteralExpression.forNull()));
