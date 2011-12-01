@@ -399,23 +399,18 @@ public class API
                                            Operator innerInput,
                                            int inputBindingPosition)
     {
-        return new Map_NestedLoops(outerInput, innerInput, null, null, inputBindingPosition);
+        return new Map_NestedLoops(outerInput, innerInput, inputBindingPosition);
     }
 
-    public static Operator map_NestedLoops(Operator outerInput,
-                                           Operator innerInput,
-                                           RowType outerJoinRowType,
-                                           List<Expression> outerJoinRowExpressions,
-                                           int inputBindingPosition)
+    // IfEmpty
+
+    public static Operator ifEmpty_Default(Operator input, RowType rowType, List<? extends Expression> expressions)
     {
-        return new Map_NestedLoops(outerInput,
-                                   innerInput,
-                                   outerJoinRowType,
-                                   outerJoinRowExpressions,
-                                   inputBindingPosition);
+        return new IfEmpty_Default(input, rowType, expressions);
     }
 
     // Union
+
     public static Operator unionAll(
             Operator input1, RowType input1RowType,
             Operator input2, RowType input2RowType
