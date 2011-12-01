@@ -226,12 +226,18 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 
     @Test
     public void testIncludeSelectEngine() throws Exception {
-	File include = File.createTempFile("include", null);
-	include.deleteOnExit();
-	writeFile(include, "- CreateTable: t (bigint_field bigint)\n");
+	File includeFile = File.createTempFile("include", null);
+	includeFile.deleteOnExit();
+	writeFile(includeFile, "- CreateTable: t (bigint_field bigint)\n");
+        /*
+         * Double backslashes, to escape them in the YAML format.  Note that
+         * they need to be doubled for Java strings, and double again for
+         * regexps.
+         */
+        String include = includeFile.getPath().replaceAll("\\\\", "\\\\");
 	testYaml("---\n" +
-		 "- Include: !select-engine { foo: bar, it: " + include +
-		 " }\n" +
+		 "- Include: !select-engine { foo: bar, it: '" + include +
+		 "' }\n" +
 		 "---\n" +
 		 "- Statement: SELECT bigint_field FROM t\n" +
 		 "...");
