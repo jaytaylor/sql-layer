@@ -44,384 +44,385 @@ import static org.junit.Assert.fail;
 
 public final class NewGiUpdateIT extends ITBase {
 
-    private void initC() {
-        u();
+    private GisChecker initC() {
+        writeRow(c, 117L, "John");
+        return checker().done();
     }
 
     @Test
     public void c_add_c() {
-        initC();
+        GisChecker initState = initC();
         u();
     }
 
     @Test
     public void c_add_o() {
-        initC();
+        GisChecker initState = initC();
         u();
     }
 
     @Test
     public void c_add_I() {
-        initC();
+        GisChecker initState = initC();
         u();
     }
 
     @Test
     public void c_add_h() {
-        initC();
+        GisChecker initState = initC();
         u();
     }
 
     @Test
     public void c_add_a() {
-        initC();
+        GisChecker initState = initC();
         u();
     }
 
     @Test
     public void c_del_c() {
-        initC();
+        GisChecker initState = initC();
         u();
     }
 
-    private void initCC() {
-        u();
+    private GisChecker initCC() {
+        throw u();
     }
 
     @Test
     public void cC_add_o() {
-        initCC();
+        GisChecker initState = initCC();
         u();
     }
 
     @Test
     public void cC_del_c() {
-        initCC();
+        GisChecker initState = initCC();
         u();
     }
 
-    private void initO() {
-        u();
+    private GisChecker initO() {
+        throw u();
     }
 
     @Test
     public void o_add_c() {
-        initO();
+        GisChecker initState = initO();
         u();
     }
 
     @Test
     public void o_add_o() {
-        initO();
+        GisChecker initState = initO();
         u();
     }
 
     @Test
     public void o_add_I() {
-        initO();
+        GisChecker initState = initO();
         u();
     }
 
     @Test
     public void o_add_h() {
-        initO();
+        GisChecker initState = initO();
         u();
     }
 
     @Test
     public void o_add_a() {
-        initO();
+        GisChecker initState = initO();
         u();
     }
 
     @Test
     public void o_del_o() {
-        initO();
+        GisChecker initState = initO();
         u();
     }
 
-    private void initOO() {
-        u();
+    private GisChecker initOO() {
+        throw u();
     }
 
     @Test
     public void oo_add_c() {
-        initOO();
+        GisChecker initState = initOO();
         u();
     }
 
     @Test
     public void oo_add_I() {
-        initOO();
+        GisChecker initState = initOO();
         u();
     }
 
     @Test
     public void oo_add_h() {
-        initOO();
+        GisChecker initState = initOO();
         u();
     }
 
     @Test
     public void oo_del_o() {
-        initOO();
+        GisChecker initState = initOO();
         u();
     }
 
-    private void initI() {
-        u();
+    private GisChecker initI() {
+        throw u();
     }
 
     @Test
     public void I_add_c() {
-        initI();
+        GisChecker initState = initI();
         u();
     }
 
     @Test
     public void I_add_o() {
-        initI();
+        GisChecker initState = initI();
         u();
     }
 
     @Test
     public void I_add_I() {
-        initI();
+        GisChecker initState = initI();
         u();
     }
 
     @Test
     public void I_add_h() {
-        initI();
+        GisChecker initState = initI();
         u();
     }
 
     @Test
     public void I_add_a() {
-        initI();
+        GisChecker initState = initI();
         u();
     }
 
     @Test
     public void I_del_I() {
-        initI();
+        GisChecker initState = initI();
         u();
     }
 
-    private void initII() {
-        u();
+    private GisChecker initII() {
+        throw u();
     }
 
     @Test
     public void ii_add_c() {
-        initII();
+        GisChecker initState = initII();
         u();
     }
 
     @Test
     public void ii_add_o() {
-        initII();
+        GisChecker initState = initII();
         u();
     }
 
     @Test
     public void ii_add_h() {
-        initII();
+        GisChecker initState = initII();
         u();
     }
 
     @Test
     public void ii_del_I() {
-        initII();
+        GisChecker initState = initII();
         u();
     }
 
-    private void initH() {
-        u();
+    private GisChecker initH() {
+        throw u();
     }
 
     @Test
     public void h_add_c() {
-        initH();
+        GisChecker initState = initH();
         u();
     }
 
     @Test
     public void h_add_o() {
-        initH();
+        GisChecker initState = initH();
         u();
     }
 
     @Test
     public void h_add_I() {
-        initH();
+        GisChecker initState = initH();
         u();
     }
 
     @Test
     public void h_add_h() {
-        initH();
+        GisChecker initState = initH();
         u();
     }
 
     @Test
     public void h_add_a() {
-        initH();
+        GisChecker initState = initH();
         u();
     }
 
-    private void initCO() {
-        u();
+    private GisChecker initCO() {
+        throw u();
     }
 
     @Test
     public void co_add_o() {
-        initCO();
+        GisChecker initState = initCO();
         u();
     }
 
     @Test
     public void co_add_I() {
-        initCO();
+        GisChecker initState = initCO();
         u();
     }
 
     @Test
     public void co_add_h() {
-        initCO();
+        GisChecker initState = initCO();
         u();
     }
 
     @Test
     public void co_del_c() {
-        initCO();
+        GisChecker initState = initCO();
         u();
     }
 
     @Test
     public void co_del_o() {
-        initCO();
+        GisChecker initState = initCO();
         u();
     }
 
-    private void initCI() {
-        u();
+    private GisChecker initCI() {
+        throw u();
     }
 
 
     @Test
     public void ci_add_o() {
-        initCI();
+        GisChecker initState = initCI();
         u();
     }
 
     @Test
     public void ci_add_h() {
-        initCI();
+        GisChecker initState = initCI();
         u();
     }
 
-    private void initOI() {
-        u();
+    private GisChecker initOI() {
+        throw u();
     }
 
     @Test
     public void oi_add_c() {
-        initOI();
+        GisChecker initState = initOI();
         u();
     }
 
     @Test
     public void oi_add_h() {
-        initOI();
+        GisChecker initState = initOI();
         u();
     }
 
     @Test
     public void oi_del_o() {
-        initOI();
+        GisChecker initState = initOI();
         u();
     }
 
     @Test
     public void oi_del_I() {
-        initOI();
+        GisChecker initState = initOI();
         u();
     }
 
-    private void initIH() {
-        u();
+    private GisChecker initIH() {
+        throw u();
     }
 
     @Test
     public void ih_add_o() {
-        initIH();
+        GisChecker initState = initIH();
         u();
     }
 
-    private void initCOI() {
-        u();
+    private GisChecker initCOI() {
+        throw u();
     }
 
     @Test
     public void coi_add_h() {
-        initCOI();
+        GisChecker initState = initCOI();
         u();
     }
 
     @Test
     public void coi_add_a() {
-        initCOI();
+        GisChecker initState = initCOI();
         u();
     }
 
-    private void initCOH() {
-        u();
+    private GisChecker initCOH() {
+        throw u();
     }
 
     @Test
     public void coh_add_I() {
-        initCOH();
+        GisChecker initState = initCOH();
         u();
     }
 
-    private void initCOIH() {
-        u();
+    private GisChecker initCOIH() {
+        throw u();
     }
 
     @Test
     public void coih_add_h() {
-        initCOIH();
+        GisChecker initState = initCOIH();
         u();
     }
 
     @Test
     public void coih_add_a() {
-        initCOIH();
+        GisChecker initState = initCOIH();
         u();
     }
 
     @Test
     public void coih_del_c() {
-        initCOIH();
+        GisChecker initState = initCOIH();
         u();
     }
 
     @Test
     public void coih_del_o() {
-        initCOIH();
+        GisChecker initState = initCOIH();
         u();
     }
 
     @Test
     public void coih_del_I() {
-        initCOIH();
+        GisChecker initState = initCOIH();
         u();
     }
 
     @Test
     public void coih_del_h() {
-        initCOIH();
+        GisChecker initState = initCOIH();
         u();
     }
 
@@ -687,7 +688,7 @@ public final class NewGiUpdateIT extends ITBase {
         private final List<String> _strings = new ArrayList<String>();
     }
 
-    private static void u() {
+    private static Error u() {
         throw new UnsupportedOperationException();
     }
 }
