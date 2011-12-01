@@ -402,22 +402,6 @@ public class API
         return new Map_NestedLoops(outerInput, innerInput, inputBindingPosition);
     }
 
-    /**
-     * @deprecated
-     */
-    public static Operator map_NestedLoops(Operator outerInput,
-                                           Operator innerInput,
-                                           RowType outerJoinRowType,
-                                           List<Expression> outerJoinRowExpressions,
-                                           int inputBindingPosition)
-    {
-
-
-        return new Map_NestedLoops(outerInput,
-                                   ifEmpty_Default(innerInput, outerJoinRowType, outerJoinRowExpressions),
-                                   inputBindingPosition);
-    }
-
     // IfEmpty
 
     public static Operator ifEmpty_Default(Operator input, RowType rowType, List<? extends Expression> expressions)
