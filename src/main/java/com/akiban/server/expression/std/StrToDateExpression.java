@@ -23,17 +23,14 @@ import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueSourceIsNullException;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.ObjectExtractor;
 import com.akiban.server.types.util.ValueHolder;
 import java.util.Calendar;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
 
 public class StrToDateExpression extends AbstractBinaryExpression
 {
@@ -66,935 +63,12 @@ public class StrToDateExpression extends AbstractBinaryExpression
 
     };
 
-    /**
-     * Specifiers for str_to_date
-     * See http://dev.mysql.com/doc/refman/5.5/en/date-and-time-functions.html
-     */    
-    protected static enum Field
-    {
-
-        /**
-         * abbreviated weekday name: Sun, Sat, Fri, ...
-         */
-        a 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                return new long[] {abbWeekday.get(str.substring(0, 3).toUpperCase()), 3};
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.W;
-            }
-
-        },
-        
-        /**
-         * abbreviated month name: Dec, Nov, Oct, ...
-         */
-        b 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                return new long [] {abbMonth.get(str.substring(0, 3).toUpperCase()), 3};
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.m;
-            }
-        },
-        
-        /**
-         * month in numeric: 12, 11, 10, ...
-         */
-        c 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long[] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2: 1)), i};
-            }
-
-             @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.m;
-            }
-        },
-        
-        /**
-         * day of month with suffix: 31st, 30th, 29th, ...
-         */
-        D 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int n = 0;
-                int limit = Math.min(4, str.length());
-                for (n = 0; n < limit && str.charAt(n) >= '0' && str.charAt(n) <= '9'; ++n );
-                return new long[] { Long.parseLong(str.substring(0, n)), n +2 };
-
-            }
-
-             @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.d;
-            }
-        },
-        
-        /**
-         * day of month in numeric: 31, 30, 29, ...
-         */
-        d 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long[] {Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2: 1)), i};
-            }
-
-             @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.d;
-            }
-        },
-        
-        /**
-         * same as d: day in numeric
-         */
-        e 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long [] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2: 1))};
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.d;
-            }
-        },
-        
-        /**
-         * micro seconds
-         */
-        f 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int n = 0;
-                while (n < str.length() && Character.isDigit(str.charAt(n))) ++n;
-                return new long[] {month.get(str.substring(0, n).toUpperCase()),n};
-            }
-             @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.f;
-            }
-        },
-        
-        /**
-         * hour in 24-hr format
-         */
-        H 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long[] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2 :1)), i};
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.H;
-            }
-        },
-        
-        /**
-         * hour in 12-hr format
-         */
-        h 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int i = 2 <= str.length() ? 2 : 1;
-                // adjust hour to 24hr format
-                long h = Long.parseLong(str.substring(0, i));
-                if (h > 12) throw new NumberFormatException();
-                h %= 12;
-                return new long [] {h, i};
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.H;
-            }
-        },
-        
-        /**
-         * I same as h: hour in 12-hr format
-         */
-        I 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long [] { (Long.parseLong(str.substring(0,i = 2 <= str.length() ? 2 : 1)) + 12) % 24, i};
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.H;
-            }
-        },
-        
-        /**
-         * minute
-         */
-        i 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long[] {Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2 :1)), i};
-            }
-
-             @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.i;
-            }
-        },
-        
-        /**
-         * day of year in numeric
-         */
-        j 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int i = 0;
-                for (; i < 3 && i < str.length() && str.charAt(i) >= '0' && str.charAt(i) <= '9'; ++i);
-                return new long[] {Long.parseLong(str.substring(0,i)), i};
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.j;
-            }
-        },
-        
-        /**
-         * hour : 24-hr format.
-         * Same as H
-         */
-        k
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long[] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2 :1)), i};
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.H;
-            }
-        },
-
-        /**
-         * hour: 12-hr format
-         * Same as h
-         */
-        l
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int i = 2 <= str.length() ? 2 : 1;
-                // adjust hour to 24hr format
-                long h = Long.parseLong(str.substring(0, i));
-                if (h > 12) throw new NumberFormatException();
-                h %= 12;
-                return new long [] {h, i};
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.H;
-            }
-        },
-        
-        /**
-         * month name: December, November, ...
-         */
-        M 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int n = 0;
-                while (n < str.length() && !Character.isDigit(str.charAt(n))) ++n;
-                return new long[] {month.get(str.substring(0, n).toUpperCase()),n};
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-             @Override
-            public Field equivalentField ()
-            {
-                return Field.m;
-            }
-        },
-        
-        /**
-         * month in numeric: 12, 11, 10, ...
-         */
-        m 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long[] { Long.parseLong(str.substring(0,i = 2 <= str.length() ? 2 :1)), i};
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.m;
-            }
-        },
-        
-        /**
-         * specify pm or am
-         * to be used with %r (12-hr format time) or %h (12-hr format hour)
-         * return NULL if used with %T (24-hr format time) or %H (24-hr format hour)
-         */        
-        p 
-        {
-            @Override
-            public long [] get (String str)
-            {
-                String ap = str.substring(0, 2);
-                return new long[] {ap.equalsIgnoreCase("am") ? 0 : ap.equalsIgnoreCase("pm") ? 12 : -1
-                    , 2};
-            }
-
-             @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.p;
-            }
-        },
-        
-        /**
-         * Time hh:mm:ss 12hr format
-         */
-        r 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int i =  Math.min(8, str.length());
-                String time = str.substring(0,i);
-                String t[] = time.split("\\:");
-
-                // adjust time to 24hr format
-                long hr = Long.parseLong(t[0]);
-                if (hr > 12) throw new NumberFormatException();
-                hr %= 12;
-                long m = Long.parseLong(t[1]);
-                long s = Long.parseLong(t[2]);
-                return new long [] {10000L * hr + 100 * m + s, i};
-            }
-
-             @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.T;
-            }
-        },
-   
-        /**
-         * second, same as s
-         */
-        S 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long[] { Long.parseLong(str.substring(0,i = 2 <= str.length() ? 2 :1)), i};
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.s;
-            }
-        },
-        
-        /**
-         * second,
-         */
-        s 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long[] { Long.parseLong(str.substring(0,i = 2 <= str.length() ? 2 :1)), i};
-            }
-
-             @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.s;
-            }
-        },
-        
-        /**
-         * Time: hh:mm:ss in 24hr format.
-         */
-        T 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int i = Math.min(8, str.length());
-                String time = str.substring(0, i);
-                String t[] = time.split("\\:");
-                return new long [] {10000L * Long.parseLong(t[0]) + 100 * Long.parseLong(t[1]) + Long.parseLong(t[2]), i};
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.T;
-            }
-        },
-        
-        /**
-         * week of year [0,...53], Sunday is the first day of week
-         */
-        U 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                // TO DO: not sure how this actually gets used
-                throw new UnsupportedOperationException("%U is not supported in str_to_date yet");
-                /*
-                int i;
-                return new long [] { Long.parseLong(str.substring(0,i = 2 <= str.length() ? 2 :1)), i};
-                 *
-                 */
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.U;
-            }
-        },
-        
-        /**
-         * week of year [0...53], Monday is the first day of week
-         */
-        u 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                // TO DO: not sure how this actually gets used
-                throw new UnsupportedOperationException("%u is not supported in str_to_date yet");
-                /*
-                int i;
-                return new long [] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2 :1)), i};
-                 *
-                 */
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.u;
-            }
-        },
-        
-        /**
-         * week of year: [1,..,53]: where Sunday is the first day
-         * to be used with %X
-         */
-        V 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long[] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2:1)), i};
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.V;
-            }
-        },
-        
-        /**
-         * week of year [0,..,53]: where Monday is the first day
-         * to be used with %x
-         */
-        v 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long [] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2 :1)), i};
-            }
-
-             @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.v;
-            }
-        },
-        
-        /**
-         * week day name: Sunday, Saturday, ...
-         */
-        W 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int n = 0;
-                while (n < str.length() && !Character.isDigit(str.charAt(n))) ++n;
-                return new long[] {weekDay.get(str.substring(0, n).toUpperCase()),n};
-            }
-
-             @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.W;
-            }
-        },
-        
-        /**
-         * week day in numeric: Sunday = 0, .... Saturday = 6
-         */
-        w 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                return new long[] { Long.parseLong(str.charAt(0) + ""), 1};
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.W;
-            }
-        },
-        
-        /**
-         * year for the week, to be used with %V: Sunday is the first day
-         */
-        X 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int i = 4 % str.length();
-                i = (i == 0 ? 4 :i);
-                return new long[] { Long.parseLong(str.substring(0, i)),i };
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.X;
-            }
-        },
-        
-        /**
-         * year for the week, to be used with %v: Monday is the first day
-         */
-        x 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int i = 4 % str.length();
-                i = (i == 0 ? 4 :i);
-                return new long[] { Long.parseLong(str.substring(0, i)),i };
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.x;
-            }
-        },
-        
-        /**
-         * year : 2 digits, relative to 2000
-         */
-        y 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long[] {2000 + Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2: 1)), i};
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.Y;
-            }
-        },
-        
-        /**
-         *  year: 4 digits 
-         */
-        Y 
-        {
-            @Override
-            public long [] get(String str)
-            {
-                int i = 4 % str.length();
-                i = (i == 0 ? 4 :i);
-                return new long[] { Long.parseLong(str.substring(0, i)),i };
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.Y;
-            }
-        },
-
-        /**
-         * literal %
-         */
-        percent
-        {
-            @Override
-            public long [] get(String str)
-            {
-                throw new UnsupportedOperationException("literal % is not supported in str_to_date");
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 throw new UnsupportedOperationException("literal % is not supported yet");
-            }
-
-            @Override
-            public Field equivalentField ()
-            {
-                return Field.percent;
-            }
-        };
-
-        
-        /**
-         * parse str to get value for this field.
-         * return an array of long where array[0] is the parsed value, and array[1] is n where
-         * str.substring(0,n) contains the parsed value. This is used to remove parsed field from str.
-         */
-        abstract long [] get(String str);
-
-        /**
-         *
-         * @return 1 if the field specifies date-related info (i.e., year, month, day, date, week, etc..)
-         *         2 if the field specifies time-related info (i.e., hour, minute, second,)
-         */
-        abstract int getFieldType ();
-
-        /**
-         * 
-         * @return the equivalent field (that's ultimately used to map values to)
-         * For example, %b, %m, and %M are all referred to as %m because the all mean day of month
-         *              %y and %Y  => %Y year
-         */
-        abstract Field equivalentField ();
-
-        // class static data fields
-        static protected final HashMap<String, Integer> abbWeekday = new HashMap<String, Integer>();
-        static protected final HashMap<String, Integer> weekDay = new HashMap<String, Integer>();
-        static protected final HashMap<String, Integer> abbMonth = new HashMap<String, Integer>();
-        static protected final HashMap<String, Integer> month = new HashMap<String, Integer>();
-        static
-        {
-            weekDay.put("SUNDAY", 0);
-            weekDay.put("MONDAY", 1);
-            weekDay.put("TUESDAY", 2);
-            weekDay.put("WEDNESDAY", 3);
-            weekDay.put("THURSDAY", 4);
-            weekDay.put("FRIDAY", 5);
-            weekDay.put("SATURDAY", 6);
-            weekDay.put("SUNDAY", 7);
-
-            abbWeekday.put("SUN", 0);
-            abbWeekday.put("MON", 1);
-            abbWeekday.put("TUE", 2);
-            abbWeekday.put("WED", 3);
-            abbWeekday.put("THU", 4);
-            abbWeekday.put("FRI", 5);
-            abbWeekday.put("SAT", 6);
-
-            abbMonth.put("JAN", 1);
-            abbMonth.put("FEB", 2);
-            abbMonth.put("MAR", 3);
-            abbMonth.put("APR", 4);
-            abbMonth.put("MAY", 5);
-            abbMonth.put("JUN", 6);
-            abbMonth.put("JUL", 7);
-            abbMonth.put("AUG", 8);
-            abbMonth.put("SEP", 9);
-            abbMonth.put("OCT", 10);
-            abbMonth.put("NOV", 11);
-            abbMonth.put("DEC", 12);
-
-            month.put("JANUARY", 1);
-            month.put("FEBRUARY", 2);
-            month.put("MARCH", 3);
-            month.put("APRIL", 4);
-            month.put("MAY", 5);
-            month.put("JUNE", 6);
-            month.put("JULY", 7);
-            month.put("AUGUST", 8);
-            month.put("SEPTEMBER", 9);
-            month.put("OCTOBER", 10);
-            month.put("NOVEMBER", 11);
-            month.put("DECEMBER", 12);
-        }
-    }
-
     private static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
         private  int topType;
-        private EnumMap<Field, Long> valuesMap = new EnumMap<Field,Long>(Field.class);
+        private EnumMap<DateTimeField, Long> valuesMap = new EnumMap<DateTimeField,Long>(DateTimeField.class);
         private boolean has24Hr;
+
         public InnerEvaluation (AkType type, List<? extends ExpressionEvaluation> childrenEval)
         {
             super(childrenEval);
@@ -1030,7 +104,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             // trim unnecessary spaces in str.
             str = str.trim();
             String sVal = "";
-            Field field = null;
+            DateTimeField field = null;
             topType = 0;
             has24Hr = false;
             try
@@ -1038,8 +112,8 @@ public class StrToDateExpression extends AbstractBinaryExpression
                 for (int n = 1; n < formatList.length - 1; ++n)
                 {
                     String fName = formatList[n].charAt(0) + "";
-                    field = Field.valueOf(fName);
-                    has24Hr |= field.equals(Field.H) || field.equals(Field.T);
+                    field = DateTimeField.valueOf(fName);
+                    has24Hr |= field.equals(DateTimeField.H) || field.equals(DateTimeField.T);
                     topType |= field.getFieldType();
                     String del = formatList[n].substring(1);
                     if (del.length() == 0) // no delimeter
@@ -1063,7 +137,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
                     str = str.replaceFirst(sVal + del, "");
                     str = str.trim();
                 }
-                field = Field.valueOf(formatList[formatList.length - 1].charAt(0) + "");
+                field = DateTimeField.valueOf(formatList[formatList.length - 1].charAt(0) + "");
                 topType |= field.getFieldType();
                 if (valuesMap.containsKey(field.equivalentField())) return false;
                 valuesMap.put(field.equivalentField(), field.get(str)[0]);
@@ -1105,18 +179,18 @@ public class StrToDateExpression extends AbstractBinaryExpression
              Long d = 0L;
              
               // year
-              if ((y = valuesMap.get(Field.Y.equivalentField())) == null) y = 0L;
+              if ((y = valuesMap.get(DateTimeField.Y.equivalentField())) == null) y = 0L;
 
               // month
-              if ((m = valuesMap.get(Field.m.equivalentField())) == null) m = 0L;
+              if ((m = valuesMap.get(DateTimeField.m.equivalentField())) == null) m = 0L;
                     
               // day
-              if ((d = valuesMap.get(Field.d.equivalentField())) == null) d = 0L;
+              if ((d = valuesMap.get(DateTimeField.d.equivalentField())) == null) d = 0L;
               
               // get date specified by day of year, year, if year, month or day is not available
               if ( m * d == 0 && y != 0)
               {
-                  Long dayOfYear = valuesMap.get(Field.j);
+                  Long dayOfYear = valuesMap.get(DateTimeField.j);
                   if (dayOfYear != null && dayOfYear.intValue() >= 0)
                   {
                       Calendar cal = Calendar.getInstance();
@@ -1131,23 +205,23 @@ public class StrToDateExpression extends AbstractBinaryExpression
               // get date specified by week,year and weekday if year, month or day field is still not available
               if ( y*m*d == 0)
               {
-                  Long yr = valuesMap.get(Field.x);
+                  Long yr = valuesMap.get(DateTimeField.x);
                   Long wk;
                   Long dWeek;
                   Calendar cal = Calendar.getInstance();
                  
                   if (yr == null)
                   {
-                      if ((yr = valuesMap.get(Field.X)) == null || (wk = valuesMap.get(Field.V)) == null
-                              || (dWeek = valuesMap.get(Field.W)) == null)
+                      if ((yr = valuesMap.get(DateTimeField.X)) == null || (wk = valuesMap.get(DateTimeField.V)) == null
+                              || (dWeek = valuesMap.get(DateTimeField.W)) == null)
                           return validYMD(y, m, d) ? y * 10000L + m * 100 + d : -1;
                        cal.setMinimalDaysInFirstWeek(7);
                        cal.setFirstDayOfWeek(Calendar.SUNDAY);
                    }
                   else
                   {
-                      if ((wk = valuesMap.get(Field.v)) == null
-                              || (dWeek = valuesMap.get(Field.W)) == null)
+                      if ((wk = valuesMap.get(DateTimeField.v)) == null
+                              || (dWeek = valuesMap.get(DateTimeField.W)) == null)
                           return validYMD(y, m, d) ? y * 10000L + m * 100 + d: -1;
                       cal.setMinimalDaysInFirstWeek(1);
                       cal.setFirstDayOfWeek(Calendar.MONDAY); 
@@ -1169,8 +243,8 @@ public class StrToDateExpression extends AbstractBinaryExpression
             Long min = 0L;
             Long sec = 0L;
             
-            Long t = valuesMap.get(Field.T);
-            Long ap = valuesMap.get(Field.p);
+            Long t = valuesMap.get(DateTimeField.T);
+            Long ap = valuesMap.get(DateTimeField.p);
             if (ap != null && (ap < 0L || has24Hr)) return -1;
                     
             if (t != null)
@@ -1182,19 +256,18 @@ public class StrToDateExpression extends AbstractBinaryExpression
              }
 
             // hour
-            if ((hr = valuesMap.get(Field.h.equivalentField())) == null) hr = 0L;
+            if ((hr = valuesMap.get(DateTimeField.h.equivalentField())) == null) hr = 0L;
             if (ap != null && hr > 0L) hr += ap;
 
             // minute
-            if ((min = valuesMap.get(Field.i.equivalentField())) == null) min = 0L;
+            if ((min = valuesMap.get(DateTimeField.i.equivalentField())) == null) min = 0L;
             
             // second
-            if ((sec = valuesMap.get(Field.s.equivalentField())) == null) sec = 0L;
+            if ((sec = valuesMap.get(DateTimeField.s.equivalentField())) == null) sec = 0L;
 
             // TODO: millis sec (???)
 
             return validHMS(hr,min,sec) ? hr * 10000L + min * 100L + sec : -1;
-
         }
         
         private long findDateTime ()
@@ -1205,8 +278,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             long time = findTime();
             if (time < 0) return -1;
             
-            return date * 1000000L + time;
-       
+            return date * 1000000L + time;       
         }             
 
         private static boolean validYMD(long y, long m, long d)
@@ -1235,43 +307,11 @@ public class StrToDateExpression extends AbstractBinaryExpression
         {
             return !(h < 0 || h > 23 || m < 0 || m > 59 || sec < 0 || sec > 59);
         }
-
     }
    
     public StrToDateExpression (Expression l, Expression r)
     {
         super(AkType.DATETIME,l, r);
-    }
-
-    protected static AkType getTopType (ExpressionEvaluation strE, ExpressionEvaluation formatE)
-    {
-        ValueSource formatS = formatE.eval();
-
-        try
-        {
-            String format = Extractors.getStringExtractor().getObject(formatS);
-            String formatList[] = format.split("\\%");
-            int bit = 0;
-            try
-            {
-                for (int n = 1; n < formatList.length; ++n)
-                    bit |= Field.valueOf(formatList[n].charAt(0) + "").getFieldType();
-                switch (bit)
-                {
-                    case 1:     return AkType.DATE;
-                    case 2:     return AkType.TIME;
-                    default:    return AkType.DATETIME;
-                }
-            }
-            catch (IllegalArgumentException ex)
-            {
-                return AkType.NULL;
-            }
-        }
-        catch (ValueSourceIsNullException e)
-        {
-            return AkType.NULL;
-        }
     }
 
     @Override
