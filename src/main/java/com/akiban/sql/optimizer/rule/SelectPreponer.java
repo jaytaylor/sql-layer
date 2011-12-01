@@ -119,16 +119,19 @@ public class SelectPreponer extends BaseRule
 
         protected void pullToward(PlanNode node) {
             loaders = new HashMap<TableSource,PlanNode>();
+            PlanNode prev = null;
             if (node instanceof IndexScan) {
                 indexColumns = new HashMap<ExpressionNode,PlanNode>();
                 for (ExpressionNode column : ((IndexScan)node).getColumns())
                     indexColumns.put(column, node);
-                node = node.getOutput();
+                prev = node;
+                node = getOutput(node);
             }
             while (node instanceof TableLoader) {
                 for (TableSource table : ((TableLoader)node).getTables()) {
                     loaders.put(table, node);
                 }
+                prev = node;
                 node = getOutput(node);
             }
             boolean sawJoin = false;
@@ -149,13 +152,26 @@ public class SelectPreponer extends BaseRule
                     }
                     sawJoin = true;
                 }
-                else if ((node instanceof Product) ||
-                         (node instanceof MapJoin)) {
+                else if (node instanceof MapJoin) {
+                    switch (((MapJoin)node).getJoinType()) {
+                    case INNER:
+                        break;
+                    case LEFT:
+                        if (prev == ((MapJoin)node).getInner())
+                            return;
+                        break;
+                    default:
+                        return;
+                    }
+                    sawJoin = true;
+                }
+                else if (node instanceof Product) {
                     // Only inner right now.
                     sawJoin = true;
                 }
                 else
                     break;
+                prev = node;
                 node = getOutput(node);
             }
             if (!sawJoin ||
