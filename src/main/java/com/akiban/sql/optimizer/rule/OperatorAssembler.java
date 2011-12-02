@@ -249,6 +249,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleSort((Sort)node);
             else if (node instanceof Limit)
                 return assembleLimit((Limit)node);
+            else if (node instanceof NullIfEmpty)
+                return assembleNullIfEmpty((NullIfEmpty)node);
             else if (node instanceof Project)
                 return assembleProject((Project)node);
             else if (node instanceof ExpressionsSource)
@@ -660,6 +662,16 @@ public class OperatorAssembler extends BaseRule
             stream.operator = API.limit_Default(stream.operator, 
                                                 limit.getOffset(), limit.isOffsetParameter(),
                                                 nlimit, limit.isLimitParameter());
+            return stream;
+        }
+
+        protected RowStream assembleNullIfEmpty(NullIfEmpty nullIfEmpty) {
+            RowStream stream = assembleStream(nullIfEmpty.getInput());
+            Expression[] nulls = new Expression[stream.rowType.nFields()];
+            Arrays.fill(nulls, LiteralExpression.forNull());
+            stream.operator = API.ifEmpty_Default(stream.operator,
+                                                  stream.rowType,
+                                                  Arrays.asList(nulls));
             return stream;
         }
 
