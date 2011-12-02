@@ -16,10 +16,7 @@
 package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.Tap;
@@ -75,25 +72,13 @@ class Map_NestedLoops extends Operator
 
     public Map_NestedLoops(Operator outerInputOperator,
                            Operator innerInputOperator,
-                           RowType outerJoinRowType,
-                           List<? extends Expression> outerJoinRowExpressions,
                            int inputBindingPosition)
     {
         ArgumentValidation.notNull("outerInputOperator", outerInputOperator);
         ArgumentValidation.notNull("innerInputOperator", innerInputOperator);
-        ArgumentValidation.isTrue("outer join specification makes sense",
-                                  (outerJoinRowType == null && outerJoinRowExpressions == null) ||
-                                  (outerJoinRowType != null &&
-                                   outerJoinRowExpressions != null &&
-                                   outerJoinRowExpressions.size() > 0));
         ArgumentValidation.isGTE("inputBindingPosition", inputBindingPosition, 0);
         this.outerInputOperator = outerInputOperator;
         this.innerInputOperator = innerInputOperator;
-        this.outerJoinRowType = outerJoinRowType;
-        this.outerJoinRowExpressions =
-            outerJoinRowExpressions == null
-            ? null
-            : new ArrayList<Expression>(outerJoinRowExpressions);
         this.inputBindingPosition = inputBindingPosition;
     }
 
@@ -106,8 +91,6 @@ class Map_NestedLoops extends Operator
 
     private final Operator outerInputOperator;
     private final Operator innerInputOperator;
-    private final RowType outerJoinRowType;
-    private final List<Expression> outerJoinRowExpressions;
     private final int inputBindingPosition;
 
     // Inner classes
@@ -168,16 +151,6 @@ class Map_NestedLoops extends Operator
             super(adapter);
             this.outerInput = outerInputOperator.cursor(adapter);
             this.innerInput = innerInputOperator.cursor(adapter);
-            if (outerJoinRowExpressions == null) {
-                this.outerJoinRowEvaluations = null;
-            } else {
-                this.outerJoinRowEvaluations = new ArrayList<ExpressionEvaluation>();
-                for (Expression outerJoinRowExpression : outerJoinRowExpressions) {
-                    ExpressionEvaluation eval = outerJoinRowExpression.evaluation();
-                    eval.of(adapter);
-                    outerJoinRowEvaluations.add(eval);
-                }
-            }
         }
 
         // For use by this class
@@ -188,24 +161,9 @@ class Map_NestedLoops extends Operator
             if (outerRow.isHolding()) {
                 Row innerRow = innerInput.next();
                 if (innerRow == null) {
-                    if (needOuterJoinRow) {
-                        ValuesHolderRow outerJoinValuesHolderRow = unsharedOuterJoinRow().get();
-                        int nFields = outerJoinRowType.nFields();
-                        for (int i = 0; i < nFields; i++) {
-                            ExpressionEvaluation outerJoinRowColumnEvaluation = outerJoinRowEvaluations.get(i);
-                            outerJoinRowColumnEvaluation.of(outerRow.get());
-                            outerJoinRowColumnEvaluation.of(bindings);
-                            outerJoinValuesHolderRow.holderAt(i).copyFrom(outerJoinRowColumnEvaluation.eval());
-                        }
-                        outputRow = outerJoinValuesHolderRow;
-                        // We're about to emit an outerjoin row. Don't do it again for this outer row.
-                        needOuterJoinRow = false;
-                    } else {
-                        outerRow.release();
-                    }
+                    outerRow.release();
                 } else {
                     outputRow = innerRow;
-                    needOuterJoinRow = false;
                 }
             }
             return outputRow;
@@ -214,7 +172,6 @@ class Map_NestedLoops extends Operator
         private void closeOuter()
         {
             outerRow.release();
-            outerJoinRow.release();
             outerInput.close();
         }
 
@@ -223,16 +180,6 @@ class Map_NestedLoops extends Operator
             innerInput.close();
             bindings.set(inputBindingPosition, row);
             innerInput.open(bindings);
-            needOuterJoinRow = outerJoinRowType != null;
-        }
-
-        private ShareHolder<ValuesHolderRow> unsharedOuterJoinRow()
-        {
-            if (outerJoinRow.isEmpty() || outerJoinRow.isShared()) {
-                ValuesHolderRow valuesHolderRow = new ValuesHolderRow(outerJoinRowType);
-                outerJoinRow.hold(valuesHolderRow);
-            }
-            return outerJoinRow;
         }
 
         // Object state
@@ -240,10 +187,7 @@ class Map_NestedLoops extends Operator
         private final Cursor outerInput;
         private final Cursor innerInput;
         private final ShareHolder<Row> outerRow = new ShareHolder<Row>();
-        private final List<ExpressionEvaluation> outerJoinRowEvaluations;
-        private final ShareHolder<ValuesHolderRow> outerJoinRow = new ShareHolder<ValuesHolderRow>();
         private Bindings bindings;
         private boolean closed = false;
-        private boolean needOuterJoinRow;
     }
 }
