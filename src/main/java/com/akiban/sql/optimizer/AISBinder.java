@@ -532,15 +532,18 @@ public class AISBinder implements Visitor
                 throw new NoSuchColumnException(columnName);
         }
         else {
+            boolean ambiguous = false;
+            outer:
             for (BindingContext bindingContext : bindingContexts) {
                 ColumnBinding contextBinding = null;
                 for (FromTable fromTable : bindingContext.tables) {
                     ColumnBinding tableBinding = getColumnBinding(fromTable, columnName);
                     if (tableBinding != null) {
-                        if (contextBinding != null)
-                            throw new AmbiguousColumNameException (columnName);
-                        else
-                            contextBinding = tableBinding;
+                        if (contextBinding != null) {
+                            ambiguous = true;
+                            break outer;
+                        }
+                        contextBinding = tableBinding;
                     }
                 }
                 if (contextBinding != null) {
@@ -558,8 +561,12 @@ public class AISBinder implements Visitor
                         }
                     }
                 }
-                if (columnBinding == null)
-                    throw new NoSuchColumnException (columnName);
+                if (columnBinding == null) {
+                    if (ambiguous)
+                        throw new AmbiguousColumNameException(columnName);
+                    else
+                        throw new NoSuchColumnException(columnName);
+                }
             }
         }
         columnReference.setUserData(columnBinding);

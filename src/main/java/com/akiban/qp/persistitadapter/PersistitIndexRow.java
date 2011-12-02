@@ -77,7 +77,7 @@ public class PersistitIndexRow extends AbstractRow
     {
         this.adapter = adapter;
         this.indexRowType = indexRowType;
-        this.indexRow = adapter.persistit.getKey(adapter.session);
+        this.indexRow = adapter.persistit().getKey(adapter.session());
         this.hKey = new PersistitHKey(adapter, index().hKey());
         this.keySource = new PersistitKeyValueSource();
     }
@@ -88,7 +88,7 @@ public class PersistitIndexRow extends AbstractRow
     {
         // Extract the hKey from the exchange, using indexRow as a convenient Key to bridge Exchange
         // and PersistitHKey.
-        adapter.persistit.constructHKeyFromIndexKey(indexRow, exchange.getKey(), index());
+        adapter.persistit().constructHKeyFromIndexKey(indexRow, exchange.getKey(), index());
         hKey.copyFrom(indexRow);
         // Now copy the entire index record into indexRow.
         exchange.getKey().copyTo(indexRow);

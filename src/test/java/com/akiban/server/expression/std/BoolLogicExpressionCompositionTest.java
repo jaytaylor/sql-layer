@@ -22,10 +22,12 @@ import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 import java.util.Collection;
+import org.junit.Test;
 
 @RunWith(NamedParameterizedRunner.class)
 public final class BoolLogicExpressionCompositionTest extends ComposedExpressionTestBase {
 
+    private static boolean alreadyExc = false;
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() {
         return Arrays.asList(
@@ -33,7 +35,12 @@ public final class BoolLogicExpressionCompositionTest extends ComposedExpression
                 Parameterization.create("OR", BoolLogicExpression.orComposer)
         );
     }
-    
+
+    @Test
+    public void testdummy ()
+    {
+        alreadyExc = true;
+    }
     @Override
     protected CompositionTestInfo getTestInfo (){
         return testInfo;
@@ -50,4 +57,10 @@ public final class BoolLogicExpressionCompositionTest extends ComposedExpression
 
     private final ExpressionComposer composer;
     private final CompositionTestInfo testInfo = new CompositionTestInfo(2, AkType.BOOL, true);
+
+    @Override
+    public boolean alreadyExc()
+    {
+        return alreadyExc;
+    }
 }

@@ -71,11 +71,101 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	testYamlFail("- UnknownCommand:");
     }
 
+    /* Test !select-engine general syntax */
+
+    @Test
+    public void testSelectEngineMissingValue() {
+	testYamlFail("- Statement: !select-engine");
+    }
+
+    @Test
+    public void testSelectEngineScalarValue() {
+	testYamlFail("- Statement: !select-engine foo");
+    }
+
+    @Test
+    public void testSelectEngineSequenceValue() {
+	testYamlFail("- Statement: !select-engine [foo, bar]");
+    }
+
+    @Test
+    public void testSelectEngineKeyNotScalar() {
+	testYamlFail("- Statement: !select-engine { [foo, bar]: baz }");
+    }
+
+    @Test
+    public void testSelectEngineMatch() {
+	testYaml("---\n" +
+		 "- CreateTable: t (bigint_field bigint)\n" +
+		 "---\n" +
+		 "- Statement: !select-engine\n" +
+		 "    { foo: bar,\n" +
+		 "      it: INSERT INTO t VALUES (1) }\n" +
+		 "...");
+    }
+
+    @Test
+    public void testSelectEngineNoMatch() {
+	testYaml("- Statement: !select-engine { foo: bar }");
+    }
+
+    @Test
+    public void testSelectEngineKeyItOverAllPrecedence() {
+	testYaml("---\n" +
+                 "- CreateTable: t (bigint_field bigint)\n" +
+                 "---\n" +
+                 "- Statement: !select-engine\n" +
+                 "    { it: SELECT * FROM t, all: oops }");
+    }
+
+    @Test
+    public void testSelectEngineKeyItOverAllPrecedenceReversed() {
+	testYaml("---\n" +
+                 "- CreateTable: t (bigint_field bigint)\n" +
+                 "---\n" +
+                 "- Statement: !select-engine\n" +
+                 "    { all: oops, it: SELECT * FROM t }");
+    }
+
+    @Test
+    public void testSelectEngineKeyItOverAllPrecedenceNull() {
+	testYaml("---\n" +
+                 "- Statement: !select-engine { it: null, all: oops }");
+	testYaml("---\n" +
+                 "- Statement: !select-engine { all: oops, it: null }");
+	testYamlFail("---\n" +
+                     "- Statement: !select-engine { it: oops, all: null }");
+	testYamlFail("---\n" +
+                     "- Statement: !select-engine { all: null, it: oops }");
+    }
+
+    @Test
+    public void testSelectEngineKeyAll() {
+	testYaml("---\n" +
+                 "- CreateTable: t (bigint_field bigint)\n" +
+                 "---\n" +
+                 "- Statement: !select-engine\n" +
+                 "    { all: SELECT * FROM t, foo: oops }");
+    }
+
+    @Test
+    public void testSelectEngineKeyAllNull() {
+	testYaml("---\n" +
+                 "- Statement: !select-engine { all: null, foo: oops }");
+	testYaml("---\n" +
+                 "- Statement: !select-engine { foo: oops, all: null }");
+    }
+
     /* Test Include */
 
     @Test
     public void testIncludeMissingValue() {
-	testYamlFail("- Include:");
+	testYaml("- Include:");
+    }
+
+    @Test
+    public void testIncludeNullValue() {
+	testYaml("- Include: null");
     }
 
     @Test
@@ -90,8 +180,6 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 
     @Test
     public void testIncludeUnexpectedAttributes() throws Exception {
-	File include = File.createTempFile("include", null);
-	include.deleteOnExit();
 	testYamlFail("- Include: somefile\n" +
 		     "- foo: bar");
     }
@@ -183,12 +271,37 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 		     "- Include: " + include);
     }
 
+    @Test
+    public void testIncludeSelectEngine() throws Exception {
+	File includeFile = File.createTempFile("include", null);
+	includeFile.deleteOnExit();
+	writeFile(includeFile, "- CreateTable: t (bigint_field bigint)\n");
+        /*
+         * Double backslashes, to escape them in the YAML format.  Note that
+         * they need to be doubled for Java strings, and double again for
+         * regexps.
+         */
+        String include = includeFile.getPath().replaceAll("\\\\", "\\\\");
+	testYaml("---\n" +
+		 "- Include: !select-engine { foo: bar, it: '" + include +
+		 "' }\n" +
+		 "---\n" +
+		 "- Statement: SELECT bigint_field FROM t\n" +
+		 "...");
+    }
+
     /* Test Properties */
 
     @Test
     public void testPropertiesNoValue() {
 	testYamlFail("---\n" +
 		     "- Properties:\n");
+    }
+
+    @Test
+    public void testPropertiesNullValue() {
+	testYamlFail("---\n" +
+		     "- Properties: null\n");
     }
 
     @Test
@@ -247,6 +360,11 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     @Test
     public void testCreateTableNoValue() {
 	testYamlFail("- CreateTable:");
+    }
+
+    @Test
+    public void testCreateTableNullValue() {
+	testYamlFail("- CreateTable: null");
     }
 
     @Test
@@ -357,7 +475,25 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "        : SELECT * FR");
     }
 
+    @Test
+    public void testCreateTableErrorSelectEngine() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: a (i int\n" +
+	    "- error: !select-engine { it: [42000], sys-aksql: [33] }");
+    }
+
     /* Test Statement */
+
+    @Test
+    public void testStatementNoValue() {
+	testYaml("- Statement:");
+    }
+
+    @Test
+    public void testStatementNullValue() {
+	testYaml("- Statement: null");
+    }
 
     @Test
     public void testStatementValueInteger() {
@@ -380,12 +516,41 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	testYamlFail("- Statement: create TABLE foo (int_field int)");
     }
 
+    @Test
+    public void testStatementSelectEngineMatch() {
+	testYaml("- Statement: !select-engine { it: MORP }\n" +
+		 "- error: [42000]");
+    }
+
+    @Test
+    public void testStatementSelectEngineMatchAll() {
+	testYaml("- Statement: !select-engine { all: MORP }\n" +
+		 "- error: [42000]");
+    }
+
+    @Test
+    public void testStatementSelectEngineNoMatch() {
+	testYaml("- Statement: !select-engine { sys: MORP }");
+    }
+
     /* Test Statement params */
 
     @Test
     public void testStatementParamsNoValue() {
-	testYamlFail("- Statement: a b c\n" +
-		     "- params:");
+	testYaml("---\n" +
+		 "- CreateTable: t (bigint_field bigint)\n" +
+		 "---\n" +
+		 "- Statement: SELECT * FROM t\n" +
+		 "- params:");
+    }
+
+    @Test
+    public void testStatementParamsNullValue() {
+	testYaml("---\n" +
+		 "- CreateTable: t (bigint_field bigint)\n" +
+		 "---\n" +
+		 "- Statement: SELECT * FROM t\n" +
+		 "- params: null");
     }
 
     @Test
@@ -427,10 +592,42 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     }
 
     @Test
+    public void testStatementParamsTypesNoParamsNoValue() {
+	testYaml("---\n" +
+		 "- CreateTable: t (bigint_field bigint)\n" +
+		 "---\n" +
+		 "- Statement: SELECT * FROM t\n" +
+		 "- param_types:");
+    }
+
+    @Test
+    public void testStatementParamsTypesNullParamsNullValue() {
+	testYaml("---\n" +
+		 "- CreateTable: t (bigint_field bigint)\n" +
+		 "---\n" +
+		 "- Statement: SELECT * FROM t\n" +
+		 "- params: null\n" +
+		 "- param_types: null");
+    }
+ 
+    @Test
     public void testStatementParamsTypesNoValue() {
-	testYamlFail("- Statement: a b c\n" +
-		     "- params: [[a, b]]\n" +
-		     "- param_types:");
+	testYaml("---\n" +
+		 "- CreateTable: t (bigint_field bigint)\n" +
+		 "---\n" +
+		 "- Statement: SELECT * FROM t WHERE bigint_field = ?\n" +
+		 "- params: [[1]]\n" +
+		 "- param_types:");
+    }
+
+    @Test
+    public void testStatementParamsTypesNullValue() {
+	testYaml("---\n" +
+		 "- CreateTable: t (bigint_field bigint)\n" +
+		 "---\n" +
+		 "- Statement: SELECT * FROM t WHERE bigint_field = ?\n" +
+		 "- params: [[1]]\n" +
+		 "- param_types: null");
     }
 
     @Test
@@ -474,12 +671,38 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "- output: [[1]]");
     }
 
+    @Test
+    public void testStatementParamTypesSelectEngine() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: c (cid int)\n" +
+	    "---\n" +
+	    "- Statement: INSERT INTO c VALUES (1), (2)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM c where cid = ?\n" +
+	    "- params: [[1]]\n" +
+	    "- param_types: !select-engine { it: [DECIMAL], foo: bar }\n" +
+	    "- output: [[1]]");
+    }
+
     /* Test Statement output */
 
     @Test
     public void testStatementOutputNoValue() {
-	testYamlFail("- Statement: a b c\n" +
-		     "- output:");
+	testYaml("---\n" +
+		 "- CreateTable: t (id int)\n" +
+		 "---\n" +
+		 "- Statement: SELECT * FROM t\n" +
+		 "- output:");
+    }
+
+    @Test
+    public void testStatementOutputNullValue() {
+	testYaml("---\n" +
+		 "- CreateTable: t (id int)\n" +
+		 "---\n" +
+		 "- Statement: SELECT * FROM t\n" +
+		 "- output: null");
     }
 
     @Test
@@ -636,6 +859,22 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     }
 
     @Test
+    public void testStatementOutputRegexpSelectEngine() {
+    	testYaml(
+    	    "---\n" +
+    	    "- CreateTable: t (name varchar(32))\n" +
+    	    "---\n" +
+    	    "- Statement: INSERT INTO t VALUES\n" +
+	    "    ('abc'), ('123')\n" +
+    	    "---\n" +
+    	    "- Statement: SELECT * FROM t\n" +
+    	    "- output:\n" +
+	    "    !select-engine\n" +
+	    "      it: [[!re '[a-z]+'], [!re '[0-9]+']]\n" +
+	    "      foo: bar\n");
+    }
+
+    @Test
     public void testStatementOutputNullAndEmpty() {
 	testYaml(
 	    "---\n" +
@@ -756,10 +995,22 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 
     @Test
     public void testStatementRowCountNoValue() {
-	testYamlFail(
+	testYaml(
 	    "---\n" +
-	    "- Statement: a b c\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
 	    "- row_count:");
+    }
+
+    @Test
+    public void testStatementRowCountNullValue() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
+	    "- row_count: null");
     }
 
     @Test
@@ -809,14 +1060,37 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "- row_count: 2\n");
     }
 
+    @Test
+    public void testStatementRowCountSelectEngine() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: customers (cid int, name varchar(32));\n" +
+	    "---\n" +
+	    "- Statement:\n" +
+	    "    INSERT INTO customers VALUES (1, 'Smith'), (2, 'Jones');\n" +
+	    "- row_count: !select-engine { foo: 7, all: 2}\n");
+    }
+
     /* Test Statement output_types */
 
     @Test
     public void testStatementOutputTypesNoValue() {
-	testYamlFail(
+	testYaml(
 	    "---\n" +
-	    "- Statement: a b c\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
 	    "- output_types:");
+    }
+
+    @Test
+    public void testStatementOutputTypesNullValue() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
+	    "- output_types: null");
     }
 
     @Test
@@ -888,14 +1162,38 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "- output_types: [INTEGER, VARCHAR]");
     }
 
+    @Test
+    public void testStatementOutputTypesSelectEngine() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: c (cid int, name varchar(32))\n" +
+	    "---\n" +
+	    "- Statement: INSERT INTO c VALUES (1, 'Smith'), (2, 'Jones')\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM c\n" +
+	    "- output_types: [INTEGER, !select-engine { it: VARCHAR }]");
+    }
+
     /* Test Statement explain */
 
     @Test
     public void testStatementExplainNoValue() {
-	testYamlFail(
+	testYaml(
 	    "---\n" +
-	    "- Statement: a b c\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
 	    "- explain:");
+    }
+
+    @Test
+    public void testStatementExplainNullValue() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
+	    "- explain: null");
     }
 
     @Test
@@ -933,14 +1231,38 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "        GroupScan_Default(full scan on _akiban_c)\n");
     }
 
+    @Test
+    public void testStatementExplainSelectEngine() {
+	testYamlFail(
+	    "---\n" +
+	    "- CreateTable: c (cid int, name varchar(32))\n" +
+	    "---\n" +
+	    "- Statement: INSERT INTO c VALUES (1, 'Smith'), (2, 'Jones')\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM c\n" +
+	    "- explain: !select-engine { all: stuff }");
+    }
+
     /* Test Statement error */
 
     @Test
     public void testStatementErrorNoValue() {
-	testYamlFail(
+	testYaml(
 	    "---\n" +
-	    "- Statement: a b c\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
 	    "- error:");
+    }
+
+    @Test
+    public void testStatementErrorNullValue() {
+	testYaml(
+	    "---\n" +
+	    "- CreateTable: t (int_field int)\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
+	    "- error: null");
     }
 
     @Test
@@ -1025,10 +1347,60 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "        : SELECT * FR");
     }
 
+    @Test
+    public void testStatementErrorSelectEngineNoMatch() {
+	testYamlFail(
+	    "---\n" +
+	    "- Statement: SELECT * FR\n" +
+	    "- error: !select-engine { foo: [bar] }");
+    }
+
+    @Test
+    public void testStatementErrorSelectEngineNoMatchWithMessage() {
+	testYamlFail(
+	    "---\n" +
+	    "- Statement: SELECT * FR\n" +
+	    "- error: [!select-engine { foo: bar }, Hello]");
+    }
+
+    @Test
+    public void testStatementErrorSelectEngineMatch() {
+	testYaml(
+	    "---\n" +
+	    "- Statement: SELECT * FR\n" +
+	    "- error: [!select-engine { it: 42000, all: 42 }]");
+    }
+
     /* Other methods */
 
     private void testYaml(String yaml) {
-	new YamlTester(null, new StringReader(yaml), connection).test();
+	if (DEBUG) {
+	    StackTraceElement[] callStack =
+		Thread.currentThread().getStackTrace();
+	    if (callStack.length > 2) {
+		String testMethod = callStack[2].getMethodName();
+		System.err.println(testMethod + ": ");
+	    }
+	}
+	try {
+	    new YamlTester(null, new StringReader(yaml), connection).test();
+	} catch (RuntimeException e) {
+	    if (DEBUG) {
+		System.err.println("Test failed:");
+		e.printStackTrace();
+	    }
+	    throw e;
+	} catch (Error e) {
+	    if (DEBUG) {
+		System.err.println("Test failed:");
+		e.printStackTrace();
+	    }
+	    throw e;
+	}
+	if (DEBUG) {
+	    System.err.println("Test passed");
+	}
+
     }
 
     private void testYamlFail(String yaml) {
@@ -1041,7 +1413,10 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    }
 	}
 	try {
-	    testYaml(yaml);
+	    new YamlTester(null, new StringReader(yaml), connection).test();
+	    if (DEBUG) {
+		System.err.println("Test failed: Expected exception");
+	    }
 	} catch (Throwable t) {
 	    if (DEBUG) {
 		System.err.println(t);

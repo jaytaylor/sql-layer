@@ -274,7 +274,7 @@
 ---
 - Statement: SELECT timestamp_field FROM all_types
     WHERE timestamp_field IS NOT NULL
-- output: [['1234-05-06 12:34:56.0']]
+- output: [[!re '1234-05-06 12:34:56([.]0)?']]
 ---
 - Statement: DELETE FROM all_types
 

@@ -61,4 +61,10 @@ public final class NotExpressionTest extends ComposedExpressionTestBase {
                 null
         );
     }
+
+    @Override
+    protected boolean alreadyExc()
+    {
+       return false;
+    }
 }

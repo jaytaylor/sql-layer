@@ -36,7 +36,7 @@
 ---
 - Statement: SELECT (blob_field) from all_types
 - output: [['deadbeef']]
-- output_types: [VARCHAR]
+- output_types: !select-engine {it: [VARCHAR], sys-aksql: [BLOB]}
 ---
 - Statement: DELETE from all_types
 
@@ -72,7 +72,7 @@
 ---
 - Statement: SELECT (clob_field) from all_types
 - output: [[deadbeef]]
-- output_types: [VARCHAR]
+- output_types: !select-engine {it:[VARCHAR], sys-aksql:[BLOB]}
 ---
 - Statement: DELETE from all_types
 
@@ -90,7 +90,7 @@
 ---
 - Statement: SELECT (decimal_field) from all_types
 - output: [[1], [123456], [-123456], [4822], [-4822]]
-- output_types: [NUMERIC]
+- output_types: !select-engine {it:[NUMERIC], sys-aksql:[DECIMAL]}
 ---
 - Statement: DELETE from all_types
 
@@ -151,7 +151,7 @@
 ---
 - Statement: SELECT (numeric_field) from all_types
 - output: [[1]]
-- output_types: [NUMERIC]
+- output_types: !select-engine {it: [NUMERIC], sys-aksql: [DECIMAL]}
 ---
 - Statement: DELETE from all_types
 
@@ -160,7 +160,7 @@
 ---
 - Statement: SELECT (real_field) from all_types
 - output: [[1.0]]
-- output_types: [REAL]
+- output_types: !select-engine {it: [REAL], sys-aksql: [FLOAT]}
 ---
 - Statement: DELETE from all_types
 
@@ -187,7 +187,7 @@
     VALUES ('2000-01-02 04:00:00')
 ---
 - Statement: SELECT (timestamp_field) from all_types
-- output: [['2000-01-02 04:00:00.0']]
+- output: [[!re '2000-01-02 04:00:00([.]0)?']]
 - output_types: [TIMESTAMP]
 ---
 - Statement: DELETE from all_types

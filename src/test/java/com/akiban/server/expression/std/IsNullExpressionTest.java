@@ -58,5 +58,11 @@ public class IsNullExpressionTest extends ComposedExpressionTestBase
     {
         return IsNullExpression.COMPOSER;
     }
+
+    @Override
+    protected boolean alreadyExc()
+    {
+        return false;
+    }
     
 }

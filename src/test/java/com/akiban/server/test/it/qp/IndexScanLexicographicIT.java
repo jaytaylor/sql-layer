@@ -35,6 +35,7 @@ import org.junit.Test;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.akiban.qp.operator.API.ordering;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -45,7 +46,7 @@ import static org.junit.Assert.fail;
  * scan finds all records following (10, 5), and could include rows with x > 10. MySQL does semi-bounded scans.
  */
 
-public class IndexScanSemiBoundedIT extends OperatorITBase
+public class IndexScanLexicographicIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -175,6 +176,16 @@ public class IndexScanSemiBoundedIT extends OperatorITBase
              1007, 1006, 1005, 1004, 1003, 1002, 1001);
     }
 
+    // Inspirted by bug 889736
+    @Test
+    public void test_LoAndHiBounded()
+    {
+        test(range(INCLUSIVE, 1, 11, 115,
+                   INCLUSIVE, 5, 51, 515),
+             ordering(ASC),
+             1001, 1002, 1003, 1004, 1005);
+    }
+
     // For use by this class
 
     private void test(IndexKeyRange keyRange, API.Ordering ordering, int ... expectedIds)
@@ -207,7 +218,9 @@ public class IndexScanSemiBoundedIT extends OperatorITBase
         } else {
             bound = new IndexBound(row(idxRowType, a, b, c), new SetColumnSelector(0, 1, 2));
         }
-        return IndexKeyRange.startingAt(idxRowType, bound, inclusive);
+        IndexKeyRange indexKeyRange = IndexKeyRange.startingAt(idxRowType, bound, inclusive);
+        indexKeyRange.lexicographic(true);
+        return indexKeyRange;
     }
 
     private IndexKeyRange end(boolean inclusive, Integer a, Integer b, Integer c)
@@ -223,7 +236,39 @@ public class IndexScanSemiBoundedIT extends OperatorITBase
         } else {
             bound = new IndexBound(row(idxRowType, a, b, c), new SetColumnSelector(0, 1, 2));
         }
-        return IndexKeyRange.endingAt(idxRowType, bound, inclusive);
+        IndexKeyRange indexKeyRange = IndexKeyRange.endingAt(idxRowType, bound, inclusive);
+        indexKeyRange.lexicographic(true);
+        return indexKeyRange;
+    }
+
+    private IndexKeyRange range(boolean loInclusive, Integer aLo, Integer bLo, Integer cLo,
+                                boolean hiInclusive, Integer aHi, Integer bHi, Integer cHi)
+    {
+        IndexBound lo;
+        if (aLo == UNSPECIFIED) {
+            lo = null;
+            fail();
+        } else if (bLo == UNSPECIFIED) {
+            lo = new IndexBound(row(idxRowType, aLo), new SetColumnSelector(0));
+        } else if (cLo == UNSPECIFIED) {
+            lo = new IndexBound(row(idxRowType, aLo, bLo), new SetColumnSelector(0, 1));
+        } else {
+            lo = new IndexBound(row(idxRowType, aLo, bLo, cLo), new SetColumnSelector(0, 1, 2));
+        }
+        IndexBound hi;
+        if (aHi == UNSPECIFIED) {
+            hi = null;
+            fail();
+        } else if (bHi == UNSPECIFIED) {
+            hi = new IndexBound(row(idxRowType, aHi), new SetColumnSelector(0));
+        } else if (cHi == UNSPECIFIED) {
+            hi = new IndexBound(row(idxRowType, aHi, bHi), new SetColumnSelector(0, 1));
+        } else {
+            hi = new IndexBound(row(idxRowType, aHi, bHi, cHi), new SetColumnSelector(0, 1, 2));
+        }
+        IndexKeyRange indexKeyRange = IndexKeyRange.bounded(idxRowType, lo, loInclusive, hi, hiInclusive);
+        indexKeyRange.lexicographic(true);
+        return indexKeyRange;
     }
 
     private API.Ordering ordering(boolean direction)

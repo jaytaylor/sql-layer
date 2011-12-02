@@ -22,6 +22,8 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.Tap;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,6 +114,7 @@ class AncestorLookup_Nested extends Operator
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(AncestorLookup_Nested.class);
+    private static final Tap.PointTap ANC_LOOKUP_COUNT = Tap.createCount("operator: ancestor_lookup_nested", true);
 
     // Object state
 
@@ -130,6 +133,7 @@ class AncestorLookup_Nested extends Operator
         @Override
         public void open(Bindings bindings)
         {
+            ANC_LOOKUP_COUNT.hit();
             Row rowFromBindings = (Row) bindings.get(inputBindingPosition);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("AncestorLookup_Nested: open using {}", rowFromBindings);

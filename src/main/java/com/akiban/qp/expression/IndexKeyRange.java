@@ -67,13 +67,6 @@ public class IndexKeyRange
         return lo == null && hi == null;
     }
 
-    // Indicates a mysql-style index scan, e.g. start at (10, 15) and keep going, even past index records
-    // starting with 10.
-    public boolean semiBounded()
-    {
-        return (lo == null || hi == null) && lo != hi;
-    }
-
     public int boundColumns()
     {
         return boundColumns;
@@ -149,6 +142,23 @@ public class IndexKeyRange
             throw new IllegalArgumentException("IndexBound argument must not be null");
         }
         return new IndexKeyRange(indexRowType, null, false, hi, hiInclusive);
+    }
+
+    // An Akiban index scan normally allows a range for only the last specified part of the bound. E.g.,
+    // (1, 10, 800) - (1, 10, 888) is legal, but (1, 10, 800) - (1, 20, 888) is not, because there are two ranges,
+    // 10-20 and 800-888. MySQL support requires a different approach in which we start at the lower bound and
+    // scan everything in the index up to the upper bound. So (1, 10, 800) - (1, 20, 888) is legal, and could return
+    // a row that is lexicographically between these bounds, but outside some range, e.g. (1, 11, 900). This will
+    // also be useful in supporting queries such as select * from t where (x, y) > (5, 7).
+    public void lexicographic(boolean lexicographic)
+    {
+        this.lexicographic = lexicographic;
+    }
+
+    public boolean lexicographic()
+    {
+        // return (lo == null || hi == null) && lo != hi;
+        return lexicographic;
     }
 
     private IndexKeyRange(IndexRowType indexRowType)
@@ -239,4 +249,5 @@ public class IndexKeyRange
     private final boolean loInclusive;
     private final IndexBound hi;
     private final boolean hiInclusive;
+    private boolean lexicographic = false;
 }

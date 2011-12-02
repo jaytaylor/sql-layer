@@ -20,12 +20,14 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.UndefBindings;
+import com.akiban.qp.persistitadapter.sort.Sorter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.LiteralExpression;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.types.AkType;
 import org.junit.Before;
 import org.junit.Test;
@@ -35,6 +37,7 @@ import java.util.Collections;
 
 import static com.akiban.server.expression.std.Expressions.field;
 import static com.akiban.qp.operator.API.*;
+import static junit.framework.Assert.assertTrue;
 
 public class Sort_TreeIT extends OperatorITBase
 {
@@ -429,7 +432,12 @@ public class Sort_TreeIT extends OperatorITBase
             row(itemRowType, 111L, 11L),
         };
         for (int i = 0; i < 10; i++) {
+            Session.Key<Sorter.TempVolumeState> tempVolumeStateKey = Session.Key.named("TEMP_VOLUME_STATE");
+            Sorter.TempVolumeState tempVolumeState = session().get(tempVolumeStateKey);
+            assertTrue(tempVolumeState == null);
             compareRows(expected, cursor(plan, adapter));
+            tempVolumeState = session().get(tempVolumeStateKey);
+            assertTrue(tempVolumeState == null);
         }
     }
 

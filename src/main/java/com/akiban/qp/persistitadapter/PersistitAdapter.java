@@ -43,6 +43,7 @@ import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.persistit.Exchange;
 import com.persistit.Key;
+import com.persistit.Persistit;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
 
@@ -159,6 +160,16 @@ public class PersistitAdapter extends StoreAdapter
 
     // PersistitAdapter interface
 
+    public Session session()
+    {
+        return session;
+    }
+
+    public PersistitStore persistit()
+    {
+        return persistit;
+    }
+
     public RowDef rowDef(int tableId)
     {
         return persistit.getRowDefCache().getRowDef(tableId);
@@ -254,6 +265,6 @@ public class PersistitAdapter extends StoreAdapter
 
     private final TreeService treeService;
     private final ConfigurationService config;
-    final PersistitStore persistit;
-    final Session session;
+    private final PersistitStore persistit;
+    private final Session session;
 }

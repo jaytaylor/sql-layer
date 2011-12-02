@@ -112,6 +112,7 @@ public class WeekExpressionTest extends ComposedExpressionTestBase
        
     }
     
+    @Override
     protected boolean alreadyExc()
     {
         return false;

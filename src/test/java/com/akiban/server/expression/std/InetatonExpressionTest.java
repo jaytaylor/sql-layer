@@ -115,4 +115,10 @@ public class InetatonExpressionTest  extends ComposedExpressionTestBase
         assertEquals(expected,
                 (new InetatonExpression(new LiteralExpression(AkType.VARCHAR, ip))).evaluation().eval().getLong());
     }
+
+    @Override
+    public boolean alreadyExc()
+    {
+        return false;
+    }
 }

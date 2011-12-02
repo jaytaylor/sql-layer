@@ -636,7 +636,9 @@ public final class CBasicIT extends ITBase {
         final byte[] columnBitmap = {3};
         final NewRow endRow = createNewRow(tid, null, 0L);
         final int indexId = getUserTable(tid).getIndex("i").getIndexId();
-        final EnumSet<ScanFlag> scanFlags = EnumSet.of(ScanFlag.START_AT_BEGINNING, ScanFlag.END_RANGE_EXCLUSIVE);
+        final EnumSet<ScanFlag> scanFlags = EnumSet.of(ScanFlag.START_AT_BEGINNING,
+                                                       ScanFlag.END_RANGE_EXCLUSIVE,
+                                                       ScanFlag.LEXICOGRAPHIC);
 
         LegacyScanRequest request = new LegacyScanRequest(tid, null, null,
                                                           endRow.toRowData(), endRow.getActiveColumns(),

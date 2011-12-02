@@ -13,8 +13,23 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.session;
+package com.akiban.sql.optimizer.plan;
 
-public interface SessionEventListener {
-    void sessionClosing();
+import com.akiban.server.types.AkType;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.parser.ValueNode;
+
+public class ParameterCondition extends ParameterExpression 
+                                implements ConditionExpression 
+{
+    public ParameterCondition(int position,
+                              DataTypeDescriptor sqlType, ValueNode sqlSource) {
+        super(position, sqlType, AkType.BOOL, sqlSource);
+    }
+
+    @Override
+    public Implementation getImplementation() {
+        return null;
+    }
+
 }

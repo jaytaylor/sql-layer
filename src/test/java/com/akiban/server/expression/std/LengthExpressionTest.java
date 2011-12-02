@@ -88,4 +88,10 @@ public class LengthExpressionTest extends ComposedExpressionTestBase
         assertEquals(expected, actual);
     }
 
+    @Override
+    protected boolean alreadyExc()
+    {
+        return false;
+    }
+
 }
