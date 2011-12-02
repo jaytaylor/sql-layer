@@ -71,9 +71,10 @@ public class ColumnBinding
         }
         else {
             Type aisType = column.getType();
-            TypeId typeId = TypeId.getBuiltInTypeId(aisType.name().toUpperCase());
+            String typeName = aisType.name().toUpperCase();
+            TypeId typeId = TypeId.getBuiltInTypeId(typeName);
             if (typeId == null)
-                typeId = TypeId.getSQLTypeForJavaType(aisType.name());
+                typeId = TypeId.getSQLTypeForJavaType(typeName);
             boolean nullable = this.nullable || column.getNullable();
             switch (aisType.nTypeParameters()) {
             case 0:
