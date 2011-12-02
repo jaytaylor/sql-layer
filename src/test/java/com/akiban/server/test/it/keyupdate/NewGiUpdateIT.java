@@ -81,6 +81,7 @@ public final class NewGiUpdateIT extends ITBase {
         return checker()
                 .gi("name_when_LEFT")
                 .entry("John, null, 117, null").backedBy(c)
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -94,6 +95,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_LEFT")
                 .entry("John, null, 117, null").backedBy(c)
                 .entry("Noble, null, 6, null").backedBy(c)
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -109,6 +111,7 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .entry("John, 2552-08-30, 117, 7").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -121,7 +124,13 @@ public final class NewGiUpdateIT extends ITBase {
         GisChecker initState = initC();
 
         writeRow(i, 101L, 7L, "1234");
-        initState.check();
+        checker()
+                .gi("name_when_LEFT")
+                .entry("John, null, 117, null").backedBy(c)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, null, null, 7, 101, null").backedBy(i)
+                .gi("street_name_RIGHT")
+                .done();
 
         deleteRow(i, 101L, 7L);
         initState.check();
@@ -146,6 +155,7 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .entry("John, null, 117, null").backedBy(c)
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .entry("Reach, John, 117, 40").backedBy(c, a)
                 .done();
@@ -162,6 +172,7 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .gi("street_name_RIGHT")
+                .gi("sku_instructions_LEFT")
                 .done();
     }
 
@@ -173,6 +184,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_LEFT")
                 .entry("John, null, 117, null").backedBy(c)
                 .entry("Noble, null, 6, null").backedBy(c)
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -186,6 +198,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_LEFT")
                 .entry("John, 1970-01-01, 117, 10").backedBy(c, o)
                 .entry("Noble, null, 6, null").backedBy(c)
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -202,6 +215,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_LEFT")
                 .entry("Noble, null, 6, null").backedBy(c)
                 .gi("street_name_RIGHT")
+                .gi("sku_instructions_LEFT")
                 .done();
     }
 
@@ -211,6 +225,7 @@ public final class NewGiUpdateIT extends ITBase {
         return checker()
                 .gi("name_when_LEFT")
                 .gi("street_name_RIGHT")
+                .gi("sku_instructions_LEFT")
                 .done();
     }
 
@@ -222,6 +237,7 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .entry("Bob, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -236,6 +252,7 @@ public final class NewGiUpdateIT extends ITBase {
         writeRow(o, 21L, 1L, "2002-02-02");
         checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -244,12 +261,14 @@ public final class NewGiUpdateIT extends ITBase {
     }
 
     @Test
-    public void o_add_I() {
+    public void o_add_i() {
         GisChecker initState = init_o();
 
         writeRow(i, 111L, 11L, "1234");
         checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
+                .entry("1234, null, 1, 11, 111, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -264,6 +283,7 @@ public final class NewGiUpdateIT extends ITBase {
         writeRow(h, 1111L, 111L, "careful");
         checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -278,6 +298,7 @@ public final class NewGiUpdateIT extends ITBase {
         writeRow(a, 11L, 1L, "Harrison Ave");
         checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .entry("Harrison Ave, null, 1, 11").backedBy(a)
                 .done();
@@ -292,6 +313,7 @@ public final class NewGiUpdateIT extends ITBase {
 
         return checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -305,6 +327,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_LEFT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
                 .entry("John, 2002-02-02, 1, 21").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -319,6 +342,8 @@ public final class NewGiUpdateIT extends ITBase {
         writeRow(i, 111L, 11L, "1234");
         checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
+                .entry("1234, null, 1, 11, 111, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -333,6 +358,7 @@ public final class NewGiUpdateIT extends ITBase {
         writeRow(h, 1111L, 111L, "careful");
         checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -347,6 +373,7 @@ public final class NewGiUpdateIT extends ITBase {
         deleteRow(o, 11L, 1L);
         checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -355,6 +382,8 @@ public final class NewGiUpdateIT extends ITBase {
         writeRow(i, 111L, 11L, "1234");
         return checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
+                .entry("1234, null, null, 11, 111, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -367,6 +396,8 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .entry("John, null, 1, null").backedBy(c)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, null, null, 11, 111, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -381,6 +412,8 @@ public final class NewGiUpdateIT extends ITBase {
         writeRow(o, 11L, 1L, "2001-01-01");
         checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
+                .entry("1234, null, 1, 11, 111, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -395,6 +428,9 @@ public final class NewGiUpdateIT extends ITBase {
         writeRow(i, 211L, 11L, "5678");
         checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
+                .entry("1234, null, null, 11, 111, null").backedBy(i)
+                .entry("5678, null, null, 11, 211, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -409,6 +445,8 @@ public final class NewGiUpdateIT extends ITBase {
         writeRow(h, 1111L, 111L, "don't drop");
         checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't drop, null, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -423,6 +461,8 @@ public final class NewGiUpdateIT extends ITBase {
         writeRow(a, 11L, 1L, "Mass Ave");
         checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
+                .entry("1234, null, null, 11, 111, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .entry("Mass Ave, null, 1, 11").backedBy(a)
                 .done();
@@ -437,6 +477,9 @@ public final class NewGiUpdateIT extends ITBase {
 
         return checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
+                .entry("1234, null, null, 11, 111, null").backedBy(i)
+                .entry("5678, null, null, 11, 211, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -449,6 +492,9 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .entry("John, null, 1, null").backedBy(c)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, null, null, 11, 111, null").backedBy(i)
+                .entry("5678, null, null, 11, 211, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -463,6 +509,9 @@ public final class NewGiUpdateIT extends ITBase {
         writeRow(o, 11L, 1L, "2001-01-01");
         checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
+                .entry("1234, null, 1, 11, 111, null").backedBy(i)
+                .entry("5678, null, 1, 11, 211, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -472,15 +521,19 @@ public final class NewGiUpdateIT extends ITBase {
 
     @Test
     public void ii_add_h() {
-        init_ii();
+        GisChecker initState = init_ii();
 
-        writeRow(h, 1111L, 111L, "dont drop!");
+        writeRow(h, 1111L, 111L, "don't drop!");
         checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't drop!, null, 11, 111, 1111").backedBy(i, h)
+                .entry("5678, null, null, 11, 211, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .done();
 
         deleteRow(h, 1111L, 111L);
+        initState.check();
     }
 
     @Test
@@ -490,6 +543,8 @@ public final class NewGiUpdateIT extends ITBase {
         deleteRow(i, 111L, 11L);
         checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
+                .entry("5678, null, null, 11, 211, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -498,6 +553,7 @@ public final class NewGiUpdateIT extends ITBase {
         writeRow(h, 1111L, 111L, "don't let it break");
         return checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -510,6 +566,7 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .entry("John, null, 1, null").backedBy(c)
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -535,6 +592,8 @@ public final class NewGiUpdateIT extends ITBase {
         writeRow(i, 111L, 11L, "1234");
         checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't let it break, null, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -549,6 +608,7 @@ public final class NewGiUpdateIT extends ITBase {
         writeRow(h, 2111L, 111L, "it's fine if it breaks");
         checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -562,6 +622,7 @@ public final class NewGiUpdateIT extends ITBase {
         return checker()
                 .gi("name_when_LEFT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -575,6 +636,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_LEFT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
                 .entry("John, 2002-02-02, 1, 21").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -590,6 +652,8 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, null, 1, 11, 111, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -605,6 +669,7 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -619,6 +684,7 @@ public final class NewGiUpdateIT extends ITBase {
         deleteRow(c, 1L);
         checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -631,6 +697,7 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .entry("John, null, 1, null").backedBy(c)
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -641,6 +708,8 @@ public final class NewGiUpdateIT extends ITBase {
         return checker()
                 .gi("name_when_LEFT")
                 .entry("John, null, 1, null").backedBy(c)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, null, null, 11, 111, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -654,6 +723,8 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, null, 1, 11, 111, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -669,6 +740,8 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .entry("John, null, 1, null").backedBy(c)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't drop, null, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -681,6 +754,8 @@ public final class NewGiUpdateIT extends ITBase {
         writeRow(i, 111L, 11L, "1234");
         return checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
+                .entry("1234, null, 1, 11, 111, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -693,6 +768,8 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, null, 1, 11, 111, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -707,6 +784,8 @@ public final class NewGiUpdateIT extends ITBase {
         writeRow(h, 1111L, 111L, "don't drop");
         checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -721,6 +800,8 @@ public final class NewGiUpdateIT extends ITBase {
         deleteRow(o, 11L, 1L);
         checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
+                .entry("1234, null, null, 11, 111, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -732,6 +813,7 @@ public final class NewGiUpdateIT extends ITBase {
         deleteRow(i, 111L, 11L);
         checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -740,16 +822,23 @@ public final class NewGiUpdateIT extends ITBase {
     public void ih_add_o() {
         writeRow(i, 111L, 11L, "1234");
         writeRow(h, 1111L, 111L, "don't drop");
-        checker()
+        GisChecker initState = checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't drop, null, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
         writeRow(o, 11L, 1L, "2001-01-01");
         checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
+
+        deleteRow(o, 11L, 1L);
+        initState.check();
     }
 
     private GisChecker init_coi() {
@@ -759,6 +848,8 @@ public final class NewGiUpdateIT extends ITBase {
         return checker()
                 .gi("name_when_LEFT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, null, 1, 11, 111, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -771,6 +862,8 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -786,6 +879,8 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, null, 1, 11, 111, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .entry("Harrison, John, 1, 11").backedBy(c, a)
                 .done();
@@ -798,10 +893,11 @@ public final class NewGiUpdateIT extends ITBase {
     public void coh_add_i() {
         writeRow(c, 1L, "John");
         writeRow(o, 11L, 1L, "2001-01-01");
-        writeRow(h, 1111L, 111L, "don't drop");
+        writeRow(h, 1111L, 111L, "don't drop!");
         GisChecker initState = checker()
                 .gi("name_when_LEFT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -809,6 +905,8 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't drop!, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -824,6 +922,8 @@ public final class NewGiUpdateIT extends ITBase {
         return checker()
                 .gi("name_when_LEFT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -837,6 +937,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_LEFT")
                 .entry("Bob, null, 2, null").backedBy(c)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -853,6 +955,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_LEFT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
                 .entry("John, 2002-02-02, 1, 21").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -868,6 +972,9 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
+                .entry("5678, null, 1, 11, 211, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -883,6 +990,9 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
+                .entry("1234, fine if it drops, 1, 11, 111, 2111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -898,6 +1008,8 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .entry("Mass Ave, John, 1, 11").backedBy(c, a)
                 .done();
@@ -913,6 +1025,8 @@ public final class NewGiUpdateIT extends ITBase {
         deleteRow(c, 1L);
         checker()
                 .gi("name_when_LEFT")
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -925,6 +1039,8 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .entry("John, null, 1, null").backedBy(c)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't drop, null, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -937,6 +1053,7 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -949,6 +1066,8 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, null, 1, 11, 111, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -979,6 +1098,9 @@ public final class NewGiUpdateIT extends ITBase {
         GisChecker initState = checker()
                 .gi("name_when_LEFT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
+                .entry("5678, be careful, 2, 12, 112, 1112").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -986,6 +1108,9 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .entry("Johnny, 2002-02-02, 2, 12").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
+                .entry("5678, be careful, 2, 12, 112, 1112").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -1000,6 +1125,9 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_LEFT")
                 .entry("Bob, null, 2, null").backedBy(c)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
+                .entry("5678, be careful, null, 12, 112, 1112").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -1008,6 +1136,9 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_LEFT")
                 .entry("Bob, 1999-12-31, 2, 12").backedBy(c, o)
                 .entry("John, null, 1, null").backedBy(c)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't drop, null, 11, 111, 1111").backedBy(i, h)
+                .entry("5678, be careful, 2, 12, 112, 1112").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -1016,12 +1147,14 @@ public final class NewGiUpdateIT extends ITBase {
     }
 
     @Test
-    public void coihCOH_move_I() {
+    public void coihCOH_move_i() {
         init_coih_COIH(c, o, h);
         GisChecker initState = checker()
                 .gi("name_when_LEFT")
                 .entry("Bob, 2002-02-02, 2, 12").backedBy(c, o)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -1030,6 +1163,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_LEFT")
                 .entry("Bob, 2002-02-02, 2, 12").backedBy(c, o)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
+                .entry("3456, be careful, 2, 12, 112, 1112").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -1044,6 +1179,9 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_LEFT")
                 .entry("Bob, 2002-02-02, 2, 12").backedBy(c, o)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
+                .entry("5678, null, 2, 12, 112, null").backedBy(i)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -1052,6 +1190,9 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_LEFT")
                 .entry("Bob, 2002-02-02, 2, 12").backedBy(c, o)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_LEFT")
+                .entry("1234, null, 1, 11, 111, null").backedBy(i)
+                .entry("5678, handle with care, 2, 12, 112, 1112").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
         
@@ -1071,11 +1212,11 @@ public final class NewGiUpdateIT extends ITBase {
 
         createGroupIndex(groupName, "name_when_LEFT", "c.name,o.when", Index.JoinType.LEFT);
         createGroupIndex(groupName, "sku_instructions_LEFT", "i.sku, h.handling_instructions", Index.JoinType.LEFT);
-        createGroupIndex(groupName, "name_when_sku_LEFT", "c.name, o.when, i.sku", Index.JoinType.LEFT);
+//        createGroupIndex(groupName, "name_when_sku_LEFT", "c.name, o.when, i.sku", Index.JoinType.LEFT);
 
-        createGroupIndex(groupName, "name_when_RIGHT", "c.name,o.when", Index.JoinType.RIGHT);
-        createGroupIndex(groupName, "sku_instructions_RIGHT", "i.sku, h.handling_instructions", Index.JoinType.RIGHT);
-        createGroupIndex(groupName, "name_when_sku_RIGHT", "c.name, o.when, i.sku", Index.JoinType.RIGHT);
+//        createGroupIndex(groupName, "name_when_RIGHT", "c.name,o.when", Index.JoinType.RIGHT);
+//        createGroupIndex(groupName, "sku_instructions_RIGHT", "i.sku, h.handling_instructions", Index.JoinType.RIGHT);
+//        createGroupIndex(groupName, "name_when_sku_RIGHT", "c.name, o.when, i.sku", Index.JoinType.RIGHT);
         
         createGroupIndex(groupName, "street_name_RIGHT", "a.street,c.name", Index.JoinType.RIGHT);
     }
@@ -1239,7 +1380,7 @@ public final class NewGiUpdateIT extends ITBase {
                 for (GroupIndex gi : uncheckedGis) {
                     uncheckedGiNames.add(gi.getIndexName().getName());
                 }
-                fail("unchecked GIs: " + uncheckedGiNames.toString());
+                throw new RuntimeException("unchecked GIs: " + uncheckedGiNames.toString());
             }
         }
 
