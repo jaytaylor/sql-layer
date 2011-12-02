@@ -1,0 +1,14 @@
+SelectQuery@d09099d
+  ResultSet@4c56291a[order_date, name]
+    MapJoin@90affe()
+      Flatten@1b124cfc(user.customers INNER user.orders)
+        GroupScan@4e7c4246(Group(customers -> user._akiban_customers))
+          TableSource@785b38d6(user.customers - TableGroup@3fe329eb(customers))
+          TableSource@2cf0a755(user.orders - TableGroupJoin@5ad52411(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+      Project@2ca4911d[user.orders.order_date, user.child.name]
+        Select@68331dd0[like(user.customers.name,S%)]
+          NullIfEmpty@5f3306ad
+            Flatten@efb78af(user.child)
+              BranchLookup@1fb030d8(user.parent -> user.parent)
+                IndexScan@6856c528(Index(user.parent.name[IndexColumn(name)]), NONE, =user.customers.name)
+                TableSource@b6e14f9(user.child - TableGroupJoin@18a9fa9c(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))

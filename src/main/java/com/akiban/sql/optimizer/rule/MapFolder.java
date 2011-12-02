@@ -92,11 +92,14 @@ public class MapFolder extends BaseRule
         switch (map.getJoinType()) {
         case INNER:
             break;
+        case LEFT:
+            map.setInner(new NullIfEmpty(map.getInner()));
+            break;
         case SEMI:
             map.setInner(new Limit(map.getInner(), 1));
             break;
         default:
-            throw new UnsupportedSQLException("non-INNER complex join " + map, null);
+            throw new UnsupportedSQLException("complex join type " + map, null);
         }
 
         PlanWithInput parent = map;

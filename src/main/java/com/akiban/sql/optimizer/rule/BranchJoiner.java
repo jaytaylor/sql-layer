@@ -195,6 +195,8 @@ public class BranchJoiner extends BaseRule
             mainBranchSources = branching.getMainBranchTableSources();
         }
         else {
+            if (ancestors.contains(indexTable))
+                descendants.add(indexTable); // Getting it along with descendants.
             Collections.sort(descendants, tableSourceById);
             scan = new BranchLookup(scan, indexTableNode, 
                                     indexTableNode, descendants);
