@@ -109,8 +109,12 @@ public class WeekExpressionTest extends ComposedExpressionTestBase
         assertEquals("assert topType is INT", AkType.INT, week.valueType());
         assertEquals("DATE: " + date + ", mode " + mode, actual, exp);
         
-        
        
+    }
+    
+    protected boolean alreadyExc()
+    {
+        return false;
     }
 
     @Override
