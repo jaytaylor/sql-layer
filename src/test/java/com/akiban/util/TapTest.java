@@ -28,7 +28,7 @@ public class TapTest {
 
     @Test
     public void testPerThreadTap() throws Exception {
-        final Tap.InOutTap tap = Tap.createTimeStampLog("ttap");
+        final Tap.InOutTap tap = Tap.createTimer("tap");
         Tap.setEnabled(".*", true);
         final Thread[] threads = new Thread[THREADS];
         for (int i = 0; i < THREADS; i++) {
@@ -52,18 +52,6 @@ public class TapTest {
             threads[i].join();
         }
         final TapReport report = tap.getReport();
-        final Tap.PerThread.PerThreadTapReport pttr = (Tap.PerThread.PerThreadTapReport) report;
-        final Map<String, TapReport> map = pttr.getTapReportMap();
-        assertEquals(THREADS, map.size());
-        final Tap.TimeStampLog.TimeStampTapReport tstp = (Tap.TimeStampLog.TimeStampTapReport) map.get("thread_6");
-        final long[] log = tstp.getLog();
-        assertEquals(CYCLES * 2, log.length);
-        assertEquals(0, log[0]);
-        long value = -1;
-        for (int i = 0; i < log.length; i++) {
-            assertTrue(String.format("i: %s, log[i]: %s, value: %s", i, log[i], value), log[i] >= value);
-            value = log[i];
-        }
         assertEquals(THREADS * CYCLES, report.getInCount());
         assertEquals(THREADS * CYCLES, report.getOutCount());
     }
