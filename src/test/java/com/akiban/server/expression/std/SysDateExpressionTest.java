@@ -26,19 +26,17 @@ public class SysDateExpressionTest
     @Test
     public void test() throws InterruptedException
     {
-        ValueSource date = (new SysDateExpression()).evaluation().eval();
+        ValueSource date = (new SysDateExpression().evaluation()).eval();
         long dt = System.currentTimeMillis();
         assertEquals("current time in seconds: " + dt,
                 (dt)/1000, 
-                date.getTimestamp()); // dt and date could be a few millisecs away
-        
-    }
+                date.getTimestamp(), 1); // dt and date could be a few millisecs away
+     }
     
     @Test
     public void testConst()
     {
         Expression sys = new SysDateExpression();
-        assertFalse("SysDateExpression() is not const" , sys.isConstant());
-    }
-    
+        assertFalse("SysDateExpression is const" , sys.isConstant());
+    }  
 }
