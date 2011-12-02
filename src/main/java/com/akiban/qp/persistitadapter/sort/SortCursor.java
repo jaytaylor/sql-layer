@@ -42,8 +42,8 @@ public abstract class SortCursor implements Cursor
     {
         return
             ordering.allAscending() || ordering.allDescending()
-            ? (keyRange != null && keyRange.semiBounded()
-               ? SortCursorUnidirectionalSemiBounded.create(adapter, iterationHelper, keyRange, ordering)
+            ? (keyRange != null && keyRange.lexicographic()
+               ? SortCursorUnidirectionalLexicographic.create(adapter, iterationHelper, keyRange, ordering)
                : SortCursorUnidirectional.create(adapter, iterationHelper, keyRange, ordering))
             : SortCursorMixedOrder.create(adapter, iterationHelper, keyRange, ordering);
     }

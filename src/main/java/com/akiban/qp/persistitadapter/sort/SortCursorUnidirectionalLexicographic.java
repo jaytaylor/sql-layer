@@ -24,24 +24,24 @@ import com.akiban.server.types.conversion.Converters;
 
 // For a semi-bounded (mysqlish) index scan
 
-class SortCursorUnidirectionalSemiBounded extends SortCursorUnidirectional
+class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
 {
     // SortCursorUnidirectional interface
 
-    public static SortCursorUnidirectionalSemiBounded create(PersistitAdapter adapter,
-                                                             IterationHelper iterationHelper,
-                                                             IndexKeyRange keyRange,
-                                                             API.Ordering ordering)
+    public static SortCursorUnidirectionalLexicographic create(PersistitAdapter adapter,
+                                                               IterationHelper iterationHelper,
+                                                               IndexKeyRange keyRange,
+                                                               API.Ordering ordering)
     {
-        return new SortCursorUnidirectionalSemiBounded(adapter, iterationHelper, keyRange, ordering);
+        return new SortCursorUnidirectionalLexicographic(adapter, iterationHelper, keyRange, ordering);
     }
 
     // For use by this class
 
-    private SortCursorUnidirectionalSemiBounded(PersistitAdapter adapter,
-                                                IterationHelper iterationHelper,
-                                                IndexKeyRange keyRange,
-                                                API.Ordering ordering)
+    private SortCursorUnidirectionalLexicographic(PersistitAdapter adapter,
+                                                  IterationHelper iterationHelper,
+                                                  IndexKeyRange keyRange,
+                                                  API.Ordering ordering)
     {
         super(adapter, iterationHelper, keyRange, ordering);
     }

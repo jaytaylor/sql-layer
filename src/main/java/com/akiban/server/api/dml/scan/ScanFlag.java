@@ -25,7 +25,7 @@ public enum ScanFlag {
     START_RANGE_EXCLUSIVE(1),
     END_RANGE_EXCLUSIVE(2),
     SINGLE_ROW(3),
-    MATCH_BY_PREFIX(4),
+    LEXICOGRAPHIC(4),
     START_AT_BEGINNING(5),
     END_AT_END(6),
     DEEP(7)

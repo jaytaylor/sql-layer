@@ -192,9 +192,6 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                                                          ColumnSelector endColumns,
                                                          ScanLimit scanLimit)
     {
-        if ((scanFlags & SCAN_FLAGS_PREFIX) != 0) {
-            throw new IllegalArgumentException("SCAN_FLAGS_PREFIX is unsupported");
-        }
         if (start != null && end != null && start.getRowDefId() != end.getRowDefId()) {
             throw new IllegalArgumentException(String.format("start row def id: %s, end row def id: %s",
                                                              start.getRowDefId(), end.getRowDefId()));
