@@ -22,7 +22,7 @@ import java.sql.Types;
 public final class TypesTranslation {
     public static AkType sqlTypeToAkType(DataTypeDescriptor descriptor) {
         switch (descriptor.getJDBCTypeId()) {
-        case Types.BIGINT:  return AkType.BIGINT;
+        case Types.BIGINT:  return AkType.LONG;
         case Types.BINARY:  return AkType.VARBINARY;
         case Types.BLOB:    return AkType.VARBINARY;
         case Types.BOOLEAN: return AkType.BOOL;
