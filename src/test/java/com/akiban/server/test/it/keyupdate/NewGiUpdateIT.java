@@ -46,12 +46,12 @@ import static org.junit.Assert.fail;
 /**
  * <p>Various atomic tests of GI maintenance.</p>
  *
- * Each test is named foo_action_X where:
+ *<p>Each test is named foo_action_X where:
  * <ul>
  * <li>foo = the initial state of the db</li>
  * <li>action = add, del (delete), move</li>
  * <li>X = one of {@code [c a o i h]}, the type of row which is being added/deleted/moved</li>
- * </ul>
+ * </ul></p>
  *
  * The grouping is:
  * <pre>
