@@ -23,6 +23,14 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
+/**
+ * 
+ * Test for FromUnixExpression
+ * 
+ * from_unixtime(...) expression is timezone-sensitive, and thus so as the test.
+ * The test was written with the assumption that current timezone is GMT +5,
+ * hence it'll only pass in this timezone
+ */
 public class FromUnixExpressionTest extends ComposedExpressionTestBase
 {
     @Test

@@ -67,1110 +67,1029 @@ public enum DateTimeField
      * abbreviated month name: Dec, Nov, Oct, ...
      */
    b
+    {
+        @Override
+        public long [] get(String str)
         {
-            @Override
-            public long [] get(String str)
-            {
-                return new long [] {abbMonth.get(str.substring(0, 3).toUpperCase()), 3};
-            }
+            return new long [] {abbMonth.get(str.substring(0, 3).toUpperCase()), 3};
+        }
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return datetime.monthOfYear().getAsShortText();
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.m;
-            }
-        },
-
-        /**
-         * month in numeric: 12, 11, 10, ...
-         */
-        c
+        @Override
+        public String get(MutableDateTime datetime)
         {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long[] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2: 1)), i};
-            }
+            return datetime.monthOfYear().getAsShortText();
+        }
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return datetime.getMonthOfYear() + "";
-            }
-
-             @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.m;
-            }
-        },
-
-        /**
-         * day of month with suffix: 31st, 30th, 29th, ...
-         */
-        D
+        @Override
+        public int getFieldType ()
         {
-            @Override
-            public long [] get(String str)
-            {
-                int n = 0;
-                int limit = Math.min(4, str.length());
-                for (n = 0; n < limit && str.charAt(n) >= '0' && str.charAt(n) <= '9'; ++n );
-                return new long[] { Long.parseLong(str.substring(0, n)), n +2 };
+             return 1;
+        }
 
-            }
-
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                int d = datetime.getDayOfMonth();
-
-                switch(d%10)
-                {
-                    case 1:  return d + "st";
-                    case 2:  return d + "nd";
-                    case 3:  return d + "rd";
-                    default: return d + "th";
-                }
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.d;
-            }
-        },
-
-        /**
-         * day of month in numeric: 31, 30, 29, ...
-         */
-        d
+        @Override
+        public DateTimeField equivalentField ()
         {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long[] {Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2: 1)), i};
-            }
+            return DateTimeField.m;
+        }
+    },
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return datetime.getDayOfMonth() + "";
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.d;
-            }
-        },
-
-        /**
-         * same as d: day in numeric
-         */
-        e
+    /**
+     * month in numeric: 12, 11, 10, ...
+     */
+    c
+    {
+        @Override
+        public long [] get(String str)
         {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long [] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2: 1))};
-            }
+            int i;
+            return new long[] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2: 1)), i};
+        }
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return datetime.getDayOfMonth() + "";
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.d;
-            }
-        },
-
-        /**
-         * micro seconds
-         */
-        f
+        @Override
+        public String get(MutableDateTime datetime)
         {
-            @Override
-            public long [] get(String str)
-            {
-                int n = 0;
-                while (n < str.length() && Character.isDigit(str.charAt(n))) ++n;
-                return new long[] {month.get(str.substring(0, n).toUpperCase()),n};
-            }
+            return datetime.getMonthOfYear() + "";
+        }
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return "0"; // only second was supplied, => micro = 0
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.f;
-            }
-        },
-
-        /**
-         * hour in 24-hr format
-         */
-        H
+         @Override
+        public int getFieldType ()
         {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long[] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2 :1)), i};
-            }
+             return 1;
+        }
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return datetime.getHourOfDay() + "";
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.H;
-            }
-        },
-
-        /**
-         * hour in 12-hr format
-         */
-        h
+        @Override
+        public DateTimeField equivalentField ()
         {
-            @Override
-            public long [] get(String str)
-            {
-                int i = 2 <= str.length() ? 2 : 1;
-                // adjust hour to 24hr format
-                long h = Long.parseLong(str.substring(0, i));
-                if (h > 12) throw new NumberFormatException();
-                h %= 12;
-                return new long [] {h, i};
-            }
+            return DateTimeField.m;
+        }
+    },
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return datetime.get(DateTimeFieldType.clockhourOfHalfday()) + "";
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.H;
-            }
-        },
-
-        /**
-         * I same as h: hour in 12-hr format
-         */
-        I
+    /**
+     * day of month with suffix: 31st, 30th, 29th, ...
+     */
+    D
+    {
+        @Override
+        public long [] get(String str)
         {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long [] { (Long.parseLong(str.substring(0,i = 2 <= str.length() ? 2 : 1)) + 12) % 24, i};
-            }
+            int n = 0;
+            int limit = Math.min(4, str.length());
+            for (n = 0; n < limit && str.charAt(n) >= '0' && str.charAt(n) <= '9'; ++n );
+            return new long[] { Long.parseLong(str.substring(0, n)), n +2 };
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                int hr = datetime.getHourOfDay();
-                if (hr == 0) return "1";
-                else if (hr <= 12) return hr + "";
-                else return (hr - 12) + "";
-            }
+        }
 
-            @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.H;
-            }
-        },
-
-        /**
-         * minute
-         */
-        i
+        @Override
+        public String get(MutableDateTime datetime)
         {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long[] {Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2 :1)), i};
-            }
+            int d = datetime.getDayOfMonth();
 
-            @Override
-            public String get(MutableDateTime datetime)
+            switch(d%10)
             {
-                return datetime.getMinuteOfHour() + "";
+                case 1:  return d + (d == 11 ? "th" :"st");
+                case 2:  return d + (d == 12? "th" : "nd");
+                case 3:  return d + (d == 13 ? "th" : "rd");
+                default: return d + "th";
             }
+        }
 
-            @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.i;
-            }
-        },
-
-        /**
-         * day of year in numeric
-         */
-        j
+        @Override
+        public int getFieldType ()
         {
-            @Override
-            public long [] get(String str)
-            {
-                int i = 0;
-                for (; i < 3 && i < str.length() && str.charAt(i) >= '0' && str.charAt(i) <= '9'; ++i);
-                return new long[] {Long.parseLong(str.substring(0,i)), i};
-            }
+             return 1;
+        }
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return datetime.getDayOfYear() + "";
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.j;
-            }
-        },
-
-        /**
-         * hour : 24-hr format.
-         * Same as H
-         */
-        k
+        @Override
+        public DateTimeField equivalentField ()
         {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long[] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2 :1)), i};
-            }
+            return DateTimeField.d;
+        }
+    },
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return datetime.getHourOfDay() + "";
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.H;
-            }
-        },
-
-        /**
-         * hour: 12-hr format
-         * Same as h
-         */
-        l
+    /**
+     * day of month in numeric: 31, 30, 29, ...
+     */
+    d
+    {
+        @Override
+        public long [] get(String str)
         {
-            @Override
-            public long [] get(String str)
-            {
-                int i = 2 <= str.length() ? 2 : 1;
-                // adjust hour to 24hr format
-                long h = Long.parseLong(str.substring(0, i));
-                if (h > 12) throw new NumberFormatException();
-                h %= 12;
-                return new long [] {h, i};
-            }
+            int i;
+            return new long[] {Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2: 1)), i};
+        }
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return datetime.get(DateTimeFieldType.clockhourOfHalfday()) + "";
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.H;
-            }
-        },
-
-        /**
-         * month name: December, November, ...
-         */
-        M
+        @Override
+        public String get(MutableDateTime datetime)
         {
-            @Override
-            public long [] get(String str)
-            {
-                int n = 0;
-                while (n < str.length() && !Character.isDigit(str.charAt(n))) ++n;
-                return new long[] {month.get(str.substring(0, n).toUpperCase()),n};
-            }
+            return datetime.getDayOfMonth() + "";
+        }
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return datetime.monthOfYear().getAsText();
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-             @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.m;
-            }
-        },
-
-        /**
-         * month in numeric: 12, 11, 10, ...
-         */
-        m
+        @Override
+        public int getFieldType ()
         {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long[] { Long.parseLong(str.substring(0,i = 2 <= str.length() ? 2 :1)), i};
-            }
+             return 1;
+        }
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return datetime.getMonthOfYear() + "";
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.m;
-            }
-        },
-
-        /**
-         * specify pm or am
-         * to be used with %r (12-hr format time) or %h (12-hr format hour)
-         * return NULL if used with %T (24-hr format time) or %H (24-hr format hour)
-         */
-        p
+        @Override
+        public DateTimeField equivalentField ()
         {
-            @Override
-            public long [] get (String str)
-            {
-                String ap = str.substring(0, 2);
-                return new long[] {ap.equalsIgnoreCase("am") ? 0 : ap.equalsIgnoreCase("pm") ? 12 : -1
-                    , 2};
-            }
+            return DateTimeField.d;
+        }
+    },
 
-
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                int hr = datetime.getHourOfDay();
-                if(hr < 12) return "AM";
-                else return "PM";
-            }
-             @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.p;
-            }
-        },
-
-        /**
-         * Time hh:mm:ss 12hr format
-         */
-        r
+    /**
+     * same as d: day in numeric
+     */
+    e
+    {
+        @Override
+        public long [] get(String str)
         {
-            @Override
-            public long [] get(String str)
-            {
-                int i =  Math.min(8, str.length());
-                String time = str.substring(0,i);
-                String t[] = time.split("\\:");
+            int i;
+            return new long [] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2: 1))};
+        }
 
-                // adjust time to 24hr format
-                long hr = Long.parseLong(t[0]);
-                if (hr > 12) throw new NumberFormatException();
-                hr %= 12;
-                long m = Long.parseLong(t[1]);
-                long s = Long.parseLong(t[2]);
-                return new long [] {10000L * hr + 100 * m + s, i};
-            }
-
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                int h = datetime.get(DateTimeFieldType.clockhourOfHalfday());
-                int m = datetime.getMinuteOfHour();
-                int s = datetime.getSecondOfMinute();
-
-                return String.format("%02d:%02d:%02d", h,m,s);
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.T;
-            }
-        },
-
-        /**
-         * second, same as s
-         */
-        S
+        @Override
+        public String get(MutableDateTime datetime)
         {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long[] { Long.parseLong(str.substring(0,i = 2 <= str.length() ? 2 :1)), i};
-            }
+            return datetime.getDayOfMonth() + "";
+        }
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return datetime.getSecondOfMinute() + "";
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.s;
-            }
-        },
-
-        /**
-         * second,
-         */
-        s
+        @Override
+        public int getFieldType ()
         {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long[] { Long.parseLong(str.substring(0,i = 2 <= str.length() ? 2 :1)), i};
-            }
+             return 1;
+        }
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return datetime.getSecondOfMinute() + "";
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.s;
-            }
-        },
-
-        /**
-         * Time: hh:mm:ss in 24hr format.
-         */
-        T
+        @Override
+        public DateTimeField equivalentField ()
         {
-            @Override
-            public long [] get(String str)
-            {
-                int i = Math.min(8, str.length());
-                String time = str.substring(0, i);
-                String t[] = time.split("\\:");
-                return new long [] {10000L * Long.parseLong(t[0]) + 100 * Long.parseLong(t[1]) + Long.parseLong(t[2]), i};
-            }
+            return DateTimeField.d;
+        }
+    },
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                int h = datetime.getHourOfDay();
-                int m = datetime.getMinuteOfHour();
-                int s = datetime.getSecondOfMinute();
-
-                return String.format("%02d:%02d:%02d", h,m,s);
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 2;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.T;
-            }
-        },
-
-        /**
-         * week of year [0,...53], Sunday is the first day of week
-         */
-        U
+    /**
+     * micro seconds
+     */
+    f
+    {
+        @Override
+        public long [] get(String str)
         {
-            @Override
-            public long [] get(String str)
-            {
-                // TO DO: not sure how this actually gets used
-                throw new UnsupportedOperationException("%U is not supported in str_to_date");
-                /*
-                int i;
-                return new long [] { Long.parseLong(str.substring(0,i = 2 <= str.length() ? 2 :1)), i};
-                 *
-                 */
-            }
+            int n = 0;
+            while (n < str.length() && Character.isDigit(str.charAt(n))) ++n;
+            return new long[] {month.get(str.substring(0, n).toUpperCase()),n};
+        }
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return getWeek(datetime, datetime.getYear(), datetime.getMonthOfYear(), datetime.getDayOfMonth(), 7) + "";
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.U;
-            }
-            
-            private int getWeek(MutableDateTime cal, int yr, int mo, int da, int firstDay)
-            {
-                cal.setYear(yr);
-                cal.setMonthOfYear(1);
-                cal.setDayOfMonth(1);
-                int firstD = 1;
-
-                while (cal.getDayOfWeek() != firstDay)
-                    cal.setDayOfMonth(++firstD);
-
-                cal.setYear(yr); 
-                cal.setMonthOfYear(mo); 
-                cal.setDayOfMonth(da); 
-
-                int dayOfYear = cal.getDayOfYear(); 
-
-                if (dayOfYear < firstD) return 0;
-                else return (dayOfYear - firstD) / 7 +1;
-            }
-        },
-
-        /**
-         * week of year [0...53], Monday is the first day of week
-         */
-        u
+        @Override
+        public String get(MutableDateTime datetime)
         {
-            @Override
-            public long [] get(String str)
-            {
-                // TO DO: not sure how this actually gets used
-                throw new UnsupportedOperationException("%u is not supported in str_to_date");
-                /*
-                int i;
-                return new long [] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2 :1)), i};
-                 *
-                 */
-            }
+            return "0"; // only second was supplied, => micro = 0
+        }
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return getWeek(datetime, datetime.getYear(), datetime.getMonthOfYear(), datetime.getDayOfMonth(), 1) + "";
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.u;
-            }
-            
-            protected int getWeek(MutableDateTime cal, int yr, int mo, int da, int firstDay)
-            {
-                cal.setYear(yr);
-                cal.setMonthOfYear(1);
-                cal.setDayOfMonth(1);
-                int firstD = 1;
-
-                while (cal.getDayOfWeek() != firstDay)
-                    cal.setDayOfMonth(++firstD);
-
-                cal.setYear(yr); 
-                cal.setMonthOfYear(mo); 
-                cal.setDayOfMonth(da); 
-
-                int dayOfYear = cal.getDayOfYear(); 
-
-                if (dayOfYear < firstD) return 0;
-                else return (dayOfYear - firstD) / 7 +1;
-            }
-        },
-
-        /**
-         * week of year: [1,..,53]: where Sunday is the first day
-         * to be used with %X
-         */
-        V
+        @Override
+        public int getFieldType ()
         {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long[] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2:1)), i};
-            }
+             return 2;
+        }
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return getWeek(datetime, datetime.getYear(), datetime.getMonthOfYear(), datetime.getDayOfMonth(), 7) + "";
-                
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.V;
-            }
-            
-            
-            private int getWeek(MutableDateTime cal, int yr, int mo, int da, int firstDay)
-            {
-                cal.setYear(yr);
-                cal.setMonthOfYear(1);
-                cal.setDayOfMonth(1);
-                int firstD = 1;
-
-                while (cal.getDayOfWeek() != firstDay)
-                    cal.setDayOfMonth(++firstD);
-
-                cal.setYear(yr); 
-                cal.setMonthOfYear(mo); 
-                cal.setDayOfMonth(da); 
-
-                int dayOfYear = cal.getDayOfYear(); 
-
-                if (dayOfYear < firstD) return getWeek(cal, yr-1, 12, 31, firstDay);
-                else return (dayOfYear - firstD) / 7 +1;
-            }
-
-        },
-
-        /**
-         * week of year [0,..,53]: where Monday is the first day
-         * to be used with %x
-         */
-        v
+        @Override
+        public DateTimeField equivalentField ()
         {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long [] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2 :1)), i};
-            }
+            return DateTimeField.f;
+        }
+    },
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                 return getWeek(datetime, datetime.getYear(), datetime.getMonthOfYear(), datetime.getDayOfMonth(), 1) + "";
-             
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.v;
-            }
-            
-            protected int getWeek(MutableDateTime cal, int yr, int mo, int da, int firstDay)
-            {
-                cal.setYear(yr);
-                cal.setMonthOfYear(1);
-                cal.setDayOfMonth(1);
-                int firstD = 1;
-
-                while (cal.getDayOfWeek() != firstDay)
-                    cal.setDayOfMonth(++firstD);
-
-                cal.setYear(yr); 
-                cal.setMonthOfYear(mo); 
-                cal.setDayOfMonth(da); 
-
-                int dayOfYear = cal.getDayOfYear(); 
-
-                if (dayOfYear < firstD) return getWeek(cal, yr-1, 12, 31, firstDay);
-                else return (dayOfYear - firstD) / 7 +1;
-            }
-        },
-
-        /**
-         * week day name: Sunday, Saturday, ...
-         */
-        W
+    /**
+     * hour in 24-hr format
+     */
+    H
+    {
+        @Override
+        public long [] get(String str)
         {
-            @Override
-            public long [] get(String str)
-            {
-                int n = 0;
-                while (n < str.length() && !Character.isDigit(str.charAt(n))) ++n;
-                return new long[] {weekDay.get(str.substring(0, n).toUpperCase()),n};
-            }
+            int i;
+            return new long[] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2 :1)), i};
+        }
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return datetime.dayOfWeek().getAsText();
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.W;
-            }
-        },
-
-        /**
-         * week day in numeric: Sunday = 0, .... Saturday = 6
-         */
-        w
+        @Override
+        public String get(MutableDateTime datetime)
         {
-            @Override
-            public long [] get(String str)
-            {
-                return new long[] { Long.parseLong(str.charAt(0) + ""), 1};
-            }
+            return datetime.getHourOfDay() + "";
+        }
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return datetime.getDayOfWeek() % 7 + "";
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.W;
-            }
-        },
-
-        /**
-         * year for the week, to be used with %V: Sunday is the first day
-         */
-        X
+        @Override
+        public int getFieldType ()
         {
-            @Override
-            public long [] get(String str)
-            {
-                int i = 4 % str.length();
-                i = (i == 0 ? 4 :i);
-                return new long[] { Long.parseLong(str.substring(0, i)),i };
-            }
+             return 2;
+        }
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return datetime.getYear() + "";
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.X;
-            }
-        },
-
-        /**
-         * year for the week, to be used with %v: Monday is the first day
-         */
-        x
+        @Override
+        public DateTimeField equivalentField ()
         {
-            @Override
-            public long [] get(String str)
-            {
-                int i = 4 % str.length();
-                i = (i == 0 ? 4 :i);
-                return new long[] { Long.parseLong(str.substring(0, i)),i };
-            }
+            return DateTimeField.H;
+        }
+    },
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return datetime.getYear() + "";
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.x;
-            }
-        },
-
-        /**
-         * year : 2 digits, relative to 2000
-         */
-        y
+    /**
+     * hour in 12-hr format
+     */
+    h
+    {
+        @Override
+        public long [] get(String str)
         {
-            @Override
-            public long [] get(String str)
-            {
-                int i;
-                return new long[] {2000 + Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2: 1)), i};
-            }
+            int i = 2 <= str.length() ? 2 : 1;
+            // adjust hour to 24hr format
+            long h = Long.parseLong(str.substring(0, i));
+            if (h > 12) throw new NumberFormatException();
+            h %= 12;
+            return new long [] {h, i};
+        }
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return datetime.getYear() % 100 + "";
-            }
-
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.Y;
-            }
-        },
-
-        /**
-         *  year: 4 digits
-         */
-        Y
+        @Override
+        public String get(MutableDateTime datetime)
         {
-            @Override
-            public long [] get(String str)
-            {
-                int i = 4 % str.length();
-                i = (i == 0 ? 4 :i);
-                return new long[] { Long.parseLong(str.substring(0, i)),i };
-            }
+            return datetime.get(DateTimeFieldType.clockhourOfHalfday()) + "";
+        }
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return datetime.getYear() + "";
-            }
-            
-            @Override
-            public int getFieldType ()
-            {
-                 return 1;
-            }
-
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.Y;
-            }
-        },
-
-        /**
-         * literal %
-         */
-        percent
+        @Override
+        public int getFieldType ()
         {
-            @Override
-            public long [] get(String str)
-            {
-                throw new UnsupportedOperationException("literal % is not supported in str_to_date");
-            }
+             return 2;
+        }
 
-            @Override
-            public int getFieldType ()
-            {
-                 throw new UnsupportedOperationException("literal % is not supported for this method");
-            }
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.H;
+        }
+    },
 
-            @Override
-            public String get(MutableDateTime datetime)
-            {
-                return "%";
-            }
+    /**
+     * I same as h: hour in 12-hr format
+     */
+    I
+    {
+        @Override
+        public long [] get(String str)
+        {
+            int i = 2 <= str.length() ? 2 : 1;
+            // adjust hour to 24hr format
+            long h = Long.parseLong(str.substring(0, i));
+            if (h > 12) throw new NumberFormatException();
+            h %= 12;
+            return new long [] {h, i};
+        }
 
-            @Override
-            public DateTimeField equivalentField ()
-            {
-                return DateTimeField.percent;
-            }
-        };
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+            return datetime.get(DateTimeFieldType.clockhourOfHalfday()) + "";
+        }
+
+        @Override
+        public int getFieldType ()
+        {
+             return 2;
+        }
+
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.H;
+        }
+    },
+
+    /**
+     * minute
+     */
+    i
+    {
+        @Override
+        public long [] get(String str)
+        {
+            int i;
+            return new long[] {Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2 :1)), i};
+        }
+
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+            return datetime.getMinuteOfHour() + "";
+        }
+
+        @Override
+        public int getFieldType ()
+        {
+             return 2;
+        }
+
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.i;
+        }
+    },
+
+    /**
+     * day of year in numeric
+     */
+    j
+    {
+        @Override
+        public long [] get(String str)
+        {
+            int i = 0;
+            for (; i < 3 && i < str.length() && str.charAt(i) >= '0' && str.charAt(i) <= '9'; ++i);
+            return new long[] {Long.parseLong(str.substring(0,i)), i};
+        }
+
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+            return datetime.getDayOfYear() + "";
+        }
+
+        @Override
+        public int getFieldType ()
+        {
+             return 1;
+        }
+
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.j;
+        }
+    },
+
+    /**
+     * hour : 24-hr format.
+     * Same as H
+     */
+    k
+    {
+        @Override
+        public long [] get(String str)
+        {
+            int i;
+            return new long[] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2 :1)), i};
+        }
+
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+            return datetime.getHourOfDay() + "";
+        }
+
+        @Override
+        public int getFieldType ()
+        {
+             return 2;
+        }
+
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.H;
+        }
+    },
+
+    /**
+     * hour: 12-hr format
+     * Same as h
+     */
+    l
+    {
+        @Override
+        public long [] get(String str)
+        {
+            int i = 2 <= str.length() ? 2 : 1;
+            // adjust hour to 24hr format
+            long h = Long.parseLong(str.substring(0, i));
+            if (h > 12) throw new NumberFormatException();
+            h %= 12;
+            return new long [] {h, i};
+        }
+
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+            return datetime.get(DateTimeFieldType.clockhourOfHalfday()) + "";
+        }
+
+        @Override
+        public int getFieldType ()
+        {
+             return 2;
+        }
+
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.H;
+        }
+    },
+
+    /**
+     * month name: December, November, ...
+     */
+    M
+    {
+        @Override
+        public long [] get(String str)
+        {
+            int n = 0;
+            while (n < str.length() && !Character.isDigit(str.charAt(n))) ++n;
+            return new long[] {month.get(str.substring(0, n).toUpperCase()),n};
+        }
+
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+            return datetime.monthOfYear().getAsText();
+        }
+
+        @Override
+        public int getFieldType ()
+        {
+             return 1;
+        }
+
+         @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.m;
+        }
+    },
+
+    /**
+     * month in numeric: 12, 11, 10, ...
+     */
+    m
+    {
+        @Override
+        public long [] get(String str)
+        {
+            int i;
+            return new long[] { Long.parseLong(str.substring(0,i = 2 <= str.length() ? 2 :1)), i};
+        }
+
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+            return datetime.getMonthOfYear() + "";
+        }
+
+        @Override
+        public int getFieldType ()
+        {
+             return 1;
+        }
+
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.m;
+        }
+    },
+
+    /**
+     * specify pm or am
+     * to be used with %r (12-hr format time) or %h (12-hr format hour)
+     * return NULL if used with %T (24-hr format time) or %H (24-hr format hour)
+     */
+    p
+    {
+        @Override
+        public long [] get (String str)
+        {
+            String ap = str.substring(0, 2);
+            return new long[] {ap.equalsIgnoreCase("am") ? 0 : ap.equalsIgnoreCase("pm") ? 12 : -1
+                , 2};
+        }
+
+
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+            int hr = datetime.getHourOfDay();
+            if(hr < 12) return "AM";
+            else return "PM";
+        }
+         @Override
+        public int getFieldType ()
+        {
+             return 2;
+        }
+
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.p;
+        }
+    },
+
+    /**
+     * Time hh:mm:ss 12hr format
+     */
+    r
+    {
+        @Override
+        public long [] get(String str)
+        {
+            int i =  Math.min(8, str.length());
+            String time = str.substring(0,i);
+            String t[] = time.split("\\:");
+
+            // adjust time to 24hr format
+            long hr = Long.parseLong(t[0]);
+            if (hr > 12) throw new NumberFormatException();
+            hr %= 12;
+            long m = Long.parseLong(t[1]);
+            long s = Long.parseLong(t[2]);
+            return new long [] {10000L * hr + 100 * m + s, i};
+        }
+
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+            int h = datetime.get(DateTimeFieldType.clockhourOfHalfday());
+            int m = datetime.getMinuteOfHour();
+            int s = datetime.getSecondOfMinute();
+
+            return String.format("%02d:%02d:%02d", h,m,s);
+        }
+
+        @Override
+        public int getFieldType ()
+        {
+             return 2;
+        }
+
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.T;
+        }
+    },
+
+    /**
+     * second, same as s
+     */
+    S
+    {
+        @Override
+        public long [] get(String str)
+        {
+            int i;
+            return new long[] { Long.parseLong(str.substring(0,i = 2 <= str.length() ? 2 :1)), i};
+        }
+
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+            return datetime.getSecondOfMinute() + "";
+        }
+
+        @Override
+        public int getFieldType ()
+        {
+             return 2;
+        }
+
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.s;
+        }
+    },
+
+    /**
+     * second,
+     */
+    s
+    {
+        @Override
+        public long [] get(String str)
+        {
+            int i;
+            return new long[] { Long.parseLong(str.substring(0,i = 2 <= str.length() ? 2 :1)), i};
+        }
+
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+            return datetime.getSecondOfMinute() + "";
+        }
+
+        @Override
+        public int getFieldType ()
+        {
+             return 2;
+        }
+
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.s;
+        }
+    },
+
+    /**
+     * Time: hh:mm:ss in 24hr format.
+     */
+    T
+    {
+        @Override
+        public long [] get(String str)
+        {
+            int i = Math.min(8, str.length());
+            String time = str.substring(0, i);
+            String t[] = time.split("\\:");
+            return new long [] {10000L * Long.parseLong(t[0]) + 100 * Long.parseLong(t[1]) + Long.parseLong(t[2]), i};
+        }
+
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+            int h = datetime.getHourOfDay();
+            int m = datetime.getMinuteOfHour();
+            int s = datetime.getSecondOfMinute();
+
+            return String.format("%02d:%02d:%02d", h,m,s);
+        }
+
+        @Override
+        public int getFieldType ()
+        {
+             return 2;
+        }
+
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.T;
+        }
+    },
+
+    /**
+     * week of year [0,...53], Sunday is the first day of week
+     */
+    U
+    {
+        @Override
+        public long [] get(String str)
+        {
+            // TO DO: not sure how this actually gets used
+            throw new UnsupportedOperationException("%U is not supported in str_to_date");
+            /*
+            int i;
+            return new long [] { Long.parseLong(str.substring(0,i = 2 <= str.length() ? 2 :1)), i};
+             *
+             */
+        }
+
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+            // last parameter: 7 means SUNDAY
+            return getWeek(datetime, datetime.getYear(), datetime.getMonthOfYear(), datetime.getDayOfMonth(), 7, true) + "";
+        }
+
+        @Override
+        public int getFieldType ()
+        {
+             return 1;
+        }
+
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.U;
+        }
+    },
+
+    /**
+     * week of year [0...53], Monday is the first day of week
+     */
+    u
+    {
+        @Override
+        public long [] get(String str)
+        {
+            // TO DO: not sure how this actually gets used
+            throw new UnsupportedOperationException("%u is not supported in str_to_date");
+        }
+
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+            // last parameter: 1 means MONDAY
+            return getWeek(datetime, datetime.getYear(), datetime.getMonthOfYear(), datetime.getDayOfMonth(), 1, true) + "";
+        }
+
+        @Override
+        public int getFieldType ()
+        {
+             return 1;
+        }
+
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.u;
+        }
+    },
+
+    /**
+     * week of year: [1,..,53]: where Sunday is the first day
+     * to be used with %X
+     */
+    V
+    {
+        @Override
+        public long [] get(String str)
+        {
+            int i;
+            return new long[] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2:1)), i};
+        }
+
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+            return getWeek(datetime, datetime.getYear(), datetime.getMonthOfYear(), datetime.getDayOfMonth(), 7, false) + "";
+
+        }
+
+        @Override
+        public int getFieldType ()
+        {
+             return 1;
+        }
+
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.V;
+        }
+    },
+
+    /**
+     * week of year [1,..,53]: where Monday is the first day
+     * to be used with %x
+     */
+    v
+    {
+        @Override
+        public long [] get(String str)
+        {
+            int i;
+            return new long [] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2 :1)), i};
+        }
+
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+            // the last parameter: 1 means MONDAY
+             return getWeek(datetime, datetime.getYear(), datetime.getMonthOfYear(), datetime.getDayOfMonth(), 1, false) + "";
+        }
+
+        @Override
+        public int getFieldType ()
+        {
+             return 1;
+        }
+
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.v;
+        }
+    },
+
+    /**
+     * week day name: Sunday, Saturday, ...
+     */
+    W
+    {
+        @Override
+        public long [] get(String str)
+        {
+            int n = 0;
+            while (n < str.length() && !Character.isDigit(str.charAt(n))) ++n;
+            return new long[] {weekDay.get(str.substring(0, n).toUpperCase()),n};
+        }
+
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+            return datetime.dayOfWeek().getAsText();
+        }
+
+        @Override
+        public int getFieldType ()
+        {
+             return 1;
+        }
+
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.W;
+        }
+    },
+
+    /**
+     * week day in numeric: Sunday = 0, .... Saturday = 6
+     */
+    w
+    {
+        @Override
+        public long [] get(String str)
+        {
+            return new long[] { Long.parseLong(str.charAt(0) + ""), 1};
+        }
+
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+            return datetime.getDayOfWeek() % 7 + "";
+        }
+
+        @Override
+        public int getFieldType ()
+        {
+             return 1;
+        }
+
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.W;
+        }
+    },
+
+    /**
+     * year for the week, to be used with %V: Sunday is the first day
+     */
+    X
+    {
+        @Override
+        public long [] get(String str)
+        {
+            int i = 4 % str.length();
+            i = (i == 0 ? 4 :i);
+            return new long[] { Long.parseLong(str.substring(0, i)),i };
+        }
+
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+            // Last parameter: 7 means SUNDAY
+            return getYear(datetime, datetime.getYear(), datetime.getMonthOfYear(), datetime.getDayOfMonth(), 7) + "";
+        }
+
+        @Override
+        public int getFieldType ()
+        {
+             return 1;
+        }
+
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.X;
+        }
+    },
+
+    /**
+     * year for the week, to be used with %v: Monday is the first day
+     */
+    x
+    {
+        @Override
+        public long [] get(String str)
+        {
+            int i = 4 % str.length();
+            i = (i == 0 ? 4 :i);
+            return new long[] { Long.parseLong(str.substring(0, i)),i };
+        }
+
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+             // the last parameter: 1 means MONDAY
+             return getYear(datetime, datetime.getYear(), datetime.getMonthOfYear(), datetime.getDayOfMonth(), 1) + "";
+      
+        }
+
+        @Override
+        public int getFieldType ()
+        {
+             return 1;
+        }
+
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.x;
+        }
+    },
+
+    /**
+     * year : 2 digits, relative to 2000
+     */
+    y
+    {
+        @Override
+        public long [] get(String str)
+        {
+            int i;
+            return new long[] {2000 + Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2: 1)), i};
+        }
+
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+            return datetime.getYear() % 100 + "";
+        }
+
+        @Override
+        public int getFieldType ()
+        {
+             return 1;
+        }
+
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.Y;
+        }
+    },
+
+    /**
+     *  year: 4 digits
+     */
+    Y
+    {
+        @Override
+        public long [] get(String str)
+        {
+            int i = 4 % str.length();
+            i = (i == 0 ? 4 :i);
+            return new long[] { Long.parseLong(str.substring(0, i)),i };
+        }
+
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+            return datetime.getYear() + "";
+        }
+
+        @Override
+        public int getFieldType ()
+        {
+             return 1;
+        }
+
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.Y;
+        }
+    },
+
+    /**
+     * literal %
+     */
+    percent
+    {
+        @Override
+        public long [] get(String str)
+        {
+            throw new UnsupportedOperationException("literal % is not supported in str_to_date");
+        }
+
+        @Override
+        public int getFieldType ()
+        {
+             throw new UnsupportedOperationException("literal % is not supported for this method");
+        }
+
+        @Override
+        public String get(MutableDateTime datetime)
+        {
+            return "%";
+        }
+
+        @Override
+        public DateTimeField equivalentField ()
+        {
+            return DateTimeField.percent;
+        }
+    };
 
 
 
@@ -1183,7 +1102,7 @@ public enum DateTimeField
 
     /**
      *
-     * @param yToSec: given a datetime object
+     * @param datetime: given a datetime object
      * @return the value of this field as a string
      */
     abstract String get(MutableDateTime datetime);
@@ -1202,6 +1121,63 @@ public enum DateTimeField
      *              %y and %Y  => %Y year
      */
     abstract DateTimeField equivalentField ();
+    
+    /**
+     * to be used in X and x
+     * @param cal
+     * @param yr
+     * @param mo
+     * @param da
+     * @param firstDay: the first day of week
+     * @return the year for this week, could be the same as yr or different
+     *        , depending on the first day of year
+     */
+    private static int getYear(MutableDateTime cal, int yr, int mo, int da, int firstDay)
+    {
+        if (mo > 1 || da >7 ) return yr;
+
+        cal.setYear(yr);
+        cal.setMonthOfYear(1);
+        cal.setDayOfMonth(1);
+        int firstD = 1;
+
+        while (cal.getDayOfWeek() != firstDay)
+            cal.setDayOfMonth(++firstD);
+
+        if (da < firstD) return yr -1;
+        else return yr;
+    }
+    
+    /**
+     * to be used in V, v, U and u
+     * @param cal
+     * @param yr
+     * @param mo
+     * @param da
+     * @param firstDay
+     * @param lowestIs0: whether the lowest value could be zero or not
+     * @return the week for this date, if the lowest value is not supposed to be zero, then it returns that
+     *          the number of the last week in the previous year
+     */
+    private static int getWeek(MutableDateTime cal, int yr, int mo, int da, int firstDay, boolean lowestIs0)
+    {
+        cal.setYear(yr);
+        cal.setMonthOfYear(1);
+        cal.setDayOfMonth(1);
+        int firstD = 1;
+
+        while (cal.getDayOfWeek() != firstDay)
+            cal.setDayOfMonth(++firstD);
+
+        cal.setYear(yr); 
+        cal.setMonthOfYear(mo); 
+        cal.setDayOfMonth(da); 
+
+        int dayOfYear = cal.getDayOfYear(); 
+
+        if (dayOfYear < firstD) return (lowestIs0 ? 0 : getWeek(cal, yr-1, 12, 31, firstDay, lowestIs0));
+        else return (dayOfYear - firstD) / 7 +1;
+    }
 
     // class static data DateTimeFields
     static protected final HashMap<String, Integer> abbWeekday = new HashMap<String, Integer>();

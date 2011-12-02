@@ -59,7 +59,7 @@ public class FromUnixExpression extends AbstractCompositeExpression
             switch(s)
             {
                 case 2: return ExpressionTypes.varchar(argumentTypes.get(1).getScale() * 4); // each specifier is to be replaced with a "number", max length is 4
-                case 1: return ExpressionTypes.LONG;
+                case 1: return ExpressionTypes.DATETIME;
                 default: throw new WrongExpressionArityException(1, s);
             }
         }
@@ -90,16 +90,16 @@ public class FromUnixExpression extends AbstractCompositeExpression
             ValueSource dateS = children().get(0).eval();
             if (dateS.isNull()) return NullValueSource.only();
             long unix = dateS.getLong() * 1000;
-            DateTime d = new DateTime(unix); 
-            
+         
             switch(children().size())
             {
-                case 1:     return new ValueHolder(AkType.DATETIME, d);
+                case 1:     return new ValueHolder(AkType.DATETIME, new DateTime(unix));
                 
                 default:    ValueSource str = children().get(1).eval();
-                            if (str.isNull()) return NullValueSource.only();
-                            else return new ValueHolder(AkType.VARCHAR, 
-                                    getFormatted(new MutableDateTime(unix), str.getString()));
+                            if (str.isNull()) 
+                                return NullValueSource.only();
+                            else 
+                                return new ValueHolder(AkType.VARCHAR, getFormatted(new MutableDateTime(unix), str.getString()));
             }
             
         }
