@@ -572,9 +572,9 @@ public abstract class Tap {
             super(name);
         }
 
-        long inCount = 0;
+        volatile long inCount = 0;
 
-        long outCount = 0;
+        volatile long outCount = 0;
 
         public void in() {
             inCount++;
@@ -618,13 +618,13 @@ public abstract class Tap {
             super(name);
         }
 
-        long cumulativeNanos = 0;
-        long inCount = 0;
-        long outCount = 0;
-        long inNanos = Long.MIN_VALUE;
-        long startNanos = System.nanoTime();
-        long endNanos = System.nanoTime();
-        long lastDuration = Long.MIN_VALUE;
+        volatile long cumulativeNanos = 0;
+        volatile long inCount = 0;
+        volatile long outCount = 0;
+        volatile long inNanos = Long.MIN_VALUE;
+        volatile long startNanos = System.nanoTime();
+        volatile long endNanos = System.nanoTime();
+        volatile long lastDuration = Long.MIN_VALUE;
 
         public void in() {
             inCount++;
@@ -699,16 +699,16 @@ public abstract class Tap {
             super(name);
         }
 
-        long startMillis = Long.MIN_VALUE;
-        long startNanos = Long.MIN_VALUE;
-        long endNanos = Long.MAX_VALUE;
-        long cumulativeNanos = 0;
-        long inCount = 0;
-        long outCount = 0;
-        long inNanos = Long.MIN_VALUE;
-        long lastDuration = Long.MIN_VALUE;
+        volatile long startMillis = Long.MIN_VALUE;
+        volatile long startNanos = Long.MIN_VALUE;
+        volatile long endNanos = Long.MAX_VALUE;
+        volatile long cumulativeNanos = 0;
+        volatile long inCount = 0;
+        volatile long outCount = 0;
+        volatile long inNanos = Long.MIN_VALUE;
+        volatile long lastDuration = Long.MIN_VALUE;
 
-        long[] log = new long[0];
+        volatile long[] log = new long[0];
 
         public void in() {
             inCount++;
