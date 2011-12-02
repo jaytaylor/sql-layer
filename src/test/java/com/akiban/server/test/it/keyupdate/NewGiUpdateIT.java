@@ -43,6 +43,37 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+/**
+ * <p>Various atomic tests of GI maintenance.</p>
+ *
+ * Each test is named foo_action_X where:
+ * <ul>
+ * <li>foo = the initial state of the db</li>
+ * <li>action = add, del (delete), move</li>
+ * <li>X = one of {@code [c a o i h]}, the type of row which is being added/deleted/moved</li>
+ * </ul>
+ *
+ * The grouping is:
+ * <pre>
+ * c
+ * |- a
+ * |- o
+ *    |- i
+ *       |- h</pre>
+ * <p>For instance, {@link #coh_add_i()} would start with a db where there's a customer with an order, and an orphaned
+ * handling row; it would then add the item that links the customer-order to the handling, and check the GIs.</p>
+ *
+ * <p>About the PKs: each one has as many digits as its depth, and its rightmost (N-1) digits correspond to its
+ * parent. For instance, an item row would have a 3-digits PK (its depth is 3), and its 2 rightmost digits would
+ * refer to its parent order. This is true even if the given order doesn't exist. The leftmost digit simply increments.
+ * So, the first order for cid 1 would have a PK of 11, and the next order for that customer would be 21. The first
+ * order for cid 2 would have a PK of 12.</p>
+ *
+ * <p>Some of these tests contain multiple branches. These have names like {@link #coihCIH_move_o()}. In this case,
+ * we have two branches initially: one has coih rows and the other has c, no o, and an orphaned i that has an h. It then
+ * moves the o from the first branch to the second, such that the first now has an orphaned i, and the second adopts
+ * and now has an unbroken branch.</p>
+ */
 public final class NewGiUpdateIT extends ITBase {
 
     private GisChecker initC() {
@@ -1029,7 +1060,7 @@ public final class NewGiUpdateIT extends ITBase {
     }
 
     @Before
-    public final void createTables() { // TODO not really a todo, but serves as a nice bookmark :)
+    public final void createTables() {
         c = createTable(SCHEMA, "c", "cid int key, name varchar(32)");
         o = createTable(SCHEMA, "o", "oid int key, c_id int, when varchar(32)", akibanFK("c_id", "c", "cid") );
         i = createTable(SCHEMA, "i", "iid int key, o_id int, sku int", akibanFK("o_id", "o", "oid") );
@@ -1260,9 +1291,5 @@ public final class NewGiUpdateIT extends ITBase {
         // object state
 
         private final List<String> _strings = new ArrayList<String>();
-    }
-
-    private static Error u() {
-        throw new UnsupportedOperationException();
     }
 }
