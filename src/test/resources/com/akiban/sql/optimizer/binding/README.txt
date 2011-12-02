@@ -34,4 +34,6 @@ select-7aj: Ambiguous column with explicit join
 
 select-7n: Non-ambiguous column
 
+select-7o: Non-ambiguous due in ORDER BY
+
 update-1: Columns of target table.
