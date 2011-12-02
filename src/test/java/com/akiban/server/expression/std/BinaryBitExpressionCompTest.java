@@ -21,6 +21,7 @@ import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
 import java.util.Collection;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(NamedParameterizedRunner.class)
@@ -28,7 +29,7 @@ public class BinaryBitExpressionCompTest extends ComposedExpressionTestBase
 {
     private final ExpressionComposer composer;
     private static final CompositionTestInfo testInfo = new CompositionTestInfo(2, AkType.LONG, true);
-    
+    private static boolean alreadyExc = false;
     public BinaryBitExpressionCompTest (ExpressionComposer composer)
     {
         this.composer = composer;
@@ -53,7 +54,11 @@ public class BinaryBitExpressionCompTest extends ComposedExpressionTestBase
         pb.add(name, c);
     }
 
-
+    @Test
+    public void testdummy ()
+    {
+        alreadyExc = true;
+    }
 
     @Override
     protected ExpressionComposer getComposer()
@@ -65,5 +70,11 @@ public class BinaryBitExpressionCompTest extends ComposedExpressionTestBase
     protected CompositionTestInfo getTestInfo() 
     {
         return testInfo;
+    }
+
+    @Override
+    public boolean alreadyExc()
+    {
+        return alreadyExc;
     }
 }

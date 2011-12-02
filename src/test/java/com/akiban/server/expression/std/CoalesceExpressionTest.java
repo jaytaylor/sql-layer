@@ -87,4 +87,10 @@ public final class CoalesceExpressionTest extends ComposedExpressionTestBase {
     }
 
     private final CompositionTestInfo testInfo = new CompositionTestInfo(2, AkType.LONG, false);
+
+    @Override
+    public boolean alreadyExc()
+    {
+        return false;
+    }
 }

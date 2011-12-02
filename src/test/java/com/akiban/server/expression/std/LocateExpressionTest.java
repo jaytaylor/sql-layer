@@ -96,4 +96,10 @@ public class LocateExpressionTest extends ComposedExpressionTestBase
     {
         return LocateExpression.LOCATE_COMPOSER;
     }
+
+    @Override
+    protected boolean alreadyExc() 
+    {
+        return false;
+    }
 }
