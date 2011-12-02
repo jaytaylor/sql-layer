@@ -501,6 +501,9 @@ public class GroupJoinFinder extends BaseRule
             join.setLeft(getTableJoins(left, leftGroup));
         if (rightGroup != null)
             join.setRight(getTableJoins(right, rightGroup));
+        // Make arbitrary joins LEFT not RIGHT.
+        if (join.getJoinType() == JoinType.RIGHT)
+            join.reverse();
         return null;
     }
 
