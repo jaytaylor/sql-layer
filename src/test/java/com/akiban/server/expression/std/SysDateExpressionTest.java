@@ -16,8 +16,8 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.types.util.ValueHolder;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -26,21 +26,19 @@ public class SysDateExpressionTest
     @Test
     public void test() throws InterruptedException
     {
-        int dt = 4;
+        ValueSource date = (new SysDateExpression()).evaluation().eval();
+        long dt = System.currentTimeMillis();
+        assertEquals("current time in seconds: " + dt,
+                (dt)/1000, 
+                date.getTimestamp()); // dt and date could be a few millisecs away
         
-        ValueHolder date1 = new ValueHolder(new SysDateExpression().evaluation().eval());
-        Thread.sleep(dt * 1000);
-        
-        ValueHolder date2 = new ValueHolder(new SysDateExpression().evaluation().eval());
-        
-        assertEquals(date1.getDateTime(), date2.getDateTime() - dt); // the first and second call to SysDate() are 4 secs away
     }
     
     @Test
     public void testConst()
     {
         Expression sys = new SysDateExpression();
-        assertFalse(sys.isConstant());
+        assertFalse("SysDateExpression() is not const" , sys.isConstant());
     }
     
 }

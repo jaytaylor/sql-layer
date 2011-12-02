@@ -44,7 +44,7 @@ public class SysDateExpression extends AbstractNoArgExpression
         public ExpressionType composeType(List<? extends ExpressionType> argumentTypes) 
         {
              if (!argumentTypes.isEmpty()) throw new WrongExpressionArityException(0, argumentTypes.size());
-             else return ExpressionTypes.DATETIME;
+             else return ExpressionTypes.TIMESTAMP;
         }
 
         @Override
@@ -61,14 +61,14 @@ public class SysDateExpression extends AbstractNoArgExpression
         @Override
         public ValueSource eval() 
         {
-            return new ValueHolder(AkType.DATETIME, new DateTime());
+            return new ValueHolder(AkType.TIMESTAMP, new DateTime());
         }
         
     }
     
     public SysDateExpression ()
     {
-        super(AkType.DATETIME);
+        super(AkType.TIMESTAMP);
     }
     
     @Override
