@@ -57,16 +57,6 @@ public class WeekExpressionTest extends ComposedExpressionTestBase
         test(st,1,18);
         test(st,0,19);
         
-        // test 0000-01-01
-        test(st = "0000-01-01", 7, -1);
-        test(st,6,-1);
-        test(st,5,-1);
-        test(st,4,-1);
-        test(st,3,-1);
-        test(st,2,-1);
-        test(st,1,-1);
-        test(st,0,-1);
-        
     }
     
     @Test 
@@ -94,6 +84,12 @@ public class WeekExpressionTest extends ComposedExpressionTestBase
                 new LiteralExpression(AkType.INT, 4),
                 new LiteralExpression(AkType.INT, 4)));
     }
+    
+    @Test (expected = InvalidParameterValueException.class)
+    public void testZeroYear()
+    {
+        test("0000-12-2", 0, 0);
+    }
 
     @Test (expected = InvalidParameterValueException.class)
     public void testInvalidMode()
@@ -109,14 +105,10 @@ public class WeekExpressionTest extends ComposedExpressionTestBase
         Expression m = new LiteralExpression(AkType.INT, mode);
         Expression week = new WeekExpression(Arrays.asList(d, m));
 
-        if (exp < 0)
-            assertTrue (week.evaluation().eval().isNull());
-        else
-        {
-            int actual = (int)week.evaluation().eval().getInt();
-             assertEquals(AkType.INT, week.valueType());
-            assertEquals("DATE: " + date + ", mode " + mode, actual, exp);
-        }
+        int actual = (int) week.evaluation().eval().getInt();
+        assertEquals("assert topType is INT", AkType.INT, week.valueType());
+        assertEquals("DATE: " + date + ", mode " + mode, actual, exp);
+        
         
        
     }

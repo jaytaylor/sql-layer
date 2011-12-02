@@ -178,7 +178,7 @@ public class WeekExpression extends AbstractCompositeExpression
             int da = (int)(date % 32);
             long mode = 0;
             
-            if (yr * mo * da == 0) return NullValueSource.only();
+            if (yr * mo * da == 0) throw new InvalidParameterValueException();
 
             // second operand
             if (children().size() == 2)
