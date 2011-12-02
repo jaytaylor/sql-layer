@@ -121,4 +121,10 @@ public class FromUnixExpressionTest extends ComposedExpressionTestBase
     {
         return FromUnixExpression.COMPOSER;
     }
+
+    @Override
+    protected boolean alreadyExc() 
+    {
+        return false;
+    }
 }

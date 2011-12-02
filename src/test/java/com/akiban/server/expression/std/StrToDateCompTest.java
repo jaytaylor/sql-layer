@@ -32,4 +32,10 @@ public class StrToDateCompTest extends ComposedExpressionTestBase
         return StrToDateExpression.COMPOSER;
     }
 
+    @Override
+    protected boolean alreadyExc() 
+    {
+        return false;
+    }
+
 }
