@@ -19,6 +19,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -215,7 +216,7 @@ public abstract class Tap {
 
     public final static String NEW_LINE = System.getProperty("line.separator");
 
-    private static Map<String, Dispatch> dispatches = new TreeMap<String, Dispatch>();
+    private static final Map<String, Dispatch> dispatches = new TreeMap<String, Dispatch>();
 
     private static boolean registered;
 
@@ -247,7 +248,9 @@ public abstract class Tap {
      */
     private static Dispatch add(final Tap tap) {
         final Dispatch dispatch = new Dispatch(tap.getName(), tap);
-        dispatches.put(tap.getName(), dispatch);
+        synchronized (dispatches) {
+            dispatches.put(tap.getName(), dispatch);
+        }
         return dispatch;
     }
 
@@ -259,7 +262,7 @@ public abstract class Tap {
      */
     public static void setEnabled(final String regExPattern, final boolean on) {
         final Pattern pattern = Pattern.compile(regExPattern);
-        for (final Dispatch tap : dispatches.values()) {
+        for (final Dispatch tap : dispatchesCopy()) {
             if (pattern.matcher(tap.getName()).matches()) {
                 tap.setEnabled(on);
             }
@@ -274,7 +277,7 @@ public abstract class Tap {
      */
     public static void reset(final String regExPattern) {
         final Pattern pattern = Pattern.compile(regExPattern);
-        for (final Dispatch tap : dispatches.values()) {
+        for (final Dispatch tap : dispatchesCopy()) {
             if (pattern.matcher(tap.getName()).matches()) {
                 tap.reset();
             }
@@ -292,7 +295,7 @@ public abstract class Tap {
     public static TapReport[] getReport(final String regExPattern) {
         final List<TapReport> reports = new ArrayList<TapReport>();
         final Pattern pattern = Pattern.compile(regExPattern);
-        for (final Dispatch tap : dispatches.values()) {
+        for (final Dispatch tap : dispatchesCopy()) {
             if (pattern.matcher(tap.getName()).matches()) {
                 final TapReport report = tap.getReport();
                 if (report != null) {
@@ -328,7 +331,7 @@ public abstract class Tap {
 
         final Constructor<? extends Tap> constructor = clazz
                 .getConstructor(new Class[] { String.class });
-        for (final Dispatch dispatch : dispatches.values()) {
+        for (final Dispatch dispatch : dispatchesCopy()) {
             if (pattern.matcher(dispatch.getName()).matches()) {
                 final Tap tap = (Tap) constructor
                         .newInstance(new Object[] { dispatch.getName() });
@@ -346,7 +349,7 @@ public abstract class Tap {
      */
     public static String report() {
         final StringBuilder sb = new StringBuilder();
-        for (final Tap tap : dispatches.values()) {
+        for (final Tap tap : dispatchesCopy()) {
             int length = sb.length();
             tap.appendReport(sb);
             if (sb.length() > length) {
@@ -356,6 +359,13 @@ public abstract class Tap {
         final String result = sb.toString();
         LOG.info("Tap Report" + NEW_LINE + NEW_LINE + result + NEW_LINE);
         return result;
+    }
+
+    private static Collection<Tap.Dispatch> dispatchesCopy()
+    {
+        synchronized (dispatches) {
+            return new ArrayList<Dispatch>(dispatches.values());
+        }
     }
 
     /**
@@ -726,7 +736,7 @@ public abstract class Tap {
                             // don't try to do anything here.
                         }
                     }
-                    if (outCount * 2 + 2 < log.length) {
+                    if (outCount * 2 + 2 <= log.length) {
                         log[(int) outCount * 2] = inNanos - startNanos;
                         log[(int) outCount * 2 + 1] = now - startNanos;
                     }
