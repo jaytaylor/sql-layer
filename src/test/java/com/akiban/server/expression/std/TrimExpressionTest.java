@@ -35,7 +35,8 @@ public class TrimExpressionTest extends ComposedExpressionTestBase
     private String expected;
     private TrimExpression.TrimType trimType;
     private final CompositionTestInfo testInfo = new CompositionTestInfo(1, AkType.VARCHAR, true);
-    
+
+    private static boolean alreadyExc = false;
     public TrimExpressionTest (String input, String expected, 
             TrimExpression.TrimType trimType)
     {
@@ -89,7 +90,7 @@ public class TrimExpressionTest extends ComposedExpressionTestBase
         String actual = result.getString();
         
         assertTrue("Actual equals expected", actual.equals(expected));
-
+        alreadyExc = true;
     }
     
     
@@ -108,6 +109,12 @@ public class TrimExpressionTest extends ComposedExpressionTestBase
                 TrimExpression.TRIM_COMPOSER :
                     (trimType == TrimExpression.TrimType.TRAILING ? TrimExpression.RTRIM_COMPOSER : 
                         TrimExpression.LTRIM_COMPOSER));
+    }
+
+    @Override
+    public boolean alreadyExc()
+    {
+        return alreadyExc;
     }
     
     

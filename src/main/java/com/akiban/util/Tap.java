@@ -222,6 +222,12 @@ public abstract class Tap {
     public static PointTap createCount(String name) {
         return new PointTap(add(new PerThread(name, Count.class)));
     }
+    
+    public static PointTap createCount(String name, boolean enabled) {
+        PointTap ret =  new PointTap(add(new PerThread(name, Count.class)));
+        Tap.setEnabled(name, enabled);
+        return ret;
+    }
 
     public static InOutTap createTimer(String name) {
         return new InOutTap(add(new PerThread(name, TimeAndCount.class)));

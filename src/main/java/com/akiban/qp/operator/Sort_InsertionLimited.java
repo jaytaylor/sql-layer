@@ -23,6 +23,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.Tap;
 
 import java.util.*;
 
@@ -91,6 +92,7 @@ class Sort_InsertionLimited extends Operator
     private final RowType sortType;
     private final API.Ordering ordering;
     private final int limit;
+    private static final Tap.PointTap SORT_INSERTION_COUNT = Tap.createCount("operator: sort_insertion", true);
 
     // Inner classes
 
@@ -108,6 +110,7 @@ class Sort_InsertionLimited extends Operator
             for (ExpressionEvaluation eval : evaluations)
                 eval.of(bindings);
             sorted = new TreeSet<Holder>();
+            SORT_INSERTION_COUNT.hit();
         }
 
         @Override

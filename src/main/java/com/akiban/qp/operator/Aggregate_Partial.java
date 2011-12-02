@@ -25,6 +25,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.Tap;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -117,6 +118,9 @@ final class Aggregate_Partial extends Operator
         if (outputType == null)
             throw new NullPointerException();
     }
+    
+    // class state
+    private static final Tap.PointTap AGGREGATION_COUNT = Tap.createCount("operator: aggregation", true);
 
     // object state
 
@@ -138,6 +142,7 @@ final class Aggregate_Partial extends Operator
                 throw new IllegalStateException("can't open cursor: already open");
             inputCursor.open(bindings);
             cursorState = CursorState.OPENING;
+            AGGREGATION_COUNT.hit();
         }
 
         @Override

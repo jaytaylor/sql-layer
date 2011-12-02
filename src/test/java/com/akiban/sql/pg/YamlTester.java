@@ -161,6 +161,11 @@ class YamlTester {
 	addTypeNameAndNumber("VARCHAR", Types.VARCHAR);
     }
 
+    /** Matches all engines. */
+    private static final String ALL_ENGINE = "all";
+    /** Matches the IT engine. */
+    private static final String IT_ENGINE = "it";
+
     private final String filename;
     private final Reader in;
     private final Connection connection;
@@ -276,7 +281,7 @@ class YamlTester {
 
     private void propertiesCommand(Object value, List<Object> sequence) {
 	String engine = string(value, "Properties framework engine");
-	if (matchesCurrentEngine(engine)) {
+	if (ALL_ENGINE.equals(engine) || IT_ENGINE.equals(engine)) {
 	    for (Object elem : sequence) {
 		Entry<Object, Object> entry =
 		    onlyEntry(elem, "Properties entry");
@@ -995,11 +1000,6 @@ class YamlTester {
 	return rows;
     }
 
-    /** Returns true if the argument matches the current engine. */
-    static boolean matchesCurrentEngine(String engine) {
-	return "all".equals(engine) || "it".equals(engine);
-    }
-
     /** Support comparing this object to expected output. */
     interface OutputComparator {
 	/**
@@ -1110,6 +1110,8 @@ class YamlTester {
 		    fail("The value of the !select-engine tag must be a map" +
 			 "\nGot: " + node);
 		}
+                String matchingKey = null;
+                Object result = null;
 		for (NodeTuple tuple : ((MappingNode) node).getValue()) {
 		    Node keyNode = tuple.getKeyNode();
 		    if (!(keyNode instanceof ScalarNode)) {
@@ -1117,19 +1119,25 @@ class YamlTester {
 			     "\nGot: " + constructObject(keyNode));
 		    }
 		    String key = ((ScalarNode) keyNode).getValue();
-		    if (matchesCurrentEngine(key)) {
-			Object result = constructObject(tuple.getValueNode());
-			if (DEBUG) {
-			    System.err.println("Select engine: '" + key +
-					       "' => '" + result + "'");
-			}
-			return result;
+		    if (IT_ENGINE.equals(key) ||
+                        (matchingKey == null && ALL_ENGINE.equals(key)))
+                    {
+                        matchingKey = key;
+			result = constructObject(tuple.getValueNode());
 		    }
 		}
-		if (DEBUG) {
-		    System.err.println("Select engine: no match");
-		}
-		return null;
+                if (matchingKey != null) {
+                    if (DEBUG) {
+                        System.err.println("Select engine: '" + matchingKey +
+                                           "' => '" + result + "'");
+                    }
+                    return result;
+                } else {
+                    if (DEBUG) {
+                        System.err.println("Select engine: no match");
+                    }
+                    return null;
+                }
 	    }
 	}
     }

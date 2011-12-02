@@ -13,28 +13,23 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.expression.std;
+package com.akiban.sql.optimizer.plan;
 
-import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.parser.ValueNode;
 
-public class IfExpressionCompositionTest extends ComposedExpressionTestBase
+public class ParameterCondition extends ParameterExpression 
+                                implements ConditionExpression 
 {
-    @Override
-    protected CompositionTestInfo getTestInfo()
-    {
-        return new CompositionTestInfo(3, AkType.LONG, false);
+    public ParameterCondition(int position,
+                              DataTypeDescriptor sqlType, ValueNode sqlSource) {
+        super(position, sqlType, AkType.BOOL, sqlSource);
     }
 
     @Override
-    public ExpressionComposer getComposer()
-    {
-        return IfExpression.COMPOSER;
+    public Implementation getImplementation() {
+        return null;
     }
 
-    @Override
-    protected boolean alreadyExc()
-    {
-        return false;
-    }
 }

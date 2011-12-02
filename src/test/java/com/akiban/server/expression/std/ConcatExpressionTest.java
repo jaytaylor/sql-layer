@@ -118,4 +118,10 @@ public final class ConcatExpressionTest  extends ComposedExpressionTestBase {
     }
 
     private final CompositionTestInfo testInfo = new CompositionTestInfo(3, AkType.VARCHAR, true);
+
+    @Override
+    public boolean alreadyExc()
+    {
+        return false;
+    }
 }

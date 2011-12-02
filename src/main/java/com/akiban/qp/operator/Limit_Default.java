@@ -18,6 +18,7 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.Tap;
 import com.akiban.server.error.NegativeLimitException;
 
 import java.util.Collections;
@@ -100,6 +101,10 @@ final class Limit_Default extends Operator
     public boolean isLimitBinding() {
         return limitIsBinding;
     }
+    
+    // Class state
+    
+    private static final Tap.PointTap LIMIT_COUNT = Tap.createCount("operator: limit", true);
 
     // Object state
 
@@ -115,6 +120,7 @@ final class Limit_Default extends Operator
 
         @Override
         public void open(Bindings bindings) {
+            LIMIT_COUNT.hit();
             super.open(bindings);
             if (isSkipBinding()) {
                 Integer i = (Integer)bindings.get(skip());

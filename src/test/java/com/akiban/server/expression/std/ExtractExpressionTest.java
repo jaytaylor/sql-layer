@@ -862,4 +862,10 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     {
         return composer.compose(Arrays.asList(arg));
     }
+
+    @Override
+    public boolean alreadyExc()
+    {
+        return false;
+    }
 }

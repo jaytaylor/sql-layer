@@ -42,6 +42,8 @@ public class TrigExpressionTest extends ComposedExpressionTestBase
     private double expected;
     private TrigExpression.TrigName name;
     private boolean expectExc;
+
+    private static boolean alreadyExc = false;
     public TrigExpressionTest (double input, double expected, 
             TrigExpression.TrigName name, double input2, boolean expectExc)
     {
@@ -141,6 +143,7 @@ public class TrigExpressionTest extends ComposedExpressionTestBase
         double actual = result.getDouble();
 
         assertEquals(expected, actual,0.01);
+        alreadyExc = true;
     }
     private static List <? extends Expression> getArgList (Expression ...arg)
     {
@@ -180,5 +183,11 @@ public class TrigExpressionTest extends ComposedExpressionTestBase
             case TANH:  return TrigExpression.TANH_COMPOSER;
             default: return TrigExpression.COTH_COMPOSER;
         }
-    }   
+    }
+
+    @Override
+    public boolean alreadyExc()
+    {
+        return alreadyExc;
+    }
 }

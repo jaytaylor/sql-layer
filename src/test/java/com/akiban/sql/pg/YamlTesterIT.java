@@ -109,6 +109,53 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	testYaml("- Statement: !select-engine { foo: bar }");
     }
 
+    @Test
+    public void testSelectEngineKeyItOverAllPrecedence() {
+	testYaml("---\n" +
+                 "- CreateTable: t (bigint_field bigint)\n" +
+                 "---\n" +
+                 "- Statement: !select-engine\n" +
+                 "    { it: SELECT * FROM t, all: oops }");
+    }
+
+    @Test
+    public void testSelectEngineKeyItOverAllPrecedenceReversed() {
+	testYaml("---\n" +
+                 "- CreateTable: t (bigint_field bigint)\n" +
+                 "---\n" +
+                 "- Statement: !select-engine\n" +
+                 "    { all: oops, it: SELECT * FROM t }");
+    }
+
+    @Test
+    public void testSelectEngineKeyItOverAllPrecedenceNull() {
+	testYaml("---\n" +
+                 "- Statement: !select-engine { it: null, all: oops }");
+	testYaml("---\n" +
+                 "- Statement: !select-engine { all: oops, it: null }");
+	testYamlFail("---\n" +
+                     "- Statement: !select-engine { it: oops, all: null }");
+	testYamlFail("---\n" +
+                     "- Statement: !select-engine { all: null, it: oops }");
+    }
+
+    @Test
+    public void testSelectEngineKeyAll() {
+	testYaml("---\n" +
+                 "- CreateTable: t (bigint_field bigint)\n" +
+                 "---\n" +
+                 "- Statement: !select-engine\n" +
+                 "    { all: SELECT * FROM t, foo: oops }");
+    }
+
+    @Test
+    public void testSelectEngineKeyAllNull() {
+	testYaml("---\n" +
+                 "- Statement: !select-engine { all: null, foo: oops }");
+	testYaml("---\n" +
+                 "- Statement: !select-engine { foo: oops, all: null }");
+    }
+
     /* Test Include */
 
     @Test
@@ -226,12 +273,18 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 
     @Test
     public void testIncludeSelectEngine() throws Exception {
-	File include = File.createTempFile("include", null);
-	include.deleteOnExit();
-	writeFile(include, "- CreateTable: t (bigint_field bigint)\n");
+	File includeFile = File.createTempFile("include", null);
+	includeFile.deleteOnExit();
+	writeFile(includeFile, "- CreateTable: t (bigint_field bigint)\n");
+        /*
+         * Double backslashes, to escape them in the YAML format.  Note that
+         * they need to be doubled for Java strings, and double again for
+         * regexps.
+         */
+        String include = includeFile.getPath().replaceAll("\\\\", "\\\\");
 	testYaml("---\n" +
-		 "- Include: !select-engine { foo: bar, it: " + include +
-		 " }\n" +
+		 "- Include: !select-engine { foo: bar, it: '" + include +
+		 "' }\n" +
 		 "---\n" +
 		 "- Statement: SELECT bigint_field FROM t\n" +
 		 "...");
