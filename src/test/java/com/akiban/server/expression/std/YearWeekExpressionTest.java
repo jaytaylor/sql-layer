@@ -26,65 +26,63 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class WeekExpressionTest extends ComposedExpressionTestBase
+public class YearWeekExpressionTest extends ComposedExpressionTestBase
 {
-    private static final CompositionTestInfo info = new CompositionTestInfo (1, AkType.DATE, true);
-
     @Test
     public void testFirstDay()
     {
         // test first day
         String st = "2009-1-1";
-        test(st,0, 0);
-        test(st,1,1);
-        test(st,2,52);
-        test(st,3,1);
-        test(st,4,0);
-        test(st,5,0);
-        test(st,6,53);
-        test(st,7,52);
+        test(st,0, 200852);
+        test(st,1,200901);
+        test(st,2,200852);
+        test(st,3,200901);
+        test(st,4,200853);
+        test(st,5,200852);
+        test(st,6,200853);
+        test(st,7,200852);
 
         // test last day
         for (int i = 0; i < 8; ++i)
-            test("2012-12-31",i,53);
+            test("2012-12-31",i,201253);
 
         // test 2010-may-08
-        test(st = "2011-5-8",7,18);
-        test(st,6,19);
-        test(st,5,18);
-        test(st,4,19);
-        test(st,3,18);
-        test(st,2,19);
-        test(st,1,18);
-        test(st,0,19);
-    }
-    
-    @Test 
-    public void testNullFirst ()
-    {
-        Expression week = new WeekExpression(Arrays.asList(LiteralExpression.forNull(),
-                new LiteralExpression(AkType.LONG, 4)));
-        assertEquals(AkType.INT,week.valueType());
-        assertTrue(week.evaluation().eval().isNull());
+        test(st = "2011-5-8",7,201118);
+        test(st,6,201119);
+        test(st,5,201118);
+        test(st,4,201119);
+        test(st,3,201118);
+        test(st,2,201119);
+        test(st,1,201118);
+        test(st,0,201119);
     }
 
-    @Test 
+    @Test
+    public void testNullFirst ()
+    {
+        Expression yearWeek = new YearWeekExpression(Arrays.asList(LiteralExpression.forNull(),
+                new LiteralExpression(AkType.LONG, 4)));
+        assertEquals(AkType.INT,yearWeek.valueType());
+        assertTrue(yearWeek.evaluation().eval().isNull());
+    }
+
+    @Test
     public void testNullSecond ()
     {
-        Expression week = new WeekExpression(Arrays.asList(new LiteralExpression(AkType.DATE, 12345L),
+        Expression yearWeak = new YearWeekExpression(Arrays.asList(new LiteralExpression(AkType.DATE, 12345L),
                 LiteralExpression.forNull()));
-        assertEquals(AkType.INT,week.valueType());
-        assertTrue(week.evaluation().eval().isNull());
+        assertEquals(AkType.INT,yearWeak.valueType());
+        assertTrue(yearWeak.evaluation().eval().isNull());
     }
 
     @Test (expected = WrongExpressionArityException.class)
     public void testWrongArity()
     {
-        Expression week = new WeekExpression(Arrays.asList(new LiteralExpression(AkType.DATE, 12345L),
+        Expression yearWeek = new YearWeekExpression(Arrays.asList(new LiteralExpression(AkType.DATE, 12345L),
                 new LiteralExpression(AkType.INT, 4),
                 new LiteralExpression(AkType.INT, 4)));
     }
-    
+
     @Test (expected = InvalidParameterValueException.class)
     public void testZeroYear()
     {
@@ -96,13 +94,13 @@ public class WeekExpressionTest extends ComposedExpressionTestBase
     {
         test("0001-00-02", 0, 0);
     }
-    
+
     @Test (expected = InvalidParameterValueException.class)
     public void testZeroDay()
     {
         test("0001-02-00", 0, 0);
     }
-    
+
     @Test (expected = InvalidParameterValueException.class)
     public void testInvalidMode()
     {
@@ -115,28 +113,28 @@ public class WeekExpressionTest extends ComposedExpressionTestBase
 
         Expression d = new LiteralExpression(AkType.DATE, date);
         Expression m = new LiteralExpression(AkType.INT, mode);
-        Expression week = new WeekExpression(Arrays.asList(d, m));
+        Expression yearWeek = new YearWeekExpression(Arrays.asList(d, m));
 
-        int actual = (int) week.evaluation().eval().getInt();
-        assertEquals("assert topType is INT", AkType.INT, week.valueType());
+        int actual = (int) yearWeek.evaluation().eval().getInt();
+        assertEquals("assert topType is INT", AkType.INT, yearWeek.valueType());
         assertEquals("DATE: " + date + ", mode " + mode, actual, exp);
-    }
-    
-    @Override
-    protected boolean alreadyExc()
-    {
-        return false;
     }
 
     @Override
     protected CompositionTestInfo getTestInfo()
     {
-        return info;
+        return new CompositionTestInfo(1, AkType.DATE, true);
     }
 
     @Override
     protected ExpressionComposer getComposer()
     {
-        return WeekExpression.WEEK_COMPOSER;
+        return YearWeekExpression.WEEK_COMPOSER;
+    }
+
+    @Override
+    protected boolean alreadyExc()
+    {
+        return false;
     }
 }
