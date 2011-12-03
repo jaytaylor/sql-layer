@@ -83,6 +83,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("John, null, 117, null").backedBy(c)
                 .gi("sku_instructions_LEFT")
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -98,6 +99,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("Noble, null, 6, null").backedBy(c)
                 .gi("sku_instructions_LEFT")
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -116,6 +118,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .gi("name_when_RIGHT")
                 .entry("John, 2552-08-30, 117, 7").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -134,6 +137,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .entry("1234, null, null, 7, 101, null").backedBy(i)
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -146,7 +150,15 @@ public final class NewGiUpdateIT extends ITBase {
         GisChecker initState = initC();
 
         writeRow(h, 1001L, 101L, "don't drop");
-        initState.check();
+        checker()
+                .gi("name_when_LEFT")
+                .entry("John, null, 117, null").backedBy(c)
+                .gi("sku_instructions_LEFT")
+                .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
+                .entry("null, don't drop, null, null, 101, 1001").backedBy(h)
+                .gi("street_name_RIGHT")
+                .done();
         
         deleteRow(h, 1001L, 101L);
         initState.check();
@@ -162,6 +174,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("John, null, 117, null").backedBy(c)
                 .gi("sku_instructions_LEFT")
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .entry("Reach, John, 117, 40").backedBy(c, a)
                 .done();
@@ -179,6 +192,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_LEFT")
                 .gi("sku_instructions_LEFT")
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -193,6 +207,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("Noble, null, 6, null").backedBy(c)
                 .gi("sku_instructions_LEFT")
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -209,6 +224,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .gi("name_when_RIGHT")
                 .entry("John, 1970-01-01, 117, 10").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -226,6 +242,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("Noble, null, 6, null").backedBy(c)
                 .gi("name_when_RIGHT")
                 .gi("street_name_RIGHT")
+                .gi("sku_instructions_RIGHT")
                 .gi("sku_instructions_LEFT")
                 .done();
     }
@@ -238,6 +255,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .gi("name_when_RIGHT")
                 .entry("null, 2001-01-01, 1, 11").backedBy(o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -253,6 +271,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .gi("name_when_RIGHT")
                 .entry("Bob, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -271,6 +290,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_RIGHT")
                 .entry("null, 2001-01-01, 1, 11").backedBy(o)
                 .entry("null, 2002-02-02, 1, 21").backedBy(o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -289,6 +309,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("1234, null, 1, 11, 111, null").backedBy(i)
                 .gi("name_when_RIGHT")
                 .entry("null, 2001-01-01, 1, 11").backedBy(o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -306,6 +327,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .gi("name_when_RIGHT")
                 .entry("null, 2001-01-01, 1, 11").backedBy(o)
+                .gi("sku_instructions_RIGHT")
+                .entry("null, careful, null, null, 111, 1111").backedBy(h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -323,6 +346,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .gi("name_when_RIGHT")
                 .entry("null, 2001-01-01, 1, 11").backedBy(o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .entry("Harrison Ave, null, 1, 11").backedBy(a)
                 .done();
@@ -341,6 +365,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_RIGHT")
                 .entry("null, 2001-01-01, 1, 11").backedBy(o)
                 .entry("null, 2002-02-02, 1, 21").backedBy(o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -358,6 +383,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_RIGHT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
                 .entry("John, 2002-02-02, 1, 21").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -377,6 +403,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_RIGHT")
                 .entry("null, 2001-01-01, 1, 11").backedBy(o)
                 .entry("null, 2002-02-02, 1, 21").backedBy(o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -395,6 +422,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_RIGHT")
                 .entry("null, 2001-01-01, 1, 11").backedBy(o)
                 .entry("null, 2002-02-02, 1, 21").backedBy(o)
+                .gi("sku_instructions_RIGHT")
+                .entry("null, careful, null, null, 111, 1111").backedBy(h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -412,6 +441,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .gi("name_when_RIGHT")
                 .entry("null, 2002-02-02, 1, 21").backedBy(o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -423,6 +453,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .entry("1234, null, null, 11, 111, null").backedBy(i)
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -438,6 +469,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .entry("1234, null, null, 11, 111, null").backedBy(i)
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -456,6 +488,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("1234, null, 1, 11, 111, null").backedBy(i)
                 .gi("name_when_RIGHT")
                 .entry("null, 2001-01-01, 1, 11").backedBy(o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -474,6 +507,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("1234, null, null, 11, 111, null").backedBy(i)
                 .entry("5678, null, null, 11, 211, null").backedBy(i)
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -491,6 +525,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .entry("1234, don't drop, null, 11, 111, 1111").backedBy(i, h)
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
+                .entry("null, don't drop, null, null, 111, 1111").backedBy(h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -508,6 +544,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .entry("1234, null, null, 11, 111, null").backedBy(i)
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .entry("Mass Ave, null, 1, 11").backedBy(a)
                 .done();
@@ -526,6 +563,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("1234, null, null, 11, 111, null").backedBy(i)
                 .entry("5678, null, null, 11, 211, null").backedBy(i)
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -542,6 +580,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("1234, null, null, 11, 111, null").backedBy(i)
                 .entry("5678, null, null, 11, 211, null").backedBy(i)
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -561,6 +600,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("5678, null, 1, 11, 211, null").backedBy(i)
                 .gi("name_when_RIGHT")
                 .entry("null, 2001-01-01, 1, 11").backedBy(o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -579,6 +619,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("1234, don't drop!, null, 11, 111, 1111").backedBy(i, h)
                 .entry("5678, null, null, 11, 211, null").backedBy(i)
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't drop!, null, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -596,6 +638,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .entry("5678, null, null, 11, 211, null").backedBy(i)
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -606,6 +649,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_LEFT")
                 .gi("sku_instructions_LEFT")
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
+                .entry("null, don't let it break, null, null, 111, 1111").backedBy(h)
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -620,6 +665,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("John, null, 1, null").backedBy(c)
                 .gi("sku_instructions_LEFT")
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
+                .entry("null, don't let it break, null, null, 111, 1111").backedBy(h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -634,10 +681,11 @@ public final class NewGiUpdateIT extends ITBase {
         writeRow(o, 11L, 1L, "2001-01-01");
         checker()
                 .gi("name_when_LEFT")
-                .entry("John, null, 1, null").backedBy(c)
                 .gi("sku_instructions_LEFT")
                 .gi("name_when_RIGHT")
                 .entry("null, 2001-01-01, 1, 11").backedBy(o)
+                .gi("sku_instructions_RIGHT")
+                .entry("null, don't let it break, null, null, 111, 1111").backedBy(h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -655,6 +703,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .entry("1234, don't let it break, null, 11, 111, 1111").backedBy(i, h)
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't let it break, null, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -672,6 +722,9 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .gi("name_when_RIGHT")
                 .gi("street_name_RIGHT")
+                .gi("sku_instructions_RIGHT")
+                .entry("null, don't let it break, null, null, 111, 1111").backedBy(h)
+                .entry("null, it's fine if it breaks, null, null, 111, 2111").backedBy(h)
                 .done();
 
         deleteRow(h, 2111L, 111L);
@@ -687,6 +740,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .gi("name_when_RIGHT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -704,6 +758,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_RIGHT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
                 .entry("John, 2002-02-02, 1, 21").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -723,6 +778,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("1234, null, 1, 11, 111, null").backedBy(i)
                 .gi("name_when_RIGHT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -741,6 +797,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .gi("name_when_RIGHT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
+                .entry("null, don't drop, null, null, 111, 1111").backedBy(h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -756,9 +814,10 @@ public final class NewGiUpdateIT extends ITBase {
         checker()
                 .gi("name_when_LEFT")
                 .gi("sku_instructions_LEFT")
-                .gi("street_name_RIGHT")
                 .gi("name_when_RIGHT")
                 .entry("null, 2001-01-01, 1, 11").backedBy(o)
+                .gi("sku_instructions_RIGHT")
+                .gi("street_name_RIGHT")
                 .done();
     }
 
@@ -772,6 +831,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("John, null, 1, null").backedBy(c)
                 .gi("sku_instructions_LEFT")
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -785,6 +845,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .entry("1234, null, null, 11, 111, null").backedBy(i)
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -802,6 +863,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("1234, null, 1, 11, 111, null").backedBy(i)
                 .gi("name_when_RIGHT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -820,6 +882,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .entry("1234, don't drop, null, 11, 111, 1111").backedBy(i, h)
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't drop, null, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -836,6 +900,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("1234, null, 1, 11, 111, null").backedBy(i)
                 .gi("name_when_RIGHT")
                 .entry("null, 2001-01-01, 1, 11").backedBy(o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -852,6 +917,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("1234, null, 1, 11, 111, null").backedBy(i)
                 .gi("name_when_RIGHT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -870,6 +936,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("name_when_RIGHT")
                 .entry("null, 2001-01-01, 1, 11").backedBy(o)
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -887,6 +955,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .entry("1234, null, null, 11, 111, null").backedBy(i)
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -901,6 +970,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .gi("name_when_RIGHT")
                 .entry("null, 2001-01-01, 1, 11").backedBy(o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -914,6 +984,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .entry("1234, don't drop, null, 11, 111, 1111").backedBy(i, h)
                 .gi("name_when_RIGHT")
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't drop, null, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -924,6 +996,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("name_when_RIGHT")
                 .entry("null, 2001-01-01, 1, 11").backedBy(o)
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't drop, null, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -942,6 +1016,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("1234, null, 1, 11, 111, null").backedBy(i)
                 .gi("name_when_RIGHT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -958,6 +1033,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("name_when_RIGHT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -977,6 +1054,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("1234, null, 1, 11, 111, null").backedBy(i)
                 .gi("name_when_RIGHT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .entry("Harrison, John, 1, 11").backedBy(c, a)
                 .done();
@@ -996,6 +1074,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("sku_instructions_LEFT")
                 .gi("name_when_RIGHT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
+                .entry("null, don't drop!, null, null, 111, 1111").backedBy(h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -1007,6 +1087,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("1234, don't drop!, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("name_when_RIGHT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't drop!, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -1026,6 +1108,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("name_when_RIGHT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -1043,6 +1127,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("name_when_RIGHT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -1064,6 +1150,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_RIGHT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
                 .entry("John, 2002-02-02, 1, 21").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -1084,6 +1172,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("5678, null, 1, 11, 211, null").backedBy(i)
                 .gi("name_when_RIGHT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -1104,6 +1194,9 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("1234, fine if it drops, 1, 11, 111, 2111").backedBy(i, h)
                 .gi("name_when_RIGHT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
+                .entry("1234, fine if it drops, 1, 11, 111, 2111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -1123,6 +1216,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("name_when_RIGHT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .entry("Mass Ave, John, 1, 11").backedBy(c, a)
                 .done();
@@ -1143,6 +1238,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_RIGHT")
                 .entry("null, 2001-01-01, 1, 11").backedBy(o)
                 .gi("street_name_RIGHT")
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .done();
     }
 
@@ -1158,6 +1255,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("1234, don't drop, null, 11, 111, 1111").backedBy(i, h)
                 .gi("name_when_RIGHT")
                 .gi("street_name_RIGHT")
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .done();
     }
 
@@ -1173,6 +1272,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_RIGHT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
                 .gi("street_name_RIGHT")
+                .gi("sku_instructions_RIGHT")
+                .entry("null, don't drop, null, null, 111, 1111").backedBy(h)
                 .done();
     }
 
@@ -1188,6 +1289,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("1234, null, 1, 11, 111, null").backedBy(i)
                 .gi("name_when_RIGHT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -1224,6 +1326,9 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_RIGHT")
                 .entry("null, 2002-02-02, 2, 12").backedBy(o)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
+                .entry("5678, be careful, 2, 12, 112, 1112").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -1237,6 +1342,9 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_RIGHT")
                 .entry("null, 2001-01-01, 1, 11").backedBy(o)
                 .entry("Johnny, 2002-02-02, 2, 12").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
+                .entry("5678, be careful, 2, 12, 112, 1112").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -1255,6 +1363,9 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("5678, be careful, null, 12, 112, 1112").backedBy(i, h)
                 .gi("name_when_RIGHT")
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
+                .entry("5678, be careful, null, 12, 112, 1112").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
     }
@@ -1273,6 +1384,9 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("5678, be careful, null, 12, 112, 1112").backedBy(i, h)
                 .gi("name_when_RIGHT")
                 .entry("John, 1999-12-31, 1, 21").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't drop, null, 11, 111, 1111").backedBy(i, h)
+                .entry("5678, be careful, null, 12, 112, 1112").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -1316,6 +1430,9 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("5678, be careful, null, 12, 112, 1112").backedBy(i, h) // Note! oid=11 doesn't adopt iid=112
                 .gi("name_when_RIGHT")
                 .entry("Bob, 1999-12-31, 2, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't drop, 2, 11, 111, 1111").backedBy(i, h)    // these two are like the left joins
+                .entry("5678, be careful, null, 12, 112, 1112").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -1337,6 +1454,9 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("5678, be careful, 2, 12, 112, 1112").backedBy(i, h)
                 .gi("name_when_RIGHT")
                 .entry("Bob, 1999-12-31, 2, 12").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't drop, null, 11, 111, 1111").backedBy(i, h)
+                .entry("5678, be careful, 2, 12, 112, 1112").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -1356,6 +1476,9 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_RIGHT")
                 .entry("Bob, 2002-02-02, 2, 12").backedBy(c, o)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
+                .entry("null, be careful, null, null, 112, 1112").backedBy(h)
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -1369,6 +1492,9 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_RIGHT")
                 .entry("Bob, 2002-02-02, 2, 12").backedBy(c, o)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
+                .entry("null, don't drop, null, null, 111, 1111").backedBy(h)
+                .entry("3456, be careful, 2, 12, 112, 1112").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -1389,6 +1515,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_RIGHT")
                 .entry("Bob, 2002-02-02, 2, 12").backedBy(c, o)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
+                .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
 
@@ -1403,6 +1531,8 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi("name_when_RIGHT")
                 .entry("Bob, 2002-02-02, 2, 12").backedBy(c, o)
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
+                .gi("sku_instructions_RIGHT")
+                .entry("5678, handle with care, 2, 12, 112, 1112").backedBy(i, h)
                 .gi("street_name_RIGHT")
                 .done();
         
@@ -1424,7 +1554,7 @@ public final class NewGiUpdateIT extends ITBase {
         createGroupIndex(groupName, "sku_instructions_LEFT", "i.sku, h.handling_instructions", Index.JoinType.LEFT);
 
         createGroupIndex(groupName, "name_when_RIGHT", "c.name,o.when", Index.JoinType.RIGHT);
-//        createGroupIndex(groupName, "sku_instructions_RIGHT", "i.sku, h.handling_instructions", Index.JoinType.RIGHT);
+        createGroupIndex(groupName, "sku_instructions_RIGHT", "i.sku, h.handling_instructions", Index.JoinType.RIGHT);
         
         createGroupIndex(groupName, "street_name_RIGHT", "a.street,c.name", Index.JoinType.RIGHT);
     }
