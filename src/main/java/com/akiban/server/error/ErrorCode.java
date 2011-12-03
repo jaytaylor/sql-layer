@@ -151,6 +151,7 @@ public enum ErrorCode {
         // SubClass 021 - character not in repertoire
         // SubClass 022 - indicator overflow 
         // SubClass 023 - invalid parameter value
+    INVALID_PARAMETER_VALUE  ("22", "023", Importance.DEBUG, InvalidParameterValueException.class),
         // SubClass 024 - unterminated C string
         // SubClass 025 - invalid escape sequence
         // SubClass 026 - string data, length mismatch
