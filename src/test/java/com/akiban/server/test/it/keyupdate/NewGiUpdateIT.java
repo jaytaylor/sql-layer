@@ -1613,22 +1613,22 @@ public final class NewGiUpdateIT extends ITBase {
     }
 
     private interface GisCheckBuilder {
-        GiCheckBuilder gi(String giName);
+        GiEntryChecker gi(String giName);
         public GisChecker done();
     }
 
-    private interface GiCheckBuilder extends GisCheckBuilder {
+    private interface GiEntryChecker extends GisCheckBuilder {
         public GiTablesChecker entry(String key);
     }
 
     private interface GiTablesChecker {
-        GiCheckBuilder backedBy(int firstTableId, int... tableIds);
+        GiEntryChecker backedBy(int firstTableId, int... tableIds);
     }
 
-    private class GiCheckBuilderImpl implements GiCheckBuilder, GiTablesChecker {
+    private class GiCheckBuilderImpl implements GiEntryChecker, GiTablesChecker {
 
         @Override
-        public GiCheckBuilder gi(String giName) {
+        public GiEntryChecker gi(String giName) {
             assertEquals("", scratch.toString());
             giToCheck = group().getIndex(giName);
             assertNotNull("no GI named " + giName, giToCheck);
@@ -1645,7 +1645,7 @@ public final class NewGiUpdateIT extends ITBase {
         }
 
         @Override
-        public GiCheckBuilder backedBy(int firstTableId, int... tableIds) {
+        public GiEntryChecker backedBy(int firstTableId, int... tableIds) {
             String scratchString = scratch.toString();
             assertTrue(scratchString, scratchString.endsWith(" => "));
             assertNotNull(giToCheck);
@@ -1678,6 +1678,7 @@ public final class NewGiUpdateIT extends ITBase {
             return this;
         }
 
+        @Override
         public GisChecker done() {
             unfinishedCheckBuilders.remove(this);
             GisChecker checker = new GisCheckerImpl(expectedStrings);
