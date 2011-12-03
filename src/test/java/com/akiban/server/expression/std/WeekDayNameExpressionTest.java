@@ -60,18 +60,21 @@ public class WeekDayNameExpressionTest extends ComposedExpressionTestBase
         param(pb, AkType.DATE, AkType.VARCHAR, st1 = "2011-12-05", st2 = "Monday", DAYNAME_COMPOSER);
         param(pb, AkType.DATETIME, AkType.VARCHAR, st1 += " 12:30:10", st2, DAYNAME_COMPOSER);
         param(pb, AkType.TIMESTAMP, AkType.VARCHAR, st1, st2, DAYNAME_COMPOSER);
-
+        param(pb, AkType.DATE, AkType.VARCHAR, null, null, DAYNAME_COMPOSER);
+        
         // test day of week
         st1 = "2011-12-05";
         st2 = st1 + " 12:30:10";
         param(pb, AkType.DATE, AkType.INT, st1, "2", DAYOFWEEK_COMPOSER);
         param(pb, AkType.DATETIME, AkType.INT, st2, "2",DAYOFWEEK_COMPOSER);
         param(pb, AkType.TIMESTAMP, AkType.INT, st2, "2", DAYOFWEEK_COMPOSER);
+        param(pb, AkType.DATETIME, AkType.INT, null, null, DAYOFWEEK_COMPOSER);
 
         // test week day
         param(pb, AkType.DATE, AkType.INT, st1,"0", WEEKDAY_COMPOSER);
         param(pb, AkType.DATETIME, AkType.INT, st2,"0", WEEKDAY_COMPOSER);
         param(pb, AkType.TIMESTAMP, AkType.INT, st2,"0", WEEKDAY_COMPOSER);
+        param(pb, AkType.TIMESTAMP, AkType.INT, null,null, WEEKDAY_COMPOSER);
         
         return pb.asList();
     }
@@ -89,7 +92,7 @@ public class WeekDayNameExpressionTest extends ComposedExpressionTestBase
         
         assertEquals(outputType, top.valueType());
 
-        if (expected.equals(""))
+        if (expected == null)
             assertTrue(".eval() is null ", source.isNull());
         else
             switch(outputType)
@@ -103,6 +106,7 @@ public class WeekDayNameExpressionTest extends ComposedExpressionTestBase
 
     private static Expression getExp (AkType type, String value)
     {
+        if (value == null) return LiteralExpression.forNull();
         long l = Extractors.getLongExtractor(type).getLong(value);
         return new LiteralExpression(type, l);
     }
