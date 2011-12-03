@@ -112,24 +112,6 @@ public class Map_NestedLoopsIT extends OperatorITBase
         map_NestedLoops(groupScan_Default(coi), groupScan_Default(coi), -1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testBadOuterJoin1()
-    {
-        map_NestedLoops(groupScan_Default(coi), groupScan_Default(coi), null, Arrays.asList(field(customerRowType, 0)), 0);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testBadOuterJoin2()
-    {
-        map_NestedLoops(groupScan_Default(coi), groupScan_Default(coi), customerRowType, null, 0);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testBadOuterJoin3()
-    {
-        map_NestedLoops(groupScan_Default(coi), groupScan_Default(coi), customerRowType, Collections.<Expression>emptyList(), 0);
-    }
-
     // Test operator execution
 
     @Test
@@ -218,9 +200,9 @@ public class Map_NestedLoopsIT extends OperatorITBase
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(customerRowType)),
-                project,
-                projectRowType,
-                Arrays.asList(boundField(customerRowType, 0, 0), literal(null)),
+                ifEmpty_Default(project,
+                                projectRowType,
+                                Arrays.asList(boundField(customerRowType, 0, 0), literal(null))),
                 0);
         RowBase[] expected = new RowBase[]{
             row(projectRowType, 1L, 100L),

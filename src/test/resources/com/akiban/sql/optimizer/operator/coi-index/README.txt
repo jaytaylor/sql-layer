@@ -62,6 +62,8 @@ select-11: aggregation in derived table
 
 select-12: list of AND !='s into UNION
 
+select-13: cross group outer join
+
 update-1: change column to literal
 
 update-2: change column to expression (column itself)

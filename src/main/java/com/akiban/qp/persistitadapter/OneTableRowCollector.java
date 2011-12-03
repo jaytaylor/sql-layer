@@ -29,6 +29,7 @@ import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.server.store.RowCollector;
 
 public class OneTableRowCollector extends OperatorBasedRowCollector
 {
@@ -106,6 +107,7 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
                                             loInclusive,
                                             hi,
                                             hiInclusive);
+                indexKeyRange.lexicographic((scanFlags & RowCollector.SCAN_FLAGS_LEXICOGRAPHIC) != 0);
             }
         }
     }

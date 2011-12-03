@@ -30,7 +30,7 @@ fi
 
 if [ ${platform} == "debian" ]; then
     cp packages-common/* ${platform}
-    mvn -Dmaven.test.skip=true clean install -DBZR_REVISION=${bzr_revno}
+    mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=${bzr_revno}
     debuild
 elif [ ${platform} == "redhat" ]; then
     mkdir -p ${PWD}/redhat/rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}

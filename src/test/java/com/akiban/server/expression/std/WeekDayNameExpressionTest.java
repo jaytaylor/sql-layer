@@ -119,7 +119,8 @@ public class WeekDayNameExpressionTest extends ComposedExpressionTestBase
         return composer;
     }
 
-    protected boolean alreadyExc ()
+    @Override
+    public boolean alreadyExc ()
     {
         return alreadyExc;
     }

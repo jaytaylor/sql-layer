@@ -38,6 +38,13 @@ import static org.junit.Assert.assertEquals;
 @RunWith(NamedParameterizedRunner.class)
 public class UnaryBitExpressionTest extends ComposedExpressionTestBase
 {
+    private static boolean alreadyExc = false;
+    @Override
+    public boolean alreadyExc()
+    {
+        return alreadyExc;
+    }
+
     static interface Functors
     {
         ValueSource calc (BigInteger n);
@@ -110,6 +117,7 @@ public class UnaryBitExpressionTest extends ComposedExpressionTestBase
         Expression arg = new LiteralExpression(AkType.LONG, 15L);
         
         assertEquals(functor[op.ordinal()].calc(BigInteger.valueOf(15L)), getActualSource(arg));
+        alreadyExc = true;
     }
     
     @Test 
