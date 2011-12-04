@@ -471,7 +471,11 @@ public class ExtractExpression extends AbstractUnaryExpression
                                         }
                 }
            
-                if (raw != -1) return new ValueHolder(type.underlying, raw);
+                if (raw != -1)
+                {
+                    valueHolder().putRaw(type.underlying, raw);
+                    return valueHolder();
+                }
                 else return NullValueSource.only();
             }
             catch (InvalidDateFormatException ex)

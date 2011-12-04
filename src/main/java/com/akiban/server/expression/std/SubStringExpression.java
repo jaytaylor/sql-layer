@@ -117,8 +117,9 @@ public class SubStringExpression extends AbstractCompositeExpression
             // if to <= fr => return empty
             if (to < from || from >= st.length() ) return new ValueHolder(AkType.VARCHAR, "");            
             to = (to > st.length() -1 ? st.length() -1 : to);
-         
-            return new ValueHolder(AkType.VARCHAR, st.substring(from,to +1 ));
+
+            valueHolder().putString(st.substring(from,to +1 ));
+            return valueHolder();
         }  
     }
     

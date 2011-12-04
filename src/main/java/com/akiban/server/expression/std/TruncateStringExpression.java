@@ -61,18 +61,10 @@ public class TruncateStringExpression extends AbstractUnaryExpression
             String value = operandSource.getString();
             if (value.length() > length)
                 value = value.substring(0, length);
-            return hold(value);
+            valueHolder().putString(value);
+            return valueHolder();          
         }
 
-        private ValueSource hold(String value) {
-            if (holder == null) {
-                holder = new ValueHolder();
-            }
-            holder.putString(value);
-            return holder;
-        }
-
-        private final int length;
-        private ValueHolder holder;
+        private final int length;        
     }
 }

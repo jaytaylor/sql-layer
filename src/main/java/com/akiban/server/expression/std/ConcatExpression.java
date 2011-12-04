@@ -105,7 +105,8 @@ public final class ConcatExpression extends AbstractCompositeExpression {
                     return NullValueSource.only();
                 childSource.appendAsString(appender, Quote.NONE);
             }
-            return new ValueHolder(AkType.VARCHAR, sb.toString());
+            valueHolder().putString(sb.toString());
+            return valueHolder();
         }
 
         private InnerEvaluation(List<? extends ExpressionEvaluation> children) {

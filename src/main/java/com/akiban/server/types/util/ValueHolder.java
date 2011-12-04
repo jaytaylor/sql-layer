@@ -197,9 +197,17 @@ public final class ValueHolder implements ValueSource, ValueTarget {
         putRaw(AkType.DATE, value);
     }
 
+    public void putDate(DateTime value) {
+        putRaw(AkType.DATE, AKTYPE_CONVERTERS.get(AkType.DATE).toLong(value));
+    }
+
     @Override
     public void putDateTime(long value) {
         putRaw(AkType.DATETIME, value);
+    }
+
+    public void putDateTime(DateTime value) {
+        putRaw(AkType.DATETIME, AKTYPE_CONVERTERS.get(AkType.DATETIME).toLong(value));
     }
 
     @Override
@@ -242,9 +250,17 @@ public final class ValueHolder implements ValueSource, ValueTarget {
         putRaw(AkType.TIME, value);
     }
 
+    public void putTime(DateTime value) {
+        putRaw(AkType.TIME, AKTYPE_CONVERTERS.get(AkType.TIME).toLong(value));
+    }
+
     @Override
     public void putTimestamp(long value) {
         putRaw(AkType.TIMESTAMP, value);
+    }
+
+    public void putTimestamp(DateTime value) {
+        putRaw(AkType.TIMESTAMP, AKTYPE_CONVERTERS.get(AkType.TIMESTAMP).toLong(value));
     }
     
     @Override
@@ -387,6 +403,13 @@ public final class ValueHolder implements ValueSource, ValueTarget {
         type = newType;
         floatVal = value;
         stateType = StateType.FLOAT_VAL;
+    }
+
+    public void putRaw(AkType newType, DateTime value) {
+        JodaDateToLong jdToLong = AKTYPE_CONVERTERS.get(newType);
+        if (jdToLong == null)
+            throw new IllegalRawPutException("DateTime() to " + newType);
+        putRaw(newType, jdToLong.toLong(value));
     }
 
     public void putRaw(AkType newType, Object value) {
