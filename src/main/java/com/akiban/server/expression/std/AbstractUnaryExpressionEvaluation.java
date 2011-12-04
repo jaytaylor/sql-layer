@@ -23,56 +23,46 @@ import com.akiban.server.types.util.ValueHolder;
 
 public abstract class AbstractUnaryExpressionEvaluation implements ExpressionEvaluation
 {
-
     @Override
-    public void of(Row row)
-    {
+    public void of(Row row) {
         operandEvaluation.of(row);
     }
 
     @Override
-    public void of(Bindings bindings)
-    {
+    public void of(Bindings bindings) {
         operandEvaluation.of(bindings);
     }
 
     @Override
-    public void of(StoreAdapter adapter)
-    {
+    public void of(StoreAdapter adapter) {
         operandEvaluation.of(adapter);
     }
 
     @Override
-    public void acquire()
-    {
+    public void acquire() {
         operandEvaluation.acquire();
     }
 
     @Override
-    public boolean isShared()
-    {
+    public boolean isShared() {
         return operandEvaluation.isShared();
     }
 
     @Override
-    public void release()
-    {
+    public void release() {
         operandEvaluation.release();
     }
 
     // for use by subclasses
-    protected final ValueSource operand()
-    {
+    protected final ValueSource operand() {
         return operandEvaluation.eval();
     }
 
-    protected final ExpressionEvaluation operandEvaluation()
-    {
+    protected final ExpressionEvaluation operandEvaluation() {
         return operandEvaluation;
     }
 
-    protected AbstractUnaryExpressionEvaluation(ExpressionEvaluation operandEvaluation)
-    {
+    protected AbstractUnaryExpressionEvaluation(ExpressionEvaluation operandEvaluation) {
         this.operandEvaluation = operandEvaluation;
     }
 

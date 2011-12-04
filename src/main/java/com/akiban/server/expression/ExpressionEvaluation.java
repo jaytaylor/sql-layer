@@ -19,7 +19,6 @@ import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.Shareable;
 
 /**
