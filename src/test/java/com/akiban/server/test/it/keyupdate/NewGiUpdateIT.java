@@ -20,13 +20,21 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.persistitadapter.OperatorStoreMaintenanceLoader;
 import com.akiban.server.store.IndexRecordVisitor;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.Strings;
+import com.akiban.util.Tap;
+import com.akiban.util.TapReport;
 import com.persistit.exception.PersistitException;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -36,6 +44,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1540,6 +1551,19 @@ public final class NewGiUpdateIT extends ITBase {
         initState.check();
     }
 
+    @Rule
+    public TestName name = new TestName();
+
+    @BeforeClass
+    public static void tapHeaders() {
+        OperatorStoreMaintenanceLoader.load();
+        Tap.setEnabled(TAP_PATTERN, true);
+        log(TAP_HEADER
+                + "name\t"
+                + Strings.join(reportsByName().keySet(), "\t")
+        );
+    }
+
     @Before
     public final void createTables() {
         c = createTable(SCHEMA, "c", "cid int key, name varchar(32)");
@@ -1550,6 +1574,7 @@ public final class NewGiUpdateIT extends ITBase {
 
         String groupName = group().getName();
 
+        Tap.setEnabled(TAP_PATTERN, true);
         createGroupIndex(groupName, ___LEFT_name_when___________, "c.name,o.when", Index.JoinType.LEFT);
         createGroupIndex(groupName, ___LEFT_sku_instructions____, "i.sku, h.handling_instructions", Index.JoinType.LEFT);
 
@@ -1557,10 +1582,20 @@ public final class NewGiUpdateIT extends ITBase {
         createGroupIndex(groupName, ___RIGHT_sku_instructions___, "i.sku, h.handling_instructions", Index.JoinType.RIGHT);
         
         createGroupIndex(groupName, ___RIGHT_street_name________, "a.street,c.name", Index.JoinType.RIGHT);
+
+        Tap.setEnabled(TAP_PATTERN, true);
+        Tap.reset(TAP_PATTERN);
     }
 
     @After
     public final void forgetTables() throws PersistitException {
+        log(TAP_HEADER
+                + name.getMethodName() + "\t"
+                + Strings.join(reportsByName().values(), "\t")
+        );
+
+        Tap.setEnabled(TAP_PATTERN, false);
+
         dml().truncateTable(session(), a);
         dml().truncateTable(session(), i);
         dml().truncateTable(session(), o);
@@ -1578,6 +1613,25 @@ public final class NewGiUpdateIT extends ITBase {
         h = null;
         a = null;
         assertEquals(Collections.<GisCheckBuilder>emptySet(), unfinishedCheckBuilders);
+    }
+
+    private static Map<String, Long> reportsByName() {
+        TapReport[] reports = Tap.getReport(TAP_PATTERN);
+        Map<String,Long> reportsByName = new TreeMap<String, Long>();
+        Pattern pattern = Pattern.compile(TAP_PATTERN);
+        for (TapReport report : reports) {
+            Matcher matcher = pattern.matcher(report.getName());
+            if (!matcher.matches())
+                throw new RuntimeException("pattern not matched: " + report.getName());
+            String matched = matcher.group(1);
+            reportsByName.put(matched + " in", report.getInCount());
+            reportsByName.put(matched + " out", report.getOutCount());
+        }
+        return reportsByName;
+    }
+
+    private static void log(String string) {
+        System.out.println(string);
     }
 
     private GisCheckBuilder checker() {
@@ -1605,6 +1659,9 @@ public final class NewGiUpdateIT extends ITBase {
     private static final String ___RIGHT_name_when__________ = "name_when_RIGHT";
     private static final String ___RIGHT_sku_instructions___ = "sku_instructions_RIGHT";
     private static final String ___RIGHT_street_name________ = "street_name_RIGHT";
+    private static final String TAP_PATTERN = "GI maintenance: (.+)";
+    private static final String TAP_HEADER = "GI TAPS:\t";
+    private static final Logger log = LoggerFactory.getLogger(NewGiUpdateIT.class);
 
     // nested classes
 

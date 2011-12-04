@@ -96,6 +96,9 @@ final class OperatorStoreMaintenance {
                     handler.handleRow(groupIndex, row, action);
                     actionTap.out();
                 }
+                else {
+                    extraTap(action).hit();
+                }
             }
         } finally {
             cursor.close();
@@ -131,6 +134,16 @@ final class OperatorStoreMaintenance {
             case STORE:     return STORE_TAP;
             case DELETE:    return DELETE_TAP;
             default:        return OTHER_TAP;
+        }
+    }
+
+    private Tap.PointTap extraTap(OperatorStoreGIHandler.Action action) {
+        if (action == null)
+            return EXTRA_OTHER_ROW_TAP;
+        switch (action) {
+            case STORE:     return EXTRA_STORE_ROW_TAP;
+            case DELETE:    return EXTRA_DELETE_ROW_TAP;
+            default:        return EXTRA_OTHER_ROW_TAP;
         }
     }
 
@@ -433,6 +446,9 @@ final class OperatorStoreMaintenance {
     private static final Tap.InOutTap STORE_TAP = Tap.createTimer("GI maintenance: STORE");
     private static final Tap.InOutTap DELETE_TAP = Tap.createTimer("GI maintenance: DELETE");
     private static final Tap.InOutTap OTHER_TAP = Tap.createTimer("GI maintenance: OTHER");
+    private static final Tap.PointTap EXTRA_STORE_ROW_TAP = Tap.createCount("GI maintenance: extra store");
+    private static final Tap.PointTap EXTRA_DELETE_ROW_TAP = Tap.createCount("GI maintenance: extra delete");
+    private static final Tap.PointTap EXTRA_OTHER_ROW_TAP = Tap.createCount("GI maintenance: extra other");
 
     // nested classes
 
