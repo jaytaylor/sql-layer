@@ -101,4 +101,26 @@ create table akiban_information_schema.index_analysis (
     primary key(table_id, index_id, item_number)
 ) engine=akibandb;
 
+create table akiban_information_schema.index_statistics (
+    table_id            int not null,
+    index_id            int not null,
+    analysis_timestamp  timestamp,
+    row_count           bigint,
+    sampled_count       bigint,
+    primary key(table_id, index_id)
+) engine=akibandb;
+
+create table akiban_information_schema.index_statistics_entry (
+    table_id            int not null,
+    index_id            int not null,
+    column_count        int not null,
+    item_number         int not null,
+    key_string          varchar(2048),
+    key_bytes           varbinary(4096),
+    eq_count            bigint,
+    lt_count            bigint,
+    distinct_count      bigint,
+    primary key(table_id, index_id, column_count, item_number),
+    CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (table_id, index_id) REFERENCES akiban_information_schema.index_statistics(table_id, index_id)
+) engine=akibandb;
 
