@@ -15,7 +15,6 @@
 
 package com.akiban.sql.test;
 
-import com.akiban.server.service.functions.FunctionsRegistryImpl;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.compiler.BooleanNormalizer;
 import com.akiban.sql.optimizer.AISBinder;
@@ -49,6 +48,9 @@ import com.akiban.ais.ddl.SchemaDef;
 import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 
+import com.akiban.server.service.functions.FunctionsRegistryImpl;
+import com.akiban.server.store.statistics.IndexStatisticsYamlLoader;
+
 import java.util.*;
 import java.io.*;
 
@@ -66,6 +68,7 @@ public class Tester
     List<Action> actions;
     SQLParser parser;
     BoundNodeToString unparser;
+    AkibanInformationSchema ais;
     AISBinder binder;
     AISTypeComputer typeComputer;
     BooleanNormalizer booleanNormalizer;
@@ -170,16 +173,23 @@ public class Tester
         }
     }
 
+    static final String DEFAULT_SCHEMA = "user";
+
     public void setSchema(String sql) throws Exception {
-        SchemaDef schemaDef = SchemaDef.parseSchema("use user; " + sql);
+        SchemaDef schemaDef = SchemaDef.parseSchema("use " + DEFAULT_SCHEMA + "; " + 
+                                                    sql);
         SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
-        AkibanInformationSchema ais = toAis.getAis();
+        ais = toAis.getAis();
         if (actions.contains(Action.BIND))
-            binder = new AISBinder(ais, "user");
+            binder = new AISBinder(ais, DEFAULT_SCHEMA);
         if (actions.contains(Action.OPERATORS))
-            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, ais, "user", new FunctionsRegistryImpl());
+            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, ais, DEFAULT_SCHEMA, new FunctionsRegistryImpl());
         if (actions.contains(Action.PLAN))
             rulesContext = new RulesTestContext(ais, planRules);
+    }
+
+    public void loadIndexStatistics(File file) throws Exception {
+        System.out.println(new IndexStatisticsYamlLoader(ais, DEFAULT_SCHEMA).load(file));
     }
 
     public void addView(String sql) throws Exception {
@@ -229,7 +239,7 @@ public class Tester
             System.out.println("Usage: Tester " +
                                "[-clone] [-bind] [-types] [-boolean] [-flatten] [-plan @planfile] [-operators]" +
                                "[-tree] [-print] [-print-bound]" +
-                               "[-schema ddl] [-view ddl]..." +
+                               "[-schema ddl] [-index-stats yamlfile] [-view ddl]..." +
                                "sql...");
             System.out.println("Examples:");
             System.out.println("-tree 'SELECT t1.x+2 FROM t1'");
@@ -256,6 +266,8 @@ public class Tester
                     tester.addAction(Action.BIND);
                 else if ("-schema".equals(arg))
                     tester.setSchema(maybeFile(args[i++]));
+                else if ("-index-stats".equals(arg))
+                    tester.loadIndexStatistics(new File(args[i++]));
                 else if ("-view".equals(arg))
                     tester.addView(maybeFile(args[i++]));
                 else if ("-types".equals(arg))

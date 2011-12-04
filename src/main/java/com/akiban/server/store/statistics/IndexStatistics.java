@@ -24,7 +24,7 @@ import java.util.List;
 public class IndexStatistics
 {
     private Index index;
-    private long rowCount, sampledCount;
+    private long timestamp, rowCount, sampledCount;
     private Histogram[] histograms; // Indexed by column count.
 
     protected IndexStatistics(Index index) {
@@ -51,11 +51,11 @@ public class IndexStatistics
     }
 
     public Histogram getHistogram(int columnCount) {
-        return histograms[columnCount];
+        return histograms[columnCount-1];
     }
 
     protected void setHistogram(int columnCount, Histogram histogram) {
-        histograms[columnCount] = histogram;
+        histograms[columnCount-1] = histogram;
     }
     
     public static class Histogram {
@@ -81,7 +81,15 @@ public class IndexStatistics
 
         @Override
         public String toString() {
-            return getClass().getSimpleName() + " for " + index + ": " + entries;
+            StringBuilder str = new StringBuilder(getClass().getSimpleName());
+            str.append(" for ").append(index.getIndexName()).append("(");
+            for (int j = 0; j < columnCount; j++) {
+                if (j > 0) str.append(", ");
+                str.append(index.getColumns().get(j).getColumn().getName());
+            }
+            str.append("):\n");
+            str.append(entries);
+            return str.toString();
         }
 
     }
@@ -124,6 +132,19 @@ public class IndexStatistics
                 ", dist " + distinctCount +
                 "}";
         }
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder str = new StringBuilder(super.toString());
+        str.append(" for ").append(index);
+        for (int i = 0; i < histograms.length; i++) {
+            Histogram h = histograms[i];
+            if (h == null) continue;
+            str.append("\n");
+            str.append(h);
+        }
+        return str.toString();
     }
 
 }
