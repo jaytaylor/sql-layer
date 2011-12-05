@@ -23,8 +23,10 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 
 import com.akiban.server.PersistitKeyValueTarget;
+import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.persistit.Key;
+import com.persistit.Persistit;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoSuchIndexException;
@@ -42,7 +44,8 @@ public class IndexStatisticsYamlLoader
     private AkibanInformationSchema ais;
     private String defaultSchema;
 
-    private PersistitKeyValueTarget keyTarget = new PersistitKeyValueTarget();
+    private final Key key = new Key((Persistit)null);
+    private final PersistitKeyValueTarget keyTarget = new PersistitKeyValueTarget();
     
     public IndexStatisticsYamlLoader(AkibanInformationSchema ais, String defaultSchema) {
         this.ais = ais;
@@ -94,8 +97,10 @@ public class IndexStatisticsYamlLoader
             if (!(eobj instanceof Map))
                 throw new AkibanInternalException("Entry not in expected format");
             Map emap = (Map)eobj;
-            String keyString = emap.get("key").toString();
-            byte[] keyBytes = null;
+            Key key = encodeKey(index, columnCount, (List<Object>)emap.get("key"));
+            String keyString = key.toString();
+            byte[] keyBytes = new byte[key.getEncodedSize()];
+            System.arraycopy(key.getEncodedBytes(), 0, keyBytes, 0, keyBytes.length);
             int eqCount = (Integer)emap.get("eq");
             int ltCount = (Integer)emap.get("lt");
             int distinctCount = (Integer)emap.get("distinct");
@@ -103,6 +108,20 @@ public class IndexStatisticsYamlLoader
                                            eqCount, ltCount, distinctCount));
         }
         return new Histogram(index, columnCount, entries);
+    }
+
+    protected Key encodeKey(Index index, int columnCount, List<Object> values) {
+        if (values.size() != columnCount)
+            throw new AkibanInternalException("Key values do not match column count");
+        FromObjectValueSource valueSource = new FromObjectValueSource();
+        key.clear();
+        keyTarget.attach(key);
+        for (int i = 0; i < columnCount; i++) {
+            keyTarget.expectingType(index.getColumns().get(i).getColumn().getType().akType());
+            valueSource.setReflectively(values.get(i));
+            Converters.convert(valueSource, keyTarget);
+        }
+        return key;
     }
 
 }

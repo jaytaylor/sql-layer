@@ -100,7 +100,7 @@ public class IndexStatistics
         private long equalCount, lessCount, distinctCount;
 
         protected HistogramEntry(String keyString, byte[] keyBytes,
-                                 long equalCount, long lessCount, long DistinctCount) {
+                                 long equalCount, long lessCount, long distinctCount) {
             this.keyString = keyString;
             this.keyBytes = keyBytes;
             this.equalCount = equalCount;
@@ -129,7 +129,7 @@ public class IndexStatistics
             return "{" + keyString +
                 ": = " + equalCount +
                 ", < " + lessCount +
-                ", dist " + distinctCount +
+                ", distinct " + distinctCount +
                 "}";
         }
     }
