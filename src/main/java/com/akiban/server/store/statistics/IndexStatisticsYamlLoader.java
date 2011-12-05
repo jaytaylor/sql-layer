@@ -22,8 +22,10 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 
+import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.types.FromObjectValueSource;
+import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.conversion.Converters;
 import com.persistit.Key;
 import com.persistit.Persistit;
@@ -45,6 +47,7 @@ public class IndexStatisticsYamlLoader
     private String defaultSchema;
 
     private final Key key = new Key((Persistit)null);
+    private final PersistitKeyValueSource keySource = new PersistitKeyValueSource();
     private final PersistitKeyValueTarget keyTarget = new PersistitKeyValueTarget();
     
     public IndexStatisticsYamlLoader(AkibanInformationSchema ais, String defaultSchema) {
@@ -122,6 +125,64 @@ public class IndexStatisticsYamlLoader
             Converters.convert(valueSource, keyTarget);
         }
         return key;
+    }
+
+    public void dump(Collection<IndexStatistics> stats, File file) throws IOException {
+        List<Object> docs = new ArrayList<Object>(stats.size());
+        for (IndexStatistics stat : stats) {
+            docs.add(buildStatistics(stat));
+        }
+        Yaml yaml = new Yaml();
+        FileWriter ostr = new FileWriter(file);
+        yaml.dumpAll(docs.iterator(), ostr);
+        ostr.close();
+    }
+
+    protected Object buildStatistics(IndexStatistics indexStatistics) {
+        Map map = new HashMap();
+        Index index = indexStatistics.getIndex();
+        map.put("Index", index.getIndexName().getName());
+        map.put("Table", index.getIndexName().getTableName());
+        List<Object> stats = new ArrayList<Object>();
+        for (int i = 0; i < index.getColumns().size(); i++) {
+            Histogram histogram = indexStatistics.getHistogram(i + 1);
+            if (histogram == null) continue;
+            stats.add(buildHistogram(histogram));
+        }
+        map.put("Statistics", stats);
+        return map;
+    }
+
+    protected Object buildHistogram(Histogram histogram) {
+        Map map = new HashMap();
+        Index index = histogram.getIndex();
+        int columnCount = histogram.getColumnCount();
+        map.put("Columns", columnCount);
+        List<Object> entries = new ArrayList<Object>();
+        for (HistogramEntry entry : histogram.getEntries()) {
+            Map emap = new HashMap();
+            emap.put("eq", entry.getEqualCount());
+            emap.put("lt", entry.getLessCount());
+            emap.put("distinct", entry.getDistinctCount());
+            emap.put("key", decodeKey(index, columnCount, entry.getKeyBytes()));
+            entries.add(emap);
+        }
+        map.put("Histogram", entries);
+        return map;
+    }
+
+    protected List<Object> decodeKey(Index index, int columnCount, byte[] bytes) {
+        key.setEncodedSize(bytes.length);
+        System.arraycopy(bytes, 0, key.getEncodedBytes(), 0, bytes.length);
+        ToObjectValueTarget valueTarget = new ToObjectValueTarget();
+        List<Object> result = new ArrayList<Object>(columnCount);
+        for (int i = 0; i < columnCount; i++) {
+            keySource.attach(key, index.getColumns().get(i));
+            // TODO: Special handling for date/time types to make them
+            // more legible than internal long representation?
+            result.add(valueTarget.convertFromSource(keySource));
+        }
+        return result;
     }
 
 }

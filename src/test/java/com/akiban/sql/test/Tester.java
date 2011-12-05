@@ -51,6 +51,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.GroupIndex;
 
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
+import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsYamlLoader;
 import com.akiban.server.util.GroupIndexCreator;
 
@@ -210,7 +211,11 @@ public class Tester
     }
 
     public void loadIndexStatistics(File file) throws Exception {
-        System.out.println(new IndexStatisticsYamlLoader(ais, DEFAULT_SCHEMA).load(file));
+        IndexStatisticsYamlLoader loader =
+            new IndexStatisticsYamlLoader(ais, DEFAULT_SCHEMA);
+        Map<Index,IndexStatistics> stats = loader.load(file);
+        System.out.println(stats);
+        loader.dump(stats.values(), new File(file.getParent(), file.getName() + ".out"));
     }
 
     public void addView(String sql) throws Exception {
