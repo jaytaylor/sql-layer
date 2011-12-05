@@ -87,7 +87,7 @@ public class IndexStatisticsYamlLoader
             Map em = (Map)e;
             int columnCount = (Integer)em.get("Columns");
             Histogram h = parseHistogram(em.get("Histogram"), index, columnCount);
-            result.setHistogram(columnCount, h);
+            result.addHistogram(h);
         }
         return result;
     }

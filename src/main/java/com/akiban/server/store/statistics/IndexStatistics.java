@@ -24,7 +24,7 @@ import java.util.List;
 public class IndexStatistics
 {
     private Index index;
-    private long timestamp, rowCount, sampledCount;
+    private long analysisTimestamp, rowCount, sampledCount;
     private Histogram[] histograms; // Indexed by column count.
 
     protected IndexStatistics(Index index) {
@@ -34,6 +34,13 @@ public class IndexStatistics
 
     public Index getIndex() {
         return index;
+    }
+
+    public long getAnalysisTimestamp() {
+        return analysisTimestamp;
+    }
+    public void setAnalysisTimestamp(long analysisTimestamp) {
+        this.analysisTimestamp = analysisTimestamp;
     }
 
     public long getRowCount() {
@@ -51,11 +58,12 @@ public class IndexStatistics
     }
 
     public Histogram getHistogram(int columnCount) {
-        return histograms[columnCount-1];
+        return histograms[columnCount - 1];
     }
 
-    protected void setHistogram(int columnCount, Histogram histogram) {
-        histograms[columnCount-1] = histogram;
+    protected void addHistogram(Histogram histogram) {
+        assert (histograms[histogram.getColumnCount() - 1] == null);
+        histograms[histogram.getColumnCount() - 1] = histogram;
     }
     
     public static class Histogram {
