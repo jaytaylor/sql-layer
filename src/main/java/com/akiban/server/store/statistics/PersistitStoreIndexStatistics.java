@@ -215,7 +215,7 @@ public class PersistitStoreIndexStatistics
                     Histogram histogram = indexStatistics.getHistogram(i + 1);
                     int itemNumber = 0;
                     for (HistogramEntry entry : histogram.getEntries()) {
-                        rowData.createRow(indexStatisticsRowDef, new Object[] {
+                        rowData.createRow(indexStatisticsEntryRowDef, new Object[] {
                                               indexDef.getRowDef().getRowDefId(),
                                               index.getIndexId(),
                                               histogram.getColumnCount(),
@@ -299,8 +299,10 @@ public class PersistitStoreIndexStatistics
         for (Index index : indexes) {
             try {
                 IndexStatistics indexStatistics = computeIndexStatistics(session, index);
-                if (indexStatistics != null)
+                if (indexStatistics != null) {
+                    logger.debug("Analyzed: " + indexStatistics);
                     storeIndexStatistics(session, indexStatistics);
+                }
             }
             catch (PersistitException ex) {
                 throw new PersistItErrorException(ex);
