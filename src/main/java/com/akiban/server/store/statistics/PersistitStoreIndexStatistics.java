@@ -19,6 +19,7 @@ import static com.akiban.server.store.statistics.IndexStatistics.*;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
@@ -171,6 +172,82 @@ public class PersistitStoreIndexStatistics
     /** Store statistics into database. */
     public void storeIndexStatistics(Session session, IndexStatistics indexStatistics)
             throws PersistitException {
+        Index index = indexStatistics.getIndex();
+        IndexDef indexDef = (IndexDef)index.indexDef();
+        RowDef indexStatisticsRowDef = store.getRowDefCache()
+            .getRowDef(INDEX_STATISTICS_TABLE_NAME);
+        RowDef indexStatisticsEntryRowDef = store.getRowDefCache()
+            .getRowDef(INDEX_STATISTICS_ENTRY_TABLE_NAME);
+        Exchange exchange = store.getExchange(session, indexStatisticsRowDef);
+        Transaction transaction = exchange.getTransaction();
+        int retries = MAX_TRANSACTION_RETRY_COUNT;
+
+        for (;;) {
+            transaction.begin();
+            try {
+                RowData rowData = new RowData(new byte[INITIAL_ROW_SIZE]);
+
+                // First delete any old entries.
+                rowData.createRow(indexStatisticsRowDef, new Object[] {
+                                      indexDef.getRowDef().getRowDefId(),
+                                      index.getIndexId() 
+                                  });
+                store.constructHKey(session, exchange, 
+                                    indexStatisticsRowDef, rowData, false);
+                exchange.cut();
+                exchange.remove(Key.GT);
+                // TODO: How to tell treeService.getTableStatusCache() about that?
+
+                // Parent header row.
+                rowData.createRow(indexStatisticsRowDef, new Object[] {
+                                      indexDef.getRowDef().getRowDefId(),
+                                      index.getIndexId(),
+                                      indexStatistics.getAnalysisTimestamp(),
+                                      indexStatistics.getRowCount(),
+                                      indexStatistics.getSampledCount()
+                                  });
+                try {
+                    store.writeRow(session, rowData);
+                } 
+                catch (InvalidOperationException ex) {
+                    throw new RollbackException(ex);
+                }
+                
+                for (int i = 0; i < index.getColumns().size(); i++) {
+                    Histogram histogram = indexStatistics.getHistogram(i + 1);
+                    int itemNumber = 0;
+                    for (HistogramEntry entry : histogram.getEntries()) {
+                        rowData.createRow(indexStatisticsRowDef, new Object[] {
+                                              indexDef.getRowDef().getRowDefId(),
+                                              index.getIndexId(),
+                                              histogram.getColumnCount(),
+                                              ++itemNumber,
+                                              entry.getKeyString(),
+                                              entry.getKeyBytes(),
+                                              entry.getEqualCount(),
+                                              entry.getLessCount(),
+                                              entry.getDistinctCount()
+                                          });
+                        try {
+                            store.writeRow(session, rowData);
+                        } 
+                        catch (InvalidOperationException ex) {
+                            throw new RollbackException(ex);
+                        }
+                    }
+                }
+                transaction.commit(forceToDisk);
+                break;
+            }
+            catch (RollbackException ex) {
+                if (--retries < 0) {
+                    throw new TransactionFailedException();
+                }
+            } 
+            finally {
+                transaction.end();
+            }
+        }
     }
 
     /** Delete any stored statistics for the given index. */
@@ -195,12 +272,11 @@ public class PersistitStoreIndexStatistics
                                     indexStatisticsRowDef, rowData, false);
                 exchange.cut();
                 exchange.remove(Key.GT);
-                treeService.getTableStatusCache()
-                    .truncate(indexStatisticsRowDef.getRowDefId());
+                // TODO: How to tell treeService.getTableStatusCache() about that?
                 transaction.commit(forceToDisk);
                 break;
             } 
-            catch (RollbackException re) {
+            catch (RollbackException ex) {
                 if (--retries < 0) {
                     throw new TransactionFailedException();
                 }
