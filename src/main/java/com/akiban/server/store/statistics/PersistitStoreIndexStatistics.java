@@ -43,7 +43,7 @@ import java.util.*;
  */
 public class PersistitStoreIndexStatistics
 {
-    private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreIndexStatistics.class);
+    private static final Logger logger = LoggerFactory.getLogger(PersistitStoreIndexStatistics.class);
 
     // Keep in sync with akiban_information_schema.*
 
@@ -67,9 +67,6 @@ public class PersistitStoreIndexStatistics
     private static final int MAX_TRANSACTION_RETRY_COUNT = 10;
     private static final boolean forceToDisk = false;
     private static final int INITIAL_ROW_SIZE = 4096;
-
-
-
 
     private final PersistitStore store;
     private final TreeService treeService;
@@ -290,7 +287,10 @@ public class PersistitStoreIndexStatistics
     /** Sample index values and build statistics histograms. */
     public IndexStatistics computeIndexStatistics(Session session, Index index)
             throws PersistitException {
-        return null;
+        PersistitIndexStatisticsVisitor visitor = 
+            new PersistitIndexStatisticsVisitor(index);
+        store.traverse(session, index, visitor);
+        return visitor.getIndexStatistics();
     }
     
 }
