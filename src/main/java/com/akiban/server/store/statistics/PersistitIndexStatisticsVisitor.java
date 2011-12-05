@@ -39,6 +39,7 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
     }
 
     protected void visit(Key key, Value value) {
+        logger.debug("Key = " + key + ", Value = " + value);
     }
 
     public IndexStatistics getIndexStatistics() {

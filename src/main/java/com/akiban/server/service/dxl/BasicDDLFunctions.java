@@ -360,8 +360,10 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         Collection<Index> indexes = new HashSet<Index>();
         for(String indexName : indexesToUpdate) {
             Index index = table.getIndex(indexName);
-            if(index == null) {
-                throw new NoSuchIndexException (indexName);
+            if (index == null) {
+                index = table.getGroup().getIndex(indexName);
+                if (index == null)
+                    throw new NoSuchIndexException(indexName);
             }
             indexes.add(index);
         }

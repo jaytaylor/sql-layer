@@ -1068,6 +1068,9 @@ public class PersistitStore implements Store {
 
     @Override
     public void analyzeIndexes(Session session, Collection<? extends Index> indexes) {
+        if (true)
+            new com.akiban.server.store.statistics.PersistitStoreIndexStatistics(this, treeService).analyzeIndexes(session, indexes);
+        else
         indexManager.analyzeIndexes(session, indexes);
     }
 
