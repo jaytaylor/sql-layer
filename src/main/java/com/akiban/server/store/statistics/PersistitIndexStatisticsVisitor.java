@@ -36,9 +36,7 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
     
     private Index index;
     private int columnCount;
-    private Histogram[] histograms;
-    private Key[] keys;
-    private long[] counts;
+    private Bucket[] buckets;
     private long timestamp;
     private int rowCount;
     private Key sampleKey;
@@ -47,12 +45,10 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
         this.index = index;
         
         columnCount = index.getColumns().size();
-        histograms = new Histogram[columnCount];
+        buckets = new Bucket[columnCount];
         for (int i = 0; i < columnCount; i++) {
-            histograms[i] = new Histogram(index, i + 1, new ArrayList<HistogramEntry>());
+            buckets[i] = new Bucket(index, i + 1);
         }
-        keys = new Key[columnCount];
-        counts = new long[columnCount];
         timestamp = System.currentTimeMillis();
         rowCount = 0;
     }
@@ -67,19 +63,7 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
         logger.debug("Key = " + sampleKey);
 
         for (int i = columnCount - 1; i >= 0; i--) {
-            if (keys[i] == null) {
-                keys[i] = new Key(sampleKey);
-                counts[i] = 1;
-            }
-            else if (keys[i].equals(sampleKey)) {
-                counts[i]++;
-            }
-            else {
-                flush(i);
-                sampleKey.copyTo(keys[i]);
-                counts[i] = 1;
-            }
-            
+            buckets[i].sample(sampleKey);
             sampleKey.setDepth(i);
         }
 
@@ -92,19 +76,51 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
         result.setRowCount(rowCount);
         result.setSampledCount(rowCount);
         for (int i = 0; i < columnCount; i++) {
-            flush(i);
-            result.addHistogram(histograms[i]);
+            result.addHistogram(buckets[i].getHistogram());
         }
         return result;
     }
 
-    private void flush(int i) {
-        Key key = keys[i];
-        byte[] keyBytes = new byte[key.getEncodedSize()];
-        System.arraycopy(key.getEncodedBytes(), 0, keyBytes, 0, keyBytes.length);
-        HistogramEntry entry = new HistogramEntry(key.toString(), keyBytes,
-                                                  counts[i], 0, 0);
-        histograms[i].getEntries().add(entry);
+    static class Bucket {
+        private Index index;
+        private int columnCount;
+
+        private Key key;
+        private long eqCount;
+        private List<HistogramEntry> entries = new ArrayList<HistogramEntry>();
+
+        public Bucket(Index index, int columnCount) {
+            this.index = index;
+            this.columnCount = columnCount;
+        }
+
+        public void sample(Key sampleKey) {
+            if (key == null) {
+                key = new Key(sampleKey);
+                eqCount = 1;
+            }
+            else if (key.equals(sampleKey)) {
+                eqCount++;
+            }
+            else {
+                flush();
+                sampleKey.copyTo(key);
+                eqCount = 1;
+            }
+        }
+
+        public Histogram getHistogram() {
+            flush();
+            return new Histogram(index, columnCount, entries);
+        }
+
+        private void flush() {
+            byte[] keyBytes = new byte[key.getEncodedSize()];
+            System.arraycopy(key.getEncodedBytes(), 0, keyBytes, 0, keyBytes.length);
+            HistogramEntry entry = new HistogramEntry(key.toString(), keyBytes,
+                                                      eqCount, 0, 0);
+            entries.add(entry);
+        }
     }
 
 }
