@@ -77,7 +77,7 @@ public class ArithExpression extends AbstractBinaryExpression
     @Override
     public ExpressionEvaluation evaluation()
     {
-        return new InnerEvaluation(op, topT, this,this.childrenEvaluations());
+        return new InnerEvaluation(op, topT, this,childrenEvaluations());
     }
 
     /**
