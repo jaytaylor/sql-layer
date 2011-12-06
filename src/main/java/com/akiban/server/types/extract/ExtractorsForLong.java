@@ -85,4 +85,10 @@ class ExtractorsForLong extends LongExtractor {
     public long unixToStdLong(long unixVal) {
         throw new UnsupportedOperationException("Unsupported! Only works for date/time types");
     }
+    
+    @Override
+    public long[] getYearMonthDay (long value) {
+        throw new UnsupportedOperationException("Unsupported! Only works for date/time types");
+    }
+    
 }

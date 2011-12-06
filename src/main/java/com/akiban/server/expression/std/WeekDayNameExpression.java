@@ -24,6 +24,7 @@ import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
 import org.joda.time.DateTime;
 
@@ -112,27 +113,22 @@ public class WeekDayNameExpression extends AbstractUnaryExpression
             ValueSource s = operand();
             if (s.isNull()) return NullValueSource.only();
             long l = 0;
-            int y = -1, m = -1, d = -1;
+            long ymd[] = null;
             switch(s.getConversionType())
             {
-                case DATE:      l = s.getDate(); //  DD + MM x 32 + YYYY x 512
-                                y = (int)(l / 512);
-                                m = (int)(l / 32 % 16);
-                                d = (int)(l % 32);
+                case DATE:      l = s.getDate(); 
+                                ymd = Extractors.getLongExtractor(AkType.DATE).getYearMonthDay(l);
                                 break;
-                case DATETIME:  l = s.getDateTime(); //(YY*10000 MM*100 + DD)*1000000 + (HH*10000 + MM*100 + SS)
-                                y = (int)(l / 10000000000L);
-                                m = (int)(l / 100000000L % 100);
-                                d = (int)(l / 1000000 % 100);
+                case DATETIME:  l = s.getDateTime(); 
+                                ymd = Extractors.getLongExtractor(AkType.DATETIME).getYearMonthDay(l);
                                 break;
                 case TIMESTAMP: l = s.getTimestamp(); break; // number of seconds since 1970
-
                 default:        throw new InvalidArgumentTypeException(s.getConversionType() + " is invalid for dayname()");
             }
 
             DateTime datetime;
-            if (y * m * d == -1) datetime = new DateTime(l * 1000); // timestamp
-            else datetime = new DateTime(y,m,d,1,1);
+            if (ymd == null) datetime = new DateTime(l * 1000); // timestamp
+            else datetime = new DateTime((int)ymd[0],(int)ymd[1],(int)ymd[2],1,1); 
 
             switch(field)
             {
@@ -149,7 +145,6 @@ public class WeekDayNameExpression extends AbstractUnaryExpression
         }
     }
 
-    private final Field field;
     public WeekDayNameExpression (Expression arg, Field field)
     {
         super(field == Field.DAYNAME? AkType.VARCHAR : AkType.INT, arg);
@@ -167,4 +162,6 @@ public class WeekDayNameExpression extends AbstractUnaryExpression
     {
         return new InnerEvaluation(operandEvaluation(), field);
     }
+    
+    private final Field field;
 }
