@@ -207,8 +207,6 @@ public class ArithExpression extends AbstractBinaryExpression
         protected final InnerValueSource valueSource;
     }
 
-
-
    protected static class InnerValueSource extends AbstractArithValueSource
    {
        private final ArithOp op;
