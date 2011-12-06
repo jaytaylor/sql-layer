@@ -369,16 +369,20 @@ public class API
     // Sort
 
     public static Operator sort_InsertionLimited(Operator inputOperator,
-                                                         RowType sortType,
-                                                         Ordering ordering,
-                                                         int limit)
+                                                 RowType sortType,
+                                                 Ordering ordering,
+                                                 SortOption sortOption,
+                                                 int limit)
     {
-        return new Sort_InsertionLimited(inputOperator, sortType, ordering, limit);
+        return new Sort_InsertionLimited(inputOperator, sortType, ordering, sortOption, limit);
     }
 
-    public static Operator sort_Tree(Operator inputOperator, RowType sortType, Ordering ordering)
+    public static Operator sort_Tree(Operator inputOperator, 
+                                     RowType sortType, 
+                                     Ordering ordering, 
+                                     SortOption sortOption)
     {
-        return new Sort_Tree(inputOperator, sortType, ordering);
+        return new Sort_Tree(inputOperator, sortType, ordering, sortOption);
     }
 
     public static Ordering ordering()
@@ -471,6 +475,13 @@ public class API
     public static enum LookupOption {
         KEEP_INPUT,
         DISCARD_INPUT
+    }
+
+    // Sort flags
+
+    public static enum SortOption {
+        PRESERVE_DUPLICATES,
+        SUPPRESS_DUPLICATES
     }
 
     // Ordering specification
