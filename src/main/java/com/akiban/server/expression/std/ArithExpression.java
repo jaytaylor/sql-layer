@@ -43,7 +43,7 @@ public class ArithExpression extends AbstractBinaryExpression
      * INTERVAL is put with '0' because INTERVAL is special; that is, it can "interact" with both date/time types
      * and regular numeric types
      */
-    protected static final BidirectionalMap SUPPORTED_TYPES = new BidirectionalMap(9, 0.5f);
+    protected static final BidirectionalMap SUPPORTED_TYPES = new BidirectionalMap(10, 0.5f);
     static
     {
         // date/time types : key is even
@@ -52,6 +52,7 @@ public class ArithExpression extends AbstractBinaryExpression
         SUPPORTED_TYPES.put(AkType.TIME, 4);
         SUPPORTED_TYPES.put(AkType.DATETIME, 6);
         SUPPORTED_TYPES.put(AkType.YEAR, 8);
+        SUPPORTED_TYPES.put(AkType.TIMESTAMP, 10);
 
         // regular numeric types: key is odd
         SUPPORTED_TYPES.put(AkType.DECIMAL, 1);

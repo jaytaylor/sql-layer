@@ -56,6 +56,10 @@ public class DateTimeArithExpression extends ArithExpression
         @Override
         public void argumentTypes(List<AkType> argumentTypes)
         {
+            // TODO: DATETIME AND TIMESTAMP are the two types
+            // that always work for both date/time ariths,
+            // we dont know how to specify that in this
+            // method yet
             for (int n = 0; n < argumentTypes.size(); ++n)
                 argumentTypes.set(n, argT);
         }
@@ -63,6 +67,8 @@ public class DateTimeArithExpression extends ArithExpression
     
     protected static class InnerValueSource extends ArithExpression.InnerValueSource
     {      
+        private static final long SECS_OF_DAY = 86400;
+        
         public InnerValueSource (ArithOp op, AkType topT)
         {
             super(op, topT);     
@@ -77,7 +83,7 @@ public class DateTimeArithExpression extends ArithExpression
         {
             check(AkType.LONG);
             long seconds = rawInterval() / 1000L;
-            return seconds /86400; // number of sec in a day
+            return seconds /SECS_OF_DAY; 
         }
 
         /**
@@ -89,10 +95,15 @@ public class DateTimeArithExpression extends ArithExpression
         {
             check(AkType.TIME);
             long seconds = rawInterval() / 1000L;
+            long sign;
+            if (seconds < 0)
+                seconds *= (sign = -1);
+            else
+                sign = 1;
             long hours = seconds / 3600;
             long minutes = (seconds - hours * 3600) / 60;
             seconds -= hours * 3600 + minutes * 60;
-            return hours * 10000L + minutes * 100 + seconds;
+            return sign * (hours * 10000L + minutes * 100 + seconds);
         }
     }
 
@@ -118,6 +129,6 @@ public class DateTimeArithExpression extends ArithExpression
     @Override
     public ExpressionEvaluation evaluation ()
     {
-        return new InnerEvaluation(op, topT, this,childrenEvaluations());
+        return new InnerEvaluation(op, topT, this, childrenEvaluations());
     }
 }
