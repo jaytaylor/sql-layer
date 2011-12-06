@@ -18,6 +18,9 @@ package com.akiban.server.aggregation.std;
 import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.OverflowException;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.NullValueSource;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.util.ValueHolder;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -25,6 +28,7 @@ class Processors
 {
     public final static AbstractProcessor bitAndProcessor = new BitProcessor ()
     {
+
         @Override
         public BigInteger process(BigInteger oldState, BigInteger input)
         {
@@ -35,6 +39,12 @@ class Processors
         public String toString ()
         {
             return "BIT_AND";
+        }
+
+        @Override
+        public ValueSource emptyValue()
+        {
+            return EMPTY_FOR_AND;
         }
     };
 
@@ -51,6 +61,12 @@ class Processors
         {
             return "BIT_OR";
         }
+
+        @Override
+        public ValueSource emptyValue()
+        {
+            return EMPTY_FOR_OR;
+        }
     };
 
     public final static AbstractProcessor bitXOrProcessor = new BitProcessor ()
@@ -65,6 +81,12 @@ class Processors
         public String toString ()
         {
             return "BIT_XOR";
+        }
+
+        @Override
+        public ValueSource emptyValue()
+        {
+            return EMPTY_FOR_OR;
         }
     };
 
@@ -174,12 +196,20 @@ class Processors
         {
              throw new InvalidArgumentTypeException("Sum of VARCHAR is not supported");
         }
+
+        @Override
+        public ValueSource emptyValue()
+        {
+            return NullValueSource.only();
+        }
     };
 
     // nested class
     private static abstract class BitProcessor implements AbstractProcessor
     {
         protected static final BigInteger n64 = new BigInteger("FFFFFFFFFFFFFFFF", 16);
+        protected static final ValueSource EMPTY_FOR_AND = new ValueHolder(AkType.U_BIGINT, n64);
+        protected static final ValueSource EMPTY_FOR_OR = new ValueHolder(AkType.U_BIGINT, BigInteger.ZERO);
 
         @Override
         public long process(long oldState, long input)
@@ -303,6 +333,12 @@ class Processors
         public String process(String oldState, String input)
         {
             return (condition(oldState.compareTo(input)) ? oldState : input);
+        }
+
+        @Override
+        public ValueSource emptyValue ()
+        {
+            return NullValueSource.only();
         }
     }
 }

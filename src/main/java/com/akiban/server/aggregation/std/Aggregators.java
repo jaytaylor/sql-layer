@@ -28,7 +28,7 @@ public class Aggregators
         return new AggregatorFactory ()
         {
             @Override
-            public Aggregator get() {return AbstractAggregator.getAgg(type, Processors.bitXOrProcessor); }
+            public Aggregator get() {return AbstractBitAggregator.getAgg(type, Processors.bitXOrProcessor); }
 
             @Override
             public String toString () {return name + type.name();}
@@ -44,7 +44,7 @@ public class Aggregators
         return new AggregatorFactory ()
         {
             @Override
-            public Aggregator get() {return AbstractAggregator.getAgg(type, Processors.bitOrProcessor); }
+            public Aggregator get() {return AbstractBitAggregator.getAgg(type, Processors.bitOrProcessor); }
 
             @Override
             public String toString () {return name + type.name();}
@@ -60,7 +60,7 @@ public class Aggregators
         return new AggregatorFactory ()
         {
             @Override
-            public Aggregator get() {return AbstractAggregator.getAgg(type, Processors.bitAndProcessor); }
+            public Aggregator get() {return AbstractBitAggregator.getAgg(type, Processors.bitAndProcessor); }
 
             @Override
             public String toString () {return name + type.name();}

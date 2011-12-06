@@ -17,13 +17,16 @@ package com.akiban.server.aggregation.std;
 
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
 import java.math.BigInteger;
 
 class AbstractBitAggregator extends AbstractAggregator
 {
-    protected static AbstractAggregator getAgg (AkType t, AbstractProcessor pr)
+    protected static final ValueSource EMPTY_VALUE = new ValueHolder(AkType.U_BIGINT, new BigInteger("FFFFFFFFFFFFFFFF", 16));
+
+    protected static AbstractBitAggregator getAgg (AkType t, AbstractProcessor pr)
     {
         return new AbstractBitAggregator(pr,t);
     }
@@ -34,15 +37,22 @@ class AbstractBitAggregator extends AbstractAggregator
     }
 
     @Override
+    public String toString ()
+    {
+        return processor.toString();
+    }
+
+    @Override
     public void input(ValueSource input)
     {
-        BigInteger bigIntInput;
-        if (input.isNull()) bigIntInput = BigInteger.ZERO;
-        else bigIntInput = Extractors.getUBigIntExtractor().getObject(input);
-
-        if (value == null)
-            value = new ValueHolder(AkType.U_BIGINT, bigIntInput);
-        else
-            value.putUBigInt(processor.process(Extractors.getUBigIntExtractor().getObject(value), bigIntInput));
+        if (!input.isNull())
+        {
+            BigInteger bigIntInput = Extractors.getUBigIntExtractor().getObject(input);
+            if (value == null)
+                value = new ValueHolder(AkType.U_BIGINT, bigIntInput);
+            else
+                value.putUBigInt(processor.process(Extractors.getUBigIntExtractor().getObject(value), bigIntInput));
+        }
     }
+
 }
