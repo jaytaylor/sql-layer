@@ -1,0 +1,4 @@
+# Specifying COLLATE  for column fails
+---
+- CreateTable: t (v varchar(32) COLLATE latin1_cs)
+...
