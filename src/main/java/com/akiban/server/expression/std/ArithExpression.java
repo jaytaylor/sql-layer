@@ -29,7 +29,7 @@ import java.util.List;
 
 public class ArithExpression extends AbstractBinaryExpression
 {
-    private final ArithOp op;
+    protected final ArithOp op;
     protected final AkType topT;
 
     /**
@@ -77,7 +77,7 @@ public class ArithExpression extends AbstractBinaryExpression
     @Override
     public ExpressionEvaluation evaluation()
     {
-        return new InnerEvaluation(op, topT, this.childrenEvaluations());
+        return new InnerEvaluation(op, topT, this,this.childrenEvaluations());
     }
 
     /**
@@ -176,9 +176,19 @@ public class ArithExpression extends AbstractBinaryExpression
     {
         return true;
     }
-    
+
+    /**
+     * this is to be overridden by sub-classes to return a more appropriate ValueSource
+     * @param op
+     * @param topT
+     * @return
+     */
+    protected InnerValueSource getValueSource (ArithOp op, AkType topT)
+    {
+        return new InnerValueSource(op, topT);
+    }
   
-    private static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
+    protected static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
         @Override
         public ValueSource eval() 
@@ -187,17 +197,19 @@ public class ArithExpression extends AbstractBinaryExpression
             return valueSource;
         }
         
-        private InnerEvaluation (ArithOp op, AkType topT,
+        protected InnerEvaluation (ArithOp op, AkType topT,ArithExpression ex,
                 List<? extends ExpressionEvaluation> children)
         {
             super(children);
-            valueSource = new InnerValueSource(op, topT);
+            valueSource = ex.getValueSource(op, topT);
         }
         
-        private final InnerValueSource valueSource;        
+        protected final InnerValueSource valueSource;
     }
-    
-   private static class InnerValueSource extends AbstractArithValueSource
+
+
+
+   protected static class InnerValueSource extends AbstractArithValueSource
    {
        private final ArithOp op;
        private ValueSource left;
