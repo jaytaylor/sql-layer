@@ -28,8 +28,6 @@ public interface IndexManager {
 
     public void analyzeTable(Session session, RowDef rowDef, int sampleSize);
 
-    public void analyzeIndexes(Session session, Collection<? extends Index> indexes) throws PersistitException;
-
     public void deleteIndexAnalysis(Session session, Index index) throws PersistitException;
 
     public void analyzeIndex(Session session, Index index, int sampleSize) throws PersistitException;

@@ -136,10 +136,6 @@ public class DelegatingStore<S extends Store> implements Store {
         delegate.analyzeTable(session, tableId, sampleSize);
     }
 
-    public void analyzeIndexes(Session session, Collection<? extends Index> indexes) {
-        delegate.analyzeIndexes(session, indexes);
-    }
-
     public void flushIndexes(final Session session) {
         delegate.flushIndexes(session);
     }

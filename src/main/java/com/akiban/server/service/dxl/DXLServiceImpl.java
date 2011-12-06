@@ -29,6 +29,7 @@ import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
+import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.google.inject.Inject;
 
 import java.util.ArrayList;
@@ -48,6 +49,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     private final Store store;
     private final TreeService treeService;
     private final SessionService sessionService;
+    private final IndexStatisticsService indexStatisticsService;
 
     @Override
     public JmxObjectInfo getJmxObjectInfo() {
@@ -86,7 +88,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     }
 
     DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
-        return new BasicDDLFunctions(middleman, schemaManager, store, treeService);
+        return new BasicDDLFunctions(middleman, schemaManager, store, treeService, indexStatisticsService);
     }
 
     @Override
@@ -162,11 +164,12 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     }
 
     @Inject
-    public DXLServiceImpl(SchemaManager schemaManager, Store store, TreeService treeService, SessionService sessionService) {
+    public DXLServiceImpl(SchemaManager schemaManager, Store store, TreeService treeService, SessionService sessionService, IndexStatisticsService indexStatisticsService) {
         this.schemaManager = schemaManager;
         this.store = store;
         this.treeService = treeService;
         this.sessionService = sessionService;
+        this.indexStatisticsService = indexStatisticsService;
     }
 
     // for use by subclasses
@@ -181,6 +184,10 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
 
     protected final TreeService treeService() {
         return treeService;
+    }
+
+    protected final IndexStatisticsService indexStatisticsService() {
+        return indexStatisticsService;
     }
 
     protected final Session session() {

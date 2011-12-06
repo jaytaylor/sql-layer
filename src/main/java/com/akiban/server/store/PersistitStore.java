@@ -1066,14 +1066,6 @@ public class PersistitStore implements Store {
         indexManager.analyzeTable(session, rowDef, sampleSize);
     }
 
-    @Override
-    public void analyzeIndexes(Session session, Collection<? extends Index> indexes) {
-        if (true)
-            new com.akiban.server.store.statistics.PersistitStoreIndexStatistics(this, treeService).analyzeIndexes(session, indexes);
-        else
-        indexManager.analyzeIndexes(session, indexes);
-    }
-
     boolean hasNullIndexSegments(final RowData rowData, final Index index) {
         IndexDef indexDef = (IndexDef)index.indexDef();
         assert indexDef.getRowDef().getRowDefId() == rowData.getRowDefId();

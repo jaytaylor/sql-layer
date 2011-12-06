@@ -52,12 +52,15 @@ import com.persistit.exception.PersistitException;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
+import com.akiban.server.store.statistics.IndexStatisticsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
 
     private final static Logger logger = LoggerFactory.getLogger(BasicDDLFunctions.class);
+
+    private final IndexStatisticsService indexStatisticsService;
 
     @Override
     public void createTable(Session session, String schema, String ddlText)
@@ -353,21 +356,25 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     public void updateTableStatistics(Session session, TableName tableName, Collection<String> indexesToUpdate) {
         final Table table = getTable(session, tableName);
+        Collection<? extends Index> indexes;
         if (indexesToUpdate == null) {
-            store().analyzeTable(session, table.getTableId());
-            return;
+            indexes = table.getIndexes();
+            // TODO: Group indexes, too?
         }
-        Collection<Index> indexes = new HashSet<Index>();
-        for(String indexName : indexesToUpdate) {
-            Index index = table.getIndex(indexName);
-            if (index == null) {
-                index = table.getGroup().getIndex(indexName);
-                if (index == null)
-                    throw new NoSuchIndexException(indexName);
+        else {
+            Set<Index> namedIndexes = new HashSet<Index>();
+            for (String indexName : indexesToUpdate) {
+                Index index = table.getIndex(indexName);
+                if (index == null) {
+                    index = table.getGroup().getIndex(indexName);
+                    if (index == null)
+                        throw new NoSuchIndexException(indexName);
+                }
+                namedIndexes.add(index);
             }
-            indexes.add(index);
+            indexes = namedIndexes;
         }
-        store().analyzeIndexes(session, indexes);
+        indexStatisticsService.updateIndexStatistics(session, indexes);
     }
 
     private void checkCursorsForDDLModification(Session session, Table table) {
@@ -401,7 +408,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         }
     }
 
-    BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService) {
+    BasicDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService, IndexStatisticsService indexStatisticsService) {
         super(middleman, schemaManager, store, treeService);
+        this.indexStatisticsService = indexStatisticsService;
     }
 }

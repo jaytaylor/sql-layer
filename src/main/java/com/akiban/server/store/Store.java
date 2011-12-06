@@ -144,7 +144,6 @@ public interface Store extends Service<Store> {
      */
     void analyzeTable(Session session, int tableId);
     void analyzeTable(Session session, int tableId, int sampleSize);
-    void analyzeIndexes(Session session, Collection<? extends Index> indexes);
 
     boolean isDeferIndexes();
     void setDeferIndexes(boolean b);
