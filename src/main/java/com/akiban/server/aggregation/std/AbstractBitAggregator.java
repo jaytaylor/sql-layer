@@ -17,15 +17,12 @@ package com.akiban.server.aggregation.std;
 
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
 import java.math.BigInteger;
 
 class AbstractBitAggregator extends AbstractAggregator
-{
-    protected static final ValueSource EMPTY_VALUE = new ValueHolder(AkType.U_BIGINT, new BigInteger("FFFFFFFFFFFFFFFF", 16));
-
+{    
     protected static AbstractBitAggregator getAgg (AkType t, AbstractProcessor pr)
     {
         return new AbstractBitAggregator(pr,t);
@@ -54,5 +51,4 @@ class AbstractBitAggregator extends AbstractAggregator
                 value.putUBigInt(processor.process(Extractors.getUBigIntExtractor().getObject(value), bigIntInput));
         }
     }
-
 }

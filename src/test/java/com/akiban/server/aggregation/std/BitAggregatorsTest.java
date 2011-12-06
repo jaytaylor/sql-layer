@@ -212,7 +212,7 @@ public class BitAggregatorsTest
 
     private static ValueHolder holder = new ValueHolder();
     private static final BigInteger N64 = new BigInteger("FFFFFFFFFFFFFFFF", 16);
-    private static boolean alreadyExc;
+    private static boolean alreadyExc = false;
 
     private Aggregator aggregator;
     private BigInteger expected;

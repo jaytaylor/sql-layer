@@ -28,7 +28,6 @@ class Processors
 {
     public final static AbstractProcessor bitAndProcessor = new BitProcessor ()
     {
-
         @Override
         public BigInteger process(BigInteger oldState, BigInteger input)
         {
