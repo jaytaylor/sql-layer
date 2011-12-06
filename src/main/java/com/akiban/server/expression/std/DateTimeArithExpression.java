@@ -82,7 +82,7 @@ public class DateTimeArithExpression extends ArithExpression
 
         /**
          *
-         * @return INTERVAL between two events expressed HOURS,MINUTES, SECONDS
+         * @return INTERVAL between two events expressed in HOUR:MINUTE:SECOND
          */
         @Override
         public long getTime ()
