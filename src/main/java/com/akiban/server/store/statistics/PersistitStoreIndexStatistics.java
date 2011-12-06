@@ -91,79 +91,78 @@ public class PersistitStoreIndexStatistics
         exchange.clear()
             .append(indexStatisticsRowDef.getOrdinal())
             .append((long)indexDef.getRowDef().getRowDefId())
-            .append((long)index.getIndexId())
-            .append(Key.BEFORE);
-        List<RowData> rows = new ArrayList<RowData>();
-        while (exchange.next()) {
+            .append((long)index.getIndexId());
+        if (!exchange.fetch().getValue().isDefined())
+            return null;
+        IndexStatistics result = new IndexStatistics(index);
+        // Decode the header.
+        {
             RowData rowData = new RowData(new byte[exchange.getValue().getEncodedSize() + RowData.ENVELOPE_SIZE]);
             store.expandRowData(exchange, rowData);
-            rows.add(rowData);
-        }
-        if (rows.isEmpty())
-            return null;
-
-        IndexStatistics result = new IndexStatistics(index);
-        Histogram histogram = null;
-        for (RowData row : rows) {
-            if (row.getRowDefId() == indexStatisticsRowDef.getRowDefId()) {
-                long analysisTimestampLocation =
-                    indexStatisticsRowDef.fieldLocation(row, ANALYSIS_TIMESTAMP_FIELD_INDEX);
-                long analysisTimestamp = row.getIntegerValue((int)analysisTimestampLocation,
+            long analysisTimestampLocation =
+                indexStatisticsRowDef.fieldLocation(rowData, ANALYSIS_TIMESTAMP_FIELD_INDEX);
+            long analysisTimestamp = rowData.getIntegerValue((int)analysisTimestampLocation,
                                                              (int)(analysisTimestampLocation >>> 32));
-                long rowCountLocation =
-                    indexStatisticsRowDef.fieldLocation(row, ROW_COUNT_FIELD_INDEX);
-                long rowCount = row.getIntegerValue((int)rowCountLocation,
+            long rowCountLocation =
+                indexStatisticsRowDef.fieldLocation(rowData, ROW_COUNT_FIELD_INDEX);
+            long rowCount = rowData.getIntegerValue((int)rowCountLocation,
                                                     (int)(rowCountLocation >>> 32));
-                long sampledCountLocation =
-                    indexStatisticsRowDef.fieldLocation(row, SAMPLED_COUNT_FIELD_INDEX);
-                long sampledCount = row.getIntegerValue((int)sampledCountLocation,
+            long sampledCountLocation =
+                indexStatisticsRowDef.fieldLocation(rowData, SAMPLED_COUNT_FIELD_INDEX);
+            long sampledCount = rowData.getIntegerValue((int)sampledCountLocation,
                                                         (int)(sampledCountLocation >>> 32));
-                result.setAnalysisTimestamp(analysisTimestamp);
-                result.setRowCount(rowCount);
-                result.setSampledCount(sampledCount);
-            }
-            else {
-                long columnCountLocation =
-                    indexStatisticsEntryRowDef.fieldLocation(row, COLUMN_COUNT_FIELD_INDEX);
-                int columnCount = (int)row.getIntegerValue((int)columnCountLocation,
+            result.setAnalysisTimestamp(analysisTimestamp);
+            result.setRowCount(rowCount);
+            result.setSampledCount(sampledCount);
+        }
+        // Decode the children.
+        Histogram histogram = null;
+        while (exchange.traverse(Key.GT, true)) {
+            if (exchange.getKey().getDepth() <= indexStatisticsRowDef.getHKeyDepth())
+                break;          // End of children.
+            RowData rowData = new RowData(new byte[exchange.getValue().getEncodedSize() + RowData.ENVELOPE_SIZE]);
+            store.expandRowData(exchange, rowData);
+            long columnCountLocation =
+                indexStatisticsEntryRowDef.fieldLocation(rowData, COLUMN_COUNT_FIELD_INDEX);
+            int columnCount = (int)rowData.getIntegerValue((int)columnCountLocation,
                                                            (int)(columnCountLocation >>> 32));
-                long itemNumberLocation =
-                    indexStatisticsEntryRowDef.fieldLocation(row, ITEM_NUMBER_FIELD_INDEX);
-                int itemNumber = (int)row.getIntegerValue((int)itemNumberLocation,
+            long itemNumberLocation =
+                indexStatisticsEntryRowDef.fieldLocation(rowData, ITEM_NUMBER_FIELD_INDEX);
+            int itemNumber = (int)rowData.getIntegerValue((int)itemNumberLocation,
                                                           (int)(itemNumberLocation >>> 32));
-                long keyStringLocation =
-                    indexStatisticsEntryRowDef.fieldLocation(row, KEY_STRING_FIELD_INDEX);
-                String keyString = row.getStringValue((int)keyStringLocation,
+            long keyStringLocation =
+                indexStatisticsEntryRowDef.fieldLocation(rowData, KEY_STRING_FIELD_INDEX);
+            String keyString = rowData.getStringValue((int)keyStringLocation,
                                                       (int)(keyStringLocation >>> 32),
                                                       indexStatisticsEntryRowDef.getFieldDef(KEY_STRING_FIELD_INDEX));
-                long keyBytesLocation =
-                    indexStatisticsEntryRowDef.fieldLocation(row, KEY_BYTES_FIELD_INDEX);
-                final int keyBytesPrefix = indexStatisticsEntryRowDef.getFieldDef(KEY_BYTES_FIELD_INDEX).getPrefixSize();
-                byte[] keyBytes = new byte[(int)(keyBytesLocation >>> 32) - keyBytesPrefix];
-                System.arraycopy(row.getBytes(), (int)keyBytesLocation + keyBytesPrefix,
-                                 keyBytes, 0, keyBytes.length);
-                long eqCountLocation =
-                    indexStatisticsEntryRowDef.fieldLocation(row, EQ_COUNT_FIELD_INDEX);
-                long eqCount = row.getIntegerValue((int)eqCountLocation,
+            long keyBytesLocation =
+                indexStatisticsEntryRowDef.fieldLocation(rowData, KEY_BYTES_FIELD_INDEX);
+            final int keyBytesPrefix = indexStatisticsEntryRowDef.getFieldDef(KEY_BYTES_FIELD_INDEX).getPrefixSize();
+            byte[] keyBytes = new byte[(int)(keyBytesLocation >>> 32) - keyBytesPrefix];
+            System.arraycopy(rowData.getBytes(), (int)keyBytesLocation + keyBytesPrefix,
+                             keyBytes, 0, keyBytes.length);
+            long eqCountLocation =
+                indexStatisticsEntryRowDef.fieldLocation(rowData, EQ_COUNT_FIELD_INDEX);
+            long eqCount = rowData.getIntegerValue((int)eqCountLocation,
                                                    (int)(eqCountLocation >>> 32));
-                long ltCountLocation =
-                    indexStatisticsEntryRowDef.fieldLocation(row, LT_COUNT_FIELD_INDEX);
-                long ltCount = row.getIntegerValue((int)ltCountLocation,
+            long ltCountLocation =
+                indexStatisticsEntryRowDef.fieldLocation(rowData, LT_COUNT_FIELD_INDEX);
+            long ltCount = rowData.getIntegerValue((int)ltCountLocation,
                                                    (int)(ltCountLocation >>> 32));
-                long distinctCountLocation =
-                    indexStatisticsEntryRowDef.fieldLocation(row, DISTINCT_COUNT_FIELD_INDEX);
-                long distinctCount = row.getIntegerValue((int)distinctCountLocation,
+            long distinctCountLocation =
+                indexStatisticsEntryRowDef.fieldLocation(rowData, DISTINCT_COUNT_FIELD_INDEX);
+            long distinctCount = rowData.getIntegerValue((int)distinctCountLocation,
                                                          (int)(distinctCountLocation >>> 32));
-                if ((histogram == null) ||
-                    (histogram.getColumnCount() != columnCount)) {
-                    histogram = new Histogram(index, columnCount,
-                                              new ArrayList<HistogramEntry>());
-                    result.addHistogram(histogram);
-                }
-                histogram.getEntries().add(new HistogramEntry(keyString, keyBytes,
-                                                              eqCount, ltCount, distinctCount));
+            if ((histogram == null) ||
+                (histogram.getColumnCount() != columnCount)) {
+                histogram = new Histogram(index, columnCount,
+                                          new ArrayList<HistogramEntry>());
+                result.addHistogram(histogram);
             }
+            histogram.getEntries().add(new HistogramEntry(keyString, keyBytes,
+                                                          eqCount, ltCount, distinctCount));
         }
+        logger.debug("Loaded: " + result);
         return result;
     }
 
