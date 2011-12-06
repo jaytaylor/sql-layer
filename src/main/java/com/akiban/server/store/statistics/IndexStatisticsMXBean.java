@@ -15,8 +15,10 @@
 
 package com.akiban.server.store.statistics;
 
+import java.io.IOException;
+
 public interface IndexStatisticsMXBean
 {
     /** Write index statistics to a YAML file. */
-    public dumpIndexStatistics(String schema, String toFile);
+    public String dumpIndexStatistics(String schema, String toFile) throws IOException;
 }

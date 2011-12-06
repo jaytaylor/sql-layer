@@ -291,7 +291,9 @@ public class PersistitStoreIndexStatistics
         PersistitIndexStatisticsVisitor visitor = 
             new PersistitIndexStatisticsVisitor(index);
         store.traverse(session, index, visitor);
-        return visitor.getIndexStatistics();
+        IndexStatistics result = visitor.getIndexStatistics();
+        logger.debug("Analyzed: " + result);
+        return result;
     }
     
     // TODO: Is this the right API?

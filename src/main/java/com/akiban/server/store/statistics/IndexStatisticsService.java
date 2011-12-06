@@ -15,6 +15,10 @@
 
 package com.akiban.server.store.statistics;
 
+import com.akiban.server.service.session.Session;
+import com.akiban.ais.model.Index;
+import java.util.Collection;
+
 public interface IndexStatisticsService
 {
     /** Get available statistics for the given index. */
@@ -22,5 +26,9 @@ public interface IndexStatisticsService
 
     /** Update statistics for the given indexes. */
     public void updateIndexStatistics(Session session, 
+                                      Collection<? extends Index> indexes);
+
+    /** Delete stored statistics for the given indexes. */
+    public void deleteIndexStatistics(Session session, 
                                       Collection<? extends Index> indexes);
 }

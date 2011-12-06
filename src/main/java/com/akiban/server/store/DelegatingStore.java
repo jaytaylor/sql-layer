@@ -39,7 +39,7 @@ public class DelegatingStore<S extends Store> implements Store {
         this.delegate = delegate;
     }
 
-    protected S getDelegate() {
+    public S getDelegate() {
         return delegate;
     }
 
