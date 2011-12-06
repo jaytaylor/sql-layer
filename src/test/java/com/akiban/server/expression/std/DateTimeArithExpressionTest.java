@@ -16,6 +16,7 @@
 package com.akiban.server.expression.std;
 
 
+import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.extract.Extractors;
@@ -114,6 +115,7 @@ public class DateTimeArithExpressionTest extends ComposedExpressionTestBase
         
         assertEquals(-28L, actual);
     }
+    
 
     @Test
     public void testNullDateiff()
@@ -123,6 +125,24 @@ public class DateTimeArithExpressionTest extends ComposedExpressionTestBase
 
         Expression top = DateTimeArithExpression.DATEDIFF_COMPOSER.compose(Arrays.asList(l, r));
         assertTrue("top is null", top.evaluation().eval().isNull());
+    }
+    
+    @Test(expected = InvalidArgumentTypeException.class)
+    public void testInvalidArgumenTypeDateDiff ()
+    {
+        Expression l = new LiteralExpression(AkType.DATE, 1234L);
+        Expression r = new LiteralExpression(AkType.DATETIME, 1234L);
+        
+         Expression top = DateTimeArithExpression.DATEDIFF_COMPOSER.compose(Arrays.asList(l, r));
+    }
+    
+    @Test(expected = InvalidArgumentTypeException.class)
+    public void testInvalidArgumenTypeTimeDiff ()
+    {
+        Expression l = new LiteralExpression(AkType.DATE, 1234L);
+        Expression r = new LiteralExpression(AkType.DATETIME, 1234L);
+        
+         Expression top = DateTimeArithExpression.TIMEDIFF_COMPOSER.compose(Arrays.asList(l, r));
     }
 
     @Override

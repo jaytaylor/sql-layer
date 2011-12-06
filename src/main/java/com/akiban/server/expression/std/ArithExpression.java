@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
@@ -139,20 +140,20 @@ public class ArithExpression extends AbstractBinaryExpression
        int l = SUPPORTED_TYPES.get(leftT), r = SUPPORTED_TYPES.get(rightT);
        int prod = l*r, sum = r + l;
 
-       if (sum <= -1 ) throw new UnsupportedOperationException(msg); // both are NOT supported || interval and a NOT supported
+       if (sum <= -1 ) throw new InvalidArgumentTypeException(msg); // both are NOT supported || interval and a NOT supported
        if (prod == 0) // at least one is interval
        {
            if (sum %2 == 0) // datetime and interval alone
                switch (op.opName())
                {
-                  case '-': if (r != 0) throw new UnsupportedOperationException(msg); // fall thru;  check if second operandis NOT interval E.g inteval - date? => nonsense
+                  case '-': if (r != 0) throw new InvalidArgumentTypeException(msg); // fall thru;  check if second operandis NOT interval E.g inteval - date? => nonsense
                   case '+': return SUPPORTED_TYPES.get(sum); // return date/time or interval
-                  default: throw new UnsupportedOperationException(msg);
+                  default: throw new InvalidArgumentTypeException(msg);
                }
             else // number and interval: an interval can be multiply with || divide by a number
             {
                if (op.opName() == '/' && l == 0 || op.opName() == '*') return AkType.INTERVAL;
-               else throw new UnsupportedOperationException(msg);
+               else throw new InvalidArgumentTypeException(msg);
             }
         }
         else if (prod > 0) // both are supported
@@ -162,12 +163,12 @@ public class ArithExpression extends AbstractBinaryExpression
             else // even => at least one is datetime
             {
                 if (l == r && op.opName() == '-') return AkType.INTERVAL;
-                else throw new UnsupportedOperationException("");
+                else throw new InvalidArgumentTypeException("");
             }
         }
         else // left || right is not supported
         {
-            if( sum %2 == 1) throw new UnsupportedOperationException(msg); // date/times and unsupported
+            if( sum %2 == 1) throw new InvalidArgumentTypeException(msg); // date/times and unsupported
             else return SUPPORTED_TYPES.get(sum+1);
         }   
     }
