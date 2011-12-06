@@ -103,14 +103,9 @@ class AbstractAggregator implements Aggregator
     @Override
     public void output(ValueTarget output)
     {
-        findOutPut(output);
-    }
-
-    protected void findOutPut (ValueTarget out)
-    {
         if(value == null) value = new ValueHolder(emptyValue());
 
-        Converters.convert(value, out);
+        Converters.convert(value, output);
         value = null;
     }
 
