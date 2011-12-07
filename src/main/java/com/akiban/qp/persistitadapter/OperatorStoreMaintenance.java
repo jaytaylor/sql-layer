@@ -72,17 +72,29 @@ final class OperatorStoreMaintenance {
         try {
             Row row;
             while ((row = cursor.next()) != null) {
+                boolean actioned = false;
                 if (row.rowType().equals(planOperator.rowType())) {
                     doAction(action, handler, row);
+                    actioned = true;
                 }
-                else if (row.rowType().equals(storePlan.partiallyFlattenedType)
-                        && useInvertType(action, bindings, adapter)
-                        && (storePlan.partialIsWithinGi || action == OperatorStoreGIHandler.Action.STORE)
-                ) {
-                    Row outerRow = new FlattenedRow(storePlan.outJoinFlattenedType, row, null, row.hKey());
-                    doAction(invert(action), handler, outerRow);
+                else if (storePlan.incomingRowIsWithinGI) {
+                    // "Natural" index cleanup. Look for the left half, but only if we need to
+                    if (row.rowType().equals(storePlan.leftHalf) && useInvertType(action, bindings, adapter)) {
+                        Row outerRow = new FlattenedRow(storePlan.topLevelFlattenType, row, null, row.hKey());
+                        doAction(invert(action), handler, outerRow);
+                        actioned = true;
+                    }
                 }
                 else {
+                    // Hkey cleanup. Look for the right half.
+                    if (row.rowType().equals(storePlan.rightHalf)) {
+                        Row outerRow = new FlattenedRow(storePlan.topLevelFlattenType, null, row, row.hKey());
+                        doAction(invert(action), handler, outerRow);
+                        actioned = true;
+
+                    }
+                }
+                if (!actioned) {
                     extraTap(action).hit();
                 }
             }
@@ -256,24 +268,18 @@ final class OperatorStoreMaintenance {
         int branchStartDepth = branchTables.rootMost().userTable().getDepth() - 1;
         boolean withinBranch = branchStartDepth == -1;
         API.JoinType withinBranchJoin = operatorJoinType(groupIndex);
-        RowType rightSideFlatten = null;
+        // TODO bookmark
         for (UserTableRowType branchRowType : branchTables.fromRoot()) {
             if (parentRowType == null) {
                 parentRowType = branchRowType;
             } else {
-                EnumSet<API.FlattenOption> flattenOptions;
-                if (branchRowType.equals(rowType)) {
-                    result.partialIsWithinGi = withinBranch;
-                    result.partiallyFlattenedType = parentRowType;
-                    rightSideFlatten = branchRowType;
-                    flattenOptions = KEEP_PARENT;
-                } else {
-                    flattenOptions = NO_FLATTEN_OPTIONS;
-                    if (rightSideFlatten != null)
-                        rightSideFlatten = schema.newFlattenType(rightSideFlatten, branchRowType);
-                }
-                plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType, flattenOptions);
+                plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType);
                 parentRowType = plan.rowType();
+            }
+            if (branchRowType.equals(rowType)) {
+                result.leftHalf = parentRowType;
+                result.incomingRowIsWithinGI = withinBranch;
+                parentRowType = null;
             }
             if (branchRowType.userTable().getDepth() == branchStartDepth) {
                 withinBranch = true;
@@ -281,8 +287,13 @@ final class OperatorStoreMaintenance {
                 joinType = withinBranchJoin;
             }
         }
-        if (rightSideFlatten != null) {
-            result.outJoinFlattenedType = schema.newFlattenType(result.partiallyFlattenedType, rightSideFlatten);
+        result.rightHalf = parentRowType;
+        if (result.rightHalf != null) {
+            API.JoinType topJoinType = rowType.userTable().getDepth() < branchTables.rootMost().userTable().getDepth()
+                    ? API.JoinType.RIGHT_JOIN
+                    : joinType;
+            plan = API.flatten_HKeyOrdered(plan, result.leftHalf, result.rightHalf, topJoinType, KEEP_BOTH);
+            result.topLevelFlattenType = (FlattenedRowType) plan.rowType();
         }
 
         result.rootOperator = plan;
@@ -291,6 +302,10 @@ final class OperatorStoreMaintenance {
 
     private static final EnumSet<API.FlattenOption> NO_FLATTEN_OPTIONS = EnumSet.noneOf(API.FlattenOption.class);
     private static final EnumSet<API.FlattenOption> KEEP_PARENT = EnumSet.of(API.FlattenOption.KEEP_PARENT);
+    private static final EnumSet<API.FlattenOption> KEEP_BOTH = EnumSet.of(
+            API.FlattenOption.KEEP_PARENT,
+            API.FlattenOption.KEEP_CHILD
+    );
 
     private static API.JoinType operatorJoinType(Index index) {
         switch (index.getJoinType()) {
@@ -390,9 +405,11 @@ final class OperatorStoreMaintenance {
         }
 
         public final String toString;
+
         public Operator rootOperator;
-        public FlattenedRowType outJoinFlattenedType;
-        public RowType partiallyFlattenedType;
-        public boolean partialIsWithinGi;
+        public FlattenedRowType topLevelFlattenType;
+        public RowType leftHalf;
+        public RowType rightHalf;
+        public boolean incomingRowIsWithinGI;
     }
 }
