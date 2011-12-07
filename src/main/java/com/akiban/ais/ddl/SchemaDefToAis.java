@@ -467,7 +467,7 @@ public class SchemaDefToAis {
     }
 
     /**
-     * Find the maximum index ID from all of the user tables within the given group.
+     * Find the maximum index ID from all of the indexes within the given group.
      */
     public static int findMaxIndexIDInGroup(AkibanInformationSchema ais, Group group) {
         int maxId = Integer.MIN_VALUE;
@@ -477,6 +477,9 @@ public class SchemaDefToAis {
                     maxId = Math.max(index.getIndexId(), maxId);
                 }
             }
+        }
+        for(Index index : group.getIndexes()) {
+            maxId = Math.max(index.getIndexId(), maxId);
         }
         return maxId;
     }
