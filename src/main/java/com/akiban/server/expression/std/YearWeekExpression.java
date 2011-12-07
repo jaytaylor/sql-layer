@@ -13,11 +13,6 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package com.akiban.server.expression.std;
 
 import com.akiban.server.error.InvalidParameterValueException;
@@ -44,7 +39,8 @@ public class YearWeekExpression extends AbstractCompositeExpression
         {
             int s = argumentTypes.size();
             if (s != 1 && s != 2) throw new WrongExpressionArityException(2, s);
-            argumentTypes.set(0, AkType.DATE);
+            if (argumentTypes.get(0) != AkType.TIMESTAMP && argumentTypes.get(0) != AkType.DATETIME)
+                argumentTypes.set(0, AkType.DATE);
             if (s == 2) argumentTypes.set(1, AkType.INT);
         }
 
@@ -88,7 +84,7 @@ public class YearWeekExpression extends AbstractCompositeExpression
           new Modes() {public int getYearWeek(MutableDateTime cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, DayOfWeek.MON, 5);}}, //5
           new Modes() {public int getYearWeek(MutableDateTime cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, DayOfWeek.SAT,4);}},//6
           new Modes() {public int getYearWeek(MutableDateTime cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, DayOfWeek.MON,5);}},  //7
-        //  new Modes() {public int getYearWeek(MutableDateTime cal, int yr, int mo, int da){return 0;}} // dummy always return 0-lowestval
+       
         };
 
         private static int getMode1346(MutableDateTime cal, int yr, int mo, int da, int firstDay, int lowestVal)
@@ -155,7 +151,7 @@ public class YearWeekExpression extends AbstractCompositeExpression
             int yr = (int)(date / 512);
             int mo = (int)(date / 32 % 16);
             int da = (int)(date % 32);
-            long mode = 0;
+            int mode = 0;
 
             if (yr * mo * da == 0) throw new InvalidParameterValueException();
 
@@ -192,7 +188,7 @@ public class YearWeekExpression extends AbstractCompositeExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("YEARWEEK(date,[mode])");
+        sb.append("YEARWEEK(date[, mode])");
     }
 
     @Override
