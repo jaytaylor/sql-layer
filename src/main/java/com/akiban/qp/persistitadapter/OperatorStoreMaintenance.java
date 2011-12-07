@@ -75,7 +75,10 @@ final class OperatorStoreMaintenance {
                 if (row.rowType().equals(planOperator.rowType())) {
                     doAction(action, handler, row);
                 }
-                else if (row.rowType().equals(storePlan.partiallyFlattenedType) && useInvertType(action, bindings, adapter)) {
+                else if (row.rowType().equals(storePlan.partiallyFlattenedType)
+                        && useInvertType(action, bindings, adapter)
+                        && (storePlan.partialIsWithinGi || action == OperatorStoreGIHandler.Action.STORE)
+                ) {
                     Row outerRow = new FlattenedRow(storePlan.outJoinFlattenedType, row, null, row.hKey());
                     doAction(invert(action), handler, outerRow);
                 }
@@ -259,7 +262,8 @@ final class OperatorStoreMaintenance {
                 parentRowType = branchRowType;
             } else {
                 EnumSet<API.FlattenOption> flattenOptions;
-                if (withinBranch && branchRowType.equals(rowType)) {
+                if (branchRowType.equals(rowType)) {
+                    result.partialIsWithinGi = withinBranch;
                     result.partiallyFlattenedType = parentRowType;
                     rightSideFlatten = branchRowType;
                     flattenOptions = KEEP_PARENT;
@@ -389,5 +393,6 @@ final class OperatorStoreMaintenance {
         public Operator rootOperator;
         public FlattenedRowType outJoinFlattenedType;
         public RowType partiallyFlattenedType;
+        public boolean partialIsWithinGi;
     }
 }
