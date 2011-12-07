@@ -116,9 +116,9 @@ public class MapFolder extends BaseRule
     // turn them inside out. Nesting must all be on the inner side to
     // be like regular loops. Conceptually, the two trace places, but
     // actually doing that would mess up the depth nesting for the
-    // next pass.
+    // next pass. Which is also why a loop is needed.
     protected void foldOuterMap(MapJoin map) {
-        if (map.getOuter() instanceof MapJoin) {
+        while (map.getOuter() instanceof MapJoin) {
             MapJoin otherMap = (MapJoin)map.getOuter();
             PlanNode inner = map.getInner();
             PlanNode outer = otherMap.getInner();
