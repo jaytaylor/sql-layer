@@ -65,6 +65,23 @@ public class DateTimeArithExpression extends ArithExpression
         }
     }
 
+    protected static final class Calculator
+    {
+        /**
+         *
+         * @param interval: a positive number representing an interval between
+         *                  two events in millisecs
+         * @return interval in H,M,S
+         */
+        public static long[] getHMS (long interval)
+        {
+            long seconds = interval / 1000L;
+            long hours = seconds / 3600;
+            long minutes = (seconds - hours * 3600) / 60;
+            seconds -= (minutes * 60 + hours * 3600);
+            return new long[] {hours, minutes, seconds};
+        }
+    }
     protected static class InnerValueSource extends ArithExpression.InnerValueSource
     {
         private static final double SECS_OF_DAY = 86400;
@@ -96,16 +113,14 @@ public class DateTimeArithExpression extends ArithExpression
         public long getTime ()
         {
             check(AkType.TIME);
-            long seconds = rawInterval() / 1000L;
+            long millis = rawInterval();
             long sign;
-            if (seconds < 0)
-                seconds *= (sign = -1);
+            if (millis < 0)
+                millis *= (sign = -1);
             else
                 sign = 1;
-            long hours = seconds / 3600;
-            long minutes = (seconds - hours * 3600) / 60;
-            seconds -= hours * 3600 + minutes * 60;
-            return sign * (hours * 10000L + minutes * 100 + seconds);
+            long hms[] = Calculator.getHMS(millis);
+            return sign * (hms[0] * 10000L + hms[1] * 100 + hms[2]);
         }
     }
 
