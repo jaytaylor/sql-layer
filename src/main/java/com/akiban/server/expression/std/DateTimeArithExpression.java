@@ -67,6 +67,21 @@ public class DateTimeArithExpression extends ArithExpression
 
     protected static final class Calculator
     {
+        private static final double M_SECS_OF_DAY = 86400000L;
+
+        /**
+         *
+         * @param interval: in millisecs
+         * @return interval in day
+         *  The result is rounded *up* , that is one day and 1 second => 2 days.
+         *
+         */
+        public static long getDay (long interval)
+        {
+            return interval < 0 ?
+                (long)Math.floor(interval /M_SECS_OF_DAY) : (long) Math.ceil(interval / M_SECS_OF_DAY);
+        }
+
         /**
          *
          * @param interval: a positive number representing an interval between
@@ -84,7 +99,7 @@ public class DateTimeArithExpression extends ArithExpression
     }
     protected static class InnerValueSource extends ArithExpression.InnerValueSource
     {
-        private static final double SECS_OF_DAY = 86400;
+        
 
         public InnerValueSource (ArithOp op, AkType topT)
         {
@@ -99,10 +114,7 @@ public class DateTimeArithExpression extends ArithExpression
         public long getLong ()
         {
             check(AkType.LONG);
-            long seconds = rawInterval() / 1000L;
-
-            return seconds < 0 ?
-                (long)Math.floor(seconds /SECS_OF_DAY) : (long) Math.ceil(seconds / SECS_OF_DAY);
+            return Calculator.getDay(rawInterval());
         }
 
         /**
