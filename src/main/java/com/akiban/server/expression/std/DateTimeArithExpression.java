@@ -64,15 +64,15 @@ public class DateTimeArithExpression extends ArithExpression
                 argumentTypes.set(n, argT);
         }
     }
-    
+
     protected static class InnerValueSource extends ArithExpression.InnerValueSource
-    {      
-        private static final long SECS_OF_DAY = 86400;
-        
+    {
+        private static final double SECS_OF_DAY = 86400;
+
         public InnerValueSource (ArithOp op, AkType topT)
         {
-            super(op, topT);     
-        }                
+            super(op, topT);
+        }
 
         /**
          *
@@ -83,7 +83,9 @@ public class DateTimeArithExpression extends ArithExpression
         {
             check(AkType.LONG);
             long seconds = rawInterval() / 1000L;
-            return seconds /SECS_OF_DAY; 
+
+            return seconds < 0 ?
+                (long)Math.floor(seconds /SECS_OF_DAY) : (long) Math.ceil(seconds / SECS_OF_DAY);
         }
 
         /**
@@ -113,7 +115,7 @@ public class DateTimeArithExpression extends ArithExpression
      *  For example, time minus time => interval
      *  if topT is set to TIME => result is INTERVAL in HOURS, SECONDS, MINUTES
      */
-    private final AkType topT; 
+    private final AkType topT;
     protected DateTimeArithExpression (Expression left, Expression right, AkType topT)
     {
         super(left, ArithOps.MINUS, right);

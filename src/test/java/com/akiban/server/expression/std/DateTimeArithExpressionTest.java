@@ -15,7 +15,6 @@
 
 package com.akiban.server.expression.std;
 
-
 import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.extract.LongExtractor;
@@ -40,30 +39,30 @@ public class DateTimeArithExpressionTest extends ComposedExpressionTestBase
 
         assertEquals(10000L, actual);
     }
-    
+
     @Test
     public void testDateTimeDiff()
     {
         Expression l = new LiteralExpression(AkType.DATETIME, 20091010123010L);
         Expression r = new LiteralExpression(AkType.DATETIME, 20091010123001L);
-        
+
         Expression top = DateTimeArithExpression.TIMEDIFF_COMPOSER.compose(Arrays.asList(r,l));
         long actual = top.evaluation().eval().getTime();
-        
+
         assertEquals(-9L, actual);
     }
-    
+
     @Test
     public void testTimeStampDiff ()
     {
-        Expression l = new LiteralExpression(AkType.TIMESTAMP, 
+        Expression l = new LiteralExpression(AkType.TIMESTAMP,
                 Extractors.getLongExtractor(AkType.TIMESTAMP).getLong("2009-12-10 10:10:10"));
         Expression r = new LiteralExpression(AkType.TIMESTAMP,
                 Extractors.getLongExtractor(AkType.TIMESTAMP).getLong("2009-12-11 10:09:09"));
-        
+
         Expression top = DateTimeArithExpression.TIMEDIFF_COMPOSER.compose(Arrays.asList(l,r));
         long actual = top.evaluation().eval().getTime();
-        
+
         assertEquals(-235859L, actual);
     }
 
@@ -89,33 +88,33 @@ public class DateTimeArithExpressionTest extends ComposedExpressionTestBase
 
         assertEquals(34L, actual);
     }
-    
+
     @Test
     public void testDateDiffWithTimeStamp()
     {
-        Expression l = new LiteralExpression(AkType.TIMESTAMP, 
+        Expression l = new LiteralExpression(AkType.TIMESTAMP,
                 Extractors.getLongExtractor(AkType.TIMESTAMP).getLong("2009-12-10 10:10:10"));
         Expression r = new LiteralExpression(AkType.TIMESTAMP,
                 Extractors.getLongExtractor(AkType.TIMESTAMP).getLong("2010-01-12 10:09:09"));
-        
+
         Expression top = DateTimeArithExpression.DATEDIFF_COMPOSER.compose(Arrays.asList(l,r));
         long actual = top.evaluation().eval().getLong();
-       
-        assertEquals(-32L, actual); 
+
+        assertEquals(-33L, actual);
     }
-    
+
     @Test
     public void testDateDiffWithDateTime()
     {
         Expression l = new LiteralExpression(AkType.DATETIME, 20080210123010L);
         Expression r = new LiteralExpression(AkType.DATETIME, 20080310121001L);
-        
+
         Expression top = DateTimeArithExpression.DATEDIFF_COMPOSER.compose(Arrays.asList(l,r));
         long actual = top.evaluation().eval().getLong();
-        
-        assertEquals(-28L, actual);
+
+        assertEquals(-29L, actual);
     }
-    
+
 
     @Test
     public void testNullDateiff()
@@ -126,22 +125,22 @@ public class DateTimeArithExpressionTest extends ComposedExpressionTestBase
         Expression top = DateTimeArithExpression.DATEDIFF_COMPOSER.compose(Arrays.asList(l, r));
         assertTrue("top is null", top.evaluation().eval().isNull());
     }
-    
+
     @Test(expected = InvalidArgumentTypeException.class)
     public void testInvalidArgumenTypeDateDiff ()
     {
         Expression l = new LiteralExpression(AkType.DATE, 1234L);
         Expression r = new LiteralExpression(AkType.DATETIME, 1234L);
-        
+
          Expression top = DateTimeArithExpression.DATEDIFF_COMPOSER.compose(Arrays.asList(l, r));
     }
-    
+
     @Test(expected = InvalidArgumentTypeException.class)
     public void testInvalidArgumenTypeTimeDiff ()
     {
         Expression l = new LiteralExpression(AkType.DATE, 1234L);
         Expression r = new LiteralExpression(AkType.DATETIME, 1234L);
-        
+
          Expression top = DateTimeArithExpression.TIMEDIFF_COMPOSER.compose(Arrays.asList(l, r));
     }
 
