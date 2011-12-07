@@ -27,7 +27,9 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /** Take a map join node and push enough into the inner loop that the
- * bindings can be evaluated properly.
+ * bindings can be evaluated properly. 
+ * Or, looked at another way, what is before expressed through
+ * data-flow is after expressed as control-flow.
  */
 public class MapFolder extends BaseRule
 {
@@ -85,10 +87,16 @@ public class MapFolder extends BaseRule
         BaseQuery query = (BaseQuery)planContext.getPlan();
         List<MapJoin> maps = new MapJoinsFinder().find(query);
         for (MapJoin map : maps)
+            handleJoinType(map);
+        for (MapJoin map : maps)
+            foldOuterMap(map);
+        for (MapJoin map : maps)
             fold(map);
     }
 
-    protected void fold(MapJoin map) {
+    // First pass: account for the join type by adding something at
+    // the tip of the inner (fast) side of the loop.
+    protected void handleJoinType(MapJoin map) {
         switch (map.getJoinType()) {
         case INNER:
             break;
@@ -101,7 +109,28 @@ public class MapFolder extends BaseRule
         default:
             throw new UnsupportedSQLException("complex join type " + map, null);
         }
+        map.setJoinType(null);  // No longer special.
+    }
 
+    // Second pass: if one map has another on the outer (slow) side,
+    // turn them inside out. Nesting must all be on the inner side to
+    // be like regular loops. Conceptually, the two trace places, but
+    // actually doing that would mess up the depth nesting for the
+    // next pass.
+    protected void foldOuterMap(MapJoin map) {
+        if (map.getOuter() instanceof MapJoin) {
+            MapJoin otherMap = (MapJoin)map.getOuter();
+            PlanNode inner = map.getInner();
+            PlanNode outer = otherMap.getInner();
+            map.setOuter(otherMap.getOuter());
+            map.setInner(otherMap);
+            otherMap.setOuter(outer);
+            otherMap.setInner(inner);
+        }
+    }    
+
+    // Final pass: move things upstream of the map down into the inner (fast) side.
+    protected void fold(MapJoin map) {
         PlanWithInput parent = map;
         PlanNode child;
         do {
@@ -119,8 +148,6 @@ public class MapFolder extends BaseRule
             parent.replaceInput(child, map);
             map.setInner(child);
         }
-
-        map.setJoinType(null);  // No longer special.
     }
 
 }
