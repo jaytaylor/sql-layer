@@ -15,30 +15,52 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
+
 import java.util.List;
 
 public class DateTimeArithExpression extends ArithExpression
 {
     @Scalar("timediff")
-    public static final ExpressionComposer TIMEDIFF_COMPOSER = new InternalComposer(AkType.TIME, AkType.TIME);
+    public static final ExpressionComposer TIMEDIFF_COMPOSER = new InternalComposer(AkType.TIME)
+    {
+        @Override
+        public void argumentTypes(List<AkType> argumentTypes) 
+        {
+            if (argumentTypes.size() != 2) throw new WrongExpressionArityException(2, argumentTypes.size());
+            
+            AkType type;
+            for (int n = 0; n < 2; ++n)
+                if ((type = argumentTypes.get(n)) != AkType.TIME && type != AkType.TIMESTAMP)
+                    argumentTypes.set(n, AkType.TIME);
+        }
+    };
 
     @Scalar("datediff")
-    public static final ExpressionComposer DATEDIFF_COMPOSER = new InternalComposer(AkType.DATE, AkType.LONG);
+    public static final ExpressionComposer DATEDIFF_COMPOSER = new InternalComposer(AkType.LONG)
+    {
+        @Override
+        public void argumentTypes(List<AkType> argumentTypes) 
+        {
+            if (argumentTypes.size() != 2) throw new WrongExpressionArityException(2, argumentTypes.size());
+            for (int n = 0; n < 2; ++n)
+                argumentTypes.set(n, AkType.DATE);
+        }
+        
+    };
 
-    private static class InternalComposer extends BinaryComposer
+    private abstract static class InternalComposer extends BinaryComposer
     {
         private final AkType topT;
-        private final AkType argT;
-        public InternalComposer (AkType argT, AkType topT)
+        public InternalComposer (AkType topT)
         {
             this.topT = topT;
-            this.argT = argT;
         }
 
         @Override
@@ -52,34 +74,21 @@ public class DateTimeArithExpression extends ArithExpression
         {
             return ExpressionTypes.newType(topT, 0, 0);
         }
-
-        @Override
-        public void argumentTypes(List<AkType> argumentTypes)
-        {
-            // TODO: DATETIME AND TIMESTAMP are the two types
-            // that always work for both date/time ariths,
-            // we dont know how to specify that in this
-            // method yet
-            for (int n = 0; n < argumentTypes.size(); ++n)
-                argumentTypes.set(n, argT);
-        }
     }
 
     protected static final class Calculator
     {
-        private static final double M_SECS_OF_DAY = 86400000L;
+        private static final long M_SECS_OF_DAY = 86400000L;
 
         /**
          *
          * @param interval: in millisecs
          * @return interval in day
-         *  The result is rounded *up* , that is one day and 1 second => 2 days.
          *
          */
         public static long getDay (long interval)
         {
-            return interval < 0 ?
-                (long)Math.floor(interval /M_SECS_OF_DAY) : (long) Math.ceil(interval / M_SECS_OF_DAY);
+            return interval < 0 ? interval /M_SECS_OF_DAY : interval / M_SECS_OF_DAY;
         }
 
         /**
@@ -97,10 +106,9 @@ public class DateTimeArithExpression extends ArithExpression
             return new long[] {hours, minutes, seconds};
         }
     }
+    
     protected static class InnerValueSource extends ArithExpression.InnerValueSource
     {
-        
-
         public InnerValueSource (ArithOp op, AkType topT)
         {
             super(op, topT);
@@ -113,10 +121,6 @@ public class DateTimeArithExpression extends ArithExpression
         @Override
         public long getLong ()
         {
-            check(AkType.LONG);
-            // remove time portion in datetime/time stamp field as that is not needed
-            
-            //l 
             return Calculator.getDay(rawInterval());
         }
 

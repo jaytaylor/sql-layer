@@ -1,0 +1,110 @@
+# Test the LIKE function
+---
+- Include: all-types-schema.yaml
+
+---
+- Statement: SELECT varchar_field LIKE FROM all_types
+- error: [42000]
+
+---
+- Statement: SELECT LIKE varchar_field FROM all_types
+- error: [42000]
+
+---
+- Statement: INSERT INTO all_types (varchar_field) VALUES
+    (null)
+---
+- Statement: INSERT INTO all_types (varchar_field) VALUES
+    (''), ('a'), ('b'), ('ab'), ('ac'), ('cb'), ('cc'),
+    ('abc'), ('bbc'), ('cbb'),
+    ('abcd'), ('xbcd')
+---
+- Statement: SELECT varchar_field FROM all_types
+    WHERE varchar_field LIKE ''
+- output: [['']]
+---
+- Statement: SELECT varchar_field FROM all_types
+    WHERE varchar_field LIKE 'a'
+- output: [['a']]
+---
+- Statement: SELECT varchar_field FROM all_types
+    WHERE varchar_field LIKE '%'
+- row_count: 12
+---
+- Statement: SELECT varchar_field FROM all_types
+    WHERE varchar_field LIKE '%%'
+- row_count: 12
+---
+- Statement: SELECT varchar_field FROM all_types
+    WHERE varchar_field LIKE '_'
+- output: [['a'], ['b']]
+---
+- Statement: SELECT varchar_field FROM all_types
+    WHERE varchar_field LIKE '__'
+- output: [['ab'], ['ac'], ['cb'], ['cc']]
+---
+- Statement: SELECT varchar_field FROM all_types
+    WHERE varchar_field LIKE '_%'
+- output: [['a'], ['b'], ['ab'], ['ac'], ['cb'], ['cc'],
+           ['abc'], ['bbc'], ['cbb'],
+           ['abcd'], ['xbcd']]
+---
+- Statement: SELECT varchar_field FROM all_types
+    WHERE varchar_field LIKE 'a%'
+- output: [['a'], ['ab'], ['ac'], ['abc'], ['abcd']]
+---
+- Statement: SELECT varchar_field FROM all_types
+    WHERE varchar_field LIKE '%b'
+- output: [['b'], ['ab'], ['cb'], ['cbb']]
+---
+- Statement: SELECT varchar_field FROM all_types
+    WHERE varchar_field LIKE '%_'
+- output: [['a'], ['b'], ['ab'], ['ac'], ['cb'], ['cc'],
+           ['abc'], ['bbc'], ['cbb'],
+           ['abcd'], ['xbcd']]
+---
+- Statement: SELECT varchar_field FROM all_types
+    WHERE varchar_field LIKE '%b%'
+- output: [['b'], ['ab'], ['cb'], ['abc'], ['bbc'], ['cbb'], ['abcd'], ['xbcd']]
+---
+- Statement: SELECT varchar_field FROM all_types
+    WHERE varchar_field LIKE 'a_c%'
+- output: [['abc'], ['abcd']]
+
+---
+- Statement: SELECT varchar_field FROM all_types
+    WHERE 'abc' LIKE varchar_field
+- output: [['abc']]
+
+# LIKE in SELECT clause fails
+# ---
+# - Statement: SELECT varchar_field LIKE 'ab%' FROM all_types
+# - output: [[null],
+#            [false], [false], [false], [true], [false], [false], [false],
+#            [true], [false], [false], [false],
+#            [true], [false],
+#            [true], [true]]
+
+# LIKE with parameter fails
+# ---
+# - Statement: SELECT varchar_field FROM all_types
+#     WHERE varchar_field LIKE ?
+# - params: [['b%']]
+# - output: [['b'], ['bbc']]
+
+# COLLATE fails
+# # Case sensitivity
+# ---
+# - CreateTable: t (cs varchar(32) CHARSET latin1 COLLATE latin1_bin)
+# ---
+# - Statement: INSERT INTO t VALUES ('abc'), ('Abc'), ('ABC')
+# ---
+# - Statement: SELECT cs WHERE cs LIKE 'Abc'
+# - output: [[Abc]]
+# ---
+# - Statement: SELECT cs WHERE cs LIKE 'abc'
+# - output: [[abc]]
+# ---
+# - Statement: SELECT cs WHERE cs LIKE 'ABC'
+# - output: [[ABC]]
+...

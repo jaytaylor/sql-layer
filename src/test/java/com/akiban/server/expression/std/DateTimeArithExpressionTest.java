@@ -79,42 +79,11 @@ public class DateTimeArithExpressionTest extends ComposedExpressionTestBase
     @Test
     public void testDateDiff ()
     {
-        LongExtractor ex = Extractors.getLongExtractor(AkType.DATE);
-        Expression l = new LiteralExpression(AkType.DATE,ex.getLong("2011-12-05"));
-        Expression r = new LiteralExpression(AkType.DATE, ex.getLong("2011-11-01"));
-
-        Expression top = DateTimeArithExpression.DATEDIFF_COMPOSER.compose(Arrays.asList(l,r));
-        long actual = top.evaluation().eval().getLong();
-
-        assertEquals(34L, actual);
+        test("2011-12-05", "2011-11-01", 34L);
+        test("2009-12-10", "2010-01-12", -33L);
+        test("2008-02-01", "2008-03-01", -29L);
+        test("2010-01-01", "2010-01-01", 0L);
     }
-
-    @Test
-    public void testDateDiffWithTimeStamp()
-    {
-        Expression l = new LiteralExpression(AkType.TIMESTAMP,
-                Extractors.getLongExtractor(AkType.TIMESTAMP).getLong("2009-12-10 10:10:10"));
-        Expression r = new LiteralExpression(AkType.TIMESTAMP,
-                Extractors.getLongExtractor(AkType.TIMESTAMP).getLong("2010-01-12 10:09:09"));
-
-        Expression top = DateTimeArithExpression.DATEDIFF_COMPOSER.compose(Arrays.asList(l,r));
-        long actual = top.evaluation().eval().getLong();
-
-        assertEquals(-33L, actual);
-    }
-
-    @Test
-    public void testDateDiffWithDateTime()
-    {
-        Expression l = new LiteralExpression(AkType.DATETIME, 20080210123010L);
-        Expression r = new LiteralExpression(AkType.DATETIME, 20080310121001L);
-
-        Expression top = DateTimeArithExpression.DATEDIFF_COMPOSER.compose(Arrays.asList(l,r));
-        long actual = top.evaluation().eval().getLong();
-
-        assertEquals(-29L, actual);
-    }
-
 
     @Test
     public void testNullDateiff()
@@ -160,5 +129,19 @@ public class DateTimeArithExpressionTest extends ComposedExpressionTestBase
     protected boolean alreadyExc()
     {
         return false;
+    }
+    
+    // ---------------- private method -----------------
+        
+    private static void test (String left, String right, long expected)
+    {
+        LongExtractor ex = Extractors.getLongExtractor(AkType.DATE);
+        Expression l = new LiteralExpression(AkType.DATE,ex.getLong(left));
+        Expression r = new LiteralExpression(AkType.DATE, ex.getLong(right));
+
+        Expression top = DateTimeArithExpression.DATEDIFF_COMPOSER.compose(Arrays.asList(l,r));
+        long actual = top.evaluation().eval().getLong();
+
+        assertEquals(expected, actual);
     }
 }
