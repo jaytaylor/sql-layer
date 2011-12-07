@@ -268,28 +268,32 @@ final class OperatorStoreMaintenance {
         int branchStartDepth = branchTables.rootMost().userTable().getDepth() - 1;
         boolean withinBranch = branchStartDepth == -1;
         API.JoinType withinBranchJoin = operatorJoinType(groupIndex);
+        result.incomingRowIsWithinGI = rowType.userTable().getDepth() >= branchTables.rootMost().userTable().getDepth();
         // TODO bookmark
         for (UserTableRowType branchRowType : branchTables.fromRoot()) {
+            if (result.incomingRowIsWithinGI && branchRowType.equals(rowType)) {
+                result.leftHalf = parentRowType;
+                parentRowType = null;
+            }
             if (parentRowType == null) {
                 parentRowType = branchRowType;
             } else {
                 plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType);
                 parentRowType = plan.rowType();
             }
-            if (branchRowType.equals(rowType)) {
-                result.leftHalf = parentRowType;
-                result.incomingRowIsWithinGI = withinBranch;
-                parentRowType = null;
-            }
             if (branchRowType.userTable().getDepth() == branchStartDepth) {
                 withinBranch = true;
             } else if (withinBranch) {
                 joinType = withinBranchJoin;
             }
+            if ( (!result.incomingRowIsWithinGI) && branchRowType.equals(rowType)) {
+                result.leftHalf = parentRowType;
+                parentRowType = null;
+            }
         }
         result.rightHalf = parentRowType;
-        if (result.rightHalf != null) {
-            API.JoinType topJoinType = rowType.userTable().getDepth() < branchTables.rootMost().userTable().getDepth()
+        if (result.leftHalf != null && result.rightHalf != null) {
+            API.JoinType topJoinType = rowType.userTable().getDepth() <= branchTables.rootMost().userTable().getDepth()
                     ? API.JoinType.RIGHT_JOIN
                     : joinType;
             plan = API.flatten_HKeyOrdered(plan, result.leftHalf, result.rightHalf, topJoinType, KEEP_BOTH);
