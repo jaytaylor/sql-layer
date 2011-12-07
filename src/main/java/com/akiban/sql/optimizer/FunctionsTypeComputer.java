@@ -67,8 +67,252 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case NodeTypes.SIMPLE_STRING_OPERATOR_NODE:
         case NodeTypes.UNARY_DATE_TIMESTAMP_OPERATOR_NODE:
             return unaryOperatorFunction((UnaryOperatorNode)node);
+        case NodeTypes.LIKE_OPERATOR_NODE:
+        case NodeTypes.LOCATE_FUNCTION_NODE:
+        case NodeTypes.SUBSTRING_OPERATOR_NODE:
+        case NodeTypes.TRIM_OPERATOR_NODE:
+        case NodeTypes.TIMESTAMP_ADD_FN_NODE:
+        case NodeTypes.TIMESTAMP_DIFF_FN_NODE:
+            return ternaryOperatorFunction((TernaryOperatorNode)node);
         default:
             return super.computeType(node);
+        }
+    }
+
+    // Access to typed function arguments.
+    interface ArgumentsAccess {
+        public int nargs();
+        public ExpressionType argType(int index) throws StandardException;
+        public ExpressionType addCast(int index, 
+                                      ExpressionType argType, AkType requiredType)
+                throws StandardException;
+    }
+
+    // Compute type from function's composer with arguments' types.
+    protected DataTypeDescriptor expressionComposer(String functionName,
+                                                    ArgumentsAccess args)
+            throws StandardException {
+        ExpressionComposer composer;
+        try {
+            composer = functionsRegistry.composer(functionName);
+        }
+        catch (NoSuchFunctionException ex) {
+            return null;
+        }
+        int nargs = args.nargs();
+        List<ExpressionType> argTypes = new ArrayList<ExpressionType>(nargs);
+        List<AkType> origTypes = new ArrayList<AkType>(nargs);
+        for (int i = 0; i < nargs; i++) {
+            ExpressionType argType = args.argType(i);
+            if (argType == null)
+                return null;
+            argTypes.add(argType);
+            origTypes.add(argType.getType());
+        }
+        List<AkType> requiredTypes = new ArrayList<AkType>(origTypes);
+        composer.argumentTypes(requiredTypes);
+        for (int i = 0; i < nargs; i++) {
+            if ((origTypes.get(i) == requiredTypes.get(i)) ||
+                (origTypes.get(i) == AkType.NULL))
+                continue;
+            // Need a different type: add a CAST.
+            argTypes.set(i, args.addCast(i, argTypes.get(i), requiredTypes.get(i)));
+        }
+        ExpressionType resultType = composer.composeType(argTypes);
+        if (resultType == null)
+            return null;
+        return fromExpressionType(resultType);
+    }
+
+    protected DataTypeDescriptor noArgFunction(String functionName) 
+            throws StandardException {
+        DataTypeDescriptor result = 
+            expressionComposer(functionName,
+                               new ArgumentsAccess() {
+                                   @Override
+                                   public int nargs() {
+                                       return 0;
+                                   }
+
+                                   @Override
+                                   public ExpressionType argType(int index) {
+                                       assert false;
+                                       return null;
+                                   }
+
+                                   @Override
+                                   public ExpressionType addCast(int index, 
+                                                                 ExpressionType argType, 
+                                                                 AkType requiredType) {
+                                       assert false;
+                                       return null;
+                                   }
+                               });
+        if (result == null) {
+            // Not a regular function, maybe an environment access function.
+            EnvironmentExpressionFactory environment;
+            try {
+               environment = functionsRegistry.environment(functionName);
+            }
+            catch (NoSuchFunctionException ex) {
+                environment = null;
+            }
+            if (environment != null)
+                result = fromExpressionType(environment.getType());
+        }
+        return result;
+    }
+
+    protected DataTypeDescriptor unaryOperatorFunction(UnaryOperatorNode node) 
+            throws StandardException {
+        return expressionComposer(node.getMethodName(), new UnaryValuesAccess(node));
+    }
+
+    protected DataTypeDescriptor binaryOperatorFunction(BinaryOperatorNode node) 
+            throws StandardException {
+        return expressionComposer(node.getMethodName(), new BinaryValuesAccess(node));
+    }
+
+    protected DataTypeDescriptor ternaryOperatorFunction(TernaryOperatorNode node) 
+            throws StandardException {
+        return expressionComposer(node.getMethodName(), new TernaryValuesAccess(node));
+    }
+
+    // Normal AST nodes for arguments.
+    abstract class ValueNodesAccess implements ArgumentsAccess {
+        public abstract ValueNode argNode(int index);
+        public abstract void setArgNode(int index, ValueNode value);
+
+        @Override
+        public ExpressionType argType(int index) {
+            return valueExpressionType(argNode(index));
+        }
+
+        @Override
+        public ExpressionType addCast(int index, 
+                                      ExpressionType argType, AkType requiredType) 
+                throws StandardException {
+            ValueNode value = argNode(index);
+            ExpressionType castType = castType(argType, requiredType, value.getType());
+            DataTypeDescriptor sqlType = fromExpressionType(castType);
+            value = (ValueNode)value.getNodeFactory()
+                .getNode(NodeTypes.CAST_NODE, 
+                         value, sqlType, value.getParserContext());
+            setArgNode(index, value);
+            return castType;
+        }
+    }
+
+    final class UnaryValuesAccess extends ValueNodesAccess {
+        private final UnaryOperatorNode node;
+
+        public UnaryValuesAccess(UnaryOperatorNode node) {
+            this.node = node;
+        }
+
+        @Override
+        public int nargs() {
+            return 1;
+        }
+
+        @Override
+        public ValueNode argNode(int index) {
+            assert (index == 0);
+            return node.getOperand();
+        }
+
+        @Override
+        public void setArgNode(int index, ValueNode value) {
+            assert (index == 0);
+            node.setOperand(value);
+        }
+    }
+
+    final class BinaryValuesAccess extends ValueNodesAccess {
+        private final BinaryOperatorNode node;
+
+        public BinaryValuesAccess(BinaryOperatorNode node) {
+            this.node = node;
+        }
+
+        @Override
+        public int nargs() {
+            return 2;
+        }
+
+        @Override
+        public ValueNode argNode(int index) {
+            switch (index) {
+            case 0:
+                return node.getLeftOperand();
+            case 1:
+                return node.getRightOperand();
+            default:
+                assert false;
+                return null;
+            }
+        }
+
+        @Override
+        public void setArgNode(int index, ValueNode value) {
+            switch (index) {
+            case 0:
+                node.setLeftOperand(value);
+                break;
+            case 1: 
+                node.setRightOperand(value); 
+                break;
+           default:
+                assert false;
+            }
+        }
+    }
+
+    final class TernaryValuesAccess extends ValueNodesAccess {
+        private final TernaryOperatorNode node;
+
+        public TernaryValuesAccess(TernaryOperatorNode node) {
+            this.node = node;
+        }
+
+        @Override
+        public int nargs() {
+            if (node.getRightOperand() != null)
+                return 3;
+            else
+                return 2;
+        }
+
+        @Override
+        public ValueNode argNode(int index) {
+            switch (index) {
+            case 0:
+                return node.getReceiver();
+            case 1:
+                return node.getLeftOperand();
+            case 2:
+                return node.getRightOperand();
+            default:
+                assert false;
+                return null;
+            }
+        }
+
+        @Override
+        public void setArgNode(int index, ValueNode value) {
+            switch (index) {
+            case 0:
+                node.setReceiver(value);
+                break;
+            case 1:
+                node.setLeftOperand(value);
+                break;
+            case 2:
+                node.setRightOperand(value);
+                break;
+            default:
+                assert false;
+            }
         }
     }
 
@@ -92,80 +336,45 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return noArgFunction(methodCall.getMethodName());
         }
         else {
-            ExpressionComposer composer;
-            try {
-                composer = functionsRegistry.composer(methodCall.getMethodName());
-            }
-            catch (NoSuchFunctionException ex) {
-                composer = null;
-            }
-            if (composer != null)
-                return expressionComposer(composer, methodCall.getMethodParameters());
+            return expressionComposer(methodCall.getMethodName(),
+                                      new JavaValuesAccess(methodCall.getMethodParameters()));
         }
-        return null;
     }
 
-    protected DataTypeDescriptor noArgFunction(String functionName) 
-            throws StandardException {
-        {
-            ExpressionComposer composer;
-            try {
-                composer = functionsRegistry.composer(functionName);
-            }
-            catch (NoSuchFunctionException ex) {
-                composer = null;
-            }
-            if (composer != null)
-                return expressionComposer(composer, null);
-        }
-        {
-            EnvironmentExpressionFactory environment;
-            try {
-               environment = functionsRegistry.environment(functionName);
-            }
-            catch (NoSuchFunctionException ex) {
-                environment = null;
-            }
-            if (environment != null)
-                return fromExpressionType(environment.getType());
-        }
-        return null;
-    }
+    final class JavaValuesAccess implements ArgumentsAccess {
+        private final JavaValueNode[] args;
 
-    protected DataTypeDescriptor expressionComposer(ExpressionComposer composer,
-                                                    JavaValueNode[] args)
-            throws StandardException {
-        int nargs = 0;
-        if (args != null)
-            nargs = args.length;
-        List<ExpressionType> argTypes = new ArrayList<ExpressionType>(nargs);
-        List<AkType> origTypes = new ArrayList<AkType>(nargs);
-        for (int i = 0; i < nargs; i++) {
-            JavaValueNode arg = args[i];
-            ExpressionType argType;
-            if (arg instanceof SQLToJavaValueNode)
-                argType = valueExpressionType(((SQLToJavaValueNode)arg).getSQLValueNode());
+        public JavaValuesAccess(JavaValueNode[] args) {
+            this.args = args;
+        }
+
+        @Override
+        public int nargs() {
+            if (args == null)
+                return 0;
             else
-                argType = toExpressionType(arg.getType());
-            if (argType == null)
-                return null;
-            argTypes.add(argType);
-            origTypes.add(argType.getType());
+                return args.length;
         }
-        List<AkType> requiredTypes = new ArrayList<AkType>(origTypes);
-        composer.argumentTypes(requiredTypes);
-        for (int i = 0; i < nargs; i++) {
-            if ((origTypes.get(i) == requiredTypes.get(i)) ||
-                (origTypes.get(i) == AkType.NULL))
-                continue;
-            // Need a different type: add a CAST.
-            JavaValueNode arg = args[i];
-            ExpressionType castType = castType(argTypes.get(i),
-                                               requiredTypes.get(i), 
-                                               arg.getType());
+
+        @Override
+        public ExpressionType argType(int index) throws StandardException {
+            JavaValueNode arg = args[index];
+            if (arg instanceof SQLToJavaValueNode)
+                return valueExpressionType(((SQLToJavaValueNode)arg).getSQLValueNode());
+            else
+                return toExpressionType(arg.getType());
+        }
+
+        @Override
+        public ExpressionType addCast(int index,
+                                      ExpressionType argType, AkType requiredType) 
+                throws StandardException {
+            JavaValueNode arg = args[index];
             if (arg instanceof SQLToJavaValueNode) {
                 SQLToJavaValueNode jarg = (SQLToJavaValueNode)arg;
                 ValueNode sqlArg = jarg.getSQLValueNode();
+                ExpressionType castType = castType(argType, requiredType, 
+                                                   sqlArg.getType());
                 DataTypeDescriptor sqlType = fromExpressionType(castType);
                 if (sqlArg instanceof ParameterNode) {
                     sqlArg.setType(sqlType);
@@ -176,32 +385,11 @@ public class FunctionsTypeComputer extends AISTypeComputer
                                  sqlArg, sqlType, sqlArg.getParserContext());
                     jarg.setSQLValueNode(cast);
                 }
+                return castType;
             }
-            argTypes.set(i, castType);
+            else
+                return argType;
         }
-        ExpressionType resultType = composer.composeType(argTypes);
-        if (resultType == null)
-            return null;
-        return fromExpressionType(resultType);
-    }
-
-    protected DataTypeDescriptor unaryOperatorFunction(UnaryOperatorNode node) 
-            throws StandardException {
-        ExpressionComposer composer;
-        try {
-            composer = functionsRegistry.composer(node.getMethodName());
-        }
-        catch (NoSuchFunctionException ex) {
-            return null;
-        }
-        ExpressionType argType = valueExpressionType(node.getOperand());
-        if (argType == null)
-            return null;
-        List<ExpressionType> argTypes = Collections.singletonList(argType);
-        ExpressionType resultType = composer.composeType(argTypes);
-        if (resultType == null)
-            return null;
-        return fromExpressionType(resultType);
     }
 
     protected DataTypeDescriptor specialFunctionNode(SpecialFunctionNode node)
