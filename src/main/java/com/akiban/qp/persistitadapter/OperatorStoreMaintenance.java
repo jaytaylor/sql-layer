@@ -141,7 +141,7 @@ final class OperatorStoreMaintenance {
                 }
                 finally {
                     siblingsCounter.close();
-                    SIBLING_ALL_TAP.in();
+                    SIBLING_ALL_TAP.out();
                 }
              default:
                  throw new AssertionError(action.name());
