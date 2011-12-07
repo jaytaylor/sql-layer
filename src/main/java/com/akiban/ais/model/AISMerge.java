@@ -257,8 +257,12 @@ public class AISMerge {
     private int computeIndexIDOffset (AkibanInformationSchema ais, String groupName) {
         int offset = 1;
         Group group = ais.getGroup(groupName);
-        for (TableIndex index : group.getGroupTable().getIndexes()) {
-            offset = Math.max(offset, index.getIndexId() + 1); 
+        for(UserTable table : ais.getUserTables().values()) {
+            if(table.getGroup().equals(group)) {
+                for(Index index : table.getIndexesIncludingInternal()) {
+                    offset = Math.max(offset, index.getIndexId() + 1);
+                }
+            }
         }
         for (GroupIndex index : group.getIndexes()) {
             offset = Math.max(offset, index.getIndexId() + 1); 
