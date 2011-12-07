@@ -212,8 +212,8 @@ public class ArithExpression extends AbstractBinaryExpression
    protected static class InnerValueSource extends AbstractArithValueSource
    {
        private final ArithOp op;
-       private ValueSource left;
-       private ValueSource right;
+       protected ValueSource left;
+       protected ValueSource right;
        private AkType topT;
        public InnerValueSource (ArithOp op,  AkType topT )
        {

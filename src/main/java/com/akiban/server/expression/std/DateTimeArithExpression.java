@@ -114,6 +114,9 @@ public class DateTimeArithExpression extends ArithExpression
         public long getLong ()
         {
             check(AkType.LONG);
+            // remove time portion in datetime/time stamp field as that is not needed
+            
+            //l 
             return Calculator.getDay(rawInterval());
         }
 
