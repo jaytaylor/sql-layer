@@ -19,7 +19,6 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.OperatorStoreMaintenanceLoader;
 import com.akiban.server.store.IndexRecordVisitor;
@@ -1553,11 +1552,6 @@ public final class NewGiUpdateIT extends ITBase {
         initState.check();
     }
 
-    @Test
-    public void noIgnoredGIs() {
-        assertEquals("ignored GIs", Collections.<IndexName>emptySet(), ignoredGis);
-    }
-
     @Rule
     public TestName name = new TestName();
 
@@ -1585,17 +1579,13 @@ public final class NewGiUpdateIT extends ITBase {
         createGroupIndex(groupName, ___LEFT_name_when___________, "c.name,o.when", Index.JoinType.LEFT);
         createGroupIndex(groupName, ___LEFT_sku_instructions____, "i.sku, h.handling_instructions", Index.JoinType.LEFT);
 
-        ignore(createGroupIndex(groupName, ___RIGHT_name_when__________, "c.name,o.when", Index.JoinType.RIGHT));
-        ignore(createGroupIndex(groupName, ___RIGHT_sku_instructions___, "i.sku, h.handling_instructions", Index.JoinType.RIGHT));
+        createGroupIndex(groupName, ___RIGHT_name_when__________, "c.name,o.when", Index.JoinType.RIGHT);
+        createGroupIndex(groupName, ___RIGHT_sku_instructions___, "i.sku, h.handling_instructions", Index.JoinType.RIGHT);
         
-        ignore(createGroupIndex(groupName, ___RIGHT_street_name________, "a.street,c.name", Index.JoinType.RIGHT));
+        createGroupIndex(groupName, ___RIGHT_street_name________, "a.street,c.name", Index.JoinType.RIGHT);
 
         Tap.setEnabled(TAP_PATTERN, true);
         Tap.reset(TAP_PATTERN);
-    }
-
-    private void ignore(GroupIndex groupIndex) {
-//        ignoredGis.add(groupIndex.getIndexName());
     }
 
     @After
@@ -1642,7 +1632,7 @@ public final class NewGiUpdateIT extends ITBase {
     }
 
     private static void log(String string) {
-        System.out.println(string);
+        log.debug(string);
     }
 
     private GisCheckBuilder checker() {
@@ -1662,7 +1652,6 @@ public final class NewGiUpdateIT extends ITBase {
     private Integer i;
     private Integer h;
     private Integer a;
-    private Set<IndexName> ignoredGis = new HashSet<IndexName>();
     private final Set<GisCheckBuilder> unfinishedCheckBuilders = new HashSet<GisCheckBuilder>();
 
     private static final String SCHEMA = "coia";
@@ -1798,8 +1787,6 @@ public final class NewGiUpdateIT extends ITBase {
         }
 
         private void checkIndex(GroupIndex groupIndex, List<String> expected) {
-            if (ignoredGis.contains(groupIndex.getIndexName()))
-                return;
             final StringsIndexScanner scanner;
             try {
                 scanner= persistitStore().traverse(session(), groupIndex, new StringsIndexScanner());

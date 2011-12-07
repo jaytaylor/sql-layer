@@ -128,10 +128,12 @@ final class OperatorStoreMaintenance {
                 if (siblingsLookup == null)
                     return false;
                 Cursor siblingsCounter = API.cursor(siblingsLookup, adapter);
+                SIBLING_ALL_TAP.in();
                 siblingsCounter.open(bindings);
                 try {
                     int siblings = 0;
                     while (siblingsCounter.next() != null) {
+                        SIBLING_ROW_TAP.hit();
                         if (++siblings > 1)
                             return false;
                     }
@@ -139,6 +141,7 @@ final class OperatorStoreMaintenance {
                 }
                 finally {
                     siblingsCounter.close();
+                    SIBLING_ALL_TAP.in();
                 }
              default:
                  throw new AssertionError(action.name());
@@ -192,7 +195,7 @@ final class OperatorStoreMaintenance {
                                     GroupIndex groupIndex,
                                     UserTableRowType rowType)
     {
-        this.storePlan = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType, true);
+        this.storePlan = createGroupIndexMaintenancePlan(branchTables, groupIndex, rowType);
         siblingsLookup = createSiblingsFinder(groupIndex, branchTables, rowType);
         this.rowType = rowType;
         this.groupIndex = groupIndex;
@@ -207,7 +210,6 @@ final class OperatorStoreMaintenance {
 
     private Operator createSiblingsFinder(GroupIndex groupIndex, BranchTables branchTables, UserTableRowType rowType) {
         // only bother doing this for tables *leafward* of the rootmost table in the GI
-        // TODO this is a LJ GI rule!
         if (rowType.userTable().getDepth() <= branchTables.rootMost().userTable().getDepth())
             return null;
         UserTable parentUserTable = rowType.userTable().parentTable();
@@ -245,8 +247,7 @@ final class OperatorStoreMaintenance {
     private static PlanCreationStruct createGroupIndexMaintenancePlan(
             BranchTables branchTables,
             GroupIndex groupIndex,
-            UserTableRowType rowType,
-            boolean forStoring)
+            UserTableRowType rowType)
     {
         if (branchTables.isEmpty()) {
             throw new RuntimeException("group index has empty branch: " + groupIndex);
@@ -281,14 +282,13 @@ final class OperatorStoreMaintenance {
 
         // RIGHT JOIN until the GI, and then the GI's join types
 
-        Schema schema = rowType.schema();
         RowType parentRowType = null;
         API.JoinType joinType = API.JoinType.RIGHT_JOIN;
         int branchStartDepth = branchTables.rootMost().userTable().getDepth() - 1;
         boolean withinBranch = branchStartDepth == -1;
         API.JoinType withinBranchJoin = operatorJoinType(groupIndex);
         result.incomingRowIsWithinGI = rowType.userTable().getDepth() >= branchTables.rootMost().userTable().getDepth();
-        // TODO bookmark
+
         for (UserTableRowType branchRowType : branchTables.fromRoot()) {
             boolean breakAtTop = result.incomingRowIsWithinGI && withinBranchJoin == API.JoinType.LEFT_JOIN;
             if (breakAtTop && branchRowType.equals(rowType)) {
@@ -324,8 +324,6 @@ final class OperatorStoreMaintenance {
         return result;
     }
 
-    private static final EnumSet<API.FlattenOption> NO_FLATTEN_OPTIONS = EnumSet.noneOf(API.FlattenOption.class);
-    private static final EnumSet<API.FlattenOption> KEEP_PARENT = EnumSet.of(API.FlattenOption.KEEP_PARENT);
     private static final EnumSet<API.FlattenOption> KEEP_BOTH = EnumSet.of(
             API.FlattenOption.KEEP_PARENT,
             API.FlattenOption.KEEP_CHILD
@@ -350,6 +348,8 @@ final class OperatorStoreMaintenance {
     private static final Tap.InOutTap STORE_TAP = Tap.createTimer("GI maintenance: STORE");
     private static final Tap.InOutTap DELETE_TAP = Tap.createTimer("GI maintenance: DELETE");
     private static final Tap.InOutTap OTHER_TAP = Tap.createTimer("GI maintenance: OTHER");
+    private static final Tap.InOutTap SIBLING_ALL_TAP = Tap.createTimer("GI maintenance: sibling all");
+    private static final Tap.PointTap SIBLING_ROW_TAP = Tap.createCount("GI maintenance: sibling row");
     private static final Tap.PointTap EXTRA_STORE_ROW_TAP = Tap.createCount("GI maintenance: extra store");
     private static final Tap.PointTap EXTRA_DELETE_ROW_TAP = Tap.createCount("GI maintenance: extra delete");
     private static final Tap.PointTap EXTRA_OTHER_ROW_TAP = Tap.createCount("GI maintenance: extra other");
