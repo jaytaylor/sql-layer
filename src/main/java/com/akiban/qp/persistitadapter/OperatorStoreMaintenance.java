@@ -46,8 +46,6 @@ final class OperatorStoreMaintenance {
     public void run(OperatorStoreGIHandler.Action action, PersistitHKey hKey, RowData forRow, StoreAdapter adapter, OperatorStoreGIHandler handler) {
         if (storePlan.noMaintenanceRequired())
             return;
-        if (groupIndex.getJoinType() == Index.JoinType.RIGHT)
-            return; // TODO!!!
         ALL_TAP.in();
         Operator planOperator = rootOperator();
         if (planOperator == null)
@@ -81,10 +79,23 @@ final class OperatorStoreMaintenance {
                 }
                 else if (storePlan.incomingRowIsWithinGI) {
                     // "Natural" index cleanup. Look for the left half, but only if we need to
-                    if (row.rowType().equals(storePlan.leftHalf) && useInvertType(action, bindings, adapter)) {
-                        Row outerRow = new FlattenedRow(storePlan.topLevelFlattenType, row, null, row.hKey());
-                        doAction(invert(action), handler, outerRow);
-                        actioned = true;
+                    Index.JoinType giJoin = groupIndex.getJoinType();
+                    switch (giJoin) {
+                    case LEFT:
+                        if (row.rowType().equals(storePlan.leftHalf) && useInvertType(action, bindings, adapter)) {
+                            Row outerRow = new FlattenedRow(storePlan.topLevelFlattenType, row, null, row.hKey());
+                            doAction(invert(action), handler, outerRow);
+                            actioned = true;
+                        }
+                        break;
+                    case RIGHT:
+                        if (row.rowType().equals(storePlan.rightHalf) && useInvertType(action, bindings, adapter)) {
+                            Row outerRow = new FlattenedRow(storePlan.topLevelFlattenType, null, row, row.hKey());
+                            doAction(invert(action), handler, outerRow);
+                            actioned = true;
+                        }
+                        break;
+                    default: throw new AssertionError(giJoin.name());
                     }
                 }
                 else {
@@ -108,27 +119,33 @@ final class OperatorStoreMaintenance {
     }
 
     private boolean useInvertType(OperatorStoreGIHandler.Action action, Bindings bindings, StoreAdapter adapter) {
-        switch (action) {
-        case STORE:
-            return true;
-        case DELETE:
-            if (siblingsLookup == null)
-                return false;
-            Cursor siblingsCounter = API.cursor(siblingsLookup, adapter);
-            siblingsCounter.open(bindings);
-            try {
-                int siblings = 0;
-                while (siblingsCounter.next() != null) {
-                    if (++siblings > 1)
-                        return false;
-                }
+        switch (groupIndex.getJoinType()) {
+        case LEFT:
+            switch (action) {
+            case STORE:
                 return true;
+            case DELETE:
+                if (siblingsLookup == null)
+                    return false;
+                Cursor siblingsCounter = API.cursor(siblingsLookup, adapter);
+                siblingsCounter.open(bindings);
+                try {
+                    int siblings = 0;
+                    while (siblingsCounter.next() != null) {
+                        if (++siblings > 1)
+                            return false;
+                    }
+                    return true;
+                }
+                finally {
+                    siblingsCounter.close();
+                }
+             default:
+                 throw new AssertionError(action.name());
             }
-            finally {
-                siblingsCounter.close();
-            }
-         default:
-             throw new AssertionError(action.name());
+        case RIGHT:
+            return true;
+        default: throw new AssertionError(groupIndex.getJoinType().name());
         }
     }
 
@@ -273,7 +290,8 @@ final class OperatorStoreMaintenance {
         result.incomingRowIsWithinGI = rowType.userTable().getDepth() >= branchTables.rootMost().userTable().getDepth();
         // TODO bookmark
         for (UserTableRowType branchRowType : branchTables.fromRoot()) {
-            if (result.incomingRowIsWithinGI && branchRowType.equals(rowType)) {
+            boolean breakAtTop = result.incomingRowIsWithinGI && withinBranchJoin == API.JoinType.LEFT_JOIN;
+            if (breakAtTop && branchRowType.equals(rowType)) {
                 result.leftHalf = parentRowType;
                 parentRowType = null;
             }
@@ -288,7 +306,7 @@ final class OperatorStoreMaintenance {
             } else if (withinBranch) {
                 joinType = withinBranchJoin;
             }
-            if ( (!result.incomingRowIsWithinGI) && branchRowType.equals(rowType)) {
+            if ( (!breakAtTop) && branchRowType.equals(rowType)) {
                 result.leftHalf = parentRowType;
                 parentRowType = null;
             }

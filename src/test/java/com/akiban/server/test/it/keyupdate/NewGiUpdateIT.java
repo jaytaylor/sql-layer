@@ -24,6 +24,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.OperatorStoreMaintenanceLoader;
 import com.akiban.server.store.IndexRecordVisitor;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.util.AssertUtils;
 import com.akiban.util.Strings;
 import com.akiban.util.Tap;
 import com.akiban.util.TapReport;
@@ -1594,7 +1595,7 @@ public final class NewGiUpdateIT extends ITBase {
     }
 
     private void ignore(GroupIndex groupIndex) {
-        ignoredGis.add(groupIndex.getIndexName());
+//        ignoredGis.add(groupIndex.getIndexName());
     }
 
     @After
@@ -1806,11 +1807,11 @@ public final class NewGiUpdateIT extends ITBase {
                 throw new RuntimeException(e);
             }
 
-            if (!expected.equals(scanner.strings())) {
-                assertEquals("scan of " + groupIndex, Strings.join(expected), Strings.join(scanner.strings()));
-                // just in case
-                assertEquals("scan of " + groupIndex, expected, scanner.strings());
-            }
+            AssertUtils.assertCollectionEquals(
+                    "scan of " + groupIndex.getIndexName().getName(),
+                    expected,
+                    scanner.strings()
+            );
         }
 
         private GisCheckerImpl(Map<GroupIndex, List<String>> expectedStrings) {
