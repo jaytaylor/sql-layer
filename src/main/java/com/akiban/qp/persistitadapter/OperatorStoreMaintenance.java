@@ -44,6 +44,8 @@ import java.util.*;
 final class OperatorStoreMaintenance {
 
     public void run(OperatorStoreGIHandler.Action action, PersistitHKey hKey, RowData forRow, StoreAdapter adapter, OperatorStoreGIHandler handler) {
+        if (groupIndex.getJoinType() == Index.JoinType.RIGHT)
+            return; // TODO!!!
         ALL_TAP.in();
         Operator planOperator = rootOperator();
         if (planOperator == null)
@@ -72,12 +74,8 @@ final class OperatorStoreMaintenance {
             while ((row = cursor.next()) != null) {
                 if (row.rowType().equals(planOperator.rowType())) {
                     doAction(action, handler, row);
-                    if (useInvertType(action, bindings, adapter)) {
-                        Row outerRow = storePlan.outerFlattenedRowFactory.createFrom(row);
-                        doAction(invert(action), handler, outerRow);
-                    }
                 }
-                else if (row.rowType().equals(storePlan.outerJoinType) && useInvertType(action, bindings, adapter)) {
+                else if (row.rowType().equals(storePlan.partiallyFlattenedType) && useInvertType(action, bindings, adapter)) {
                     Row outerRow = new FlattenedRow(storePlan.outJoinFlattenedType, row, null, row.hKey());
                     doAction(invert(action), handler, outerRow);
                 }
@@ -245,26 +243,26 @@ final class OperatorStoreMaintenance {
 
         // RIGHT JOIN until the GI, and then the GI's join types
 
+        Schema schema = rowType.schema();
         RowType parentRowType = null;
         API.JoinType joinType = API.JoinType.RIGHT_JOIN;
         int branchStartDepth = branchTables.rootMost().userTable().getDepth() - 1;
         boolean withinBranch = branchStartDepth == -1;
         API.JoinType withinBranchJoin = operatorJoinType(groupIndex);
+        RowType rightSideFlatten = null;
         for (UserTableRowType branchRowType : branchTables.fromRoot()) {
             if (parentRowType == null) {
                 parentRowType = branchRowType;
             } else {
                 EnumSet<API.FlattenOption> flattenOptions;
-                if (branchRowType.equals(rowType)) {
-                    result.outerFlattenedRowFactory = new OuterFlattenedRow.Factory(branchRowType.userTable(), parentRowType.nFields());
-//                    saveFlattenType = true;
-                    flattenOptions = NO_FLATTEN_OPTIONS;
-//                    assert result.outerJoinType == null : result.outerJoinType;
-//                    result.outerJoinType = parentRowType;
-//                    flattenOptions = KEEP_PARENT;
-//                    saveFlattenType = true;
+                if (withinBranch && branchRowType.equals(rowType)) {
+                    result.partiallyFlattenedType = parentRowType;
+                    rightSideFlatten = branchRowType;
+                    flattenOptions = KEEP_PARENT;
                 } else {
                     flattenOptions = NO_FLATTEN_OPTIONS;
+                    if (rightSideFlatten != null)
+                        rightSideFlatten = schema.newFlattenType(rightSideFlatten, branchRowType);
                 }
                 plan = API.flatten_HKeyOrdered(plan, parentRowType, branchRowType, joinType, flattenOptions);
                 parentRowType = plan.rowType();
@@ -275,6 +273,10 @@ final class OperatorStoreMaintenance {
                 joinType = withinBranchJoin;
             }
         }
+        if (rightSideFlatten != null) {
+            result.outJoinFlattenedType = schema.newFlattenType(result.partiallyFlattenedType, rightSideFlatten);
+        }
+
         result.rootOperator = plan;
         return result;
     }
@@ -371,7 +373,6 @@ final class OperatorStoreMaintenance {
     static class PlanCreationStruct {
         public Operator rootOperator;
         public FlattenedRowType outJoinFlattenedType;
-        public RowType outerJoinType;
-        public OuterFlattenedRow.Factory outerFlattenedRowFactory;
+        public RowType partiallyFlattenedType;
     }
 }
