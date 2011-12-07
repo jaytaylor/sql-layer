@@ -618,8 +618,10 @@ public enum DateTimeField
             int h = datetime.get(DateTimeFieldType.clockhourOfHalfday());
             int m = datetime.getMinuteOfHour();
             int s = datetime.getSecondOfMinute();
+            String halfDay = datetime.get(DateTimeFieldType.halfdayOfDay())  == 0 ? "AM" : "PM";
 
-            return String.format("%02d:%02d:%02d", h,m,s);
+            return String.format("%02d:%02d:%02d %s" ,
+                    h,m,s, halfDay);
         }
 
         @Override

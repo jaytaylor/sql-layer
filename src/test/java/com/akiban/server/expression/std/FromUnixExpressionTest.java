@@ -52,7 +52,7 @@ public class FromUnixExpressionTest extends ComposedExpressionTestBase
         test(0L, "This is epoch in text %Y-%b-%D", "This is epoch in text 1970-Jan-1st");
         
         // 2007-11-30 16:30:19
-        test(1196440219L, "%Y %b -%D :: %r", "2007 Nov -30th :: 04:30:19");
+        test(1196440219L, "%Y %b -%D :: %r", "2007 Nov -30th :: 04:30:19 PM");
         
         // 2007-11-30 16:30:19: unix -> sring with trailing chars
         test(1196440219L, "%D %H display only day of month and hour", "30th 16 display only day of month and hour");
