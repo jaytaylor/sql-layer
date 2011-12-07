@@ -29,7 +29,7 @@ public class BitLengthExpressionTest extends ComposedExpressionTestBase
     public void test() throws IOException
     {
         // test regular string
-        test("abc", 24, null); // w/o specifying charset, then bitlength = strlen * 8
+        test("abc", 24, null); // no charset specified
         test("abc", 24, "UTF-8" ); // utf-8 is used as charset
 
         // test unicode string

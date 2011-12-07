@@ -25,6 +25,7 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import org.slf4j.LoggerFactory;
 
 public class BitLengthExpression extends AbstractUnaryExpression
@@ -83,7 +84,7 @@ public class BitLengthExpression extends AbstractUnaryExpression
                         return NullValueSource.only();
                     }
                 else
-                    return new ValueHolder(AkType.LONG, source.getString().length() * 8);
+                    return new ValueHolder(AkType.LONG, source.getString().getBytes(Charset.defaultCharset()).length * 8);
         }
     }
 
