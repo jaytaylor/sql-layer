@@ -19,6 +19,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -112,11 +113,6 @@ import org.slf4j.LoggerFactory;
  * <dt>{@link Tap.Count}</dt>
  * <dd>Simply count the number of alls to {@link #in()} and {@link #out()}.
  * Faster because {@link System#nanoTime()} is not called</dd>
- * <dt>{@link Tap.TimeStampLog}</dt>
- * <dd>Like {@link Tap.TimeAndCount} but in addition, maintains a log of
- * relative times at which {@link #in()} and {@link #out()} have been called.
- * These are relative to a starting wall-clock time that is accessible from the
- * {@link TapReport} object returned by {@link #getReport()}</dd>
  * <dt>{@link Tap.PerThread}</dt>
  * <dd>Sub-dispatches each {@link #in()} and {@link #out()} call to a
  * subordinate {@link Tap} on private to the current Thread. Results are
@@ -215,7 +211,7 @@ public abstract class Tap {
 
     public final static String NEW_LINE = System.getProperty("line.separator");
 
-    private static Map<String, Dispatch> dispatches = new TreeMap<String, Dispatch>();
+    private static final Map<String, Dispatch> dispatches = new TreeMap<String, Dispatch>();
 
     private static boolean registered;
 
@@ -233,10 +229,6 @@ public abstract class Tap {
         return new InOutTap(add(new PerThread(name, TimeAndCount.class)));
     }
 
-    public static InOutTap createTimeStampLog(String name) {
-        return new InOutTap(add(new PerThread(name, TimeStampLog.class)));
-    }
-
     /**
      * Add or replace a new Dispatch declaration. Generally called by static
      * initializers of classes to be measured.
@@ -247,7 +239,9 @@ public abstract class Tap {
      */
     private static Dispatch add(final Tap tap) {
         final Dispatch dispatch = new Dispatch(tap.getName(), tap);
-        dispatches.put(tap.getName(), dispatch);
+        synchronized (dispatches) {
+            dispatches.put(tap.getName(), dispatch);
+        }
         return dispatch;
     }
 
@@ -259,7 +253,7 @@ public abstract class Tap {
      */
     public static void setEnabled(final String regExPattern, final boolean on) {
         final Pattern pattern = Pattern.compile(regExPattern);
-        for (final Dispatch tap : dispatches.values()) {
+        for (final Dispatch tap : dispatchesCopy()) {
             if (pattern.matcher(tap.getName()).matches()) {
                 tap.setEnabled(on);
             }
@@ -274,7 +268,7 @@ public abstract class Tap {
      */
     public static void reset(final String regExPattern) {
         final Pattern pattern = Pattern.compile(regExPattern);
-        for (final Dispatch tap : dispatches.values()) {
+        for (final Dispatch tap : dispatchesCopy()) {
             if (pattern.matcher(tap.getName()).matches()) {
                 tap.reset();
             }
@@ -292,7 +286,7 @@ public abstract class Tap {
     public static TapReport[] getReport(final String regExPattern) {
         final List<TapReport> reports = new ArrayList<TapReport>();
         final Pattern pattern = Pattern.compile(regExPattern);
-        for (final Dispatch tap : dispatches.values()) {
+        for (final Dispatch tap : dispatchesCopy()) {
             if (pattern.matcher(tap.getName()).matches()) {
                 final TapReport report = tap.getReport();
                 if (report != null) {
@@ -328,7 +322,7 @@ public abstract class Tap {
 
         final Constructor<? extends Tap> constructor = clazz
                 .getConstructor(new Class[] { String.class });
-        for (final Dispatch dispatch : dispatches.values()) {
+        for (final Dispatch dispatch : dispatchesCopy()) {
             if (pattern.matcher(dispatch.getName()).matches()) {
                 final Tap tap = (Tap) constructor
                         .newInstance(new Object[] { dispatch.getName() });
@@ -346,7 +340,7 @@ public abstract class Tap {
      */
     public static String report() {
         final StringBuilder sb = new StringBuilder();
-        for (final Tap tap : dispatches.values()) {
+        for (final Tap tap : dispatchesCopy()) {
             int length = sb.length();
             tap.appendReport(sb);
             if (sb.length() > length) {
@@ -356,6 +350,13 @@ public abstract class Tap {
         final String result = sb.toString();
         LOG.info("Tap Report" + NEW_LINE + NEW_LINE + result + NEW_LINE);
         return result;
+    }
+
+    private static Collection<Tap.Dispatch> dispatchesCopy()
+    {
+        synchronized (dispatches) {
+            return new ArrayList<Dispatch>(dispatches.values());
+        }
     }
 
     /**
@@ -562,9 +563,9 @@ public abstract class Tap {
             super(name);
         }
 
-        long inCount = 0;
+        volatile long inCount = 0;
 
-        long outCount = 0;
+        volatile long outCount = 0;
 
         public void in() {
             inCount++;
@@ -608,13 +609,13 @@ public abstract class Tap {
             super(name);
         }
 
-        long cumulativeNanos = 0;
-        long inCount = 0;
-        long outCount = 0;
-        long inNanos = Long.MIN_VALUE;
-        long startNanos = System.nanoTime();
-        long endNanos = System.nanoTime();
-        long lastDuration = Long.MIN_VALUE;
+        volatile long cumulativeNanos = 0;
+        volatile long inCount = 0;
+        volatile long outCount = 0;
+        volatile long inNanos = Long.MIN_VALUE;
+        volatile long startNanos = System.nanoTime();
+        volatile long endNanos = System.nanoTime();
+        volatile long lastDuration = Long.MIN_VALUE;
 
         public void in() {
             inCount++;
@@ -661,152 +662,6 @@ public abstract class Tap {
 
         public TapReport getReport() {
             return new TapReport(getName(), inCount, outCount, cumulativeNanos);
-        }
-
-    }
-
-    /**
-     * A Tap subclass that counts and times the intervals between calls to
-     * {@link #in()} and {@link #out()}. In addition, it keeps a log of in/out
-     * times. The log is an array of long values arranged in pairs alternating
-     * between {@link #in()} and {@link #out()} times. Each time value is
-     * measured in nanoseconds since the first call to {@link #in()} since the
-     * Tap was created or since {@link #reset()} was last called.
-     * <p />
-     * The {@link TapReport} returned by the {@link #getReport()} method of this
-     * class contains all the timing details, including the timestamp array and
-     * the wall-clock time (@link {@link System#currentTimeMillis()}
-     * corresponding with the zero timestamp value.
-     * 
-     */
-    static class TimeStampLog extends Tap {
-
-        public final static int LOG_SIZE_DELTA = 100000;
-
-        public final static int MAX_LOG_SIZE = 10000000; // 10 million entries
-
-        public TimeStampLog(final String name) {
-            super(name);
-        }
-
-        long startMillis = Long.MIN_VALUE;
-        long startNanos = Long.MIN_VALUE;
-        long endNanos = Long.MAX_VALUE;
-        long cumulativeNanos = 0;
-        long inCount = 0;
-        long outCount = 0;
-        long inNanos = Long.MIN_VALUE;
-        long lastDuration = Long.MIN_VALUE;
-
-        long[] log = new long[0];
-
-        public void in() {
-            inCount++;
-            inNanos = System.nanoTime();
-            if (startNanos == Long.MIN_VALUE) {
-                startMillis = System.currentTimeMillis();
-                startNanos = inNanos;
-            }
-        }
-
-        public void out() {
-            if (inNanos != Long.MIN_VALUE) {
-                long now = System.nanoTime();
-                endNanos = now;
-                lastDuration = now - inNanos;
-                cumulativeNanos += lastDuration;
-                if (outCount * 2 < MAX_LOG_SIZE) {
-                    if (outCount * 2 >= log.length) {
-                        try {
-                            final long[] longerLog = new long[log.length
-                                    + LOG_SIZE_DELTA];
-                            System.arraycopy(log, 0, longerLog, 0, log.length);
-                            log = longerLog;
-                        } catch (OutOfMemoryError oome) {
-                            // don't try to do anything here.
-                        }
-                    }
-                    if (outCount * 2 + 2 < log.length) {
-                        log[(int) outCount * 2] = inNanos - startNanos;
-                        log[(int) outCount * 2 + 1] = now - startNanos;
-                    }
-                }
-                outCount++;
-                inNanos = Long.MIN_VALUE;
-            }
-        }
-        
-        public long getDuration() {
-            return lastDuration;
-        }
-
-        public void reset() {
-            inCount = 0;
-            outCount = 0;
-            cumulativeNanos = 0;
-            inNanos = Long.MIN_VALUE;
-            startMillis = Long.MIN_VALUE;
-            startNanos = Long.MIN_VALUE;
-            log = new long[0];
-        }
-
-        public void appendReport(final StringBuilder sb) {
-            sb.append(String.format(
-                    "%20s inCount=%,10d outCount=%,10d time=%,12dms", name,
-                    inCount, outCount, cumulativeNanos / 1000000));
-            if (outCount > 0) {
-                sb.append(String.format("  per=%,12dns  interval=%,12dns",
-                        cumulativeNanos / outCount, (endNanos - startNanos)
-                                / outCount));
-            }
-        }
-
-        public String toString() {
-            return String.format("%s inCount=%,d outCount=%,d time=%,dms",
-                    name, inCount, outCount, cumulativeNanos / 1000000);
-        }
-
-        public TapReport getReport() {
-            return new TimeStampTapReport(getName(), inCount, outCount,
-                    cumulativeNanos, startMillis, log);
-        }
-
-        /**
-         * TapReport subclass that includes the start time of the Timestamp log
-         * from {@link System#currentTimeMillis()} and the timestamp log itself
-         * as an array of alternating {@link Tap#in()} and {@link Tap#out()}
-         * times. Each value represents the number of nanoseconds elapsed since
-         * the zero time.
-         * 
-         * 
-         */
-        public static class TimeStampTapReport extends TapReport {
-            private final long[] log;
-
-            private final long startMillis;
-
-            private TimeStampTapReport(final String name, final long inCount,
-                    final long outCount, final long cumulativeTime,
-                    final long startMillis, final long[] log) {
-                super(name, inCount, outCount, cumulativeTime);
-                this.log = new long[Math.min(log.length, (int) outCount * 2)];
-                System.arraycopy(log, 0, this.log, 0, this.log.length);
-                this.startMillis = startMillis;
-            }
-
-            /**
-             * @return The wall-clock time in millisceconds of timestamp 0.
-             */
-            public long getStartTimeMillis() {
-                return startMillis;
-            }
-
-            /**
-             * @return The timestamp log
-             */
-            public long[] getLog() {
-                return log;
-            }
         }
 
     }

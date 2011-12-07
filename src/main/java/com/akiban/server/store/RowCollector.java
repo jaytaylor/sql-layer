@@ -30,7 +30,7 @@ public interface RowCollector {
 
     public final int SCAN_FLAGS_SINGLE_ROW = 1 << 3;
 
-    public final int SCAN_FLAGS_PREFIX = 1 << 4;
+    public final int SCAN_FLAGS_LEXICOGRAPHIC = 1 << 4;
 
     public final int SCAN_FLAGS_START_AT_EDGE = 1 << 5;
 

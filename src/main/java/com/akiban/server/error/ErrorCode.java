@@ -151,6 +151,7 @@ public enum ErrorCode {
         // SubClass 021 - character not in repertoire
         // SubClass 022 - indicator overflow 
         // SubClass 023 - invalid parameter value
+    INVALID_PARAMETER_VALUE  ("22", "023", Importance.DEBUG, InvalidParameterValueException.class),
         // SubClass 024 - unterminated C string
         // SubClass 025 - invalid escape sequence
         // SubClass 026 - string data, length mismatch
@@ -297,6 +298,7 @@ public enum ErrorCode {
     BAD_INTERNAL_SETTING    ("50", "01M", Importance.DEBUG, BadAISInternalSettingException.class),
     TYPES_ARE_STATIC        ("50", "01N", Importance.DEBUG, TypesAreStaticException.class),
     GROUP_INDEX_DEPTH       ("50", "01O", Importance.DEBUG, GroupIndexDepthException.class),
+    DUPLICATE_INDEXID       ("50", "01P", Importance.DEBUG, DuplicateIndexIdException.class),
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),

@@ -19,3 +19,9 @@ single-table: rows from single table only
 subquery: group join across subquery boundary
 
 two-groups: join between two groups
+
+two-groups-left: LEFT join between two groups (stays LEFT)
+
+two-groups-left-2: LEFT join between two groups other way (stays LEFT)
+
+two-groups-right: RIGHT join between two groups (turns into LEFT)

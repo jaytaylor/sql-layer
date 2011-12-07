@@ -79,8 +79,16 @@ abstract class ExtractorsForDates extends LongExtractor {
 
         @Override
         public long unixToStdLong(long unixVal) {
-            int ymd[] = Calculator.getYearMonthDay(unixVal);
+            long ymd[] = Calculator.getYearMonthDay(unixVal);
             return (long)ymd[0] * 512 + (long)ymd[1] *32 + ymd[2];
+        }
+
+        @Override
+        public long[] getYearMonthDay(long value) {
+            final long year = value / 512;
+            final long month = (value / 32) % 16;
+            final long day = value % 32;
+            return new long[] {year, month, day};
         }
     };
 
@@ -153,6 +161,14 @@ abstract class ExtractorsForDates extends LongExtractor {
             int rst[] = Calculator.getYMDHMS(unixVal);
             return (rst[0] * 10000 + rst[1] * 100 + rst[2]) *1000000L + rst[3] * 10000 + rst[4] * 100 + rst[5];
         }
+
+        @Override
+        public long[] getYearMonthDay(long value) {
+            final long year = (value / DATETIME_YEAR_SCALE);
+            final long month = (value / DATETIME_MONTH_SCALE) % 100;
+            final long day = (value / DATETIME_DAY_SCALE) % 100;
+            return new long[] {year, month, day};
+        }
     };
 
     /**
@@ -223,6 +239,11 @@ abstract class ExtractorsForDates extends LongExtractor {
             int rst[] = Calculator.getHrMinSec(unixVal);
             return rst[0]* TIME_HOURS_SCALE + rst[1]* TIME_MINUTES_SCALE + rst[2];
         }
+
+        @Override
+        public long[] getYearMonthDay(long value) {
+            throw new UnsupportedOperationException("Unsupported operation. Only works for date types");
+        }
     };
 
     /**
@@ -261,6 +282,11 @@ abstract class ExtractorsForDates extends LongExtractor {
         public long unixToStdLong(long unixVal) {
             return unixVal / 1000;
         }
+
+        @Override
+        public long[] getYearMonthDay(long value) {
+            return Calculator.getYearMonthDay(value * 1000);
+        }
     };
 
     /**
@@ -298,6 +324,11 @@ abstract class ExtractorsForDates extends LongExtractor {
         public long unixToStdLong(long unixVal) {
            long yr = Calculator.getYear(unixVal);
            return yr == 0L ? 0 : yr - 1900 ;
+        }
+
+        @Override
+        public long[] getYearMonthDay(long value) {
+            return new long[] {value == 0 ? 0 : 1900 + value, 0, 0};
         }
     };
 
@@ -354,6 +385,13 @@ abstract class ExtractorsForDates extends LongExtractor {
         public long unixToStdLong(long unixVal) {
             return unixVal; 
         }
+
+        @Override
+        public long[] getYearMonthDay(long value) {
+            // TODO: convert milisecons to INTERVAL of day, month year
+            // how many days are there in a month/year???
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     };
 
     private static class Calculator {
@@ -401,9 +439,9 @@ abstract class ExtractorsForDates extends LongExtractor {
             return calendar.get(Calendar.SECOND);
         }
 
-        public static int[] getYearMonthDay (long millis) {
+        public static long[] getYearMonthDay (long millis) {
             calendar.setTimeInMillis(millis);
-            return new int[] {calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) +1, calendar.get(Calendar.DAY_OF_MONTH)};
+            return new long[] {calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) +1, calendar.get(Calendar.DAY_OF_MONTH)};
         }
 
         public static int[] getHrMinSec (long millis) {

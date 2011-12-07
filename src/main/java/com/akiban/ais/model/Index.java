@@ -67,11 +67,6 @@ public abstract class Index implements Serializable, ModelNames, Traversable
             throw new IllegalArgumentException("index ID out of range: " + indexId + " > " + INDEX_ID_BITS);
         AISInvariants.checkNullName(indexName, "index", "index name");
 
-        if (isValid)
-            indexId |= IS_VALID_FLAG;
-        if (joinType == JoinType.RIGHT)
-            indexId |= IS_RIGHT_JOIN_FLAG;
-
         this.indexName = new IndexName(tableName, indexName);
         this.indexId = indexId;
         this.isUnique = isUnique;
@@ -125,6 +120,11 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         map.put(index_tableName, indexName.getTableName());
         map.put(index_indexType, getIndexType().toString());
         map.put(index_indexName, indexName.getName());
+        Integer indexId = this.indexId;
+        if (isValid)
+            indexId |= IS_VALID_FLAG;
+        if (joinType == JoinType.RIGHT)
+            indexId |= IS_RIGHT_JOIN_FLAG;
         map.put(index_indexId, indexId);
         map.put(index_unique, isUnique);
         map.put(index_constraint, constraint);

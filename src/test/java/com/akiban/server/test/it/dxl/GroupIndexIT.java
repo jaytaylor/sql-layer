@@ -48,10 +48,10 @@ public class GroupIndexIT extends ITBase {
 
     @Before
     public void createTables() {
-        cId = createTable("test", "c", "id int key, name varchar(32)");
-        aId = createTable("test", "a", "id int key, cid int, addr varchar(32), constraint __akiban foreign key(cid) references c(id)");
-        oId = createTable("test", "o", "id int key, cid int, odate int, constraint __akiban foreign key(cid) references c(id)");
-        iId = createTable("test", "i", "id int key, oid int, sku int, constraint __akiban foreign key(oid) references o(id)");
+        cId = createTable("test", "c", "id int not null key, name varchar(32)");
+        aId = createTable("test", "a", "id int not null key, cid int, addr varchar(32), constraint __akiban foreign key(cid) references c(id)");
+        oId = createTable("test", "o", "id int not null key, cid int, odate int, constraint __akiban foreign key(cid) references c(id)");
+        iId = createTable("test", "i", "id int not null key, oid int, sku int, constraint __akiban foreign key(oid) references o(id)");
         groupName = getUserTable(cId).getGroup().getName();
     }
 
@@ -203,6 +203,16 @@ public class GroupIndexIT extends ITBase {
                             array(875L, 2L));
     }
 
+    @Test
+    public void multipleCreation() throws InvalidOperationException {
+        createGroupIndex(groupName, "name_date", "c.name, o.odate");
+        createGroupIndex(groupName, "name_sku", "c.name, i.sku");
+        final Group group = ddl().getAIS(session()).getGroup(groupName);
+        assertEquals("group index count", 2, group.getIndexes().size());
+        if (true)
+            // TODO: Shouldn't this just happen?
+            ddl().getAIS(session()).validate(com.akiban.ais.model.validation.AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+    }
 
     private void expectIndexContents(GroupIndex groupIndex, Object[]... keys) throws Exception {
         final Iterator<Object[]> keyIt = Arrays.asList(keys).iterator();
