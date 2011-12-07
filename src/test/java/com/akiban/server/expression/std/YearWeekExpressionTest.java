@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import java.util.EnumMap;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
@@ -28,33 +29,50 @@ import static org.junit.Assert.*;
 
 public class YearWeekExpressionTest extends ComposedExpressionTestBase
 {
+    private static final EnumMap<AkType, String> TESTCASE_1 = new EnumMap(AkType.class);
+    private static final int RESULT1[] = {200852, 200901, 200852, 200901, 200853, 200852, 200853, 200852};
+    static
+    {
+        TESTCASE_1.put(AkType.DATE, "2009-01-01");
+        TESTCASE_1.put(AkType.DATETIME, "2009-01-01 12:30:45");
+        TESTCASE_1.put(AkType.TIMESTAMP, "2009-01-01 12:30: 45");
+    }
+    
+    private static final EnumMap<AkType, String> TESTCASE_2 = new EnumMap(AkType.class);
+    private static final int RESULT2 = 201253;
+    static
+    {
+        TESTCASE_2.put(AkType.DATE, "2012-12-31");
+        TESTCASE_2.put(AkType.DATETIME, "2012-12-31 12:30:45");
+        TESTCASE_2.put(AkType.TIMESTAMP, "2012-12-31 12:30: 45");
+    }
+    
+    private static final EnumMap<AkType, String> TESTCASE_3 = new EnumMap(AkType.class);
+    private static final int RESULT3[] = {201119, 201118, 201119, 201118, 201119, 201118, 201119, 201118};
+    static
+    {
+        TESTCASE_3.put(AkType.DATE, "2011-05-08");
+        TESTCASE_3.put(AkType.DATETIME, "2011-05-08 12:30:45");
+        TESTCASE_3.put(AkType.TIMESTAMP, "2011-05-08 12:30: 45");
+    }
+    
     @Test
-    public void testFirstDay()
+    public void testRegularCases()
     {
         // test first day
-        String st = "2009-1-1";
-        test(st,0, 200852);
-        test(st,1,200901);
-        test(st,2,200852);
-        test(st,3,200901);
-        test(st,4,200853);
-        test(st,5,200852);
-        test(st,6,200853);
-        test(st,7,200852);
-
+        for (AkType type : TESTCASE_1.keySet())
+            for (int mode = 0; mode < 8; ++mode)
+                test(type, TESTCASE_1.get(type), mode, RESULT1[mode]);
+            
         // test last day
-        for (int i = 0; i < 8; ++i)
-            test("2012-12-31",i,201253);
+        for (AkType type : TESTCASE_2.keySet())
+            for (int mode = 0; mode < 8; ++mode)
+                test(type, TESTCASE_2.get(type), mode, RESULT2);
 
-        // test 2010-may-08
-        test(st = "2011-5-8",7,201118);
-        test(st,6,201119);
-        test(st,5,201118);
-        test(st,4,201119);
-        test(st,3,201118);
-        test(st,2,201119);
-        test(st,1,201118);
-        test(st,0,201119);
+        // test 2010-may-08      
+        for (AkType type : TESTCASE_3.keySet())
+            for (int mode = 0; mode < 8; ++mode)
+                test(type, TESTCASE_3.get(type), mode, RESULT3[mode]);
     }
 
     @Test
@@ -86,32 +104,32 @@ public class YearWeekExpressionTest extends ComposedExpressionTestBase
     @Test (expected = InvalidParameterValueException.class)
     public void testZeroYear()
     {
-        test("0000-12-2", 0, 0);
+        test(AkType.DATETIME, "0000-12-2 12:10:15", 0, 0);
     }
 
     @Test (expected = InvalidParameterValueException.class)
     public void testZeroMonth()
     {
-        test("0001-00-02", 0, 0);
+        test(AkType.DATETIME, "0001-00-02 12:10:15", 0, 0);
     }
 
     @Test (expected = InvalidParameterValueException.class)
     public void testZeroDay()
     {
-        test("0001-02-00", 0, 0);
+        test(AkType.DATE, "0001-02-00", 0, 0);
     }
 
     @Test (expected = InvalidParameterValueException.class)
     public void testInvalidMode()
     {
-        test("2009-12-2", 10, 0);
+        test(AkType.DATE, "2009-12-2", 10, 0);
     }
 
-    private void test(String dateS, int mode, int exp)
+    private void test(AkType type, String dateS, int mode, int exp)
     {
-        long date = Extractors.getLongExtractor(AkType.DATE).getLong(dateS);
+        long date = Extractors.getLongExtractor(type).getLong(dateS);
 
-        Expression d = new LiteralExpression(AkType.DATE, date);
+        Expression d = new LiteralExpression(type, date);
         Expression m = new LiteralExpression(AkType.INT, mode);
         Expression yearWeek = new YearWeekExpression(Arrays.asList(d, m));
 
