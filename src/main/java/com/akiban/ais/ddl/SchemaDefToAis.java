@@ -291,11 +291,11 @@ public class SchemaDefToAis {
         builder.setTableIdOffset(computeTableIdOffset(ais));
         IdGenerator indexIdGenerator = new IdGenerator(schemaDef.getGroupMap());
 
-        // Index IDs must be unique in a given group. For now, find max for all
+        // Index IDs must be unique in a given group. For now, find maxes for all
         // groups. Really only need to find max for any groups in the SchemaDef.
         for(Group group : ais.getGroups().values()) {
             final UserTable root = group.getGroupTable().getRoot();
-            final int maxId = findMaxIndexIDInGroup(ais, group);
+            final int maxId = findMaxIndexIDInGroup(group);
             indexIdGenerator.setIdForGroupName(toCName(root.getName()), maxId);
         }
 
@@ -469,14 +469,10 @@ public class SchemaDefToAis {
     /**
      * Find the maximum index ID from all of the indexes within the given group.
      */
-    public static int findMaxIndexIDInGroup(AkibanInformationSchema ais, Group group) {
+    public static int findMaxIndexIDInGroup(Group group) {
         int maxId = Integer.MIN_VALUE;
-        for(UserTable table : ais.getUserTables().values()) {
-            if(table.getGroup().equals(group)) {
-                for(Index index : table.getIndexesIncludingInternal()) {
-                    maxId = Math.max(index.getIndexId(), maxId);
-                }
-            }
+        for(Index index : group.getGroupTable().getIndexes()) {
+            maxId = Math.max(index.getIndexId(), maxId);
         }
         for(Index index : group.getIndexes()) {
             maxId = Math.max(index.getIndexId(), maxId);

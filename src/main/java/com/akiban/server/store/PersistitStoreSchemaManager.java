@@ -392,7 +392,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     curIndex = newTable.getIndex(indexName.getName());
                     schemaName = indexName.getSchemaName();
                     newGroup = newTable.getGroup();
-                    Integer newId = SchemaDefToAis.findMaxIndexIDInGroup(newAIS, newGroup) + 1;
+                    Integer newId = SchemaDefToAis.findMaxIndexIDInGroup(newGroup) + 1;
                     newIndex = TableIndex.create(newAIS, newTable, indexName.getName(), newId, index.isUnique(),
                                                  index.getConstraint());
                 }
@@ -405,7 +405,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     }
                     curIndex = newGroup.getIndex(indexName.getName());
                     schemaName = indexName.getSchemaName();
-                    Integer newId = SchemaDefToAis.findMaxIndexIDInGroup(newAIS, newGroup) + 1;
+                    Integer newId = SchemaDefToAis.findMaxIndexIDInGroup(newGroup) + 1;
                     newIndex = GroupIndex.create(newAIS, newGroup, indexName.getName(), newId, index.isUnique(),
                                                  index.getConstraint(), index.getJoinType());
                 }
