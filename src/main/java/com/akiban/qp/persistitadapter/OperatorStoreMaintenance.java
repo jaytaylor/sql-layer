@@ -172,6 +172,10 @@ final class OperatorStoreMaintenance {
     // for use in this class
 
     private Operator createSiblingsFinder(GroupIndex groupIndex, BranchTables branchTables, UserTableRowType rowType) {
+        // only bother doing this for tables *leafward* of the rootmost table in the GI
+        // TODO this is a LJ GI rule!
+        if (rowType.userTable().getDepth() <= branchTables.rootMost().userTable().getDepth())
+            return null;
         UserTable parentUserTable = rowType.userTable().parentTable();
         if (parentUserTable == null) {
             return null;
@@ -217,7 +221,7 @@ final class OperatorStoreMaintenance {
             throw new RuntimeException(rowType + " not in branch for " + groupIndex + ": " + branchTables);
         }
 
-        PlanCreationStruct result = new PlanCreationStruct();
+        PlanCreationStruct result = new PlanCreationStruct(rowType, groupIndex);
 
         boolean deep = !branchTables.leafMost().equals(rowType);
         Operator plan = API.groupScan_Default(
@@ -371,6 +375,17 @@ final class OperatorStoreMaintenance {
     }
 
     static class PlanCreationStruct {
+
+        @Override
+        public String toString() {
+            return toString;
+        }
+
+        PlanCreationStruct(RowType forRow, GroupIndex forGi) {
+            this.toString = String.format("for %s in %s", forRow, forGi.getIndexName().getName());
+        }
+
+        public final String toString;
         public Operator rootOperator;
         public FlattenedRowType outJoinFlattenedType;
         public RowType partiallyFlattenedType;
