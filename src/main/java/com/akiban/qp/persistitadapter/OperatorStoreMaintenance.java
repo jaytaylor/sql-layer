@@ -44,6 +44,8 @@ import java.util.*;
 final class OperatorStoreMaintenance {
 
     public void run(OperatorStoreGIHandler.Action action, PersistitHKey hKey, RowData forRow, StoreAdapter adapter, OperatorStoreGIHandler handler) {
+        if (storePlan.noMaintenanceRequired())
+            return;
         if (groupIndex.getJoinType() == Index.JoinType.RIGHT)
             return; // TODO!!!
         ALL_TAP.in();
@@ -399,6 +401,10 @@ final class OperatorStoreMaintenance {
 
     static class PlanCreationStruct {
 
+        public boolean noMaintenanceRequired() {
+            return (!incomingRowIsWithinGI) && (incomingRowType.userTable().getDepth() == 0);
+        }
+
         @Override
         public String toString() {
             return toString;
@@ -406,14 +412,18 @@ final class OperatorStoreMaintenance {
 
         PlanCreationStruct(RowType forRow, GroupIndex forGi) {
             this.toString = String.format("for %s in %s", forRow, forGi.getIndexName().getName());
+            this.incomingRowType = forRow;
         }
 
         public final String toString;
+        public final RowType incomingRowType;
 
         public Operator rootOperator;
         public FlattenedRowType topLevelFlattenType;
         public RowType leftHalf;
         public RowType rightHalf;
         public boolean incomingRowIsWithinGI;
+
+
     }
 }
