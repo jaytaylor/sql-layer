@@ -15,32 +15,30 @@
 
 package com.akiban.util;
 
+import org.junit.Test;
+
+import java.util.Map;
+
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Map;
-import java.util.Random;
-
-import org.junit.Test;
-
 public class TapTest {
+    private static final int THREADS = 20;
+    private static final int CYCLES = 10000;
 
     @Test
     public void testPerThreadTap() throws Exception {
-        final Tap.InOutTap tap = Tap.createTimeStampLog("ttap");
+        final Tap.InOutTap tap = Tap.createTimer("tap");
         Tap.setEnabled(".*", true);
-        final Thread[] threads = new Thread[10];
-        for (int i = 0; i < 10; i++) {
+        final Thread[] threads = new Thread[THREADS];
+        for (int i = 0; i < THREADS; i++) {
             final Thread thread = new Thread(new Runnable() {
 
                 @Override
                 public void run() {
-                    final Random random = new Random();
-                    for (int j = 0; j < 20; j++) {
+                    for (int j = 0; j < CYCLES; j++) {
                         tap.in();
-                        sleep(random.nextInt(200) + 10);
                         tap.out();
-                        sleep(10);
                     }
                 }
 
@@ -54,25 +52,44 @@ public class TapTest {
             threads[i].join();
         }
         final TapReport report = tap.getReport();
-        final Tap.PerThread.PerThreadTapReport pttr = (Tap.PerThread.PerThreadTapReport) report;
-        final Map<String, TapReport> map = pttr.getTapReportMap();
-        assertEquals(10, map.size());
-        final Tap.TimeStampLog.TimeStampTapReport tstp = (Tap.TimeStampLog.TimeStampTapReport) map
-                .get("thread_6");
-        final long[] log = tstp.getLog();
-        assertEquals(40, log.length);
-        assertEquals(0, log[0]);
-        long value = -1;
-        for (int i = 0; i < log.length; i++) {
-            assertTrue(log[i] > value);
-            value = log[i];
-        }
+        assertEquals(THREADS * CYCLES, report.getInCount());
+        assertEquals(THREADS * CYCLES, report.getOutCount());
     }
 
-    private void sleep(final int millis) {
-        try {
-            Thread.sleep(millis);
-        } catch (InterruptedException e) {
+    // Inspired by bug 869554
+    @Test
+    public void testConcurrentTapControl() throws InterruptedException
+    {
+        Thread[] threads = new Thread[THREADS];
+        final boolean[] ok = new boolean[THREADS];
+        for (int t = 0; t < THREADS; t++) {
+            final int threadId = t;
+            threads[t] = new Thread()
+            {
+                @Override
+                public void run()
+                {
+                    try {
+                        Tap.createTimer(String.format("tap %s", threadId));
+                        for (int i = 0; i < CYCLES; i++) {
+                            Tap.setEnabled(".*", (i % 2) == 0);
+                        }
+                        ok[threadId] = true;
+                    } catch (Exception e) {
+                        ok[threadId] = false;
+                    }
+                }
+            };
+        }
+        for (Thread thread : threads) {
+            thread.start();
+            Thread.sleep(1);
+        }
+        for (Thread thread : threads) {
+            thread.join();
+        }
+        for (boolean b : ok) {
+            assertTrue(b);
         }
     }
 }

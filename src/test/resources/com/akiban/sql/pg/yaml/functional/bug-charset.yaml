@@ -1,0 +1,4 @@
+# Specifying CHARACTER SET for column fails
+---
+- CreateTable: t (v varchar(32) CHARACTER SET latin1)
+...
