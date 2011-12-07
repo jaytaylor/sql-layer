@@ -33,7 +33,6 @@ public class BitLengthExpressionTest extends ComposedExpressionTestBase
         test("abc", 24, "UTF-8" ); // utf-8 is used as charset
 
         // test unicode string
-        test("♫♠", 16, null); 
         test("♫♠", 48, "UTF-8");
 
         // test empty string
@@ -44,6 +43,21 @@ public class BitLengthExpressionTest extends ComposedExpressionTestBase
         test (null, -1, null);
         test (null, -1, "UTF-8");
     }
+    
+    @Test
+    public void testUnicodeStringWithoutCharset ()
+    {
+         
+        Expression ex = new BitLengthExpression ( new LiteralExpression(AkType.VARCHAR, "♫♠"), null);
+        ValueSource eval = ex.evaluation().eval();
+        
+        assertEquals ("Top is LONG", AkType.LONG, eval.getConversionType());
+        assertTrue ("Result is " + eval.getLong(), true); // result could vary depending on the system's
+                                                          // charset. So we are not going to test for that.
+                                                          // This is wrong but there's no other way
+    }
+
+    
 
     private static void test(String input, long expected, String charset)
     {
