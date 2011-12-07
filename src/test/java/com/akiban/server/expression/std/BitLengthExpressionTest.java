@@ -57,8 +57,6 @@ public class BitLengthExpressionTest extends ComposedExpressionTestBase
                                                           // This is wrong but there's no other way
     }
 
-    
-
     private static void test(String input, long expected, String charset)
     {
         Expression ex;
