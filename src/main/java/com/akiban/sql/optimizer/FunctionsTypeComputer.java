@@ -195,10 +195,15 @@ public class FunctionsTypeComputer extends AISTypeComputer
             ValueNode value = argNode(index);
             ExpressionType castType = castType(argType, requiredType, value.getType());
             DataTypeDescriptor sqlType = fromExpressionType(castType);
-            value = (ValueNode)value.getNodeFactory()
-                .getNode(NodeTypes.CAST_NODE, 
-                         value, sqlType, value.getParserContext());
-            setArgNode(index, value);
+            if (value instanceof ParameterNode) {
+                value.setType(sqlType);
+            }
+            else {
+                value = (ValueNode)value.getNodeFactory()
+                    .getNode(NodeTypes.CAST_NODE, 
+                             value, sqlType, value.getParserContext());
+                setArgNode(index, value);
+            }
             return castType;
         }
     }
