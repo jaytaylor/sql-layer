@@ -69,13 +69,14 @@ class Sort_Tree extends Operator
 
     // Sort_Tree interface
 
-    public Sort_Tree(Operator inputOperator, RowType sortType, API.Ordering ordering)
+    public Sort_Tree(Operator inputOperator, RowType sortType, API.Ordering ordering, API.SortOption sortOption)
     {
         ArgumentValidation.notNull("sortType", sortType);
         ArgumentValidation.isGT("ordering.columns()", ordering.sortColumns(), 0);
         this.inputOperator = inputOperator;
         this.sortType = sortType;
         this.ordering = ordering;
+        this.sortOption = sortOption;
     }
     
     // Class state
@@ -86,6 +87,7 @@ class Sort_Tree extends Operator
     private final Operator inputOperator;
     private final RowType sortType;
     private final API.Ordering ordering;
+    private final API.SortOption sortOption;
 
     // Inner classes
 
@@ -108,7 +110,7 @@ class Sort_Tree extends Operator
             checkQueryCancelation();
             if (output == null) {
                 SORT_TREE_COUNT.hit();
-                output = adapter.sort(input, sortType, ordering, bindings);
+                output = adapter.sort(input, sortType, ordering, sortOption, bindings);
             }
             Row row = null;
             if (!closed) {

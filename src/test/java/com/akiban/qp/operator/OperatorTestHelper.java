@@ -135,7 +135,10 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public Cursor newIndexCursor(Index index, IndexKeyRange keyRange, API.Ordering ordering, IndexScanSelector selector)
+        public Cursor newIndexCursor(Index index,
+                                     IndexKeyRange keyRange,
+                                     API.Ordering ordering,
+                                     IndexScanSelector selector)
         {
             throw new UnsupportedOperationException();
         }
@@ -165,7 +168,11 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public Cursor sort(Cursor input, RowType rowType, API.Ordering ordering, Bindings bindings)
+        public Cursor sort(Cursor input,
+                           RowType rowType,
+                           API.Ordering ordering,
+                           API.SortOption sortOption,
+                           Bindings bindings)
         {
             throw new UnsupportedOperationException();
         }

@@ -25,6 +25,7 @@ import com.akiban.server.expression.Expression;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collections;
 
 import static com.akiban.server.expression.std.Expressions.field;
@@ -71,6 +72,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                     Collections.singleton(customerRowType)),
                 customerRowType,
                 ordering(field(customerRowType, 1), true),
+                SortOption.PRESERVE_DUPLICATES,
                 2);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -90,6 +92,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                     Collections.singleton(orderRowType)),
                 orderRowType,
                 ordering(field(orderRowType, 2), true, field(orderRowType, 1), false),
+                SortOption.PRESERVE_DUPLICATES,
                 4);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -111,6 +114,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                     Collections.singleton(orderRowType)),
                 orderRowType,
                 ordering(field(orderRowType, 2), true),
+                SortOption.PRESERVE_DUPLICATES,
                 4);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -133,6 +137,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                     Collections.singleton(orderRowType)),
                 orderRowType,
                 ordering(field(orderRowType, 2), true),
+                SortOption.PRESERVE_DUPLICATES,
                 2);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -163,6 +168,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                     Collections.singleton(oiType)),
                 oiType,
                 ordering(cidField, true, oidField, true, iidField, true),
+                SortOption.PRESERVE_DUPLICATES,
                 8);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -198,6 +204,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                     Collections.singleton(oiType)),
                 oiType,
                 ordering(cidField, true, oidField, true, iidField, false),
+                SortOption.PRESERVE_DUPLICATES,
                 8);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -233,6 +240,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                     Collections.singleton(oiType)),
                 oiType,
                 ordering(cidField, true, oidField, false, iidField, true),
+                SortOption.PRESERVE_DUPLICATES,
                 8);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -268,6 +276,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                     Collections.singleton(oiType)),
                 oiType,
                 ordering(cidField, true, oidField, false, iidField, false),
+                SortOption.PRESERVE_DUPLICATES,
                 8);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -303,6 +312,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                     Collections.singleton(oiType)),
                 oiType,
                 ordering(cidField, false, oidField, true, iidField, true),
+                SortOption.PRESERVE_DUPLICATES,
                 8);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -338,6 +348,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                     Collections.singleton(oiType)),
                 oiType,
                 ordering(cidField, false, oidField, true, iidField, false),
+                SortOption.PRESERVE_DUPLICATES,
                 8);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -373,6 +384,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                     Collections.singleton(oiType)),
                 oiType,
                 ordering(cidField, false, oidField, false, iidField, true),
+                SortOption.PRESERVE_DUPLICATES,
                 8);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -408,6 +420,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                     Collections.singleton(oiType)),
                 oiType,
                 ordering(cidField, false, oidField, false, iidField, false),
+                SortOption.PRESERVE_DUPLICATES,
                 8);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
@@ -421,6 +434,63 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             row(oiType, 11L, 1L, "ori", 111L, 11L),
         };
         compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testPreserveDuplicates()
+    {
+        Operator project =
+            project_Default(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(orderRowType)),
+                orderRowType,
+                Arrays.asList(field(orderRowType, 1)));
+        RowType projectType = project.rowType();
+        Operator plan =
+            sort_InsertionLimited(
+                project,
+                projectType,
+                ordering(field(projectType, 0), true),
+                SortOption.PRESERVE_DUPLICATES,
+                5);
+
+        RowBase[] expected = new RowBase[]{
+            row(projectType, 1L),
+            row(projectType, 1L),
+            row(projectType, 2L),
+            row(projectType, 2L),
+            row(projectType, 3L),
+        };
+        compareRows(expected, cursor(plan, adapter));
+    }
+
+    @Test
+    public void testSuppressDuplicates()
+    {
+        Operator project =
+            project_Default(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(orderRowType)),
+                orderRowType,
+                Arrays.asList(field(orderRowType, 1)));
+        RowType projectType = project.rowType();
+        Operator plan =
+            sort_InsertionLimited(
+                project,
+                projectType,
+                ordering(field(projectType, 0), true),
+                SortOption.SUPPRESS_DUPLICATES,
+                4);
+
+        RowBase[] expected = new RowBase[]{
+            row(projectType, 1L),
+            row(projectType, 2L),
+            row(projectType, 3L),
+            row(projectType, 5L),
+        };
+        compareRows(expected, cursor(plan, adapter));
     }
 
     private Ordering ordering(Object... objects)

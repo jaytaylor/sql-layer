@@ -181,7 +181,7 @@ public class Distinct_PartialTest {
         ordering.append(field(input.rowType(), 0), true);
         ordering.append(field(input.rowType(), 1), true);
         Operator sort = sort_InsertionLimited(input, input.rowType(),
-                                              ordering, 200);
+                                              ordering, SortOption.PRESERVE_DUPLICATES, 200);
         Operator plan = distinct_Partial(sort, sort.rowType());
         Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.VARCHAR)
             .row(0L,"abc")
