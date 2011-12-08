@@ -15,36 +15,14 @@
 
 package com.akiban.sql.pg;
 
-import static org.hamcrest.CoreMatchers.anyOf;
-import static org.hamcrest.CoreMatchers.instanceOf;
-import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
-import java.text.DateFormat;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Collection;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -52,6 +30,26 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Stack;
 import java.util.regex.Pattern;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+
+import static org.hamcrest.CoreMatchers.anyOf;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.not;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
@@ -67,1222 +65,1223 @@ import org.yaml.snakeyaml.nodes.Tag;
  * the contents of a YAML file.
  */
 /* Here's an overview of the syntax of the YAML file.
-	-
-	-  General:
-	-
-	-   - One or more YAML documents
-	-   - Each document is a sequence whose first element is a map
-	-   - Key of first element's map is a command: a string with an uppercase first
-	-     character
-	-
-	-   Commands:
-	-
-	-   Include
-	-   - Syntax:
-	-     - Include: <file>
-	-   - If the file is relative, it is parsed relative to the referring file
-	-   - If the file argument is missing or null, the command will be ignored
-	-
-	-   Properties
-	-   - Syntax:
-	-     - Properties: <framework engine>
-	-     - <property>: <value>
-	-   - The frame engines that apply to this engine are: "all" (all frameworks) and
-	-     "it" (this integration test framework engine)
-	-   - A new property definition overrides any previous ones
-	-
-	-   CreateTable
-	-   - Syntax:
-	-     - CreateTable: <table name> <create table arguments>...
-	-     - error: [<error code>, <error message>]
-	-   - The error message is optional
-	-   - If the error code is missing or null, then the attribute and its value
-	-     will be ignored
-	-   - This command has the same behavior as would specifying a CREATE TABLE
-	-     statement with a Statement command, but it lets the test framework know
-	-     which tables have been created, so it can drop them after the test is
-	-     completed
-	-
-	-   Statement
-	-   - Syntax
-	-     - Statement: <statement text>
-	-     - params: [[<parameter value>, ...], ...]
-	-     - param_types: [<column type>, ...]
-	-     - output: [[<output value>, ...], ...]
-	-     - row_count: <number of rows>
-	-     - output_types: [<column type>, ...]
-	-     - explain: <explain plan>
-	-     - error: [<error code>, <error message>]
-	-   - If the statement text is missing or null, the command will be ignored
-	-   - Attributes are optional and can appear at most once
-	-   - If the value of any attribute is missing or null, then the attribute and
-	-     its value will be ignored
-	-   - Only one statement in statement text (not checked)
- 	-   - At least one row element in params, param_types, output, output_types
-	-   - At least one row in params and output
-	-   - Types for param_types and output_types listed in code below
-	-   - param_types requires params
-	-   - All rows same length for output and params
-	-   - Same values for output row length, output_types length, and row_count
-	-   - Same values for params row length and param_types length
-	-   - The value of row_count is non-negative
-	-   - The error message is optional
-	-   - Can't have error with output or row_count
-	-   - YAML null for null value
-	-   - !dc dc for don't care value in output
-	-   - !re regular-expression for regular expression patterns that should match
-	-     output
-	-   - The statement text should not create a table -- use the CreateTable
-	-     command for that purpose
-	-*/
+
+  General:
+
+   - One or more YAML documents
+   - Each document is a sequence whose first element is a map
+   - Key of first element's map is a command: a string with an uppercase first
+     character
+
+   Commands:
+
+   Include
+   - Syntax:
+     - Include: <file>
+   - If the file is relative, it is parsed relative to the referring file
+   - If the file argument is missing or null, the command will be ignored
+
+   Properties
+   - Syntax:
+     - Properties: <framework engine>
+     - <property>: <value>
+   - The frame engines that apply to this engine are: "all" (all frameworks) and
+     "it" (this integration test framework engine)
+   - A new property definition overrides any previous ones
+
+   CreateTable
+   - Syntax:
+     - CreateTable: <table name> <create table arguments>...
+     - error: [<error code>, <error message>]
+   - The error message is optional
+   - If the error code is missing or null, then the attribute and its value
+     will be ignored
+   - This command has the same behavior as would specifying a CREATE TABLE
+     statement with a Statement command, but it lets the test framework know
+     which tables have been created, so it can drop them after the test is
+     completed
+
+   Statement
+   - Syntax
+     - Statement: <statement text>
+     - params: [[<parameter value>, ...], ...]
+     - param_types: [<column type>, ...]
+     - output: [[<output value>, ...], ...]
+     - row_count: <number of rows>
+     - output_types: [<column type>, ...]
+     - explain: <explain plan>
+     - error: [<error code>, <error message>]
+   - If the statement text is missing or null, the command will be ignored
+   - Attributes are optional and can appear at most once
+   - If the value of any attribute is missing or null, then the attribute and
+     its value will be ignored
+   - Only one statement in statement text (not checked)
+   - At least one row element in params, param_types, output, output_types
+   - At least one row in params and output
+   - Types for param_types and output_types listed in code below
+   - param_types requires params
+   - All rows same length for output and params
+   - Same values for output row length, output_types length, and row_count
+   - Same values for params row length and param_types length
+   - The value of row_count is non-negative
+   - The error message is optional
+   - Can't have error with output or row_count
+   - YAML null for null value
+   - !dc dc for don't care value in output
+   - !re regular-expression for regular expression patterns that should match
+     output
+   - The statement text should not create a table -- use the CreateTable
+     command for that purpose
+*/
 class YamlTester {
 
-	private static final boolean DEBUG = Boolean.getBoolean("test.DEBUG");
-	private static final Map<String, Integer> typeNameToNumber = new HashMap<String, Integer>();
-	private static final Map<Integer, String> typeNumberToName = new HashMap<Integer, String>();
-	static {
-		addTypeNameAndNumber("BIGINT", Types.BIGINT);
-		addTypeNameAndNumber("BLOB", Types.BLOB);
-		addTypeNameAndNumber("BOOLEAN", Types.BOOLEAN);
-		addTypeNameAndNumber("CHAR", Types.CHAR);
-		addTypeNameAndNumber("CLOB", Types.CLOB);
-		addTypeNameAndNumber("DATE", Types.DATE);
-		addTypeNameAndNumber("DECIMAL", Types.DECIMAL);
-		addTypeNameAndNumber("DOUBLE", Types.DOUBLE);
-		addTypeNameAndNumber("FLOAT", Types.FLOAT);
-		addTypeNameAndNumber("INTEGER", Types.INTEGER);
-		addTypeNameAndNumber("NUMERIC", Types.NUMERIC);
-		addTypeNameAndNumber("REAL", Types.REAL);
-		addTypeNameAndNumber("SMALLINT", Types.SMALLINT);
-		addTypeNameAndNumber("TIME", Types.TIME);
-		addTypeNameAndNumber("TIMESTAMP", Types.TIMESTAMP);
-		addTypeNameAndNumber("TINYINT", Types.TINYINT);
-		addTypeNameAndNumber("VARBINARY", Types.VARBINARY);
-		addTypeNameAndNumber("VARCHAR", Types.VARCHAR);
-	}
+    private static final boolean DEBUG = Boolean.getBoolean("test.DEBUG");
+    private static final Map<String, Integer> typeNameToNumber =
+	new HashMap<String, Integer>();
+    private static final Map<Integer, String> typeNumberToName =
+	new HashMap<Integer, String>();
+    static {
+	addTypeNameAndNumber("BIGINT", Types.BIGINT);
+	addTypeNameAndNumber("BLOB", Types.BLOB);
+	addTypeNameAndNumber("BOOLEAN", Types.BOOLEAN);
+	addTypeNameAndNumber("CHAR", Types.CHAR);
+	addTypeNameAndNumber("CLOB", Types.CLOB);
+	addTypeNameAndNumber("DATE", Types.DATE);
+	addTypeNameAndNumber("DECIMAL", Types.DECIMAL);
+	addTypeNameAndNumber("DOUBLE", Types.DOUBLE);
+	addTypeNameAndNumber("FLOAT", Types.FLOAT);
+	addTypeNameAndNumber("INTEGER", Types.INTEGER);
+	addTypeNameAndNumber("NUMERIC", Types.NUMERIC);
+	addTypeNameAndNumber("REAL", Types.REAL);
+	addTypeNameAndNumber("SMALLINT", Types.SMALLINT);
+	addTypeNameAndNumber("TIME", Types.TIME);
+	addTypeNameAndNumber("TIMESTAMP", Types.TIMESTAMP);
+	addTypeNameAndNumber("TINYINT", Types.TINYINT);
+	addTypeNameAndNumber("VARBINARY", Types.VARBINARY);
+	addTypeNameAndNumber("VARCHAR", Types.VARCHAR);
+    }
 
-	/** Matches all engines. */
-	private static final String ALL_ENGINE = "all";
-	/** Matches the IT engine. */
-	private static final String IT_ENGINE = "it";
+    /** Matches all engines. */
+    private static final String ALL_ENGINE = "all";
+    /** Matches the IT engine. */
+    private static final String IT_ENGINE = "it";
 
-	private final String filename;
-	private final Reader in;
-	private final Connection connection;
-	private final Stack<String> includeStack = new Stack<String>();
-	private int commandNumber = 0;
-	private String commandName = null;
-	private boolean suppressed = false;
-	private static DateFormat DEFAULT_DATE_FORMAT = new SimpleDateFormat(
-			"yyyy-MM-dd");
-	private static DateFormat DEFAULT_DATETIME_FORMAT = new SimpleDateFormat(
-			"yyyy-MM-dd HH:mm:ss.S");
+    private final String filename;
+    private final Reader in;
+    private final Connection connection;
+    private final Stack<String> includeStack = new Stack<String>();
+    private int commandNumber = 0;
+    private String commandName = null;
+    private boolean suppressed = false;
+    private static DateFormat DEFAULT_DATE_FORMAT = new SimpleDateFormat(
+            "yyyy-MM-dd");
+    private static DateFormat DEFAULT_DATETIME_FORMAT = new SimpleDateFormat(
+            "yyyy-MM-dd HH:mm:ss.S");
 
-	/**
-	 * Creates an instance of this class.
-	 * 
-	 * @param filename
-	 *            the file name of the YAML input
-	 * @param in
-	 *            the YAML input
-	 * @param connection
-	 *            the JDBC connection
-	 */
-	YamlTester(String filename, Reader in, Connection connection) {
-		this.filename = filename;
-		this.in = in;
-		this.connection = connection;
-	}
+    /**
+     * Creates an instance of this class.
+     *
+     * @param filename the file name of the YAML input
+     * @param in the YAML input
+     * @param connection the JDBC connection
+     */
+    YamlTester(String filename, Reader in, Connection connection) {
+	this.filename = filename;
+	this.in = in;
+	this.connection = connection;
+    }
 
-	/** Test the input specified in the constructor. */
-	void test() {
-		test(in);
-	}
+    /** Test the input specified in the constructor. */
+    void test() {
+	test(in);
+    }
 
-	private void test(Reader in) {
-		try {
-			Yaml yaml = new Yaml(new RegisterTags());
-			Iterator<Object> documents = yaml.loadAll(in).iterator();
-			while (documents.hasNext()) {
-				++commandNumber;
-				commandName = null;
-				Object document = documents.next();
-				List<Object> sequence = nonEmptySequence(document,
-						"command document");
-				Entry<Object, Object> firstEntry = firstEntry(sequence.get(0),
-						"first element of the document");
-				commandName = string(firstEntry.getKey(), "command name");
-				Object value = firstEntry.getValue();
-				if ("Include".equals(commandName)) {
-					includeCommand(value, sequence);
-				} else if ("Properties".equals(commandName)) {
-					propertiesCommand(value, sequence);
-				} else if ("CreateTable".equals(commandName)) {
-					createTableCommand(value, sequence);
-				} else if ("Statement".equals(commandName)) {
-					statementCommand(value, sequence);
-				} else {
-					fail("Unknown command: " + commandName);
-				}
-				if (suppressed) {
-					System.err.println(context() + "Test suppressed: exiting");
-					break;
-				}
-			}
-			if (commandNumber == 0) {
-				fail("Test file must not be empty");
-			}
-		} catch (ContextAssertionError e) {
-			throw e;
-		} catch (Throwable e) {
-			/* Add context */
-			throw new ContextAssertionError(e.toString(), e);
-		}
-	}
-
-	private void includeCommand(Object value, List<Object> sequence) {
-		if (value == null) {
-			return;
-		}
-		String includeValue = string(value, "Include value");
-		File include = new File(includeValue);
-		if (sequence.size() > 1) {
-			throw new ContextAssertionError(
-					"The Include command does not support attributes"
-							+ "\nFound: " + sequence.get(1));
-		}
-		if (!include.isAbsolute()) {
-			String parent = filename;
-			if (!includeStack.isEmpty()) {
-				parent = includeStack.peek();
-			}
-			if (parent != null) {
-				include = new File(new File(parent).getParent(),
-						include.toString());
-			}
-		}
-		Reader in = null;
-		try {
-			in = new FileReader(include);
-		} catch (IOException e) {
-			throw new ContextAssertionError("Problem accessing include file "
-					+ include + ": " + e, e);
-		}
-		int originalCommandNumber = commandNumber;
-		commandNumber = 0;
-		String originalCommandName = commandName;
+    private void test(Reader in) {
+	try {
+	    Yaml yaml = new Yaml(new RegisterTags());
+	    Iterator<Object> documents = yaml.loadAll(in).iterator();
+	    while (documents.hasNext()) {
+		++commandNumber;
 		commandName = null;
+		Object document = documents.next();
+		List<Object> sequence =
+		    nonEmptySequence(document, "command document");
+		Entry<Object, Object> firstEntry = firstEntry(
+		    sequence.get(0), "first element of the document");
+		commandName = string(firstEntry.getKey(), "command name");
+		Object value = firstEntry.getValue();
+		if ("Include".equals(commandName)) {
+		    includeCommand(value, sequence);
+		} else if ("Properties".equals(commandName)) {
+		    propertiesCommand(value, sequence);
+		} else if ("CreateTable".equals(commandName)) {
+		    createTableCommand(value, sequence);
+		} else if ("Statement".equals(commandName)) {
+		    statementCommand(value, sequence);
+		} else {
+		    fail("Unknown command: " + commandName);
+		}
+		if (suppressed) {
+		    System.err.println(context() + "Test suppressed: exiting");
+		    break;
+		}
+	    }
+	    if (commandNumber == 0) {
+		fail("Test file must not be empty");
+	    }
+	} catch (ContextAssertionError e) {
+	    throw e;
+	} catch (Throwable e) {
+	    /* Add context */
+	    throw new ContextAssertionError(e.toString(), e);
+	}
+    }
+
+    private void includeCommand(Object value, List<Object> sequence) {
+	if (value == null) {
+	    return;
+	}
+	String includeValue = string(value, "Include value");
+	File include = new File(includeValue);
+	if (sequence.size() > 1) {
+	    throw new ContextAssertionError(
+		"The Include command does not support attributes" +
+		"\nFound: " + sequence.get(1));
+	}
+	if (!include.isAbsolute()) {
+	    String parent = filename;
+	    if (!includeStack.isEmpty()) {
+		parent = includeStack.peek();
+	    }
+	    if (parent != null) {
+		include = new File(new File(parent).getParent(),
+				   include.toString());
+	    }
+	}
+	Reader in = null;
+	try {
+	    in = new FileReader(include);
+	} catch (IOException e) {
+	    throw new ContextAssertionError(
+		"Problem accessing include file " + include + ": " + e, e);
+	}
+	int originalCommandNumber = commandNumber;
+	commandNumber = 0;
+	String originalCommandName = commandName;
+	commandName = null;
+	try {
+	    includeStack.push(includeValue);
+	    test(in);
+	} finally {
+	    includeStack.pop();
+	    commandNumber = originalCommandNumber;
+	    commandName = originalCommandName;
+	    try {
+		in.close();
+	    } catch (IOException e) {
+	    }
+	}
+    }
+
+    private void propertiesCommand(Object value, List<Object> sequence) {
+	String engine = string(value, "Properties framework engine");
+	if (ALL_ENGINE.equals(engine) || IT_ENGINE.equals(engine)) {
+	    for (Object elem : sequence) {
+		Entry<Object, Object> entry =
+		    onlyEntry(elem, "Properties entry");
+		if ("suppressed".equals(entry.getKey())) {
+		    suppressed = bool(entry.getValue(), "suppressed value");
+		}
+	    }
+	}
+    }
+
+    /** Implements common behavior of commands that execute statements. */
+    private abstract class AbstractStatementCommand {
+	final String statement;
+	boolean errorSpecified;
+	String errorCode;
+	String errorMessage;
+
+	/** Handle a statement with the specified statement text. */
+	AbstractStatementCommand(String statement) {
+	    this.statement = statement;
+	}
+
+	/** Parse an error attribute with the specified value. */
+	void parseError(Object value) {
+	    if (value == null) {
+		return;
+	    }
+	    assertFalse("The error attribute must not appear more than once",
+			errorSpecified);
+	    errorSpecified = true;
+	    List<Object> errorInfo =
+		nonEmptyScalarSequence(value, "error value");
+	    errorCode = scalar(errorInfo.get(0), "error code").toString();
+	    if (errorInfo.size() > 1) {
+		errorMessage = string(errorInfo.get(1), "error message").trim();
+		assertTrue("The error attribute can have at most two" +
+			   " elements",
+			   errorInfo.size() < 3);
+	    }
+	}
+
+	/**
+	 * Check the specified exception against the error attribute specified
+	 * earlier, if any.
+	 */
+	void checkFailure(SQLException sqlException) {
+	    if (DEBUG) {
+		System.err.println(
+		    "Generated error code: " + sqlException.getSQLState() +
+		    "\nException: " + sqlException);
+	    }
+	    if (!errorSpecified) {
+		throw new ContextAssertionError(
+		    "Unexpected statement execution failure: " + sqlException,
+		    sqlException);
+	    }
+	    if (!errorCode.equals(sqlException.getSQLState())) {
+		throw new ContextAssertionError(
+		    "Unexpected error code:" +
+		    "\nExpected: " + errorCode +
+		    "\n     got: " + sqlException.getSQLState(),
+		    sqlException);
+	    }
+	    if (errorMessage != null) {
+		if (!errorMessage.equals(sqlException.getMessage().trim())) {
+		    throw new ContextAssertionError(
+			"Unexpected exception message:" +
+			"\nExpected: '" + errorMessage + "'",
+			sqlException);
+		}
+	    }
+	}
+    }
+
+    private void createTableCommand(Object value, List<Object> sequence)
+	    throws SQLException
+    {
+	new CreateTableCommand(value, sequence).execute();
+    }
+
+    private class CreateTableCommand extends AbstractStatementCommand {
+
+	CreateTableCommand(Object value, List<Object> sequence) {
+	    super("CREATE TABLE " + string(value, "CreateTable argument"));
+	    for (int i = 1; i < sequence.size(); i++) {
+		Entry<Object, Object> map =
+		    onlyEntry(sequence.get(i), "CreateTable attribute");
+		String attribute =
+		    string(map.getKey(), "CreateTable attribute name");
+		Object attributeValue = map.getValue();
+		if ("error".equals(attribute)) {
+		    parseError(attributeValue);
+		} else {
+		    fail("The '" + attribute + "' attribute name was not" +
+			 " recognized");
+		}
+	    }
+	}
+
+	void execute() throws SQLException {
+	    Statement stmt = connection.createStatement();
+	    if (DEBUG) {
+		System.err.println("Executing statement: " + statement);
+	    }
+	    try {
+		stmt.execute(statement);
+		if (DEBUG) {
+		    System.err.println("Statement executed successfully");
+		}
+	    } catch (SQLException e) {
+		if (DEBUG) {
+		    System.err.println(
+			"Generated error code: " + e.getSQLState() +
+			"\nException: " + e);
+		}
+		checkFailure(e);
+		return;
+	    }
+	    assertFalse("Statement execution succeeded, but was expected" +
+			" to generate an error",
+			errorSpecified);
+	}
+    }
+
+    private void statementCommand(Object value, List<Object> sequence)
+	throws SQLException
+    {
+	if (value != null) {
+	    new StatementCommand(value, sequence).execute();
+	}
+    }
+
+    private class StatementCommand extends AbstractStatementCommand {
+	private List<List<Object>> params;
+	private List<Integer> paramTypes;
+	private List<List<Object>> output;
+	private int rowCount = -1;
+	private List<String> outputTypes;
+	private String explain;
+
+	/**
+	 * The 1-based index of the row of parameters being used for the
+	 * current parameterized statement execution.
+	 */
+	private int paramsRow = 1;
+
+	/**
+	 * The 0-based index of the row of the output being compared with the
+	 * statement output.
+	 */
+	private int outputRow = 0;
+
+	StatementCommand(Object value, List<Object> sequence) {
+	    super(string(value, "Statement value"));
+	    if (statement.regionMatches(true, 0, "CREATE TABLE", 0, 12)) {
+		throw new ContextAssertionError(
+		    "The Statement command should not be used for CREATE" +
+		    " TABLE statements");
+	    }
+	    for (int i = 1; i < sequence.size(); i++) {
+		Entry<Object, Object> map =
+		    onlyEntry(sequence.get(i), "Statement attribute");
+		String attribute =
+		    string(map.getKey(), "Statement attribute name");
+		Object attributeValue = map.getValue();
+		if ("params".equals(attribute)) {
+		    parseParams(attributeValue);
+		} else if ("param_types".equals(attribute)) {
+		    parseParamTypes(attributeValue);
+		} else if ("output".equals(attribute)) {
+		    parseOutput(attributeValue);
+		} else if ("row_count".equals(attribute)) {
+		    parseRowCount(attributeValue);
+		} else if ("output_types".equals(attribute)) {
+		    parseOutputTypes(attributeValue);
+		} else if ("error".equals(attribute)) {
+		    parseError(attributeValue);
+		} else if ("explain".equals(attribute)) {
+		    parseExplain(attributeValue);
+		} else {
+		    fail("The '" + attribute + "' attribute name was not" +
+			 " recognized");
+		}
+	    }
+	    if (paramTypes != null) {
+		if (params == null) {
+		    fail("Cannot specify the param_types attribute without" +
+			 " params attribute");
+		} else {
+		    assertEquals("The params_types attribute must be the same" +
+				 " length as the row length of the params" +
+				 " attribute:",
+				 params.get(0).size(), paramTypes.size());
+		}
+	    }
+	    if (rowCount != -1) {
+		if (output != null) {
+		    assertEquals("The row_count attribute must be the same" +
+				 " as the length of the rows in the output"+
+				 " attribute:",
+				 output.get(0).size(), rowCount);
+		} else if (outputTypes != null) {
+		    assertEquals("The row_count attribute must be the same" +
+				 " as the length of the output_types" +
+				 " attribute:",
+				 outputTypes.size(), rowCount);
+		}
+	    }
+	    if (outputTypes != null) {
+		if (output != null) {
+		    assertEquals("The output_types attribute must be the same" +
+				 " length as the length of the rows in the" +
+				 " output attribute:",
+				 output.get(0).size(), outputTypes.size());
+		}
+	    }
+	    if (errorSpecified && output != null) {
+		fail("Cannot specify both error and output attributes");
+	    }
+	    if (errorSpecified && rowCount != -1) {
+		fail("Cannot specify both error and row_count attributes");
+	    }
+	}
+
+	private void parseParams(Object value) {
+	    if (value == null) {
+		return;
+	    }
+	    assertNull("The params attribute must not appear more than once",
+		       params);
+	    params = rows(value, "params value");
+	}
+
+	private void parseParamTypes(Object value) {
+	    if (value == null) {
+		return;
+	    }
+	    assertNull(
+		"The param_types attribute must not appear more than once",
+		paramTypes);
+	    List<String> paramTypeNames =
+		nonEmptyStringSequence(value, "param_types value");
+	    paramTypes = new ArrayList<Integer>(paramTypeNames.size());
+	    for (String typeName : paramTypeNames) {
+		Integer typeNumber = getTypeNumber(typeName);
+		assertNotNull("Unknown type name in param_types: " + typeName,
+			      typeNumber);
+		paramTypes.add(typeNumber);
+	    }
+	}
+
+	private void parseOutput(Object value) {
+	    if (value == null) {
+		return;
+	    }
+	    assertNull("The output attribute must not appear more than once",
+		       output);
+	    output = rows(value, "output value");
+	}
+
+	private void parseRowCount(Object value) {
+	    if (value == null) {
+		return;
+	    }
+	    assertTrue("The row_count attribute must not appear more than once",
+		       rowCount == -1);
+	    rowCount = integer(value, "row_count value");
+	    assertTrue("The row_count value must not be negative",
+		       rowCount >= 0);
+	}
+
+	private void parseOutputTypes(Object value) {
+	    if (value == null) {
+		return;
+	    }
+	    assertNull(
+		"The output_types attribute must not appear more than once",
+		paramTypes);
+	    outputTypes = nonEmptyStringSequence(value, "output_types value");
+	    for (String typeName : outputTypes) {
+		assertNotNull("Unknown type name in output_types: " + typeName,
+			      getTypeNumber(typeName));
+	    }
+	}
+
+	private void parseExplain(Object value) {
+	    if (value == null) {
+		return;
+	    }
+	    assertNull("The explain attribute must not appear more than once",
+		       explain);
+	    explain = string(value, "explain value").trim();
+	}
+
+	void execute() throws SQLException {
+	    if (explain != null) {
+		checkExplain();
+	    }
+	    if (params == null) {
+		Statement stmt = connection.createStatement();
 		try {
-			includeStack.push(includeValue);
-			test(in);
+		    if (DEBUG) {
+			System.err.println("Executing statement: " + statement);
+		    }
+		    try {
+			stmt.execute(statement);
+		    } catch (SQLException e) {
+			checkFailure(e);
+			return;
+		    }
+		    checkSuccess(stmt);
 		} finally {
-			includeStack.pop();
-			commandNumber = originalCommandNumber;
-			commandName = originalCommandName;
-			try {
-				in.close();
-			} catch (IOException e) {
-			}
+		    stmt.close();
 		}
-	}
-
-	private void propertiesCommand(Object value, List<Object> sequence) {
-		String engine = string(value, "Properties framework engine");
-		if (ALL_ENGINE.equals(engine) || IT_ENGINE.equals(engine)) {
-			for (Object elem : sequence) {
-				Entry<Object, Object> entry = onlyEntry(elem,
-						"Properties entry");
-				if ("suppressed".equals(entry.getKey())) {
-					suppressed = bool(entry.getValue(), "suppressed value");
-				}
+	    } else {
+		PreparedStatement stmt =
+		    connection.prepareStatement(statement);
+		try {
+		    int numParams = params.get(0).size();
+		    for (List<Object> paramsList : params) {
+			if (params.size() > 1) {
+			    commandName = "Statement, params list " + paramsRow;
 			}
-		}
-	}
-
-	/** Implements common behavior of commands that execute statements. */
-	private abstract class AbstractStatementCommand {
-		final String statement;
-		boolean errorSpecified;
-		String errorCode;
-		String errorMessage;
-
-		/** Handle a statement with the specified statement text. */
-		AbstractStatementCommand(String statement) {
-			this.statement = statement;
-		}
-
-		/** Parse an error attribute with the specified value. */
-		void parseError(Object value) {
-			if (value == null) {
-				return;
+			for (int i = 0; i < numParams; i++) {
+			    Object param = paramsList.get(i);
+			    if (paramTypes != null) {
+				stmt.setObject(i + 1, param, paramTypes.get(i));
+			    } else {
+				stmt.setObject(i + 1, param);
+			    }
 			}
-			assertFalse("The error attribute must not appear more than once",
-					errorSpecified);
-			errorSpecified = true;
-			List<Object> errorInfo = nonEmptyScalarSequence(value,
-					"error value");
-			errorCode = scalar(errorInfo.get(0), "error code").toString();
-			if (errorInfo.size() > 1) {
-				errorMessage = string(errorInfo.get(1), "error message").trim();
-				assertTrue("The error attribute can have at most two"
-						+ " elements", errorInfo.size() < 3);
-			}
-		}
-
-		/**
-		 * Check the specified exception against the error attribute specified
-		 * earlier, if any.
-		 */
-		void checkFailure(SQLException sqlException) {
+			SQLException sqlException = null;
 			if (DEBUG) {
-				System.err.println("Generated error code: "
-						+ sqlException.getSQLState() + "\nException: "
-						+ sqlException);
-			}
-			if (!errorSpecified) {
-				throw new ContextAssertionError(
-						"Unexpected statement execution failure: "
-								+ sqlException, sqlException);
-			}
-			if (!errorCode.equals(sqlException.getSQLState())) {
-				throw new ContextAssertionError("Unexpected error code:"
-						+ "\nExpected: " + errorCode + "\n     got: "
-						+ sqlException.getSQLState(), sqlException);
-			}
-			if (errorMessage != null) {
-				if (!errorMessage.equals(sqlException.getMessage().trim())) {
-					throw new ContextAssertionError(
-							"Unexpected exception message:" + "\nExpected: '"
-									+ errorMessage + "'", sqlException);
-				}
-			}
-		}
-	}
-
-	private void createTableCommand(Object value, List<Object> sequence)
-			throws SQLException {
-		new CreateTableCommand(value, sequence).execute();
-	}
-
-	private class CreateTableCommand extends AbstractStatementCommand {
-
-		CreateTableCommand(Object value, List<Object> sequence) {
-			super("CREATE TABLE " + string(value, "CreateTable argument"));
-			for (int i = 1; i < sequence.size(); i++) {
-				Entry<Object, Object> map = onlyEntry(sequence.get(i),
-						"CreateTable attribute");
-				String attribute = string(map.getKey(),
-						"CreateTable attribute name");
-				Object attributeValue = map.getValue();
-				if ("error".equals(attribute)) {
-					parseError(attributeValue);
-				} else {
-					fail("The '" + attribute + "' attribute name was not"
-							+ " recognized");
-				}
-			}
-		}
-
-		void execute() throws SQLException {
-			Statement stmt = connection.createStatement();
-			if (DEBUG) {
-				System.err.println("Executing statement: " + statement);
+			    System.err.println(
+				"Executing statement: " + statement +
+				"\nParameters: " + paramsList);
 			}
 			try {
-				stmt.execute(statement);
-				if (DEBUG) {
-					System.err.println("Statement executed successfully");
-				}
+			    stmt.execute();
 			} catch (SQLException e) {
-				if (DEBUG) {
-					System.err.println("Generated error code: "
-							+ e.getSQLState() + "\nException: " + e);
-				}
-				checkFailure(e);
-				return;
+			    checkFailure(e);
+			    continue;
 			}
-			assertFalse("Statement execution succeeded, but was expected"
-					+ " to generate an error", errorSpecified);
+			checkSuccess(stmt);
+			paramsRow++;
+		    }
+		    commandName = "Statement";
+		} finally {
+		    stmt.close();
 		}
+	    }
 	}
 
-	private void statementCommand(Object value, List<Object> sequence)
-			throws SQLException {
-		if (value != null) {
-			new StatementCommand(value, sequence).execute();
-		}
-	}
-
-	private class StatementCommand extends AbstractStatementCommand {
-		private List<List<Object>> params;
-		private List<Integer> paramTypes;
-		private List<List<Object>> output;
-		private int rowCount = -1;
-		private List<String> outputTypes;
-		private String explain;
-
-		/**
-		 * The 1-based index of the row of parameters being used for the current
-		 * parameterized statement execution.
-		 */
-		private int paramsRow = 1;
-
-		/**
-		 * The 0-based index of the row of the output being compared with the
-		 * statement output.
-		 */
-		private int outputRow = 0;
-
-		StatementCommand(Object value, List<Object> sequence) {
-			super(string(value, "Statement value"));
-			if (statement.regionMatches(true, 0, "CREATE TABLE", 0, 12)) {
-				throw new ContextAssertionError(
-						"The Statement command should not be used for CREATE"
-								+ " TABLE statements");
-			}
-			for (int i = 1; i < sequence.size(); i++) {
-				Entry<Object, Object> map = onlyEntry(sequence.get(i),
-						"Statement attribute");
-				String attribute = string(map.getKey(),
-						"Statement attribute name");
-				Object attributeValue = map.getValue();
-				if ("params".equals(attribute)) {
-					parseParams(attributeValue);
-				} else if ("param_types".equals(attribute)) {
-					parseParamTypes(attributeValue);
-				} else if ("output".equals(attribute)) {
-					parseOutput(attributeValue);
-				} else if ("row_count".equals(attribute)) {
-					parseRowCount(attributeValue);
-				} else if ("output_types".equals(attribute)) {
-					parseOutputTypes(attributeValue);
-				} else if ("error".equals(attribute)) {
-					parseError(attributeValue);
-				} else if ("explain".equals(attribute)) {
-					parseExplain(attributeValue);
-				} else {
-					fail("The '" + attribute + "' attribute name was not"
-							+ " recognized");
-				}
-			}
-			if (paramTypes != null) {
-				if (params == null) {
-					fail("Cannot specify the param_types attribute without"
-							+ " params attribute");
-				} else {
-					assertEquals("The params_types attribute must be the same"
-							+ " length as the row length of the params"
-							+ " attribute:", params.get(0).size(),
-							paramTypes.size());
-				}
-			}
-			if (rowCount != -1) {
-				if (output != null) {
-					assertEquals("The row_count attribute must be the same"
-							+ " as the length of the rows in the output"
-							+ " attribute:", output.get(0).size(), rowCount);
-				} else if (outputTypes != null) {
-					assertEquals("The row_count attribute must be the same"
-							+ " as the length of the output_types"
-							+ " attribute:", outputTypes.size(), rowCount);
-				}
-			}
-			if (outputTypes != null) {
-				if (output != null) {
-					assertEquals("The output_types attribute must be the same"
-							+ " length as the length of the rows in the"
-							+ " output attribute:", output.get(0).size(),
-							outputTypes.size());
-				}
-			}
-			if (errorSpecified && output != null) {
-				fail("Cannot specify both error and output attributes");
-			}
-			if (errorSpecified && rowCount != -1) {
-				fail("Cannot specify both error and row_count attributes");
-			}
-		}
-
-		private void parseParams(Object value) {
-			if (value == null) {
-				return;
-			}
-			assertNull("The params attribute must not appear more than once",
-					params);
-			params = rows(value, "params value");
-		}
-
-		private void parseParamTypes(Object value) {
-			if (value == null) {
-				return;
-			}
-			assertNull(
-					"The param_types attribute must not appear more than once",
-					paramTypes);
-			List<String> paramTypeNames = nonEmptyStringSequence(value,
-					"param_types value");
-			paramTypes = new ArrayList<Integer>(paramTypeNames.size());
-			for (String typeName : paramTypeNames) {
-				Integer typeNumber = getTypeNumber(typeName);
-				assertNotNull("Unknown type name in param_types: " + typeName,
-						typeNumber);
-				paramTypes.add(typeNumber);
-			}
-		}
-
-		private void parseOutput(Object value) {
-			if (value == null) {
-				return;
-			}
-			assertNull("The output attribute must not appear more than once",
-					output);
-			output = rows(value, "output value");
-		}
-
-		private void parseRowCount(Object value) {
-			if (value == null) {
-				return;
-			}
-			assertTrue(
-					"The row_count attribute must not appear more than once",
-					rowCount == -1);
-			rowCount = integer(value, "row_count value");
-			assertTrue("The row_count value must not be negative",
-					rowCount >= 0);
-		}
-
-		private void parseOutputTypes(Object value) {
-			if (value == null) {
-				return;
-			}
-			assertNull(
-					"The output_types attribute must not appear more than once",
-					paramTypes);
-			outputTypes = nonEmptyStringSequence(value, "output_types value");
-			for (String typeName : outputTypes) {
-				assertNotNull("Unknown type name in output_types: " + typeName,
-						getTypeNumber(typeName));
-			}
-		}
-
-		private void parseExplain(Object value) {
-			if (value == null) {
-				return;
-			}
-			assertNull("The explain attribute must not appear more than once",
-					explain);
-			explain = string(value, "explain value").trim();
-		}
-
-		void execute() throws SQLException {
-			if (explain != null) {
-				checkExplain();
-			}
-			if (params == null) {
-				Statement stmt = connection.createStatement();
-				try {
-					if (DEBUG) {
-						System.err.println("Executing statement: " + statement);
-					}
-					try {
-						stmt.execute(statement);
-					} catch (SQLException e) {
-						checkFailure(e);
-						return;
-					}
-					checkSuccess(stmt);
-				} finally {
-					stmt.close();
-				}
-			} else {
-				PreparedStatement stmt = connection.prepareStatement(statement);
-				try {
-					int numParams = params.get(0).size();
-					for (List<Object> paramsList : params) {
-						if (params.size() > 1) {
-							commandName = "Statement, params list " + paramsRow;
-						}
-						for (int i = 0; i < numParams; i++) {
-							Object param = paramsList.get(i);
-							if (paramTypes != null) {
-								stmt.setObject(i + 1, param, paramTypes.get(i));
-							} else {
-								stmt.setObject(i + 1, param);
-							}
-						}
-						SQLException sqlException = null;
-						if (DEBUG) {
-							System.err
-									.println("Executing statement: "
-											+ statement + "\nParameters: "
-											+ paramsList);
-						}
-						try {
-							stmt.execute();
-						} catch (SQLException e) {
-							checkFailure(e);
-							continue;
-						}
-						checkSuccess(stmt);
-						paramsRow++;
-					}
-					commandName = "Statement";
-				} finally {
-					stmt.close();
-				}
-			}
-		}
-
-		private void checkExplain() throws SQLException {
-			Statement stmt = connection.createStatement();
-			try {
-				stmt.execute("EXPLAIN " + statement);
-				ResultSet rs = stmt.getResultSet();
-				StringBuilder sb = new StringBuilder();
-				int numColumns = rs.getMetaData().getColumnCount();
-				while (rs.next()) {
-					for (int i = 1; i <= numColumns; i++) {
-						if (i != 1) {
-							sb.append(", ");
-						}
-						sb.append(rs.getString(i));
-					}
-					sb.append('\n');
-				}
-				String got = sb.toString().trim();
-				assertEquals("Explain results do not match:", explain, got);
-			} finally {
-				stmt.close();
-			}
-		}
-
-		private void checkSuccess(Statement stmt) throws SQLException {
-			assertFalse("Statement execution succeeded, but was expected"
-					+ " to generate an error", errorSpecified);
-			ResultSet rs = stmt.getResultSet();
-			if (rs == null) {
-				assertNull("Query did not produce results output", output);
-				assertNull("Query did not produce results, so output_types"
-						+ " are not supported", outputTypes);
-				if (rowCount != -1) {
-					int updateCount = stmt.getUpdateCount();
-					assertFalse("Query did not produce an update count",
-							updateCount == -1);
-					outputRow += updateCount;
-					checkRowCount(rowCount, false);
-				}
-			} else {
-				checkResults(rs);
-				assertFalse("Multiple result sets not supported",
-						stmt.getMoreResults());
-			}
-		}
-
-		/**
-		 * Check if the number of rows of output seen, as measured by the
-		 * outputRow field, is incorrect given the expected number of rows.
-		 * 
-		 * @param expected
-		 *            the number of rows expected
-		 * @param more
-		 *            whether there are more result rows in the current result
-		 *            set
-		 */
-		private void checkRowCount(int expected, boolean more) {
-			int got = outputRow;
-			if (more) {
-				got++;
-			}
-			if (got > expected) {
-				throw new ContextAssertionError("Too many output rows:"
-						+ "\nExpected: " + expected + "\n     got: " + got);
-			} else if (!more && (params == null || paramsRow == params.size())
-					&& (got < expected)) {
-				throw new ContextAssertionError("Too few output rows:"
-						+ "\nExpected: " + expected + "\n     got: " + got);
-			}
-		}
-
-		private void checkResults(ResultSet rs) throws SQLException {
-			if (outputTypes != null && outputRow == 0) {
-				checkOutputTypes(rs);
-			}
-			if (DEBUG) {
-				System.err.println("Statement output:");
-			}
-			if (output != null) {
-				ResultSetMetaData metaData = rs.getMetaData();
-				int numColumns = metaData.getColumnCount();
-				boolean resultsEmpty = false;
-				for (; true; outputRow++) {
-					if (!rs.next()) {
-						resultsEmpty = true;
-						break;
-					} else if (outputRow >= output.size()) {
-						break;
-					}
-					List<Object> row = output.get(outputRow);
-					if (outputRow == 0) {
-						assertEquals("Unexpected number of columns in output:",
-								row.size(), numColumns);
-					}
-					List<Object> resultsRow = new ArrayList<Object>(row.size());
-					for (int i = 1; i <= numColumns; i++) {
-						resultsRow.add(rs.getObject(i));
-					}
-					if (DEBUG) {
-						System.err.println(arrayString(resultsRow));
-					}
-					if (!rowsEqual(row, resultsRow)) {
-						throw new ContextAssertionError(
-								"Unexpected output in row " + (outputRow + 1)
-										+ ":" + "\nExpected: "
-										+ arrayString(row) + "\n     got: "
-										+ arrayString(resultsRow));
-					}
-				}
-				checkRowCount(output.size(), !resultsEmpty);
-			} else {
-				ResultSetMetaData metaData = rs.getMetaData();
-				int numColumns = metaData.getColumnCount();
-				List<Object> resultsRow = DEBUG ? new ArrayList<Object>(
-						numColumns) : null;
-				while (rs.next()) {
-					outputRow++;
-					for (int i = 1; i <= numColumns; i++) {
-						Object result = rs.getObject(i);
-						if (DEBUG) {
-							resultsRow.add(result);
-						}
-					}
-					if (DEBUG) {
-						System.err.println(arrayString(resultsRow));
-						resultsRow.clear();
-					}
-				}
-				if (rowCount != -1) {
-					checkRowCount(rowCount, false);
-				}
-			}
-		}
-
-		private void checkOutputTypes(ResultSet rs) throws SQLException {
-			ResultSetMetaData metaData = rs.getMetaData();
-			int numColumns = metaData.getColumnCount();
-			assertEquals("Wrong number of output types:", outputTypes.size(),
-					numColumns);
-			for (int i = 1; i <= numColumns; i++) {
-				int columnType = metaData.getColumnType(i);
-				String columnTypeName = getTypeName(columnType);
-				if (columnTypeName == null) {
-					columnTypeName = "<unknown "
-							+ metaData.getColumnTypeName(i) + " (" + columnType
-							+ ")>";
-				}
-				assertEquals("Wrong output type for column " + i + ":",
-						outputTypes.get(i - 1), columnTypeName);
-			}
-		}
-
-		private boolean rowsEqual(List<Object> pattern, List<Object> row) {
-			int size = pattern.size();
-			if (size != row.size()) {
-				return false;
-			}
-			for (int i = 0; i < size; i++) {
-				Object patternElem = pattern.get(i);
-				Object rowElem = row.get(i);
-				if (patternElem instanceof OutputComparator) {
-					return ((OutputComparator) patternElem)
-							.compareOutput(rowElem);
-				} else if (patternElem == null) {
-					if (rowElem != null) {
-						return false;
-					}
-				} else if (!arrayElementString(patternElem).equals(
-						arrayElementString(rowElem))) {
-					return false;
-				}
-			}
-			return true;
-		}
-
-		private void debugPrintResults(ResultSet rs) throws SQLException {
-			System.err.println(context() + "Result output:");
-			ResultSetMetaData md = rs.getMetaData();
-			int nc = md.getColumnCount();
-			for (int i = 1; i <= nc; i++) {
-				if (i != 1) {
-					System.err.print(", ");
-				}
-				System.err.print(md.getColumnName(i));
-			}
-			System.err.println();
-			while (rs.next()) {
-				for (int i = 1; i <= nc; i++) {
-					if (i != 1) {
-						System.err.print(", ");
-					}
-					System.err.print(rs.getObject(i));
-				}
-				System.err.println();
-			}
-			rs.beforeFirst();
-		}
-	}
-
-	static String arrayString(List<Object> array) {
-		if (array == null) {
-			return "null";
-		}
+	private void checkExplain() throws SQLException {
+	    Statement stmt = connection.createStatement();
+	    try {
+		stmt.execute("EXPLAIN " + statement);
+		ResultSet rs = stmt.getResultSet();
 		StringBuilder sb = new StringBuilder();
-		sb.append('[');
-		for (Object elem : array) {
-			if (sb.length() != 1) {
-				sb.append(", ");
+		int numColumns = rs.getMetaData().getColumnCount();
+		while (rs.next()) {
+		    for (int i = 1; i <= numColumns; i++) {
+			if (i != 1) {
+			    sb.append(", ");
 			}
-			sb.append(arrayElementString(elem));
+			sb.append(rs.getString(i));
+		    }
+		    sb.append('\n');
 		}
-		sb.append(']');
-		return sb.toString();
+		String got = sb.toString().trim();
+		assertEquals("Explain results do not match:", explain, got);
+	    } finally {
+		stmt.close();
+	    }
 	}
 
-	static String arrayElementString(Object elem) {
-		if (elem == null) {
-			return "null";
-		} else {
-			Class elemClass = elem.getClass();
-			if (!elemClass.isArray()) {
-				return elem.toString();
-			} else if (elemClass == byte[].class) {
-				return Arrays.toString((byte[]) elem);
-			} else if (elemClass == short[].class) {
-				return Arrays.toString((short[]) elem);
-			} else if (elemClass == int[].class) {
-				return Arrays.toString((int[]) elem);
-			} else if (elemClass == long[].class) {
-				return Arrays.toString((long[]) elem);
-			} else if (elemClass == char[].class) {
-				return Arrays.toString((char[]) elem);
-			} else if (elemClass == float[].class) {
-				return Arrays.toString((float[]) elem);
-			} else if (elemClass == double[].class) {
-				return Arrays.toString((double[]) elem);
-			} else if (elemClass == boolean[].class) {
-				return Arrays.toString((boolean[]) elem);
-			} else {
-				/* Another type of array -- shouldn't happen */
-				return elem.toString();
-			}
+	private void checkSuccess(Statement stmt) throws SQLException {
+	    assertFalse("Statement execution succeeded, but was expected" +
+			" to generate an error",
+			errorSpecified);
+	    ResultSet rs = stmt.getResultSet();
+	    if (rs == null) {
+		assertNull("Query did not produce results output", output);
+		assertNull("Query did not produce results, so output_types" +
+			   " are not supported",
+			   outputTypes);
+		if (rowCount != -1) {
+		    int updateCount = stmt.getUpdateCount();
+		    assertFalse("Query did not produce an update count",
+				updateCount == -1);
+		    outputRow += updateCount;
+		    checkRowCount(rowCount, false);
 		}
-	}
-
-	static Object scalar(Object object, String desc) {
-		assertThat("The " + desc + " must be a scalar", object,
-				not(anyOf(instanceOf(Collection.class), instanceOf(Map.class))));
-		return object;
-	}
-
-	static String string(Object object, String desc) {
-		assertThat("The " + desc + " must be a string", object,
-				instanceOf(String.class));
-		return (String) object;
-	}
-
-	static int integer(Object object, String desc) {
-		assertThat("The " + desc + " must be an integer", object,
-				instanceOf(Integer.class));
-		return (Integer) object;
-	}
-
-	static boolean bool(Object object, String desc) {
-		assertThat("The " + desc + " must be a boolean", object,
-				instanceOf(Boolean.class));
-		return (Boolean) object;
-	}
-
-	static Map<Object, Object> map(Object object, String desc) {
-		assertThat("The " + desc + " must be a map", object,
-				instanceOf(Map.class));
-		return (Map<Object, Object>) object;
-	}
-
-	static Entry<Object, Object> firstEntry(Object object, String desc) {
-		Map<Object, Object> map = map(object, desc);
-		for (Entry<Object, Object> entry : map.entrySet()) {
-			return entry;
-		}
-		throw new AssertionError("The " + desc + " must not be empty");
-	}
-
-	static Entry<Object, Object> onlyEntry(Object object, String desc) {
-		Map<Object, Object> map = map(object, desc);
-		assertEquals("The " + desc + " must contain exactly one entry:", 1,
-				map.size());
-		for (Entry<Object, Object> entry : map.entrySet()) {
-			return entry;
-		}
-		throw new AssertionError("Not reachable");
-	}
-
-	static List<Object> sequence(Object object, String desc) {
-		assertThat("The " + desc + " must be a sequence", object,
-				instanceOf(List.class));
-		return (List<Object>) object;
-	}
-
-	static List<Object> nonEmptySequence(Object object, String desc) {
-		List<Object> list = sequence(object, desc);
-		assertFalse("The " + desc + " must not be empty", list.isEmpty());
-		return list;
-	}
-
-	static List<Object> scalarSequence(Object object, String desc) {
-		List<Object> list = sequence(object, desc);
-		for (Object elem : list) {
-			assertThat(
-					"The element of the " + desc + " must be a scalar",
-					elem,
-					not(anyOf(instanceOf(Collection.class),
-							instanceOf(Map.class))));
-		}
-		return list;
-	}
-
-	static List<Object> nonEmptyScalarSequence(Object object, String desc) {
-		List<Object> list = scalarSequence(object, desc);
-		assertFalse("The " + desc + " must not be empty", list.isEmpty());
-		return list;
-	}
-
-	static List<String> stringSequence(Object object, String desc) {
-		List<Object> list = sequence(object, desc);
-		List<String> strList = new ArrayList<String>(list.size());
-		for (Object elem : list) {
-			assertThat("The element of the " + desc + " must be a string",
-					elem, instanceOf(String.class));
-			strList.add((String) elem);
-		}
-		return strList;
-	}
-
-	static List<String> nonEmptyStringSequence(Object object, String desc) {
-		List<String> list = stringSequence(object, desc);
-		assertFalse("The " + desc + " must not be empty", list.isEmpty());
-		return list;
-	}
-
-	static List<List<Object>> rows(Object object, String desc) {
-		List<Object> list = nonEmptySequence(object, desc);
-		List<List<Object>> rows = new ArrayList<List<Object>>();
-		int rowLength = -1;
-		for (int i = 0; i < list.size(); i++) {
-			List<Object> row = nonEmptyScalarSequence(list.get(i), desc
-					+ " element");
-			if (i == 0) {
-				rowLength = row.size();
-			} else {
-				assertEquals(desc + " row " + (i + 1) + " has a different"
-						+ " length than previous rows:", rowLength, row.size());
-			}
-			rows.add(row);
-		}
-		return rows;
-	}
-
-	/** Support comparing this object to expected output. */
-	interface OutputComparator {
-		/**
-		 * Compares the specified output with this object, which represents the
-		 * expected output.
-		 * 
-		 * @param output
-		 *            the output
-		 * @return whether the output matches the expected output
-		 */
-		boolean compareOutput(Object output);
+	    } else {
+		checkResults(rs);
+		assertFalse("Multiple result sets not supported",
+			    stmt.getMoreResults());
+	    }
 	}
 
 	/**
-	 * An object that represents a don't care value specified in the expected
-	 * output.
+	 * Check if the number of rows of output seen, as measured by the
+	 * outputRow field, is incorrect given the expected number of rows.
+	 *
+	 * @param expected the number of rows expected
+	 * @param more whether there are more result rows in the current result
+	 * set
 	 */
-	static class DontCare implements OutputComparator {
-		static final DontCare INSTANCE = new DontCare();
-
-		private DontCare() {
-		}
-
-		@Override
-		public boolean compareOutput(Object output) {
-			return true;
-		}
-
-		@Override
-		public String toString() {
-			return "!dc";
-		}
+	private void checkRowCount(int expected, boolean more) {
+	    int got = outputRow;
+	    if (more) {
+		got++;
+	    }
+	    if (got > expected) {
+		throw new ContextAssertionError(
+		    "Too many output rows:" +
+		    "\nExpected: " + expected +
+		    "\n     got: " + got);
+	    } else if (!more &&
+		       (params == null || paramsRow == params.size()) &&
+		       (got < expected))
+	    {
+		throw new ContextAssertionError(
+		    "Too few output rows:" +
+		    "\nExpected: " + expected +
+		    "\n     got: " + got);
+	    }
 	}
 
-	/**
-	 * A class that represents a regular expression specified in the expected
-	 * output.
-	 */
-	static class Regexp implements OutputComparator {
-		private final Pattern pattern;
-
-		Regexp(String pattern) {
-			this.pattern = Pattern.compile(convertPattern(pattern));
+	private void checkResults(ResultSet rs) throws SQLException {
+	    if (outputTypes != null && outputRow == 0) {
+		checkOutputTypes(rs);
+	    }
+	    if (DEBUG) {
+		System.err.println("Statement output:");
+	    }
+	    if (output != null) {
+		ResultSetMetaData metaData = rs.getMetaData();
+		int numColumns = metaData.getColumnCount();
+		boolean resultsEmpty = false;
+		for ( ; true; outputRow++) {
+		    if (!rs.next()) {
+			resultsEmpty = true;
+			break;
+		    } else if (outputRow >= output.size()) {
+			break;
+		    }
+		    List<Object> row = output.get(outputRow);
+		    if (outputRow == 0) {
+			assertEquals("Unexpected number of columns in output:",
+				     row.size(), numColumns);
+		    }
+		    List<Object> resultsRow = new ArrayList<Object>(row.size());
+		    for (int i = 1; i <= numColumns; i++) {
+			resultsRow.add(rs.getObject(i));
+		    }
+		    if (DEBUG) {
+			System.err.println(arrayString(resultsRow));
+		    }
+		    if (!rowsEqual(row, resultsRow)) {
+			throw new ContextAssertionError(
+			    "Unexpected output in row " + (outputRow + 1) +
+			    ":" +
+			    "\nExpected: " + arrayString(row) +
+			    "\n     got: " + arrayString(resultsRow));
+		    }
+		}
+		checkRowCount(output.size(), !resultsEmpty);
+	    } else {
+		ResultSetMetaData metaData = rs.getMetaData();
+		int numColumns = metaData.getColumnCount();
+		List<Object> resultsRow =
+		    DEBUG ? new ArrayList<Object>(numColumns) : null;
+		while (rs.next()) {
+		    outputRow++;
+		    for (int i = 1; i <= numColumns; i++) {
+			Object result = rs.getObject(i);
 			if (DEBUG) {
-				System.err.println("Regexp: '" + pattern + "' => '"
-						+ this.pattern + "'");
+			    resultsRow.add(result);
 			}
+		    }
+		    if (DEBUG) {
+			System.err.println(arrayString(resultsRow));
+			resultsRow.clear();
+		    }
 		}
-
-		@Override
-		public boolean compareOutput(Object object) {
-			boolean result = pattern.matcher(String.valueOf(object)).matches();
-			if (DEBUG) {
-				System.err.println("Regexp.compareOutput pattern='" + pattern
-						+ "', object='" + object + "' => '" + result + "'");
-			}
-			return result;
+		if (rowCount != -1) {
+		    checkRowCount(rowCount, false);
 		}
-
-		@Override
-		public String toString() {
-			return "!re '" + pattern + "'";
-		}
+	    }
 	}
 
+        private void checkOutputTypes(ResultSet rs) throws SQLException {
+	    ResultSetMetaData metaData = rs.getMetaData();
+	    int numColumns = metaData.getColumnCount();
+	    assertEquals("Wrong number of output types:",
+			 outputTypes.size(), numColumns);
+	    for (int i = 1; i <= numColumns; i++) {
+		int columnType = metaData.getColumnType(i);
+		String columnTypeName = getTypeName(columnType);
+		if (columnTypeName == null) {
+		    columnTypeName = "<unknown " +
+			metaData.getColumnTypeName(i) + " (" + columnType + ")>";
+		}
+		assertEquals("Wrong output type for column " + i + ":",
+			     outputTypes.get(i - 1), columnTypeName);
+	    }
+	}
+
+        private boolean rowsEqual(List<Object> pattern, List<Object> row) {
+	    int size = pattern.size();
+	    if (size != row.size()) {
+		return false;
+	    }
+	    for (int i = 0; i < size; i++) {
+		Object patternElem = pattern.get(i);
+		Object rowElem = row.get(i);
+		if (patternElem instanceof OutputComparator) {
+		    return ((OutputComparator) patternElem).compareOutput(
+			rowElem);
+		} else if (patternElem == null) {
+		    if (rowElem != null) {
+			return false;
+		    }
+		} else if (!arrayElementString(patternElem).equals(
+			       arrayElementString(rowElem))) {
+		    return false;
+		}
+	    }
+	    return true;
+	}
+
+	private void debugPrintResults(ResultSet rs) throws SQLException {
+	    System.err.println(context() + "Result output:");
+	    ResultSetMetaData md = rs.getMetaData();
+	    int nc = md.getColumnCount();
+	    for (int i = 1; i <= nc; i++) {
+		if (i != 1) {
+		    System.err.print(", ");
+		}
+		System.err.print(md.getColumnName(i));
+	    }
+	    System.err.println();
+	    while (rs.next()) {
+		for (int i = 1; i <= nc; i++) {
+		    if (i != 1) {
+			System.err.print(", ");
+		    }
+		    System.err.print(rs.getObject(i));
+		}
+		System.err.println();
+	    }
+	    rs.beforeFirst();
+	}
+    }
+
+    static String arrayString(List<Object> array) {
+	if (array == null) {
+	    return "null";
+	}
+	StringBuilder sb = new StringBuilder();
+	sb.append('[');
+	for (Object elem : array) {
+	    if (sb.length() != 1) {
+		sb.append(", ");
+	    }
+	    sb.append(arrayElementString(elem));
+	}
+	sb.append(']');
+	return sb.toString();
+    }
+
+    static String arrayElementString(Object elem) {
+	if (elem == null) {
+	    return "null";
+	} else {
+	    Class elemClass = elem.getClass();
+	    if (!elemClass.isArray()) {
+		return elem.toString();
+	    } else if (elemClass == byte[].class) {
+		return Arrays.toString((byte[]) elem);
+	    } else if (elemClass == short[].class) {
+		return Arrays.toString((short[]) elem);
+	    } else if (elemClass == int[].class) {
+		return Arrays.toString((int[]) elem);
+	    } else if (elemClass == long[].class) {
+		return Arrays.toString((long[]) elem);
+	    } else if (elemClass == char[].class) {
+		return Arrays.toString((char[]) elem);
+	    } else if (elemClass == float[].class) {
+		return Arrays.toString((float[]) elem);
+	    } else if (elemClass == double[].class) {
+		return Arrays.toString((double[]) elem);
+	    } else if (elemClass == boolean[].class) {
+		return Arrays.toString((boolean[]) elem);
+	    } else {
+		/* Another type of array -- shouldn't happen */
+		return elem.toString();
+	    }
+	}
+    }
+
+    static Object scalar(Object object, String desc) {
+	assertThat("The " + desc + " must be a scalar",
+		   object,
+		   not(anyOf(instanceOf(Collection.class),
+			     instanceOf(Map.class))));
+	return object;
+    }
+
+    static String string(Object object, String desc) {
+	assertThat("The " + desc + " must be a string",
+		   object, instanceOf(String.class));
+	return (String) object;
+    }
+
+    static int integer(Object object, String desc) {
+	assertThat("The " + desc + " must be an integer",
+		   object, instanceOf(Integer.class));
+	return (Integer) object;
+    }
+
+    static boolean bool(Object object, String desc) {
+	assertThat("The " + desc + " must be a boolean",
+		   object, instanceOf(Boolean.class));
+	return (Boolean) object;
+    }
+
+    static Map<Object, Object> map(Object object, String desc) {
+	assertThat("The " + desc + " must be a map",
+		   object, instanceOf(Map.class));
+	return (Map<Object, Object>) object;
+    }
+
+    static Entry<Object, Object> firstEntry(Object object, String desc) {
+	Map<Object, Object> map = map(object, desc);
+	for (Entry<Object, Object> entry : map.entrySet()) {
+	    return entry;
+	}
+	throw new AssertionError("The " + desc + " must not be empty");
+    }
+
+    static Entry<Object, Object> onlyEntry(Object object, String desc) {
+	Map<Object, Object> map = map(object, desc);
+	assertEquals("The " + desc + " must contain exactly one entry:",
+		     1, map.size());
+	for (Entry<Object, Object> entry : map.entrySet()) {
+	    return entry;
+	}
+	throw new AssertionError("Not reachable");
+    }
+
+    static List<Object> sequence(Object object, String desc) {
+	assertThat("The " + desc + " must be a sequence",
+		   object, instanceOf(List.class));
+	return (List<Object>) object;
+    }
+
+    static List<Object> nonEmptySequence(Object object, String desc) {
+	List<Object> list = sequence(object, desc);
+	assertFalse("The " + desc + " must not be empty", list.isEmpty());
+	return list;
+    }
+
+    static List<Object> scalarSequence(Object object, String desc) {
+	List<Object> list = sequence(object, desc);
+	for (Object elem : list) {
+	    assertThat("The element of the " + desc + " must be a scalar",
+		       elem,
+		       not(anyOf(instanceOf(Collection.class),
+				 instanceOf(Map.class))));
+	}
+	return list;
+    }
+
+    static List<Object> nonEmptyScalarSequence(Object object, String desc) {
+	List<Object> list = scalarSequence(object, desc);
+	assertFalse("The " + desc + " must not be empty", list.isEmpty());
+	return list;
+    }
+
+    static List<String> stringSequence(Object object, String desc) {
+	List<Object> list = sequence(object, desc);
+	List<String> strList = new ArrayList<String>(list.size());
+	for (Object elem : list) {
+	    assertThat("The element of the " + desc + " must be a string",
+		       elem, instanceOf(String.class));
+	    strList.add((String) elem);
+	}
+	return strList;
+    }
+
+    static List<String> nonEmptyStringSequence(Object object, String desc) {
+	List<String> list = stringSequence(object, desc);
+	assertFalse("The " + desc + " must not be empty", list.isEmpty());
+	return list;
+    }
+
+    static List<List<Object>> rows(Object object, String desc) {
+	List<Object> list = nonEmptySequence(object, desc);
+	List<List<Object>> rows = new ArrayList<List<Object>>();
+	int rowLength = -1;
+	for (int i = 0; i < list.size(); i++) {
+	    List<Object> row =
+		nonEmptyScalarSequence(list.get(i), desc + " element");
+	    if (i == 0) {
+		rowLength = row.size();
+	    } else {
+		assertEquals(
+		    desc + " row " + (i + 1) + " has a different" +
+		    " length than previous rows:",
+		    rowLength, row.size());
+	    }
+	    rows.add(row);
+	}
+	return rows;
+    }
+
+    /** Support comparing this object to expected output. */
+    interface OutputComparator {
 	/**
-	 * Convert a pattern from the input format, with {N} for captured groups, to
-	 * the \N format used by Java regexps.
+	 * Compares the specified output with this object, which represents the
+	 * expected output.
+	 *
+	 * @param output the output
+	 * @return whether the output matches the expected output
 	 */
-	static String convertPattern(String pattern) {
-		if (pattern.indexOf("{") == -1) {
-			return pattern;
-		} else {
-			/*
-			 * Replace {N} with \N. To make sure that the '{' is not escaped,
-			 * require that the brace is either at the beginning of the input,
-			 * right after the last match, that the previous character is not a
-			 * backslash, or that the previous two characters are backslashes,
-			 * for an escaped backslash. Note that backslashes need to be
-			 * doubled to get them into the string, and then doubled again for
-			 * regexp processing to treat them as literals.
-			 */
-			return pattern.replaceAll(
-					"(\\A|\\G|[^\\\\]|\\\\\\\\)[{]([0-9]+)[}]", "$1\\\\$2");
+	boolean compareOutput(Object output);
+    }
+
+    /**
+     * An object that represents a don't care value specified in the expected
+     * output.
+     */
+    static class DontCare implements OutputComparator {
+	static final DontCare INSTANCE = new DontCare();
+	private DontCare() { }
+        public boolean compareOutput(Object output) {
+	    return true;
+	}
+	public String toString() {
+	    return "!dc";
+	}
+    }
+
+    /**
+     * A class that represents a regular expression specified in the expected
+     * output.
+     */
+    static class Regexp implements OutputComparator {
+	private final Pattern pattern;
+	Regexp(String pattern) {
+	    this.pattern = Pattern.compile(convertPattern(pattern));
+	    if (DEBUG) {
+		System.err.println("Regexp: '" + pattern + "' => '" +
+				   this.pattern + "'");
+	    }
+	}
+	public boolean compareOutput(Object object) {
+	    boolean result = pattern.matcher(String.valueOf(object)).matches();
+	    if (DEBUG) {
+		System.err.println("Regexp.compareOutput pattern='" + pattern +
+				   "', object='" + object + "' => '" + result +
+				   "'");
+	    }
+	    return result;
+	}
+	public String toString() {
+	    return "!re '" + pattern + "'";
+	}
+    }
+
+    /**
+     * Convert a pattern from the input format, with {N} for captured groups,
+     * to the \N format used by Java regexps.
+     */
+    static String convertPattern(String pattern) {
+	if (pattern.indexOf("{") == -1) {
+	    return pattern;
+	} else {
+	    /*
+	     * Replace {N} with \N.  To make sure that the '{' is not escaped,
+	     * require that the brace is either at the beginning of the input,
+	     * right after the last match, that the previous character is not a
+	     * backslash, or that the previous two characters are backslashes,
+	     * for an escaped backslash.  Note that backslashes need to be
+	     * doubled to get them into the string, and then doubled again for
+	     * regexp processing to treat them as literals.
+	     */
+	    return pattern.replaceAll(
+		"(\\A|\\G|[^\\\\]|\\\\\\\\)[{]([0-9]+)[}]", "$1\\\\$2");
+	}
+    }
+
+    /**
+     * A SnakeYAML constructor that converts dc tags to DontCare.INSTANCE and
+     * re tags to Regexp instances.
+     */
+    private static class RegisterTags extends SafeConstructor {
+	RegisterTags() {
+	    yamlConstructors.put(new Tag("!dc"), new ConstructDontCare());
+	    yamlConstructors.put(new Tag("!re"), new ConstructRegexp());
+	    yamlConstructors.put(new Tag("!select-engine"),
+				 new ConstructSelectEngine());
+            yamlConstructors.put(new Tag("!date"), new ConstructSystemDate());
+            yamlConstructors.put(new Tag("!time"), new ConstructSystemTime());
+            yamlConstructors.put(new Tag("!datetime"),
+                    new ConstructSystemDateTime());
+	}
+	private static class ConstructDontCare extends AbstractConstruct {
+	    @Override
+	    public Object construct(Node node) {
+		return DontCare.INSTANCE;
+	    }
+	}
+	private static class ConstructRegexp extends AbstractConstruct {
+	    @Override
+	    public Object construct(Node node) {
+		if (!(node instanceof ScalarNode)) {
+		    fail("The value of the regular expression (!re) tag must" +
+			 " be a scalar");
 		}
+		return new Regexp(((ScalarNode) node).getValue());
+	    }
+	}
+	private class ConstructSelectEngine extends AbstractConstruct {
+	    @Override
+	    public Object construct(Node node) {
+		if (!(node instanceof MappingNode)) {
+		    fail("The value of the !select-engine tag must be a map" +
+			 "\nGot: " + node);
+		}
+                String matchingKey = null;
+                Object result = null;
+		for (NodeTuple tuple : ((MappingNode) node).getValue()) {
+		    Node keyNode = tuple.getKeyNode();
+		    if (!(keyNode instanceof ScalarNode)) {
+			fail("The key in a !select-engine map must be a scalar" +
+			     "\nGot: " + constructObject(keyNode));
+		    }
+		    String key = ((ScalarNode) keyNode).getValue();
+		    if (IT_ENGINE.equals(key) ||
+                        (matchingKey == null && ALL_ENGINE.equals(key)))
+                    {
+                        matchingKey = key;
+			result = constructObject(tuple.getValueNode());
+		    }
+		}
+                if (matchingKey != null) {
+                    if (DEBUG) {
+                        System.err.println("Select engine: '" + matchingKey +
+                                           "' => '" + result + "'");
+                    }
+                    return result;
+                } else {
+                    if (DEBUG) {
+                        System.err.println("Select engine: no match");
+                    }
+                    return null;
+                }
+	    }
 	}
 
-	/**
-	 * A SnakeYAML constructor that converts dc tags to DontCare.INSTANCE and re
-	 * tags to Regexp instances.
-	 */
-	private static class RegisterTags extends SafeConstructor {
-		RegisterTags() {
-			yamlConstructors.put(new Tag("!dc"), new ConstructDontCare());
-			yamlConstructors.put(new Tag("!re"), new ConstructRegexp());
-			yamlConstructors.put(new Tag("!select-engine"),
-					new ConstructSelectEngine());
-			yamlConstructors.put(new Tag("!date"),
-					new ConstructSystemDate());
-			yamlConstructors.put(new Tag("!time"), new ConstructSystemTime());
-			yamlConstructors.put(new Tag("!datetime"),
-					new ConstructSystemDateTime());
-		}
+        private static class ConstructSystemDate extends AbstractConstruct {
+            // not thread safe, not sure if that matters
+            @Override
+            public Object construct(Node node) {
+                Date today = Calendar.getInstance().getTime();
+                return DEFAULT_DATE_FORMAT.format(today);
+            }
 
-		private static class ConstructDontCare extends AbstractConstruct {
-			@Override
-			public Object construct(Node node) {
-				return DontCare.INSTANCE;
-			}
-		}
+        }
 
-		private static class ConstructRegexp extends AbstractConstruct {
-			@Override
-			public Object construct(Node node) {
-				if (!(node instanceof ScalarNode)) {
-					fail("The value of the regular expression (!re) tag must"
-							+ " be a scalar");
-				}
-				return new Regexp(((ScalarNode) node).getValue());
-			}
-		}
+        private static class ConstructSystemTime extends AbstractConstruct {
+            @Override
+            public Object construct(Node node) {
+                return new TimeChecker();
+            }
+        }
 
-		private class ConstructSelectEngine extends AbstractConstruct {
-			@Override
-			public Object construct(Node node) {
-				if (!(node instanceof MappingNode)) {
-					fail("The value of the !select-engine tag must be a map"
-							+ "\nGot: " + node);
-				}
-				String matchingKey = null;
-				Object result = null;
-				for (NodeTuple tuple : ((MappingNode) node).getValue()) {
-					Node keyNode = tuple.getKeyNode();
-					if (!(keyNode instanceof ScalarNode)) {
-						fail("The key in a !select-engine map must be a scalar"
-								+ "\nGot: " + constructObject(keyNode));
-					}
-					String key = ((ScalarNode) keyNode).getValue();
-					if (IT_ENGINE.equals(key)
-							|| (matchingKey == null && ALL_ENGINE.equals(key))) {
-						matchingKey = key;
-						result = constructObject(tuple.getValueNode());
-					}
-				}
-				if (matchingKey != null) {
-					if (DEBUG) {
-						System.err.println("Select engine: '" + matchingKey
-								+ "' => '" + result + "'");
-					}
-					return result;
-				} else {
-					if (DEBUG) {
-						System.err.println("Select engine: no match");
-					}
-					return null;
-				}
-			}
-		}
+        private static class ConstructSystemDateTime extends AbstractConstruct {
+            @Override
+            public Object construct(Node node) {
+                return new DateTimeChecker();
+            }
+        }
 
-		private static class ConstructSystemDate extends AbstractConstruct {
-			// not thread safe, not sure if that matters
-			@Override
-			public Object construct(Node node) {
-				Date today = Calendar.getInstance().getTime();
-				return DEFAULT_DATE_FORMAT.format(today);
-			}
+    }
 
-		}
+    /**
+     * A class that represents the current system time 60 seconds
+     */
+    static class TimeChecker implements OutputComparator {
 
-		private static class ConstructSystemTime extends AbstractConstruct {
-			@Override
-			public Object construct(Node node) {
-				return new TimeChecker();
-			}
-		}
+        private static final int MINUTES_IN_SECONDS = 60;
+        private static final int HOURS_IN_MINUTES = 60;
+        private static final int SECONDS_IN_MILLISECONDS = 1000;
 
-		private static class ConstructSystemDateTime extends AbstractConstruct {
-			@Override
-			public Object construct(Node node) {
-				return new DateTimeChecker();
-			}
-		}
+        @Override
+        public boolean compareOutput(Object object) {
+            String[] time_as_string = String.valueOf(object).split(":");
+            Calendar local_calendar = Calendar.getInstance();
+            long local_time_in_seconds = local_calendar
+                    .get(Calendar.HOUR_OF_DAY)
+                    * MINUTES_IN_SECONDS
+                    * HOURS_IN_MINUTES;
+            local_time_in_seconds += local_calendar.get(Calendar.MINUTE)
+                    * MINUTES_IN_SECONDS;
+            local_time_in_seconds += local_calendar.get(Calendar.SECOND)
+                    * MINUTES_IN_SECONDS;
+            long result_time = Integer.parseInt(time_as_string[0])
+                    * MINUTES_IN_SECONDS * HOURS_IN_MINUTES;
+            result_time += Integer.parseInt(time_as_string[1])
+                    * MINUTES_IN_SECONDS;
+            result_time += Integer.parseInt(time_as_string[2]);
+            boolean results = Math.abs(result_time - local_time_in_seconds) < (1 * MINUTES_IN_SECONDS * SECONDS_IN_MILLISECONDS);
+            return results;
+        }
 
+    }
+
+    /**
+     * A class that represents the current system datetime within 60 seconds
+     */
+    static class DateTimeChecker implements OutputComparator {
+
+        private static final int MINUTES_IN_SECONDS = 60;
+        private static final int SECONDS_IN_MILLISECONDS = 1000;
+
+        @Override
+        public boolean compareOutput(Object object) {
+            Calendar local_calendar = Calendar.getInstance();
+            long test_result = 0;
+            try {
+                Date result = DEFAULT_DATETIME_FORMAT.parse(String
+                        .valueOf(object));
+                test_result = result.getTime()
+                        - local_calendar.getTimeInMillis();
+            } catch (ParseException e) {
+                fail(e.getMessage());
+            }
+            boolean results = Math.abs(test_result) < (1 * MINUTES_IN_SECONDS * SECONDS_IN_MILLISECONDS);
+            return results;
+        }
+
+    }
+
+    private static void addTypeNameAndNumber(String name, int number) {
+	typeNameToNumber.put(name, number);
+	typeNumberToName.put(number, name);
+    }
+
+    private static String getTypeName(int typeNumber) {
+	return typeNumberToName.get(typeNumber);
+    }
+
+    private static Integer getTypeNumber(String typeName) {
+	return typeNameToNumber.get(typeName);
+    }
+
+    /** An assertion error that includes context information. */
+    private class ContextAssertionError extends AssertionError {
+	ContextAssertionError(String message) {
+	    super(context() + message);
 	}
-
-	/**
-	 * A class that represents the current system time 60 seconds
-	 */
-	static class TimeChecker implements OutputComparator {
-
-		private static final int MINUTES_IN_SECONDS = 60;
-		private static final int HOURS_IN_MINUTES = 60;
-		private static final int SECONDS_IN_MILLISECONDS = 1000;
-
-		@Override
-		public boolean compareOutput(Object object) {
-			String[] time_as_string = String.valueOf(object).split(":");
-			Calendar local_calendar = Calendar.getInstance();
-			long local_time_in_seconds = local_calendar
-					.get(Calendar.HOUR_OF_DAY)
-					* MINUTES_IN_SECONDS
-					* HOURS_IN_MINUTES;
-			local_time_in_seconds += local_calendar.get(Calendar.MINUTE)
-					* MINUTES_IN_SECONDS;
-			local_time_in_seconds += local_calendar.get(Calendar.SECOND)
-					* MINUTES_IN_SECONDS;
-			long result_time = Integer.parseInt(time_as_string[0])
-					* MINUTES_IN_SECONDS * HOURS_IN_MINUTES;
-			result_time += Integer.parseInt(time_as_string[1])
-					* MINUTES_IN_SECONDS;
-			result_time += Integer.parseInt(time_as_string[2]);
-			boolean results = Math.abs(result_time - local_time_in_seconds) < (1 * MINUTES_IN_SECONDS * SECONDS_IN_MILLISECONDS);
-			return results;
-		}
-
+	ContextAssertionError(String message, Throwable cause) {
+	    super(context() + message);
+	    initCause(cause);
 	}
+    }
 
-	/**
-	 * A class that represents the current system datetime within 60 seconds
-	 */
-	static class DateTimeChecker implements OutputComparator {
-
-		private static final int MINUTES_IN_SECONDS = 60;
-		private static final int SECONDS_IN_MILLISECONDS = 1000;
-
-		@Override
-		public boolean compareOutput(Object object) {
-			Calendar local_calendar = Calendar.getInstance();
-			long test_result = 0;
-			try {
-				Date result = DEFAULT_DATETIME_FORMAT.parse(String
-						.valueOf(object));
-				test_result = result.getTime()
-						- local_calendar.getTimeInMillis();
-			} catch (ParseException e) {
-				fail(e.getMessage());
-			}
-			boolean results = Math.abs(test_result) < (1 * MINUTES_IN_SECONDS * SECONDS_IN_MILLISECONDS);
-			return results;
-		}
-
+    private String context() {
+	StringBuffer context = new StringBuffer();
+	if (filename != null) {
+	    context.append(filename);
 	}
-
-	private static void addTypeNameAndNumber(String name, int number) {
-		typeNameToNumber.put(name, number);
-		typeNumberToName.put(number, name);
-	}
-
-	private static String getTypeName(int typeNumber) {
-		return typeNumberToName.get(typeNumber);
-	}
-
-	private static Integer getTypeNumber(String typeName) {
-		return typeNameToNumber.get(typeName);
-	}
-
-	/** An assertion error that includes context information. */
-	private class ContextAssertionError extends AssertionError {
-		ContextAssertionError(String message) {
-			super(context() + message);
-		}
-
-		ContextAssertionError(String message, Throwable cause) {
-			super(context() + message);
-			initCause(cause);
-		}
-	}
-
-	private String context() {
-		StringBuffer context = new StringBuffer();
-		if (filename != null) {
-			context.append(filename);
-		}
-		if (!includeStack.isEmpty()) {
-			for (String include : includeStack) {
-				if (context.length() != 0) {
-					context.append(", ");
-				}
-				context.append("Include ").append(include);
-			}
-		}
-		if (commandNumber != 0) {
-			if (context.length() != 0) {
-				context.append(", ");
-			}
-			context.append("Command ").append(commandNumber);
-			if (commandName != null) {
-				context.append(" (").append(commandName).append(')');
-			}
-		}
+	if (!includeStack.isEmpty()) {
+	    for (String include : includeStack) {
 		if (context.length() != 0) {
-			context.append(": ");
+		    context.append(", ");
 		}
-		return context.toString();
+		context.append("Include ").append(include);
+	    }
 	}
+	if (commandNumber != 0) {
+	    if (context.length() != 0) {
+		context.append(", ");
+	    }
+	    context.append("Command ").append(commandNumber);
+	    if (commandName != null) {
+		context.append(" (").append(commandName).append(')');
+	    }
+	}
+	if (context.length() != 0) {
+	    context.append(": ");
+	}
+	return context.toString();
+    }
 }
