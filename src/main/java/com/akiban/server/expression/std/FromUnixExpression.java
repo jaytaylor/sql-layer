@@ -99,36 +99,10 @@ public class FromUnixExpression extends AbstractCompositeExpression
                             if (str.isNull()) 
                                 return NullValueSource.only();
                             else 
-                                return new ValueHolder(AkType.VARCHAR, getFormatted(new MutableDateTime(unix), str.getString()));
+                                return new ValueHolder(AkType.VARCHAR, DateTimeField.getFormatted(new MutableDateTime(unix), str.getString()));
             }
             
-        }
-        
-        
-        private static String getFormatted (MutableDateTime date, String format)
-        {
-            String[] frmList = format.split("\\%");
-            StringBuilder buffer = new StringBuilder(frmList[0]);
-          
-            for (int n = 1; n < frmList.length; ++n)
-                if (frmList[n].length() == 0)
-                {
-                    buffer.append("%");
-                    ++n;
-                }
-                else
-                    try
-                    { 
-                        String s = frmList[n].charAt(0) + "";
-                        buffer.append(frmList[n].replaceFirst(s, DateTimeField.valueOf(s).get(date)));
-                    }
-                    catch (IllegalArgumentException ex) // unknown specifiers are treated as regular chars
-                    {
-                        buffer.append(frmList[n]);
-                    }
-            
-            return buffer.toString();
-        }
+        }                
     }
     
     /**

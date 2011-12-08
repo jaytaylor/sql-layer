@@ -15,15 +15,51 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types.util.ValueHolder;
 import java.util.List;
+import org.joda.time.MutableDateTime;
 
 public class DateFormatExpression extends AbstractBinaryExpression
 {
+    @Scalar("date_format")
+    public static final ExpressionComposer COMPOSER = new BinaryComposer ()
+    {
+        @Override
+        protected Expression compose(Expression first, Expression second)
+        {
+            return new DateFormatExpression(first, second);
+        }
+
+        @Override
+        protected ExpressionType composeType(ExpressionType first, ExpressionType second)
+        {
+            return ExpressionTypes.varchar(second.getScale() * 4);
+        }
+
+        @Override
+        public void argumentTypes(List<AkType> argumentTypes)
+        {
+            if (argumentTypes.size() != 2)
+                throw new WrongExpressionArityException(2, argumentTypes.size());
+            
+            argumentTypes.set(1, AkType.VARCHAR);
+            AkType dateType = argumentTypes.get(0);
+            if (dateType != AkType.DATE && dateType != AkType.DATETIME
+                    && dateType != AkType.TIME && dateType != AkType.TIMESTAMP
+                    && dateType != AkType.YEAR)
+                argumentTypes.set(0, AkType.DATE);
+        }
+    };
     private static final class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
         public InnerEvaluation (List<? extends ExpressionEvaluation> childrenEvals)
@@ -37,10 +73,10 @@ public class DateFormatExpression extends AbstractBinaryExpression
             ValueSource date = children().get(0).eval();
             ValueSource format = children().get(1).eval();
             if (date.isNull() || format.isNull()) return NullValueSource.only();
+            MutableDateTime datetime = (MutableDateTime)Extractors.getObjectExtractor(AkType.DATE).getObject(date);
             
-            switch()
-        }
-        
+            return new ValueHolder(AkType.VARCHAR, DateTimeField.getFormatted(datetime, format.getString()));
+        }        
     }
     
     protected DateFormatExpression (Expression left, Expression right)
@@ -63,7 +99,6 @@ public class DateFormatExpression extends AbstractBinaryExpression
     @Override
     public ExpressionEvaluation evaluation() 
     {
-        return new InnerEvaluation(childrenEvaluation());
-    }
-    
+        return new InnerEvaluation(childrenEvaluations());
+    }    
 }

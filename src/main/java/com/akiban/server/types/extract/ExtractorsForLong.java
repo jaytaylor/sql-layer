@@ -87,7 +87,7 @@ class ExtractorsForLong extends LongExtractor {
     }
     
     @Override
-    public long[] getYearMonthDay (long value) {
+    public long[] getYearMonthDayHourMinuteSecond (long value) {
         throw new UnsupportedOperationException("Unsupported! Only works for date/time types");
     }
     

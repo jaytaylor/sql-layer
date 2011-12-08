@@ -84,11 +84,11 @@ abstract class ExtractorsForDates extends LongExtractor {
         }
 
         @Override
-        public long[] getYearMonthDay(long value) {
+        public long[] getYearMonthDayHourMinuteSecond(long value) {
             final long year = value / 512;
             final long month = (value / 32) % 16;
             final long day = value % 32;
-            return new long[] {year, month, day};
+            return new long[] {year, month, day, 0, 0, 0};
         }
     };
 
@@ -158,16 +158,19 @@ abstract class ExtractorsForDates extends LongExtractor {
 
         @Override
         public long unixToStdLong(long unixVal) {
-            int rst[] = Calculator.getYMDHMS(unixVal);
+            long rst[] = Calculator.getYMDHMS(unixVal);
             return (rst[0] * 10000 + rst[1] * 100 + rst[2]) *1000000L + rst[3] * 10000 + rst[4] * 100 + rst[5];
         }
 
         @Override
-        public long[] getYearMonthDay(long value) {
+        public long[] getYearMonthDayHourMinuteSecond (long value) {
             final long year = (value / DATETIME_YEAR_SCALE);
             final long month = (value / DATETIME_MONTH_SCALE) % 100;
             final long day = (value / DATETIME_DAY_SCALE) % 100;
-            return new long[] {year, month, day};
+            long hour = value / DATETIME_HOUR_SCALE % 100;
+            long minute = value / DATETIME_MIN_SCALE % 100;
+            long second = value / DATETIME_SEC_SCALE % 100;
+            return new long[] {year, month, day, hour, minute, second};
         }
     };
 
@@ -241,8 +244,12 @@ abstract class ExtractorsForDates extends LongExtractor {
         }
 
         @Override
-        public long[] getYearMonthDay(long value) {
-            throw new UnsupportedOperationException("Unsupported operation. Only works for date types");
+        public long[] getYearMonthDayHourMinuteSecond(long value) {
+            long abs = value > 0 ? value : - value;
+            long hour = abs / TIME_HOURS_SCALE;
+            long minute = (abs - hour* TIME_HOURS_SCALE) / TIME_MINUTES_SCALE;
+            long second = abs - hour* TIME_HOURS_SCALE - minute* TIME_MINUTES_SCALE;
+            return new long [] {0, 0, 0, hour, minute, second};
         }
     };
 
@@ -284,8 +291,8 @@ abstract class ExtractorsForDates extends LongExtractor {
         }
 
         @Override
-        public long[] getYearMonthDay(long value) {
-            return Calculator.getYearMonthDay(value * 1000);
+        public long[] getYearMonthDayHourMinuteSecond(long value) {
+            return Calculator.getYMDHMS(value * 1000);
         }
     };
 
@@ -327,8 +334,8 @@ abstract class ExtractorsForDates extends LongExtractor {
         }
 
         @Override
-        public long[] getYearMonthDay(long value) {
-            return new long[] {value == 0 ? 0 : 1900 + value, 0, 0};
+        public long[] getYearMonthDayHourMinuteSecond(long value) {
+            return new long[] {value == 0 ? 0 : 1900 + value, 0, 0, 0, 0};
         }
     };
 
@@ -387,7 +394,7 @@ abstract class ExtractorsForDates extends LongExtractor {
         }
 
         @Override
-        public long[] getYearMonthDay(long value) {
+        public long[] getYearMonthDayHourMinuteSecond(long value) {
             // TODO: convert milisecons to INTERVAL of day, month year
             // how many days are there in a month/year???
             throw new UnsupportedOperationException("Not supported yet.");
@@ -448,9 +455,9 @@ abstract class ExtractorsForDates extends LongExtractor {
             calendar.setTimeInMillis(millis);
             return new int[] {calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND)};
         }
-        public static int[] getYMDHMS (long millis) {
+        public static long[] getYMDHMS (long millis) {
             calendar.setTimeInMillis(millis);
-            return new int[] {calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) +1, calendar.get(Calendar.DAY_OF_MONTH),
+            return new long[] {calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) +1, calendar.get(Calendar.DAY_OF_MONTH),
                 calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND)};
         }
     }

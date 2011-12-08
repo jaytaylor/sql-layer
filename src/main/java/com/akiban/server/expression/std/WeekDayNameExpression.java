@@ -15,7 +15,6 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -26,7 +25,7 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
-import org.joda.time.DateTime;
+import org.joda.time.MutableDateTime;
 
 public class WeekDayNameExpression extends AbstractUnaryExpression
 {
@@ -111,25 +110,9 @@ public class WeekDayNameExpression extends AbstractUnaryExpression
         public ValueSource eval()
         {
             ValueSource s = operand();
-            if (s.isNull()) return NullValueSource.only();
-            long l = 0;
-            long ymd[] = null;
-            switch(s.getConversionType())
-            {
-                case DATE:      l = s.getDate(); 
-                                ymd = Extractors.getLongExtractor(AkType.DATE).getYearMonthDay(l);
-                                break;
-                case DATETIME:  l = s.getDateTime(); 
-                                ymd = Extractors.getLongExtractor(AkType.DATETIME).getYearMonthDay(l);
-                                break;
-                case TIMESTAMP: l = s.getTimestamp(); break; // number of seconds since 1970
-                default:        throw new InvalidArgumentTypeException(s.getConversionType() + " is invalid for dayname()");
-            }
-
-            DateTime datetime;
-            if (ymd == null) datetime = new DateTime(l * 1000); // timestamp
-            else datetime = new DateTime((int)ymd[0],(int)ymd[1],(int)ymd[2],1,1); 
-
+            if (s.isNull()) return NullValueSource.only();            
+            MutableDateTime datetime = (MutableDateTime) Extractors.getObjectExtractor(AkType.DATE).getObject(s);
+            
             switch(field)
             {
                 case DAYNAME:           return new ValueHolder(AkType.VARCHAR, datetime.dayOfWeek().getAsText());

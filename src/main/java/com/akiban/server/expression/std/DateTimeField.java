@@ -1181,6 +1181,38 @@ public enum DateTimeField
         else return (dayOfYear - firstD) / 7 +1;
     }
 
+    /**
+     * Takes a (Mutable)DateTime object and a mysql format string
+     *
+     * @param date
+     * @param format
+     * @return a string formatted accordingly
+     */
+    public static String getFormatted (MutableDateTime date, String format)
+    {
+        String[] frmList = format.split("\\%");
+        StringBuilder buffer = new StringBuilder(frmList[0]);
+
+        for (int n = 1; n < frmList.length; ++n)
+            if (frmList[n].length() == 0)
+            {
+                buffer.append("%");
+                ++n;
+            }
+            else
+                try
+                {
+                    String s = frmList[n].charAt(0) + "";
+                    buffer.append(frmList[n].replaceFirst(s, DateTimeField.valueOf(s).get(date)));
+                }
+                catch (IllegalArgumentException ex) // unknown specifiers are treated as regular chars
+                {
+                    buffer.append(frmList[n]);
+                }
+
+        return buffer.toString();
+    }
+
     // class static data DateTimeFields
     static protected final HashMap<String, Integer> abbWeekday = new HashMap<String, Integer>();
     static protected final HashMap<String, Integer> weekDay = new HashMap<String, Integer>();
