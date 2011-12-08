@@ -18,6 +18,8 @@ package com.akiban.server.store.statistics;
 import com.akiban.server.service.session.Session;
 import com.akiban.ais.model.Index;
 import java.util.Collection;
+import java.io.File;
+import java.io.IOException;
 
 public interface IndexStatisticsService
 {
@@ -31,4 +33,12 @@ public interface IndexStatisticsService
     /** Delete stored statistics for the given indexes. */
     public void deleteIndexStatistics(Session session, 
                                       Collection<? extends Index> indexes);
+
+    /** Load statistics from a YAML file. */
+    public void loadIndexStatistics(Session session, 
+                                    String schema, File file) throws IOException;
+
+    /** Dump statistics to a YAML file. */
+    public void dumpIndexStatistics(Session session, 
+                                    String schema, File file) throws IOException;
 }

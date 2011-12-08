@@ -153,6 +153,56 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         }
     }
 
+    @Override
+    public void loadIndexStatistics(Session session, 
+                                    String schema, File file) throws IOException {
+        AkibanInformationSchema ais = schemaManager.getAis(session);
+        Map<Index,IndexStatistics> stats = 
+            new IndexStatisticsYamlLoader(ais, schema).load(file);
+        for (Map.Entry<Index,IndexStatistics> entry : stats.entrySet()) {
+            Index index = entry.getKey();
+            IndexStatistics indexStatistics = entry.getValue();
+            try {
+                storeStats.storeIndexStatistics(session, indexStatistics);
+            }
+            catch (PersistitException ex) {
+                throw new PersistItErrorException(ex);
+            }
+            cache.put(index, indexStatistics);
+        }
+    }
+
+    @Override
+    public void dumpIndexStatistics(Session session, 
+                                    String schema, File file) throws IOException {
+        List<Index> indexes = new ArrayList<Index>();
+        Set<Group> groups = new HashSet<Group>();
+        AkibanInformationSchema ais = schemaManager.getAis(session);
+        for (UserTable table : ais.getUserTables().values()) {
+            if (table.getName().getSchemaName().equals(schema)) {
+                indexes.addAll(table.getIndexes());
+                if (groups.add(table.getGroup()))
+                    indexes.addAll(table.getGroup().getIndexes());
+            }
+        }
+        // Get all the stats already computed for an index on this schema.
+        List<IndexStatistics> toDump = new ArrayList<IndexStatistics>();
+        for (Index index : indexes) {
+            IndexStatistics stats = getIndexStatistics(session, index);
+            if (stats != null) {
+                toDump.add(stats);
+            }
+        }
+        Collections.sort(toDump, new Comparator<IndexStatistics>() {
+                             @Override
+                             public int compare(IndexStatistics i1, IndexStatistics i2) {
+                                 return i1.getIndex().getIndexName().toString()
+                                     .compareTo(i2.getIndex().getIndexName().toString());
+                             }
+                         });
+        new IndexStatisticsYamlLoader(ais, schema).dump(toDump, file);
+    }
+
     /* JmxManageable */
 
     @Override
@@ -168,32 +218,8 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 throws IOException {
             Session session = sessionService.createSession();
             try {
-                List<Index> indexes = new ArrayList<Index>();
-                Set<Group> groups = new HashSet<Group>();
-                AkibanInformationSchema ais = schemaManager.getAis(session);
-                for (UserTable table : ais.getUserTables().values()) {
-                    if (table.getName().getSchemaName().equals(schema))
-                        indexes.addAll(table.getIndexes());
-                    if (groups.add(table.getGroup()))
-                        indexes.addAll(table.getGroup().getIndexes());
-                }
-                // Get all the stats already computed for an index on this schema.
-                List<IndexStatistics> toDump = new ArrayList<IndexStatistics>();
-                for (Index index : indexes) {
-                    IndexStatistics stats = getIndexStatistics(session, index);
-                    if (stats != null) {
-                        toDump.add(stats);
-                    }
-                }
-                Collections.sort(toDump, new Comparator<IndexStatistics>() {
-                                     @Override
-                                     public int compare(IndexStatistics i1, IndexStatistics i2) {
-                                         return i1.getIndex().getIndexName().toString()
-                                             .compareTo(i2.getIndex().getIndexName().toString());
-                                     }
-                                 });
                 File file = new File(toFile);
-                new IndexStatisticsYamlLoader(ais, schema).dump(toDump, file);
+                IndexStatisticsServiceImpl.this.dumpIndexStatistics(session, schema, file);
                 return file.getAbsolutePath();
             }
             finally {
