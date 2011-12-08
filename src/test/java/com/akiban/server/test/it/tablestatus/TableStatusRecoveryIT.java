@@ -23,7 +23,7 @@ import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
 import com.akiban.server.TableStatistics;
-import com.akiban.server.TableStatus;
+import com.akiban.server.PersistitTransactionalCacheTableStatus;
 import com.akiban.server.service.config.Property;
 import com.persistit.Persistit;
 
@@ -84,8 +84,8 @@ public class TableStatusRecoveryIT extends ITBase {
         
         final TableStatistics ts3 = store().getTableStatistics(session(), tableId);
         assertEquals(20000, ts3.getRowCount());
-        final TableStatus status = store().getRowDefCache().getRowDef(tableId).getTableStatus();
+        final PersistitTransactionalCacheTableStatus status = store().getRowDefCache().getRowDef(tableId).getTableStatus();
         assertEquals(20000, status.getRowCount());
-        assertEquals(20001, status.allocateNewUniqueId());
+        assertEquals(20001, status.createNewUniqueID());
     }
 }

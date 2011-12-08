@@ -18,7 +18,7 @@ package com.akiban.sql.optimizer.rule;
 // TODO: Think about all this.
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.TableStatus;
+import com.akiban.server.PersistitTransactionalCacheTableStatus;
 import com.akiban.server.rowdata.RowDef;
 
 import org.yaml.snakeyaml.Yaml;
@@ -70,7 +70,7 @@ public class RulesTestHelper
     public static void ensureRowDefs(AkibanInformationSchema ais) {
         for (UserTable userTable : ais.getUserTables().values()) {
             int tableId = userTable.getTableId();
-            TableStatus ts = new TableStatus(tableId);
+            PersistitTransactionalCacheTableStatus ts = new PersistitTransactionalCacheTableStatus(tableId);
             ts.setOrdinal(tableId);
             new RowDef(userTable, ts);
         }

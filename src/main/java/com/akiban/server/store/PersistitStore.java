@@ -40,7 +40,6 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.util.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -278,9 +277,8 @@ public class PersistitStore implements Store {
                     if (insertingRow && column.isAkibanPKColumn()) {
                         // Must be a PK-less table. Use unique id from
                         // TableStatus.
-                        TableStatus tableStatus = segmentRowDef
-                                .getTableStatus();
-                        uniqueId = tableStatus.allocateNewUniqueId();
+                        PersistitTransactionalCacheTableStatus tableStatus = segmentRowDef.getTableStatus();
+                        uniqueId = tableStatus.createNewUniqueID();
                         hKeyAppender.append(uniqueId);
                         // Write rowId into the value part of the row also.
                         rowData.updateNonNullLong(fieldDef, uniqueId);
@@ -310,8 +308,8 @@ public class PersistitStore implements Store {
                     // TODO: Maintain a counter elsewhere, maybe in the
                     // FieldDef. At the end of the bulk load,
                     // TODO: assign the counter to TableStatus.
-                    TableStatus tableStatus = fieldDef.getRowDef().getTableStatus();
-                    hkey.append(tableStatus.allocateNewUniqueId());
+                    PersistitTransactionalCacheTableStatus tableStatus = fieldDef.getRowDef().getTableStatus();
+                    hkey.append(tableStatus.createNewUniqueID());
                 } else {
                     appender.append(hKeyValues[k], fieldDef);
                 }
@@ -668,7 +666,7 @@ public class PersistitStore implements Store {
             for (;;) {
                 transaction.begin();
                 try {
-                    final TableStatus ts = rowDef.getTableStatus();
+                    final PersistitTransactionalCacheTableStatus ts = rowDef.getTableStatus();
                     constructHKey(session, hEx, rowDef, oldRowData, false);
                     hEx.fetch();
                     //
@@ -1032,12 +1030,12 @@ public class PersistitStore implements Store {
     public TableStatistics getTableStatistics(final Session session, int tableId) {
         final RowDef rowDef = rowDefCache.getRowDef(tableId);
         final TableStatistics ts = new TableStatistics(tableId);
-        final TableStatus status = rowDef.getTableStatus();
+        final PersistitTransactionalCacheTableStatus status = rowDef.getTableStatus();
         if (rowDef.isGroupTable()) {
             ts.setRowCount(2);
             ts.setAutoIncrementValue(-1);
         } else {
-            ts.setAutoIncrementValue(status.getAutoIncrementValue());
+            ts.setAutoIncrementValue(status.getAutoIncrement());
             ts.setRowCount(status.getRowCount());
         }
         ts.setUpdateTime(Math.max(status.getLastUpdateTime(),
