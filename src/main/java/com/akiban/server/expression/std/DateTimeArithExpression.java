@@ -23,10 +23,63 @@ import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 
+import java.util.Arrays;
 import java.util.List;
 
 public class DateTimeArithExpression extends ArithExpression
 {
+    @Scalar("add_date")
+    public static final ExpressionComposer ADD_DATE_COMPOSER = new BinaryComposer ()
+    {
+
+        @Override
+        protected Expression compose(Expression first, Expression second) 
+        {
+            return ArithOps.ADD.compose(Arrays.asList(first, second));
+        }
+
+        @Override
+        protected ExpressionType composeType(ExpressionType first, ExpressionType second) 
+        {
+            return ArithOps.ADD.composeType(first, second);
+        }
+
+        @Override
+        public void argumentTypes(List<AkType> argumentTypes) 
+        {
+            ArithOps.ADD.argumentTypes(argumentTypes);
+        }
+        
+    };
+    
+    @Scalar("add_time")
+    public static final ExpressionComposer ADD_TIME_COMPOSER = ADD_DATE_COMPOSER;
+    
+    @Scalar("sub_date")
+    public static final ExpressionComposer SUB_DATE_COMPOSER = new BinaryComposer ()
+    {
+        @Override
+        protected Expression compose(Expression first, Expression second) 
+        {
+            return ArithOps.MINUS.compose(Arrays.asList(first, second));
+        }
+
+        @Override
+        protected ExpressionType composeType(ExpressionType first, ExpressionType second) 
+        {
+            return ArithOps.MINUS.composeType(first, second);
+        }
+
+        @Override
+        public void argumentTypes(List<AkType> argumentTypes) 
+        {
+            ArithOps.MINUS.argumentTypes(argumentTypes);
+        }
+    };
+    
+    @Scalar("sub_time")
+    public static final ExpressionComposer SUB_TIME_COMPOSER = SUB_DATE_COMPOSER;
+    
     @Scalar("timediff")
     public static final ExpressionComposer TIMEDIFF_COMPOSER = new InternalComposer(AkType.TIME)
     {
