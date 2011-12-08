@@ -88,7 +88,7 @@ public class DateTimeArithExpression extends ArithExpression
          */
         public static long getDay (long interval)
         {
-            return interval < 0 ? interval /M_SECS_OF_DAY : interval / M_SECS_OF_DAY;
+            return interval / M_SECS_OF_DAY;
         }
 
         /**
