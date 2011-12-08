@@ -40,7 +40,7 @@ public class BitAggregatorsTest
         DOUBLE
         {
             @Override
-            public BigInteger aggregate(Aggregator aggregator, ValueHolder holder)
+            public BigInteger aggregate_test1(Aggregator aggregator, ValueHolder holder)
             {
                 holder.clear();
                 for (int n = 0; n < 20; ++n)
@@ -52,11 +52,25 @@ public class BitAggregatorsTest
                 aggregator.output(holder);
                 return holder.getUBigInt();
             }
+
+            @Override
+            public BigInteger aggregate_test2(Aggregator aggregator, ValueHolder holder)
+            {
+                holder.clear();
+                for (int n = 0; n < 5; ++n)
+                {
+                    holder.putDouble(5);
+                    aggregator.input(holder);
+                }
+                holder.putUBigInt(BigInteger.ONE); 
+                aggregator.output(holder);
+                return holder.getUBigInt();
+            }
         },
 
         FLOAT
         {
-            public BigInteger aggregate(Aggregator aggregator, ValueHolder holder)
+            public BigInteger aggregate_test1(Aggregator aggregator, ValueHolder holder)
             {
                 holder.clear();
                 for (int n = 0; n < 20; ++n)
@@ -68,11 +82,24 @@ public class BitAggregatorsTest
                 aggregator.output(holder);
                 return holder.getUBigInt();
             }
+
+            public BigInteger aggregate_test2(Aggregator aggregator, ValueHolder holder)
+            {
+                holder.clear();
+                for (int n = 0; n < 5; ++n)
+                {
+                    holder.putFloat(5);
+                    aggregator.input(holder);
+                }
+                holder.putUBigInt(BigInteger.ONE);
+                aggregator.output(holder);
+                return holder.getUBigInt();
+            }
         },
 
         LONG
         {
-            public BigInteger aggregate(Aggregator aggregator, ValueHolder holder)
+            public BigInteger aggregate_test1(Aggregator aggregator, ValueHolder holder)
             {
                 holder.clear();
                 for (int n = 0; n < 20; ++n)
@@ -84,11 +111,24 @@ public class BitAggregatorsTest
                 aggregator.output(holder);
                 return holder.getUBigInt();
             }
+
+            public BigInteger aggregate_test2(Aggregator aggregator, ValueHolder holder)
+            {
+                holder.clear();
+                for (int n = 0; n < 5; ++n)
+                {
+                    holder.putLong(5);
+                    aggregator.input(holder);
+                }
+                holder.putUBigInt(BigInteger.ONE);
+                aggregator.output(holder);
+                return holder.getUBigInt();
+            }
         },
 
         INT
         {
-            public BigInteger aggregate(Aggregator aggregator, ValueHolder holder)
+            public BigInteger aggregate_test1(Aggregator aggregator, ValueHolder holder)
             {
                 holder.clear();
                 for (int n = 0; n < 20; ++n)
@@ -100,11 +140,24 @@ public class BitAggregatorsTest
                 aggregator.output(holder);
                 return holder.getUBigInt();
             }
+
+            public BigInteger aggregate_test2(Aggregator aggregator, ValueHolder holder)
+            {
+                holder.clear();
+                for (int n = 0; n < 5; ++n)
+                {
+                    holder.putInt(5);
+                    aggregator.input(holder);
+                }
+                holder.putUBigInt(BigInteger.ONE);
+                aggregator.output(holder);
+                return holder.getUBigInt();
+            }
         },
 
         DECIMAL
         {
-            public BigInteger aggregate(Aggregator aggregator, ValueHolder holder)
+            public BigInteger aggregate_test1(Aggregator aggregator, ValueHolder holder)
             {
                 holder.clear();
                 for (int n = 0; n < 20; ++n)
@@ -116,11 +169,24 @@ public class BitAggregatorsTest
                 aggregator.output(holder);
                 return holder.getUBigInt();
             }
+
+            public BigInteger aggregate_test2(Aggregator aggregator, ValueHolder holder)
+            {
+                holder.clear();
+                for (int n = 0; n < 5; ++n)
+                {
+                    holder.putDecimal(BigDecimal.valueOf(5));
+                    aggregator.input(holder);
+                }
+                holder.putUBigInt(BigInteger.ONE);
+                aggregator.output(holder);
+                return holder.getUBigInt();
+            }
         },
 
         U_BIGINT
         {
-            public BigInteger aggregate(Aggregator aggregator, ValueHolder holder)
+            public BigInteger aggregate_test1(Aggregator aggregator, ValueHolder holder)
             {
 
                 holder.clear();
@@ -133,64 +199,14 @@ public class BitAggregatorsTest
                 aggregator.output(holder);
                 return holder.getUBigInt();
             }
-        },
 
-        VARCHAR
-        {
-            public BigInteger aggregate(Aggregator aggregator, ValueHolder holder)
+            public BigInteger aggregate_test2(Aggregator aggregator, ValueHolder holder)
             {
-                holder.clear();
-                for (int n = 0; n < 20; ++n)
-                {
-                    holder.putString(n + "");
-                    aggregator.input(holder);
-                }
-                holder.putUBigInt(BigInteger.ONE);
-                aggregator.output(holder);
-                return holder.getUBigInt();
-            }
-        },
 
-        BOOL
-        {
-            public BigInteger aggregate(Aggregator aggregator, ValueHolder holder)
-            {
                 holder.clear();
-                for (int n = 0; n < 20; ++n)
+                for (int n = 0; n < 5; ++n)
                 {
-                    holder.putBool(n % 2 == 0);
-                    aggregator.input(holder);
-                }
-                holder.putUBigInt(BigInteger.ONE);
-                aggregator.output(holder);
-                return holder.getUBigInt();
-            }
-        },
-
-        DATE
-        {
-            public BigInteger aggregate(Aggregator aggregator, ValueHolder holder)
-            {
-                holder.clear();
-                for (int n = 0; n < 20; ++n)
-                {
-                    holder.putDate(n);
-                    aggregator.input(holder);
-                }
-                holder.putUBigInt(BigInteger.ONE);
-                aggregator.output(holder);
-                return holder.getUBigInt();
-            }
-        },
-
-        TIME
-        {
-            public BigInteger aggregate(Aggregator aggregator, ValueHolder holder)
-            {
-                holder.clear();
-                for (int n = 0; n < 20; ++n)
-                {
-                    holder.putTime(n);
+                    holder.putUBigInt(BigInteger.valueOf(5));
                     aggregator.input(holder);
                 }
                 holder.putUBigInt(BigInteger.ONE);
@@ -199,9 +215,9 @@ public class BitAggregatorsTest
             }
         };
 
-        abstract BigInteger aggregate (Aggregator aggregator, ValueHolder holder);
+        abstract BigInteger aggregate_test1 (Aggregator aggregator, ValueHolder holder);
+        abstract BigInteger aggregate_test2 (Aggregator aggregator, ValueHolder holder);
     }
-
 
     protected static final EnumSet<AkType> SUPPORTED = EnumSet.of(AkType.LONG,
                                                                 AkType.DOUBLE,
@@ -215,13 +231,15 @@ public class BitAggregatorsTest
     private static boolean alreadyExc = false;
 
     private Aggregator aggregator;
-    private BigInteger expected;
+    private BigInteger expected1;
+    private BigInteger expected2;
     private Types type;
 
-    public BitAggregatorsTest (Aggregator aggregator, BigInteger expected, Types type)
+    public BitAggregatorsTest (Aggregator aggregator, BigInteger expected1, BigInteger expected2, Types type)
     {
         this.aggregator = aggregator;
-        this.expected = expected;
+        this.expected1 = expected1;
+        this.expected2 = expected2;
         this.type = type;
     }
 
@@ -229,26 +247,33 @@ public class BitAggregatorsTest
     public static Collection<Parameterization> params()
     {
         ParameterizationBuilder pb = new ParameterizationBuilder();
-
+        BigInteger bigInt5 = BigInteger.valueOf(5);
         for (AkType t: SUPPORTED)
         {
-            param(pb, Aggregators.bit_and("bit_and", t).get(), BigInteger.ZERO, Types.valueOf(t.name()));
-            param(pb, Aggregators.bit_or("bit_or", t).get(), BigInteger.valueOf(31), Types.valueOf(t.name()));
-            param(pb, Aggregators.bit_xor("bit_xor", t).get(), BigInteger.ZERO, Types.valueOf(t.name()));
+            param(pb, Aggregators.bit_and("bit_and", t).get(), BigInteger.ZERO, bigInt5, Types.valueOf(t.name()));
+            param(pb, Aggregators.bit_or("bit_or", t).get(), BigInteger.valueOf(31), bigInt5, Types.valueOf(t.name()));
+            param(pb, Aggregators.bit_xor("bit_xor", t).get(), BigInteger.ZERO, bigInt5, Types.valueOf(t.name()));
         }
 
         return pb.asList();
     }
 
-    private static void param(ParameterizationBuilder pb, Aggregator agg, BigInteger expected, Types type)
+    private static void param(ParameterizationBuilder pb, Aggregator agg, BigInteger expected1,
+            BigInteger expected2, Types type)
     {
-        pb.add(agg.toString() + type, agg, expected, type);
+        pb.add(agg.toString() + type, agg, expected1, expected2, type);
     }
 
     @Test
-    public void test ()
+    public void testColumnOfDifferentValues ()
     {
-        assertEquals(expected, type.aggregate(aggregator, holder));
+        assertEquals(expected1, type.aggregate_test1(aggregator, holder));
+    }
+
+    @Test
+    public void testColumnOfSameValues ()
+    {
+        assertEquals(expected2, type.aggregate_test2(aggregator, holder));
     }
 
     @OnlyIfNot("alreadyExc()")
@@ -256,7 +281,7 @@ public class BitAggregatorsTest
     public void testNullAnd ()
     {
         aggregator = Aggregators.bit_and("bit_and", AkType.U_BIGINT).get();
-        expected = N64;
+        expected1 = N64;
         testNull();
     }
 
@@ -265,7 +290,7 @@ public class BitAggregatorsTest
     public void testNullOr ()
     {
         aggregator = Aggregators.bit_or("bit_or", AkType.U_BIGINT).get();
-        expected = BigInteger.ZERO;
+        expected1 = BigInteger.ZERO;
         testNull();
     }
 
@@ -274,7 +299,7 @@ public class BitAggregatorsTest
     public void testNullXOr ()
     {
         aggregator = Aggregators.bit_xor("bit_xor", AkType.U_BIGINT).get();
-        expected = BigInteger.ZERO;
+        expected1 = BigInteger.ZERO;
         testNull();
         alreadyExc = true;
     }
@@ -289,6 +314,6 @@ public class BitAggregatorsTest
         aggregator.input(NullValueSource.only());
         aggregator.output(holder);
 
-        assertEquals(expected, holder.getUBigInt());
+        assertEquals(expected1, holder.getUBigInt());
     }
 }
