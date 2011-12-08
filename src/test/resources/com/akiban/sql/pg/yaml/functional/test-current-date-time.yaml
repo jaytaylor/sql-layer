@@ -15,4 +15,36 @@
 ---
 - Statement: SELECT NOW() FROM all_types
 - output: [[!re '20[0-9][0-9]-[0-9][0-9]-[0-9][0-9] [0-9][0-9]:[0-9][0-9]:[0-9][0-9]([.]0)?']]
+---
+- Statement: SELECT CURRENT_DATE FROM all_types
+- output: [[ !date ]]
+---
+# !time does a partial compare of time, allowed to be within 1 minute of system time
+- Statement: SELECT CURRENT_TIME FROM all_types
+- output: [[ !time ]]
+---
+# !time does a partial compare of time, allowed to be within 1 minute of system time
+- Statement: SELECT CURRENT_TIMESTAMP FROM all_types
+- output: [[ !datetime ]]
+---
+# !time does a partial compare of time, allowed to be within 1 minute of system time
+- Statement: SELECT NOW() FROM all_types
+- output: [[ !datetime ]]
+#---
+# !time does a partial compare of time, allowed to be within 1 minute of system time
+#- Statement: SELECT LOCALTIME() FROM all_types
+#- output: [[ !datetime ]]
+#---
+# !time does a partial compare of time, allowed to be within 1 minute of system time
+#- Statement: SELECT LOCALTIMESTAMP() FROM all_types
+#- output: [[ !datetime ]]
+#---
+# !time does a partial compare of time, allowed to be within 1 minute of system time
+#- Statement: SELECT CURDATE() FROM all_types
+#- output: [[ !datetime ]]
+#---
+# !time does a partial compare of time, allowed to be within 1 minute of system time
+#- Statement: SELECT SYSDATE() FROM all_types
+#- output: [[ !datetime ]]
+
 ...
