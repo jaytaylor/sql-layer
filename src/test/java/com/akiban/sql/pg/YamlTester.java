@@ -15,34 +15,9 @@
 
 package com.akiban.sql.pg;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Stack;
-import java.util.regex.Pattern;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
-
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.not;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -50,6 +25,33 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Stack;
+import java.util.regex.Pattern;
 
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
@@ -1023,10 +1025,12 @@ class YamlTester {
     static class DontCare implements OutputComparator {
 	static final DontCare INSTANCE = new DontCare();
 	private DontCare() { }
+        @Override
         public boolean compareOutput(Object output) {
 	    return true;
 	}
-	public String toString() {
+	@Override
+    public String toString() {
 	    return "!dc";
 	}
     }
@@ -1044,7 +1048,8 @@ class YamlTester {
 				   this.pattern + "'");
 	    }
 	}
-	public boolean compareOutput(Object object) {
+	@Override
+    public boolean compareOutput(Object object) {
 	    boolean result = pattern.matcher(String.valueOf(object)).matches();
 	    if (DEBUG) {
 		System.err.println("Regexp.compareOutput pattern='" + pattern +
@@ -1053,7 +1058,8 @@ class YamlTester {
 	    }
 	    return result;
 	}
-	public String toString() {
+	@Override
+    public String toString() {
 	    return "!re '" + pattern + "'";
 	}
     }
