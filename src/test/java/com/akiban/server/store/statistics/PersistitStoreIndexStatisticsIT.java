@@ -51,9 +51,9 @@ public class PersistitStoreIndexStatisticsIT extends PostgresServerFilesITBase
     
     @Test
     public void testLoadDump() throws Exception {
-        service.loadIndexStatistics(session(), "user", YAML_FILE);
+        service.loadIndexStatistics(session(), SCHEMA_NAME, YAML_FILE);
         File tempFile = File.createTempFile("stats", "yaml");
-        service.dumpIndexStatistics(session(), "user", tempFile);
+        service.dumpIndexStatistics(session(), SCHEMA_NAME, tempFile);
         assertEquals("dump matches load", 
                      fileContents(YAML_FILE).replace("\r", ""),
                      fileContents(tempFile).replace("\r", ""));
