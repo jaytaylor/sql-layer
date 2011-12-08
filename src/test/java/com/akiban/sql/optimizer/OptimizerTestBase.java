@@ -68,7 +68,7 @@ public class OptimizerTestBase extends ASTTransformTestBase
         subqueryFlattener = new SubqueryFlattener(parser);
     }
 
-    protected static AkibanInformationSchema parseSchema(File schema) throws Exception {
+    public static AkibanInformationSchema parseSchema(File schema) throws Exception {
         String sql = fileContents(schema);
         SchemaDef schemaDef = SchemaDef.parseSchema("use user; " + sql);
         SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
@@ -86,7 +86,7 @@ public class OptimizerTestBase extends ASTTransformTestBase
         binder.addView(new ViewDefinition(sql, parser));
     }
 
-    protected static void loadGroupIndexes(AkibanInformationSchema ais, File file) 
+    public static void loadGroupIndexes(AkibanInformationSchema ais, File file) 
             throws Exception {
         Reader rdr = null;
         try {
