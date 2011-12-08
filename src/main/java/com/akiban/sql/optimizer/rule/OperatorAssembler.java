@@ -340,8 +340,8 @@ public class OperatorAssembler extends BaseRule
                                                                stream.rowType);
             if (expressionsSource.getDistinctState() == DistinctState.NEED_DISTINCT) {
                 // Add Sort (usually _InsertionLimited) and Distinct.
-                assembleSort(stream, stream.rowType.nFields(), expressionsSource);
-                stream.operator = API.distinct_Partial(stream.operator, stream.rowType);
+                assembleSort(stream, stream.rowType.nFields(), expressionsSource,
+                             API.SortOption.SUPPRESS_DUPLICATES);
             }
             return stream;
         }
@@ -584,7 +584,8 @@ public class OperatorAssembler extends BaseRule
                 break;
             default:
                 // TODO: Could pre-aggregate now in PREAGGREGATE_RESORT case.
-                assembleSort(stream, nkeys, aggregateSource.getInput());
+                assembleSort(stream, nkeys, aggregateSource.getInput(),
+                             API.SortOption.PRESERVE_DUPLICATES);
                 break;
             }
             stream.operator = API.aggregate_Partial(stream.operator, nkeys,
@@ -603,12 +604,13 @@ public class OperatorAssembler extends BaseRule
               impl = Distinct.Implementation.SORT;
             switch (impl) {
             case PRESORTED:
+                stream.operator = API.distinct_Partial(stream.operator, stream.rowType);
                 break;
             default:
-                assembleSort(stream, stream.rowType.nFields(), distinct.getInput());
+                assembleSort(stream, stream.rowType.nFields(), distinct.getInput(),
+                             API.SortOption.SUPPRESS_DUPLICATES);
                 break;
             }
-            stream.operator = API.distinct_Partial(stream.operator, stream.rowType);
             return stream;
         }
 
@@ -622,12 +624,14 @@ public class OperatorAssembler extends BaseRule
                                                      stream.fieldOffsets);
                 ordering.append(expr, orderBy.isAscending());
             }
-            assembleSort(stream, ordering, sort.getInput(), sort.getOutput());
+            assembleSort(stream, ordering, sort.getInput(), sort.getOutput(),
+                         API.SortOption.PRESERVE_DUPLICATES);
             return stream;
         }
 
         protected void assembleSort(RowStream stream, API.Ordering ordering,
-                                    PlanNode input, PlanNode output) {
+                                    PlanNode input, PlanNode output, 
+                                    API.SortOption sortOption) {
             int maxrows = -1;
             if (output instanceof Limit) {
                 Limit limit = (Limit)output;
@@ -641,17 +645,18 @@ public class OperatorAssembler extends BaseRule
             }
             if ((maxrows >= 0) && (maxrows <= INSERTION_SORT_MAX_LIMIT))
                 stream.operator = API.sort_InsertionLimited(stream.operator, stream.rowType,
-                                                            ordering, API.SortOption.PRESERVE_DUPLICATES, maxrows);
+                                                            ordering, sortOption, maxrows);
             else
-                stream.operator = API.sort_Tree(stream.operator, stream.rowType, ordering, API.SortOption.PRESERVE_DUPLICATES);
+                stream.operator = API.sort_Tree(stream.operator, stream.rowType, ordering, sortOption);
         }
 
-        protected void assembleSort(RowStream stream, int nkeys, PlanNode input) {
+        protected void assembleSort(RowStream stream, int nkeys, PlanNode input,
+                                    API.SortOption sortOption) {
             API.Ordering ordering = API.ordering();
             for (int i = 0; i < nkeys; i++) {
                 ordering.append(Expressions.field(stream.rowType, i), true);
             }
-            assembleSort(stream, ordering, input, null);
+            assembleSort(stream, ordering, input, null, sortOption);
         }
 
         protected RowStream assembleLimit(Limit limit) {
