@@ -31,7 +31,10 @@ class Sort_Tree extends Operator
     @Override
     public String toString()
     {
-        return String.format("%s(%s)", getClass().getSimpleName(), sortType);
+        if (sortOption == API.SortOption.PRESERVE_DUPLICATES)
+            return String.format("%s(%s)", getClass().getSimpleName(), sortType);
+        else
+            return String.format("%s(%s, %s)", getClass().getSimpleName(), sortType, sortOption.name());
     }
 
     // Operator interface

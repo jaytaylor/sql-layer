@@ -34,7 +34,8 @@ class Sort_InsertionLimited extends Operator
     @Override
     public String toString()
     {
-        return String.format("%s(%s, %d)", getClass().getSimpleName(), sortType, limit);
+        return String.format("%s(%s, %d%s)", getClass().getSimpleName(), sortType, limit,
+                             preserveDuplicates ? "" : ", SUPPRESS_DUPLICATES");
     }
 
     // Operator interface
