@@ -249,7 +249,7 @@ abstract class ExtractorsForDates extends LongExtractor {
             long hour = abs / TIME_HOURS_SCALE;
             long minute = (abs - hour* TIME_HOURS_SCALE) / TIME_MINUTES_SCALE;
             long second = abs - hour* TIME_HOURS_SCALE - minute* TIME_MINUTES_SCALE;
-            return new long [] {0, 0, 0, hour, minute, second};
+            return new long [] {0, 1, 1, hour, minute, second};
         }
     };
 
@@ -335,7 +335,7 @@ abstract class ExtractorsForDates extends LongExtractor {
 
         @Override
         public long[] getYearMonthDayHourMinuteSecond(long value) {
-            return new long[] {value == 0 ? 0 : 1900 + value, 0, 0, 0, 0};
+            return new long[] {value == 0 ? 0 : 1900 + value, 1, 1, 0, 0, 0};
         }
     };
 

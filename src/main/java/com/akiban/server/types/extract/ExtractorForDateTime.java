@@ -35,10 +35,11 @@ public class ExtractorForDateTime extends ObjectExtractor<MutableDateTime>
         {
             case DATE:      ymd_hms = ExtractorsForDates.DATE.getYearMonthDayHourMinuteSecond(source.getDate()); break;
             case DATETIME:  ymd_hms = ExtractorsForDates.DATETIME.getYearMonthDayHourMinuteSecond(source.getDateTime()); break;
-            case TIMESTAMP: ymd_hms = ExtractorsForDates.TIMESTAMP.getYearMonthDayHourMinuteSecond(source.getTimestamp()); break;
+            case TIMESTAMP: return new MutableDateTime(source.getTimestamp() * 1000); 
             case TIME:      ymd_hms = ExtractorsForDates.TIME.getYearMonthDayHourMinuteSecond(source.getTime()); break;
             case VARCHAR:   return getObject(source.getString());
             case TEXT:      return getObject(source.getText());
+            case YEAR:      ymd_hms = ExtractorsForDates.YEAR.getYearMonthDayHourMinuteSecond(source.getYear()); break;
             default:        throw unsupportedConversion(source.getConversionType());
         }
 

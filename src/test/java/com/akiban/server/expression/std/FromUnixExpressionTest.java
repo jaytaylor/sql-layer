@@ -43,10 +43,10 @@ public class FromUnixExpressionTest extends ComposedExpressionTestBase
         test(1196440219L, 20071130163019L);
         
         // epoch: unix -> numeric string
-        test(0L, "%y-%m-%d", "70-1-1");
+        test(0L, "%y-%m-%d", "70-01-01");
         
         // epoch : unix -> string, month name
-        test(0L, "%Y-%M-%d", "1970-January-1");
+        test(0L, "%Y-%M-%d", "1970-January-01");
         
         // epoch : unix -> string, month name and day with suffix with leading chars 
         test(0L, "This is epoch in text %Y-%b-%D", "This is epoch in text 1970-Jan-1st");

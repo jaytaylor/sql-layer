@@ -21,7 +21,6 @@
 package com.akiban.server.expression.std;
 
 import java.util.HashMap;
-import org.joda.time.DateTime;
 import org.joda.time.DateTimeFieldType;
 import org.joda.time.MutableDateTime;
 
@@ -167,7 +166,7 @@ public enum DateTimeField
     },
 
     /**
-     * day of month in numeric: 31, 30, 29, ...
+     * day of month in numeric: 31, 30, 29, ..., 00
      */
     d
     {
@@ -181,7 +180,7 @@ public enum DateTimeField
         @Override
         public String get(MutableDateTime datetime)
         {
-            return datetime.getDayOfMonth() + "";
+            return String.format("%02d", datetime.getDayOfMonth());
         }
 
         @Override
@@ -275,7 +274,7 @@ public enum DateTimeField
         @Override
         public String get(MutableDateTime datetime)
         {
-            return datetime.getHourOfDay() + "";
+            return String.format("%02d", datetime.getHourOfDay());
         }
 
         @Override
@@ -539,7 +538,7 @@ public enum DateTimeField
         @Override
         public String get(MutableDateTime datetime)
         {
-            return datetime.getMonthOfYear() + "";
+            return String.format("%02d", datetime.getMonthOfYear());
         }
 
         @Override
@@ -1015,7 +1014,7 @@ public enum DateTimeField
         @Override
         public String get(MutableDateTime datetime)
         {
-            return datetime.getYear() % 100 + "";
+            return String.format("%02d", datetime.getYear() % 100);
         }
 
         @Override

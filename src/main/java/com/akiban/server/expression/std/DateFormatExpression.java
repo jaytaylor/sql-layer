@@ -55,8 +55,7 @@ public class DateFormatExpression extends AbstractBinaryExpression
             argumentTypes.set(1, AkType.VARCHAR);
             AkType dateType = argumentTypes.get(0);
             if (dateType != AkType.DATE && dateType != AkType.DATETIME
-                    && dateType != AkType.TIME && dateType != AkType.TIMESTAMP
-                    && dateType != AkType.YEAR)
+                    && dateType != AkType.TIME && dateType != AkType.TIMESTAMP)
                 argumentTypes.set(0, AkType.DATE);
         }
     };
@@ -72,9 +71,9 @@ public class DateFormatExpression extends AbstractBinaryExpression
         {
             ValueSource date = children().get(0).eval();
             ValueSource format = children().get(1).eval();
-            if (date.isNull() || format.isNull()) return NullValueSource.only();
+            if (date.isNull() || format.isNull() || format.getString().equals("")) return NullValueSource.only();
             MutableDateTime datetime = (MutableDateTime)Extractors.getObjectExtractor(AkType.DATE).getObject(date);
-            
+           
             return new ValueHolder(AkType.VARCHAR, DateTimeField.getFormatted(datetime, format.getString()));
         }        
     }
