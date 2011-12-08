@@ -20,6 +20,8 @@ import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
+import com.akiban.server.expression.std.Comparison;
+
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
@@ -335,71 +337,73 @@ public class GroupJoinFinder extends BaseRule
         List<JoinColumn> joinColumns = groupJoin.getJoinColumns();
         int ncols = joinColumns.size();
         Map<TableSource,List<ComparisonCondition>> parentTables = 
-          new HashMap<TableSource,List<ComparisonCondition>>();
+            new HashMap<TableSource,List<ComparisonCondition>>();
         for (ConditionExpression condition : conditions) {
             if (condition instanceof ComparisonCondition) {
                 ComparisonCondition ccond = (ComparisonCondition)condition;
-                ExpressionNode left = ccond.getLeft();
-                ExpressionNode right = ccond.getRight();
-                if (left.isColumn() && right.isColumn()) {
-                  ColumnExpression lcol = (ColumnExpression)left;
-                  ColumnExpression rcol = (ColumnExpression)right;
-                  if (lcol.getTable() == childTable) {
-                    ColumnSource rightSource = rcol.getTable();
-                    if (rightSource instanceof TableSource) {
-                      TableSource rightTable = (TableSource)rightSource;
-                      if (rightTable.getTable() == parentNode) {
-                        for (int i = 0; i < ncols; i++) {
-                          JoinColumn joinColumn = joinColumns.get(i);
-                          if ((joinColumn.getChild() == lcol.getColumn()) &&
-                              (joinColumn.getParent() == rcol.getColumn())) {
-                            List<ComparisonCondition> entry = 
-                              parentTables.get(rightTable);
-                            if (entry == null) {
-                              entry = new ArrayList<ComparisonCondition>(Collections.<ComparisonCondition>nCopies(ncols, null));
-                              parentTables.put(rightTable, entry);
+                if (ccond.getOperation() == Comparison.EQ) {
+                    ExpressionNode left = ccond.getLeft();
+                    ExpressionNode right = ccond.getRight();
+                    if (left.isColumn() && right.isColumn()) {
+                        ColumnExpression lcol = (ColumnExpression)left;
+                        ColumnExpression rcol = (ColumnExpression)right;
+                        if (lcol.getTable() == childTable) {
+                            ColumnSource rightSource = rcol.getTable();
+                            if (rightSource instanceof TableSource) {
+                                TableSource rightTable = (TableSource)rightSource;
+                                if (rightTable.getTable() == parentNode) {
+                                    for (int i = 0; i < ncols; i++) {
+                                        JoinColumn joinColumn = joinColumns.get(i);
+                                        if ((joinColumn.getChild() == lcol.getColumn()) &&
+                                            (joinColumn.getParent() == rcol.getColumn())) {
+                                            List<ComparisonCondition> entry = 
+                                                parentTables.get(rightTable);
+                                            if (entry == null) {
+                                                entry = new ArrayList<ComparisonCondition>(Collections.<ComparisonCondition>nCopies(ncols, null));
+                                                parentTables.put(rightTable, entry);
+                                            }
+                                            entry.set(i, ccond);
+                                        }
+                                    }
+                                }
                             }
-                            entry.set(i, ccond);
-                          }
                         }
-                      }
                     }
-                  }
                 }
             }
         }
         TableSource parentTable = null;
         List<ComparisonCondition> groupJoinConditions = null;
         for (Map.Entry<TableSource,List<ComparisonCondition>> entry : parentTables.entrySet()) {
-          boolean found = true;
-          for (ComparisonCondition elem : entry.getValue()) {
-            if (elem == null) {
-              found = false;
-              break;
+            boolean found = true;
+            for (ComparisonCondition elem : entry.getValue()) {
+                if (elem == null) {
+                    found = false;
+                    break;
+                }
             }
-          }
-          if (found) {
-            if (parentTable == null) {
-              parentTable = entry.getKey();
-              groupJoinConditions = entry.getValue();
+            if (found) {
+                if (parentTable == null) {
+                    parentTable = entry.getKey();
+                    groupJoinConditions = entry.getValue();
+                }
+                else {
+                    // TODO: What we need is something
+                    // earlier to decide that the primary
+                    // keys are equated and so share the
+                    // references somehow.
+                    ConditionExpression c1 = groupJoinConditions.get(0);
+                    ConditionExpression c2 = entry.getValue().get(0);
+                    if (conditions.indexOf(c1) > conditions.indexOf(c2)) {
+                        // Make the order predictable for tests.
+                        ConditionExpression temp = c1;
+                        c1 = c2;
+                        c2 = temp;
+                    }
+                    throw new UnsupportedSQLException("Found two possible parent joins", 
+                                                      c2.getSQLsource());
+                }
             }
-            else {
-              // TODO: What we need is something
-              // earlier to decide that the primary
-              // keys are equated and so share the
-              // references somehow.
-              ConditionExpression c1 = groupJoinConditions.get(0);
-              ConditionExpression c2 = entry.getValue().get(0);
-              if (conditions.indexOf(c1) > conditions.indexOf(c2)) {
-                // Make the order predictable for tests.
-                ConditionExpression temp = c1;
-                c1 = c2;
-                c2 = temp;
-              }
-              throw new UnsupportedSQLException("Found two possible parent joins", 
-                                                c2.getSQLsource());
-            }
-          }
         }
         if (parentTable == null) return null;
         TableGroup group = parentTable.getGroup();
