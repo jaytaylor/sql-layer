@@ -66,53 +66,75 @@ import org.yaml.snakeyaml.nodes.Tag;
  * A utility for testing SQL access over a Postgres server connection based on
  * the contents of a YAML file.
  */
-/*
- * Here's an overview of the syntax of the YAML file.
- * 
- * General:
- * 
- * - One or more YAML documents - Each document is a sequence whose first
- * element is a map - Key of first element's map is a command: a string with an
- * uppercase first character
- * 
- * Commands:
- * 
- * Include - Syntax: - Include: <file> - If the file is relative, it is parsed
- * relative to the referring file - If the file argument is missing or null, the
- * command will be ignored
- * 
- * Properties - Syntax: - Properties: <framework engine> - <property>: <value> -
- * The frame engines that apply to this engine are: "all" (all frameworks) and
- * "it" (this integration test framework engine) - A new property definition
- * overrides any previous ones
- * 
- * CreateTable - Syntax: - CreateTable: <table name> <create table arguments>...
- * - error: [<error code>, <error message>] - The error message is optional - If
- * the error code is missing or null, then the attribute and its value will be
- * ignored - This command has the same behavior as would specifying a CREATE
- * TABLE statement with a Statement command, but it lets the test framework know
- * which tables have been created, so it can drop them after the test is
- * completed
- * 
- * Statement - Syntax - Statement: <statement text> - params: [[<parameter
- * value>, ...], ...] - param_types: [<column type>, ...] - output: [[<output
- * value>, ...], ...] - row_count: <number of rows> - output_types: [<column
- * type>, ...] - explain: <explain plan> - error: [<error code>, <error
- * message>] - If the statement text is missing or null, the command will be
- * ignored - Attributes are optional and can appear at most once - If the value
- * of any attribute is missing or null, then the attribute and its value will be
- * ignored - Only one statement in statement text (not checked) - At least one
- * row element in params, param_types, output, output_types - At least one row
- * in params and output - Types for param_types and output_types listed in code
- * below - param_types requires params - All rows same length for output and
- * params - Same values for output row length, output_types length, and
- * row_count - Same values for params row length and param_types length - The
- * value of row_count is non-negative - The error message is optional - Can't
- * have error with output or row_count - YAML null for null value - !dc dc for
- * don't care value in output - !re regular-expression for regular expression
- * patterns that should match output - The statement text should not create a
- * table -- use the CreateTable command for that purpose
- */
+/* Here's an overview of the syntax of the YAML file.
+	-
+	-  General:
+	-
+	-   - One or more YAML documents
+	-   - Each document is a sequence whose first element is a map
+	-   - Key of first element's map is a command: a string with an uppercase first
+	-     character
+	-
+	-   Commands:
+	-
+	-   Include
+	-   - Syntax:
+	-     - Include: <file>
+	-   - If the file is relative, it is parsed relative to the referring file
+	-   - If the file argument is missing or null, the command will be ignored
+	-
+	-   Properties
+	-   - Syntax:
+	-     - Properties: <framework engine>
+	-     - <property>: <value>
+	-   - The frame engines that apply to this engine are: "all" (all frameworks) and
+	-     "it" (this integration test framework engine)
+	-   - A new property definition overrides any previous ones
+	-
+	-   CreateTable
+	-   - Syntax:
+	-     - CreateTable: <table name> <create table arguments>...
+	-     - error: [<error code>, <error message>]
+	-   - The error message is optional
+	-   - If the error code is missing or null, then the attribute and its value
+	-     will be ignored
+	-   - This command has the same behavior as would specifying a CREATE TABLE
+	-     statement with a Statement command, but it lets the test framework know
+	-     which tables have been created, so it can drop them after the test is
+	-     completed
+	-
+	-   Statement
+	-   - Syntax
+	-     - Statement: <statement text>
+	-     - params: [[<parameter value>, ...], ...]
+	-     - param_types: [<column type>, ...]
+	-     - output: [[<output value>, ...], ...]
+	-     - row_count: <number of rows>
+	-     - output_types: [<column type>, ...]
+	-     - explain: <explain plan>
+	-     - error: [<error code>, <error message>]
+	-   - If the statement text is missing or null, the command will be ignored
+	-   - Attributes are optional and can appear at most once
+	-   - If the value of any attribute is missing or null, then the attribute and
+	-     its value will be ignored
+	-   - Only one statement in statement text (not checked)
+ 	-   - At least one row element in params, param_types, output, output_types
+	-   - At least one row in params and output
+	-   - Types for param_types and output_types listed in code below
+	-   - param_types requires params
+	-   - All rows same length for output and params
+	-   - Same values for output row length, output_types length, and row_count
+	-   - Same values for params row length and param_types length
+	-   - The value of row_count is non-negative
+	-   - The error message is optional
+	-   - Can't have error with output or row_count
+	-   - YAML null for null value
+	-   - !dc dc for don't care value in output
+	-   - !re regular-expression for regular expression patterns that should match
+	-     output
+	-   - The statement text should not create a table -- use the CreateTable
+	-     command for that purpose
+	-*/
 class YamlTester {
 
 	private static final boolean DEBUG = Boolean.getBoolean("test.DEBUG");

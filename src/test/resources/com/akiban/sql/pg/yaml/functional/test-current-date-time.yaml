@@ -1,4 +1,6 @@
 # Test the CURRENT_DATE, CURRENT_TIME, CURRENT_TIMESTAMP, and NOW functions
+- Properties: sys-aksql
+- suppressed: true
 ---
 - Include: all-types-schema.yaml
 ---
