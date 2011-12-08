@@ -139,7 +139,7 @@ public class IndexStatisticsYamlLoader
     }
 
     protected Object buildStatistics(IndexStatistics indexStatistics) {
-        Map map = new HashMap();
+        Map map = new TreeMap();
         Index index = indexStatistics.getIndex();
         map.put("Index", index.getIndexName().getName());
         map.put("Table", index.getIndexName().getTableName());
@@ -154,13 +154,13 @@ public class IndexStatisticsYamlLoader
     }
 
     protected Object buildHistogram(Histogram histogram) {
-        Map map = new HashMap();
+        Map map = new TreeMap();
         Index index = histogram.getIndex();
         int columnCount = histogram.getColumnCount();
         map.put("Columns", columnCount);
         List<Object> entries = new ArrayList<Object>();
         for (HistogramEntry entry : histogram.getEntries()) {
-            Map emap = new HashMap();
+            Map emap = new TreeMap();
             emap.put("eq", entry.getEqualCount());
             emap.put("lt", entry.getLessCount());
             emap.put("distinct", entry.getDistinctCount());
