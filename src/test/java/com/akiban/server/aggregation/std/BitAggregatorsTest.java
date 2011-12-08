@@ -287,6 +287,43 @@ public class BitAggregatorsTest
 
     @OnlyIfNot("alreadyExc()")
     @Test
+    public void testAndOrXor()
+    {
+        // test and
+        aggregator = Aggregators.bit_and("bit_and", AkType.U_BIGINT).get();
+        expected1 = BigInteger.valueOf(1);
+        testNonParam();
+        
+        // test or
+        aggregator = Aggregators.bit_or("bit_or", AkType.U_BIGINT).get();
+        expected1 = BigInteger.valueOf(3);
+        testNonParam();
+        
+        // test xor
+        aggregator = Aggregators.bit_xor("bit_xor", AkType.U_BIGINT).get();
+        expected1 = BigInteger.valueOf(2);
+        testNonParam();
+    }
+    
+    private void testNonParam ()
+    {
+        holder.clear();
+        
+        holder.putUBigInt(BigInteger.ONE);
+        aggregator.input(holder);
+        
+        holder.putUBigInt(BigInteger.valueOf(3));
+        aggregator.input(holder);
+        
+        holder.clear();
+        holder.putUBigInt(N64);
+        aggregator.output(holder);
+        
+        assertEquals(expected1, holder.getUBigInt());
+    }
+    
+    @OnlyIfNot("alreadyExc()")
+    @Test
     public void testNullOr ()
     {
         aggregator = Aggregators.bit_or("bit_or", AkType.U_BIGINT).get();
