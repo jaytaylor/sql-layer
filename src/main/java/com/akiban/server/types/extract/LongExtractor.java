@@ -29,6 +29,7 @@ public abstract class LongExtractor extends AbstractExtractor {
     // for date/times only
     public abstract long stdLongToUnix (long longVal);
     public abstract long unixToStdLong (long unixVal);
+    public abstract long[] getYearMonthDay (long value);
     
     // package-private ctor
     LongExtractor(AkType targetConversionType) {

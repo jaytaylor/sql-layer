@@ -25,6 +25,7 @@ public final class AISValidations {
     public static final AISValidation GROUP_INDEX_NOT_UNIQUE = new GroupIndexesNotUnique();
     public static final AISValidation GROUP_TABLE_SINGLE_ROOT = new GroupTableSingleRoot();
     public static final AISValidation INDEX_HAS_COLUMNS = new IndexHasColumns();
+    public static final AISValidation INDEX_IDS_UNIQUE = new IndexIDsUnique();
     public static final AISValidation INDEX_SIZES = new IndexSizes();
     public static final AISValidation INDEX_TREE_NAMES_UNIQUE = new IndexTreeNamesUnique();
     public static final AISValidation JOIN_COLUMN_TYPES_MATCH = new JoinColumnTypesMatch();
@@ -54,6 +55,7 @@ public final class AISValidations {
                 SUPPORTED_COLUMN_TYPES,
                 COLUMN_POSITION_DENSE,
                 TABLEID_UNIQUE,
+                INDEX_IDS_UNIQUE,
                 REFERENCES_CORRECT,
                 TABLES_IN_A_GROUP,
                 INDEX_HAS_COLUMNS,
