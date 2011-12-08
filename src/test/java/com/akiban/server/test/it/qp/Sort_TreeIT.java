@@ -77,7 +77,8 @@ public class Sort_TreeIT extends OperatorITBase
                     groupScan_Default(coi),
                     Collections.singleton(customerRowType)),
                 customerRowType,
-                ordering(field(customerRowType, 1), true));
+                ordering(field(customerRowType, 1), true),
+                SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 2L, "foundation"),
@@ -97,7 +98,8 @@ public class Sort_TreeIT extends OperatorITBase
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
                 orderRowType,
-                ordering(field(orderRowType, 2), true, field(orderRowType, 1), false));
+                ordering(field(orderRowType, 2), true, field(orderRowType, 1), false),
+                SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 31L, 3L, "david"),
@@ -119,7 +121,8 @@ public class Sort_TreeIT extends OperatorITBase
                     groupScan_Default(coi),
                     Collections.singleton(orderRowType)),
                 orderRowType,
-                ordering(field(orderRowType, 2), true));
+                ordering(field(orderRowType, 2), true),
+                SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             // Order among equals in group.
@@ -152,7 +155,8 @@ public class Sort_TreeIT extends OperatorITBase
                     flattenOI,
                     Collections.singleton(oiType)),
                 oiType,
-                ordering(cidField, true, oidField, true, iidField, true));
+                ordering(cidField, true, oidField, true, iidField, true),
+                SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(oiType, 11L, 1L, "ori", 111L, 11L),
@@ -186,7 +190,8 @@ public class Sort_TreeIT extends OperatorITBase
                     flattenOI,
                     Collections.singleton(oiType)),
                 oiType,
-                ordering(cidField, true, oidField, true, iidField, false));
+                ordering(cidField, true, oidField, true, iidField, false),
+                SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(oiType, 11L, 1L, "ori", 112L, 11L),
@@ -220,7 +225,8 @@ public class Sort_TreeIT extends OperatorITBase
                     flattenOI,
                     Collections.singleton(oiType)),
                 oiType,
-                ordering(cidField, true, oidField, false, iidField, true));
+                ordering(cidField, true, oidField, false, iidField, true),
+                SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(oiType, 12L, 1L, "david", 121L, 12L),
@@ -254,7 +260,8 @@ public class Sort_TreeIT extends OperatorITBase
                     flattenOI,
                     Collections.singleton(oiType)),
                 oiType,
-                ordering(cidField, true, oidField, false, iidField, false));
+                ordering(cidField, true, oidField, false, iidField, false),
+                SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(oiType, 12L, 1L, "david", 122L, 12L),
@@ -288,7 +295,8 @@ public class Sort_TreeIT extends OperatorITBase
                     flattenOI,
                     Collections.singleton(oiType)),
                 oiType,
-                ordering(cidField, false, oidField, true, iidField, true));
+                ordering(cidField, false, oidField, true, iidField, true),
+                SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(oiType, 21L, 2L, "david", 211L, 21L),
@@ -322,7 +330,8 @@ public class Sort_TreeIT extends OperatorITBase
                     flattenOI,
                     Collections.singleton(oiType)),
                 oiType,
-                ordering(cidField, false, oidField, true, iidField, false));
+                ordering(cidField, false, oidField, true, iidField, false),
+                SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(oiType, 21L, 2L, "david", 212L, 21L),
@@ -356,7 +365,8 @@ public class Sort_TreeIT extends OperatorITBase
                     flattenOI,
                     Collections.singleton(oiType)),
                 oiType,
-                ordering(cidField, false, oidField, false, iidField, true));
+                ordering(cidField, false, oidField, false, iidField, true),
+                SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(oiType, 22L, 2L, "jack", 221L, 22L),
@@ -390,7 +400,8 @@ public class Sort_TreeIT extends OperatorITBase
                     flattenOI,
                     Collections.singleton(oiType)),
                 oiType,
-                ordering(cidField, false, oidField, false, iidField, false));
+                ordering(cidField, false, oidField, false, iidField, false),
+                SortOption.PRESERVE_DUPLICATES);
         Cursor cursor = cursor(plan, adapter);
         RowBase[] expected = new RowBase[]{
             row(oiType, 22L, 2L, "jack", 222L, 22L),
@@ -418,9 +429,11 @@ public class Sort_TreeIT extends OperatorITBase
                         groupScan_Default(coi),
                         Collections.singleton(itemRowType)),
                     itemRowType,
-                    ordering(iidField, true, oidField, true)),
+                    ordering(iidField, true, oidField, true),
+                    SortOption.PRESERVE_DUPLICATES),
                 itemRowType,
-                ordering(oidField, false, iidField, false));
+                ordering(oidField, false, iidField, false),
+                SortOption.PRESERVE_DUPLICATES);
         RowBase[] expected = new RowBase[]{
             row(itemRowType, 222L, 22L),
             row(itemRowType, 221L, 22L),
@@ -439,6 +452,62 @@ public class Sort_TreeIT extends OperatorITBase
             tempVolumeState = session().get(tempVolumeStateKey);
             assertTrue(tempVolumeState == null);
         }
+    }
+    
+    @Test
+    public void testPreserveDuplicates()
+    {
+        Operator project = 
+            project_Default(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(orderRowType)),
+                orderRowType,
+                Arrays.asList(field(orderRowType, 1)));
+        RowType projectType = project.rowType();
+        Operator plan =
+            sort_Tree(
+                project,
+                projectType,
+                ordering(field(projectType, 0), true),
+                SortOption.PRESERVE_DUPLICATES);
+
+        RowBase[] expected = new RowBase[]{
+            row(projectType, 1L),
+            row(projectType, 1L),
+            row(projectType, 2L),
+            row(projectType, 2L),
+            row(projectType, 3L),
+            row(projectType, 5L),
+        };
+        compareRows(expected, cursor(plan, adapter));
+    }
+
+    @Test
+    public void testSuppressDuplicates()
+    {
+        Operator project =
+            project_Default(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(orderRowType)),
+                orderRowType,
+                Arrays.asList(field(orderRowType, 1)));
+        RowType projectType = project.rowType();
+        Operator plan =
+            sort_Tree(
+                project,
+                projectType,
+                ordering(field(projectType, 0), true),
+                SortOption.SUPPRESS_DUPLICATES);
+
+        RowBase[] expected = new RowBase[]{
+            row(projectType, 1L),
+            row(projectType, 2L),
+            row(projectType, 3L),
+            row(projectType, 5L),
+        };
+        compareRows(expected, cursor(plan, adapter));
     }
 
     private Ordering ordering(Object... objects)

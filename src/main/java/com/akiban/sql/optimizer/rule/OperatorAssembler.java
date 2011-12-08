@@ -641,9 +641,9 @@ public class OperatorAssembler extends BaseRule
             }
             if ((maxrows >= 0) && (maxrows <= INSERTION_SORT_MAX_LIMIT))
                 stream.operator = API.sort_InsertionLimited(stream.operator, stream.rowType,
-                                                            ordering, maxrows);
+                                                            ordering, API.SortOption.PRESERVE_DUPLICATES, maxrows);
             else
-                stream.operator = API.sort_Tree(stream.operator, stream.rowType, ordering);
+                stream.operator = API.sort_Tree(stream.operator, stream.rowType, ordering, API.SortOption.PRESERVE_DUPLICATES);
         }
 
         protected void assembleSort(RowStream stream, int nkeys, PlanNode input) {
