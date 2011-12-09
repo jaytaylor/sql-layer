@@ -51,6 +51,7 @@ public class OptimizerTestBase extends ASTTransformTestBase
     public static final File RESOURCE_DIR = 
         new File("src/test/resources/"
                  + OptimizerTestBase.class.getPackage().getName().replace('.', '/'));
+    public static final String DEFAULT_SCHEMA = "user";
 
     // Base class has all possible transformers for convenience.
     protected AISBinder binder;
@@ -70,14 +71,15 @@ public class OptimizerTestBase extends ASTTransformTestBase
 
     public static AkibanInformationSchema parseSchema(File schema) throws Exception {
         String sql = fileContents(schema);
-        SchemaDef schemaDef = SchemaDef.parseSchema("use user; " + sql);
+        SchemaDef schemaDef = SchemaDef.parseSchema("use " + DEFAULT_SCHEMA + 
+                                                    "; " + sql);
         SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
         return toAis.getAis();
     }
 
     protected AkibanInformationSchema loadSchema(File schema) throws Exception {
         AkibanInformationSchema ais = parseSchema(schema);
-        binder = new AISBinder(ais, "user");
+        binder = new AISBinder(ais, DEFAULT_SCHEMA);
         return ais;
     }
 

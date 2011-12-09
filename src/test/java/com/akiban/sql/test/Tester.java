@@ -32,6 +32,7 @@ import static com.akiban.sql.optimizer.rule.DefaultRules.*;
 import com.akiban.sql.optimizer.rule.RulesContext;
 import com.akiban.sql.optimizer.rule.RulesTestContext;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
+import com.akiban.sql.optimizer.rule.TestIndexEstimator;
 import com.akiban.sql.parser.CursorNode;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.DeleteNode;
@@ -51,8 +52,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.GroupIndex;
 
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
-import com.akiban.server.store.statistics.IndexStatistics;
-import com.akiban.server.store.statistics.IndexStatisticsYamlLoader;
 import com.akiban.server.util.GroupIndexCreator;
 
 import java.util.*;
@@ -80,6 +79,7 @@ public class Tester
     OperatorCompiler operatorCompiler;
     List<BaseRule> planRules;
     RulesContext rulesContext;
+    File statsFile;
     int repeat;
 
     public Tester() {
@@ -187,9 +187,10 @@ public class Tester
         if (actions.contains(Action.BIND))
             binder = new AISBinder(ais, DEFAULT_SCHEMA);
         if (actions.contains(Action.OPERATORS))
-            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, ais, DEFAULT_SCHEMA, new FunctionsRegistryImpl());
+            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, ais, DEFAULT_SCHEMA, new FunctionsRegistryImpl(), new TestIndexEstimator(ais, DEFAULT_SCHEMA, statsFile));
         if (actions.contains(Action.PLAN))
-            rulesContext = new RulesTestContext(ais, planRules);
+            rulesContext = new RulesTestContext(ais, DEFAULT_SCHEMA, 
+                                                statsFile, planRules);
     }
 
     public void addGroupIndex(String cols) throws Exception {
@@ -210,12 +211,8 @@ public class Tester
         }
     }
 
-    public void loadIndexStatistics(File file) throws Exception {
-        IndexStatisticsYamlLoader loader =
-            new IndexStatisticsYamlLoader(ais, DEFAULT_SCHEMA);
-        Map<Index,IndexStatistics> stats = loader.load(file);
-        System.out.println(stats);
-        loader.dump(stats.values(), new File(file.getParent(), file.getName() + ".out"));
+    public void setIndexStatistics(File file) throws Exception {
+        statsFile = file;
     }
 
     public void addView(String sql) throws Exception {
@@ -295,7 +292,7 @@ public class Tester
                 else if ("-group-index".equals(arg))
                     tester.addGroupIndex(maybeFile(args[i++]));
                 else if ("-index-stats".equals(arg))
-                    tester.loadIndexStatistics(new File(args[i++]));
+                    tester.setIndexStatistics(new File(args[i++]));
                 else if ("-view".equals(arg))
                     tester.addView(maybeFile(args[i++]));
                 else if ("-types".equals(arg))
