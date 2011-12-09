@@ -15,6 +15,8 @@
 
 package com.akiban.server;
 
+import com.akiban.server.rowdata.RowDef;
+
 public interface TableStatus {
     long getAutoIncrement();
     long getCreationTime();
@@ -35,4 +37,7 @@ public interface TableStatus {
 
     long createNewUniqueID();
     void truncate();
+
+    RowDef getRowDef();
+    void setRowDef(RowDef rowDef);
 }

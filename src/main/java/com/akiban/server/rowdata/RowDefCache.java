@@ -25,8 +25,8 @@ import java.util.TreeMap;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
-import com.akiban.server.PersistitTransactionalCacheTableStatus;
 import com.akiban.server.TableStatusCache;
+import com.akiban.server.TableStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -197,7 +197,7 @@ public class RowDefCache {
                 final HashSet<Integer> assigned = new HashSet<Integer>();
                 // First pass: merge already assigned values
                 for (final RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
-                    final PersistitTransactionalCacheTableStatus tableStatus = userRowDef.getTableStatus();
+                    final TableStatus tableStatus = userRowDef.getTableStatus();
                     int ordinal = tableStatus.getOrdinal();
                     if (ordinal != 0 && !assigned.add(ordinal)) {
                         throw new IllegalStateException(String.format(

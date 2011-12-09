@@ -132,21 +132,15 @@ public class PersistitTransactionalCacheTableStatus implements TableStatus {
         this.dirty = ts.dirty;
     }
 
+    @Override
     public synchronized RowDef getRowDef() {
         return currentRowDef;
     }
 
-    public synchronized int getRowDefId() {
-        return currentRowDef.getRowDefId();
-    }
-
+    @Override
     public synchronized void setRowDef(final RowDef rowDef) {
         this.currentRowDef = rowDef;
         dirty = true;
-    }
-
-    public synchronized void setIsAutoIncrement(final boolean isAutoIncrement) {
-        this.isAutoIncrement = isAutoIncrement;
     }
 
     @Override

@@ -28,11 +28,10 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import com.akiban.server.service.session.SessionEventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.server.TableStatusCache;
+import com.akiban.server.PersistitTransactionalCacheTableStatusCache;
 import com.akiban.server.error.ConfigurationPropertiesLoadException;
 import com.akiban.server.error.InvalidVolumeException;
 import com.akiban.server.error.PersistItErrorException;
@@ -93,7 +92,7 @@ public class TreeServiceImpl
 
     private final SessionService sessionService;
 
-    private TableStatusCache tableStatusCache;
+    private PersistitTransactionalCacheTableStatusCache tableStatusCache;
 
     @Inject
     public TreeServiceImpl(SessionService sessionService, ConfigurationService configService) {
@@ -156,7 +155,7 @@ public class TreeServiceImpl
         Persistit db = new Persistit();
         dbRef.set(db);
 
-        tableStatusCache = new TableStatusCache(sessionService, db, this);
+        tableStatusCache = new PersistitTransactionalCacheTableStatusCache(sessionService, db, this);
         tableStatusCache.register();
 
         db.setPersistitLogger(new Slf4jAdapter(LOG));
@@ -344,7 +343,7 @@ public class TreeServiceImpl
     }
 
     @Override
-    public TableStatusCache getTableStatusCache() {
+    public PersistitTransactionalCacheTableStatusCache getTableStatusCache() {
         return tableStatusCache;
     }
 

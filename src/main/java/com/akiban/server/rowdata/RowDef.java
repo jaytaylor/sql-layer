@@ -30,7 +30,7 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.AkServerUtil;
-import com.akiban.server.PersistitTransactionalCacheTableStatus;
+import com.akiban.server.TableStatus;
 import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
 
@@ -50,7 +50,7 @@ public class RowDef implements TreeLink {
 
     private final boolean hasAkibanPK;
 
-    private final PersistitTransactionalCacheTableStatus tableStatus;
+    private final TableStatus tableStatus;
 
     /**
      * Array of FieldDef, one per column
@@ -117,7 +117,7 @@ public class RowDef implements TreeLink {
 
     private AtomicReference<TreeCache> treeCache = new AtomicReference<TreeCache>();
 
-    public RowDef(Table table, final PersistitTransactionalCacheTableStatus tableStatus) {
+    public RowDef(Table table, final TableStatus tableStatus) {
         this.table = table;
         this.tableStatus = tableStatus;
         tableStatus.setRowDef(this);
@@ -134,19 +134,16 @@ public class RowDef implements TreeLink {
         if (table.isUserTable()) {
             final UserTable userTable = (UserTable) table;
             if (userTable.getAutoIncrementColumn() != null) {
-                autoIncrementField = userTable.getAutoIncrementColumn()
-                        .getPosition();
+                autoIncrementField = userTable.getAutoIncrementColumn().getPosition();
                 //
                 // TODO - receive non-default value from adapter.
                 //
                 autoIncrementDelta = 1;
-                final long initialAutoIncrementValue = userTable.getAutoIncrementColumn()
-                        .getInitialAutoIncrementValue().longValue();
+                long initialAutoIncrementValue = userTable.getAutoIncrementColumn().getInitialAutoIncrementValue();
                 //
                 // Safe to do these here, non-transactionally, since recovery would
                 // redo these anyway.
                 //
-                tableStatus.setIsAutoIncrement(true);
                 tableStatus.setAutoIncrement(initialAutoIncrementValue);
             }
             this.hasAkibanPK = userTable.getPrimaryKeyIncludingInternal().isAkibanPK();
@@ -467,7 +464,7 @@ public class RowDef implements TreeLink {
         return table.getTableId();
     }
 
-    public PersistitTransactionalCacheTableStatus getTableStatus() {
+    public TableStatus getTableStatus() {
         return tableStatus;
     }
 

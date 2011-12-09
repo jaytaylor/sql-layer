@@ -360,8 +360,7 @@ public class PersistitStoreIndexManager implements IndexManager {
                     } catch (InvalidOperationException e) {
                         throw new RollbackException(e);
                     }
-                    treeService.getTableStatusCache().incrementRowCount(
-                            indexAnalysisRowDef.getRowDefId());
+                    treeService.getTableStatusCache().rowWritten(indexAnalysisRowDef.getRowDefId());
 
                     transaction.commit(store.forceToDisk);
                     break;

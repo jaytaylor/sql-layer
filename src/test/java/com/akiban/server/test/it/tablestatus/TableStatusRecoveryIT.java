@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 
 import java.util.Collections;
 
+import com.akiban.server.TableStatus;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
@@ -84,7 +85,7 @@ public class TableStatusRecoveryIT extends ITBase {
         
         final TableStatistics ts3 = store().getTableStatistics(session(), tableId);
         assertEquals(20000, ts3.getRowCount());
-        final PersistitTransactionalCacheTableStatus status = store().getRowDefCache().getRowDef(tableId).getTableStatus();
+        final TableStatus status = store().getRowDefCache().getRowDef(tableId).getTableStatus();
         assertEquals(20000, status.getRowCount());
         assertEquals(20001, status.createNewUniqueID());
     }
