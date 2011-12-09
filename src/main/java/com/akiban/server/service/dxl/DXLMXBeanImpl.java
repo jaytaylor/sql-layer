@@ -16,11 +16,13 @@
 package com.akiban.server.service.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.staticgrouping.Group;
 import com.akiban.ais.model.staticgrouping.Grouping;
 import com.akiban.ais.model.staticgrouping.GroupingVisitorStub;
 import com.akiban.ais.model.staticgrouping.GroupsBuilder;
@@ -40,8 +42,10 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 class DXLMXBeanImpl implements DXLMXBean {
     private final DXLServiceImpl dxlService;
@@ -182,8 +186,40 @@ class DXLMXBeanImpl implements DXLMXBean {
     @Override
     public List<String> getGroupIndexDDLs() {
         AkibanInformationSchema ais = ais();
-        throw new UnsupportedOperationException();
+        List<String> result = new ArrayList<String>();
+        StringBuilder sb = new StringBuilder();
+        for (Group group : ais.getGroups().values()) {
+            for (GroupIndex gi : group.getIndexes()) {
+                // CREATE INDEX name_date ON "order"(customer.name, "order".order_date) USING LEFT JOIN
+                sb.setLength(0);
+                escapeName(sb, gi.getIndexName().getName());
+                sb.append(" ON ");
+                String schemaName = gi.leafMostTable().getName().getSchemaName();
+                if (!schemaName.equals(getUsingSchema()))
+                    escapeName(sb, schemaName).append('.');
+                escapeName(sb, gi.leafMostTable().getName().getTableName()).append(" ( ");
+                for (Iterator<IndexColumn> colsIter = gi.getColumns().iterator(); colsIter.hasNext(); ) {
+                    Column column = colsIter.next().getColumn();
+                    if (!column.getTable().getName().getSchemaName().equals(schemaName))
+                        throw new UnsupportedOperationException("mixed-schema GIs are not supported");
+                    escapeName(sb, column.getTable().getName().getTableName()).append('.');
+                    escapeName(sb, column.getName());
+                    if (colsIter.hasNext())
+                        sb.append(", ");
+                }
+                sb.append(" ) USING ");
+                switch (gi.getJoinType()) {
+                case LEFT:  sb.append("LEFT JOIN"); break;
+                case RIGHT: sb.append("RIGHT JOIN"); break;
+                default: throw new AssertionError(gi.getJoinType());
+                }
+                result.add(sb.toString());
+            }
+        }
+        return result;
     }
+
+    private static final Pattern SAFE_NAMES = Pattern.compile("\\w+");
 
     @Override
     public String getGroupNameFromTableName(String schemaName, String tableName) {
@@ -273,5 +309,13 @@ class DXLMXBeanImpl implements DXLMXBean {
             session.close();
         }
         return ais;
+    }
+
+    private StringBuilder escapeName(StringBuilder sb, String name) {
+        // Eventually we'll want to quote this. For now, just check that it's safe.
+        if (!SAFE_NAMES.matcher(name).matches())
+            throw new UnsupportedOperationException("illegal characters in identifier: " + name);
+        sb.append(name);
+        return sb;
     }
 }
