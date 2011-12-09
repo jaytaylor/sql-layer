@@ -33,7 +33,7 @@ import java.util.*;
 // and WHERE conditions on subqueries (views) into the subquery
 // itself. These need to run earlier to affect indexing. Not sure how
 // to integrate all these. Maybe move everything earlier on and then
-// recognize joins of such filtered tables.
+// recognize joins of such filtered tables as Joinable.
 public class SelectPreponer extends BaseRule
 {
     private static final Logger logger = LoggerFactory.getLogger(SelectPreponer.class);
@@ -74,7 +74,7 @@ public class SelectPreponer extends BaseRule
                     PlanNode input = ((BasePlanWithInput)n).getInput();
                     if (!((input instanceof TableLoader) ||
                           (input instanceof IndexScan))) {
-                        // Don't bother putting both in.
+                        // Will put input in, so don't bother putting both in.
                         origins.add(n);
                     }
                 }
@@ -203,7 +203,7 @@ public class SelectPreponer extends BaseRule
 
         // Return where this condition can move.
         // TODO: Can move to after subset of joins once enough tables are joined
-        // or if all condition tables come in at once via BranchLookup.
+        // by breaking apart Flatten.
         protected PlanNode canMove(ConditionExpression condition) {
             TableSource table = getSingleTableConditionTable(condition);
             if (table == null)
