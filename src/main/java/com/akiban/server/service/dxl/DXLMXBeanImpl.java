@@ -180,14 +180,14 @@ class DXLMXBeanImpl implements DXLMXBean {
     }
 
     @Override
+    public List<String> getGroupIndexDDLs() {
+        AkibanInformationSchema ais = ais();
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public String getGroupNameFromTableName(String schemaName, String tableName) {
-        Session session = sessionService.createSession();
-        final AkibanInformationSchema ais;
-        try {
-            ais = dxlService.ddlFunctions().getAIS(session);
-        } finally {
-            session.close();
-        }
+        AkibanInformationSchema ais = ais();
         Table table = ais.getTable(schemaName, tableName);
         if(table != null) {
             final com.akiban.ais.model.Group group = table.getGroup();
@@ -200,29 +200,17 @@ class DXLMXBeanImpl implements DXLMXBean {
 
     @Override
     public String printAIS() {
-        Session session = sessionService.createSession();
-        try {
-            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-            return AISPrinter.toString(ais);
-        }
-        finally {
-            session.close();
-        }
+        return AISPrinter.toString(ais());
     }
 
     public List<String> getGrouping(String schema) {
-        Session session = sessionService.createSession();
-        try {
-            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-            Grouping grouping = GroupsBuilder.fromAis(ais, schema);
+        AkibanInformationSchema ais = ais();
+        Grouping grouping = GroupsBuilder.fromAis(ais, schema);
 
-            stripAISFromGrouping(grouping);
+        stripAISFromGrouping(grouping);
 
-            String groupingString = grouping.toString();
-            return Arrays.asList(groupingString.split("\\n"));
-        } finally {
-            session.close();
-        }
+        String groupingString = grouping.toString();
+        return Arrays.asList(groupingString.split("\\n"));
     }
 
     public void writeRow(String schema, String table, String fields) {
@@ -274,5 +262,16 @@ class DXLMXBeanImpl implements DXLMXBean {
         for (Group group : groupsToRemove) {
             manipulator.dropGroup(group.getGroupName());
         }
+    }
+
+    private AkibanInformationSchema ais() {
+        AkibanInformationSchema ais;
+        Session session = sessionService.createSession();
+        try {
+            ais = dxlService.ddlFunctions().getAIS(session);
+        } finally {
+            session.close();
+        }
+        return ais;
     }
 }
