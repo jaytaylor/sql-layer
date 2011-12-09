@@ -105,12 +105,14 @@ public class SelectPreponer extends BaseRule
     public void apply(PlanContext plan) {
         TableOriginFinder finder = new TableOriginFinder();
         finder.find(plan.getPlan());
+        Preponer preponer = new Preponer();
         for (PlanNode origin : finder.getOrigins()) {
-            new Preponer().pullToward(origin);
+            preponer.pullToward(origin);
         }
     }
     
     static class Preponer {
+        Map<Select,ConditionDependencyAnalyzer> selectDependencies;
         Map<TableSource,PlanNode> loaders;
         Map<ExpressionNode,PlanNode> indexColumns;
         
@@ -125,14 +127,17 @@ public class SelectPreponer extends BaseRule
                 for (ExpressionNode column : ((IndexScan)node).getColumns())
                     indexColumns.put(column, node);
                 prev = node;
-                node = getOutput(node);
+                node = node.getOutput();
+            }
+            else {
+                indexColumns = null;
             }
             while (node instanceof TableLoader) {
                 for (TableSource table : ((TableLoader)node).getTables()) {
                     loaders.put(table, node);
                 }
                 prev = node;
-                node = getOutput(node);
+                node = node.getOutput();
             }
             boolean sawJoin = false;
             while (true) {
@@ -172,7 +177,7 @@ public class SelectPreponer extends BaseRule
                 else
                     break;
                 prev = node;
-                node = getOutput(node);
+                node = node.getOutput();
             }
             if (!sawJoin ||
                 (loaders.isEmpty() &&
@@ -183,17 +188,30 @@ public class SelectPreponer extends BaseRule
                 return;
             }
             if (node instanceof Select) {
-                moveConditions(((Select)node).getConditions());
+                Select select = (Select)node;
+                moveConditions(getDependencies(select), select.getConditions());
             }
+        }
+
+        protected ConditionDependencyAnalyzer getDependencies(Select select) {
+            if (selectDependencies == null)
+                selectDependencies = new HashMap<Select,ConditionDependencyAnalyzer>();
+            ConditionDependencyAnalyzer dependencies = selectDependencies.get(select);
+            if (dependencies == null) {
+                dependencies = new ConditionDependencyAnalyzer(select);
+                selectDependencies.put(select, dependencies);
+            }
+            return dependencies;
         }
 
         // Have a straight path to these conditions and know where
         // tables came from.  See what can be moved back there.
-        protected void moveConditions(ConditionList conditions) {
+        protected void moveConditions(ConditionDependencyAnalyzer dependencies,
+                                      ConditionList conditions) {
             Iterator<ConditionExpression> iter = conditions.iterator();
             while (iter.hasNext()) {
                 ConditionExpression condition = iter.next();
-                PlanNode moveTo = canMove(condition);
+                PlanNode moveTo = canMove(dependencies, condition);
                 if (moveTo != null) {
                     moveCondition(condition, moveTo);
                     iter.remove();
@@ -202,22 +220,40 @@ public class SelectPreponer extends BaseRule
         }
 
         // Return where this condition can move.
-        // TODO: Can move to after subset of joins once enough tables are joined
+        // TODO: Can move to after subset of joins once enough tables are joined,
         // by breaking apart Flatten.
-        protected PlanNode canMove(ConditionExpression condition) {
-            TableSource table = getSingleTableConditionTable(condition);
-            if (table == null)
-                return null;
-            if ((indexColumns != null) && (condition instanceof ComparisonCondition)) {
+        protected PlanNode canMove(ConditionDependencyAnalyzer dependencies,
+                                   ConditionExpression condition) {
+            ColumnSource singleTable = dependencies.analyze(condition);
+            if (indexColumns != null) {
                 // Can check the index column before it's used for lookup.
-                PlanNode loader = indexColumns.get(((ComparisonCondition)
-                                                    condition).getLeft());
+                PlanNode loader = 
+                    getSingleIndexLoader(dependencies.getReferencedColumns());
                 if (loader != null)
                     return loader;
             }
-            return loaders.get(table);
+            if (singleTable == null)
+                return null;
+            else
+                return loaders.get(singleTable);
         }
 
+        // If all the referenced columns come from the same index, return it.
+        protected PlanNode getSingleIndexLoader(Set<ColumnExpression> columns) {
+            PlanNode single = null;
+            for (ColumnExpression column : columns) {
+                PlanNode loader = indexColumns.get(column);
+                if (loader == null)
+                    return null;
+                if (single == null)
+                    single = loader;
+                else if (single != loader)
+                    return null;
+            }
+            return single;
+        }
+
+        // Move the given condition to a Select that is right after the given node.
         protected void moveCondition(ConditionExpression condition, 
                                      PlanNode before) {
             Select select = null;
@@ -229,10 +265,6 @@ public class SelectPreponer extends BaseRule
                 after.replaceInput(before, select);
             }
             select.getConditions().add(condition);
-        }
-
-        protected PlanNode getOutput(PlanNode input) {
-            return input.getOutput();
         }
 
     }
