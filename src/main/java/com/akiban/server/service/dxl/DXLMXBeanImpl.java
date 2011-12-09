@@ -17,12 +17,12 @@ package com.akiban.server.service.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.staticgrouping.Group;
 import com.akiban.ais.model.staticgrouping.Grouping;
 import com.akiban.ais.model.staticgrouping.GroupingVisitorStub;
 import com.akiban.ais.model.staticgrouping.GroupsBuilder;
@@ -188,7 +188,7 @@ class DXLMXBeanImpl implements DXLMXBean {
         AkibanInformationSchema ais = ais();
         List<String> result = new ArrayList<String>();
         StringBuilder sb = new StringBuilder();
-        for (Group group : ais.getGroups().values()) {
+        for (com.akiban.ais.model.Group group : ais.getGroups().values()) {
             for (GroupIndex gi : group.getIndexes()) {
                 // CREATE INDEX name_date ON "order"(customer.name, "order".order_date) USING LEFT JOIN
                 sb.setLength(0);
