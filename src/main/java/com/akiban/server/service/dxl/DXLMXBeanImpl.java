@@ -189,8 +189,6 @@ class DXLMXBeanImpl implements DXLMXBean {
         return listGiDDLs(ais, getUsingSchema());
     }
 
-    private static final Pattern SAFE_NAMES = Pattern.compile("\\w+");
-
     @Override
     public String getGroupNameFromTableName(String schemaName, String tableName) {
         AkibanInformationSchema ais = ais();
@@ -323,4 +321,6 @@ class DXLMXBeanImpl implements DXLMXBean {
         sb.append(name);
         return sb;
     }
+
+    private static final Pattern SAFE_NAMES = Pattern.compile("[a-zA-Z]\\w*");
 }

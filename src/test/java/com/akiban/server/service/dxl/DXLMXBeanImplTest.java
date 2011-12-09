@@ -114,6 +114,38 @@ public final class DXLMXBeanImplTest {
         DXLMXBeanImpl.listGiDDLs(ais, "s1");
     }
 
+    @Test(expected = UnsupportedOperationException.class)
+    public void escapedColumnName_leadingSpace() {
+        AkibanInformationSchema ais;
+        try {
+            ais = AISBBasedBuilder.create("s1")
+                    .userTable("customers").colLong("cid").colString("name", 32).pk("cid")
+                    .userTable("orders").colLong("oid").colLong("cid").colString(" odate", 32).pk("oid")
+                    .joinTo("customers").on("cid", "cid")
+                    .groupIndex("gi1", Index.JoinType.LEFT).on("customers", "name").and("orders", " odate")
+                    .ais();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        DXLMXBeanImpl.listGiDDLs(ais, "s1");
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void escapedColumnName_leadingDigit() {
+        AkibanInformationSchema ais;
+        try {
+            ais = AISBBasedBuilder.create("s1")
+                    .userTable("customers").colLong("cid").colString("name", 32).pk("cid")
+                    .userTable("orders").colLong("oid").colLong("cid").colString("2odate", 32).pk("oid")
+                    .joinTo("customers").on("cid", "cid")
+                    .groupIndex("gi1", Index.JoinType.LEFT).on("customers", "name").and("orders", "2odate")
+                    .ais();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        DXLMXBeanImpl.listGiDDLs(ais, "s1");
+    }
+
     private void checkGiDDLs(AkibanInformationSchema ais, String usingSchema, String... expectedDDLs) {
         List<String> expectedList = Arrays.asList(expectedDDLs);
         List<String> actualList = new ArrayList<String>(DXLMXBeanImpl.listGiDDLs(ais, usingSchema));
