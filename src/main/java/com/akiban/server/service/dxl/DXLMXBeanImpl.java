@@ -263,7 +263,7 @@ class DXLMXBeanImpl implements DXLMXBean {
                     escapeName(sb, column.getTable().getName().getTableName()).append('.');
                     escapeName(sb, column.getName());
                     if (colsIter.hasNext())
-                        sb.append(", ");
+                        sb.append(" , ");
                 }
                 sb.append(" ) USING ");
                 switch (gi.getJoinType()) {
