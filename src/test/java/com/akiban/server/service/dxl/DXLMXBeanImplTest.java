@@ -26,6 +26,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+
 public final class DXLMXBeanImplTest {
 
     @Test
@@ -66,84 +68,71 @@ public final class DXLMXBeanImplTest {
         DXLMXBeanImpl.listGiDDLs(ais, "s1");
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void escapedSchemaName() {
-        AkibanInformationSchema ais;
-        try {
-            ais = AISBBasedBuilder.create("☃")
-                    .userTable("customers").colLong("cid").colString("name", 32).pk("cid")
-                    .userTable("orders").colLong("oid").colLong("cid").colString("odate", 32).pk("oid")
-                    .joinTo("customers").on("cid", "cid")
-                    .groupIndex("gi1", Index.JoinType.LEFT).on("customers", "name").and("orders", "odate")
-                    .ais();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        DXLMXBeanImpl.listGiDDLs(ais, "s1");
+        AkibanInformationSchema ais = AISBBasedBuilder.create("☃")
+                .userTable("customers").colLong("cid").colString("name", 32).pk("cid")
+                .userTable("orders").colLong("oid").colLong("cid").colString("odate", 32).pk("oid")
+                .joinTo("customers").on("cid", "cid")
+                .groupIndex("gi1", Index.JoinType.LEFT).on("customers", "name").and("orders", "odate")
+                .ais();
+        checkGiDDLs(ais, "foo",
+                "CREATE INDEX gi1 ON \"☃\".orders ( customers.name , orders.odate ) USING LEFT JOIN"
+        );
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void escapedTableName() {
-        AkibanInformationSchema ais;
-        try {
-            ais = AISBBasedBuilder.create("s1")
-                    .userTable("customers").colLong("cid").colString("name", 32).pk("cid")
-                    .userTable("☃").colLong("oid").colLong("cid").colString("odate", 32).pk("oid")
-                    .joinTo("customers").on("cid", "cid")
-                    .groupIndex("gi1", Index.JoinType.LEFT).on("customers", "name").and("☃", "odate")
-                    .ais();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        DXLMXBeanImpl.listGiDDLs(ais, "s1");
+        AkibanInformationSchema ais = AISBBasedBuilder.create("s1")
+                .userTable("customers").colLong("cid").colString("name", 32).pk("cid")
+                .userTable("☃").colLong("oid").colLong("cid").colString("odate", 32).pk("oid")
+                .joinTo("customers").on("cid", "cid")
+                .groupIndex("gi1", Index.JoinType.LEFT).on("customers", "name").and("☃", "odate")
+                .ais();
+        checkGiDDLs(ais, "foo",
+                "CREATE INDEX gi1 ON s1.\"☃\" ( customers.name , \"☃\".odate ) USING LEFT JOIN"
+        );
     }
 
-    @Test(expected = UnsupportedOperationException.class)
+    @Test
     public void escapedColumnName() {
-        AkibanInformationSchema ais;
-        try {
-            ais = AISBBasedBuilder.create("s1")
-                    .userTable("customers").colLong("cid").colString("name", 32).pk("cid")
-                    .userTable("orders").colLong("oid").colLong("cid").colString("☃", 32).pk("oid")
-                    .joinTo("customers").on("cid", "cid")
-                    .groupIndex("gi1", Index.JoinType.LEFT).on("customers", "name").and("orders", "☃")
-                    .ais();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        DXLMXBeanImpl.listGiDDLs(ais, "s1");
+        AkibanInformationSchema ais = AISBBasedBuilder.create("s1")
+                .userTable("customers").colLong("cid").colString("☃", 32).pk("cid")
+                .userTable("orders").colLong("oid").colLong("cid").colString("odate", 32).pk("oid")
+                .joinTo("customers").on("cid", "cid")
+                .groupIndex("gi1", Index.JoinType.LEFT).on("customers", "☃").and("orders", "odate")
+                .ais();
+        checkGiDDLs(ais, "foo",
+                "CREATE INDEX gi1 ON s1.orders ( customers.\"☃\" , orders.odate ) USING LEFT JOIN"
+        );
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void escapedColumnName_leadingSpace() {
-        AkibanInformationSchema ais;
-        try {
-            ais = AISBBasedBuilder.create("s1")
-                    .userTable("customers").colLong("cid").colString("name", 32).pk("cid")
-                    .userTable("orders").colLong("oid").colLong("cid").colString(" odate", 32).pk("oid")
-                    .joinTo("customers").on("cid", "cid")
-                    .groupIndex("gi1", Index.JoinType.LEFT).on("customers", "name").and("orders", " odate")
-                    .ais();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        DXLMXBeanImpl.listGiDDLs(ais, "s1");
+    @Test
+    public void escapedGiName() {
+        AkibanInformationSchema ais = AISBBasedBuilder.create("s1")
+                .userTable("customers").colLong("cid").colString("name", 32).pk("cid")
+                .userTable("orders").colLong("oid").colLong("cid").colString("odate", 32).pk("oid")
+                .joinTo("customers").on("cid", "cid")
+                .groupIndex("☃", Index.JoinType.LEFT).on("customers", "name").and("orders", "odate")
+                .ais();
+        checkGiDDLs(ais, "foo",
+                "CREATE INDEX \"☃\" ON s1.orders ( customers.name , orders.odate ) USING LEFT JOIN"
+        );
     }
 
-    @Test(expected = UnsupportedOperationException.class)
-    public void escapedColumnName_leadingDigit() {
-        AkibanInformationSchema ais;
-        try {
-            ais = AISBBasedBuilder.create("s1")
-                    .userTable("customers").colLong("cid").colString("name", 32).pk("cid")
-                    .userTable("orders").colLong("oid").colLong("cid").colString("2odate", 32).pk("oid")
-                    .joinTo("customers").on("cid", "cid")
-                    .groupIndex("gi1", Index.JoinType.LEFT).on("customers", "name").and("orders", "2odate")
-                    .ais();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        DXLMXBeanImpl.listGiDDLs(ais, "s1");
+    @Test
+    public void giEscaping_leadingSpace() {
+        checkEscape(" hello");
+    }
+
+    @Test
+    public void giEscaping_leadingNumber() {
+        checkEscape("1hello");
+    }
+
+    @Test
+    public void giEscaping_reservedWord() {
+        checkEscape("order", "order");
     }
 
     private void checkGiDDLs(AkibanInformationSchema ais, String usingSchema, String... expectedDDLs) {
@@ -153,5 +142,14 @@ public final class DXLMXBeanImplTest {
         Collections.sort(expectedList);
         Collections.sort(actualList);
         AssertUtils.assertCollectionEquals("GI DDLs", expectedList, actualList);
+    }
+
+    private void checkEscape(String input, String expected) {
+        String actual = DXLMXBeanImpl.escapeName(new StringBuilder(), input).toString();
+        assertEquals("escaped string", expected, actual);
+    }
+
+    private void checkEscape(String input) {
+        checkEscape(input, '"' + input + '"');
     }
 }

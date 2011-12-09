@@ -314,11 +314,14 @@ class DXLMXBeanImpl implements DXLMXBean {
         return ais;
     }
 
-    private static StringBuilder escapeName(StringBuilder sb, String name) {
+    static StringBuilder escapeName(StringBuilder sb, String name) {
         // Eventually we'll want to quote this. For now, just check that it's safe.
-        if (!SAFE_NAMES.matcher(name).matches())
-            throw new UnsupportedOperationException("illegal characters in identifier: " + name);
+        boolean needsEscaping = !SAFE_NAMES.matcher(name).matches();
+        if (needsEscaping)
+            sb.append('"');
         sb.append(name);
+        if (needsEscaping)
+            sb.append('"');
         return sb;
     }
 
