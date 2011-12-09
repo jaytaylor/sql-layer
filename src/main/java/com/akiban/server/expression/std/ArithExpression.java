@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
@@ -29,7 +30,7 @@ import java.util.List;
 
 public class ArithExpression extends AbstractBinaryExpression
 {
-    private final ArithOp op;
+    protected final ArithOp op;
     protected final AkType topT;
 
     /**
@@ -43,7 +44,7 @@ public class ArithExpression extends AbstractBinaryExpression
      * INTERVAL is put with '0' because INTERVAL is special; that is, it can "interact" with both date/time types
      * and regular numeric types
      */
-    protected static final BidirectionalMap SUPPORTED_TYPES = new BidirectionalMap(9, 0.5f);
+    protected static final BidirectionalMap SUPPORTED_TYPES = new BidirectionalMap(10, 0.5f);
     static
     {
         // date/time types : key is even
@@ -52,6 +53,7 @@ public class ArithExpression extends AbstractBinaryExpression
         SUPPORTED_TYPES.put(AkType.TIME, 4);
         SUPPORTED_TYPES.put(AkType.DATETIME, 6);
         SUPPORTED_TYPES.put(AkType.YEAR, 8);
+        SUPPORTED_TYPES.put(AkType.TIMESTAMP, 10);
 
         // regular numeric types: key is odd
         SUPPORTED_TYPES.put(AkType.DECIMAL, 1);
@@ -77,7 +79,7 @@ public class ArithExpression extends AbstractBinaryExpression
     @Override
     public ExpressionEvaluation evaluation()
     {
-        return new InnerEvaluation(op, topT, this.childrenEvaluations());
+        return new InnerEvaluation(op, topT, this,childrenEvaluations());
     }
 
     /**
@@ -138,20 +140,20 @@ public class ArithExpression extends AbstractBinaryExpression
        int l = SUPPORTED_TYPES.get(leftT), r = SUPPORTED_TYPES.get(rightT);
        int prod = l*r, sum = r + l;
 
-       if (sum <= -1 ) throw new UnsupportedOperationException(msg); // both are NOT supported || interval and a NOT supported
+       if (sum <= -1 ) throw new InvalidArgumentTypeException(msg); // both are NOT supported || interval and a NOT supported
        if (prod == 0) // at least one is interval
        {
            if (sum %2 == 0) // datetime and interval alone
                switch (op.opName())
                {
-                  case '-': if (r != 0) throw new UnsupportedOperationException(msg); // fall thru;  check if second operandis NOT interval E.g inteval - date? => nonsense
+                  case '-': if (r != 0) throw new InvalidArgumentTypeException(msg); // fall thru;  check if second operandis NOT interval E.g inteval - date? => nonsense
                   case '+': return SUPPORTED_TYPES.get(sum); // return date/time or interval
-                  default: throw new UnsupportedOperationException(msg);
+                  default: throw new InvalidArgumentTypeException(msg);
                }
             else // number and interval: an interval can be multiply with || divide by a number
             {
                if (op.opName() == '/' && l == 0 || op.opName() == '*') return AkType.INTERVAL;
-               else throw new UnsupportedOperationException(msg);
+               else throw new InvalidArgumentTypeException(msg);
             }
         }
         else if (prod > 0) // both are supported
@@ -161,12 +163,12 @@ public class ArithExpression extends AbstractBinaryExpression
             else // even => at least one is datetime
             {
                 if (l == r && op.opName() == '-') return AkType.INTERVAL;
-                else throw new UnsupportedOperationException("");
+                else throw new InvalidArgumentTypeException("");
             }
         }
         else // left || right is not supported
         {
-            if( sum %2 == 1) throw new UnsupportedOperationException(msg); // date/times and unsupported
+            if( sum %2 == 1) throw new InvalidArgumentTypeException(msg); // date/times and unsupported
             else return SUPPORTED_TYPES.get(sum+1);
         }   
     }
@@ -176,9 +178,19 @@ public class ArithExpression extends AbstractBinaryExpression
     {
         return true;
     }
-    
+
+    /**
+     * this is to be overridden by sub-classes to return a more appropriate ValueSource
+     * @param op
+     * @param topT
+     * @return
+     */
+    protected InnerValueSource getValueSource (ArithOp op, AkType topT)
+    {
+        return new InnerValueSource(op, topT);
+    }
   
-    private static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
+    protected static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
         @Override
         public ValueSource eval() 
@@ -187,21 +199,21 @@ public class ArithExpression extends AbstractBinaryExpression
             return valueSource;
         }
         
-        private InnerEvaluation (ArithOp op, AkType topT,
+        protected InnerEvaluation (ArithOp op, AkType topT,ArithExpression ex,
                 List<? extends ExpressionEvaluation> children)
         {
             super(children);
-            valueSource = new InnerValueSource(op, topT);
+            valueSource = ex.getValueSource(op, topT);
         }
         
-        private final InnerValueSource valueSource;        
+        protected final InnerValueSource valueSource;
     }
-    
-   private static class InnerValueSource extends AbstractArithValueSource
+
+   protected static class InnerValueSource extends AbstractArithValueSource
    {
        private final ArithOp op;
-       private ValueSource left;
-       private ValueSource right;
+       protected ValueSource left;
+       protected ValueSource right;
        private AkType topT;
        public InnerValueSource (ArithOp op,  AkType topT )
        {

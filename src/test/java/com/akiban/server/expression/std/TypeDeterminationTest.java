@@ -16,6 +16,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.junit.OnlyIf;
 import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.NamedParameterizedRunner;
@@ -129,7 +130,7 @@ public class TypeDeterminationTest
     }
     
     @OnlyIf("exceptionExpected()")
-    @Test (expected = UnsupportedOperationException.class)
+    @Test (expected = InvalidArgumentTypeException.class)
     public void testWithException ()
     {
         Expression left = getExp(input1);
