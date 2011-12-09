@@ -5,6 +5,8 @@ after-ancestors: Select right after ancestor lookup, preventing one of the flatt
 between-lookups: After branch lookup and before ancestor lookup.
                  (Which it cannot prevent in this case.)
 
-no-change: Conditions unmolested.
+complex-conds: Complex conditions.
+
+no-change: Multi-table conditions unmolested.
 
 use-index: Test performed against index table itself before lookups.
