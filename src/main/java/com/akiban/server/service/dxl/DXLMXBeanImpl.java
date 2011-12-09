@@ -186,38 +186,7 @@ class DXLMXBeanImpl implements DXLMXBean {
     @Override
     public List<String> getGroupIndexDDLs() {
         AkibanInformationSchema ais = ais();
-        List<String> result = new ArrayList<String>();
-        StringBuilder sb = new StringBuilder();
-        for (com.akiban.ais.model.Group group : ais.getGroups().values()) {
-            for (GroupIndex gi : group.getIndexes()) {
-                // CREATE INDEX name_date ON "order"(customer.name, "order".order_date) USING LEFT JOIN
-                sb.setLength(0);
-                sb.append("CREATE INDEX ");
-                escapeName(sb, gi.getIndexName().getName());
-                sb.append(" ON ");
-                String schemaName = gi.leafMostTable().getName().getSchemaName();
-                if (!schemaName.equals(getUsingSchema()))
-                    escapeName(sb, schemaName).append('.');
-                escapeName(sb, gi.leafMostTable().getName().getTableName()).append(" ( ");
-                for (Iterator<IndexColumn> colsIter = gi.getColumns().iterator(); colsIter.hasNext(); ) {
-                    Column column = colsIter.next().getColumn();
-                    if (!column.getTable().getName().getSchemaName().equals(schemaName))
-                        throw new UnsupportedOperationException("mixed-schema GIs are not supported");
-                    escapeName(sb, column.getTable().getName().getTableName()).append('.');
-                    escapeName(sb, column.getName());
-                    if (colsIter.hasNext())
-                        sb.append(", ");
-                }
-                sb.append(" ) USING ");
-                switch (gi.getJoinType()) {
-                case LEFT:  sb.append("LEFT JOIN"); break;
-                case RIGHT: sb.append("RIGHT JOIN"); break;
-                default: throw new AssertionError(gi.getJoinType());
-                }
-                result.add(sb.toString());
-            }
-        }
-        return result;
+        return listGiDDLs(ais, getUsingSchema());
     }
 
     private static final Pattern SAFE_NAMES = Pattern.compile("\\w+");
@@ -273,6 +242,41 @@ class DXLMXBeanImpl implements DXLMXBean {
         writeRow(usingSchema.get(), table, fields);
     }
 
+    static List<String> listGiDDLs(AkibanInformationSchema ais, String usingSchema) {
+        List<String> result = new ArrayList<String>();
+        StringBuilder sb = new StringBuilder();
+        for (com.akiban.ais.model.Group group : ais.getGroups().values()) {
+            for (GroupIndex gi : group.getIndexes()) {
+                // CREATE INDEX name_date ON "order"(customer.name, "order".order_date) USING LEFT JOIN
+                sb.setLength(0);
+                sb.append("CREATE INDEX ");
+                escapeName(sb, gi.getIndexName().getName());
+                sb.append(" ON ");
+                String schemaName = gi.leafMostTable().getName().getSchemaName();
+                if (!schemaName.equals(usingSchema))
+                    escapeName(sb, schemaName).append('.');
+                escapeName(sb, gi.leafMostTable().getName().getTableName()).append(" ( ");
+                for (Iterator<IndexColumn> colsIter = gi.getColumns().iterator(); colsIter.hasNext(); ) {
+                    Column column = colsIter.next().getColumn();
+                    if (!column.getTable().getName().getSchemaName().equals(schemaName))
+                        throw new UnsupportedOperationException("mixed-schema GIs are not supported");
+                    escapeName(sb, column.getTable().getName().getTableName()).append('.');
+                    escapeName(sb, column.getName());
+                    if (colsIter.hasNext())
+                        sb.append(", ");
+                }
+                sb.append(" ) USING ");
+                switch (gi.getJoinType()) {
+                case LEFT:  sb.append("LEFT JOIN"); break;
+                case RIGHT: sb.append("RIGHT JOIN"); break;
+                default: throw new AssertionError(gi.getJoinType());
+                }
+                result.add(sb.toString());
+            }
+        }
+        return result;
+    }
+
     private static void stripAISFromGrouping(Grouping grouping) {
         List<Group> groupsToRemove = grouping.traverse(new GroupingVisitorStub<List<Group>>() {
             private final List<Group> ret = new ArrayList<Group>();
@@ -312,7 +316,7 @@ class DXLMXBeanImpl implements DXLMXBean {
         return ais;
     }
 
-    private StringBuilder escapeName(StringBuilder sb, String name) {
+    private static StringBuilder escapeName(StringBuilder sb, String name) {
         // Eventually we'll want to quote this. For now, just check that it's safe.
         if (!SAFE_NAMES.matcher(name).matches())
             throw new UnsupportedOperationException("illegal characters in identifier: " + name);
