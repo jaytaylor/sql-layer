@@ -1,0 +1,7 @@
+# LIKE in SELECT clause fails
+---
+- CreateTable: t (varchar_field varchar(32))
+---
+- Statement: SELECT varchar_field LIKE 'abc' FROM t
+- row_count: 0
+...
