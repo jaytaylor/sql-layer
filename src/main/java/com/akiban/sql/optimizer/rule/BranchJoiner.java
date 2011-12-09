@@ -435,14 +435,7 @@ public class BranchJoiner extends BaseRule
         if (joinable.isJoin()) {
             JoinNode join = (JoinNode)joinable;
             if (join.hasJoinConditions()) {
-                for (ConditionExpression cond : join.getJoinConditions()) {
-                    if (cond.getImplementation() !=
-                        ConditionExpression.Implementation.GROUP_JOIN) {
-                        if (!isSimpleJoinCondition(cond, join))
-                            throw new UnsupportedSQLException("Join condition too complex", cond.getSQLsource());
-                        joinConditions.add(cond);
-                    }
-                }
+                addJoinConditions(join, joinConditions);
             }
             JoinType joinType = join.getJoinType();
             if (joinType != JoinType.INNER) {
@@ -469,11 +462,42 @@ public class BranchJoiner extends BaseRule
         }
     }
 
-    // Is this join condition simple enough to execute before the join?
-    protected boolean isSimpleJoinCondition(ConditionExpression cond,
-                                            JoinNode join) {
-        TableSource table = SelectPreponer.getSingleTableConditionTable(cond);
-        return ((table == join.getLeft()) || (table == join.getRight()));
+    // Make sure non-group join conditions are simple enough to
+    // execute before the join and put them into the given list.
+    // TODO: If not, something needs to have made this into a nested loop join.
+    protected void addJoinConditions(JoinNode join, ConditionList joinConditions) {
+        ConditionDependencyAnalyzer dependencies = null;
+        Set<ColumnSource> leftTables = null, rightTables = null;
+        for (ConditionExpression cond : join.getJoinConditions()) {
+            if (cond.getImplementation() !=
+                ConditionExpression.Implementation.GROUP_JOIN) {
+                if (dependencies == null) {
+                    ConditionDependencyAnalyzer ld = 
+                        new ConditionDependencyAnalyzer(join.getLeft());
+                    ConditionDependencyAnalyzer rd = 
+                        new ConditionDependencyAnalyzer(join.getRight());
+                    dependencies = new ConditionDependencyAnalyzer(ld, rd);
+                    leftTables = ld.getUpstreamTables();
+                    rightTables = rd.getUpstreamTables();
+                }
+                dependencies.analyze(cond); // Compute referenced tables.
+                Set<ColumnSource> condTables = dependencies.getReferencedTables();
+                if (intersects(condTables, leftTables) &&
+                    intersects(condTables, rightTables))
+                    throw new UnsupportedSQLException("Join condition too complex", 
+                                                      cond.getSQLsource());
+                joinConditions.add(cond);
+            }
+        }
+    }
+
+    protected static boolean intersects(Set<? extends Object> s1, 
+                                        Set<? extends Object> s2) {
+        for (Object o1 : s1) {
+            if (s2.contains(o1))
+                return true;
+        }
+        return false;
     }
 
     static final Comparator<TableSource> tableSourceById = new Comparator<TableSource>() {
