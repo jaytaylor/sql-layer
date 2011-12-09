@@ -192,6 +192,7 @@ class DXLMXBeanImpl implements DXLMXBean {
             for (GroupIndex gi : group.getIndexes()) {
                 // CREATE INDEX name_date ON "order"(customer.name, "order".order_date) USING LEFT JOIN
                 sb.setLength(0);
+                sb.append("CREATE INDEX ");
                 escapeName(sb, gi.getIndexName().getName());
                 sb.append(" ON ");
                 String schemaName = gi.leafMostTable().getName().getSchemaName();
