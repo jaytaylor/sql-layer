@@ -10,3 +10,5 @@ complex-conds: Complex conditions.
 no-change: Multi-table conditions unmolested.
 
 use-index: Test performed against index table itself before lookups.
+
+group-index: Test against a group index.
