@@ -105,6 +105,7 @@ public class IndexGoal implements Comparator<IndexScan>
     private AggregateSource grouping;
     private Sort ordering;
     private Project projectDistinct;
+    private IndexEstimator indexEstimator;
 
     private TableNode updateTarget;
 
@@ -117,12 +118,14 @@ public class IndexGoal implements Comparator<IndexScan>
                      AggregateSource grouping,
                      Sort ordering,
                      Project projectDistinct,
-                     Collection<TableSource> tables) {
+                     Collection<TableSource> tables,
+                     IndexEstimator indexEstimator) {
         this.boundTables = boundTables;
         this.conditionSources = conditionSources;
         this.grouping = grouping;
         this.ordering = ordering;
         this.projectDistinct = projectDistinct;
+        this.indexEstimator = indexEstimator;
         
         if (conditionSources.size() == 1)
             conditions = conditionSources.get(0);
