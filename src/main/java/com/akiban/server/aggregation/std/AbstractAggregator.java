@@ -103,7 +103,7 @@ class AbstractAggregator implements Aggregator
     @Override
     public void output(ValueTarget output)
     {
-        if(value == null) value = new ValueHolder(NullValueSource.only());
+        if(value == null) value = new ValueHolder(emptyValue());
 
         Converters.convert(value, output);
         value = null;
@@ -112,6 +112,6 @@ class AbstractAggregator implements Aggregator
     @Override
     public ValueSource emptyValue()
     {
-        return NullValueSource.only();
+        return processor.emptyValue();
     }
 }
