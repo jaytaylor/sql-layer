@@ -51,22 +51,6 @@ public final class DXLMXBeanImplTest {
                 "CREATE INDEX gi3 ON s2.comment ( page.title , comment.content ) USING RIGHT JOIN"
         );
     }
-    
-    @Test(expected = UnsupportedOperationException.class)
-    public void giDDL_multiSchemaGroup() {
-        AkibanInformationSchema ais;
-        try {
-            ais = AISBBasedBuilder.create("UNUSED")
-                    .userTable("s1", "customers").colLong("cid").colString("name", 32).pk("cid")
-                    .userTable("s2", "orders").colLong("oid").colLong("cid").colString("odate", 32).pk("oid")
-                    .joinTo("s1", "customers").on("cid", "cid")
-                    .groupIndex("gi1", Index.JoinType.LEFT).on("s1", "customers", "name").and("s2", "orders", "odate")
-                    .ais();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-        DXLMXBeanImpl.listGiDDLs(ais, "s1");
-    }
 
     @Test
     public void escapedSchemaName() {
@@ -133,6 +117,22 @@ public final class DXLMXBeanImplTest {
     @Test
     public void giEscaping_reservedWord() {
         checkEscape("order", "order");
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void giDDL_multiSchemaGroup() {
+        AkibanInformationSchema ais;
+        try {
+            ais = AISBBasedBuilder.create("UNUSED")
+                    .userTable("s1", "customers").colLong("cid").colString("name", 32).pk("cid")
+                    .userTable("s2", "orders").colLong("oid").colLong("cid").colString("odate", 32).pk("oid")
+                    .joinTo("s1", "customers").on("cid", "cid")
+                    .groupIndex("gi1", Index.JoinType.LEFT).on("s1", "customers", "name").and("s2", "orders", "odate")
+                    .ais();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+        DXLMXBeanImpl.listGiDDLs(ais, "s1");
     }
 
     private void checkGiDDLs(AkibanInformationSchema ais, String usingSchema, String... expectedDDLs) {
