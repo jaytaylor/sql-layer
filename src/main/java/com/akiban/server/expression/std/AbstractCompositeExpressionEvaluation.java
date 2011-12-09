@@ -19,6 +19,7 @@ import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.types.util.ValueHolder;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -86,8 +87,12 @@ public abstract class AbstractCompositeExpressionEvaluation implements Expressio
     protected final List<? extends ExpressionEvaluation> children() {
         return children;
     }
-
+    
+    protected ValueHolder valueHolder() {
+        return valueHolder == null ? valueHolder = new ValueHolder() : valueHolder ;
+    }
     // object state
 
     private final List<? extends ExpressionEvaluation> children;
+    private ValueHolder valueHolder;
 }

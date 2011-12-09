@@ -25,6 +25,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import java.util.List;
 
@@ -121,7 +122,7 @@ public class LikeExpression extends AbstractCompositeExpression
                 default: matched = compareS(left, right); break;
             }
 
-            return new ValueHolder(AkType.BOOL, matched);
+            return BoolValueSource.of(matched);
         }
 
         private  boolean compareS(String left, String right)

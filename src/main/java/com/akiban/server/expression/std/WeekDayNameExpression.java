@@ -132,16 +132,19 @@ public class WeekDayNameExpression extends AbstractUnaryExpression
 
             switch(field)
             {
-                case DAYNAME:           return new ValueHolder(AkType.VARCHAR, datetime.dayOfWeek().getAsText());
+                case DAYNAME:           valueHolder().putRaw(AkType.VARCHAR, datetime.dayOfWeek().getAsText());
+                                        return valueHolder();
                 
                                         // joda:            mon = 1, ..., sat = 6, sun = 7
                                         // mysql DAYOFWEEK: mon = 2, ..., sat = 7, sun = 1
-                case DAYOFWEEK:         return new ValueHolder(AkType.INT, datetime.getDayOfWeek() % 7 +1);
-
+                case DAYOFWEEK:         valueHolder().putRaw(AkType.INT, datetime.getDayOfWeek() % 7 + 1);
+                                        return valueHolder();
+                                        
                                         // joda:            mon = 1,..., sat = 6, sun = 7
                                         // mysql WEEKDAY:   mon = 0,..., sat = 5, sun = 6
-                default: /*WEEKDAY*/    return new ValueHolder(AkType.INT, datetime.getDayOfWeek() -1);
-            }            
+                default: /*WEEKDAY*/    valueHolder().putRaw(AkType.INT, datetime.getDayOfWeek() -1);
+                                        return valueHolder();
+            }
         }
     }
 

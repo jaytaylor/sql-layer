@@ -189,7 +189,11 @@ public class WeekExpression extends AbstractCompositeExpression
                 mode = (int)sOp.getInt();
             }
             if (mode < 0 || mode > 7) throw new InvalidParameterValueException();
-            return new ValueHolder(AkType.INT, modes[(int)mode].getWeek(new MutableDateTime(), yr, mo, da));
+            else
+            {
+                valueHolder().putRaw(AkType.INT, modes[(int) mode].getWeek(new MutableDateTime(), yr, mo, da));
+                return valueHolder();
+            }
         }
     }
 

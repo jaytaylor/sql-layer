@@ -83,7 +83,8 @@ public class StringEnvironmentExpression extends EnvironmentExpression
         @Override
         public ValueSource eval() 
         {
-            return new ValueHolder(AkType.VARCHAR, environmentValue());
+            valueHolder().putString(environmentValue());
+            return valueHolder();
         }
     }
 }

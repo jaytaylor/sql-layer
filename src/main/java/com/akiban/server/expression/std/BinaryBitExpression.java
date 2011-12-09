@@ -154,7 +154,8 @@ public class BinaryBitExpression extends AbstractBinaryExpression
             {
                 LoggerFactory.getLogger(BinaryBitExpression.class).debug(exc.getMessage() + " - assume 0 as input"); 
             }
-            return new ValueHolder(AkType.U_BIGINT, rst.and(n64));
+            valueHolder().putUBigInt(rst.and(n64));
+            return valueHolder();
         }
     }
     

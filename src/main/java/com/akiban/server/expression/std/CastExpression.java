@@ -56,14 +56,10 @@ public class CastExpression extends AbstractUnaryExpression
         }
 
         private ValueHolder holder() {
-            if (holder == null) {
-                holder = new ValueHolder();
-                holder.expectType(type);
-            }
-            return holder;
+            valueHolder().expectType(type);
+            return valueHolder();
         }
 
-        private final AkType type;
-        private ValueHolder holder;
+        private final AkType type;        
     }
 }
