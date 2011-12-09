@@ -120,6 +120,11 @@ public final class DXLMXBeanImplTest {
     }
 
     @Test(expected = UnsupportedOperationException.class)
+    public void giEscaping_hasDoubleQuote() {
+        DXLMXBeanImpl.escapeName(new StringBuilder(), "foo\"bar");
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
     public void giDDL_multiSchemaGroup() {
         AkibanInformationSchema ais;
         try {

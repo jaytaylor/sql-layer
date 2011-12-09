@@ -317,6 +317,8 @@ class DXLMXBeanImpl implements DXLMXBean {
     static StringBuilder escapeName(StringBuilder sb, String name) {
         // Eventually we'll want to quote this. For now, just check that it's safe.
         boolean needsEscaping = !SAFE_NAMES.matcher(name).matches();
+        if (needsEscaping && (name.indexOf('"') >= 0))
+            throw new UnsupportedOperationException("illegal identifier: " + name);
         if (needsEscaping)
             sb.append('"');
         sb.append(name);
