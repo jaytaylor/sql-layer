@@ -606,6 +606,8 @@ public class OperatorAssembler extends BaseRule
                     return assembleSort((Sort)input, distinct.getOutput(), 
                                         API.SortOption.SUPPRESS_DUPLICATES);
                 }
+                // Sort removed but Distinct remains.
+                impl = Distinct.Implementation.PRESORTED;
             }
             RowStream stream = assembleStream(distinct.getInput());
             if (impl == null)
