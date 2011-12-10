@@ -429,13 +429,13 @@ public class BranchJoiner extends BaseRule
     // on the optional table. Everything else needs to be done using a
     // general nested loop join.
     protected void copyJoins(Joinable joinable,
-                             List<TableSource> branch, 
+                             List<TableSource> branch,
                              List<JoinType> joinTypes,
                              ConditionList joinConditions) {
         if (joinable.isJoin()) {
             JoinNode join = (JoinNode)joinable;
             if (join.hasJoinConditions()) {
-                addJoinConditions(join, joinConditions);
+                addJoinConditions(join, branch, joinConditions);
             }
             JoinType joinType = join.getJoinType();
             if (joinType != JoinType.INNER) {
@@ -465,7 +465,9 @@ public class BranchJoiner extends BaseRule
     // Make sure non-group join conditions are simple enough to
     // execute before the join and put them into the given list.
     // TODO: If not, something needs to have made this into a nested loop join.
-    protected void addJoinConditions(JoinNode join, ConditionList joinConditions) {
+    protected void addJoinConditions(JoinNode join, 
+                                     List<TableSource> branch,
+                                     ConditionList joinConditions) {
         ConditionDependencyAnalyzer dependencies = null;
         Set<ColumnSource> leftTables = null, rightTables = null;
         for (ConditionExpression cond : join.getJoinConditions()) {
@@ -482,17 +484,35 @@ public class BranchJoiner extends BaseRule
                 }
                 dependencies.analyze(cond); // Compute referenced tables.
                 Set<ColumnSource> condTables = dependencies.getReferencedTables();
-                if (intersects(condTables, leftTables) &&
-                    intersects(condTables, rightTables))
+                if (!intersects(condTables, branch))
+                    return;     // Not test for this branch.
+                boolean testsLeft = intersects(condTables, leftTables);
+                boolean testsRight = intersects(condTables, rightTables);
+                if (testsLeft && testsRight)
                     throw new UnsupportedSQLException("Join condition too complex", 
                                                       cond.getSQLsource());
+                switch (join.getJoinType()) {
+                case INNER:
+                    break;
+                case LEFT:
+                    // A restriction on the parent will keep it out altogether, missing the outer join.
+                    if (testsLeft)
+                        throw new UnsupportedSQLException("Join condition on parent too complex for LEFT JOIN", 
+                                                          cond.getSQLsource());
+                    break;
+                case RIGHT:
+                    // A restriction on the child will keep it out altogether, missing outer join.
+                    // A restriction on the parent will remove the child too if Select_HKeyOrdered is used.
+                    throw new UnsupportedSQLException("Join condition too complex for RIGHT JOIN", 
+                                                      cond.getSQLsource());
+                }
                 joinConditions.add(cond);
             }
         }
     }
 
-    protected static boolean intersects(Set<? extends Object> s1, 
-                                        Set<? extends Object> s2) {
+    protected static boolean intersects(Collection<? extends Object> s1, 
+                                        Collection<? extends Object> s2) {
         for (Object o1 : s1) {
             if (s2.contains(o1))
                 return true;
