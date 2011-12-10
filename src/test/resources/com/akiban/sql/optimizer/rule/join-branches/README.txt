@@ -8,7 +8,7 @@ group-equals: Group index and ancestor lookup from there.
 
 group-sort: Group index for sorting and ancestor lookup from there.
 
-join-cond-too-complex: A join condition that will not will not work with a group join.
+join-cond-too-complex: A join condition that will not will not work with a group join. (Unsupported)
 
 no-index: Group scan and flatten.
 
@@ -27,6 +27,8 @@ right-inner: RIGHT expressed as LEFT
 
 right-right: RIGHT join down.
 
+right-too-complex: RIGHT join condition. (Unsupported)
+
 side-branch: Index on one branch and all results from another branch,
              including an ancestor of the index.
 
@@ -35,3 +37,8 @@ side-branch-sorted: Side branch with sorting.
 single-table: Single ancestor of index.
 
 two-branches: Some fields on index ancestors and some from another branch.
+
+two-branches-complex-1: Two branches with complex join condition.
+
+two-branches-complex-2: Similar condition but on the other branch.
+
