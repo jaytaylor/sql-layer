@@ -264,7 +264,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
 
     // ------------------------ GET HOUR (or HOUR_OF_DAY)-----------------------
     @Test
-    public void getHourFrom3DigitsTime ()
+    public void getHourFrom3DigitHrTime ()
     {
         Expression time = new LiteralExpression (AkType.TIME, Extractors.getLongExtractor(AkType.TIME).getLong("-999:12:20"));
         Expression top = ExtractExpression.HOUR_COMPOSER.compose(Arrays.asList(time));
