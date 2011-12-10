@@ -423,7 +423,6 @@ public class PersistitStore implements Store {
         Exchange hEx;
         hEx = getExchange(session, rowDef);
         try {
-            long uniqueId = -1;
             int retries = MAX_TRANSACTION_RETRY_COUNT;
             for (;;) {
                 transaction.begin();
@@ -445,8 +444,8 @@ public class PersistitStore implements Store {
                     if (rowDef.isAutoIncrement()) {
                         final long location = rowDef.fieldLocation(rowData, rowDef.getAutoIncrementField());
                         if (location != 0) {
-                            final long autoIncrementValue = rowData.getIntegerValue((int)location, (int)(location >>> 32));
-                            tableStatusCache.setAutoIncrement(rowDefId,autoIncrementValue);
+                            long autoIncrement = rowData.getIntegerValue((int)location, (int)(location >>> 32));
+                            tableStatusCache.setAutoIncrement(rowDefId, autoIncrement);
                         }
                     }
                     tableStatusCache.rowWritten(rowDefId);

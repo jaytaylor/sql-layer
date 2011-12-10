@@ -69,12 +69,6 @@ public class RowDef implements TreeLink {
     private int autoIncrementField;
 
     /**
-     * Auto-Increment delta. This is the amount by which the auto-increment
-     * counter should be incremented for each new row.
-     */
-    private long autoIncrementDelta;
-
-    /**
      * RowDefs of constituent user tables. Populated only if this is the RowDef
      * for a group table. Null if this is the RowDef for a user table.
      */
@@ -135,16 +129,6 @@ public class RowDef implements TreeLink {
             final UserTable userTable = (UserTable) table;
             if (userTable.getAutoIncrementColumn() != null) {
                 autoIncrementField = userTable.getAutoIncrementColumn().getPosition();
-                //
-                // TODO - receive non-default value from adapter.
-                //
-                autoIncrementDelta = 1;
-                long initialAutoIncrementValue = userTable.getAutoIncrementColumn().getInitialAutoIncrementValue();
-                //
-                // Safe to do these here, non-transactionally, since recovery would
-                // redo these anyway.
-                //
-                tableStatus.setAutoIncrement(initialAutoIncrementValue);
             }
             this.hasAkibanPK = userTable.getPrimaryKeyIncludingInternal().isAkibanPK();
         } else {
@@ -488,10 +472,6 @@ public class RowDef implements TreeLink {
         return tableStatus.getOrdinal();
     }
 
-    public void setOrdinal(final int ordinal) {
-        tableStatus.setOrdinal(ordinal);
-    }
-
     public boolean isUserTable() {
         return !isGroupTable();
     }
@@ -549,10 +529,6 @@ public class RowDef implements TreeLink {
         return autoIncrementField != -1;
     }
 
-    public long getAutoIncrementDelta() {
-        return autoIncrementDelta;
-    }
-    
     /**
      * Compute lookup tables used to in the {@link #fieldLocation(RowData, int)}
      * method. This method is invoked once when a RowDef is first constructed.

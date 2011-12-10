@@ -60,7 +60,7 @@ public class RowDefCache {
 
     private final Map<TableName, Integer> nameMap = new TreeMap<TableName, Integer>();
     
-    private TableStatusCache tableStatusCache;
+    protected TableStatusCache tableStatusCache;
 
     private AkibanInformationSchema ais;
 
@@ -229,8 +229,21 @@ public class RowDefCache {
         return ordinalMap;
     }
 
-    private RowDef createUserTableRowDef(UserTable table) {
+    private RowDef createRowDefCommon(Table table) {
         RowDef rowDef = new RowDef(table, tableStatusCache.getTableStatus(table.getTableId()));
+        if(table.isUserTable()) {
+            UserTable uTable = (UserTable)table;
+            Column autoIncColumn = uTable.getAutoIncrementColumn();
+            if(autoIncColumn != null) {
+                long initialAutoIncrementValue = autoIncColumn.getInitialAutoIncrementValue();
+                tableStatusCache.setAutoIncrement(table.getTableId(), initialAutoIncrementValue);
+            }
+        }
+        return rowDef;
+    }
+
+    private RowDef createUserTableRowDef(UserTable table) {
+        RowDef rowDef = createRowDefCommon(table);
         // parentRowDef
         int[] parentJoinFields;
         if (table.getParentJoin() != null) {
@@ -277,9 +290,9 @@ public class RowDefCache {
         return rowDef;
 
     }
-    
+
     private RowDef createGroupTableRowDef(GroupTable table) {
-        RowDef rowDef = new RowDef(table, tableStatusCache.getTableStatus(table.getTableId()));
+        RowDef rowDef = createRowDefCommon(table);
         List<Integer> userTableRowDefIds = new ArrayList<Integer>();
         for (Column column : table.getColumnsIncludingInternal()) {
             Column userColumn = column.getUserColumn();

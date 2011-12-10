@@ -27,17 +27,6 @@ public interface TableStatus {
     long getRowCount();
     long getUniqueID();
 
-    void rowDeleted();
-    void rowUpdated();
-    void rowWritten();
-
-    void setAutoIncrement(long autoIncrement);
-    void setOrdinal(int ordinal);
-    void setUniqueID(long uniqueID);
-
-    long createNewUniqueID();
-    void truncate();
-
     RowDef getRowDef();
     void setRowDef(RowDef rowDef);
 }

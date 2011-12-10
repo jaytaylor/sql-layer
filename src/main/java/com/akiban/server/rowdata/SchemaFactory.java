@@ -60,12 +60,12 @@ public class SchemaFactory {
             Map<Table,Integer> ordinalMap = new HashMap<Table,Integer>();
             for (RowDef groupRowDef : getRowDefs()) {
                 if (groupRowDef.isGroupTable()) {
-                    groupRowDef.setOrdinal(0);
+                    tableStatusCache.setOrdinal(groupRowDef.getRowDefId(), 0);
                     ordinalMap.put(groupRowDef.table(), 0);
                     int userTableOrdinal = 1;
                     for (RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
                         int ordinal = userTableOrdinal++;
-                        userRowDef.setOrdinal(ordinal);
+                        tableStatusCache.setOrdinal(userRowDef.getRowDefId(), ordinal);
                         ordinalMap.put(userRowDef.table(), ordinal);
                     }
                 }

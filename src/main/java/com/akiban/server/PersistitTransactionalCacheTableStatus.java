@@ -191,42 +191,36 @@ public class PersistitTransactionalCacheTableStatus implements TableStatus {
         return uniqueIdValue;
     }
 
-    @Override
-    public synchronized void rowDeleted() {
+    synchronized void rowDeleted() {
         rowCount = Math.max(0, rowCount - 1);
         lastDeleteTime = now();
         dirty = true;
     }
 
-    @Override
-    public synchronized void rowUpdated() {
+    synchronized void rowUpdated() {
         lastUpdateTime = now();
         dirty = true;
     }
 
-    @Override
-    public synchronized void rowWritten() {
+    synchronized void rowWritten() {
         ++rowCount;
         lastWriteTime = now();
         dirty = true;
     }
 
-    @Override
-    public synchronized void setAutoIncrement(long autoIncrement) {
+    synchronized void setAutoIncrement(long autoIncrement) {
         this.autoIncrementValue = Math.max(this.autoIncrementValue, autoIncrement);
         dirty = true;
     }
 
-    @Override
-    public synchronized void setOrdinal(int ordinal) {
+    synchronized void setOrdinal(int ordinal) {
         if (this.ordinal != ordinal) {
             this.ordinal = ordinal;
             dirty = true;
         }
     }
 
-    @Override
-    public synchronized void setUniqueID(long uniqueID) {
+    synchronized void setUniqueID(long uniqueID) {
         this.uniqueIdValue = Math.max(this.uniqueIdValue, uniqueID);
         if (uniqueIdValue > uniqueIdCounter) {
             uniqueIdCounter = uniqueIdValue;
@@ -234,13 +228,11 @@ public class PersistitTransactionalCacheTableStatus implements TableStatus {
         dirty = true;
     }
 
-    @Override
-    public synchronized long createNewUniqueID() {
+    synchronized long createNewUniqueID() {
         return ++uniqueIdCounter;
     }
 
-    @Override
-    public synchronized void truncate() {
+    synchronized void truncate() {
         rowCount = 0;
         autoIncrementValue = 0;
         uniqueIdCounter = 0;
