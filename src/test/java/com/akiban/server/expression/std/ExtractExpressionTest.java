@@ -269,7 +269,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
         Expression time = new LiteralExpression (AkType.TIME, Extractors.getLongExtractor(AkType.TIME).getLong("-999:12:20"));
         Expression top = ExtractExpression.HOUR_COMPOSER.compose(Arrays.asList(time));
 
-        assertEquals("expected 9", 999, top.evaluation().eval().getLong());
+        assertEquals("expected 999", 999, top.evaluation().eval().getLong());
     }
     
     @Test
