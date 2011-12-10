@@ -17,6 +17,11 @@ package com.akiban.server;
 
 import com.akiban.server.rowdata.RowDef;
 
+/**
+ * Structure denotes summary information about a table, including row count,
+ * uniqueId and auto-increment values. In general there is one TableStatus per
+ * RowDef, and each object refers to the other.
+ */
 public interface TableStatus {
     long getAutoIncrement();
     long getCreationTime();

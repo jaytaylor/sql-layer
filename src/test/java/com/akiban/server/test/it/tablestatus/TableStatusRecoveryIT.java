@@ -24,7 +24,6 @@ import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
 import com.akiban.server.TableStatistics;
-import com.akiban.server.PersistitTransactionalCacheTableStatus;
 import com.akiban.server.service.config.Property;
 import com.persistit.Persistit;
 

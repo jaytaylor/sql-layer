@@ -31,6 +31,8 @@ import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Persistit;
 import com.persistit.TransactionalCache;
+import com.persistit.Value;
+import com.persistit.exception.ConversionException;
 import com.persistit.exception.PersistitException;
 
 public class PersistitTransactionalCacheTableStatusCache extends TransactionalCache implements TableStatusCache {
@@ -48,10 +50,8 @@ public class PersistitTransactionalCacheTableStatusCache extends TransactionalCa
     private PersistitTransactionalCacheTableStatusCache(final PersistitTransactionalCacheTableStatusCache tsc) {
         super(tsc);
         treeService = tsc.treeService;
-        for (final Entry<Integer, PersistitTransactionalCacheTableStatus> entry : tsc.tableStatusMap
-                .entrySet()) {
-            tableStatusMap.put(entry.getKey(),
-                    new PersistitTransactionalCacheTableStatus(entry.getValue()));
+        for (final Entry<Integer, InnerTableStatus> entry : tsc.tableStatusMap.entrySet()) {
+            tableStatusMap.put(entry.getKey(), new InnerTableStatus(entry.getValue()));
         }
         this.sessionService = tsc.sessionService;
     }
@@ -66,7 +66,7 @@ public class PersistitTransactionalCacheTableStatusCache extends TransactionalCa
     private final static byte DROP = 6;
     private final static byte ASSIGN_ORDINAL = 100;
 
-    private final Map<Integer, PersistitTransactionalCacheTableStatus> tableStatusMap = new HashMap<Integer, PersistitTransactionalCacheTableStatus>(
+    private final Map<Integer, InnerTableStatus> tableStatusMap = new HashMap<Integer, InnerTableStatus>(
             INITIAL_MAP_SIZE);
     private final SessionService sessionService;
 
@@ -84,7 +84,7 @@ public class PersistitTransactionalCacheTableStatusCache extends TransactionalCa
         @Override
         public void apply(final TransactionalCache tc) {
             PersistitTransactionalCacheTableStatusCache tsc = (PersistitTransactionalCacheTableStatusCache) tc;
-            final PersistitTransactionalCacheTableStatus ts = tsc.getTableStatusInternal(_arg);
+            final InnerTableStatus ts = tsc.getInternalTableStatus(_arg);
             ts.rowWritten();
         }
 
@@ -123,7 +123,7 @@ public class PersistitTransactionalCacheTableStatusCache extends TransactionalCa
         @Override
         public void apply(final TransactionalCache tc) {
             PersistitTransactionalCacheTableStatusCache tsc = (PersistitTransactionalCacheTableStatusCache) tc;
-            final PersistitTransactionalCacheTableStatus ts = tsc.getTableStatusInternal(_arg);
+            final InnerTableStatus ts = tsc.getInternalTableStatus(_arg);
             ts.rowDeleted();
         }
 
@@ -162,7 +162,7 @@ public class PersistitTransactionalCacheTableStatusCache extends TransactionalCa
         @Override
         public void apply(final TransactionalCache tc) {
             PersistitTransactionalCacheTableStatusCache tsc = (PersistitTransactionalCacheTableStatusCache) tc;
-            final PersistitTransactionalCacheTableStatus ts = tsc.getTableStatusInternal(_arg);
+            final InnerTableStatus ts = tsc.getInternalTableStatus(_arg);
             ts.truncate();
         }
 
@@ -211,7 +211,7 @@ public class PersistitTransactionalCacheTableStatusCache extends TransactionalCa
         @Override
         protected void apply(TransactionalCache tc) {
             final PersistitTransactionalCacheTableStatusCache tsc = (PersistitTransactionalCacheTableStatusCache) tc;
-            final PersistitTransactionalCacheTableStatus ts = tsc.getTableStatusInternal(_arg1);
+            final InnerTableStatus ts = tsc.getInternalTableStatus(_arg1);
             ts.setAutoIncrement(_arg2);
         }
 
@@ -251,7 +251,7 @@ public class PersistitTransactionalCacheTableStatusCache extends TransactionalCa
         @Override
         protected void apply(TransactionalCache tc) {
             final PersistitTransactionalCacheTableStatusCache tsc = (PersistitTransactionalCacheTableStatusCache) tc;
-            final PersistitTransactionalCacheTableStatus ts = tsc.getTableStatusInternal(_arg1);
+            final InnerTableStatus ts = tsc.getInternalTableStatus(_arg1);
             ts.setUniqueID(_arg2);
         }
 
@@ -290,7 +290,7 @@ public class PersistitTransactionalCacheTableStatusCache extends TransactionalCa
         @Override
         protected void apply(TransactionalCache tc) {
             final PersistitTransactionalCacheTableStatusCache tsc = (PersistitTransactionalCacheTableStatusCache) tc;
-            final PersistitTransactionalCacheTableStatus ts = tsc.getTableStatusInternal(_arg1);
+            final InnerTableStatus ts = tsc.getInternalTableStatus(_arg1);
             ts.setOrdinal((int) _arg2);
         }
 
@@ -338,7 +338,7 @@ public class PersistitTransactionalCacheTableStatusCache extends TransactionalCa
         final Session session = sessionService.createSession();
         try {
             removeAll(session);
-            for (final PersistitTransactionalCacheTableStatus ts : tableStatusMap.values()) {
+            for (final InnerTableStatus ts : tableStatusMap.values()) {
                 final RowDef rowDef = ts.getRowDef();
                 if (rowDef != null) {
                     final TreeLink link = treeService.treeLink(
@@ -385,12 +385,12 @@ public class PersistitTransactionalCacheTableStatusCache extends TransactionalCa
             int tableId = treeService.storeToAis(exchange.getVolume(),
                     storedTableId);
             if (exchange.getValue().isDefined()) {
-                PersistitTransactionalCacheTableStatus ts = tableStatusMap.get(tableId);
+                InnerTableStatus ts = tableStatusMap.get(tableId);
                 if (ts != null && ts.getCreationTime() != 0) {
                     throw new IllegalStateException("TableID " + tableId
                             + " already loaded");
                 }
-                ts = new PersistitTransactionalCacheTableStatus(tableId);
+                ts = new InnerTableStatus(tableId);
                 ts.get(exchange.getValue());
                 tableStatusMap.put(tableId, ts);
             }
@@ -423,6 +423,7 @@ public class PersistitTransactionalCacheTableStatusCache extends TransactionalCa
     
     @Override
     public void rowUpdated(final int tableId) {
+        getInternalTableStatus(tableId).rowUpdated();
     }
 
     @Override
@@ -442,7 +443,7 @@ public class PersistitTransactionalCacheTableStatusCache extends TransactionalCa
 
     @Override
     public synchronized long createNewUniqueID(int tableID) {
-        long id = getTableStatusInternal(tableID).createNewUniqueID();
+        long id = getInternalTableStatus(tableID).createNewUniqueID();
         setUniqueID(tableID, id);
         return id;
     }
@@ -459,14 +460,14 @@ public class PersistitTransactionalCacheTableStatusCache extends TransactionalCa
 
     @Override
     public synchronized TableStatus getTableStatus(final int tableId) {
-        return getTableStatusInternal(tableId);
+        return getInternalTableStatus(tableId);
     }
     
     @Override
     public synchronized void detachAIS() {
         PersistitTransactionalCacheTableStatusCache tsc = this;
         while (tsc != null) {
-            for (final PersistitTransactionalCacheTableStatus ts : tsc.tableStatusMap.values()) {
+            for (final InnerTableStatus ts : tsc.tableStatusMap.values()) {
                 ts.setRowDef(null);
             }
             tsc = (PersistitTransactionalCacheTableStatusCache)tsc._previousVersion;
@@ -478,12 +479,275 @@ public class PersistitTransactionalCacheTableStatusCache extends TransactionalCa
         return String.format("TableStatusCache %s", tableStatusMap);
     }
 
-    private synchronized PersistitTransactionalCacheTableStatus getTableStatusInternal(final int tableId) {
-        PersistitTransactionalCacheTableStatus ts = tableStatusMap.get(Integer.valueOf(tableId));
+    private synchronized InnerTableStatus getInternalTableStatus(final int tableId) {
+        InnerTableStatus ts = tableStatusMap.get(Integer.valueOf(tableId));
         if (ts == null) {
-            ts = new PersistitTransactionalCacheTableStatus(tableId);
+            ts = new InnerTableStatus(tableId);
             tableStatusMap.put(Integer.valueOf(tableId), ts);
         }
         return ts;
+    }
+
+    /**
+     * The values maintained in this class are updated frequently. Recording them
+     * through the normal Transaction commit mechanism would cause severe
+     * performance problems due to high contention. Therefore this class requires
+     * special handling to ensure recoverability in the event of an abrupt
+     * termination of the server.
+     * <p>
+     * The purpose of recovery processing in general is to restore the backing
+     * B-Trees to an internally consistent, valid state, and then to apply any
+     * transactions that had been committed prior to the failure. With respect to
+     * TableStatus, the purpose is to restore the row count, unique ID and
+     * auto-increment fields to a state that is consistent with those recovered
+     * transactions. For example, the row count must accurately reflect the count of
+     * all rows inserted into and removed from the database by committed
+     * transactions.
+     * <p>
+     * To accomplish this, TableStatus values are periodically stored on disk using
+     * the Persistit Checkpoint mechanism. This event is carefully managed in such a
+     * way that all transactions having commit timestamps less than the checkpoint
+     * of record, and none committed after that checkpoint, are reflected in the
+     * stored record.
+     * <p>
+     * Upon recovery, Persistit selects a checkpoint to which all B-Trees will be
+     * recovered - the recovery checkpoint. The selected checkpoint is determined by
+     * finding the last valid checkpoint record in the Journal. Persistit starts its
+     * recovery processing by restoring the values of all pages in all B-trees to
+     * their pre-checkpoint states.
+     * <p>
+     * Next Persistit recovers all transactions that were committed after the
+     * recovery checkpoint. While applying these transactions, TableStatus values
+     * are updated to adjust the row count, unique ID and auto-increment fields
+     * according to the transactions that committed after the checkpoint.
+     *
+     * @author peter
+     */
+    private static class InnerTableStatus implements TableStatus {
+        private static final int SERIALIZATION_VERSION = 100;
+
+        private boolean dirty;
+        private final int tableId;
+        private RowDef currentRowDef;
+
+        private int ordinal;
+        private long rowCount;
+        private long uniqueIdValue;
+        private long autoIncrementValue;
+
+        private boolean isAutoIncrement;
+        private long creationTime;
+        private long lastDeleteTime;
+        private long lastReadTime;
+        private long lastUpdateTime;
+        private long lastWriteTime;
+
+        public InnerTableStatus(final int tableId) {
+            this.tableId = tableId;
+            this.creationTime = now();
+        }
+
+        public InnerTableStatus(final InnerTableStatus ts) {
+            this.tableId = ts.tableId;
+            this.currentRowDef = ts.currentRowDef;
+            this.ordinal = ts.ordinal;
+            this.isAutoIncrement = ts.isAutoIncrement;
+            this.autoIncrementValue = ts.autoIncrementValue;
+            this.uniqueIdValue = ts.uniqueIdValue;
+            this.rowCount = ts.rowCount;
+            this.creationTime = ts.creationTime;
+            this.lastDeleteTime = ts.lastDeleteTime;
+            this.lastReadTime = ts.lastReadTime;
+            this.lastUpdateTime = ts.lastUpdateTime;
+            this.lastWriteTime = ts.lastWriteTime;
+            this.dirty = ts.dirty;
+        }
+
+        @Override
+        public synchronized String toString() {
+            return String.format("TableStatus(rowDefId=%d,ordinal=%d,isAutoIncrement=%s,autoIncrementValue=%d,rowCount=%d)",
+                                 currentRowDef.getRowDefId(), ordinal, isAutoIncrement, autoIncrementValue, rowCount);
+        }
+
+        //
+        // TableStatus
+        //
+
+        @Override
+        public synchronized long getAutoIncrement() {
+            return autoIncrementValue;
+        }
+
+        @Override
+        public synchronized long getCreationTime() {
+            return creationTime;
+        }
+
+        @Override
+        public synchronized long getLastDeleteTime() {
+            return lastDeleteTime;
+        }
+
+        @Override
+        public synchronized long getLastUpdateTime() {
+            return lastUpdateTime;
+        }
+
+        @Override
+        public synchronized long getLastWriteTime() {
+            return lastWriteTime;
+        }
+
+        @Override
+        public synchronized int getOrdinal() {
+            return ordinal;
+        }
+
+        @Override
+        public synchronized long getRowCount() {
+            return rowCount;
+        }
+
+        @Override
+        public synchronized long getUniqueID() {
+            return uniqueIdValue;
+        }
+
+        @Override
+        public synchronized RowDef getRowDef() {
+            return currentRowDef;
+        }
+
+        @Override
+        public synchronized void setRowDef(final RowDef rowDef) {
+            this.currentRowDef = rowDef;
+            dirty = true;
+        }
+
+        //
+        // Internal
+        //
+
+        private static long now() {
+            return System.currentTimeMillis();
+        }
+
+        synchronized void rowDeleted() {
+            rowCount = Math.max(0, rowCount - 1);
+            lastDeleteTime = now();
+            dirty = true;
+        }
+
+        synchronized void rowUpdated() {
+            lastUpdateTime = now();
+            dirty = true;
+        }
+
+        synchronized void rowWritten() {
+            ++rowCount;
+            lastWriteTime = now();
+            dirty = true;
+        }
+
+        synchronized void setAutoIncrement(long autoIncrement) {
+            this.autoIncrementValue = Math.max(this.autoIncrementValue, autoIncrement);
+            dirty = true;
+        }
+
+        synchronized void setOrdinal(int ordinal) {
+            if (this.ordinal != ordinal) {
+                this.ordinal = ordinal;
+                dirty = true;
+            }
+        }
+
+        synchronized void setUniqueID(long uniqueId) {
+            this.uniqueIdValue = Math.max(uniqueIdValue, uniqueId);
+            dirty = true;
+        }
+
+        synchronized long createNewUniqueID() {
+            return ++uniqueIdValue;
+        }
+
+        synchronized void truncate() {
+            rowCount = 0;
+            autoIncrementValue = 0;
+            uniqueIdValue = 0;
+            lastDeleteTime = now();
+            dirty = true;
+        }
+
+        /**
+         * Serialize this table status into the supplied Persistit Value object.
+         * This eliminates the need to have a custom PersistitValueCoder and
+         * therefore simplifies managing the saved state of the system.
+         *
+         * @param value Destination of serialized state
+         * @throws com.persistit.exception.ConversionException For a failure during serialization
+         */
+        void put(Value value) throws ConversionException {
+            if (creationTime == 0) {
+                creationTime = now();
+            }
+            value.setStreamMode(true);
+            try {
+                value.put(SERIALIZATION_VERSION);
+                value.put(currentRowDef.getSchemaName());
+                value.put(currentRowDef.getTableName());
+                value.put(currentRowDef.getRowDefId());
+                value.put(ordinal);
+                value.put(isAutoIncrement);
+                value.put(autoIncrementValue);
+                value.put(uniqueIdValue);
+                value.put(rowCount);
+                value.put(creationTime);
+                value.put(lastWriteTime);
+                value.put(lastReadTime);
+                value.put(lastUpdateTime);
+                value.put(lastDeleteTime);
+            } finally {
+                value.setStreamMode(false);
+            }
+        }
+
+        /**
+         * Deserialize this table status from the supplied Persistit Value object.
+         *
+         * @param value Source of serialized state
+         */
+        void get(Value value) {
+            value.setStreamMode(true);
+            try {
+                final long version = value.getInt();
+                if (version != SERIALIZATION_VERSION) {
+                    throw new IllegalArgumentException("Can't decode table status written as version " + version);
+                }
+
+                /*
+                * schemaName and tableName are stored for human readability- code
+                * does not need these strings.
+                */
+                final String schemaName = value.getString();
+                final String tableName = value.getString();
+
+                final int rowDefId = value.getInt();
+                if (currentRowDef != null && rowDefId != currentRowDef.getRowDefId()) {
+                    throw new IllegalArgumentException("Can't decode " + this + " from record for rowDefId=" + rowDefId);
+                }
+                ordinal = value.getInt();
+                isAutoIncrement = value.getBoolean();
+                autoIncrementValue = value.getLong();
+                setUniqueID(value.getLong());
+                rowCount = value.getLong();
+                creationTime = value.getLong();
+                lastWriteTime = value.getLong();
+                lastReadTime = value.getLong();
+                lastUpdateTime = value.getLong();
+                lastDeleteTime = value.getLong();
+            } finally {
+                value.setStreamMode(false);
+            }
+        }
     }
 }
