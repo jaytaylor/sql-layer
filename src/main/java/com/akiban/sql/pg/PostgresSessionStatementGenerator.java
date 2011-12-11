@@ -33,6 +33,8 @@ public class PostgresSessionStatementGenerator extends PostgresBaseStatementGene
                                       StatementNode stmt, 
                                       List<ParameterNode> params, int[] paramTypes)  {
         switch (stmt.getNodeType()) {
+        case NodeTypes.SET_SCHEMA_NODE:
+            return new PostgresSessionStatement(PostgresSessionStatement.Operation.USE, stmt);
         case NodeTypes.TRANSACTION_CONTROL_NODE:
             {
                 PostgresSessionStatement.Operation operation;
@@ -52,8 +54,10 @@ public class PostgresSessionStatementGenerator extends PostgresBaseStatementGene
                 }
                 return new PostgresSessionStatement(operation, stmt);
             }
-        case NodeTypes.SET_SCHEMA_NODE:
-            return new PostgresSessionStatement (PostgresSessionStatement.Operation.USE, stmt);
+        case NodeTypes.SET_TRANSACTION_ISOLATION_NODE:
+            return new PostgresSessionStatement(PostgresSessionStatement.Operation.TRANSACTION_ISOLATION, stmt);
+        case NodeTypes.SET_TRANSACTION_ACCESS_NODE:
+            return new PostgresSessionStatement(PostgresSessionStatement.Operation.TRANSACTION_ACCESS, stmt);
         default:
             return null;
         }

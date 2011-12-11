@@ -17,6 +17,7 @@ package com.akiban.sql.pg;
 
 import com.akiban.server.error.NoSuchSchemaException;
 import com.akiban.server.error.UnsupportedParametersException;
+import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.aisddl.SchemaDDL;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.SetSchemaNode;
@@ -29,7 +30,8 @@ public class PostgresSessionStatement implements PostgresStatement
 {
     enum Operation {
         USE,
-        BEGIN_TRANSACTION, COMMIT_TRANSACTION, ROLLBACK_TRANSACTION
+        BEGIN_TRANSACTION, COMMIT_TRANSACTION, ROLLBACK_TRANSACTION,
+        TRANSACTION_ISOLATION, TRANSACTION_ACCESS
     };
 
     private Operation operation;
@@ -81,8 +83,9 @@ public class PostgresSessionStatement implements PostgresStatement
                     server.getProperty("user") : node.getSchemaName());
             if (SchemaDDL.checkSchema(server.getAIS(), schemaName)) {
                 server.setDefaultSchemaName(schemaName);
-            } else {
-                throw new NoSuchSchemaException (schemaName);
+            } 
+            else {
+                throw new NoSuchSchemaException(schemaName);
             }
             break;
         case BEGIN_TRANSACTION:
@@ -94,6 +97,8 @@ public class PostgresSessionStatement implements PostgresStatement
         case ROLLBACK_TRANSACTION:
             server.rollbackTransaction();
             break;
+        default:
+            throw new UnsupportedSQLException("session control", statement);
         }
     }
 
