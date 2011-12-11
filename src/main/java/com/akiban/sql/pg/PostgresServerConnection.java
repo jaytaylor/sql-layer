@@ -21,6 +21,7 @@ import com.akiban.server.expression.EnvironmentExpressionSetting;
 import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
+import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.SQLParser;
@@ -39,9 +40,6 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 
 import com.akiban.util.Tap;
-import com.persistit.Transaction;
-import com.persistit.exception.PersistitException;
-import com.persistit.exception.RollbackException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,8 +84,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     private PostgresStatementParser[] unparsedGenerators;
     private PostgresStatementGenerator[] parsedGenerators;
     private Thread thread;
-    private Transaction transaction;
-    private Date transactionStartTime;
+    private PostgresTransaction transaction;
+    private boolean transactionDefaultReadOnly = false;
     
     private boolean instrumentationEnabled = false;
     private String sql;
@@ -236,9 +234,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
         finally {
             if (transaction != null) {
-                transaction.end();
+                transaction.abort();
                 transaction = null;
-                transactionStartTime = null;
             }
             server.removeConnection(pid);
         }
@@ -743,6 +740,11 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     @Override
+    public TreeService getTreeService() {
+        return reqs.treeService();
+    }
+
+    @Override
     public LoadablePlan loadablePlan(String planName)
     {
         return server.loadablePlan(planName);
@@ -770,58 +772,47 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         return socket.getInetAddress().getHostAddress();
     }
 
+    @Override
     public void beginTransaction() {
         if (transaction != null)
             throw new TransactionInProgressException ();
-        transaction = reqs.treeService().getTransaction(session);
-        transactionStartTime = new Date();
-        boolean transactionBegun = false;
-        try {
-            transaction.begin();
-            transactionBegun = true;
-        }
-        catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
-        } finally {
-            if (!transactionBegun) {
-                transaction = null;
-                transactionStartTime = null;
-            }
-        }
+        transaction = new PostgresTransaction(this, transactionDefaultReadOnly);
     }
 
+    @Override
     public void commitTransaction() {
         if (transaction == null)
             throw new NoTransactionInProgressException();
         try {
-            transaction.commit();
-        }
-        catch (PersistitException ex) {
-            throw new PersistItErrorException(ex);
+            transaction.commit();            
         }
         finally {
-            transaction.end();
             transaction = null;
-            transactionStartTime = null;
         }
     }
 
+    @Override
     public void rollbackTransaction() {
         if (transaction == null)
             throw new NoTransactionInProgressException();
         try {
             transaction.rollback();
         }
-        catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
-        }
-        catch (RollbackException ex) {
-        }
         finally {
-            transaction.end();
             transaction = null;
-            transactionStartTime = null;
         }
+    }
+
+    @Override
+    public void setTransactionReadOnly(boolean readOnly) {
+        if (transaction == null)
+            throw new NoTransactionInProgressException();
+        transaction.setReadOnly(readOnly);
+    }
+
+    @Override
+    public void setTransactionDefaultReadOnly(boolean readOnly) {
+        this.transactionDefaultReadOnly = readOnly;
     }
 
     @Override
@@ -833,8 +824,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     public Object getEnvironmentValue(EnvironmentExpressionSetting setting) {
         switch (setting) {
         case CURRENT_DATETIME:
-            if (transactionStartTime != null) 
-                return new DateTime(transactionStartTime.getTime());
+            if (transaction != null) 
+                return new DateTime(transaction.getTime());
             else
                 return new DateTime();
         case CURRENT_USER:
