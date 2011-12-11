@@ -62,6 +62,11 @@ public class PostgresSessionStatement implements PostgresStatement
     }
 
     @Override
+    public TransactionMode getTransactionMode() {
+        return TransactionMode.ALLOWED;
+    }
+
+    @Override
     public int execute(PostgresServerSession server, int maxrows)
             throws IOException {
         doOperation(server);
