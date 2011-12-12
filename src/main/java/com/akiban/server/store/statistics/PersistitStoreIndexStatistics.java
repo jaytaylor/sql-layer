@@ -204,7 +204,9 @@ public class PersistitStoreIndexStatistics
                                     indexStatisticsRowDef, rowData, false);
                 exchange.cut();
                 exchange.remove(Key.GT);
-                // TODO: How to tell treeService.getTableStatusCache() about that?
+                // TODO: Need to get a count back from
+                // exchange.remove() in order to tell the row count in
+                // treeService.getTableStatusCache() what changed.
 
                 // Parent header row.
                 rowData.createRow(indexStatisticsRowDef, new Object[] {
@@ -280,7 +282,7 @@ public class PersistitStoreIndexStatistics
                                     indexStatisticsRowDef, rowData, false);
                 exchange.cut();
                 exchange.remove(Key.GT);
-                // TODO: How to tell treeService.getTableStatusCache() about that?
+                // TODO: See exchange.remove() above.
                 transaction.commit(forceToDisk);
                 break;
             } 

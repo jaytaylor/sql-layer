@@ -709,8 +709,7 @@ public class IndexGoal implements Comparator<IndexScan>
     protected void estimateCost(IndexEstimator indexEstimator, IndexScan index) {
         IndexStatistics indexStatistics = indexEstimator.getIndexStatistics(index.getIndex());
         if (indexStatistics != null) {
-            // TODO: Use statistics.
-
+            // TODO: Here is where we will actually use those statistics.
         }
     }
 

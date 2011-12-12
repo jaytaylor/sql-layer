@@ -359,7 +359,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         Collection<? extends Index> indexes;
         if (indexesToUpdate == null) {
             indexes = table.getIndexes();
-            // TODO: Group indexes, too?
+            // TODO: Group indexes that include this table? That terminate with it?
         }
         else {
             Set<Index> namedIndexes = new HashSet<Index>();
