@@ -19,7 +19,6 @@ import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -70,8 +69,7 @@ public class IndexScanLexicographicIT extends OperatorITBase
             createNewRow(t, 1006L, 5L, 55L, 551L),
             createNewRow(t, 1007L, 5L, 55L, 555L),
         };
-        final PersistitStore persistitStore = store().getPersistitStore();
-        adapter = new PersistitAdapter(schema, persistitStore, null, session(), configService());
+        adapter = persistitAdapter(schema);
         use(db);
     }
 

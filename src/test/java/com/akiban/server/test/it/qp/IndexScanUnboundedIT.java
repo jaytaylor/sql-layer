@@ -18,7 +18,6 @@ package com.akiban.server.test.it.qp;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -74,8 +73,7 @@ public class IndexScanUnboundedIT extends OperatorITBase
             createNewRow(t, 2006L, null, null, 5L),
             createNewRow(t, 2007L, null, null, null),
         };
-        final PersistitStore persistitStore = store().getPersistitStore();
-        adapter = new PersistitAdapter(schema, persistitStore, null, session(), configService());
+        adapter = persistitAdapter(schema);
         use(db);
     }
 
