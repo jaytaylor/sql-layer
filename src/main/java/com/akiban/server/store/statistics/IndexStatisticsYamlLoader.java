@@ -59,11 +59,15 @@ public class IndexStatisticsYamlLoader
         Map<Index,IndexStatistics> result = new HashMap<Index,IndexStatistics>();
         Yaml yaml = new Yaml();
         FileInputStream istr = new FileInputStream(file);
-        for (Object doc : yaml.loadAll(istr)) {
-            IndexStatistics indexStatistics = parseStatistics(doc);
-            result.put(indexStatistics.getIndex(), indexStatistics);
+        try {
+            for (Object doc : yaml.loadAll(istr)) {
+                IndexStatistics indexStatistics = parseStatistics(doc);
+                result.put(indexStatistics.getIndex(), indexStatistics);
+            }
         }
-        istr.close();
+        finally {
+            istr.close();
+        }
         return result;
     }
 
@@ -134,8 +138,12 @@ public class IndexStatisticsYamlLoader
         }
         Yaml yaml = new Yaml();
         FileWriter ostr = new FileWriter(file);
-        yaml.dumpAll(docs.iterator(), ostr);
-        ostr.close();
+        try {
+            yaml.dumpAll(docs.iterator(), ostr);
+        }
+        finally {
+            ostr.close();
+        }
     }
 
     protected Object buildStatistics(IndexStatistics indexStatistics) {
