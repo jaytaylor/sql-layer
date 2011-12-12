@@ -1193,6 +1193,7 @@ class YamlTester {
         public boolean compareOutput(Object object) {
             String[] timeAsString = String.valueOf(object).split(":");
             Calendar localCalendar = Calendar.getInstance();
+            
             long localTimeInSeconds = localCalendar
                     .get(Calendar.HOUR_OF_DAY)
                     * MINUTES_IN_SECONDS
@@ -1205,7 +1206,7 @@ class YamlTester {
             resultTime += Integer.parseInt(timeAsString[1])
                     * MINUTES_IN_SECONDS;
             resultTime += Integer.parseInt(timeAsString[2]);
-            boolean results = Math.abs(resultTime - localTimeInSeconds) < (1 * MINUTES_IN_SECONDS * SECONDS_IN_MILLISECONDS);
+            boolean results = Math.abs(resultTime - localTimeInSeconds) < (1 * MINUTES_IN_SECONDS);
             return results;
         }
 
@@ -1226,7 +1227,9 @@ class YamlTester {
             try {
                 Date result = DEFAULT_DATETIME_FORMAT.parse(String
                         .valueOf(object));
+                
                 testResult = result.getTime() - localCalendar.getTimeInMillis();
+                System.out.println("["+testResult+"]"+result.getTime()+" vs "+localCalendar.getTimeInMillis());
             } catch (ParseException e) {
                 fail(e.getMessage());
             }
