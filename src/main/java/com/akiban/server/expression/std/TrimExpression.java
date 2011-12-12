@@ -68,7 +68,8 @@ public class TrimExpression extends AbstractUnaryExpression
             if (trimType != TrimType.LEADING)
                 st = rtrim(st);          
             
-            return new ValueHolder (AkType.VARCHAR, st);            
+            valueHolder().putString(st);
+            return valueHolder();
         }
         
         private static String ltrim (String st)

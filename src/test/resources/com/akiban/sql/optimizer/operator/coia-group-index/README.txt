@@ -46,6 +46,8 @@ select-16: DISTINCT
 
 select-16s: DISTINCT with ORDER BY using Sort
 
+select-16l: DISTINCT with ORDER BY using Sort with LIMIT
+
 select-16g: DISTINCT with ORDER BY using group index
 
 select-17a: side branch with sort

@@ -183,7 +183,7 @@ public class ExtractExpression extends AbstractUnaryExpression
                 switch(type)
                 {
                     case TIME:      rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
-                                    return rawLong / 10000L % 100;
+                                    return rawLong / 10000L;
                     case DATETIME:  rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
                                     long yr = rawLong / 10000000000L;
                                     long mo = rawLong / 100000000L % 100;
@@ -471,7 +471,11 @@ public class ExtractExpression extends AbstractUnaryExpression
                                         }
                 }
            
-                if (raw != -1) return new ValueHolder(type.underlying, raw);
+                if (raw != -1)
+                {
+                    valueHolder().putRaw(type.underlying, raw);
+                    return valueHolder();
+                }
                 else return NullValueSource.only();
             }
             catch (InvalidDateFormatException ex)

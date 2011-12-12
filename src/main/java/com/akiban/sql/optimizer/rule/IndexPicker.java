@@ -396,6 +396,11 @@ public class IndexPicker extends BaseRule
 
         @Override
         public boolean visit(PlanNode n) {
+            if (!subqueries.isEmpty() &&
+                (n instanceof ColumnSource)) {
+                boolean added = subqueries.peek().tablesDefined.add((ColumnSource)n);
+                assert added : "Table defined more than once";
+            }
             if (n instanceof Joinable) {
                 Joinable j = (Joinable)n;
                 while (j.getOutput() instanceof Joinable)
@@ -410,11 +415,6 @@ public class IndexPicker extends BaseRule
                     entry.query = subqueries.peek().subquery;
                 }
                 result.add(entry);
-            }
-            if (!subqueries.isEmpty() &&
-                (n instanceof ColumnSource)) {
-                boolean added = subqueries.peek().tablesDefined.add((ColumnSource)n);
-                assert added : "Table defined more than once";
             }
             return true;
         }

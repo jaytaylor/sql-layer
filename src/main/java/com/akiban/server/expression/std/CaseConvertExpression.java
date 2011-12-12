@@ -90,8 +90,8 @@ public class CaseConvertExpression extends AbstractUnaryExpression
             
             ObjectExtractor<String> sExtractor = Extractors.getStringExtractor();
             String st = sExtractor.getObject(operandSource);
-            return new ValueHolder(AkType.VARCHAR, 
-                    conversionType == ConversionType.TOLOWER ? st.toLowerCase() : st.toUpperCase());
+            valueHolder().putString(conversionType == ConversionType.TOLOWER ? st.toLowerCase() : st.toUpperCase());
+            return valueHolder();
         }         
     }
      

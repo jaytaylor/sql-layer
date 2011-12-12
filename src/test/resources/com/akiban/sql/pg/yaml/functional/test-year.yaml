@@ -1,5 +1,12 @@
 # Test the YEAR function
 ---
+# Suppress (skip) this test for two bugs: 
+# Bug #901516 - YEAR() should be compable with INTEGER parameters
+# Bug #901511 - YEAR() returning years less than 1000 with leading 0's
+- Properties: sys-aksql
+- suppressed: true
+
+---
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (varchar_field) VALUES (null)

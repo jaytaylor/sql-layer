@@ -34,7 +34,8 @@ class Sort_InsertionLimited extends Operator
     @Override
     public String toString()
     {
-        return String.format("%s(%s, %d)", getClass().getSimpleName(), sortType, limit);
+        return String.format("%s(%s, %d%s)", getClass().getSimpleName(), sortType, limit,
+                             preserveDuplicates ? "" : ", SUPPRESS_DUPLICATES");
     }
 
     // Operator interface
@@ -75,6 +76,7 @@ class Sort_InsertionLimited extends Operator
     public Sort_InsertionLimited(Operator inputOperator,
                                  RowType sortType,
                                  API.Ordering ordering,
+                                 API.SortOption sortOption,
                                  int limit)
     {
         ArgumentValidation.notNull("sortType", sortType);
@@ -83,6 +85,7 @@ class Sort_InsertionLimited extends Operator
         this.inputOperator = inputOperator;
         this.sortType = sortType;
         this.ordering = ordering;
+        this.preserveDuplicates = sortOption == API.SortOption.PRESERVE_DUPLICATES;
         this.limit = limit;
     }
 
@@ -91,6 +94,7 @@ class Sort_InsertionLimited extends Operator
     private final Operator inputOperator;
     private final RowType sortType;
     private final API.Ordering ordering;
+    private final boolean preserveDuplicates;
     private final int limit;
     private static final Tap.PointTap SORT_INSERTION_COUNT = Tap.createCount("operator: sort_insertion", true);
 
@@ -120,15 +124,19 @@ class Sort_InsertionLimited extends Operator
             switch (state) {
             case FILLING:
                 {
-                    int count = 0;
+                    // If duplicates are preserved, the label is different for each row. Otherwise, it stays at 0.
+                    int label = 0;
                     Row row;
                     while ((row = input.next()) != null) {
                         assert row.rowType() == sortType : row;
-                        Holder holder = new Holder(count++, row, evaluations);
+                        Holder holder = new Holder(label, row, evaluations);
+                        if (preserveDuplicates) {
+                            label++;
+                        }
                         if (sorted.size() < limit) {
                             // Still room: add it in.
                             boolean added = sorted.add(holder);
-                            assert added;
+                            assert !preserveDuplicates || added;
                         }
                         else {
                             // Current greatest element.

@@ -115,6 +115,7 @@ public final class Converters {
                 VARBINARY
         );
         builder.legalConversions(U_BIGINT,
+                FLOAT,
                 DOUBLE,
                 DECIMAL,
                 DOUBLE,

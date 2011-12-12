@@ -47,7 +47,12 @@ public final class SortIT extends ITBase {
         inputCursor.open(UndefBindings.only());
         API.Ordering ordering = new API.Ordering();
         ordering.append(new FieldExpression(inputOperator.rowType(), 0), true);
-        Sorter sorter = new Sorter(adapter, inputCursor, inputOperator.rowType(), ordering, UndefBindings.only());
+        Sorter sorter = new Sorter(adapter,
+                                   inputCursor,
+                                   inputOperator.rowType(),
+                                   ordering,
+                                   API.SortOption.PRESERVE_DUPLICATES,
+                                   UndefBindings.only());
         Cursor sortedCursor = sorter.sort();
 
         // check expected output

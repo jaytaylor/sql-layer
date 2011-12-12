@@ -36,35 +36,39 @@ public class UnaryBitExpression extends AbstractUnaryExpression
         NOT
         {
             @Override
-            public ValueSource exc (BigInteger arg)
+            public ValueSource exc (BigInteger arg, ValueHolder valueHolder)
             {
-                return new ValueHolder(AkType.U_BIGINT, arg.not().and(n64));
+                valueHolder.putUBigInt(arg.not().and(n64));
+                return valueHolder;
             }
             
             @Override
-            public ValueSource errorCase ()
+            public ValueSource errorCase (ValueHolder valueHolder)
             {
-                return new ValueHolder(AkType.U_BIGINT,n64);
+                valueHolder.putUBigInt(n64);
+                return valueHolder;
             }
         },
         
         COUNT
         {
             @Override
-            public ValueSource exc (BigInteger arg)
+            public ValueSource exc (BigInteger arg, ValueHolder valueHolder)
             {
-                return new ValueHolder(AkType.LONG, arg.signum() >= 0 ?  arg.bitCount() : 64 - arg.bitCount());
+                valueHolder.putLong(arg.signum() >= 0 ?  arg.bitCount() : 64 - arg.bitCount());
+                return valueHolder;
             }
             
             @Override
-            public ValueSource errorCase ()
+            public ValueSource errorCase (ValueHolder valueHolder)
             {
-                return new ValueHolder(AkType.LONG, 0L);
+                valueHolder.putLong(0L);
+                return valueHolder;
             }
         };
 
-        protected abstract ValueSource exc (BigInteger arg);
-        protected abstract ValueSource errorCase ();
+        protected abstract ValueSource exc (BigInteger arg, ValueHolder valueHolder);
+        protected abstract ValueSource errorCase (ValueHolder valueHolder);
         private static final BigInteger n64 = new BigInteger("FFFFFFFFFFFFFFFF", 16);
    }
     
@@ -123,14 +127,14 @@ public class UnaryBitExpression extends AbstractUnaryExpression
             catch (InconvertibleTypesException ex) 
             {
                 log.debug("assume 0 as input ", ex);
-                return op.errorCase();
+                return op.errorCase(valueHolder());
             } 
             catch (NumberFormatException ex)
             {
                 log.debug("assume 0 as input ", ex);
-                return op.errorCase();
+                return op.errorCase(valueHolder());
             }           
-            return op.exc(arg);            
+            return op.exc(arg, valueHolder());
         }        
     }
     
