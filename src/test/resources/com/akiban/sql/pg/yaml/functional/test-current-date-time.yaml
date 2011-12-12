@@ -1,4 +1,6 @@
 # Test the CURRENT_DATE, CURRENT_TIME, CURRENT_TIMESTAMP, and NOW functions
+- Properties: sys-aksql
+- suppressed: true
 ---
 - Include: all-types-schema.yaml
 ---
@@ -46,5 +48,8 @@
 # !time does a partial compare of time, allowed to be within 1 minute of system time
 #- Statement: SELECT SYSDATE() FROM all_types
 #- output: [[ !datetime ]]
-
+#---
+# !time does a partial compare of time, allowed to be within 1 minute of system time
+#- Statement: SELECT CURTIME() FROM all_types
+#- output: [[ !time ]]
 ...

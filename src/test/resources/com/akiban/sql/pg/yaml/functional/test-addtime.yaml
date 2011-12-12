@@ -1,0 +1,17 @@
+# Test the ADDTIME() function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
+#---
+#- Statement: select ADDTIME('2007-12-31 23:59:59.999999', '1 1:1:1.000002') from all_types;
+#- output: [['2008-01-02 01:01:01.000001']]
+#---
+#- Statement: select SELECT ADDTIME('01:00:00.999999', '02:00:00.999998') from all_types;
+#- output: [['03:00:01.999997']]
+#---
+#- Include: all-datetime-schema.yaml
+#---
+#- Statement: select id, time_field from datetime_matrix where ADDTIME(time_field, 0) <> time_field;
+#- row_count: 0
+...
