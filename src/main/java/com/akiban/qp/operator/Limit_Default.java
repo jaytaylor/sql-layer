@@ -63,6 +63,7 @@ final class Limit_Default extends Operator
             str.append(String.format("skip=%d", skip));
         }
         if ((limit >= 0) && (limit < Integer.MAX_VALUE)) {
+            if (skip > 0) str.append(", ");
             str.append(String.format("limit=%d", limit));
         }
         str.append(": ");
