@@ -10,6 +10,7 @@ SelectQuery@1f31cd12
                   Select@1d1d565f[user.orders.order_date > 2011-03-02]
                     BranchLookup@711185e7(user.customers -> user.customers)
                       IndexScan@356e3aaf(Index(user.customers.name[IndexColumn(name)]), SORTED)
+                      TableSource@6c22fde7(user.customers - TableGroup@1ff19e50(customers))
                       TableSource@24753433(user.orders - TableGroupJoin@57ced290(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
       Project@377e9134[user.customers.cid, user.customers.name]
         Select@566f0962[]

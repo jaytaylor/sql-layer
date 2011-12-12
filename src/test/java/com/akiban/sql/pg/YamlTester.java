@@ -15,34 +15,9 @@
 
 package com.akiban.sql.pg;
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.Reader;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Stack;
-import java.util.regex.Pattern;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
-
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.not;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -50,6 +25,33 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.sql.Types;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Stack;
+import java.util.regex.Pattern;
 
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
@@ -173,6 +175,10 @@ class YamlTester {
     private int commandNumber = 0;
     private String commandName = null;
     private boolean suppressed = false;
+    private static DateFormat DEFAULT_DATE_FORMAT = new SimpleDateFormat(
+            "yyyy-MM-dd");
+    private static DateFormat DEFAULT_DATETIME_FORMAT = new SimpleDateFormat(
+            "yyyy-MM-dd HH:mm:ss.S");
 
     /**
      * Creates an instance of this class.
@@ -1019,10 +1025,12 @@ class YamlTester {
     static class DontCare implements OutputComparator {
 	static final DontCare INSTANCE = new DontCare();
 	private DontCare() { }
+        @Override
         public boolean compareOutput(Object output) {
 	    return true;
 	}
-	public String toString() {
+	@Override
+    public String toString() {
 	    return "!dc";
 	}
     }
@@ -1040,7 +1048,8 @@ class YamlTester {
 				   this.pattern + "'");
 	    }
 	}
-	public boolean compareOutput(Object object) {
+	@Override
+    public boolean compareOutput(Object object) {
 	    boolean result = pattern.matcher(String.valueOf(object)).matches();
 	    if (DEBUG) {
 		System.err.println("Regexp.compareOutput pattern='" + pattern +
@@ -1049,7 +1058,8 @@ class YamlTester {
 	    }
 	    return result;
 	}
-	public String toString() {
+	@Override
+    public String toString() {
 	    return "!re '" + pattern + "'";
 	}
     }
@@ -1086,6 +1096,10 @@ class YamlTester {
 	    yamlConstructors.put(new Tag("!re"), new ConstructRegexp());
 	    yamlConstructors.put(new Tag("!select-engine"),
 				 new ConstructSelectEngine());
+            yamlConstructors.put(new Tag("!date"), new ConstructSystemDate());
+            yamlConstructors.put(new Tag("!time"), new ConstructSystemTime());
+            yamlConstructors.put(new Tag("!datetime"),
+                    new ConstructSystemDateTime());
 	}
 	private static class ConstructDontCare extends AbstractConstruct {
 	    @Override
@@ -1140,6 +1154,89 @@ class YamlTester {
                 }
 	    }
 	}
+
+        private static class ConstructSystemDate extends AbstractConstruct {
+            // not thread safe, not sure if that matters
+            @Override
+            public Object construct(Node node) {
+                Date today = Calendar.getInstance().getTime();
+                return DEFAULT_DATE_FORMAT.format(today);
+            }
+
+        }
+
+        private static class ConstructSystemTime extends AbstractConstruct {
+            @Override
+            public Object construct(Node node) {
+                return new TimeChecker();
+            }
+        }
+
+        private static class ConstructSystemDateTime extends AbstractConstruct {
+            @Override
+            public Object construct(Node node) {
+                return new DateTimeChecker();
+            }
+        }
+
+    }
+
+    /**
+     * A class that represents the current system time 60 seconds
+     */
+    static class TimeChecker implements OutputComparator {
+
+        private static final int MINUTES_IN_SECONDS = 60;
+        private static final int HOURS_IN_MINUTES = 60;
+        private static final int SECONDS_IN_MILLISECONDS = 1000;
+
+        @Override
+        public boolean compareOutput(Object object) {
+            String[] time_as_string = String.valueOf(object).split(":");
+            Calendar local_calendar = Calendar.getInstance();
+            long local_time_in_seconds = local_calendar
+                    .get(Calendar.HOUR_OF_DAY)
+                    * MINUTES_IN_SECONDS
+                    * HOURS_IN_MINUTES;
+            local_time_in_seconds += local_calendar.get(Calendar.MINUTE)
+                    * MINUTES_IN_SECONDS;
+            local_time_in_seconds += local_calendar.get(Calendar.SECOND)
+                    * MINUTES_IN_SECONDS;
+            long result_time = Integer.parseInt(time_as_string[0])
+                    * MINUTES_IN_SECONDS * HOURS_IN_MINUTES;
+            result_time += Integer.parseInt(time_as_string[1])
+                    * MINUTES_IN_SECONDS;
+            result_time += Integer.parseInt(time_as_string[2]);
+            boolean results = Math.abs(result_time - local_time_in_seconds) < (1 * MINUTES_IN_SECONDS * SECONDS_IN_MILLISECONDS);
+            return results;
+        }
+
+    }
+
+    /**
+     * A class that represents the current system datetime within 60 seconds
+     */
+    static class DateTimeChecker implements OutputComparator {
+
+        private static final int MINUTES_IN_SECONDS = 60;
+        private static final int SECONDS_IN_MILLISECONDS = 1000;
+
+        @Override
+        public boolean compareOutput(Object object) {
+            Calendar local_calendar = Calendar.getInstance();
+            long test_result = 0;
+            try {
+                Date result = DEFAULT_DATETIME_FORMAT.parse(String
+                        .valueOf(object));
+                test_result = result.getTime()
+                        - local_calendar.getTimeInMillis();
+            } catch (ParseException e) {
+                fail(e.getMessage());
+            }
+            boolean results = Math.abs(test_result) < (1 * MINUTES_IN_SECONDS * SECONDS_IN_MILLISECONDS);
+            return results;
+        }
+
     }
 
     private static void addTypeNameAndNumber(String name, int number) {

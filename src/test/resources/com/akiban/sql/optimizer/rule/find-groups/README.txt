@@ -4,6 +4,8 @@ duplicate-parent: join between two parent-child joins
 
 in: IN condition
 
+not-equals: Conditions other than equals
+
 right-as-left: RIGHT join expressed as LEFT
 
 right-as-right: RIGHT join expressed with RIGHT
@@ -19,3 +21,9 @@ single-table: rows from single table only
 subquery: group join across subquery boundary
 
 two-groups: join between two groups
+
+two-groups-left: LEFT join between two groups (stays LEFT)
+
+two-groups-left-2: LEFT join between two groups other way (stays LEFT)
+
+two-groups-right: RIGHT join between two groups (turns into LEFT)

@@ -80,10 +80,14 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public Cursor sort(Cursor input, RowType rowType, API.Ordering ordering, Bindings bindings)
+    public Cursor sort(Cursor input,
+                       RowType rowType,
+                       API.Ordering ordering,
+                       API.SortOption sortOption,
+                       Bindings bindings)
     {
         try {
-            return new Sorter(this, input, rowType, ordering, bindings).sort();
+            return new Sorter(this, input, rowType, ordering, sortOption, bindings).sort();
         } catch (PersistitException e) {
             handlePersistitException(e);
             throw new AssertionError();

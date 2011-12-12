@@ -16,8 +16,10 @@
 package com.akiban.server.service.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.staticgrouping.Group;
@@ -40,8 +42,10 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Pattern;
 
 class DXLMXBeanImpl implements DXLMXBean {
     private final DXLServiceImpl dxlService;
@@ -180,14 +184,14 @@ class DXLMXBeanImpl implements DXLMXBean {
     }
 
     @Override
+    public List<String> getGroupIndexDDLs() {
+        AkibanInformationSchema ais = ais();
+        return listGiDDLs(ais, getUsingSchema());
+    }
+
+    @Override
     public String getGroupNameFromTableName(String schemaName, String tableName) {
-        Session session = sessionService.createSession();
-        final AkibanInformationSchema ais;
-        try {
-            ais = dxlService.ddlFunctions().getAIS(session);
-        } finally {
-            session.close();
-        }
+        AkibanInformationSchema ais = ais();
         Table table = ais.getTable(schemaName, tableName);
         if(table != null) {
             final com.akiban.ais.model.Group group = table.getGroup();
@@ -200,29 +204,17 @@ class DXLMXBeanImpl implements DXLMXBean {
 
     @Override
     public String printAIS() {
-        Session session = sessionService.createSession();
-        try {
-            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-            return AISPrinter.toString(ais);
-        }
-        finally {
-            session.close();
-        }
+        return AISPrinter.toString(ais());
     }
 
     public List<String> getGrouping(String schema) {
-        Session session = sessionService.createSession();
-        try {
-            AkibanInformationSchema ais = dxlService.ddlFunctions().getAIS(session);
-            Grouping grouping = GroupsBuilder.fromAis(ais, schema);
+        AkibanInformationSchema ais = ais();
+        Grouping grouping = GroupsBuilder.fromAis(ais, schema);
 
-            stripAISFromGrouping(grouping);
+        stripAISFromGrouping(grouping);
 
-            String groupingString = grouping.toString();
-            return Arrays.asList(groupingString.split("\\n"));
-        } finally {
-            session.close();
-        }
+        String groupingString = grouping.toString();
+        return Arrays.asList(groupingString.split("\\n"));
     }
 
     public void writeRow(String schema, String table, String fields) {
@@ -246,6 +238,41 @@ class DXLMXBeanImpl implements DXLMXBean {
     @Override
     public void writeRow(String table, String fields) {
         writeRow(usingSchema.get(), table, fields);
+    }
+
+    static List<String> listGiDDLs(AkibanInformationSchema ais, String usingSchema) {
+        List<String> result = new ArrayList<String>();
+        StringBuilder sb = new StringBuilder();
+        for (com.akiban.ais.model.Group group : ais.getGroups().values()) {
+            for (GroupIndex gi : group.getIndexes()) {
+                // CREATE INDEX name_date ON "order"(customer.name, "order".order_date) USING LEFT JOIN
+                sb.setLength(0);
+                sb.append("CREATE INDEX ");
+                escapeName(sb, gi.getIndexName().getName());
+                sb.append(" ON ");
+                String schemaName = gi.leafMostTable().getName().getSchemaName();
+                if (!schemaName.equals(usingSchema))
+                    escapeName(sb, schemaName).append('.');
+                escapeName(sb, gi.leafMostTable().getName().getTableName()).append(" ( ");
+                for (Iterator<IndexColumn> colsIter = gi.getColumns().iterator(); colsIter.hasNext(); ) {
+                    Column column = colsIter.next().getColumn();
+                    if (!column.getTable().getName().getSchemaName().equals(schemaName))
+                        throw new UnsupportedOperationException("mixed-schema GIs are not supported");
+                    escapeName(sb, column.getTable().getName().getTableName()).append('.');
+                    escapeName(sb, column.getName());
+                    if (colsIter.hasNext())
+                        sb.append(" , ");
+                }
+                sb.append(" ) USING ");
+                switch (gi.getJoinType()) {
+                case LEFT:  sb.append("LEFT JOIN"); break;
+                case RIGHT: sb.append("RIGHT JOIN"); break;
+                default: throw new AssertionError(gi.getJoinType());
+                }
+                result.add(sb.toString());
+            }
+        }
+        return result;
     }
 
     private static void stripAISFromGrouping(Grouping grouping) {
@@ -275,4 +302,30 @@ class DXLMXBeanImpl implements DXLMXBean {
             manipulator.dropGroup(group.getGroupName());
         }
     }
+
+    private AkibanInformationSchema ais() {
+        AkibanInformationSchema ais;
+        Session session = sessionService.createSession();
+        try {
+            ais = dxlService.ddlFunctions().getAIS(session);
+        } finally {
+            session.close();
+        }
+        return ais;
+    }
+
+    static StringBuilder escapeName(StringBuilder sb, String name) {
+        // Eventually we'll want to quote this. For now, just check that it's safe.
+        boolean needsEscaping = !SAFE_NAMES.matcher(name).matches();
+        if (needsEscaping && (name.indexOf('"') >= 0))
+            throw new UnsupportedOperationException("illegal identifier: " + name);
+        if (needsEscaping)
+            sb.append('"');
+        sb.append(name);
+        if (needsEscaping)
+            sb.append('"');
+        return sb;
+    }
+
+    private static final Pattern SAFE_NAMES = Pattern.compile("[a-zA-Z]\\w*");
 }

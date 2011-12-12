@@ -16,6 +16,7 @@
 package com.akiban.server.aggregation.std;
 
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -29,5 +30,6 @@ interface AbstractProcessor
     boolean process (boolean oldState, boolean input);
     String process (String oldState, String input);
     
-    void checkType (AkType type);    
+    void checkType (AkType type);
+    ValueSource emptyValue();
 }

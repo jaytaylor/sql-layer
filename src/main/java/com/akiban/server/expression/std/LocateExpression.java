@@ -116,8 +116,9 @@ public class LocateExpression extends AbstractCompositeExpression
                 pos = posOp.getLong() -1;
                 if (pos < 0 || pos > str.length()) return new ValueHolder(AkType.LONG, 0L);
             }
-                         
-            return new ValueHolder(AkType.LONG, 1 + (long)str.indexOf(substr, (int)pos));
+
+            valueHolder().putLong(1 + (long)str.indexOf(substr, (int)pos));
+            return valueHolder();
         }
         
     }

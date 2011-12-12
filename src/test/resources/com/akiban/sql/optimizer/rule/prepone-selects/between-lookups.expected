@@ -7,5 +7,6 @@ SelectQuery@355ccfb1
             Select@7f342545[user.items.quan > 100]
               BranchLookup@387b1641(user.orders -> user.orders)
                 IndexScan@18f2225f(Index(user.orders.order_date[IndexColumn(order_date)]), NONE, >Cast(2011-01-01 AS DATE NOT NULL))
+                TableSource@46798249(user.orders - TableGroupJoin@488d12e4(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
                 TableSource@54128635(user.items - TableGroupJoin@40ae97c4(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
             TableSource@23e45a5c(user.customers - TableGroup@66de609(customers))

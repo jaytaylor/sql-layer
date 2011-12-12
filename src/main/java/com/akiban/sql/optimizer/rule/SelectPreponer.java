@@ -119,16 +119,19 @@ public class SelectPreponer extends BaseRule
 
         protected void pullToward(PlanNode node) {
             loaders = new HashMap<TableSource,PlanNode>();
+            PlanNode prev = null;
             if (node instanceof IndexScan) {
                 indexColumns = new HashMap<ExpressionNode,PlanNode>();
                 for (ExpressionNode column : ((IndexScan)node).getColumns())
                     indexColumns.put(column, node);
-                node = node.getOutput();
+                prev = node;
+                node = getOutput(node);
             }
             while (node instanceof TableLoader) {
                 for (TableSource table : ((TableLoader)node).getTables()) {
                     loaders.put(table, node);
                 }
+                prev = node;
                 node = getOutput(node);
             }
             boolean sawJoin = false;
@@ -149,13 +152,26 @@ public class SelectPreponer extends BaseRule
                     }
                     sawJoin = true;
                 }
-                else if ((node instanceof Product) ||
-                         (node instanceof MapJoin)) {
+                else if (node instanceof MapJoin) {
+                    switch (((MapJoin)node).getJoinType()) {
+                    case INNER:
+                        break;
+                    case LEFT:
+                        if (prev == ((MapJoin)node).getInner())
+                            return;
+                        break;
+                    default:
+                        return;
+                    }
+                    sawJoin = true;
+                }
+                else if (node instanceof Product) {
                     // Only inner right now.
                     sawJoin = true;
                 }
                 else
                     break;
+                prev = node;
                 node = getOutput(node);
             }
             if (!sawJoin ||
@@ -186,12 +202,13 @@ public class SelectPreponer extends BaseRule
         }
 
         // Return where this condition can move.
-        // TODO: Can move to after subset of joins once enough tables are joined.
+        // TODO: Can move to after subset of joins once enough tables are joined
+        // or if all condition tables come in at once via BranchLookup.
         protected PlanNode canMove(ConditionExpression condition) {
             TableSource table = getSingleTableConditionTable(condition);
             if (table == null)
                 return null;
-            if (indexColumns != null) {
+            if ((indexColumns != null) && (condition instanceof ComparisonCondition)) {
                 // Can check the index column before it's used for lookup.
                 PlanNode loader = indexColumns.get(((ComparisonCondition)
                                                     condition).getLeft());
@@ -242,6 +259,22 @@ public class SelectPreponer extends BaseRule
             TableSource left = getSingleTableConditionTable(bexpr.getLeft());
             TableSource right = getSingleTableConditionTable(bexpr.getRight());
             if (left == right) return left;
+        }
+        else if (condition instanceof LogicalFunctionCondition) {
+            TableSource single = null;
+            for (ExpressionNode operand : ((LogicalFunctionCondition)
+                                           condition).getOperands()) {
+                TableSource osingle = getSingleTableConditionTable((ConditionExpression)
+                                                                   operand);
+                if (single == null) {
+                    if (osingle == null)
+                        return null;
+                    single = osingle;
+                }
+                else if (single != osingle)
+                    return null;
+            }
+            return single;
         }
         return null;
     }

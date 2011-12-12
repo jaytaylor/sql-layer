@@ -64,8 +64,9 @@ public class LengthExpression  extends AbstractUnaryExpression
            
            ObjectExtractor<String> sExtractor = Extractors.getStringExtractor();
            String st = sExtractor.getObject(source);
-           
-           return new ValueHolder(AkType.LONG, st.length());
+
+           valueHolder().putLong(st.length());
+           return valueHolder();
         }        
     }
     

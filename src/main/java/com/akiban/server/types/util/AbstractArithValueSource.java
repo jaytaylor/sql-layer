@@ -186,7 +186,7 @@ public abstract class AbstractArithValueSource implements ValueSource
         return new WrongValueGetException(expected, getConversionType());
     }
 
-    private  void check (AkType t)
+    protected void check (AkType t)
     {
        ValueSourceHelper.checkType(t, getConversionType());
         if (isNull())

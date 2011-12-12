@@ -70,7 +70,8 @@ public class ScaleDecimalExpression extends AbstractUnaryExpression
             value = value.setScale(scale, roundingMode);
             if (value.precision() > precision)
                 throw new OverflowException();
-            return hold(value);
+            valueHolder().putDecimal(value);
+            return valueHolder();
         }
 
         private ValueSource hold(BigDecimal value) {
