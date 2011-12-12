@@ -19,6 +19,7 @@ import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.types.util.ValueHolder;
 
 public abstract class AbstractNoArgExpressionEvaluation implements ExpressionEvaluation {
     @Override
@@ -51,4 +52,9 @@ public abstract class AbstractNoArgExpressionEvaluation implements ExpressionEva
     protected AbstractNoArgExpressionEvaluation() {
     }
 
+    protected ValueHolder valueHolder () {
+        return valueHolder == null ? valueHolder = new ValueHolder() : valueHolder;
+    }
+
+    private ValueHolder valueHolder;
 }

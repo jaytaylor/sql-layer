@@ -67,13 +67,13 @@ public class AISBBasedBuilder
 
         @Override
         public NewAISBuilder defaultSchema(String schema) {
-            this.schema = schema;
+            this.defaultSchema = schema;
             return this;
         }
 
         @Override
         public NewUserTableBuilder userTable(String table) {
-            return userTable(schema, table);
+            return userTable(defaultSchema, table);
         }
 
         @Override
@@ -94,7 +94,12 @@ public class AISBBasedBuilder
 
         @Override
         public NewAISGroupIndexStarter groupIndex(String indexName) {
-            return new ActualGroupIndexBuilder(aisb.akibanInformationSchema(), schema).groupIndex(indexName);
+            return groupIndex(indexName, null);
+        }
+
+        @Override
+        public NewAISGroupIndexStarter groupIndex(String indexName, Index.JoinType joinType) {
+            return new ActualGroupIndexBuilder(aisb.akibanInformationSchema(), defaultSchema).groupIndex(indexName, joinType);
         }
 
         // NewuserTableBuilder interface
@@ -241,6 +246,7 @@ public class AISBBasedBuilder
         // object state
 
         private final AISBuilder aisb;
+        private String defaultSchema;
         private String schema;
         private String userTable;
 
@@ -284,9 +290,15 @@ public class AISBBasedBuilder
 
         @Override
         public NewAISGroupIndexStarter groupIndex(String indexName) {
+            return groupIndex(indexName, null);
+        }
+
+        @Override
+        public NewAISGroupIndexStarter groupIndex(String indexName, Index.JoinType joinType) {
             this.indexName = indexName;
             this.groupName = null;
             this.position = -1;
+            this.joinType = joinType;
             return this;
         }
 
@@ -310,7 +322,7 @@ public class AISBBasedBuilder
             }
             this.groupName = localGroupName;
             this.position = 0;
-            aisb.groupIndex(this.groupName, this.indexName, false, null);
+            aisb.groupIndex(this.groupName, this.indexName, false, joinType);
             return and(schema, table, column);
         }
 
@@ -350,6 +362,7 @@ public class AISBBasedBuilder
         private final AISBuilder aisb;
         private final String defaultSchema;
         private int position;
+        private Index.JoinType joinType;
         private String indexName;
         private String groupName;
     }

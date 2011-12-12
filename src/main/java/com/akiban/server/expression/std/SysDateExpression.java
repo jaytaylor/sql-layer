@@ -61,9 +61,9 @@ public class SysDateExpression extends AbstractNoArgExpression
         @Override
         public ValueSource eval() 
         {
-            return new ValueHolder(AkType.TIMESTAMP, new DateTime());
-        }
-        
+            valueHolder().putTimestamp(new DateTime());
+            return valueHolder();
+        }        
     }
     
     public SysDateExpression ()

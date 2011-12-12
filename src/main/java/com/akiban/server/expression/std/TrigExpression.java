@@ -160,8 +160,10 @@ public class TrigExpression extends AbstractCompositeExpression
                             else result = Math.cosh(dvar1) / Math.sinh(dvar1);
                             break;
                 default: throw new UnsupportedOperationException("Unknown Operation: " + name.name());
-            }            
-            return new ValueHolder(AkType.DOUBLE, result);
+            }
+
+            valueHolder().putDouble(result);
+            return valueHolder();
         }   
     }
      

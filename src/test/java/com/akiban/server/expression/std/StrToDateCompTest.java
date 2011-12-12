@@ -13,23 +13,29 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.aggregation.std;
+package com.akiban.server.expression.std;
 
+import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 
-interface AbstractProcessor
+public class StrToDateCompTest extends ComposedExpressionTestBase
 {
-    long process (long oldState, long input);
-    double process (double oldState, double input);
-    float process (float oldState, float input);
-    BigDecimal process (BigDecimal oldState, BigDecimal input);
-    BigInteger process (BigInteger oldState, BigInteger input);
-    boolean process (boolean oldState, boolean input);
-    String process (String oldState, String input);
-    
-    void checkType (AkType type);
-    ValueSource emptyValue();
+    @Override
+    protected CompositionTestInfo getTestInfo()
+    {
+        return new CompositionTestInfo (2, AkType.NULL, true);
+    }
+
+    @Override
+    protected ExpressionComposer getComposer()
+    {
+        return StrToDateExpression.COMPOSER;
+    }
+
+    @Override
+    protected boolean alreadyExc() 
+    {
+        return false;
+    }
+
 }

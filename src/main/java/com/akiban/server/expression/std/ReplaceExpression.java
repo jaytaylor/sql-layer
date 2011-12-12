@@ -66,9 +66,10 @@ public class ReplaceExpression extends AbstractTernaryExpression
                 if (sources[n].isNull()) return NullValueSource.only();
                 else sts[n] = sources[n].getString();
 
-
-            return new ValueHolder(AkType.VARCHAR,
+            valueHolder().putRaw(AkType.VARCHAR,
                     sts[1].equals("") ? sts[0] : sts[0].replace(sts[1], sts[2]));
+            return valueHolder();
+                    
         }
     }
 

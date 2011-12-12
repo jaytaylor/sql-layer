@@ -35,6 +35,8 @@ final class ExtractorForBigInteger extends ObjectExtractor<BigInteger> {
         case DECIMAL:   return BigInteger.valueOf(source.getDecimal().longValueExact());
         case U_DOUBLE:  return BigInteger.valueOf((long)source.getUDouble());
         case DOUBLE:    return BigInteger.valueOf((long)source.getDouble());
+        case FLOAT:     return BigInteger.valueOf((long)source.getFloat());
+        case U_FLOAT:   return BigInteger.valueOf((long)source.getUFloat());
         default: throw unsupportedConversion(type);
         }
     }

@@ -77,8 +77,9 @@ public class CurrentDateTimeExpression extends EnvironmentExpression
 
         @Override
         public ValueSource eval()
-        {  
-            return new ValueHolder(currentType, environmentValue());
+        {
+            valueHolder().putRaw(currentType, environmentValue());
+            return valueHolder();
         }
     }
     
