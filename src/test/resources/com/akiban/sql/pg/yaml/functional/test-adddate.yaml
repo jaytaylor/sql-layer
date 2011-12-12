@@ -9,4 +9,10 @@
 #---
 #- Statement: SELECT ADDDATE('2008-01-02', 31) from all_types;
 #- output: [['2008-02-02']]
+#---
+#- Statement: select ADDDATE('2008-01-02', INTERVAL 31 MILLISECOND) from all_types;
+#- output: [['2008-02-02']]
+#---
+#- Statement: SELECT ADDDATE('2008-01-02') from all_types;
+#- output: [['2008-02-02']]
 ...
