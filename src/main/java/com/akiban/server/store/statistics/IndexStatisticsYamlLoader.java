@@ -74,7 +74,7 @@ public class IndexStatisticsYamlLoader
     protected IndexStatistics parseStatistics(Object obj) {
         if (!(obj instanceof Map))
             throw new AkibanInternalException("Document not in expected format");
-        Map map = (Map)obj;
+        Map<?,?> map = (Map<?,?>)obj;
         TableName tableName = TableName.create(defaultSchema, (String)map.get("Table"));
         Table table = ais.getTable(tableName);
         if (table == null)
@@ -88,7 +88,7 @@ public class IndexStatisticsYamlLoader
         }
         IndexStatistics result = new IndexStatistics(index);
         for (Object e : (Iterable)map.get("Statistics")) {
-            Map em = (Map)e;
+            Map<?,?> em = (Map<?,?>)e;
             int columnCount = (Integer)em.get("Columns");
             Histogram h = parseHistogram(em.get("Histogram"), index, columnCount);
             result.addHistogram(h);
@@ -103,8 +103,8 @@ public class IndexStatisticsYamlLoader
         for (Object eobj : (Iterable)obj) {
             if (!(eobj instanceof Map))
                 throw new AkibanInternalException("Entry not in expected format");
-            Map emap = (Map)eobj;
-            Key key = encodeKey(index, columnCount, (List<Object>)emap.get("key"));
+            Map<?,?> emap = (Map<?,?>)eobj;
+            Key key = encodeKey(index, columnCount, (List<?>)emap.get("key"));
             String keyString = key.toString();
             byte[] keyBytes = new byte[key.getEncodedSize()];
             System.arraycopy(key.getEncodedBytes(), 0, keyBytes, 0, keyBytes.length);
@@ -117,7 +117,7 @@ public class IndexStatisticsYamlLoader
         return new Histogram(index, columnCount, entries);
     }
 
-    protected Key encodeKey(Index index, int columnCount, List<Object> values) {
+    protected Key encodeKey(Index index, int columnCount, List<?> values) {
         if (values.size() != columnCount)
             throw new AkibanInternalException("Key values do not match column count");
         FromObjectValueSource valueSource = new FromObjectValueSource();
