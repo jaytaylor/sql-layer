@@ -23,15 +23,55 @@ import com.akiban.server.rowdata.RowDef;
  * RowDef, and each object refers to the other.
  */
 public interface TableStatus {
+    /**
+     * @return Current auto-increment value of the assocated table.
+     */
     long getAutoIncrement();
+
+    /**
+     * @return Timestamp, in milliseconds, of when this table was created.
+     */
     long getCreationTime();
+
+    /**
+     * @return Timestamp, in milliseconds, of the last delete operation.
+     */
     long getLastDeleteTime();
+
+    /**
+     * @return Timestamp, in milliseconds, of the last update operation.
+     */
     long getLastUpdateTime();
+
+    /**
+     * @return Timestamp, in milliseconds, of the last write operation.
+     */
     long getLastWriteTime();
+
+    /**
+     * @return Ordinal of the associated table.
+     */
     int getOrdinal();
+
+    /**
+     * @return Current number of rows in the associated table.
+     */
     long getRowCount();
+
+    /**
+     * @return The <b>last</b> unique value used for the associated table.
+     */
     long getUniqueID();
 
+    /**
+     * @return RowDef of the associated table. Only meaningful if
+     * {@link #setRowDef(RowDef)} has been called since instantiation.
+     */
     RowDef getRowDef();
+
+    /**
+     * Set the RowDef of the associated table.
+     * @param rowDef The RowDef.
+     */
     void setRowDef(RowDef rowDef);
 }
