@@ -94,6 +94,6 @@ public class RulesTestHelper
         public long getRowCount() { throw new UnsupportedOperationException(); }
         public long getUniqueID() { throw new UnsupportedOperationException(); }
         public RowDef getRowDef() {  throw new UnsupportedOperationException(); }
-        public void setRowDef(RowDef rowDef) {  throw new UnsupportedOperationException(); }
+        public void setRowDef(RowDef rowDef) { /* ignore */ }
     }
 }
