@@ -71,14 +71,7 @@ public class IndexScanBoundedIT extends OperatorITBase
             createNewRow(t, 1006L, 5L, 55L, 551L),
             createNewRow(t, 1007L, 5L, 55L, 555L),
         };
-        Store plainStore = store();
-        final PersistitStore persistitStore;
-        if (plainStore instanceof OperatorStore) {
-            OperatorStore operatorStore = (OperatorStore) plainStore;
-            persistitStore = operatorStore.getPersistitStore();
-        } else {
-            persistitStore = (PersistitStore) plainStore;
-        }
+        final PersistitStore persistitStore = store().getPersistitStore();
         adapter = new PersistitAdapter(schema, persistitStore, null, session(), configService());
         use(db);
     }

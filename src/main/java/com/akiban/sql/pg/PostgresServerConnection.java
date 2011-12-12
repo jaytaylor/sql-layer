@@ -607,16 +607,10 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
         PostgresStatementGenerator compiler;
         {
-            final Store store = reqs.store();
-            final PersistitStore persistitStore;
-            if (store instanceof OperatorStore)
-                persistitStore = ((OperatorStore)store).getPersistitStore();
-            else
-                persistitStore = (PersistitStore)store;
             PostgresOperatorCompiler c = new PostgresOperatorCompiler(this);
             compiler = c;
             adapter = new PersistitAdapter(c.getSchema(),
-                                           persistitStore,
+                                           reqs.store().getPersistitStore(),
                                            reqs.treeService(),
                                            session,
                                            reqs.config());

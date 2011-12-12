@@ -52,13 +52,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Inject
     public IndexStatisticsServiceImpl(Store store, TreeService treeService,
                                       SchemaManager schemaManager, SessionService sessionService) {
-        // The default implementation is an OperatorStore, but some
-        // tests have the PersistitStore directly. We don't need the
-        // OperatorStore, but do need methods not on Store.
-        // TODO: Seems like a mess. Cf. PostgresServerConnection.updateAIS().
-        while (!(store instanceof PersistitStore))
-            store = ((DelegatingStore<Store>)store).getDelegate();
-        this.store = (PersistitStore)store;
+        this.store = store.getPersistitStore();
         this.treeService = treeService;
         this.schemaManager = schemaManager;
         this.sessionService = sessionService;

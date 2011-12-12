@@ -16,7 +16,6 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.GroupTable;
-import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
@@ -26,8 +25,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.Store;
 import org.junit.Before;
 import org.junit.Test;
 

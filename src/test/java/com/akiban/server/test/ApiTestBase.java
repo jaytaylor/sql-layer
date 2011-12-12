@@ -276,6 +276,10 @@ public class ApiTestBase {
         return sm.getStore();
     }
 
+    protected final PersistitStore persistitStore() {
+        return store().getPersistitStore();
+    }
+    
     protected final AkServerInterface akServer() {
         return sm.getAkSserver();
     }
@@ -295,14 +299,6 @@ public class ApiTestBase {
         return new PersistitAdapter(schema, persistitStore(), treeService(), session(), configService());
     }
 
-    protected final PersistitStore persistitStore() {
-        Store store = store();
-        if (store instanceof OperatorStore) {
-            return ((OperatorStore)store).getPersistitStore();
-        }
-        return (PersistitStore) sm.getStore();
-    }
-    
     protected final MemcacheService memcache() {
         return sm.getMemcacheService();
     }

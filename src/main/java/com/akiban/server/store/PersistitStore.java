@@ -178,6 +178,11 @@ public class PersistitStore implements Store {
         return Store.class;
     }
 
+    @Override
+    public PersistitStore getPersistitStore() {
+        return this;
+    }
+
     public Persistit getDb() {
         return treeService.getDb();
     }

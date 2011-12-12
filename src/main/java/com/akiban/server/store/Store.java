@@ -160,4 +160,7 @@ public interface Store extends Service<Store> {
      * @throws Exception 
      */
     void removeTrees(Session session, Table table);
+
+    /** Get the underlying {@link PersistitStore}. */
+    public PersistitStore getPersistitStore();
 }

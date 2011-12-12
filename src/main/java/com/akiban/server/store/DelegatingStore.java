@@ -31,7 +31,7 @@ import com.persistit.exception.PersistitException;
 
 import java.util.Collection;
 
-public class DelegatingStore<S extends Store> implements Store {
+public abstract class DelegatingStore<S extends Store> implements Store {
 
     private final S delegate;
 
@@ -39,7 +39,7 @@ public class DelegatingStore<S extends Store> implements Store {
         this.delegate = delegate;
     }
 
-    public S getDelegate() {
+    protected S getDelegate() {
         return delegate;
     }
 

@@ -31,7 +31,6 @@ import org.slf4j.LoggerFactory;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.Store;
 
 public class BulkLoader extends Thread
 {
@@ -112,7 +111,7 @@ public class BulkLoader extends Thread
     }
 
     public static synchronized BulkLoader start(SessionService sessionService,
-                                                Store store,
+                                                PersistitStore store,
                                                 AkibanInformationSchema ais,
                                                 List<String> groups,
                                                 String artifactsSchema,
@@ -164,7 +163,7 @@ public class BulkLoader extends Thread
     }
 
     public BulkLoader(SessionService sessionService,
-                      Store store,
+                      PersistitStore store,
                       AkibanInformationSchema ais,
                       List<String> groups,
                       String artifactsSchema,
@@ -178,7 +177,7 @@ public class BulkLoader extends Thread
             throws ClassNotFoundException, SQLException
     {
         this.sessionService = sessionService;
-        this.persistitStore = (PersistitStore) store;
+        this.persistitStore = store;
         this.ais = ais;
         this.groups = Collections.unmodifiableList(groups);
         this.artifactsSchema = artifactsSchema == null ? generateArtifactSchemaName() : artifactsSchema;

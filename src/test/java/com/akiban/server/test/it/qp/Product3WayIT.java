@@ -16,7 +16,6 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.GroupTable;
-import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
@@ -26,8 +25,6 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.Store;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -102,14 +99,6 @@ public class Product3WayIT extends OperatorITBase
                           createNewRow(c, 27L, 2L, "c27"),
                           createNewRow(c, 28L, 2L, "c28"),
         };
-        Store plainStore = store();
-        final PersistitStore persistitStore;
-        if (plainStore instanceof OperatorStore) {
-            OperatorStore operatorStore = (OperatorStore) plainStore;
-            persistitStore = operatorStore.getPersistitStore();
-        } else {
-            persistitStore = (PersistitStore) plainStore;
-        }
         adapter = persistitAdapter(schema);
         use(db);
     }
