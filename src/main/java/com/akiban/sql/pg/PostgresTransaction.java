@@ -17,6 +17,7 @@ package com.akiban.sql.pg;
 
 import com.akiban.server.error.TransactionInProgressException;
 import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.error.TransactionReadOnlyException;
 import com.akiban.server.service.session.Session;
 
@@ -28,24 +29,37 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Date;
+import java.io.InterruptedIOException;
 
 public class PostgresTransaction
 {
+    private Session session;
     private Transaction transaction;
     private boolean readOnly;
     private Date transactionTime;
     
     /** Begin a new transaction or signal an exception. */
     public PostgresTransaction(PostgresServerSession server, boolean readOnly) {
-        transaction = server.getTreeService().getTransaction(server.getSession());
+        session = server.getSession();
+        transaction = server.getTreeService().getTransaction(session);
         boolean transactionBegun = false;
         try {
             transaction.begin();
         }
         catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
+            handlePersistitException(ex);
         } 
         this.readOnly = readOnly;
+    }
+
+    protected void handlePersistitException(PersistitException ex) {
+        Throwable cause = ex.getCause();
+        if ((cause instanceof InterruptedIOException) ||
+            (cause instanceof InterruptedException))
+            // Also check session.isCurrentQueryCanceled()?
+            throw new QueryCanceledException(session);
+        else
+            throw new PersistItErrorException(ex);
     }
 
     public boolean isReadOnly() {
@@ -73,7 +87,7 @@ public class PostgresTransaction
             transaction.commit();            
         }
         catch (PersistitException ex) {
-            throw new PersistItErrorException(ex);
+            handlePersistitException(ex);
         }
         finally {
             transaction.end();
@@ -88,7 +102,7 @@ public class PostgresTransaction
         catch (RollbackException ex) {
         }
         catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
+            handlePersistitException(ex);
         }
         finally {
             transaction.end();
