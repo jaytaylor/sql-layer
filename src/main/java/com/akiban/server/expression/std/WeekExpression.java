@@ -35,7 +35,7 @@ public class WeekExpression extends AbstractCompositeExpression
     @Scalar("week")
     public static final ExpressionComposer WEEK_COMPOSER = new InternalComposer();
 
-    @Scalar("week_of_year")
+    @Scalar("weekofyear")
     public static final ExpressionComposer WEEK_OF_YEAR_COMPOSER = new UnaryComposer ()
     {
 
