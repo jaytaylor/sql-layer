@@ -33,7 +33,7 @@ import java.util.*;
 // and WHERE conditions on subqueries (views) into the subquery
 // itself. These need to run earlier to affect indexing. Not sure how
 // to integrate all these. Maybe move everything earlier on and then
-// recognize joins of such filtered tables.
+// recognize joins of such filtered tables as Joinable.
 public class SelectPreponer extends BaseRule
 {
     private static final Logger logger = LoggerFactory.getLogger(SelectPreponer.class);
@@ -74,7 +74,7 @@ public class SelectPreponer extends BaseRule
                     PlanNode input = ((BasePlanWithInput)n).getInput();
                     if (!((input instanceof TableLoader) ||
                           (input instanceof IndexScan))) {
-                        // Don't bother putting both in.
+                        // Will put input in, so don't bother putting both in.
                         origins.add(n);
                     }
                 }
@@ -105,12 +105,14 @@ public class SelectPreponer extends BaseRule
     public void apply(PlanContext plan) {
         TableOriginFinder finder = new TableOriginFinder();
         finder.find(plan.getPlan());
+        Preponer preponer = new Preponer();
         for (PlanNode origin : finder.getOrigins()) {
-            new Preponer().pullToward(origin);
+            preponer.pullToward(origin);
         }
     }
     
     static class Preponer {
+        Map<Select,ConditionDependencyAnalyzer> selectDependencies;
         Map<TableSource,PlanNode> loaders;
         Map<ExpressionNode,PlanNode> indexColumns;
         
@@ -125,14 +127,17 @@ public class SelectPreponer extends BaseRule
                 for (ExpressionNode column : ((IndexScan)node).getColumns())
                     indexColumns.put(column, node);
                 prev = node;
-                node = getOutput(node);
+                node = node.getOutput();
+            }
+            else {
+                indexColumns = null;
             }
             while (node instanceof TableLoader) {
                 for (TableSource table : ((TableLoader)node).getTables()) {
                     loaders.put(table, node);
                 }
                 prev = node;
-                node = getOutput(node);
+                node = node.getOutput();
             }
             boolean sawJoin = false;
             while (true) {
@@ -172,7 +177,7 @@ public class SelectPreponer extends BaseRule
                 else
                     break;
                 prev = node;
-                node = getOutput(node);
+                node = node.getOutput();
             }
             if (!sawJoin ||
                 (loaders.isEmpty() &&
@@ -183,17 +188,30 @@ public class SelectPreponer extends BaseRule
                 return;
             }
             if (node instanceof Select) {
-                moveConditions(((Select)node).getConditions());
+                Select select = (Select)node;
+                moveConditions(getDependencies(select), select.getConditions());
             }
+        }
+
+        protected ConditionDependencyAnalyzer getDependencies(Select select) {
+            if (selectDependencies == null)
+                selectDependencies = new HashMap<Select,ConditionDependencyAnalyzer>();
+            ConditionDependencyAnalyzer dependencies = selectDependencies.get(select);
+            if (dependencies == null) {
+                dependencies = new ConditionDependencyAnalyzer(select);
+                selectDependencies.put(select, dependencies);
+            }
+            return dependencies;
         }
 
         // Have a straight path to these conditions and know where
         // tables came from.  See what can be moved back there.
-        protected void moveConditions(ConditionList conditions) {
+        protected void moveConditions(ConditionDependencyAnalyzer dependencies,
+                                      ConditionList conditions) {
             Iterator<ConditionExpression> iter = conditions.iterator();
             while (iter.hasNext()) {
                 ConditionExpression condition = iter.next();
-                PlanNode moveTo = canMove(condition);
+                PlanNode moveTo = canMove(dependencies, condition);
                 if (moveTo != null) {
                     moveCondition(condition, moveTo);
                     iter.remove();
@@ -202,22 +220,40 @@ public class SelectPreponer extends BaseRule
         }
 
         // Return where this condition can move.
-        // TODO: Can move to after subset of joins once enough tables are joined
-        // or if all condition tables come in at once via BranchLookup.
-        protected PlanNode canMove(ConditionExpression condition) {
-            TableSource table = getSingleTableConditionTable(condition);
-            if (table == null)
-                return null;
-            if ((indexColumns != null) && (condition instanceof ComparisonCondition)) {
+        // TODO: Can move to after subset of joins once enough tables are joined,
+        // by breaking apart Flatten.
+        protected PlanNode canMove(ConditionDependencyAnalyzer dependencies,
+                                   ConditionExpression condition) {
+            ColumnSource singleTable = dependencies.analyze(condition);
+            if (indexColumns != null) {
                 // Can check the index column before it's used for lookup.
-                PlanNode loader = indexColumns.get(((ComparisonCondition)
-                                                    condition).getLeft());
+                PlanNode loader = 
+                    getSingleIndexLoader(dependencies.getReferencedColumns());
                 if (loader != null)
                     return loader;
             }
-            return loaders.get(table);
+            if (singleTable == null)
+                return null;
+            else
+                return loaders.get(singleTable);
         }
 
+        // If all the referenced columns come from the same index, return it.
+        protected PlanNode getSingleIndexLoader(Set<ColumnExpression> columns) {
+            PlanNode single = null;
+            for (ColumnExpression column : columns) {
+                PlanNode loader = indexColumns.get(column);
+                if (loader == null)
+                    return null;
+                if (single == null)
+                    single = loader;
+                else if (single != loader)
+                    return null;
+            }
+            return single;
+        }
+
+        // Move the given condition to a Select that is right after the given node.
         protected void moveCondition(ConditionExpression condition, 
                                      PlanNode before) {
             Select select = null;
@@ -231,62 +267,6 @@ public class SelectPreponer extends BaseRule
             select.getConditions().add(condition);
         }
 
-        protected PlanNode getOutput(PlanNode input) {
-            return input.getOutput();
-        }
-
-    }
-
-    /** If this condition involves only a single table, return it. */
-    // TODO: Lots of room for improvement here, even with that simple contract.
-    public static TableSource getSingleTableConditionTable(ConditionExpression condition) {
-        if (condition instanceof ComparisonCondition) {
-            ComparisonCondition comp = (ComparisonCondition)condition;
-            ExpressionNode left = comp.getLeft();
-            ExpressionNode right = comp.getRight();
-            if (!(left.isColumn()))
-                return null;
-            ColumnSource table = null;
-            table = ((ColumnExpression)left).getTable();
-            if (!(table instanceof TableSource))
-                return null;
-            if (!isConstant(right))
-                return null;
-            return (TableSource)table;
-        }
-        else if (condition instanceof BooleanOperationExpression) {
-            BooleanOperationExpression bexpr = (BooleanOperationExpression)condition;
-            TableSource left = getSingleTableConditionTable(bexpr.getLeft());
-            TableSource right = getSingleTableConditionTable(bexpr.getRight());
-            if (left == right) return left;
-        }
-        else if (condition instanceof LogicalFunctionCondition) {
-            TableSource single = null;
-            for (ExpressionNode operand : ((LogicalFunctionCondition)
-                                           condition).getOperands()) {
-                TableSource osingle = getSingleTableConditionTable((ConditionExpression)
-                                                                   operand);
-                if (single == null) {
-                    if (osingle == null)
-                        return null;
-                    single = osingle;
-                }
-                else if (single != osingle)
-                    return null;
-            }
-            return single;
-        }
-        return null;
-    }
-
-    // TODO: Column from outer table okay, too. Need general predicate for that.
-    protected static boolean isConstant(ExpressionNode node) {
-        if ((node instanceof ConstantExpression) || 
-            (node instanceof ParameterExpression))
-            return true;
-        if (node instanceof CastExpression)
-            return isConstant(((CastExpression)node).getOperand());
-        return false;
     }
 
 }

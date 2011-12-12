@@ -1,0 +1,1 @@
+com.akiban.server.error.UnsupportedSQLException: UNSUPPORTED_SQL: Unsupported SQL Join condition too complex : addresses.city <> customers.name

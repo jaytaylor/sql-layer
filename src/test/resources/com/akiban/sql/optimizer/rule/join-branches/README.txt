@@ -8,6 +8,8 @@ group-equals: Group index and ancestor lookup from there.
 
 group-sort: Group index for sorting and ancestor lookup from there.
 
+join-cond-too-complex: A join condition that will not will not work with a group join.
+
 no-index: Group scan and flatten.
 
 no-index-branch: Group scan and flatten along one branch and then
