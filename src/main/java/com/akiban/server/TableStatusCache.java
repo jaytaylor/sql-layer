@@ -34,6 +34,8 @@ public interface TableStatusCache {
     void setOrdinal(int tableID, int value);
 
     TableStatus getTableStatus(int tableID);
+    
+    void loadAllInVolume(String volumeName) throws Exception;
 
     void detachAIS();
 }

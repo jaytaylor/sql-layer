@@ -93,7 +93,7 @@ public class TreeServiceImpl
 
     private final SessionService sessionService;
 
-    private PersistitTransactionalCacheTableStatusCache tableStatusCache;
+    private TableStatusCache tableStatusCache;
 
     @Inject
     public TreeServiceImpl(SessionService sessionService, ConfigurationService configService) {
@@ -156,8 +156,7 @@ public class TreeServiceImpl
         Persistit db = new Persistit();
         dbRef.set(db);
 
-        tableStatusCache = new PersistitTransactionalCacheTableStatusCache(sessionService, db, this);
-        tableStatusCache.register();
+        tableStatusCache = createTableStatusCache();
 
         db.setPersistitLogger(new Slf4jAdapter(LOG));
         try {
@@ -445,21 +444,20 @@ public class TreeServiceImpl
         return ((Integer) volume.getAppCache()).intValue();
     }
 
-    public synchronized Volume mappedVolume(final String schemaName,
-            final String treeName) throws PersistitException {
+    public synchronized Volume mappedVolume(final String schemaName, final String treeName) throws PersistitException {
         try {
             final String vstring = volumeForTree(schemaName, treeName);
             final Volume volume = getDb().loadVolume(vstring);
             if (volume.getAppCache() == null) {
                 volume.setAppCache(Integer.valueOf(volumeOffsetCounter));
                 volumeOffsetCounter += MAX_TABLES_PER_VOLUME;
-                final Exchange exchange = new Exchange(getDb(), volume,
-                        STATUS_TREE_NAME, true);
-                tableStatusCache.loadOneVolume(exchange);
+                tableStatusCache.loadAllInVolume(volume.getName());
             }
             return volume;
         } catch (InvalidVolumeSpecificationException e) {
             throw new InvalidVolumeException (e);
+        } catch (Exception e) {
+            throw new PersistitException(e);
         }
     }
 
@@ -665,6 +663,12 @@ public class TreeServiceImpl
             props.put(TREE, treeName);
         }
         return db.substituteProperties(vs, props);
+    }
+    
+    private TableStatusCache createTableStatusCache() {
+        PersistitTransactionalCacheTableStatusCache tsc = new PersistitTransactionalCacheTableStatusCache(sessionService, getDb(), this);
+        tsc.register();
+        return tsc;
     }
 
     @Override

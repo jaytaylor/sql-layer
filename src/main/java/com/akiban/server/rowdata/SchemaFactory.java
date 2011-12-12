@@ -20,7 +20,6 @@ import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Table;
 import com.akiban.server.MemoryOnlyTableStatusCache;
-import com.akiban.server.PersistitTransactionalCacheTableStatusCache;
 
 import java.util.HashMap;
 import java.util.Map;

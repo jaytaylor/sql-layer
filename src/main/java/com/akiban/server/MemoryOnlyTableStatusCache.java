@@ -74,6 +74,11 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
     }
 
     @Override
+    public void loadAllInVolume(String volumeName) throws Exception {
+        // Nothing persisted
+    }
+
+    @Override
     public synchronized void detachAIS() {
         for(Map.Entry<Integer, InternalTableStatus> entry : tableStatusMap.entrySet()) {
             entry.getValue().setRowDef(null);

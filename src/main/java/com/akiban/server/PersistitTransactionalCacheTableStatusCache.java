@@ -378,7 +378,18 @@ public class PersistitTransactionalCacheTableStatusCache extends TransactionalCa
         }
     }
 
-    public void loadOneVolume(final Exchange exchange) throws PersistitException {
+    @Override
+    public void loadAllInVolume(String volumeName) throws PersistitException {
+        Exchange exchange = _persistit.getExchange(volumeName, STATUS_TREE_NAME, false);
+        try {
+            loadOneVolume(exchange);
+        }
+        finally {
+            _persistit.releaseExchange(exchange);
+        }
+    }
+
+    private void loadOneVolume(final Exchange exchange) throws PersistitException {
         exchange.append(Key.BEFORE);
         while (exchange.next()) {
             final int storedTableId = exchange.getKey().reset().decodeInt();
