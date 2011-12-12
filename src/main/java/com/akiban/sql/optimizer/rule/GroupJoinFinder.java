@@ -575,23 +575,32 @@ public class GroupJoinFinder extends BaseRule
         return tg1.getMinOrdinal() - tg2.getMinOrdinal();
     }
 
-    // Return size of directly-reachable subtree of all inner joins.
+    // Return size of directly-reachable subtree of all simple inner joins.
     protected static int countInnerJoins(Joinable joinable) {
-        if (!joinable.isInnerJoin())
+        if (!isSimpleInnerJoin(joinable))
             return 0;
         return 1 +
             countInnerJoins(((JoinNode)joinable).getLeft()) +
             countInnerJoins(((JoinNode)joinable).getRight());
     }
 
-    // Accumulate operands of directly-reachable subtree of inner joins.
+    // Accumulate operands of directly-reachable subtree of simple inner joins.
     protected static void getInnerJoins(Joinable joinable, Collection<Joinable> into) {
-        if (!joinable.isInnerJoin())
+        if (!isSimpleInnerJoin(joinable))
             into.add(joinable);
         else {
             getInnerJoins(((JoinNode)joinable).getLeft(), into);
             getInnerJoins(((JoinNode)joinable).getRight(), into);
         }
+    }
+
+    // Can this inner join be reorderd?
+    // TODO: If there are inner joins with conditions that didn't get
+    // moved by the first pass, leave them alone. That will miss
+    // opportunities.  Need to have a way to accumulate those
+    // conditions and put them into the join tree.
+    protected static boolean isSimpleInnerJoin(Joinable joinable) {
+        return (joinable.isInnerJoin() && !((JoinNode)joinable).hasJoinConditions());
     }
 
     protected static int compareJoinables(Joinable j1, Joinable j2) {
