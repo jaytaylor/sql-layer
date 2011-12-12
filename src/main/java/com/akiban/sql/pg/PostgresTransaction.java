@@ -116,9 +116,9 @@ public class PostgresTransaction
     
     /** Return the transaction's time, which is fixed the first time
      * something asks for it. */
-    public Date getTime() {
+    public Date getTime(PostgresServerSession server) {
         if (transactionTime == null)
-            transactionTime = new Date();
+            transactionTime = server.currentTime();
         return transactionTime;
     }
 

@@ -56,7 +56,8 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     private volatile int aisGeneration = -1;
     private volatile PostgresStatementCache statementCache;
     private final Map<String, LoadablePlan> loadablePlans = new HashMap<String, LoadablePlan>();
-    //
+    // end AIS-dependent state
+    private volatile Date overrideCurrentTime;
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresServer.class);
 
@@ -334,5 +335,14 @@ public class PostgresServer implements Runnable, PostgresMXBean {
             status = e.toString();
         }
         return status;
+    }
+
+    /** For testing, set the server's idea of the current time. */
+    public void setOverrideCurrentTime(Date overrideCurrentTime) {
+        this.overrideCurrentTime = overrideCurrentTime;
+    }
+
+    public Date getOverrideCurrentTime() {
+        return overrideCurrentTime;
     }
 }

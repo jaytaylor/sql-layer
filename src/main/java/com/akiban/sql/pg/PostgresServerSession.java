@@ -15,22 +15,21 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.qp.loadableplan.LoadablePlan;
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.service.tree.TreeService;
-
 import com.akiban.sql.parser.SQLParser;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.server.expression.EnvironmentExpressionSetting;
+import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.TreeService;
 
-import com.akiban.server.expression.EnvironmentExpressionSetting;
-
-import java.util.Properties;
+import java.util.Date;
 import java.util.Map;
+import java.util.Properties;
 
 /** A session has the state needed to execute SQL statements and
  * return results to the client. */
@@ -107,6 +106,9 @@ public interface PostgresServerSession
 
     /** Get the functions registry. */
     public FunctionsRegistry functionsRegistry();
+
+    /** Get the server's idea of the current time. */
+    public Date currentTime();
 
     /** Get a current environment value. */
     public Object getEnvironmentValue(EnvironmentExpressionSetting setting);

@@ -15,29 +15,29 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.qp.loadableplan.LoadablePlan;
-import com.akiban.server.error.*;
-import com.akiban.server.expression.EnvironmentExpressionSetting;
-import com.akiban.server.expression.ExpressionRegistry;
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.service.tree.TreeService;
-import com.akiban.server.store.Store;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.ParameterNode;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.qp.loadableplan.LoadablePlan;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.service.instrumentation.SessionTracer;
+import com.akiban.server.error.*;
+import com.akiban.server.expression.EnvironmentExpressionSetting;
+import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.service.EventTypes;
+import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.functions.FunctionsRegistry;
+import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.server.store.Store;
 
 import com.akiban.util.Tap;
 
@@ -155,8 +155,6 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             }
         }
     }
-
-    //protected enum ErrorMode { NONE, SIMPLE, EXTENDED };
 
     protected void topLevel() throws IOException, Exception {
         logger.info("Connect from {}" + socket.getRemoteSocketAddress());
@@ -846,13 +844,20 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     @Override
+    public Date currentTime() {
+        Date override = server.getOverrideCurrentTime();
+        if (override != null)
+            return override;
+        else
+            return new Date();
+    }
+
+    @Override
     public Object getEnvironmentValue(EnvironmentExpressionSetting setting) {
         switch (setting) {
         case CURRENT_DATETIME:
-            if (transaction != null) 
-                return new DateTime(transaction.getTime());
-            else
-                return new DateTime();
+            return new DateTime((transaction != null) ? transaction.getTime(this)
+                                                      : currentTime());
         case CURRENT_USER:
             return defaultSchemaName;
         case SESSION_USER:
