@@ -50,10 +50,10 @@ public class IsExpression extends AbstractUnaryExpression
         TRUE, FALSE, UNKNOWN
    }
 
-   private static class InnerComposer extends UnaryComposer 
+   private static class InnerComposer  extends UnaryComposer
    {
-       private final TriVal triVal;
-       private final boolean negate;
+       protected final TriVal triVal;
+       protected final boolean negate;
        
        protected InnerComposer (TriVal triVal, boolean negate)
        {
@@ -78,8 +78,14 @@ public class IsExpression extends AbstractUnaryExpression
         protected ExpressionType composeType(ExpressionType argumentType)
         {
             return ExpressionTypes.BOOL;
-        }       
-   }
+        }
+
+       @Override
+       public String toString()
+       {
+           return "IS" + (negate ? " NOT " : " ") + triVal;
+       }
+    }
 
     private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
@@ -126,7 +132,7 @@ public class IsExpression extends AbstractUnaryExpression
     @Override
     protected String name()
     {
-        return "NOT" + (negate ? " NOT " : " ") + triVal;
+        return "IS" + (negate ? " NOT " : " ") + triVal;
     }
 
     @Override
