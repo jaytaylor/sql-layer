@@ -15,7 +15,9 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.error.TransactionInProgressException;
 import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.TransactionReadOnlyException;
 import com.akiban.server.service.session.Session;
 
 import com.persistit.Transaction;
@@ -53,6 +55,18 @@ public class PostgresTransaction
         this.readOnly = readOnly;
     }
 
+    public void checkTransactionMode(PostgresStatement.TransactionMode transactionMode) {
+        switch (transactionMode) {
+        case NONE:
+        case NEW:
+        case NEW_WRITE:
+            throw new TransactionInProgressException();
+        case WRITE:
+            if (readOnly)
+                throw new TransactionReadOnlyException();
+        }
+    }
+
     /** Commit transaction. */
     public void commit() {
         try {
@@ -81,7 +95,7 @@ public class PostgresTransaction
         }
     }
 
-    /** Abort transaction that still exists at thread exit. */
+    /** Abort transaction that still exists on exit. */
     public void abort() {
         transaction.end();
     }

@@ -388,13 +388,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
         if (pstmt != null) {
             pstmt.sendDescription(this, false);
-            try {
-                sessionTracer.beginEvent(EventTypes.EXECUTE);
-                rowsProcessed = pstmt.execute(this, -1);
-            }
-            finally {
-                sessionTracer.endEvent();
-            }
+            rowsProcessed = executeStatement(pstmt, -1);
         }
         else {
             // Parse as a _list_ of statements and process each in turn.
@@ -413,13 +407,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 if ((statementCache != null) && (stmts.size() == 1))
                     statementCache.put(sql, pstmt);
                 pstmt.sendDescription(this, false);
-                try {
-                    sessionTracer.beginEvent(EventTypes.EXECUTE);
-                    rowsProcessed = pstmt.execute(this, -1);
-                }
-                finally {
-                    sessionTracer.endEvent();
-                }
+                rowsProcessed = executeStatement(pstmt, -1);
             }
         }
         readyForQuery();
@@ -653,6 +641,47 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             sessionTracer.endEvent();
         }
         throw new UnsupportedSQLException ("", stmt);
+    }
+
+    protected int executeStatement(PostgresStatement pstmt, int maxrows) 
+            throws IOException {
+        PostgresStatement.TransactionMode transactionMode = pstmt.getTransactionMode();
+        PostgresTransaction localTransaction = null;
+        if (transaction != null) {
+            transaction.checkTransactionMode(transactionMode);
+        }
+        else {
+            switch (transactionMode) {
+            case REQUIRED:
+            case REQUIRED_WRITE:
+                throw new NoTransactionInProgressException();
+            case READ:
+            case NEW:
+                localTransaction = new PostgresTransaction(this, true);
+                break;
+            case WRITE:
+            case NEW_WRITE:
+                localTransaction = new PostgresTransaction(this, false);
+                break;
+            }
+        }
+        int rowsProcessed = 0;
+        boolean success = false;
+        try {
+            sessionTracer.beginEvent(EventTypes.EXECUTE);
+            rowsProcessed = pstmt.execute(this, maxrows);
+            success = true;
+        }
+        finally {
+            if (localTransaction != null) {
+                if (success)
+                    localTransaction.commit();
+                else
+                    localTransaction.abort();
+            }
+            sessionTracer.endEvent();
+        }
+        return rowsProcessed;
     }
 
     /* PostgresServerSession */
