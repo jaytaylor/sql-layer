@@ -442,10 +442,13 @@ public class PersistitStore implements Store {
                     // Store the h-row
                     hEx.store();
                     if (rowDef.isAutoIncrement()) {
-                        final long location = rowDef.fieldLocation(rowData, rowDef.getAutoIncrementField());
+                        final long location = rowDef.fieldLocation(rowData,
+                                rowDef.getAutoIncrementField());
                         if (location != 0) {
-                            long autoIncrement = rowData.getIntegerValue((int)location, (int)(location >>> 32));
-                            tableStatusCache.setAutoIncrement(rowDefId, autoIncrement);
+                            final long autoIncrementValue = rowData
+                                    .getIntegerValue((int) location,
+                                            (int) (location >>> 32));
+                            tableStatusCache.setAutoIncrement(rowDefId, autoIncrementValue);
                         }
                     }
                     tableStatusCache.rowWritten(rowDefId);

@@ -50,8 +50,10 @@ public class PersistitTransactionalCacheTableStatusCache extends TransactionalCa
     private PersistitTransactionalCacheTableStatusCache(final PersistitTransactionalCacheTableStatusCache tsc) {
         super(tsc);
         treeService = tsc.treeService;
-        for (final Entry<Integer, InnerTableStatus> entry : tsc.tableStatusMap.entrySet()) {
-            tableStatusMap.put(entry.getKey(), new InnerTableStatus(entry.getValue()));
+        for (final Entry<Integer, InnerTableStatus> entry : tsc.tableStatusMap
+                .entrySet()) {
+            tableStatusMap.put(entry.getKey(),
+                    new InnerTableStatus(entry.getValue()));
         }
         this.sessionService = tsc.sessionService;
     }

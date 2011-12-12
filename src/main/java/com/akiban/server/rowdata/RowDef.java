@@ -128,7 +128,8 @@ public class RowDef implements TreeLink {
         if (table.isUserTable()) {
             final UserTable userTable = (UserTable) table;
             if (userTable.getAutoIncrementColumn() != null) {
-                autoIncrementField = userTable.getAutoIncrementColumn().getPosition();
+                autoIncrementField = userTable.getAutoIncrementColumn()
+                        .getPosition();
             }
             this.hasAkibanPK = userTable.getPrimaryKeyIncludingInternal().isAkibanPK();
         } else {

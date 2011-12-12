@@ -28,10 +28,10 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import com.akiban.server.TableStatusCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.akiban.server.TableStatusCache;
 import com.akiban.server.PersistitTransactionalCacheTableStatusCache;
 import com.akiban.server.error.ConfigurationPropertiesLoadException;
 import com.akiban.server.error.InvalidVolumeException;
@@ -444,7 +444,8 @@ public class TreeServiceImpl
         return ((Integer) volume.getAppCache()).intValue();
     }
 
-    public synchronized Volume mappedVolume(final String schemaName, final String treeName) throws PersistitException {
+    public synchronized Volume mappedVolume(final String schemaName,
+            final String treeName) throws PersistitException {
         try {
             final String vstring = volumeForTree(schemaName, treeName);
             final Volume volume = getDb().loadVolume(vstring);
