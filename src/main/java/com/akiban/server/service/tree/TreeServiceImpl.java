@@ -28,6 +28,7 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
+import com.akiban.server.TableStatusCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -343,7 +344,7 @@ public class TreeServiceImpl
     }
 
     @Override
-    public PersistitTransactionalCacheTableStatusCache getTableStatusCache() {
+    public TableStatusCache getTableStatusCache() {
         return tableStatusCache;
     }
 
