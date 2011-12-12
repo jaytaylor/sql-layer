@@ -531,13 +531,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         int maxrows = messenger.readInt();
         PostgresStatement pstmt = boundPortals.get(portalName);
         logger.info("Execute: {}", pstmt.toString());
-        try {
-            sessionTracer.beginEvent(EventTypes.EXECUTE);
-            rowsProcessed = pstmt.execute(this, maxrows);
-        }
-        finally {
-            sessionTracer.endEvent();
-        }
+        rowsProcessed = executeStatement(pstmt, maxrows);
         logger.debug("Execute complete");
         if (reqs.instrumentation().isQueryLogEnabled()) {
             reqs.instrumentation().logQuery(pid, sql, (System.nanoTime() - startTime), rowsProcessed);
@@ -661,6 +655,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 break;
             case WRITE:
             case NEW_WRITE:
+                if (transactionDefaultReadOnly)
+                    throw new TransactionReadOnlyException();
                 localTransaction = new PostgresTransaction(this, false);
                 break;
             }
