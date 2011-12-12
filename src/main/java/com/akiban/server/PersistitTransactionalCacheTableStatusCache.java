@@ -380,7 +380,7 @@ public class PersistitTransactionalCacheTableStatusCache extends TransactionalCa
 
     @Override
     public void loadAllInVolume(String volumeName) throws PersistitException {
-        Exchange exchange = _persistit.getExchange(volumeName, STATUS_TREE_NAME, false);
+        Exchange exchange = _persistit.getExchange(volumeName, STATUS_TREE_NAME, true);
         try {
             loadOneVolume(exchange);
         }
