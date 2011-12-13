@@ -53,22 +53,13 @@ public class IsExpressionTest extends ComposedExpressionTestBase
 
         // is true
         param(pb, new boolean [] {true, false, false}, IS_TRUE);
-        
-        // is not true
-        param(pb, new boolean [] {false, true, true}, IS_NOT_TRUE);
 
         // is false
         param(pb, new boolean [] {false, true, false}, IS_FALSE);
 
-        // is not false
-        param(pb, new boolean [] {true, false, true}, IS_NOT_FALSE);
-
         // is unknown
         param(pb, new boolean [] {false, false, true}, IS_UNKNOWN);
 
-        // is not unknown
-        param(pb, new boolean [] {true, true, false}, IS_NOT_UNKNOWN);
-        
         return pb.asList();
     }
 
@@ -98,7 +89,7 @@ public class IsExpressionTest extends ComposedExpressionTestBase
     @Override
     protected ExpressionComposer getComposer()
     {
-        return IsExpression.IS_NOT_TRUE;
+        return IsExpression.IS_TRUE;
     }
 
     @Override

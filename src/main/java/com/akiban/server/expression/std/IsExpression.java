@@ -22,28 +22,19 @@ import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.util.BoolValueSource;
 
 public class IsExpression extends AbstractUnaryExpression
 {    
-   @Scalar ("is true")
-   public static final ExpressionComposer IS_TRUE = new InnerComposer(TriVal.TRUE, false);
+   @Scalar ("istrue")
+   public static final ExpressionComposer IS_TRUE = new InnerComposer(TriVal.TRUE);
 
-   @Scalar ("is false")
-   public static final ExpressionComposer IS_FALSE = new InnerComposer(TriVal.FALSE, false);
+   @Scalar ("isfalse")
+   public static final ExpressionComposer IS_FALSE = new InnerComposer(TriVal.FALSE);
 
-   @Scalar ("is unknown")
-   public static final ExpressionComposer IS_UNKNOWN= new InnerComposer(TriVal.UNKNOWN, false);
+   @Scalar ("isunknown")
+   public static final ExpressionComposer IS_UNKNOWN= new InnerComposer(TriVal.UNKNOWN);
 
-   @Scalar ("is not true")
-   public static final ExpressionComposer IS_NOT_TRUE = new InnerComposer(TriVal.TRUE, true);
-
-   @Scalar ("is not false")
-   public static final ExpressionComposer IS_NOT_FALSE = new InnerComposer(TriVal.FALSE, true);
-
-   @Scalar ("is not unknown")
-   public static final ExpressionComposer IS_NOT_UNKNOWN = new InnerComposer(TriVal.UNKNOWN, true);
 
    protected static enum TriVal
    {
@@ -53,25 +44,22 @@ public class IsExpression extends AbstractUnaryExpression
    private static class InnerComposer  extends UnaryComposer
    {
        protected final TriVal triVal;
-       protected final boolean negate;
        
-       protected InnerComposer (TriVal triVal, boolean negate)
+       protected InnerComposer (TriVal triVal)
        {
            this.triVal = triVal;
-           this.negate = negate;
        }
 
         @Override
         protected Expression compose(Expression argument)
         {
-            return new IsExpression(argument, triVal, negate);
+            return new IsExpression(argument, triVal);
         }
 
         @Override
         protected AkType argumentType(AkType givenType)
         {
-            return Converters.isConversionAllowed(givenType, AkType.BOOL)
-                    ? AkType.BOOL : AkType.NULL;
+            return AkType.BOOL;
         }
 
         @Override
@@ -83,61 +71,55 @@ public class IsExpression extends AbstractUnaryExpression
        @Override
        public String toString()
        {
-           return "IS" + (negate ? " NOT " : " ") + triVal;
+           return "IS " + triVal;
        }
     }
 
     private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
         private final TriVal triVal;
-        private final boolean negate;
 
-        public InnerEvaluation (ExpressionEvaluation operandEval, TriVal triVal, boolean negate)
+        public InnerEvaluation (ExpressionEvaluation operandEval, TriVal triVal)
         {
             super(operandEval);
             this.triVal = triVal;
-            this.negate = negate;
         }
         
         @Override
         public ValueSource eval()
         {
             ValueSource source = operand();
-            boolean eval;
+
 
             if (source.isNull())            
-                eval = triVal == TriVal.UNKNOWN;            
+                return BoolValueSource.of(triVal == TriVal.UNKNOWN);            
             else
                 switch (triVal)
                 {
-                    case TRUE:  eval = source.getBool(); break;
-                    case FALSE: eval = !source.getBool(); break;
-                    default:    eval = false; 
+                    case TRUE:  return BoolValueSource.of(source.getBool());
+                    case FALSE: return BoolValueSource.of(!source.getBool()); 
+                    default:    return BoolValueSource.of(false); 
                 }
-
-            return BoolValueSource.of(negate? !eval : eval);
         }
     }
 
     private final TriVal triVal;
-    private final boolean negate;
     
-    protected IsExpression (Expression arg, TriVal triVal, boolean negate)
+    protected IsExpression (Expression arg, TriVal triVal)
     {
         super(AkType.BOOL, arg);
         this.triVal = triVal;
-        this.negate = negate;
     }
 
     @Override
     protected String name()
     {
-        return "IS" + (negate ? " NOT " : " ") + triVal;
+        return "IS " + triVal;
     }
 
     @Override
     public ExpressionEvaluation evaluation()
     {
-        return new InnerEvaluation(operandEvaluation(), triVal, negate);
+        return new InnerEvaluation(operandEvaluation(), triVal);
     }
 }
