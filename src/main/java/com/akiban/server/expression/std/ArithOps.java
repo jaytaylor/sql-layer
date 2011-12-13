@@ -16,6 +16,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.error.DivisionByZeroException;
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
@@ -158,10 +159,11 @@ public class ArithOps
         
         @Override
         public void argumentTypes(List<AkType> argumentTypes) {
-            AkType type = ArithExpression.getTopType(argumentTypes.get(0),
-                                                     argumentTypes.get(1), this);
-            argumentTypes.set(0, type);
-            argumentTypes.set(1, type);
+            // only needs to check for number of arguments
+            // the casting, if necessary is done in the function
+            // because there are cases when the top type is completely
+            // different from the children's type (DATE - DATE => INTERVAL)
+            if (argumentTypes.size() != 2) throw new WrongExpressionArityException(2, argumentTypes.size());
         }
 
         @Override
