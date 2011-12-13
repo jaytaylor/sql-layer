@@ -1215,7 +1215,7 @@ public enum DateTimeField
             }
         }
         
-        if (format.charAt(format.length()-1) == '%')
+        for (int m = format.length() -1; format.charAt(m) == '%'; m -= 2)
             builder.append('%');
         return builder.toString();
     }

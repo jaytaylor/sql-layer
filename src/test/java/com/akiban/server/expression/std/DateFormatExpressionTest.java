@@ -58,11 +58,11 @@ public class DateFormatExpressionTest extends ComposedExpressionTestBase
         param(pb, AkType.DATE, "%U %V", "0 52");
         param(pb, AkType.DATE, "", null); // format string is empty => result is null
         param(pb, AkType.DATE, null, null); // format string is null => result is null
-        param(pb, AkType.DATE, " %%Foo %%%% ", " %Foo %% "); // format string only contains literal,
+        param(pb, AkType.DATE, " %%Foo %%%%", " %Foo %%"); // format string only contains literal,
                                                            // , starts with % and ends with %
         param(pb, AkType.DATE, "% ", " "); 
         param(pb, AkType.DATE, "% z %M", " z January"); // invalid specifier is treated as regular char
-        param(pb, AkType.DATE, "%Y %", "2002 %"); // % at the end is treated as literal %
+        param(pb, AkType.DATE, "%Y %%%", "2002 %%"); // % at the end is treated as literal %
         
         // DATETIME and TIMESTAMP       
         for (AkType t : Arrays.asList(AkType.DATETIME, AkType.TIMESTAMP))
@@ -72,14 +72,13 @@ public class DateFormatExpressionTest extends ComposedExpressionTestBase
             param(pb, t, "%U %V", "0 52");
             param(pb, t, "", null);
             param(pb, t, null, null);
-            
         }
         
         // TIME
         param(pb, AkType.TIME, "%H %i:%s", "11 30:56");
         param(pb, AkType.TIME, "", null);
         param(pb, AkType.TIME, null, null);
-        
+       
         return pb.asList();
     }
     
