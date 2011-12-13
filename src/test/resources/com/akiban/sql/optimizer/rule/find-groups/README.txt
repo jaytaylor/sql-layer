@@ -4,6 +4,8 @@ duplicate-parent: join between two parent-child joins
 
 in: IN condition
 
+inner-beneath-left: INNER join with conditions held away from WHERE
+
 not-equals: Conditions other than equals
 
 right-as-left: RIGHT join expressed as LEFT

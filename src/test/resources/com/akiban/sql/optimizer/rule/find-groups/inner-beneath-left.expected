@@ -1,0 +1,15 @@
+SelectQuery@6770526a
+  ResultSet@7f32e233[cid, name, cid, name, id, pid, name, id, name, state]
+    Project@65a0c382[user.customers.cid, user.customers.name, user.customers.cid, user.customers.name, user.child.id, user.child.pid, user.child.name, user.parent.id, user.parent.name, user.parent.state]
+      Select@1d83bfee[]
+        JoinNode@34adb165(LEFT[user.parent.name == user.customers.name])
+          JoinNode@775978e7(INNER[user.child.name == user.customers.name])
+            JoinNode@1310c2e8(INNER[user.customers.name == user.customers.name, user.customers.cid != user.customers.cid])
+              TableJoins@316c171f(TableGroup@2f620d92(customers))
+                TableSource@2c10d16b(user.customers - TableGroup@2f620d92(customers))
+              TableJoins@4e69048b(TableGroup@50a969e4(customers))
+                TableSource@424de67(user.customers - TableGroup@50a969e4(customers))
+            TableJoins@2267211b(TableGroup@20ae8542(parent))
+              TableSource@10853e51(user.child - TableGroup@20ae8542(parent))
+          TableJoins@21aec0d1(TableGroup@57f4ea9d(parent))
+            TableSource@1bbe4050(user.parent - TableGroup@57f4ea9d(parent))
