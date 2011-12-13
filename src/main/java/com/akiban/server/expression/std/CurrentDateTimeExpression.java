@@ -32,14 +32,14 @@ public class CurrentDateTimeExpression extends EnvironmentExpression
     /**
      * return current_date() expression 
      */
-    @EnvironmentValue("current_date")
+    @EnvironmentValue({"current_date", "curdate"})
     public static final EnvironmentExpressionFactory CURRENT_DATE_COMPOSER 
             = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_DATETIME, AkType.DATE);
     
     /**
      * return current_time() expression 
      */
-    @EnvironmentValue("current_time")
+    @EnvironmentValue({"current_time", "curtime"})
     public static final EnvironmentExpressionFactory CURRENT_TIME_COMPOSER 
             = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_DATETIME, AkType.TIME);
     
