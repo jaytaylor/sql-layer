@@ -61,7 +61,7 @@ public class BitwiseMatrixCreator implements Runnable {
         sql_data.append("truncate table test.bitwise_matrix;"
                 + System.getProperty("line.separator"));
         
-        for (int x=0;x < 10;x++) {
+        for (int x=0;x < 500;x++) {
             recordSQL();
         }
         
