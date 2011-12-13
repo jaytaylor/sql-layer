@@ -19,6 +19,7 @@ import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.sql.optimizer.plan.AST;
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PlanContext;
+import com.akiban.sql.optimizer.rule.IndexEstimator;
 import com.akiban.sql.optimizer.rule.SchemaRulesContext;
 import static com.akiban.sql.optimizer.rule.DefaultRules.*;
 
@@ -52,8 +53,9 @@ public class OperatorCompiler extends SchemaRulesContext
 
     public OperatorCompiler(SQLParser parser, 
                             AkibanInformationSchema ais, String defaultSchemaName,
-                            FunctionsRegistry functionsRegistry) {
-        super(ais, functionsRegistry, DEFAULT_RULES);
+                            FunctionsRegistry functionsRegistry,
+                            IndexEstimator indexEstimator) {
+        super(ais, functionsRegistry, indexEstimator, DEFAULT_RULES);
         parserContext = parser;
         nodeFactory = parserContext.getNodeFactory();
         binder = new AISBinder(ais, defaultSchemaName);

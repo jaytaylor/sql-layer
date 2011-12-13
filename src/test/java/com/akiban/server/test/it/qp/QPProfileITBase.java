@@ -16,7 +16,6 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.*;
-import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.persistitadapter.PersistitRowLimit;
@@ -33,8 +32,6 @@ import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.Store;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types.ToObjectValueTarget;
 import org.junit.Before;

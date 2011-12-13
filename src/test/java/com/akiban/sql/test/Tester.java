@@ -15,7 +15,6 @@
 
 package com.akiban.sql.test;
 
-import com.akiban.server.service.functions.FunctionsRegistryImpl;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.compiler.BooleanNormalizer;
 import com.akiban.sql.optimizer.AISBinder;
@@ -33,6 +32,7 @@ import static com.akiban.sql.optimizer.rule.DefaultRules.*;
 import com.akiban.sql.optimizer.rule.RulesContext;
 import com.akiban.sql.optimizer.rule.RulesTestContext;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
+import com.akiban.sql.optimizer.rule.TestIndexEstimator;
 import com.akiban.sql.parser.CursorNode;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.DeleteNode;
@@ -48,6 +48,11 @@ import com.akiban.sql.views.ViewDefinition;
 import com.akiban.ais.ddl.SchemaDef;
 import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.GroupIndex;
+
+import com.akiban.server.service.functions.FunctionsRegistryImpl;
+import com.akiban.server.util.GroupIndexCreator;
 
 import java.util.*;
 import java.io.*;
@@ -66,6 +71,7 @@ public class Tester
     List<Action> actions;
     SQLParser parser;
     BoundNodeToString unparser;
+    AkibanInformationSchema ais;
     AISBinder binder;
     AISTypeComputer typeComputer;
     BooleanNormalizer booleanNormalizer;
@@ -73,6 +79,7 @@ public class Tester
     OperatorCompiler operatorCompiler;
     List<BaseRule> planRules;
     RulesContext rulesContext;
+    File statsFile;
     int repeat;
 
     public Tester() {
@@ -170,16 +177,42 @@ public class Tester
         }
     }
 
+    static final String DEFAULT_SCHEMA = "user";
+
     public void setSchema(String sql) throws Exception {
-        SchemaDef schemaDef = SchemaDef.parseSchema("use user; " + sql);
+        SchemaDef schemaDef = SchemaDef.parseSchema("use " + DEFAULT_SCHEMA + "; " + 
+                                                    sql);
         SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
-        AkibanInformationSchema ais = toAis.getAis();
+        ais = toAis.getAis();
         if (actions.contains(Action.BIND))
-            binder = new AISBinder(ais, "user");
+            binder = new AISBinder(ais, DEFAULT_SCHEMA);
         if (actions.contains(Action.OPERATORS))
-            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, ais, "user", new FunctionsRegistryImpl());
+            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, ais, DEFAULT_SCHEMA, new FunctionsRegistryImpl(), new TestIndexEstimator(ais, DEFAULT_SCHEMA, statsFile));
         if (actions.contains(Action.PLAN))
-            rulesContext = new RulesTestContext(ais, planRules);
+            rulesContext = new RulesTestContext(ais, DEFAULT_SCHEMA, 
+                                                statsFile, planRules);
+    }
+
+    public void addGroupIndex(String cols) throws Exception {
+        BufferedReader brdr = new BufferedReader(new StringReader(cols));
+        while (true) {
+            String line = brdr.readLine();
+            if (line == null) break;
+            String defn[] = line.split("\t");
+            Index.JoinType joinType = Index.JoinType.LEFT;
+            if (defn.length > 3)
+                joinType = Index.JoinType.valueOf(defn[3]);
+            GroupIndex index = GroupIndexCreator.createIndex(ais,
+                                                             defn[0], 
+                                                             defn[1],
+                                                             defn[2],
+                                                             joinType);
+            index.getGroup().addIndex(index);
+        }
+    }
+
+    public void setIndexStatistics(File file) throws Exception {
+        statsFile = file;
     }
 
     public void addView(String sql) throws Exception {
@@ -229,7 +262,7 @@ public class Tester
             System.out.println("Usage: Tester " +
                                "[-clone] [-bind] [-types] [-boolean] [-flatten] [-plan @planfile] [-operators]" +
                                "[-tree] [-print] [-print-bound]" +
-                               "[-schema ddl] [-view ddl]..." +
+                               "[-schema ddl] [-index-stats yamlfile] [-view ddl]..." +
                                "sql...");
             System.out.println("Examples:");
             System.out.println("-tree 'SELECT t1.x+2 FROM t1'");
@@ -256,6 +289,10 @@ public class Tester
                     tester.addAction(Action.BIND);
                 else if ("-schema".equals(arg))
                     tester.setSchema(maybeFile(args[i++]));
+                else if ("-group-index".equals(arg))
+                    tester.addGroupIndex(maybeFile(args[i++]));
+                else if ("-index-stats".equals(arg))
+                    tester.setIndexStatistics(new File(args[i++]));
                 else if ("-view".equals(arg))
                     tester.addView(maybeFile(args[i++]));
                 else if ("-types".equals(arg))

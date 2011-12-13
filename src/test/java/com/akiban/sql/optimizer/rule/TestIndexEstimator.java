@@ -16,21 +16,31 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.service.functions.FunctionsRegistryImpl;
+import com.akiban.ais.model.Index;
 
-import java.util.List;
+import com.akiban.server.store.statistics.IndexStatistics;
+import com.akiban.server.store.statistics.IndexStatisticsYamlLoader;
+
+import java.util.Map;
+import java.util.Collections;
 import java.io.File;
 import java.io.IOException;
 
-public class RulesTestContext extends SchemaRulesContext
+public class TestIndexEstimator extends IndexEstimator
 {
-    public RulesTestContext(AkibanInformationSchema ais, String defaultSchema, 
-                            File statsFile, List<BaseRule> rules) 
+    private final Map<Index,IndexStatistics> stats;
+
+    public TestIndexEstimator(AkibanInformationSchema ais, String defaultSchema,
+                              File statsFile) 
             throws IOException {
-        super(ais, 
-              new FunctionsRegistryImpl(), 
-              new TestIndexEstimator(ais, defaultSchema, statsFile),
-              rules);
-        RulesTestHelper.ensureRowDefs(ais);
+        if (statsFile == null)
+            stats = Collections.<Index,IndexStatistics>emptyMap();
+        else
+            stats = new IndexStatisticsYamlLoader(ais, defaultSchema).load(statsFile);
+    }
+
+    @Override
+    public IndexStatistics getIndexStatistics(Index index) {
+        return stats.get(index);
     }
 }

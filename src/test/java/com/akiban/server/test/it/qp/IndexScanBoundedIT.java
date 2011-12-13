@@ -19,8 +19,6 @@ import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.persistitadapter.OperatorStore;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -28,8 +26,6 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.std.FieldExpression;
-import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.Store;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -71,15 +67,7 @@ public class IndexScanBoundedIT extends OperatorITBase
             createNewRow(t, 1006L, 5L, 55L, 551L),
             createNewRow(t, 1007L, 5L, 55L, 555L),
         };
-        Store plainStore = store();
-        final PersistitStore persistitStore;
-        if (plainStore instanceof OperatorStore) {
-            OperatorStore operatorStore = (OperatorStore) plainStore;
-            persistitStore = operatorStore.getPersistitStore();
-        } else {
-            persistitStore = (PersistitStore) plainStore;
-        }
-        adapter = new PersistitAdapter(schema, persistitStore, null, session(), configService());
+        adapter = persistitAdapter(schema);
         use(db);
     }
 

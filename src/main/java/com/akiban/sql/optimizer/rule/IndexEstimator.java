@@ -15,22 +15,13 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.server.service.functions.FunctionsRegistryImpl;
+import com.akiban.server.store.statistics.IndexStatistics;
 
-import java.util.List;
-import java.io.File;
-import java.io.IOException;
+import com.akiban.ais.model.Index;
 
-public class RulesTestContext extends SchemaRulesContext
+public abstract class IndexEstimator
 {
-    public RulesTestContext(AkibanInformationSchema ais, String defaultSchema, 
-                            File statsFile, List<BaseRule> rules) 
-            throws IOException {
-        super(ais, 
-              new FunctionsRegistryImpl(), 
-              new TestIndexEstimator(ais, defaultSchema, statsFile),
-              rules);
-        RulesTestHelper.ensureRowDefs(ais);
-    }
+    public abstract IndexStatistics getIndexStatistics(Index index);
+
+    // TODO: More non-abstract to come.
 }

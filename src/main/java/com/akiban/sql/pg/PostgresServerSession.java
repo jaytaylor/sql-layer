@@ -15,18 +15,18 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.qp.loadableplan.LoadablePlan;
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.functions.FunctionsRegistry;
-
 import com.akiban.sql.parser.SQLParser;
 
+import com.akiban.sql.optimizer.rule.IndexEstimator;
+
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.server.expression.EnvironmentExpressionSetting;
+import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.session.Session;
-
-import com.akiban.server.expression.EnvironmentExpressionSetting;
 
 import java.util.Properties;
 import java.util.Map;
@@ -100,4 +100,7 @@ public interface PostgresServerSession
 
     /** Get a current environment value. */
     public Object getEnvironmentValue(EnvironmentExpressionSetting setting);
+
+    /** Get the index estimator. */
+    public IndexEstimator indexEstimator();
 }
