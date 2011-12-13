@@ -83,4 +83,11 @@ public class TableGroupJoin extends BasePlanElement
         conditions = duplicateList(conditions, map);
     }
     
+    public void remove() {
+        for (ComparisonCondition condition : conditions)
+          condition.setImplementation(ConditionExpression.Implementation.NORMAL);
+        child.setParentJoin(null);
+        group.getJoins().remove(this);
+    }
+
 }

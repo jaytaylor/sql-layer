@@ -16,6 +16,8 @@ order-covering: covering from ordering index
 
 order-only: index for ordering with another condition
 
+pkey-over-group: child looked up by index not by group operation
+
 single-table: whole row from indexed table
 
 sort-partial: sort by subset of columns

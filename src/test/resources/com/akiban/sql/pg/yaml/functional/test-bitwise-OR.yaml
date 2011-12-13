@@ -1,0 +1,23 @@
+# Test the bitwise OR function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: SELECT 29 | 15 from all_types;
+- output: [[31]]  
+---
+- Statement: SELECT 0 | 5 from all_types;
+- output: [[5]]  
+---
+- Statement: SELECT 1 | 5 from all_types;
+- output: [[5]]  
+---
+- Statement: SELECT 2 | 5 from all_types;
+- output: [[7]]  
+---
+- Statement: SELECT 4 | 5 from all_types;
+- output: [[5]]  
+---
+- Statement: SELECT 8 | 5 from all_types;
+- output: [[13]]  
+...
+
