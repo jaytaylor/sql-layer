@@ -1,0 +1,22 @@
+# Test the bitwise AND function
+---
+- Include: all-bitwise-matrix-schema.yaml
+---
+- Statement: select id,source1,source2 from test.bitwise_matrix where (source1 & source2) != bitwise_and;
+- row_count: 0
+---
+- Statement: select id,source1,source2 from test.bitwise_matrix where (source1 ^ source2) != bitwise_xor;
+- row_count: 0
+---
+- Statement: select id,source1,source2 from test.bitwise_matrix where (source1 | source2) != bitwise_or;
+- row_count: 0
+---
+- Statement: select id,source1,source2 from test.bitwise_matrix where (source1 >> source2) != bitwise_shiftright;
+- row_count: 0
+---
+- Statement: select id,source1,source2 from test.bitwise_matrix where (source1 << source2) != bitwise_shiftleft;
+- row_count: 0
+---
+- Statement: select id,source1,source2 from test.bitwise_matrix where (source1 & ~source2) != bitwise_invert;
+- row_count: 0
+...  
