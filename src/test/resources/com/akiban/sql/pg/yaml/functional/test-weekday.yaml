@@ -10,6 +10,9 @@
 ---
 - Statement: SELECT WEEKDAY('2007-11-06 01:01:01') from all_types;
 - output: [['1']]
+---
+- Statement: SELECT WEEKDAY('1999-02-01 15:04:52') from all_types;
+- output: [[0]]
 #---
 # bug 903294  
 #- Statement: SELECT WEEKDAY('2007-11-06') from all_types;
@@ -19,8 +22,8 @@
 #---
 #- Statement: select id,WEEKDAY(time_field) from datetime_matrix where WEEKDAY(time_field) is not null;
 #- row_count: 0
-#---
-#- Statement: select id,WEEKDAY(timestamp_field) from datetime_matrix where WEEKDAY(timestamp_field) <> weekday;
+#---  datetime matrix has some bugs ti work out
+#- Statement: select id,timestamp_field,WEEKDAY(timestamp_field),weekday from datetime_matrix where WEEKDAY(timestamp_field) <> weekday;
 #- row_count: 0
 #---
 #- Statement: select id,WEEKDAY(date_field) from datetime_matrix where WEEKDAY(date_field) <> weekday;

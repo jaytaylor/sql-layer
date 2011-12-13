@@ -3,10 +3,16 @@
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
----
-- Statement: select TIMEDIFF('2000:01:01 00:00:00', '2000:01:01 00:00:00.000001') from all_types;
-- output: [['-00:00:00.000001']]
----
-- Statement: select TIMEDIFF('2008-12-31 23:59:59.000001', '2008-12-30 01:01:01.000002') from all_types;
-- output: [['46:58:57.999999']]
+#---
+#- Statement: select TIMEDIFF('2000-01-01 00:00:00', '2000-01-01 00:00:00.000001') from all_types;
+#- output: [['-00:00:00.000001']]
+#---
+#- Statement: select TIMEDIFF('2008-12-31 23:59:59.000001', '2008-12-30 01:01:01.000002') from all_types;
+#- output: [['46:58:57.999999']]
+#---
+#- Statement: select TIMEDIFF('2004-02-03 00:00:00', '2000-01-01 00:00:00.000001') from all_types;
+#- output: [['838:59:59']]
+#---
+#- Statement: select TIMEDIFF('2008-12-31 23:59:59', '2008-12-30 01:01:01') from all_types;
+#- output: [['46:58:57']]
 ...

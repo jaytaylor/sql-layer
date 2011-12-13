@@ -1222,14 +1222,12 @@ class YamlTester {
 
         @Override
         public boolean compareOutput(Object object) {
-            Calendar localCalendar = Calendar.getInstance();
+            Date d = new Date(System.currentTimeMillis());
             long testResult = 0;
             try {
                 Date result = DEFAULT_DATETIME_FORMAT.parse(String
-                        .valueOf(object));
-                
-                testResult = result.getTime() - localCalendar.getTimeInMillis();
-                System.out.println("["+testResult+"]"+result.getTime()+" vs "+localCalendar.getTimeInMillis());
+                       .valueOf(object));
+                testResult = (result.getTime() - d.getTime());
             } catch (ParseException e) {
                 fail(e.getMessage());
             }

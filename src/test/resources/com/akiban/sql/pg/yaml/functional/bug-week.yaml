@@ -1,3 +1,8 @@
+# Test the WEEK() function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
 # bug 902168
 ---
 - Statement: select WEEK('A') from all_types;
@@ -6,10 +11,11 @@
 # bug 902169
 - Statement: select WEEK(999999) from all_types;
 - output: [[null]]
+---
 # bug 902243
 - Statement: select week('2008-02-20', 0), week('2008-02-20 22:03:44', 1) from all_types;
 - output: [[7,8]]
 ---
 - Statement: select week('2008-02-20', '0'), week('2008-02-20 22:03:44', '1') from all_types;
 - output: [[7,8]]
-...
+.../

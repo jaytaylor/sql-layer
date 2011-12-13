@@ -32,7 +32,7 @@
 # !time does a partial compare of time, allowed to be within 1 minute of system time
 - Statement: SELECT NOW() FROM all_types
 - output: [[ !datetime ]]
-#---
+#--- functions not implemented yet
 # !time does a partial compare of time, allowed to be within 1 minute of system time
 #- Statement: SELECT LOCALTIME() FROM all_types
 #- output: [[ !datetime ]]

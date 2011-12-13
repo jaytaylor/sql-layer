@@ -1,4 +1,4 @@
-# Test the DATE_ADD() function
+# Test the FROM_UNIXTIME() function
 ---
 - Include: all-types-schema.yaml
 ---
