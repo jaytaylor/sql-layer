@@ -23,7 +23,6 @@ import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.extract.Extractors;
 import java.util.Arrays;
 
@@ -81,6 +80,7 @@ public class DateFormatExpressionTest extends ComposedExpressionTestBase
     {
         pb.add("date_format( ," + argType + ", " + format + ") =" + expected, argType, format, expected);
     }
+
     @Test
     public void test()
     {
@@ -93,6 +93,7 @@ public class DateFormatExpressionTest extends ComposedExpressionTestBase
         
         Expression top = DateFormatExpression.COMPOSER.compose(Arrays.asList(date, formatExp));
         check(top, expected);
+
         alreadyExc = true;
     }
     
