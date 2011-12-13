@@ -57,10 +57,11 @@ public class BoundNodeToStringTest extends NamedParamsTestBase
         unparser.setUseBindings(true);
 
         String sql = fileContents(new File(RESOURCE_DIR, "schema.ddl"));
-        SchemaDef schemaDef = SchemaDef.parseSchema("use user; " + sql);
+        SchemaDef schemaDef = SchemaDef.parseSchema("use " + OptimizerTestBase.DEFAULT_SCHEMA + 
+                                                    "; " + sql);
         SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
         AkibanInformationSchema ais = toAis.getAis();
-        binder = new AISBinder(ais, "user");
+        binder = new AISBinder(ais, OptimizerTestBase.DEFAULT_SCHEMA);
     }
 
     @TestParameters

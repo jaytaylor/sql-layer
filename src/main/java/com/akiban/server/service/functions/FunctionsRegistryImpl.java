@@ -173,13 +173,15 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service<F
             Scalar annotation = field.getAnnotation(Scalar.class);
             if (annotation != null) {
                 validateComposer(field);
-                String name = nameIsAvailable(names, annotation.value());
-                try {
-                    ExpressionComposer composer = (ExpressionComposer) field.get(null);
-                    ExpressionComposer old = composers.put(name, composer);
-                    assert old == null : old; // nameIsAvailable did actual error check
-                } catch (IllegalAccessException e) {
-                    throw new AkibanInternalException("while accessing field " + field, e);
+                for (String value : annotation.value()) {
+                    String name = nameIsAvailable(names, value);
+                    try {
+                        ExpressionComposer composer = (ExpressionComposer) field.get(null);
+                        ExpressionComposer old = composers.put(name, composer);
+                        assert old == null : old; // nameIsAvailable did actual error check
+                    } catch (IllegalAccessException e) {
+                        throw new AkibanInternalException("while accessing field " + field, e);
+                    }
                 }
             }
         }
@@ -190,13 +192,15 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service<F
             EnvironmentValue annotation = field.getAnnotation(EnvironmentValue.class);
             if (annotation != null) {
                 validateEnvironment(field);
-                String name = nameIsAvailable(names, annotation.value());
-                try {
-                    EnvironmentExpressionFactory factory = (EnvironmentExpressionFactory) field.get(null);
-                    EnvironmentExpressionFactory old = environments.put(name, factory);
-                    assert old == null : old; // nameIsAvailable did actual error check
-                } catch (IllegalAccessException e) {
-                    throw new AkibanInternalException("while accessing field " + field, e);
+                for (String value: annotation.value()) {
+                    String name = nameIsAvailable(names, value);
+                    try {
+                        EnvironmentExpressionFactory factory = (EnvironmentExpressionFactory) field.get(null);
+                        EnvironmentExpressionFactory old = environments.put(name, factory);
+                        assert old == null : old; // nameIsAvailable did actual error check
+                    } catch (IllegalAccessException e) {
+                        throw new AkibanInternalException("while accessing field " + field, e);
+                    }
                 }
             }
         }

@@ -93,7 +93,7 @@ public class TableDDLIT extends PostgresServerITBase {
 
         UserTable table = ais.getUserTable("test", "t2");
         assertNotNull (table);
-        assertEquals (1, ais.getJoins().size());
+        assertEquals (2, ais.getJoins().size());
         assertNotNull (table.getParentJoin());
         connection.createStatement().execute(DROP_T2);
         connection.createStatement().execute(DROP_T1);

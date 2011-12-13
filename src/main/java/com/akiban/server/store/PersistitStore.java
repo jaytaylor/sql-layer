@@ -178,6 +178,11 @@ public class PersistitStore implements Store {
         return Store.class;
     }
 
+    @Override
+    public PersistitStore getPersistitStore() {
+        return this;
+    }
+
     public Persistit getDb() {
         return treeService.getDb();
     }
@@ -1064,11 +1069,6 @@ public class PersistitStore implements Store {
     public void analyzeTable(Session session, int tableId, int sampleSize) {
         final RowDef rowDef = rowDefCache.getRowDef(tableId);
         indexManager.analyzeTable(session, rowDef, sampleSize);
-    }
-
-    @Override
-    public void analyzeIndexes(Session session, Collection<? extends Index> indexes) {
-        indexManager.analyzeIndexes(session, indexes);
     }
 
     boolean hasNullIndexSegments(final RowData rowData, final Index index) {

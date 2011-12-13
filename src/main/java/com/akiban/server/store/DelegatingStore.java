@@ -31,7 +31,7 @@ import com.persistit.exception.PersistitException;
 
 import java.util.Collection;
 
-public class DelegatingStore<S extends Store> implements Store {
+public abstract class DelegatingStore<S extends Store> implements Store {
 
     private final S delegate;
 
@@ -134,10 +134,6 @@ public class DelegatingStore<S extends Store> implements Store {
 
     public void analyzeTable(final Session session, final int tableId, final int sampleSize) {
         delegate.analyzeTable(session, tableId, sampleSize);
-    }
-
-    public void analyzeIndexes(Session session, Collection<? extends Index> indexes) {
-        delegate.analyzeIndexes(session, indexes);
     }
 
     public void flushIndexes(final Session session) {

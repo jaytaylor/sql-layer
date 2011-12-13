@@ -362,14 +362,17 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleSelect(Select select) {
             RowStream stream = assembleStream(select.getInput());
+            ConditionDependencyAnalyzer dependencies = null;
             for (ConditionExpression condition : select.getConditions()) {
                 RowType rowType = stream.rowType;
                 ColumnExpressionToIndex fieldOffsets = stream.fieldOffsets;
                 if (rowType == null) {
-                    // Pre-flattening case.
+                    // Pre-flattening case: get the single table this
+                    // condition must have come from and use its row-type.
                     // TODO: Would it be better if earlier rule saved this?
-                    TableSource table = 
-                        SelectPreponer.getSingleTableConditionTable(condition);
+                    if (dependencies == null)
+                        dependencies = new ConditionDependencyAnalyzer(select);
+                    TableSource table = (TableSource)dependencies.analyze(condition);
                     rowType = tableRowType(table);
                     fieldOffsets = new ColumnSourceFieldOffsets(table, rowType);
                 }

@@ -15,10 +15,9 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.*;
-
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
+import com.akiban.sql.optimizer.rule.range.ColumnRanges;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
@@ -26,7 +25,8 @@ import com.akiban.ais.model.Index.JoinType;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
-import com.akiban.sql.optimizer.rule.range.ColumnRanges;
+import com.akiban.server.expression.std.Comparison;
+import com.akiban.server.store.statistics.IndexStatistics;
 
 import java.util.*;
 
@@ -105,6 +105,7 @@ public class IndexGoal implements Comparator<IndexScan>
     private AggregateSource grouping;
     private Sort ordering;
     private Project projectDistinct;
+    private IndexEstimator indexEstimator;
 
     private TableNode updateTarget;
 
@@ -117,12 +118,14 @@ public class IndexGoal implements Comparator<IndexScan>
                      AggregateSource grouping,
                      Sort ordering,
                      Project projectDistinct,
-                     Collection<TableSource> tables) {
+                     Collection<TableSource> tables,
+                     IndexEstimator indexEstimator) {
         this.boundTables = boundTables;
         this.conditionSources = conditionSources;
         this.grouping = grouping;
         this.ordering = ordering;
         this.projectDistinct = projectDistinct;
+        this.indexEstimator = indexEstimator;
         
         if (conditionSources.size() == 1)
             conditions = conditionSources.get(0);
@@ -226,6 +229,7 @@ public class IndexGoal implements Comparator<IndexScan>
             (!index.hasConditions()))
             return false;
         index.setCovering(determineCovering(index));
+        estimateCost(indexEstimator, index);
         return true;
     }
 
@@ -700,6 +704,13 @@ public class IndexGoal implements Comparator<IndexScan>
             }
         }
         return requiredAfter.isEmpty();
+    }
+
+    protected void estimateCost(IndexEstimator indexEstimator, IndexScan index) {
+        IndexStatistics indexStatistics = indexEstimator.getIndexStatistics(index.getIndex());
+        if (indexStatistics != null) {
+            // TODO: Here is where we will actually use those statistics.
+        }
     }
 
     /** Change WHERE, GROUP BY, and ORDER BY upstream of

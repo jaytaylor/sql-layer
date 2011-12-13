@@ -107,6 +107,9 @@ class ProtectedTables implements AISValidation,Visitor {
         list.add(names.generateGroupTableName("types"));
         list.add("index_analysis");
         list.add(names.generateGroupTableName("index_analysis"));
+        list.add("index_statistics");
+        list.add(names.generateGroupTableName("index_statistics"));
+        list.add("index_statistics_entry");
         
         return Collections.unmodifiableList(list);
     }

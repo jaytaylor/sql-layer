@@ -26,6 +26,7 @@ import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
+import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.google.inject.Inject;
 
 /** The PostgreSQL server service.
@@ -42,8 +43,9 @@ public class PostgresServerManager implements PostgresService, Service<PostgresS
                                  SessionService sessionService,
                                  Store store,
                                  TreeService treeService,
-                                 FunctionsRegistry functionsRegistry) {
-        this.reqs = new PostgresServiceRequirements(dxlService, instrumentation, sessionService, store, treeService, functionsRegistry, config);
+                                 FunctionsRegistry functionsRegistry,
+                                 IndexStatisticsService indexStatisticsService) {
+        this.reqs = new PostgresServiceRequirements(dxlService, instrumentation, sessionService, store, treeService, functionsRegistry, config, indexStatisticsService);
     }
 
     /*** Service<PostgresService> ***/

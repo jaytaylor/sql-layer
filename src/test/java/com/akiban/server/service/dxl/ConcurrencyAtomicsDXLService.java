@@ -28,6 +28,7 @@ import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
+import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.google.inject.Inject;
 
 import java.util.Collection;
@@ -71,7 +72,7 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
 
     @Override
     DDLFunctions createDDLFunctions(BasicDXLMiddleman middleman) {
-        return new ConcurrencyAtomicsDDLFunctions(middleman, schemaManager(), store(), treeService());
+        return new ConcurrencyAtomicsDDLFunctions(middleman, schemaManager(), store(), treeService(), indexStatisticsService());
     }
 
     public static ScanHooks installScanHook(Session session, ScanHooks hook) {
@@ -105,8 +106,8 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
     }
 
     @Inject
-    public ConcurrencyAtomicsDXLService(SchemaManager schemaManager, Store store, TreeService treeService, SessionService sessionService) {
-        super(schemaManager, store, treeService, sessionService);
+    public ConcurrencyAtomicsDXLService(SchemaManager schemaManager, Store store, TreeService treeService, SessionService sessionService, IndexStatisticsService indexStatisticsService) {
+        super(schemaManager, store, treeService, sessionService, indexStatisticsService);
     }
 
     public class ScanhooksDMLFunctions extends BasicDMLFunctions {
@@ -162,8 +163,8 @@ public final class ConcurrencyAtomicsDXLService extends DXLServiceImpl {
             }
         }
 
-        private ConcurrencyAtomicsDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService) {
-            super(middleman, schemaManager, store, treeService);
+        private ConcurrencyAtomicsDDLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService, IndexStatisticsService indexStatisticsService) {
+            super(middleman, schemaManager, store, treeService, indexStatisticsService);
         }
     }
 }

@@ -23,6 +23,7 @@ import com.akiban.server.service.instrumentation.InstrumentationService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
+import com.akiban.server.store.statistics.IndexStatisticsService;
 
 public final class PostgresServiceRequirements {
 
@@ -32,7 +33,8 @@ public final class PostgresServiceRequirements {
                                        Store store,
                                        TreeService treeService,
                                        FunctionsRegistry functionsRegistry,
-                                       ConfigurationService config) {
+                                       ConfigurationService config,
+                                       IndexStatisticsService indexStatistics) {
         this.instrumentation = instrumentation;
         this.dxlService = dxlService;
         this.sessionService = sessionService;
@@ -40,6 +42,7 @@ public final class PostgresServiceRequirements {
         this.treeService = treeService;
         this.functionsRegistry = functionsRegistry;
         this.config = config;
+        this.indexStatistics = indexStatistics;
     }
 
     public InstrumentationService instrumentation() {
@@ -70,6 +73,10 @@ public final class PostgresServiceRequirements {
         return config;
     }
 
+    public IndexStatisticsService indexStatistics() {
+        return indexStatistics;
+    }
+
     private final InstrumentationService instrumentation;
     private final DXLService dxlService;
     private final SessionService sessionService;
@@ -77,4 +84,5 @@ public final class PostgresServiceRequirements {
     private final TreeService treeService;
     private final FunctionsRegistry functionsRegistry;
     private final ConfigurationService config;
+    private final IndexStatisticsService indexStatistics;
 }
