@@ -54,10 +54,15 @@ public class DateFormatExpressionTest extends ComposedExpressionTestBase
         
         // DATE
         param(pb, AkType.DATE, "%y - %m - %d", "02 - 01 - 01");
-        param(pb, AkType.DATE, "%Y-%M-%D %H", "2002-January-1st 00");
+        param(pb, AkType.DATE, "%Y-%M-%D %H %D%D", "2002-January-1st 00 1st1st"); // duplicate specifiers
         param(pb, AkType.DATE, "%U %V", "0 52");
         param(pb, AkType.DATE, "", null); // format string is empty => result is null
         param(pb, AkType.DATE, null, null); // format string is null => result is null
+        param(pb, AkType.DATE, " %%Foo %%%% ", " %Foo %% "); // format string only contains literal,
+                                                           // , starts with % and ends with %
+        param(pb, AkType.DATE, "% ", " "); 
+        param(pb, AkType.DATE, "% z %M", " z January"); // invalid specifier is treated as regular char
+        param(pb, AkType.DATE, "%Y %", "2002 %"); // % at the end is treated as literal %
         
         // DATETIME and TIMESTAMP       
         for (AkType t : Arrays.asList(AkType.DATETIME, AkType.TIMESTAMP))

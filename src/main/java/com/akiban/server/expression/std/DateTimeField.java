@@ -1190,26 +1190,34 @@ public enum DateTimeField
     public static String getFormatted (MutableDateTime date, String format)
     {
         String[] frmList = format.split("\\%");
-        StringBuilder buffer = new StringBuilder(frmList[0]);
-
+        StringBuilder builder = new StringBuilder(frmList[0]);
+       
         for (int n = 1; n < frmList.length; ++n)
-            if (frmList[n].length() == 0)
+        {
+            if (frmList[n].length() == 0 )
             {
-                buffer.append("%");
-                ++n;
+                builder.append('%');
+                if ( n+1 < frmList.length && frmList[n+1].length() == 0)
+                    ++n;
             }
             else
+            {
+                String s = Character.toString(frmList[n].charAt(0));
                 try
                 {
-                    String s = frmList[n].charAt(0) + "";
-                    buffer.append(frmList[n].replaceFirst(s, DateTimeField.valueOf(s).get(date)));
+                    
+                    builder.append(frmList[n].replaceFirst(s, DateTimeField.valueOf(s).get(date)));
                 }
                 catch (IllegalArgumentException ex) // unknown specifiers are treated as regular chars
                 {
-                    buffer.append(frmList[n]);
+                    builder.append(frmList[n]);
                 }
-
-        return buffer.toString();
+            }
+        }
+        
+        if (format.charAt(format.length()-1) == '%')
+            builder.append('%');
+        return builder.toString();
     }
 
     // class static data DateTimeFields
