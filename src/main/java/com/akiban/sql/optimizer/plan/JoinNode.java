@@ -99,7 +99,8 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
     }
     public void setGroupJoin(TableGroupJoin groupJoin) {
         this.groupJoin = groupJoin;
-        this.implementation = Implementation.GROUP;
+        if (groupJoin != null)
+            this.implementation = Implementation.GROUP;
     }
 
     /** Get the condition that implements groupJoin. */
