@@ -66,17 +66,17 @@ public class FromUnixExpression extends AbstractCompositeExpression
     };
 
     @Override
-    protected boolean nullIsContaminating() 
+    protected boolean nullIsContaminating()
     {
         return true;
     }
 
     @Override
-    protected void describe(StringBuilder sb) 
+    protected void describe(StringBuilder sb)
     {
         sb.append("FROM_UNIXTIME()");
     }
-    
+
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
         public InnerEvaluation (List< ? extends ExpressionEvaluation> ev)
@@ -85,31 +85,31 @@ public class FromUnixExpression extends AbstractCompositeExpression
         }
 
         @Override
-        public ValueSource eval() 
+        public ValueSource eval()
         {
             ValueSource dateS = children().get(0).eval();
             if (dateS.isNull()) return NullValueSource.only();
             long unix = dateS.getLong() * 1000;
-         
+
             switch(children().size())
             {
                 case 1:     return new ValueHolder(AkType.DATETIME, new DateTime(unix));
-                
+
                 default:    ValueSource str = children().get(1).eval();
-                            if (str.isNull()) 
+                            if (str.isNull())
                                 return NullValueSource.only();
-                            else 
+                            else
                                 return new ValueHolder(AkType.VARCHAR, DateTimeField.getFormatted(new MutableDateTime(unix), str.getString()));
             }
-            
-        }                
+
+        }
     }
-    
+
     /**
-     * Takes an UNIX_TIME, which is the number of SECONDS from epoch and optionally 
+     * Takes an UNIX_TIME, which is the number of SECONDS from epoch and optionally
      * a format str
-     * 
-     * @param ex 
+     *
+     * @param ex
      * @return  DATETIME in <b>current</b> timezone if no format string is passed
      *          VARCHAR representing the datetime formated accordingly if format string is passed
      */
@@ -125,7 +125,7 @@ public class FromUnixExpression extends AbstractCompositeExpression
     }
 
     @Override
-    public ExpressionEvaluation evaluation() 
+    public ExpressionEvaluation evaluation()
     {
         return new InnerEvaluation(childrenEvaluations());
     }

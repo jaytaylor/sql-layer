@@ -71,8 +71,9 @@ public class InetatonExpression extends AbstractUnaryExpression
                 {                    
                     if ((num = Short.parseShort(strs[i])) < 0 || num > 255) return NullValueSource.only();
                     sum += num * FACTORS[i];
-                }   
-                return new ValueHolder(AkType.LONG, sum);
+                }
+                valueHolder().putLong(sum);
+                return valueHolder();
             }
             catch (NumberFormatException e)
             {

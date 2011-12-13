@@ -118,19 +118,9 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                         oldRowData, OperatorStoreGIHandler.forTable(adapter, userTable),
                         OperatorStoreGIHandler.Action.DELETE
                 );
-                maintainGroupIndexes(
-                        session, ais, adapter,
-                        newRowData, OperatorStoreGIHandler.forTable(adapter, userTable),
-                        OperatorStoreGIHandler.Action.DELETE
-                );
 
                 runCursor(oldRowData, rowDef, updateOp, adapter);
 
-                maintainGroupIndexes(
-                        session, ais, adapter,
-                        oldRowData, OperatorStoreGIHandler.forTable(adapter, userTable),
-                        OperatorStoreGIHandler.Action.STORE
-                );
                 maintainGroupIndexes(
                         session, ais, adapter,
                         newRowData, OperatorStoreGIHandler.forTable(adapter, userTable),
@@ -168,11 +158,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                                          session,
                                          config);
                 UserTable uTable = ais.getUserTable(rowData.getRowDefId());
-                maintainGroupIndexes(
-                        session, ais, adapter,
-                        rowData, OperatorStoreGIHandler.forTable(adapter, uTable),
-                        OperatorStoreGIHandler.Action.DELETE
-                );
                 super.writeRow(session, rowData);
                 maintainGroupIndexes(
                         session, ais, adapter,
@@ -217,11 +202,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                         OperatorStoreGIHandler.Action.DELETE
                 );
                 super.deleteRow(session, rowData);
-                maintainGroupIndexes(
-                        session, ais, adapter,
-                        rowData, OperatorStoreGIHandler.forTable(adapter, uTable),
-                        OperatorStoreGIHandler.Action.STORE
-                );
                 transaction.commit();
 
                 break;
@@ -287,6 +267,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         this.config = config;
     }
 
+    @Override
     public PersistitStore getPersistitStore() {
         return super.getDelegate();
     }

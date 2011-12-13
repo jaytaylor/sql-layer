@@ -9,8 +9,9 @@ SelectQuery@583a5794
       Project@4816ef71[user.orders.order_date, user.items.sku, user.items.quan]
         Select@59c208b0[]
           Limit@51a19458(LIMIT 1)
-            Select@47124746[user.items.quan == plus(user.items.quan,user.items.quan)]
+            Select@39880571[]
               Flatten@105691e(user.items)
-                AncestorLookup@a383118(user.items -> [user.items])
-                  IndexScan@6f1f23e5(Index(user.items.sku[IndexColumn(sku)]), NONE, =1234)
-                  TableSource@5121177e(user.items - TableGroup@656dc861(customers))
+                Select@47124746[user.items.quan == plus(user.items.quan,user.items.quan)]
+                  AncestorLookup@a383118(user.items -> [user.items])
+                    IndexScan@6f1f23e5(Index(user.items.sku[IndexColumn(sku)]), NONE, =1234)
+                    TableSource@5121177e(user.items - TableGroup@656dc861(customers))

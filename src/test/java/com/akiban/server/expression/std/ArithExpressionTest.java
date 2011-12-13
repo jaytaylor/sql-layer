@@ -16,6 +16,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.error.OverflowException;
 import com.akiban.server.error.DivisionByZeroException;
@@ -98,7 +99,7 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
         ValueSource actual = new ValueHolder (top.evaluation().eval());
     }
   
-    @Test (expected = UnsupportedOperationException.class)
+    @Test (expected = InvalidArgumentTypeException.class)
     public void datePlusLong ()
     {
         Expression left = new LiteralExpression (AkType.DATE, 1L);

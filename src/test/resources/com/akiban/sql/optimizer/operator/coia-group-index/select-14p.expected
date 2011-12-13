@@ -1,8 +1,7 @@
 PhysicalSelect[VARCHAR(32), VARCHAR(32), VARCHAR(32)][order_date:date[DATE], sku:varchar(32)[VARCHAR], quan:int[INT]]
   Map_NestedLoops
-    Distinct_Partial(values([VARCHAR]))
-      Sort_InsertionLimited(values([VARCHAR]), 4)
-        ValuesScan_Default[ImmutableRow[1234], Bindable[Variable(pos=0)], Bindable[Variable(pos=1)], Bindable[Variable(pos=2)]]
+    Sort_InsertionLimited(values([VARCHAR]), 4, SUPPRESS_DUPLICATES)
+      ValuesScan_Default[ImmutableRow[1234], Bindable[Variable(pos=0)], Bindable[Variable(pos=1)], Bindable[Variable(pos=2)]]
     project([Field(2), Field(5), Field(6)])
       Flatten_HKeyOrdered(user.orders INNER user.items)
         AncestorLookup_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) -> [user.orders, user.items])

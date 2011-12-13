@@ -38,21 +38,15 @@ public class ExtractExpression extends AbstractUnaryExpression
     @Scalar ("datetime")
     public static final ExpressionComposer DATETIME_COMPOSER = new InternalComposer(TargetExtractType.DATETIME);
     
-    @Scalar ("day")
+    @Scalar ({"day", "dayofmonth"})
     public static final ExpressionComposer DAY_COMPOSER = new InternalComposer(TargetExtractType.DAY);
-
+    
     /**
      * extract the HOUR from a DATETIME/TIME/TIMESTAMP expression.
      * (24-hr format)
      */
-    @Scalar ("hour")
+    @Scalar ({"hour", "hourofday"})
     public static final ExpressionComposer HOUR_COMPOSER = new InternalComposer(TargetExtractType.HOUR);
-
-    /**
-     * alias of HOUR
-     */
-    @Scalar ("hour_of_day")
-    public static final ExpressionComposer HOUR_OF_DAY_COMPOSER = HOUR_COMPOSER;
 
     @Scalar ("minute")
     public static final ExpressionComposer MINUTE_COMPOSER = new InternalComposer(TargetExtractType.MINUTE);
@@ -183,7 +177,7 @@ public class ExtractExpression extends AbstractUnaryExpression
                 switch(type)
                 {
                     case TIME:      rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
-                                    return rawLong / 10000L % 100;
+                                    return rawLong / 10000L;
                     case DATETIME:  rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
                                     long yr = rawLong / 10000000000L;
                                     long mo = rawLong / 100000000L % 100;
@@ -471,7 +465,11 @@ public class ExtractExpression extends AbstractUnaryExpression
                                         }
                 }
            
-                if (raw != -1) return new ValueHolder(type.underlying, raw);
+                if (raw != -1)
+                {
+                    valueHolder().putRaw(type.underlying, raw);
+                    return valueHolder();
+                }
                 else return NullValueSource.only();
             }
             catch (InvalidDateFormatException ex)

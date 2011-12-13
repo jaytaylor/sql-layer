@@ -45,6 +45,8 @@ public interface DXLMXBean {
 
     List<String> getGrouping();
 
+    List<String> getGroupIndexDDLs();
+
     String getGroupNameFromTableName(String schema, String table);
 
     String printAIS();

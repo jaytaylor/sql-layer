@@ -1,0 +1,3 @@
+SELECT name, order_date, quan
+  FROM customers INNER JOIN orders ON customers.cid = orders.cid INNER JOIN items ON orders.oid = items.oid
+ WHERE name = 'Smith' AND sku >= 'S' AND name <> sku

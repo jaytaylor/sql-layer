@@ -40,17 +40,21 @@ public class IndexPicker extends BaseRule
     @Override
     public void apply(PlanContext planContext) {
         BaseQuery query = (BaseQuery)planContext.getPlan();
-        List<Picker> pickers = new JoinsFinder().find(query);
+        List<Picker> pickers = 
+          new JoinsFinder(((SchemaRulesContext)planContext.getRulesContext())
+                          .getIndexEstimator()).find(query);
         for (Picker picker : pickers)
             picker.pickIndexes();
     }
 
     static class Picker {
+        IndexEstimator indexEstimator;
         Joinable joinable;
         BaseQuery query;
         Set<ColumnSource> boundTables;
 
-        public Picker(Joinable joinable) {
+        public Picker(IndexEstimator indexEstimator, Joinable joinable) {
+            this.indexEstimator = indexEstimator;
             this.joinable = joinable;
         }
 
@@ -173,9 +177,9 @@ public class IndexPicker extends BaseRule
                 (grouping == null) &&
                 (projectDistinct == null))
                 return null;
-            return new IndexGoal(query, boundTables, 
+            return new IndexGoal(query, boundTables,
                                  conditionSources, grouping, ordering, projectDistinct,
-                                 tables);
+                                 tables, indexEstimator);
         }
 
         protected IndexScan pickBestIndex(TableJoins tableJoins, IndexGoal goal) {
@@ -367,6 +371,11 @@ public class IndexPicker extends BaseRule
     static class JoinsFinder implements PlanVisitor, ExpressionVisitor {
         List<Picker> result = new ArrayList<Picker>();
         Deque<SubqueryState> subqueries = new ArrayDeque<SubqueryState>();
+        IndexEstimator indexEstimator;
+
+        public JoinsFinder(IndexEstimator indexEstimator) {
+            this.indexEstimator = indexEstimator;
+        }
 
         public List<Picker> find(BaseQuery query) {
             query.accept(this);
@@ -396,6 +405,11 @@ public class IndexPicker extends BaseRule
 
         @Override
         public boolean visit(PlanNode n) {
+            if (!subqueries.isEmpty() &&
+                (n instanceof ColumnSource)) {
+                boolean added = subqueries.peek().tablesDefined.add((ColumnSource)n);
+                assert added : "Table defined more than once";
+            }
             if (n instanceof Joinable) {
                 Joinable j = (Joinable)n;
                 while (j.getOutput() instanceof Joinable)
@@ -405,16 +419,11 @@ public class IndexPicker extends BaseRule
                         // Already have another set of joins to same root join.
                         return true;
                 }
-                Picker entry = new Picker(j);
+                Picker entry = new Picker(indexEstimator, j);
                 if (!subqueries.isEmpty()) {
                     entry.query = subqueries.peek().subquery;
                 }
                 result.add(entry);
-            }
-            if (!subqueries.isEmpty() &&
-                (n instanceof ColumnSource)) {
-                boolean added = subqueries.peek().tablesDefined.add((ColumnSource)n);
-                assert added : "Table defined more than once";
             }
             return true;
         }

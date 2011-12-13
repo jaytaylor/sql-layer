@@ -1,0 +1,37 @@
+Index: names
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 200
+    eq: 1
+    key: [AAA]
+    lt: 500
+  - distinct: 100
+    eq: 2
+    key: [MMM]
+    lt: 900
+- Columns: 2
+  Histogram:
+  - distinct: 200
+    eq: 0
+    key: [AAA, qqq]
+    lt: 500
+  - distinct: 100
+    eq: 0
+    key: [MMM, zzz]
+    lt: 900
+Table: parent
+---
+Index: name
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 200
+    eq: 1
+    key: [AAA]
+    lt: 500
+  - distinct: 100
+    eq: 2
+    key: [MMM]
+    lt: 900
+Table: parent

@@ -12,7 +12,6 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-
 package com.akiban.server.expression.std;
 
 import com.akiban.qp.operator.Bindings;
@@ -20,8 +19,10 @@ import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.util.ValueHolder;
 
-public abstract class AbstractUnaryExpressionEvaluation implements ExpressionEvaluation {
+public abstract class AbstractUnaryExpressionEvaluation implements ExpressionEvaluation
+{
     @Override
     public void of(Row row) {
         operandEvaluation.of(row);
@@ -53,7 +54,6 @@ public abstract class AbstractUnaryExpressionEvaluation implements ExpressionEva
     }
 
     // for use by subclasses
-
     protected final ValueSource operand() {
         return operandEvaluation.eval();
     }
@@ -66,7 +66,11 @@ public abstract class AbstractUnaryExpressionEvaluation implements ExpressionEva
         this.operandEvaluation = operandEvaluation;
     }
 
+    protected ValueHolder valueHolder(){
+        return valueHolder == null ? valueHolder = new ValueHolder() : valueHolder;
+    }
+    
     // object state
-
     private final ExpressionEvaluation operandEvaluation;
+    private ValueHolder valueHolder;
 }

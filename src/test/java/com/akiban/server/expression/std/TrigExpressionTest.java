@@ -121,6 +121,7 @@ public class TrigExpressionTest extends ComposedExpressionTestBase
     @Test
     public void testWithoutExc()
     {
+        alreadyExc = true;
         test();
     }
 
@@ -128,6 +129,7 @@ public class TrigExpressionTest extends ComposedExpressionTestBase
     @Test (expected = OverflowException.class)
     public void testWithExc ()
     {
+        alreadyExc = true;
         test();
     }
 
@@ -142,8 +144,7 @@ public class TrigExpressionTest extends ComposedExpressionTestBase
         ValueSource result = trigExpression.evaluation().eval();
         double actual = result.getDouble();
 
-        assertEquals(expected, actual,0.01);
-        alreadyExc = true;
+        assertEquals(expected, actual,0.01);        
     }
     private static List <? extends Expression> getArgList (Expression ...arg)
     {

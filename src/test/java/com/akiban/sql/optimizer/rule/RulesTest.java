@@ -53,7 +53,7 @@ public class RulesTest extends OptimizerTestBase
     public static final File RESOURCE_DIR = 
         new File(OptimizerTestBase.RESOURCE_DIR, "rule");
 
-    protected File rulesFile, schemaFile, indexFile;
+    protected File rulesFile, schemaFile, indexFile, statsFile;
 
     @TestParameters
     public static Collection<Parameterization> statements() throws Exception {
@@ -69,13 +69,17 @@ public class RulesTest extends OptimizerTestBase
                 File indexFile = new File(subdir, "group.idx");
                 if (!indexFile.exists())
                     indexFile = null;
+                File statsFile = new File(subdir, "stats.yaml");
+                if (!statsFile.exists())
+                    statsFile = null;
                 for (Object[] args : sqlAndExpected(subdir)) {
-                    Object[] nargs = new Object[args.length+3];
+                    Object[] nargs = new Object[args.length+4];
                     nargs[0] = subdir.getName() + "/" + args[0];
                     nargs[1] = rulesFile;
                     nargs[2] = schemaFile;
                     nargs[3] = indexFile;
-                    System.arraycopy(args, 1, nargs, 4, args.length-1);
+                    nargs[4] = statsFile;
+                    System.arraycopy(args, 1, nargs, 5, args.length-1);
                     result.add(nargs);
                 }
             }
@@ -83,12 +87,14 @@ public class RulesTest extends OptimizerTestBase
         return NamedParamsTestBase.namedCases(result);
     }
 
-    public RulesTest(String caseName, File rulesFile, File schemaFile, File indexFile,
+    public RulesTest(String caseName, 
+                     File rulesFile, File schemaFile, File indexFile, File statsFile,
                      String sql, String expected, String error) {
         super(caseName, sql, expected, error);
         this.rulesFile = rulesFile;
         this.schemaFile = schemaFile;
         this.indexFile = indexFile;
+        this.statsFile = statsFile;
     }
 
     protected RulesContext rules;
@@ -98,7 +104,8 @@ public class RulesTest extends OptimizerTestBase
         AkibanInformationSchema ais = loadSchema(schemaFile);
         if (indexFile != null)
             OptimizerTestBase.loadGroupIndexes(ais, indexFile);
-        rules = new RulesTestContext(ais, RulesTestHelper.loadRules(rulesFile));
+        rules = new RulesTestContext(ais, DEFAULT_SCHEMA, statsFile,
+                                     RulesTestHelper.loadRules(rulesFile));
     }
 
     @Test

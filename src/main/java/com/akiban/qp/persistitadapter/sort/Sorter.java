@@ -46,7 +46,12 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class Sorter
 {
-    public Sorter(PersistitAdapter adapter, Cursor input, RowType rowType, API.Ordering ordering, Bindings bindings)
+    public Sorter(PersistitAdapter adapter, 
+                  Cursor input, 
+                  RowType rowType, 
+                  API.Ordering ordering,
+                  API.SortOption sortOption,
+                  Bindings bindings)
         throws PersistitException
     {
         this.adapter = adapter;
@@ -73,10 +78,13 @@ public class Sorter
         for (int i = 0; i < rowFields; i++) {
             fieldTypes[i] = rowType.typeAt(i);
         }
-        // Append a count field as a sort key, to ensure key uniqueness for Persisit. By setting
-        // the ascending flag equal to that of some other sort field, we don't change an all-ASC or all-DESC sort
-        // into a less efficient mixed-mode sort.
-        this.ordering.append(DUMMY_EXPRESSION, ordering.ascending(0));
+        preserveDuplicates = sortOption == API.SortOption.PRESERVE_DUPLICATES;
+        if (preserveDuplicates) {
+            // Append a count field as a sort key, to ensure key uniqueness for Persisit. By setting
+            // the ascending flag equal to that of some other sort field, we don't change an all-ASC or all-DESC sort
+            // into a less efficient mixed-mode sort.
+            this.ordering.append(DUMMY_EXPRESSION, ordering.ascending(0));
+        }
         int nsort = this.ordering.sortColumns();
         this.evaluations = new ArrayList<ExpressionEvaluation>(nsort);
         this.orderingTypes = new AkType[nsort];
@@ -148,7 +156,7 @@ public class Sorter
     private void createKey(Row row)
     {
         key.clear();
-        int sortFields = ordering.sortColumns() - 1; // Don't include the artificial count field
+        int sortFields = ordering.sortColumns() - (preserveDuplicates ? 1 : 0);
         for (int i = 0; i < sortFields; i++) {
             ExpressionEvaluation evaluation = evaluations.get(i);
             evaluation.of(row);
@@ -156,7 +164,9 @@ public class Sorter
             keyTarget.expectingType(orderingTypes[i]);
             Converters.convert(keySource, keyTarget);
         }
-        key.append(rowCount++);
+        if (preserveDuplicates) {
+            key.append(rowCount++);
+        }
     }
 
     private void createValue(Row row)
@@ -205,6 +215,7 @@ public class Sorter
     final Cursor input;
     final RowType rowType;
     final API.Ordering ordering;
+    final boolean preserveDuplicates;
     final List<ExpressionEvaluation> evaluations;
     final Bindings bindings;
     final Key key;

@@ -116,6 +116,10 @@ public class NestedLoopMapper extends BaseRule
             combined.addAll(getBoundTables(map.getInner()));
             return combined;
         }
+        else if (node instanceof Select) {
+            // Might be the Select we just added above with join conditions.
+            return getBoundTables(((Select)node).getInput());
+        }
         else {
             assert false : "Unknown map join input";
             return Collections.<ColumnSource>emptySet();

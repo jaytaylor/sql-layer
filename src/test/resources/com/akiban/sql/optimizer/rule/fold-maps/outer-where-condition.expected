@@ -6,7 +6,7 @@ SelectQuery@d09099d
           TableSource@785b38d6(user.customers - TableGroup@3fe329eb(customers))
           TableSource@2cf0a755(user.orders - TableGroupJoin@5ad52411(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
       Project@2ca4911d[user.orders.order_date, user.child.name]
-        Select@68331dd0[like(user.customers.name,S%)]
+        Select@68331dd0[user.child.name != user.customers.name]
           NullIfEmpty@5f3306ad
             Flatten@efb78af(user.child)
               BranchLookup@1fb030d8(user.parent -> user.parent)

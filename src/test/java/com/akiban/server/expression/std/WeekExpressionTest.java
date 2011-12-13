@@ -39,6 +39,7 @@ public class WeekExpressionTest extends ComposedExpressionTestBase
         test(st,1,1);
         test(st,2,52);
         test(st,3,1);
+        test(st,4,0);
         test(st,5,0);
         test(st,6,53);
         test(st,7,52);

@@ -108,16 +108,7 @@ public class PersistitStoreIndexManager implements IndexManager {
      */
     @Override
     public void analyzeTable(final Session session, final RowDef rowDef, final int sampleSize) {
-        analyzeIndexes(session, Arrays.asList(rowDef.getIndexes()), sampleSize);
-    }
-
-    @Override
-    public void analyzeIndexes(final Session session, final Collection<? extends Index> indexes) {
-        analyzeIndexes(session, indexes, DEFAULT_SAMPLE_SIZE - 1);
-    }
-
-    public void analyzeIndexes(final Session session, final Collection<? extends Index> indexes, final int sampleSize) {
-        for (Index index : indexes) {
+        for (Index index : rowDef.getIndexes()) {
             try {
                 analyzeIndex(session, index, sampleSize);
             } catch (PersistitException e) {

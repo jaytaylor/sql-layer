@@ -56,7 +56,6 @@ public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
         deleteAndCheck(r1);
     }
 
-    @Ignore("bug 877656")
     @Test
     public void coiNoOrphan() {
         groupIndex("c.name, o.when, i.sku");
@@ -84,15 +83,15 @@ public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
         );
         writeAndCheck(
                 createNewRow(o, 12L, 1L, "02-02-2002"),
-                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + containing(o, i),
-                "Horton, 01-01-2001, 2222, 1, 11, 102 => " + containing(o, i),
-                "Horton, 01-01-2001, 3333, 1, 11, 103 => " + containing(o, i)
+                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + containing(c, o, i),
+                "Horton, 01-01-2001, 2222, 1, 11, 102 => " + containing(c, o, i),
+                "Horton, 01-01-2001, 3333, 1, 11, 103 => " + containing(c, o, i)
         );
 
         writeAndCheck(createNewRow(a, 10001L, 1L, "Causeway"),
-                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + containing(o, i),
-                "Horton, 01-01-2001, 2222, 1, 11, 102 => " + containing(o, i),
-                "Horton, 01-01-2001, 3333, 1, 11, 103 => " + containing(o, i)
+                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + containing(c, o, i),
+                "Horton, 01-01-2001, 2222, 1, 11, 102 => " + containing(c, o, i),
+                "Horton, 01-01-2001, 3333, 1, 11, 103 => " + containing(c, o, i)
         );
 
 
@@ -100,28 +99,31 @@ public final class GroupIndexRjUpdateIT extends GIUpdateITBase {
         updateAndCheck(
                 createNewRow(o, 11L, 1L, "01-01-2001"),
                 createNewRow(o, 11L, 1L, "01-01-1999"), // party!
-                "Horton, 01-01-1999, 1111, 1, 11, 101 => " + containing(o, i),
-                "Horton, 01-01-1999, 2222, 1, 11, 102 => " + containing(o, i),
-                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + containing(o, i)
+                "Horton, 01-01-1999, 1111, 1, 11, 101 => " + containing(c, o, i),
+                "Horton, 01-01-1999, 2222, 1, 11, 102 => " + containing(c, o, i),
+                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + containing(c, o, i)
         );
         // update child
         updateAndCheck(
                 createNewRow(i, 102L, 11L, 2222),
                 createNewRow(i, 102L, 11L, 2442),
-                "Horton, 01-01-1999, 1111, 1, 11, 101 => " + containing(o, i),
-                "Horton, 01-01-1999, 2442, 1, 11, 102 => " + containing(o, i),
-                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + containing(o, i)
+                "Horton, 01-01-1999, 1111, 1, 11, 101 => " + containing(c, o, i),
+                "Horton, 01-01-1999, 2442, 1, 11, 102 => " + containing(c, o, i),
+                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + containing(c, o, i)
         );
 
         // delete order
         deleteAndCheck(
                 createNewRow(o, 11L, 1L, "01-01-1999"),
-                "Horton, null, 1111, null, 11, 101 => " + containing(i),
-                "Horton, null, 3333, null, 11, 103 => " + containing(i)
+                "null, null, 1111, null, 11, 101 => " + containing(i),
+                "null, null, 2442, null, 11, 102 => " + containing(i),
+                "null, null, 3333, null, 11, 103 => " + containing(i)
         );
         // delete item
         deleteAndCheck(
-                createNewRow(i, 102L, 11L, 222211)
+                createNewRow(i, 102L, 11L, 222211),
+                "null, null, 1111, null, 11, 101 => " + containing(i),
+                "null, null, 3333, null, 11, 103 => " + containing(i)
         );
     }
 

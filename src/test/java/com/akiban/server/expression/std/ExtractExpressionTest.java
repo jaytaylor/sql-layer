@@ -14,7 +14,6 @@
  */
 package com.akiban.server.expression.std;
 
-import com.akiban.server.types.ValueSource;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
@@ -263,6 +262,15 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     }
 
     // ------------------------ GET HOUR (or HOUR_OF_DAY)-----------------------
+    @Test
+    public void getHourFrom3DigitHrTime ()
+    {
+        Expression time = new LiteralExpression (AkType.TIME, Extractors.getLongExtractor(AkType.TIME).getLong("-999:12:20"));
+        Expression top = ExtractExpression.HOUR_COMPOSER.compose(Arrays.asList(time));
+
+        assertEquals("expected 999", 999, top.evaluation().eval().getLong());
+    }
+    
     @Test
     public void getHourFromDate()
     {

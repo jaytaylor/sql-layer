@@ -263,7 +263,7 @@ public class ASTStatementLoader extends BaseRule
                 query = project;
                 if (!sorts.isEmpty()) {
                     query = new Sort(query, sortsForDistinct(sorts, project));
-                    query = new Distinct(query, Distinct.Implementation.PRESORTED);
+                    query = new Distinct(query, Distinct.Implementation.EXPLICIT_SORT);
                 }
                 else
                     query = new Distinct(query);

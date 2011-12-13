@@ -21,7 +21,7 @@ import java.util.List;
 public class Distinct extends BasePlanWithInput
 {
     public static enum Implementation {
-        PRESORTED, SORT, HASH, TREE
+        PRESORTED, SORT, HASH, TREE, EXPLICIT_SORT
     }
 
     private Implementation implementation;

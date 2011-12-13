@@ -15,6 +15,7 @@
 
 package com.akiban.server.types.extract;
 
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import org.joda.time.MutableDateTime;
@@ -33,18 +34,29 @@ public class ExtractorForDateTime extends ObjectExtractor<MutableDateTime>
         long [] ymd_hms;
         switch(source.getConversionType())
         {
-            case DATE:      ymd_hms = ExtractorsForDates.DATE.getYearMonthDayHourMinuteSecond(source.getDate()); break;
-            case DATETIME:  ymd_hms = ExtractorsForDates.DATETIME.getYearMonthDayHourMinuteSecond(source.getDateTime()); break;
+            case DATE:      ymd_hms = ExtractorsForDates.DATE.getYearMonthDayHourMinuteSecond(source.getDate());
+                            checkArgs(ymd_hms);
+                            break;
+            case DATETIME:  ymd_hms = ExtractorsForDates.DATETIME.getYearMonthDayHourMinuteSecond(source.getDateTime());
+                            checkArgs(ymd_hms);
+                            break;
             case TIMESTAMP: return new MutableDateTime(source.getTimestamp() * 1000); 
             case TIME:      ymd_hms = ExtractorsForDates.TIME.getYearMonthDayHourMinuteSecond(source.getTime()); break;
             case VARCHAR:   return getObject(source.getString());
             case TEXT:      return getObject(source.getText());
-            case YEAR:      ymd_hms = ExtractorsForDates.YEAR.getYearMonthDayHourMinuteSecond(source.getYear()); break;
+            case YEAR:      ymd_hms = ExtractorsForDates.YEAR.getYearMonthDayHourMinuteSecond(source.getYear());
+                            checkArgs(ymd_hms);
+                            break;
             default:        throw unsupportedConversion(source.getConversionType());
         }
-
+        
         return new MutableDateTime((int)ymd_hms[0], (int)ymd_hms[1], (int)ymd_hms[2],
                 (int)ymd_hms[3], (int)ymd_hms[4], (int)ymd_hms[5], 0);
+    }
+
+    private static void checkArgs (long [] ymd_hms)
+    {
+        if (ymd_hms[0] * ymd_hms[1] * ymd_hms[2] == 0) throw new InvalidParameterValueException();
     }
 
     @Override
