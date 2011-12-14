@@ -76,21 +76,42 @@
     WHERE 'abc' LIKE varchar_field
 - output: [['abc']]
 
-# LIKE in SELECT clause fails
-# ---
-# - Statement: SELECT varchar_field LIKE 'ab%' FROM all_types
-# - output: [[null],
-#            [false], [false], [false], [true], [false], [false], [false],
-#            [true], [false], [false], [false],
-#            [true], [false],
-#            [true], [true]]
-
-# LIKE with parameter fails
-# ---
-# - Statement: SELECT varchar_field FROM all_types
-#     WHERE varchar_field LIKE ?
-# - params: [['b%']]
-# - output: [['b'], ['bbc']]
+---
+- Statement: SELECT varchar_field, varchar_field LIKE 'ab%' FROM all_types
+- output: [[null, null],
+           ['', false],
+           [a, false],
+           [b, false],
+           [ab, true],
+           [ac, false],
+           [cb, false],
+           [cc, false],
+           [abc, true],
+           [bbc, false],
+           [cbb, false],
+           [abcd, true],
+           [xbcd, false]]
+---
+- Statement: SELECT varchar_field, varchar_field LIKE ? FROM all_types
+- params: [['ab%']]
+- output: [[null, null],
+           ['', false],
+           [a, false],
+           [b, false],
+           [ab, true],
+           [ac, false],
+           [cb, false],
+           [cc, false],
+           [abc, true],
+           [bbc, false],
+           [cbb, false],
+           [abcd, true],
+           [xbcd, false]]
+---
+- Statement: SELECT varchar_field FROM all_types
+    WHERE varchar_field LIKE ?
+- params: [['b%']]
+- output: [['b'], ['bbc']]
 
 # COLLATE fails
 # # Case sensitivity
@@ -107,4 +128,68 @@
 # ---
 # - Statement: SELECT cs WHERE cs LIKE 'ABC'
 # - output: [[ABC]]
+
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (varchar_field)
+    VALUES ('abc'), ('Abc'), ('ABC')
+---
+- Statement: SELECT varchar_field FROM all_types WHERE BLIKE(varchar_field, 'Abc')
+- output: [[Abc]]
+---
+- Statement: SELECT varchar_field FROM all_types WHERE ILIKE(varchar_field, 'Abc')
+- output: [[abc], [Abc], [ABC]]
+---
+- Statement: SELECT varchar_field FROM all_types WHERE BLIKE(varchar_field, 'abc')
+- output: [[abc]]
+---
+- Statement: SELECT varchar_field FROM all_types WHERE ILIKE(varchar_field, 'abc')
+- output: [[abc], [Abc], [ABC]]
+---
+- Statement: SELECT varchar_field FROM all_types WHERE BLIKE(varchar_field, 'ABC')
+- output: [[ABC]]
+---
+- Statement: SELECT varchar_field FROM all_types WHERE ILIKE(varchar_field, 'ABC')
+- output: [[abc], [Abc], [ABC]]
+
+# Test escapes
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (varchar_field)
+    VALUES ('a'), ('ax'), ('a%'), ('a_'), ('a\'), ('a%c'), ('a%cd'), ('a_c'), ('a_cd'),
+    ('ax%'), ('ax_'), ('axx')
+---
+- Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE 'a\%'
+- output: [[a%]]
+---
+- Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE 'a\_'
+- output: [[a_]]
+---
+- Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE 'a\\'
+- output: [['a\']]
+---
+- Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE 'a\%%'
+- output: [[a%], [a%c], [a%cd]]
+---
+- Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE 'a\__'
+- output: [[a_c]]
+# Specifying escape doesn't work
+# ---
+# - Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE 'ax%' ESCAPE 'x'
+# - output: [[a%]]
+# ---
+# - Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE 'ax_' ESCAPE 'x'
+# - output: [[a_]]
+# ---
+# - Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE 'axx' ESCAPE 'x'
+# - output: [[ax]]
+# ---
+# - Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE 'ax%%' ESCAPE 'x'
+# - output: [[a%], [a%c], [a%cd]]
+# ---
+# - Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE 'ax__' ESCAPE 'x'
+# - output: [[a_c]]
+
 ...
