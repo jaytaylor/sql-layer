@@ -11,10 +11,10 @@
 - Statement: select id,source1,source2 from bitwise_matrix where BITOR(source1,source2) != bitwise_or;
 - row_count: 0
 ---
-- Statement: select id,source1,source2 from bitwise_matrix where RIGHTSHIFT(source1,source2) != bitwise_shiftright;
+- Statement: select id,source1,source2,RIGHTSHIFT(source1,source2),bitwise_rightshift from bitwise_matrix where RIGHTSHIFT(source1,source2) != bitwise_rightshift;
 - row_count: 0
 ---
-- Statement: select id,source1,source2 from bitwise_matrix where LEFTSHIFT(source1,source2) != bitwise_shiftleft;
+- Statement: select id,source1,source2 from bitwise_matrix where LEFTSHIFT(source1,source2) != bitwise_leftshift;
 - row_count: 0
 #---
 #- Statement: select id,source1,source2 from bitwise_matrix where (source1 & ~source2) != bitwise_invert;

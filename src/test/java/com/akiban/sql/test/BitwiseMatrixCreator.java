@@ -95,7 +95,8 @@ public class BitwiseMatrixCreator implements Runnable {
                 "bitwise_rightshift," +
                 "bitwise_leftshift," +
                 "bitwise_invert" +
-                ") values (" + (counter ++) + ","+source1+","+source2+","+(source1 & source2)+","+(source1 | source2)+","+(source1 ^ source2)+","+(source1 >> source2)+","+(source1 << source2)+","+(source1 & ~source2)+" )";
+                ") values (" + (counter ++) + ","+source1+","+source2+","+(source1 & source2)+","+(source1 | source2)+","+(source1 ^ source2)
+                +","+(source1 >> source2)+","+(source1 << source2)+","+(source1 & ~source2)+" )";
     }
     
     private void recordSQL() {
