@@ -17,9 +17,14 @@ package com.akiban.sql.pg;
 
 import com.akiban.server.error.NoSuchSchemaException;
 import com.akiban.server.error.UnsupportedParametersException;
+import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.aisddl.SchemaDDL;
-import com.akiban.sql.parser.StatementNode;
+import com.akiban.sql.parser.AccessMode;
+import com.akiban.sql.parser.IsolationLevel;
 import com.akiban.sql.parser.SetSchemaNode;
+import com.akiban.sql.parser.SetTransactionAccessNode;
+import com.akiban.sql.parser.SetTransactionIsolationNode;
+import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.StatementType;
 
 import java.io.IOException;
@@ -29,7 +34,8 @@ public class PostgresSessionStatement implements PostgresStatement
 {
     enum Operation {
         USE,
-        BEGIN_TRANSACTION, COMMIT_TRANSACTION, ROLLBACK_TRANSACTION
+        BEGIN_TRANSACTION, COMMIT_TRANSACTION, ROLLBACK_TRANSACTION,
+        TRANSACTION_ISOLATION, TRANSACTION_ACCESS
     };
 
     private Operation operation;
@@ -60,6 +66,11 @@ public class PostgresSessionStatement implements PostgresStatement
     }
 
     @Override
+    public TransactionMode getTransactionMode() {
+        return TransactionMode.ALLOWED;
+    }
+
+    @Override
     public int execute(PostgresServerSession server, int maxrows)
             throws IOException {
         doOperation(server);
@@ -75,14 +86,16 @@ public class PostgresSessionStatement implements PostgresStatement
     protected void doOperation(PostgresServerSession server) {
         switch (operation) {
         case USE:
-            final SetSchemaNode node = (SetSchemaNode)statement;
-            
-            final String schemaName = (node.statementType() == StatementType.SET_SCHEMA_USER ? 
-                    server.getProperty("user") : node.getSchemaName());
-            if (SchemaDDL.checkSchema(server.getAIS(), schemaName)) {
-                server.setDefaultSchemaName(schemaName);
-            } else {
-                throw new NoSuchSchemaException (schemaName);
+            {
+                SetSchemaNode node = (SetSchemaNode)statement;
+                String schemaName = (node.statementType() == StatementType.SET_SCHEMA_USER ? 
+                                     server.getProperty("user") : node.getSchemaName());
+                if (SchemaDDL.checkSchema(server.getAIS(), schemaName)) {
+                    server.setDefaultSchemaName(schemaName);
+                } 
+                else {
+                    throw new NoSuchSchemaException(schemaName);
+                }
             }
             break;
         case BEGIN_TRANSACTION:
@@ -94,6 +107,20 @@ public class PostgresSessionStatement implements PostgresStatement
         case ROLLBACK_TRANSACTION:
             server.rollbackTransaction();
             break;
+        case TRANSACTION_ACCESS:
+            {
+                SetTransactionAccessNode node = (SetTransactionAccessNode)statement;
+                boolean current = node.isCurrent();
+                boolean readOnly = (node.getAccessMode() == 
+                                    AccessMode.READ_ONLY_ACCESS_MODE);
+                if (current)
+                    server.setTransactionReadOnly(readOnly);
+                else
+                    server.setTransactionDefaultReadOnly(readOnly);
+            }
+            break;
+        default:
+            throw new UnsupportedSQLException("session control", statement);
         }
     }
 

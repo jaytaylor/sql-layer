@@ -75,6 +75,12 @@ public class PostgresDDLStatement implements PostgresStatement
         }
     }
 
+    @Override
+    public TransactionMode getTransactionMode() {
+        return TransactionMode.NONE;
+    }
+
+    @Override
     public int execute(PostgresServerSession server, int maxrows)
             throws IOException {
         AkibanInformationSchema ais = server.getAIS();

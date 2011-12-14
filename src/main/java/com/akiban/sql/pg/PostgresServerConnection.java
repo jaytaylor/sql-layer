@@ -38,15 +38,13 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 
 import com.akiban.util.Tap;
-import com.persistit.Transaction;
-import com.persistit.exception.PersistitException;
-import com.persistit.exception.RollbackException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,8 +89,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     private PostgresStatementParser[] unparsedGenerators;
     private PostgresStatementGenerator[] parsedGenerators;
     private Thread thread;
-    private Transaction transaction;
-    private Date transactionStartTime;
+    private PostgresTransaction transaction;
+    private boolean transactionDefaultReadOnly = false;
     
     private boolean instrumentationEnabled = false;
     private String sql;
@@ -162,8 +160,6 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             }
         }
     }
-
-    //protected enum ErrorMode { NONE, SIMPLE, EXTENDED };
 
     protected void topLevel() throws IOException, Exception {
         logger.info("Connect from {}" + socket.getRemoteSocketAddress());
@@ -241,9 +237,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
         finally {
             if (transaction != null) {
-                transaction.end();
+                transaction.abort();
                 transaction = null;
-                transactionStartTime = null;
             }
             server.removeConnection(pid);
         }
@@ -396,13 +391,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
         if (pstmt != null) {
             pstmt.sendDescription(this, false);
-            try {
-                sessionTracer.beginEvent(EventTypes.EXECUTE);
-                rowsProcessed = pstmt.execute(this, -1);
-            }
-            finally {
-                sessionTracer.endEvent();
-            }
+            rowsProcessed = executeStatement(pstmt, -1);
         }
         else {
             // Parse as a _list_ of statements and process each in turn.
@@ -421,13 +410,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 if ((statementCache != null) && (stmts.size() == 1))
                     statementCache.put(sql, pstmt);
                 pstmt.sendDescription(this, false);
-                try {
-                    sessionTracer.beginEvent(EventTypes.EXECUTE);
-                    rowsProcessed = pstmt.execute(this, -1);
-                }
-                finally {
-                    sessionTracer.endEvent();
-                }
+                rowsProcessed = executeStatement(pstmt, -1);
             }
         }
         readyForQuery();
@@ -551,13 +534,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         int maxrows = messenger.readInt();
         PostgresStatement pstmt = boundPortals.get(portalName);
         logger.info("Execute: {}", pstmt.toString());
-        try {
-            sessionTracer.beginEvent(EventTypes.EXECUTE);
-            rowsProcessed = pstmt.execute(this, maxrows);
-        }
-        finally {
-            sessionTracer.endEvent();
-        }
+        rowsProcessed = executeStatement(pstmt, maxrows);
         logger.debug("Execute complete");
         if (reqs.instrumentation().isQueryLogEnabled()) {
             reqs.instrumentation().logQuery(pid, sql, (System.nanoTime() - startTime), rowsProcessed);
@@ -657,6 +634,49 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         throw new UnsupportedSQLException ("", stmt);
     }
 
+    protected int executeStatement(PostgresStatement pstmt, int maxrows) 
+            throws IOException {
+        PostgresStatement.TransactionMode transactionMode = pstmt.getTransactionMode();
+        PostgresTransaction localTransaction = null;
+        if (transaction != null) {
+            transaction.checkTransactionMode(transactionMode);
+        }
+        else {
+            switch (transactionMode) {
+            case REQUIRED:
+            case REQUIRED_WRITE:
+                throw new NoTransactionInProgressException();
+            case READ:
+            case NEW:
+                localTransaction = new PostgresTransaction(this, true);
+                break;
+            case WRITE:
+            case NEW_WRITE:
+                if (transactionDefaultReadOnly)
+                    throw new TransactionReadOnlyException();
+                localTransaction = new PostgresTransaction(this, false);
+                break;
+            }
+        }
+        int rowsProcessed = 0;
+        boolean success = false;
+        try {
+            sessionTracer.beginEvent(EventTypes.EXECUTE);
+            rowsProcessed = pstmt.execute(this, maxrows);
+            success = true;
+        }
+        finally {
+            if (localTransaction != null) {
+                if (success)
+                    localTransaction.commit();
+                else
+                    localTransaction.abort();
+            }
+            sessionTracer.endEvent();
+        }
+        return rowsProcessed;
+    }
+
     /* PostgresServerSession */
 
     @Override
@@ -742,6 +762,11 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     @Override
+    public TreeService getTreeService() {
+        return reqs.treeService();
+    }
+
+    @Override
     public LoadablePlan loadablePlan(String planName)
     {
         return server.loadablePlan(planName);
@@ -769,58 +794,47 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         return socket.getInetAddress().getHostAddress();
     }
 
+    @Override
     public void beginTransaction() {
         if (transaction != null)
             throw new TransactionInProgressException ();
-        transaction = reqs.treeService().getTransaction(session);
-        transactionStartTime = new Date();
-        boolean transactionBegun = false;
-        try {
-            transaction.begin();
-            transactionBegun = true;
-        }
-        catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
-        } finally {
-            if (!transactionBegun) {
-                transaction = null;
-                transactionStartTime = null;
-            }
-        }
+        transaction = new PostgresTransaction(this, transactionDefaultReadOnly);
     }
 
+    @Override
     public void commitTransaction() {
         if (transaction == null)
             throw new NoTransactionInProgressException();
         try {
-            transaction.commit();
-        }
-        catch (PersistitException ex) {
-            throw new PersistItErrorException(ex);
+            transaction.commit();            
         }
         finally {
-            transaction.end();
             transaction = null;
-            transactionStartTime = null;
         }
     }
 
+    @Override
     public void rollbackTransaction() {
         if (transaction == null)
             throw new NoTransactionInProgressException();
         try {
             transaction.rollback();
         }
-        catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
-        }
-        catch (RollbackException ex) {
-        }
         finally {
-            transaction.end();
             transaction = null;
-            transactionStartTime = null;
         }
+    }
+
+    @Override
+    public void setTransactionReadOnly(boolean readOnly) {
+        if (transaction == null)
+            throw new NoTransactionInProgressException();
+        transaction.setReadOnly(readOnly);
+    }
+
+    @Override
+    public void setTransactionDefaultReadOnly(boolean readOnly) {
+        this.transactionDefaultReadOnly = readOnly;
     }
 
     @Override
@@ -829,13 +843,20 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     @Override
+    public Date currentTime() {
+        Date override = server.getOverrideCurrentTime();
+        if (override != null)
+            return override;
+        else
+            return new Date();
+    }
+
+    @Override
     public Object getEnvironmentValue(EnvironmentExpressionSetting setting) {
         switch (setting) {
         case CURRENT_DATETIME:
-            if (transactionStartTime != null) 
-                return new DateTime(transactionStartTime.getTime());
-            else
-                return new DateTime();
+            return new DateTime((transaction != null) ? transaction.getTime(this)
+                                                      : currentTime());
         case CURRENT_USER:
             return defaultSchemaName;
         case SESSION_USER:

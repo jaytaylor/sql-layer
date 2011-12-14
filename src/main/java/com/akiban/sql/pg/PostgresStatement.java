@@ -33,6 +33,20 @@ public interface PostgresStatement
     public void sendDescription(PostgresServerSession server, boolean always) 
             throws IOException;
 
+    /** What transaction mode(s) does this statement use? */
+    public enum TransactionMode { 
+        ALLOWED,                // Does not matter.
+        NONE,                   // Must not have a transaction; none created.
+        NEW,                    // Must not have a transaction: read only created.
+        NEW_WRITE,              // Must not have a transaction: read write created.
+        READ,                   // New read only or existing allowed.
+        WRITE,                  // New or existing read write allowed.
+        REQUIRED,               // Must have transaction: read only okay.
+        REQUIRED_WRITE          // Must have read write transaction.
+    };
+
+    public TransactionMode getTransactionMode();
+
     /** Execute statement and output results. Return number of rows processed. */
     public int execute(PostgresServerSession server, int maxrows)
             throws IOException;

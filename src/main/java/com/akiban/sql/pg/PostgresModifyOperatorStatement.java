@@ -56,6 +56,11 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         this.resultOperator = resultOperator;
     }
     
+    @Override
+    public TransactionMode getTransactionMode() {
+        return TransactionMode.WRITE;
+    }
+
     public int execute(PostgresServerSession server, int maxrows)
         throws IOException {
 

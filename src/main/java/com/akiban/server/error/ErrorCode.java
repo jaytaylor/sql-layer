@@ -183,6 +183,7 @@ public enum ErrorCode {
         // SubClass 002 - branch transaction already active
     TRANSACTION_IN_PROGRESS ("25", "002", Importance.DEBUG, TransactionInProgressException.class),
         // SubClass 003 - inappropriate access mode for branch transaction
+    TRANSACTION_READ_ONLY   ("25", "003", Importance.DEBUG, TransactionReadOnlyException.class),
         // SubClass 004 - inappropriate isolation level for branch transaction
         // SubClass 005 - no active SQL-transaction for branch transaction
     NO_TRANSACTION          ("25", "005", Importance.DEBUG, NoTransactionInProgressException.class),
