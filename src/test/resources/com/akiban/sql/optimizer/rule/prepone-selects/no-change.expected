@@ -1,8 +1,8 @@
-SelectQuery@355ccfb1
-  ResultSet@604788d5[cid, name, oid, cid, order_date, special]
-    Project@78688954[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date, user.orders.special]
-      Select@1710278e[upper(user.customers.name) == SMITH, or(date(user.orders.order_date) == Cast(2011-01-01 AS DATE NOT NULL),date(user.orders.order_date) == Cast(2012-01-01 AS DATE NOT NULL))]
-        Flatten@2594e776(user.customers INNER user.orders)
-          GroupScan@52e80740(Group(customers -> user._akiban_customers))
-            TableSource@23e45a5c(user.customers - TableGroup@7f342545(customers))
-            TableSource@64e8606c(user.orders - TableGroupJoin@387b1641(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+SelectQuery@40395aaf
+  ResultSet@7570b819[cid, name, oid, cid, order_date, special]
+    Project@3b46ad8b[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date, user.orders.special]
+      Select@1d2b9f14[user.orders.special == upper(user.customers.name)]
+        Flatten@513c952f(user.customers INNER user.orders)
+          GroupScan@60666a53(Group(customers -> user._akiban_customers))
+            TableSource@785606f3(user.customers - TableGroup@63cea096(customers))
+            TableSource@57e2793d(user.orders - TableGroupJoin@12910b0b(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))

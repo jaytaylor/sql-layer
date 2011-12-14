@@ -69,6 +69,7 @@ public class WeekDayNameExpressionTest extends ComposedExpressionTestBase
         param(pb, AkType.DATETIME, AkType.INT, st2, "2",DAYOFWEEK_COMPOSER);
         param(pb, AkType.TIMESTAMP, AkType.INT, st2, "2", DAYOFWEEK_COMPOSER);
         param(pb, AkType.DATETIME, AkType.INT, null, null, DAYOFWEEK_COMPOSER);
+        param(pb, AkType.DATE, AkType.INT, "2011-12-35",null, DAYOFWEEK_COMPOSER);
 
         // test week day
         param(pb, AkType.DATE, AkType.INT, st1,"0", WEEKDAY_COMPOSER);

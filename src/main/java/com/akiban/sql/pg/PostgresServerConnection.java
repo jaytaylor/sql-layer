@@ -20,7 +20,10 @@ import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.ParameterNode;
 
+import com.akiban.sql.optimizer.rule.IndexEstimator;
+
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Index;
 import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.OperatorStore;
@@ -38,6 +41,8 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
+import com.akiban.server.store.statistics.IndexStatistics;
+import com.akiban.server.store.statistics.IndexStatisticsService;
 
 import com.akiban.util.Tap;
 
@@ -579,16 +584,10 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
         PostgresStatementGenerator compiler;
         {
-            final Store store = reqs.store();
-            final PersistitStore persistitStore;
-            if (store instanceof OperatorStore)
-                persistitStore = ((OperatorStore)store).getPersistitStore();
-            else
-                persistitStore = (PersistitStore)store;
             PostgresOperatorCompiler c = new PostgresOperatorCompiler(this);
             compiler = c;
             adapter = new PersistitAdapter(c.getSchema(),
-                                           persistitStore,
+                                           reqs.store().getPersistitStore(),
                                            reqs.treeService(),
                                            session,
                                            reqs.config());
@@ -868,6 +867,29 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             throw new AkibanInternalException("Unknown environment value: " +
                                               setting);
         }
+    }
+
+    // TODO: Maybe move this someplace else. Right now this is where things meet.
+    public static class ServiceIndexEstimator extends IndexEstimator
+    {
+        private IndexStatisticsService indexStatistics;
+        private Session session;
+
+        public ServiceIndexEstimator(IndexStatisticsService indexStatistics,
+                                     Session session) {
+            this.indexStatistics = indexStatistics;
+            this.session = session;
+        }
+
+        @Override
+        public IndexStatistics getIndexStatistics(Index index) {
+            return indexStatistics.getIndexStatistics(session, index);
+        }
+    }
+
+    @Override
+    public IndexEstimator indexEstimator() {
+        return new ServiceIndexEstimator(reqs.indexStatistics(), session);
     }
 
 }

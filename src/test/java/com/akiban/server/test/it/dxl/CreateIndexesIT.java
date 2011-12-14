@@ -52,6 +52,7 @@ import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
+import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.util.GroupIndexCreator;
 import com.google.inject.Inject;
@@ -519,8 +520,8 @@ public final class CreateIndexesIT extends ITBase {
 
         @Inject
         public StartHookDxlService(SchemaManager schemaManager, Store store, TreeService treeService,
-                                   SessionService sessionService) {
-            super(schemaManager, store, treeService, sessionService);
+                                   SessionService sessionService, IndexStatisticsService indexStatisticsService) {
+            super(schemaManager, store, treeService, sessionService, indexStatisticsService);
         }
 
         @Override

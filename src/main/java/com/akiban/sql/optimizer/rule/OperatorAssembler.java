@@ -362,14 +362,17 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleSelect(Select select) {
             RowStream stream = assembleStream(select.getInput());
+            ConditionDependencyAnalyzer dependencies = null;
             for (ConditionExpression condition : select.getConditions()) {
                 RowType rowType = stream.rowType;
                 ColumnExpressionToIndex fieldOffsets = stream.fieldOffsets;
                 if (rowType == null) {
-                    // Pre-flattening case.
+                    // Pre-flattening case: get the single table this
+                    // condition must have come from and use its row-type.
                     // TODO: Would it be better if earlier rule saved this?
-                    TableSource table = 
-                        SelectPreponer.getSingleTableConditionTable(condition);
+                    if (dependencies == null)
+                        dependencies = new ConditionDependencyAnalyzer(select);
+                    TableSource table = (TableSource)dependencies.analyze(condition);
                     rowType = tableRowType(table);
                     fieldOffsets = new ColumnSourceFieldOffsets(table, rowType);
                 }
@@ -598,8 +601,18 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected RowStream assembleDistinct(Distinct distinct) {
-            RowStream stream = assembleStream(distinct.getInput());
             Distinct.Implementation impl = distinct.getImplementation();
+            if (impl == Distinct.Implementation.EXPLICIT_SORT) {
+                PlanNode input = distinct.getInput();
+                if (input instanceof Sort) {
+                    // Explicit Sort is still there; combine.
+                    return assembleSort((Sort)input, distinct.getOutput(), 
+                                        API.SortOption.SUPPRESS_DUPLICATES);
+                }
+                // Sort removed but Distinct remains.
+                impl = Distinct.Implementation.PRESORTED;
+            }
+            RowStream stream = assembleStream(distinct.getInput());
             if (impl == null)
               impl = Distinct.Implementation.SORT;
             switch (impl) {
@@ -617,6 +630,12 @@ public class OperatorAssembler extends BaseRule
         static final int INSERTION_SORT_MAX_LIMIT = 100;
 
         protected RowStream assembleSort(Sort sort) {
+            return assembleSort(sort, 
+                                sort.getOutput(), API.SortOption.PRESERVE_DUPLICATES);
+        }
+
+        protected RowStream assembleSort(Sort sort, 
+                                         PlanNode output, API.SortOption sortOption) {
             RowStream stream = assembleStream(sort.getInput());
             API.Ordering ordering = API.ordering();
             for (OrderByExpression orderBy : sort.getOrderBy()) {
@@ -624,8 +643,7 @@ public class OperatorAssembler extends BaseRule
                                                      stream.fieldOffsets);
                 ordering.append(expr, orderBy.isAscending());
             }
-            assembleSort(stream, ordering, sort.getInput(), sort.getOutput(),
-                         API.SortOption.PRESERVE_DUPLICATES);
+            assembleSort(stream, ordering, sort.getInput(), output, sortOption);
             return stream;
         }
 

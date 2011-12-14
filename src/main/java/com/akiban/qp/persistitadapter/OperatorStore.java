@@ -267,6 +267,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         this.config = config;
     }
 
+    @Override
     public PersistitStore getPersistitStore() {
         return super.getDelegate();
     }

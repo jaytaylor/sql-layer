@@ -8,7 +8,7 @@ SelectQuery@6ddaa877
       Project@46f0bf3d[user.orders.order_date, user.child.name]
         Select@679b622d[]
           NullIfEmpty@1722fe15
-            Select@7a572090[or(user.customers.name == user.parent.name,user.customers.name == upcase(user.parent.name))]
+            Select@7a572090[or(user.customers.name == user.parent.name,user.customers.name == concatenate(user.parent.name,user.child.name))]
               Flatten@6e1b0caf(user.parent INNER user.child)
                 GroupScan@31ddeda2(Group(parent -> user._akiban_parent))
                   TableSource@7deaf705(user.parent - TableGroup@611c4041(parent))

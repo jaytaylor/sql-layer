@@ -53,6 +53,13 @@ public class GroupNameCollisionIT extends ITBase {
             TableName rootTable = aisGroup.getGroupTable().getRoot().getName();
             if ("akiban_information_schema".equals(rootTable.getSchemaName())) {
                 expectedBuilder.rootTable(rootTable, aisGroup.getName());
+                if ("zindex_statistics".equals(rootTable.getTableName())) {
+                  expectedBuilder.joinTables(rootTable,
+                                             new TableName(rootTable.getSchemaName(),
+                                                           "zindex_statistics_entry"))
+                    .column("table_id", "table_id")
+                    .column("index_id", "index_id");
+                }
             }
         }
         expectedBuilder.rootTable("s1", "t", group1.getName());

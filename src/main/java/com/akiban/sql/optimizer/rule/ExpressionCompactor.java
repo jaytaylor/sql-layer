@@ -48,7 +48,7 @@ public class ExpressionCompactor extends BaseRule
     @Override
     public boolean visitLeave(PlanNode n) {
         if (n instanceof Select)
-            compactConditions(((Select)n).getConditions());
+            compactConditions(n, ((Select)n).getConditions());
         return true;
     }
 
@@ -67,29 +67,36 @@ public class ExpressionCompactor extends BaseRule
         if (expr instanceof AnyCondition)
             return anyCondition((AnyCondition)expr);
         if (expr instanceof IfElseExpression)
-            compactConditions(((IfElseExpression)expr).getTestConditions());
+            compactConditions(null, ((IfElseExpression)expr).getTestConditions());
         return expr;
     }
 
-    protected void compactConditions(ConditionList conditions) {
+    protected void compactConditions(PlanNode node, ConditionList conditions) {
         if (conditions.size() <= 1)
             return;
-
-        Map<TableSource,List<ConditionExpression>> byTable = 
-            new HashMap<TableSource,List<ConditionExpression>>();
-        for (ConditionExpression condition : conditions) {
-            TableSource table = SelectPreponer.getSingleTableConditionTable(condition);
-            List<ConditionExpression> entry = byTable.get(table);
-            if (entry == null) {
-                entry = new ArrayList<ConditionExpression>();
-                byTable.put(table, entry);
+        
+        Map<ColumnSource,List<ConditionExpression>> byTable = 
+            new HashMap<ColumnSource,List<ConditionExpression>>();
+        if (node != null) {
+            ConditionDependencyAnalyzer dependencies = 
+                new ConditionDependencyAnalyzer(node);
+            for (ConditionExpression condition : conditions) {
+                ColumnSource table = dependencies.analyze(condition);
+                List<ConditionExpression> entry = byTable.get(table);
+                if (entry == null) {
+                    entry = new ArrayList<ConditionExpression>();
+                    byTable.put(table, entry);
+                }
+                entry.add(condition);
             }
-            entry.add(condition);
+        }
+        else {
+            byTable.put(null, new ArrayList<ConditionExpression>(conditions));
         }
         conditions.clear();
-        List<TableSource> tables = new ArrayList<TableSource>(byTable.keySet());
+        List<ColumnSource> tables = new ArrayList<ColumnSource>(byTable.keySet());
         Collections.sort(tables, tableSourceById);
-        for (TableSource table : tables) {
+        for (ColumnSource table : tables) {
             List<ConditionExpression> entry = byTable.get(table);
             ConditionExpression condition;
             int size = entry.size();
@@ -109,20 +116,20 @@ public class ExpressionCompactor extends BaseRule
         }
     }
 
-    static final Comparator<TableSource> tableSourceById = 
-        new Comparator<TableSource>() {
+    static final Comparator<ColumnSource> tableSourceById = 
+        new Comparator<ColumnSource>() {
         @Override
-        public int compare(TableSource t1, TableSource t2) {
-            if (t1 == null) {
-                if (t2 == null)
+        public int compare(ColumnSource t1, ColumnSource t2) {
+            if (!(t1 instanceof TableSource)) {
+                if (!(t2 instanceof TableSource))
                     return 0;
                 else
                     return +1;
             }
-            else if (t2 == null)
+            else if (!(t2 instanceof TableSource))
                 return -1;
             else
-                return t1.getTable().getTable().getTableId().compareTo(t2.getTable().getTable().getTableId());
+                return ((TableSource)t1).getTable().getTable().getTableId().compareTo(((TableSource)t2).getTable().getTable().getTableId());
         }
     };
 
