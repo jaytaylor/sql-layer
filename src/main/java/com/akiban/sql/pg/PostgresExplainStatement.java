@@ -61,6 +61,11 @@ public class PostgresExplainStatement implements PostgresStatement
     }
 
     @Override
+    public TransactionMode getTransactionMode() {
+        return TransactionMode.ALLOWED;
+    }
+
+    @Override
     public int execute(PostgresServerSession server, int maxrows)
             throws IOException {
         PostgresMessenger messenger = server.getMessenger();
