@@ -22,6 +22,11 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.Date;
 
+/*
+ * This class creates the database definition and outputs a data set for 
+ * use in the functional testing system.  It produces a YAML and a sql file
+ * for inclusion in
+ * */
 public class DateTimeMatrixCreator implements Runnable {
 
     private static final int MAX_TIME = 838;
@@ -74,7 +79,7 @@ public class DateTimeMatrixCreator implements Runnable {
                 + database
                 + " (id, date_field, time_field, timestamp_field, "
                 + "expected_year, expected_month, expected_day, expected_hour, "
-                + "expected_minute, expected_second, expected_millisecond,day_of_week, weekday, weekofyear, yearweek, dayname) "
+                + "expected_minute, expected_second, expected_millisecond,day_of_week, weekday, weekofyear, yearweek, dayname, week) "
                 + "values (" + (counter++) + ",'" + year + "-" + month + "-"
                 + day + "', '" + hour + ":" + minute + ":" + second + "',"
                 + timestamp + " , " + year + ", " + month + " , " + day + " , "
@@ -112,11 +117,9 @@ public class DateTimeMatrixCreator implements Runnable {
     }
 
     /*
-     * 
-     * */
-
-    // takes in (1 = Sunday, 2 = Monday, …, 7 = Saturday)
-    // result is (0 = Monday, 1 = Tuesday, … 5=sat, 6 = Sunday).
+     *  This function allows us to use a custom offset when working with day of week 
+     *  functions and the two (for now) ways of dealing with it
+     */
     public String convertWeekday(String valueOf, int indexOff, boolean zeroBase) {
         int value = Integer.parseInt(valueOf);
         int returnValue = value - indexOff;
@@ -175,7 +178,7 @@ public class DateTimeMatrixCreator implements Runnable {
                 + System.getProperty("line.separator")
                 + "      yearweek integer,"
                 + System.getProperty("line.separator")
-                + "      dayname varchar(15)"
+                + "      dayname varchar(15), week int"
                 + System.getProperty("line.separator") + "      )"
 
                 + System.getProperty("line.separator"));

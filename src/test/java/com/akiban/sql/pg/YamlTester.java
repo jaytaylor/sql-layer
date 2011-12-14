@@ -1222,12 +1222,11 @@ class YamlTester {
 
         @Override
         public boolean compareOutput(Object object) {
-            Date d = new Date(System.currentTimeMillis());
             long testResult = 0;
             try {
                 Date result = DEFAULT_DATETIME_FORMAT.parse(String
                        .valueOf(object));
-                testResult = (result.getTime() - d.getTime());
+                testResult = (result.getTime() - System.currentTimeMillis());
             } catch (ParseException e) {
                 fail(e.getMessage());
             }
