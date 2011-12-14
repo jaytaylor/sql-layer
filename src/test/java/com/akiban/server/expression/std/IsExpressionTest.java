@@ -89,7 +89,7 @@ public class IsExpressionTest extends ComposedExpressionTestBase
     @Override
     protected ExpressionComposer getComposer()
     {
-        return IsExpression.IS_TRUE;
+        return composer;
     }
 
     @Override
