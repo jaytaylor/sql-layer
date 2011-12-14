@@ -770,7 +770,7 @@ public class ASTStatementLoader extends BaseRule
             String function;
             Boolean value = (Boolean)((ConstantNode)is.getRightOperand()).getValue();
             if (value == null)
-                function = "isNull"; // No separate isUnknown.
+                function = "isUnknown";
             else if (value.booleanValue())
                 function = "isTrue";
             else
