@@ -86,14 +86,14 @@ public class PersistitStoreIndexStatistics
      * Keep in sync with akiban_information_schema.
      */
 
-    private static final TableName INDEX_STATISTICS_TABLE_NAME = new TableName("akiban_information_schema", "index_statistics");
+    private static final TableName INDEX_STATISTICS_TABLE_NAME = new TableName("akiban_information_schema", "zindex_statistics");
     private static final int TABLE_ID_FIELD_INDEX = 0;
     private static final int INDEX_ID_FIELD_INDEX = 1;
     private static final int ANALYSIS_TIMESTAMP_FIELD_INDEX = 2;
     private static final int ROW_COUNT_FIELD_INDEX = 3;
     private static final int SAMPLED_COUNT_FIELD_INDEX = 4;
 
-    private static final TableName INDEX_STATISTICS_ENTRY_TABLE_NAME = new TableName("akiban_information_schema", "index_statistics_entry");
+    private static final TableName INDEX_STATISTICS_ENTRY_TABLE_NAME = new TableName("akiban_information_schema", "zindex_statistics_entry");
     // Parent keys the same.
     private static final int COLUMN_COUNT_FIELD_INDEX = 2;
     private static final int ITEM_NUMBER_FIELD_INDEX = 3;
