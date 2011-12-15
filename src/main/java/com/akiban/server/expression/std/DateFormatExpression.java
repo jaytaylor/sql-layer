@@ -71,7 +71,7 @@ public class DateFormatExpression extends AbstractBinaryExpression
             ValueSource date = children().get(0).eval();
             ValueSource format = children().get(1).eval();
             if (date.isNull() || format.isNull() || format.getString().equals("")) return NullValueSource.only();
-            MutableDateTime datetime = (MutableDateTime)ConversionUtil.getConverters(AkType.DATE).get(date);
+            MutableDateTime datetime = ConversionUtil.getDateTimeConverter().get(date);
 
             valueHolder().putString(DateTimeField.getFormatted(datetime, format.getString()));
             return valueHolder();

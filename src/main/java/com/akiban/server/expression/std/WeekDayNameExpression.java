@@ -118,7 +118,7 @@ public class WeekDayNameExpression extends AbstractUnaryExpression
             MutableDateTime datetime;
             try
             {
-                datetime = (MutableDateTime)ConversionUtil.getConverters(AkType.DATE).get(s);
+                datetime = ConversionUtil.getDateTimeConverter().get(s);
             }
             catch (IllegalFieldValueException ex)
             {

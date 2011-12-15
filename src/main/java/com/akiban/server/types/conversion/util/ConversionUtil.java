@@ -15,23 +15,14 @@
 
 package com.akiban.server.types.conversion.util;
 
-import com.akiban.server.types.AkType;
 import org.joda.time.MutableDateTime;
 
 public class ConversionUtil 
 {
     private static final AbstractConverter<MutableDateTime> DATETIME = new DateTimeConverter();
     
-    public static AbstractConverter getConverters (AkType type)
+    public static AbstractConverter<MutableDateTime> getDateTimeConverter ()
     {
-        switch (type)
-        {
-            case DATE:
-            case TIME:
-            case DATETIME:
-            case TIMESTAMP:
-            case YEAR:          return DATETIME;
-            default: throw new UnsupportedOperationException ("Converters for " + type + " is not available yet");
-        }
+        return DATETIME;
     }
 }
