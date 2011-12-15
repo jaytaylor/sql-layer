@@ -22,7 +22,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import org.joda.time.MutableDateTime;
 
-public class DateTimeConverter implements AbstractConverter<MutableDateTime>
+class DateTimeConverter implements AbstractConverter<MutableDateTime>
 {
     @Override
     public  MutableDateTime get(ValueSource source) 

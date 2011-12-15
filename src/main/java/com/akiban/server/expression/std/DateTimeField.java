@@ -261,6 +261,7 @@ public enum DateTimeField
 
     /**
      * hour in 24-hr format
+     * [23, 22, ..., 01, 00]
      */
     H
     {
@@ -292,6 +293,7 @@ public enum DateTimeField
 
     /**
      * hour in 12-hr format
+     * [12, 11, ...,01]
      */
     h
     {
@@ -309,7 +311,7 @@ public enum DateTimeField
         @Override
         public String get(MutableDateTime datetime)
         {
-            return datetime.get(DateTimeFieldType.clockhourOfHalfday()) + "";
+            return String.format("%2d", datetime.get(DateTimeFieldType.clockhourOfHalfday()));
         }
 
         @Override
@@ -327,6 +329,7 @@ public enum DateTimeField
 
     /**
      * I same as h: hour in 12-hr format
+     * [12, 11, ...,01]
      */
     I
     {
@@ -344,7 +347,7 @@ public enum DateTimeField
         @Override
         public String get(MutableDateTime datetime)
         {
-            return datetime.get(DateTimeFieldType.clockhourOfHalfday()) + "";
+            return String.format("%2d", datetime.get(DateTimeFieldType.clockhourOfHalfday()));
         }
 
         @Override
@@ -361,7 +364,7 @@ public enum DateTimeField
     },
 
     /**
-     * minute
+     * minute: 59, 58, ..., 1,0
      */
     i
     {
@@ -425,7 +428,8 @@ public enum DateTimeField
 
     /**
      * hour : 24-hr format.
-     * Same as H
+     * Same as H, but do not pre-pend 0 to one-digit hour
+     * [23, 22, ...1,0]
      */
     k
     {
@@ -457,7 +461,8 @@ public enum DateTimeField
 
     /**
      * hour: 12-hr format
-     * Same as h
+     * Same as h, but does not pre-pend 0 to a one-digit value
+     * [12, 11, ..., 1]
      */
     l
     {

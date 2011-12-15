@@ -25,8 +25,6 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.util.ConversionUtil;
-import com.akiban.server.types.conversion.util.DateTimeConverter;
-import com.akiban.server.types.extract.Extractors;
 import java.util.List;
 import org.joda.time.MutableDateTime;
 
