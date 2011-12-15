@@ -14,6 +14,7 @@
  */
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -107,6 +108,8 @@ public final class BoolLogicExpression extends AbstractBinaryExpression {
 
         @Override
         public void argumentTypes(List<AkType> argumentTypes) {
+            if (argumentTypes.size() != 2) 
+                throw new WrongExpressionArityException(2, argumentTypes.size());
             argumentTypes.set(0, AkType.BOOL);
             argumentTypes.set(1, AkType.BOOL);
         }

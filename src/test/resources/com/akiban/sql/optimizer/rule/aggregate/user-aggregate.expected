@@ -1,0 +1,7 @@
+SelectQuery@3c70315
+  ResultSet@7e9b59a2[_SQL_COL_1]
+    Project@919db9e[GROUP[0]]
+      Select@a166bd[]
+        AggregateSource@6460029d(UNGROUPED,[bit_or(user.items.quan)])
+          Select@5b4bc4e6[]
+            TableSource@48c5186e(user.items)

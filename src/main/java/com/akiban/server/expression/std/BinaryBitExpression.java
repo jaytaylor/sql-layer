@@ -16,6 +16,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.error.InconvertibleTypesException;
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -122,6 +123,8 @@ public class BinaryBitExpression extends AbstractBinaryExpression
         @Override
         public void argumentTypes(List<AkType> argumentTypes)
         {
+            if (argumentTypes.size() != 2) 
+                throw new WrongExpressionArityException(2, argumentTypes.size());
             argumentTypes.set(0, AkType.U_BIGINT);
             argumentTypes.set(1, op.ordinal() >= BitOperator.LEFT_SHIFT.ordinal() ? AkType.LONG : AkType.U_BIGINT );
         }
