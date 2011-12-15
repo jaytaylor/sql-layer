@@ -1,0 +1,23 @@
+# Test the bitwise AND function
+---
+- CreateTable:  Classes (ClassID SMALLINT , Dept CHAR(4) NOT NULL, 
+                  Level varchar(5) NOT NULL, TotalStudents int NOT NULL);
+---
+- Statement: INSERT INTO Classes VALUES
+      (1001, 'ANTH', 'Upper', 25),
+      (1002, 'ANTH', 'Upper', 25),
+      (1003, 'MATH', 'Upper', 18),
+      (1004, 'ANTH', 'Lower', 19),
+      (1005, 'ENGL', 'Upper', 28),
+      (1006, 'MATH', 'Lower', 23),
+      (1007, 'ENGL', 'Upper', 25),
+      (1008, 'MATH', 'Lower', 29),
+      (1009, 'ANTH', 'Upper', 25),
+      (1010, 'ANTH', 'Lower', 30),
+      (1011, 'ENGL', 'Lower', 26),
+      (1012, 'MATH', 'Lower', 22),
+      (1013, 'ANTH', 'Upper', 27),
+      (1014, 'ANTH', 'Upper', 21),
+      (1015, 'ENGL', 'Lower', 25),
+      (1016, 'ENGL', 'Upper', 32);
+...
