@@ -186,7 +186,8 @@ create table index_analysis(
 ) engine=akibandb;
 
 -- New format Index histograms
-create table akiban_information_schema.index_statistics (
+-- See akiban_information_schema.ddl for note on names.
+create table akiban_information_schema.zindex_statistics (
     table_id            int not null,
     index_id            int not null,
     analysis_timestamp  timestamp,
@@ -195,7 +196,7 @@ create table akiban_information_schema.index_statistics (
     primary key(table_id, index_id)
 ) engine=akibandb;
 
-create table akiban_information_schema.index_statistics_entry (
+create table akiban_information_schema.zindex_statistics_entry (
     table_id            int not null,
     index_id            int not null,
     column_count        int not null,
@@ -206,6 +207,6 @@ create table akiban_information_schema.index_statistics_entry (
     lt_count            bigint,
     distinct_count      bigint,
     primary key(table_id, index_id, column_count, item_number),
-    CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (table_id, index_id) REFERENCES akiban_information_schema.index_statistics(table_id, index_id)
+    CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (table_id, index_id) REFERENCES akiban_information_schema.zindex_statistics(table_id, index_id)
 ) engine=akibandb;
 
