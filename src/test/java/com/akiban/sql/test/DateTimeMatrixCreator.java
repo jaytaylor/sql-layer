@@ -24,8 +24,9 @@ import java.util.Date;
 
 /*
  * This class creates the database definition and outputs a data set for 
- * use in the functional testing system.  It produces a YAML and a sql file
- * for inclusion in
+ * use in the functional testing system.  It produces a YAML 
+ * for inclusion in testing with other yaml files.  A SQL file is created to 
+ * allow for direct mySQL comparisons.
  * */
 public class DateTimeMatrixCreator implements Runnable {
 
