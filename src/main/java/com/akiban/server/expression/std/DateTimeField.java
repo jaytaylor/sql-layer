@@ -988,7 +988,7 @@ public enum DateTimeField
         {
              // the last parameter: 1 means MONDAY
              return getYear(datetime, datetime.getYear(), datetime.getMonthOfYear(), datetime.getDayOfMonth(), 1) + "";
-      
+
         }
 
         @Override
@@ -1127,7 +1127,7 @@ public enum DateTimeField
      *              %y and %Y  => %Y year
      */
     abstract DateTimeField equivalentField ();
-    
+
     /**
      * to be used in X and x
      * @param cal
@@ -1153,7 +1153,7 @@ public enum DateTimeField
         if (da < firstD) return yr -1;
         else return yr;
     }
-    
+
     /**
      * to be used in V, v, U and u
      * @param cal
@@ -1175,11 +1175,11 @@ public enum DateTimeField
         while (cal.getDayOfWeek() != firstDay)
             cal.setDayOfMonth(++firstD);
 
-        cal.setYear(yr); 
-        cal.setMonthOfYear(mo); 
-        cal.setDayOfMonth(da); 
+        cal.setYear(yr);
+        cal.setMonthOfYear(mo);
+        cal.setDayOfMonth(da);
 
-        int dayOfYear = cal.getDayOfYear(); 
+        int dayOfYear = cal.getDayOfYear();
 
         if (dayOfYear < firstD) return (lowestIs0 ? 0 : getWeek(cal, yr-1, 12, 31, firstDay, lowestIs0));
         else return (dayOfYear - firstD) / 7 +1;
@@ -1196,7 +1196,7 @@ public enum DateTimeField
     {
         String[] frmList = format.split("\\%");
         StringBuilder builder = new StringBuilder(frmList[0]);
-       
+
         for (int n = 1; n < frmList.length; ++n)
         {
             if (frmList[n].length() == 0 )
@@ -1218,7 +1218,7 @@ public enum DateTimeField
                 }
             }
         }
-        
+
         for (int m = format.length() -1; format.charAt(m) == '%'; m -= 2)
             builder.append('%');
         return builder.toString();

@@ -46,12 +46,12 @@ public class DateFormatExpressionTest extends ComposedExpressionTestBase
         this.expected = expected;
         this.argType = argType;
     }
-    
+
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params()
     {
         ParameterizationBuilder pb = new ParameterizationBuilder();
-        
+
         // DATE
         param(pb, AkType.DATE, "%y - %m - %d", "02 - 01 - 01");
         param(pb, AkType.DATE, "%Y-%M-%D %H %D%D", "2002-January-1st 00 1st1st"); // duplicate specifiers
@@ -60,11 +60,11 @@ public class DateFormatExpressionTest extends ComposedExpressionTestBase
         param(pb, AkType.DATE, null, null); // format string is null => result is null
         param(pb, AkType.DATE, " %%Foo %%%%", " %Foo %%"); // format string only contains literal,
                                                            // , starts with % and ends with %
-        param(pb, AkType.DATE, "% ", " "); 
+        param(pb, AkType.DATE, "% ", " ");
         param(pb, AkType.DATE, "% z %M", " z January"); // invalid specifier is treated as regular char
         param(pb, AkType.DATE, "%Y %%%", "2002 %%"); // % at the end is treated as literal %
-        
-        // DATETIME and TIMESTAMP       
+
+        // DATETIME and TIMESTAMP
         for (AkType t : Arrays.asList(AkType.DATETIME, AkType.TIMESTAMP))
         {
             param(pb, t, "%y - %m - %d", "02 - 01 - 01");
@@ -73,15 +73,15 @@ public class DateFormatExpressionTest extends ComposedExpressionTestBase
             param(pb, t, "", null);
             param(pb, t, null, null);
         }
-        
+
         // TIME
         param(pb, AkType.TIME, "%H %i:%s", "11 30:56");
         param(pb, AkType.TIME, "", null);
         param(pb, AkType.TIME, null, null);
-       
+
         return pb.asList();
     }
-    
+
     private static void param(ParameterizationBuilder pb, AkType argType, String format, String expected)
     {
         pb.add("date_format( ," + argType + ", " + format + ") =" + expected, argType, format, expected);
@@ -97,24 +97,24 @@ public class DateFormatExpressionTest extends ComposedExpressionTestBase
         // for the date_format
         DateTimeZone defaultTimezone = DateTimeZone.getDefault();
         DateTimeZone.setDefault(DateTimeZone.forTimeZone(TimeZone.getTimeZone("UTC")));
-        
+
         Expression date = getExp(argType);
         Expression formatExp;
         if (format != null)
             formatExp = new LiteralExpression(AkType.VARCHAR, format);
         else
             formatExp = LiteralExpression.forNull();
-        
+
         Expression top = DateFormatExpression.COMPOSER.compose(Arrays.asList(date, formatExp));
         check(top, expected);
 
         alreadyExc = true;
-        
+
         // reset to default timezone
         TimeZone.setDefault(defaultTimeZone);
         DateTimeZone.setDefault(defaultTimezone);
     }
-    
+
     private void check(Expression top, String expected)
     {
         if (expected == null)
@@ -139,6 +139,7 @@ public class DateFormatExpressionTest extends ComposedExpressionTestBase
     {
         return Extractors.getLongExtractor(type).getLong(ex);
     }
+    
     @Override
     protected CompositionTestInfo getTestInfo()
     {

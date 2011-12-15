@@ -12,10 +12,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package com.akiban.server.types.conversion.util;
 
 import com.akiban.server.types.ValueSource;
