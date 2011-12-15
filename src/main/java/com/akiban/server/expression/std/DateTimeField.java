@@ -1202,10 +1202,9 @@ public enum DateTimeField
             }
             else
             {
-                String s = Character.toString(frmList[n].charAt(0));
                 try
                 {
-                    
+                    String s = Character.toString(frmList[n].charAt(0));
                     builder.append(frmList[n].replaceFirst(s, DateTimeField.valueOf(s).get(date)));
                 }
                 catch (IllegalArgumentException ex) // unknown specifiers are treated as regular chars
