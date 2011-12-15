@@ -2,22 +2,24 @@
 ---
 - Include: all-types-schema.yaml
 ---
-- Statement: SELECT 29 | 15 from all_types;
+- Statement: INSERT INTO all_types VALUES (null);
+---  
+- Statement: SELECT BITOR(29, 15) from all_types;
 - output: [[31]]  
 ---
-- Statement: SELECT 0 | 5 from all_types;
+- Statement: SELECT BITOR(0, 5) from all_types;
 - output: [[5]]  
 ---
-- Statement: SELECT 1 | 5 from all_types;
+- Statement: SELECT BITOR(1, 5) from all_types;
 - output: [[5]]  
 ---
-- Statement: SELECT 2 | 5 from all_types;
+- Statement: SELECT BITOR(2, 5) from all_types;
 - output: [[7]]  
 ---
-- Statement: SELECT 4 | 5 from all_types;
+- Statement: SELECT BITOR(4, 5) from all_types;
 - output: [[5]]  
 ---
-- Statement: SELECT 8 | 5 from all_types;
+- Statement: SELECT BITOR(8, 5) from all_types;
 - output: [[13]]  
 ...
 

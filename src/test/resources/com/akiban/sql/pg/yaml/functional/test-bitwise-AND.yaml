@@ -38,43 +38,50 @@
 ---
 - Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (64, 'Level 7');
 ---
-- Statement: SELECT 1 from all_types where 29 & 15 = 13;
+- Statement: SELECT 1 from all_types where BITAND(29,15) = 13 limit 1;
 - output: [[1]]  
 ---
-- Statement: SELECT 0 & 5 from all_types;
-- output: [[0]]  
----
-- Statement: SELECT 1 & 5 from all_types;
+- Statement: SELECT 1 from all_types where BITAND(0,5) = 0 limit 1;
 - output: [[1]]  
 ---
-- Statement: SELECT 2 & 5 from all_types;
-- output: [[0]]  
+- Statement: SELECT 1 from all_types where BITAND(1,5) = 1 limit 1;
+- output: [[1]]  
 ---
-- Statement: SELECT 4 & 15 from all_types;
-- output: [[4]]  
+- Statement: SELECT 1 from all_types where BITAND(2,5) = 0 limit 1;
+- output: [[1]]  
 ---
-- Statement: SELECT 8 & 15 from all_types;
-- output: [[0]]
+- Statement: SELECT 1 from all_types where BITAND(4,5) = 4 limit 1;
+- output: [[1]]  
 ---
-- Statement: SELECT varchar_field from all_types where bigint_field & 1 and varchar_field not like '%Level 1%';    
+- Statement: SELECT 1 from all_types where BITAND(8,5) = 0 limit 1;
+- output: [[1]]
+---
+- Statement: SELECT varchar_field from all_types where BITAND(bigint_field,1)=1 and varchar_field not like '%Level 1%';    
 - row_count: 0
 ---
-- Statement: SELECT varchar_field from all_types where bigint_field & 2 and varchar_field not like '%Level 2%';
+- Statement: SELECT varchar_field from all_types where BITAND(bigint_field,2)=2 and varchar_field not like '%Level 2%';
 - row_count: 0
 ---
-- Statement: SELECT varchar_field from all_types where bigint_field & 4 and varchar_field not like '%Level 3%';
+- Statement: SELECT varchar_field from all_types where BITAND(bigint_field,4)=4 and varchar_field not like '%Level 3%';
 - row_count: 0
 ---
-- Statement: SELECT varchar_field from all_types where bigint_field & 8 and varchar_field not like '%Level 4%';
+- Statement: SELECT varchar_field from all_types where BITAND(bigint_field,8) = 8 and varchar_field not like '%Level 4%';
 - row_count: 0
 ---
-- Statement: SELECT varchar_field from all_types where bigint_field & 16 and varchar_field not like '%Level 5%';
+- Statement: SELECT varchar_field from all_types where BITAND(bigint_field,16)=16 and varchar_field not like '%Level 5%';
 - row_count: 0
 ---
-- Statement: SELECT varchar_field from all_types where bigint_field & 32 and varchar_field not like '%Level 6%';
+- Statement: SELECT varchar_field from all_types where BITAND(bigint_field,32)=32 and varchar_field not like '%Level 6%';
 - row_count: 0
 ---
-- Statement: SELECT varchar_field from all_types where bigint_field & 64 and varchar_field not like '%Level 7%';
-- row_count: 0  
+- Statement: SELECT varchar_field from all_types where BITAND(bigint_field,64)=64 and varchar_field not like '%Level 7%';
+- row_count: 0
+---
+- Statement: SELECT varchar_field from all_types where BITAND(bigint_field,64)=64;
+- row_count: 1  
+- output: [['Level 7']]  
+---
+- Statement: SELECT varchar_field from all_types where BITAND(bigint_field,1)=1;
+- output: [['Level 1'],['Level 1;Level 2'],['Level 3;Level 1'],['Level 3;Level 2;Level 1'],['Level 4;Level 1'],['Level 4;Level 2;Level 1'],['Level 4;Level 3;Level 1'],['Level 4;Level 3;Level 2;Level 1']]
 ...
 

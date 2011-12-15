@@ -1,80 +1,33 @@
 # Test the bitwise AND function
 ---
-- Include: all-types-schema.yaml
+- CreateTable:  Classes (ClassID SMALLINT , Dept CHAR(4) NOT NULL, Level varchar(5) NOT NULL, TotalStudents int NOT NULL);
+--- 
+#bug 904284
+- Statement: INSERT INTO Classes VALUES (1001, 'ANTH', 'Upper', 25);
 ---
-- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (1, 'Level 1');
+- Statement: SELECT Dept, Level, BITAND(ClassID) AS BitwiseAND FROM Classes GROUP BY ClassID, Dept, Level;
+- output: [['ANTH','Upper',1001]]
+---  
+- Statement: INSERT INTO Classes VALUES
+      (1002, 'ANTH', 'Upper', 25),
+      (1003, 'MATH', 'Upper', 18),
+      (1004, 'ANTH', 'Lower', 19),
+      (1005, 'ENGL', 'Upper', 28),
+      (1006, 'MATH', 'Lower', 23),
+      (1007, 'ENGL', 'Upper', 25),
+      (1008, 'MATH', 'Lower', 29),
+      (1009, 'ANTH', 'Upper', 25),
+      (1010, 'ANTH', 'Lower', 30),
+      (1011, 'ENGL', 'Lower', 26),
+      (1012, 'MATH', 'Lower', 22),
+      (1013, 'ANTH', 'Upper', 27),
+      (1014, 'ANTH', 'Upper', 21),
+      (1015, 'ENGL', 'Lower', 25),
+      (1016, 'ENGL', 'Upper', 32);
 ---
-- Statement: SELECT 1 from all_types where BITAND(29,15) = 13;
-- output: [[1]]  
----
-- Statement: SELECT 0 BIT_AND 5 from all_types;
-- output: [[0]]  
----
-- Statement: SELECT 1 BIT_AND 5 from all_types;
-- output: [[1]]  
----
-- Statement: SELECT 2 BIT_AND 5 from all_types;
-- output: [[0]]  
----
-- Statement: SELECT 4 BIT_AND 15 from all_types;
-- output: [[4]]  
----
-- Statement: SELECT 8 BIT_AND 15 from all_types;
-- output: [[0]]
----
-- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (2, 'Level 2');
----
-- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (3, 'Level 1;Level 2');
----
-- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (4, 'Level 3');
----
-- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (5, 'Level 3;Level 1');
----
-- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (6, 'Level 3;Level 2');
----
-- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (7, 'Level 3;Level 2;Level 1');
----
-- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (8, 'Level 4');
----
-- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (9, 'Level 4;Level 1');
----
-- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (10, 'Level 4;Level 2');
----
-- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (11, 'Level 4;Level 2;Level 1');
----
-- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (12, 'Level 4;Level 3');
----
-- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (13, 'Level 4;Level 3;Level 1');
----
-- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (14, 'Level 4;Level 3;Level 2');
----
-- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (15, 'Level 4;Level 3;Level 2;Level 1');
----
-- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (16, 'Level 5');
----
-- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (32, 'Level 6');
----
-- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (64, 'Level 7');
----
-- Statement: SELECT varchar_field from all_types where bigint_field BIT_AND 1 and varchar_field not like '%Level 1%';    
-- row_count: 0
----
-- Statement: SELECT varchar_field from all_types where bigint_field BIT_AND 2 and varchar_field not like '%Level 2%';
-- row_count: 0
----
-- Statement: SELECT varchar_field from all_types where bigint_field BIT_AND 4 and varchar_field not like '%Level 3%';
-- row_count: 0
----
-- Statement: SELECT varchar_field from all_types where bigint_field BIT_AND 8 and varchar_field not like '%Level 4%';
-- row_count: 0
----
-- Statement: SELECT varchar_field from all_types where bigint_field BIT_AND 16 and varchar_field not like '%Level 5%';
-- row_count: 0
----
-- Statement: SELECT varchar_field from all_types where bigint_field BIT_AND 32 and varchar_field not like '%Level 6%';
-- row_count: 0
----
-- Statement: SELECT varchar_field from all_types where bigint_field BIT_AND 64 and varchar_field not like '%Level 7%';
-- row_count: 0 
+- Statement: SELECT Dept, Level, ClassID AS BitwiseAND FROM Classes;
+---  
+- Statement: SELECT Dept, Level, BITAND(ClassID) AS BitwiseAND FROM Classes GROUP BY ClassID, Dept, Level;
+- output: [['Anth','Upper',992],['ANTH','Upper',992],['ANTH','Lower',992],['ANTH',null,992],['ENGL','Upper',1000],['ENGL','Lower',1011],['ENGL',NULL,992],['MATH','Upper',1003],['MATH','Lower',992],['MATH',NULL,992],[NULL,NULL,992]]
 ...
 

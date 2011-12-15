@@ -4,27 +4,27 @@
 ---
 - Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
 ---
-- Statement: SELECT 1 ^ 1 from all_types;
+- Statement: SELECT BITXOR(1,1) from all_types;
 - output: [[0]] 
 ---
-- Statement: SELECT 1 ^ 0 from all_types;
+- Statement: SELECT BITXOR(1,0) from all_types;
 - output: [[1]] 
 ---
-- Statement: SELECT 11 ^ 3 from all_types;
+- Statement: SELECT BITXOR(11,3) from all_types;
 - output: [[8]] 
 ---
-- Statement: SELECT 0 ^ 5 from all_types;
+- Statement: SELECT BITXOR(0,5) from all_types;
 - output: [[5]] 
 ---
-- Statement: SELECT 1 ^ 5 from all_types;
+- Statement: SELECT BITXOR(1,5) from all_types;
 - output: [[4]] 
 ---
-- Statement: SELECT 2 ^ 5 from all_types;
+- Statement: SELECT BITXOR(2,5) from all_types;
 - output: [[7]] 
 ---
-- Statement: SELECT 4 ^ 5 from all_types;
+- Statement: SELECT BITXOR(4,5) from all_types;
 - output: [[1]] 
 ---
-- Statement: SELECT 8 ^ 5 from all_types;
-- output: [[13]] 
+- Statement: SELECT BITXOR(8,5) from all_types;
+- output: [[13]]
 ...
