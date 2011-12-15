@@ -21,7 +21,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MemoryOnlyTableStatusCache implements TableStatusCache {
-    private Map<Integer, InternalTableStatus> tableStatusMap = new HashMap<Integer, InternalTableStatus>();
+    private final Map<Integer, InternalTableStatus> tableStatusMap = new HashMap<Integer, InternalTableStatus>();
             
     @Override
     public synchronized void rowDeleted(int tableID) {
