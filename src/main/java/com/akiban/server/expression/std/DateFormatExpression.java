@@ -42,7 +42,7 @@ public class DateFormatExpression extends AbstractBinaryExpression
         @Override
         protected ExpressionType composeType(ExpressionType first, ExpressionType second)
         {
-            return ExpressionTypes.varchar(second.getScale() * 10);
+            return ExpressionTypes.varchar(second.getPrecision() * 5);
         }
 
         @Override
@@ -50,7 +50,7 @@ public class DateFormatExpression extends AbstractBinaryExpression
         {
             if (argumentTypes.size() != 2)
                 throw new WrongExpressionArityException(2, argumentTypes.size());
-            
+
             argumentTypes.set(1, AkType.VARCHAR);
             AkType dateType = argumentTypes.get(0);
             if (dateType != AkType.DATE && dateType != AkType.DATETIME
@@ -72,32 +72,32 @@ public class DateFormatExpression extends AbstractBinaryExpression
             ValueSource format = children().get(1).eval();
             if (date.isNull() || format.isNull() || format.getString().equals("")) return NullValueSource.only();
             MutableDateTime datetime = (MutableDateTime)ConversionUtil.getConverters(AkType.DATE).get(date);
-           
+
             valueHolder().putString(DateTimeField.getFormatted(datetime, format.getString()));
             return valueHolder();
-        }        
+        }
     }
-    
+
     protected DateFormatExpression (Expression left, Expression right)
     {
         super(AkType.VARCHAR, left, right);
     }
-    
+
     @Override
-    protected boolean nullIsContaminating() 
+    protected boolean nullIsContaminating()
     {
         return true;
     }
 
     @Override
-    protected void describe(StringBuilder sb) 
+    protected void describe(StringBuilder sb)
     {
         sb.append("DATE_FORMAT");
     }
 
     @Override
-    public ExpressionEvaluation evaluation() 
+    public ExpressionEvaluation evaluation()
     {
         return new InnerEvaluation(childrenEvaluations());
-    }    
+    }
 }
