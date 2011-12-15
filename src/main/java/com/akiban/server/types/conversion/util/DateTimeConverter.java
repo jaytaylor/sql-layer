@@ -13,41 +13,43 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.types.extract;
+package com.akiban.server.types.conversion.util;
 
+import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.extract.Extractors;
 import org.joda.time.MutableDateTime;
 
-public class ExtractorForDateTime extends ObjectExtractor<MutableDateTime>
+public class DateTimeConverter implements AbstractConverter<MutableDateTime>
 {
-    ExtractorForDateTime ()
-    {
-        super(AkType.LONG); // wrong!
-    }
-
     @Override
-    public MutableDateTime getObject(ValueSource source)
+    public  MutableDateTime get(ValueSource source) 
     {
         if (source.isNull()) return null;
         long [] ymd_hms;
         switch(source.getConversionType())
         {
-            case DATE:      ymd_hms = ExtractorsForDates.DATE.getYearMonthDayHourMinuteSecond(source.getDate());
+            case DATE:      ymd_hms = Extractors.getLongExtractor(AkType.DATE).
+                                getYearMonthDayHourMinuteSecond(source.getDate());
                             checkArgs(ymd_hms);
                             break;
-            case DATETIME:  ymd_hms = ExtractorsForDates.DATETIME.getYearMonthDayHourMinuteSecond(source.getDateTime());
+            case DATETIME:  ymd_hms = Extractors.getLongExtractor(AkType.DATETIME).
+                                getYearMonthDayHourMinuteSecond(source.getDateTime());
                             checkArgs(ymd_hms);
                             break;
             case TIMESTAMP: return new MutableDateTime(source.getTimestamp() * 1000); 
-            case TIME:      ymd_hms = ExtractorsForDates.TIME.getYearMonthDayHourMinuteSecond(source.getTime()); break;
-            case VARCHAR:   return getObject(source.getString());
-            case TEXT:      return getObject(source.getText());
-            case YEAR:      ymd_hms = ExtractorsForDates.YEAR.getYearMonthDayHourMinuteSecond(source.getYear());
+            case TIME:      ymd_hms =  Extractors.getLongExtractor(AkType.TIME).
+                                getYearMonthDayHourMinuteSecond(source.getTime()); break;
+            case VARCHAR:   return get(source.getString());
+            case TEXT:      return get(source.getText());
+            case YEAR:      ymd_hms =   Extractors.getLongExtractor(AkType.YEAR).
+                                getYearMonthDayHourMinuteSecond(source.getYear());
                             checkArgs(ymd_hms);
                             break;
-            default:        throw unsupportedConversion(source.getConversionType());
+            default:        throw new InconvertibleTypesException(source.getConversionType(), 
+                                                                    AkType.DATETIME);
         }
         
         return new MutableDateTime((int)ymd_hms[0], (int)ymd_hms[1], (int)ymd_hms[2],
@@ -60,8 +62,10 @@ public class ExtractorForDateTime extends ObjectExtractor<MutableDateTime>
     }
 
     @Override
-    public MutableDateTime getObject(String string)
+    public MutableDateTime get(String source) 
     {
-        return MutableDateTime.parse(string);
+        return MutableDateTime.parse(source);
     }
+    
+    protected DateTimeConverter () {}
 }

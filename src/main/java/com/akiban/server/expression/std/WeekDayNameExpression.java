@@ -23,6 +23,7 @@ import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.conversion.util.ConversionUtil;
 import com.akiban.server.types.extract.Extractors;
 import org.joda.time.MutableDateTime;
 import org.joda.time.IllegalFieldValueException;
@@ -117,7 +118,7 @@ public class WeekDayNameExpression extends AbstractUnaryExpression
             MutableDateTime datetime;
             try
             {
-                datetime = (MutableDateTime) Extractors.getObjectExtractor(AkType.DATE).getObject(s);
+                datetime = (MutableDateTime)ConversionUtil.getConverters(AkType.DATE).get(s);
             }
             catch (IllegalFieldValueException ex)
             {

@@ -24,6 +24,8 @@ import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.conversion.util.ConversionUtil;
+import com.akiban.server.types.conversion.util.DateTimeConverter;
 import com.akiban.server.types.extract.Extractors;
 import java.util.List;
 import org.joda.time.MutableDateTime;
@@ -71,7 +73,7 @@ public class DateFormatExpression extends AbstractBinaryExpression
             ValueSource date = children().get(0).eval();
             ValueSource format = children().get(1).eval();
             if (date.isNull() || format.isNull() || format.getString().equals("")) return NullValueSource.only();
-            MutableDateTime datetime = (MutableDateTime)Extractors.getObjectExtractor(AkType.DATE).getObject(date);
+            MutableDateTime datetime = (MutableDateTime)ConversionUtil.getConverters(AkType.DATE).get(date);
            
             valueHolder().putString(DateTimeField.getFormatted(datetime, format.getString()));
             return valueHolder();

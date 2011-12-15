@@ -60,12 +60,6 @@ public final class Extractors {
         case VARCHAR:   return STRING_EXTRACTOR;
         case DECIMAL:   return DECIMAL_EXTRACTOR;
         case U_BIGINT:  return UBIGINT_EXTRACTOR;
-        case DATE:
-        case TIME:
-        case DATETIME:
-        case TIMESTAMP:
-        case YEAR:
-        case LONG:      return DATETIME_EXTRACTOR;
         default: throw new AkibanInternalException("not an ObjectExtractor type: " + type);
         }
     }
@@ -104,7 +98,6 @@ public final class Extractors {
     private static final ExtractorForBigInteger UBIGINT_EXTRACTOR = new ExtractorForBigInteger();
     private static final ExtractorForBigDecimal DECIMAL_EXTRACTOR = new ExtractorForBigDecimal();
     private static final ExtractorForVarBinary VARBINARY_EXTRACTOR = new ExtractorForVarBinary();
-    private static final ExtractorForDateTime DATETIME_EXTRACTOR = new ExtractorForDateTime();
     
     private static final Map<AkType,? extends LongExtractor> readOnlyExtractorsMap = createLongExtractorsMap();
 }
