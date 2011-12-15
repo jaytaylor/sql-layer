@@ -80,7 +80,7 @@ public class DateTimeMatrixCreator implements Runnable {
                 + database
                 + " (id, date_field, time_field, timestamp_field, "
                 + "expected_year, expected_month, expected_day, expected_hour, "
-                + "expected_minute, expected_second, expected_millisecond,day_of_week, weekday, weekofyear, yearweek, dayname, week) "
+                + "expected_minute, expected_second, expected_millisecond,day_of_week, weekday, weekofyear, yearweek, dayname) "
                 + "values (" + (counter++) + ",'" + year + "-" + month + "-"
                 + day + "', '" + hour + ":" + minute + ":" + second + "',"
                 + timestamp + " , " + year + ", " + month + " , " + day + " , "
