@@ -135,7 +135,7 @@ public class WeekExpressionTest extends ComposedExpressionTestBase
     }
 
     @Override
-    protected ExpressionComposer getComposer()
+    public ExpressionComposer getComposer()
     {
         return WeekExpression.WEEK_COMPOSER;
     }
