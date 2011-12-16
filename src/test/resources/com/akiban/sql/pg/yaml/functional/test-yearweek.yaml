@@ -1,17 +1,20 @@
 # Test the YEARWEEK() function
 ---
-- Include: all-types-schema.yaml
----
-- Statement: INSERT INTO all_types (bigint_field) VALUES (1)
+- Properties: sys-aksql
+- suppressed: true
+#---
+#- Include: all-types-schema.yaml
+#---
+#- Statement: INSERT INTO all_types (bigint_field) VALUES (1)
 #---
 #- Statement: select YEARWEEK('1987-01-01 01:15:33') from all_types;
 #- output: [[198653]]
 #---
-#- Statement: select YEARWEEK('2000-01-01'), weekofyear('2000-01-01') from all_types;
-#- output: [[199952, 52]]
+#- Statement: select YEARWEEK('2000-01-01') from all_types;
+#- output: [[199952]]
 #---
-#- Statement: select YEARWEEK('2001-12-31'), weekofyear('2001-12-31') from all_types;
-#- output: [[200152, 1]]
+#- Statement: select YEARWEEK('2001-12-31') from all_types;
+#- output: [[200152]]
 #---
 #- Statement: select YEARWEEK('A') from all_types;
 #- output: [[null]]
