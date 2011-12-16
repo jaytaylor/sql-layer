@@ -401,7 +401,7 @@ public class PostgresType
     }
 
     public Object decodeParameter(String value) {
-        if (converter != null)
+        if ((converter != null) && (value != null))
             return converter.getLong(value);
         else
             return value;

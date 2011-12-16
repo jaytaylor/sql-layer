@@ -68,6 +68,17 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service<F
     }
 
     // FunctionsRegistry interface
+    public FunctionKind getFunctionKind(String name) {
+        if (roComposers.containsKey(name))
+            return FunctionKind.SCALAR;
+        else if (roAggregators.containsKey(name))
+            return FunctionKind.AGGREGATE;
+        else if (roEnvironments.containsKey(name))
+            return FunctionKind.ENVIRONMENT;
+        else
+            return null;
+    }
+
     @Inject @SuppressWarnings("unused") // guice will use this
     public FunctionsRegistryImpl() {
         this(new GlobularFunctionsClassFinder());
