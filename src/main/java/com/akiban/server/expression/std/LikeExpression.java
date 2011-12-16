@@ -118,8 +118,9 @@ public class LikeExpression extends AbstractCompositeExpression
             boolean matched = false;
             switch (mode)
             {
-                case CASE_INSENSITIVE: matched = compareS(left.toUpperCase(), right.toUpperCase()); break;
-                default: matched = compareS(left, right); break;
+                case CASE_INSENSITIVE:  esca = Character.toUpperCase(esca); 
+                                        matched = compareS(left.toUpperCase(), right.toUpperCase()); break;
+                default:                matched = compareS(left, right); break;
             }
 
             return BoolValueSource.of(matched);
