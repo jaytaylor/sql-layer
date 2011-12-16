@@ -42,6 +42,7 @@ import com.akiban.server.error.ParseException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.error.OrderGroupByNonIntegerConstant;
 import com.akiban.server.error.OrderGroupByIntegerOutOfRange;
+import com.akiban.server.error.WrongExpressionArityException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -770,7 +771,7 @@ public class ASTStatementLoader extends BaseRule
             String function;
             Boolean value = (Boolean)((ConstantNode)is.getRightOperand()).getValue();
             if (value == null)
-                function = "isNull"; // No separate isUnknown.
+                function = "isUnknown";
             else if (value.booleanValue())
                 function = "isTrue";
             else
@@ -1177,6 +1178,13 @@ public class ASTStatementLoader extends BaseRule
                     return new FunctionCondition(methodCall.getMethodName(),
                                                  operands,
                                                  valueNode.getType(), valueNode);
+                else if (AggregateFunctionExpression.class.getName().equals(methodCall.getJavaClassName())) {
+                    if (operands.size() != 1)
+                        throw new WrongExpressionArityException(2, operands.size());
+                    return new AggregateFunctionExpression(methodCall.getMethodName(),
+                                                           operands.get(0), false,
+                                                           valueNode.getType(), valueNode);
+                }
                 else
                     return new FunctionExpression(methodCall.getMethodName(),
                                                   operands,

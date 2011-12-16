@@ -12,15 +12,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
+package com.akiban.server.error;
 
-package com.akiban.server.service.functions;
-
-import com.akiban.server.aggregation.AggregatorRegistry;
-import com.akiban.server.expression.ExpressionRegistry;
-import com.akiban.server.expression.EnvironmentExpressionRegistry;
-
-public interface FunctionsRegistry extends AggregatorRegistry, ExpressionRegistry, EnvironmentExpressionRegistry {
-    public enum FunctionKind { SCALAR, AGGREGATE, ENVIRONMENT };
-
-    public FunctionKind getFunctionKind(String name);
+public class TransactionReadOnlyException extends InvalidOperationException {
+    public TransactionReadOnlyException () {
+        super (ErrorCode.TRANSACTION_READ_ONLY);
+    }
 }

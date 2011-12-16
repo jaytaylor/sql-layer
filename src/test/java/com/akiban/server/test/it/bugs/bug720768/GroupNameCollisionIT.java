@@ -53,10 +53,10 @@ public class GroupNameCollisionIT extends ITBase {
             TableName rootTable = aisGroup.getGroupTable().getRoot().getName();
             if ("akiban_information_schema".equals(rootTable.getSchemaName())) {
                 expectedBuilder.rootTable(rootTable, aisGroup.getName());
-                if ("index_statistics".equals(rootTable.getTableName())) {
+                if ("zindex_statistics".equals(rootTable.getTableName())) {
                   expectedBuilder.joinTables(rootTable,
                                              new TableName(rootTable.getSchemaName(),
-                                                           "index_statistics_entry"))
+                                                           "zindex_statistics_entry"))
                     .column("table_id", "table_id")
                     .column("index_id", "index_id");
                 }

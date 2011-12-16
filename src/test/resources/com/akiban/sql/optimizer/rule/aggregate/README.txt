@@ -15,3 +15,5 @@ order-by-1: ORDER BY compatible with grouping
 order-by-2: ORDER BY accumulated result
 
 sum-all: aggregate without GROUP BY
+
+user-aggregate: non-standard aggregate function

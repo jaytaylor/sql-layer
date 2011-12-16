@@ -63,7 +63,7 @@ public class PostgresServerMultipleUpdateIT extends PostgresServerFilesITBase
     public String generateResult() throws Exception {
         Statement stmt = connection.createStatement();
         for (String sqls : sql.split("\\;\\s*")) {
-            stmt.executeUpdate(sqls);
+            stmt.execute(sqls);
         }
         stmt.close();
         return dumpData();

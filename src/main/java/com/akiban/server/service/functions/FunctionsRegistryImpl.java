@@ -68,6 +68,17 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service<F
     }
 
     // FunctionsRegistry interface
+    public FunctionKind getFunctionKind(String name) {
+        if (roComposers.containsKey(name))
+            return FunctionKind.SCALAR;
+        else if (roAggregators.containsKey(name))
+            return FunctionKind.AGGREGATE;
+        else if (roEnvironments.containsKey(name))
+            return FunctionKind.ENVIRONMENT;
+        else
+            return null;
+    }
+
     @Inject @SuppressWarnings("unused") // guice will use this
     public FunctionsRegistryImpl() {
         this(new GlobularFunctionsClassFinder());
@@ -192,13 +203,15 @@ public final class FunctionsRegistryImpl implements FunctionsRegistry, Service<F
             EnvironmentValue annotation = field.getAnnotation(EnvironmentValue.class);
             if (annotation != null) {
                 validateEnvironment(field);
-                String name = nameIsAvailable(names, annotation.value());
-                try {
-                    EnvironmentExpressionFactory factory = (EnvironmentExpressionFactory) field.get(null);
-                    EnvironmentExpressionFactory old = environments.put(name, factory);
-                    assert old == null : old; // nameIsAvailable did actual error check
-                } catch (IllegalAccessException e) {
-                    throw new AkibanInternalException("while accessing field " + field, e);
+                for (String value: annotation.value()) {
+                    String name = nameIsAvailable(names, value);
+                    try {
+                        EnvironmentExpressionFactory factory = (EnvironmentExpressionFactory) field.get(null);
+                        EnvironmentExpressionFactory old = environments.put(name, factory);
+                        assert old == null : old; // nameIsAvailable did actual error check
+                    } catch (IllegalAccessException e) {
+                        throw new AkibanInternalException("while accessing field " + field, e);
+                    }
                 }
             }
         }

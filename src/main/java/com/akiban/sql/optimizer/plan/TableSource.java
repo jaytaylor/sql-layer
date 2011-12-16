@@ -50,7 +50,8 @@ public class TableSource extends BaseJoinable implements ColumnSource
     }
     public void setParentJoin(TableGroupJoin parentJoin) {
         this.parentJoin = parentJoin;
-        this.group = parentJoin.getGroup();
+        if (parentJoin != null)
+            this.group = parentJoin.getGroup();
     }
 
     public TableSource getParentTable() {

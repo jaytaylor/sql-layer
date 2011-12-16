@@ -1,0 +1,10 @@
+# Select of literal is null fails
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types
+    (bigint_field) VALUES (null)
+---
+- Statement: SELECT null IS NULL from all_types
+- output: [[true]]
+...

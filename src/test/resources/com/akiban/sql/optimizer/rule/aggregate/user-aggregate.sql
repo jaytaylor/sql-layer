@@ -1,0 +1,1 @@
+SELECT bit_or(quan) FROM items
