@@ -123,7 +123,7 @@ public class WeekExpressionTest extends ComposedExpressionTestBase
     }
     
     @Override
-    protected boolean alreadyExc()
+    public boolean alreadyExc()
     {
         return false;
     }
@@ -135,7 +135,7 @@ public class WeekExpressionTest extends ComposedExpressionTestBase
     }
 
     @Override
-    public ExpressionComposer getComposer()
+    protected ExpressionComposer getComposer()
     {
         return WeekExpression.WEEK_COMPOSER;
     }
