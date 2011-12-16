@@ -72,7 +72,7 @@ public class UnaryBitExpression extends AbstractUnaryExpression
         private static final BigInteger n64 = new BigInteger("FFFFFFFFFFFFFFFF", 16);
    }
     
-    @Scalar("~")
+    @Scalar("not")
     public static final ExpressionComposer NOT_COMPOSER = new InternalComposer(UnaryBitOperator.NOT);
     
     @Scalar("bit_count")
