@@ -1,0 +1,9 @@
+# Specifying an ESCAPE for LIKE doesn't work
+---
+- CreateTable: t (f varchar(32))
+---
+- Statement: INSERT INTO t VALUES ('a%'), ('ax')
+---
+- Statement: SELECT f FROM t WHERE f LIKE 'ax%' ESCAPE 'x'
+- output: [[a%]]
+...
