@@ -103,4 +103,3 @@ public class LocateExpressionTest extends ComposedExpressionTestBase
         return false;
     }
 }
-
