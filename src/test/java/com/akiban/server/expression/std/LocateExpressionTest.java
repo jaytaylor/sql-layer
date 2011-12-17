@@ -24,10 +24,10 @@ import org.junit.Test;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertEquals;
 
-public class LocateExpressionTest extends ComposedExpressionTestBase
+public class LocateExpressionTest extends ComposedExpressionTestBase 
 {
     @Test
-    public void test()
+    public void test() 
     {
         //test 2 args
         testLocate("bar", "foobarbar", 4);
@@ -47,9 +47,9 @@ public class LocateExpressionTest extends ComposedExpressionTestBase
         testLocate(null, "abc", 3L, 0);
         testLocate("abc", null, 3L,0);
         testLocate("abc", "abcd", null, 0);
-
+        
     }
-
+    
     @Test(expected = WrongExpressionArityException.class)
     public void testWithExc ()
     {
@@ -62,10 +62,10 @@ public class LocateExpressionTest extends ComposedExpressionTestBase
         boolean expectNull;
         Expression strEx = new LiteralExpression((expectNull = str == null) ? AkType.NULL : AkType.VARCHAR, str);
         Expression subEx = new LiteralExpression((expectNull |= substr == null) ? AkType.NULL : AkType.VARCHAR, substr);
-
+        
         check(expectNull, expected, subEx, strEx);
     }
-
+    
     private static void testLocate(String substr, String str, Long pos, long expected)
     {
         boolean expectNull;
@@ -75,14 +75,14 @@ public class LocateExpressionTest extends ComposedExpressionTestBase
 
         check(expectNull, expected, subEx, strEx, posEx);
     }
-
+                
     private static void check ( boolean expectNull, long expected ,Expression ... ex)
     {
         Expression top = new LocateExpression(Arrays.asList(ex));
         if (expectNull)
             assertTrue (ex.toString(), top.evaluation().eval().isNull());
-        else
-            assertEquals(ex.toString(), expected, top.evaluation().eval().getLong());
+        else        
+            assertEquals(ex.toString(), expected, top.evaluation().eval().getLong());        
     }
 
     @Override
@@ -90,9 +90,9 @@ public class LocateExpressionTest extends ComposedExpressionTestBase
     {
         return new CompositionTestInfo(2, AkType.VARCHAR, true);
     }
-
+    
     @Override
-    protected ExpressionComposer getComposer()
+    protected ExpressionComposer getComposer() 
     {
         return LocateExpression.LOCATE_COMPOSER;
     }
