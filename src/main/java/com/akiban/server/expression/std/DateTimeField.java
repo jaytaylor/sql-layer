@@ -96,7 +96,7 @@ public enum DateTimeField
         @Override
         public long [] get(String str)
         {
-            return parseLeading2Char(str);
+            return parseLeadingChars(str);
         }
 
         @Override
@@ -169,7 +169,7 @@ public enum DateTimeField
         @Override
         public long [] get(String str)
         {
-            return parseLeading2Char(str);
+            return parseLeadingChars(str);
         }
 
         @Override
@@ -199,7 +199,7 @@ public enum DateTimeField
         @Override
         public long [] get(String str)
         {
-            return parseLeading2Char(str);
+            return parseLeadingChars(str);
         }
 
         @Override
@@ -262,7 +262,7 @@ public enum DateTimeField
         @Override
         public long [] get(String str)
         {
-            return parseLeading2Char(str);
+            return parseLeadingChars(str);
         }
 
         @Override
@@ -364,7 +364,7 @@ public enum DateTimeField
         @Override
         public long [] get(String str)
         {
-            return parseLeading2Char(str);
+            return parseLeadingChars(str);
         }
 
         @Override
@@ -429,7 +429,7 @@ public enum DateTimeField
         @Override
         public long [] get(String str)
         {
-            return parseLeading2Char(str);
+            return parseLeadingChars(str);
         }
 
         @Override
@@ -528,7 +528,7 @@ public enum DateTimeField
         @Override
         public long [] get(String str)
         {
-            return parseLeading2Char(str);
+            return parseLeadingChars(str);
         }
 
         @Override
@@ -640,7 +640,7 @@ public enum DateTimeField
         @Override
         public long [] get(String str)
         {
-            return parseLeading2Char(str);
+            return parseLeadingChars(str);
         }
 
         @Override
@@ -670,7 +670,7 @@ public enum DateTimeField
         @Override
         public long [] get(String str)
         {
-            return parseLeading2Char(str);
+            return parseLeadingChars(str);
         }
 
         @Override
@@ -807,7 +807,7 @@ public enum DateTimeField
         @Override
         public long [] get(String str)
         {
-            return parseLeading2Char(str);
+            return parseLeadingChars(str);
         }
 
         @Override
@@ -839,7 +839,7 @@ public enum DateTimeField
         @Override
         public long [] get(String str)
         {
-            return parseLeading2Char(str);
+            return parseLeadingChars(str);
         }
 
         @Override
@@ -1127,7 +1127,7 @@ public enum DateTimeField
     *      The index is passed back to the calling function to cut-off the substring
     *      that has been passed
     */ 
-    private static long [] parseLeading2Char(String str)
+    private static long [] parseLeadingChars(String str)
     {
          int i = 2 <= str.length() ? 2 :1;
          return new long[] { Long.parseLong(str.substring(0, i )), i};
