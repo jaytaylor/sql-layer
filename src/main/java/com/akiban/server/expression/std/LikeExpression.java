@@ -26,38 +26,33 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.BoolValueSource;
-import com.akiban.server.types.util.ValueHolder;
 import java.util.List;
 
 
 public class LikeExpression extends AbstractCompositeExpression
 {
     @Scalar("ilike")
-    public static final ExpressionComposer ILIKE_COMPOSER = new InnerComposer(LikeMode.CASE_INSENSITIVE);
+    public static final ExpressionComposer ILIKE_COMPOSER = new InnerComposer(true);
 
     @Scalar("blike")
-    public static final ExpressionComposer BLIKE_COMPOSER = new InnerComposer(LikeMode.CASE_SENSITIVE);
+    public static final ExpressionComposer BLIKE_COMPOSER = new InnerComposer(false);
 
     @Scalar("like")
     public static final ExpressionComposer LIKE_COMPOSER = ILIKE_COMPOSER;
 
-    public static enum LikeMode
-    {
-        CASE_INSENSITIVE, CASE_SENSITIVE
-    }
 
     private static final class InnerComposer implements ExpressionComposer
     {
-        private final LikeMode mode;
-        public InnerComposer (LikeMode mode)
+        private final boolean case_insensitive;
+        public InnerComposer (boolean mode)
         {
-            this.mode = mode;
+            this.case_insensitive = mode;
         }
 
         @Override
         public String toString ()
         {
-            return "LIKE " + mode;
+            return "LIKE " + (case_insensitive ? "IN" : "" ) + "SENSITIVE";
         }
 
         @Override
@@ -79,21 +74,21 @@ public class LikeExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments)
         {
-            return new LikeExpression(arguments, mode);
+            return new LikeExpression(arguments, case_insensitive);
         }
     }
 
     private static final class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
-        private final LikeMode mode;
+        private final boolean case_insens;
         private char esca = '\\';
         private boolean noWildcardU = false;
         private boolean noWildcardP = false;
 
-        public InnerEvaluation (List<? extends ExpressionEvaluation> childrenEval, LikeMode mode)
+        public InnerEvaluation (List<? extends ExpressionEvaluation> childrenEval, boolean mode)
         {
             super(childrenEval);
-            this.mode = mode;
+            this.case_insens = mode;
         }
 
         @Override
@@ -115,17 +110,11 @@ public class LikeExpression extends AbstractCompositeExpression
             noWildcardU = esca == '_';
             noWildcardP = esca == '%';
 
-            boolean matched = false;
-            switch (mode)
-            {
-                case CASE_INSENSITIVE: matched = compareS(left.toUpperCase(), right.toUpperCase()); break;
-                default: matched = compareS(left, right); break;
-            }
 
-            return BoolValueSource.of(matched);
+            return BoolValueSource.of(compareS(left,right, case_insens));
         }
 
-        private  boolean compareS(String left, String right)
+        private  boolean compareS(String left, String right, boolean case_insensitive)
         {
             int l = 0, r = 0;
             int lLimit = left.length(), rLimit = right.length();
@@ -158,7 +147,9 @@ public class LikeExpression extends AbstractCompositeExpression
                     while (l < lLimit) // loop1: attempt to find a matching sequence in left that starts with afterP
                     {
                         lchar = left.charAt(l++);
-                        if (lchar == afterP || afterP == '_' && !noWildcardU && !esc ) // found a *potentially* matching sequence
+                        if (lchar == afterP  || 
+                                Character.toUpperCase(lchar) == Character.toUpperCase(afterP) && case_insensitive
+                                || afterP == '_' && !noWildcardU && !esc ) // found a *potentially* matching sequence
                         {
                             --l;
                             int oldR = r;
@@ -173,14 +164,16 @@ public class LikeExpression extends AbstractCompositeExpression
                                     if (r +1 <rLimit && (right.charAt(r+1) == '%' || right.charAt(r+1) == '_' || right.charAt(r+1) == esca))
                                     {
                                         rchar = right.charAt(++r);
-                                         esc = true;
+                                        esc = true;
                                     }
                                      else throw new UnsupportedOperationException ("invalid escape sequence");
                                 }
 
                                 if (rchar == '%' && !esc) continue Loop2;
 
-                                if (lchar == rchar || rchar == '_' && !esc && !noWildcardU)
+                                if (lchar == rchar || 
+                                        Character.toUpperCase(lchar) == Character.toUpperCase(rchar) && case_insensitive
+                                        || rchar == '_' && !esc && !noWildcardU)
                                 {
                                     ++l;
                                     ++r;
@@ -213,21 +206,21 @@ public class LikeExpression extends AbstractCompositeExpression
                     if ( r + 1 < rLimit && (right.charAt(r+1) == '_' || right.charAt(r+1) == '%' || right.charAt(r+1) == esca)) rchar = right.charAt(++r);
                     else throw new UnsupportedOperationException("invalid escape sequence"); // TODO: replaced with invalid parameter value
 
-                    if (lchar != rchar)   return false;
-                    else
+                    if (lchar == rchar || Character.toUpperCase(lchar) == Character.toUpperCase(rchar) && case_insensitive )
                     {
                         ++l;
                         ++r;
                     }
+                    else return false;
                 }
                 else
                 {
-                    if (lchar != rchar)   return false;
-                    else
+                    if (lchar == rchar || Character.toUpperCase(lchar) == Character.toUpperCase(rchar) && case_insensitive )
                     {
                         ++l;
                         ++r;
                     }
+                    else return false;
                 }
             }
 
@@ -248,12 +241,11 @@ public class LikeExpression extends AbstractCompositeExpression
         }
     }
 
-    private final LikeMode mode;
-
-    public LikeExpression (List <? extends Expression> children, LikeMode mode)
+    private final boolean case_insens;
+    public LikeExpression (List <? extends Expression> children, boolean mode)
     {
         super(AkType.BOOL, checkArgs(children));
-        this.mode = mode;
+        this.case_insens = mode;
     }
 
     private static List<? extends Expression> checkArgs(List<? extends Expression> children)
@@ -273,12 +265,13 @@ public class LikeExpression extends AbstractCompositeExpression
     protected void describe(StringBuilder sb)
     {
         sb.append("LIKE_");
-        sb.append(mode);
+        sb.append(case_insens? "IN" : "");
+        sb.append("SENSITIVE");
     }
 
     @Override
     public ExpressionEvaluation evaluation()
     {
-        return new InnerEvaluation(childrenEvaluations(), mode);
+        return new InnerEvaluation(childrenEvaluations(), case_insens);
     }
 }
