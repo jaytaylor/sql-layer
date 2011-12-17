@@ -98,7 +98,7 @@ public class LocateExpressionTest extends ComposedExpressionTestBase
     }
 
     @Override
-    public boolean alreadyExc() 
+    protected boolean alreadyExc()
     {
         return false;
     }

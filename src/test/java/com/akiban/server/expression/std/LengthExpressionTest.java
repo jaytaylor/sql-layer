@@ -89,7 +89,7 @@ public class LengthExpressionTest extends ComposedExpressionTestBase
     }
 
     @Override
-    public boolean alreadyExc()
+    protected boolean alreadyExc()
     {
         return false;
     }

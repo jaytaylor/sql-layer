@@ -89,7 +89,7 @@ public class ReplaceExpressionTest extends ComposedExpressionTestBase
     }
 
     @Override
-    public boolean alreadyExc()
+    protected boolean alreadyExc()
     {
         throw new UnsupportedOperationException("Not supported yet.");
     }
