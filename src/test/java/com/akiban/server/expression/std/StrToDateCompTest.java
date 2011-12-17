@@ -33,7 +33,7 @@ public class StrToDateCompTest extends ComposedExpressionTestBase
     }
 
     @Override
-    protected boolean alreadyExc()
+    protected boolean alreadyExc() 
     {
         return false;
     }

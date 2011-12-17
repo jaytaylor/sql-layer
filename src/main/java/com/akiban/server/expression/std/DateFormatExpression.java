@@ -58,7 +58,6 @@ public class DateFormatExpression extends AbstractBinaryExpression
                 argumentTypes.set(0, AkType.DATE);
         }
     };
-    
     private static final class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
         public InnerEvaluation (List<? extends ExpressionEvaluation> childrenEvals)
