@@ -28,7 +28,8 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
 {
     private static final CompositionTestInfo testInfo = new CompositionTestInfo(1, AkType.DATE, false);
 
-    // --------------------------- GET DATE-------------------------------------
+    // --------------------------- GET DATE-------------------------------------    
+
     @Test
     public void getDateFromDate()
     {
@@ -106,6 +107,50 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
 
     //------------------------GET DATETIME--------------------------------------
     @Test
+    public void getDateTimeBug () //  bug 905525 - unit test passes
+    {
+        Expression timeStamp = new LiteralExpression(AkType.TIMESTAMP,
+                Extractors.getLongExtractor(AkType.TIMESTAMP).getLong("1999-12-31 01:15:33"));
+        Expression top = ExtractExpression.DATETIME_COMPOSER.compose(Arrays.asList(timeStamp));
+
+        String actual = Extractors.getLongExtractor(AkType.DATETIME).asString(top.evaluation().eval().getDateTime());
+        assertEquals(actual, "1999-12-31 01:15:33");
+    }
+
+    @Test
+    public void getDateTimeZeroYear ()
+    {
+        testWeirdDateTime("0000-01-01", "0000-01-01 00:00:00");
+    }
+
+    @Test
+    public void getDateTimeZeroMonth ()
+    {
+        testWeirdDateTime("0001-00-01", "0001-00-01 00:00:00");
+    }
+
+    @Test
+    public void getDateTimeZeroDay ()
+    {
+        testWeirdDateTime("0001-01-00", "0001-01-00 00:00:00");
+    }
+
+    @Test
+    public void getDateTimeZero ()
+    {
+        testWeirdDateTime("0000-00-00", "0000-00-00 00:00:00");
+    }
+    
+    private void testWeirdDateTime(String input, String exp)
+    {
+        Expression top = getTop(input, ExtractExpression.DATETIME_COMPOSER);
+        String actual = Extractors.getLongExtractor(AkType.DATETIME).asString(top.evaluation().eval().getDateTime());
+        assertEquals(exp, actual);
+    }
+
+ 
+
+    @Test
     public void getDatetimeFromDate()
     {
         Expression top = getTopExp(ExtractExpression.DATETIME_COMPOSER, getDate());
@@ -182,6 +227,13 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
         assertTrue (top.evaluation().eval().isNull());
     }
     //----------------------- GET DAY-------------------------------------------
+    @Test
+    public void getDayZero ()
+    {
+        Expression top = getTop("0000-00-00", ExtractExpression.DAY_COMPOSER);
+        assertEquals(0L, top.evaluation().eval().getLong());
+    }
+
     @Test
     public void getDayFromDate()
     {
@@ -429,6 +481,13 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     }
     // ----------------------- GET MONTH----------------------------------------
     @Test
+    public void getMonthZero()
+    {
+        Expression top = getTop("0000-00-01", ExtractExpression.MONTH_COMPOSER);      
+        assertEquals(0L, top.evaluation().eval().getLong());
+    }
+
+    @Test
     public void getMonthFromDate()
     {
         Expression top = getTopExp(ExtractExpression.MONTH_COMPOSER, getDate());
@@ -668,6 +727,17 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     }
     // ----------------------- GET TIMESTAMP------------------------------------
     @Test
+    public void getTimeStampBug () // bug 905525 - unit test passes
+    {
+        Expression timeStamp = new LiteralExpression(AkType.DATETIME,
+                Extractors.getLongExtractor(AkType.DATETIME).getLong("1999-12-31 01:15:33"));
+        Expression top = ExtractExpression.TIMESTAMP_COMPOSER.compose(Arrays.asList(timeStamp));
+
+        String actual = Extractors.getLongExtractor(AkType.TIMESTAMP).asString(top.evaluation().eval().getTimestamp());
+        assertEquals(actual, "1999-12-31 01:15:33");
+    }
+
+    @Test
     public void getTimestampFromTimestamp()
     {
         Expression top = getTopExp(ExtractExpression.TIMESTAMP_COMPOSER, new LiteralExpression(AkType.TIMESTAMP, 1234L));
@@ -747,6 +817,13 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
         assertTrue (top.evaluation().eval().isNull());
     }
     // ------------------------GET YEAR-----------------------------------------
+    @Test
+    public void getYearZero ()
+    {
+        Expression top = getTop("0000-01-00", ExtractExpression.YEAR_COMPOSER);
+        assertEquals(0L, top.evaluation().eval().getYear());
+    }
+
     @Test
     public void getYearFromTimestamp()
     {
@@ -871,6 +948,14 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
         return composer.compose(Arrays.asList(arg));
     }
 
+    private Expression getTop (String input, ExpressionComposer comp)
+    {
+        Expression date = new LiteralExpression(AkType.DATE,
+                Extractors.getLongExtractor(AkType.DATE).getLong(input));
+        Expression top = comp.compose(Arrays.asList(date));
+        return top;
+    }
+    
     @Override
     public boolean alreadyExc()
     {

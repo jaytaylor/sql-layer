@@ -361,12 +361,12 @@ public class ExtractExpression extends AbstractUnaryExpression
                                     long y = rawLong / 512;
                                     long m = rawLong / 32 % 16;
                                     long d = rawLong % 32;
-                                    return vallidDayMonth (y,m,d)? y - 1900 : -1;
+                                    return vallidDayMonth (y,m,d)? (y == 0 ? 0 : y - 1900) : -1;
                     case DATETIME:  rawLong = source.getDateTime();
                                     long yr = rawLong / 10000000000L;
                                     long mo = rawLong / 100000000L % 100;
                                     long da = rawLong / 1000000L % 100;
-                                    return vallidDayMonth(yr,mo,da) ? yr - 1900 : -1;
+                                    return vallidDayMonth(yr,mo,da) ? (yr == 0 ? 0 : yr - 1900) : -1;
                     case TIMESTAMP: rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
                                     Calendar calendar = Calendar.getInstance();
                                     calendar.setTimeInMillis(rawLong * 1000);
@@ -401,6 +401,7 @@ public class ExtractExpression extends AbstractUnaryExpression
                 case 7:
                 case 8:
                 case 10:
+                case 0:
                 case 12:    return d <= 31;                        
                 default:    return false;
             }
