@@ -13,26 +13,25 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.types.extract;
+package com.akiban.server.types.conversion.util;
 
-import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 
-public abstract class LongExtractor extends AbstractExtractor {
-
-    // LongExtractor interface
-
-    public abstract long getLong(ValueSource source);
-    public abstract String asString(long value);
-    public abstract long getLong(String string);
-
-    // for date/times only
-    public abstract long stdLongToUnix (long longVal);
-    public abstract long unixToStdLong (long unixVal);
-    public abstract long[] getYearMonthDayHourMinuteSecond (long value);
-    
-    // package-private ctor
-    LongExtractor(AkType targetConversionType) {
-        super(targetConversionType);
-    }
+public interface AbstractConverter<T>
+{
+    /**
+     * 
+     * @param source
+     * @return a (java) object that could be created
+     *  using source's value
+     */
+     T get (ValueSource source);
+     
+     /**
+      * 
+      * @param string
+      * @return a (java) object that could be created
+      *  using string's value
+      */
+     T get (String string);
 }
