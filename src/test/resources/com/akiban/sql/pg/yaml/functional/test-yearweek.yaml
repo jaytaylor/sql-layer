@@ -2,7 +2,7 @@
 ---
 - Properties: sys-aksql
 - suppressed: true
-#---
+#--- bug 905502 not coded yet
 #- Include: all-types-schema.yaml
 #---
 #- Statement: INSERT INTO all_types (bigint_field) VALUES (1)
