@@ -132,17 +132,15 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private final static boolean forceToDisk = true;
 
     /**
-     * Maximum size that can can be stored in an index. See
-     * {@link Transaction#prepareTxnExchange(com.persistit.Tree, com.persistit.Key, char)}
-     * for details on upper bound.
+     * Maximum size that can can be stored in an index.
      */
-    static final int MAX_INDEX_STORAGE_SIZE = Key.MAX_KEY_LENGTH - 32;
+    static final int MAX_INDEX_STORAGE_SIZE = Key.MAX_KEY_LENGTH;
 
     /**
      * Maximum size for an ordinal value as stored with the HKey. Note that this
      * <b>must match</b> the EWIDTH_XXX definition from {@link Key}, where XXX
-     * is the return type of {@link RowDef#getOrdinal()}. Currently this is
-     * int and {@link Key#EWIDTH_INT}.
+     * is the return type of {@link com.akiban.server.rowdata.RowDef#getOrdinal()}.
+     * Currently this is int and {@link Key#EWIDTH_INT}.
      */
     static final int MAX_ORDINAL_STORAGE_SIZE = 5;
 
