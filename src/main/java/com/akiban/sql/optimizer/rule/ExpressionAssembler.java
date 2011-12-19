@@ -31,6 +31,8 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
 
+import com.akiban.sql.types.TypeId;
+import com.akiban.sql.types.TypeId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -186,8 +188,16 @@ public class ExpressionAssembler
         AkType toType = castExpression.getAkType();
         if (toType == null) return expr;
         if (!toType.equals(operand.getAkType()))
-            // Do type conversion.
-            expr = new com.akiban.server.expression.std.CastExpression(toType, expr);
+        {
+            // Do type conversion.         
+            TypeId id = castExpression.getSQLtype().getTypeId(); 
+            
+            if (id.isIntervalTypeId())
+                expr = new IntervalCastExpression(expr, IntervalCastExpression.ID_MAP.get(id));
+            else 
+                expr = new com.akiban.server.expression.std.CastExpression(toType, expr);
+        }
+        
         switch (toType) {
         case VARCHAR:
             {

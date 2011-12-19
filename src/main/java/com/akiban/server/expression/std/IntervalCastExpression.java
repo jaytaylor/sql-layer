@@ -15,6 +15,9 @@
 
 package com.akiban.server.expression.std;
 
+import java.util.HashMap;
+import java.util.EnumMap;
+import com.akiban.sql.types.TypeId;
 import com.akiban.server.error.InvalidIntervalFormatException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -49,6 +52,15 @@ public class IntervalCastExpression extends AbstractUnaryExpression
         
         final AkType type;
     }
+    
+    public static final HashMap<TypeId,EndPoint> ID_MAP = new HashMap();
+    static
+    {
+        ID_MAP.put(TypeId.INTERVAL_YEAR_ID, EndPoint.YEAR);
+        ID_MAP.put(TypeId.INTERVAL_YEAR_MONTH_ID, EndPoint.YEAR_MONTH);
+        ID_MAP.put(TypeId.INTERVAL_MONTH_ID, EndPoint.MONTH);
+        // TODO: ADD MORE
+    }
 
     private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
@@ -69,7 +81,7 @@ public class IntervalCastExpression extends AbstractUnaryExpression
             String interval = source.getString().trim();
             
             long result = 0;
-            
+            TypeId typeId = TypeId.INTERVAL_YEAR_MONTH_ID;
             try
             {
                 switch(endPoint)
@@ -145,7 +157,7 @@ public class IntervalCastExpression extends AbstractUnaryExpression
     }
     
     private final EndPoint endPoint;
-    protected IntervalCastExpression (Expression str, EndPoint endPoint)
+    public IntervalCastExpression (Expression str, EndPoint endPoint)
     {
         super(endPoint.type, str);
         this.endPoint = endPoint;
