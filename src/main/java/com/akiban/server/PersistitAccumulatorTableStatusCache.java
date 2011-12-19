@@ -1,8 +1,23 @@
+/**
+ * Copyright (C) 2011 Akiban Technologies Inc.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License, version 3,
+ * as published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses.
+ */
+
 package com.akiban.server;
 
+import com.akiban.server.error.PersistItErrorException;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.persistit.Accumulator;
 import com.persistit.Exchange;
@@ -13,6 +28,8 @@ import com.persistit.exception.PersistitInterruptedException;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.persistit.Accumulator.Type;
 
 public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     private Map<Integer, InternalTableStatus> tableStatusMap = new HashMap<Integer, InternalTableStatus>();
@@ -29,6 +46,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
     @Override
     public synchronized void rowUpdated(int tableID) {
+        getInternalTableStatus(tableID).rowUpdated();
     }
 
     @Override
@@ -44,36 +62,24 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
     @Override
     public synchronized void drop(int tableID) {
-        InternalTableStatus ts = getInternalTableStatus(tableID);
-        //TODO: fix lack of TreeService/session usage?
-        IndexDef indexDef = (IndexDef)ts.getRowDef().getPKIndex().indexDef();
         try {
-            treeService.populateTreeCache(indexDef);
-            String vol = treeService.volumeForTree(indexDef.getSchemaName(), indexDef.getTreeName());
-            Exchange ex = treeService.getDb().getExchange(vol, indexDef.getTreeName(), false);
+            InternalTableStatus ts = getInternalTableStatus(tableID);
+            Tree tree = getTreeForRowDef(ts.getRowDef());
+            Exchange ex = new Exchange(tree);
             ex.removeTree();
-            treeService.getDb().releaseExchange(ex);
         } catch(PersistitException e) {
-            throw new RuntimeException(e);
+            throw new PersistItErrorException(e);
         }
     }
 
     @Override
     public synchronized void setAutoIncrement(int tableID, long value) {
-        try {
-            getInternalTableStatus(tableID).setAutoIncrement(value);
-        } catch(PersistitInterruptedException e) {
-            e.printStackTrace();
-        }
+        getInternalTableStatus(tableID).setAutoIncrement(value);
     }
 
     @Override
     public synchronized void setOrdinal(int tableID, int value) {
-        try {
-            getInternalTableStatus(tableID).setOrdinal(value);
-        } catch(PersistitInterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        getInternalTableStatus(tableID).setOrdinal(value);
     }
 
     @Override
@@ -82,25 +88,17 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         if(ts == null) {
             throw new IllegalArgumentException("Unknown table ID " + tableID + " for RowDef " + rowDef);
         }
-        
-        try {
-            IndexDef indexDef = (IndexDef) rowDef.getPKIndex().indexDef();
-            treeService.populateTreeCache(indexDef);
-            ts.setRowDef(rowDef, indexDef.getTreeCache().getTree());
-        } catch(PersistitException e) {
-            throw new RuntimeException(e);
-        }
+        Tree tree = getTreeForRowDef(rowDef);
+        ts.setRowDef(rowDef, tree);
     }
 
     @Override
     public synchronized  long createNewUniqueID(int tableID) {
-        long uniqueID = 0;
         try {
-            uniqueID = getInternalTableStatus(tableID).createNewUniqueID();
+            return getInternalTableStatus(tableID).createNewUniqueID();
         } catch(PersistitInterruptedException e) {
-            throw new RuntimeException(e);
+            throw new PersistItErrorException(e);
         }
-        return uniqueID;
     }
 
     @Override
@@ -110,10 +108,14 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
     @Override
     public synchronized void loadAllInVolume(String volumeName) throws Exception {
+        // Nothing to do
     }
 
     @Override
     public synchronized void detachAIS() {
+        for(InternalTableStatus ts : tableStatusMap.values()) {
+            ts.setRowDef(null, null);
+        }
     }
     
     //
@@ -129,73 +131,105 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         return ts;
     }
     
-
-    private Transaction getCurrentTrx() {
-        return treeService.getDb().getTransaction();
+    private Tree getTreeForRowDef(RowDef rowDef) {
+        IndexDef indexDef = (IndexDef) rowDef.getPKIndex().indexDef();
+        assert indexDef != null : rowDef;
+        try {
+            treeService.populateTreeCache(indexDef);
+            return indexDef.getTreeCache().getTree();
+        }
+        catch (PersistitException e) {
+            throw new PersistItErrorException(e);
+        }
     }
 
+
+    /**
+     * Mapping of indexes and types for the Accumulators used by the table status.
+     * <p>
+     * Note: Remember that <i>any</i> modification to existing values is an
+     * <b>incompatible</b> data format change. It is only safe to stop using
+     * an index position or add new ones at the end of the range.
+     * </p>
+     */
+    private static enum AccumInfo {
+        ORDINAL(0, Type.SUM),
+        ROW_COUNT(1, Type.SUM),
+        UNIQUE_ID(2, Type.SEQ),
+        AUTO_INC(3, Type.SUM),
+        CREATE_TIME(4, Type.MAX),
+        DELETE_TIME(5, Type.MAX),
+        UPDATE_TIME(6, Type.MAX),
+        WRITE_TIME(7, Type.MAX),
+        ;
+
+        AccumInfo(int index, Type type) {
+            this.index = index;
+            this.type = type;
+        }
+        
+        int getIndex() {
+            return index;
+        }
+        
+        Type getType() {
+            return type;
+        }
+
+        private final int index;
+        private final Accumulator.Type type;
+    }
+
+    
     private class InternalTableStatus implements TableStatus {
         private volatile RowDef rowDef;
-        private volatile Accumulator rowCount;
         private volatile Accumulator ordinal;
+        private volatile Accumulator rowCount;
         private volatile Accumulator uniqueID;
         private volatile Accumulator autoIncrement;
-
+        private volatile Accumulator createTime;
+        private volatile Accumulator deleteTime;
+        private volatile Accumulator updateTime;
+        private volatile Accumulator writeTime;
+        
         @Override
         public long getAutoIncrement() {
-            try {
-                return autoIncrement.getSnapshotValue(getCurrentTrx());
-            } catch(PersistitInterruptedException e) {
-                e.printStackTrace();
-            }
-            return 0;
+            return getSnapshot(autoIncrement, getCurrentTrx());
         }
 
         @Override
         public long getCreationTime() {
-            return 0;
+            return getSnapshot(createTime, getCurrentTrx());
         }
 
         @Override
         public long getLastDeleteTime() {
-            return 0;
+            return getSnapshot(deleteTime, getCurrentTrx());
         }
 
         @Override
         public long getLastUpdateTime() {
-            return 0;
+            return getSnapshot(updateTime, getCurrentTrx());
         }
 
         @Override
         public long getLastWriteTime() {
-            return 0;
+            return getSnapshot(writeTime, getCurrentTrx());
         }
 
         @Override
         public int getOrdinal() {
-            try {
-                return (int) ordinal.getSnapshotValue(getCurrentTrx());
-            } catch(PersistitInterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            return (int) getSnapshot(ordinal, getCurrentTrx());
         }
 
         @Override
         public long getRowCount() {
-            try {
-                return rowCount.getSnapshotValue(getCurrentTrx());
-            } catch(PersistitInterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            return getSnapshot(rowCount, getCurrentTrx());
         }
 
         @Override
         public long getUniqueID() {
-            try {
-                return uniqueID.getSnapshotValue(getCurrentTrx());
-            } catch(PersistitInterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            return getSnapshot(uniqueID, getCurrentTrx());
         }
 
         @Override
@@ -203,54 +237,78 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             return rowDef;
         }
 
-        synchronized void rowDeleted() {
-            rowCount.update(-1, getCurrentTrx());
+        void rowDeleted() {
+            Transaction txn = getCurrentTrx();
+            rowCount.update(-1, txn);
+            deleteTime.update(System.currentTimeMillis(), txn);
         }
 
-        synchronized void rowUpdated() {
+        void rowUpdated() {
+            updateTime.update(System.currentTimeMillis(), getCurrentTrx());
         }
 
-        synchronized void rowWritten() {
-            rowCount.update(1, getCurrentTrx());
+        void rowWritten() {
+            Transaction txn = getCurrentTrx();
+            rowCount.update(1, txn);
+            writeTime.update(System.currentTimeMillis(), txn);
         }
 
-        synchronized void setRowCount(long rowCount) throws PersistitInterruptedException {
-            long diff = rowCount - this.rowCount.getSnapshotValue(getCurrentTrx());
+        void setRowCount(long rowCountValue) {
+            long diff = rowCountValue - getSnapshot(rowCount, getCurrentTrx());
             this.rowCount.update(diff, getCurrentTrx());
         }
 
-        synchronized void setAutoIncrement(long autoIncrement) throws PersistitInterruptedException {
-            long diff = autoIncrement - this.autoIncrement.getSnapshotValue(getCurrentTrx());
+        void setAutoIncrement(long autoIncrementValue) {
+            long diff = autoIncrementValue - getSnapshot(autoIncrement, getCurrentTrx());
             this.autoIncrement.update(diff, getCurrentTrx());
         }
 
-        synchronized void setOrdinal(int ordinal) throws PersistitInterruptedException {
-            long diff = ordinal - this.ordinal.getSnapshotValue(getCurrentTrx());
+        void setOrdinal(int ordinalValue) {
+            long diff = ordinalValue - getSnapshot(ordinal, getCurrentTrx());
             this.ordinal.update(diff, getCurrentTrx());
         }
 
         synchronized void setRowDef(RowDef rowDef, Tree tree) {
             this.rowDef = rowDef;
+            if(rowDef == null && tree == null) {
+                return;
+            }
             try {
-                rowCount = tree.getAccumulator(Accumulator.Type.SUM, 0);
-                ordinal = tree.getAccumulator(Accumulator.Type.SUM, 1);
-                uniqueID = tree.getAccumulator(Accumulator.Type.SEQ, 2);
-                autoIncrement = tree.getAccumulator(Accumulator.Type.SUM, 3);
+                ordinal = getAccumulator(tree, AccumInfo.ORDINAL);
+                rowCount = getAccumulator(tree, AccumInfo.ROW_COUNT);
+                uniqueID = getAccumulator(tree, AccumInfo.UNIQUE_ID);
+                autoIncrement = getAccumulator(tree, AccumInfo.AUTO_INC);
+                createTime = getAccumulator(tree, AccumInfo.CREATE_TIME);
+                deleteTime = getAccumulator(tree, AccumInfo.DELETE_TIME);
+                updateTime = getAccumulator(tree, AccumInfo.UPDATE_TIME);
+                writeTime = getAccumulator(tree, AccumInfo.WRITE_TIME);
             } catch(PersistitException e) {
-                throw new RuntimeException(e);
+                throw new PersistItErrorException(e);
             }
         }
         
-        synchronized long createNewUniqueID() throws PersistitInterruptedException {
+        long createNewUniqueID() throws PersistitInterruptedException {
             return this.uniqueID.update(1, getCurrentTrx());
         }
 
-        synchronized void truncate() {
+        void truncate() {
+            setRowCount(0);
+            setAutoIncrement(0);
+        }
+
+        private Transaction getCurrentTrx() {
+            return treeService.getDb().getTransaction();
+        }
+
+        private Accumulator getAccumulator(Tree tree, AccumInfo info) throws PersistitException {
+            return tree.getAccumulator(info.getType(), info.getIndex());
+        }
+
+        private long getSnapshot(Accumulator accumulator, Transaction txn) {
             try {
-                setRowCount(0);
-                setAutoIncrement(0);
+                return accumulator.getSnapshotValue(txn);
             } catch(PersistitInterruptedException e) {
-                throw new RuntimeException(e);
+                throw new PersistItErrorException(e);
             }
         }
     }

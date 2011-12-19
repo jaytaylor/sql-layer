@@ -32,7 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.TableStatusCache;
-import com.akiban.server.MemoryOnlyTableStatusCache;
+import com.akiban.server.PersistitAccumulatorTableStatusCache;
 import com.akiban.server.error.ConfigurationPropertiesLoadException;
 import com.akiban.server.error.InvalidVolumeException;
 import com.akiban.server.error.PersistItErrorException;
@@ -51,7 +51,6 @@ import com.persistit.Volume;
 import com.persistit.VolumeSpecification;
 import com.persistit.exception.InvalidVolumeSpecificationException;
 import com.persistit.exception.PersistitException;
-import com.persistit.exception.PersistitInterruptedException;
 import com.persistit.logging.Slf4jAdapter;
 
 public class TreeServiceImpl
