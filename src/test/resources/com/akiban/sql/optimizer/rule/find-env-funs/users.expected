@@ -2,5 +2,5 @@ SelectQuery@440f52ed
   ResultSet@4a0d6883[_SQL_COL_1, _SQL_COL_2]
     Project@36489670[current_user(0), session_user(1)]
       Select@578caee7[]
-        TableJoins@552eec98(TableGroup@7baf1ad8(parent) - GroupScan@250b9a58(Group(parent -> user._akiban_parent)))
+        TableJoins@552eec98(TableGroup@7baf1ad8(parent) - IndexScan@250b9a58(Index(user.parent.name[IndexColumn(name)]), covering/NONE))
           TableSource@3ed8d90c(user.parent - TableGroup@7baf1ad8(parent))
