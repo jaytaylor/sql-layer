@@ -25,6 +25,7 @@ import com.akiban.ais.ddl.SqlTextTarget;
 import com.akiban.server.AkServerAisSource;
 import com.akiban.server.AkServerAisTarget;
 import com.akiban.server.test.it.store.DataDictionaryDDL;
+import com.persistit.Transaction;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -43,48 +44,65 @@ public class AkServerAisSourceTargetIT extends ITBase {
 
     @Test
     public void testAkServerAis() throws Exception {
-        final AkibanInformationSchema ais = ddl().getAIS(session());
-        
-        // Store AIS data
-        final Target target = new AkServerAisTarget(store(), serviceManager().getSessionService());
-        new Writer(target).save(ais);
+        final Transaction trx = treeService().getTransaction(session());
+        trx.begin();
+        try {
+            final AkibanInformationSchema ais = ddl().getAIS(session());
+            
+            // Store AIS data
+            final Target target = new AkServerAisTarget(store(), serviceManager().getSessionService());
+            new Writer(target).save(ais);
 
-        // Retrieve AIS data
-        final Source source = new AkServerAisSource(store(), serviceManager().getSessionService());
-        final AkibanInformationSchema aisCopy = new Reader(source).load();
+            // Retrieve AIS data
+            final Source source = new AkServerAisSource(store(), serviceManager().getSessionService());
+            final AkibanInformationSchema aisCopy = new Reader(source).load();
 
-        new Writer(new SqlTextTarget(new PrintWriter(new FileWriter("/tmp/ais1.txt")))).save(ais);
-        new Writer(new SqlTextTarget(new PrintWriter(new FileWriter("/tmp/ais2.txt")))).save(aisCopy);
+            new Writer(new SqlTextTarget(new PrintWriter(new FileWriter("/tmp/ais1.txt")))).save(ais);
+            new Writer(new SqlTextTarget(new PrintWriter(new FileWriter("/tmp/ais2.txt")))).save(aisCopy);
+            assertTrue(equals(ais, aisCopy));
 
-        assertTrue(equals(ais, aisCopy));
+            trx.commit();
+        }
+        finally {
+            trx.end();
+        }
     }
 
     @Test
     public void testReloadAIS() throws Exception {
         final AkibanInformationSchema ais = ddl().getAIS(session());
         
-        // Store AIS data
-        final Target target = new AkServerAisTarget(store(), serviceManager().getSessionService());
-        new Writer(target).save(ais);
+        final Transaction trx = treeService().getTransaction(session());
+        trx.begin();
+        try {
+            // Store AIS data
+            final Target target = new AkServerAisTarget(store(), serviceManager().getSessionService());
+            new Writer(target).save(ais);
 
-        // Retrieve AIS data
-        final Source source1 = new AkServerAisSource(store(), serviceManager().getSessionService());
-        final AkibanInformationSchema aisCopy1 = new Reader(source1).load();
-        new Writer(target).save(aisCopy1);
+            // Retrieve AIS data
+            final Source source1 = new AkServerAisSource(store(), serviceManager().getSessionService());
+            final AkibanInformationSchema aisCopy1 = new Reader(source1).load();
+            new Writer(target).save(aisCopy1);
 
-        final Source source2 = new AkServerAisSource(store(), serviceManager().getSessionService());
-        final AkibanInformationSchema aisCopy2 = new Reader(source2).load();
+            final Source source2 = new AkServerAisSource(store(), serviceManager().getSessionService());
+            final AkibanInformationSchema aisCopy2 = new Reader(source2).load();
 
-        // new Writer(new SqlTextTarget(new PrintWriter(new
-        // FileWriter("/tmp/ais1.txt")))).save(ais);
-        // new Writer(new SqlTextTarget(new PrintWriter(new
-        // FileWriter("/tmp/ais2.txt")))).save(aisCopy2);
+            // new Writer(new SqlTextTarget(new PrintWriter(new
+            // FileWriter("/tmp/ais1.txt")))).save(ais);
+            // new Writer(new SqlTextTarget(new PrintWriter(new
+            // FileWriter("/tmp/ais2.txt")))).save(aisCopy2);
 
-        assertTrue(equals(ais, aisCopy2));
+            assertTrue(equals(ais, aisCopy2));
 
-        final Source source3 = new AkServerAisSource(store(), serviceManager().getSessionService());
-        final AkibanInformationSchema aisCopy3 = new Reader(source3).load();
-        assertTrue(equals(ais, aisCopy3));
+            final Source source3 = new AkServerAisSource(store(), serviceManager().getSessionService());
+            final AkibanInformationSchema aisCopy3 = new Reader(source3).load();
+            assertTrue(equals(ais, aisCopy3));
+
+            trx.commit();
+        }
+        finally {
+            trx.end();
+        }
     }
 
     private boolean equals(final AkibanInformationSchema ais1,
