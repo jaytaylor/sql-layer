@@ -53,3 +53,9 @@ select-16g: DISTINCT with ORDER BY using group index
 select-17a: side branch with sort
 
 select-17b: side branch with sort and IN
+
+select-18: range inequalities
+
+select-18n: range inequalities and IS NULL
+
+select-19i: aggregation and IN
