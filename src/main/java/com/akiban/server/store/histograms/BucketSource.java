@@ -17,7 +17,7 @@ package com.akiban.server.store.histograms;
 
 import java.util.Iterator;
 
-public final class BucketSource<A> implements Iterable<Bucket<A>> {
+final class BucketSource<A> implements Iterable<Bucket<A>> {
 
     // Iterable interface
 
@@ -58,7 +58,7 @@ public final class BucketSource<A> implements Iterable<Bucket<A>> {
                 last = source.next();
                 if (!last.equals(result.value()))
                     return result;
-                result.addEquals(1);
+                result.addEquals();
             }
             // saw last element from source
             last = null;

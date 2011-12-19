@@ -15,7 +15,7 @@
 
 package com.akiban.server.store.histograms;
 
-public final class Bucket<A> {
+final class Bucket<A> {
 
     // Bucket interface
 
@@ -35,8 +35,8 @@ public final class Bucket<A> {
         return ltDistinctCount;
     }
 
-    public void addEquals(long value) {
-        equalsCount += value;
+    public void addEquals() {
+        ++equalsCount;
     }
 
     public void addLessThans(long value) {

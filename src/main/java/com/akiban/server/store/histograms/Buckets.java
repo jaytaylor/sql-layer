@@ -18,7 +18,7 @@ package com.akiban.server.store.histograms;
 import java.util.ArrayList;
 import java.util.List;
 
-public final class Buckets<A extends Comparable<? super A>> {
+final class Buckets<A extends Comparable<? super A>> {
 
     public static <A extends Comparable<A>> List<Bucket<A>> compile(int maxSize, Iterable<A> from) {
         BucketSource<A> source = new BucketSource<A>(from);
