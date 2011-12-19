@@ -57,3 +57,5 @@ select-17b: side branch with sort and IN
 select-18: range inequalities
 
 select-18n: range inequalities and IS NULL
+
+select-19i: aggregation and IN
