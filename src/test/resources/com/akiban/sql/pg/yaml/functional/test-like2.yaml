@@ -3,6 +3,16 @@
 - Properties: sys-aksql
 - suppressed: true
 ---   
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (varchar_field) VALUES
+    (null)
+---
+- Statement: INSERT INTO all_types (varchar_field) VALUES
+    (''), ('a'), ('b'), ('ab'), ('ac'), ('cb'), ('cc'),
+    ('abc'), ('bbc'), ('cbb'),
+    ('abcd'), ('xbcd')
+---
 # --- bug 905498 
 - Statement: SELECT varchar_field, varchar_field LIKE ? FROM all_types
 - params: [['ab%']]
