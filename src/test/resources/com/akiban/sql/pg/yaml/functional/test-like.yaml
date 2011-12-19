@@ -95,7 +95,6 @@
            [cbb, false],
            [abcd, true],
            [xbcd, false]]
-# --- bug 905498 
 ---
 - Statement: SELECT varchar_field FROM all_types
     WHERE varchar_field LIKE ?

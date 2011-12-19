@@ -3,6 +3,7 @@
 - Properties: sys-aksql
 - suppressed: true
 ---   
+# --- bug 905498 
 - Statement: SELECT varchar_field, varchar_field LIKE ? FROM all_types
 - params: [['ab%']]
 - output: [[null, null],
