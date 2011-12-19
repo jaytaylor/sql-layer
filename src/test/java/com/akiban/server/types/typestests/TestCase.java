@@ -85,7 +85,10 @@ public final class TestCase<T> {
     public static <T> TestCase<T> forInterval_Millis(long value, T expectedState) {
         return new TestCase<T>(INTERVAL_MILLIS, value, TC_LONG, expectedState);
     }
-    
+
+    public static <T> TestCase<T> forInterval_Month(long value, T expectedState) {
+        return new TestCase<T>(INTERVAL_MONTH, value, TC_LONG, expectedState);
+    }
     public static <T> TestCase<T> forUBigInt(BigInteger value, T expectedState) {
         return new TestCase<T>(U_BIGINT, value, TC_OBJECT, expectedState);
     }
@@ -148,6 +151,7 @@ public final class TestCase<T> {
         case TIME: target.putTime(valLong); break;
         case TIMESTAMP: target.putTimestamp(valLong); break;
         case INTERVAL_MILLIS: target.putInterval_Millis(valLong); break;
+        case INTERVAL_MONTH:  target.putInterval_Month(valLong); break;
         case U_BIGINT: target.putUBigInt((BigInteger)valObject); break;
         case U_DOUBLE: target.putUDouble(valDouble); break;
         case U_FLOAT: target.putUFloat(valFloat); break;
@@ -175,6 +179,7 @@ public final class TestCase<T> {
         case TIME: assertEquals(niceString(), valLong, source.getTime()); break;
         case TIMESTAMP: assertEquals(niceString(), valLong, source.getTimestamp()); break;
         case INTERVAL_MILLIS: assertEquals(niceString(), valLong, source.getInterval_Millis()); break;
+        case INTERVAL_MONTH: assertEquals(niceString(), valLong, source.getInterval_Month()); break;
         case U_BIGINT: assertEquals(niceString(), valObject, source.getUBigInt()); break;
         case U_DOUBLE: assertEquals(niceString(), valDouble, source.getUDouble(), EPSILON); break;
         case U_FLOAT: assertEquals(niceString(), valFloat, source.getUFloat(), EPSILON); break;
@@ -221,7 +226,8 @@ public final class TestCase<T> {
         case TEXT: source.getText(); break;
         case TIME: source.getTime(); break;
         case TIMESTAMP: source.getTimestamp(); break;
-        case INTERVAL_MILLIS: source.getInterval_Millis();; break;
+        case INTERVAL_MILLIS: source.getInterval_Millis(); break;
+        case INTERVAL_MONTH: source.getInterval_Month(); break;
         case U_BIGINT: source.getUBigInt(); break;
         case U_DOUBLE: source.getUDouble(); break;
         case U_FLOAT: source.getUFloat(); break;

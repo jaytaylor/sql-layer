@@ -59,6 +59,7 @@ public final class RowDataConversionTest extends ConversionTestBase {
         LongExtractor timestamp = Extractors.getLongExtractor(AkType.TIMESTAMP);
         LongExtractor time = Extractors.getLongExtractor(AkType.TIME);
         LongExtractor interval_millis = Extractors.getLongExtractor(AkType.INTERVAL_MILLIS);
+        LongExtractor interval_month = Extractors.getLongExtractor(AkType.INTERVAL_MONTH);
         ConverterTestUtils.setGlobalTimezone("UTC");
 
         ConversionSuite<?> suite = ConversionSuite.build(new ConversionPair())
@@ -128,6 +129,7 @@ public final class RowDataConversionTest extends ConversionTestBase {
 
                 // Interval millis
                 .add(TestCase.forInterval_Millis(interval_millis.getLong("12345"), b(12345L, 8) ))
+                .add(TestCase.forInterval_Month(interval_month.getLong("12345"), b(12345L, 8)))
                 
                 // Time
                 .add(TestCase.forTime(time.getLong("00:00:00"), b(0, 3)))
@@ -173,7 +175,7 @@ public final class RowDataConversionTest extends ConversionTestBase {
 
         @Override
         public void setUp(TestCase<?> testCase) {
-            if (testCase.type() == AkType.INTERVAL_MILLIS)
+            if (testCase.type() == AkType.INTERVAL_MILLIS || testCase.type() == AkType.INTERVAL_MONTH)
                 throw new UnsupportedOperationException();
             createEnvironment(testCase);
             byte[] bytes = new byte[128];
@@ -188,7 +190,7 @@ public final class RowDataConversionTest extends ConversionTestBase {
 
         @Override
         public Set<? extends AkType> unsupportedTypes() {
-            return EnumSet.of(AkType.INTERVAL_MILLIS);
+            return EnumSet.of(AkType.INTERVAL_MILLIS, AkType.INTERVAL_MONTH);
         }
 
         private void createEnvironment(TestCase<?> testCase) {

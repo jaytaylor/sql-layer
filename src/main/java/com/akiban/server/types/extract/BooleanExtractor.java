@@ -47,6 +47,7 @@ public final class BooleanExtractor extends AbstractExtractor {
         case DECIMAL:   return !source.getDecimal().equals(BigDecimal.ZERO);
         case U_BIGINT:  return !source.getUBigInt().equals(BigInteger.ZERO);
         case INTERVAL_MILLIS:  return l2b(source.getInterval_Millis());
+        case INTERVAL_MONTH:   return l2b(source.getInterval_Month());
         default: throw unsupportedConversion(type);
         }
     }

@@ -116,6 +116,11 @@ public final class ToObjectValueTarget implements ValueTarget {
     }
 
     @Override
+    public void putInterval_Month(long value) {
+        internalPut(value, AkType.INTERVAL_MONTH);
+    }
+    
+    @Override
     public void putUBigInt(BigInteger value) {
         internalPut(value, AkType.U_BIGINT);
     }

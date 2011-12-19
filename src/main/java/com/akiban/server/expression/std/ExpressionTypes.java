@@ -40,6 +40,7 @@ public class ExpressionTypes
     public static final ExpressionType U_INT = newType(AkType.U_INT);
     public static final ExpressionType YEAR = newType(AkType.YEAR);
     public static final ExpressionType INTERVAL_MILLIS = newType(AkType.INTERVAL_MILLIS);
+    public static final ExpressionType INTERVAL_MONTH = newType(AkType.INTERVAL_MONTH);
 
     public static ExpressionType decimal(int precision, int scale) {
         return newType(AkType.DECIMAL, precision, scale);

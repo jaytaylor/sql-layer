@@ -136,6 +136,11 @@ abstract class AbstractRowDataValueSource implements ValueSource {
     }
 
     @Override
+    public long getInterval_Month() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public long getUInt() {
         checkState(AkType.U_INT);
         return extractLong(Signage.UNSIGNED);

@@ -43,6 +43,7 @@ final class ExtractorForString extends ObjectExtractor<String> {
         case DECIMAL:   return String.valueOf(source.getDecimal());
         case VARBINARY: return String.valueOf(source.getVarBinary());
         case INTERVAL_MILLIS:  return longExtractor(AkType.INTERVAL_MILLIS).asString(source.getInterval_Millis());
+        case INTERVAL_MONTH:   return longExtractor(AkType.INTERVAL_MONTH).asString(source.getInterval_Month());
         default:
             throw unsupportedConversion(type);
         }

@@ -106,6 +106,11 @@ public final class NullValueSource implements ValueSource {
     }
 
     @Override
+    public long getInterval_Month() {
+        throw new ValueSourceIsNullException();
+    }
+
+    @Override
     public long getUInt() {
         throw new ValueSourceIsNullException();
     }

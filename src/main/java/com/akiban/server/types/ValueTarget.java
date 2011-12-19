@@ -34,6 +34,7 @@ public interface ValueTarget {
     void putTime(long value);
     void putTimestamp(long value);
     void putInterval_Millis(long value);
+    void putInterval_Month(long value);
     void putUBigInt(BigInteger value);
     void putUDouble(double value);
     void putUFloat(float value);

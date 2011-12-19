@@ -79,6 +79,7 @@ public final class Converters {
         result.put(TIME, LongConverter.TIME);
         result.put(TIMESTAMP, LongConverter.TIMESTAMP);
         result.put(INTERVAL_MILLIS, LongConverter.INTERVAL_MILLIS);
+        result.put(INTERVAL_MONTH,LongConverter.INTERVAL_MONTH);
         result.put(U_BIGINT, ConverterForBigInteger.INSTANCE);
         result.put(U_DOUBLE, ConverterForDouble.UNSIGNED);
         result.put(U_FLOAT, ConverterForFloat.UNSIGNED);
@@ -108,6 +109,7 @@ public final class Converters {
                 TIME,
                 TIMESTAMP,
                 INTERVAL_MILLIS,
+                INTERVAL_MONTH,
                 YEAR,
                 DATE,
                 DATETIME,
@@ -121,13 +123,15 @@ public final class Converters {
                 DOUBLE,
                 VARCHAR,
                 LONG,
-                INTERVAL_MILLIS
+                INTERVAL_MILLIS,
+                INTERVAL_MONTH
         );
         builder.legalConversions(DECIMAL,
                 U_BIGINT,
                 VARCHAR,
                 LONG,
                 INTERVAL_MILLIS,
+                INTERVAL_MONTH,
                 FLOAT,
                 DOUBLE
         );
@@ -137,7 +141,8 @@ public final class Converters {
                 LONG,
                 U_BIGINT,
                 VARCHAR,
-                INTERVAL_MILLIS
+                INTERVAL_MILLIS,
+                INTERVAL_MONTH
         );
         builder.legalConversions(FLOAT,
                 DOUBLE,
@@ -145,7 +150,8 @@ public final class Converters {
                 LONG,
                 U_BIGINT,
                 VARCHAR,
-                INTERVAL_MILLIS
+                INTERVAL_MILLIS,
+                INTERVAL_MONTH
         );
         builder.legalConversions(LONG,
                 DOUBLE,
@@ -153,7 +159,8 @@ public final class Converters {
                 U_BIGINT,
                 DECIMAL,
                 VARCHAR,
-                INTERVAL_MILLIS
+                INTERVAL_MILLIS,
+                INTERVAL_MONTH
         );
         builder.legalConversions(DATE,
                 VARCHAR,
@@ -178,6 +185,7 @@ public final class Converters {
         builder.legalConversions(BOOL,
                 VARCHAR,
                 INTERVAL_MILLIS,
+                INTERVAL_MONTH,
                 LONG,
                 DOUBLE,
                 FLOAT,
@@ -198,6 +206,14 @@ public final class Converters {
                 VARCHAR               
         );
 
+        builder.legalConversions(INTERVAL_MONTH,
+                DOUBLE,
+                DECIMAL,
+                U_BIGINT,
+                LONG,
+                VARCHAR
+        );
+        
         return builder.result();
     }
     

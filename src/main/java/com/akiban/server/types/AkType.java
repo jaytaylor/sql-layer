@@ -39,6 +39,7 @@ public enum AkType {
     YEAR(LONG_AKTYPE),
     BOOL(BOOLEAN_AKTYPE),
     INTERVAL_MILLIS(LONG_AKTYPE),
+    INTERVAL_MONTH(LONG_AKTYPE),
     NULL(null),
     UNSUPPORTED(null),
     ;

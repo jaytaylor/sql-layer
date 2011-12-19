@@ -145,6 +145,11 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     public long getInterval_Millis() {
         return rawLong(AkType.INTERVAL_MILLIS);
     }
+
+    @Override
+    public long getInterval_Month() {
+        return rawLong(AkType.INTERVAL_MONTH);
+    }
     
     @Override
     public long getUInt() {
@@ -268,6 +273,10 @@ public final class ValueHolder implements ValueSource, ValueTarget {
         putRaw(AkType.INTERVAL_MILLIS, value);
     }
 
+    @Override
+    public void putInterval_Month(long value) {
+        putRaw(AkType.INTERVAL_MONTH, value);
+    }
     @Override
     public void putUBigInt(BigInteger value) {
         putRaw(AkType.U_BIGINT, value);
@@ -568,7 +577,7 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     }
 
     private enum StateType {
-        LONG_VAL (AkType.DATE, AkType.DATETIME, AkType.INT, AkType.LONG, AkType.TIME, AkType.TIMESTAMP, AkType.INTERVAL_MILLIS, AkType.U_INT, AkType.YEAR),
+        LONG_VAL (AkType.DATE, AkType.DATETIME, AkType.INT, AkType.LONG, AkType.TIME, AkType.TIMESTAMP, AkType.INTERVAL_MILLIS, AkType.INTERVAL_MONTH, AkType.U_INT, AkType.YEAR),
         DOUBLE_VAL(AkType.DOUBLE, AkType.U_DOUBLE),
         FLOAT_VAL(AkType.FLOAT, AkType.U_FLOAT),
         OBJECT_VAL(AkType.DECIMAL, AkType.VARCHAR, AkType.TEXT, AkType.U_BIGINT, AkType.VARBINARY),

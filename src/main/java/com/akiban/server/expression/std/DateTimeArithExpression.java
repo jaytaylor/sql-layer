@@ -200,7 +200,7 @@ public class DateTimeArithExpression extends ArithExpression
      *  topT
      *  means INTERVAL_MILLIS expressed in this type
      *  For example, time minus time => interval
-     *  if topT is set to TIME => result is INTERVAL_MILLIS in HOURS, SECONDS, MINUTES
+     *  if topT is set to TIME => result is INTERVAL in HOURS, SECONDS, MINUTES
      */
     private final AkType topT;
     protected DateTimeArithExpression (Expression left, Expression right, AkType topT)

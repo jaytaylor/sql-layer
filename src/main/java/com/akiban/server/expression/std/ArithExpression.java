@@ -298,6 +298,26 @@ public class ArithExpression extends AbstractBinaryExpression
         }
 
         @Override
+        public long rawInterval_Month ()
+        {
+
+            int pos = SUPPORTED_TYPES.get(left.getConversionType()) - SUPPORTED_TYPES.get(right.getConversionType());
+            switch (pos)
+            {
+                case -1:
+                case 1:     return rawDecimal().longValue();
+                case -3:
+                case 3:     return (long)rawDouble();
+                case -5:
+                case 5:     return rawBigInteger().longValue();
+                default:    throw new UnsupportedOperationException(); /* INTERVAL_MONTH should not be
+                            the result of two date/time, not in ArithExpression anyway.
+                            This method, though, could be overidden in sub-class(DateTimeArith) as needed  */
+            }
+
+        }
+        
+        @Override
         public boolean isNull() 
         {
             return left.isNull() || right.isNull();

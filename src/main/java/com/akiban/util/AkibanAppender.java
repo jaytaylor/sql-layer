@@ -237,6 +237,11 @@ public abstract class AkibanAppender {
         }
 
         @Override
+        public void putInterval_Month(long value) {
+            throw new UnsupportedOperationException();
+        }
+        
+        @Override
         public void putUBigInt(BigInteger value) {
             throw new UnsupportedOperationException();
         }

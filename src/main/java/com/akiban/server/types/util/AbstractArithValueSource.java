@@ -35,7 +35,8 @@ public abstract class AbstractArithValueSource implements ValueSource
     protected abstract BigDecimal rawDecimal();
     protected abstract BigInteger rawBigInteger();
     protected abstract long rawInterval_Millis();
-
+    protected abstract long rawInterval_Month();
+    
     @Override
     public BigDecimal getDecimal()
     {
@@ -129,6 +130,14 @@ public abstract class AbstractArithValueSource implements ValueSource
         check(AkType.INTERVAL_MILLIS);
         return rawInterval_Millis();
     }
+
+    @Override
+    public long getInterval_Month()
+    {
+        check(AkType.INTERVAL_MONTH);
+        return rawInterval_Month();
+    }
+
     @Override
     public long getUInt()
     {

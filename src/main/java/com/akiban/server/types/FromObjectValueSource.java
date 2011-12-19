@@ -134,6 +134,11 @@ public final class FromObjectValueSource implements ValueSource {
     }
 
     @Override
+    public long getInterval_Month() {
+        return as(Long.class, AkType.INTERVAL_MONTH);
+    }
+    
+    @Override
     public long getUInt() {
         return as(Long.class, AkType.U_INT);
     }
@@ -226,6 +231,7 @@ public final class FromObjectValueSource implements ValueSource {
         case DATETIME:
         case TIMESTAMP:
         case INTERVAL_MILLIS:
+        case INTERVAL_MONTH:
         case INT:
         case LONG:
         case TIME:

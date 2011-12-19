@@ -140,6 +140,10 @@ final class StandardTestCases {
         list.add(TestCase.forInterval_Millis(Long.MAX_VALUE, NO_STATE));
         list.add(TestCase.forInterval_Millis(Long.MIN_VALUE, NO_STATE));
 
+        list.add(TestCase.forInterval_Month(0, NO_STATE));
+        list.add(TestCase.forInterval_Month(Long.MAX_VALUE, NO_STATE));
+        list.add(TestCase.forInterval_Month(Long.MIN_VALUE, NO_STATE));
+
         verifyAllTypesTested(list);
 
         return Collections.unmodifiableCollection(list);

@@ -146,6 +146,12 @@ public final class AllowedConversionsTest {
         }
 
         @Override
+        public long getInterval_Month() {
+            checkType(AkType.INTERVAL_MONTH);
+            return 0;
+        }
+        
+        @Override
         public long getInt() {
             checkType(AkType.INT);
             return 0;
@@ -230,6 +236,9 @@ public final class AllowedConversionsTest {
             case INTERVAL_MILLIS:
                 stringValue = "1234567";
                 break;
+            case INTERVAL_MONTH:
+                stringValue = "123";
+                break;
             case DECIMAL:
             case DOUBLE:
             case FLOAT:
@@ -307,7 +316,11 @@ public final class AllowedConversionsTest {
         @Override
         public void putInterval_Millis(long value) {
         }
-        
+
+        @Override
+        public void putInterval_Month(long value) {
+        }
+
         @Override
         public void putUBigInt(BigInteger value) {
         }

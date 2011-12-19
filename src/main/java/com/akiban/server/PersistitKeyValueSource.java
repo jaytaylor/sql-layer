@@ -35,7 +35,7 @@ public final class PersistitKeyValueSource implements ValueSource {
     }
 
     public void attach(Key key, int depth, AkType type) {
-        if (type == AkType.INTERVAL_MILLIS)
+        if (type == AkType.INTERVAL_MILLIS || type == AkType.INTERVAL_MONTH)
             throw new UnsupportedOperationException();
         this.key = key;
         this.key.indexTo(depth);
@@ -120,6 +120,11 @@ public final class PersistitKeyValueSource implements ValueSource {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public long getInterval_Month() {
+        throw new UnsupportedOperationException();
+    }
+    
     @Override
     public long getUInt() {
         return decode().getUInt();

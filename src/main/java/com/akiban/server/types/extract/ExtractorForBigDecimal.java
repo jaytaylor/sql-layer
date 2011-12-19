@@ -36,6 +36,7 @@ final class ExtractorForBigDecimal extends ObjectExtractor<BigDecimal> {
         case DOUBLE:    return BigDecimal.valueOf(source.getDouble());
         case U_DOUBLE:  return BigDecimal.valueOf(source.getUDouble());
         case INTERVAL_MILLIS:  return new BigDecimal(source.getInterval_Millis());
+        case INTERVAL_MONTH:   return new BigDecimal(source.getInterval_Month());
         case U_BIGINT:  return new BigDecimal(source.getUBigInt());
         default: throw unsupportedConversion(type);
         }

@@ -68,6 +68,7 @@ class ExtractorsForLong extends LongExtractor {
             }
         case DECIMAL:   return source.getDecimal().longValue();
         case INTERVAL_MILLIS:  return source.getInterval_Millis();
+        case INTERVAL_MONTH:  return source.getInterval_Month();
         default: throw unsupportedConversion(type);
         }
     }
