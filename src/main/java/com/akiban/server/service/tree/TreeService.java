@@ -39,8 +39,6 @@ public interface TreeService extends Service<TreeService> {
 
     final static String SCHEMA_TREE_NAME = "_schema_";
 
-    final static String STATUS_TREE_NAME = "_status_";
-
     final static String TREESPACE = "treespace";
 
     final static String SCHEMA = "schema";

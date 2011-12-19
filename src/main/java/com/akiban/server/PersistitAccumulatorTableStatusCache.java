@@ -62,13 +62,12 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
     @Override
     public synchronized void drop(int tableID) {
-        try {
-            InternalTableStatus ts = getInternalTableStatus(tableID);
-            Tree tree = getTreeForRowDef(ts.getRowDef());
-            Exchange ex = new Exchange(tree);
-            ex.removeTree();
-        } catch(PersistitException e) {
-            throw new PersistItErrorException(e);
+        InternalTableStatus ts = tableStatusMap.remove(tableID);
+        if(ts != null) {
+            ts.setAutoIncrement(0);
+            ts.setRowCount(0);
+            ts.setOrdinal(0);
+            ts.setRowDef(null, null);
         }
     }
 

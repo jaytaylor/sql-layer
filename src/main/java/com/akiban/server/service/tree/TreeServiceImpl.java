@@ -74,8 +74,6 @@ public class TreeServiceImpl
     // Must be one of 1024, 2048, 4096, 8192, 16384:
     static final int DEFAULT_BUFFER_SIZE = 16384;
 
-    static final int MAX_TRANSACTION_RETRY_COUNT = 10;
-
     private final ConfigurationService configService;
 
     private static int instanceCount = 0;
@@ -87,8 +85,6 @@ public class TreeServiceImpl
     private int volumeOffsetCounter = 0;
 
     private final Map<String, TreeLink> schemaLinkMap = new HashMap<String, TreeLink>();
-
-    private final Map<String, TreeLink> statusLinkMap = new HashMap<String, TreeLink>();
 
     private final SessionService sessionService;
 
@@ -258,7 +254,6 @@ public class TreeServiceImpl
         }
         synchronized (this) {
             schemaLinkMap.clear();
-            statusLinkMap.clear();
             // TODO - remove this when sure we don't need it
             --instanceCount;
             assert instanceCount == 0 : instanceCount;
@@ -528,8 +523,7 @@ public class TreeServiceImpl
     }
 
     public TreeLink treeLink(final String schemaName, final String treeName) {
-        final Map<String, TreeLink> map = treeName == STATUS_TREE_NAME ? statusLinkMap
-                : schemaLinkMap;
+        final Map<String, TreeLink> map = schemaLinkMap;
         TreeLink link;
         synchronized (map) {
             link = map.get(schemaName);
