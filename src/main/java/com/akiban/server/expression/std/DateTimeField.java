@@ -21,7 +21,6 @@
 package com.akiban.server.expression.std;
 
 import java.util.HashMap;
-import org.joda.time.DateTime;
 import org.joda.time.DateTimeFieldType;
 import org.joda.time.MutableDateTime;
 
@@ -167,7 +166,7 @@ public enum DateTimeField
     },
 
     /**
-     * day of month in numeric: 31, 30, 29, ...
+     * day of month in numeric: 31, 30, 29, ..., 00
      */
     d
     {
@@ -181,7 +180,7 @@ public enum DateTimeField
         @Override
         public String get(MutableDateTime datetime)
         {
-            return datetime.getDayOfMonth() + "";
+            return String.format("%02d", datetime.getDayOfMonth());
         }
 
         @Override
@@ -262,6 +261,7 @@ public enum DateTimeField
 
     /**
      * hour in 24-hr format
+     * [23, 22, ..., 01, 00]
      */
     H
     {
@@ -275,7 +275,7 @@ public enum DateTimeField
         @Override
         public String get(MutableDateTime datetime)
         {
-            return datetime.getHourOfDay() + "";
+            return String.format("%02d", datetime.getHourOfDay());
         }
 
         @Override
@@ -293,6 +293,7 @@ public enum DateTimeField
 
     /**
      * hour in 12-hr format
+     * [12, 11, ...,01]
      */
     h
     {
@@ -310,7 +311,7 @@ public enum DateTimeField
         @Override
         public String get(MutableDateTime datetime)
         {
-            return datetime.get(DateTimeFieldType.clockhourOfHalfday()) + "";
+            return String.format("%2d", datetime.get(DateTimeFieldType.clockhourOfHalfday()));
         }
 
         @Override
@@ -328,6 +329,7 @@ public enum DateTimeField
 
     /**
      * I same as h: hour in 12-hr format
+     * [12, 11, ...,01]
      */
     I
     {
@@ -345,7 +347,7 @@ public enum DateTimeField
         @Override
         public String get(MutableDateTime datetime)
         {
-            return datetime.get(DateTimeFieldType.clockhourOfHalfday()) + "";
+            return String.format("%2d", datetime.get(DateTimeFieldType.clockhourOfHalfday()));
         }
 
         @Override
@@ -362,7 +364,7 @@ public enum DateTimeField
     },
 
     /**
-     * minute
+     * minute: 59, 58, ..., 1,0
      */
     i
     {
@@ -426,7 +428,8 @@ public enum DateTimeField
 
     /**
      * hour : 24-hr format.
-     * Same as H
+     * Same as H, but do not pre-pend 0 to one-digit hour
+     * [23, 22, ...1,0]
      */
     k
     {
@@ -458,7 +461,8 @@ public enum DateTimeField
 
     /**
      * hour: 12-hr format
-     * Same as h
+     * Same as h, but does not pre-pend 0 to a one-digit value
+     * [12, 11, ..., 1]
      */
     l
     {
@@ -539,7 +543,7 @@ public enum DateTimeField
         @Override
         public String get(MutableDateTime datetime)
         {
-            return datetime.getMonthOfYear() + "";
+            return String.format("%02d", datetime.getMonthOfYear());
         }
 
         @Override
@@ -618,8 +622,10 @@ public enum DateTimeField
             int h = datetime.get(DateTimeFieldType.clockhourOfHalfday());
             int m = datetime.getMinuteOfHour();
             int s = datetime.getSecondOfMinute();
+            String halfDay = datetime.get(DateTimeFieldType.halfdayOfDay())  == 0 ? "AM" : "PM";
 
-            return String.format("%02d:%02d:%02d", h,m,s);
+            return String.format("%02d:%02d:%02d %s" ,
+                    h,m,s, halfDay);
         }
 
         @Override
@@ -982,7 +988,7 @@ public enum DateTimeField
         {
              // the last parameter: 1 means MONDAY
              return getYear(datetime, datetime.getYear(), datetime.getMonthOfYear(), datetime.getDayOfMonth(), 1) + "";
-      
+
         }
 
         @Override
@@ -1013,7 +1019,7 @@ public enum DateTimeField
         @Override
         public String get(MutableDateTime datetime)
         {
-            return datetime.getYear() % 100 + "";
+            return String.format("%02d", datetime.getYear() % 100);
         }
 
         @Override
@@ -1121,7 +1127,7 @@ public enum DateTimeField
      *              %y and %Y  => %Y year
      */
     abstract DateTimeField equivalentField ();
-    
+
     /**
      * to be used in X and x
      * @param cal
@@ -1147,7 +1153,7 @@ public enum DateTimeField
         if (da < firstD) return yr -1;
         else return yr;
     }
-    
+
     /**
      * to be used in V, v, U and u
      * @param cal
@@ -1169,14 +1175,53 @@ public enum DateTimeField
         while (cal.getDayOfWeek() != firstDay)
             cal.setDayOfMonth(++firstD);
 
-        cal.setYear(yr); 
-        cal.setMonthOfYear(mo); 
-        cal.setDayOfMonth(da); 
+        cal.setYear(yr);
+        cal.setMonthOfYear(mo);
+        cal.setDayOfMonth(da);
 
-        int dayOfYear = cal.getDayOfYear(); 
+        int dayOfYear = cal.getDayOfYear();
 
         if (dayOfYear < firstD) return (lowestIs0 ? 0 : getWeek(cal, yr-1, 12, 31, firstDay, lowestIs0));
         else return (dayOfYear - firstD) / 7 +1;
+    }
+
+    /**
+     * Takes a (Mutable)DateTime object and a mysql format string
+     *
+     * @param date
+     * @param format
+     * @return a string formatted accordingly
+     */
+    public static String getFormatted (MutableDateTime date, String format)
+    {
+        String[] frmList = format.split("\\%");
+        StringBuilder builder = new StringBuilder(frmList[0]);
+
+        for (int n = 1; n < frmList.length; ++n)
+        {
+            if (frmList[n].length() == 0 )
+            {
+                builder.append('%');
+                if ( n+1 < frmList.length && frmList[n+1].length() == 0)
+                    ++n;
+            }
+            else
+            {
+                try
+                {
+                    String s = Character.toString(frmList[n].charAt(0));
+                    builder.append(frmList[n].replaceFirst(s, DateTimeField.valueOf(s).get(date)));
+                }
+                catch (IllegalArgumentException ex) // unknown specifiers are treated as regular chars
+                {
+                    builder.append(frmList[n]);
+                }
+            }
+        }
+
+        for (int m = format.length() -1; format.charAt(m) == '%'; m -= 2)
+            builder.append('%');
+        return builder.toString();
     }
 
     // class static data DateTimeFields

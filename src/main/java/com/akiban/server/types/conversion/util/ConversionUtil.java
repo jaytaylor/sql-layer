@@ -13,14 +13,16 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.functions;
+package com.akiban.server.types.conversion.util;
 
-import com.akiban.server.aggregation.AggregatorRegistry;
-import com.akiban.server.expression.ExpressionRegistry;
-import com.akiban.server.expression.EnvironmentExpressionRegistry;
+import org.joda.time.MutableDateTime;
 
-public interface FunctionsRegistry extends AggregatorRegistry, ExpressionRegistry, EnvironmentExpressionRegistry {
-    public enum FunctionKind { SCALAR, AGGREGATE, ENVIRONMENT };
-
-    public FunctionKind getFunctionKind(String name);
+public class ConversionUtil 
+{
+    private static final AbstractConverter<MutableDateTime> DATETIME = new DateTimeConverter();
+    
+    public static AbstractConverter<MutableDateTime> getDateTimeConverter ()
+    {
+        return DATETIME;
+    }
 }

@@ -38,14 +38,14 @@ public class ExtractExpression extends AbstractUnaryExpression
     @Scalar ("datetime")
     public static final ExpressionComposer DATETIME_COMPOSER = new InternalComposer(TargetExtractType.DATETIME);
     
-    @Scalar ({"day", "day of month"})
+    @Scalar ({"day", "dayofmonth"})
     public static final ExpressionComposer DAY_COMPOSER = new InternalComposer(TargetExtractType.DAY);
     
     /**
      * extract the HOUR from a DATETIME/TIME/TIMESTAMP expression.
      * (24-hr format)
      */
-    @Scalar ({"hour", "hour of day"})
+    @Scalar ({"hour", "hourofday"})
     public static final ExpressionComposer HOUR_COMPOSER = new InternalComposer(TargetExtractType.HOUR);
 
     @Scalar ("minute")

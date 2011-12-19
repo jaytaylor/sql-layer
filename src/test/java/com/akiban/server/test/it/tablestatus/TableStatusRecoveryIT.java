@@ -86,6 +86,8 @@ public class TableStatusRecoveryIT extends ITBase {
         assertEquals(20000, ts3.getRowCount());
         final TableStatus status = store().getRowDefCache().getRowDef(tableId).getTableStatus();
         assertEquals(20000, status.getRowCount());
-        assertEquals(20001, status.allocateNewUniqueId());
+
+        writeRows(createNewRow(tableId, 20001, "This is record # ", -1));
+        assertEquals(20001, status.getUniqueID());
     }
 }

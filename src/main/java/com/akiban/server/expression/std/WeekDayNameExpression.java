@@ -15,7 +15,6 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -24,11 +23,12 @@ import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.conversion.util.ConversionUtil;
 import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types.util.ValueHolder;
-import org.joda.time.DateTime;
+import org.joda.time.MutableDateTime;
 import org.joda.time.IllegalFieldValueException;
 import org.slf4j.LoggerFactory;
+
 
 public class WeekDayNameExpression extends AbstractUnaryExpression
 {
@@ -114,36 +114,17 @@ public class WeekDayNameExpression extends AbstractUnaryExpression
         {
             ValueSource s = operand();
             if (s.isNull()) return NullValueSource.only();
-            long l = 0;
-            long ymd[] = null;
-            switch(s.getConversionType())
-            {
-                case DATE:      l = s.getDate(); 
-                                ymd = Extractors.getLongExtractor(AkType.DATE).getYearMonthDay(l);
-                                break;
-                case DATETIME:  l = s.getDateTime(); 
-                                ymd = Extractors.getLongExtractor(AkType.DATETIME).getYearMonthDay(l);
-                                break;
-                case TIMESTAMP: l = s.getTimestamp(); break; // number of seconds since 1970
-                default:        throw new InvalidArgumentTypeException(s.getConversionType() + " is invalid for dayname()");
-            }
 
-            DateTime datetime;
-            if (ymd == null) 
-                datetime = new DateTime(l * 1000); // timestamp
-            else
+            MutableDateTime datetime;
+            try
             {
-                try
-                {
-                    datetime = new DateTime((int)ymd[0],(int)ymd[1],(int)ymd[2],1,1); 
-                }
-                catch (IllegalFieldValueException ex)
-                {
-                    LoggerFactory.getLogger(WeekDayNameExpression.class).debug(ex.getMessage());
-                    return NullValueSource.only();
-                }
+                datetime = ConversionUtil.getDateTimeConverter().get(s);
             }
-                
+            catch (IllegalFieldValueException ex)
+            {
+                LoggerFactory.getLogger(WeekDayNameExpression.class).debug(ex.getMessage());
+                return NullValueSource.only();
+            }
 
             switch(field)
             {
@@ -154,7 +135,7 @@ public class WeekDayNameExpression extends AbstractUnaryExpression
                                         // mysql DAYOFWEEK: mon = 2, ..., sat = 7, sun = 1
                 case DAYOFWEEK:         valueHolder().putRaw(AkType.INT, datetime.getDayOfWeek() % 7 + 1);
                                         return valueHolder();
-                                        
+
                                         // joda:            mon = 1,..., sat = 6, sun = 7
                                         // mysql WEEKDAY:   mon = 0,..., sat = 5, sun = 6
                 default: /*WEEKDAY*/    valueHolder().putRaw(AkType.INT, datetime.getDayOfWeek() -1);

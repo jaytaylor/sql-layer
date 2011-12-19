@@ -98,6 +98,6 @@ public final class Extractors {
     private static final ExtractorForBigInteger UBIGINT_EXTRACTOR = new ExtractorForBigInteger();
     private static final ExtractorForBigDecimal DECIMAL_EXTRACTOR = new ExtractorForBigDecimal();
     private static final ExtractorForVarBinary VARBINARY_EXTRACTOR = new ExtractorForVarBinary();
-
+    
     private static final Map<AkType,? extends LongExtractor> readOnlyExtractorsMap = createLongExtractorsMap();
 }

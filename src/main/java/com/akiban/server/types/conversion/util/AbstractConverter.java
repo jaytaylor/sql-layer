@@ -13,14 +13,25 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.functions;
+package com.akiban.server.types.conversion.util;
 
-import com.akiban.server.aggregation.AggregatorRegistry;
-import com.akiban.server.expression.ExpressionRegistry;
-import com.akiban.server.expression.EnvironmentExpressionRegistry;
+import com.akiban.server.types.ValueSource;
 
-public interface FunctionsRegistry extends AggregatorRegistry, ExpressionRegistry, EnvironmentExpressionRegistry {
-    public enum FunctionKind { SCALAR, AGGREGATE, ENVIRONMENT };
-
-    public FunctionKind getFunctionKind(String name);
+public interface AbstractConverter<T>
+{
+    /**
+     * 
+     * @param source
+     * @return a (java) object that could be created
+     *  using source's value
+     */
+     T get (ValueSource source);
+     
+     /**
+      * 
+      * @param string
+      * @return a (java) object that could be created
+      *  using string's value
+      */
+     T get (String string);
 }
