@@ -5,7 +5,7 @@
 #bug 904284
 - Statement: INSERT INTO Classes VALUES (1001, 'ANTH', 'Upper', 25);
 ---
-- Statement: SELECT Dept, Level, BITAND(ClassID) AS BitwiseAND FROM Classes GROUP BY ClassID, Dept, Level;
+- Statement: SELECT Dept, Level, BIT_AND(ClassID) AS BitwiseAND FROM Classes GROUP BY ClassID, Dept, Level;
 - output: [['ANTH','Upper',1001]]
 ---  
 - Statement: INSERT INTO Classes VALUES
@@ -27,7 +27,7 @@
 ---
 - Statement: SELECT Dept, Level, ClassID AS BitwiseAND FROM Classes;
 ---  
-- Statement: SELECT Dept, Level, BITAND(ClassID) AS BitwiseAND FROM Classes GROUP BY ClassID, Dept, Level;
+- Statement: SELECT Dept, Level, BIT_AND(ClassID) AS BitwiseAND FROM Classes GROUP BY ClassID, Dept, Level;
 - output: [['Anth','Upper',992],['ANTH','Upper',992],['ANTH','Lower',992],['ANTH',null,992],['ENGL','Upper',1000],['ENGL','Lower',1011],['ENGL',NULL,992],['MATH','Upper',1003],['MATH','Lower',992],['MATH',NULL,992],[NULL,NULL,992]]
 ...
 
