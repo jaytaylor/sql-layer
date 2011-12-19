@@ -46,7 +46,7 @@ final class Aggregate_Partial extends Operator
         return new AggregateCursor(
                 adapter,
                 inputOperator.cursor(adapter),
-                inputOperator.rowType(),
+                inputRowType,
                 aggregatorFactories,
                 aggregators,
                 inputsIndex,
@@ -72,12 +72,13 @@ final class Aggregate_Partial extends Operator
 
     // AggregationOperator interface
 
-    public Aggregate_Partial(Operator inputOperator, int inputsIndex, List<AggregatorFactory> aggregatorFactories) {
+    public Aggregate_Partial(Operator inputOperator, RowType inputRowType, int inputsIndex, List<AggregatorFactory> aggregatorFactories) {
         this(
                 inputOperator,
+                inputRowType,
                 inputsIndex,
                 aggregatorFactories,
-                inputOperator.rowType().schema().newAggregateType(inputOperator.rowType(), inputsIndex, aggregatorFactories)
+                inputRowType.schema().newAggregateType(inputRowType, inputsIndex, aggregatorFactories)
         );
     }
 
@@ -97,8 +98,9 @@ final class Aggregate_Partial extends Operator
 
     // package-private (for testing)
 
-    Aggregate_Partial(Operator inputOperator, int inputsIndex, List<AggregatorFactory> aggregatorFactories, AggregatedRowType outputType) {
+    Aggregate_Partial(Operator inputOperator, RowType inputRowType, int inputsIndex, List<AggregatorFactory> aggregatorFactories, AggregatedRowType outputType) {
         this.inputOperator = inputOperator;
+        this.inputRowType = inputRowType;
         this.inputsIndex = inputsIndex;
         this.aggregatorFactories = new ArrayList<AggregatorFactory>(aggregatorFactories);
         this.outputType = outputType;
@@ -108,15 +110,15 @@ final class Aggregate_Partial extends Operator
     // private methods
 
     private void validate() {
-        ArgumentValidation.isBetween("inputsIndex", 0, inputsIndex, inputOperator.rowType().nFields()+1);
-        if (inputsIndex + aggregatorFactories.size() != inputOperator.rowType().nFields()) {
+        if (inputOperator == null || inputRowType == null || outputType == null)
+            throw new NullPointerException();
+        ArgumentValidation.isBetween("inputsIndex", 0, inputsIndex, inputRowType.nFields()+1);
+        if (inputsIndex + aggregatorFactories.size() != inputRowType.nFields()) {
             throw new IllegalArgumentException(
                     String.format("inputsIndex(=%d) + aggregatorNames.size(=%d) != inputRowType.nFields(=%d)",
-                            inputsIndex, aggregatorFactories.size(), inputOperator.rowType().nFields()
+                            inputsIndex, aggregatorFactories.size(), inputRowType.nFields()
             ));
         }
-        if (outputType == null)
-            throw new NullPointerException();
     }
     
     // class state
@@ -125,6 +127,7 @@ final class Aggregate_Partial extends Operator
     // object state
 
     private final Operator inputOperator;
+    private final RowType inputRowType;
     private final AggregatedRowType outputType;
     private final int inputsIndex;
     private final List<AggregatorFactory> aggregatorFactories;
