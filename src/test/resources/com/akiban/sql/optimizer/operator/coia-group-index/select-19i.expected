@@ -1,15 +1,7 @@
 PhysicalSelect[_SQL_COL_1:VARCHAR(32)]
   project([Field(0)])
-    Aggregation(without GROUP BY: [maxINT])
+    Aggregation(without GROUP BY: [maxVARCHAR])
       Map_NestedLoops
         ValuesScan_Default[ImmutableRow[Jones], ImmutableRow[Smith]]
-        project([Field(5)])
-          Product_NestedLoops(flatten(flatten(user.customers, user.orders), user.items) x flatten(user.customers, user.addresses))
-            Filter_Default([flatten(flatten(user.customers, user.orders), user.items)])
-              Flatten_HKeyOrdered(flatten(user.customers, user.orders) INNER user.items)
-                Flatten_HKeyOrdered(user.customers INNER user.orders)
-                  BranchLookup_Default(_akiban_customers Index(user.customers.name[IndexColumn(name)]) -> user.customers limit NO LIMIT)
-                    IndexScan_Default(Index(user.customers.name[IndexColumn(name)]) (>=UnboundExpressions[Bound(0,Field(0))],<=UnboundExpressions[Bound(0,Field(0))]))
-            Filter_Default([flatten(user.customers, user.addresses)])
-              Flatten_HKeyOrdered(user.customers INNER user.addresses)
-                BranchLookup_Nested(_akiban_customers user.customers -> user.addresses)
+        project([Field(1)])
+          IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) (>=UnboundExpressions[Bound(0,Field(0))],<=UnboundExpressions[Bound(0,Field(0))]))
