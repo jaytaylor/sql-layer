@@ -15,6 +15,8 @@
 
 package com.akiban.server;
 
+import com.akiban.server.rowdata.RowDef;
+
 public interface TableStatusCache {
     /**
      * Record that a row has been deleted.
@@ -54,19 +56,18 @@ public interface TableStatusCache {
     void setAutoIncrement(int tableID, long value);
 
     /**
+     * Set the RowDef of a given table.
+     * @param tableID ID of the table.
+     * @param rowDef Associated RowDef.
+     */
+    void setRowDef(int tableID, RowDef rowDef);
+
+    /**
      * Create a brand new, unique ID for the given table.
      * @param tableID ID of the table.
      * @return The new ID value.
      */
     long createNewUniqueID(int tableID);
-
-    /**
-     * Set the unique ID value of a given table. Note: Attempting to
-     * decrease the current value is silently <b>ignored</b>.
-     * @param tableID ID of the table.
-     * @param value Value to set the unique ID to.
-     */
-    void setUniqueID(int tableID, long value);
 
     /**
      * Set the ordinal value of a given table.

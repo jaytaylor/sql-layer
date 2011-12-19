@@ -114,7 +114,6 @@ public class RowDef implements TreeLink {
     public RowDef(Table table, final TableStatus tableStatus) {
         this.table = table;
         this.tableStatus = tableStatus;
-        tableStatus.setRowDef(this);
         table.rowDef(this);
         List<Column> columns = table.getColumnsIncludingInternal();
         this.fieldDefs = new FieldDef[columns.size()];

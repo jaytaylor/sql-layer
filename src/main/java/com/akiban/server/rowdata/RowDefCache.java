@@ -230,16 +230,7 @@ public class RowDefCache {
     }
 
     private RowDef createRowDefCommon(Table table) {
-        RowDef rowDef = new RowDef(table, tableStatusCache.getTableStatus(table.getTableId()));
-        if(table.isUserTable()) {
-            UserTable uTable = (UserTable)table;
-            Column autoIncColumn = uTable.getAutoIncrementColumn();
-            if(autoIncColumn != null) {
-                long initialAutoIncrementValue = autoIncColumn.getInitialAutoIncrementValue();
-                tableStatusCache.setAutoIncrement(table.getTableId(), initialAutoIncrementValue);
-            }
-        }
-        return rowDef;
+        return new RowDef(table, tableStatusCache.getTableStatus(table.getTableId()));
     }
 
     private RowDef createUserTableRowDef(UserTable table) {
@@ -287,8 +278,15 @@ public class RowDefCache {
         }
         rowDef.setParentJoinFields(parentJoinFields);
         rowDef.setIndexes(indexList.toArray(new Index[indexList.size()]));
-        return rowDef;
 
+        tableStatusCache.setRowDef(rowDef.getRowDefId(), rowDef);
+        Column autoIncColumn = table.getAutoIncrementColumn();
+        if(autoIncColumn != null) {
+            long initialAutoIncrementValue = autoIncColumn.getInitialAutoIncrementValue();
+            tableStatusCache.setAutoIncrement(table.getTableId(), initialAutoIncrementValue);
+        }
+
+        return rowDef;
     }
 
     private RowDef createGroupTableRowDef(GroupTable table) {

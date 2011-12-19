@@ -80,4 +80,6 @@ public interface TreeService extends Service<TreeService> {
     String volumeForTree(final String schemaName, final String treeName);
 
     boolean treeExists(final String schemaName, final String treeName);
+
+    TreeCache populateTreeCache(TreeLink link) throws PersistitException;
 }

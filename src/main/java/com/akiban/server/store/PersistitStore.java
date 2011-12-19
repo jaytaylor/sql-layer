@@ -280,8 +280,7 @@ public class PersistitStore implements Store {
                     Column column = hKeyColumn.column();
                     FieldDef fieldDef = fieldDefs[column.getPosition()];
                     if (insertingRow && column.isAkibanPKColumn()) {
-                        // Must be a PK-less table. Use unique id from
-                        // TableStatus.
+                        // Must be a PK-less table. Use unique id from TableStatus.
                         uniqueId = tableStatusCache.createNewUniqueID(segmentRowDef.getRowDefId());
                         hKeyAppender.append(uniqueId);
                         // Write rowId into the value part of the row also.

@@ -59,13 +59,13 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
     }
 
     @Override
-    public synchronized void setUniqueID(int tableID, long value) {
-        getInternalTableStatus(tableID).setUniqueID(value);
+    public synchronized void setOrdinal(int tableID, int value) {
+        getInternalTableStatus(tableID).setOrdinal(value);
     }
 
     @Override
-    public synchronized void setOrdinal(int tableID, int value) {
-        getInternalTableStatus(tableID).setOrdinal(value);
+    public void setRowDef(int tableID, RowDef rowDef) {
+        getInternalTableStatus(tableID).setRowDef(rowDef);
     }
 
     @Override
@@ -152,8 +152,7 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
             return rowDef;
         }
 
-        @Override
-        public synchronized void setRowDef(RowDef rowDef) {
+        synchronized void setRowDef(RowDef rowDef) {
             this.rowDef = rowDef;
         }
 

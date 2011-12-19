@@ -64,14 +64,7 @@ public interface TableStatus {
     long getUniqueID();
 
     /**
-     * @return RowDef of the associated table. Only meaningful if
-     * {@link #setRowDef(RowDef)} has been called since instantiation.
+     * @return RowDef of the associated table.
      */
     RowDef getRowDef();
-
-    /**
-     * Set the RowDef of the associated table.
-     * @param rowDef The RowDef.
-     */
-    void setRowDef(RowDef rowDef);
 }

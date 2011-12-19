@@ -408,11 +408,11 @@ public class TreeServiceImpl
         return tableId + offset;
     }
 
-    private TreeCache populateTreeCache(final TreeLink link) throws PersistitException  {
+    @Override
+    public TreeCache populateTreeCache(final TreeLink link) throws PersistitException {
         TreeCache cache = (TreeCache) link.getTreeCache();
         if (cache == null || !cache.getTree().isValid()) {
-            Volume volume = mappedVolume(link.getSchemaName(),
-                    link.getTreeName());
+            Volume volume = mappedVolume(link.getSchemaName(), link.getTreeName());
             final Tree tree = volume.getTree(link.getTreeName(), true);
             cache = new TreeCache(tree);
             link.setTreeCache(cache);
@@ -661,7 +661,8 @@ public class TreeServiceImpl
     }
     
     private TableStatusCache createTableStatusCache() {
-        return new MemoryOnlyTableStatusCache();
+        //return new MemoryOnlyTableStatusCache();
+        return new PersistitAccumulatorTableStatusCache(this);
     }
 
     @Override
