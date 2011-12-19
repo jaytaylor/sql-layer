@@ -15,6 +15,8 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.InvalidIntervalFormatException;
+import com.akiban.server.error.ParseException;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.IntervalCastExpression.EndPoint;
@@ -69,6 +71,13 @@ public class IntervalCastExpressionTest
         // hour
         test("     10         ", HOUR, INTERVAL_MILLIS, 36000000L);
         test("1    ", HOUR, INTERVAL_MILLIS, 3600000L);
+    }
+    
+    @Test(expected = InvalidIntervalFormatException.class)
+    public void testInvalidFormat ()
+    {
+        test("abc", YEAR_MONTH, INTERVAL_MONTH, 0); 
+        
     }
     
     private static void test(String str, EndPoint endPoint, AkType expType, long exp)

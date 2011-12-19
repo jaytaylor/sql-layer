@@ -15,7 +15,7 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.error.ParseException;
+import com.akiban.server.error.InvalidIntervalFormatException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
@@ -83,7 +83,7 @@ public class IntervalCastExpression extends AbstractUnaryExpression
                     case YEAR_MONTH: 
                         String yr_mth[] = interval.split("-");
                         if (yr_mth.length != 2) 
-                            throw new ParseException("", "INTERVAL_" + endPoint + " SYNTAX ERROR", "");
+                            throw new InvalidIntervalFormatException (endPoint.name(), interval);
                         result = Long.parseLong(yr_mth[0]) * 12 + Long.parseLong(yr_mth[1]);
                         break;
                     case DAY:
@@ -124,7 +124,7 @@ public class IntervalCastExpression extends AbstractUnaryExpression
             } 
             catch (NumberFormatException ex)
             {
-                throw new ParseException("", "INTERVAL_" + endPoint + " SYNTAX ERROR: " + ex, "");
+                throw new InvalidIntervalFormatException (endPoint.name(), interval);
             }
         }
         
@@ -132,7 +132,7 @@ public class IntervalCastExpression extends AbstractUnaryExpression
         {
             String strings[] = interval.split(del);
             if (strings.length != expSize) 
-                throw new ParseException("", "INTERVAL_" + endPoint + " SYNTAX ERROR", "");
+                throw new InvalidIntervalFormatException (endPoint.name(), interval);
             long res = 0;
             for (int n = 0, m = start; n < expSize - (lastIsSec ? 1 : 0); ++n, ++m)
                 res += Long.parseLong(strings[n]) * MULS[m];
