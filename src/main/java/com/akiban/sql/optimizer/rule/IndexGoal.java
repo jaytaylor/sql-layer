@@ -225,10 +225,11 @@ public class IndexGoal implements Comparator<IndexScan>
             }
         }
         index.setOrderEffectiveness(determineOrderEffectiveness(index));
-        if ((index.getOrderEffectiveness() == IndexScan.OrderEffectiveness.NONE) &&
-            (!index.hasConditions()))
-            return false;
         index.setCovering(determineCovering(index));
+        if ((index.getOrderEffectiveness() == IndexScan.OrderEffectiveness.NONE) &&
+            !index.hasConditions() &&
+            !index.isCovering())
+            return false;
         estimateCost(indexEstimator, index);
         return true;
     }
