@@ -17,11 +17,11 @@ package com.akiban.server.store.histograms;
 
 import com.akiban.util.Equality;
 
-final class Bucket<A> {
+final class Bucket<T> {
 
     // Bucket interface
 
-    public A value() {
+    public T value() {
         return value;
     }
 
@@ -81,12 +81,12 @@ final class Bucket<A> {
 
     // ctor
 
-    public Bucket(A value) {
+    public Bucket(T value) {
         this.value = value;
         this.equalsCount = 1;
     }
 
-    private final A value;
+    private final T value;
     private long equalsCount;
     private long ltCount;
     private long ltDistinctCount;

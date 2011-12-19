@@ -16,8 +16,8 @@
 package com.akiban.server.store.histograms;
 
 final class BucketTestUtils {
-    public static <A> Bucket<A> bucket(A value, long equals, long lessThans, long lessThanDistincts) {
-        Bucket<A> result = new Bucket<A>(value);
+    public static <T> Bucket<T> bucket(T value, long equals, long lessThans, long lessThanDistincts) {
+        Bucket<T> result = new Bucket<T>(value);
         for (int i = 1; i < equals; ++i) { // starting count from 1 since a new Bucket has equals of 1
             result.addEquals();
         }
@@ -26,7 +26,7 @@ final class BucketTestUtils {
         return result;
     }
 
-    public static <A> Bucket<A> bucket(A value, long equals) {
+    public static <T> Bucket<T> bucket(T value, long equals) {
         return bucket(value, equals, 0, 0);
     }
 }

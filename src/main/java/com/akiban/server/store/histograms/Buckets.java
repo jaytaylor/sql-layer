@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-final class Buckets<A extends Comparable<? super A>> {
+final class Buckets<T extends Comparable<? super T>> {
 
     public static <A extends Comparable<A>> List<Bucket<A>> compile(int maxSize, Iterable<A> from) {
         BucketSource<A> source = new BucketSource<A>(from);
@@ -30,25 +30,25 @@ final class Buckets<A extends Comparable<? super A>> {
         return buckets.buckets();
     }
 
-    public void add(Bucket<A> bucket) {
+    public void add(Bucket<T> bucket) {
         // for all but the first entry, compare it to the previous entry
         if (sentinel.next != null && last.bucket.value().compareTo(bucket.value()) >= 1)
             throw new IllegalArgumentException("can't add " + bucket + " to " + buckets());
-        BucketNode<A> node = nodeFor(bucket);
+        BucketNode<T> node = nodeFor(bucket);
         node.prev = last;
         last.next = node;
         last = node;
         log("adding %s", bucket);
         log("%s", buckets());
         if (++size > maxSize) { // need to trim
-            BucketNode<A> removeNode = nodeToRemove();
+            BucketNode<T> removeNode = nodeToRemove();
             // if the least popular node was the tail, we should fold it into its
             // prev. We can't do that, so instead, we'll fold its prev into it.
             if (removeNode.next == null)
                 removeNode = removeNode.prev;   // to to
-            Bucket<A> removeBucket = removeNode.bucket;
+            Bucket<T> removeBucket = removeNode.bucket;
 
-            Bucket<A> foldIntoBucket = removeNode.next.bucket;
+            Bucket<T> foldIntoBucket = removeNode.next.bucket;
             assert foldIntoBucket != null;
             foldIntoBucket.addLessThans(removeBucket.getEqualsCount() + removeBucket.getLessThanCount());
             foldIntoBucket.addLessThanDistincts(removeBucket.getLessThanDistinctsCount() + 1);
@@ -62,17 +62,17 @@ final class Buckets<A extends Comparable<? super A>> {
         log("");
     }
 
-    public List<Bucket<A>> buckets() {
-        List<Bucket<A>> results = new ArrayList<Bucket<A>>(size);
-        for(BucketNode<A> node = sentinel.next; node != null; node = node.next) {
+    public List<Bucket<T>> buckets() {
+        List<Bucket<T>> results = new ArrayList<Bucket<T>>(size);
+        for(BucketNode<T> node = sentinel.next; node != null; node = node.next) {
             results.add(node.bucket);
         }
         return results;
     }
 
     private void checkIntegrity() {
-        BucketNode<A> last = null;
-        for(BucketNode<A> node = sentinel; node != null; node = node.next) {
+        BucketNode<T> last = null;
+        for(BucketNode<T> node = sentinel; node != null; node = node.next) {
             if (node.prev != last)
                 System.out.printf("expected node.prev=%s but was %s%n", last, node.prev);
             last = node;
@@ -83,22 +83,22 @@ final class Buckets<A extends Comparable<? super A>> {
         if (maxSize < 2)
             throw new IllegalArgumentException("max must be at least 2");
         this.maxSize = maxSize;
-        this.sentinel = new BucketNode<A>();
+        this.sentinel = new BucketNode<T>();
         this.last = sentinel;
     }
 
-    protected RemovalTieBreaker<BucketNode<A>> tieBreaker() {
+    protected RemovalTieBreaker<BucketNode<T>> tieBreaker() {
         if (tieBreaker == null)
-            tieBreaker = new FairRandomTieBreaker<BucketNode<A>>();
+            tieBreaker = new FairRandomTieBreaker<BucketNode<T>>();
         return tieBreaker;
     }
 
-    private BucketNode<A> nodeToRemove() {
+    private BucketNode<T> nodeToRemove() {
         long lowestCount = Long.MAX_VALUE;
-        BucketNode<A> result = null;
-        RemovalTieBreaker<BucketNode<A>> tieBreaker = tieBreaker();
+        BucketNode<T> result = null;
+        RemovalTieBreaker<BucketNode<T>> tieBreaker = tieBreaker();
         tieBreaker.reset();
-        for(BucketNode<A> node = sentinel.next; node != null; node = node.next) {
+        for(BucketNode<T> node = sentinel.next; node != null; node = node.next) {
             long nodeEqs = node.bucket.getEqualsCount();
             if (nodeEqs == Long.MAX_VALUE)
                 throw new IllegalStateException("node has too many counts: " + node);
@@ -114,10 +114,10 @@ final class Buckets<A extends Comparable<? super A>> {
         return result;
     }
 
-    private BucketNode<A> nodeFor(Bucket<A> bucket) {
+    private BucketNode<T> nodeFor(Bucket<T> bucket) {
         if (bucket == null)
             throw new IllegalArgumentException("bucket may not be null");
-        return new BucketNode<A>(bucket);
+        return new BucketNode<T>(bucket);
     }
 
     private void log(String format, Object... args) {
@@ -128,9 +128,9 @@ final class Buckets<A extends Comparable<? super A>> {
 
     private final int maxSize;
     private int size;
-    private final BucketNode<A> sentinel;
-    private BucketNode<A> last;
-    private RemovalTieBreaker<BucketNode<A>> tieBreaker;
+    private final BucketNode<T> sentinel;
+    private BucketNode<T> last;
+    private RemovalTieBreaker<BucketNode<T>> tieBreaker;
 
     private static class BucketNode<A> {
 
@@ -193,12 +193,12 @@ final class Buckets<A extends Comparable<? super A>> {
      *     </li>
      * </ul>
      *
-     * @param <A> type of element being chosen
+     * @param <T> type of element being chosen
      */
-    private static class FairRandomTieBreaker<A> implements RemovalTieBreaker<A> {
+    private static class FairRandomTieBreaker<T> implements RemovalTieBreaker<T> {
 
         @Override
-        public A choose(A previous, A newGuy) {
+        public T choose(T previous, T newGuy) {
             assert count > 0 : count;
             ++count;
             return (random().nextInt(count) == 0)

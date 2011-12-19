@@ -19,27 +19,27 @@ import com.akiban.util.ArgumentValidation;
 
 import java.util.Iterator;
 
-final class BucketSource<A> implements Iterable<Bucket<A>> {
+final class BucketSource<T> implements Iterable<Bucket<T>> {
 
     // Iterable interface
 
     @Override
-    public Iterator<Bucket<A>> iterator() {
-        return new InternalIterator<A>(iterable.iterator());
+    public Iterator<Bucket<T>> iterator() {
+        return new InternalIterator<T>(iterable.iterator());
     }
 
     // ctor
 
-    public BucketSource(Iterable<? extends A> iterable) {
+    public BucketSource(Iterable<? extends T> iterable) {
         ArgumentValidation.notNull("input", iterable);
         this.iterable = iterable;
     }
 
-    private final Iterable<? extends A> iterable;
+    private final Iterable<? extends T> iterable;
 
     // nested classes
 
-    private static class InternalIterator<A> implements Iterator<Bucket<A>> {
+    private static class InternalIterator<T> implements Iterator<Bucket<T>> {
 
         @Override
         public boolean hasNext() {
@@ -47,13 +47,13 @@ final class BucketSource<A> implements Iterable<Bucket<A>> {
         }
 
         @Override
-        public Bucket<A> next() {
-            Bucket<A> result;
+        public Bucket<T> next() {
+            Bucket<T> result;
             if (last == null) {
-                result = new Bucket<A>(source.next());
+                result = new Bucket<T>(source.next());
             }
             else {
-                result = new Bucket<A>(last);
+                result = new Bucket<T>(last);
                 last = null;
             }
             while (source.hasNext()) {
@@ -72,11 +72,11 @@ final class BucketSource<A> implements Iterable<Bucket<A>> {
             throw new UnsupportedOperationException();
         }
 
-        InternalIterator(Iterator<? extends A> source) {
+        InternalIterator(Iterator<? extends T> source) {
             this.source = source;
         }
 
-        private A last;
-        private final Iterator<? extends A> source;
+        private T last;
+        private final Iterator<? extends T> source;
     }
 }
