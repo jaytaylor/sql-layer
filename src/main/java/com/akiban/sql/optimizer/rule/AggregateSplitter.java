@@ -53,8 +53,8 @@ public class AggregateSplitter extends BaseRule
         assert !source.isProjectSplitOff();
         if (!source.hasGroupBy() && source.getAggregates().size() == 1) {
             AggregateFunctionExpression aggr1 = source.getAggregates().get(0);
-            if ((aggr1.getOperand() == null) &&
-                (aggr1.getFunction().equals("COUNT"))) {
+            String fun = aggr1.getFunction();
+            if ((fun.equals("COUNT")) && (aggr1.getOperand() == null)) {
                 TableSource singleTable = trivialCountStar(source);
                 if (singleTable != null) {
                     source.setImplementation(Implementation.COUNT_TABLE_STATUS);
@@ -65,6 +65,12 @@ public class AggregateSplitter extends BaseRule
                     // Count_Default operator while we have it.
                     source.setImplementation(Implementation.COUNT_STAR);
                 return;
+            }
+            else if (fun.equals("MIN") || fun.equals("MAX")) {
+                if (directIndexMinMax(source)) {
+                    source.setImplementation(Implementation.FIRST_FROM_INDEX);
+                    return;
+                }
             }
         }
         boolean distinct = checkDistinctDistincts(source);
@@ -142,6 +148,50 @@ public class AggregateSplitter extends BaseRule
                 return flatten.getTableSources().get(0);
         }
         return null;
+    }
+
+    /** MIN(val) from index ordering by val? */
+    protected boolean directIndexMinMax(AggregateSource source) {
+        PlanNode input = source.getInput();
+        if (!(input instanceof Select))
+            return false;
+        Select select = (Select)input;
+        if (!select.getConditions().isEmpty())
+            return false;
+        input = select.getInput();
+        if (!(input instanceof IndexScan))
+            return false;
+        IndexScan index = (IndexScan)input;
+        int nequals = 0;
+        if (index.getEqualityComparands() != null)
+            nequals = index.getEqualityComparands().size();
+        List<Sort.OrderByExpression> ordering = index.getOrdering();
+        // Get number of leading columns available for ordering. This
+        // includes those tested for equality, which only have that
+        // one value.
+        int ncols = (nequals < ordering.size()) ? (nequals + 1) : nequals;
+        System.out.println("??? " + ncols);
+        AggregateFunctionExpression aggr1 = source.getAggregates().get(0);
+        for (int i = 0; i < ncols; i++) {
+            Sort.OrderByExpression orderBy = ordering.get(i);
+            System.out.println("??? " + i);
+            System.out.println("+++ " + orderBy.getExpression());
+            System.out.println("+++ " + aggr1.getOperand());
+            if (orderBy.getExpression().equals(aggr1.getOperand())) {
+                if ((i == nequals) &&
+                    (orderBy.isAscending() != aggr1.getFunction().equals("MIN"))) {
+                    // Fetching the MAX of an ascending index (or MIN
+                    // or descending): reverse the scan to get it
+                    // first.  (Order doesn't matter on the
+                    // equalities, MIN and MAX are the same.)
+                    for (Sort.OrderByExpression otherOtherBy : ordering) {
+                        otherOtherBy.setAscending(!otherOtherBy.isAscending());
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
     }
 
 }
