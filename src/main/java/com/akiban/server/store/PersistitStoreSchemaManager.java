@@ -842,23 +842,12 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
 
     private void onTransactionCommit(final AkibanInformationSchema newAis) {
-        // None of this code "can fail" because it is being ran inside of a Persistit commit. Fail LOUDLY.
-        try {
-            final RowDefCache rowDefCache = store.getRowDefCache();
-            rowDefCache.clear();
-            treeService.getTableStatusCache().detachAIS();
-            rowDefCache.setAIS(newAis);
-            updateTimestamp.getAndIncrement();
-            aish.setAis(newAis);
-        }
-        catch(RuntimeException e) {
-            LOG.error(COMMIT_AIS_ERROR_MSG, e);
-            throw e;
-        }
-        catch(Error e) {
-            LOG.error(COMMIT_AIS_ERROR_MSG, e);
-            throw e;
-        }
+        final RowDefCache rowDefCache = store.getRowDefCache();
+        rowDefCache.clear();
+        treeService.getTableStatusCache().detachAIS();
+        rowDefCache.setAIS(newAis);
+        updateTimestamp.getAndIncrement();
+        aish.setAis(newAis);
     }
 
     private SchemaDef parseTableStatement(String defaultSchemaName, String ddl) throws InvalidOperationException {
