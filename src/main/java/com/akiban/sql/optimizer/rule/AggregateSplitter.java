@@ -69,7 +69,7 @@ public class AggregateSplitter extends BaseRule
             else if (fun.equals("MIN") || fun.equals("MAX")) {
                 if (directIndexMinMax(source)) {
                     source.setImplementation(Implementation.FIRST_FROM_INDEX);
-                    return;
+                    // Still need project to get correct field.
                 }
             }
         }

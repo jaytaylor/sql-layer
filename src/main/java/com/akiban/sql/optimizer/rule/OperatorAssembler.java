@@ -559,36 +559,25 @@ public class OperatorAssembler extends BaseRule
             switch (impl) {
             case COUNT_STAR:
             case COUNT_TABLE_STATUS:
-            case FIRST_FROM_INDEX:
-                assert !aggregateSource.isProjectSplitOff();
-                assert ((nkeys == 0) &&
-                        (aggregateSource.getNAggregates() == 1));
-                switch (impl) {
-                case COUNT_STAR:
-                    stream = assembleStream(aggregateSource.getInput());
-                    // TODO: Could be removed, since aggregate_Partial works as well.
-                    stream.operator = API.count_Default(stream.operator, 
-                                                        stream.rowType);
+                {
+                    assert !aggregateSource.isProjectSplitOff();
+                    assert ((nkeys == 0) &&
+                            (aggregateSource.getNAggregates() == 1));
+                    if (impl == AggregateSource.Implementation.COUNT_STAR) {
+                        stream = assembleStream(aggregateSource.getInput());
+                        // TODO: Could be removed, since aggregate_Partial works as well.
+                        stream.operator = API.count_Default(stream.operator, 
+                                                            stream.rowType);
+                    }
+                    else {
+                        stream = new RowStream();
+                        stream.operator = API.count_TableStatus(tableRowType(aggregateSource.getTable()));
+                    }
                     stream.rowType = stream.operator.rowType();
-                    break;
-                case COUNT_TABLE_STATUS:
-                    stream = new RowStream();
-                    stream.operator = API.count_TableStatus(tableRowType(aggregateSource.getTable()));
-
-                    stream.rowType = stream.operator.rowType();
-                    break;
-                case FIRST_FROM_INDEX:
-                    stream = assembleStream(aggregateSource.getInput());
-                    stream.operator = API.limit_Default(stream.operator, 1);
-                    stream = assembleNullIfEmpty(stream);
-                    break;
-                default:
-                    assert false;
-                    stream = null;
-                }
-                stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource, 
-                                                                   stream.rowType);
-                return stream;
+                    stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource, 
+                                                                       stream.rowType);
+                    return stream;
+                }                
             }
             assert aggregateSource.isProjectSplitOff();
             stream = assembleStream(aggregateSource.getInput());
@@ -596,6 +585,16 @@ public class OperatorAssembler extends BaseRule
             case PRESORTED:
             case UNGROUPED:
                 break;
+            case FIRST_FROM_INDEX:
+                {
+                    assert ((nkeys == 0) &&
+                            (aggregateSource.getNAggregates() == 1));
+                    stream.operator = API.limit_Default(stream.operator, 1);
+                    stream = assembleNullIfEmpty(stream);
+                    stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource, 
+                                                                       stream.rowType);
+                    return stream;
+                }
             default:
                 // TODO: Could pre-aggregate now in PREAGGREGATE_RESORT case.
                 assembleSort(stream, nkeys, aggregateSource.getInput(),
