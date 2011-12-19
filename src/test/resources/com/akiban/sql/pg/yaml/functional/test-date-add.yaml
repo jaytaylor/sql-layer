@@ -1,0 +1,75 @@
+# Test the DATE_ADD() function
+---
+- Properties: sys-aksql
+- suppressed: true
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
+---
+- Statement: SELECT DATE_ADD('2000-12-31 23:59:59', '2000-12-31 23:59:59'-'2000-12-30 23:59:59') from all_types;
+- output: [[ '2001-01-01 00:00:00']] 
+#---  
+# bug 903191
+#- Statement: select '2008-12-31 23:59:59' + INTERVAL 1 SECOND from all_types;
+#- output: [['2009-01-01 00:00:00']] 
+#---
+#- Statement: SELECT '2005-01-01' - INTERVAL 1 SECOND from all_types;
+#- output: [['2004-12-31 23:59:59']] 
+#---
+#- Statement: SELECT DATE_ADD('2000-12-31 23:59:59', INTERVAL 1 SECOND) from all_types;
+#- output: [[ '2001-01-01 00:00:00']] 
+#---
+#- Statement: SELECT DATE_ADD('2010-12-31 23:59:59', INTERVAL 1 DAY) from all_types;
+#- output: [[ '2011-01-01 23:59:59']] 
+#---
+#- Statement: SELECT DATE_ADD('2100-12-31 23:59:59', INTERVAL '1:1' MINUTE_SECOND) from all_types;
+#- output: [[ [['2101-01-01 00:01:00']] 
+##---
+#- Statement: SELECT DATE_SUB('2005-01-01 00:00:00', INTERVAL '1 1:1:1' DAY_SECOND) from all_types;
+#- output: [[ '2004-12-30 22:58:59']] 
+#---
+#- Statement: SELECT DATE_ADD('1900-01-01 00:00:00', INTERVAL '-1 10' DAY_HOUR) from all_types;
+#- output: [[ '1899-12-30 14:00:00']] 
+#---
+#- Statement: SELECT DATE_SUB('1998-01-02', INTERVAL 31 DAY) from all_types;
+#- output: [['1997-12-02']] 
+#---
+#- Statement: SELECT DATE_ADD('1992-12-31 23:59:59.000002', INTERVAL '1.999999' SECOND_MICROSECOND) from all_types;
+#- output: [['1993-01-01 00:00:01.000001']]
+#---
+#- Statement: SELECT 6/4 from all_types;
+#- output: [[1.5000]]
+#---
+#- Statement: SELECT DATE_ADD('2009-01-01', INTERVAL 6/4 HOUR_MINUTE) from all_types;
+#- output: [['2009-01-04 12:20:00']]
+# To ensure interpretation of the interval value as you expect, a CAST() operation may be used. To treat 6/4 as 1 hour, 5 minutes, cast it to a DECIMAL value with a single fractional digit:
+#---
+# bug 903215
+#- Statement: SELECT CAST(6/4 AS DECIMAL(3,1)) from all_types;
+#- output: [[1.5]]
+#---
+#- Statement: SELECT DATE_ADD('1970-01-01 12:00:00', INTERVAL CAST(6/4 AS DECIMAL(3,1)) HOUR_MINUTE) from all_types;
+#- output: [['1970-01-01 13:05:00']]
+#If you add to or subtract from a date value something that contains a time part, the result is automatically converted to a datetime value:
+#---
+#- Statement: SELECT DATE_ADD('2013-01-01', INTERVAL 1 DAY) from all_types;
+#- output: [['2013-01-02']]
+#---
+#- Statement: SELECT DATE_ADD('2013-01-01', INTERVAL 1 HOUR) from all_types;
+#- output: [['2013-01-01 01:00:00']]
+#If you add MONTH, YEAR_MONTH, or YEAR and the resulting date has a day that is larger than the maximum day for the new month, the day is adjusted to the maximum days in the new month:
+#---
+#- Statement: SELECT DATE_ADD('2009-01-30', INTERVAL 1 MONTH) from all_types;
+#- output: [['2009-02-28']]
+#Date arithmetic operations require complete dates and do not work with incomplete dates such as '2006-07-00' or badly malformed dates:
+#---
+#- Statement: SELECT DATE_ADD('2006-07-00', INTERVAL 1 DAY) from all_types;
+#- output: [[null]]
+#---
+#- Statement: SELECT '2005-03-32' + INTERVAL 1 MONTH from all_types;
+#- output: [[null]]
+#---
+#- Statement: SELECT INTERVAL 1 DAY + '2008-12-31' from all_types;
+#- output: [['2009-01-01']] 
+...
