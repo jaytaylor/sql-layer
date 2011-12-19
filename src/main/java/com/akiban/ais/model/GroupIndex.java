@@ -15,18 +15,10 @@
 
 package com.akiban.ais.model;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.TreeMap;
-
 import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.IndexColNotInGroupException;
-import com.akiban.server.error.IndexTableNotInGroupException;
+
+import java.util.*;
 
 public class GroupIndex extends Index
 {
@@ -69,13 +61,13 @@ public class GroupIndex extends Index
     @Override
     public UserTable leafMostTable() {
         assert ! tablesByDepth.isEmpty() : "no tables participate in this group index";
-        return tablesByDepth.lastEntry().getValue();
+        return tablesByDepth.lastEntry().getValue().table;
     }
 
     @Override
     public UserTable rootMostTable() {
         assert ! tablesByDepth.isEmpty() : "no tables participate in this group index";
-        return tablesByDepth.firstEntry().getValue();
+        return tablesByDepth.firstEntry().getValue().table;
     }
 
     @Override
@@ -86,25 +78,47 @@ public class GroupIndex extends Index
                     indexColumn.getColumn().getName());
         }
         UserTable indexTable = (UserTable) indexGenericTable;
+        Integer indexTableDepth = indexTable.getDepth();
+        assert indexTableDepth != null;
 
         super.addColumn(indexColumn);
         GroupIndexHelper.actOnGroupIndexTables(this, indexColumn, GroupIndexHelper.ADD);
 
         // Add the table into our navigable map if needed. Confirm it's within the branch
-        if (!tablesByDepth.values().contains(indexTable)) {
-            Integer indexTableDepth = indexTable.getDepth();
-            if (indexTableDepth == null) {
-                throw new IndexTableNotInGroupException (indexColumn.getIndex().getIndexName().getName(),
-                        indexColumn.getColumn().getName(),
-                        indexTable.getName().getTableName());
+        ParticipatingTable participatingTable = tablesByDepth.get(indexTableDepth);
+        if (participatingTable == null) {
+            Map.Entry<Integer,ParticipatingTable> rootwardEntry = tablesByDepth.floorEntry(indexTableDepth);
+            Map.Entry<Integer,ParticipatingTable> leafwardEntry = tablesByDepth.ceilingEntry(indexTableDepth);
+            checkIndexTableInBranchNew(indexColumn, indexTable, indexTableDepth, rootwardEntry, true);
+            checkIndexTableInBranchNew(indexColumn, indexTable, indexTableDepth, leafwardEntry, false);
+            participatingTable = new ParticipatingTable(indexTable);
+            tablesByDepth.put(indexTableDepth, participatingTable);
+        } else if (participatingTable.table != indexTable) {
+            throw new BranchingGroupIndexException(indexColumn.getIndex().getIndexName().getName(),
+                                                   indexTable.getName(),
+                                                   participatingTable.table.getName());
+        }
+        participatingTable.markInvolvedInIndex(indexColumn.getColumn());
+    }
+
+    public boolean columnsOverlap(UserTable table, BitSet modifiedColumnPositions)
+    {
+        ParticipatingTable participatingTable = tablesByDepth.get(table.getDepth());
+        if (participatingTable != null) {
+            assert participatingTable.table == table;
+            int n = modifiedColumnPositions.length();
+            for (int i = 0; i < n; i++) {
+                if (modifiedColumnPositions.get(i) && participatingTable.inIndex.get(i)) {
+                    return true;
+                }
             }
-            Map.Entry<Integer,UserTable> rootwardEntry = tablesByDepth.floorEntry(indexTableDepth);
-            Map.Entry<Integer,UserTable> leafwardEntry = tablesByDepth.ceilingEntry(indexTableDepth);
-            checkIndexTableInBranch(indexColumn, indexTable, indexTableDepth, rootwardEntry, true);
-            checkIndexTableInBranch(indexColumn, indexTable, indexTableDepth, leafwardEntry, false);
-            tablesByDepth.put(indexTableDepth, indexTable);
+            return false;
+        } else {
+            // TODO: Can index maintenance be skipped in this case?
+            return true;
         }
     }
+
 
     @Override
     protected Column indexRowCompositionColumn(HKeyColumn hKeyColumn) {
@@ -152,17 +166,17 @@ public class GroupIndex extends Index
         );
     }
 
-    private void checkIndexTableInBranch(IndexColumn indexColumn, UserTable indexTable, int indexTableDepth,
-            Map.Entry<Integer, UserTable> entry, boolean entryIsRootward)
+    private void checkIndexTableInBranchNew(IndexColumn indexColumn, UserTable indexTable, int indexTableDepth,
+            Map.Entry<Integer, ParticipatingTable> entry, boolean entryIsRootward)
     {
         if (entry == null) {
             return;
         }
         if (entry.getKey().intValue() == indexTableDepth) {
             throw new BranchingGroupIndexException (indexColumn.getIndex().getIndexName().getName(), 
-                    indexTable.getName(), entry.getValue().getName());
+                    indexTable.getName(), entry.getValue().table.getName());
         }
-        UserTable entryTable = entry.getValue();
+        UserTable entryTable = entry.getValue().table;
 
         final UserTable rootward;
         final UserTable leafward;
@@ -179,7 +193,7 @@ public class GroupIndex extends Index
         if (!leafward.isDescendantOf(rootward))
         {
             throw new BranchingGroupIndexException (indexColumn.getIndex().getIndexName().getName(), 
-                    indexTable.getName(), entry.getValue().getName());
+                    indexTable.getName(), entry.getValue().table.getName());
         }
     }
 
@@ -206,6 +220,10 @@ public class GroupIndex extends Index
             columnsPerFlattenedField.addAll(userTable.getColumnsIncludingInternal());
         }
         computeFieldAssociations(ordinalMap, null, offsetsMap);
+        // Complete computation of inIndex bitsets
+        for (ParticipatingTable participatingTable : tablesByDepth.values()) {
+            participatingTable.close();
+        }
     }
 
     public Group getGroup()
@@ -224,7 +242,36 @@ public class GroupIndex extends Index
     {}
 
     private Group group;
-    private final NavigableMap<Integer,UserTable> tablesByDepth = new TreeMap<Integer, UserTable>();
+    private final NavigableMap<Integer,ParticipatingTable> tablesByDepth = new TreeMap<Integer, ParticipatingTable>();
     private List<Column> columnsPerFlattenedField;
 
+    private static class ParticipatingTable
+    {
+        public void markInvolvedInIndex(Column column)
+        {
+            assert column.getTable() == table;
+            inIndex.set(column.getPosition(), true);
+        }
+
+        public void close()
+        {
+            for (Column pkColumn : table.getPrimaryKeyIncludingInternal().getColumns()) {
+                inIndex.set(pkColumn.getPosition(), true);
+            }
+            if (table.getParentJoin() != null) {
+                for (JoinColumn joinColumn : table.getParentJoin().getJoinColumns()) {
+                    inIndex.set(joinColumn.getChild().getPosition(), true);
+                }
+            }
+        }
+
+        public ParticipatingTable(UserTable table)
+        {
+            this.table = table;
+            this.inIndex = new BitSet(table.getColumnsIncludingInternal().size());
+        }
+
+        final UserTable table;
+        final BitSet inIndex;
+    }
 }

@@ -91,6 +91,8 @@ public class PersistitStore implements Store {
 
     private static final Tap.InOutTap DELETE_ROW_TAP = Tap.createTimer("write: delete_row");
 
+    private static final Tap.InOutTap TABLE_INDEX_MAINTENANCE_TAP = Tap.createTimer("index: maintain_table");
+
     private static final Tap.PointTap TX_COMMIT_COUNT = Tap.createCount("write: tx_commit", true);
 
     private static final Tap.PointTap TX_RETRY_TAP = Tap.createCount("write: tx_retry", true);
@@ -1160,21 +1162,25 @@ public class PersistitStore implements Store {
         checkNotGroupIndex(index);
         IndexDef indexDef = (IndexDef)index.indexDef();
         if (!fieldsEqual(rowDef, oldRowData, newRowData, indexDef.getFields())) {
-            final Exchange oldExchange = getExchange(session, index);
-            constructIndexKey(new PersistitKeyAppender(oldExchange.getKey()), oldRowData, index, hkey);
-            final Exchange newExchange = getExchange(session, index);
-            constructIndexKey(new PersistitKeyAppender(newExchange.getKey()), newRowData, index, hkey);
+            TABLE_INDEX_MAINTENANCE_TAP.in();
+            try {
+                Exchange oldExchange = getExchange(session, index);
+                constructIndexKey(new PersistitKeyAppender(oldExchange.getKey()), oldRowData, index, hkey);
+                Exchange newExchange = getExchange(session, index);
+                constructIndexKey(new PersistitKeyAppender(newExchange.getKey()), newRowData, index, hkey);
 
-            checkUniqueness(index, newRowData, newExchange);
+                checkUniqueness(index, newRowData, newExchange);
 
-            oldExchange.getValue().clear();
-            newExchange.getValue().clear();
+                oldExchange.getValue().clear();
+                newExchange.getValue().clear();
 
-            oldExchange.remove();
-            newExchange.store();
+                oldExchange.remove();
+                newExchange.store();
 
-            releaseExchange(session, newExchange);
-            releaseExchange(session, oldExchange);
+                releaseExchange(session, newExchange);
+                releaseExchange(session, oldExchange);
+            } finally {
+                TABLE_INDEX_MAINTENANCE_TAP.out();            }
         }
     }
 
