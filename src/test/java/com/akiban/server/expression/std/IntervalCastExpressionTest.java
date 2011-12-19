@@ -74,10 +74,22 @@ public class IntervalCastExpressionTest
     }
     
     @Test(expected = InvalidIntervalFormatException.class)
-    public void testInvalidFormat ()
+    public void testInvalidFormatYear ()
     {
         test("abc", YEAR_MONTH, INTERVAL_MONTH, 0); 
         
+    }
+    
+    @Test(expected = InvalidIntervalFormatException.class)
+    public void testMissingFields ()
+    {
+        test("12 ", YEAR_MONTH, INTERVAL_MONTH, 0);
+    }
+    
+    @Test(expected = InvalidIntervalFormatException.class)
+    public void testRedundantFields ()
+    {
+        test("12 2:12", YEAR_MONTH, INTERVAL_MONTH, 0);
     }
     
     private static void test(String str, EndPoint endPoint, AkType expType, long exp)
