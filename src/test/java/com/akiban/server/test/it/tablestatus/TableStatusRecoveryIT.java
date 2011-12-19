@@ -20,6 +20,7 @@ import static org.junit.Assert.assertEquals;
 import java.util.Collections;
 
 import com.akiban.server.test.it.ITBase;
+import com.persistit.Transaction;
 import org.junit.Test;
 
 import com.akiban.server.TableStatistics;
@@ -35,7 +36,7 @@ public class TableStatusRecoveryIT extends ITBase {
         for (int i = 0; i < 10000; i++) {
             writeRows(createNewRow(tableId, i, "This is record # " + 1));
         }
-        final TableStatistics ts1 = store().getTableStatistics(session(), tableId);
+        final TableStatistics ts1 = dml().getTableStatistics(session(), tableId, false);
         assertEquals(10000, ts1.getRowCount());
         
         final Persistit db = serviceManager().getTreeService().getDb();
@@ -47,7 +48,7 @@ public class TableStatusRecoveryIT extends ITBase {
         final Property property = new Property("akserver.datapath", datapath);
         restartTestServices(Collections.singleton(property));
         
-        final TableStatistics ts2 = store().getTableStatistics(session(), tableId);
+        final TableStatistics ts2 = dml().getTableStatistics(session(), tableId, false);
         assertEquals(10000, ts2.getRowCount());
 
     }
@@ -59,7 +60,7 @@ public class TableStatusRecoveryIT extends ITBase {
             // -1: Dummy value for akiban-supplied PK
             writeRows(createNewRow(tableId, i, "This is record # " + 1, -1));
         }
-        final TableStatistics ts1 = store().getTableStatistics(session(), tableId);
+        final TableStatistics ts1 = dml().getTableStatistics(session(), tableId, false);
         assertEquals(10000, ts1.getRowCount());
         
         final Persistit db = serviceManager().getTreeService().getDb();
@@ -73,7 +74,7 @@ public class TableStatusRecoveryIT extends ITBase {
             writeRows(createNewRow(tableId, i, "This is record # " + 1, -1));
         }
         
-        final TableStatistics ts2 = store().getTableStatistics(session(), tableId);
+        final TableStatistics ts2 = dml().getTableStatistics(session(), tableId, false);
         assertEquals(20000, ts2.getRowCount());
         db.getJournalManager().force();
 
@@ -82,12 +83,21 @@ public class TableStatusRecoveryIT extends ITBase {
         final Property property = new Property("akserver.datapath", datapath);
         restartTestServices(Collections.singleton(property));
         
-        final TableStatistics ts3 = store().getTableStatistics(session(), tableId);
+        final TableStatistics ts3 = dml().getTableStatistics(session(), tableId, false);
         assertEquals(20000, ts3.getRowCount());
-        final TableStatus status = store().getRowDefCache().getRowDef(tableId).getTableStatus();
-        assertEquals(20000, status.getRowCount());
 
-        writeRows(createNewRow(tableId, 20001, "This is record # ", -1));
-        assertEquals(20001, status.getUniqueID());
+        // Transaction so we can directly read the table status
+        final Transaction trx = treeService().getTransaction(session());
+        trx.begin();
+        try {
+            final TableStatus status = store().getRowDefCache().getRowDef(tableId).getTableStatus();
+            assertEquals(20000, status.getRowCount());
+            writeRows(createNewRow(tableId, 20001, "This is record # ", -1));
+            assertEquals(20001, status.getUniqueID());
+            trx.commit();
+        }
+        finally {
+            trx.end();
+        }
     }
 }

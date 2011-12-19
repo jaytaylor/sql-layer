@@ -41,7 +41,7 @@ public class AnalyzeIndexIT extends AbstractScanBase {
     public void testPopulateTableStatistics() throws Exception {
         final RowDef rowDef = rowDef("aa");
         store.analyzeTable(session, rowDef.getRowDefId());
-        final TableStatistics ts = store.getTableStatistics(session, rowDef.getRowDefId());
+        final TableStatistics ts = serviceManager.getDXL().dmlFunctions().getTableStatistics(session, rowDef.getRowDefId(), false);
         {
             // Checks a secondary index
             //
@@ -78,7 +78,7 @@ public class AnalyzeIndexIT extends AbstractScanBase {
     public void testGroupTableStatistics() throws Exception {
         final RowDef rowDef = rowDef("_akiban_a");
         store.analyzeTable(session, rowDef.getRowDefId());
-        final TableStatistics ts = store.getTableStatistics(session, rowDef.getRowDefId());
+        final TableStatistics ts = serviceManager.getDXL().dmlFunctions().getTableStatistics(session, rowDef.getRowDefId(), false);
         final int indexId = findIndexId(rowDef, "aa$str");
         TableStatistics.Histogram histogram = null;
         for (TableStatistics.Histogram h : ts.getHistogramList()) {
