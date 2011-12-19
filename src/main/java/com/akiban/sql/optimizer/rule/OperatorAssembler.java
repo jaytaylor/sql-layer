@@ -601,7 +601,8 @@ public class OperatorAssembler extends BaseRule
                              API.SortOption.PRESERVE_DUPLICATES);
                 break;
             }
-            stream.operator = API.aggregate_Partial(stream.operator, nkeys,
+            stream.operator = API.aggregate_Partial(stream.operator, stream.rowType, 
+                                                    nkeys,
                                                     rulesContext.getFunctionsRegistry(),
                                                     aggregateSource.getAggregateFunctions());
             stream.rowType = stream.operator.rowType();
