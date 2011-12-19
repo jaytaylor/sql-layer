@@ -447,7 +447,19 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             finally {
                 sessionTracer.endEvent();
             }
-            pstmt = generateStatement(stmt, params, paramTypes);
+
+            // Transaction needed due to ordinal ultimately being stored in TableStatus
+            PostgresTransaction localTransaction = new PostgresTransaction(this, true);
+            try {
+                pstmt = generateStatement(stmt, params, paramTypes);
+                localTransaction.commit();
+                localTransaction = null;
+            }
+            finally {
+                if(localTransaction != null)
+                    localTransaction.abort();
+            }
+
             if (statementCache != null)
                 statementCache.put(sql, pstmt);
         }
