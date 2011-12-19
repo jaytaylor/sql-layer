@@ -25,7 +25,6 @@ import static com.akiban.server.store.histograms.BucketTestUtils.bucket;
 import static com.akiban.util.CollectionUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 
 public final class BucketSourceTest {
 
