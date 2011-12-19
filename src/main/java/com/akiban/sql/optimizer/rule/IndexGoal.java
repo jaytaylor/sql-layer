@@ -512,10 +512,12 @@ public class IndexGoal implements Comparator<IndexScan>
             // These are ordered worst to best.
             return i1.getOrderEffectiveness().compareTo(i2.getOrderEffectiveness());
         if (i1.isCovering()) {
-            if (!i2.isCovering())
+            if (!i2.isCovering() &&
+                (i1.hasConditions() == i2.hasConditions()))
                 return +1;
         }
-        else if (i2.isCovering())
+        else if (i2.isCovering() &&
+                 (i1.hasConditions() == i2.hasConditions()))
             return -1;
         if (i1.getEqualityComparands() != null) {
             if (i2.getEqualityComparands() == null)
