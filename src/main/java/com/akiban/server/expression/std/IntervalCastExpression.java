@@ -66,7 +66,7 @@ public class IntervalCastExpression extends AbstractUnaryExpression
         {
             ValueSource source = operand();
             if (source.isNull()) return NullValueSource.only();
-            String interval = source.getString();
+            String interval = source.getString().trim();
             
             long result = 0;
             
@@ -96,6 +96,7 @@ public class IntervalCastExpression extends AbstractUnaryExpression
                         result = Long.parseLong(interval) * MULS[2]; 
                         break;
                     case SECOND:
+                        
                         result = Math.round(Double.parseDouble(interval) * 1000);
                         break;
                     case DAY_HOUR:
@@ -153,7 +154,7 @@ public class IntervalCastExpression extends AbstractUnaryExpression
     @Override
     protected String name() 
     {
-        return "INTERVAL_CAST_EXPRESSION";
+        return "CAST_INTERVAL_" + endPoint;
     }
 
     @Override
