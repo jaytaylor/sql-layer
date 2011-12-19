@@ -127,15 +127,21 @@ public class AggregateSplitter extends BaseRule
         if (!select.getConditions().isEmpty())
             return null;
         input = select.getInput();
-        if (!(input instanceof Flatten))
-            return null;
-        Flatten flatten = (Flatten)input;
-        if (flatten.getTableNodes().size() != 1)
-            return null;
-        input = flatten.getInput();
-        if (!(input instanceof GroupScan))
-            return null;
-        return flatten.getTableSources().get(0);
+        if (input instanceof IndexScan) {
+            IndexScan index = (IndexScan)input;
+            if (index.isCovering() && !index.hasConditions() &&
+                index.getIndex().isTableIndex())
+                return index.getLeafMostTable();
+        }
+        else if (input instanceof Flatten) {
+            Flatten flatten = (Flatten)input;
+            if (flatten.getTableNodes().size() != 1)
+                return null;
+            input = flatten.getInput();
+            if (input instanceof GroupScan)
+                return flatten.getTableSources().get(0);
+        }
+        return null;
     }
 
 }
