@@ -170,13 +170,9 @@ public class AggregateSplitter extends BaseRule
         // includes those tested for equality, which only have that
         // one value.
         int ncols = (nequals < ordering.size()) ? (nequals + 1) : nequals;
-        System.out.println("??? " + ncols);
         AggregateFunctionExpression aggr1 = source.getAggregates().get(0);
         for (int i = 0; i < ncols; i++) {
             Sort.OrderByExpression orderBy = ordering.get(i);
-            System.out.println("??? " + i);
-            System.out.println("+++ " + orderBy.getExpression());
-            System.out.println("+++ " + aggr1.getOperand());
             if (orderBy.getExpression().equals(aggr1.getOperand())) {
                 if ((i == nequals) &&
                     (orderBy.isAscending() != aggr1.getFunction().equals("MIN"))) {
