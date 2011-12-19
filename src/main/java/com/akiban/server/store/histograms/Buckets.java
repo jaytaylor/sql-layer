@@ -21,13 +21,18 @@ import java.util.Random;
 
 final class Buckets<T extends Comparable<? super T>> {
 
-    public static <A extends Comparable<A>> List<Bucket<A>> compile(int maxSize, Iterable<A> from) {
-        BucketSource<A> source = new BucketSource<A>(from);
-        Buckets<A> buckets = new Buckets<A>(maxSize);
-        for (Bucket<A> bucket : source) {
-            buckets.add(bucket);
+    public static <T extends Comparable<T>> List<Bucket<T>> compile(Iterable<? extends T> from, int maxSize) {
+        return compile(from, new Buckets<T>(maxSize));
+    }
+
+    // intended for testing
+    static <T extends Comparable<? super T>>
+    List<Bucket<T>> compile(Iterable<? extends T> from, Buckets<T> usingBuckets) {
+        BucketSource<T> source = new BucketSource<T>(from);
+        for (Bucket<T> bucket : source) {
+            usingBuckets.add(bucket);
         }
-        return buckets.buckets();
+        return usingBuckets.buckets();
     }
 
     public void add(Bucket<T> bucket) {
@@ -38,8 +43,6 @@ final class Buckets<T extends Comparable<? super T>> {
         node.prev = last;
         last.next = node;
         last = node;
-        log("adding %s", bucket);
-        log("%s", buckets());
         if (++size > maxSize) { // need to trim
             BucketNode<T> removeNode = nodeToRemove();
             // if the least popular node was the tail, we should fold it into its
@@ -58,8 +61,6 @@ final class Buckets<T extends Comparable<? super T>> {
                 removeNode.next.prev = removeNode.prev;
             checkIntegrity();
         }
-        log("%s", buckets());
-        log("");
     }
 
     public List<Bucket<T>> buckets() {
@@ -105,6 +106,7 @@ final class Buckets<T extends Comparable<? super T>> {
             if (nodeEqs < lowestCount) {
                 lowestCount = nodeEqs;
                 tieBreaker.first();
+                result = node;
             }
             else if (nodeEqs == lowestCount) {
                 result = tieBreaker.choose(result, node);
@@ -118,12 +120,6 @@ final class Buckets<T extends Comparable<? super T>> {
         if (bucket == null)
             throw new IllegalArgumentException("bucket may not be null");
         return new BucketNode<T>(bucket);
-    }
-
-    private void log(String format, Object... args) {
-        System.out.print("\t-- ");
-        System.out.printf(format, args);
-        System.out.println();
     }
 
     private final int maxSize;
