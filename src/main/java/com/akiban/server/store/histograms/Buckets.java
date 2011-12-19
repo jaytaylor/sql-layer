@@ -191,13 +191,14 @@ final class Buckets<T extends Comparable<? super T>> {
      *
      * @param <T> type of element being chosen
      */
-    private static class FairRandomTieBreaker<T> implements RemovalTieBreaker<T> {
+    static class FairRandomTieBreaker<T> implements RemovalTieBreaker<T> {
 
         @Override
         public T choose(T previous, T newGuy) {
             assert count > 0 : count;
             ++count;
-            return (random().nextInt(count) == 0)
+            int dice = random().nextInt(count);
+            return (dice == 0)
                     ? newGuy
                     : previous;
         }

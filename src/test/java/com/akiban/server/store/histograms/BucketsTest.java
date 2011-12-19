@@ -18,15 +18,10 @@ package com.akiban.server.store.histograms;
 import com.akiban.util.AssertUtils;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 import static com.akiban.server.store.histograms.BucketTestUtils.bucket;
-import static com.akiban.server.store.histograms.BucketTestUtils.bucketSource;
 import static com.akiban.util.CollectionUtils.list;
-import static org.junit.Assert.assertEquals;
 
 public final class BucketsTest {
     @Test
