@@ -15,6 +15,8 @@
 
 package com.akiban.server.store.histograms;
 
+import com.akiban.util.Equality;
+
 final class Bucket<A> {
 
     // Bucket interface
@@ -52,6 +54,29 @@ final class Bucket<A> {
     @Override
     public String toString() {
         return String.format("<%s: %d,%d,%d>", value, equalsCount, ltCount, ltDistinctCount);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Bucket bucket = (Bucket) o;
+
+        return equalsCount == bucket.equalsCount
+                && ltCount == bucket.ltCount
+                && ltDistinctCount == bucket.ltDistinctCount
+                && Equality.areEqual(value, bucket.value);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = value != null ? value.hashCode() : 0;
+        result = 31 * result + (int) (equalsCount ^ (equalsCount >>> 32));
+        result = 31 * result + (int) (ltCount ^ (ltCount >>> 32));
+        result = 31 * result + (int) (ltDistinctCount ^ (ltDistinctCount >>> 32));
+        return result;
     }
 
     // ctor

@@ -15,6 +15,8 @@
 
 package com.akiban.server.store.histograms;
 
+import com.akiban.util.ArgumentValidation;
+
 import java.util.Iterator;
 
 final class BucketSource<A> implements Iterable<Bucket<A>> {
@@ -29,13 +31,13 @@ final class BucketSource<A> implements Iterable<Bucket<A>> {
     // ctor
 
     public BucketSource(Iterable<? extends A> iterable) {
+        ArgumentValidation.notNull("input", iterable);
         this.iterable = iterable;
     }
 
     private final Iterable<? extends A> iterable;
 
     // nested classes
-
 
     private static class InternalIterator<A> implements Iterator<Bucket<A>> {
 
