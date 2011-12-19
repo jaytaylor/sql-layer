@@ -2,8 +2,10 @@ package com.akiban.server;
 
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.persistit.Accumulator;
+import com.persistit.Exchange;
 import com.persistit.Transaction;
 import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
@@ -36,10 +38,24 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
     @Override
     public synchronized void truncate(int tableID) {
+        InternalTableStatus ts = getInternalTableStatus(tableID);
+        ts.truncate();
     }
 
     @Override
     public synchronized void drop(int tableID) {
+        InternalTableStatus ts = getInternalTableStatus(tableID);
+        //TODO: fix lack of TreeService/session usage?
+        IndexDef indexDef = (IndexDef)ts.getRowDef().getPKIndex().indexDef();
+        try {
+            treeService.populateTreeCache(indexDef);
+            String vol = treeService.volumeForTree(indexDef.getSchemaName(), indexDef.getTreeName());
+            Exchange ex = treeService.getDb().getExchange(vol, indexDef.getTreeName(), false);
+            ex.removeTree();
+            treeService.getDb().releaseExchange(ex);
+        } catch(PersistitException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -56,7 +72,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         try {
             getInternalTableStatus(tableID).setOrdinal(value);
         } catch(PersistitInterruptedException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
@@ -72,7 +88,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             treeService.populateTreeCache(indexDef);
             ts.setRowDef(rowDef, indexDef.getTreeCache().getTree());
         } catch(PersistitException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
     }
 
@@ -82,7 +98,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         try {
             uniqueID = getInternalTableStatus(tableID).createNewUniqueID();
         } catch(PersistitInterruptedException e) {
-            e.printStackTrace();
+            throw new RuntimeException(e);
         }
         return uniqueID;
     }
@@ -160,9 +176,8 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             try {
                 return (int) ordinal.getSnapshotValue(getCurrentTrx());
             } catch(PersistitInterruptedException e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
-            return 0;
         }
 
         @Override
@@ -170,9 +185,8 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             try {
                 return rowCount.getSnapshotValue(getCurrentTrx());
             } catch(PersistitInterruptedException e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
-            return 0;
         }
 
         @Override
@@ -180,9 +194,8 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             try {
                 return uniqueID.getSnapshotValue(getCurrentTrx());
             } catch(PersistitInterruptedException e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
-            return 0;
         }
 
         @Override
@@ -201,6 +214,11 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             rowCount.update(1, getCurrentTrx());
         }
 
+        synchronized void setRowCount(long rowCount) throws PersistitInterruptedException {
+            long diff = rowCount - this.rowCount.getSnapshotValue(getCurrentTrx());
+            this.rowCount.update(diff, getCurrentTrx());
+        }
+
         synchronized void setAutoIncrement(long autoIncrement) throws PersistitInterruptedException {
             long diff = autoIncrement - this.autoIncrement.getSnapshotValue(getCurrentTrx());
             this.autoIncrement.update(diff, getCurrentTrx());
@@ -215,11 +233,11 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             this.rowDef = rowDef;
             try {
                 rowCount = tree.getAccumulator(Accumulator.Type.SUM, 0);
-                ordinal = tree.getAccumulator(Accumulator.Type.MAX, 1);
+                ordinal = tree.getAccumulator(Accumulator.Type.SUM, 1);
                 uniqueID = tree.getAccumulator(Accumulator.Type.SEQ, 2);
-                autoIncrement = tree.getAccumulator(Accumulator.Type.MAX, 3);
+                autoIncrement = tree.getAccumulator(Accumulator.Type.SUM, 3);
             } catch(PersistitException e) {
-                e.printStackTrace();
+                throw new RuntimeException(e);
             }
         }
         
@@ -228,6 +246,12 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         synchronized void truncate() {
+            try {
+                setRowCount(0);
+                setAutoIncrement(0);
+            } catch(PersistitInterruptedException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }
