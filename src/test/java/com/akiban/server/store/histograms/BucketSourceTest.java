@@ -18,11 +18,14 @@ package com.akiban.server.store.histograms;
 import org.junit.Test;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import static com.akiban.server.store.histograms.BucketTestUtils.bucket;
 import static com.akiban.util.CollectionUtils.list;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 
 public final class BucketSourceTest {
 
@@ -48,6 +51,27 @@ public final class BucketSourceTest {
                 list("a b b a".split(" ")),
                 buckets(bucket("a", 1), bucket("b", 2), bucket("a", 1))
         );
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void noRemoves() {
+        List<String> list = new ArrayList<String>(list("a b c".split(" "))); // list's iterator supports remove
+        Iterator<Bucket<String>> iterator = new BucketSource<String>(list).iterator();
+        Bucket<String> bucket = iterator.next();
+        assertEquals("first bucket", bucket("a", 1), bucket);
+        UnsupportedOperationException uoe = null;
+        try {
+            iterator.remove();
+        }
+        catch (UnsupportedOperationException e) {
+            uoe = e;
+        }
+        assertEquals("second bucket", bucket("b", 1), iterator.next());
+        assertEquals("third bucket", bucket("c", 1), iterator.next());
+        assertFalse("iter should have been done", iterator.hasNext());
+        // doing it this way instead of just assertNotNull helps the @Test annotation document expected behavior
+        if (uoe != null)
+            throw uoe;
     }
 
     @Test(expected = IllegalArgumentException.class)
