@@ -36,7 +36,6 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 import com.akiban.ais.io.AISTarget;
 import com.akiban.ais.io.MessageSource;
@@ -113,7 +112,6 @@ import com.akiban.server.service.tree.TreeVisitor;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Transaction;
-import com.persistit.Transaction.DefaultCommitListener;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
 import com.persistit.exception.TransactionFailedException;
@@ -166,7 +164,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private final Store store;
     private final TreeService treeService;
     private final ConfigurationService config;
-    private AtomicLong updateTimestamp;
+    private AtomicInteger updateTimestamp;
     private int maxAISBufferSize;
     private ByteBuffer aisByteBuffer;
 
@@ -728,24 +726,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
 
     @Override
-    public long getUpdateTimestamp() {
+    public int getSchemaGeneration() {
         return updateTimestamp.get();
     }
 
     @Override
-    public int getSchemaGeneration() {
-        final long ts = getUpdateTimestamp();
-        return (int) ts ^ (int) (ts >>> 32);
-    }
-
-    @Override
     public synchronized void forceNewTimestamp() {
-        Session session = sessionService.createSession();
-        try {
-            updateTimestamp.set(treeService.getTimestamp(session));
-        } finally {
-            session.close();
-        }
+        updateTimestamp.getAndIncrement();
     }
 
     @Override
@@ -760,7 +747,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     @Override
     public void start() {
-        updateTimestamp = new AtomicLong();
+        updateTimestamp = new AtomicInteger();
         maxAISBufferSize = Integer.parseInt(config.getProperty(MAX_AIS_SIZE_PROPERTY));
         if(maxAISBufferSize < 0) {
             LOG.warn("Clamping property "+MAX_AIS_SIZE_PROPERTY+" to 0");
@@ -833,7 +820,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                                              }, SCHEMA_TREE_NAME);
 
                     forceNewTimestamp();
-                    onTransactionCommit(newAIS, updateTimestamp.get());
+                    onTransactionCommit(newAIS);
                     transaction.commit();
 
                     break; // Success
@@ -854,14 +841,14 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
     }
 
-    private void onTransactionCommit(final AkibanInformationSchema newAis, final long timestamp) {
+    private void onTransactionCommit(final AkibanInformationSchema newAis) {
         // None of this code "can fail" because it is being ran inside of a Persistit commit. Fail LOUDLY.
         try {
             final RowDefCache rowDefCache = store.getRowDefCache();
             rowDefCache.clear();
             treeService.getTableStatusCache().detachAIS();
             rowDefCache.setAIS(newAis);
-            updateTimestamp.set(timestamp);
+            updateTimestamp.getAndIncrement();
             aish.setAis(newAis);
         }
         catch(RuntimeException e) {
@@ -1122,12 +1109,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     schemaEx.getValue().putByteArray(buffer.array(), buffer.position(), buffer.limit());
                     schemaEx.store();
 
-                    transaction.commit(new DefaultCommitListener() {
-                        @Override
-                        public void committed() {
-                            onTransactionCommit(newAIS, transaction.getCommitTimestamp());
-                        }
-                    }, forceToDisk);
+                    transaction.commit(forceToDisk);
+                    onTransactionCommit(newAIS);
 
                     break; // Success
 

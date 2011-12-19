@@ -61,8 +61,6 @@ public interface TreeService extends Service<TreeService> {
 
     void visitStorage(Session session, TreeVisitor visitor, String treeName) throws PersistitException;
 
-    long getTimestamp(Session session);
-
     boolean isContainer(Exchange exchange, TreeLink storageLink);
 
     int aisToStore(final TreeLink link, final int logicalTableId);
@@ -71,7 +69,7 @@ public interface TreeService extends Service<TreeService> {
 
     int storeToAis(final Volume volume, final int storedTableId);
 
-    void checkpoint() throws PersistitInterruptedException;
+    void checkpoint() throws PersistitException;
 
     TableStatusCache getTableStatusCache();
 

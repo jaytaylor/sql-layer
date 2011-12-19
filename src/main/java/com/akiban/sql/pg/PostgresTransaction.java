@@ -96,17 +96,7 @@ public class PostgresTransaction
 
     /** Rollback transaction. */
     public void rollback() {
-        try {
-            transaction.rollback();
-        }
-        catch (RollbackException ex) {
-        }
-        catch (PersistitException ex) {
-            handlePersistitException(ex);
-        }
-        finally {
-            transaction.end();
-        }
+        transaction.rollback();
     }
 
     /** Abort transaction that still exists on exit. */

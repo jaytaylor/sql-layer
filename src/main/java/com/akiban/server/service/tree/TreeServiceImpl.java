@@ -32,7 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.TableStatusCache;
-import com.akiban.server.PersistitTransactionalCacheTableStatusCache;
+import com.akiban.server.MemoryOnlyTableStatusCache;
 import com.akiban.server.error.ConfigurationPropertiesLoadException;
 import com.akiban.server.error.InvalidVolumeException;
 import com.akiban.server.error.PersistItErrorException;
@@ -333,12 +333,7 @@ public class TreeServiceImpl
     }
 
     @Override
-    public long getTimestamp(final Session session) {
-        return getDb().getTransaction().getTimestamp();
-    }
-
-    @Override
-    public void checkpoint()  throws PersistitInterruptedException {
+    public void checkpoint()  throws PersistitException {
         getDb().checkpoint();
     }
 
@@ -352,9 +347,8 @@ public class TreeServiceImpl
             final String treeName) throws PersistitException {
         Persistit db = getDb();
         final Volume sysVol = db.getSystemVolume();
-        final Volume txnVol = db.getTransactionVolume();
         for (final Volume volume : db.getVolumes()) {
-            if (volume != sysVol && volume != txnVol) {
+            if (volume != sysVol) {
                 final Tree tree = volume.getTree(treeName, false);
                 if (tree != null) {
                     final Exchange exchange = getExchange(session, tree);
@@ -667,9 +661,7 @@ public class TreeServiceImpl
     }
     
     private TableStatusCache createTableStatusCache() {
-        PersistitTransactionalCacheTableStatusCache tsc = new PersistitTransactionalCacheTableStatusCache(sessionService, getDb(), this);
-        tsc.register();
-        return tsc;
+        return new MemoryOnlyTableStatusCache();
     }
 
     @Override
