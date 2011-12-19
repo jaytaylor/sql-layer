@@ -139,9 +139,9 @@ public final class AllowedConversionsTest {
         }
 
         @Override
-        public long getInterval()
+        public long getInterval_Millis()
         {
-            checkType(AkType.INTERVAL);
+            checkType(AkType.INTERVAL_MILLIS);
             return 0;
         }
 
@@ -227,7 +227,7 @@ public final class AllowedConversionsTest {
             case YEAR:
                 stringValue = "2004";
                 break;
-            case INTERVAL:
+            case INTERVAL_MILLIS:
                 stringValue = "1234567";
                 break;
             case DECIMAL:
@@ -305,7 +305,7 @@ public final class AllowedConversionsTest {
         }
 
         @Override
-        public void putInterval(long value) {
+        public void putInterval_Millis(long value) {
         }
         
         @Override

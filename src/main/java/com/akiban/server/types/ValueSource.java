@@ -37,7 +37,7 @@ public interface ValueSource {
     long getLong();
     long getTime();
     long getTimestamp();
-    long getInterval();
+    long getInterval_Millis();
     long getUInt();
     long getYear();
     String getString();

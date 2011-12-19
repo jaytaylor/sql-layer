@@ -339,13 +339,13 @@ abstract class ExtractorsForDates extends LongExtractor {
         }
     };
 
-    final static ExtractorsForDates INTERVAL = new ExtractorsForDates(AkType.INTERVAL)
+    final static ExtractorsForDates INTERVAL = new ExtractorsForDates(AkType.INTERVAL_MILLIS)
     {
         @Override
         protected long doGetLong(ValueSource source){
             AkType type = source.getConversionType();
             switch (type){
-                case INTERVAL:  return source.getInterval();
+                case INTERVAL_MILLIS:  return source.getInterval_Millis();
                 case DECIMAL:   return source.getDecimal().longValue();
                 case DOUBLE:    return (long)source.getDouble();
                 case U_BIGINT:  return source.getUBigInt().longValue();
@@ -395,7 +395,7 @@ abstract class ExtractorsForDates extends LongExtractor {
 
         @Override
         public long[] getYearMonthDayHourMinuteSecond(long value) {
-            // TODO: convert milisecons to INTERVAL of day, month year
+            // TODO: convert milisecons to INTERVAL_MILLIS of day, month year
             // how many days are there in a month/year???
             throw new UnsupportedOperationException("Not supported yet.");
         }
@@ -469,7 +469,7 @@ abstract class ExtractorsForDates extends LongExtractor {
         if (source.isNull())
             throw new ValueSourceIsNullException();
         AkType type = source.getConversionType();
-        if (type == targetConversionType() || targetConversionType() == AkType.INTERVAL) {
+        if (type == targetConversionType() || targetConversionType() == AkType.INTERVAL_MILLIS) {
             return doGetLong(source);
         }
         switch (type) {

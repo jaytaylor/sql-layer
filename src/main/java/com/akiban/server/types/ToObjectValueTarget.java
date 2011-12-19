@@ -111,8 +111,8 @@ public final class ToObjectValueTarget implements ValueTarget {
     }
     
     @Override
-    public void putInterval(long value){
-        internalPut(value, AkType.INTERVAL);
+    public void putInterval_Millis(long value){
+        internalPut(value, AkType.INTERVAL_MILLIS);
     }
 
     @Override

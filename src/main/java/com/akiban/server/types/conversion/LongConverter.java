@@ -99,12 +99,12 @@ abstract class LongConverter extends AbstractConverter {
         }
     };
 
-    static final LongConverter INTERVAL = new LongConverter(AkType.INTERVAL)
+    static final LongConverter INTERVAL_MILLIS = new LongConverter(AkType.INTERVAL_MILLIS)
     {
         @Override
         protected void putLong(ValueTarget target, long value)
         {
-            target.putInterval(value);
+            target.putInterval_Millis(value);
         }
     };
     

@@ -131,7 +131,7 @@ abstract class AbstractRowDataValueSource implements ValueSource {
     }
     
     @Override
-    public long getInterval() {
+    public long getInterval_Millis() {
         throw new UnsupportedOperationException();
     }
 

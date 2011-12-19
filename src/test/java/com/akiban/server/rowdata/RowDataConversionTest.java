@@ -58,7 +58,7 @@ public final class RowDataConversionTest extends ConversionTestBase {
         LongExtractor year = Extractors.getLongExtractor(AkType.YEAR);
         LongExtractor timestamp = Extractors.getLongExtractor(AkType.TIMESTAMP);
         LongExtractor time = Extractors.getLongExtractor(AkType.TIME);
-        LongExtractor interval = Extractors.getLongExtractor(AkType.INTERVAL);
+        LongExtractor interval_millis = Extractors.getLongExtractor(AkType.INTERVAL_MILLIS);
         ConverterTestUtils.setGlobalTimezone("UTC");
 
         ConversionSuite<?> suite = ConversionSuite.build(new ConversionPair())
@@ -126,8 +126,8 @@ public final class RowDataConversionTest extends ConversionTestBase {
                 .add(TestCase.forTimestamp(timestamp.getLong("1986-10-28 00:00:00"), b(530841600, 4)))
                 .add(TestCase.forTimestamp(timestamp.getLong("2011-04-10 18:34:00"), b(1302460440, 4)))
 
-                // Interval
-                .add(TestCase.forInterval(interval.getLong("12345"), b(12345L, 8) ))
+                // Interval millis
+                .add(TestCase.forInterval_Millis(interval_millis.getLong("12345"), b(12345L, 8) ))
                 
                 // Time
                 .add(TestCase.forTime(time.getLong("00:00:00"), b(0, 3)))
@@ -173,7 +173,7 @@ public final class RowDataConversionTest extends ConversionTestBase {
 
         @Override
         public void setUp(TestCase<?> testCase) {
-            if (testCase.type() == AkType.INTERVAL)
+            if (testCase.type() == AkType.INTERVAL_MILLIS)
                 throw new UnsupportedOperationException();
             createEnvironment(testCase);
             byte[] bytes = new byte[128];
@@ -188,7 +188,7 @@ public final class RowDataConversionTest extends ConversionTestBase {
 
         @Override
         public Set<? extends AkType> unsupportedTypes() {
-            return EnumSet.of(AkType.INTERVAL);
+            return EnumSet.of(AkType.INTERVAL_MILLIS);
         }
 
         private void createEnvironment(TestCase<?> testCase) {

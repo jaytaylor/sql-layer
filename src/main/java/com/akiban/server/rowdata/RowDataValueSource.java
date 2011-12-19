@@ -22,7 +22,7 @@ public final class RowDataValueSource extends AbstractRowDataValueSource {
     // FieldDefConversionBase interface
 
     public void bind(FieldDef fieldDef, RowData rowData) {
-        if(fieldDef.getType().akType() == AkType.INTERVAL)
+        if(fieldDef.getType().akType() == AkType.INTERVAL_MILLIS)
             throw new UnsupportedOperationException();
         this.fieldDef = fieldDef;
         this.rowData = rowData;

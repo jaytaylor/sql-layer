@@ -96,7 +96,7 @@ public final class MismatchedConversionsSuite {
         map.put(TEXT, TestCase.forText("world", 5, "US-ASCII", NO_STATE));
         map.put(TIME, TestCase.forTime(0, NO_STATE));
         map.put(TIMESTAMP, TestCase.forTimestamp(0, NO_STATE));
-        map.put(INTERVAL, TestCase.forInterval(0, NO_STATE));
+        map.put(INTERVAL_MILLIS, TestCase.forInterval_Millis(0, NO_STATE));
         map.put(U_BIGINT, TestCase.forUBigInt(BigInteger.TEN, NO_STATE));
         map.put(U_DOUBLE, TestCase.forUDouble(0, NO_STATE));
         map.put(U_FLOAT, TestCase.forUFloat(0, NO_STATE));
