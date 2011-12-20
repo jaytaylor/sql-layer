@@ -45,11 +45,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     }
 
     @Override
-    public synchronized void rowUpdated(int tableID) {
-        getInternalTableStatus(tableID).rowUpdated();
-    }
-
-    @Override
     public synchronized void rowWritten(int tableID) {
         getInternalTableStatus(tableID).rowWritten();
     }
@@ -156,10 +151,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         ROW_COUNT(1, Type.SUM),
         UNIQUE_ID(2, Type.SEQ),
         AUTO_INC(3, Type.SUM),
-        CREATE_TIME(4, Type.MAX),
-        DELETE_TIME(5, Type.MAX),
-        UPDATE_TIME(6, Type.MAX),
-        WRITE_TIME(7, Type.MAX),
         ;
 
         AccumInfo(int index, Type type) {
@@ -186,34 +177,10 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         private volatile Accumulator rowCount;
         private volatile Accumulator uniqueID;
         private volatile Accumulator autoIncrement;
-        private volatile Accumulator createTime;
-        private volatile Accumulator deleteTime;
-        private volatile Accumulator updateTime;
-        private volatile Accumulator writeTime;
-        
+
         @Override
         public long getAutoIncrement() {
             return getSnapshot(autoIncrement, getCurrentTrx());
-        }
-
-        @Override
-        public long getCreationTime() {
-            return getSnapshot(createTime, getCurrentTrx());
-        }
-
-        @Override
-        public long getLastDeleteTime() {
-            return getSnapshot(deleteTime, getCurrentTrx());
-        }
-
-        @Override
-        public long getLastUpdateTime() {
-            return getSnapshot(updateTime, getCurrentTrx());
-        }
-
-        @Override
-        public long getLastWriteTime() {
-            return getSnapshot(writeTime, getCurrentTrx());
         }
 
         @Override
@@ -237,19 +204,11 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         void rowDeleted() {
-            Transaction txn = getCurrentTrx();
-            rowCount.update(-1, txn);
-            deleteTime.update(System.currentTimeMillis(), txn);
-        }
-
-        void rowUpdated() {
-            updateTime.update(System.currentTimeMillis(), getCurrentTrx());
+            rowCount.update(-1, getCurrentTrx());
         }
 
         void rowWritten() {
-            Transaction txn = getCurrentTrx();
-            rowCount.update(1, txn);
-            writeTime.update(System.currentTimeMillis(), txn);
+            rowCount.update(1, getCurrentTrx());
         }
 
         void setRowCount(long rowCountValue) {
@@ -277,10 +236,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
                 rowCount = getAccumulator(tree, AccumInfo.ROW_COUNT);
                 uniqueID = getAccumulator(tree, AccumInfo.UNIQUE_ID);
                 autoIncrement = getAccumulator(tree, AccumInfo.AUTO_INC);
-                createTime = getAccumulator(tree, AccumInfo.CREATE_TIME);
-                deleteTime = getAccumulator(tree, AccumInfo.DELETE_TIME);
-                updateTime = getAccumulator(tree, AccumInfo.UPDATE_TIME);
-                writeTime = getAccumulator(tree, AccumInfo.WRITE_TIME);
             } catch(PersistitException e) {
                 throw new PersistItErrorException(e);
             }

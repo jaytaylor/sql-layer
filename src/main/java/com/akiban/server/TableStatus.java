@@ -29,26 +29,6 @@ public interface TableStatus {
     long getAutoIncrement();
 
     /**
-     * @return Timestamp, in milliseconds, of when this table was created.
-     */
-    long getCreationTime();
-
-    /**
-     * @return Timestamp, in milliseconds, of the last delete operation.
-     */
-    long getLastDeleteTime();
-
-    /**
-     * @return Timestamp, in milliseconds, of the last update operation.
-     */
-    long getLastUpdateTime();
-
-    /**
-     * @return Timestamp, in milliseconds, of the last write operation.
-     */
-    long getLastWriteTime();
-
-    /**
      * @return Ordinal of the associated table.
      */
     int getOrdinal();

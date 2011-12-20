@@ -25,12 +25,6 @@ public interface TableStatusCache {
     void rowDeleted(int tableID);
 
     /**
-     * Record that a row has been updated.
-     * @param tableID ID of the modified table.
-     */
-    void rowUpdated(int tableID);
-
-    /**
      * Record that a row has been written.
      * @param tableID ID of the modified table.
      */
