@@ -1,4 +1,4 @@
 PhysicalSelect[name:varchar(32)[VARCHAR]]
-  project([Field(0)])
-    Select_HKeyOrdered(Index(.customers.cname_and_state[IndexColumn(name), IndexColumn(state)]), IsNull(Field(1)))
-      IndexScan_Default(Index(.customers.cname_and_state[IndexColumn(name), IndexColumn(state)]) (>UnboundExpressions[Literal(M)],<UnboundExpressions[Literal(NULL)]) INNER JOIN thru customers, then LEFT)
+  project([Field(1)])
+    Select_HKeyOrdered(Index(.customers.state_and_cname[IndexColumn(state), IndexColumn(name)]), Field(1) > Literal(M))
+      IndexScan_Default(Index(.customers.state_and_cname[IndexColumn(state), IndexColumn(name)]) (>=UnboundExpressions[Literal(NULL)],<=UnboundExpressions[Literal(NULL)]) INNER JOIN thru customers, then LEFT)

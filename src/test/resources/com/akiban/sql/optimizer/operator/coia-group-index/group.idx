@@ -1,3 +1,3 @@
 customers	cname_and_sku	customers.name,items.sku
 customers	sku_and_date	items.sku,orders.order_date
-customers	cname_and_state	customers.name,addresses.state
+customers	state_and_cname	addresses.state,customers.name
