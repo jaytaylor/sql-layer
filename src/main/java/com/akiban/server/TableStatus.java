@@ -30,26 +30,6 @@ public interface TableStatus {
     long getAutoIncrement() throws PersistitInterruptedException;
 
     /**
-     * @return Timestamp, in milliseconds, of when this table was created.
-     */
-    long getCreationTime() throws PersistitInterruptedException;
-
-    /**
-     * @return Timestamp, in milliseconds, of the last delete operation.
-     */
-    long getLastDeleteTime() throws PersistitInterruptedException;
-
-    /**
-     * @return Timestamp, in milliseconds, of the last update operation.
-     */
-    long getLastUpdateTime() throws PersistitInterruptedException;
-
-    /**
-     * @return Timestamp, in milliseconds, of the last write operation.
-     */
-    long getLastWriteTime() throws PersistitInterruptedException;
-
-    /**
      * @return Ordinal of the associated table.
      */
     int getOrdinal() throws PersistitInterruptedException;

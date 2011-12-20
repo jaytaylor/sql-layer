@@ -926,9 +926,6 @@ public class PersistitStore implements Store {
                 ts.setAutoIncrementValue(status.getAutoIncrement());
                 ts.setRowCount(status.getRowCount());
             }
-            ts.setUpdateTime(Math.max(status.getLastUpdateTime(),
-                    status.getLastWriteTime()));
-            ts.setCreationTime(status.getCreationTime());
             // TODO - get correct values
             ts.setMeanRecordLength(100);
             ts.setBlockSize(8192);
