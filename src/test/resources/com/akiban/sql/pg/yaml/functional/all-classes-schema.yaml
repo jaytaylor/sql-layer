@@ -1,4 +1,4 @@
-# Test the bitwise AND function
+# setup for the classes table.  Mostly used iin bitwise tests
 ---
 - CreateTable:  Classes (ClassID SMALLINT , Dept CHAR(4) NOT NULL, 
                   Level varchar(5) NOT NULL, TotalStudents int NOT NULL);
