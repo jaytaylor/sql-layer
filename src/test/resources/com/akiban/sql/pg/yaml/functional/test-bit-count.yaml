@@ -1,0 +1,47 @@
+# Test the bitwise AND function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field) VALUES (1);
+---
+- Statement: SELECT BIT_COUNT(29) from all_types;
+- output: [[4]]
+---
+- Statement: SELECT BIT_COUNT(-1) from all_types;
+- output: [[64]]
+---
+- Statement: SELECT BIT_COUNT(0) from all_types;
+- output: [[0]]
+---
+- Statement: SELECT BIT_COUNT(365) from all_types;
+- output: [[6]]
+---
+- Statement: SELECT BIT_COUNT(9223372036854775807) from all_types;
+- output: [[63]]
+---
+- Statement: SELECT BIT_COUNT(-99999) from all_types;
+- output: [[55]]
+---
+- Statement: SELECT 3 from all_types where BIT_COUNT(-99999) = 55;
+- output: [[3]]
+  
+  #bug 906457
+#- Statement: SELECT BIT_COUNT(?) from all_types;
+#- params: [[100]]
+#- output: [[3]]
+# ---
+# - Statement: SELECT 1 from all_types where BIT_COUNT(?) = 3;
+# - params: [[100]]
+# - output: [[1]]
+--- #906512
+- Statement: SELECT BIT_COUNT(NULL) from all_types;
+- output: [[null]]
+  
+#overflow issues not decided yet
+#---
+#- Statement: SELECT BIT_COUNT(9223372036854775808) from all_types;
+#- output: [[1]]
+#---
+#- Statement: SELECT BIT_COUNT(9223372036854775809) from all_types;
+#- output: [[2]]
+...

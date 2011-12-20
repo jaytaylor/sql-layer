@@ -26,6 +26,8 @@ select-3m: group index in mixed mode
 
 select-4: covering group index
 
+select-5: index IS NULL
+
 select-7l: literal in result list
 
 select-7o: ordering group index
@@ -53,3 +55,12 @@ select-16g: DISTINCT with ORDER BY using group index
 select-17a: side branch with sort
 
 select-17b: side branch with sort and IN
+
+select-18: range inequalities
+
+select-18n: range inequalities and IS NULL
+
+select-19i: aggregation and IN
+
+select-19x: aggregation from MAX
+
