@@ -187,6 +187,16 @@ public class IndexGoal implements Comparator<IndexScan>
                         break;
                     }
                 }
+                else if (condition instanceof FunctionCondition) {
+                    FunctionCondition fcond = (FunctionCondition)condition;
+                    if (fcond.getFunction().equals("isNull") &&
+                        (fcond.getOperands().size() == 1) &&
+                        (fcond.getOperands().get(0).equals(indexExpression))) {
+                        equalityCondition = condition;
+                        otherComparand = null; // TODO: Or constant NULL, depending on API.
+                        break;
+                    }
+                }
             }
             if (equalityCondition == null)
                 break;
