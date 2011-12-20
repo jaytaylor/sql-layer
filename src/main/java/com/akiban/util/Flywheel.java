@@ -30,7 +30,7 @@ public abstract class Flywheel<T> {
     protected abstract T createNew();
     
     protected int defaultCapacity() {
-        return 32;
+        return 16;
     }
     
     public T get() {

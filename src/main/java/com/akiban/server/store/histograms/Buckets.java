@@ -201,11 +201,6 @@ final class Buckets<T extends Comparable<? super T>> {
                 protected BucketNode<T> createNew() {
                     return new BucketNode<T>();
                 }
-
-                @Override
-                protected int defaultCapacity() {
-                    return maxSize;
-                }
             };
         }
         BucketNode<T> result = bucketNodeReserves.get();
