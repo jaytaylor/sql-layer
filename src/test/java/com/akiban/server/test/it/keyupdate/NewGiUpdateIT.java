@@ -1570,7 +1570,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("Paul, 2001-01-01, 1, 11").backedBy(c, o)
                 .gi(___RIGHT_sku_instructions___)
                 .gi(___RIGHT_street_name________)
-                .checkCounts(0)
+                .checkMaintenanceSkips(0)
                 .done();
     }
 
@@ -1588,7 +1588,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("Paul, 2001-01-01, 1, 11").backedBy(c, o)
                 .gi(___RIGHT_sku_instructions___)
                 .gi(___RIGHT_street_name________)
-                .checkCounts(0)
+                .checkMaintenanceSkips(0)
                 .done();
     }
 
@@ -1606,7 +1606,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
                 .gi(___RIGHT_sku_instructions___)
                 .gi(___RIGHT_street_name________)
-                .checkCounts(6)
+                .checkMaintenanceSkips(6)
                 .done();
     }
 
@@ -1626,7 +1626,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
                 .gi(___RIGHT_sku_instructions___)
                 .gi(___RIGHT_street_name________)
-                .checkCounts(6)
+                .checkMaintenanceSkips(6)
                 .done();
     }
 
@@ -1644,7 +1644,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("John, 2011-11-11, 1, 11").backedBy(c, o)
                 .gi(___RIGHT_sku_instructions___)
                 .gi(___RIGHT_street_name________)
-                .checkCounts(0)
+                .checkMaintenanceSkips(0)
                 .done();
     }
 
@@ -1662,7 +1662,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("John, 2011-11-11, 1, 11").backedBy(c, o)
                 .gi(___RIGHT_sku_instructions___)
                 .gi(___RIGHT_street_name________)
-                .checkCounts(0)
+                .checkMaintenanceSkips(0)
                 .done();
     }
 
@@ -1680,7 +1680,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
                 .gi(___RIGHT_sku_instructions___)
                 .gi(___RIGHT_street_name________)
-                .checkCounts(4)
+                .checkMaintenanceSkips(4)
                 .done();
     }
 
@@ -1700,7 +1700,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .entry("John, 2001-01-01, 1, 11").backedBy(c, o)
                 .gi(___RIGHT_sku_instructions___)
                 .gi(___RIGHT_street_name________)
-                .checkCounts(4)
+                .checkMaintenanceSkips(4)
                 .done();
     }
 
@@ -1720,7 +1720,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi(___RIGHT_sku_instructions___)
                 .entry("9999, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi(___RIGHT_street_name________)
-                .checkCounts(0)
+                .checkMaintenanceSkips(0)
                 .done();
     }
 
@@ -1740,7 +1740,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi(___RIGHT_sku_instructions___)
                 .entry("9999, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi(___RIGHT_street_name________)
-                .checkCounts(0)
+                .checkMaintenanceSkips(0)
                 .done();
     }
 
@@ -1760,7 +1760,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi(___RIGHT_sku_instructions___)
                 .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi(___RIGHT_street_name________)
-                .checkCounts(4)
+                .checkMaintenanceSkips(4)
                 .done();
     }
 
@@ -1782,7 +1782,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi(___RIGHT_sku_instructions___)
                 .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi(___RIGHT_street_name________)
-                .checkCounts(4)
+                .checkMaintenanceSkips(4)
                 .done();
     }
 
@@ -1802,7 +1802,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi(___RIGHT_sku_instructions___)
                 .entry("1234, lemon drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi(___RIGHT_street_name________)
-                .checkCounts(0)
+                .checkMaintenanceSkips(0)
                 .done();
     }
 
@@ -1823,7 +1823,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi(___RIGHT_sku_instructions___)
                 .entry("1234, lemon drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi(___RIGHT_street_name________)
-                .checkCounts(0)
+                .checkMaintenanceSkips(0)
                 .done();
     }
 
@@ -1843,7 +1843,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi(___RIGHT_sku_instructions___)
                 .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi(___RIGHT_street_name________)
-                .checkCounts(4)
+                .checkMaintenanceSkips(4)
                 .done();
     }
 
@@ -1865,7 +1865,7 @@ public final class NewGiUpdateIT extends ITBase {
                 .gi(___RIGHT_sku_instructions___)
                 .entry("1234, don't drop, 1, 11, 111, 1111").backedBy(i, h)
                 .gi(___RIGHT_street_name________)
-                .checkCounts(4)
+                .checkMaintenanceSkips(4)
                 .done();
     }
 
@@ -1989,7 +1989,7 @@ public final class NewGiUpdateIT extends ITBase {
 
     private interface GisCheckBuilder {
         GiEntryChecker gi(String giName);
-        public GisCheckBuilder checkCounts(int skipMaintenance);
+        public GisCheckBuilder checkMaintenanceSkips(int skipMaintenance);
         public GisChecker done();
     }
 
@@ -2055,7 +2055,7 @@ public final class NewGiUpdateIT extends ITBase {
         }
 
         @Override
-        public GisCheckBuilder checkCounts(int expectedSkipMaintenance) {
+        public GisCheckBuilder checkMaintenanceSkips(int expectedSkipMaintenance) {
             Map<String, Long> reports = reportsByName();
             long actualSkipMaintenance = reports.get("skip_maintenance in");
             assertEquals(expectedSkipMaintenance, actualSkipMaintenance);

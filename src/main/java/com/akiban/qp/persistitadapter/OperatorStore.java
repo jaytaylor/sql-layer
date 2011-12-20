@@ -76,7 +76,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         if ((columnSelector != null) && !rowDef.table().getGroupIndexes().isEmpty()) {
             throw new RuntimeException("group index maintence won't work with partial rows");
         }
-        BitSet columnDifferences = diff(rowDef, oldRowData, newRowData);
+        BitSet changedColumnPositions = changedColumnPositions(rowDef, oldRowData, newRowData);
 
         PersistitAdapter adapter =
             new PersistitAdapter(SchemaCache.globalSchema(ais), persistitStore, treeService, session, config);
@@ -115,7 +115,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                                      ais,
                                      adapter,
                                      oldRowData,
-                                     columnDifferences,
+                                     changedColumnPositions,
                                      OperatorStoreGIHandler.forTable(adapter, userTable),
                                      OperatorStoreGIHandler.Action.DELETE);
 
@@ -125,7 +125,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                                      ais,
                                      adapter,
                                      newRowData,
-                                     columnDifferences,
+                                     changedColumnPositions,
                                      OperatorStoreGIHandler.forTable(adapter, userTable),
                                      OperatorStoreGIHandler.Action.STORE);
 
@@ -291,8 +291,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             RowData rowData,
             BitSet columnDifferences,
             OperatorStoreGIHandler handler,
-            OperatorStoreGIHandler.Action action
-    )
+            OperatorStoreGIHandler.Action action)
     throws PersistitException
     {
         UserTable userTable = ais.getUserTable(rowData.getRowDefId());
@@ -319,8 +318,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                     OperatorStoreMaintenance plan = groupIndexCreationPlan(
                             ais,
                             groupIndex,
-                            adapter.schema().userTableRowType(userTable)
-                                                                          );
+                            adapter.schema().userTableRowType(userTable));
                     plan.run(action, persistitHKey, rowData, adapter, handler);
                 } else {
                     SKIP_MAINTENANCE.hit();
@@ -373,7 +371,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
     }
 
-    private static BitSet diff(RowDef rowDef, RowData a, RowData b)
+    private static BitSet changedColumnPositions(RowDef rowDef, RowData a, RowData b)
     {
         int fields = rowDef.getFieldCount();
         BitSet differences = new BitSet(fields);

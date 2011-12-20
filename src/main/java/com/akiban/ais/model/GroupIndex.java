@@ -101,6 +101,9 @@ public class GroupIndex extends Index
         participatingTable.markInvolvedInIndex(indexColumn.getColumn());
     }
 
+    // A row of the given table is being changed in the columns described by modifiedColumnPositions.
+    // Return true iff there are any columns in common with those columns of the table contributing to the
+    // index. A result of false means that the row change need not result in group index maintenance.
     public boolean columnsOverlap(UserTable table, BitSet modifiedColumnPositions)
     {
         ParticipatingTable participatingTable = tablesByDepth.get(table.getDepth());
@@ -271,7 +274,12 @@ public class GroupIndex extends Index
             this.inIndex = new BitSet(table.getColumnsIncludingInternal().size());
         }
 
+        // The table participating in the group index
         final UserTable table;
+        // The columns of the table that contribute to the group index key or value. This includes PK columns,
+        // FK columns, and any columns declared in the key. The PK and FK columns may not always be necessary, as
+        // the logic here does not account for whether the index includes the leafward or rootward side of an FK.
+        // As a result, we may decide to do index maintenance when it could otherwise be safely avoided.
         final BitSet inIndex;
     }
 }

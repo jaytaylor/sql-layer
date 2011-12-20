@@ -1180,7 +1180,8 @@ public class PersistitStore implements Store {
                 releaseExchange(session, newExchange);
                 releaseExchange(session, oldExchange);
             } finally {
-                TABLE_INDEX_MAINTENANCE_TAP.out();            }
+                TABLE_INDEX_MAINTENANCE_TAP.out();
+            }
         }
     }
 
