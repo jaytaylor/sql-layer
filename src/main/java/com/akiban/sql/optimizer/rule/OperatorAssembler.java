@@ -860,7 +860,9 @@ public class OperatorAssembler extends BaseRule
             int kidx = 0;
             if (equalityComparands != null) {
                 for (ExpressionNode comp : equalityComparands) {
-                    keys[kidx++] = assembleExpression(comp, fieldOffsets);
+                    if (comp != null)
+                        keys[kidx] = assembleExpression(comp, fieldOffsets);
+                    kidx++;
                 }
             }
 
