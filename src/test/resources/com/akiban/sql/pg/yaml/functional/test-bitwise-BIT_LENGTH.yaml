@@ -32,4 +32,16 @@
 #---
 - Statement: SELECT BIT_LENGTH(00000005) from all_types;
 - output: [[8]]
+---
+- Statement: SELECT BIT_LENGTH(NULL) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT BIT_LENGTH(?) from all_types;
+- params: [[7]]
+- output: [[8]]
+---
+- Statement: SELECT 1  from all_types WHERE BIT_LENGTH(?) = ?;
+- params: [[7, 8]]
+- output: [[1]]
+
 ...
