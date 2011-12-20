@@ -43,6 +43,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
 import com.akiban.server.test.it.ITBase;
+import com.persistit.Transaction;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -67,19 +68,49 @@ public final class SchemaManagerIT extends ITBase {
     private SchemaManager schemaManager;
 
     private void createTableDef(String schema, String ddl) throws Exception {
-        schemaManager.createTableDefinition(session(), schema, ddl);
+        Transaction txn = treeService().getTransaction(session());
+        txn.begin();
+        try {
+            schemaManager.createTableDefinition(session(), schema, ddl);
+            txn.commit();
+        }
+        finally {
+            txn.end();
+        }
     }
 
     private void deleteTableDef(String schema, String table) throws Exception {
-        schemaManager.deleteTableDefinition(session(), schema, table);
+        Transaction txn = treeService().getTransaction(session());
+        txn.begin();
+        try {
+            schemaManager.deleteTableDefinition(session(), schema, table);
+        }
+        finally {
+            txn.end();
+        }
     }
 
     private TableDefinition getTableDef(String schema, String table) throws Exception {
-        return schemaManager.getTableDefinition(session(), new TableName(schema, table));
+        Transaction txn = treeService().getTransaction(session());
+        txn.begin();
+        try {
+            return schemaManager.getTableDefinition(session(), new TableName(schema, table));
+        }
+        finally {
+            txn.end();
+        }
     }
 
     private List<String> getSchemaStringsWithouAIS(boolean withGroupTables) throws Exception {
-        List<String> statements = schemaManager.schemaStrings(session(), withGroupTables);
+        final List<String> statements;
+        Transaction txn = treeService().getTransaction(session());
+        txn.begin();
+        try {
+            statements = schemaManager.schemaStrings(session(), withGroupTables);
+        }
+        finally {
+            txn.end();
+        }
         Iterator<String> it = statements.iterator();
         while(it.hasNext()) {
             String ddl = it.next();
