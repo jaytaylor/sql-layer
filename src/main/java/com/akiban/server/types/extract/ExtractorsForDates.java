@@ -392,9 +392,7 @@ abstract class ExtractorsForDates extends LongExtractor {
 
         @Override
         public long[] getYearMonthDayHourMinuteSecond(long value) {
-            // TODO: convert milisecons to INTERVAL_MILLIS of day, month year
-            // how many days are there in a month/year???
-            throw new UnsupportedOperationException("Not supported yet.");
+            throw new UnsupportedOperationException("Unsupported: Cannot extract Year/Month/.... from INTERVAL_MILLIS");
         }
     };
 
@@ -451,9 +449,7 @@ abstract class ExtractorsForDates extends LongExtractor {
 
         @Override
         public long[] getYearMonthDayHourMinuteSecond(long value) {
-            // TODO: convert milisecons to INTERVAL_MILLIS of day, month year
-            // how many days are there in a month/year???
-            throw new UnsupportedOperationException("Not supported yet.");
+            throw new UnsupportedOperationException("Unsupported: Cannot extract Year/Month/... from INTERVAL_MONTH");
         }
     };
 
