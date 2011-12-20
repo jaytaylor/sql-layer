@@ -91,6 +91,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     }
 
     @Override
+    public TransactionMode getTransactionMode() {
+        return TransactionMode.READ;
+    }
+
+    @Override
     public int execute(PostgresServerSession server, int maxrows)
         throws IOException {
         PostgresMessenger messenger = server.getMessenger();

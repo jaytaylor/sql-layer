@@ -32,6 +32,8 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoSuchFunctionException;
 
+import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -97,7 +99,7 @@ public class FunctionsTypeComputer extends AISTypeComputer
             composer = functionsRegistry.composer(functionName);
         }
         catch (NoSuchFunctionException ex) {
-            return null;
+            return null;        // Defer error until later.
         }
         int nargs = args.nargs();
         List<ExpressionType> argTypes = new ArrayList<ExpressionType>(nargs);
@@ -126,41 +128,37 @@ public class FunctionsTypeComputer extends AISTypeComputer
 
     protected DataTypeDescriptor noArgFunction(String functionName) 
             throws StandardException {
-        DataTypeDescriptor result = 
-            expressionComposer(functionName,
-                               new ArgumentsAccess() {
-                                   @Override
-                                   public int nargs() {
-                                       return 0;
-                                   }
+        FunctionsRegistry.FunctionKind functionKind = 
+            functionsRegistry.getFunctionKind(functionName);
+        if (functionKind == FunctionsRegistry.FunctionKind.SCALAR)
+            return expressionComposer(functionName,
+                                      new ArgumentsAccess() {
+                                          @Override
+                                          public int nargs() {
+                                              return 0;
+                                          }
 
-                                   @Override
-                                   public ExpressionType argType(int index) {
-                                       assert false;
-                                       return null;
-                                   }
+                                          @Override
+                                          public ExpressionType argType(int index) {
+                                              assert false;
+                                              return null;
+                                          }
 
-                                   @Override
-                                   public ExpressionType addCast(int index, 
-                                                                 ExpressionType argType, 
-                                                                 AkType requiredType) {
-                                       assert false;
-                                       return null;
-                                   }
-                               });
-        if (result == null) {
-            // Not a regular function, maybe an environment access function.
-            EnvironmentExpressionFactory environment;
-            try {
-               environment = functionsRegistry.environment(functionName);
-            }
-            catch (NoSuchFunctionException ex) {
-                environment = null;
-            }
-            if (environment != null)
-                result = fromExpressionType(environment.getType());
+                                          @Override
+                                          public ExpressionType addCast(int index, 
+                                                                        ExpressionType argType, 
+                                                                        AkType requiredType) {
+                                              assert false;
+                                              return null;
+                                          }
+                                      });
+        // Not a regular function, maybe an environment access function.
+        if (functionKind == FunctionsRegistry.FunctionKind.ENVIRONMENT) {
+            EnvironmentExpressionFactory environment = 
+                functionsRegistry.environment(functionName);
+            return fromExpressionType(environment.getType());
         }
-        return result;
+        return null;
     }
 
     protected DataTypeDescriptor unaryOperatorFunction(UnaryOperatorNode node) 
@@ -340,10 +338,36 @@ public class FunctionsTypeComputer extends AISTypeComputer
             (methodCall.getMethodParameters().length == 0)) {
             return noArgFunction(methodCall.getMethodName());
         }
+        else if (methodCall.getMethodParameters().length == 1) {
+            return oneArgMethodCall(methodCall);
+        }
         else {
             return expressionComposer(methodCall.getMethodName(),
                                       new JavaValuesAccess(methodCall.getMethodParameters()));
         }
+    }
+
+    protected DataTypeDescriptor oneArgMethodCall(MethodCallNode methodCall)
+            throws StandardException {
+        FunctionsRegistry.FunctionKind functionKind = 
+            functionsRegistry.getFunctionKind(methodCall.getMethodName());
+        if (functionKind == FunctionsRegistry.FunctionKind.SCALAR)
+            return expressionComposer(methodCall.getMethodName(),
+                                      new JavaValuesAccess(methodCall.getMethodParameters()));
+        if (functionKind == FunctionsRegistry.FunctionKind.AGGREGATE) {
+            // Mark the method call as really an aggregate function.
+            // Could do the substitution now, but that would require throwing
+            // a subclass of StandardException up to visit() or something other
+            // complicated control flow.
+            methodCall.setJavaClassName(AggregateFunctionExpression.class.getName());
+            JavaValueNode arg = methodCall.getMethodParameters()[0];
+            if (arg instanceof SQLToJavaValueNode) {
+                SQLToJavaValueNode jarg = (SQLToJavaValueNode)arg;
+                ValueNode sqlArg = jarg.getSQLValueNode();
+                return sqlArg.getType();
+            }
+        }
+        return null;
     }
 
     final class JavaValuesAccess implements ArgumentsAccess {

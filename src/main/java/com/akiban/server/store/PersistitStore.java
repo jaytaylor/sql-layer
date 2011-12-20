@@ -40,7 +40,6 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.util.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -285,9 +284,7 @@ public class PersistitStore implements Store {
                     if (insertingRow && column.isAkibanPKColumn()) {
                         // Must be a PK-less table. Use unique id from
                         // TableStatus.
-                        TableStatus tableStatus = segmentRowDef
-                                .getTableStatus();
-                        uniqueId = tableStatus.allocateNewUniqueId();
+                        uniqueId = tableStatusCache.createNewUniqueID(segmentRowDef.getRowDefId());
                         hKeyAppender.append(uniqueId);
                         // Write rowId into the value part of the row also.
                         rowData.updateNonNullLong(fieldDef, uniqueId);
@@ -317,8 +314,8 @@ public class PersistitStore implements Store {
                     // TODO: Maintain a counter elsewhere, maybe in the
                     // FieldDef. At the end of the bulk load,
                     // TODO: assign the counter to TableStatus.
-                    TableStatus tableStatus = fieldDef.getRowDef().getTableStatus();
-                    hkey.append(tableStatus.allocateNewUniqueId());
+                    long id = tableStatusCache.createNewUniqueID(fieldDef.getRowDef().getRowDefId());
+                    hkey.append(id);
                 } else {
                     appender.append(hKeyValues[k], fieldDef);
                 }
@@ -433,7 +430,6 @@ public class PersistitStore implements Store {
         Exchange hEx;
         hEx = getExchange(session, rowDef);
         try {
-            long uniqueId = -1;
             int retries = MAX_TRANSACTION_RETRY_COUNT;
             for (;;) {
                 transaction.begin();
@@ -443,8 +439,7 @@ public class PersistitStore implements Store {
                     // Does the heavy lifting of looking up the full hkey in
                     // parent's primary index if necessary.
                     //
-                    uniqueId = constructHKey(session, hEx, rowDef, rowData,
-                            true);
+                    constructHKey(session, hEx, rowDef, rowData, true);
                     if (hEx.isValueDefined()) {
                         rollback(transaction);
                         throw new DuplicateKeyException("PRIMARY", hEx.getKey());
@@ -460,15 +455,10 @@ public class PersistitStore implements Store {
                             final long autoIncrementValue = rowData
                                     .getIntegerValue((int) location,
                                             (int) (location >>> 32));
-                            tableStatusCache.updateAutoIncrementValue(rowDefId,
-                                    autoIncrementValue);
+                            tableStatusCache.setAutoIncrement(rowDefId, autoIncrementValue);
                         }
                     }
-                    tableStatusCache.incrementRowCount(rowDefId);
-                    if (uniqueId > 0) {
-                        tableStatusCache
-                                .updateUniqueIdValue(rowDefId, uniqueId);
-                    }
+                    tableStatusCache.rowWritten(rowDefId);
 
                     for (Index index : rowDef.getIndexes()) {
                         //
@@ -622,7 +612,7 @@ public class PersistitStore implements Store {
 
                     // Remove the h-row
                     hEx.remove();
-                    tableStatusCache.decrementRowCount(rowDefId);
+                    tableStatusCache.rowDeleted(rowDefId);
 
                     // Remove the indexes, including the PK index
                     for (Index index : rowDef.getIndexes()) {
@@ -675,7 +665,6 @@ public class PersistitStore implements Store {
             for (;;) {
                 transaction.begin();
                 try {
-                    final TableStatus ts = rowDef.getTableStatus();
                     constructHKey(session, hEx, rowDef, oldRowData, false);
                     hEx.fetch();
                     //
@@ -774,7 +763,7 @@ public class PersistitStore implements Store {
             expandRowData(exchange, descendentRowData);
             // Delete the current row from the tree
             exchange.remove();
-            tableStatusCache.decrementRowCount(descendentRowDefId);
+            tableStatusCache.rowDeleted(descendentRowDefId);
             for (Index index : descendentRowDef.getIndexes()) {
                 if (!index.isHKeyEquivalent()) {
                     deleteIndex(session, index, descendentRowData, exchange.getKey());
@@ -1044,7 +1033,7 @@ public class PersistitStore implements Store {
             ts.setRowCount(2);
             ts.setAutoIncrementValue(-1);
         } else {
-            ts.setAutoIncrementValue(status.getAutoIncrementValue());
+            ts.setAutoIncrementValue(status.getAutoIncrement());
             ts.setRowCount(status.getRowCount());
         }
         ts.setUpdateTime(Math.max(status.getLastUpdateTime(),
