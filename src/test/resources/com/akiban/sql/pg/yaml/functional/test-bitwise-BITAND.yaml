@@ -1,4 +1,4 @@
-# Test the bitwise AND function
+# Test the bitwise BITAND() function
 ---
 - Include: all-types-schema.yaml
 ---

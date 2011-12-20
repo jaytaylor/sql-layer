@@ -1,4 +1,4 @@
-# Test the bitwise AND function
+# Test the bitwise BIT_LENGTH() function
 ---
 - Include: all-types-schema.yaml
 ---

@@ -41,4 +41,10 @@
 ---
 - Statement: SELECT BITXOR(8,5) from all_types;
 - output: [[13]]
+# ---
+# - Statement: SELECT BITXOR(-4,5) from all_types;
+# - output: [[1]] 
+# ---
+# - Statement: SELECT BITXOR(8,-5) from all_types;
+# - output: [[13]]
 ...

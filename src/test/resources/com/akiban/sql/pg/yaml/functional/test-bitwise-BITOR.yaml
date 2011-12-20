@@ -35,5 +35,12 @@
 ---
 - Statement: SELECT BITOR(8, 5) from all_types;
 - output: [[13]]  
+# --- bug 906880 
+# - Statement: SELECT BITOR(4, -5) from all_types;
+# - output: [[5]]  
+# ---
+# - Statement: SELECT BITOR(-8, 5) from all_types;
+# - output: [[13]]  
+
 ...
 
