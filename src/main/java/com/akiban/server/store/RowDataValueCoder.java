@@ -17,6 +17,7 @@ package com.akiban.server.store;
 
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.error.RowDataCorruptionException;
+import com.akiban.server.rowdata.CorruptRowDataException;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.persistit.Value;
@@ -64,7 +65,7 @@ public class RowDataValueCoder implements ValueDisplayer, ValueRenderer {
         byte[] rowDataBytes = rowData.getBytes();
 
         if (rowDataSize < RowData.MINIMUM_RECORD_LENGTH || rowDataSize > RowData.MAXIMUM_RECORD_LENGTH) {
-            throw new RowDataCorruptionException("RowData is too short or too long: " + rowDataSize);
+            throw new CorruptRowDataException("RowData is too short or too long: " + rowDataSize);
         }
 
         if (rowDataSize > rowDataBytes.length) {

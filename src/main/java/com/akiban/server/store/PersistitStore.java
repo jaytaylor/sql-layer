@@ -34,6 +34,7 @@ import com.akiban.ais.model.Table;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.server.*;
 import com.akiban.server.api.dml.scan.ScanLimit;
+import com.akiban.server.rowdata.CorruptRowDataException;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
@@ -1105,7 +1106,13 @@ public class PersistitStore implements Store {
 
     public void expandRowData(final Exchange exchange, final RowData rowData) {
         final Value value = exchange.getValue();
-        value.get(rowData);
+        try {
+            value.get(rowData);
+        }
+        catch(CorruptRowDataException e) {
+            LOG.error("Corrupt RowData at key {}: {}", exchange.getKey(), e.getMessage());
+            throw new RowDataCorruptionException(exchange.getKey());
+        }
         rowData.prepareRow(0);
         int rowDefId = treeService.storeToAis(exchange.getVolume(), rowData.getRowDefId());
         /*
