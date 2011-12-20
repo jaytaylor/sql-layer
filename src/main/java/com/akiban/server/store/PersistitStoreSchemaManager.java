@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.akiban.ais.io.AISTarget;
 import com.akiban.ais.io.MessageSource;
@@ -157,7 +158,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private final Store store;
     private final TreeService treeService;
     private final ConfigurationService config;
-    private AtomicInteger updateTimestamp;
+    private AtomicLong schemaGeneration;
     private int maxAISBufferSize;
     private ByteBuffer aisByteBuffer;
 
@@ -684,15 +685,16 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
         return ddlList;
     }
-
+    
     @Override
     public int getSchemaGeneration() {
-        return updateTimestamp.get();
+        long ts = schemaGeneration.get();
+        return (int) ts ^ (int) (ts >>> 32);
     }
-
+    
     @Override
-    public synchronized void forceNewTimestamp() {
-        updateTimestamp.getAndIncrement();
+    public void forceNewGeneration() {
+        schemaGeneration.set(treeService.getDb().getCurrentTimestamp());
     }
 
     @Override
@@ -707,7 +709,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     @Override
     public void start() {
-        updateTimestamp = new AtomicInteger();
+        schemaGeneration = new AtomicLong();
         maxAISBufferSize = Integer.parseInt(config.getProperty(MAX_AIS_SIZE_PROPERTY));
         if(maxAISBufferSize < 0) {
             LOG.warn("Clamping property "+MAX_AIS_SIZE_PROPERTY+" to 0");
@@ -727,7 +729,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public void stop() {
         this.aish.setAis(null);
-        this.updateTimestamp = null;
+        this.schemaGeneration = null;
         this.maxAISBufferSize = 0;
         this.aisByteBuffer = null;
     }
@@ -779,7 +781,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                                                  }
                                              }, SCHEMA_TREE_NAME);
 
-                    forceNewTimestamp();
                     onTransactionCommit(newAIS);
                     transaction.commit();
 
@@ -806,7 +807,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         rowDefCache.clear();
         treeService.getTableStatusCache().detachAIS();
         rowDefCache.setAIS(newAis);
-        updateTimestamp.getAndIncrement();
+        forceNewGeneration();
         aish.setAis(newAis);
     }
 

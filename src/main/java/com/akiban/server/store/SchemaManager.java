@@ -131,7 +131,7 @@ public interface SchemaManager {
      * Force a new generation as returned by {@link #getSchemaGeneration()}. Primarily
      * intended for testing and diagnostics.
      */
-    void forceNewTimestamp();
+    void forceNewGeneration();
 
     /**
      * This value changes for any create, delete, or alter method executed.
