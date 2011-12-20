@@ -187,23 +187,47 @@ public abstract class KeyUpdateBase extends ITBase {
 
     protected final void dbInsert(TestRow row) throws Exception
     {
-        testStore.writeRow(session(), row);
-        Integer oldCount = rowDefsToCounts.get(row.getTableId());
-        oldCount = (oldCount == null) ? 1 : oldCount+1;
-        rowDefsToCounts.put(row.getTableId(), oldCount);
+        Transaction txn = treeService().getTransaction(session());
+        txn.begin();
+        try {
+            testStore.writeRow(session(), row);
+            Integer oldCount = rowDefsToCounts.get(row.getTableId());
+            oldCount = (oldCount == null) ? 1 : oldCount+1;
+            rowDefsToCounts.put(row.getTableId(), oldCount);
+            txn.commit();
+        }
+        finally {
+            txn.end();
+        }
     }
 
     protected final void dbUpdate(TestRow oldRow, TestRow newRow) throws Exception
     {
-        testStore.updateRow(session(), oldRow, newRow, null);
+        Transaction txn = treeService().getTransaction(session());
+        txn.begin();
+        try {
+            testStore.updateRow(session(), oldRow, newRow, null);
+            txn.commit();
+        }
+        finally {
+            txn.end();
+        }
     }
 
     protected final void dbDelete(TestRow row) throws Exception
     {
-        testStore.deleteRow(session(), row);
-        Integer oldCount = rowDefsToCounts.get(row.getTableId());
-        assertNotNull(oldCount);
-        rowDefsToCounts.put(row.getTableId(), oldCount - 1);
+        Transaction txn = treeService().getTransaction(session());
+        txn.begin();
+        try {
+            testStore.deleteRow(session(), row);
+            Integer oldCount = rowDefsToCounts.get(row.getTableId());
+            assertNotNull(oldCount);
+            rowDefsToCounts.put(row.getTableId(), oldCount - 1);
+            txn.commit();
+        }
+        finally {
+            txn.end();
+        }
     }
 
     private int countAllRows() {
