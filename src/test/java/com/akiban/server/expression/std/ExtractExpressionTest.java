@@ -14,6 +14,7 @@
  */
 package com.akiban.server.expression.std;
 
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
@@ -29,6 +30,17 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     private static final CompositionTestInfo testInfo = new CompositionTestInfo(1, AkType.DATE, false);
 
     // --------------------------- GET DATE-------------------------------------    
+    @Test
+    public void getDateFromShortLong ()
+    {
+        Expression arg = new LiteralExpression(AkType.LONG, 9999999L);
+        Expression top = ExtractExpression.DATE_COMPOSER.compose(Arrays.asList(arg));
+        
+        ValueSource source = top.evaluation().eval();
+        
+        assertEquals("input 999, source should be null", "2009-01-01",
+                Extractors.getLongExtractor(AkType.DATE).asString(source.getDate()));
+    }
 
     @Test
     public void getDateFromDate()
