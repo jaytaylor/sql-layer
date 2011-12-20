@@ -15,6 +15,8 @@
 
 package com.akiban.server.store.histograms;
 
+import com.akiban.util.Flywheel;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +69,7 @@ final class Buckets<T extends Comparable<? super T>> {
                 removeNode.next.prev = removeNode.prev;
             --size;
             checkIntegrity();
+            bucketNodeReserves.release(removeNode);
         }
         else {
             addPenultToBucketNodeSets();
@@ -87,9 +90,6 @@ final class Buckets<T extends Comparable<? super T>> {
             if (node.prev != last)
                 System.out.printf("expected node.prev=%s but was %s%n", last, node.prev);
             last = node;
-        }
-        if (buckets().size() != size) {
-            System.out.println("buckets too big!");
         }
     }
 
@@ -184,9 +184,22 @@ final class Buckets<T extends Comparable<? super T>> {
     }
 
     private BucketNode<T> nodeFor(Bucket<T> bucket) {
-        if (bucket == null)
-            throw new IllegalArgumentException("bucket may not be null");
-        return new BucketNode<T>(bucket);
+        if (bucketNodeReserves == null) {
+            bucketNodeReserves = new Flywheel<BucketNode<T>>() {
+                @Override
+                protected BucketNode<T> createNew() {
+                    return new BucketNode<T>();
+                }
+
+                @Override
+                protected int defaultCapacity() {
+                    return maxSize;
+                }
+            };
+        }
+        BucketNode<T> result = bucketNodeReserves.get();
+        result.init(bucket);
+        return result;
     }
     
     private int rand(int n) {
@@ -201,23 +214,22 @@ final class Buckets<T extends Comparable<? super T>> {
     private final NavigableMap<Long,BucketNodeSet<T>> bucketNodeSets;
     private Random random;
     private BucketNode<T> last;
+    private Flywheel<BucketNode<T>> bucketNodeReserves;
 
     private static class BucketNode<A> {
-
-        public BucketNode() {
-            this(null);
-        }
-
-        public BucketNode(Bucket<A> bucket) {
-            this.bucket = bucket;
-        }
 
         @Override
         public String toString() {
             return (prev==null) ? "SENTINAL" : String.valueOf(bucket);
         }
 
-        final Bucket<A> bucket;
+        public void init(Bucket<A> bucket) {
+            this.bucket = bucket;
+            this.next = null;
+            this.prev = null;
+        }
+
+        Bucket<A> bucket;
         BucketNode<A> next;
         BucketNode<A> prev;
     }
