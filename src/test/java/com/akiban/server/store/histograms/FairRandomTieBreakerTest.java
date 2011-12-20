@@ -17,6 +17,7 @@ package com.akiban.server.store.histograms;
 
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -28,15 +29,18 @@ import static org.junit.Assert.fail;
 public final class FairRandomTieBreakerTest {
     @Test
     public void testDistribution() {
-        int iterations = 50000;
-//        iterations = 1;
+        int iterations = 5000;
         int max = 100;
         Map<Integer,Long> distributions = new TreeMap<Integer, Long>();
         for (int i = 0; i < max; ++i) {
             distributions.put(i, 0L);
         }
         for (int iteration = 0; iteration < iterations; ++iteration) {
-            List<Bucket<Integer>> buckets = Buckets.compile(new Range(max), 31);
+            List<Integer> range = new ArrayList<Integer>();
+            for (int i =0; i < max; ++i) {
+                range.add(i);
+            }
+            List<Bucket<Integer>> buckets = Buckets.compile(range, 31);
             assertEquals("buckets size", 31, buckets.size());
             for (Bucket<Integer> bucket : buckets) {
                 put(distributions, bucket.value());
@@ -47,49 +51,42 @@ public final class FairRandomTieBreakerTest {
         }
         fail(distributions.toString());
     }
+    
+    @Test
+    public void unfairDistrib() {
+        int iterations = 50000;
+        int max = 100;
+        Map<Integer,Long> distributions = new TreeMap<Integer, Long>();
+        for (int i = 0; i < max; ++i) {
+            distributions.put(i, 0L);
+        }
+        for (int iteration = 0; iteration < iterations; ++iteration) {
+            List<Integer> range = new ArrayList<Integer>();
+            for (int i =0; i < max; ++i) {
+                range.add(i);
+                if (i % 4 == 0) {
+                    range.add(i);
+                    range.add(i);                    
+                }
+                else if (i % 27 == 0) {
+                    range.add(i);
+                }
+            }
+            List<Bucket<Integer>> buckets = Buckets.compile(range, 31);
+            assertEquals("buckets size", 31, buckets.size());
+            for (Bucket<Integer> bucket : buckets) {
+                put(distributions, bucket.value());
+            }
+        }
+        for (Map.Entry<Integer,Long> entry : distributions.entrySet()) {
+            System.out.println(entry.getKey() + "\t" + entry.getValue());
+        }
+        fail(distributions.toString());
+    }
 
     private void put(Map<Integer,Long> map, Integer key) {
         Long previous = map.get(key);
         previous = previous == null ? 1 : previous + 1;
         map.put(key, previous);
-    }
-
-    private static class Range implements Iterable<Integer> {
-
-        @Override
-        public Iterator<Integer> iterator() {
-            return new InternalIterator(max);
-        }
-
-        private Range(int max) {
-            this.max = max;
-        }
-
-        private final int max;
-
-        private static class InternalIterator implements Iterator<Integer> {
-
-            @Override
-            public boolean hasNext() {
-                return value < max;
-            }
-
-            @Override
-            public Integer next() {
-                return value++;
-            }
-
-            @Override
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-
-            private InternalIterator(int max) {
-                this.max = max;
-            }
-
-            private final int max;
-            private int value;
-        }
     }
 }
