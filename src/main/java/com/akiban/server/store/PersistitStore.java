@@ -133,10 +133,10 @@ public class PersistitStore implements Store {
         indexManager = new PersistitStoreIndexManager(this, treeService);
         rowDefCache = new RowDefCache(tableStatusCache);
         try {
+            getDb().getCoderManager().registerValueCoder(RowData.class, new RowDataValueCoder(this));
             originalDisplayFilter = getDb().getManagement().getDisplayFilter();
             getDb().getManagement().setDisplayFilter(
-                    new RowDataDisplayFilter(this, treeService,
-                            originalDisplayFilter));
+                    new RowDataDisplayFilter(originalDisplayFilter));
         } catch (RemoteException e) {
             throw new DisplayFilterSetException (e.getMessage());
         }
@@ -671,12 +671,9 @@ public class PersistitStore implements Store {
                 Integer.MAX_VALUE);
         RowData descendentRowData = new RowData(EMPTY_BYTE_ARRAY);
         while (exchange.next(filter)) {
-            Value value = exchange.getValue();
-            int descendentRowDefId = AkServerUtil.getInt(
-                    value.getEncodedBytes(), RowData.O_ROW_DEF_ID
-                            - RowData.LEFT_ENVELOPE_SIZE);
-            RowDef descendentRowDef = rowDefCache.getRowDef(descendentRowDefId);
             expandRowData(exchange, descendentRowData);
+            int descendentRowDefId = descendentRowData.getRowDefId();
+            RowDef descendentRowDef = rowDefCache.getRowDef(descendentRowDefId);
             // Delete the current row from the tree
             exchange.remove();
             tableStatusCache.rowDeleted(descendentRowDefId);
@@ -1094,58 +1091,28 @@ public class PersistitStore implements Store {
 
     public void packRowData(final Exchange hEx, final RowDef rowDef,
             final RowData rowData) {
-        final int start = rowData.getInnerStart();
-        final int size = rowData.getInnerSize();
-        hEx.getValue().ensureFit(size);
-        System.arraycopy(rowData.getBytes(), start, hEx.getValue()
-                .getEncodedBytes(), 0, size);
-        int storedTableId = treeService.aisToStore(rowDef,
-                rowData.getRowDefId());
-        AkServerUtil.putInt(hEx.getValue().getEncodedBytes(),
-                RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE,
+        final Value value = hEx.getValue();
+        value.put(rowData);
+        final int at = value.getEncodedSize() - rowData.getInnerSize();
+        int storedTableId = treeService.aisToStore(rowDef, rowData.getRowDefId());
+        /*
+         * Overwrite rowDefId field within the Value instance with the absolute
+         * rowDefId.
+         */
+        AkServerUtil.putInt(hEx.getValue().getEncodedBytes(), at + RowData.O_ROW_DEF_ID - RowData.LEFT_ENVELOPE_SIZE,
                 storedTableId);
-        hEx.getValue().setEncodedSize(size);
     }
 
     public void expandRowData(final Exchange exchange, final RowData rowData) {
-        // TODO this needs to be a more specific exception
-        final int size = exchange.getValue().getEncodedSize();
-        final int rowDataSize = size + RowData.ENVELOPE_SIZE;
-        final byte[] valueBytes = exchange.getValue().getEncodedBytes();
-        byte[] rowDataBytes = rowData.getBytes();
-
-        if (rowDataSize < RowData.MINIMUM_RECORD_LENGTH
-                || rowDataSize > RowData.MAXIMUM_RECORD_LENGTH) {
-            if (LOG.isErrorEnabled()) {
-                LOG.error("Value at " + exchange.getKey()
-                        + " is not a valid row - skipping");
-            }
-            throw new RowDataCorruptionException (exchange.getKey());
-        }
-
-        int rowDefId = AkServerUtil.getInt(valueBytes, RowData.O_ROW_DEF_ID
-                - RowData.LEFT_ENVELOPE_SIZE);
-        rowDefId = treeService.storeToAis(exchange.getVolume(), rowDefId);
-        if (rowDataSize > rowDataBytes.length) {
-            rowDataBytes = new byte[rowDataSize + INITIAL_BUFFER_SIZE];
-            rowData.reset(rowDataBytes);
-        }
-
-        //
-        // Assemble the Row in a byte array to allow column
-        // elision
-        //
-        AkServerUtil.putInt(rowDataBytes, RowData.O_LENGTH_A, rowDataSize);
-        AkServerUtil.putShort(rowDataBytes, RowData.O_SIGNATURE_A,
-                RowData.SIGNATURE_A);
-        System.arraycopy(valueBytes, 0, rowDataBytes, RowData.O_FIELD_COUNT,
-                size);
-        AkServerUtil.putShort(rowDataBytes, RowData.O_SIGNATURE_B + rowDataSize,
-                RowData.SIGNATURE_B);
-        AkServerUtil.putInt(rowDataBytes, RowData.O_LENGTH_B + rowDataSize,
-                rowDataSize);
-        AkServerUtil.putInt(rowDataBytes, RowData.O_ROW_DEF_ID, rowDefId);
+        final Value value = exchange.getValue();
+        value.get(rowData);
         rowData.prepareRow(0);
+        int rowDefId = treeService.storeToAis(exchange.getVolume(), rowData.getRowDefId());
+        /*
+         * Overwrite the rowDefId field within the RowData instance with the
+         * relative rowDefId.
+         */
+        AkServerUtil.putInt(rowData.getBytes(), RowData.O_ROW_DEF_ID, rowDefId);
     }
 
     @Override
