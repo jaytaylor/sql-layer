@@ -560,6 +560,7 @@ public class IndexGoal implements Comparator<IndexScan>
         private Deque<Boolean> excludeNodeStack = new ArrayDeque<Boolean>();
         private boolean excludeNode = false;
         private int excludeDepth = 0;
+        private int subqueryDepth = 0;
 
         public RequiredColumnsFiller(RequiredColumns requiredColumns) {
             this.requiredColumns = requiredColumns;
@@ -590,11 +591,20 @@ public class IndexGoal implements Comparator<IndexScan>
             // it and all its inputs.
             excludeNodeStack.push(excludeNode);
             excludeNode = exclude(n);
+            if ((n instanceof Subquery) &&
+                !((Subquery)n).getOuterTables().isEmpty())
+                // TODO: Might be accessing tables from outer query as
+                // group joins, which we don't support currently. Make
+                // sure those aren't excluded.
+                subqueryDepth++;
             return visit(n);
         }
         @Override
         public boolean visitLeave(PlanNode n) {
             excludeNode = excludeNodeStack.pop();
+            if ((n instanceof Subquery) &&
+                !((Subquery)n).getOuterTables().isEmpty())
+                subqueryDepth--;
             return true;
         }
         @Override
@@ -640,7 +650,9 @@ public class IndexGoal implements Comparator<IndexScan>
                     // Group join conditions are handled specially.
                     ((expr instanceof ConditionExpression) &&
                      (((ConditionExpression)expr).getImplementation() ==
-                      ConditionExpression.Implementation.GROUP_JOIN)));
+                      ConditionExpression.Implementation.GROUP_JOIN) &&
+                     // Include expressions in subqueries until do joins across them.
+                     (subqueryDepth == 0)));
         }
     }
 
