@@ -17,7 +17,10 @@ package com.akiban.server.store.histograms;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
 import java.util.Random;
+import java.util.TreeMap;
 
 final class Buckets<T extends Comparable<? super T>> {
 
@@ -48,7 +51,7 @@ final class Buckets<T extends Comparable<? super T>> {
             // if the least popular node was the tail, we should fold it into its
             // prev. We can't do that, so instead, we'll fold its prev into it.
             if (removeNode.next == null)
-                removeNode = removeNode.prev;   // to to
+                removeNode = removeNode.prev;    TODO this breaks the map!
             Bucket<T> removeBucket = removeNode.bucket;
 
             Bucket<T> foldIntoBucket = removeNode.next.bucket;
@@ -59,7 +62,11 @@ final class Buckets<T extends Comparable<? super T>> {
             removeNode.prev.next = removeNode.next;
             if (removeNode.next != null)
                 removeNode.next.prev = removeNode.prev;
+            --size;
             checkIntegrity();
+        }
+        else {
+            addLastToBucketNodeSets();
         }
     }
 
@@ -78,6 +85,9 @@ final class Buckets<T extends Comparable<? super T>> {
                 System.out.printf("expected node.prev=%s but was %s%n", last, node.prev);
             last = node;
         }
+        if (buckets().size() != size) {
+            System.out.println("buckets too big!");
+        }
     }
 
     public Buckets(int maxSize) {
@@ -86,34 +96,70 @@ final class Buckets<T extends Comparable<? super T>> {
         this.maxSize = maxSize;
         this.sentinel = new BucketNode<T>();
         this.last = sentinel;
-    }
-
-    protected RemovalTieBreaker<BucketNode<T>> tieBreaker() {
-        if (tieBreaker == null)
-            tieBreaker = new FairRandomTieBreaker<BucketNode<T>>();
-        return tieBreaker;
+        this.bucketNodeSets = new TreeMap<Long, BucketNodeSet<T>>();
     }
 
     private BucketNode<T> nodeToRemove() {
-        long lowestCount = Long.MAX_VALUE;
-        BucketNode<T> result = null;
-        RemovalTieBreaker<BucketNode<T>> tieBreaker = tieBreaker();
-        tieBreaker.reset();
-        for(BucketNode<T> node = sentinel.next; node != null; node = node.next) {
-            long nodeEqs = node.bucket.getEqualsCount();
-            if (nodeEqs == Long.MAX_VALUE)
-                throw new IllegalStateException("node has too many counts: " + node);
-            if (nodeEqs < lowestCount) {
-                lowestCount = nodeEqs;
-                tieBreaker.first();
-                result = node;
+        long lastNodePopularity = last.bucket.getEqualsCount();
+        Map.Entry<Long,BucketNodeSet<T>> leastPopularEntry = bucketNodeSets.firstEntry();
+        long leastPopular = leastPopularEntry.getKey();
+        if (lastNodePopularity < leastPopular) {
+            return last;
+        }
+        if (lastNodePopularity == leastPopular) {
+            BucketNodeSet<T> bucketNodeSet = leastPopularEntry.getValue();
+            // if there have been more elements seen than we see here, then each element has had
+            // a (t-N)/t chance of being picked, where N = current list.size and t = total seen.
+            // Multiply both num and denom by 1/(t-N) and you get a 1 / (t/(t-N)) chance.
+            if (bucketNodeSet.totalSeen > bucketNodeSet.bucketNodes.size()) {
+                float totalFloat = bucketNodeSet.totalSeen;
+                totalFloat /= bucketNodeSet.battles;
+//                float denom =totalFloat- ((float)bucketNodeSet.bucketNodes.size());
+//                int randN = Math.round(totalFloat/denom);
+                
+                int randN = Math.round(bucketNodeSet.totalSeen - bucketNodeSet.bucketNodes.size());
+                if (0 == rand(randN)) {
+                    bucketNodeSet.totalSeen++;
+                    return last;
+                }
+                else {
+                    bucketNodeSet.add(last);
+                }
             }
-            else if (nodeEqs == lowestCount) {
-                result = tieBreaker.choose(result, node);
+            else {
+                bucketNodeSet.add(last);
             }
         }
-        assert result != null;
+        else {
+            // not the least popular! Add this to its entry, creating if needed
+            addLastToBucketNodeSets();
+        }
+        // now, clear a random one out of the least popular entry
+        BucketNodeSet<T> bucketNodeSet = leastPopularEntry.getValue();
+        final BucketNode<T> result;
+        if (bucketNodeSet.bucketNodes.size() == 1) {
+            // last element! get it and remove this node set from the map.
+            // this is safe to do because the final results are guaranteed to have only
+            // nodes which are more popular than this one.
+            result = bucketNodeSet.bucketNodes.get(0);
+            bucketNodeSets.remove(leastPopular);
+        }
+        else {
+            List<BucketNode<T>> list = bucketNodeSet.bucketNodes;
+            result = list.remove(rand(list.size()));
+            bucketNodeSet.battles++;
+        }
         return result;
+    }
+
+    private void addLastToBucketNodeSets() {
+        long lastPopularity = last.bucket.getEqualsCount();
+        BucketNodeSet<T> bucketNodeSet = bucketNodeSets.get(lastPopularity);
+        if (bucketNodeSet == null) {
+            bucketNodeSet = new BucketNodeSet<T>();
+            bucketNodeSets.put(lastPopularity, bucketNodeSet);
+        }
+        bucketNodeSet.add(last);
     }
 
     private BucketNode<T> nodeFor(Bucket<T> bucket) {
@@ -121,12 +167,19 @@ final class Buckets<T extends Comparable<? super T>> {
             throw new IllegalArgumentException("bucket may not be null");
         return new BucketNode<T>(bucket);
     }
+    
+    private int rand(int n) {
+        if (random == null)
+            random = new Random(System.nanoTime());
+        return random.nextInt(n);
+    }
 
     private final int maxSize;
     private int size;
     private final BucketNode<T> sentinel;
+    private final NavigableMap<Long,BucketNodeSet<T>> bucketNodeSets;
+    private Random random;
     private BucketNode<T> last;
-    private RemovalTieBreaker<BucketNode<T>> tieBreaker;
 
     private static class BucketNode<A> {
 
@@ -147,84 +200,16 @@ final class Buckets<T extends Comparable<? super T>> {
         BucketNode<A> next;
         BucketNode<A> prev;
     }
-
-    private interface RemovalTieBreaker<A> {
-        void reset();
-        void first();
-        A choose(A previous, A newGuy);
-    }
-
-    /**
-     * <p>A tiebreaker which uses randomization, but such that all elements will eventually have an equal chance to
-     * win.</p>
-     *
-     * <p>If we used an unbiased randomization to choose tiebreakers (ie, get a random boolean and pick either the
-     * old or new value), we would have a bias toward later entries; the last entry would have a 50% chance of being
-     * picked, the one before it 25%, etc.</p>
-     *
-     * <p>The FairRandomTieBreaker strategy gives each new element a 1/N chance of being picked, where
-     * N is the number of elements involved in the tie, including this new element. For instance, if we
-     * had seen 3 previous elements, and we assume that the last winner had a 1/3 chance of winning, then giving this
-     * new element a 1/4th chance means the last winner has 3/4 chance of winning. That makes its overall chance of
-     * winning all tiebreakers 1/4 * 3/4 = 3/12 = 1/4.</p>
-     *
-     * <p>We can prove this fairness inductively for N >= 2 (it would also work for N >= 1, but the
-     * interfaces are a bit cleaner if we only start breaking ties at the second element).</p>
-     *
-     * <ul>
-     *     <li><b>Base case (N = 2): </b> The previous element had been the only one, so it had a 1/1 chance in being
-     *     picked. This new element has a 1/N chance of being picked, where N = 2, so it has a 1/2 chance of being
-     *     picked. The previous element has a 1 - (1/2) chance of being picked, which is also 1/2.</li>
-     *     <li><b>Inductive step:</b> Let P(E<sub>i, N</sub>) be the probability of any element i being chosen
-     *     if there are N elements involved in the tiebreaker; 1 <= i < N. Show that if
-     *     P(E<sub>i, N</sub>) == 1/N for any 1 <= i < N, then P(E<sub>i, N+1</sub>) == 1/(N+1) for any 1 <= i < N+1.
-     *     <ol>
-     *         <li>The probability of the newest element being chosen is <b>1/N+1</b>, so this trivially satisfies the
-     *         requirement</li>
-     *         <li>The probability of any other element being chosen is thus 1 - 1/(N+1), or (1-N+1)/(N+1), or
-     *         N/(N+1). The probability of that element having been previously chosen was 1/N, so its overall
-     *         probability of winning all contests (including this one) is 1/N * (N/N+1), or N/N(N+1), or
-     *         <b>1/N+1</b>.</li>
-     *     </ol>
-     *     </li>
-     * </ul>
-     *
-     * @param <T> type of element being chosen
-     */
-    static class FairRandomTieBreaker<T> implements RemovalTieBreaker<T> {
-
-        @Override
-        public T choose(T previous, T newGuy) {
-            assert count > 0 : count;
-            ++count;
-            int dice = random().nextInt(count);
-            return (dice == 0)
-                    ? newGuy
-                    : previous;
+    
+    private static class BucketNodeSet<T> {
+        
+        private void add(BucketNode<T> node) {
+            bucketNodes.add(node);
+            ++totalSeen;
         }
-
-        @Override
-        public void reset() {
-            count = -1;
-        }
-
-        @Override
-        public void first() {
-            count = 1;
-        }
-
-        @Override
-        public String toString() {
-            return "tiebreaker n=" + count;
-        }
-
-        private Random random() {
-            if (random == null)
-                random = new Random(System.nanoTime());
-            return random;
-        }
-
-        private int count;
-        private Random random;
+        
+        private final List<BucketNode<T>> bucketNodes = new ArrayList<BucketNode<T>>();
+        private int totalSeen = 0;
+        private int battles = 0;
     }
 }
