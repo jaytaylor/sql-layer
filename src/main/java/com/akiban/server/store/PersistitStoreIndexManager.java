@@ -102,6 +102,9 @@ public class PersistitStoreIndexManager implements IndexManager {
      */
     @Override
     public void analyzeTable(final Session session, final RowDef rowDef, final int sampleSize) {
+        if (rowDef.isGroupTable()) {
+            throw new IllegalArgumentException("Cannot analyze group table: " + rowDef);
+        }
         for (Index index : rowDef.getIndexes()) {
             try {
                 analyzeIndex(session, index, sampleSize);
