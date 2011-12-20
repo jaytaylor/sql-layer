@@ -145,7 +145,9 @@ final class Buckets<T extends Comparable<? super T>> {
             // this is safe to do because the final results are guaranteed to have only
             // nodes which are more popular than this one.
             result = bucketNodeSet.bucketNodes.get(0);
-            bucketNodeSets.remove(leastPopular);
+            BucketNodeSet<T> removed = bucketNodeSets.remove(leastPopular);
+            assert removed != null;
+            bucketNodeSetReserves.release(removed);
         }
         else {
             List<BucketNode<T>> list = bucketNodeSet.bucketNodes;
@@ -164,7 +166,16 @@ final class Buckets<T extends Comparable<? super T>> {
         long nodePopularity = node.bucket.getEqualsCount();
         BucketNodeSet<T> bucketNodeSet = bucketNodeSets.get(nodePopularity);
         if (bucketNodeSet == null) {
-            bucketNodeSet = new BucketNodeSet<T>();
+            if (bucketNodeSetReserves == null) {
+                bucketNodeSetReserves = new Flywheel<BucketNodeSet<T>>() {
+                    @Override
+                    protected BucketNodeSet<T> createNew() {
+                        return new BucketNodeSet<T>();
+                    }
+                };
+            }
+            bucketNodeSet = bucketNodeSetReserves.get();
+            bucketNodeSet.init();
             bucketNodeSets.put(nodePopularity, bucketNodeSet);
         }
         bucketNodeSet.add(node);
@@ -215,6 +226,8 @@ final class Buckets<T extends Comparable<? super T>> {
     private Random random;
     private BucketNode<T> last;
     private Flywheel<BucketNode<T>> bucketNodeReserves;
+    private Flywheel<BucketNodeSet<T>> bucketNodeSetReserves;
+
 
     private static class BucketNode<A> {
 
@@ -241,9 +254,15 @@ final class Buckets<T extends Comparable<? super T>> {
             return String.format("%d buckets (%d total), %d battles", bucketNodes.size(), totalSeen, battles);
         }
 
-        private void add(BucketNode<T> node) {
+        public void add(BucketNode<T> node) {
             bucketNodes.add(node);
             ++totalSeen;
+        }
+
+        public void init() {
+            bucketNodes.clear();
+            totalSeen = 0;
+            battles = 0;
         }
         
         private final List<BucketNode<T>> bucketNodes = new ArrayList<BucketNode<T>>();
