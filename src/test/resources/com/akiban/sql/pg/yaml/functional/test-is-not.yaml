@@ -116,13 +116,13 @@
 # ---
 # - Statement: SELECT null IS UNKNOWN FROM all_types
 # - output: [[true],[true],[true],[true],[true]]
----
-- Statement: SELECT ? IS TRUE FROM all_types where bigint_field = 1
-- params: [[true]]
-- output: [[true]]
+# ---
+# - Statement: SELECT ? IS TRUE FROM all_types where bigint_field = 1
+# - params: [[true]]
+# - output: [[true]]
 ---
 - Statement: SELECT 999 IS TRUE FROM all_types
- - output: [[true],[true],[true],[true],[true]]
+- output: [[true],[true],[true],[true],[true]]
 ---
 - Statement: SELECT 1 FROM all_types where 999 IS TRUE;
 - output: [[1],[1],[1],[1],[1]]
