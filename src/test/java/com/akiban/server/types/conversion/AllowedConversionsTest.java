@@ -139,12 +139,18 @@ public final class AllowedConversionsTest {
         }
 
         @Override
-        public long getInterval()
+        public long getInterval_Millis()
         {
-            checkType(AkType.INTERVAL);
+            checkType(AkType.INTERVAL_MILLIS);
             return 0;
         }
 
+        @Override
+        public long getInterval_Month() {
+            checkType(AkType.INTERVAL_MONTH);
+            return 0;
+        }
+        
         @Override
         public long getInt() {
             checkType(AkType.INT);
@@ -227,8 +233,11 @@ public final class AllowedConversionsTest {
             case YEAR:
                 stringValue = "2004";
                 break;
-            case INTERVAL:
+            case INTERVAL_MILLIS:
                 stringValue = "1234567";
+                break;
+            case INTERVAL_MONTH:
+                stringValue = "123";
                 break;
             case DECIMAL:
             case DOUBLE:
@@ -305,9 +314,13 @@ public final class AllowedConversionsTest {
         }
 
         @Override
-        public void putInterval(long value) {
+        public void putInterval_Millis(long value) {
         }
-        
+
+        @Override
+        public void putInterval_Month(long value) {
+        }
+
         @Override
         public void putUBigInt(BigInteger value) {
         }

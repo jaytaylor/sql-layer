@@ -34,8 +34,9 @@ public abstract class AbstractArithValueSource implements ValueSource
     protected abstract double rawDouble();
     protected abstract BigDecimal rawDecimal();
     protected abstract BigInteger rawBigInteger();
-    protected abstract long rawInterval();
-
+    protected abstract long rawInterval_Millis();
+    protected abstract long rawInterval_Month();
+    
     @Override
     public BigDecimal getDecimal()
     {
@@ -85,14 +86,14 @@ public abstract class AbstractArithValueSource implements ValueSource
     public long getDate()
     {
         check (AkType.DATE);
-        return rawInterval();
+        return rawInterval_Millis();
     }
 
     @Override
     public long getDateTime()
     {
         check (AkType.DATETIME);
-        return rawInterval();
+        return rawInterval_Millis();
     }
 
     @Override
@@ -113,22 +114,30 @@ public abstract class AbstractArithValueSource implements ValueSource
     public long getTime()
     {
        check(AkType.TIME);
-       return rawInterval();
+       return rawInterval_Millis();
     }
 
     @Override
     public long getTimestamp()
     {
         check(AkType.TIMESTAMP);
-        return rawInterval();
+        return rawInterval_Millis();
     }
 
     @Override
-    public long getInterval()
+    public long getInterval_Millis()
     {
-        check(AkType.INTERVAL);
-        return rawInterval();
+        check(AkType.INTERVAL_MILLIS);
+        return rawInterval_Millis();
     }
+
+    @Override
+    public long getInterval_Month()
+    {
+        check(AkType.INTERVAL_MONTH);
+        return rawInterval_Month();
+    }
+
     @Override
     public long getUInt()
     {
@@ -140,7 +149,7 @@ public abstract class AbstractArithValueSource implements ValueSource
     public long getYear()
     {
         check(AkType.YEAR);
-        return rawInterval();
+        return rawInterval_Millis();
     }
 
     @Override

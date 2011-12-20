@@ -41,14 +41,14 @@ public class ArithExpression extends AbstractBinaryExpression
      * and regular numeric types (double, int, etc) odd value key (e.g., 1, 3, 5, ... 2n +1),
      * since these keys are going to be used to determine the return type of the expression
      *
-     * INTERVAL is put with '0' because INTERVAL is special; that is, it can "interact" with both date/time types
+     * INTERVAL_MILLIS is put with '0' because INTERVAL_MILLIS is special; that is, it can "interact" with both date/time types
      * and regular numeric types
      */
     protected static final BidirectionalMap SUPPORTED_TYPES = new BidirectionalMap(10, 0.5f);
     static
     {
         // date/time types : key is even
-        SUPPORTED_TYPES.put(AkType.INTERVAL, 0);
+        SUPPORTED_TYPES.put(AkType.INTERVAL_MILLIS, 0);
         SUPPORTED_TYPES.put(AkType.DATE, 2);
         SUPPORTED_TYPES.put(AkType.TIME, 4);
         SUPPORTED_TYPES.put(AkType.DATETIME, 6);
@@ -84,14 +84,14 @@ public class ArithExpression extends AbstractBinaryExpression
 
     /**
      * Date/time types:
-     *      DATE - DATE, TIME - TIME, YEAR - YEAR , DATETIME - DATETIME, => result is an INTERVAL
-     *      DATE + INTERVAL => DATE, TIME + INTERVAL => TIME, ....etc
-     *      INTERVAL + DATE => DATE, INTERVAL + TIME => TIME, ....etc
-     *      DATE - INTERVAL => DATE, TIME - INTERVAL => TIME, ....etc
-     *      INTERVAL + INTERVAL => INTERVAL
-     *      INTERVAL - INTERVAL => INTERVAL
-     *      INTERVAL * n (of anytypes :double, long ,...etc) => INTERVAL
-     *      INTERVAL / n = INTERVAL
+     *      DATE - DATE, TIME - TIME, YEAR - YEAR , DATETIME - DATETIME, => result is an INTERVAL_MILLIS
+     *      DATE + INTERVAL_MILLIS => DATE, TIME + INTERVAL_MILLIS => TIME, ....etc
+     *      INTERVAL_MILLIS + DATE => DATE, INTERVAL_MILLIS + TIME => TIME, ....etc
+     *      DATE - INTERVAL_MILLIS => DATE, TIME - INTERVAL_MILLIS => TIME, ....etc
+     *      INTERVAL_MILLIS + INTERVAL_MILLIS => INTERVAL_MILLIS
+     *      INTERVAL_MILLIS - INTERVAL_MILLIS => INTERVAL_MILLIS
+     *      INTERVAL_MILLIS * n (of anytypes :double, long ,...etc) => INTERVAL_MILLIS
+     *      INTERVAL_MILLIS / n = INTERVAL_MILLIS
      *
      *  Regular types:
      *      Anything [+/*-]  DECIMAL => DECIMAL
@@ -115,7 +115,7 @@ public class ArithExpression extends AbstractBinaryExpression
      *
      *      if sum is neg then both are not supported since .get() only returns -1 if the types aren't in the map
      *      else
-     *          if product is zero then at least one of the two is an INTERVAL (key of INTERVAL is zero)
+     *          if product is zero then at least one of the two is an INTERVAL_MILLIS (key of INTERVAL_MILLIS is zero)
      *              check sum :
      *              if sum is even (0, 2, 4...etc..) then the other operand is either an interval or date/time
      *                  check op : if it's anything other than + or - => throw exception
@@ -152,7 +152,7 @@ public class ArithExpression extends AbstractBinaryExpression
                }
             else // number and interval: an interval can be multiply with || divide by a number
             {
-               if (op.opName() == '/' && l == 0 || op.opName() == '*') return AkType.INTERVAL;
+               if (op.opName() == '/' && l == 0 || op.opName() == '*') return AkType.INTERVAL_MILLIS;
                else throw new InvalidArgumentTypeException(msg);
             }
         }
@@ -162,7 +162,7 @@ public class ArithExpression extends AbstractBinaryExpression
                 return SUPPORTED_TYPES.get(l < r ? l : r);
             else // even => at least one is datetime
             {
-                if (l == r && op.opName() == '-') return AkType.INTERVAL;
+                if (l == r && op.opName() == '-') return AkType.INTERVAL_MILLIS;
                 else throw new InvalidArgumentTypeException("");
             }
         }
@@ -264,14 +264,14 @@ public class ArithExpression extends AbstractBinaryExpression
         }
 
         @Override
-        protected long rawInterval ()
+        protected long rawInterval_Millis ()
         {
             /*
-             * The rawInterval() is called only if the top's type is INTERVAL, which  only happens when
+             * The rawInterval_Millis() is called only if the top's type is INTERVAL_MILLIS, which  only happens when
              *      one of the two operands is an interval and the other is a regular numeric value
              *      or both operands are of the same date/time type, that is, both are date, or both are time, etc
              *
-             * DECIMAL's key in SUPPORTED is 1, DOUBLE's key is 3, [...etc...] and INTERVAL'S is 0.
+             * DECIMAL's key in SUPPORTED is 1, DOUBLE's key is 3, [...etc...] and INTERVAL_MILLIS'S is 0.
              * So if the difference is -1 or 1 => rawDecimal
              *    if  //               -3 or 3 => rawDouble
              *      [...etc...]
@@ -297,6 +297,26 @@ public class ArithExpression extends AbstractBinaryExpression
             }
         }
 
+        @Override
+        public long rawInterval_Month ()
+        {
+
+            int pos = SUPPORTED_TYPES.get(left.getConversionType()) - SUPPORTED_TYPES.get(right.getConversionType());
+            switch (pos)
+            {
+                case -1:
+                case 1:     return rawDecimal().longValue();
+                case -3:
+                case 3:     return (long)rawDouble();
+                case -5:
+                case 5:     return rawBigInteger().longValue();
+                default:    throw new UnsupportedOperationException(); /* INTERVAL_MONTH should not be
+                            the result of two date/time, not in ArithExpression anyway.
+                            This method, though, could be overidden in sub-class(DateTimeArith) as needed  */
+            }
+
+        }
+        
         @Override
         public boolean isNull() 
         {

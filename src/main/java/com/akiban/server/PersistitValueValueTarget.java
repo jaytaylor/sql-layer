@@ -130,10 +130,15 @@ public final class PersistitValueValueTarget implements ValueTarget {
     }
     
     @Override
-    public void putInterval(long value) {
+    public void putInterval_Millis(long value) {
         throw new UnsupportedOperationException("interval not supported yet");
     }
 
+    @Override
+    public void putInterval_Month (long value) {
+        throw new UnsupportedOperationException ("interval not supported yet");
+    }
+    
     @Override
     public void putUBigInt(BigInteger value) {
         checkState(AkType.U_BIGINT);

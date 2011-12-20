@@ -132,7 +132,13 @@ public final class PersistitValueValueSource implements ValueSource
     }
     
     @Override
-    public long getInterval()
+    public long getInterval_Millis()
+    {
+        throw new UnsupportedOperationException("interval not supported yet");
+    }
+
+    @Override
+    public long getInterval_Month()
     {
         throw new UnsupportedOperationException("interval not supported yet");
     }
