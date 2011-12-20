@@ -69,31 +69,8 @@ public class RulesTestHelper
     // TODO: Think about where this really goes.
     public static void ensureRowDefs(AkibanInformationSchema ais) {
         for (UserTable userTable : ais.getUserTables().values()) {
-            int tableId = userTable.getTableId();
-            TableStatus ts = new MockTableStatus(tableId);
-            new RowDef(userTable, ts);
+            int ordinal = userTable.getTableId();
+            new RowDef(userTable, ordinal);
         }
-    }
-
-    private static class MockTableStatus implements TableStatus {
-        private int ordinal = 0;
-
-        MockTableStatus(int ordinal) {
-            this.ordinal = ordinal;
-        }
-
-        public int getOrdinal() {
-            return ordinal;
-        }
-
-        public long getAutoIncrement() { throw new UnsupportedOperationException(); }
-        public long getCreationTime() { throw new UnsupportedOperationException(); }
-        public long getLastDeleteTime() { throw new UnsupportedOperationException(); }
-        public long getLastUpdateTime() { throw new UnsupportedOperationException(); }
-        public long getLastWriteTime() { throw new UnsupportedOperationException(); }
-        public long getRowCount() { throw new UnsupportedOperationException(); }
-        public long getUniqueID() { throw new UnsupportedOperationException(); }
-        public RowDef getRowDef() {  throw new UnsupportedOperationException(); }
-        public void setRowDef(RowDef rowDef) { /* ignore */ }
     }
 }

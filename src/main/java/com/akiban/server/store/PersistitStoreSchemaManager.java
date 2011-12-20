@@ -551,7 +551,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
     }
 
-    private void deleteTableStatuses(List<TableName> tables) {
+    private void deleteTableStatuses(List<TableName> tables) throws PersistitException {
         for(final TableName tn : tables) {
             UserTable table = getAis().getUserTable(tn);
             if (table != null) {
@@ -799,7 +799,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
     }
 
-    private void onTransactionCommit(final AkibanInformationSchema newAis) {
+    private void onTransactionCommit(final AkibanInformationSchema newAis) throws PersistitException {
         final RowDefCache rowDefCache = store.getRowDefCache();
         rowDefCache.clear();
         treeService.getTableStatusCache().detachAIS();

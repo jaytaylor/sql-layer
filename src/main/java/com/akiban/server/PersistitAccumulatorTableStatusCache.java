@@ -55,13 +55,12 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     }
 
     @Override
-    public synchronized void truncate(int tableID) {
-        InternalTableStatus ts = getInternalTableStatus(tableID);
-        ts.truncate();
+    public synchronized void truncate(int tableID) throws PersistitInterruptedException {
+        getInternalTableStatus(tableID).truncate();
     }
 
     @Override
-    public synchronized void drop(int tableID) {
+    public synchronized void drop(int tableID) throws PersistitInterruptedException {
         InternalTableStatus ts = tableStatusMap.remove(tableID);
         if(ts != null) {
             ts.setAutoIncrement(0);
@@ -72,17 +71,17 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     }
 
     @Override
-    public synchronized void setAutoIncrement(int tableID, long value) {
+    public synchronized void setAutoIncrement(int tableID, long value) throws PersistitInterruptedException {
         getInternalTableStatus(tableID).setAutoIncrement(value);
     }
 
     @Override
-    public synchronized void setOrdinal(int tableID, int value) {
+    public synchronized void setOrdinal(int tableID, int value) throws PersistitInterruptedException {
         getInternalTableStatus(tableID).setOrdinal(value);
     }
 
     @Override
-    public void setRowDef(int tableID, RowDef rowDef) {
+    public synchronized void setRowDef(int tableID, RowDef rowDef) {
         InternalTableStatus ts = tableStatusMap.get(tableID);
         if(ts == null) {
             throw new IllegalArgumentException("Unknown table ID " + tableID + " for RowDef " + rowDef);
@@ -92,12 +91,8 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     }
 
     @Override
-    public synchronized  long createNewUniqueID(int tableID) {
-        try {
-            return getInternalTableStatus(tableID).createNewUniqueID();
-        } catch(PersistitInterruptedException e) {
-            throw new PersistItErrorException(e);
-        }
+    public synchronized long createNewUniqueID(int tableID) throws PersistitInterruptedException {
+        return getInternalTableStatus(tableID).createNewUniqueID();
     }
 
     @Override
@@ -192,43 +187,43 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         private volatile Accumulator writeTime;
         
         @Override
-        public long getAutoIncrement() {
-            return getSnapshot(autoIncrement, getCurrentTrx());
+        public long getAutoIncrement() throws PersistitInterruptedException {
+            return getSnapshot(autoIncrement);
         }
 
         @Override
-        public long getCreationTime() {
-            return getSnapshot(createTime, getCurrentTrx());
+        public long getCreationTime() throws PersistitInterruptedException {
+            return getSnapshot(createTime);
         }
 
         @Override
-        public long getLastDeleteTime() {
-            return getSnapshot(deleteTime, getCurrentTrx());
+        public long getLastDeleteTime() throws PersistitInterruptedException {
+            return getSnapshot(deleteTime);
         }
 
         @Override
-        public long getLastUpdateTime() {
-            return getSnapshot(updateTime, getCurrentTrx());
+        public long getLastUpdateTime() throws PersistitInterruptedException {
+            return getSnapshot(updateTime);
         }
 
         @Override
-        public long getLastWriteTime() {
-            return getSnapshot(writeTime, getCurrentTrx());
+        public long getLastWriteTime() throws PersistitInterruptedException {
+            return getSnapshot(writeTime);
         }
 
         @Override
-        public int getOrdinal() {
-            return (int) getSnapshot(ordinal, getCurrentTrx());
+        public int getOrdinal() throws PersistitInterruptedException {
+            return (int) getSnapshot(ordinal);
         }
 
         @Override
-        public long getRowCount() {
-            return getSnapshot(rowCount, getCurrentTrx());
+        public long getRowCount() throws PersistitInterruptedException {
+            return getSnapshot(rowCount);
         }
 
         @Override
-        public long getUniqueID() {
-            return getSnapshot(uniqueID, getCurrentTrx());
+        public long getUniqueID() throws PersistitInterruptedException {
+            return getSnapshot(uniqueID);
         }
 
         @Override
@@ -252,18 +247,18 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             writeTime.update(System.currentTimeMillis(), txn);
         }
 
-        void setRowCount(long rowCountValue) {
-            long diff = rowCountValue - getSnapshot(rowCount, getCurrentTrx());
+        void setRowCount(long rowCountValue) throws PersistitInterruptedException {
+            long diff = rowCountValue - getSnapshot(rowCount);
             this.rowCount.update(diff, getCurrentTrx());
         }
 
-        void setAutoIncrement(long autoIncrementValue) {
-            long diff = autoIncrementValue - getSnapshot(autoIncrement, getCurrentTrx());
+        void setAutoIncrement(long autoIncrementValue) throws PersistitInterruptedException {
+            long diff = autoIncrementValue - getSnapshot(autoIncrement);
             this.autoIncrement.update(diff, getCurrentTrx());
         }
 
-        void setOrdinal(int ordinalValue) {
-            long diff = ordinalValue - getSnapshot(ordinal, getCurrentTrx());
+        void setOrdinal(int ordinalValue) throws PersistitInterruptedException {
+            long diff = ordinalValue - getSnapshot(ordinal);
             this.ordinal.update(diff, getCurrentTrx());
         }
 
@@ -290,7 +285,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             return this.uniqueID.update(1, getCurrentTrx());
         }
 
-        void truncate() {
+        void truncate() throws PersistitInterruptedException {
             setRowCount(0);
             setAutoIncrement(0);
         }
@@ -303,12 +298,8 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             return tree.getAccumulator(info.getType(), info.getIndex());
         }
 
-        private long getSnapshot(Accumulator accumulator, Transaction txn) {
-            try {
-                return accumulator.getSnapshotValue(txn);
-            } catch(PersistitInterruptedException e) {
-                throw new PersistItErrorException(e);
-            }
+        private long getSnapshot(Accumulator accumulator) throws PersistitInterruptedException {
+            return accumulator.getSnapshotValue(getCurrentTrx());
         }
     }
 }

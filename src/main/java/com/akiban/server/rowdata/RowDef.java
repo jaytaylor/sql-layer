@@ -31,8 +31,10 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.TableStatus;
+import com.akiban.server.TableStatusCache;
 import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
+import com.persistit.exception.PersistitInterruptedException;
 
 /**
  * Contain the relevant schema information for one version of a table
@@ -51,6 +53,8 @@ public class RowDef implements TreeLink {
     private final boolean hasAkibanPK;
 
     private final TableStatus tableStatus;
+    
+    private volatile int ordinalCache;
 
     /**
      * Array of FieldDef, one per column
@@ -136,6 +140,16 @@ public class RowDef implements TreeLink {
         }
     }
 
+    /**
+     * Should be used for tests only. Will contain no TableStatus.
+     * @param table Associated table
+     * @param ordinal Ordinal value
+     */
+    public RowDef(Table table, int ordinal) {
+        this(table, null);
+        ordinalCache = ordinal;
+    }
+    
     public Table table() {
         return table;
     }
@@ -469,7 +483,11 @@ public class RowDef implements TreeLink {
     }
 
     public int getOrdinal() {
-        return tableStatus.getOrdinal();
+        return ordinalCache;
+    }
+
+    void setOrdinalCache(int ordinal) {
+        ordinalCache = ordinal;
     }
 
     public boolean isUserTable() {

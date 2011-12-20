@@ -40,6 +40,7 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
+import com.persistit.exception.PersistitInterruptedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -298,7 +299,7 @@ public class PersistitStore implements Store {
     }
 
     void constructHKey(Exchange hEx, RowDef rowDef, int[] ordinals,
-            int[] nKeyColumns, FieldDef[] hKeyFieldDefs, Object[] hKeyValues) {
+            int[] nKeyColumns, FieldDef[] hKeyFieldDefs, Object[] hKeyValues) throws PersistitInterruptedException {
         PersistitKeyAppender appender = new PersistitKeyAppender(hEx.getKey());
         final Key hkey = hEx.getKey();
         hkey.clear();
@@ -1026,20 +1027,21 @@ public class PersistitStore implements Store {
         final RowDef rowDef = rowDefCache.getRowDef(tableId);
         final TableStatistics ts = new TableStatistics(tableId);
         final TableStatus status = rowDef.getTableStatus();
-        if (rowDef.isGroupTable()) {
-            ts.setRowCount(2);
-            ts.setAutoIncrementValue(-1);
-        } else {
-            ts.setAutoIncrementValue(status.getAutoIncrement());
-            ts.setRowCount(status.getRowCount());
-        }
-        ts.setUpdateTime(Math.max(status.getLastUpdateTime(),
-                status.getLastWriteTime()));
-        ts.setCreationTime(status.getCreationTime());
-        // TODO - get correct values
-        ts.setMeanRecordLength(100);
-        ts.setBlockSize(8192);
         try {
+            if (rowDef.isGroupTable()) {
+                ts.setRowCount(2);
+                ts.setAutoIncrementValue(-1);
+            } else {
+                ts.setAutoIncrementValue(status.getAutoIncrement());
+                ts.setRowCount(status.getRowCount());
+            }
+            ts.setUpdateTime(Math.max(status.getLastUpdateTime(),
+                    status.getLastWriteTime()));
+            ts.setCreationTime(status.getCreationTime());
+            // TODO - get correct values
+            ts.setMeanRecordLength(100);
+            ts.setBlockSize(8192);
+
             indexManager.populateTableStatistics(session, ts);
         } catch (PersistitException e) {
             throw new PersistItErrorException (e);

@@ -16,6 +16,7 @@
 package com.akiban.server;
 
 import com.akiban.server.rowdata.RowDef;
+import com.persistit.exception.PersistitInterruptedException;
 
 /**
  * Structure denotes summary information about a table, including row count,
@@ -26,42 +27,42 @@ public interface TableStatus {
     /**
      * @return Current auto-increment value of the assocated table.
      */
-    long getAutoIncrement();
+    long getAutoIncrement() throws PersistitInterruptedException;
 
     /**
      * @return Timestamp, in milliseconds, of when this table was created.
      */
-    long getCreationTime();
+    long getCreationTime() throws PersistitInterruptedException;
 
     /**
      * @return Timestamp, in milliseconds, of the last delete operation.
      */
-    long getLastDeleteTime();
+    long getLastDeleteTime() throws PersistitInterruptedException;
 
     /**
      * @return Timestamp, in milliseconds, of the last update operation.
      */
-    long getLastUpdateTime();
+    long getLastUpdateTime() throws PersistitInterruptedException;
 
     /**
      * @return Timestamp, in milliseconds, of the last write operation.
      */
-    long getLastWriteTime();
+    long getLastWriteTime() throws PersistitInterruptedException;
 
     /**
      * @return Ordinal of the associated table.
      */
-    int getOrdinal();
+    int getOrdinal() throws PersistitInterruptedException;
 
     /**
      * @return Current number of rows in the associated table.
      */
-    long getRowCount();
+    long getRowCount() throws PersistitInterruptedException;
 
     /**
      * @return The <b>last</b> unique value used for the associated table.
      */
-    long getUniqueID();
+    long getUniqueID() throws PersistitInterruptedException;
 
     /**
      * @return RowDef of the associated table.

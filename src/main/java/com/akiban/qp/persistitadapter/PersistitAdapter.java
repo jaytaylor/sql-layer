@@ -159,7 +159,11 @@ public class PersistitAdapter extends StoreAdapter
     @Override
     public long rowCount(RowType tableType) {
         RowDef rowDef = (RowDef)tableType.userTable().rowDef();
-        return rowDef.getTableStatus().getRowCount();
+        try {
+            return rowDef.getTableStatus().getRowCount();
+        } catch(PersistitInterruptedException e) {
+            throw new QueryCanceledException(session);
+        }
     }
 
     // PersistitAdapter interface
