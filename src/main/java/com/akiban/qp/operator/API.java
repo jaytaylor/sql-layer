@@ -40,16 +40,17 @@ public class API
     // Aggregate
 
     public static Operator aggregate_Partial(Operator inputOperator,
+                                                     RowType rowType,
                                                      int inputsIndex,
                                                      AggregatorRegistry registry,
                                                      List<String> aggregatorNames)
     {
         return new Aggregate_Partial(
-                inputOperator,
+                inputOperator, rowType,
                 inputsIndex,
                 Aggregators.factories(
                         registry,
-                        Aggregators.aggregatorIds(aggregatorNames, inputOperator.rowType(), inputsIndex)
+                        Aggregators.aggregatorIds(aggregatorNames, rowType, inputsIndex)
                 )
         );
     }

@@ -20,7 +20,7 @@
 ---
 - Statement: select TIME('A') from all_types;
 - output: [[null]]
----
-- Statement: select TIME(9999999) from all_types;
-- output: [[null]]
+# ---
+# - Statement: select TIME(9999999) from all_types;
+# - output: [[null]]
 ...

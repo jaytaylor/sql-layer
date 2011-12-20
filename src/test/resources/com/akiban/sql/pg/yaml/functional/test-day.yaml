@@ -20,7 +20,7 @@
 ---
 - Statement: select DAY('A') from all_types;
 - output: [[null]]
----
-- Statement: select DAY(9999999) from all_types;
-- output: [[null]]
+# ---
+# - Statement: select DAY(9999999) from all_types;
+# - output: [[null]]
 ...
