@@ -25,7 +25,6 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.ObjectExtractor;
-import com.akiban.server.types.util.ValueHolder;
 import java.util.Calendar;
 import java.util.EnumMap;
 import java.util.List;
@@ -83,8 +82,13 @@ public class StrToDateExpression extends AbstractBinaryExpression
             ObjectExtractor<String> extractor = Extractors.getStringExtractor();
             long l = getValue(extractor.getObject(left()), extractor.getObject(right()));
 
-            if (l < 0) return NullValueSource.only();
-            else return new ValueHolder(AkType.DATETIME, l);
+            if (l < 0)
+                return NullValueSource.only();
+            else 
+            {
+                valueHolder().putDateTime(l);
+                return valueHolder();
+            }
         }
 
         private long getValue (String str, String format)
@@ -92,7 +96,15 @@ public class StrToDateExpression extends AbstractBinaryExpression
             if (parseString(str, format)) return getLong();
             else return -1;
         }
-        
+
+        /**
+         * parse the date string, and stores the values of each field (year, month, day, etc) in valuesMap
+         * 
+         * @param str
+         * @param format
+         * @return true if parsing was done successfully
+         *         false otherwise
+         */
         private boolean parseString (String str, String format)
         {           
             // split format
@@ -323,7 +335,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("STR_TO_DATE()");
+        sb.append("STR_TO_DATE");
     }
 
     @Override

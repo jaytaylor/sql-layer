@@ -28,11 +28,11 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import com.akiban.server.service.session.SessionEventListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.TableStatusCache;
+import com.akiban.server.PersistitTransactionalCacheTableStatusCache;
 import com.akiban.server.error.ConfigurationPropertiesLoadException;
 import com.akiban.server.error.InvalidVolumeException;
 import com.akiban.server.error.PersistItErrorException;
@@ -156,8 +156,7 @@ public class TreeServiceImpl
         Persistit db = new Persistit();
         dbRef.set(db);
 
-        tableStatusCache = new TableStatusCache(sessionService, db, this);
-        tableStatusCache.register();
+        tableStatusCache = createTableStatusCache();
 
         db.setPersistitLogger(new Slf4jAdapter(LOG));
         try {
@@ -453,13 +452,13 @@ public class TreeServiceImpl
             if (volume.getAppCache() == null) {
                 volume.setAppCache(Integer.valueOf(volumeOffsetCounter));
                 volumeOffsetCounter += MAX_TABLES_PER_VOLUME;
-                final Exchange exchange = new Exchange(getDb(), volume,
-                        STATUS_TREE_NAME, true);
-                tableStatusCache.loadOneVolume(exchange);
+                tableStatusCache.loadAllInVolume(volume.getName());
             }
             return volume;
         } catch (InvalidVolumeSpecificationException e) {
             throw new InvalidVolumeException (e);
+        } catch (Exception e) {
+            throw new PersistitException(e);
         }
     }
 
@@ -665,6 +664,12 @@ public class TreeServiceImpl
             props.put(TREE, treeName);
         }
         return db.substituteProperties(vs, props);
+    }
+    
+    private TableStatusCache createTableStatusCache() {
+        PersistitTransactionalCacheTableStatusCache tsc = new PersistitTransactionalCacheTableStatusCache(sessionService, getDb(), this);
+        tsc.register();
+        return tsc;
     }
 
     @Override

@@ -26,6 +26,8 @@ select-3m: group index in mixed mode
 
 select-4: covering group index
 
+select-5: index IS NULL
+
 select-7l: literal in result list
 
 select-7o: ordering group index
