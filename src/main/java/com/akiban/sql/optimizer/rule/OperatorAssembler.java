@@ -585,6 +585,16 @@ public class OperatorAssembler extends BaseRule
             case PRESORTED:
             case UNGROUPED:
                 break;
+            case FIRST_FROM_INDEX:
+                {
+                    assert ((nkeys == 0) &&
+                            (aggregateSource.getNAggregates() == 1));
+                    stream.operator = API.limit_Default(stream.operator, 1);
+                    stream = assembleNullIfEmpty(stream);
+                    stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource, 
+                                                                       stream.rowType);
+                    return stream;
+                }
             default:
                 // TODO: Could pre-aggregate now in PREAGGREGATE_RESORT case.
                 assembleSort(stream, nkeys, aggregateSource.getInput(),
@@ -691,6 +701,10 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleNullIfEmpty(NullIfEmpty nullIfEmpty) {
             RowStream stream = assembleStream(nullIfEmpty.getInput());
+            return assembleNullIfEmpty(stream);
+        }
+
+        protected RowStream assembleNullIfEmpty(RowStream stream) {
             Expression[] nulls = new Expression[stream.rowType.nFields()];
             Arrays.fill(nulls, LiteralExpression.forNull());
             stream.operator = API.ifEmpty_Default(stream.operator,

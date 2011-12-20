@@ -61,3 +61,6 @@ select-18: range inequalities
 select-18n: range inequalities and IS NULL
 
 select-19i: aggregation and IN
+
+select-19x: aggregation from MAX
+
