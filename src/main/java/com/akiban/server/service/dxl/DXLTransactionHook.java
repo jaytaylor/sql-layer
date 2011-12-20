@@ -31,6 +31,9 @@ public class DXLTransactionHook implements DXLFunctionsHook {
 
     @Override
     public void hookFunctionIn(Session session, DXLFunction function) {
+        if(!needsTransaction(function)) {
+            return;
+        }
         Transaction trx = treeService.getTransaction(session);
         if(!trx.isActive()) {
             try {
@@ -47,6 +50,9 @@ public class DXLTransactionHook implements DXLFunctionsHook {
 
     @Override
     public void hookFunctionCatch(Session session, DXLFunction function, Throwable throwable) {
+        if(!needsTransaction(function)) {
+            return;
+        }
         Boolean doAuto = session.pop(AUTO_TRX_CLOSE);
         if(doAuto != null && doAuto) {
             Transaction trx = treeService.getTransaction(session);
@@ -61,6 +67,9 @@ public class DXLTransactionHook implements DXLFunctionsHook {
 
     @Override
     public void hookFunctionFinally(Session session, DXLFunction function, Throwable throwable) {
+        if(!needsTransaction(function)) {
+            return;
+        }
         Boolean doAuto = session.pop(AUTO_TRX_CLOSE);
         if(doAuto != null && doAuto) {
             Transaction trx = treeService.getTransaction(session);
@@ -75,5 +84,46 @@ public class DXLTransactionHook implements DXLFunctionsHook {
                 }
             }
         }
+    }
+    
+    private static boolean needsTransaction(DXLFunction function) {
+        switch(function) {
+            case CREATE_TABLE:
+            case RENAME_TABLE:
+            case DROP_TABLE:
+            case DROP_SCHEMA:
+            case DROP_GROUP:
+            case CREATE_INDEXES:
+            case DROP_INDEXES:
+            case GET_TABLE_STATISTICS:
+            case SCAN_SOME:
+            case WRITE_ROW:
+            case DELETE_ROW:
+            case UPDATE_ROW:
+            case TRUNCATE_TABLE:
+            case UPDATE_TABLE_STATISTICS:
+                return true;
+
+            case GET_AIS:
+            case GET_TABLE_ID:
+            case GET_TABLE_BY_ID:
+            case GET_TABLE_BY_NAME:
+            case GET_USER_TABLE_BY_NAME:
+            case GET_USER_TABLE_BY_ID:
+            case GET_ROWDEF:
+            case GET_DDLS:
+            case GET_SCHEMA_ID:
+            case FORCE_GENERATION_UPDATE:
+            case OPEN_CURSOR:
+            case GET_CURSOR_STATE:
+            case CLOSE_CURSOR:
+            case GET_CURSORS:
+            case CONVERT_NEW_ROW:
+            case CONVERT_ROW_DATA:
+            case CONVERT_ROW_DATAS:
+                return false;
+        }
+
+        throw new IllegalArgumentException("Unexpected function for hook " + function);
     }
 }
