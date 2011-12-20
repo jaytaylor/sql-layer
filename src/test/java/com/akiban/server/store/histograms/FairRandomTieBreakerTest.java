@@ -28,7 +28,8 @@ import static org.junit.Assert.fail;
 public final class FairRandomTieBreakerTest {
     @Test
     public void testDistribution() {
-        int iterations = 10000;
+        int iterations = 50000;
+//        iterations = 1;
         int max = 100;
         Map<Integer,Long> distributions = new TreeMap<Integer, Long>();
         for (int i = 0; i < max; ++i) {

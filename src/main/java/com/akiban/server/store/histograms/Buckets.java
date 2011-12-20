@@ -69,7 +69,7 @@ final class Buckets<T extends Comparable<? super T>> {
             checkIntegrity();
         }
         else {
-            addLastToBucketNodeSets();
+            addPenultToBucketNodeSets();
         }
     }
 
@@ -103,39 +103,39 @@ final class Buckets<T extends Comparable<? super T>> {
     }
 
     private BucketNode<T> nodeToRemove() {
-        long lastNodePopularity = last.bucket.getEqualsCount();
+        BucketNode<T> penult = last.prev;
+        long lastNodePopularity = penult.bucket.getEqualsCount();
         Map.Entry<Long,BucketNodeSet<T>> leastPopularEntry = bucketNodeSets.firstEntry();
         long leastPopular = leastPopularEntry.getKey();
         if (lastNodePopularity < leastPopular) {
-            return last;
+            return penult;
         }
         if (lastNodePopularity == leastPopular) {
             BucketNodeSet<T> bucketNodeSet = leastPopularEntry.getValue();
-            // if there have been more elements seen than we see here, then each element has had
-            // a (t-N)/t chance of being picked, where N = current list.size and t = total seen.
-            // Multiply both num and denom by 1/(t-N) and you get a 1 / (t/(t-N)) chance.
             if (bucketNodeSet.totalSeen > bucketNodeSet.bucketNodes.size()) {
-                float totalFloat = bucketNodeSet.totalSeen;
-                totalFloat /= bucketNodeSet.battles;
-//                float denom =totalFloat- ((float)bucketNodeSet.bucketNodes.size());
-//                int randN = Math.round(totalFloat/denom);
-                
-                int randN = Math.round(bucketNodeSet.totalSeen - bucketNodeSet.bucketNodes.size());
-                if (0 == rand(randN)) {
+                // if there have been T buckets seen, and there are S buckets now, then
+                // T-S buckets have been removed. That means each bucket has had a (T-S)/T chance of being removed.
+                // Another way of looking at it: there have been T total, and there are S now. So each nosw in here has
+                // had an S/T chance of being picked, which means a 1 - (S/T) chance of being removed.
+                //     1 - (S/T) = T/T - S/T = (T-S)/T
+                // So, we need to give this guy the same opportunity!
+                int numer = bucketNodeSet.totalSeen - bucketNodeSet.bucketNodes.size();
+                int denom = bucketNodeSet.totalSeen + 1;
+                if (rand(denom) < numer) {
                     bucketNodeSet.totalSeen++;
-                    return last;
+                    return penult;
                 }
                 else {
-                    bucketNodeSet.add(last);
+                    bucketNodeSet.add(penult);
                 }
             }
             else {
-                bucketNodeSet.add(last);
+                bucketNodeSet.add(penult);
             }
         }
         else {
             // not the least popular! Add this to its entry, creating if needed
-            addLastToBucketNodeSets();
+            addPenultToBucketNodeSets();
         }
         // now, clear a random one out of the least popular entry
         BucketNodeSet<T> bucketNodeSet = leastPopularEntry.getValue();
@@ -155,8 +155,9 @@ final class Buckets<T extends Comparable<? super T>> {
         return result;
     }
 
-    private void addLastToBucketNodeSets() {
-        addToBucketNodeSets(last);
+    private void addPenultToBucketNodeSets() {
+        if (last.prev != sentinel)
+            addToBucketNodeSets(last.prev);
     }
 
     private void addToBucketNodeSets(BucketNode<T> node) {
@@ -222,7 +223,12 @@ final class Buckets<T extends Comparable<? super T>> {
     }
     
     private static class BucketNodeSet<T> {
-        
+
+        @Override
+        public String toString() {
+            return String.format("%d buckets (%d total), %d battles", bucketNodes.size(), totalSeen, battles);
+        }
+
         private void add(BucketNode<T> node) {
             bucketNodes.add(node);
             ++totalSeen;
