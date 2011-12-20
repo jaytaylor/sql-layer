@@ -327,7 +327,7 @@ public final class SchemaManagerIT extends ITBase {
     @Test
     public void forceNewTimestampChangesSchemaGen() throws Exception {
         final int first = schemaManager.getSchemaGeneration();
-        schemaManager.forceNewTimestamp();
+        schemaManager.forceNewGeneration();
         final int second = schemaManager.getSchemaGeneration();
         assertTrue("timestamp changed", first != second);
     }
