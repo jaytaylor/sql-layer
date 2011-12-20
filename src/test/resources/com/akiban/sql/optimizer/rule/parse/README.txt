@@ -84,3 +84,4 @@ update-1: change to literal
 
 update-2: change to expressions and unnested subquery condition
 
+user-aggregate: non-standard aggregate function

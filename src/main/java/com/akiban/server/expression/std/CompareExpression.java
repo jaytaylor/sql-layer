@@ -16,6 +16,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -220,6 +221,8 @@ public final class CompareExpression extends AbstractBinaryExpression {
 
         @Override
         public void argumentTypes(List<AkType> argumentTypes) {
+            if (argumentTypes.size() != 2) 
+                throw new WrongExpressionArityException(2, argumentTypes.size());
             // This is what the code does, using childrenType().
             // The actual rule applied by the SQL parser is that,
             // e.g. string op number is a numeric comparison.

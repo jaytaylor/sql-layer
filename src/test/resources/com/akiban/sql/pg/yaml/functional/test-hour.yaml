@@ -1,0 +1,172 @@
+# Test the HOUR() function
+---
+- Include: all-types-schema.yaml
+---
+- Include: all-datetime-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
+---
+# fails bug 901679
+#- Statement: select hour(date_field) from all_types
+#- output: [[0]]
+#---
+- Statement: select hour(time_field) from all_types where bigint_field=1
+- output: [[1]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (2, '02:01:03')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=2
+- output: [[2]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (3, '03:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=3
+- output: [[3]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (4, '04:12:22')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=4
+- output: [[4]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (5, '05:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=5
+- output: [[5]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (6, '06:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=6
+- output: [[6]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (7, '07:04:33')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=7
+- output: [[7]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (8, '08:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=8
+- output: [[8]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (9, '09:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=9
+- output: [[9]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (10, '10:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=10
+- output: [[10]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (11, '11:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=11
+- output: [[11]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (12, '12:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=12
+- output: [[12]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (13, '13:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=13
+- output: [[13]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (14, '14:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=14
+- output: [[14]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (15, '15:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=15
+- output: [[15]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (16, '16:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=16
+- output: [[16]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (17, '17:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=17
+- output: [[17]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (18, '18:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=18
+- output: [[18]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (19, '19:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=19
+- output: [[19]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (20, '20:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=20
+- output: [[20]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (21, '21:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=21
+- output: [[21]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (22, '22:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=22
+- output: [[22]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (23, '23:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=23
+- output: [[23]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (24, '24:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=24
+- output: [[24]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (25, '25:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=25
+- output: [[25]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (99, '99:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field=99
+- output: [[99]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (-99, '-99:04:07')
+---
+- Statement: select hour(time_field) from all_types where bigint_field = -99
+- output: [[99]]
+---
+# bug 901845
+#- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (-999, '-999:04:07')
+#---
+#- Statement: select bigint_field, hour(time_field) from all_types where bigint_field = -999
+#- output: [[-999, 838]]
+#---
+# bug 901875
+#- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (838, '838:04:07')
+#---
+#- Statement: select bigint_field, hour(time_field) from all_types where bigint_field = 838
+#- output: [[838, 838]]
+#---
+#- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (999, '999:04:07')
+#---
+#- Statement: select bigint_field, hour(time_field) from all_types where bigint_field = 999
+#- output: [[999, 838]]
+#---
+- Statement: select id,HOUR(time_field),expected_hour from datetime_matrix where HOUR(time_field) <> expected_HOUR;
+- row_count: 0
+---
+- Statement: select id,HOUR(timestamp_field),expected_hour from datetime_matrix where HOUR(timestamp_field) <> expected_HOUR;
+- row_count: 0
+---
+- Statement: select hour('A') from all_types where bigint_field = -99
+- output: [[null]]
+...
+

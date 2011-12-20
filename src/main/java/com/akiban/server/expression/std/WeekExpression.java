@@ -25,7 +25,7 @@ import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types.extract.Extractors;
 import java.util.Arrays;
 import java.util.List;
 import org.joda.time.MutableDateTime;
@@ -38,11 +38,10 @@ public class WeekExpression extends AbstractCompositeExpression
     @Scalar("weekofyear")
     public static final ExpressionComposer WEEK_OF_YEAR_COMPOSER = new UnaryComposer ()
     {
-
         @Override
         protected Expression compose(Expression argument)
         {
-            return new WeekExpression(Arrays.asList(argument));
+            return new WeekExpression(Arrays.asList(argument, new LiteralExpression(AkType.INT, 3L)));
         }
 
         @Override
@@ -172,15 +171,12 @@ public class WeekExpression extends AbstractCompositeExpression
             ValueSource fOp = children().get(0).eval();
             if (fOp.isNull()) return NullValueSource.only();
 
-            long date = fOp.getDate();
-            int yr = (int)(date / 512);
-            int mo = (int)(date / 32 % 16);
-            int da = (int)(date % 32);
-            long mode = 0;
-            
-            if (yr * mo * da == 0) throw new InvalidParameterValueException();
+            long rawLong = Extractors.getLongExtractor(fOp.getConversionType()).getLong(fOp);
+            long ymd[] = Extractors.getLongExtractor(fOp.getConversionType()).getYearMonthDayHourMinuteSecond(rawLong);
+            if (ymd[0] * ymd[1] * ymd[2] == 0) throw new InvalidParameterValueException();
 
             // second operand
+            int mode = 0;
             if (children().size() == 2)
             {
                 ValueSource sOp = children().get(1).eval();
@@ -188,10 +184,12 @@ public class WeekExpression extends AbstractCompositeExpression
 
                 mode = (int)sOp.getInt();
             }
-            if (mode < 0 || mode > 7) throw new InvalidParameterValueException();
+            
+            if (mode < 0 || mode > 7)
+                throw new InvalidParameterValueException();
             else
             {
-                valueHolder().putRaw(AkType.INT, modes[(int) mode].getWeek(new MutableDateTime(), yr, mo, da));
+                valueHolder().putRaw(AkType.INT, modes[(int) mode].getWeek(new MutableDateTime(), (int)ymd[0], (int)ymd[1], (int)ymd[2]));
                 return valueHolder();
             }
         }

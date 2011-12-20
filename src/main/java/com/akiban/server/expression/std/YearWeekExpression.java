@@ -140,13 +140,11 @@ public class YearWeekExpression extends AbstractCompositeExpression
             if (fOp.isNull()) return NullValueSource.only();
 
             long rawLong = Extractors.getLongExtractor(fOp.getConversionType()).getLong(fOp);
-            long ymd[] = Extractors.getLongExtractor(fOp.getConversionType()).getYearMonthDay(rawLong);
-            
-            int mode = 0;
-
+            long ymd[] = Extractors.getLongExtractor(fOp.getConversionType()).getYearMonthDayHourMinuteSecond(rawLong);                        
             if (ymd[0] * ymd[1] * ymd[2] == 0) throw new InvalidParameterValueException();
 
             // second operand
+            int mode = 0;
             if (children().size() == 2)
             {
                 ValueSource sOp = children().get(1).eval();
@@ -156,10 +154,7 @@ public class YearWeekExpression extends AbstractCompositeExpression
             }
             if (mode < 0 || mode > 7) throw new InvalidParameterValueException();
             return new ValueHolder(AkType.INT, modes[(int)mode].getYearWeek(
-                    new MutableDateTime(), 
-                              (int)ymd[0], 
-                              (int)ymd[1], 
-                              (int)ymd[2]));
+                    new MutableDateTime(),(int)ymd[0], (int)ymd[1], (int)ymd[2]));
         }
     }
 
@@ -192,5 +187,3 @@ public class YearWeekExpression extends AbstractCompositeExpression
         return new InnerEvaluation(childrenEvaluations());
     }
 }
-
-

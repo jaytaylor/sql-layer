@@ -20,4 +20,7 @@ import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.expression.EnvironmentExpressionRegistry;
 
 public interface FunctionsRegistry extends AggregatorRegistry, ExpressionRegistry, EnvironmentExpressionRegistry {
+    public enum FunctionKind { SCALAR, AGGREGATE, ENVIRONMENT };
+
+    public FunctionKind getFunctionKind(String name);
 }

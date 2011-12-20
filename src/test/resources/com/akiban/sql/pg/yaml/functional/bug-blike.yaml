@@ -1,7 +1,0 @@
-# BLIKE fails
----
-- CreateTable: t (varchar_field varchar(32))
----
-- Statement: SELECT varchar_field FROM t WHERE varchar_field BLIKE 'abc'
-- row_count: 0
-...
