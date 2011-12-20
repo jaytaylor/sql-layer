@@ -50,8 +50,11 @@ final class Buckets<T extends Comparable<? super T>> {
             BucketNode<T> removeNode = nodeToRemove();
             // if the least popular node was the tail, we should fold it into its
             // prev. We can't do that, so instead, we'll fold its prev into it.
-            if (removeNode.next == null)
-                removeNode = removeNode.prev;    TODO this breaks the map!
+            if (removeNode.next == null) {
+                addToBucketNodeSets(removeNode);
+                removeNode = removeNode.prev;
+                removeFromBucketNodeSets(removeNode);
+            }
             Bucket<T> removeBucket = removeNode.bucket;
 
             Bucket<T> foldIntoBucket = removeNode.next.bucket;
@@ -153,13 +156,30 @@ final class Buckets<T extends Comparable<? super T>> {
     }
 
     private void addLastToBucketNodeSets() {
-        long lastPopularity = last.bucket.getEqualsCount();
-        BucketNodeSet<T> bucketNodeSet = bucketNodeSets.get(lastPopularity);
+        addToBucketNodeSets(last);
+    }
+
+    private void addToBucketNodeSets(BucketNode<T> node) {
+        long nodePopularity = node.bucket.getEqualsCount();
+        BucketNodeSet<T> bucketNodeSet = bucketNodeSets.get(nodePopularity);
         if (bucketNodeSet == null) {
             bucketNodeSet = new BucketNodeSet<T>();
-            bucketNodeSets.put(lastPopularity, bucketNodeSet);
+            bucketNodeSets.put(nodePopularity, bucketNodeSet);
         }
-        bucketNodeSet.add(last);
+        bucketNodeSet.add(node);
+    }
+
+    private void removeFromBucketNodeSets(BucketNode<T> node) {
+        long popularity = node.bucket.getEqualsCount();
+        BucketNodeSet<T> bucketNodeSet = bucketNodeSets.get(popularity);
+        if (bucketNodeSet.bucketNodes.size() == 1) {
+            assert bucketNodeSet.bucketNodes.contains(node) : node + " not in " + bucketNodeSet.bucketNodes;
+            bucketNodeSets.remove(popularity);
+        }
+        else {
+            boolean success = bucketNodeSet.bucketNodes.remove(node);
+            assert success : "couldn't remove " + node + " from " + bucketNodeSet.bucketNodes;
+        }
     }
 
     private BucketNode<T> nodeFor(Bucket<T> bucket) {
