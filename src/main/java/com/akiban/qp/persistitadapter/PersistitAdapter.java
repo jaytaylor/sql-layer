@@ -41,6 +41,7 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
+import com.akiban.util.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Persistit;
@@ -251,7 +252,7 @@ public class PersistitAdapter extends StoreAdapter
     {
         persistit.releaseExchange(session, exchange);
     }
-
+    
     public PersistitAdapter(Schema schema,
                             PersistitStore persistit,
                             TreeService treeService,
@@ -264,6 +265,10 @@ public class PersistitAdapter extends StoreAdapter
         this.session = session;
         this.treeService = treeService;
     }
+    
+    // Class state
+    
+    public static final Tap.InOutTap CURSOR_FIRST_ROW_TAP = Tap.createTimer("cursor first row");
 
     // Object state
 
