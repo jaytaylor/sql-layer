@@ -5,5 +5,5 @@
 - Statement: INSERT INTO t VALUES (1), (1), (0)
 ---
 - Statement: SELECT AVG(boolean_field) FROM t
-#- output: [[1]]
+- output: [[1]]
 ...
