@@ -108,6 +108,7 @@ public enum ErrorCode {
         // SubClass 004 - null value not allowed
         // SubClass 005 - error in assignment
         // SubClass 006 - invalid interval format
+    INVALID_INTERVAL_FORMAT  ("22", "006", Importance.DEBUG, InvalidIntervalFormatException.class),
         // SubClass 007 - invalid datetime format 
     INVALID_DATE_FORMAT     ("22", "007", Importance.DEBUG, InvalidDateFormatException.class),
         // SubClass 008 - datetime field overflow 

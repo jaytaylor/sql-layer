@@ -74,36 +74,36 @@ public class TypeDeterminationTest
         param(pb, AkType.LONG, ArithOps.ADD, AkType.LONG, AkType.LONG);
 
         // date
-        param(pb, AkType.DATE, ArithOps.MINUS, AkType.DATE, AkType.INTERVAL);
-        param(pb, AkType.DATE, ArithOps.MINUS, AkType.INTERVAL, AkType.DATE);
-        param(pb, AkType.DATE, ArithOps.ADD, AkType.INTERVAL, AkType.DATE);
-        param(pb, AkType.INTERVAL, ArithOps.ADD, AkType.DATE, AkType.DATE);
-        param(pb, AkType.INTERVAL, ArithOps.MINUS, AkType.DATE, null); // expect exception
-        param(pb, AkType.DATE, ArithOps.DIVIDE, AkType.INTERVAL, null); // expect exception
+        param(pb, AkType.DATE, ArithOps.MINUS, AkType.DATE, AkType.INTERVAL_MILLIS);
+        param(pb, AkType.DATE, ArithOps.MINUS, AkType.INTERVAL_MILLIS, AkType.DATE);
+        param(pb, AkType.DATE, ArithOps.ADD, AkType.INTERVAL_MILLIS, AkType.DATE);
+        param(pb, AkType.INTERVAL_MILLIS, ArithOps.ADD, AkType.DATE, AkType.DATE);
+        param(pb, AkType.INTERVAL_MILLIS, ArithOps.MINUS, AkType.DATE, null); // expect exception
+        param(pb, AkType.DATE, ArithOps.DIVIDE, AkType.INTERVAL_MILLIS, null); // expect exception
         param(pb, AkType.DATE, ArithOps.ADD, AkType.DATE, null); // expect exception
 
         // time
-        param(pb, AkType.TIME, ArithOps.MINUS, AkType.TIME, AkType.INTERVAL);
-        param(pb, AkType.TIME, ArithOps.ADD, AkType.INTERVAL, AkType.TIME);
-        param(pb, AkType.TIME, ArithOps.MINUS, AkType.INTERVAL, AkType.TIME);
-        param(pb, AkType.INTERVAL, ArithOps.ADD, AkType.TIME, AkType.TIME);
-        param(pb, AkType.INTERVAL, ArithOps.MINUS, AkType.TIME, null); // expect exception
+        param(pb, AkType.TIME, ArithOps.MINUS, AkType.TIME, AkType.INTERVAL_MILLIS);
+        param(pb, AkType.TIME, ArithOps.ADD, AkType.INTERVAL_MILLIS, AkType.TIME);
+        param(pb, AkType.TIME, ArithOps.MINUS, AkType.INTERVAL_MILLIS, AkType.TIME);
+        param(pb, AkType.INTERVAL_MILLIS, ArithOps.ADD, AkType.TIME, AkType.TIME);
+        param(pb, AkType.INTERVAL_MILLIS, ArithOps.MINUS, AkType.TIME, null); // expect exception
 
         // year
-        param(pb, AkType.YEAR, ArithOps.MINUS, AkType.YEAR, AkType.INTERVAL);
-        param(pb, AkType.YEAR, ArithOps.ADD, AkType.INTERVAL, AkType.YEAR);
-        param(pb, AkType.YEAR, ArithOps.MINUS, AkType.INTERVAL, AkType.YEAR);
-        param(pb, AkType.INTERVAL, ArithOps.ADD, AkType.YEAR, AkType.YEAR);
+        param(pb, AkType.YEAR, ArithOps.MINUS, AkType.YEAR, AkType.INTERVAL_MILLIS);
+        param(pb, AkType.YEAR, ArithOps.ADD, AkType.INTERVAL_MILLIS, AkType.YEAR);
+        param(pb, AkType.YEAR, ArithOps.MINUS, AkType.INTERVAL_MILLIS, AkType.YEAR);
+        param(pb, AkType.INTERVAL_MILLIS, ArithOps.ADD, AkType.YEAR, AkType.YEAR);
 
-        // INTERVAL
-        param(pb, AkType.INTERVAL, ArithOps.ADD, AkType.INTERVAL, AkType.INTERVAL);
-        param(pb, AkType.INTERVAL, ArithOps.MINUS, AkType.INTERVAL, AkType.INTERVAL);
-        param(pb, AkType.INTERVAL, ArithOps.MULTIPLY, AkType.LONG, AkType.INTERVAL);
-        param(pb, AkType.DECIMAL, ArithOps.MULTIPLY, AkType.INTERVAL, AkType.INTERVAL);
-        param(pb, AkType.INTERVAL, ArithOps.DIVIDE, AkType.U_BIGINT, AkType.INTERVAL);
-        param(pb, AkType.LONG, ArithOps.DIVIDE, AkType.INTERVAL, null); // expect exception
-        param(pb, AkType.INTERVAL, ArithOps.DIVIDE, AkType.INTERVAL, null); // expect exception
-        param(pb, AkType.INTERVAL, ArithOps.MULTIPLY, AkType.INTERVAL, null); // expect exception
+        // INTERVAL_MILLIS
+        param(pb, AkType.INTERVAL_MILLIS, ArithOps.ADD, AkType.INTERVAL_MILLIS, AkType.INTERVAL_MILLIS);
+        param(pb, AkType.INTERVAL_MILLIS, ArithOps.MINUS, AkType.INTERVAL_MILLIS, AkType.INTERVAL_MILLIS);
+        param(pb, AkType.INTERVAL_MILLIS, ArithOps.MULTIPLY, AkType.LONG, AkType.INTERVAL_MILLIS);
+        param(pb, AkType.DECIMAL, ArithOps.MULTIPLY, AkType.INTERVAL_MILLIS, AkType.INTERVAL_MILLIS);
+        param(pb, AkType.INTERVAL_MILLIS, ArithOps.DIVIDE, AkType.U_BIGINT, AkType.INTERVAL_MILLIS);
+        param(pb, AkType.LONG, ArithOps.DIVIDE, AkType.INTERVAL_MILLIS, null); // expect exception
+        param(pb, AkType.INTERVAL_MILLIS, ArithOps.DIVIDE, AkType.INTERVAL_MILLIS, null); // expect exception
+        param(pb, AkType.INTERVAL_MILLIS, ArithOps.MULTIPLY, AkType.INTERVAL_MILLIS, null); // expect exception
 
         // exceptions
         param(pb, AkType.DATE, ArithOps.MINUS, AkType.TIME, null);
@@ -148,7 +148,7 @@ public class TypeDeterminationTest
             case U_BIGINT: return new LiteralExpression(type, BigInteger.ONE);
             case DATE: return new LiteralExpression(type, 1L);
             case TIME: return new LiteralExpression(type, 1L);
-            case INTERVAL: return new LiteralExpression(type, 1L);
+            case INTERVAL_MILLIS: return new LiteralExpression(type, 1L);
             case YEAR: return new LiteralExpression(type, 1L);
             case VARCHAR: return new LiteralExpression (type, "1");
             case NULL: return new LiteralExpression(type, null);
