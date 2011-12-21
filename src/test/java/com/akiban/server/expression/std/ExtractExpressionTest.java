@@ -14,7 +14,6 @@
  */
 package com.akiban.server.expression.std;
 
-import com.akiban.server.types.ValueSource;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
@@ -31,15 +30,12 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
 
     // --------------------------- GET DATE-------------------------------------    
     @Test
-    public void getDateFromShortLong ()
+    public void testBound ()
     {
         Expression arg = new LiteralExpression(AkType.LONG, 9999999L);
-        Expression top = ExtractExpression.DATE_COMPOSER.compose(Arrays.asList(arg));
+        Expression top = getTopExp(ExtractExpression.DATE_COMPOSER,arg);
         
-        ValueSource source = top.evaluation().eval();
-        
-        assertEquals("input 999, source should be null", "2009-01-01",
-                Extractors.getLongExtractor(AkType.DATE).asString(source.getDate()));
+        assertTrue("input 9999999L, source should be null", top.evaluation().eval().isNull());
     }
 
     @Test
@@ -118,6 +114,15 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     }
 
     //------------------------GET DATETIME--------------------------------------
+    @Test
+    public void testBoundDateTime()
+    {
+        Expression arg = new LiteralExpression(AkType.LONG, 99);
+        Expression top = getTopExp(ExtractExpression.DATETIME_COMPOSER, arg);
+
+        assertTrue("Top should be null", top.evaluation().eval().isNull());
+    }
+
     @Test
     public void getDateTimeBug () //  bug 905525 - unit test passes
     {
@@ -239,6 +244,15 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
         assertTrue (top.evaluation().eval().isNull());
     }
     //----------------------- GET DAY-------------------------------------------
+    @Test
+    public void testBoundDay ()
+    {
+        Expression arg = new LiteralExpression(AkType.LONG, 99);
+        Expression top = getTopExp(ExtractExpression.DAY_COMPOSER, arg);
+
+        assertTrue("Top should be null", top.evaluation().eval().isNull());
+    }
+
     @Test
     public void getDayZero ()
     {
@@ -493,6 +507,14 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     }
     // ----------------------- GET MONTH----------------------------------------
     @Test
+    public void testBoundMonth ()
+    {
+        Expression arg = new LiteralExpression(AkType.LONG, 999L);
+        Expression top = getTopExp(ExtractExpression.MONTH_COMPOSER, arg);
+
+        assertTrue("Top should be null", top.evaluation().eval().isNull());
+    }
+    @Test
     public void getMonthZero()
     {
         Expression top = getTop("0000-00-01", ExtractExpression.MONTH_COMPOSER);      
@@ -579,6 +601,15 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     }
     // ----------------------- GET SECOND---------------------------------------
     @Test
+    public void testBoundSecond ()
+    {
+        Expression arg = new LiteralExpression(AkType.LONG, 9999999L);
+        Expression top = getTopExp(ExtractExpression.SECOND_COMPOSER, arg);
+
+        assertTrue("Top should be null", top.evaluation().eval().isNull());
+    }
+
+    @Test
     public void getSecondFromDate()
     {
         Expression top = getTopExp(ExtractExpression.SECOND_COMPOSER, getDate());
@@ -658,6 +689,14 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
         assertTrue (top.evaluation().eval().isNull());
     }
     // -------------------------GET TIME----------------------------------------
+    @Test
+    public void testBoundTime ()
+    {
+        Expression arg = new LiteralExpression(AkType.LONG, 9999L);
+        Expression top = getTopExp(ExtractExpression.TIME_COMPOSER, arg);
+
+        assertTrue("Top should be null", top.evaluation().eval().isNull());
+    }
 
     @Test
     public void getTimeFromTime()

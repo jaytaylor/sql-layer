@@ -92,13 +92,6 @@ public class ExtractExpression extends AbstractUnaryExpression
                                     long m = calendar.get(Calendar.MONTH) +1; // month in calendar is 0-based
                                     long d = calendar.get(Calendar.DAY_OF_MONTH);
                                     return d + m*32 + y*512;
-                    case LONG:      rawLong = source.getLong();
-                                    long yr = rawLong /10000;
-                                    long mo = rawLong / 100 % 100;
-                                    long da = rawLong % 100;
-                                    if(!TargetExtractType.vallidDayMonth(yr, mo, da) || (yr +mo + da == rawLong))
-                                        return -1;
-                                    else return yr * 512 + mo * 32 + da;
                     default:        return -1;
                 }
             }
@@ -248,8 +241,7 @@ public class ExtractExpression extends AbstractUnaryExpression
                     case TIMESTAMP: rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
                                     Calendar calendar = Calendar.getInstance();
                                     calendar.setTimeInMillis(rawLong * 1000);
-                                    return calendar.get(Calendar.MONTH) +1;
-                    
+                                    return calendar.get(Calendar.MONTH) +1;                    
                     default: /*year*/       return -1;
                 }
             }
@@ -265,14 +257,16 @@ public class ExtractExpression extends AbstractUnaryExpression
                 long rawLong;
                 switch (type)
                 {
-                    case TIME:      rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
-                                    return rawLong % 100;
+                    case TIME:      rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source)) % 100;
+                                    return rawLong >= 0 && rawLong < 60 ? rawLong : -1;
                     case DATETIME:  rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
                                     long yr = rawLong / 10000000000L;
                                     long mo = rawLong / 100000000L % 100;
                                     long da = rawLong / 1000000L % 100;
+                                    long hr = rawLong / 10000 % 100;
+                                    long min = rawLong / 100 % 100;
                                     long sec = rawLong % 100;
-                                    return vallidDayMonth(yr,mo,da) ? sec : -1;
+                                    return vallidDayMonth(yr,mo,da) && vallidHrMinSec(hr, min,sec) ? sec : -1;
                     case TIMESTAMP: rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
                                     Calendar calendar = Calendar.getInstance();
                                     calendar.setTimeInMillis(rawLong * 1000);
@@ -297,7 +291,10 @@ public class ExtractExpression extends AbstractUnaryExpression
                                     long yr = rawLong / 10000000000L;
                                     long mo = rawLong / 100000000L % 100;
                                     long da = rawLong / 1000000L % 100;
-                                    return vallidDayMonth(yr,mo,da) ? rawLong % 1000000L : -1;
+                                    long hr = rawLong / 10000 % 100;
+                                    long min = rawLong / 100 % 100;
+                                    long sec = rawLong % 100;
+                                    return vallidDayMonth(yr,mo,da) && vallidHrMinSec(hr, min,sec) ? rawLong % 1000000L : -1;
                     case TIMESTAMP: rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
                                     Calendar calendar = Calendar.getInstance();
                                     calendar.setTimeInMillis(rawLong * 1000);
@@ -343,7 +340,7 @@ public class ExtractExpression extends AbstractUnaryExpression
                                     hr = rawLong /10000L % 100;
                                     min = rawLong / 100L % 100;
                                     sec = rawLong % 100;
-                                    if (!vallidDayMonth(y,m,d)) return -1;
+                                    if (!vallidDayMonth(y,m,d) || !vallidHrMinSec(hr, min,sec)) return -1;
                                     Calendar calendar = Calendar.getInstance();
                                     calendar.set((int)y, (int)m -1, (int)d, (int)hr, (int)min, (int)sec);
                                     return calendar.getTimeInMillis() / 1000;                        
@@ -372,7 +369,10 @@ public class ExtractExpression extends AbstractUnaryExpression
                                     long yr = rawLong / 10000000000L;
                                     long mo = rawLong / 100000000L % 100;
                                     long da = rawLong / 1000000L % 100;
-                                    return vallidDayMonth(yr,mo,da) ? (yr == 0 ? 0 : yr - 1900) : -1;
+                                    long hr = rawLong / 10000 % 100;
+                                    long min = rawLong / 100 % 100;
+                                    long sec = rawLong % 100;
+                                    return vallidDayMonth(yr,mo,da) && vallidHrMinSec(hr,min,sec) ? (yr == 0 ? 0 : yr - 1900) : -1;
                     case TIMESTAMP: rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
                                     Calendar calendar = Calendar.getInstance();
                                     calendar.setTimeInMillis(rawLong * 1000);
@@ -391,8 +391,13 @@ public class ExtractExpression extends AbstractUnaryExpression
         }
 
         abstract long extract (ValueSource source);
-        
-        protected static boolean vallidDayMonth (long y, long m, long d)
+
+        private static boolean vallidHrMinSec (long hr, long min, long sec)
+        {
+            return hr >= 0 && hr < 24 && min >= 0 && min < 60 && sec >= 0 && sec < 60;
+        }
+
+        private static boolean vallidDayMonth (long y, long m, long d)
         {
             switch ((int)m)
             {
@@ -423,9 +428,10 @@ public class ExtractExpression extends AbstractUnaryExpression
             this.type = type;
         }
         
-        private static final EnumSet<AkType> DATES = EnumSet.of(AkType.DATE, AkType.DATETIME, AkType.TIMESTAMP, AkType.YEAR);
+        private static final EnumSet<AkType> DATES = EnumSet.of( AkType.DATE, AkType.DATETIME, AkType.TIMESTAMP, AkType.YEAR);
         private static final EnumSet<AkType> TIMES = EnumSet.of(AkType.TIME, AkType.TIMESTAMP, AkType.DATETIME);
-       
+
+        private AkType t;
         @Override
         public ValueSource eval() 
         {
@@ -437,29 +443,18 @@ public class ExtractExpression extends AbstractUnaryExpression
             {
                 switch (type)
                 {
-                    case DATE:      if (DATES.contains(source.getConversionType()) || source.getConversionType() == AkType.LONG)
-                                        raw = type.extract(source);
-                                    else
-                                        for (AkType t : DATES)
-                                        {
-                                            raw = tryGetLong(t);
-                                            if (raw != -1) 
-                                            {
-                                                raw = type.extract(new ValueHolder(t,raw));
-                                                break;
-                                            }
-                                        }
-                                    break;
+                    case DATE:     
                     case DAY:
                     case TIMESTAMP:
                     case DATETIME:
                     case YEAR:
-                    case MONTH:     if (DATES.contains(source.getConversionType()))
+                    case MONTH:
+                                    if (DATES.contains(source.getConversionType()))
                                         raw = type.extract(source);
                                     else
-                                        for (AkType t : DATES)
+                                        for ( AkType ty : DATES)
                                         {
-                                            raw = tryGetLong(t);
+                                            raw = tryGetLong(t = ty);
                                             if (raw != -1) 
                                             {
                                                 raw = type.extract(new ValueHolder(t,raw));
@@ -507,19 +502,15 @@ public class ExtractExpression extends AbstractUnaryExpression
                 {
                     case TEXT:
                     case VARCHAR: l = Extractors.getLongExtractor(targetType).getLong(operand().getString()); break;
-                    case LONG:     if (targetType == AkType.TIMESTAMP || targetType == AkType.DATE) return -1;
-//                                   else if (targetType == AkType.DATE )
-//                                   {
-//                                       long raw = operand().getLong();
-//                                       long yr = raw /10000;
-//                                       long mo = raw / 100 % 100;
-//                                       long day = raw % 100;
-//                                       if(!TargetExtractType.vallidDayMonth(yr, mo, day) || (yr +mo + day == raw))
-//                                           return -2; //throw new InvalidDateFormatException("date", raw + "");
-//                                       else return
-//                                               yr * 512 + mo * 32 + day;
-//                                   }
-                                   l = Extractors.getLongExtractor(targetType).getLong(Extractors.getLongExtractor(targetType).asString(operand().getLong())); break; 
+                    case LONG:     long raw = operand().getLong();
+                                   if (targetType == AkType.TIMESTAMP/* || targetType == AkType.DATE*/) return -1;
+                                   else if (targetType == AkType.DATE )
+                                   {
+                                       t = AkType.DATETIME;
+                                       if (raw <= 1000000000) return raw * 1000000L; // less than 10 digits
+                                       else return raw;
+                                   }
+                                   l = Extractors.getLongExtractor(targetType).getLong(Extractors.getLongExtractor(targetType).asString(raw)); break;
                     default:
                      l = Extractors.getLongExtractor(targetType).getLong(operand());
                 }
