@@ -244,8 +244,10 @@ public class PersistitAdapter extends StoreAdapter
 
     public static void handlePersistitException(Session session, PersistitException e)
     {
+        assert e != null;
+        Throwable cause = e.getCause();
         if (e instanceof PersistitInterruptedException ||
-            e.getCause() != null && e.getCause() instanceof InterruptedIOException) {
+            cause != null && (cause instanceof InterruptedIOException || cause instanceof InterruptedException)) {
             throw new QueryCanceledException(session);
         } else {
             throw new PersistitAdapterException(e);
