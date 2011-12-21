@@ -154,7 +154,7 @@ public class ArithExpression extends AbstractBinaryExpression
                switch (op.opName())
                {
                   case '-': if (r2 != 0) throw new InvalidArgumentTypeException(msg); // fall thru;  check if second operandis NOT interval E.g inteval - date? => nonsense
-                  case '+': return SUPPORTED_TYPES.get(sum2); // return date/time or interval
+                  case '+': return SUPPORTED_TYPES.get(sum2 == 0 ? sum /2: sum2); // return date/time or interval
                   default: throw new InvalidArgumentTypeException(msg);
                }
             else // number and interval: an interval can be multiply with || divide by a number
@@ -301,8 +301,6 @@ public class ArithExpression extends AbstractBinaryExpression
                             else return doArithMillis(pos); // left and right are date/times
                 default:    if (l == 0 || r == 0) return doArithMillis(pos); // left is date/time and right is interval or vice versa
                             else return doArithMonth(); // dito
-                            
-                            
             }
         }
         
@@ -319,9 +317,7 @@ public class ArithExpression extends AbstractBinaryExpression
      
         protected long doArithMonth ()
         {
-            throw new UnsupportedOperationException(); /* INTERVAL_MONTH should not be
-                            the result of two date/time, not in ArithExpression anyway.
-                            This method, though, could be overidden in sub-class(DateTimeArith) as needed  */
+            throw new UnsupportedOperationException(); // not supported yet
         }
         
         @Override
