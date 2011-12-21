@@ -255,6 +255,10 @@ public class PostgresType
         LongExtractor converter = null;
 
         switch (typeId.getTypeFormatId()) {
+        case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
+        case TypeId.FormatIds.INTERVAL_YEAR_MONTH_ID:
+            oid = INTERVAL_TYPE_OID;
+            break;
         case TypeId.FormatIds.BIT_TYPE_ID:
             oid = BIT_TYPE_OID;
             break;
