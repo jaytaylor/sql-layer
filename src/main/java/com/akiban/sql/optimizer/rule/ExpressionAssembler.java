@@ -21,22 +21,16 @@ import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.types.DataTypeDescriptor;
-
 import static com.akiban.server.expression.std.Expressions.*;
 import com.akiban.server.expression.std.InExpression;
 import com.akiban.server.types.AkType;
-import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
-
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
-
 import com.akiban.server.expression.std.IntervalCastExpression;
-import com.akiban.sql.types.TypeId;
 import com.akiban.sql.types.TypeId;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 /** Turn {@link ExpressionNode} into {@link Expression}. */
