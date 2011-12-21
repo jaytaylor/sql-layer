@@ -174,7 +174,7 @@ public class DateTimeArithExpression extends ArithExpression
         @Override
         public long getLong ()
         {
-            return Calculator.getDay(rawInterval_Millis());
+            return Calculator.getDay(rawInterval());
         }
 
         /**
@@ -185,7 +185,7 @@ public class DateTimeArithExpression extends ArithExpression
         public long getTime ()
         {
             check(AkType.TIME);
-            long millis = rawInterval_Millis();
+            long millis = rawInterval();
             long sign;
             if (millis < 0)
                 millis *= (sign = -1);
