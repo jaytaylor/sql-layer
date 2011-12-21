@@ -3,5 +3,5 @@
 - CreateTable: t (char_for_bit_data_field char(32) for bit data)
 ---
 - Statement: SELECT * FROM t
-- output_types: [BLOB]
+- output_types: [VARCHAR]
 ...
