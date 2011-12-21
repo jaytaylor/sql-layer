@@ -330,7 +330,7 @@ public enum ErrorCode {
     INTERNAL_ERROR          ("53", "000", Importance.ERROR, null),
     INTERNAL_CORRUPTION     ("53", "001", Importance.ERROR, RowDataCorruptionException.class),
     AIS_TOO_LARGE           ("53", "002", Importance.ERROR, AISTooLargeException.class),
-    PERSISTIT_ERROR         ("53", "003", Importance.ERROR, PersistItErrorException.class),
+    PERSISTIT_ERROR         ("53", "003", Importance.ERROR, PersistitAdapterException.class),
     TABLE_NOT_BOUND         ("53", "004", Importance.ERROR, TableNotBoundException.class),
     ROW_OUTPUT              ("53", "005", Importance.DEBUG, RowOutputException.class),    
     SCAN_RETRY_ABANDONDED   ("53", "006", Importance.ERROR, ScanRetryAbandonedException.class),

@@ -12,13 +12,16 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
+package com.akiban.server.error;
 
-package com.akiban.qp.operator;
+import com.persistit.exception.PersistitException;
 
-public class StoreAdapterRuntimeException extends RuntimeException
-{
-    public StoreAdapterRuntimeException(Exception exception)
-    {
-        super(exception);
+public class PersistitAdapterException extends StoreAdapterRuntimeException {
+    public PersistitAdapterException(Throwable ex) {
+        super(ErrorCode.PERSISTIT_ERROR, ex.getMessage());
+        exception = ex;
     }
+    public Throwable getException () { return exception; }
+    
+    private Throwable exception;
 }

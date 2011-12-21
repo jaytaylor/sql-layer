@@ -57,7 +57,7 @@ import com.akiban.server.error.DisplayFilterSetException;
 import com.akiban.server.error.DuplicateKeyException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchRowException;
-import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.RowDataCorruptionException;
 import com.akiban.server.error.ScanRetryAbandonedException;
 import com.akiban.server.service.session.Session;
@@ -839,7 +839,7 @@ public class PersistitStore implements Store {
             try {
                 iEx.removeAll();
             } catch (PersistitException e) {
-                throw new PersistItErrorException (e);
+                throw new PersistitAdapterException(e);
             }
             releaseExchange(session, iEx);
         }
@@ -849,7 +849,7 @@ public class PersistitStore implements Store {
             try {
                 indexManager.deleteIndexAnalysis(session, index);
             } catch (PersistitException e) {
-                throw new PersistItErrorException (e);
+                throw new PersistitAdapterException(e);
             }
         }
     }
@@ -1043,7 +1043,7 @@ public class PersistitStore implements Store {
         try {
             indexManager.populateTableStatistics(session, ts);
         } catch (PersistitException e) {
-            throw new PersistItErrorException (e);
+            throw new PersistitAdapterException(e);
         }
         return ts;
     }
@@ -1102,7 +1102,7 @@ public class PersistitStore implements Store {
             try {
                 iEx.store();
             } catch (PersistitException e) {
-                throw new PersistItErrorException(e);
+                throw new PersistitAdapterException(e);
             }
         }
         releaseExchange(session, iEx);
@@ -1119,7 +1119,7 @@ public class PersistitStore implements Store {
                     throw new DuplicateKeyException(index.getIndexName().getName(), key);
                 }
             } catch (PersistitException e) {
-                throw new PersistItErrorException(e);
+                throw new PersistitAdapterException(e);
             }
             ks.copyTo(key);
         }
@@ -1329,7 +1329,7 @@ public class PersistitStore implements Store {
                     }
                 }
             } catch (PersistitException e) {
-                throw new PersistItErrorException (e);
+                throw new PersistitAdapterException(e);
             }
             flushIndexes(session);
             LOG.debug("Inserted {} index keys into {}", indexKeyCount, rowDef.table().getName());
@@ -1373,7 +1373,7 @@ public class PersistitStore implements Store {
                 }
             }
         } catch (PersistitException e) {
-            throw new PersistItErrorException (e);
+            throw new PersistitAdapterException(e);
         } finally {
             if(hEx != null) {
                 releaseExchange(session, hEx);
@@ -1387,7 +1387,7 @@ public class PersistitStore implements Store {
     public void flushIndexes(final Session session) {
         try {
             putAllDeferredIndexKeys(session);
-        } catch (PersistItErrorException e) {
+        } catch (PersistitAdapterException e) {
             LOG.debug("Exception while trying to flush deferred index keys", e);
             throw e;
         }
@@ -1404,7 +1404,7 @@ public class PersistitStore implements Store {
                 iEx.removeTree();
             } catch (PersistitException e) {
                 LOG.debug("Exception while removing index tree: " + indexDef, e);
-                throw new PersistItErrorException(e);
+                throw new PersistitAdapterException(e);
             }
         }
     }
@@ -1419,7 +1419,7 @@ public class PersistitStore implements Store {
             }
         } catch (PersistitException e) {
             LOG.error(e.getMessage());
-            throw new PersistItErrorException (e);
+            throw new PersistitAdapterException(e);
         }
         final long elapsed = System.nanoTime() - start;
         if (LOG.isInfoEnabled()) {
