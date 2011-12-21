@@ -92,4 +92,9 @@ class ExtractorsForLong extends LongExtractor {
         throw new UnsupportedOperationException("Unsupported! Only works for date/time types");
     }
     
+    @Override
+    public long getEncoded (long [] ymd_hms) {
+        throw new UnsupportedOperationException("Unsupported! Only works for date/time types");
+    }
+    
 }

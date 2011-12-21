@@ -208,6 +208,19 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
         ValueSource actual = new ValueHolder(top.evaluation().eval());        
     }
 
+    @Test
+    public void testDatePlusIntervalMonth ()
+    {
+        Expression left = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2009-02-23"));
+        Expression right = new LiteralExpression(AkType.INTERVAL_MONTH, 23L);
+        
+        Expression top = new ArithExpression(left, ex = ArithOps.ADD, right);
+        
+        String actual = Extractors.getLongExtractor(AkType.DATE).asString(top.evaluation().eval().getDate());
+        
+        assertEquals("2011-01-23", actual);
+    }
+    
     @Override
     protected ExpressionComposer getComposer()
     {

@@ -310,14 +310,42 @@ public class ArithExpression extends AbstractBinaryExpression
             LongExtractor rEx = Extractors.getLongExtractor(right.getConversionType());
             long leftUnix = lEx.stdLongToUnix(lEx.getLong(left));
             long rightUnix = rEx.stdLongToUnix(rEx.getLong(right));               
-            return Extractors.getLongExtractor(SUPPORTED_TYPES.get(pos >= 0 ? pos : -pos)).
+            return Extractors.getLongExtractor(SUPPORTED_TYPES.get(pos > 0 ? pos : -pos)). 
                     unixToStdLong(op.evaluate(leftUnix, rightUnix));
         }
         
      
         protected long doArithMonth ()
         {
-            throw new UnsupportedOperationException(); // not supported yet
+           
+            long ymd_hms[] = new long[6];
+            long interval;
+            LongExtractor extract = Extractors.getLongExtractor(topT);
+            
+            if (left.getConversionType() == AkType.INTERVAL_MONTH)
+            {
+                interval = left.getInterval_Month();
+                ymd_hms = extract.getYearMonthDayHourMinuteSecond(extract.getLong(right));
+            }
+            else
+            {
+                interval = right.getInterval_Month();
+                ymd_hms = ymd_hms = extract.getYearMonthDayHourMinuteSecond(extract.getLong(left));
+            }
+            
+            switch (op.opName())
+            {
+                case '+':   
+                    ymd_hms[1] += interval;
+                    ymd_hms[0] += ymd_hms[1] / 12;
+                    ymd_hms[1] = ymd_hms[1] % 12;
+                    break;
+                default: // '-' 
+                    throw new UnsupportedOperationException();
+                    
+            }
+            // TODO: adjust day
+            return extract.getEncoded(ymd_hms);
         }
         
         @Override
