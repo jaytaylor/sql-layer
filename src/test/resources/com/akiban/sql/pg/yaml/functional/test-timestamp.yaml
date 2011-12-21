@@ -25,7 +25,7 @@
 #---
 - Statement: select timestamp('A') from all_types;
 - output: [[null]]
-# ---
-# - Statement: select timestamp(9999999) from all_types;
-# - output: [[null]]
+ ---
+ - Statement: select timestamp(9999999) from all_types;
+ - output: [[null]]
 ...
