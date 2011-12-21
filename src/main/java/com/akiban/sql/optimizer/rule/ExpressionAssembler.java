@@ -28,6 +28,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.expression.std.IntervalCastExpression;
+import com.akiban.sql.pg.PostgresType;
 import com.akiban.sql.types.TypeId;
 import java.util.ArrayList;
 import java.util.Arrays;
