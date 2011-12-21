@@ -232,10 +232,15 @@ public abstract class AkibanAppender {
         }
         
         @Override
-        public void putInterval(long value) {
+        public void putInterval_Millis(long value) {
             throw new UnsupportedOperationException();
         }
 
+        @Override
+        public void putInterval_Month(long value) {
+            throw new UnsupportedOperationException();
+        }
+        
         @Override
         public void putUBigInt(BigInteger value) {
             throw new UnsupportedOperationException();

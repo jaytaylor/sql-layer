@@ -5,7 +5,7 @@
 # Bug #901511 - YEAR() returning years less than 1000 with leading 0's
 - Properties: sys-aksql
 - suppressed: true
-
+# bug 905507 and 901511
 ---
 - Include: all-types-schema.yaml
 ---

@@ -174,18 +174,18 @@ public class DateTimeArithExpression extends ArithExpression
         @Override
         public long getLong ()
         {
-            return Calculator.getDay(rawInterval());
+            return Calculator.getDay(rawInterval_Millis());
         }
 
         /**
          *
-         * @return INTERVAL between two events expressed in HOUR:MINUTE:SECOND
+         * @return INTERVAL_MILLIS between two events expressed in HOUR:MINUTE:SECOND
          */
         @Override
         public long getTime ()
         {
             check(AkType.TIME);
-            long millis = rawInterval();
+            long millis = rawInterval_Millis();
             long sign;
             if (millis < 0)
                 millis *= (sign = -1);
@@ -198,7 +198,7 @@ public class DateTimeArithExpression extends ArithExpression
 
     /**
      *  topT
-     *  means INTERVAL expressed in this type
+     *  means INTERVAL_MILLIS expressed in this type
      *  For example, time minus time => interval
      *  if topT is set to TIME => result is INTERVAL in HOURS, SECONDS, MINUTES
      */

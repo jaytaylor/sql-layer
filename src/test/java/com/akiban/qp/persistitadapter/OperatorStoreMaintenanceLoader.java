@@ -16,11 +16,16 @@ package com.akiban.qp.persistitadapter;
 
 public final class OperatorStoreMaintenanceLoader {
     public static void load() {
-        String name = OperatorStoreMaintenance.class.getCanonicalName();
         try {
-            Class.forName(name);
+            load(OperatorStore.class);
+            load(OperatorStoreMaintenance.class);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public static void load(Class klass) throws ClassNotFoundException
+    {
+        Class.forName(klass.getCanonicalName());
     }
 }

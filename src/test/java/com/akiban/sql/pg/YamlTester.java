@@ -175,9 +175,9 @@ class YamlTester {
     private int commandNumber = 0;
     private String commandName = null;
     private boolean suppressed = false;
-    private static DateFormat DEFAULT_DATE_FORMAT = new SimpleDateFormat(
+    private static final DateFormat DEFAULT_DATE_FORMAT = new SimpleDateFormat(
             "yyyy-MM-dd");
-    private static DateFormat DEFAULT_DATETIME_FORMAT = new SimpleDateFormat(
+    private static final DateFormat DEFAULT_DATETIME_FORMAT = new SimpleDateFormat(
             "yyyy-MM-dd HH:mm:ss.S");
 
     /**
@@ -1030,9 +1030,9 @@ class YamlTester {
 	    return true;
 	}
 	@Override
-    public String toString() {
-	    return "!dc";
-	}
+        public String toString() {
+            return "!dc";
+        }
     }
 
     /**
@@ -1049,7 +1049,7 @@ class YamlTester {
 	    }
 	}
 	@Override
-    public boolean compareOutput(Object object) {
+        public boolean compareOutput(Object object) {
 	    boolean result = pattern.matcher(String.valueOf(object)).matches();
 	    if (DEBUG) {
 		System.err.println("Regexp.compareOutput pattern='" + pattern +
@@ -1059,7 +1059,7 @@ class YamlTester {
 	    return result;
 	}
 	@Override
-    public String toString() {
+        public String toString() {
 	    return "!re '" + pattern + "'";
 	}
     }
@@ -1156,7 +1156,6 @@ class YamlTester {
 	}
 
         private static class ConstructSystemDate extends AbstractConstruct {
-            // not thread safe, not sure if that matters
             @Override
             public Object construct(Node node) {
                 Date today = Calendar.getInstance().getTime();
@@ -1182,7 +1181,7 @@ class YamlTester {
     }
 
     /**
-     * A class that represents the current system time 60 seconds
+     * A class that compares a time value allowing a 1 minute window 
      */
     static class TimeChecker implements OutputComparator {
 
@@ -1192,29 +1191,29 @@ class YamlTester {
 
         @Override
         public boolean compareOutput(Object object) {
-            String[] time_as_string = String.valueOf(object).split(":");
-            Calendar local_calendar = Calendar.getInstance();
-            long local_time_in_seconds = local_calendar
+            String[] timeAsString = String.valueOf(object).split(":");
+            Calendar localCalendar = Calendar.getInstance();
+            
+            long localTimeInSeconds = localCalendar
                     .get(Calendar.HOUR_OF_DAY)
                     * MINUTES_IN_SECONDS
                     * HOURS_IN_MINUTES;
-            local_time_in_seconds += local_calendar.get(Calendar.MINUTE)
+            localTimeInSeconds += localCalendar.get(Calendar.MINUTE)
                     * MINUTES_IN_SECONDS;
-            local_time_in_seconds += local_calendar.get(Calendar.SECOND)
-                    * MINUTES_IN_SECONDS;
-            long result_time = Integer.parseInt(time_as_string[0])
+            localTimeInSeconds += localCalendar.get(Calendar.SECOND);
+            long resultTime = Integer.parseInt(timeAsString[0])
                     * MINUTES_IN_SECONDS * HOURS_IN_MINUTES;
-            result_time += Integer.parseInt(time_as_string[1])
+            resultTime += Integer.parseInt(timeAsString[1])
                     * MINUTES_IN_SECONDS;
-            result_time += Integer.parseInt(time_as_string[2]);
-            boolean results = Math.abs(result_time - local_time_in_seconds) < (1 * MINUTES_IN_SECONDS * SECONDS_IN_MILLISECONDS);
+            resultTime += Integer.parseInt(timeAsString[2]);
+            boolean results = Math.abs(resultTime - localTimeInSeconds) < (1 * MINUTES_IN_SECONDS);
             return results;
         }
 
     }
 
     /**
-     * A class that represents the current system datetime within 60 seconds
+     *  A class that compares a datetime value allowing a 1 minute window
      */
     static class DateTimeChecker implements OutputComparator {
 
@@ -1223,17 +1222,15 @@ class YamlTester {
 
         @Override
         public boolean compareOutput(Object object) {
-            Calendar local_calendar = Calendar.getInstance();
-            long test_result = 0;
+            long testResult = 0;
             try {
                 Date result = DEFAULT_DATETIME_FORMAT.parse(String
-                        .valueOf(object));
-                test_result = result.getTime()
-                        - local_calendar.getTimeInMillis();
+                       .valueOf(object));
+                testResult = (result.getTime() - System.currentTimeMillis());
             } catch (ParseException e) {
                 fail(e.getMessage());
             }
-            boolean results = Math.abs(test_result) < (1 * MINUTES_IN_SECONDS * SECONDS_IN_MILLISECONDS);
+            boolean results = Math.abs(testResult) < (1 * MINUTES_IN_SECONDS * SECONDS_IN_MILLISECONDS);
             return results;
         }
 

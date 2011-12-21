@@ -136,9 +136,13 @@ final class StandardTestCases {
         list.add(TestCase.forYear(yearConverter.getLong("1983"), NO_STATE));
         list.add(TestCase.forYear(yearConverter.getLong("2155"), NO_STATE));
 
-        list.add(TestCase.forInterval(0, NO_STATE));
-        list.add(TestCase.forInterval(Long.MAX_VALUE, NO_STATE));
-        list.add(TestCase.forInterval(Long.MIN_VALUE, NO_STATE));
+        list.add(TestCase.forInterval_Millis(0, NO_STATE));
+        list.add(TestCase.forInterval_Millis(Long.MAX_VALUE, NO_STATE));
+        list.add(TestCase.forInterval_Millis(Long.MIN_VALUE, NO_STATE));
+
+        list.add(TestCase.forInterval_Month(0, NO_STATE));
+        list.add(TestCase.forInterval_Month(Long.MAX_VALUE, NO_STATE));
+        list.add(TestCase.forInterval_Month(Long.MIN_VALUE, NO_STATE));
 
         verifyAllTypesTested(list);
 
