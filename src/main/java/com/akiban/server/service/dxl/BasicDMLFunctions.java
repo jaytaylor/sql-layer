@@ -60,7 +60,7 @@ import com.akiban.server.error.CursorIsUnknownException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.OldAISException;
-import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.RowOutputException;
 import com.akiban.server.error.ScanRetryAbandonedException;
 import com.akiban.server.error.TableDefinitionChangedException;
@@ -337,12 +337,12 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                     }
                     cursor = reopen(session, cursorId, cursor.getScanRequest(), false);
                 } catch (PersistitException e) {
-                    throw new PersistItErrorException(e);
+                    throw new PersistitAdapterException(e);
                 } finally {
                     transaction.end();
                 }
             } catch (PersistitException e) {
-                throw new PersistItErrorException(e);
+                throw new PersistitAdapterException(e);
             }
         }
     }
@@ -600,7 +600,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         try {
             store().writeRow(session, rowData);
         } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
+            throw new PersistitAdapterException(ex);
         }
         return null;
     }
@@ -613,7 +613,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         try {
             store().deleteRow(session, rowData);
         } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
+            throw new PersistitAdapterException(ex);
         }
     }
 
@@ -644,7 +644,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         try {
             store().updateRow(session, oldData, newData, columnSelector);
         } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
+            throw new PersistitAdapterException(ex);
         }
             
     }
@@ -756,7 +756,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             try {
                 store().truncateGroup(session, rowDef.getRowDefId());
             } catch (PersistitException ex) {
-                throw new PersistItErrorException (ex);
+                throw new PersistitAdapterException(ex);
             }
                 
             return;
@@ -817,7 +817,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         try {
             store().truncateTableStatus(session, tableId);
         } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
+            throw new PersistitAdapterException(ex);
         }
         if (thrown != null) {
             throw thrown;
