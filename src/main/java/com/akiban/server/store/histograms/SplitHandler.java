@@ -44,9 +44,10 @@ abstract class SplitHandler<T> {
             for (int i = 0; i < segments; ++i) {
                 T segment = split.get(i);
                 SegmentBuffer<T> buffer = buffers.get(i);
+                T prev = buffer.last();
                 int count = buffer.put(segment);
                 if (count > 0) {
-                    handle(i, segment, count);
+                    handle(i, prev, count);
                 }
             }
         }
@@ -54,7 +55,8 @@ abstract class SplitHandler<T> {
             SegmentBuffer<T> buffer = buffers.get(i);
             T segment = buffer.last();
             int count = buffer.lastCount();
-            handle(i, segment, count);
+            if (count > 0)
+                handle(i, segment, count);
         }
     }
 
@@ -68,7 +70,10 @@ abstract class SplitHandler<T> {
         int put(T segment) {
             int count;
             if (lastCount == 0) {
+                // first element
                 count = 0;
+                lastCount = 1;
+                last = segment;
             }
             else if (Equality.areEqual(last, segment)) {
                 // same segment, just update lastCount
