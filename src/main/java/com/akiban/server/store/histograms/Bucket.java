@@ -21,9 +21,9 @@ public final class Bucket<T> {
 
     // Bucket interface
     
-    public void init(T value) {
+    public void init(T value, int count) {
         this.value = value;
-        this.equalsCount = 1;
+        this.equalsCount = count;
         this.ltCount = 0;
         this.ltDistinctCount = 0;
     }

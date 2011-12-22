@@ -15,11 +15,11 @@
 
 package com.akiban.server.store.histograms;
 
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Flywheel;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -29,14 +29,14 @@ import java.util.TreeMap;
 public final class Buckets<T> {
 
     public static <T> List<List<Bucket<T>>> compile(
-            Iterable<? extends List<? extends T>> from,
-            int segments,
+            Iterator<? extends T> from,
+            Splitter<T> splitter,
             int maxSize
     ) {
-        return compile(from, maxSize, segments, System.nanoTime());
+        return compile(from, splitter, maxSize, System.nanoTime());
     }
     
-    private void add(Bucket<T> bucket, BucketSource<T> releaseTo) {
+    private void add(Bucket<T> bucket, Flywheel<Bucket<T>> releaseTo) {
         BucketNode<T> node = nodeFor(bucket);
         node.prev = last;
         last.next = node;
@@ -64,35 +64,62 @@ public final class Buckets<T> {
         }
     }
 
+    private static class InternalSplitHandler<T> extends SplitHandler<T> {
+        @Override
+        protected void handle(int segmentIndex, T input, int count) {
+            Buckets<T> buckets = bucketsList.get(segmentIndex);
+            
+            Bucket<T> bucket = bucketsFlywheel.get();
+            bucket.init(input, count);
+            
+            buckets.add(bucket, bucketsFlywheel);
+        }
+        
+        public List<List<Bucket<T>>> toBuckets() {
+            List<List<Bucket<T>>> results = new ArrayList<List<Bucket<T>>>(segments);
+            for (int i=0; i < segments; ++i ) {
+                results.add(bucketsList.get(i).buckets());
+            }
+            return results;
+        }
+
+        private InternalSplitHandler(Splitter<T> splitter, int maxSize, long randSeed) {
+            super(splitter);
+            int segments = splitter.segments();
+            ArgumentValidation.isGT("segments", segments, 0);
+            bucketsList =  new ArrayList<Buckets<T>>(segments);
+            Random random = new Random(randSeed);
+            for (int i=0; i < segments; ++i) {
+                bucketsList.add(new Buckets<T>(maxSize, random));
+            }
+            this.maxSize = maxSize;
+            this.segments = segments;
+        }
+        
+        final List<Buckets<T>> bucketsList;
+        final int maxSize;
+        final int segments;
+        final Flywheel<Bucket<T>> bucketsFlywheel = new Flywheel<Bucket<T>>() {
+            @Override
+            protected Bucket<T> createNew() {
+                ++created;
+                assert created <= (maxSize+1) * segments : created + " > " + (maxSize+1)*segments;
+                return new Bucket<T>();
+            }
+            
+            private int created;
+        };
+    }
+    
     static <T> List<List<Bucket<T>>> compile(
-            Iterable<? extends List<? extends T>> from,
+            Iterator<? extends T> from,
+            Splitter<T> splitter,
             int maxSize,
-            int segments,
             long randSeed
     ) {
-        ArgumentValidation.isGT("segments", segments, 0);
-        BucketSource<T> source = new BucketSource<T>(from, segments, maxSize + 1);
-        // init the buckets and list
-        List<Buckets<T>> buckets = new ArrayList<Buckets<T>>(segments);
-        Random random = new Random(randSeed);
-        for (int i=0; i < segments; ++i) {
-            buckets.add(new Buckets<T>(maxSize, random));
-        }
-        // scan in the input segments and add them to their respective buckets
-        for (List<Bucket<T>> inputs : source) {
-            if (inputs.size() != segments)
-                throw new AkibanInternalException("expected " + segments + " segments: " + inputs);
-            for (int i = 0; i < segments; ++i) {
-                buckets.get(i).add(inputs.get(i), source);
-            }
-            source.release(inputs);
-        }
-        // create a list out of the respective buckets
-        List<List<Bucket<T>>> results = new ArrayList<List<Bucket<T>>>(segments);
-        for (int i=0; i < segments; ++i ) {
-            results.add(buckets.get(i).buckets());
-        }
-        return results;
+        InternalSplitHandler<T> handler = new InternalSplitHandler<T>(splitter, maxSize, randSeed);
+        handler.run(from);
+        return handler.toBuckets();
     }
 
     private List<Bucket<T>> buckets() {
@@ -229,8 +256,7 @@ public final class Buckets<T> {
     private BucketNode<T> last;
     private Flywheel<BucketNode<T>> bucketNodeReserves;
     private Flywheel<BucketNodeSet<T>> bucketNodeSetReserves;
-
-
+    
     private static class BucketNode<A> {
 
         @Override

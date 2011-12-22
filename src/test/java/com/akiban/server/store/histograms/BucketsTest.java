@@ -66,18 +66,35 @@ public final class BucketsTest {
 
     @Test
     public void multipleStreams() {
-        List<List<String>> inputs = new ArrayList<List<String>>();
-        inputs.add(list("bird", "berry"));
-        inputs.add(list("bear", "berry"));
-        inputs.add(list("bear", "honey")); // (bear) should double up, (berry) should not
-        inputs.add(list("dog", "itsownpoop"));
-        inputs.add(list("dog", "itsownpoop"));
-        inputs.add(list("mouse", "cheese"));
-        inputs.add(list("mouse", "cheese"));
-        inputs.add(list("mouse", "cheese"));
-        inputs.add(list("human", "cheese"));
+        List<String> inputs = Arrays.asList(
+            "bird eats berry",
+            "bear eats berry",
+            "bear eats honey",
+            "dog eats itsownpoop",
+            "dog eats itsownpoop",
+            "mouse eats cheese",
+            "mouse eats cheese",
+            "mouse eats cheese",
+            "human eats cheese"
+        );
+
+        Splitter<String> splitter = new Splitter<String>() {
+            @Override
+            public int segments() {
+                return 2;
+            }
+
+            @Override
+            public List<? extends String> split(String input) {
+                return Arrays.asList(input.split(" eats "));
+            }
+        };
         
-        List<List<Bucket<String>>> actualBuckets = Buckets.compile(inputs, 2, Integer.MAX_VALUE); // "unlimited" buckets
+        List<List<Bucket<String>>> actualBuckets = Buckets.compile(
+                inputs.iterator(),
+                splitter,
+                Integer.MAX_VALUE // "unlimited" buckets
+        );
 
         List<List<Bucket<String>>> expectedBuckets = new ArrayList<List<Bucket<String>>>();
         expectedBuckets.add(
@@ -86,11 +103,11 @@ public final class BucketsTest {
                         bucket("berry", 2, 0, 0)
                 )
         );
-        expectedBuckets.add(
-                bucketsList(
-                        bucket("")
-                )
-        )
+//        expectedBuckets.add(
+//                bucketsList(
+//                        bucket("")
+//                )
+//        )
         
         fail("not yet implemented");
     }
@@ -210,13 +227,12 @@ public final class BucketsTest {
             Random seedGenerator = new Random(seedSeed);
             for (int iteration = 0; iteration < iterations; ++iteration) {
                 long seed = seedGenerator.nextLong();
-                List<List<Bucket<T>>> buckets = Buckets.compile(
-                        BucketTestUtils.expandList(testDescription.list()),
+                List<Bucket<T>> buckets = BucketTestUtils.compileSingleStream(
+                        testDescription.list(),
                         testDescription.maxBuckets(),
-                        1,
                         seed
                 );
-                for (Bucket<T> bucket : BucketTestUtils.extractSingle(buckets)) {
+                for (Bucket<T> bucket : buckets) {
                     T bucketValue = bucket.value();
                     long old = distributions.get(bucketValue);
                     distributions.put(bucketValue, old+1);
@@ -304,9 +320,13 @@ public final class BucketsTest {
         AssertUtils.assertCollectionEquals("compiled buckets", expected, actual);
     }
 
-    @SuppressWarnings("unchecked")
     private List<Bucket<String>> bucketsList(Bucket<?>... buckets) {
-        return (List<Bucket<String>>) list(buckets);
-        
+        List<Bucket<String>> list = new ArrayList<Bucket<String>>();
+        for (Bucket<?> bucket : buckets) {
+            @SuppressWarnings("unchecked")
+            Bucket<String> cast = (Bucket<String>) bucket;
+            list.add(cast);
+        }
+        return list;
     }
 }

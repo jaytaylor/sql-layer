@@ -15,7 +15,6 @@
 
 package com.akiban.server.store.histograms;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -24,7 +23,7 @@ import static org.junit.Assert.assertEquals;
 final class BucketTestUtils {
     public static <T> Bucket<T> bucket(T value, long equals, long lessThans, long lessThanDistincts) {
         Bucket<T> result = new Bucket<T>();
-        result.init(value);
+        result.init(value, 1);
         for (int i = 1; i < equals; ++i) { // starting count from 1 since a new Bucket has equals of 1
             result.addEquals();
         }
@@ -32,28 +31,26 @@ final class BucketTestUtils {
         result.addLessThanDistincts(lessThanDistincts);
         return result;
     }
-
-    public static <T> Bucket<T> bucket(T value, long equals) {
-        return bucket(value, equals, 0, 0);
-    }
     
-    public static <T> List<Bucket<T>> compileSingleStream(Iterable<? extends T> inputs, int maxBuckets) {
-        List<List<T>> inputsTransformed = expandList(inputs);
-        List<List<Bucket<T>>> result = Buckets.compile(inputsTransformed, 1, maxBuckets);
+    public static <T> List<Bucket<T>> compileSingleStream(Iterable<? extends T> inputs, int maxBuckets, long seed) {
+        List<List<Bucket<T>>> result = Buckets.compile(inputs.iterator(), new SingletonSplitter<T>(), maxBuckets, seed);
         assertEquals("result length: " + result, 1, result.size());
         return result.get(0);
     }
-    
-    public static <T> T extractSingle(List<? extends T> from) {
-        assertEquals("singleton list size: " + from, 1, from.size());
-        return from.get(0);
+
+    public static <T> List<Bucket<T>> compileSingleStream(Iterable<? extends T> inputs, int maxBuckets) {
+        return compileSingleStream(inputs, maxBuckets, 37L);
     }
 
-    public static <T> List<List<T>> expandList(Iterable<? extends T> inputs) {
-        List<List<T>> inputsTransformed = new ArrayList<List<T>>();
-        for (T input : inputs) {
-            inputsTransformed.add(Collections.singletonList(input));
+    public static class SingletonSplitter<T> implements Splitter<T> {
+        @Override
+        public int segments() {
+            return 1;
         }
-        return inputsTransformed;
+
+        @Override
+        public List<? extends T> split(T input) {
+            return Collections.singletonList(input);
+        }
     }
 }
