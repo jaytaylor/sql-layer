@@ -19,7 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public final class CollectionUtils {
-    public static <T> List<? extends T> list(T... elems) {
+    public static <T> List<T> list(T... elems) {
         return Arrays.asList(elems);
     }
 }

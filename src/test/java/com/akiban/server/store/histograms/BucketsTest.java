@@ -22,6 +22,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -65,6 +66,32 @@ public final class BucketsTest {
 
     @Test
     public void multipleStreams() {
+        List<List<String>> inputs = new ArrayList<List<String>>();
+        inputs.add(list("bird", "berry"));
+        inputs.add(list("bear", "berry"));
+        inputs.add(list("bear", "honey")); // (bear) should double up, (berry) should not
+        inputs.add(list("dog", "itsownpoop"));
+        inputs.add(list("dog", "itsownpoop"));
+        inputs.add(list("mouse", "cheese"));
+        inputs.add(list("mouse", "cheese"));
+        inputs.add(list("mouse", "cheese"));
+        inputs.add(list("human", "cheese"));
+        
+        List<List<Bucket<String>>> actualBuckets = Buckets.compile(inputs, 2, Integer.MAX_VALUE); // "unlimited" buckets
+
+        List<List<Bucket<String>>> expectedBuckets = new ArrayList<List<Bucket<String>>>();
+        expectedBuckets.add(
+                bucketsList(
+                        bucket("bird", 1, 0, 0),
+                        bucket("berry", 2, 0, 0)
+                )
+        );
+        expectedBuckets.add(
+                bucketsList(
+                        bucket("")
+                )
+        )
+        
         fail("not yet implemented");
     }
 
