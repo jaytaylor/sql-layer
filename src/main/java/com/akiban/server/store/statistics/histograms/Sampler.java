@@ -35,7 +35,16 @@ public class Sampler<T> extends SplitHandler<T> {
         buckets.add(bucket, bucketsFlywheel);
     }
 
+    @Override
+    public void finish() {
+        super.finish();
+        finished = true;
+    }
+
     public List<List<Bucket<T>>> toBuckets() {
+        if (!finished) {
+            throw new IllegalStateException("never called finish() after visiting");
+        }
         List<List<Bucket<T>>> results = new ArrayList<List<Bucket<T>>>(segments);
         for (int i=0; i < segments; ++i ) {
             results.add(bucketsList.get(i).buckets());
@@ -63,6 +72,7 @@ public class Sampler<T> extends SplitHandler<T> {
     final List<Buckets<T>> bucketsList;
     final int maxSize;
     final int segments;
+    boolean finished = false;
     final Flywheel<Bucket<T>> bucketsFlywheel = new Flywheel<Bucket<T>>() {
         @Override
         protected Bucket<T> createNew() {

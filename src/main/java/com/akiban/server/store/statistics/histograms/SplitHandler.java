@@ -35,6 +35,7 @@ abstract class SplitHandler<T> implements SampleVisitor<T> {
 
     @Override
     public void finish() {
+        checkInit();
         for (int i = 0; i < segments; ++i) {
             SegmentBuffer<T> buffer = buffers.get(i);
             T segment = buffer.last();
@@ -46,6 +47,7 @@ abstract class SplitHandler<T> implements SampleVisitor<T> {
 
     @Override
     public void visit(T input) {
+        checkInit();
         List<? extends T> split = splitter.split(input);
         if (split.size() != segments)
             throw new IllegalStateException("required " + segments + ", found " + split.size() + ": " + split);
@@ -65,6 +67,11 @@ abstract class SplitHandler<T> implements SampleVisitor<T> {
         this.segments = splitter.segments();
         if (segments < 1)
             throw new IllegalArgumentException("splitter must provide at least 1 segment: " + segments);
+    }
+
+    private void checkInit() {
+        if (buffers == null)
+            throw new IllegalStateException("not initialized");
     }
 
     private final Splitter<T> splitter;

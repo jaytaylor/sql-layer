@@ -23,6 +23,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static org.junit.Assert.assertEquals;
+
 public final class SplitHandlerTest {
     @Test
     public void singleStream() {
@@ -127,6 +129,28 @@ public final class SplitHandlerTest {
         AssertUtils.assertCollectionEquals("single stream", expected, actual);
     }
     
+    @Test
+    public void noInputs() {
+        ToArraySplitHandler handler = new ToArraySplitHandler(new BucketTestUtils.SingletonSplitter<String>());
+        handler.init();
+        handler.finish();
+        List<List<SplitPair>> actual = handler.splitPairStreams;
+        List<SplitPair> emptyStream = Collections.emptyList();
+        assertEquals("empty input results", Collections.singletonList(emptyStream), actual);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void visitBeforeInit() {
+        ToArraySplitHandler handler = new ToArraySplitHandler(new BucketTestUtils.SingletonSplitter<String>());
+        handler.visit("foo");
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void finishBeforeInit() {
+        ToArraySplitHandler handler = new ToArraySplitHandler(new BucketTestUtils.SingletonSplitter<String>());
+        handler.finish();
+    }
+
     @Test(expected = IllegalStateException.class)
     public void mismatchedSegmentsCount() {
         Splitter<String> splitter = new Splitter<String>() {

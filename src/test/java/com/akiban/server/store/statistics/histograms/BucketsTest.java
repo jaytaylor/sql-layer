@@ -139,6 +139,13 @@ public final class BucketsTest {
         BucketTestUtils.compileSingleStream(list("a", "b", "c"), 1);
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void toBucketsBeforeFinish() {
+        Sampler<String> sampler = new Sampler<String>(new BucketTestUtils.SingletonSplitter<String>(), 31, 37);
+        sampler.init();
+        sampler.toBuckets();
+    }
+
     // randomized (but with the same seed each time) distribution tests
 
     @Test
