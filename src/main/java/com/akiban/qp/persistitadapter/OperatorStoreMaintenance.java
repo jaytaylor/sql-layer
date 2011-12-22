@@ -258,17 +258,27 @@ final class OperatorStoreMaintenance {
 
         PlanCreationStruct result = new PlanCreationStruct(rowType, groupIndex);
 
-        boolean deep = !branchTables.leafMost().equals(rowType);
         Operator plan = API.groupScan_Default(
                 groupIndex.getGroup().getGroupTable(),
                 HKEY_BINDING_POSITION,
-                deep,
+                false,
                 rowType.userTable(),
                 branchTables.fromRoot().get(0).userTable()
         );
         if (branchTables.fromRoot().size() == 1) {
             result.rootOperator = plan;
             return result;
+        }
+        if (!branchTables.leafMost().equals(rowType)) {
+            // the incoming row isn't the leaf, so we have to get its ancestors along the branch
+            RowType child = branchTables.childOf(rowType);
+            plan = API.branchLookup_Default(
+                    plan,
+                    groupIndex.getGroup().getGroupTable(),
+                    rowType,
+                    child,
+                    API.LookupOption.KEEP_INPUT
+            );
         }
         if (!branchTables.fromRoot().get(0).equals(rowType)) {
             plan = API.ancestorLookup_Default(
@@ -378,6 +388,12 @@ final class OperatorStoreMaintenance {
 
         public UserTableRowType leafMost() {
             return onlyBranch.get(onlyBranch.size()-1);
+        }
+
+        public RowType childOf(UserTableRowType rowType) {
+            int inputDepth = rowType.userTable().getDepth();
+            int childDepth = inputDepth + 1;
+            return allTablesForBranch.get(childDepth);
         }
 
         public UserTableRowType parentRowType(UserTableRowType rowType) {
