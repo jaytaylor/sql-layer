@@ -52,6 +52,7 @@ public class PersistitGroupRow extends AbstractRow
     public ValueSource eval(int i) {
         FieldDef fieldDef = rowDef().getFieldDef(i);
         RowData rowData = rowData();
+        RowDataValueSource valueSource = valueSource(i);
         valueSource.bind(fieldDef, rowData);
         return valueSource;
     }
@@ -152,19 +153,32 @@ public class PersistitGroupRow extends AbstractRow
     {
         this.adapter = adapter;
         this.rowData = rowData;
-        this.typedHKeys = new PersistitHKey[INITIAL_HKEY_ARRAY_SIZE];
+        this.typedHKeys = new PersistitHKey[INITIAL_ARRAY_SIZE];
+    }
+    
+    private RowDataValueSource valueSource(int i)
+    {
+        if (i >= valueSources.length) {
+            RowDataValueSource[] newValueSources = new RowDataValueSource[valueSources.length * 2];
+            System.arraycopy(valueSources, 0, newValueSources, 0, valueSources.length);
+            valueSources = newValueSources;
+        }
+        if (valueSources[i] == null) {
+            valueSources[i] = new RowDataValueSource(); 
+        }
+        return valueSources[i];
     }
 
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(PersistitGroupRow.class);
     private static final int INITIAL_ROW_SIZE = 500;
-    private static final int INITIAL_HKEY_ARRAY_SIZE = 10;
+    private static final int INITIAL_ARRAY_SIZE = 10;
     private static final int MAX_ROWDATA_SIZE_BYTES = 5000000;
 
     // Object state
 
-    private final RowDataValueSource valueSource = new RowDataValueSource();
+    private RowDataValueSource[] valueSources = new RowDataValueSource[INITIAL_ARRAY_SIZE];
     private final PersistitAdapter adapter;
     private RowData rowData;
     private LegacyRowWrapper row;

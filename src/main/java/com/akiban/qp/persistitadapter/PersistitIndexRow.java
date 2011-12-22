@@ -17,8 +17,8 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.AbstractRow;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.PersistitKeyValueSource;
@@ -61,6 +61,7 @@ public class PersistitIndexRow extends AbstractRow
     @Override
     public ValueSource eval(int i) {
         IndexColumn column = index().getColumns().get(i);
+        PersistitKeyValueSource keySource = keySource(i);
         keySource.attach(indexRow, column);
         return keySource;
     }
@@ -79,7 +80,6 @@ public class PersistitIndexRow extends AbstractRow
         this.indexRowType = indexRowType;
         this.indexRow = adapter.persistit().getKey(adapter.session());
         this.hKey = new PersistitHKey(adapter, index().hKey());
-        this.keySource = new PersistitKeyValueSource();
     }
 
     // For use by this package
@@ -101,11 +101,28 @@ public class PersistitIndexRow extends AbstractRow
         return indexRowType.index();
     }
 
+    private PersistitKeyValueSource keySource(int i)
+    {
+        if (i >= keySources.length) {
+            PersistitKeyValueSource[] newKeySources = new PersistitKeyValueSource[keySources.length * 2];
+            System.arraycopy(keySources, 0, newKeySources, 0, keySources.length);
+            keySources = newKeySources;
+        }
+        if (keySources[i] == null) {
+            keySources[i] = new PersistitKeyValueSource();
+        }
+        return keySources[i];
+    }
+
+    // Class state
+    
+    private static final int INITIAL_ARRAY_SIZE = 10;
+    
     // Object state
 
     private final PersistitAdapter adapter;
     private final IndexRowType indexRowType;
-    private final PersistitKeyValueSource keySource;
+    private PersistitKeyValueSource[] keySources = new PersistitKeyValueSource[INITIAL_ARRAY_SIZE];
     private final Key indexRow;
     private PersistitHKey hKey;
 }
