@@ -297,7 +297,10 @@ public class PostgresType
             break;
         case TypeId.FormatIds.SMALLINT_TYPE_ID:
             oid = INT2_TYPE_OID;
-            converter = Extractors.getLongExtractor(AkType.INT);
+            if (typeId == TypeId.YEAR_ID)
+                converter = Extractors.getLongExtractor(AkType.YEAR);
+            else
+                converter = Extractors.getLongExtractor(AkType.INT);
             break;
         case TypeId.FormatIds.TIME_TYPE_ID:
             oid = TIME_TYPE_OID;
