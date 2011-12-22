@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.store.histograms;
+package com.akiban.server.store.statistics.histograms;
 
 import com.akiban.util.Equality;
 

@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.store.histograms;
+package com.akiban.server.store.statistics.histograms;
 
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.AssertUtils;
@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
 
-import static com.akiban.server.store.histograms.BucketTestUtils.bucket;
+import static com.akiban.server.store.statistics.histograms.BucketTestUtils.bucket;
 import static com.akiban.util.CollectionUtils.list;
 import static org.junit.Assert.*;
 
@@ -67,15 +67,15 @@ public final class BucketsTest {
     @Test
     public void multipleStreams() {
         List<String> inputs = Arrays.asList(
-            "bird eats berry",
-            "bear eats berry",
-            "bear eats honey",
-            "dog eats itsownpoop",
-            "dog eats itsownpoop",
-            "mouse eats cheese",
-            "mouse eats cheese",
-            "mouse eats cheese",
-            "human eats cheese"
+                "bird eats berry",
+                "bear eats berry",
+                "bear eats honey",
+                "dog eats itsownpoop",
+                "dog eats itsownpoop",
+                "mouse eats cheese",
+                "mouse eats cheese",
+                "mouse eats cheese",
+                "human eats cheese"
         );
 
         // note that the two streams are of different length
