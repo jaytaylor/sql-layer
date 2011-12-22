@@ -34,7 +34,7 @@ final class BucketTestUtils {
     
     public static <T> List<Bucket<T>> compileSingleStream(Iterable<? extends T> inputs, int maxBuckets, long seed) {
         Sampler<T> sampler = new Sampler<T>(new SingletonSplitter<T>(), maxBuckets, seed);
-        sampler.init(1);
+        sampler.init();
         for (T input : inputs) {
             sampler.visit(input);
         }

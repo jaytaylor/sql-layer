@@ -22,14 +22,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+/**
+ * Combines the SplitHandler (T visitor) with Buckets (T aggregator).
+ * @param <T> the thing to be sampled
+ */
 class Sampler<T> extends SplitHandler<T> {
     @Override
     protected void handle(int segmentIndex, T input, int count) {
         Buckets<T> buckets = bucketsList.get(segmentIndex);
-
         Bucket<T> bucket = bucketsFlywheel.get();
         bucket.init(input, count);
-
         buckets.add(bucket, bucketsFlywheel);
     }
 

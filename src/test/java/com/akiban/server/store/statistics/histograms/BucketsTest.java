@@ -109,7 +109,7 @@ public final class BucketsTest {
         };
 
         Sampler<String> sampler = new Sampler<String>(splitter, 50, 37);
-        sampler.init(splitter.segments());
+        sampler.init();
         for (String input : inputs) {
             sampler.visit(input);
         }

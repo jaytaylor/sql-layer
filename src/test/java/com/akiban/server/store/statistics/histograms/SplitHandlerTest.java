@@ -141,13 +141,13 @@ public final class SplitHandlerTest {
             }
         };
         ToArraySplitHandler handler = new ToArraySplitHandler(splitter);
-        handler.init(splitter.segments());
+        handler.init();
         handler.visit("one two");
     }
 
     private List<List<SplitPair>> run(Splitter<String> splitter, List<String> inputs) {
         ToArraySplitHandler handler = new ToArraySplitHandler(splitter);
-        handler.init(splitter.segments());
+        handler.init();
         for (String input : inputs) {
             handler.visit(input);
         }

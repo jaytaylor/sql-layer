@@ -16,7 +16,7 @@
 package com.akiban.server.store.statistics.histograms;
 
 public interface SampleVisitor<T> {
-    void init(int segments);
+    void init();
     void visit(T sample);
     void finish();
 }
