@@ -429,7 +429,7 @@ abstract class ExtractorsForDates extends LongExtractor {
 
         @Override
         public long[] getYearMonthDayHourMinuteSecond(long value) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            throw new UnsupportedOperationException("Unsupported: Cannot extract Year/Month/.... from INTERVAL_MILLIS");
         }
 
         @Override
@@ -491,12 +491,12 @@ abstract class ExtractorsForDates extends LongExtractor {
 
         @Override
         public long[] getYearMonthDayHourMinuteSecond(long value) {
-            throw new UnsupportedOperationException("Not supported.");
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public long getEncoded(long[] ymd_hms) {
-            throw new UnsupportedOperationException("Not supported.");
+            throw new UnsupportedOperationException();
         }
     };
 

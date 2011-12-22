@@ -57,7 +57,7 @@ import com.akiban.server.error.DisplayFilterSetException;
 import com.akiban.server.error.DuplicateKeyException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchRowException;
-import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.RowDataCorruptionException;
 import com.akiban.server.error.ScanRetryAbandonedException;
 import com.akiban.server.service.session.Session;
@@ -89,6 +89,8 @@ public class PersistitStore implements Store {
     private static final Tap.InOutTap UPDATE_ROW_TAP = Tap.createTimer("write: update_row");
 
     private static final Tap.InOutTap DELETE_ROW_TAP = Tap.createTimer("write: delete_row");
+
+    private static final Tap.InOutTap TABLE_INDEX_MAINTENANCE_TAP = Tap.createTimer("index: maintain_table");
 
     private static final Tap.PointTap TX_COMMIT_COUNT = Tap.createCount("write: tx_commit", true);
 
@@ -839,7 +841,7 @@ public class PersistitStore implements Store {
             try {
                 iEx.removeAll();
             } catch (PersistitException e) {
-                throw new PersistItErrorException (e);
+                throw new PersistitAdapterException(e);
             }
             releaseExchange(session, iEx);
         }
@@ -849,7 +851,7 @@ public class PersistitStore implements Store {
             try {
                 indexManager.deleteIndexAnalysis(session, index);
             } catch (PersistitException e) {
-                throw new PersistItErrorException (e);
+                throw new PersistitAdapterException(e);
             }
         }
     }
@@ -1043,7 +1045,7 @@ public class PersistitStore implements Store {
         try {
             indexManager.populateTableStatistics(session, ts);
         } catch (PersistitException e) {
-            throw new PersistItErrorException (e);
+            throw new PersistitAdapterException(e);
         }
         return ts;
     }
@@ -1102,7 +1104,7 @@ public class PersistitStore implements Store {
             try {
                 iEx.store();
             } catch (PersistitException e) {
-                throw new PersistItErrorException(e);
+                throw new PersistitAdapterException(e);
             }
         }
         releaseExchange(session, iEx);
@@ -1119,7 +1121,7 @@ public class PersistitStore implements Store {
                     throw new DuplicateKeyException(index.getIndexName().getName(), key);
                 }
             } catch (PersistitException e) {
-                throw new PersistItErrorException(e);
+                throw new PersistitAdapterException(e);
             }
             ks.copyTo(key);
         }
@@ -1149,21 +1151,26 @@ public class PersistitStore implements Store {
         checkNotGroupIndex(index);
         IndexDef indexDef = (IndexDef)index.indexDef();
         if (!fieldsEqual(rowDef, oldRowData, newRowData, indexDef.getFields())) {
-            final Exchange oldExchange = getExchange(session, index);
-            constructIndexKey(new PersistitKeyAppender(oldExchange.getKey()), oldRowData, index, hkey);
-            final Exchange newExchange = getExchange(session, index);
-            constructIndexKey(new PersistitKeyAppender(newExchange.getKey()), newRowData, index, hkey);
+            TABLE_INDEX_MAINTENANCE_TAP.in();
+            try {
+                Exchange oldExchange = getExchange(session, index);
+                constructIndexKey(new PersistitKeyAppender(oldExchange.getKey()), oldRowData, index, hkey);
+                Exchange newExchange = getExchange(session, index);
+                constructIndexKey(new PersistitKeyAppender(newExchange.getKey()), newRowData, index, hkey);
 
-            checkUniqueness(index, newRowData, newExchange);
+                checkUniqueness(index, newRowData, newExchange);
 
-            oldExchange.getValue().clear();
-            newExchange.getValue().clear();
+                oldExchange.getValue().clear();
+                newExchange.getValue().clear();
 
-            oldExchange.remove();
-            newExchange.store();
+                oldExchange.remove();
+                newExchange.store();
 
-            releaseExchange(session, newExchange);
-            releaseExchange(session, oldExchange);
+                releaseExchange(session, newExchange);
+                releaseExchange(session, oldExchange);
+            } finally {
+                TABLE_INDEX_MAINTENANCE_TAP.out();
+            }
         }
     }
 
@@ -1329,7 +1336,7 @@ public class PersistitStore implements Store {
                     }
                 }
             } catch (PersistitException e) {
-                throw new PersistItErrorException (e);
+                throw new PersistitAdapterException(e);
             }
             flushIndexes(session);
             LOG.debug("Inserted {} index keys into {}", indexKeyCount, rowDef.table().getName());
@@ -1373,7 +1380,7 @@ public class PersistitStore implements Store {
                 }
             }
         } catch (PersistitException e) {
-            throw new PersistItErrorException (e);
+            throw new PersistitAdapterException(e);
         } finally {
             if(hEx != null) {
                 releaseExchange(session, hEx);
@@ -1387,7 +1394,7 @@ public class PersistitStore implements Store {
     public void flushIndexes(final Session session) {
         try {
             putAllDeferredIndexKeys(session);
-        } catch (PersistItErrorException e) {
+        } catch (PersistitAdapterException e) {
             LOG.debug("Exception while trying to flush deferred index keys", e);
             throw e;
         }
@@ -1404,7 +1411,7 @@ public class PersistitStore implements Store {
                 iEx.removeTree();
             } catch (PersistitException e) {
                 LOG.debug("Exception while removing index tree: " + indexDef, e);
-                throw new PersistItErrorException(e);
+                throw new PersistitAdapterException(e);
             }
         }
     }
@@ -1419,7 +1426,7 @@ public class PersistitStore implements Store {
             }
         } catch (PersistitException e) {
             LOG.error(e.getMessage());
-            throw new PersistItErrorException (e);
+            throw new PersistitAdapterException(e);
         }
         final long elapsed = System.nanoTime() - start;
         if (LOG.isInfoEnabled()) {

@@ -74,7 +74,7 @@ import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ParseException;
-import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.ProtectedTableDDLException;
 import com.akiban.server.error.ReferencedTableException;
@@ -240,7 +240,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         try {
             commitAISChange(session, merge.getAIS(), schemaName, null);
         } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
+            throw new PersistitAdapterException(ex);
         }
             
         return newTable.getName();
@@ -289,7 +289,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         try {
             commitAISChange(session, newAIS, schemaName, null);
         } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
+            throw new PersistitAdapterException(ex);
         }
         return newTable.getName();
     }
@@ -332,7 +332,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 commitAISChange(session, newAIS, newName.getSchemaName(), null);
             }
         } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
+            throw new PersistitAdapterException(ex);
         }
     }
 
@@ -469,7 +469,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             try {
                 commitAISChange(session, newAIS, schema, null);
             } catch (PersistitException ex) {
-                throw new PersistItErrorException (ex);
+                throw new PersistitAdapterException(ex);
             }
         }
         
@@ -513,7 +513,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             try {
                 commitAISChange(session, newAIS, schema, null);
             } catch (PersistitException ex) {
-                throw new PersistItErrorException (ex);
+                throw new PersistitAdapterException(ex);
             }
         }
     }
@@ -567,7 +567,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 }
             });
         } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
+            throw new PersistitAdapterException(ex);
         }
     }
 /*
@@ -595,7 +595,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 try {
                     statusEx.clear().append(tableId).remove();
                 } catch (PersistitException ex) {
-                    throw new PersistItErrorException (ex);
+                    throw new PersistitAdapterException(ex);
                 }
                 // Status created on demand, can't check
                 treeService.getTableStatusCache().drop(tableId);
@@ -771,7 +771,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         try {
             afterStart();
         } catch (PersistitException e) {
-            throw new PersistItErrorException(e);
+            throw new PersistitAdapterException(e);
         } catch (IOException e) {
             throw new SchemaLoadIOException(e.getMessage());
         }

@@ -22,7 +22,6 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.persistitadapter.PersistitAdapterException;
 import com.akiban.qp.row.Row;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.expression.Expression;
@@ -86,7 +85,7 @@ class SortCursorUnidirectional extends SortCursor
                 }
             } catch (PersistitException e) {
                 close();
-                throw new PersistitAdapterException(e);
+                adapter.handlePersistitException(e);
             }
         }
         return next;

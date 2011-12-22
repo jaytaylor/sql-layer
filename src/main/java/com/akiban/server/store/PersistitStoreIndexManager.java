@@ -16,8 +16,6 @@
 package com.akiban.server.store;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
 import com.akiban.ais.model.Index;
@@ -33,7 +31,7 @@ import com.akiban.server.TableStatistics;
 import com.akiban.server.TableStatistics.Histogram;
 import com.akiban.server.TableStatistics.HistogramSample;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.persistit.Exchange;
@@ -112,7 +110,7 @@ public class PersistitStoreIndexManager implements IndexManager {
             try {
                 analyzeIndex(session, index, sampleSize);
             } catch (PersistitException e) {
-                throw new PersistItErrorException (e);
+                throw new PersistitAdapterException(e);
             }
         }
     }
@@ -271,7 +269,7 @@ public class PersistitStoreIndexManager implements IndexManager {
                         analysisEx.getKey().cut();
                         analysisEx.remove(Key.GT);
                     } catch (PersistitException e) {
-                        throw new PersistItErrorException (e);
+                        throw new PersistitAdapterException(e);
                     } catch (Exception e) {
                         throw new RuntimeException(e);
                     }
