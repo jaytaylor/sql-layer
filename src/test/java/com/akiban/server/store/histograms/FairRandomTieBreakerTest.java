@@ -22,10 +22,9 @@ import com.google.common.collect.Multimap;
 import org.junit.Test;
 
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.TreeMap;
 
 import static org.junit.Assert.assertEquals;
@@ -63,11 +62,11 @@ public final class FairRandomTieBreakerTest {
                     final Distribution distribution;
                     if (i % 4 == 0) {
                         count = 3;
-                        distribution = Distribution.ALL;
+                        distribution = Distribution.ALL;    // 25 of these
                     }
                     else if (i % 11 == 0) {
                         count = 2;
-                        distribution = Distribution.SOME;
+                        distribution = Distribution.SOME;   //*
                     }
                     else {
                         count = 1;
@@ -94,12 +93,18 @@ public final class FairRandomTieBreakerTest {
             }
 
             // run the iterations
+            // Each iteration runs with a different seed number, but these seeds are generated Random with a constant
+            // seed. This means the iterations themselves get well-distributed seeds, but these seeds are the same
+            // for each run of this test. That way, we won't get intermittent failures.
+            Random seedGenerator = new Random(seedSeed);
             for (int iteration = 0; iteration < iterations; ++iteration) {
-                List<Bucket<T>> buckets = Buckets.compile(testDescription.list(), testDescription.maxBuckets());
+                long seed = seedGenerator.nextLong();
+                List<Bucket<T>> buckets = Buckets.compile(testDescription.list(), testDescription.maxBuckets(), seed);
                 assertEquals("buckets size", testDescription.maxBuckets(), buckets.size());
                 for (Bucket<T> bucket : buckets) {
-                    long old = distributions.get(bucket.value());
-                    distributions.put(bucket.value(), old+1);
+                    T bucketValue = bucket.value();
+                    long old = distributions.get(bucketValue);
+                    distributions.put(bucketValue, old+1);
                 }
             }
 
@@ -117,8 +122,8 @@ public final class FairRandomTieBreakerTest {
             double error = 0.1 * expectedHits;
             for (T key : somes) {
                 double hits = distributions.remove(key);
+                assertFalse(key + ": hit exactly " + iterations + ", but shouldn't have: ", hits == iterations);
                 double difference = Math.abs(expectedHits - hits);
-                assertFalse("hit exactly " + iterations + ", but shouldn't have", hits == iterations);
                 assertEquals(
                         "hits for " + key + " (should be SOME): expected=" + expectedHits + ", was=" + hits,
                         0,
@@ -183,4 +188,6 @@ public final class FairRandomTieBreakerTest {
         SOME,
         NONE
     }
+    
+    private static long seedSeed = 31L;
 }

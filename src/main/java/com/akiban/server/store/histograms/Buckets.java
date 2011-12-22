@@ -30,9 +30,14 @@ final class Buckets<T extends Comparable<? super T>> {
         return compile(from, new Buckets<T>(maxSize));
     }
 
+    static <T extends Comparable<? super T>> List<Bucket<T>>
+    compile(Iterable<? extends T> from, int maxSize, long randSeed) {
+        return compile(from, new Buckets<T>(maxSize, new Random(randSeed)));
+    }
+    
     // intended for testing
     // TODO do we need this?
-    static <T extends Comparable<? super T>>
+    private static <T extends Comparable<? super T>>
     List<Bucket<T>> compile(Iterable<? extends T> from, Buckets<T> usingBuckets) {
         BucketSource<T> source = new BucketSource<T>(from);
         for (Bucket<T> bucket : source) {
@@ -93,14 +98,19 @@ final class Buckets<T extends Comparable<? super T>> {
             last = node;
         }
     }
+    
+    private Buckets(int maxSize) {
+        this(maxSize, null);
+    }
 
-    public Buckets(int maxSize) {
+    private Buckets(int maxSize, Random usingRandom) {
         if (maxSize < 2)
             throw new IllegalArgumentException("max must be at least 2");
         this.maxSize = maxSize;
         this.sentinel = new BucketNode<T>();
         this.last = sentinel;
         this.bucketNodeSets = new TreeMap<Long, BucketNodeSet<T>>();
+        this.random = usingRandom;
     }
 
     private BucketNode<T> nodeToRemove() {
