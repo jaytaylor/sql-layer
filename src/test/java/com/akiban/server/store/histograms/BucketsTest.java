@@ -31,9 +31,7 @@ import java.util.TreeMap;
 
 import static com.akiban.server.store.histograms.BucketTestUtils.bucket;
 import static com.akiban.util.CollectionUtils.list;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 public final class BucketsTest {
 
@@ -63,6 +61,16 @@ public final class BucketsTest {
                 new String[] {},
                 bucketsList()
         );
+    }
+
+    @Test
+    public void multipleStreams() {
+        fail("not yet implemented");
+    }
+
+    @Test
+    public void outOfOrder() {
+        fail("not yet implemented");
     }
 
     // negative tests

@@ -25,6 +25,7 @@ import static com.akiban.server.store.histograms.BucketTestUtils.bucket;
 import static com.akiban.util.CollectionUtils.list;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 public final class BucketSourceTest {
 
@@ -50,6 +51,11 @@ public final class BucketSourceTest {
                 list("a b b a".split(" ")),
                 buckets(bucket("a", 1), bucket("b", 2), bucket("a", 1))
         );
+    }
+    
+    @Test
+    public void multipleStreams() {
+        fail("not yet implemented");
     }
 
     @Test(expected = UnsupportedOperationException.class)
