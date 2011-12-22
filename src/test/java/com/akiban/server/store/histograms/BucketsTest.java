@@ -24,7 +24,6 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -156,7 +155,7 @@ public final class BucketsTest {
         }.run();
     }
 
-    private static abstract class DistributionChecker<T extends Comparable<? super T>> {
+    private static abstract class DistributionChecker<T> {
 
         protected abstract TestDescription<T> describeTest();
 
@@ -265,7 +264,7 @@ public final class BucketsTest {
 
     private static final long seedSeed = 31L;
 
-    private <T extends Comparable<T>> void check(int maxBuckets, T[] inputs, List<Bucket<T>> expected) {
+    private <T> void check(int maxBuckets, T[] inputs, List<Bucket<T>> expected) {
         List<Bucket<T>> actual = BucketTestUtils.compileSingleStream(Arrays.asList(inputs), maxBuckets);
         AssertUtils.assertCollectionEquals("compiled buckets", expected, actual);
     }
