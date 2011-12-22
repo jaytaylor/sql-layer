@@ -55,7 +55,7 @@ public final class BucketSourceTest {
     @Test(expected = UnsupportedOperationException.class)
     public void noRemoves() {
         List<String> list = new ArrayList<String>(list("a b c".split(" "))); // list's iterator supports remove
-        Iterator<Bucket<String>> iterator = new BucketSource<String>(list).iterator();
+        Iterator<Bucket<String>> iterator = new BucketSource<String>(list, 3).iterator();
         Bucket<String> bucket = iterator.next();
         assertEquals("first bucket", bucket("a", 1), bucket);
         UnsupportedOperationException uoe = null;
@@ -75,11 +75,11 @@ public final class BucketSourceTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void nullInputs() {
-        new BucketSource<Object>(null);
+        new BucketSource<Object>(null, 9);
     }
 
     private <T> void check(Iterable<T> inputs, List<? extends Bucket<?>> expected) {
-        BucketSource<T> bucketSource = new BucketSource<T>(inputs);
+        BucketSource<T> bucketSource = new BucketSource<T>(inputs, Integer.MAX_VALUE);
         List<Bucket<T>> actual = new ArrayList<Bucket<T>>();
         for (Bucket<T> bucket : bucketSource) {
             actual.add(bucket);

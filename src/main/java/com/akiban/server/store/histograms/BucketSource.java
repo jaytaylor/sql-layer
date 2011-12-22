@@ -16,6 +16,7 @@
 package com.akiban.server.store.histograms;
 
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.Flywheel;
 
 import java.util.Iterator;
 
@@ -25,17 +26,33 @@ final class BucketSource<T> implements Iterable<Bucket<T>> {
 
     @Override
     public Iterator<Bucket<T>> iterator() {
-        return new InternalIterator<T>(iterable.iterator());
+        return new InternalIterator<T>(iterable.iterator(), bucketPool);
+    }
+    
+    public void release(Bucket<T> bucket) {
+        bucketPool.release(bucket);
     }
 
     // ctor
 
-    public BucketSource(Iterable<? extends T> iterable) {
+    public BucketSource(Iterable<? extends T> iterable, int maxCreates) {
         ArgumentValidation.notNull("input", iterable);
         this.iterable = iterable;
+        this.maxCreates = maxCreates;
     }
 
     private final Iterable<? extends T> iterable;
+    private final int maxCreates;
+    private final Flywheel<Bucket<T>> bucketPool = new Flywheel<Bucket<T>>() {
+        @Override
+        protected Bucket<T> createNew() {
+            ++creates;
+            assert creates <= maxCreates : creates + " > " + maxCreates;
+            return new Bucket<T>();
+        }
+        
+        int creates = 0;
+    };
 
     // nested classes
 
@@ -48,12 +65,12 @@ final class BucketSource<T> implements Iterable<Bucket<T>> {
 
         @Override
         public Bucket<T> next() {
-            Bucket<T> result;
+            Bucket<T> result = flywheel.get();
             if (last == null) {
-                result = new Bucket<T>(source.next());
+                result.init(source.next());
             }
             else {
-                result = new Bucket<T>(last);
+                result.init(last);
                 last = null;
             }
             while (source.hasNext()) {
@@ -72,11 +89,13 @@ final class BucketSource<T> implements Iterable<Bucket<T>> {
             throw new UnsupportedOperationException();
         }
 
-        InternalIterator(Iterator<? extends T> source) {
+        InternalIterator(Iterator<? extends T> source, Flywheel<? extends Bucket<T>> flywheel) {
             this.source = source;
+            this.flywheel = flywheel;
         }
 
         private T last;
         private final Iterator<? extends T> source;
+        private final Flywheel<? extends Bucket<T>> flywheel;
     }
 }

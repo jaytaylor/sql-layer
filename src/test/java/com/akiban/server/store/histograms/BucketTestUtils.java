@@ -15,11 +15,10 @@
 
 package com.akiban.server.store.histograms;
 
-import static com.akiban.util.CollectionUtils.list;
-
 final class BucketTestUtils {
     public static <T> Bucket<T> bucket(T value, long equals, long lessThans, long lessThanDistincts) {
-        Bucket<T> result = new Bucket<T>(value);
+        Bucket<T> result = new Bucket<T>();
+        result.init(value);
         for (int i = 1; i < equals; ++i) { // starting count from 1 since a new Bucket has equals of 1
             result.addEquals();
         }
@@ -30,9 +29,5 @@ final class BucketTestUtils {
 
     public static <T> Bucket<T> bucket(T value, long equals) {
         return bucket(value, equals, 0, 0);
-    }
-
-    public static <T> BucketSource<T> bucketSource(T... values) {
-        return new BucketSource<T>(list(values));
     }
 }

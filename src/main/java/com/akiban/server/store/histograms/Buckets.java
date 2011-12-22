@@ -30,23 +30,21 @@ final class Buckets<T extends Comparable<? super T>> {
         return compile(from, new Buckets<T>(maxSize));
     }
 
-    static <T extends Comparable<? super T>> List<Bucket<T>>
+    static <T extends Comparable<? super T>> List<Bucket<T>> // for testing
     compile(Iterable<? extends T> from, int maxSize, long randSeed) {
         return compile(from, new Buckets<T>(maxSize, new Random(randSeed)));
     }
     
-    // intended for testing
-    // TODO do we need this?
     private static <T extends Comparable<? super T>>
     List<Bucket<T>> compile(Iterable<? extends T> from, Buckets<T> usingBuckets) {
-        BucketSource<T> source = new BucketSource<T>(from);
+        BucketSource<T> source = new BucketSource<T>(from, usingBuckets.maxSize + 1);
         for (Bucket<T> bucket : source) {
-            usingBuckets.add(bucket);
+            usingBuckets.add(bucket, source);
         }
         return usingBuckets.buckets();
     }
 
-    public void add(Bucket<T> bucket) {
+    public void add(Bucket<T> bucket, BucketSource<T> releaseTo) {
         // for all but the first entry, compare it to the previous entry
         if (sentinel.next != null && last.bucket.value().compareTo(bucket.value()) >= 1)
             throw new IllegalArgumentException("can't add " + bucket + " to " + buckets());
@@ -56,14 +54,9 @@ final class Buckets<T extends Comparable<? super T>> {
         last = node;
         if (++size > maxSize) { // need to trim
             BucketNode<T> removeNode = nodeToRemove();
-            // if the least popular node was the tail, we should fold it into its
-            // prev. We can't do that, so instead, we'll fold its prev into it.
-            if (removeNode.next == null) {
-                addToBucketNodeSets(removeNode);
-                removeNode = removeNode.prev;
-                removeFromBucketNodeSets(removeNode);
-            }
+            assert removeNode.next != null : removeNode;
             Bucket<T> removeBucket = removeNode.bucket;
+            releaseTo.release(removeBucket);
 
             Bucket<T> foldIntoBucket = removeNode.next.bucket;
             assert foldIntoBucket != null;
