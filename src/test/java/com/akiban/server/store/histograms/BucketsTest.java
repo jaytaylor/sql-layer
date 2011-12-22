@@ -22,7 +22,9 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -67,7 +69,7 @@ public final class BucketsTest {
     // negative tests
     @Test(expected = IllegalArgumentException.class)
     public void tooFewBuckets() {
-        Buckets.compile(list("a", "b", "c"), 1);
+        BucketTestUtils.compileSingleStream(list("a", "b", "c"), 1);
     }
 
     // randomized (but with the same seed each time) distribution tests
@@ -174,9 +176,13 @@ public final class BucketsTest {
             Random seedGenerator = new Random(seedSeed);
             for (int iteration = 0; iteration < iterations; ++iteration) {
                 long seed = seedGenerator.nextLong();
-                List<Bucket<T>> buckets = Buckets.compile(testDescription.list(), testDescription.maxBuckets(), seed);
-                assertEquals("buckets size", testDescription.maxBuckets(), buckets.size());
-                for (Bucket<T> bucket : buckets) {
+                List<List<Bucket<T>>> buckets = Buckets.compile(
+                        BucketTestUtils.expandList(testDescription.list()),
+                        testDescription.maxBuckets(),
+                        1,
+                        seed
+                );
+                for (Bucket<T> bucket : BucketTestUtils.extractSingle(buckets)) {
                     T bucketValue = bucket.value();
                     long old = distributions.get(bucketValue);
                     distributions.put(bucketValue, old+1);
@@ -260,7 +266,7 @@ public final class BucketsTest {
     private static final long seedSeed = 31L;
 
     private <T extends Comparable<T>> void check(int maxBuckets, T[] inputs, List<Bucket<T>> expected) {
-        List<Bucket<T>> actual = Buckets.compile(list(inputs), maxBuckets); // use constant rand seed
+        List<Bucket<T>> actual = BucketTestUtils.compileSingleStream(Arrays.asList(inputs), maxBuckets);
         AssertUtils.assertCollectionEquals("compiled buckets", expected, actual);
     }
 

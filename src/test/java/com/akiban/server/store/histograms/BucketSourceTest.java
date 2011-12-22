@@ -55,9 +55,9 @@ public final class BucketSourceTest {
     @Test(expected = UnsupportedOperationException.class)
     public void noRemoves() {
         List<String> list = new ArrayList<String>(list("a b c".split(" "))); // list's iterator supports remove
-        Iterator<Bucket<String>> iterator = new BucketSource<String>(list, 3).iterator();
-        Bucket<String> bucket = iterator.next();
-        assertEquals("first bucket", bucket("a", 1), bucket);
+        BucketSource<String> source = new BucketSource<String>(BucketTestUtils.expandList(list), 1, 3);
+        Iterator<List<Bucket<String>>> iterator = source.iterator();
+        assertEquals("first bucket", bucket("a", 1), extractAndRecycle(iterator, source));
         UnsupportedOperationException uoe = null;
         try {
             iterator.remove();
@@ -65,24 +65,32 @@ public final class BucketSourceTest {
         catch (UnsupportedOperationException e) {
             uoe = e;
         }
-        assertEquals("second bucket", bucket("b", 1), iterator.next());
-        assertEquals("third bucket", bucket("c", 1), iterator.next());
+        assertEquals("second bucket", bucket("b", 1), extractAndRecycle(iterator, source));
+        assertEquals("third bucket", bucket("c", 1), extractAndRecycle(iterator, source));
         assertFalse("iter should have been done", iterator.hasNext());
         // doing it this way instead of just assertNotNull helps the @Test annotation document expected behavior
         if (uoe != null)
             throw uoe;
     }
+    
+    private Bucket<String> extractAndRecycle(Iterator<List<Bucket<String>>> iterator, BucketSource<String> source) {
+        List<Bucket<String>> next = iterator.next();
+        Bucket<String> result = BucketTestUtils.extractSingle(next);
+        source.release(next);
+        return result;
+    }
 
     @Test(expected = IllegalArgumentException.class)
     public void nullInputs() {
-        new BucketSource<Object>(null, 9);
+        new BucketSource<Object>(null, 5, 9);
     }
 
     private <T> void check(Iterable<T> inputs, List<? extends Bucket<?>> expected) {
-        BucketSource<T> bucketSource = new BucketSource<T>(inputs, Integer.MAX_VALUE);
+        BucketSource<T> bucketSource = new BucketSource<T>(BucketTestUtils.expandList(inputs), 1, Integer.MAX_VALUE);
         List<Bucket<T>> actual = new ArrayList<Bucket<T>>();
-        for (Bucket<T> bucket : bucketSource) {
-            actual.add(bucket);
+        for (List<Bucket<T>> buckets : bucketSource) {
+            actual.add(BucketTestUtils.extractSingle(buckets));
+            bucketSource.release(buckets);
         }
         assertEquals("buckets", expected, actual);
     }

@@ -15,6 +15,12 @@
 
 package com.akiban.server.store.histograms;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+
 final class BucketTestUtils {
     public static <T> Bucket<T> bucket(T value, long equals, long lessThans, long lessThanDistincts) {
         Bucket<T> result = new Bucket<T>();
@@ -29,5 +35,25 @@ final class BucketTestUtils {
 
     public static <T> Bucket<T> bucket(T value, long equals) {
         return bucket(value, equals, 0, 0);
+    }
+    
+    public static <T> List<Bucket<T>> compileSingleStream(Iterable<? extends T> inputs, int maxBuckets) {
+        List<List<T>> inputsTransformed = expandList(inputs);
+        List<List<Bucket<T>>> result = Buckets.compile(inputsTransformed, 1, maxBuckets);
+        assertEquals("result length: " + result, 1, result.size());
+        return result.get(0);
+    }
+    
+    public static <T> T extractSingle(List<? extends T> from) {
+        assertEquals("singleton list size: " + from, 1, from.size());
+        return from.get(0);
+    }
+
+    public static <T> List<List<T>> expandList(Iterable<? extends T> inputs) {
+        List<List<T>> inputsTransformed = new ArrayList<List<T>>();
+        for (T input : inputs) {
+            inputsTransformed.add(Collections.singletonList(input));
+        }
+        return inputsTransformed;
     }
 }

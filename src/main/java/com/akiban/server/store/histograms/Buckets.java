@@ -15,6 +15,8 @@
 
 package com.akiban.server.store.histograms;
 
+import com.akiban.server.error.AkibanInternalException;
+import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Flywheel;
 
 import java.util.ArrayList;
@@ -24,30 +26,17 @@ import java.util.NavigableMap;
 import java.util.Random;
 import java.util.TreeMap;
 
-public final class Buckets<T extends Comparable<? super T>> {
+public final class Buckets<T> {
 
-    public static <T extends Comparable<? super T>> List<Bucket<T>> compile(Iterable<? extends T> from, int maxSize) {
-        return compile(from, new Buckets<T>(maxSize));
-    }
-
-    static <T extends Comparable<? super T>> List<Bucket<T>> // for testing
-    compile(Iterable<? extends T> from, int maxSize, long randSeed) {
-        return compile(from, new Buckets<T>(maxSize, new Random(randSeed)));
+    public static <T> List<List<Bucket<T>>> compile(
+            Iterable<? extends List<? extends T>> from,
+            int segments,
+            int maxSize
+    ) {
+        return compile(from, maxSize, segments, System.nanoTime());
     }
     
-    private static <T extends Comparable<? super T>>
-    List<Bucket<T>> compile(Iterable<? extends T> from, Buckets<T> usingBuckets) {
-        BucketSource<T> source = new BucketSource<T>(from, usingBuckets.maxSize + 1);
-        for (Bucket<T> bucket : source) {
-            usingBuckets.add(bucket, source);
-        }
-        return usingBuckets.buckets();
-    }
-
     private void add(Bucket<T> bucket, BucketSource<T> releaseTo) {
-        // for all but the first entry, compare it to the previous entry
-        if (sentinel.next != null && last.bucket.value().compareTo(bucket.value()) >= 1)
-            throw new IllegalArgumentException("can't add " + bucket + " to " + buckets());
         BucketNode<T> node = nodeFor(bucket);
         node.prev = last;
         last.next = node;
@@ -75,6 +64,37 @@ public final class Buckets<T extends Comparable<? super T>> {
         }
     }
 
+    static <T> List<List<Bucket<T>>> compile(
+            Iterable<? extends List<? extends T>> from,
+            int maxSize,
+            int segments,
+            long randSeed
+    ) {
+        ArgumentValidation.isGT("segments", segments, 0);
+        BucketSource<T> source = new BucketSource<T>(from, segments, maxSize + 1);
+        // init the buckets and list
+        List<Buckets<T>> buckets = new ArrayList<Buckets<T>>(segments);
+        Random random = new Random(randSeed);
+        for (int i=0; i < segments; ++i) {
+            buckets.add(new Buckets<T>(maxSize, random));
+        }
+        // scan in the input segments and add them to their respective buckets
+        for (List<Bucket<T>> inputs : source) {
+            if (inputs.size() != segments)
+                throw new AkibanInternalException("expected " + segments + " segments: " + inputs);
+            for (int i = 0; i < segments; ++i) {
+                buckets.get(i).add(inputs.get(i), source);
+            }
+            source.release(inputs);
+        }
+        // create a list out of the respective buckets
+        List<List<Bucket<T>>> results = new ArrayList<List<Bucket<T>>>(segments);
+        for (int i=0; i < segments; ++i ) {
+            results.add(buckets.get(i).buckets());
+        }
+        return results;
+    }
+
     private List<Bucket<T>> buckets() {
         List<Bucket<T>> results = new ArrayList<Bucket<T>>(size);
         for(BucketNode<T> node = sentinel.next; node != null; node = node.next) {
@@ -90,10 +110,6 @@ public final class Buckets<T extends Comparable<? super T>> {
                 System.out.printf("expected node.prev=%s but was %s%n", last, node.prev);
             last = node;
         }
-    }
-    
-    private Buckets(int maxSize) {
-        this(maxSize, null);
     }
 
     private Buckets(int maxSize, Random usingRandom) {

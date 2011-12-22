@@ -18,37 +18,60 @@ package com.akiban.server.store.histograms;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Flywheel;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
-final class BucketSource<T> implements Iterable<Bucket<T>> {
+final class BucketSource<T> implements Iterable<List<Bucket<T>>> {
 
     // Iterable interface
 
     @Override
-    public Iterator<Bucket<T>> iterator() {
-        return new InternalIterator<T>(iterable.iterator(), bucketPool);
+    public Iterator<List<Bucket<T>>> iterator() {
+        return new InternalIterator<T>(iterable.iterator(), bucketPool, listsPool);
     }
     
+    public void release(List<Bucket<T>> list) {
+        listsPool.release(list);
+    }
+
     public void release(Bucket<T> bucket) {
         bucketPool.release(bucket);
     }
 
     // ctor
 
-    public BucketSource(Iterable<? extends T> iterable, int maxCreates) {
+    public BucketSource(Iterable<? extends List<? extends T>> iterable, int segments, int maxCreates) {
         ArgumentValidation.notNull("input", iterable);
         this.iterable = iterable;
         this.maxCreates = maxCreates;
+        this.segments = segments;
     }
 
-    private final Iterable<? extends T> iterable;
+    private final Iterable<? extends List<? extends T>> iterable;
+    private final int segments;
     private final int maxCreates;
     private final Flywheel<Bucket<T>> bucketPool = new Flywheel<Bucket<T>>() {
         @Override
         protected Bucket<T> createNew() {
             ++creates;
-            assert creates <= maxCreates : creates + " > " + maxCreates;
+            assert creates <= (maxCreates*segments) : creates + " > " + (maxCreates*segments);
             return new Bucket<T>();
+        }
+
+        @Override
+        public void release(Bucket<T> element) {
+            super.release(element);
+        }
+
+        int creates = 0;
+    };
+    private final Flywheel<List<Bucket<T>>> listsPool = new Flywheel<List<Bucket<T>>>() {
+        @Override
+        protected List<Bucket<T>> createNew() {
+            ++creates;
+            assert creates <= 1 : creates + " > " + 1;
+            return new ArrayList<Bucket<T>>(segments);
         }
         
         int creates = 0;
@@ -56,7 +79,7 @@ final class BucketSource<T> implements Iterable<Bucket<T>> {
 
     // nested classes
 
-    private static class InternalIterator<T> implements Iterator<Bucket<T>> {
+    private static class InternalIterator<T> implements Iterator<List<Bucket<T>>> {
 
         @Override
         public boolean hasNext() {
@@ -64,24 +87,40 @@ final class BucketSource<T> implements Iterable<Bucket<T>> {
         }
 
         @Override
-        public Bucket<T> next() {
-            Bucket<T> result = flywheel.get();
+        public List<Bucket<T>> next() {
+            List<? extends T> input;
             if (last == null) {
-                result.init(source.next());
+                input = source.next();
             }
             else {
-                result.init(last);
+                input = last;
                 last = null;
             }
+            List<Bucket<T>> result = listsPool.get();
+            insertInto(input, result);
             while (source.hasNext()) {
                 last = source.next();
-                if (!last.equals(result.value()))
+                if (!last.equals(input))
                     return result;
-                result.addEquals();
+                addEquals(result);
             }
             // saw last element from source
             last = null;
             return result;
+        }
+
+        private void addEquals(List<Bucket<T>> list) {
+            for (Bucket<T> bucket : list)
+                bucket.addEquals();
+        }
+
+        private void insertInto(List<? extends T> inputs, List<? super Bucket<T>> outputs) {
+            outputs.clear();
+            for (T input : inputs) {
+                Bucket<T> bucket = bucketsPool.get();
+                bucket.init(input);
+                outputs.add(bucket);
+            }
         }
 
         @Override
@@ -89,13 +128,19 @@ final class BucketSource<T> implements Iterable<Bucket<T>> {
             throw new UnsupportedOperationException();
         }
 
-        InternalIterator(Iterator<? extends T> source, Flywheel<? extends Bucket<T>> flywheel) {
+        InternalIterator(
+                Iterator<? extends List<? extends T>> source,
+                Flywheel<? extends Bucket<T>> flywheel,
+                Flywheel<? extends List<Bucket<T>>> listsPool
+        ) {
             this.source = source;
-            this.flywheel = flywheel;
+            this.bucketsPool = flywheel;
+            this.listsPool = listsPool;
         }
 
-        private T last;
-        private final Iterator<? extends T> source;
-        private final Flywheel<? extends Bucket<T>> flywheel;
+        private List<? extends T> last;
+        private final Iterator<? extends List<? extends T>> source;
+        private final Flywheel<? extends Bucket<T>> bucketsPool;
+        private final Flywheel<? extends List<Bucket<T>>> listsPool;
     }
 }
