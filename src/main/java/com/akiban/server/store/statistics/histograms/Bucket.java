@@ -20,13 +20,6 @@ import com.akiban.util.Equality;
 public final class Bucket<T> {
 
     // Bucket interface
-    
-    public void init(T value, int count) {
-        this.value = value;
-        this.equalsCount = count;
-        this.ltCount = 0;
-        this.ltDistinctCount = 0;
-    }
 
     public T value() {
         return value;
@@ -54,6 +47,18 @@ public final class Bucket<T> {
 
     public void addLessThanDistincts(long value) {
         ltDistinctCount += value;
+    }
+
+    // for use in this class
+
+    void init(T value, int count) {
+        this.value = value;
+        this.equalsCount = count;
+        this.ltCount = 0;
+        this.ltDistinctCount = 0;
+    }
+
+    Bucket() {
     }
 
     // object interface
