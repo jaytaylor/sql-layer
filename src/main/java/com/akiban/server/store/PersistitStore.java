@@ -98,6 +98,9 @@ public class PersistitStore implements Store {
 
     private static final Tap.InOutTap NEW_COLLECTOR_TAP = Tap.createTimer("read: new_collector");
 
+    private static final Tap.InOutTap COMMIT_TAP = Tap.createTimer("write: PersistitStore commit");
+
+
     static final int MAX_TRANSACTION_RETRY_COUNT = 10;
 
     private final static int MEGA = 1024 * 1024;
@@ -510,8 +513,9 @@ public class PersistitStore implements Store {
                         }
                     }
                     propagateDownGroup(session, hEx);
+                    COMMIT_TAP.in();
                     transaction.commit(forceToDisk);
-
+                    COMMIT_TAP.out();
                     break;
                 } catch (RollbackException re) {
                     TX_RETRY_TAP.hit();
@@ -626,8 +630,9 @@ public class PersistitStore implements Store {
                     // of these rows need to be maintained.
                     propagateDownGroup(session, hEx);
 
+                    COMMIT_TAP.in();
                     transaction.commit(forceToDisk);
-
+                    COMMIT_TAP.out();
                     return;
                 } catch (RollbackException re) {
                     TX_RETRY_TAP.hit();
@@ -707,7 +712,9 @@ public class PersistitStore implements Store {
                         }
                     }
 
+                    COMMIT_TAP.in();
                     transaction.commit(forceToDisk);
+                    COMMIT_TAP.out();
                     return;
                 } catch (RollbackException re) {
                     TX_RETRY_TAP.hit();
@@ -822,7 +829,9 @@ public class PersistitStore implements Store {
                             .getRowDefId();
                     tableStatusCache.truncate(childRowDefId);
                 }
+                COMMIT_TAP.in();
                 transaction.commit(forceToDisk);
+                COMMIT_TAP.out();
                 return;
             } catch (RollbackException re) {
                 TX_RETRY_TAP.hit();
@@ -1368,7 +1377,9 @@ public class PersistitStore implements Store {
                         }
                     }
                     hEx.removeTree();
+                    COMMIT_TAP.in();
                     transaction.commit(forceToDisk);
+                    COMMIT_TAP.out();
                     break; // success
                 } catch (RollbackException re) {
                     TX_RETRY_TAP.hit();
