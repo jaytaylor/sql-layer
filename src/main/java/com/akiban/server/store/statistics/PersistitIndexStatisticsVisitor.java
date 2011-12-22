@@ -20,6 +20,9 @@ import static com.akiban.server.store.statistics.IndexStatistics.*;
 import com.akiban.ais.model.Index;
 import com.akiban.server.store.IndexVisitor;
 
+import com.akiban.server.store.statistics.histograms.Bucket;
+import com.akiban.server.store.statistics.histograms.Sampler;
+import com.akiban.server.store.statistics.histograms.Splitter;
 import com.persistit.Key;
 import com.persistit.Value;
 
@@ -33,40 +36,57 @@ import java.util.*;
 public class PersistitIndexStatisticsVisitor extends IndexVisitor
 {
     private static final Logger logger = LoggerFactory.getLogger(PersistitIndexStatisticsVisitor.class);
+    private static final int BUCKETS_COUNT = 32;
     
     private Index index;
     private int columnCount;
-    private Bucket[] buckets;
     private long timestamp;
     private int rowCount;
-    private Key sampleKey;
+    private Sampler<Key> keySampler;
 
     public PersistitIndexStatisticsVisitor(Index index) {
         this.index = index;
         
         columnCount = index.getColumns().size();
-        buckets = new Bucket[columnCount];
-        for (int i = 0; i < columnCount; i++) {
-            buckets[i] = new Bucket(index, i + 1);
-        }
         timestamp = System.currentTimeMillis();
         rowCount = 0;
+        KeySplitter splitter = new KeySplitter(columnCount);
+        keySampler = new Sampler<Key>(splitter, BUCKETS_COUNT);
+    }
+    
+    private static class KeySplitter implements Splitter<Key> {
+        @Override
+        public int segments() {
+            return keys.size();
+        }
+
+        @Override
+        public List<? extends Key> split(Key keyToSample) {
+
+            for (int i = keys.size() - 1; i >= 0; i--) {
+                Key key = keys.get(i);
+                if (key == null)
+                    keys.set(i, new Key(keyToSample));
+                else
+                    keyToSample.copyTo(key);
+                keyToSample.setDepth(i);
+            }
+            throw new UnsupportedOperationException(); // TODO
+        }
+
+        private KeySplitter(int columnCount) {
+            keys = Arrays.asList(new Key[columnCount]);
+        }
+
+        private List<Key> keys;
+    }
+    
+    public void init() {
+        keySampler.init();
     }
 
     protected void visit(Key key, Value value) {
-        if (sampleKey == null)
-            sampleKey = new Key(key);
-        else
-            key.copyTo(sampleKey);
-        
-        sampleKey.setDepth(columnCount);
-        logger.debug("Key = " + sampleKey);
-
-        for (int i = columnCount - 1; i >= 0; i--) {
-            buckets[i].sample(sampleKey);
-            sampleKey.setDepth(i);
-        }
-
+        keySampler.visit(key);
         rowCount++;
     }
 
@@ -75,52 +95,31 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
         result.setAnalysisTimestamp(timestamp);
         result.setRowCount(rowCount);
         result.setSampledCount(rowCount);
-        for (int i = 0; i < columnCount; i++) {
-            result.addHistogram(buckets[i].getHistogram());
+        List<List<Bucket<Key>>> segmentBuckets = keySampler.toBuckets();
+        assert segmentBuckets.size() == columnCount
+                : "expected " + columnCount + " seguments, saw " + segmentBuckets.size() + ": " + segmentBuckets;
+        for (int colCountSegment = 0; colCountSegment < columnCount; colCountSegment++) {
+            List<Bucket<Key>> segmentSamples = segmentBuckets.get(colCountSegment);
+            int samplesCount = segmentSamples.size();
+            List<HistogramEntry> entries = new ArrayList<HistogramEntry>(samplesCount);
+            for (int s = 0; s < samplesCount; ++s) {
+                Bucket<Key> sample = segmentSamples.get(colCountSegment);
+                Key key = sample.value();
+                byte[] keyBytes = new byte[key.getEncodedSize()];
+                System.arraycopy(key.getEncodedBytes(), 0, keyBytes, 0, keyBytes.length);
+                HistogramEntry entry = new HistogramEntry(
+                        key.toString(),
+                        keyBytes,
+                        sample.getEqualsCount(),
+                        sample.getLessThanCount(),
+                        sample.getLessThanDistinctsCount()
+                );
+                entries.add(entry);
+            }
+            Histogram histogram = new Histogram(index, colCountSegment, entries);
+            result.addHistogram(histogram);
         }
         return result;
-    }
-
-    static class Bucket {
-        private Index index;
-        private int columnCount;
-
-        private Key key;
-        private long eqCount;
-        private List<HistogramEntry> entries = new ArrayList<HistogramEntry>();
-
-        public Bucket(Index index, int columnCount) {
-            this.index = index;
-            this.columnCount = columnCount;
-        }
-
-        public void sample(Key sampleKey) {
-            if (key == null) {
-                key = new Key(sampleKey);
-                eqCount = 1;
-            }
-            else if (key.equals(sampleKey)) {
-                eqCount++;
-            }
-            else {
-                flush();
-                sampleKey.copyTo(key);
-                eqCount = 1;
-            }
-        }
-
-        public Histogram getHistogram() {
-            flush();
-            return new Histogram(index, columnCount, entries);
-        }
-
-        private void flush() {
-            byte[] keyBytes = new byte[key.getEncodedSize()];
-            System.arraycopy(key.getEncodedBytes(), 0, keyBytes, 0, keyBytes.length);
-            HistogramEntry entry = new HistogramEntry(key.toString(), keyBytes,
-                                                      eqCount, 0, 0);
-            entries.add(entry);
-        }
     }
 
 }

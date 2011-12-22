@@ -26,7 +26,7 @@ import java.util.Random;
  * Combines the SplitHandler (T visitor) with Buckets (T aggregator).
  * @param <T> the thing to be sampled
  */
-class Sampler<T> extends SplitHandler<T> {
+public class Sampler<T> extends SplitHandler<T> {
     @Override
     protected void handle(int segmentIndex, T input, int count) {
         Buckets<T> buckets = bucketsList.get(segmentIndex);
@@ -41,6 +41,10 @@ class Sampler<T> extends SplitHandler<T> {
             results.add(bucketsList.get(i).buckets());
         }
         return results;
+    }
+
+    public Sampler(Splitter<T> splitter, int maxSize) {
+        this(splitter, maxSize, System.nanoTime());
     }
 
     Sampler(Splitter<T> splitter, int maxSize, long randSeed) {

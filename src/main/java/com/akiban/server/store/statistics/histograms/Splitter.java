@@ -17,7 +17,7 @@ package com.akiban.server.store.statistics.histograms;
 
 import java.util.List;
 
-interface Splitter<T> {
+public interface Splitter<T> {
     abstract int segments();
     abstract List<? extends T> split(T input);
 }
