@@ -78,6 +78,24 @@ public final class BucketsTest {
             "human eats cheese"
         );
 
+        // note that the two streams are of different length
+        List<Bucket<String>> firstBuckets = bucketsList(
+                bucket("bird", 1, 0, 0),
+                bucket("bear", 2, 0, 0),
+                bucket("dog", 2, 0, 0),
+                bucket("mouse", 3, 0, 0),
+                bucket("human", 1, 0, 0)
+        );
+        List<Bucket<String>> secondBuckets = bucketsList(
+                bucket("berry", 2, 0, 0),
+                bucket("honey", 1, 0, 0),
+                bucket("itsownpoop", 2, 0, 0),
+                bucket("cheese", 4, 0, 0)
+        );
+        List<List<Bucket<String>>> expectedBuckets = new ArrayList<List<Bucket<String>>>();
+        expectedBuckets.add(firstBuckets);
+        expectedBuckets.add(secondBuckets);
+
         Splitter<String> splitter = new Splitter<String>() {
             @Override
             public int segments() {
@@ -89,32 +107,24 @@ public final class BucketsTest {
                 return Arrays.asList(input.split(" eats "));
             }
         };
-        
-        List<List<Bucket<String>>> actualBuckets = Buckets.compile(
-                inputs.iterator(),
-                splitter,
-                Integer.MAX_VALUE // "unlimited" buckets
-        );
 
-        List<List<Bucket<String>>> expectedBuckets = new ArrayList<List<Bucket<String>>>();
-        expectedBuckets.add(
-                bucketsList(
-                        bucket("bird", 1, 0, 0),
-                        bucket("berry", 2, 0, 0)
-                )
-        );
-//        expectedBuckets.add(
-//                bucketsList(
-//                        bucket("")
-//                )
-//        )
-        
-        fail("not yet implemented");
+        List<List<Bucket<String>>> actualBuckets = Buckets.compile(inputs.iterator(), splitter, 50);
+
+        AssertUtils.assertCollectionEquals("buckets lists", expectedBuckets, actualBuckets);
     }
 
     @Test
     public void outOfOrder() {
-        fail("not yet implemented");
+        check(
+                6,
+                "a b b a c".split(" "),
+                bucketsList(
+                        bucket("a", 1, 0, 0),
+                        bucket("b", 2, 0, 0),
+                        bucket("a", 1, 0, 0),
+                        bucket("c", 1, 0, 0)
+                )
+        );
     }
 
     // negative tests
