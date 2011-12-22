@@ -15,6 +15,8 @@
 
 package com.akiban.server.store.histograms;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -50,7 +52,11 @@ final class BucketTestUtils {
 
         @Override
         public List<? extends T> split(T input) {
-            return Collections.singletonList(input);
+            oneElementList.set(0, input);
+            return oneElementList;
         }
+
+        @SuppressWarnings("unchecked")
+        private List<T> oneElementList = Arrays.asList((T[])new Object[1]);
     }
 }
