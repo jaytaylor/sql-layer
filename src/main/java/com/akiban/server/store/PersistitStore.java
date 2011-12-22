@@ -1007,6 +1007,7 @@ public class PersistitStore implements Store {
             key.setDepth(((IndexDef) index.indexDef()).getIndexKeySegmentCount());
             try {
                 if (iEx.hasChildren()) {
+                    ks.copyTo(key);
                     throw new DuplicateKeyException(index.getIndexName().getName(), key);
                 }
             } catch (PersistitException e) {
