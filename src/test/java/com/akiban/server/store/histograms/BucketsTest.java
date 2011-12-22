@@ -39,6 +39,9 @@ public final class BucketsTest {
         );
     }
 
+    @Test
+
+
     private <T extends Comparable<T>> void check(int maxBuckets, T[] inputs, List<Bucket<T>> expected) {
         List<Bucket<T>> actual = Buckets.compile(list(inputs), maxBuckets);
         AssertUtils.assertCollectionEquals("compiled buckets", expected, actual);

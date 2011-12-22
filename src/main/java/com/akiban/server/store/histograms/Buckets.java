@@ -26,11 +26,12 @@ import java.util.TreeMap;
 
 final class Buckets<T extends Comparable<? super T>> {
 
-    public static <T extends Comparable<T>> List<Bucket<T>> compile(Iterable<? extends T> from, int maxSize) {
+    public static <T extends Comparable<? super T>> List<Bucket<T>> compile(Iterable<? extends T> from, int maxSize) {
         return compile(from, new Buckets<T>(maxSize));
     }
 
     // intended for testing
+    // TODO do we need this?
     static <T extends Comparable<? super T>>
     List<Bucket<T>> compile(Iterable<? extends T> from, Buckets<T> usingBuckets) {
         BucketSource<T> source = new BucketSource<T>(from);
