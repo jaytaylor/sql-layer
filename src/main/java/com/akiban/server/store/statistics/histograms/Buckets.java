@@ -15,28 +15,18 @@
 
 package com.akiban.server.store.statistics.histograms;
 
-import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Flywheel;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Random;
 import java.util.TreeMap;
 
-public final class Buckets<T> {
-
-    public static <T> List<List<Bucket<T>>> compile(
-            Iterator<? extends T> from,
-            Splitter<T> splitter,
-            int maxSize
-    ) {
-        return compile(from, splitter, maxSize, System.nanoTime());
-    }
+final class Buckets<T> {
     
-    private void add(Bucket<T> bucket, Flywheel<Bucket<T>> releaseTo) {
+    void add(Bucket<T> bucket, Flywheel<Bucket<T>> releaseTo) {
         BucketNode<T> node = nodeFor(bucket);
         node.prev = last;
         last.next = node;
@@ -64,65 +54,7 @@ public final class Buckets<T> {
         }
     }
 
-    private static class InternalSplitHandler<T> extends SplitHandler<T> {
-        @Override
-        protected void handle(int segmentIndex, T input, int count) {
-            Buckets<T> buckets = bucketsList.get(segmentIndex);
-            
-            Bucket<T> bucket = bucketsFlywheel.get();
-            bucket.init(input, count);
-            
-            buckets.add(bucket, bucketsFlywheel);
-        }
-        
-        public List<List<Bucket<T>>> toBuckets() {
-            List<List<Bucket<T>>> results = new ArrayList<List<Bucket<T>>>(segments);
-            for (int i=0; i < segments; ++i ) {
-                results.add(bucketsList.get(i).buckets());
-            }
-            return results;
-        }
-
-        private InternalSplitHandler(Splitter<T> splitter, int maxSize, long randSeed) {
-            super(splitter);
-            int segments = splitter.segments();
-            ArgumentValidation.isGT("segments", segments, 0);
-            bucketsList =  new ArrayList<Buckets<T>>(segments);
-            Random random = new Random(randSeed);
-            for (int i=0; i < segments; ++i) {
-                bucketsList.add(new Buckets<T>(maxSize, random));
-            }
-            this.maxSize = maxSize;
-            this.segments = segments;
-        }
-        
-        final List<Buckets<T>> bucketsList;
-        final int maxSize;
-        final int segments;
-        final Flywheel<Bucket<T>> bucketsFlywheel = new Flywheel<Bucket<T>>() {
-            @Override
-            protected Bucket<T> createNew() {
-                ++created;
-                assert created <= (maxSize+1) * segments : created + " > " + (maxSize+1)*segments;
-                return new Bucket<T>();
-            }
-            
-            private int created;
-        };
-    }
-    
-    static <T> List<List<Bucket<T>>> compile(
-            Iterator<? extends T> from,
-            Splitter<T> splitter,
-            int maxSize,
-            long randSeed
-    ) {
-        InternalSplitHandler<T> handler = new InternalSplitHandler<T>(splitter, maxSize, randSeed);
-        handler.run(from);
-        return handler.toBuckets();
-    }
-
-    private List<Bucket<T>> buckets() {
+    List<Bucket<T>> buckets() {
         List<Bucket<T>> results = new ArrayList<Bucket<T>>(size);
         for(BucketNode<T> node = sentinel.next; node != null; node = node.next) {
             results.add(node.bucket);
@@ -139,7 +71,7 @@ public final class Buckets<T> {
         }
     }
 
-    private Buckets(int maxSize, Random usingRandom) {
+    Buckets(int maxSize, Random usingRandom) {
         if (maxSize < 2)
             throw new IllegalArgumentException("max must be at least 2");
         this.maxSize = maxSize;

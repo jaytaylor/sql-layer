@@ -108,7 +108,13 @@ public final class BucketsTest {
             }
         };
 
-        List<List<Bucket<String>>> actualBuckets = Buckets.compile(inputs.iterator(), splitter, 50);
+        Sampler<String> sampler = new Sampler<String>(splitter, 50, 37);
+        sampler.init(splitter.segments());
+        for (String input : inputs) {
+            sampler.visit(input);
+        }
+        sampler.finish();
+        List<List<Bucket<String>>> actualBuckets = sampler.toBuckets();
 
         AssertUtils.assertCollectionEquals("buckets lists", expectedBuckets, actualBuckets);
     }

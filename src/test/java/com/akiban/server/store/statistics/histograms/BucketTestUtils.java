@@ -33,7 +33,13 @@ final class BucketTestUtils {
     }
     
     public static <T> List<Bucket<T>> compileSingleStream(Iterable<? extends T> inputs, int maxBuckets, long seed) {
-        List<List<Bucket<T>>> result = Buckets.compile(inputs.iterator(), new SingletonSplitter<T>(), maxBuckets, seed);
+        Sampler<T> sampler = new Sampler<T>(new SingletonSplitter<T>(), maxBuckets, seed);
+        sampler.init(1);
+        for (T input : inputs) {
+            sampler.visit(input);
+        }
+        sampler.finish();
+        List<List<Bucket<T>>> result = sampler.toBuckets();
         assertEquals("result length: " + result, 1, result.size());
         return result.get(0);
     }

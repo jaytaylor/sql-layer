@@ -39,11 +39,10 @@ public final class SplitHandlerTest {
                 new SplitPair("two", 1),
                 new SplitPair("three", 3)
         );
-        ToArraySplitHandler handler = new ToArraySplitHandler(new BucketTestUtils.SingletonSplitter<String>());
-        handler.run(inputs.iterator());
 
         List<List<SplitPair>> expected = Collections.singletonList(onlyStream);
-        AssertUtils.assertCollectionEquals("single stream", expected, handler.splitPairStreams);
+        List<List<SplitPair>> actual = run(new BucketTestUtils.SingletonSplitter<String>(), inputs);
+        AssertUtils.assertCollectionEquals("single stream", expected, actual);
     }
 
     @Test
@@ -78,13 +77,13 @@ public final class SplitHandlerTest {
                 return Arrays.asList(input.split(" "));
             }
         };
-        ToArraySplitHandler handler = new ToArraySplitHandler(splitter);
-        handler.run(inputs.iterator());
 
         List<List<SplitPair>> expected = new ArrayList<List<SplitPair>>();
         expected.add(firstStream);
         expected.add(secondStream);
-        AssertUtils.assertCollectionEquals("single stream", expected, handler.splitPairStreams);
+
+        List<List<SplitPair>> actual = run(splitter, inputs);
+        AssertUtils.assertCollectionEquals("single stream", expected, actual);
     }
 
     @Test
@@ -118,18 +117,18 @@ public final class SplitHandlerTest {
                 return Arrays.asList(input.split(" "));
             }
         };
-        ToArraySplitHandler handler = new ToArraySplitHandler(splitter);
-        handler.run(inputs.iterator());
 
         List<List<SplitPair>> expected = new ArrayList<List<SplitPair>>();
         expected.add(firstStream);
         expected.add(secondStream);
-        AssertUtils.assertCollectionEquals("single stream", expected, handler.splitPairStreams);
+
+
+        List<List<SplitPair>> actual = run(splitter, inputs);
+        AssertUtils.assertCollectionEquals("single stream", expected, actual);
     }
     
     @Test(expected = IllegalStateException.class)
     public void mismatchedSegmentsCount() {
-        List<String> inputs = Arrays.asList("one a");
         Splitter<String> splitter = new Splitter<String>() {
             @Override
             public int segments() {
@@ -142,7 +141,19 @@ public final class SplitHandlerTest {
             }
         };
         ToArraySplitHandler handler = new ToArraySplitHandler(splitter);
-        handler.run(inputs.iterator());
+        handler.init(splitter.segments());
+        handler.visit("one two");
+    }
+
+    private List<List<SplitPair>> run(Splitter<String> splitter, List<String> inputs) {
+        ToArraySplitHandler handler = new ToArraySplitHandler(splitter);
+        handler.init(splitter.segments());
+        for (String input : inputs) {
+            handler.visit(input);
+        }
+        handler.finish();
+
+        return handler.splitPairStreams;
     }
     
     private static class ToArraySplitHandler extends SplitHandler<String> {

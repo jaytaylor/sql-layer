@@ -21,36 +21,23 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-abstract class SplitHandler<T> {
+abstract class SplitHandler<T> implements SampleVisitor<T> {
 
     protected abstract void handle(int segmentIndex, T input, int count);
 
-    public void run(Iterator<? extends T> inputs) {
-        int segments = splitter.segments();
-
-        // init the buffers
+    @Override
+    public void init(int segments) {
         if (segments < 1)
             throw new IllegalStateException("splitter must provide at least 1 segment: " + segments);
-        List<SegmentBuffer<T>> buffers = new ArrayList<SegmentBuffer<T>>(segments);
+        this.segments = segments;
+        buffers = new ArrayList<SegmentBuffer<T>>(segments);
         for (int i = 0; i < segments; ++i) {
             buffers.add(new SegmentBuffer<T>());
         }
+    }
 
-        while (inputs.hasNext()) {
-            T input = inputs.next();
-            List<? extends T> split = splitter.split(input);
-            if (split.size() != segments)
-                throw new IllegalStateException("required " + segments + ", found " + split.size() + ": " + split);
-            for (int i = 0; i < segments; ++i) {
-                T segment = split.get(i);
-                SegmentBuffer<T> buffer = buffers.get(i);
-                T prev = buffer.last();
-                int count = buffer.put(segment);
-                if (count > 0) {
-                    handle(i, prev, count);
-                }
-            }
-        }
+    @Override
+    public void finish() {
         for (int i = 0; i < segments; ++i) {
             SegmentBuffer<T> buffer = buffers.get(i);
             T segment = buffer.last();
@@ -60,11 +47,29 @@ abstract class SplitHandler<T> {
         }
     }
 
+    @Override
+    public void visit(T input) {
+        List<? extends T> split = splitter.split(input);
+        if (split.size() != segments)
+            throw new IllegalStateException("required " + segments + ", found " + split.size() + ": " + split);
+        for (int i = 0; i < segments; ++i) {
+            T segment = split.get(i);
+            SegmentBuffer<T> buffer = buffers.get(i);
+            T prev = buffer.last();
+            int count = buffer.put(segment);
+            if (count > 0) {
+                handle(i, prev, count);
+            }
+        }
+    }
+
     public SplitHandler(Splitter<T> splitter) {
         this.splitter = splitter;
     }
 
     private final Splitter<T> splitter;
+    private int segments;
+    private List<SegmentBuffer<T>> buffers;
 
     private static class SegmentBuffer<T> {
         int put(T segment) {
