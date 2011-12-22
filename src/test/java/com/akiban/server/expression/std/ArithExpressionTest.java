@@ -43,21 +43,21 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
         Expression left = new LiteralExpression(AkType.LONG, 5L);
         Expression right = new LiteralExpression(AkType.DOUBLE, 2.0);
         Expression top = new ArithExpression(left, ex = ArithOps.MINUS, right);
-   
+
         assertTrue("top should be constant", top.isConstant());
         ValueSource actual = new ValueHolder(top.evaluation().eval());
         ValueSource expected = new ValueHolder(AkType.DOUBLE, 3.0);
         assertEquals("ValueSource", expected, actual);
-       
+
     }
-    
+
     @Test
-    public void bigDecimalTimesBigInteger () 
+    public void bigDecimalTimesBigInteger ()
     {
         Expression left = new LiteralExpression (AkType.DECIMAL, BigDecimal.valueOf(2.0));
         Expression right = new LiteralExpression(AkType.U_BIGINT, BigInteger.ONE);
         Expression top = new ArithExpression(left, ex = ArithOps.MULTIPLY, right);
-        
+
         assertTrue("Top is const", top.isConstant());
         ValueSource actual = new ValueHolder(top.evaluation().eval());
         ValueSource expected = new ValueHolder(AkType.DECIMAL, BigDecimal.valueOf(2.0));
@@ -70,26 +70,26 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
         Expression left = new LiteralExpression (AkType.LONG, 2L);
         Expression right = new LiteralExpression(AkType.LONG, 5L);
         Expression top = new ArithExpression(left, ex = ArithOps.DIVIDE, right);
-        
+
         assertTrue("Top is const", top.isConstant());
         ValueSource actual = new ValueHolder(top.evaluation().eval());
         ValueSource expected = new ValueHolder(AkType.LONG, 0L);
         assertEquals("actual == expected", expected, actual);
     }
-    
+
     @Test
     public void bigIntPlusBigInt ()
     {
         Expression left = new LiteralExpression (AkType.U_BIGINT, BigInteger.ONE);
         Expression right = new LiteralExpression (AkType.U_BIGINT, BigInteger.TEN);
         Expression top = new ArithExpression (left, ex = ArithOps.ADD, right);
-        
+
         assertTrue("Top is const", top.isConstant());
         ValueSource actual = new ValueHolder (top.evaluation().eval());
         ValueSource expected = new ValueHolder(AkType.U_BIGINT, BigInteger.valueOf(11L));
         assertEquals("actual == expected", expected, actual);
     }
-    
+
     @Test (expected = DivisionByZeroException.class)
     public void divideByZero ()
     {
@@ -98,27 +98,27 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
         Expression top = new ArithExpression (left, ex = ArithOps.DIVIDE, right);
         ValueSource actual = new ValueHolder (top.evaluation().eval());
     }
-  
+
     @Test (expected = InvalidArgumentTypeException.class)
     public void datePlusLong ()
     {
         Expression left = new LiteralExpression (AkType.DATE, 1L);
         Expression right = new LiteralExpression (AkType.LONG, 2L);
         Expression top = new ArithExpression (left, ex = ArithOps.ADD, right);
-        
+
         assertTrue("Top is const", top.isConstant());
         ValueSource actual = new ValueHolder (top.evaluation().eval());
         ValueSource expected = new ValueHolder(AkType.LONG, 3L);
         assertEquals("actuall = expected", expected, actual);
     }
-    
-    @Test 
+
+    @Test
     public void longPlusString ()
     {
         Expression left = new LiteralExpression (AkType.U_BIGINT, BigInteger.ONE);
         Expression right = new LiteralExpression (AkType.VARCHAR,"2");
         Expression top = new ArithExpression (left, ex = ArithOps.ADD, right);
-        
+
         assertTrue("Top is const", top.isConstant());
         ValueSource actual = new ValueHolder (top.evaluation().eval());
         ValueSource expected = new ValueHolder(AkType.U_BIGINT, BigInteger.valueOf(3L));
@@ -146,7 +146,7 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
         Expression date1 = new LiteralExpression (AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2006-11-07"));
         Expression date2 = new LiteralExpression (AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2006-11-06"));
         Expression interval = new ArithExpression (date1, ex = ArithOps.MINUS, date2);
-       
+
         Expression date08 = new LiteralExpression (AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2008-02-28"));
         Expression rst1 = new ArithExpression(interval, ex = ArithOps.ADD, date08);
 
@@ -169,7 +169,7 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
         Expression interval = new ArithExpression(date1, ex = ArithOps.MINUS, date2);
 
         // time + interval => time
-        Expression left = new LiteralExpression (AkType.TIME, 123010L);        
+        Expression left = new LiteralExpression (AkType.TIME, 123010L);
         Expression top = new ArithExpression (left, ex = ArithOps.ADD, interval);
 
         assertTrue("Top is const", top.isConstant());
@@ -189,7 +189,7 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
         Expression datetime2 = new LiteralExpression (AkType.DATETIME, 20090228235956L); // 2009-02-28 23:59:56
         Expression rst1 = new ArithExpression(datetime1, ex = ArithOps.ADD, interval);
         Expression rst2 = new ArithExpression(datetime2, ex = ArithOps.ADD, interval);
-                
+
         // 2008-02-28 23:59:56 plus 5 secs equals 2008-02-29 00:00:01  (2008 is a leap year)
         assertEquals(20080229000001L, rst1.evaluation().eval().getDateTime());
 
@@ -197,30 +197,65 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
         assertEquals(20090301000001L, rst2.evaluation().eval().getDateTime());
     }
 
-    @Test (expected = OverflowException.class)      
+    @Test (expected = OverflowException.class)
     public void bigIntPlusDouble () // expect exception
     {
         Expression left = new LiteralExpression(AkType.U_BIGINT, BigInteger.valueOf(Long.MAX_VALUE).pow(100));
-       
+
         Expression right = new LiteralExpression (AkType.DOUBLE, 100000000.0);
         Expression top = new ArithExpression(left, ex = ArithOps.ADD, right);
-     
-        ValueSource actual = new ValueHolder(top.evaluation().eval());        
+
+        ValueSource actual = new ValueHolder(top.evaluation().eval());
     }
 
     @Test
     public void testDatePlusIntervalMonth ()
     {
-        Expression left = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2009-02-23"));
-        Expression right = new LiteralExpression(AkType.INTERVAL_MONTH, 23L);
-        
+        Expression left = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2008-02-29"));
+        Expression right = new LiteralExpression(AkType.INTERVAL_MONTH, 12L);
+
         Expression top = new ArithExpression(left, ex = ArithOps.ADD, right);
-        
         String actual = Extractors.getLongExtractor(AkType.DATE).asString(top.evaluation().eval().getDate());
-        
-        assertEquals("2011-01-23", actual);
+
+        assertEquals("2009-02-28", actual);
     }
-    
+
+    @Test
+    public void testDateMinusNegativeInterval ()
+    {
+        Expression left = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2008-01-30"));
+        Expression right = new LiteralExpression(AkType.INTERVAL_MONTH, -13L);
+
+        Expression top = new ArithExpression(left, ex = ArithOps.MINUS, right);
+        String actual = Extractors.getLongExtractor(AkType.DATE).asString(top.evaluation().eval().getDate());
+
+        assertEquals("2009-02-28", actual);
+    }
+
+    @Test
+    public void testDatePlusNegativeIntervalMonth ()
+    {
+        Expression left = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2009-03-31"));
+        Expression right = new LiteralExpression(AkType.INTERVAL_MONTH, -4L);
+
+        Expression top = new ArithExpression(left, ex = ArithOps.ADD, right);
+        String actual = Extractors.getLongExtractor(AkType.DATE).asString(top.evaluation().eval().getDate());
+
+        assertEquals("2008-11-30", actual);
+    }
+
+    @Test
+    public void testDateTimeMinusIntervalMonth ()
+    {
+        Expression left = new LiteralExpression (AkType.DATETIME, 20090331123010L);
+        Expression right = new LiteralExpression(AkType.INTERVAL_MONTH, 4L);
+
+        Expression top = new ArithExpression(left, ex = ArithOps.MINUS, right);
+        String actual = Extractors.getLongExtractor(AkType.DATETIME).asString(top.evaluation().eval().getDateTime());
+
+        assertEquals("2008-11-30 12:30:10", actual);
+    }
+
     @Override
     protected ExpressionComposer getComposer()
     {

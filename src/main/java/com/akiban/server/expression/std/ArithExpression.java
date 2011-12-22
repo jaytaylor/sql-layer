@@ -16,10 +16,12 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.error.InvalidArgumentTypeException;
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.ValueSourceIsNullException;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.util.AbstractArithValueSource;
@@ -300,7 +302,7 @@ public class ArithExpression extends AbstractBinaryExpression
                 case 0:     if (l == 0 || l == HIGHEST_KEY) return rawLong();// left and right are intervals
                             else return doArithMillis(pos); // left and right are date/times
                 default:    if (l == 0 || r == 0) return doArithMillis(pos); // left is date/time and right is interval or vice versa
-                            else return doArithMonth(); // dito
+                            else return doArithMonth(); 
             }
         }
         
@@ -317,11 +319,10 @@ public class ArithExpression extends AbstractBinaryExpression
      
         protected long doArithMonth ()
         {
-           
-            long ymd_hms[] = new long[6];
+            long ymd_hms[];
             long interval;
             LongExtractor extract = Extractors.getLongExtractor(topT);
-            
+   
             if (left.getConversionType() == AkType.INTERVAL_MONTH)
             {
                 interval = left.getInterval_Month();
@@ -332,22 +333,72 @@ public class ArithExpression extends AbstractBinaryExpression
                 interval = right.getInterval_Month();
                 ymd_hms = ymd_hms = extract.getYearMonthDayHourMinuteSecond(extract.getLong(left));
             }
-            
-            switch (op.opName())
+
+            if (!vallidDayMonth(ymd_hms[0], ymd_hms[1], ymd_hms[2]))
             {
-                case '+':   
-                    ymd_hms[1] += interval;
-                    ymd_hms[0] += ymd_hms[1] / 12;
-                    ymd_hms[1] = ymd_hms[1] % 12;
-                    break;
-                default: // '-' 
-                    throw new UnsupportedOperationException();
-                    
+                topT = AkType.NULL;
+                throw new ValueSourceIsNullException();
             }
-            // TODO: adjust day
+
+            if (op.opName() == '+' && interval >= 0)
+            {
+                ymd_hms[0] += (ymd_hms[1] += interval) / 12;
+                ymd_hms[1] = ymd_hms[1] % 12;
+            }
+            else
+            {
+                ymd_hms[1] -= (interval *= op.opName() == '+' ? -1 : 1) % 12;
+                ymd_hms[0] -= interval / 12;
+                if (ymd_hms[1] <= 0)
+                {
+                    ymd_hms[1] += 12;
+                    --ymd_hms[0];
+                }
+            }
+            
+            // adjust day value
+            switch ((int)ymd_hms[1])
+            {
+                case 2: ymd_hms[2] = Math.min(ymd_hms[0] % 4 == 0 ? 29 : 28, ymd_hms[2]);
+                        break;
+                case 4:
+                case 6:
+                case 9:
+                case 11: ymd_hms[2] = Math.min(30, ymd_hms[2]);
+                         break;
+                case 3:
+                case 1:
+                case 5:
+                case 7:
+                case 8:
+                case 10:
+                case 12: ymd_hms[2] = Math.min(31, ymd_hms[2]);
+                         break;
+                default: throw new InvalidParameterValueException();
+            }
             return extract.getEncoded(ymd_hms);
         }
-        
+
+        private static boolean vallidDayMonth (long y, long m, long d)
+        {
+            switch ((int)m)
+            {
+                case 2:     return d <= (y % 4 == 0 ? 29L : 28L);
+                case 4:
+                case 6:
+                case 9:
+                case 11:    return d <= 30;
+                case 3:
+                case 1:
+                case 5:
+                case 7:
+                case 8:
+                case 10:
+                case 12:    return d <= 31;
+                default:    return false;
+            }
+        }
+
         @Override
         public boolean isNull() 
         {
