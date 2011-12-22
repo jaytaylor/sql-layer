@@ -17,7 +17,7 @@ package com.akiban.server.store.histograms;
 
 import com.akiban.util.Equality;
 
-final class Bucket<T> {
+public final class Bucket<T> {
 
     // Bucket interface
     

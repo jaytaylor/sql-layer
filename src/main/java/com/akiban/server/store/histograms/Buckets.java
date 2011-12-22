@@ -24,7 +24,7 @@ import java.util.NavigableMap;
 import java.util.Random;
 import java.util.TreeMap;
 
-final class Buckets<T extends Comparable<? super T>> {
+public final class Buckets<T extends Comparable<? super T>> {
 
     public static <T extends Comparable<? super T>> List<Bucket<T>> compile(Iterable<? extends T> from, int maxSize) {
         return compile(from, new Buckets<T>(maxSize));
@@ -44,7 +44,7 @@ final class Buckets<T extends Comparable<? super T>> {
         return usingBuckets.buckets();
     }
 
-    public void add(Bucket<T> bucket, BucketSource<T> releaseTo) {
+    private void add(Bucket<T> bucket, BucketSource<T> releaseTo) {
         // for all but the first entry, compare it to the previous entry
         if (sentinel.next != null && last.bucket.value().compareTo(bucket.value()) >= 1)
             throw new IllegalArgumentException("can't add " + bucket + " to " + buckets());
@@ -75,7 +75,7 @@ final class Buckets<T extends Comparable<? super T>> {
         }
     }
 
-    public List<Bucket<T>> buckets() {
+    private List<Bucket<T>> buckets() {
         List<Bucket<T>> results = new ArrayList<Bucket<T>>(size);
         for(BucketNode<T> node = sentinel.next; node != null; node = node.next) {
             results.add(node.bucket);
@@ -183,19 +183,6 @@ final class Buckets<T extends Comparable<? super T>> {
             bucketNodeSets.put(nodePopularity, bucketNodeSet);
         }
         bucketNodeSet.add(node);
-    }
-
-    private void removeFromBucketNodeSets(BucketNode<T> node) {
-        long popularity = node.bucket.getEqualsCount();
-        BucketNodeSet<T> bucketNodeSet = bucketNodeSets.get(popularity);
-        if (bucketNodeSet.bucketNodes.size() == 1) {
-            assert bucketNodeSet.bucketNodes.contains(node) : node + " not in " + bucketNodeSet.bucketNodes;
-            bucketNodeSets.remove(popularity);
-        }
-        else {
-            boolean success = bucketNodeSet.bucketNodes.remove(node);
-            assert success : "couldn't remove " + node + " from " + bucketNodeSet.bucketNodes;
-        }
     }
 
     private BucketNode<T> nodeFor(Bucket<T> bucket) {
