@@ -42,6 +42,7 @@ public final class TypesTranslation {
         case Types.TINYINT: return AkType.LONG;
         case Types.VARBINARY: return AkType.VARBINARY;
         case Types.VARCHAR: return AkType.VARCHAR;
+        case Types.OTHER:
         case Types.JAVA_OBJECT:
             String name = descriptor.getFullSQLTypeName();
             for (com.akiban.ais.model.Type aisType : com.akiban.ais.model.Types.types()) {
