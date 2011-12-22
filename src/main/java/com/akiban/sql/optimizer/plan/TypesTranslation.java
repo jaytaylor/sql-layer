@@ -36,7 +36,7 @@ public final class TypesTranslation {
                 return AkType.YEAR;
             if (typeId.isUnsigned())
                 return AkType.U_INT;
-            return AkType.INT;
+            return AkType.LONG; // Not INT.
         case TypeId.FormatIds.LONGINT_TYPE_ID:
             if (typeId.isUnsigned())
                 return AkType.U_BIGINT;
