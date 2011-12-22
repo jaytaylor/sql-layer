@@ -71,7 +71,41 @@ public final class FairRandomTieBreakerTest {
                     }
                     else {
                         count = 1;
-                        distribution = 0;
+                        distribution = Double.NEGATIVE_INFINITY;
+                    }
+                    test.input(i, count, distribution);
+                }
+                return test;
+            }
+        }.run();
+    }
+
+    @Test
+    public void unevenDistribWithTies() {
+        new DistributionChecker<Integer>() {
+            @Override
+            protected TestDescription<Integer> inputs() {
+                TestDescription<Integer> test = new TestDescription<Integer>(31);
+                for (int i = 0; i < 100; ++i) {
+                    final int count;
+                    final double distribution;
+                    if (i % 4 == 0) {
+                        count = 3;
+                        distribution = Double.POSITIVE_INFINITY;
+                    }
+                    else if (i % 7 == 0 || i % 13 == 0) {
+                        count = 2;
+                        // for the %7:
+                        // 28, 56 and 84 are divisible by 7, but their divisiblity by 4 takes precedence
+                        // for the %13, there are 7 values, of which one (52) is also divisible by 4,
+                        // and onen of which (91) is divisible by 7, so we shouldn't count it twice
+                        // So we have 11 + 5 = 16 values
+                        // 31 buckets - 25 (for the %4s) - 1 (for the endpoint) = 5 buckets split by 17 values
+                        distribution = 5d / 16;
+                    }
+                    else {
+                        count = 1;
+                        distribution = Double.NEGATIVE_INFINITY;
                     }
                     test.input(i, count, distribution);
                 }
@@ -113,9 +147,13 @@ public final class FairRandomTieBreakerTest {
             for (Map.Entry<Double,T> entry : testDescription.distributionsPerValue()) {
                 double distribution = entry.getKey();
                 T key = entry.getValue();
-                if (Double.isInfinite(distribution)) {
+                if (distribution == Double.POSITIVE_INFINITY) {
                     long hits = distributions.remove(key);
                     assertEquals("hits for " + key + " (should be ALL)", iterations, hits);
+                }
+                else if (distribution == Double.NEGATIVE_INFINITY) {
+                    long hits = distributions.remove(key);
+                    assertEquals("hits for " + key + " (should be ALL)", 0, hits);
                 }
                 else {
                     double hits = distributions.remove(key);
@@ -132,7 +170,7 @@ public final class FairRandomTieBreakerTest {
             assertTrue("untested distributions: " + distributions, distributions.isEmpty());
         }
         
-        private int iterations = 50000;
+        private int iterations = 10000;
     }
     
     private static class TestDescription<T> {
@@ -140,8 +178,6 @@ public final class FairRandomTieBreakerTest {
         void input(T input, int count, double distribution) {
             if (Double.isNaN(distribution))
                 throw new IllegalArgumentException("NaN not allowed");
-            if (Double.NEGATIVE_INFINITY == distribution)
-                throw new IllegalArgumentException("negative INFINITY not allowed");
             ArgumentValidation.isGT("count", count, 0);
             for (int i = 0; i < count; ++i)
                 inputs.add(input);
