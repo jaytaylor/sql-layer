@@ -29,9 +29,7 @@ import java.util.TreeMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 public final class FairRandomTieBreakerTest {
     @Test
@@ -43,7 +41,7 @@ public final class FairRandomTieBreakerTest {
                 TestDescription<Integer> test = new TestDescription<Integer>(31);
 
                 for (int i = 0; i < 100; ++i) {
-                    test.input(i, 1, Distribution.SOME);
+                    test.input(i, 1, 30d/99); // 30 buckets; value 99 is always there
                 }
 
                 return test;
@@ -59,18 +57,21 @@ public final class FairRandomTieBreakerTest {
                 TestDescription<Integer> test = new TestDescription<Integer>(31);
                 for (int i = 0; i < 100; ++i) {
                     final int count;
-                    final Distribution distribution;
+                    final double distribution;
                     if (i % 4 == 0) {
                         count = 3;
-                        distribution = Distribution.ALL;    // 25 of these
+                        distribution = Double.POSITIVE_INFINITY;
                     }
-                    else if (i % 11 == 0) {
+                    else if (i % 7 == 0) {
                         count = 2;
-                        distribution = Distribution.SOME;   //*
+                        // 28, 56 and 84 are divisible by 7, but their divisiblity by 4 takes precedence
+                        // this leaves 11 values in this category.
+                        // 31 buckets - 25 (for the %4s) - 1 (for the endpoint) = 5 buckets split by 11 values
+                        distribution = 5d / 11;
                     }
                     else {
                         count = 1;
-                        distribution = Distribution.NONE;
+                        distribution = 0;
                     }
                     test.input(i, count, distribution);
                 }
@@ -109,31 +110,24 @@ public final class FairRandomTieBreakerTest {
             }
 
             // do the checking
-            int bucketsRemaining = testDescription.maxBuckets();
-            for (T key : testDescription.forDistribution(Distribution.ALL)) {
-                long hits = distributions.remove(key);
-                assertEquals("hits for " + key + " (should be ALL)", iterations, hits);
-                bucketsRemaining -= 1;
-            }
-            Collection<? extends T> somes = testDescription.forDistribution(Distribution.SOME);
-            assertTrue("not enough buckets: " + bucketsRemaining, bucketsRemaining >= 0);
-            double bucketsUsed = bucketsRemaining > somes.size() ? somes.size() : bucketsRemaining;
-            double expectedHits = bucketsUsed / somes.size() * iterations;
-            double error = 0.1 * expectedHits;
-            for (T key : somes) {
-                double hits = distributions.remove(key);
-                assertFalse(key + ": hit exactly " + iterations + ", but shouldn't have: ", hits == iterations);
-                double difference = Math.abs(expectedHits - hits);
-                assertEquals(
-                        "hits for " + key + " (should be SOME): expected=" + expectedHits + ", was=" + hits,
-                        0,
-                        difference,
-                        error);
-                bucketsRemaining -= 1;
-            }
-            for (T key : testDescription.forDistribution(Distribution.NONE)) {
-                long hits = distributions.remove(key);
-                assertEquals("hits for " + key + " (should be NONE)", 0, hits);
+            for (Map.Entry<Double,T> entry : testDescription.distributionsPerValue()) {
+                double distribution = entry.getKey();
+                T key = entry.getValue();
+                if (Double.isInfinite(distribution)) {
+                    long hits = distributions.remove(key);
+                    assertEquals("hits for " + key + " (should be ALL)", iterations, hits);
+                }
+                else {
+                    double hits = distributions.remove(key);
+                    double expectedHits = distribution * iterations;
+                    double error = 0.05 * expectedHits;
+                    assertFalse(key + ": hit " + hits + ", but shouldn't have: " + iterations, hits >= iterations);
+                    assertEquals(
+                            String.format("hits for %s (err=%.3f)", key, error),
+                            expectedHits,
+                            hits,
+                            error);
+                }
             }
             assertTrue("untested distributions: " + distributions, distributions.isEmpty());
         }
@@ -143,7 +137,11 @@ public final class FairRandomTieBreakerTest {
     
     private static class TestDescription<T> {
 
-        void input(T input, int count, Distribution distribution) {
+        void input(T input, int count, double distribution) {
+            if (Double.isNaN(distribution))
+                throw new IllegalArgumentException("NaN not allowed");
+            if (Double.NEGATIVE_INFINITY == distribution)
+                throw new IllegalArgumentException("negative INFINITY not allowed");
             ArgumentValidation.isGT("count", count, 0);
             for (int i = 0; i < count; ++i)
                 inputs.add(input);
@@ -156,8 +154,8 @@ public final class FairRandomTieBreakerTest {
             T last = inputs.get(inputs.size() - 1);
             boolean success = distributions.remove(lastItemDistribution, last);
             assertTrue("couldn't remove " + last + " -> " + lastItemDistribution, success);
-            success = distributions.put(Distribution.ALL, last);
-            assertTrue("couldn't put " + last + " -> " + Distribution.ALL, success);
+            success = distributions.put(Double.POSITIVE_INFINITY, last);
+            assertTrue("couldn't put " + last + " -> INFINITY", success);
             
         }
         
@@ -168,9 +166,9 @@ public final class FairRandomTieBreakerTest {
         public List<? extends T> list() {
             return inputs;
         }
-        
-        public Collection<? extends T> forDistribution(Distribution distribution) {
-            return distributions.get(distribution);
+
+        public Collection<Map.Entry<Double,T>> distributionsPerValue() {
+            return distributions.entries();
         }
         
         TestDescription(int buckets) {
@@ -179,15 +177,9 @@ public final class FairRandomTieBreakerTest {
 
         private int buckets;
         private List<T> inputs = Lists.newArrayList();
-        private Multimap<Distribution,T> distributions = HashMultimap.create();
-        private Distribution lastItemDistribution = null;
-    } 
-
-    enum Distribution {
-        ALL,
-        SOME,
-        NONE
+        private Multimap<Double,T> distributions = HashMultimap.create();
+        private double lastItemDistribution = Double.NaN;
     }
     
-    private static long seedSeed = 31L;
+    private static final long seedSeed = 31L;
 }
