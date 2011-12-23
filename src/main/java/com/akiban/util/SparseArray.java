@@ -15,7 +15,6 @@
 package com.akiban.util;
 
 public abstract class SparseArray<T> {
-    protected abstract T createNew();
     
     public T get(int index) {
         if (index < 0)
@@ -29,11 +28,15 @@ public abstract class SparseArray<T> {
             internalArray = newInternalArray;
         }
         if (internalArray[index] == null) {
-            internalArray[index] = createNew();
+            internalArray[index] = initialValue();
         }
         @SuppressWarnings("unchecked")
         T cast = (T) internalArray[index];
         return cast;
+    }
+
+    protected T initialValue() {
+        return null;
     }
 
     @Override

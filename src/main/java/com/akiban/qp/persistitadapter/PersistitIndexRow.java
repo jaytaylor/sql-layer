@@ -113,7 +113,7 @@ public class PersistitIndexRow extends AbstractRow
     private final IndexRowType indexRowType;
     private final SparseArray<PersistitKeyValueSource> keySources = new SparseArray<PersistitKeyValueSource>() {
         @Override
-        protected PersistitKeyValueSource createNew() {
+        protected PersistitKeyValueSource initialValue() {
             return new PersistitKeyValueSource();
         }
     };

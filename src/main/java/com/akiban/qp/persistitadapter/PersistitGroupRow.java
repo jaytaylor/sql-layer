@@ -173,7 +173,7 @@ public class PersistitGroupRow extends AbstractRow
 
     private final SparseArray<RowDataValueSource> valueSources = new SparseArray<RowDataValueSource>() {
         @Override
-        protected RowDataValueSource createNew() {
+        protected RowDataValueSource initialValue() {
             return new RowDataValueSource();
         }
     };

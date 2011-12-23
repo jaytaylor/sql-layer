@@ -43,7 +43,7 @@ public final class SparseArrayTest {
 
     private static class CountingSparseArray extends SparseArray<String> {
         @Override
-        protected String createNew() {
+        protected String initialValue() {
             return Integer.toString(++count);
         }
 
