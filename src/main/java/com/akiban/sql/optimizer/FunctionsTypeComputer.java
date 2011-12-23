@@ -572,7 +572,9 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case NULL:
             return null;
         case DATETIME:
+            return new DataTypeDescriptor(TypeId.DATETIME_ID, true);
         case YEAR:
+            return new DataTypeDescriptor(TypeId.YEAR_ID, true);
         default:
             try {
                 return new DataTypeDescriptor(TypeId.getUserDefinedTypeId(null,
