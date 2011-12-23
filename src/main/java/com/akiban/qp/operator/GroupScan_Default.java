@@ -22,6 +22,53 @@ import com.akiban.qp.row.Row;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Tap;
 
+/**
+
+ <h1>Overview</h1>
+
+ GroupScan_Default scans a group in hkey order.
+
+ <h1>Arguments</h1>
+
+ <ul>
+
+ <li><b>GroupTable groupTable:</b>
+ The group table to be scanned.
+
+ <li><b>Limit limit (DEPRECATED):</b>
+ A limit on the number of rows to be returned. The limit is specific to one UserTable.
+ Deprecated because the result is not well-defined. In the case of a branching group, a
+ limit on one sibling has impliciations on the return of rows of other siblings.
+
+ <li>IndexKeyRange indexKeyRange (DEPRECATED):</b> Specifies an index
+ restriction for hkey-equivalent indexes. Deprecated because
+ hkey-equivalent indexes were used automatically, sometimes reducing
+ performance. Need to revisit the concept.
+
+ <ul>
+
+ <h1>Behavior</h1>
+
+ The rows of a group table are returned in hkey order.
+
+ <h1>Output</h1>
+
+ Nothing else to say.
+
+ <h1>Assumptions</h1>
+
+ None.
+
+ <h1>Performance</h1>
+
+ GroupScan_Default does a complete scan of a group table, relying on nothing but sequential access.
+
+ <h1>Memory Requirements</h1>
+
+ None.
+
+ */
+
 class GroupScan_Default extends Operator
 {
     // Object interface

@@ -35,6 +35,105 @@ import java.util.Set;
 
 import static java.lang.Math.min;
 
+/**
+
+ <h1>Overview</h1>
+
+ Given an index row or group row, BranchLookup_Default locates a
+ related branch, i.e., a related row and all of its descendents.
+
+ Unlike AncestorLookup, BranchLookup always retrieves a subtree under a
+ targeted row.
+
+ <h1>Arguments</h1>
+
+ <ul>
+
+ <li><b>GroupTable groupTable:</b> The group table containing the
+ ancestors of interest.
+
+ <li><b>RowType inputRowType:</b> Branches will be located for input
+ rows of this type.
+
+ <li><b>RowType outputRowType:</b> Type at the root of the branch to be
+ retrieved.
+
+ <li><b>boolean keepInput:</b> Indicates whether rows of type
+ inputRowType will be preserved in the output stream (keepInput =
+ true), or discarded (keepIn put = false).
+
+ <li><b>Limit limit (DEPRECATED):</b> A limit on the number of rows to
+ be returned. The limit is specific to one UserTable. Deprecated
+ because the result is not well-defined. In the case of a branching
+ group, a limit on one sibling has impliciations on the return of rows
+ of other siblings.
+
+ </ul>
+
+ inputRowType may be an index row type or a group row type. For a group
+ row type, inputRowType must not match outputRowType. For an index row
+ type, rowType may match outputRowType, and keepInput must be false
+ (this may be relaxed in the future).
+
+ The groupTable, inputRowType, and outputRowType must belong to the
+ same group.
+
+ If inputRowType is a table type, then inputRowType and outputRowType
+ must be related in one of the following ways:
+
+ <ul>
+
+ <li>outputRowType is an ancestor of inputRowType.
+
+ <li>outputRowType and inputRowType have a common ancestor, and
+ outputRowType is a child of that common ancestor.
+
+ </ul>
+
+ If inputRowType is an index type, the above rules apply to the index's
+ table's type.
+
+ <h1>Behavior</h1>
+
+ For each input row, the hkey is obtained. The hkey is transformed to
+ yield an hkey that will locate the corresponding row of the output row
+ type. Then the entire subtree under that hkey is retrieved. Orphan
+ rows will be retrieved, even if there is no row of the outputRowType.
+
+ All the retrieved records are written to the output stream in hkey
+ order (ancestors before descendents), as is the input row if keepInput
+ is true.
+
+ If keepInput is true, then the input row appears either before all the
+ rows of the branch or after all the rows of the branch. If
+ outputRowType is an ancestor of inputRowType, then the input row is
+ emitted after all the rows of the branch. Otherwise: inputRowType and
+ outputRowType have some common ancestor, and outputRowType is the
+ common ancestor's child. inputRowType has an ancestor, A, that is a
+ different child of the common ancestor. The ordering is determined by
+ comparing the ordinals of A and outputRowType.
+
+ <h1>Output</h1>
+
+ Nothing else to say.
+
+ <h1>Assumptions</h1>
+
+ None.
+
+ <h1>Performance</h1>
+
+ For each input row, BranchLookup_Default does one random access, and
+ as many sequential accesses as are needed to retrieve the entire
+ branch.
+
+ <h1>Memory Requirements</h1>
+
+ BranchLookup_Default stores two rows in memory.
+
+
+ */
+
 public class BranchLookup_Default extends Operator
 {
     // Object interface
