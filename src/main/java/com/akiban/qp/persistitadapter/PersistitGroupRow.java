@@ -154,6 +154,7 @@ public class PersistitGroupRow extends AbstractRow
     {
         this.adapter = adapter;
         this.rowData = rowData;
+        this.typedHKeys = new PersistitHKey[INITIAL_ARRAY_SIZE];
     }
     
     private RowDataValueSource valueSource(int i)
@@ -165,6 +166,7 @@ public class PersistitGroupRow extends AbstractRow
 
     private static final Logger LOG = LoggerFactory.getLogger(PersistitGroupRow.class);
     private static final int INITIAL_ROW_SIZE = 500;
+    private static final int INITIAL_ARRAY_SIZE = 10;
     private static final int MAX_ROWDATA_SIZE_BYTES = 5000000;
 
     // Object state
@@ -173,6 +175,12 @@ public class PersistitGroupRow extends AbstractRow
         @Override
         protected RowDataValueSource createNew() {
             return new RowDataValueSource();
+        }
+    };
+    private final SparseArray<PersistitHKey> typedHKeys = new SparseArray<PersistitHKey>() {
+        @Override
+        protected PersistitHKey createNew() {
+            throw new UnsupportedOperationException(); // TODO
         }
     };
     private final PersistitAdapter adapter;
