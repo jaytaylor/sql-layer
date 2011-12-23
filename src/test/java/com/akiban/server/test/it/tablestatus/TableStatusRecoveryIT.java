@@ -21,7 +21,9 @@ import java.util.Collections;
 
 import com.akiban.server.test.it.ITBase;
 import com.persistit.Transaction;
+import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitIOException;
+import com.persistit.exception.PersistitInterruptedException;
 import org.junit.Test;
 
 import com.akiban.server.TableStatistics;
@@ -103,7 +105,27 @@ public class TableStatusRecoveryIT extends ITBase {
         final TableStatistics ts2 = dml().getTableStatistics(session(), tableId, false);
         assertEquals("row count after restart", INSERT_COUNT, ts2.getRowCount());
         assertEquals("auto inc after restart", INSERT_COUNT, ts2.getAutoIncrementValue());
+    }
 
+    @Test
+    public void ordinalCreationTest() throws Exception {
+        final int aId = createTable("test", "A", "ID INT, PRIMARY KEY(ID)");
+        final int aOrdinal = getOrdinal(aId);
+
+        final int bId = createTable("test", "B", "ID INT, AID INT, PRIMARY KEY(ID)", akibanFK("AID", "A", "ID"));
+        final int bOrdinal = getOrdinal(bId);
+        
+        assertEquals("ordinals unique before restart", true, aOrdinal != bOrdinal);
+        
+        crashAndRestartSaveDatapath();
+
+        assertEquals("parent ordinal same after restart", aOrdinal, getOrdinal(aId));
+        assertEquals("child ordinal same after restart", bOrdinal, getOrdinal(bId));
+        
+        final int cId = createTable("test", "C", "ID INT, BID INT, PRIMARY KEY(ID)", akibanFK("BID", "B", "ID"));
+        final int cOrdinal = getOrdinal(cId);
+        
+        assertEquals("new grandchild after restart has unique ordinal", true, cOrdinal != aOrdinal && cOrdinal != bOrdinal);
     }
 
     private void crashAndRestartSaveDatapath() throws Exception {
@@ -115,5 +137,18 @@ public class TableStatusRecoveryIT extends ITBase {
 
         final Property property = new Property("akserver.datapath", datapath);
         restartTestServices(Collections.singleton(property));
+    }
+    
+    private int getOrdinal(int tableId) throws PersistitException {
+        final Transaction trx = treeService().getTransaction(session());
+        trx.begin();
+        try {
+            int ordinal = store().getRowDefCache().getRowDef(tableId).getTableStatus().getOrdinal();
+            trx.commit();
+            return ordinal;
+        }
+        finally {
+            trx.end();
+        }
     }
 }
