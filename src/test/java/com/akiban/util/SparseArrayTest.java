@@ -16,25 +16,81 @@ package com.akiban.util;
 
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public final class SparseArrayTest {
 
     @Test
     public void getCreates() {
         CountingSparseArray tester = new CountingSparseArray();
+
+        assertEquals("isDefined", false, tester.isDefined(0));
         assertEquals("first get", "1", tester.get(0));
-        assertEquals("first get", "2", tester.get(100));
+        assertEquals("isDefined", true, tester.isDefined(0));
+
+        assertEquals("isDefined", false, tester.isDefined(5));
+        assertEquals("second get", "2", tester.get(5));
+        assertEquals("isDefined", true, tester.isDefined(5));
+
         assertEquals("create count", 2, tester.count);
+    }
+    
+    @Test
+    public void getGrowsCapacity() {
+        CountingSparseArray tester = new CountingSparseArray();
+        int oldCapacity = tester.currentCapacity();
+
+        int index = oldCapacity + 10;
+        assertEquals("isDefined", false, tester.isDefined(index));
+        assertEquals("first get", "1", tester.get(index));
+        assertEquals("isDefined", true, tester.isDefined(index));
+
+        int newCapacity = tester.currentCapacity();
+        assertTrue("capacity <= index: " + newCapacity+ " <= " + index, newCapacity > index);
+
+        assertEquals("create count", 1, tester.count);
     }
 
     @Test
     public void getReuses() {
         CountingSparseArray tester = new CountingSparseArray();
+
+        assertEquals("isDefined", false, tester.isDefined(0));
         assertEquals("first get", "1", tester.get(0));
+        assertEquals("isDefined", true, tester.isDefined(0));
         assertEquals("first get", "1", tester.get(0));
+        assertEquals("isDefined", true, tester.isDefined(0));
         assertEquals("create count", 1, tester.count);
     }
+    
+    @Test
+    public void setUndefinedIndex() {
+        CountingSparseArray tester = new CountingSparseArray();
+
+        assertEquals("isDefined", false, tester.isDefined(0));
+        tester.set(0, "foo");
+        assertEquals("isDefined", true, tester.isDefined(0));
+
+        assertEquals("create count", 0, tester.count);
+    }
+    
+    @Test
+    public void setGrowsCapacity() {
+        CountingSparseArray tester = new CountingSparseArray();
+        int oldCapacity = tester.currentCapacity();
+
+        int index = oldCapacity + 10;
+        assertEquals("isDefined", false, tester.isDefined(index));
+        String old = tester.set(index, "foo");
+        assertEquals("old value", null, old);
+        assertEquals("isDefined", true, tester.isDefined(index));
+
+        int newCapacity = tester.currentCapacity();
+        assertTrue("capacity <= index: " + newCapacity+ " <= " + index, newCapacity > index);
+
+        assertEquals("create count", 0, tester.count);
+    }
+    
 
     @Test(expected = IndexOutOfBoundsException.class)
     public void negativeIndex() {

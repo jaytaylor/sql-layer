@@ -65,11 +65,16 @@ public abstract class SparseArray<T> {
     protected T initialValue() {
         return null;
     }
+    
+    // intended for testing
+    int currentCapacity() {
+        return internalArray.length;
+    }
 
     private void ensureCapacity(int index) {
-        if (index > internalArray.length) {
+        if (internalArray.length <= index) {
             int newSize = internalArray.length * GROW_FACTOR;
-            if (newSize < index)
+            if (newSize <= index)
                 newSize = index + 1;
             Object[] newInternalArray = new Object[newSize];
             System.arraycopy(internalArray, 0, newInternalArray, 0, internalArray.length);
