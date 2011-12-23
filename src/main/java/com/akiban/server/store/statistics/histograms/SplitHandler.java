@@ -18,7 +18,6 @@ package com.akiban.server.store.statistics.histograms;
 import com.akiban.util.Equality;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 abstract class SplitHandler<T> implements SampleVisitor<T> {
@@ -46,20 +45,22 @@ abstract class SplitHandler<T> implements SampleVisitor<T> {
     }
 
     @Override
-    public void visit(T input) {
+    public List<? extends T> visit(T input) {
         checkInit();
         List<? extends T> split = splitter.split(input);
         if (split.size() != segments)
             throw new IllegalStateException("required " + segments + ", found " + split.size() + ": " + split);
+        recycleBin.clear();
         for (int i = 0; i < segments; ++i) {
             T segment = split.get(i);
             SegmentBuffer<T> buffer = buffers.get(i);
             T prev = buffer.last();
-            int count = buffer.put(segment);
+            int count = buffer.put(segment, recycleBin);
             if (count > 0) {
                 handle(i, prev, count);
             }
         }
+        return recycleBin;
     }
 
     public SplitHandler(Splitter<T> splitter) {
@@ -67,6 +68,7 @@ abstract class SplitHandler<T> implements SampleVisitor<T> {
         this.segments = splitter.segments();
         if (segments < 1)
             throw new IllegalArgumentException("splitter must provide at least 1 segment: " + segments);
+        this.recycleBin = new ArrayList<T>(segments);
     }
 
     private void checkInit() {
@@ -77,9 +79,19 @@ abstract class SplitHandler<T> implements SampleVisitor<T> {
     private final Splitter<T> splitter;
     private final int segments;
     private List<SegmentBuffer<T>> buffers;
+    private final List<T> recycleBin;
 
     private static class SegmentBuffer<T> {
-        int put(T segment) {
+        /**
+         * Adds an element to the stream. If that element is the same as the last element this buffer saw,
+         * it won't be added to the stream, but will instead be recycled. If this element is different than the
+         * one before, this class will return the number of times that other element had been seen. The caller
+         * is responsible for having retrieved that element before calling this method.
+         * @param segment the segment to add to the buffer
+         * @param recycleBin where to put elements that need to be recycled
+         * @return the number of times the last element appeared, or 0 if that's not known yet
+         */
+        int put(T segment, List<? super T> recycleBin) {
             int count;
             if (lastCount == 0) {
                 // first element
@@ -91,6 +103,7 @@ abstract class SplitHandler<T> implements SampleVisitor<T> {
                 // same segment, just update lastCount
                 ++lastCount;
                 count = 0;
+                recycleBin.add(segment);
             } else {
                 // new segment. Return and reset lastCount, and reset last
                 count = lastCount;

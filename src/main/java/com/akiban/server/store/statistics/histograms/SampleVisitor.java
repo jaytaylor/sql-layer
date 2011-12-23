@@ -15,8 +15,10 @@
 
 package com.akiban.server.store.statistics.histograms;
 
+import java.util.List;
+
 interface SampleVisitor<T> {
     void init();
-    void visit(T sample);
+    List<? extends T> visit(T sample);
     void finish();
 }

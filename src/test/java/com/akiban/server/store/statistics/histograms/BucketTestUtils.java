@@ -31,9 +31,14 @@ final class BucketTestUtils {
         result.addLessThanDistincts(lessThanDistincts);
         return result;
     }
-    
     public static <T> List<Bucket<T>> compileSingleStream(Iterable<? extends T> inputs, int maxBuckets, long seed) {
-        Sampler<T> sampler = new Sampler<T>(new SingletonSplitter<T>(), maxBuckets, seed);
+        return compileSingleStream(inputs, maxBuckets, seed, new SingletonSplitter<T>());
+    }
+    
+    public static <T> List<Bucket<T>> compileSingleStream(Iterable<? extends T> inputs, int maxBuckets, long seed,
+                                                          Splitter<T> splitter
+    ) {
+        Sampler<T> sampler = new Sampler<T>(splitter, maxBuckets, seed);
         sampler.init();
         for (T input : inputs) {
             sampler.visit(input);
@@ -58,6 +63,10 @@ final class BucketTestUtils {
         public List<? extends T> split(T input) {
             oneElementList.set(0, input);
             return oneElementList;
+        }
+
+        @Override
+        public void recycle(T element) {
         }
 
         @SuppressWarnings("unchecked")

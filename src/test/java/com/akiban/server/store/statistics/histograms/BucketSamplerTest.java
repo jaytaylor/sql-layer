@@ -106,6 +106,10 @@ public final class BucketSamplerTest {
             public List<? extends String> split(String input) {
                 return Arrays.asList(input.split(" eats "));
             }
+
+            @Override
+            public void recycle(String element) {
+            }
         };
 
         Sampler<String> sampler = new Sampler<String>(splitter, 50, 37);
@@ -253,7 +257,8 @@ public final class BucketSamplerTest {
                 List<Bucket<T>> buckets = BucketTestUtils.compileSingleStream(
                         testDescription.list(),
                         testDescription.maxBuckets(),
-                        seed
+                        seed,
+                        new LimitingSplitter<T>(testDescription.maxBuckets() + 1)
                 );
                 for (Bucket<T> bucket : buckets) {
                     T bucketValue = bucket.value();
@@ -290,6 +295,28 @@ public final class BucketSamplerTest {
         }
 
         private int iterations = 10000;
+    }
+    
+    private static class LimitingSplitter<T> extends BucketTestUtils.SingletonSplitter<T> {
+        @Override
+        public List<? extends T> split(T input) {
+            assertTrue("reached max of " + max, count < max);
+            ++count;
+            return super.split(input);
+        }
+
+        @Override
+        public void recycle(T element) {
+            --count;
+            super.recycle(element);
+        }
+
+        private LimitingSplitter(int max) {
+            this.max = max;
+        }
+
+        int count;
+        final int max;
     }
 
     private static class TestDescription<T> {

@@ -23,7 +23,9 @@ import com.akiban.server.store.IndexVisitor;
 import com.akiban.server.store.statistics.histograms.Bucket;
 import com.akiban.server.store.statistics.histograms.Sampler;
 import com.akiban.server.store.statistics.histograms.Splitter;
+import com.akiban.util.Flywheel;
 import com.persistit.Key;
+import com.persistit.Persistit;
 import com.persistit.Value;
 
 import org.slf4j.Logger;
@@ -62,16 +64,18 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
 
         @Override
         public List<? extends Key> split(Key keyToSample) {
-
             for (int i = keys.size() - 1; i >= 0; i--) {
-                Key key = keys.get(i);
-                if (key == null)
-                    keys.set(i, new Key(keyToSample));
-                else
-                    keyToSample.copyTo(key);
+                Key key = keysFlywheel.get();
+                keyToSample.copyTo(key);
+                keys.set(i , key);
                 keyToSample.setDepth(i);
             }
             throw new UnsupportedOperationException(); // TODO
+        }
+
+        @Override
+        public void recycle(Key key) {
+            keysFlywheel.release(key);
         }
 
         private KeySplitter(int columnCount) {
@@ -79,6 +83,12 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
         }
 
         private List<Key> keys;
+        private Flywheel<Key> keysFlywheel = new Flywheel<Key>() {
+            @Override
+            protected Key createNew() {
+                return new Key((Persistit)null);
+            }
+        };
     }
     
     public void init() {
