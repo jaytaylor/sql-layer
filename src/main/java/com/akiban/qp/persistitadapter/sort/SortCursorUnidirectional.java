@@ -194,15 +194,6 @@ class SortCursorUnidirectional extends SortCursor
         }
         ValueSource loBound = loExpressions.eval(boundColumns - 1);
         ValueSource hiBound = hiExpressions.eval(boundColumns - 1);
-        if (!loBound.isNull() && !hiBound.isNull()) {
-            Expression loLEHi =
-                Expressions.compare(Expressions.valueSource(loBound),
-                                    Comparison.LE,
-                                    Expressions.valueSource(hiBound));
-            if (!loLEHi.evaluation().eval().getBool()) {
-                throw new IllegalArgumentException();
-            }
-        }
         // Construct start and end keys
         BoundExpressions startExpressions = start.boundExpressions(bindings, adapter);
         BoundExpressions endExpressions = end.boundExpressions(bindings, adapter);
@@ -251,13 +242,13 @@ class SortCursorUnidirectional extends SortCursor
             // End values
             if (endValues[f].isNull()) {
                 if (endInclusive) {
-                    if (startInclusive) {
+                    if (startInclusive && startValues[f].isNull()) {
                         // Case 10:
                         endKeyTarget.expectingType(types[f]);
                         Converters.convert(endValues[f], endKeyTarget);
                     } else {
                         // Cases 2, 6, 14:
-                        assert false;
+                        throw new IllegalArgumentException();
                     }
                 } else {
                     // Cases 0, 4, 8, 12
@@ -276,13 +267,13 @@ class SortCursorUnidirectional extends SortCursor
             // Start values
             if (startValues[f].isNull()) {
                 if (startInclusive) {
-                    if (endInclusive) {
+                    if (endInclusive && endValues[f].isNull()) {
                         // Case 10:
                         startKeyTarget.expectingType(types[f]);
                         Converters.convert(startValues[f], startKeyTarget);
                     } else {
                         // Cases 2, 6, 14:
-                        assert false;
+                        throw new IllegalArgumentException();
                     }
                 } else {
                     // Cases 0, 4, 8, 12
