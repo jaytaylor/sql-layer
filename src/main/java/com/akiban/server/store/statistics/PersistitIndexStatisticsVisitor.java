@@ -45,6 +45,12 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
     private long timestamp;
     private int rowCount;
     private Sampler<Key> keySampler;
+    private Flywheel<Key> keysFlywheel = new Flywheel<Key>() {
+        @Override
+        protected Key createNew() {
+            return new Key((Persistit)null);
+        }
+    };
 
     public PersistitIndexStatisticsVisitor(Index index) {
         this.index = index;
@@ -52,8 +58,8 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
         columnCount = index.getColumns().size();
         timestamp = System.currentTimeMillis();
         rowCount = 0;
-        KeySplitter splitter = new KeySplitter(columnCount);
-        keySampler = new Sampler<Key>(splitter, BUCKETS_COUNT);
+        KeySplitter splitter = new KeySplitter(columnCount, keysFlywheel);
+        keySampler = new Sampler<Key>(splitter, BUCKETS_COUNT, keysFlywheel);
     }
     
     private static class KeySplitter implements Splitter<Key> {
@@ -73,22 +79,13 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
             throw new UnsupportedOperationException(); // TODO
         }
 
-        @Override
-        public void recycle(Key key) {
-            keysFlywheel.release(key);
-        }
-
-        private KeySplitter(int columnCount) {
+        private KeySplitter(int columnCount, Flywheel<Key> keysFlywheel) {
             keys = Arrays.asList(new Key[columnCount]);
+            this.keysFlywheel = keysFlywheel;
         }
 
         private List<Key> keys;
-        private Flywheel<Key> keysFlywheel = new Flywheel<Key>() {
-            @Override
-            protected Key createNew() {
-                return new Key((Persistit)null);
-            }
-        };
+        private Flywheel<Key> keysFlywheel;
     }
     
     public void init() {
@@ -96,8 +93,11 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
     }
 
     protected void visit(Key key, Value value) {
-        keySampler.visit(key);
+        List<? extends Key> recycles = keySampler.visit(key);
         rowCount++;
+        for (int i=0, len=recycles.size(); i < len; ++i) {
+            keysFlywheel.recycle(recycles.get(i));
+        }
     }
 
     public IndexStatistics getIndexStatistics() {

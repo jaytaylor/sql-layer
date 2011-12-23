@@ -15,6 +15,8 @@
 
 package com.akiban.server.store.statistics.histograms;
 
+import com.akiban.util.Recycler;
+
 import java.util.Arrays;
 import java.util.List;
 
@@ -32,16 +34,18 @@ final class BucketTestUtils {
         return result;
     }
     public static <T> List<Bucket<T>> compileSingleStream(Iterable<? extends T> inputs, int maxBuckets, long seed) {
-        return compileSingleStream(inputs, maxBuckets, seed, new SingletonSplitter<T>());
+        return compileSingleStream(inputs, maxBuckets, seed, new SingletonSplitter<T>(), new NoOpRecycler<T>());
     }
     
     public static <T> List<Bucket<T>> compileSingleStream(Iterable<? extends T> inputs, int maxBuckets, long seed,
-                                                          Splitter<T> splitter
+                                                          Splitter<T> splitter, Recycler<? super T> recycler
     ) {
-        Sampler<T> sampler = new Sampler<T>(splitter, maxBuckets, seed);
+        Sampler<T> sampler = new Sampler<T>(splitter, maxBuckets, seed, recycler);
         sampler.init();
         for (T input : inputs) {
-            sampler.visit(input);
+            List<? extends T> recycles = sampler.visit(input);
+            for (T element : recycles)
+                recycler.recycle(element);
         }
         sampler.finish();
         List<List<Bucket<T>>> result = sampler.toBuckets();
@@ -65,11 +69,13 @@ final class BucketTestUtils {
             return oneElementList;
         }
 
+        @SuppressWarnings("unchecked")
+        private List<T> oneElementList = Arrays.asList((T[])new Object[1]);
+    }
+    
+    public static class NoOpRecycler<T> implements Recycler<T> {
         @Override
         public void recycle(T element) {
         }
-
-        @SuppressWarnings("unchecked")
-        private List<T> oneElementList = Arrays.asList((T[])new Object[1]);
     }
 }

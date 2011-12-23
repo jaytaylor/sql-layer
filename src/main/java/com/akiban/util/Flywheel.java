@@ -17,7 +17,7 @@ package com.akiban.util;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
-public abstract class Flywheel<T> {
+public abstract class Flywheel<T> implements Recycler<T> {
 
     @Override
     public String toString() {
@@ -41,7 +41,7 @@ public abstract class Flywheel<T> {
         return reserves.poll();
     }
     
-    public void release(T element) {
+    public void recycle(T element) {
         if (reserves == null)
             reserves = new ArrayDeque<T>(defaultCapacity());
         reserves.offer(element);

@@ -16,6 +16,7 @@
 package com.akiban.server.store.statistics.histograms;
 
 import com.akiban.util.Flywheel;
+import com.akiban.util.Recycler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -35,7 +36,7 @@ final class BucketSampler<T> {
             BucketNode<T> removeNode = nodeToRemove();
             assert removeNode.next != null : removeNode;
             Bucket<T> removeBucket = removeNode.bucket;
-            releaseTo.release(removeBucket);
+            releaseTo.recycle(removeBucket);
 
             Bucket<T> foldIntoBucket = removeNode.next.bucket;
             assert foldIntoBucket != null;
@@ -47,7 +48,8 @@ final class BucketSampler<T> {
                 removeNode.next.prev = removeNode.prev;
             --size;
             checkIntegrity();
-            bucketNodeReserves.release(removeNode);
+            bucketNodeReserves.recycle(removeNode);
+            recycler.recycle(removeBucket.value());
         }
         else {
             addPenultToBucketNodeSets();
@@ -71,7 +73,7 @@ final class BucketSampler<T> {
         }
     }
 
-    BucketSampler(int maxSize, Random usingRandom) {
+    BucketSampler(int maxSize, Random usingRandom, Recycler<? super T> recycler) {
         if (maxSize < 2)
             throw new IllegalArgumentException("max must be at least 2");
         this.maxSize = maxSize;
@@ -79,6 +81,7 @@ final class BucketSampler<T> {
         this.last = sentinel;
         this.bucketNodeSets = new TreeMap<Long, BucketNodeSet<T>>();
         this.random = usingRandom;
+        this.recycler = recycler;
     }
 
     private BucketNode<T> nodeToRemove() {
@@ -126,7 +129,7 @@ final class BucketSampler<T> {
             result = bucketNodeSet.bucketNodes.get(0);
             BucketNodeSet<T> removed = bucketNodeSets.remove(leastPopular);
             assert removed != null;
-            bucketNodeSetReserves.release(removed);
+            bucketNodeSetReserves.recycle(removed);
         }
         else {
             List<BucketNode<T>> list = bucketNodeSet.bucketNodes;
@@ -186,6 +189,7 @@ final class BucketSampler<T> {
     private final NavigableMap<Long,BucketNodeSet<T>> bucketNodeSets;
     private Random random;
     private BucketNode<T> last;
+    private final Recycler<? super T> recycler;
     private Flywheel<BucketNode<T>> bucketNodeReserves;
     private Flywheel<BucketNodeSet<T>> bucketNodeSetReserves;
     

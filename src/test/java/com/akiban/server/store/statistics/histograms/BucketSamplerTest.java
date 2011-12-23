@@ -17,6 +17,7 @@ package com.akiban.server.store.statistics.histograms;
 
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.AssertUtils;
+import com.akiban.util.Recycler;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimap;
@@ -106,13 +107,9 @@ public final class BucketSamplerTest {
             public List<? extends String> split(String input) {
                 return Arrays.asList(input.split(" eats "));
             }
-
-            @Override
-            public void recycle(String element) {
-            }
         };
 
-        Sampler<String> sampler = new Sampler<String>(splitter, 50, 37);
+        Sampler<String> sampler = new Sampler<String>(splitter, 50, 37, new BucketTestUtils.NoOpRecycler<String>());
         sampler.init();
         for (String input : inputs) {
             sampler.visit(input);
@@ -145,7 +142,12 @@ public final class BucketSamplerTest {
 
     @Test(expected = IllegalStateException.class)
     public void toBucketsBeforeFinish() {
-        Sampler<String> sampler = new Sampler<String>(new BucketTestUtils.SingletonSplitter<String>(), 31, 37);
+        Sampler<String> sampler = new Sampler<String>(
+                new BucketTestUtils.SingletonSplitter<String>(),
+                31,
+                37,
+                new BucketTestUtils.NoOpRecycler<String>()
+        );
         sampler.init();
         sampler.toBuckets();
     }
@@ -254,11 +256,15 @@ public final class BucketSamplerTest {
             Random seedGenerator = new Random(seedSeed);
             for (int iteration = 0; iteration < iterations; ++iteration) {
                 long seed = seedGenerator.nextLong();
+                // one per bucket, one for the extra bucket, one for the stream buffer
+                int maxSplits = testDescription.maxBuckets() + 2;
+                LimitingSplitter<T> splitter = new LimitingSplitter<T>(maxSplits);
                 List<Bucket<T>> buckets = BucketTestUtils.compileSingleStream(
                         testDescription.list(),
                         testDescription.maxBuckets(),
                         seed,
-                        new LimitingSplitter<T>(testDescription.maxBuckets() + 1)
+                        splitter,
+                        splitter
                 );
                 for (Bucket<T> bucket : buckets) {
                     T bucketValue = bucket.value();
@@ -297,7 +303,9 @@ public final class BucketSamplerTest {
         private int iterations = 10000;
     }
     
-    private static class LimitingSplitter<T> extends BucketTestUtils.SingletonSplitter<T> {
+    private static class LimitingSplitter<T>
+            extends BucketTestUtils.SingletonSplitter<T> implements Recycler<T>
+    {
         @Override
         public List<? extends T> split(T input) {
             assertTrue("reached max of " + max, count < max);
@@ -308,7 +316,6 @@ public final class BucketSamplerTest {
         @Override
         public void recycle(T element) {
             --count;
-            super.recycle(element);
         }
 
         private LimitingSplitter(int max) {

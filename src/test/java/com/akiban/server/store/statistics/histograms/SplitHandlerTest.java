@@ -78,10 +78,6 @@ public final class SplitHandlerTest {
             public List<? extends String> split(String input) {
                 return Arrays.asList(input.split(" "));
             }
-
-            @Override
-            public void recycle(String element) {
-            }
         };
 
         List<List<SplitPair>> expected = new ArrayList<List<SplitPair>>();
@@ -121,10 +117,6 @@ public final class SplitHandlerTest {
             @Override
             public List<? extends String> split(String input) {
                 return Arrays.asList(input.split(" "));
-            }
-
-            @Override
-            public void recycle(String element) {
             }
         };
 
@@ -170,10 +162,6 @@ public final class SplitHandlerTest {
             @Override
             public List<? extends String> split(String input) {
                 return Arrays.asList(input.split(" "));
-            }
-
-            @Override
-            public void recycle(String element) {
             }
         };
         ToArraySplitHandler handler = new ToArraySplitHandler(splitter);

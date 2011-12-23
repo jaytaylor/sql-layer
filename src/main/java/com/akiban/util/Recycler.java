@@ -13,11 +13,8 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.store.statistics.histograms;
+package com.akiban.util;
 
-import java.util.List;
-
-public interface Splitter<T> {
-    int segments();
-    List<? extends T> split(T input);
+public interface Recycler<T> {
+    void recycle(T element);
 }

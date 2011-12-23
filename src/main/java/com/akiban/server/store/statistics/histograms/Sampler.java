@@ -17,6 +17,7 @@ package com.akiban.server.store.statistics.histograms;
 
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Flywheel;
+import com.akiban.util.Recycler;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -52,26 +53,28 @@ public class Sampler<T> extends SplitHandler<T> {
         return results;
     }
 
-    public Sampler(Splitter<T> splitter, int maxSize) {
-        this(splitter, maxSize, System.nanoTime());
+    public Sampler(Splitter<T> splitter, int maxSize, Recycler<? super T> recycler) {
+        this(splitter, maxSize, System.nanoTime(), recycler);
     }
 
-    Sampler(Splitter<T> splitter, int maxSize, long randSeed) {
+    Sampler(Splitter<T> splitter, int maxSize, long randSeed, Recycler<? super T> recycler) {
         super(splitter);
         int segments = splitter.segments();
         ArgumentValidation.isGT("segments", segments, 0);
         bucketSamplerList =  new ArrayList<BucketSampler<T>>(segments);
         Random random = new Random(randSeed);
         for (int i=0; i < segments; ++i) {
-            bucketSamplerList.add(new BucketSampler<T>(maxSize, random));
+            bucketSamplerList.add(new BucketSampler<T>(maxSize, random, recycler));
         }
         this.maxSize = maxSize;
         this.segments = segments;
+        this.recycler = recycler;
     }
 
     final List<BucketSampler<T>> bucketSamplerList;
     final int maxSize;
     final int segments;
+    private final Recycler<? super T> recycler;
     boolean finished = false;
     final Flywheel<Bucket<T>> bucketsFlywheel = new Flywheel<Bucket<T>>() {
         @Override
