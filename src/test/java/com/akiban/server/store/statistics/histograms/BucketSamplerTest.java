@@ -34,7 +34,7 @@ import static com.akiban.server.store.statistics.histograms.BucketTestUtils.buck
 import static com.akiban.util.CollectionUtils.list;
 import static org.junit.Assert.*;
 
-public final class BucketsTest {
+public final class BucketSamplerTest {
 
     // fully deterministic behavior
     @Test

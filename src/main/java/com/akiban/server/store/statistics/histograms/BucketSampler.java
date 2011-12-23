@@ -24,7 +24,7 @@ import java.util.NavigableMap;
 import java.util.Random;
 import java.util.TreeMap;
 
-final class Buckets<T> {
+final class BucketSampler<T> {
     
     void add(Bucket<T> bucket, Flywheel<Bucket<T>> releaseTo) {
         BucketNode<T> node = nodeFor(bucket);
@@ -71,7 +71,7 @@ final class Buckets<T> {
         }
     }
 
-    Buckets(int maxSize, Random usingRandom) {
+    BucketSampler(int maxSize, Random usingRandom) {
         if (maxSize < 2)
             throw new IllegalArgumentException("max must be at least 2");
         this.maxSize = maxSize;

@@ -29,10 +29,10 @@ import java.util.Random;
 public class Sampler<T> extends SplitHandler<T> {
     @Override
     protected void handle(int segmentIndex, T input, int count) {
-        Buckets<T> buckets = bucketsList.get(segmentIndex);
+        BucketSampler<T> bucketSampler = bucketSamplerList.get(segmentIndex);
         Bucket<T> bucket = bucketsFlywheel.get();
         bucket.init(input, count);
-        buckets.add(bucket, bucketsFlywheel);
+        bucketSampler.add(bucket, bucketsFlywheel);
     }
 
     @Override
@@ -47,7 +47,7 @@ public class Sampler<T> extends SplitHandler<T> {
         }
         List<List<Bucket<T>>> results = new ArrayList<List<Bucket<T>>>(segments);
         for (int i=0; i < segments; ++i ) {
-            results.add(bucketsList.get(i).buckets());
+            results.add(bucketSamplerList.get(i).buckets());
         }
         return results;
     }
@@ -60,16 +60,16 @@ public class Sampler<T> extends SplitHandler<T> {
         super(splitter);
         int segments = splitter.segments();
         ArgumentValidation.isGT("segments", segments, 0);
-        bucketsList =  new ArrayList<Buckets<T>>(segments);
+        bucketSamplerList =  new ArrayList<BucketSampler<T>>(segments);
         Random random = new Random(randSeed);
         for (int i=0; i < segments; ++i) {
-            bucketsList.add(new Buckets<T>(maxSize, random));
+            bucketSamplerList.add(new BucketSampler<T>(maxSize, random));
         }
         this.maxSize = maxSize;
         this.segments = segments;
     }
 
-    final List<Buckets<T>> bucketsList;
+    final List<BucketSampler<T>> bucketSamplerList;
     final int maxSize;
     final int segments;
     boolean finished = false;
