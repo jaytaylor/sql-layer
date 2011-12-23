@@ -38,7 +38,8 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
     static
     {
         String dmlLockProperty = System.getProperty("dml.lock");
-        DML_LOCK = dmlLockProperty == null || dmlLockProperty.equals("false");
+        // FALSE by default
+        DML_LOCK = dmlLockProperty != null && dmlLockProperty.equals("true");
     }
 
     public static DXLReadWriteLockHook only() {
