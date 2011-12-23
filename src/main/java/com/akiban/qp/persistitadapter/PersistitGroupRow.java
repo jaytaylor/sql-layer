@@ -177,12 +177,6 @@ public class PersistitGroupRow extends AbstractRow
             return new RowDataValueSource();
         }
     };
-    private final SparseArray<PersistitHKey> typedHKeys = new SparseArray<PersistitHKey>() {
-        @Override
-        protected PersistitHKey createNew() {
-            throw new UnsupportedOperationException(); // TODO
-        }
-    };
     private final PersistitAdapter adapter;
     private RowData rowData;
     private LegacyRowWrapper row;
