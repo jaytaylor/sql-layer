@@ -178,6 +178,5 @@ public class PersistitGroupRow extends AbstractRow
     private RowData rowData;
     private LegacyRowWrapper row;
     private PersistitHKey currentHKey;
-    private final SparseArray<PersistitHKey> typedHKeys = new SparseArray<PersistitHKey>() {
-    };
+    private final SparseArray<PersistitHKey> typedHKeys = new SparseArray<PersistitHKey>();
 }

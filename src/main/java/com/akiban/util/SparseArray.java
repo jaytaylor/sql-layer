@@ -16,7 +16,7 @@ package com.akiban.util;
 
 import java.util.BitSet;
 
-public abstract class SparseArray<T> {
+public class SparseArray<T> {
 
     /**
      * Gets the element at the specified index. If that element had not been previously defined, its initial
@@ -61,9 +61,30 @@ public abstract class SparseArray<T> {
     public boolean isDefined(int index) {
         return definedElements.get(index);
     }
+    
+    public String describeElements() {
+        StringBuilder sb = new StringBuilder();
+        sb.append('[');
+        
+        int size = definedElements.size(); 
+        for (int i = 0; i < size; ++i) {
+            if (isDefined(i))
+                sb.append(internalGet(i)).append(", ");
+        }
+        if (sb.length() > 1)                // sb is not just the initial '['
+            sb.setLength(sb.length() - 2);  // snip off the trailing ", "
+        sb.append(']');
+
+        return sb.toString();
+    }
 
     protected T initialValue() {
         return null;
+    }
+
+    @Override
+    public String toString() {
+        return "SparseArray(" + definedElements.cardinality() + " defined: " + definedElements + ')';
     }
     
     // intended for testing
@@ -87,13 +108,17 @@ public abstract class SparseArray<T> {
         return (T) internalArray[index];
     }
 
-    @Override
-    public String toString() {
-        return "SparseArray(" + definedElements.cardinality() + " defined: " + definedElements + ')';
+    public SparseArray(int initialCapacity) {
+        internalArray = new Object[initialCapacity];
+        definedElements = new BitSet(initialCapacity);
     }
-
-    private Object[] internalArray = new Object[INITIAL_SIZE];
-    private BitSet definedElements = new BitSet(INITIAL_SIZE);
+    
+    public SparseArray() {
+        this(INITIAL_SIZE);
+    }
+    
+    private Object[] internalArray;
+    private BitSet definedElements;
     
     private static final int INITIAL_SIZE = 10;
     private static final int GROW_FACTOR = 2;
