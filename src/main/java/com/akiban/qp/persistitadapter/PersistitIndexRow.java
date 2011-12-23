@@ -26,6 +26,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.AkibanAppender;
+import com.akiban.util.SparseArray;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
@@ -103,26 +104,19 @@ public class PersistitIndexRow extends AbstractRow
 
     private PersistitKeyValueSource keySource(int i)
     {
-        if (i >= keySources.length) {
-            PersistitKeyValueSource[] newKeySources = new PersistitKeyValueSource[keySources.length * 2];
-            System.arraycopy(keySources, 0, newKeySources, 0, keySources.length);
-            keySources = newKeySources;
-        }
-        if (keySources[i] == null) {
-            keySources[i] = new PersistitKeyValueSource();
-        }
-        return keySources[i];
+        return keySources.get(i);
     }
-
-    // Class state
-    
-    private static final int INITIAL_ARRAY_SIZE = 10;
     
     // Object state
 
     private final PersistitAdapter adapter;
     private final IndexRowType indexRowType;
-    private PersistitKeyValueSource[] keySources = new PersistitKeyValueSource[INITIAL_ARRAY_SIZE];
+    private final SparseArray<PersistitKeyValueSource> keySources = new SparseArray<PersistitKeyValueSource>() {
+        @Override
+        protected PersistitKeyValueSource createNew() {
+            return new PersistitKeyValueSource();
+        }
+    };
     private final Key indexRow;
     private PersistitHKey hKey;
 }

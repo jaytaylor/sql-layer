@@ -24,6 +24,7 @@ import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.types.ValueSource;
+import com.akiban.util.SparseArray;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
@@ -153,32 +154,27 @@ public class PersistitGroupRow extends AbstractRow
     {
         this.adapter = adapter;
         this.rowData = rowData;
-        this.typedHKeys = new PersistitHKey[INITIAL_ARRAY_SIZE];
     }
     
     private RowDataValueSource valueSource(int i)
     {
-        if (i >= valueSources.length) {
-            RowDataValueSource[] newValueSources = new RowDataValueSource[valueSources.length * 2];
-            System.arraycopy(valueSources, 0, newValueSources, 0, valueSources.length);
-            valueSources = newValueSources;
-        }
-        if (valueSources[i] == null) {
-            valueSources[i] = new RowDataValueSource(); 
-        }
-        return valueSources[i];
+        return valueSources.get(i);
     }
 
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(PersistitGroupRow.class);
     private static final int INITIAL_ROW_SIZE = 500;
-    private static final int INITIAL_ARRAY_SIZE = 10;
     private static final int MAX_ROWDATA_SIZE_BYTES = 5000000;
 
     // Object state
 
-    private RowDataValueSource[] valueSources = new RowDataValueSource[INITIAL_ARRAY_SIZE];
+    private final SparseArray<RowDataValueSource> valueSources = new SparseArray<RowDataValueSource>() {
+        @Override
+        protected RowDataValueSource createNew() {
+            return new RowDataValueSource();
+        }
+    };
     private final PersistitAdapter adapter;
     private RowData rowData;
     private LegacyRowWrapper row;
