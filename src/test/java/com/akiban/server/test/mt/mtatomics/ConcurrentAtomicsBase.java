@@ -63,11 +63,10 @@ class ConcurrentAtomicsBase extends MTBase {
                 "SCAN: START",
                 "(SCAN: PAUSE)>",
                 "UPDATE: IN",
-                "UPDATE: OUT",
                 "<(SCAN: PAUSE)",
-                "SCAN: RETRY",
-                "SCAN: FINISH"
-        );
+                "SCAN: FINISH",
+                "UPDATE: OUT"
+                );
 
         assertEquals("rows scanned (in order)", scanCallableExpected, scanResult.getItem());
         expectFullRows(tableId, endStateExpected.toArray(new NewRow[endStateExpected.size()]));
