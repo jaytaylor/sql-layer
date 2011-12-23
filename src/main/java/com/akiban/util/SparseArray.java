@@ -14,6 +14,8 @@
  */
 package com.akiban.util;
 
+import java.util.BitSet;
+
 public abstract class SparseArray<T> {
     
     public T get(int index) {
@@ -30,6 +32,7 @@ public abstract class SparseArray<T> {
         if (internalArray[index] == null) {
             internalArray[index] = initialValue();
         }
+        definedElements.set(index);
         @SuppressWarnings("unchecked")
         T cast = (T) internalArray[index];
         return cast;
@@ -41,23 +44,11 @@ public abstract class SparseArray<T> {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder("SparseArray(curr_capacity=");
-        sb.append(internalArray.length).append(", defined at [");
-        boolean atLeastOne = false;
-        for (int i = 0; i < internalArray.length; ++i) {
-            if (internalArray[i] != null) {
-                atLeastOne = true;
-                sb.append(i).append(", ");
-            }
-        }
-        if (atLeastOne) {
-            sb.setLength(sb.length() - 2); // snip off the trailing ", "
-        }
-        sb.append("] )");
-        return sb.toString();
+        return "SparseArray(" + definedElements.cardinality() + " defined: " + definedElements + ')';
     }
 
     private Object[] internalArray = new Object[INITIAL_SIZE];
+    private BitSet definedElements = new BitSet(INITIAL_SIZE);
     
     private static final int INITIAL_SIZE = 10;
     private static final int GROW_FACTOR = 2;
