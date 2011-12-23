@@ -20,13 +20,13 @@ import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.OperatorExecutionBase;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.persistitadapter.PersistitAdapterException;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.PersistitValueValueSource;
 import com.akiban.server.PersistitValueValueTarget;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.std.LiteralExpression;
@@ -119,7 +119,7 @@ public class Sorter
                     exchange.removeTree();
                 }
             } catch (PersistitException e) {
-                throw new PersistitAdapterException(e);
+                adapter.handlePersistitException(e);
             } finally {
                 // Don't return the exchange. TreeServiceImpl caches it for the tree, and we're done with the tree.
                 // THIS CAUSES A LEAK OF EXCHANGES: adapter.returnExchange(exchange);
@@ -141,7 +141,7 @@ public class Sorter
         } catch (PersistitException e) {
             LOG.error("Caught exception while loading tree for sort", e);
             exchange.removeAll();
-            throw e;
+            adapter.handlePersistitException(e);
         }
     }
 

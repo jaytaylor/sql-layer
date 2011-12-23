@@ -80,7 +80,7 @@ public final class PersistitKeyConversionTest extends ConversionTestBase {
 
         @Override
         public Set<? extends AkType> unsupportedTypes() {
-            return EnumSet.of(AkType.INTERVAL);
+            return EnumSet.of(AkType.INTERVAL_MILLIS, AkType.INTERVAL_MONTH);
         }
 
         @Override

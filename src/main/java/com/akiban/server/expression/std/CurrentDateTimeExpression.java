@@ -24,7 +24,6 @@ import com.akiban.server.expression.std.EnvironmentExpression.EnvironmentEvaluat
 import com.akiban.server.service.functions.EnvironmentValue;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.ValueHolder;
 import org.joda.time.DateTime;
 
 public class CurrentDateTimeExpression extends EnvironmentExpression
@@ -45,16 +44,12 @@ public class CurrentDateTimeExpression extends EnvironmentExpression
     
     /**
      * return current_timestamp() expression in String
+     * current_timestamp, now, localtime and localtimestamp all mean the same thimg
      */
-    @EnvironmentValue("current_timestamp")
+    @EnvironmentValue({"current_timestamp", "now", "localtime", "localtimestamp"})
     public static final EnvironmentExpressionFactory CURRENT_TIMESTAMP_COMPOSER 
             = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_DATETIME,  AkType.DATETIME);
 
-    /**
-     * return now() expression  (an alias of current_timestamp())
-     */
-    @EnvironmentValue ("now")
-    public static final EnvironmentExpressionFactory CURRENT_TIMESTAMP_ALIAS = CURRENT_TIMESTAMP_COMPOSER;
 
     private final AkType currentType;
 

@@ -13,14 +13,12 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.persistitadapter;
+package com.akiban.server.error;
 
-import com.akiban.qp.operator.StoreAdapterRuntimeException;
-
-public class PersistitAdapterException extends StoreAdapterRuntimeException
+public class StoreAdapterRuntimeException extends InvalidOperationException
 {
-    public PersistitAdapterException(Exception exception)
+    public StoreAdapterRuntimeException(ErrorCode code, Object... args)
     {
-        super(exception);
+        super(code, args);
     }
 }

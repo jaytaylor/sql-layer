@@ -15,12 +15,11 @@
 
 package com.akiban.server;
 
-import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.tree.TreeService;
 import com.persistit.Accumulator;
-import com.persistit.Exchange;
 import com.persistit.Transaction;
 import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
@@ -128,7 +127,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             return indexDef.getTreeCache().getTree();
         }
         catch (PersistitException e) {
-            throw new PersistItErrorException(e);
+            throw new PersistitAdapterException(e);
         }
     }
 
@@ -235,7 +234,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
                 uniqueID = getAccumulator(tree, AccumInfo.UNIQUE_ID);
                 autoIncrement = getAccumulator(tree, AccumInfo.AUTO_INC);
             } catch(PersistitException e) {
-                throw new PersistItErrorException(e);
+                throw new PersistitAdapterException(e);
             }
         }
         

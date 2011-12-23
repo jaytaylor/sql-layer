@@ -141,7 +141,7 @@
 - Statement: SELECT varchar_field FROM all_types WHERE ILIKE(varchar_field, 'ABC')
 - output: [[abc], [Abc], [ABC]]
 
-# # Test escapes
+# Test escapes
 ---
 - Statement: DELETE FROM all_types
 ---
@@ -163,22 +163,21 @@
 ---
 - Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE 'a\__'
 - output: [[a_c]]
-# Specifying escape doesn't work
-# ---
-# - Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE 'ax%' ESCAPE 'x'
-# - output: [[a%]]
-# ---
-# - Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE 'ax_' ESCAPE 'x'
-# - output: [[a_]]
-# ---
-# - Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE 'axx' ESCAPE 'x'
-# - output: [[ax]]
-# ---
-# - Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE 'ax%%' ESCAPE 'x'
-# - output: [[a%], [a%c], [a%cd]]
-# ---
-# - Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE 'ax__' ESCAPE 'x'
-# - output: [[a_c]]
+---
+- Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE 'ax%' ESCAPE 'x'
+- output: [[a%]]
+---
+- Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE 'ax_' ESCAPE 'x'
+- output: [[a_]]
+---
+- Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE 'axx' ESCAPE 'x'
+- output: [[ax]]
+---
+- Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE 'ax%%' ESCAPE 'x'
+- output: [[a%], [a%c], [a%cd]]
+---
+- Statement: SELECT varchar_field FROM all_types WHERE varchar_field LIKE 'ax__' ESCAPE 'x'
+- output: [[a_c]]
 
 # Other types
 ---

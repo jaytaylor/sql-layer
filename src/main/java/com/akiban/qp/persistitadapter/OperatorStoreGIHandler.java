@@ -22,7 +22,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.Row;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.ArgumentValidation;
 import com.persistit.Exchange;
@@ -103,7 +103,7 @@ class OperatorStoreGIHandler {
         try {
             exchange.store();
         } catch (PersistitException e) {
-            throw new PersistItErrorException (e);
+            throw new PersistitAdapterException(e);
         }
         if (giHandlerHook != null) {
             giHandlerHook.storeHook(groupIndex, exchange.getKey(), exchange.getValue().get());
@@ -114,7 +114,7 @@ class OperatorStoreGIHandler {
         try {
             exchange.remove();
         } catch (PersistitException e) {
-            throw new PersistItErrorException (e);
+            throw new PersistitAdapterException(e);
         }
         if (giHandlerHook != null) {
             giHandlerHook.removeHook(groupIndex, exchange.getKey());

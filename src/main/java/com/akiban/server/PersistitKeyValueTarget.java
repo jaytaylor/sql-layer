@@ -34,7 +34,7 @@ public final class PersistitKeyValueTarget implements ValueTarget {
     }
 
     public PersistitKeyValueTarget expectingType(AkType type) {
-        if (type == AkType.INTERVAL)
+        if (type == AkType.INTERVAL_MILLIS || type == AkType.INTERVAL_MONTH)
             throw new UnsupportedOperationException();
         this.type = type;
         return this;
@@ -131,7 +131,12 @@ public final class PersistitKeyValueTarget implements ValueTarget {
     }
     
     @Override
-    public void putInterval(long value) {
+    public void putInterval_Millis(long value) {
+        throw new UnsupportedOperationException("interval not supported yet");
+    }
+
+    @Override
+    public void putInterval_Month(long value) {
         throw new UnsupportedOperationException("interval not supported yet");
     }
 

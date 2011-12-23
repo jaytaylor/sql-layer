@@ -108,6 +108,7 @@ public enum ErrorCode {
         // SubClass 004 - null value not allowed
         // SubClass 005 - error in assignment
         // SubClass 006 - invalid interval format
+    INVALID_INTERVAL_FORMAT  ("22", "006", Importance.DEBUG, InvalidIntervalFormatException.class),
         // SubClass 007 - invalid datetime format 
     INVALID_DATE_FORMAT     ("22", "007", Importance.DEBUG, InvalidDateFormatException.class),
         // SubClass 008 - datetime field overflow 
@@ -330,7 +331,7 @@ public enum ErrorCode {
     INTERNAL_ERROR          ("53", "000", Importance.ERROR, null),
     INTERNAL_CORRUPTION     ("53", "001", Importance.ERROR, RowDataCorruptionException.class),
     AIS_TOO_LARGE           ("53", "002", Importance.ERROR, AISTooLargeException.class),
-    PERSISTIT_ERROR         ("53", "003", Importance.ERROR, PersistItErrorException.class),
+    PERSISTIT_ERROR         ("53", "003", Importance.ERROR, PersistitAdapterException.class),
     TABLE_NOT_BOUND         ("53", "004", Importance.ERROR, TableNotBoundException.class),
     ROW_OUTPUT              ("53", "005", Importance.DEBUG, RowOutputException.class),    
     SCAN_RETRY_ABANDONDED   ("53", "006", Importance.ERROR, ScanRetryAbandonedException.class),
