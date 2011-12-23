@@ -64,13 +64,20 @@ public final class SparseArrayTest {
     }
     
     @Test
-    public void setUndefinedIndex() {
+    public void setIndex() {
         CountingSparseArray tester = new CountingSparseArray();
 
         assertEquals("isDefined", false, tester.isDefined(0));
         tester.set(0, "foo");
+        assertEquals("create count", 0, tester.count);
+        assertEquals("get", "foo", tester.get(0));
+        assertEquals("create count", 0, tester.count);
         assertEquals("isDefined", true, tester.isDefined(0));
-
+        
+        String old = tester.set(0, "bar");
+        assertEquals("get", "bar", tester.get(0));
+        assertEquals("get", "foo", old);
+        assertEquals("isDefined", true, tester.isDefined(0));
         assertEquals("create count", 0, tester.count);
     }
     
