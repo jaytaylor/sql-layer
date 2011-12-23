@@ -61,7 +61,7 @@ public abstract class AbstractScanBase extends ITSuiteBase {
                 tableMap.put(RowDefCache.nameOf(table.getName().getSchemaName(), table.getName().getTableName()), table);
             }
         }
-
+        
         populateTables(serviceManager.getDXL().dmlFunctions());
     }
 

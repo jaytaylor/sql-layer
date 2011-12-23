@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.concurrent.Callable;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupIndex;
@@ -56,6 +57,7 @@ import com.akiban.server.util.GroupIndexCreator;
 import com.akiban.util.Strings;
 import com.akiban.util.TapReport;
 import com.akiban.util.Undef;
+import com.persistit.Transaction;
 import junit.framework.Assert;
 
 import org.junit.After;
@@ -693,5 +695,18 @@ public class ApiTestBase {
         }
 
         private final NewRow oldRow;
+    }
+
+    protected <T> T transactionally(Callable<T> callable) throws Exception {
+        Transaction txn = treeService().getTransaction(session());
+        txn.begin();
+        try {
+            T value = callable.call();
+            txn.commit();
+            return value;
+        }
+        finally {
+            txn.end();
+        }
     }
 }

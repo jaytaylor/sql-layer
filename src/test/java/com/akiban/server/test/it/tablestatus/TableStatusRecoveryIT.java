@@ -18,12 +18,9 @@ package com.akiban.server.test.it.tablestatus;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Collections;
+import java.util.concurrent.Callable;
 
 import com.akiban.server.test.it.ITBase;
-import com.persistit.Transaction;
-import com.persistit.exception.PersistitException;
-import com.persistit.exception.PersistitIOException;
-import com.persistit.exception.PersistitInterruptedException;
 import org.junit.Test;
 
 import com.akiban.server.TableStatistics;
@@ -51,7 +48,7 @@ public class TableStatusRecoveryIT extends ITBase {
 
     @Test
     public void pkLessInsertRowCountTest() throws Exception {
-        int tableId = createTable("test", "A", "I INT, V VARCHAR(255)");
+        final int tableId = createTable("test", "A", "I INT, V VARCHAR(255)");
         for (int i = 0; i < 10000; i++) {
             // -1: Dummy value for akiban-supplied PK
             writeRows(createNewRow(tableId, i, "This is record # " + 1, -1));
@@ -73,18 +70,15 @@ public class TableStatusRecoveryIT extends ITBase {
         assertEquals(20000, ts3.getRowCount());
 
         // Transaction so we can directly read the table status
-        final Transaction trx = treeService().getTransaction(session());
-        trx.begin();
-        try {
-            final TableStatus status = store().getRowDefCache().getRowDef(tableId).getTableStatus();
-            assertEquals(20000, status.getRowCount());
-            writeRows(createNewRow(tableId, 20001, "This is record # ", -1));
-            assertEquals(20001, status.getUniqueID());
-            trx.commit();
-        }
-        finally {
-            trx.end();
-        }
+        transactionally(new Callable<Void>() {
+            public Void call() throws Exception {
+                final TableStatus status = store().getRowDefCache().getRowDef(tableId).getTableStatus();
+                assertEquals(20000, status.getRowCount());
+                writeRows(createNewRow(tableId, 20001, "This is record # ", -1));
+                assertEquals(20001, status.getUniqueID());
+                return null;
+            }
+        });
     }
 
     @Test
@@ -139,16 +133,11 @@ public class TableStatusRecoveryIT extends ITBase {
         restartTestServices(Collections.singleton(property));
     }
     
-    private int getOrdinal(int tableId) throws PersistitException {
-        final Transaction trx = treeService().getTransaction(session());
-        trx.begin();
-        try {
-            int ordinal = store().getRowDefCache().getRowDef(tableId).getTableStatus().getOrdinal();
-            trx.commit();
-            return ordinal;
-        }
-        finally {
-            trx.end();
-        }
+    private int getOrdinal(final int tableId) throws Exception {
+        return transactionally(new Callable<Integer>() {
+            public Integer call() throws Exception {
+                return store().getRowDefCache().getRowDef(tableId).getTableStatus().getOrdinal();
+            }
+        });
     }
 }

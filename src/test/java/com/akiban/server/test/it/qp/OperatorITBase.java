@@ -63,12 +63,17 @@ public class OperatorITBase extends ITBase
 
     @After
     public final void after_endTransaction() throws PersistitException {
-        transaction.commit();
-        transaction.end();
+        try {
+            transaction.commit();
+        }
+        finally {
+            transaction.end();
+        }
     }
 
     @Before
-    public void before() throws InvalidOperationException {
+    public void before() throws InvalidOperationException
+    {
         customer = createTable(
             "schema", "customer",
             "cid int not null key",
