@@ -23,6 +23,43 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
 
+/**
+
+ <h1>Overview</h1>
+
+ ValuesScan_Default is an in-memory collection of identical rows used
+ as a source operator.
+
+ <h1>Arguments</h1>
+
+ <ul>
+
+ <li><b>List<ExpressionRow> rows:</b> the list of ExpressionRows to be
+ returned by the cursor in order
+
+ <h1>Behaviour </h1>
+
+ The rows are returned in the order they are present in the list.
+
+ <h1>Output</h1>
+
+ Rows as given
+
+ <h1>Assumptions</h1>
+
+ None
+
+ <h1>Performance</h1>
+
+ No I/O cost, as the list is maintained in memory.
+
+ <h1>Memory Requirements</h1>
+
+ Memory requirement is for the number of rows stored in the list
+ supplied. There are no memory requirement beyond that.
+
+ */
+
 public class ValuesScan_Default extends Operator
 {
 

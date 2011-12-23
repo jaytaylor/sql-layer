@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+/** @deprecated */
 class Product_ByRun extends Operator
 {
     // Object interface
