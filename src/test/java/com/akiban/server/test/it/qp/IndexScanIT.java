@@ -20,14 +20,20 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.UndefBindings;
+import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.expression.std.FieldExpression;
+import com.akiban.server.types.ValueSource;
 import org.junit.Before;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.cursor;
+import static com.akiban.qp.operator.API.groupScan_Default;
 import static com.akiban.qp.operator.API.indexScan_Default;
+import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 
 public class IndexScanIT extends OperatorITBase
 {
@@ -542,6 +548,24 @@ public class IndexScanIT extends OperatorITBase
         Cursor cursor = cursor(indexScan, adapter);
         String[] expected = new String[]{hkey(1, 12, 122), hkey(1, 12, 121), hkey(1, 11, 112), hkey(1, 11, 111)};
         compareRenderedHKeys(expected, cursor);
+    }
+
+    // Inspired by bug 898013
+    @Test
+    public void testAliasingOfPersistitIndexRowFields()
+    {
+        Operator indexScan = indexScan_Default(itemOidIidIndexRowType, false, null);
+        Cursor cursor = cursor(indexScan, adapter);
+        cursor.open(UndefBindings.only());
+        Row row = cursor.next();
+        // Get and checking each field should work
+        assertEquals(11L, row.eval(0).getInt());
+        assertEquals(111L, row.eval(1).getInt());
+        // Getting all value sources and then using them should also work
+        ValueSource v0 = row.eval(0);
+        ValueSource v1 = row.eval(1);
+        assertEquals(11L, v0.getInt());
+        assertEquals(111L, v1.getInt());
     }
 
     // For use by this class
