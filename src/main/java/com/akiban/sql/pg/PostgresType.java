@@ -178,8 +178,7 @@ public class PostgresType
         if ("VARCHAR".equals(encoding))
             oid = VARCHAR_TYPE_OID;
         else if ("INT".equals(encoding) ||
-                 "U_INT".equals(encoding) ||
-                 "U_BIGINT".equals(encoding)) {
+                 "U_INT".equals(encoding)) {
             switch (aisType.maxSizeBytes().intValue()) {
             case 1:
                 oid = INT2_TYPE_OID; // No INT1; this also could be BOOLEAN (TINYINT(1)).
@@ -198,6 +197,9 @@ public class PostgresType
                 throw new UnknownTypeSizeException (aisType);
             }
         }
+        else if ("U_BIGINT".equals(encoding))
+            // Closest exact numeric type capable of holding 64-bit unsigned is DEC(20).
+            return new PostgresType(NUMERIC_TYPE_OID, (short)20, 0);
         else if ("DATE".equals(encoding))
             oid = DATE_TYPE_OID;
         else if ("TIME".equals(encoding))
