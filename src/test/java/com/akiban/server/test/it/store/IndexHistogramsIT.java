@@ -40,66 +40,44 @@ public final class IndexHistogramsIT extends ITBase {
     }
 
     @Test
-    public void customersNameDob() {
-        IndexStatistics stats = tIndexStats("customers", "name_dob");
-        IndexStatistics.Histogram one = stats.getHistogram(1);
-        IndexStatistics.Histogram two = stats.getHistogram(2);
-        fail();
+    public void customersNameDob_1() {
+        validateHistogram("customers", "name_dob", 1, 32, CUSTOMERS_COUNT, CUSTOMERS_COUNT);
+    }
+
+    @Test
+    public void customersNameDob_2() {
+        validateHistogram("customers", "name_dob", 2, 32, CUSTOMERS_COUNT, CUSTOMERS_COUNT);
     }
     
     @Test
     public void ordersPk() {
-        IndexStatistics stats = tIndexStats("orders", PK);
-        IndexStatistics.Histogram one = stats.getHistogram(1);
-        fail();
+        validateHistogram("orders", PK, 1, 32, ORDERS_COUNT, ORDERS_COUNT);
     }
     
     @Test
     public void ordersPlaced() {
-        IndexStatistics stats = tIndexStats("orders", "placed");
-        IndexStatistics.Histogram one = stats.getHistogram(1);
+        int count = 0;
+        Map<String,IndexStatistics.HistogramEntry> entries = validateHistogram("orders", "placed", 1, 32, count, count);
         fail();
     }
     
     @Test
     public void itemsPk() {
-        IndexStatistics stats = tIndexStats("items", PK);
-        IndexStatistics.Histogram one = stats.getHistogram(1);
-        fail();
+        validateHistogram("items", PK, 1, 32, ITEMS_COUNT, ITEMS_COUNT);
     }
     
     @Test
-    public void skuByPlacedGI() {
-        IndexStatisticsService statsService = statsService();
-        statsService.updateIndexStatistics(session(), Collections.singleton(skuByPlaced));
-        IndexStatistics stats = statsService.getIndexStatistics(session(), skuByPlaced);
-        IndexStatistics.Histogram one = stats.getHistogram(1);
-        IndexStatistics.Histogram two = stats.getHistogram(2);
+    public void skuByPlacedGI_1() {
+        int count = 0;
+        Map<String,IndexStatistics.HistogramEntry> entries = validateHistogram(skuByPlaced, 1, 32, count, count);
         fail();
     }
 
     @Test
-    public void cidOidGI() {
-        IndexStatisticsService statsService = statsService();
-        statsService.updateIndexStatistics(session(), Collections.singleton(cidOid));
-        IndexStatistics stats = statsService.getIndexStatistics(session(), cidOid);
-        IndexStatistics.Histogram one = stats.getHistogram(1);
-        IndexStatistics.Histogram two = stats.getHistogram(2);
+    public void skuByPlacedGI_2() {
+        int count = 0;
+        Map<String,IndexStatistics.HistogramEntry> entries = validateHistogram(skuByPlaced, 2, 32, count, count);
         fail();
-    }
-    
-    private IndexStatistics tIndexStats(String table, String indexName) {
-        Index index = tIndex(table, indexName);
-
-        IndexStatisticsService statsService = statsService();
-        statsService.updateIndexStatistics(session(), Collections.singleton(index));
-        return statsService.getIndexStatistics(session(), index);
-    }
-
-    private Index tIndex(String table, String indexName) {
-        return PK.endsWith(indexName)
-                    ? getUserTable(SCHEMA, table).getPrimaryKey().getIndex()
-                    : getUserTable(SCHEMA, table).getIndex(indexName);
     }
 
     @Before
@@ -115,7 +93,7 @@ public final class IndexHistogramsIT extends ITBase {
         // schema: GIs
         String groupName = getUserTable(SCHEMA, "customers").getGroup().getName();
         skuByPlaced = createGroupIndex(groupName, "skuByPlaced", "items.sku,orders.placed");
-        cidOid = createGroupIndex(groupName, "cidOid", "customers.cid,orders.oid");
+
         
         // data: customers
         int oid = 0;
@@ -180,8 +158,21 @@ public final class IndexHistogramsIT extends ITBase {
             int expectedCount,
             int expectedDistinct
     ) {
+        Index index =  PK.endsWith(indexName)
+                ? getUserTable(SCHEMA, tableName).getPrimaryKey().getIndex()
+                : getUserTable(SCHEMA, tableName).getIndex(indexName);
+        return validateHistogram(
+                index, expectedColumns,
+                expectedEntries,
+                expectedCount,
+                expectedDistinct
+        );
+    }
+
+    private Map<String, IndexStatistics.HistogramEntry> validateHistogram(
+            Index index, int expectedColumns, int expectedEntries, int expectedCount, int expectedDistinct
+    ) {
         IndexStatisticsService statsService = statsService();
-        Index index = tIndex(tableName, indexName);
         if (analyzedIndexes.add(index))
             statsService.updateIndexStatistics(session(), Collections.singleton(index));
         IndexStatistics stats = statsService.getIndexStatistics(session(), index);
@@ -214,7 +205,6 @@ public final class IndexHistogramsIT extends ITBase {
     }
 
     private GroupIndex skuByPlaced;
-    private GroupIndex cidOid;
     private Set<Index> analyzedIndexes = new HashSet<Index>();
 
     
