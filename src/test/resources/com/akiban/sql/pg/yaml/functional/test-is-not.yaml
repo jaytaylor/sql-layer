@@ -125,7 +125,7 @@
 ---
 - Statement: SELECT ? IS TRUE FROM all_types
 - params: [[true]]
-- output: [[true]]
+- output: [[true],[true],[true],[true],[true]]
 # ---
 # - CreateTable: t (boolean_field boolean)
 # ---
