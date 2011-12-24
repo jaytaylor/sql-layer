@@ -83,10 +83,14 @@ final class BucketSampler<T> {
         this.random = usingRandom;
         this.recycler = recycler;
     }
+    
+    protected long popularity(Bucket<T> bucket) {
+        return bucket.getEqualsCount();
+    }
 
     private BucketNode<T> nodeToRemove() {
         BucketNode<T> penult = last.prev;
-        long lastNodePopularity = penult.bucket.getEqualsCount();
+        long lastNodePopularity = popularity(penult.bucket);
         Map.Entry<Long,BucketNodeSet<T>> leastPopularEntry = bucketNodeSets.firstEntry();
         long leastPopular = leastPopularEntry.getKey();
         if (lastNodePopularity < leastPopular) {
@@ -145,7 +149,7 @@ final class BucketSampler<T> {
     }
 
     private void addToBucketNodeSets(BucketNode<T> node) {
-        long nodePopularity = node.bucket.getEqualsCount();
+        long nodePopularity = popularity(node.bucket);
         BucketNodeSet<T> bucketNodeSet = bucketNodeSets.get(nodePopularity);
         if (bucketNodeSet == null) {
             if (bucketNodeSetReserves == null) {
