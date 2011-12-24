@@ -304,6 +304,7 @@ public class PersistitStoreIndexStatistics
             new PersistitIndexStatisticsVisitor(index);
         visitor.init();
         store.traverse(session, index, visitor);
+        visitor.finish();
         IndexStatistics result = visitor.getIndexStatistics();
         logger.debug("Analyzed: " + result);
         return result;

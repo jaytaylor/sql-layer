@@ -70,13 +70,15 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
 
         @Override
         public List<? extends Key> split(Key keyToSample) {
-            for (int i = keys.size() - 1; i >= 0; i--) {
-                Key key = keysFlywheel.get();
-                keyToSample.copyTo(key);
-                keys.set(i , key);
-                keyToSample.setDepth(i);
+            Key prev = keyToSample;
+            for (int i = keys.size() ; i > 0; i--) {
+                Key truncatedKey = keysFlywheel.get();
+                prev.copyTo(truncatedKey);
+                truncatedKey.setDepth(i);
+                keys.set(i-1 , truncatedKey);
+                prev = truncatedKey;
             }
-            throw new UnsupportedOperationException(); // TODO
+            return keys;
         }
 
         private KeySplitter(int columnCount, Flywheel<Key> keysFlywheel) {
@@ -90,6 +92,10 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
     
     public void init() {
         keySampler.init();
+    }
+
+    public void finish() {
+        keySampler.finish();
     }
 
     protected void visit(Key key, Value value) {
@@ -113,7 +119,7 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
             int samplesCount = segmentSamples.size();
             List<HistogramEntry> entries = new ArrayList<HistogramEntry>(samplesCount);
             for (int s = 0; s < samplesCount; ++s) {
-                Bucket<Key> sample = segmentSamples.get(colCountSegment);
+                Bucket<Key> sample = segmentSamples.get(s);
                 Key key = sample.value();
                 byte[] keyBytes = new byte[key.getEncodedSize()];
                 System.arraycopy(key.getEncodedBytes(), 0, keyBytes, 0, keyBytes.length);
@@ -126,7 +132,7 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
                 );
                 entries.add(entry);
             }
-            Histogram histogram = new Histogram(index, colCountSegment, entries);
+            Histogram histogram = new Histogram(index, colCountSegment+1, entries);
             result.addHistogram(histogram);
         }
         return result;
