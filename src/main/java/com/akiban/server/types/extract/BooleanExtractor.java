@@ -53,6 +53,7 @@ public final class BooleanExtractor extends AbstractExtractor {
     }
 
     public boolean getBoolean(String string) {
+        if (string == null) return false;
         // JDBC driver passes boolean parameters as "0" and "1".
         return string.equals("1") || string.equalsIgnoreCase("true");
     }
