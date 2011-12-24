@@ -53,11 +53,12 @@ public final class BooleanExtractor extends AbstractExtractor {
     }
 
     public boolean getBoolean(String string) {
-        return Boolean.valueOf(string);
+        // JDBC driver passes boolean parameters as "0" and "1".
+        return string.equals("1") || string.equalsIgnoreCase("true");
     }
 
     public String asString(boolean value) {
-        return Boolean.valueOf(value).toString();
+        return Boolean.toString(value);
     }
 
     // package-private ctor
