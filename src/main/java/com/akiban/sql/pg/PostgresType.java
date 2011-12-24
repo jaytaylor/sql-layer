@@ -286,11 +286,12 @@ public class PostgresType
             converter = Extractors.getLongExtractor(AkType.INT);
             break;
         case TypeId.FormatIds.LONGINT_TYPE_ID:
-            oid = INT8_TYPE_OID;
             // TODO: U_BIGINT is represented by BigInteger, so a
             // LongExtractor won't work.  See comment above.
-            if (!typeId.isUnsigned())
-                converter = Extractors.getLongExtractor(AkType.INT);
+            if (typeId.isUnsigned())
+                return new PostgresType(NUMERIC_TYPE_OID, (short)20, 0);
+            oid = INT8_TYPE_OID;
+            converter = Extractors.getLongExtractor(AkType.INT);
             break;
         case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
             oid = TEXT_TYPE_OID;
