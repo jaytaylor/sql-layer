@@ -33,49 +33,6 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 public final class IndexHistogramsIT extends ITBase {
-
-    private Set<Index> analyzedIndexes = new HashSet<Index>();
-
-    private Map<String,IndexStatistics.HistogramEntry> validateHistogram(
-            String tableName,
-            String indexName,
-            int expectedColumns,
-            int expectedEntries,
-            int expectedCount,
-            int expectedDistinct
-    ) {
-        IndexStatisticsService statsService = statsService();
-        Index index = tIndex(tableName, indexName);
-        if (analyzedIndexes.add(index))
-            statsService.updateIndexStatistics(session(), Collections.singleton(index));
-        IndexStatistics stats = statsService.getIndexStatistics(session(), index);
-        IndexStatistics.Histogram histogram = stats.getHistogram(expectedColumns);
-
-
-        assertEquals("histogram index", index, histogram.getIndex());
-        assertEquals("histogram column count", expectedColumns, histogram.getColumnCount());
-        assertEquals("histogram entries count", expectedEntries, histogram.getEntries().size());
-        
-        Map<String,IndexStatistics.HistogramEntry> result = new HashMap<String, IndexStatistics.HistogramEntry>();
-        String prev = null;
-        int actualCount = 0;
-        int actualDistinct = 0;
-        for (IndexStatistics.HistogramEntry entry : histogram.getEntries()) {
-            String entryString = entry.getKeyString();
-            assertNotNull("entry key string should not be null: " + entry, entryString);
-            if (prev != null && entryString.compareTo(prev) <= 0)
-                fail(String.format("<%s> not greater than <%s>", entryString, prev));
-            
-            actualCount += entry.getEqualCount() + entry.getLessCount();
-            actualDistinct += entry.getEqualCount() + entry.getDistinctCount();
-            
-            result.put(entryString, entry);
-            prev = entryString;
-        }
-        assertEquals("histogram rows count", expectedCount, actualCount);
-        assertEquals("histogram distinct rows", expectedDistinct, actualDistinct);
-        return result;
-    }
     
     @Test
     public void customersPk() {
@@ -215,8 +172,51 @@ public final class IndexHistogramsIT extends ITBase {
         return String.format("%04d", intValue);
     }
 
+    private Map<String,IndexStatistics.HistogramEntry> validateHistogram(
+            String tableName,
+            String indexName,
+            int expectedColumns,
+            int expectedEntries,
+            int expectedCount,
+            int expectedDistinct
+    ) {
+        IndexStatisticsService statsService = statsService();
+        Index index = tIndex(tableName, indexName);
+        if (analyzedIndexes.add(index))
+            statsService.updateIndexStatistics(session(), Collections.singleton(index));
+        IndexStatistics stats = statsService.getIndexStatistics(session(), index);
+        IndexStatistics.Histogram histogram = stats.getHistogram(expectedColumns);
+
+
+        assertEquals("histogram index", index, histogram.getIndex());
+        assertEquals("histogram column count", expectedColumns, histogram.getColumnCount());
+        assertEquals("histogram entries count", expectedEntries, histogram.getEntries().size());
+
+        Map<String,IndexStatistics.HistogramEntry> result = new HashMap<String, IndexStatistics.HistogramEntry>();
+        String prev = null;
+        int actualCount = 0;
+        int actualDistinct = 0;
+        for (IndexStatistics.HistogramEntry entry : histogram.getEntries()) {
+            String entryString = entry.getKeyString();
+            assertNotNull("entry key string should not be null: " + entry, entryString);
+            if (prev != null && entryString.compareTo(prev) <= 0)
+                fail(String.format("<%s> not greater than <%s>", entryString, prev));
+
+            actualCount += entry.getEqualCount() + entry.getLessCount();
+            actualDistinct += entry.getEqualCount() + entry.getDistinctCount();
+
+            result.put(entryString, entry);
+            prev = entryString;
+        }
+        assertEquals("histogram rows count", expectedCount, actualCount);
+        assertEquals("histogram distinct rows", expectedDistinct, actualDistinct);
+        return result;
+    }
+
     private GroupIndex skuByPlaced;
     private GroupIndex cidOid;
+    private Set<Index> analyzedIndexes = new HashSet<Index>();
+
     
     private static final String SCHEMA = "indexes";
     private static final String PK = "PK";
