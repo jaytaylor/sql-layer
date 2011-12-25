@@ -96,35 +96,10 @@ public class IndexScanIT extends OperatorITBase
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void testBadRangeUnidirectional()
-    {
-        IndexBound loBound = new IndexBound(row(itemOidIidIndexRowType, 10, 10), new SetColumnSelector(0, 1));
-        IndexBound hiBound = new IndexBound(row(itemOidIidIndexRowType, 10, 5), new SetColumnSelector(0, 1));
-        IndexKeyRange keyRange = IndexKeyRange.bounded(itemOidIidIndexRowType, loBound, false, hiBound, false);
-        Operator indexScan = indexScan_Default(itemOidIidIndexRowType, false, keyRange);
-        String[] expected = new String[]{};
-        compareRenderedHKeys(expected, cursor(indexScan, adapter));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
     public void testMoreThanOneInequalityMixedMode()
     {
         IndexBound loBound = new IndexBound(row(itemOidIidIndexRowType, 10, 10), new SetColumnSelector(0, 1));
         IndexBound hiBound = new IndexBound(row(itemOidIidIndexRowType, 20, 20), new SetColumnSelector(0, 1));
-        IndexKeyRange keyRange = IndexKeyRange.bounded(itemOidIidIndexRowType, loBound, false, hiBound, false);
-        API.Ordering ordering = new API.Ordering();
-        ordering.append(Expressions.field(itemOidIidIndexRowType, 0), true);
-        ordering.append(Expressions.field(itemOidIidIndexRowType, 1), false);
-        Operator indexScan = indexScan_Default(itemOidIidIndexRowType, keyRange, ordering);
-        String[] expected = new String[]{};
-        compareRenderedHKeys(expected, cursor(indexScan, adapter));
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testBadRangeMixedMode()
-    {
-        IndexBound loBound = new IndexBound(row(itemOidIidIndexRowType, 10, 10), new SetColumnSelector(0, 1));
-        IndexBound hiBound = new IndexBound(row(itemOidIidIndexRowType, 10, 5), new SetColumnSelector(0, 1));
         IndexKeyRange keyRange = IndexKeyRange.bounded(itemOidIidIndexRowType, loBound, false, hiBound, false);
         API.Ordering ordering = new API.Ordering();
         ordering.append(Expressions.field(itemOidIidIndexRowType, 0), true);
