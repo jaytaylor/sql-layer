@@ -272,6 +272,11 @@ public class TableDDLTest {
         }
 
         @Override
+        public long getTimestamp() {
+            return 0;
+        }
+
+        @Override
         public RowDef getRowDef(int tableId) {
             return null;
         }
