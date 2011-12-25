@@ -199,7 +199,7 @@ public class PostgresType
         }
         else if ("U_BIGINT".equals(encoding))
             // Closest exact numeric type capable of holding 64-bit unsigned is DEC(20).
-            return new PostgresType(NUMERIC_TYPE_OID, (short)20, 0);
+            return new PostgresType(NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4);
         else if ("DATE".equals(encoding))
             oid = DATE_TYPE_OID;
         else if ("TIME".equals(encoding))
@@ -232,7 +232,13 @@ public class PostgresType
         if (aisColumn != null) {
             switch (aisType.nTypeParameters()) {
             case 1:
-                modifier = aisColumn.getTypeParameter1().intValue();
+                // VARCHAR(n).
+                modifier = aisColumn.getTypeParameter1().intValue() + 4;
+                break;
+            case 2:
+                // NUMERIC(n,m).
+                modifier = (aisColumn.getTypeParameter1().intValue() << 16) +
+                           aisColumn.getTypeParameter2().intValue() + 4;
                 break;
             }
         }
@@ -289,7 +295,7 @@ public class PostgresType
             // TODO: U_BIGINT is represented by BigInteger, so a
             // LongExtractor won't work.  See comment above.
             if (typeId.isUnsigned())
-                return new PostgresType(NUMERIC_TYPE_OID, (short)20, 0);
+                return new PostgresType(NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4);
             oid = INT8_TYPE_OID;
             converter = Extractors.getLongExtractor(AkType.INT);
             break;
@@ -358,11 +364,10 @@ public class PostgresType
         }
 
         if (typeId.isDecimalTypeId() || typeId.isNumericTypeId()) {
-            length = (short)type.getPrecision();
-            modifier = type.getScale();
+            modifier = (type.getPrecision() << 16) + type.getScale() + 4;
         }
         else if (typeId.variableLength()) {
-            modifier = type.getMaximumWidth();
+            modifier = type.getMaximumWidth() + 4;
         }
         else {
             length = (short)typeId.getMaximumMaximumWidth();
