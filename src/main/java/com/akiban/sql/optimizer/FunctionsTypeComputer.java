@@ -501,8 +501,16 @@ public class FunctionsTypeComputer extends AISTypeComputer
                 return ExpressionTypes.U_DOUBLE;
             else
                 return ExpressionTypes.DOUBLE;
+        case TypeId.FormatIds.SMALLINT_TYPE_ID:
+            if (typeId == TypeId.YEAR_ID)
+                return ExpressionTypes.YEAR;
+            /* else falls through */
+        case TypeId.FormatIds.TINYINT_TYPE_ID:
         case TypeId.FormatIds.INT_TYPE_ID:
-            return ExpressionTypes.INT;
+            if (typeId.isUnsigned())
+                return ExpressionTypes.U_INT;
+            else
+                return ExpressionTypes.INT;
         case TypeId.FormatIds.LONGINT_TYPE_ID:
             if (typeId.isUnsigned())
                 return ExpressionTypes.U_BIGINT;
@@ -519,15 +527,6 @@ public class FunctionsTypeComputer extends AISTypeComputer
                 return ExpressionTypes.U_FLOAT;
             else
                 return ExpressionTypes.FLOAT;
-        case TypeId.FormatIds.SMALLINT_TYPE_ID:
-            if (typeId == TypeId.YEAR_ID)
-                return ExpressionTypes.YEAR;
-            /* else falls through */
-        case TypeId.FormatIds.TINYINT_TYPE_ID:
-            if (typeId.isUnsigned())
-                return ExpressionTypes.U_INT;
-            else
-                return ExpressionTypes.INT;
         case TypeId.FormatIds.TIME_TYPE_ID:
             return ExpressionTypes.TIME;
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
