@@ -32,7 +32,7 @@ import java.util.Random;
 import java.util.TreeMap;
 
 import static com.akiban.server.store.statistics.histograms.BucketTestUtils.bucket;
-import static com.akiban.util.CollectionUtils.list;
+import static java.util.Arrays.asList;
 import static org.junit.Assert.*;
 
 public final class BucketSamplerTest {
@@ -137,7 +137,7 @@ public final class BucketSamplerTest {
     // negative tests
     @Test(expected = IllegalArgumentException.class)
     public void tooFewBuckets() {
-        BucketTestUtils.compileSingleStream(list("a", "b", "c"), 1);
+        BucketTestUtils.compileSingleStream(asList("a", "b", "c"), 1);
     }
 
     @Test(expected = IllegalStateException.class)
