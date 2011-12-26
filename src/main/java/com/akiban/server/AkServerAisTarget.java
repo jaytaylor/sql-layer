@@ -20,7 +20,7 @@ import java.util.Map;
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.model.Target;
-import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.session.Session;
@@ -65,7 +65,7 @@ public class AkServerAisTarget extends Target {
         try {
         store.truncateGroup(session, rowDef.getRowDefId());
         } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
+            throw new PersistitAdapterException(ex);
         }
     }
 
@@ -125,7 +125,7 @@ public class AkServerAisTarget extends Target {
         try {
             store.writeRow(session, rowData);
         } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
+            throw new PersistitAdapterException(ex);
         }
     }
 }

@@ -20,7 +20,7 @@ import static com.akiban.server.store.statistics.IndexStatistics.*;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
@@ -320,7 +320,7 @@ public class PersistitStoreIndexStatistics
                 }
             }
             catch (PersistitException ex) {
-                throw new PersistItErrorException(ex);
+                throw new PersistitAdapterException(ex);
             }
         }
     }

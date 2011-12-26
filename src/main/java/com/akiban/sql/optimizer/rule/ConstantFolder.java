@@ -185,7 +185,8 @@ public class ConstantFolder extends BaseRule
 
         protected ExpressionNode functionExpression(FunctionExpression fun) {
             String fname = fun.getFunction();
-            if ("isNull".equals(fname))
+            if ("isNull".equals(fname) || 
+                "isUnknown".equals(fname))
                 return isNullExpression(fun);
             else if ("isTrue".equals(fname))
                 return isTrueExpression(fun);

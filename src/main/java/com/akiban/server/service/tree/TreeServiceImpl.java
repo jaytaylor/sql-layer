@@ -35,7 +35,7 @@ import com.akiban.server.TableStatusCache;
 import com.akiban.server.PersistitTransactionalCacheTableStatusCache;
 import com.akiban.server.error.ConfigurationPropertiesLoadException;
 import com.akiban.server.error.InvalidVolumeException;
-import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
@@ -162,7 +162,7 @@ public class TreeServiceImpl
         try {
             db.initialize(properties);
         } catch (PersistitException e1) {
-            throw new PersistItErrorException (e1);
+            throw new PersistitAdapterException(e1);
         }
         buildSchemaMap();
 
@@ -253,7 +253,7 @@ public class TreeServiceImpl
             try {
                 db.close();
             } catch (PersistitException e) {
-                throw new PersistItErrorException (e);
+                throw new PersistitAdapterException(e);
             }
             dbRef.set(null);
         }
@@ -300,7 +300,7 @@ public class TreeServiceImpl
             final Tree tree = cache.getTree();
             return getExchange(session, tree);
         } catch (PersistitException e) {
-            throw new PersistItErrorException (e);
+            throw new PersistitAdapterException(e);
         }
     }
 
@@ -374,7 +374,7 @@ public class TreeServiceImpl
             final TreeCache treeCache = populateTreeCache(link);
             return exchange.getVolume().equals(treeCache.getTree().getVolume());
         } catch (PersistitException e) {
-            throw new PersistItErrorException (e);
+            throw new PersistitAdapterException(e);
         }
     }
 
@@ -389,7 +389,7 @@ public class TreeServiceImpl
             }
             return tableId - offset;
         } catch (PersistitException e) {
-            throw new PersistItErrorException (e);
+            throw new PersistitAdapterException(e);
         }
     }
 
@@ -404,7 +404,7 @@ public class TreeServiceImpl
             }
             return tableId + offset;
         } catch (PersistitException e) {
-            throw new PersistItErrorException (e);
+            throw new PersistitAdapterException(e);
         }
     }
 
@@ -530,7 +530,7 @@ public class TreeServiceImpl
             final Tree tree = volume.getTree(treeName, false);
             return tree != null;
         } catch (PersistitException e) {
-            throw new PersistItErrorException (e);
+            throw new PersistitAdapterException(e);
         }
     }
 

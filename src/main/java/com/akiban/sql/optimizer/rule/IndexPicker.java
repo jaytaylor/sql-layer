@@ -172,11 +172,6 @@ public class IndexPicker extends BaseRule
                 else if (input instanceof Sort)
                     ordering = (Sort)input;
             }
-            if (conditionSources.isEmpty() &&
-                (ordering == null) &&
-                (grouping == null) &&
-                (projectDistinct == null))
-                return null;
             return new IndexGoal(query, boundTables,
                                  conditionSources, grouping, ordering, projectDistinct,
                                  tables, indexEstimator);

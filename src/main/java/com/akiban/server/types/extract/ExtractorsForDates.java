@@ -319,7 +319,7 @@ abstract class ExtractorsForDates extends LongExtractor {
         @Override
         public String asString(long value) {
             final long year = (value == 0) ? 0 : (1900 + value);
-            return String.format("%04d", year);
+            return String.format("%d", year);
         }
 
         @Override
@@ -339,13 +339,13 @@ abstract class ExtractorsForDates extends LongExtractor {
         }
     };
 
-    final static ExtractorsForDates INTERVAL = new ExtractorsForDates(AkType.INTERVAL)
+    final static ExtractorsForDates INTERVAL_MILLIS = new ExtractorsForDates(AkType.INTERVAL_MILLIS)
     {
         @Override
         protected long doGetLong(ValueSource source){
             AkType type = source.getConversionType();
             switch (type){
-                case INTERVAL:  return source.getInterval();
+                case INTERVAL_MILLIS:  return source.getInterval_Millis();
                 case DECIMAL:   return source.getDecimal().longValue();
                 case DOUBLE:    return (long)source.getDouble();
                 case U_BIGINT:  return source.getUBigInt().longValue();
@@ -363,10 +363,7 @@ abstract class ExtractorsForDates extends LongExtractor {
          * format: millisecs between two events
          */
         @Override
-        public long getLong (String st){
-            // TO DO: parse string to get DAY, MONTH, ....
-
-            // for now, assume milisec
+        public long getLong (String st){            
               try {
                 long value = Long.parseLong(st);
                 return value;
@@ -385,7 +382,7 @@ abstract class ExtractorsForDates extends LongExtractor {
 
         @Override
         public long stdLongToUnix(long longVal) {
-             return longVal; // interval is already in millisec
+             return longVal; // interval_millis is already in millisec
         }
 
         @Override
@@ -395,9 +392,64 @@ abstract class ExtractorsForDates extends LongExtractor {
 
         @Override
         public long[] getYearMonthDayHourMinuteSecond(long value) {
-            // TODO: convert milisecons to INTERVAL of day, month year
-            // how many days are there in a month/year???
-            throw new UnsupportedOperationException("Not supported yet.");
+            throw new UnsupportedOperationException("Unsupported: Cannot extract Year/Month/.... from INTERVAL_MILLIS");
+        }
+    };
+
+    final static ExtractorsForDates INTERVAL_MONTH = new ExtractorsForDates(AkType.INTERVAL_MONTH)
+    {
+        @Override
+        protected long doGetLong(ValueSource source){
+            AkType type = source.getConversionType();
+            switch (type){
+                case INTERVAL_MONTH:  return source.getInterval_Month();
+                case DECIMAL:   return source.getDecimal().longValue();
+                case DOUBLE:    return (long)source.getDouble();
+                case U_BIGINT:  return source.getUBigInt().longValue();
+                case VARCHAR:   return getLong(source.getString());
+                case TEXT:      return getLong(source.getText());
+                case LONG:      return source.getLong();
+                case INT:       return source.getInt();
+                case U_INT:     return source.getUInt();
+                case U_DOUBLE:  return (long)source.getUDouble();
+                default:        throw unsupportedConversion(type);
+            }
+        }
+
+        /**
+         * format: months between two events
+         */
+        @Override
+        public long getLong (String st){            
+              try {
+                long value = Long.parseLong(st);
+                return value;
+            } catch (NumberFormatException ex) {
+                throw new InvalidDateFormatException ("interval", st);
+            }
+        }
+
+        /*
+         * return interval in months
+         */
+        @Override
+        public String asString (long value){
+            return value + "";
+        }
+
+        @Override
+        public long stdLongToUnix(long longVal) {
+             throw new UnsupportedOperationException ("INTERVAL_MONTH to unix is not supported");
+        }
+
+        @Override
+        public long unixToStdLong(long unixVal) {
+            throw new UnsupportedOperationException ("unix to INTERVAL_MONTH not supported");
+        }
+
+        @Override
+        public long[] getYearMonthDayHourMinuteSecond(long value) {
+            throw new UnsupportedOperationException("Unsupported: Cannot extract Year/Month/... from INTERVAL_MONTH");
         }
     };
 
@@ -469,7 +521,8 @@ abstract class ExtractorsForDates extends LongExtractor {
         if (source.isNull())
             throw new ValueSourceIsNullException();
         AkType type = source.getConversionType();
-        if (type == targetConversionType() || targetConversionType() == AkType.INTERVAL) {
+        if (type == targetConversionType() || targetConversionType() == AkType.INTERVAL_MILLIS
+                                           || targetConversionType() == AkType.INTERVAL_MONTH) {
             return doGetLong(source);
         }
         switch (type) {

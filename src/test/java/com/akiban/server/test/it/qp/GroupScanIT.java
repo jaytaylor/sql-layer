@@ -19,13 +19,18 @@ import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.UndefBindings;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.SetColumnSelector;
+import com.akiban.server.types.ValueSource;
 import org.junit.Test;
 
 import java.util.Arrays;
 
 import static com.akiban.qp.operator.API.*;
+import static junit.framework.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 
 /*
  * There are 4 usages of GroupScan_Default:
@@ -122,6 +127,31 @@ public class GroupScanIT extends OperatorITBase
     {
         // Testing GroupScan via Lookup doesn't work for an empty database, since there won't be
         // any uses of GroupScan.
+    }
+    
+    // Inspired by bug 898013
+    @Test
+    public void testAliasingOfPersistitGroupRowFields()
+    {
+        use(db);
+        Operator groupScan = groupScan_Default(coi);
+        Cursor cursor = cursor(groupScan, adapter);
+        cursor.open(UndefBindings.only());
+        Row row = cursor.next();
+        assertSame(customerRowType, row.rowType());
+        row = cursor.next();
+        assertSame(orderRowType, row.rowType());
+        // Get and checking each field should work
+        assertEquals(11L, row.eval(0).getInt());
+        assertEquals(1L, row.eval(1).getInt());
+        assertEquals("ori", row.eval(2).getString());
+        // Getting all value sources and then using them should also work
+        ValueSource v0 = row.eval(0);
+        ValueSource v1 = row.eval(1);
+        ValueSource v2 = row.eval(2);
+        assertEquals(11L, v0.getInt());
+        assertEquals(1L, v1.getInt());
+        assertEquals("ori", v2.getString());
     }
 
     private IndexBound orderSalesmanIndexBound(String salesman)

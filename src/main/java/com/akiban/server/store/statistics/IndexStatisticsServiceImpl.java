@@ -19,13 +19,12 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
-import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
@@ -106,7 +105,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             result = storeStats.loadIndexStatistics(session, index);
         }
         catch (PersistitException ex) {
-            throw new PersistItErrorException(ex);
+            throw new PersistitAdapterException(ex);
         }
         if (result != null)
             return result;
@@ -129,7 +128,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 }
             }
             catch (PersistitException ex) {
-                throw new PersistItErrorException(ex);
+                throw new PersistitAdapterException(ex);
             }
         }
     }
@@ -142,7 +141,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 storeStats.deleteIndexStatistics(session, index);
             }
             catch (PersistitException ex) {
-                throw new PersistItErrorException(ex);
+                throw new PersistitAdapterException(ex);
             }
         }
     }
@@ -160,7 +159,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 storeStats.storeIndexStatistics(session, indexStatistics);
             }
             catch (PersistitException ex) {
-                throw new PersistItErrorException(ex);
+                throw new PersistitAdapterException(ex);
             }
             cache.put(index, indexStatistics);
         }

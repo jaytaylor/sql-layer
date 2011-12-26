@@ -46,17 +46,20 @@ public final class BooleanExtractor extends AbstractExtractor {
         case U_DOUBLE:  return Extractors.getDoubleExtractor().getDouble(source) != 0.0;
         case DECIMAL:   return !source.getDecimal().equals(BigDecimal.ZERO);
         case U_BIGINT:  return !source.getUBigInt().equals(BigInteger.ZERO);
-        case INTERVAL:  return l2b(source.getInterval());
+        case INTERVAL_MILLIS:  return l2b(source.getInterval_Millis());
+        case INTERVAL_MONTH:   return l2b(source.getInterval_Month());
         default: throw unsupportedConversion(type);
         }
     }
 
     public boolean getBoolean(String string) {
-        return Boolean.valueOf(string);
+        if (string == null) return false;
+        // JDBC driver passes boolean parameters as "0" and "1".
+        return string.equals("1") || string.equalsIgnoreCase("true");
     }
 
     public String asString(boolean value) {
-        return Boolean.valueOf(value).toString();
+        return Boolean.toString(value);
     }
 
     // package-private ctor

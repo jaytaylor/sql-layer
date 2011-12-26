@@ -19,7 +19,6 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.persistitadapter.PersistitAdapterException;
 import com.akiban.qp.row.Row;
 import com.persistit.exception.PersistitException;
 
@@ -42,7 +41,7 @@ abstract class SortCursorMixedOrder extends SortCursor
             justOpened = true;
         } catch (PersistitException e) {
             close();
-            throw new PersistitAdapterException(e);
+            adapter.handlePersistitException(e);
         }
     }
 
@@ -64,7 +63,7 @@ abstract class SortCursorMixedOrder extends SortCursor
             }
         } catch (PersistitException e) {
             close();
-            throw new PersistitAdapterException(e);
+            adapter.handlePersistitException(e);
         }
         return next;
     }

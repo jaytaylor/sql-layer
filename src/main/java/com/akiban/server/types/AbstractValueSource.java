@@ -98,11 +98,17 @@ public abstract class AbstractValueSource implements ValueSource {
     }
 
     @Override
-    public long getInterval()
+    public long getInterval_Millis()
     {
-        throw complain(AkType.INTERVAL);
+        throw complain(AkType.INTERVAL_MILLIS);
     }
 
+    @Override
+    public long getInterval_Month()
+    {
+        throw complain(AkType.INTERVAL_MONTH);
+    }
+    
     @Override
     public long getUInt() {
         throw complain(AkType.U_INT);
