@@ -144,7 +144,17 @@ public interface DDLFunctions {
      */
     List<String> getDDLs(Session session);
 
+    /**
+     * Get the generation of the current AIS. This value is only guaranteed to change
+     * when the AIS goes.
+     * @see #getTimestamp
+     */
     int getGeneration();
+
+    /**
+     * Get the timestamp of the current AIS. This value increases for each new AIS.
+     */
+    long getTimestamp();
 
     /**
      * Forces an increment to the chunkserver's AIS generation ID. This can be useful for debugging.
