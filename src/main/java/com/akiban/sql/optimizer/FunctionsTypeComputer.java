@@ -497,11 +497,17 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return ExpressionTypes.decimal(sqlType.getPrecision(),
                                            sqlType.getScale());
         case TypeId.FormatIds.DOUBLE_TYPE_ID:
-            return ExpressionTypes.DOUBLE;
+            if (typeId.isUnsigned())
+                return ExpressionTypes.U_DOUBLE;
+            else
+                return ExpressionTypes.DOUBLE;
         case TypeId.FormatIds.INT_TYPE_ID:
             return ExpressionTypes.INT;
         case TypeId.FormatIds.LONGINT_TYPE_ID:
-            return ExpressionTypes.LONG;
+            if (typeId.isUnsigned())
+                return ExpressionTypes.U_BIGINT;
+            else
+                return ExpressionTypes.LONG;
         case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
         case TypeId.FormatIds.LONGVARCHAR_TYPE_ID:
         case TypeId.FormatIds.BLOB_TYPE_ID:
@@ -509,14 +515,26 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case TypeId.FormatIds.XML_TYPE_ID:
             return ExpressionTypes.TEXT;
         case TypeId.FormatIds.REAL_TYPE_ID:
-            return ExpressionTypes.FLOAT;
+            if (typeId.isUnsigned())
+                return ExpressionTypes.U_FLOAT;
+            else
+                return ExpressionTypes.FLOAT;
         case TypeId.FormatIds.SMALLINT_TYPE_ID:
+            if (typeId == TypeId.YEAR_ID)
+                return ExpressionTypes.YEAR;
+            /* else falls through */
         case TypeId.FormatIds.TINYINT_TYPE_ID:
-            return ExpressionTypes.INT;
+            if (typeId.isUnsigned())
+                return ExpressionTypes.U_INT;
+            else
+                return ExpressionTypes.INT;
         case TypeId.FormatIds.TIME_TYPE_ID:
             return ExpressionTypes.TIME;
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
-            return ExpressionTypes.TIMESTAMP;
+            if (typeId == TypeId.DATETIME_ID)
+                return ExpressionTypes.DATETIME;
+            else
+                return ExpressionTypes.TIMESTAMP;
         case TypeId.FormatIds.VARBIT_TYPE_ID:
             return ExpressionTypes.varbinary(sqlType.getMaximumWidth());
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
