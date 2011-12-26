@@ -497,11 +497,25 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return ExpressionTypes.decimal(sqlType.getPrecision(),
                                            sqlType.getScale());
         case TypeId.FormatIds.DOUBLE_TYPE_ID:
-            return ExpressionTypes.DOUBLE;
+            if (typeId.isUnsigned())
+                return ExpressionTypes.U_DOUBLE;
+            else
+                return ExpressionTypes.DOUBLE;
+        case TypeId.FormatIds.SMALLINT_TYPE_ID:
+            if (typeId == TypeId.YEAR_ID)
+                return ExpressionTypes.YEAR;
+            /* else falls through */
+        case TypeId.FormatIds.TINYINT_TYPE_ID:
         case TypeId.FormatIds.INT_TYPE_ID:
-            return ExpressionTypes.INT;
+            if (typeId.isUnsigned())
+                return ExpressionTypes.U_INT;
+            else
+                return ExpressionTypes.INT;
         case TypeId.FormatIds.LONGINT_TYPE_ID:
-            return ExpressionTypes.LONG;
+            if (typeId.isUnsigned())
+                return ExpressionTypes.U_BIGINT;
+            else
+                return ExpressionTypes.LONG;
         case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
         case TypeId.FormatIds.LONGVARCHAR_TYPE_ID:
         case TypeId.FormatIds.BLOB_TYPE_ID:
@@ -509,18 +523,25 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case TypeId.FormatIds.XML_TYPE_ID:
             return ExpressionTypes.TEXT;
         case TypeId.FormatIds.REAL_TYPE_ID:
-            return ExpressionTypes.FLOAT;
-        case TypeId.FormatIds.SMALLINT_TYPE_ID:
-        case TypeId.FormatIds.TINYINT_TYPE_ID:
-            return ExpressionTypes.INT;
+            if (typeId.isUnsigned())
+                return ExpressionTypes.U_FLOAT;
+            else
+                return ExpressionTypes.FLOAT;
         case TypeId.FormatIds.TIME_TYPE_ID:
             return ExpressionTypes.TIME;
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
-            return ExpressionTypes.TIMESTAMP;
+            if (typeId == TypeId.DATETIME_ID)
+                return ExpressionTypes.DATETIME;
+            else
+                return ExpressionTypes.TIMESTAMP;
         case TypeId.FormatIds.VARBIT_TYPE_ID:
             return ExpressionTypes.varbinary(sqlType.getMaximumWidth());
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
             return ExpressionTypes.varchar(sqlType.getMaximumWidth());
+        case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
+            return ExpressionTypes.INTERVAL_MILLIS;
+        case TypeId.FormatIds.INTERVAL_YEAR_MONTH_ID:
+            return ExpressionTypes.INTERVAL_MONTH;
         case TypeId.FormatIds.USERDEFINED_TYPE_ID:
             return ExpressionTypes.newType(AkType.valueOf(sqlType.getFullSQLTypeName().toUpperCase()), 
                                            sqlType.getPrecision(), sqlType.getScale());
@@ -575,6 +596,10 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return new DataTypeDescriptor(TypeId.DATETIME_ID, true);
         case YEAR:
             return new DataTypeDescriptor(TypeId.YEAR_ID, true);
+        case INTERVAL_MILLIS:
+            return new DataTypeDescriptor(TypeId.INTERVAL_SECOND_ID, true);
+        case INTERVAL_MONTH:
+            return new DataTypeDescriptor(TypeId.INTERVAL_MONTH_ID, true);
         default:
             try {
                 return new DataTypeDescriptor(TypeId.getUserDefinedTypeId(null,
@@ -645,6 +670,10 @@ public class FunctionsTypeComputer extends AISTypeComputer
             else
                 return ExpressionTypes.decimal(TypeId.DECIMAL_ID.getMaximumPrecision(),
                                                TypeId.DECIMAL_ID.getMaximumScale());
+        case INTERVAL_MILLIS:
+            return ExpressionTypes.INTERVAL_MILLIS;
+        case INTERVAL_MONTH:
+            return ExpressionTypes.INTERVAL_MONTH;
         default:
             return ExpressionTypes.newType(toType, 0, 0);
         }
