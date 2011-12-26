@@ -24,7 +24,7 @@ public class YearExtractorTest extends LongExtractorTestBase {
     public YearExtractorTest() {
         super(ExtractorsForDates.YEAR,
               new TestElement[] {
-                new TestElement("0000", 0),
+                new TestElement("0", 0),
                 new TestElement("1901", 1),
                 new TestElement("1950", 50),
                 new TestElement("2000", 100),
@@ -38,9 +38,9 @@ public class YearExtractorTest extends LongExtractorTestBase {
 
     @Test
     public void partiallySpecified() {
-        Assert.assertEquals("0002", encodeAndDecode("2"));
-        Assert.assertEquals("0020", encodeAndDecode("20"));
-        Assert.assertEquals("0201", encodeAndDecode("201"));
+        Assert.assertEquals("2", encodeAndDecode("2"));
+        Assert.assertEquals("20", encodeAndDecode("20"));
+        Assert.assertEquals("201", encodeAndDecode("201"));
         Assert.assertEquals("2011", encodeAndDecode("2011"));
     }
 

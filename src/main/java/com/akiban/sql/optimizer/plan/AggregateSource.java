@@ -30,7 +30,7 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
 {
     public static enum Implementation {
         PRESORTED, PREAGGREGATE_RESORT, SORT, HASH, TREE, UNGROUPED,
-        COUNT_STAR, COUNT_TABLE_STATUS
+        COUNT_STAR, COUNT_TABLE_STATUS, FIRST_FROM_INDEX
     }
 
     private boolean projectSplitOff;

@@ -1,0 +1,26 @@
+# Test the MONTH() function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
+---
+- Statement: select MONTH('1999-12-15') from all_types;
+- output: [[12]]
+---
+- Include: all-datetime-schema.yaml
+---
+- Statement: select id,MONTH(time_field),expected_MONTH from datetime_matrix where MONTH(time_field) is not null;
+- row_count: 0
+---
+- Statement: select id,MONTH(timestamp_field),expected_MONTH from datetime_matrix where MONTH(timestamp_field) <> expected_MONTH;
+- row_count: 0
+---
+- Statement: select id,MONTH(date_field), expected_MONTH from datetime_matrix where MONTH(date_field) <> expected_MONTH;
+- row_count: 0
+---
+- Statement: select MONTH('A') from all_types;
+- output: [[null]]
+# ---
+# - Statement: select MONTH(9999999) from all_types;
+# - output: [[0]]
+...

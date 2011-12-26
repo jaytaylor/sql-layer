@@ -22,3 +22,4 @@ redhat/rpmbuild
 ./target
 data
 log
+.idea

@@ -30,6 +30,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.error.QueryTimedOutException;
 import com.akiban.server.rowdata.RowData;
@@ -43,7 +44,6 @@ import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.persistit.Exchange;
 import com.persistit.Key;
-import com.persistit.Persistit;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
 
@@ -239,8 +239,15 @@ public class PersistitAdapter extends StoreAdapter
 
     public void handlePersistitException(PersistitException e)
     {
+        handlePersistitException(session, e);
+    }
+
+    public static void handlePersistitException(Session session, PersistitException e)
+    {
+        assert e != null;
+        Throwable cause = e.getCause();
         if (e instanceof PersistitInterruptedException ||
-            e.getCause() != null && e.getCause() instanceof InterruptedIOException) {
+            cause != null && (cause instanceof InterruptedIOException || cause instanceof InterruptedException)) {
             throw new QueryCanceledException(session);
         } else {
             throw new PersistitAdapterException(e);

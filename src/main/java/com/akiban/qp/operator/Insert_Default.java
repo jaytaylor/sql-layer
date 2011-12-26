@@ -26,6 +26,51 @@ import com.akiban.qp.row.Row;
 import com.akiban.util.Strings;
 import com.akiban.util.Tap;
 
+/**
+
+ <h1>Overview</h1>
+
+ Inserts new rows into a table. This is an UpdatePlannable, not a PhysicalOperator.
+
+ <h1>Arguments</h1>
+
+ <ul>
+
+ <li><b>PhysicalOperator inputOperator:</b> source of rows to be inserted
+
+ </ul>
+
+ <h1>Behaviour</h1>
+
+ For each row in the insert operator, the row in inserted into the
+ table. In practice, this is currently done via
+ <i>StoreAdapater#insertRow</i>, which is implemented by
+ <i>PersistitAdapater#insertRow</i>, which invokes
+ <i>PersistitStore#insertRow</i>
+
+ The result of this update is an UpdateResult instance which summarizes
+ how many rows were updated and how long the operation took.
+
+ <h1>Output</h1>
+
+ N/A
+
+ <h1>Assumptions</h1>
+
+ The inputOperator is returning rows of the UserTableRowType of the table being inserted into.
+
+ <h1>Performance</h1>
+
+ Insert may be slow because because indexes are also updated. Insert
+ may be able to be improved in performance by batching the index
+ updates, but there is no current API to so.
+
+ <h1>Memory Requirements</h1>
+
+ None.
+
+ */
+
 class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
 
     public Insert_Default(Operator inputOperator) {

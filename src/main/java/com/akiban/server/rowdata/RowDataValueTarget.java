@@ -28,7 +28,7 @@ import java.math.BigInteger;
 public final class RowDataValueTarget implements ValueTarget {
 
     public void bind(FieldDef fieldDef, byte[] backingBytes, int offset) {
-        if(fieldDef.getType().akType() == AkType.INTERVAL)
+        if(fieldDef.getType().akType() == AkType.INTERVAL_MILLIS || fieldDef.getType().akType() == AkType.INTERVAL_MONTH)
             throw new UnsupportedOperationException();
         clear();
         ArgumentValidation.notNull("fieldDef", fieldDef);
@@ -125,7 +125,12 @@ public final class RowDataValueTarget implements ValueTarget {
     }
     
     @Override
-    public void putInterval(long value) {
+    public void putInterval_Millis(long value) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void putInterval_Month(long value) {
         throw new UnsupportedOperationException();
     }
 

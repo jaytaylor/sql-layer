@@ -13,10 +13,6 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 
 package com.akiban.server.expression.std;
 
@@ -100,8 +96,7 @@ public enum DateTimeField
         @Override
         public long [] get(String str)
         {
-            int i;
-            return new long[] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2: 1)), i};
+            return parseLeadingChars(str);
         }
 
         @Override
@@ -110,7 +105,7 @@ public enum DateTimeField
             return datetime.getMonthOfYear() + "";
         }
 
-         @Override
+        @Override
         public int getFieldType ()
         {
              return 1;
@@ -132,8 +127,9 @@ public enum DateTimeField
         public long [] get(String str)
         {
             int n = 0;
-            int limit = Math.min(4, str.length());
-            for (n = 0; n < limit && str.charAt(n) >= '0' && str.charAt(n) <= '9'; ++n );
+            int limit = 4 < str.length() ? 4 : str.length(); 
+            for (n = 0; n < limit && str.charAt(n) >= '0' && str.charAt(n) <= '9'; ++n )
+                ; // looking for the first char that is NOT a digit
             return new long[] { Long.parseLong(str.substring(0, n)), n +2 };
 
         }
@@ -173,8 +169,7 @@ public enum DateTimeField
         @Override
         public long [] get(String str)
         {
-            int i;
-            return new long[] {Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2: 1)), i};
+            return parseLeadingChars(str);
         }
 
         @Override
@@ -204,8 +199,7 @@ public enum DateTimeField
         @Override
         public long [] get(String str)
         {
-            int i;
-            return new long [] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2: 1))};
+            return parseLeadingChars(str);
         }
 
         @Override
@@ -268,8 +262,7 @@ public enum DateTimeField
         @Override
         public long [] get(String str)
         {
-            int i;
-            return new long[] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2 :1)), i};
+            return parseLeadingChars(str);
         }
 
         @Override
@@ -311,7 +304,7 @@ public enum DateTimeField
         @Override
         public String get(MutableDateTime datetime)
         {
-            return String.format("%2d", datetime.get(DateTimeFieldType.clockhourOfHalfday()));
+            return String.format("%02d", datetime.get(DateTimeFieldType.clockhourOfHalfday()));
         }
 
         @Override
@@ -347,7 +340,7 @@ public enum DateTimeField
         @Override
         public String get(MutableDateTime datetime)
         {
-            return String.format("%2d", datetime.get(DateTimeFieldType.clockhourOfHalfday()));
+            return String.format("%02d", datetime.get(DateTimeFieldType.clockhourOfHalfday()));
         }
 
         @Override
@@ -371,8 +364,7 @@ public enum DateTimeField
         @Override
         public long [] get(String str)
         {
-            int i;
-            return new long[] {Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2 :1)), i};
+            return parseLeadingChars(str);
         }
 
         @Override
@@ -403,7 +395,8 @@ public enum DateTimeField
         public long [] get(String str)
         {
             int i = 0;
-            for (; i < 3 && i < str.length() && str.charAt(i) >= '0' && str.charAt(i) <= '9'; ++i);
+            for (; i < 3 && i < str.length() && str.charAt(i) >= '0' && str.charAt(i) <= '9'; ++i)
+                ; // looking for the first char that is not a digit
             return new long[] {Long.parseLong(str.substring(0,i)), i};
         }
 
@@ -436,8 +429,7 @@ public enum DateTimeField
         @Override
         public long [] get(String str)
         {
-            int i;
-            return new long[] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2 :1)), i};
+            return parseLeadingChars(str);
         }
 
         @Override
@@ -536,8 +528,7 @@ public enum DateTimeField
         @Override
         public long [] get(String str)
         {
-            int i;
-            return new long[] { Long.parseLong(str.substring(0,i = 2 <= str.length() ? 2 :1)), i};
+            return parseLeadingChars(str);
         }
 
         @Override
@@ -649,8 +640,7 @@ public enum DateTimeField
         @Override
         public long [] get(String str)
         {
-            int i;
-            return new long[] { Long.parseLong(str.substring(0,i = 2 <= str.length() ? 2 :1)), i};
+            return parseLeadingChars(str);
         }
 
         @Override
@@ -680,8 +670,7 @@ public enum DateTimeField
         @Override
         public long [] get(String str)
         {
-            int i;
-            return new long[] { Long.parseLong(str.substring(0,i = 2 <= str.length() ? 2 :1)), i};
+            return parseLeadingChars(str);
         }
 
         @Override
@@ -818,8 +807,7 @@ public enum DateTimeField
         @Override
         public long [] get(String str)
         {
-            int i;
-            return new long[] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2:1)), i};
+            return parseLeadingChars(str);
         }
 
         @Override
@@ -851,8 +839,7 @@ public enum DateTimeField
         @Override
         public long [] get(String str)
         {
-            int i;
-            return new long [] { Long.parseLong(str.substring(0, i = 2 <= str.length() ? 2 :1)), i};
+            return parseLeadingChars(str);
         }
 
         @Override
@@ -1127,6 +1114,24 @@ public enum DateTimeField
      *              %y and %Y  => %Y year
      */
     abstract DateTimeField equivalentField ();
+    
+    
+   /**
+    * 
+    * @param str
+    * 
+    * - Looks at the first two chars of the string and try to parse that substring
+    *      into a LONG
+    * - But if the length is only 1, then it only looks at the first char
+    * @return  the parsed value along with the length of the substring that was parsed
+    *      The index is passed back to the calling function to cut-off the substring
+    *      that has been passed
+    */ 
+    private static long [] parseLeadingChars(String str)
+    {
+         int i = 2 <= str.length() ? 2 :1;
+         return new long[] { Long.parseLong(str.substring(0, i )), i};
+    }
 
     /**
      * to be used in X and x
