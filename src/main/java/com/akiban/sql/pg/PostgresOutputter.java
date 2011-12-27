@@ -33,5 +33,5 @@ public abstract class PostgresOutputter<T>
         ncols = columnTypes.size();
     }
 
-    public abstract void output(T elem) throws IOException;
+    public abstract void output(T row) throws IOException;
 }

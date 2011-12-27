@@ -19,6 +19,7 @@ import com.akiban.qp.operator.ArrayBindings;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.loadableplan.LoadableOperator;
 import com.akiban.qp.loadableplan.LoadablePlan;
+import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 
 public class PostgresLoadablePlan
 {
@@ -30,6 +31,8 @@ public class PostgresLoadablePlan
         loadablePlan.ais(server.getAIS());
         if (loadablePlan instanceof LoadableOperator)
             return new PostgresLoadableOperator((LoadableOperator)loadablePlan, args);
+        if (loadablePlan instanceof LoadableDirectObjectPlan)
+            return new PostgresLoadableDirectObjectPlan((LoadableDirectObjectPlan)loadablePlan, args);
         return null;
     }
     
