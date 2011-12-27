@@ -221,6 +221,23 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
     }
 
     @Test
+    public void testLeapYearChecking ()
+    {
+        Expression left_1900 = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("1900-01-29"));
+        Expression left_2000 = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2000-01-29"));
+        Expression right = new LiteralExpression(AkType.INTERVAL_MONTH, 1L);
+
+        Expression top_1900 = new ArithExpression(left_1900, ex = ArithOps.ADD, right);
+        Expression top_2000 = new ArithExpression(left_2000, ex = ArithOps.ADD, right);
+
+        String actual_1900 = Extractors.getLongExtractor(AkType.DATE).asString(top_1900.evaluation().eval().getDate());
+        String actual_2000 = Extractors.getLongExtractor(AkType.DATE).asString(top_2000.evaluation().eval().getDate());
+
+        assertEquals("1900-02-28", actual_1900); // 1900 is NOT a leap year
+        assertEquals("2000-02-29", actual_2000); // 2000 is a leap year
+    }
+
+    @Test
     public void testDateMinusNegativeInterval ()
     {
         Expression left = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2008-01-30"));

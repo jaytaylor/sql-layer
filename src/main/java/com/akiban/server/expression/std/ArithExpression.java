@@ -361,7 +361,9 @@ public class ArithExpression extends AbstractBinaryExpression
             // adjust day value
             switch ((int)ymd_hms[1])
             {
-                case 2: ymd_hms[2] = Math.min(ymd_hms[0] % 4 == 0 ? 29 : 28, ymd_hms[2]);
+                case 2: ymd_hms[2] = Math.min(ymd_hms[0] % 400 == 0 || ymd_hms[0] % 4 == 0  && ymd_hms[0] % 100 != 0
+                                                                    ? 29 : 28,
+                                                                    ymd_hms[2]);
                         break;
                 case 4:
                 case 6:

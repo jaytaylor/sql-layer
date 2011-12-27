@@ -47,6 +47,7 @@ public class DateTimeArithExpression extends ArithExpression
         public void argumentTypes(List<AkType> argumentTypes) 
         {
             ArithOps.ADD.argumentTypes(argumentTypes);
+            argumentTypes.set(0, AkType.DATETIME);
             if (argumentTypes.get(1) != AkType.INTERVAL_MILLIS)
                 argumentTypes.set(1, AkType.INTERVAL_MONTH);
         }
@@ -75,6 +76,7 @@ public class DateTimeArithExpression extends ArithExpression
         public void argumentTypes(List<AkType> argumentTypes) 
         {
             ArithOps.MINUS.argumentTypes(argumentTypes);
+            argumentTypes.set(0, AkType.DATETIME);
             if (argumentTypes.get(1) != AkType.INTERVAL_MILLIS)
                 argumentTypes.set(1, AkType.INTERVAL_MONTH);
         }

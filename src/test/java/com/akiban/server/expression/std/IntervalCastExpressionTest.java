@@ -17,7 +17,6 @@ package com.akiban.server.expression.std;
 
 import java.util.Arrays;
 import com.akiban.server.error.InvalidIntervalFormatException;
-import com.akiban.server.error.ParseException;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.IntervalCastExpression.EndPoint;
