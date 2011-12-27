@@ -767,7 +767,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     @Override
-    public LoadablePlan loadablePlan(String planName)
+    public LoadablePlan<?> loadablePlan(String planName)
     {
         return server.loadablePlan(planName);
     }

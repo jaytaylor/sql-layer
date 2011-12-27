@@ -21,9 +21,20 @@ import com.akiban.util.Tap;
 
 public class PostgresLoadableOperator extends PostgresOperatorStatement
 {
-    @Override
-    public Bindings getBindings() {
-        return PostgresLoadablePlan.getBindings(args);
+    private static final Tap.InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadableOperator: execute shared");
+    private static final Tap.InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadableOperator: acquire shared lock");
+
+    private Object[] args;
+
+    protected PostgresLoadableOperator(LoadableOperator loadableOperator, Object[] args)
+    {
+        super(loadableOperator.plan(),
+              null,
+              loadableOperator.columnNames(),
+              loadableOperator.columnTypes(),
+              null, 
+              null);
+        this.args = args;
     }
     
     @Override
@@ -38,20 +49,8 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
         return ACQUIRE_LOCK_TAP;
     }
 
-    protected PostgresLoadableOperator(LoadableOperator loadableOperator, Object[] args)
-    {
-        super(loadableOperator.plan(),
-              null,
-              loadableOperator.columnNames(),
-              loadableOperator.columnTypes(),
-              NO_INPUTS, 
-              null);
-        this.args = args;
+    @Override
+    public Bindings getBindings() {
+        return PostgresLoadablePlan.getBindings(args);
     }
-
-    private Object[] args;
-
-    private static final Tap.InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadablePlan: execute shared");
-    private static final Tap.InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadablePlan: acquire shared lock");
-    private static final PostgresType[] NO_INPUTS = new PostgresType[0];
 }
