@@ -16,8 +16,6 @@
 package com.akiban.qp.loadableplan;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.GroupTable;
-import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
 import com.akiban.sql.pg.PostgresType;
@@ -26,11 +24,11 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import java.util.ArrayList;
 import java.util.List;
 
-public abstract class LoadablePlan
+public abstract class LoadablePlan<T>
 {
     public abstract String name();
 
-    public abstract Operator plan();
+    public abstract T plan();
 
     public abstract int[] jdbcTypes();
 
@@ -39,7 +37,7 @@ public abstract class LoadablePlan
         List<String> columnNames = new ArrayList<String>();
         int columns = jdbcTypes().length;
         for (int c = 0; c < columns; c++) {
-            columnNames.add(String.format("c%s", c));
+            columnNames.add(String.format("c%d", c));
         }
         return columnNames;
     }

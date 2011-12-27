@@ -15,47 +15,26 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.qp.loadableplan.LoadablePlan;
+import com.akiban.qp.operator.ArrayBindings;
 import com.akiban.qp.operator.Bindings;
-import com.akiban.util.Tap;
+import com.akiban.qp.loadableplan.LoadableOperator;
+import com.akiban.qp.loadableplan.LoadablePlan;
 
-public class PostgresLoadablePlan extends PostgresOperatorStatement
+public class PostgresLoadablePlan
 {
-    protected Tap.InOutTap executeTap()
-    {
-        return EXECUTE_TAP;
+    public static PostgresStatement statement(PostgresServerSession server, 
+                                              String planName, Object[] args) {
+        LoadablePlan<?> loadablePlan = server.loadablePlan(planName);
+        if (loadablePlan == null)
+            return null;
+        loadablePlan.ais(server.getAIS());
+        if (loadablePlan instanceof LoadableOperator)
+            return new PostgresLoadableOperator((LoadableOperator)loadablePlan, args);
+        return null;
     }
-
-    protected Tap.InOutTap acquireLockTap()
-    {
-        return ACQUIRE_LOCK_TAP;
-    }
-
-    public static PostgresLoadablePlan statement(PostgresServerSession server, String planName, Object[] args)
-    {
-        LoadablePlan loadablePlan = server.loadablePlan(planName);
-        if (loadablePlan != null) {
-            loadablePlan.ais(server.getAIS());
-        }
-        return loadablePlan == null ? null : new PostgresLoadablePlan(loadablePlan, args);
-    }
-
-    private PostgresLoadablePlan(LoadablePlan loadablePlan, Object[] args)
-    {
-        super(loadablePlan.plan(),
-              null,
-              loadablePlan.columnNames(),
-              loadablePlan.columnTypes(),
-              NO_INPUTS, 
-              null,
-              0,
-              Integer.MAX_VALUE);
-        this.args = args;
-    }
-
-    @Override
-    public Bindings getBindings() {
-        Bindings bindings = super.getBindings();
+    
+    public static Bindings getBindings(Object[] args) {
+        Bindings bindings = new ArrayBindings(args.length);
         if (args != null) {
             for (int i = 0; i < args.length; i++) {
                 bindings.set(i, args[i]);
@@ -63,10 +42,8 @@ public class PostgresLoadablePlan extends PostgresOperatorStatement
         }
         return bindings;
     }
-    
-    private Object[] args;
 
-    private static final Tap.InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadablePlan: execute shared");
-    private static final Tap.InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadablePlan: acquire shared lock");
-    private static final PostgresType[] NO_INPUTS = new PostgresType[0];
+    // All static methods.
+    private PostgresLoadablePlan() {
+    }
 }

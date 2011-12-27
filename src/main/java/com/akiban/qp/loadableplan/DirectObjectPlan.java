@@ -13,10 +13,10 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.operator;
+package com.akiban.qp.loadableplan;
 
-import com.akiban.qp.row.Row;
-
-public interface Cursor extends CursorBase<Row>
+/** A plan that uses a {@link DirectObjectCursor}. */
+public abstract class DirectObjectPlan
 {
+    public abstract DirectObjectCursor cursor();
 }

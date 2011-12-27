@@ -15,8 +15,22 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.row.Row;
-
-public interface Cursor extends CursorBase<Row>
+public interface CursorBase<T>
 {
+    /**
+     * Starts the cursor.
+     * @param bindings Values of variables referenced in the underlying query.
+     */
+    void open(Bindings bindings);
+
+    /**
+     * Advances to and returns the next object.
+     * @return The next object, or <code>null</code> if at the end.
+     */
+    T next();
+
+    /**
+     * Terminates the cursor.
+     */
+    void close();
 }

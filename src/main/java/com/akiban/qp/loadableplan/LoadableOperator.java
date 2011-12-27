@@ -13,10 +13,11 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.operator;
+package com.akiban.qp.loadableplan;
 
-import com.akiban.qp.row.Row;
+import com.akiban.qp.operator.Operator;
 
-public interface Cursor extends CursorBase<Row>
+/** A loadable plan that implements an operator tree. */
+public abstract class LoadableOperator extends LoadablePlan<Operator>
 {
 }
