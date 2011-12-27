@@ -55,13 +55,8 @@ public class PostgresDirectObjectCopier extends PostgresOutputter<List<?>>
         messenger.sendMessage();
     }
 
-    public void done(String errmsg) throws IOException {
-        if (errmsg != null) {
-            messenger.beginMessage(PostgresMessages.COPY_FAIL_TYPE.code());
-            messenger.writeString(errmsg);
-        }
-        else
-            messenger.beginMessage(PostgresMessages.COPY_DONE_TYPE.code());
+    public void done() throws IOException {
+        messenger.beginMessage(PostgresMessages.COPY_DONE_TYPE.code());
         messenger.sendMessage();
     }
 

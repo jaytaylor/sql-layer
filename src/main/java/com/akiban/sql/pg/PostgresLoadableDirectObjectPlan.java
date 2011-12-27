@@ -93,7 +93,6 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
         DirectObjectCursor cursor = null;
         PostgresOutputter<List<?>> outputter = null;
         PostgresDirectObjectCopier copier = null;
-        boolean success = false;
         try {
             cursor = plan.cursor(session);
             cursor.open(bindings);
@@ -115,17 +114,11 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
                 if ((maxrows > 0) && (nrows >= maxrows))
                     break;
             }
-            success = true;
+            if (useCopy) {
+                copier.done();
+            }
         }
         finally {
-            if (copier != null) {
-                try {
-                    copier.done(success ? null : "Copy failed");
-                }
-                catch (IOException ex) {
-                    if (success) throw ex; // Don't override original exception.
-                }
-            }
             if (cursor != null) {
                 cursor.close();
             }
