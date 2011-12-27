@@ -32,7 +32,7 @@ import java.util.concurrent.*;
 import java.io.*;
 
 /** A loadable direct object plan that returns asynchronous results.
- * Not as useful as it seems, since clients actually wait for the complete result set.
+ * Needs to use copy mode to get results out as it goes.
  * <code><pre>
 java -jar jmxterm-1.0-alpha-4-uber.jar -l localhost:8082 -n <<EOF
 run -b com.akiban:type=PostgresServer loadPlan `pwd`/`ls target/akiban-server-*-SNAPSHOT-tests.jar` com.akiban.server.test.it.loadableplan.TestDirectAsync

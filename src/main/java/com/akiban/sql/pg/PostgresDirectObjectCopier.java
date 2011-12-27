@@ -21,6 +21,10 @@ import com.akiban.server.types.ToObjectValueTarget;
 import java.util.List;
 import java.io.IOException;
 
+/** Output object rows using the COPY protocol, which has the
+ * advantage of being asynchronous. Useful when the loadable plan does
+ * something that takes a while and produces output as it goes.
+ */
 public class PostgresDirectObjectCopier extends PostgresOutputter<List<?>>
 {
     public PostgresDirectObjectCopier(PostgresMessenger messenger, 
