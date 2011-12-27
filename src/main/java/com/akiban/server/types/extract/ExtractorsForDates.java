@@ -578,7 +578,7 @@ abstract class ExtractorsForDates extends LongExtractor {
     };
 
     private static class Calculator {
-        private static Calendar calendar = Calendar.getInstance(TimeZone.getDefault()); // Assume timezone is UTC for now
+        private static Calendar calendar = Calendar.getInstance(TimeZone.getDefault()); 
 
         public static long getMillis (int year, int mon, int day, int hr, int min, int sec) {
             calendar.set(Calendar.YEAR, year);
