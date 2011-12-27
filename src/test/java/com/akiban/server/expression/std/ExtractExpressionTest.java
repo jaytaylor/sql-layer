@@ -111,7 +111,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
         Expression top = getTopExp(ExtractExpression.DATETIME_COMPOSER, getDate());
 
         long s = top.evaluation().eval().getDateTime();
-        
+
         assertEquals(20090830000000L, s);
     }
 
@@ -129,7 +129,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
         Expression top = getTopExp(ExtractExpression.DATETIME_COMPOSER, getTimestamp());
         assertEquals(20090830113045L, top.evaluation().eval().getDateTime());
     }
-                
+
 
     @Test
     public void getDatetimeFromVarchar()
@@ -270,12 +270,12 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
 
         assertEquals("expected 999", 999, top.evaluation().eval().getLong());
     }
-    
+
     @Test
     public void getHourFromDate()
     {
         Expression top = getTopExp(ExtractExpression.HOUR_COMPOSER, getDate());
-        assertTrue(top.evaluation().eval().isNull());
+        assertEquals(0, top.evaluation().eval().getLong());
 
     }
 
@@ -340,7 +340,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     public void getHourFromYear()
     {
         Expression top = getTopExp(ExtractExpression.HOUR_COMPOSER, getYear());
-        assertTrue(top.evaluation().eval().isNull());
+        assertEquals(0, top.evaluation().eval().getLong());
     }
 
     @Test
@@ -354,7 +354,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     public void getMinuteFromDate()
     {
         Expression top = getTopExp(ExtractExpression.MINUTE_COMPOSER, getDate());
-        assertTrue(top.evaluation().eval().isNull());
+        assertEquals(0, top.evaluation().eval().getLong());
     }
 
     @Test
@@ -418,7 +418,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     public void getMinuteFromYear()
     {
         Expression top = getTopExp(ExtractExpression.MINUTE_COMPOSER, getYear());
-        assertTrue(top.evaluation().eval().isNull());
+        assertEquals(0, top.evaluation().eval().getLong());
     }
 
     @Test
@@ -511,7 +511,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     public void getSecondFromDate()
     {
         Expression top = getTopExp(ExtractExpression.SECOND_COMPOSER, getDate());
-        assertTrue(top.evaluation().eval().isNull());
+        assertEquals(0, top.evaluation().eval().getLong());
 
     }
 
@@ -576,7 +576,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     public void getSecondFromYear()
     {
         Expression top = getTopExp(ExtractExpression.SECOND_COMPOSER, getYear());
-        assertTrue(top.evaluation().eval().isNull());
+        assertEquals(0, top.evaluation().eval().getLong());
     }
 
 
@@ -599,7 +599,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     public void getTimeFromDate()
     {
         Expression top = getTopExp(ExtractExpression.TIME_COMPOSER, getDate());
-        assertTrue(top.evaluation().eval().isNull());
+        assertEquals(0, top.evaluation().eval().getTime());
     }
 
     @Test
@@ -657,7 +657,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     public void getTimeFromYear()
     {
         Expression top = getTopExp(ExtractExpression.TIME_COMPOSER, getYear());
-        assertTrue(top.evaluation().eval().isNull());
+        assertEquals(0, top.evaluation().eval().getTime());
     }
 
     @Test
@@ -736,7 +736,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     public void getTimestampFromYear()
     {
         Expression top = getTopExp(ExtractExpression.TIME_COMPOSER, getYear());
-        assertTrue(top.evaluation().eval().isNull());
+        assertEquals(0, top.evaluation().eval().getTime());
     }
 
 

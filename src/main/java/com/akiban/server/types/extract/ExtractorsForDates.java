@@ -26,6 +26,7 @@ import java.text.SimpleDateFormat;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -89,6 +90,24 @@ abstract class ExtractorsForDates extends LongExtractor {
             final long month = (value / 32) % 16;
             final long day = value % 32;
             return new long[] {year, month, day, 0, 0, 0};
+        }
+
+        @Override
+        public long getEncoded(long[] ymd_hms) {
+            return ymd_hms[0] * 512 + ymd_hms[1] * 32 + ymd_hms[2];
+        }
+
+        @Override
+        protected long doConvert(ValueSource source)
+        {
+            long ymd[] = {0, 0, 0};
+            switch (source.getConversionType())
+            {
+                case DATETIME:   ymd = DATETIME.getYearMonthDayHourMinuteSecond(source.getDateTime()); break;
+                case TIMESTAMP:  ymd = TIMESTAMP.getYearMonthDayHourMinuteSecond(source.getTimestamp()); break;
+                default:         unsupportedConversion(source.getConversionType());
+            }
+            return getEncoded(ymd);
         }
     };
 
@@ -172,6 +191,29 @@ abstract class ExtractorsForDates extends LongExtractor {
             long second = value / DATETIME_SEC_SCALE % 100;
             return new long[] {year, month, day, hour, minute, second};
         }
+
+        @Override
+        public long getEncoded(long[] ymd_hms) {
+            return ymd_hms[0] * DATETIME_YEAR_SCALE +
+                   ymd_hms[1] * DATETIME_MONTH_SCALE +
+                   ymd_hms[2] * DATETIME_DAY_SCALE +
+                   ymd_hms[3] * DATETIME_HOUR_SCALE +
+                   ymd_hms[4] * DATETIME_MIN_SCALE +
+                   ymd_hms[5] * DATETIME_SEC_SCALE;
+        }
+
+        @Override
+        protected long doConvert(ValueSource source)
+        {
+            long ymd[];
+            switch (source.getConversionType())
+            {
+                case DATE:      ymd = DATE.getYearMonthDayHourMinuteSecond(source.getDate()); break;
+                case TIMESTAMP: ymd = TIMESTAMP.getYearMonthDayHourMinuteSecond(source.getTimestamp()); break;
+                default:    throw unsupportedConversion(source.getConversionType());
+            }
+            return getEncoded(ymd);
+        }
     };
 
     /**
@@ -251,6 +293,25 @@ abstract class ExtractorsForDates extends LongExtractor {
             long second = abs - hour* TIME_HOURS_SCALE - minute* TIME_MINUTES_SCALE;
             return new long [] {0, 1, 1, hour, minute, second};
         }
+
+        @Override
+        public long getEncoded(long[] ymd_hms) {
+            return ymd_hms[3] * 10000 +
+                   ymd_hms[4] * 100 +
+                   ymd_hms[5];
+        }
+
+        @Override
+        protected long doConvert(ValueSource source)
+        {
+            switch (source.getConversionType())
+            {
+                case YEAR:
+                case DATE:      return 0;
+                case DATETIME:  return source.getDateTime() % 1000000L;
+                default:        return getEncoded(TIMESTAMP.getYearMonthDayHourMinuteSecond(source.getTimestamp()));
+            }
+        }
     };
 
     /**
@@ -294,6 +355,27 @@ abstract class ExtractorsForDates extends LongExtractor {
         public long[] getYearMonthDayHourMinuteSecond(long value) {
             return Calculator.getYMDHMS(value * 1000);
         }
+
+        @Override
+        public long getEncoded(long[] ymd_hms) {
+            return Calculator.getMillis((int)ymd_hms[0], 
+                                        (int)ymd_hms[1], 
+                                        (int)ymd_hms[2], 
+                                        (int)ymd_hms[3], 
+                                        (int)ymd_hms[4], 
+                                        (int)ymd_hms[5]) / 1000;
+        }
+
+        @Override
+        protected long doConvert(ValueSource source)
+        {
+            switch(source.getConversionType())
+            {
+                case DATE:      return DATE.stdLongToUnix(source.getDate())/ 1000;
+                case DATETIME:  return DATETIME.stdLongToUnix(source.getDateTime()) / 1000;
+                default:        throw unsupportedConversion(source.getConversionType());
+            }
+        }
     };
 
     /**
@@ -336,6 +418,25 @@ abstract class ExtractorsForDates extends LongExtractor {
         @Override
         public long[] getYearMonthDayHourMinuteSecond(long value) {
             return new long[] {value == 0 ? 0 : 1900 + value, 1, 1, 0, 0, 0};
+        }
+
+        @Override
+        public long getEncoded(long[] ymd_hms) {
+            return ymd_hms[0] == 0 ? 0 : 1900 + ymd_hms[0];
+        }
+
+        @Override
+        protected long doConvert(ValueSource source)
+        {
+            long ymd[];
+            switch (source.getConversionType())
+            {
+                case DATE:      ymd = DATE.getYearMonthDayHourMinuteSecond(source.getDate()); break;
+                case DATETIME:  ymd = DATETIME.getYearMonthDayHourMinuteSecond(source.getDateTime()); break;
+                case TIMESTAMP: ymd = TIMESTAMP.getYearMonthDayHourMinuteSecond(source.getTimestamp()); break;
+                default:        throw unsupportedConversion(source.getConversionType());
+            }
+            return getEncoded(ymd);
         }
     };
 
@@ -394,6 +495,17 @@ abstract class ExtractorsForDates extends LongExtractor {
         public long[] getYearMonthDayHourMinuteSecond(long value) {
             throw new UnsupportedOperationException("Unsupported: Cannot extract Year/Month/.... from INTERVAL_MILLIS");
         }
+
+        @Override
+        public long getEncoded(long[] ymd_hms) {
+            throw new UnsupportedOperationException("Unsupported: Cannot encode Year/Month/... from INTERVAL_MILLIS");
+        }
+
+        @Override
+        protected long doConvert(ValueSource source)
+        {
+            throw unsupportedConversion(source.getConversionType());
+        }
     };
 
     final static ExtractorsForDates INTERVAL_MONTH = new ExtractorsForDates(AkType.INTERVAL_MONTH)
@@ -451,10 +563,22 @@ abstract class ExtractorsForDates extends LongExtractor {
         public long[] getYearMonthDayHourMinuteSecond(long value) {
             throw new UnsupportedOperationException("Unsupported: Cannot extract Year/Month/... from INTERVAL_MONTH");
         }
+
+        @Override
+        public long getEncoded(long[] ymd_hms) {
+            throw new UnsupportedOperationException("Unsupported: encode Year/Month/... to INTERVAL_MONTH");
+
+        }
+
+        @Override
+        protected long doConvert(ValueSource source)
+        {
+            throw unsupportedConversion(source.getConversionType());
+        }
     };
 
     private static class Calculator {
-        private static Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT")); // Assume timezone is UTC for now
+        private static Calendar calendar = Calendar.getInstance(TimeZone.getDefault()); // Assume timezone is UTC for now
 
         public static long getMillis (int year, int mon, int day, int hr, int min, int sec) {
             calendar.set(Calendar.YEAR, year);
@@ -513,8 +637,9 @@ abstract class ExtractorsForDates extends LongExtractor {
                 calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND)};
         }
     }
-
+    private static final EnumSet<AkType> DATETIMES = EnumSet.of(AkType.DATE, AkType.DATETIME, AkType.TIME, AkType.TIMESTAMP, AkType.YEAR);
     protected abstract long doGetLong(ValueSource source);
+    protected abstract long doConvert(ValueSource source);
 
     @Override
     public long getLong(ValueSource source) {
@@ -525,6 +650,8 @@ abstract class ExtractorsForDates extends LongExtractor {
                                            || targetConversionType() == AkType.INTERVAL_MONTH) {
             return doGetLong(source);
         }
+        if (DATETIMES.contains(type)) return doConvert(source);
+        
         switch (type) {
         case TEXT:      return getLong(source.getText());
         case VARCHAR:   return getLong(source.getString());

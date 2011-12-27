@@ -52,14 +52,10 @@ public class CastExpression extends AbstractUnaryExpression
                 return NullValueSource.only();
             if (type.equals(operandSource.getConversionType()))
                 return operandSource;
-            return Converters.convert(operandSource, holder());
-        }
-
-        private ValueHolder holder() {
             valueHolder().expectType(type);
-            return valueHolder();
+            return Converters.convert(operandSource, valueHolder());
         }
-
+        
         private final AkType type;        
     }
 }

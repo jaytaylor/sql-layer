@@ -20,6 +20,8 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import org.junit.Test;
@@ -73,5 +75,27 @@ public final class CastExpressionTest
         value = new ValueHolder(AkType.VARCHAR, "98.76");
         expected = new ValueHolder(AkType.DECIMAL, new BigDecimal("98.76"));
         assertEquals(expected, cast(value, AkType.DECIMAL));
+
+        LongExtractor dateExtractor = Extractors.getLongExtractor(AkType.DATE);
+        LongExtractor tsExtractor = Extractors.getLongExtractor(AkType.TIMESTAMP);
+
+        // to DATETIME
+        value = new ValueHolder(AkType.DATE, dateExtractor.getLong("2006-11-07"));
+        expected = new ValueHolder(AkType.DATETIME, 20061107000000L);
+        assertEquals(expected, cast(value, AkType.DATETIME));
+        
+        value = new ValueHolder(AkType.TIMESTAMP, tsExtractor.getLong("2006-11-07 12:30:10"));
+        expected = new ValueHolder(AkType.DATETIME, 20061107123010L);
+        assertEquals(expected, cast(value, AkType.DATETIME));
+
+        // to DATE
+        value = new ValueHolder(AkType.DATETIME, 20061107123010L);
+        expected = new ValueHolder(AkType.DATE, dateExtractor.getLong("2006-11-07"));
+        assertEquals(expected, cast(value, AkType.DATE));
+
+
     }
+
+
+
 }
