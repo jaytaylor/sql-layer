@@ -41,8 +41,10 @@ public class UnixToLongTest
     @Test
     public void testDateTime()
     {        
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+        
         long unix = Extractors.getLongExtractor(AkType.DATETIME).stdLongToUnix(20061107123010L);
-        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+        Calendar calendar = Calendar.getInstance(TimeZone.getDefault());
         calendar.set(Calendar.YEAR, 2006);
         calendar.set(Calendar.MONTH, 10);
         calendar.set(Calendar.DAY_OF_MONTH, 7);
@@ -54,15 +56,19 @@ public class UnixToLongTest
 
         long stdDate = Extractors.getLongExtractor(AkType.DATETIME).unixToStdLong(unix);
         assertEquals(20061107123010L, stdDate);
+        
+        TimeZone.setDefault(defaultTimeZone);
     }
 
     @Test
     public void testTime()
     {
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+        
         long stdLong = 123010L;
         long unix = Extractors.getLongExtractor(AkType.TIME).stdLongToUnix(stdLong);
 
-        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+        Calendar calendar = Calendar.getInstance(TimeZone.getDefault());
         calendar.set(Calendar.HOUR_OF_DAY, 12);
         calendar.set(Calendar.MINUTE, 30);
         calendar.set(Calendar.SECOND, 10);
@@ -73,11 +79,14 @@ public class UnixToLongTest
 
         assertEquals(stdLong, stdLong1);
         assertEquals(stdLong, stdLong2);
+        
+        TimeZone.setDefault(defaultTimeZone);
     }
 
     @Test
     public void testYear()
     {
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
         int year = 1991;
         long unix = Extractors.getLongExtractor(AkType.YEAR).stdLongToUnix(year);
 

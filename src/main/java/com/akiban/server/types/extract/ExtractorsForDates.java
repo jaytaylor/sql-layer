@@ -581,6 +581,7 @@ abstract class ExtractorsForDates extends LongExtractor {
         private static Calendar calendar = Calendar.getInstance(TimeZone.getDefault()); 
 
         public static long getMillis (int year, int mon, int day, int hr, int min, int sec) {
+            calendar.setTimeZone(TimeZone.getDefault());
             calendar.set(Calendar.YEAR, year);
             calendar.set(Calendar.MONTH, mon -1); // month in calendar is 0-based
             calendar.set(Calendar.DAY_OF_MONTH, day );
@@ -593,50 +594,60 @@ abstract class ExtractorsForDates extends LongExtractor {
         }
 
         public static long getYear (long millis)  {
+            calendar.setTimeZone(TimeZone.getDefault());
             calendar.setTimeInMillis(millis);
             return calendar.get(Calendar.YEAR);
         }
 
         public static int getMonth (long millis) {
+            calendar.setTimeZone(TimeZone.getDefault());
             calendar.setTimeInMillis(millis);
             return calendar.get(Calendar.MONTH) + 1; // month in Calendar is 0-based
         }
 
         public static int getDay (long millis) {
+            calendar.setTimeZone(TimeZone.getDefault());
             calendar.setTimeInMillis(millis);
             return calendar.get(Calendar.DAY_OF_MONTH);
         }
 
         public static int getHour (long millis) {
+            calendar.setTimeZone(TimeZone.getDefault());
             calendar.setTimeInMillis(millis);
             return calendar.get(Calendar.HOUR_OF_DAY);
         }
 
         public static int getMinute (long millis) {
+            calendar.setTimeZone(TimeZone.getDefault());
             calendar.setTimeInMillis(millis);
             return calendar.get(Calendar.MINUTE);
         }
 
         public static int getSec (long millis) {
+            calendar.setTimeZone(TimeZone.getDefault());
             calendar.setTimeInMillis(millis);
             return calendar.get(Calendar.SECOND);
         }
 
         public static long[] getYearMonthDay (long millis) {
+            calendar.setTimeZone(TimeZone.getDefault());
             calendar.setTimeInMillis(millis);
             return new long[] {calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) +1, calendar.get(Calendar.DAY_OF_MONTH)};
         }
 
         public static int[] getHrMinSec (long millis) {
+            calendar.setTimeZone(TimeZone.getDefault());
             calendar.setTimeInMillis(millis);
             return new int[] {calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND)};
         }
         public static long[] getYMDHMS (long millis) {
+            calendar.setTimeZone(TimeZone.getDefault());
             calendar.setTimeInMillis(millis);
             return new long[] {calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) +1, calendar.get(Calendar.DAY_OF_MONTH),
                 calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND)};
         }
     }
+    
     private static final EnumSet<AkType> DATETIMES = EnumSet.of(AkType.DATE, AkType.DATETIME, AkType.TIME, AkType.TIMESTAMP, AkType.YEAR);
     protected abstract long doGetLong(ValueSource source);
     protected abstract long doConvert(ValueSource source);
