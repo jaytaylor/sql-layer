@@ -58,6 +58,11 @@ public class TestDirectAsync extends LoadableDirectObjectPlan
                 public DirectObjectCursor cursor(Session session) {
                     return new TestDirectObjectCursor(session);
                 }
+
+                @Override
+                public boolean useCopyData() {
+                    return true;
+                }
             };
     }
 
@@ -140,17 +145,11 @@ public class TestDirectAsync extends LoadableDirectObjectPlan
     }
 
     @Override
-    public List<String> columnNames() {
-        return NAMES;
-    }
-
-    @Override
     public int[] jdbcTypes()
     {
         return TYPES;
     }
 
-    private static final List<String> NAMES = Arrays.asList("output");
     private static final int[] TYPES = new int[] { Types.VARCHAR };
     private static final long TIMEOUT = 500;
     private static final String EOF = "*EOF*";

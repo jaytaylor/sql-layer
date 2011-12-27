@@ -21,4 +21,9 @@ import com.akiban.server.service.session.Session;
 public abstract class DirectObjectPlan
 {
     public abstract DirectObjectCursor cursor(Session session);
+
+    /** Return <code>true</code> to stream a single column with text formatting. */
+    public boolean useCopyData() {
+        return false;
+    }
 }
