@@ -17,7 +17,6 @@ package com.akiban.sql.pg;
 
 import com.akiban.server.service.session.Session;
 import com.akiban.qp.operator.*;
-import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
@@ -71,29 +70,11 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             setEnvironmentBindings(server, bindings);
             cursor = API.cursor(resultOperator, server.getStore());
             cursor.open(bindings);
-            List<PostgresType> columnTypes = getColumnTypes();
-            int ncols = columnTypes.size();
+            PostgresRowOutputter outputter = new PostgresRowOutputter(messenger, this);
             Row row;
-            ToObjectValueTarget target = new ToObjectValueTarget();
             while ((row = cursor.next()) != null) {
                 assert resultRowType == null || (row.rowType() == resultRowType) : row;
-                messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
-                messenger.writeShort(ncols);
-                for (int i = 0; i < ncols; i++) {
-                    Object field = target.convertFromSource(row.eval(i));
-                    PostgresType type = columnTypes.get(i);
-                    byte[] value = type.encodeValue(field,
-                                                    messenger.getEncoding(),
-                                                    isColumnBinary(i));
-                    if (value == null) {
-                        messenger.writeInt(-1);
-                    }
-                    else {
-                        messenger.writeInt(value.length);
-                        messenger.write(value);
-                    }
-                }
-                messenger.sendMessage();
+                outputter.output(row);
                 nrows++;
                 if ((maxrows > 0) && (nrows >= maxrows))
                     break;
