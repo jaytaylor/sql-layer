@@ -24,9 +24,13 @@ import static org.junit.Assert.assertEquals;
 
 public class UnixToLongTest
 {
+    TimeZone defaultTimeZone = TimeZone.getDefault();
+
     @Test
     public void testDate()
     {
+        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+        
         long unix = Extractors.getLongExtractor(AkType.DATE).stdLongToUnix(1008673L);
         assertEquals(0, unix);
 
@@ -36,7 +40,7 @@ public class UnixToLongTest
 
     @Test
     public void testDateTime()
-    {
+    {        
         long unix = Extractors.getLongExtractor(AkType.DATETIME).stdLongToUnix(20061107123010L);
         Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
         calendar.set(Calendar.YEAR, 2006);
@@ -79,5 +83,7 @@ public class UnixToLongTest
 
         long stdLong1 = Extractors.getLongExtractor(AkType.YEAR).unixToStdLong(unix);
         assertEquals(year, stdLong1);
+
+        TimeZone.setDefault(defaultTimeZone);
     }
 }
