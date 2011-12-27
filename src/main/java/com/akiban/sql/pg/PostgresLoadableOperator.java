@@ -45,9 +45,7 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
               loadableOperator.columnNames(),
               loadableOperator.columnTypes(),
               NO_INPUTS, 
-              null,
-              0,
-              Integer.MAX_VALUE);
+              null);
         this.args = args;
     }
 

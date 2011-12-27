@@ -168,9 +168,7 @@ public class PostgresOperatorCompiler extends OperatorCompiler
             return new PostgresOperatorStatement(select.getResultOperator(),
                                                  select.getResultRowType(),
                                                  columnNames, columnTypes,
-                                                 parameterTypes, environmentSettings,
-                                                 // TODO: Assumes Limit operator used.
-                                                 0, -1);
+                                                 parameterTypes, environmentSettings);
         }
     }
 
