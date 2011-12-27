@@ -351,7 +351,7 @@ abstract class ExtractorsForDates extends LongExtractor {
         @Override
         public String asString(long value) {
             final long year = (value == 0) ? 0 : (1900 + value);
-            return String.format("%04d", year);
+            return String.format("%d", year);
         }
 
         @Override
@@ -434,7 +434,7 @@ abstract class ExtractorsForDates extends LongExtractor {
 
         @Override
         public long getEncoded(long[] ymd_hms) {
-            throw new UnsupportedOperationException("Not supported.");
+            throw new UnsupportedOperationException("Unsupported: Cannot encode Year/Month/... from INTERVAL_MILLIS");
         }
     };
 
@@ -491,12 +491,13 @@ abstract class ExtractorsForDates extends LongExtractor {
 
         @Override
         public long[] getYearMonthDayHourMinuteSecond(long value) {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("Unsupported: Cannot extract Year/Month/... from INTERVAL_MONTH");
         }
 
         @Override
         public long getEncoded(long[] ymd_hms) {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("Unsupported: encode Year/Month/... to INTERVAL_MONTH");
+
         }
     };
 

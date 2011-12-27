@@ -178,8 +178,7 @@ public class PostgresType
         if ("VARCHAR".equals(encoding))
             oid = VARCHAR_TYPE_OID;
         else if ("INT".equals(encoding) ||
-                 "U_INT".equals(encoding) ||
-                 "U_BIGINT".equals(encoding)) {
+                 "U_INT".equals(encoding)) {
             switch (aisType.maxSizeBytes().intValue()) {
             case 1:
                 oid = INT2_TYPE_OID; // No INT1; this also could be BOOLEAN (TINYINT(1)).
@@ -198,6 +197,9 @@ public class PostgresType
                 throw new UnknownTypeSizeException (aisType);
             }
         }
+        else if ("U_BIGINT".equals(encoding))
+            // Closest exact numeric type capable of holding 64-bit unsigned is DEC(20).
+            return new PostgresType(NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4);
         else if ("DATE".equals(encoding))
             oid = DATE_TYPE_OID;
         else if ("TIME".equals(encoding))
@@ -230,7 +232,13 @@ public class PostgresType
         if (aisColumn != null) {
             switch (aisType.nTypeParameters()) {
             case 1:
-                modifier = aisColumn.getTypeParameter1().intValue();
+                // VARCHAR(n).
+                modifier = aisColumn.getTypeParameter1().intValue() + 4;
+                break;
+            case 2:
+                // NUMERIC(n,m).
+                modifier = (aisColumn.getTypeParameter1().intValue() << 16) +
+                           aisColumn.getTypeParameter2().intValue() + 4;
                 break;
             }
         }
@@ -284,11 +292,12 @@ public class PostgresType
             converter = Extractors.getLongExtractor(AkType.INT);
             break;
         case TypeId.FormatIds.LONGINT_TYPE_ID:
-            oid = INT8_TYPE_OID;
             // TODO: U_BIGINT is represented by BigInteger, so a
             // LongExtractor won't work.  See comment above.
-            if (!typeId.isUnsigned())
-                converter = Extractors.getLongExtractor(AkType.INT);
+            if (typeId.isUnsigned())
+                return new PostgresType(NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4);
+            oid = INT8_TYPE_OID;
+            converter = Extractors.getLongExtractor(AkType.INT);
             break;
         case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
             oid = TEXT_TYPE_OID;
@@ -301,7 +310,10 @@ public class PostgresType
             break;
         case TypeId.FormatIds.SMALLINT_TYPE_ID:
             oid = INT2_TYPE_OID;
-            converter = Extractors.getLongExtractor(AkType.INT);
+            if (typeId == TypeId.YEAR_ID)
+                converter = Extractors.getLongExtractor(AkType.YEAR);
+            else
+                converter = Extractors.getLongExtractor(AkType.INT);
             break;
         case TypeId.FormatIds.TIME_TYPE_ID:
             oid = TIME_TYPE_OID;
@@ -309,9 +321,13 @@ public class PostgresType
             break;
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
             oid = TIMESTAMP_TYPE_OID;
-            // TODO: AkType.TIMESTAMP is MYSQL_TIMESTAMP, another way
-            // of representing seconds precision.
-            converter = Extractors.getLongExtractor(AkType.TIMESTAMP);
+            if (typeId == TypeId.DATETIME_ID)
+                converter = Extractors.getLongExtractor(AkType.DATETIME);
+            else
+                // TODO: AkType.TIMESTAMP is MYSQL_TIMESTAMP, another
+                // way of representing seconds precision, not ISO
+                // timestamp with fractional seconds.
+                converter = Extractors.getLongExtractor(AkType.TIMESTAMP);
             break;
         case TypeId.FormatIds.TINYINT_TYPE_ID:
             oid = INT2_TYPE_OID; // No INT1
@@ -348,11 +364,10 @@ public class PostgresType
         }
 
         if (typeId.isDecimalTypeId() || typeId.isNumericTypeId()) {
-            length = (short)type.getPrecision();
-            modifier = type.getScale();
+            modifier = (type.getPrecision() << 16) + type.getScale() + 4;
         }
         else if (typeId.variableLength()) {
-            modifier = type.getMaximumWidth();
+            modifier = type.getMaximumWidth() + 4;
         }
         else {
             length = (short)typeId.getMaximumMaximumWidth();

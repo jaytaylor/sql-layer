@@ -80,7 +80,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         new HashMap<String,PostgresStatement>();
 
     private Session session;
-    private int aisGeneration = -1;
+    private long aisTimestamp = -1;
     private AkibanInformationSchema ais;
     private StoreAdapter adapter;
     private String defaultSchemaName;
@@ -570,10 +570,10 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         // TODO: This could be more reliable if the AIS object itself
         // also knew its generation. Right now, can get new generation
         // # and old AIS and not notice until next change.
-        int currentGeneration = ddl.getGeneration();
-        if (aisGeneration == currentGeneration) 
+        long currentTimestamp = ddl.getTimestamp();
+        if (aisTimestamp == currentTimestamp) 
             return;             // Unchanged.
-        aisGeneration = currentGeneration;
+        aisTimestamp = currentTimestamp;
         ais = ddl.getAIS(session);
 
         parser = new SQLParser();
@@ -593,7 +593,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                                            reqs.config());
         }
 
-        statementCache = server.getStatementCache(aisGeneration);
+        statementCache = server.getStatementCache(aisTimestamp);
         unparsedGenerators = new PostgresStatementParser[] {
             new PostgresEmulatedMetaDataStatementParser(this)
         };

@@ -11,6 +11,32 @@
     sum(smallint_field) FROM all_types
 - output: [[null, null, null, null, null, null, null, null, null]]
 
+# Test sum with incompatible data types
+---
+- Statement: SELECT sum(blob_field) FROM all_types
+- error: [22503]
+---
+- Statement: SELECT sum(char_field) FROM all_types
+- error: [22503]
+---
+- Statement: SELECT sum(char_multi_field) FROM all_types
+- error: [22503]
+---
+- Statement: SELECT sum(clob_field) FROM all_types
+- error: [22503]
+---
+- Statement: SELECT sum(date_field) FROM all_types
+- error: [22503]
+---
+- Statement: SELECT sum(time_field) FROM all_types
+- error: [22503]
+---
+- Statement: SELECT sum(timestamp_field) FROM all_types
+- error: [22503]
+---
+- Statement: SELECT sum(varchar_field) FROM all_types
+- error: [22503]
+
 # Test sum with inserted rows
 
 ---
