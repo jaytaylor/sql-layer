@@ -21,7 +21,6 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types.util.ValueHolder;
 
 public class CastExpression extends AbstractUnaryExpression
 {
