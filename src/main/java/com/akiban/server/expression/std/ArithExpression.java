@@ -387,7 +387,7 @@ public class ArithExpression extends AbstractBinaryExpression
         {
             switch ((int)m)
             {
-                case 2:     return d <= (y % 4 == 0 ? 29L : 28L);
+                case 2:     return d <= (y % 400 == 0 || y % 4 == 0 && y % 100 != 0 ? 29L : 28L);
                 case 4:
                 case 6:
                 case 9:
