@@ -55,16 +55,16 @@ public class TestDirectPlan extends LoadableDirectObjectPlan
     }
 
     public static class TestDirectObjectCursor extends DirectObjectCursor {
-        private int i, n;
+        private long i, n;
 
         @Override
         public void open(Bindings bindings) {
             i = 0;
-            n = ((Integer)bindings.get(0)).intValue();
+            n = ((Number)bindings.get(0)).longValue();
         }
 
         @Override
-        public List<Integer> next() {
+        public List<Long> next() {
             if (i >= n)
                 return null;
             return Arrays.asList(i++);

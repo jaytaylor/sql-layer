@@ -316,8 +316,8 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     // (Re-)load any initial plans.
     private void loadInitialPlans() {
-        String plans = reqs.config().getProperty("akserver.postgres.loadableplans");
-        if (plans != null) {
+        String plans = reqs.config().getProperty("akserver.postgres.loadablePlans");
+        if (plans.length() > 0) {
             for (String className : plans.split(",")) {
                 try {
                     Class klass = Class.forName(className);
