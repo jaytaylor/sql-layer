@@ -65,7 +65,7 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
     public PostgresStatement getBoundStatement(String[] parameters,
                                                boolean[] columnBinary, 
                                                boolean defaultColumnBinary) {
-        throw new UnsupportedOperationException();
+        return this;
     }
 
     @Override
