@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import java.util.Arrays;
 import com.akiban.server.error.InvalidIntervalFormatException;
 import com.akiban.server.error.ParseException;
 import com.akiban.server.types.ValueSource;
@@ -78,7 +79,19 @@ public class IntervalCastExpressionTest
         test("     10         ", HOUR, INTERVAL_MILLIS, 36000000L);
         test("1    ", HOUR, INTERVAL_MILLIS, 3600000L);
     }
-    
+
+    @Test
+    public void TestIntervalWeekToDay ()
+    {
+        Expression input = new LiteralExpression(AkType.LONG, 1L);
+        Expression num = new LiteralExpression(AkType.LONG, 7L);
+        Expression week_interval = new IntervalCastExpression(input, DAY);
+        Expression day_interval = ArithOps.MULTIPLY.compose(Arrays.asList(week_interval,num));
+
+        assertEquals(AkType.INTERVAL_MILLIS, day_interval.valueType());
+        assertEquals(7 * 24 * 3600L * 1000L, day_interval.evaluation().eval().getInterval_Millis());
+    }
+
     @Test(expected = InvalidIntervalFormatException.class)
     public void testInvalidFormatYear ()
     {

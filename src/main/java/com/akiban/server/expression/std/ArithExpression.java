@@ -299,6 +299,8 @@ public class ArithExpression extends AbstractBinaryExpression
                 case 3:     return (long)rawDouble();
                 case -5:
                 case 5:     return rawBigInteger().longValue();
+                case 7:
+                case -7:
                 case 0:     if (l == 0 || l == HIGHEST_KEY) return rawLong();// left and right are intervals
                             else return doArithMillis(pos); // left and right are date/times
                 default:    if (l == 0 || r == 0) return doArithMillis(pos); // left is date/time and right is interval or vice versa
