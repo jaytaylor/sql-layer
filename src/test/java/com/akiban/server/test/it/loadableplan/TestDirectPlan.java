@@ -19,6 +19,7 @@ import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectCursor;
 import com.akiban.qp.operator.Bindings;
+import com.akiban.server.service.session.Session;
 
 import java.sql.Types;
 
@@ -48,7 +49,7 @@ public class TestDirectPlan extends LoadableDirectObjectPlan
     {
         return new DirectObjectPlan() {
                 @Override
-                public DirectObjectCursor cursor() {
+                public DirectObjectCursor cursor(Session session) {
                     return new TestDirectObjectCursor();
                 }
             };

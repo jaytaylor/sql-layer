@@ -19,6 +19,7 @@ import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectCursor;
 import com.akiban.qp.operator.Bindings;
+import com.akiban.server.service.session.Session;
 import com.akiban.util.Tap;
 
 import java.util.List;
@@ -76,10 +77,11 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
     public int execute(PostgresServerSession server, int maxrows) throws IOException {
         PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
+        Session session = server.getSession();
         int nrows = 0;
         DirectObjectCursor cursor = null;
         try {
-            cursor = plan.cursor();
+            cursor = plan.cursor(session);
             cursor.open(bindings);
             PostgresDirectObjectOutputter outputter = new PostgresDirectObjectOutputter(messenger, this);
             List<?> row;

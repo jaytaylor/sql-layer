@@ -15,8 +15,10 @@
 
 package com.akiban.qp.loadableplan;
 
+import com.akiban.server.service.session.Session;
+
 /** A plan that uses a {@link DirectObjectCursor}. */
 public abstract class DirectObjectPlan
 {
-    public abstract DirectObjectCursor cursor();
+    public abstract DirectObjectCursor cursor(Session session);
 }
