@@ -172,17 +172,23 @@ public class ExtractExpression extends AbstractUnaryExpression
             public Long extract (ValueSource source)
             {
                 AkType type = source.getConversionType();
+                long hr, min, sec;
                 long rawLong;
                 switch(type)
                 {
                     case TIME:      rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
-                                    return rawLong / 10000L;
+                                    sec = rawLong % 100;
+                                    min = rawLong / 100 % 100;
+                                    hr = rawLong / 10000;
+                                    return vallidHrMinSec(1, min,sec) ? hr : null; 
                     case DATETIME:  rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
                                     long yr = rawLong / 10000000000L;
                                     long mo = rawLong / 100000000L % 100;
                                     long da = rawLong / 1000000L % 100;
-                                    long hr = rawLong / 10000L % 100;
-                                    return vallidDayMonth(yr, mo,da) ? hr : null;
+                                    sec = rawLong % 100;
+                                    min = rawLong / 100 % 100;
+                                    hr = rawLong / 10000L % 100;
+                                    return vallidDayMonth(yr, mo,da) && vallidHrMinSec(hr, min,sec) ? hr : null;
                     case TIMESTAMP: rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
                                     Calendar calendar = Calendar.getInstance();
                                     calendar.setTimeInMillis(rawLong * 1000);
@@ -199,16 +205,21 @@ public class ExtractExpression extends AbstractUnaryExpression
             {
                 AkType type = source.getConversionType();
                 long rawLong;
+                long hr, min, sec;
                 switch (type)
                 {
                     case TIME:      rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
-                                    return rawLong / 100 % 100;
+                                    sec = rawLong % 100;
+                                    min = rawLong / 100 % 100;               
+                                    return vallidHrMinSec(0, min,sec) ? min : null;
                     case DATETIME:  rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
                                     long yr = rawLong / 10000000000L;
                                     long mo = rawLong / 100000000L % 100;
                                     long da = rawLong / 1000000L % 100;
-                                    long min = rawLong / 100 % 100;
-                                    return vallidDayMonth(yr, mo,da) ? min : null;
+                                    sec = rawLong % 100;
+                                    min = rawLong / 100 % 100;
+                                    hr = rawLong / 10000 % 100;
+                                    return vallidDayMonth(yr, mo,da) && vallidHrMinSec(hr, min,sec) ? min : null;
                     case TIMESTAMP: rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
                                     Calendar calendar = Calendar.getInstance();
                                     calendar.setTimeInMillis(rawLong * 1000);

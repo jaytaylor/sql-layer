@@ -22,5 +22,5 @@
 - output: [[null]]
 ---
  - Statement: select MINUTE(9999999) from all_types;
- - output: [[99]]
+ - output: [[null]]
 ...

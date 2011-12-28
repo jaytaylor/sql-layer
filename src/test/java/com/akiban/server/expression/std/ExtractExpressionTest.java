@@ -28,7 +28,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
 {
     private static final CompositionTestInfo testInfo = new CompositionTestInfo(1, AkType.DATE, false);
 
-    // --------------------------- GET DATE-------------------------------------    
+    // --------------------------- GET DATE-------------------------------------
     @Test
     public void testBound ()
     {
@@ -428,6 +428,13 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
         assertTrue (top.evaluation().eval().isNull());
     }
     //-----------------------------GET MINUTE-----------------------------------
+    @Test
+    public void getMinuteFrom999 ()
+    {
+        Expression top = getTopExp(ExtractExpression.MINUTE_COMPOSER, new LiteralExpression(AkType.LONG, 999999L));
+        assertTrue("Top should be null", top.evaluation().eval().isNull());
+    }
+    
     @Test
     public void getMinuteFromDate()
     {
