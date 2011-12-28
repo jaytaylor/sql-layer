@@ -16,9 +16,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.ConverterTestUtils;
 import com.akiban.server.types.extract.Extractors;
@@ -78,8 +76,8 @@ public final class CastExpressionTest
         expected = new ValueHolder(AkType.DECIMAL, new BigDecimal("98.76"));
         assertEquals(expected, cast(value, AkType.DECIMAL));
 
-        ConverterTestUtils.setGlobalTimezone("UTC");
-        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
+        String defaultTimeZone = TimeZone.getDefault().getID();
+        ConverterTestUtils.setGlobalTimezone("EST");     
         
         LongExtractor dateExtractor = Extractors.getLongExtractor(AkType.DATE);
         LongExtractor tsExtractor = Extractors.getLongExtractor(AkType.TIMESTAMP);
@@ -93,12 +91,49 @@ public final class CastExpressionTest
         expected = new ValueHolder(AkType.DATETIME, 20061007153010L);
         assertEquals(expected, cast(value, AkType.DATETIME));
 
+        // to TIMESTAMP
+        value = new ValueHolder(AkType.DATE, dateExtractor.getLong("2006-10-07"));
+        expected = new ValueHolder(AkType.TIMESTAMP, tsExtractor.getLong("2006-10-07 00:00:00"));
+        assertEquals(expected, cast(value, AkType.TIMESTAMP));
+
+        value = new ValueHolder(AkType.DATETIME, 20061007123010L);
+        expected = new ValueHolder(AkType.TIMESTAMP, tsExtractor.getLong("2006-10-07 12:30:10"));
+        assertEquals(expected, cast(value, AkType.TIMESTAMP));
+
         // to DATE
         value = new ValueHolder(AkType.DATETIME, 20061007123010L);
         expected = new ValueHolder(AkType.DATE, dateExtractor.getLong("2006-10-07"));
         assertEquals(expected, cast(value, AkType.DATE));
+
+        value = new ValueHolder(AkType.TIMESTAMP, tsExtractor.getLong("2006-10-07 12:30:10"));
+        assertEquals(expected, cast(value, AkType.DATE));
+
+        // to YEAR
+        value = new ValueHolder(AkType.DATETIME, 20061007123010L);
+        expected = new ValueHolder(AkType.YEAR, 2006L - 1900L);
+        assertEquals(expected, cast(value, AkType.YEAR));
+
+        value = new ValueHolder(AkType.DATE, dateExtractor.getLong("2006-10-07"));
+        assertEquals(expected, cast(value,AkType.YEAR));
+
+        value = new ValueHolder(AkType.TIMESTAMP, tsExtractor.getLong("2006-10-07 12:30:10"));
+        assertEquals(expected, cast(value,AkType.YEAR));
+
+        // to TIME
+        expected = new ValueHolder(AkType.TIME, 123010L);
+        assertEquals(expected, cast(value, AkType.TIME));
+
+        value = new ValueHolder(AkType.DATETIME, 20061007123010L);
+        assertEquals(expected, cast(value, AkType.TIME));
+
+        value = new ValueHolder(AkType.DATE, dateExtractor.getLong("2006-10-07"));
+        expected = new ValueHolder(AkType.TIME, 0L);
+        assertEquals(expected, cast(value, AkType.TIME));
+
+        value = new ValueHolder(AkType.YEAR, 2006L - 1900L);
+        assertEquals(expected, cast(value, AkType.TIME));
+        
+        // reset timezone
+        ConverterTestUtils.setGlobalTimezone(defaultTimeZone);
     }
-
-
-
 }
