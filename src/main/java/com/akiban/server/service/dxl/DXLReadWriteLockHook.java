@@ -50,6 +50,10 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
         // Having multiple of these introduces the possibility of a deadlock, for all the usual deadlocky reasons
     }
 
+    public boolean isEnabled() {
+        return DML_LOCK;
+    }
+
     @Override
     public void hookFunctionIn(Session session, DXLFunction function) {
         lockSchema(session, function);

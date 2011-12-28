@@ -17,6 +17,7 @@ package com.akiban.server.test.mt.mtatomics;
 
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.test.mt.MTBase;
 import com.akiban.server.test.mt.mtutil.TimePointsComparison;
@@ -25,6 +26,8 @@ import com.akiban.server.test.mt.mtutil.TimedResult;
 import com.akiban.server.service.dxl.ConcurrencyAtomicsDXLService;
 import com.akiban.server.service.dxl.DXLService;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -59,14 +62,20 @@ class ConcurrentAtomicsBase extends MTBase {
         TimedResult<List<NewRow>> scanResult = scanFuture.get();
         TimedResult<Void> updateResult = updateFuture.get();
 
-        new TimePointsComparison(scanResult, updateResult).verify(
-                "SCAN: START",
-                "(SCAN: PAUSE)>",
-                "UPDATE: IN",
-                "<(SCAN: PAUSE)",
-                "SCAN: FINISH",
-                "UPDATE: OUT"
-                );
+        List<String> timePoints = new ArrayList<String>();
+        timePoints.addAll(Arrays.asList("SCAN: START",
+                                        "(SCAN: PAUSE)>",
+                                        "UPDATE: IN",
+                                        "UPDATE: OUT",
+                                        "<(SCAN: PAUSE)",
+                                        "SCAN: FINISH"));
+
+        // 'update: out' will get blocked until scan is done if top level r/w lock is on
+        if(DXLReadWriteLockHook.only().isEnabled()) {
+            timePoints.add(timePoints.remove(3));
+        }
+
+        new TimePointsComparison(scanResult, updateResult).verify(timePoints.toArray(new String[timePoints.size()]));
 
         assertEquals("rows scanned (in order)", scanCallableExpected, scanResult.getItem());
         expectFullRows(tableId, endStateExpected.toArray(new NewRow[endStateExpected.size()]));
