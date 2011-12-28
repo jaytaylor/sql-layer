@@ -28,13 +28,10 @@ import java.util.List;
 public class DateTimeArithExpression extends ArithExpression
 {
     @Scalar({"adddate", "date_add", "addtime"})
-    public static final ExpressionComposer ADD_DATE_COMPOSER = new AddSubComposer(ArithOps.ADD);        
+    public static final ExpressionComposer ADD_DATE_COMPOSER = new AddSubComposer(ArithOps.ADD);    
     
-    @Scalar({"subdate", "date_sub"})
+    @Scalar({"subdate", "date_sub", "subtime"})
     public static final ExpressionComposer SUB_DATE_COMPOSER = new AddSubComposer(ArithOps.MINUS);
-    
-    @Scalar("subtime")
-    public static final ExpressionComposer SUB_TIME_COMPOSER = SUB_DATE_COMPOSER;
     
     @Scalar("timediff")
     public static final ExpressionComposer TIMEDIFF_COMPOSER = new DiffComposer(AkType.TIME)
@@ -73,12 +70,16 @@ public class DateTimeArithExpression extends ArithExpression
         @Override
         protected Expression compose(Expression first, Expression second)
         {
+            if (ArithExpression.isNumeric(second.valueType()))
+                second = new NumericToIntervalDay(second);
             return composer.compose(first, second);
         }
 
         @Override
         protected ExpressionType composeType(ExpressionType first, ExpressionType second)
         {
+            if (ArithExpression.isNumeric(second.getType()))
+                second = ExpressionTypes.INTERVAL_MILLIS;
             return composer.composeType(first, second);
         }
 
@@ -93,8 +94,10 @@ public class DateTimeArithExpression extends ArithExpression
                 argumentTypes.set(0, AkType.DATETIME);
 
             // second arg
-            if (argumentTypes.get(1) != AkType.INTERVAL_MILLIS)
-                argumentTypes.set(1, AkType.INTERVAL_MONTH);
+            // does not need adjusting, since 
+            //  - if it's a numeric type, it'll be *casted* to an interval_millis in compose()
+            //  - if it's an interval , => expected
+            //  - if it's anything else, then InvalidArgumentType will be thrown
         }
     }
 
@@ -210,4 +213,5 @@ public class DateTimeArithExpression extends ArithExpression
     {
         return new InnerEvaluation(op, topT, this, childrenEvaluations());
     }
+    
 }

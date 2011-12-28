@@ -187,7 +187,6 @@ public class ExpressionAssembler
         {
             // Do type conversion.         
             TypeId id = castExpression.getSQLtype().getTypeId(); 
-            
             if (id.isIntervalTypeId())
                 expr = new IntervalCastExpression(expr, IntervalCastExpression.ID_MAP.get(id));
             else 

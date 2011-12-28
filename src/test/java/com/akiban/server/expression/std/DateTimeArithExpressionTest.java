@@ -29,6 +29,29 @@ import static org.junit.Assert.*;
 public class DateTimeArithExpressionTest extends ComposedExpressionTestBase
 {
     @Test
+    public void testDateAdd ()
+    {
+        LongExtractor extractor = Extractors.getLongExtractor(AkType.DATE);
+       
+        Expression left1 = new LiteralExpression(AkType.DATE, extractor.getLong("2009-12-12"));
+        Expression right1 = new LiteralExpression(AkType.LONG, 12L); // second arg is a LONG
+        
+        Expression left2 = new LiteralExpression(AkType.DATE, extractor.getLong("2009-12-24"));
+        
+        // top1 is a DATE: ADDDATE('2009-12-12', 12)
+        Expression top1 = DateTimeArithExpression.ADD_DATE_COMPOSER.compose(Arrays.asList(left1, right1));
+        
+        // top2 is an interval
+        Expression top2 = ArithOps.MINUS.compose(Arrays.asList(left2, left1));
+        
+        // top3 is a DATE: ADDDATE("2009-12-12", interval 12 days)
+        Expression top3 = DateTimeArithExpression.ADD_DATE_COMPOSER.compose(Arrays.asList(left1, top2));
+        
+        assertEquals("assert top1 == 2009-12-24", extractor.getLong("2009-12-24"),top1.evaluation().eval().getDate());
+        assertEquals("assert top3 == top1", top1.evaluation().eval().getDate(), top3.evaluation().eval().getDate());
+    }
+    
+    @Test
     public void testTimeDiff ()
     {
         Expression l = new LiteralExpression(AkType.TIME,100915L);

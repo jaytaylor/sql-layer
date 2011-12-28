@@ -102,7 +102,7 @@ public class IntervalCastExpression extends AbstractUnaryExpression
                     throw new InconvertibleTypesException(sourceType, endPoint.type);
                 else
                     result = Extractors.getLongExtractor(AkType.LONG).getLong(source);
-                
+
                 switch(endPoint)
                 {
                     case YEAR:

@@ -183,6 +183,11 @@ public class ArithExpression extends AbstractBinaryExpression
         }   
     }
 
+    protected static boolean isNumeric (AkType type)
+    {
+        return SUPPORTED_TYPES.get(type) % 2 == 1;
+    }
+    
     @Override
     protected boolean nullIsContaminating()
     {
