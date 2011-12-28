@@ -128,15 +128,25 @@ public interface SchemaManager {
     List<String> schemaStrings(Session session, boolean withGroupTables);
 
     /**
-     * Force a new generation as returned by {@link #getSchemaGeneration()}. Primarily
-     * intended for testing and diagnostics.
+     * Return the last timestamp for the last successful change through the SchemaManager.
+     * This value changes for any create, delete, or alter method executed.
+     * @return The timestamp at which a change last occurred.
      */
-    void forceNewGeneration();
+    long getUpdateTimestamp();
 
     /**
-     * This value changes for any create, delete, or alter method executed.
+     * Force a new timestamp as returned by {@link #getUpdateTimestamp()}. Primarily
+     * intended for testing and diagnostics.
+     */
+    void forceNewTimestamp();
+
+    /**
+     * Get the value associated with the current state of the SchemaManager. This
+     * changes under every condition that {@link #getUpdateTimestamp()} does but
+     * implies no other ordering other than being distinct from the last.
      * @return The current schema generation value.
      */
     int getSchemaGeneration();
+
 
 }

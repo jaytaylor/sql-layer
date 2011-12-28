@@ -152,7 +152,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private final Store store;
     private final TreeService treeService;
     private final ConfigurationService config;
-    private AtomicLong schemaGeneration;
+    private AtomicLong updateTimestamp;
     private int maxAISBufferSize;
     private ByteBuffer aisByteBuffer;
 
@@ -679,16 +679,21 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
         return ddlList;
     }
-    
+
+    @Override
+    public long getUpdateTimestamp() {
+        return updateTimestamp.get();
+    }
+
     @Override
     public int getSchemaGeneration() {
-        long ts = schemaGeneration.get();
+        long ts = getUpdateTimestamp();
         return (int) ts ^ (int) (ts >>> 32);
     }
     
     @Override
-    public void forceNewGeneration() {
-        schemaGeneration.set(treeService.getDb().getCurrentTimestamp());
+    public void forceNewTimestamp() {
+        updateTimestamp.set(treeService.getDb().getCurrentTimestamp());
     }
 
     @Override
@@ -703,7 +708,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     @Override
     public void start() {
-        schemaGeneration = new AtomicLong();
+        updateTimestamp = new AtomicLong();
         maxAISBufferSize = Integer.parseInt(config.getProperty(MAX_AIS_SIZE_PROPERTY));
         if(maxAISBufferSize < 0) {
             LOG.warn("Clamping property "+MAX_AIS_SIZE_PROPERTY+" to 0");
@@ -723,7 +728,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public void stop() {
         this.aish.setAis(null);
-        this.schemaGeneration = null;
+        this.updateTimestamp = null;
         this.maxAISBufferSize = 0;
         this.aisByteBuffer = null;
     }
@@ -790,7 +795,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         rowDefCache.clear();
         treeService.getTableStatusCache().detachAIS();
         rowDefCache.setAIS(newAis);
-        forceNewGeneration();
+        forceNewTimestamp();
         aish.setAis(newAis);
     }
 

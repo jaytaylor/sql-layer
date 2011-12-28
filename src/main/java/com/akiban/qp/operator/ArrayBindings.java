@@ -15,55 +15,38 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.util.Undef;
-
-import java.util.Arrays;
+import com.akiban.util.SparseArray;
 
 public final class ArrayBindings extends Bindings
 {
-    private Object[] bindings;
+    private SparseArray<Object> bindings;
 
     // ArrayBindings interface
 
     // queryParameters is the number of parameters in the query. There may be additional bindings, in which case
     // set(int, Object) will cause the array to grow.
     public ArrayBindings(int queryParameters) {
-        bindings = new Object[queryParameters];
-        for (int i=0; i < queryParameters; ++i) {
-            bindings[i] = Undef.only();
-        }
+        bindings = new SparseArray<Object>(queryParameters);
     }
 
     @Override
     public String toString() {
-        return "ArrayBindings" + Arrays.toString(bindings); 
+        return "ArrayBindings[ " + bindings.describeElements() + ']'; 
     }
 
     // Bindings interface
 
     @Override
     public Object get(int index) {
-        final Object value;
-        try {
-            value = bindings[index];
-        } catch (ArrayIndexOutOfBoundsException e) {
-            throw new BindingNotSetException(e, index);
-        }
-        if (Undef.isUndefined(value)) {
+        if (!bindings.isDefined(index))
             throw new BindingNotSetException(index);
-        }
-        return value;
+        return bindings.get(index);
     }
 
     @Override
     public void set(int index, Object value)
     {
-        if (index >= bindings.length) {
-            Object[] newBindings = new Object[index + 1];
-            System.arraycopy(bindings, 0, newBindings, 0, bindings.length);
-            bindings = newBindings;
-        }
-        bindings[index] = value;
+        bindings.set(index, value);
     }
 
 }

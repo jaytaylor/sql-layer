@@ -295,6 +295,24 @@ public final class SchemaManagerIT extends ITBase {
         assertTablesInSchema(SCHEMA_VOL2_B);
     }
 
+
+    @Test
+    public void updateTimestampChangesWithCreate() throws Exception {
+        final long first = schemaManager.getUpdateTimestamp();
+        createTableDef(SCHEMA, T1_DDL);
+        final long second = schemaManager.getUpdateTimestamp();
+        assertTrue("timestamp changed", first != second);
+    }
+
+    @Test
+    public void updateTimestampChangesWithDelete() throws Exception {
+        createTableDef(SCHEMA, T1_DDL);
+        final long first = schemaManager.getUpdateTimestamp();
+        deleteTableDef(SCHEMA, T1_NAME);
+        final long second = schemaManager.getUpdateTimestamp();
+        assertTrue("timestamp changed", first != second);
+    }
+
     @Test
     public void schemaGenChangesWithCreate() throws Exception {
         final int first = schemaManager.getSchemaGeneration();
@@ -313,9 +331,17 @@ public final class SchemaManagerIT extends ITBase {
     }
 
     @Test
+    public void forceNewTimestampChangesTimestamp() throws Exception {
+        final long first = schemaManager.getUpdateTimestamp();
+        schemaManager.forceNewTimestamp();
+        final long second = schemaManager.getUpdateTimestamp();
+        assertTrue("timestamp changed", first != second);
+    }
+
+    @Test
     public void forceNewTimestampChangesSchemaGen() throws Exception {
         final int first = schemaManager.getSchemaGeneration();
-        schemaManager.forceNewGeneration();
+        schemaManager.forceNewTimestamp();
         final int second = schemaManager.getSchemaGeneration();
         assertTrue("timestamp changed", first != second);
     }

@@ -113,6 +113,7 @@ public class DXLTransactionHook implements DXLFunctionsHook {
             case GET_USER_TABLE_BY_ID:
             case GET_ROWDEF:
             case GET_SCHEMA_ID:
+            case GET_SCHEMA_TIMESTAMP:
             case FORCE_GENERATION_UPDATE:
             case OPEN_CURSOR:
             case GET_CURSOR_STATE:

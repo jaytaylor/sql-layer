@@ -283,6 +283,26 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
+    public long getTimestamp() {
+        Session session = sessionService.createSession();
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.GET_SCHEMA_TIMESTAMP);
+            return delegate.getTimestamp();
+        } catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.GET_SCHEMA_TIMESTAMP, t);
+            throw throwAlways(t);
+        } finally {
+            try {
+                hook.hookFunctionFinally(session, DXLFunction.GET_SCHEMA_TIMESTAMP, thrown);
+            } finally {
+                session.close();
+            }
+        }
+    }
+
+    @Override
     public void forceGenerationUpdate() {
         Session session = sessionService.createSession();
         Throwable thrown = null;

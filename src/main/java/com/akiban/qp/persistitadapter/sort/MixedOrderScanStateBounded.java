@@ -82,12 +82,6 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
         loSource = lo;
         hiSource = hi;
         fieldType = loNull ? hiSource.getConversionType() : loSource.getConversionType();
-        loLEHi =
-            bothNonNull
-            ? Expressions.compare(Expressions.valueSource(loSource),
-                                  Comparison.LE,
-                                  Expressions.valueSource(hiSource))
-            : null;
         loEQHi =
             bothNonNull
             ? Expressions.compare(Expressions.valueSource(loSource),
@@ -101,14 +95,8 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
     {
         this.loInclusive = loInclusive;
         this.hiInclusive = hiInclusive;
-        if (inequalityOK) {
-            if (loLEHi != null && !loLEHi.evaluation().eval().getBool()) {
-                throw new IllegalArgumentException();
-            }
-        } else {
-            if (loEQHi != null && !loEQHi.evaluation().eval().getBool()) {
-                throw new IllegalArgumentException();
-            }
+        if (!inequalityOK && loEQHi != null && !loEQHi.evaluation().eval().getBool()) {
+            throw new IllegalArgumentException();
         }
     }
 
@@ -165,7 +153,6 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
     private boolean loInclusive;
     private boolean hiInclusive;
     private Expression endComparison;
-    private Expression loLEHi;
     private Expression loEQHi;
     private AkType fieldType;
 }

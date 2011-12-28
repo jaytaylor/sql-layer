@@ -15,6 +15,8 @@
 
 package com.akiban.server.expression.std;
 
+import java.util.HashMap;
+import com.akiban.sql.types.TypeId;
 import com.akiban.server.error.InvalidIntervalFormatException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -49,6 +51,24 @@ public class IntervalCastExpression extends AbstractUnaryExpression
         
         final AkType type;
     }
+    
+    public static final HashMap<TypeId,EndPoint> ID_MAP = new HashMap();
+    static
+    {
+        ID_MAP.put(TypeId.INTERVAL_YEAR_ID, EndPoint.YEAR);
+        ID_MAP.put(TypeId.INTERVAL_YEAR_MONTH_ID, EndPoint.YEAR_MONTH);
+        ID_MAP.put(TypeId.INTERVAL_MONTH_ID, EndPoint.MONTH);
+        ID_MAP.put(TypeId.INTERVAL_DAY_ID, EndPoint.DAY);
+        ID_MAP.put(TypeId.INTERVAL_HOUR_ID, EndPoint.HOUR);
+        ID_MAP.put(TypeId.INTERVAL_MINUTE_ID, EndPoint.MINUTE);
+        ID_MAP.put(TypeId.INTERVAL_SECOND_ID, EndPoint.SECOND);
+        ID_MAP.put(TypeId.INTERVAL_DAY_SECOND_ID, EndPoint.DAY_SECOND);
+        ID_MAP.put(TypeId.INTERVAL_DAY_MINUTE_ID, EndPoint.DAY_MINUTE);
+        ID_MAP.put(TypeId.INTERVAL_DAY_HOUR_ID, EndPoint.DAY_HOUR);
+        ID_MAP.put(TypeId.INTERVAL_HOUR_MINUTE_ID, EndPoint.HOUR_MINUTE);
+        ID_MAP.put(TypeId.INTERVAL_HOUR_SECOND_ID, EndPoint.HOUR_SECOND);
+        ID_MAP.put(TypeId.INTERVAL_MINUTE_SECOND_ID, EndPoint.MINUTE_SECOND);
+    }
 
     private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
@@ -69,7 +89,6 @@ public class IntervalCastExpression extends AbstractUnaryExpression
             String interval = source.getString().trim();
             
             long result = 0;
-            
             try
             {
                 switch(endPoint)
@@ -96,7 +115,6 @@ public class IntervalCastExpression extends AbstractUnaryExpression
                         result = Long.parseLong(interval) * MULS[2]; 
                         break;
                     case SECOND:
-                        
                         result = Math.round(Double.parseDouble(interval) * 1000);
                         break;
                     case DAY_HOUR:
@@ -145,7 +163,7 @@ public class IntervalCastExpression extends AbstractUnaryExpression
     }
     
     private final EndPoint endPoint;
-    protected IntervalCastExpression (Expression str, EndPoint endPoint)
+    public IntervalCastExpression (Expression str, EndPoint endPoint)
     {
         super(endPoint.type, str);
         this.endPoint = endPoint;

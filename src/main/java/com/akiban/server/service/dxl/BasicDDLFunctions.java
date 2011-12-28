@@ -265,10 +265,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
+    public long getTimestamp() {
+        return schemaManager().getUpdateTimestamp();
+    }
+
+    @Override
     // meant to be used from JMX
     public void forceGenerationUpdate() {
         logger.trace("forcing schema generation update");
-        schemaManager().forceNewGeneration();
+        schemaManager().forceNewTimestamp();
     }
 
     @Override

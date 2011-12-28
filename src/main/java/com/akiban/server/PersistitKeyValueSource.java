@@ -38,7 +38,7 @@ public final class PersistitKeyValueSource implements ValueSource {
         if (type == AkType.INTERVAL_MILLIS || type == AkType.INTERVAL_MONTH)
             throw new UnsupportedOperationException();
         this.key = key;
-        this.key.indexTo(depth);
+        this.depth = depth;
         this.akType = type;
         clear();
     }
@@ -175,7 +175,7 @@ public final class PersistitKeyValueSource implements ValueSource {
     
     private ValueSource decode() {
         if (needsDecoding) {
-            int oldIndex = key.getIndex();
+            key.indexTo(depth);
             if (key.isNull()) {
                 valueHolder.putNull();
             }
@@ -190,7 +190,6 @@ public final class PersistitKeyValueSource implements ValueSource {
                     default: throw new UnsupportedOperationException(akType.name());
                 }
             }
-            key.indexTo(oldIndex);
             needsDecoding = false;
         }
         return valueHolder;
@@ -203,6 +202,7 @@ public final class PersistitKeyValueSource implements ValueSource {
     // object state
 
     private Key key;
+    private int depth;
     private AkType akType = AkType.UNSUPPORTED;
     private ValueHolder valueHolder = new ValueHolder();
     private boolean needsDecoding = true;

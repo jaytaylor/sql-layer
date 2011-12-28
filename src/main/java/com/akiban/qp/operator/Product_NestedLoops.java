@@ -30,6 +30,71 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+/**
+
+ <h1>Overview</h1>
+
+ Product_NestedLoops computes the cartesian product of child rows owned by the same parent row. For example, if customer c1 has orders o10 and o11, and addresses a10 and a11; and customer c2 has order o20 and address a20, then Product_NestedLoops computes \{o10, o11\} x \{a10, a11\} for c1, and \{o20\} x \{a20\} for c2.
+
+ <h1>Arguments</h1>
+
+ <ul>
+
+ <li><b>RowType outerType:</b> Type of one child row. parent rows to be
+ flattened.
+
+ <li><b>RowType innerType:</b> Type of the other child row.
+
+ <li><b>int inputBindingPosition:</b> The position in the bindings that
+ will be used to pass rows from the outer loop to the inner loop.
+
+ </ul>
+
+ The input types must have resulted from Flattens of some common
+ ancestor, e.g. Flatten(customer, order) and Flatten(customer,
+ address).
+
+ <h1>Behavior</h1>
+
+ Suppose we have a COA schema (C is the parent of O and A), and that we
+ have flattened C with O, and C with A. Product_NestedLoops has two
+ input streams, with CO in one and CA in the other. For this
+ discussion, let's assume that CO is the outer stream, and CA is in the
+ inner stream. The terms "outer" and "inner" reflect the relative
+ positions of the inputs in the nested loops used to compute the
+ product of the inputs.
+
+ For each CO row from the outer input stream, a set of matching CA rows
+ from the inner input stream are retrieved. The CO row and all of the
+ CA rows will have the same customer primary key. Product_NestedLoops
+ will write to the output stream product rows for each CO/CA
+ combination.
+
+ <h1>Output</h1>
+
+ For CO/CA input streams, the format of an output row is (C, O, A),
+ i.e., all the customer fields, followed by all the order fields,
+ followed by all the address fields.
+
+ Product rows do not have an hkey.
+
+ <h1>Assumptions</h1>
+
+ None.
+
+ <h1>Performance</h1>
+
+ Product_NestedLoops does no IO.
+
+ <h1>Memory Requirements</h1>
+
+ For each outer row, all matching rows from the inner input are kept in
+ memory. This avoids the need to retrieve the inner rows repeatedly in
+ situations where consecutive outer rows match the same inner rows,
+ e.g. for hkey-ordered outer rows.
+
+ */
+
 class Product_NestedLoops extends Operator
 {
     // Object interface

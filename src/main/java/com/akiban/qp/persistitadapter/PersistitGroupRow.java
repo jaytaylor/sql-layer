@@ -24,6 +24,7 @@ import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.types.ValueSource;
+import com.akiban.util.SparseArray;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
@@ -52,6 +53,7 @@ public class PersistitGroupRow extends AbstractRow
     public ValueSource eval(int i) {
         FieldDef fieldDef = rowDef().getFieldDef(i);
         RowData rowData = rowData();
+        RowDataValueSource valueSource = valueSource(i);
         valueSource.bind(fieldDef, rowData);
         return valueSource;
     }
@@ -130,15 +132,13 @@ public class PersistitGroupRow extends AbstractRow
     {
         RowDef rowDef = row.getRowDef();
         int ordinal = rowDef.getOrdinal();
-        if (ordinal >= typedHKeys.length) {
-            PersistitHKey[] newTypedHKeys = new PersistitHKey[ordinal * 2];
-            System.arraycopy(typedHKeys, 0, newTypedHKeys, 0, typedHKeys.length);
-            typedHKeys = newTypedHKeys;
-        }
-        currentHKey = typedHKeys[ordinal];
-        if (currentHKey == null) {
+        if (!typedHKeys.isDefined(ordinal)) {
             currentHKey = new PersistitHKey(adapter, rowDef.userTable().hKey());
-            typedHKeys[ordinal] = currentHKey;
+            PersistitHKey old = typedHKeys.set(ordinal, currentHKey);
+            assert old == null : old;
+        }
+        else {
+            currentHKey = typedHKeys.get(ordinal);
         }
         return currentHKey;
     }
@@ -152,22 +152,31 @@ public class PersistitGroupRow extends AbstractRow
     {
         this.adapter = adapter;
         this.rowData = rowData;
-        this.typedHKeys = new PersistitHKey[INITIAL_HKEY_ARRAY_SIZE];
+    }
+    
+    private RowDataValueSource valueSource(int i)
+    {
+        return valueSources.get(i);
     }
 
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(PersistitGroupRow.class);
     private static final int INITIAL_ROW_SIZE = 500;
-    private static final int INITIAL_HKEY_ARRAY_SIZE = 10;
+    private static final int INITIAL_ARRAY_SIZE = 10;
     private static final int MAX_ROWDATA_SIZE_BYTES = 5000000;
 
     // Object state
 
-    private final RowDataValueSource valueSource = new RowDataValueSource();
+    private final SparseArray<RowDataValueSource> valueSources = new SparseArray<RowDataValueSource>() {
+        @Override
+        protected RowDataValueSource initialValue() {
+            return new RowDataValueSource();
+        }
+    };
     private final PersistitAdapter adapter;
     private RowData rowData;
     private LegacyRowWrapper row;
     private PersistitHKey currentHKey;
-    private PersistitHKey[] typedHKeys;
+    private final SparseArray<PersistitHKey> typedHKeys = new SparseArray<PersistitHKey>();
 }
