@@ -364,7 +364,7 @@ abstract class ExtractorsForDates extends LongExtractor {
                                         (int)ymd_hms[2], 
                                         (int)ymd_hms[3], 
                                         (int)ymd_hms[4], 
-                                        (int)ymd_hms[5]) / 1000;
+                                        (int)ymd_hms[5]);
         }
 
         @Override
@@ -593,46 +593,46 @@ abstract class ExtractorsForDates extends LongExtractor {
             return calendar.getTimeInMillis();
         }
 
-        public static long getYear (long millis)  {           
+        public static long getYear (long millis)  {
             calendar.setTimeInMillis(millis);
             return calendar.get(Calendar.YEAR);
         }
 
-        public static int getMonth (long millis) {         
+        public static int getMonth (long millis) {
             calendar.setTimeInMillis(millis);
             return calendar.get(Calendar.MONTH) + 1; // month in Calendar is 0-based
         }
 
-        public static int getDay (long millis) {          
+        public static int getDay (long millis) {
             calendar.setTimeInMillis(millis);
             return calendar.get(Calendar.DAY_OF_MONTH);
         }
 
-        public static int getHour (long millis) {           
+        public static int getHour (long millis) {
             calendar.setTimeInMillis(millis);
             return calendar.get(Calendar.HOUR_OF_DAY);
         }
 
-        public static int getMinute (long millis) {         
+        public static int getMinute (long millis) {
             calendar.setTimeInMillis(millis);
             return calendar.get(Calendar.MINUTE);
         }
 
-        public static int getSec (long millis) {           
+        public static int getSec (long millis) {
             calendar.setTimeInMillis(millis);
             return calendar.get(Calendar.SECOND);
         }
 
-        public static long[] getYearMonthDay (long millis) {         
+        public static long[] getYearMonthDay (long millis) {
             calendar.setTimeInMillis(millis);
             return new long[] {calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) +1, calendar.get(Calendar.DAY_OF_MONTH)};
         }
 
-        public static int[] getHrMinSec (long millis) {           
+        public static int[] getHrMinSec (long millis) {
             calendar.setTimeInMillis(millis);
             return new int[] {calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND)};
         }
-        public static long[] getYMDHMS (long millis) {           
+        public static long[] getYMDHMS (long millis) {
             calendar.setTimeInMillis(millis);
             return new long[] {calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) +1, calendar.get(Calendar.DAY_OF_MONTH),
                 calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND)};
@@ -643,7 +643,7 @@ abstract class ExtractorsForDates extends LongExtractor {
         }
 
     }
-    
+
     private static final EnumSet<AkType> DATETIMES = EnumSet.of(AkType.DATE, AkType.DATETIME, AkType.TIME, AkType.TIMESTAMP, AkType.YEAR);
     protected abstract long doGetLong(ValueSource source);
     protected abstract long doConvert(ValueSource source);

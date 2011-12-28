@@ -74,7 +74,7 @@ public class UnixToLongTest
         long stdLong2 = Extractors.getLongExtractor(AkType.TIME).unixToStdLong(calendar.getTimeInMillis());
 
         assertEquals(stdLong, stdLong1);
-        assertEquals(stdLong, stdLong2);               
+        assertEquals(stdLong, stdLong2);
     }
 
     @Test

@@ -23,7 +23,6 @@ import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.std.ArithOps.ArithOpComposer;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.conversion.Converters;
 import java.util.List;
 
 public class DateTimeArithExpression extends ArithExpression
