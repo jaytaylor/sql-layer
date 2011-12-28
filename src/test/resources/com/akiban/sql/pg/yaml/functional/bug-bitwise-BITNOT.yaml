@@ -1,0 +1,14 @@
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (1, 'Level 1');
+--- #bug 909054
+- Statement: SELECT 1 from all_types where BITNOT(?) = 18446744073709551612;
+- params: [[3]]
+- output: [[1]]
+---
+- Statement: SELECT BITNOT(?) from all_types;
+- params: [[3]]
+- output: [[18446744073709551612]]
+
+...
