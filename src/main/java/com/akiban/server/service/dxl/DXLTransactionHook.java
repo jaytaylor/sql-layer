@@ -15,7 +15,7 @@
 
 package com.akiban.server.service.dxl;
 
-import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.persistit.Transaction;
@@ -40,7 +40,7 @@ public class DXLTransactionHook implements DXLFunctionsHook {
                 trx.begin();
                 session.push(AUTO_TRX_CLOSE, Boolean.TRUE);
             } catch(PersistitException e) {
-                throw new PersistItErrorException(e);
+                throw new PersistitAdapterException(e);
             }
         }
         else {
@@ -77,7 +77,7 @@ public class DXLTransactionHook implements DXLFunctionsHook {
                 try {
                     trx.commit();
                 } catch(PersistitException e) {
-                    throw new PersistItErrorException(e);
+                    throw new PersistitAdapterException(e);
                 }
                 finally {
                     trx.end();
@@ -95,6 +95,7 @@ public class DXLTransactionHook implements DXLFunctionsHook {
             case DROP_GROUP:
             case CREATE_INDEXES:
             case DROP_INDEXES:
+            case GET_DDLS:
             case GET_TABLE_STATISTICS:
             case SCAN_SOME:
             case WRITE_ROW:
@@ -111,8 +112,8 @@ public class DXLTransactionHook implements DXLFunctionsHook {
             case GET_USER_TABLE_BY_NAME:
             case GET_USER_TABLE_BY_ID:
             case GET_ROWDEF:
-            case GET_DDLS:
             case GET_SCHEMA_ID:
+            case GET_SCHEMA_TIMESTAMP:
             case FORCE_GENERATION_UPDATE:
             case OPEN_CURSOR:
             case GET_CURSOR_STATE:

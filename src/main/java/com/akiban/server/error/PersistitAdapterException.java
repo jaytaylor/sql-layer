@@ -16,12 +16,12 @@ package com.akiban.server.error;
 
 import com.persistit.exception.PersistitException;
 
-public class PersistItErrorException extends InvalidOperationException {
-    public PersistItErrorException (PersistitException ex) {
+public class PersistitAdapterException extends StoreAdapterRuntimeException {
+    public PersistitAdapterException(Throwable ex) {
         super(ErrorCode.PERSISTIT_ERROR, ex.getMessage());
         exception = ex;
     }
-    public PersistitException getException () { return exception; }
+    public Throwable getException () { return exception; }
     
-    private PersistitException exception; 
+    private Throwable exception;
 }

@@ -15,12 +15,11 @@
 
 package com.akiban.server;
 
-import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.tree.TreeService;
 import com.persistit.Accumulator;
-import com.persistit.Exchange;
 import com.persistit.Transaction;
 import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
@@ -58,7 +57,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     public synchronized void drop(int tableID) throws PersistitInterruptedException {
         InternalTableStatus ts = tableStatusMap.remove(tableID);
         if(ts != null) {
-            ts.setAutoIncrement(0);
+            ts.setAutoIncrement(0, true);
             ts.setRowCount(0);
             ts.setOrdinal(0);
             ts.setRowDef(null, null);
@@ -67,7 +66,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
     @Override
     public synchronized void setAutoIncrement(int tableID, long value) throws PersistitInterruptedException {
-        getInternalTableStatus(tableID).setAutoIncrement(value);
+        getInternalTableStatus(tableID).setAutoIncrement(value, false);
     }
 
     @Override
@@ -128,7 +127,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             return indexDef.getTreeCache().getTree();
         }
         catch (PersistitException e) {
-            throw new PersistItErrorException(e);
+            throw new PersistitAdapterException(e);
         }
     }
 
@@ -211,9 +210,12 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             this.rowCount.update(diff, getCurrentTrx());
         }
 
-        void setAutoIncrement(long autoIncrementValue) throws PersistitInterruptedException {
-            long diff = autoIncrementValue - getSnapshot(autoIncrement);
-            this.autoIncrement.update(diff, getCurrentTrx());
+        void setAutoIncrement(long autoIncrementValue, boolean evenIfLess) throws PersistitInterruptedException {
+            long current = getSnapshot(autoIncrement);
+            if(autoIncrementValue > current || evenIfLess) {
+                long diff = autoIncrementValue - current;
+                this.autoIncrement.update(diff, getCurrentTrx());
+            }
         }
 
         void setOrdinal(int ordinalValue) throws PersistitInterruptedException {
@@ -232,7 +234,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
                 uniqueID = getAccumulator(tree, AccumInfo.UNIQUE_ID);
                 autoIncrement = getAccumulator(tree, AccumInfo.AUTO_INC);
             } catch(PersistitException e) {
-                throw new PersistItErrorException(e);
+                throw new PersistitAdapterException(e);
             }
         }
         
@@ -242,7 +244,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
         void truncate() throws PersistitInterruptedException {
             setRowCount(0);
-            setAutoIncrement(0);
+            setAutoIncrement(0, true);
         }
 
         private Transaction getCurrentTrx() {

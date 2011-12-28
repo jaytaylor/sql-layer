@@ -38,7 +38,8 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
     static
     {
         String dmlLockProperty = System.getProperty("dml.lock");
-        DML_LOCK = dmlLockProperty == null || dmlLockProperty.equals("false");
+        // FALSE by default
+        DML_LOCK = dmlLockProperty != null && dmlLockProperty.equals("true");
     }
 
     public static DXLReadWriteLockHook only() {
@@ -47,6 +48,10 @@ public final class DXLReadWriteLockHook implements DXLFunctionsHook {
 
     private DXLReadWriteLockHook() {
         // Having multiple of these introduces the possibility of a deadlock, for all the usual deadlocky reasons
+    }
+
+    public boolean isEnabled() {
+        return DML_LOCK;
     }
 
     @Override

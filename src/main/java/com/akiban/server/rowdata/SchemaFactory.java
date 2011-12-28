@@ -20,7 +20,7 @@ import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Table;
 import com.akiban.server.MemoryOnlyTableStatusCache;
-import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.PersistitAdapterException;
 import com.persistit.exception.PersistitInterruptedException;
 
 import java.util.HashMap;
@@ -51,7 +51,7 @@ public class SchemaFactory {
         try {
             rowDefCache.setAIS(ais);
         } catch(PersistitInterruptedException e) {
-            throw new PersistItErrorException(e);
+            throw new PersistitAdapterException(e);
         }
         return rowDefCache;
     }

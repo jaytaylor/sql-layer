@@ -25,7 +25,6 @@ import java.util.TreeMap;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
-import com.akiban.server.TableStatus;
 import com.akiban.server.TableStatusCache;
 import com.persistit.exception.PersistitInterruptedException;
 import org.slf4j.Logger;

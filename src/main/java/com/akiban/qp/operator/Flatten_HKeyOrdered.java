@@ -30,6 +30,114 @@ import java.util.*;
 
 import static com.akiban.qp.operator.API.FlattenOption.*;
 
+/**
+
+ <h1>Overview</h1>
+
+ Flatten_HKeyOrdered combines parent and child rows within a group to form a flattened row, containing all the fields of both rows. This implementation assumes that the rows being flattened are in hkey order. Rows whose type is other than the parent type or the child type are written to the output stream.
+
+ Flatten is an intra-group join, so join semantics can be specified, (inner join, left outer, right outer).
+
+ <h1>Arguments</h1>
+
+ <ul>
+
+ <li><b>RowType parentType:</b> Type of parent rows to be flattened.
+
+ <li><b>RowType childType:</b> Type of child rows to be flattened.
+
+ <li><b>JoinType:</b> Controls join semantics
+
+ <li><b>EnumSet<FlattenOption>:</b> other flatten options
+
+ </ul>
+
+ JoinType:
+
+ <ul>
+ <li>INNER_JOIN
+ <li>LEFT_JOIN
+ <li>RIGHT_JOIN
+ <li>FULL_JOIN
+ </ul>
+
+ FlattenOptions:
+
+ <ul>
+ <li>KEEP_PARENT: Copy parent rows to output.
+ <li>KEEP_CHILD: Copy child rows to output.
+ <li>LEFT_JOIN_SHORTENS_HKEY: If doing a left join, any generated row will have the hkey of its left row
+ </ul>
+
+ These options can be used individually or together.
+
+ LEFT_JOIN_SHORTENS_HKEY is only valid if doing a LEFT_JOIN. With it,
+ generated rows have the hkey of the left row, rather than of the right
+ row with null values. For instance, if doing a C-O join, a customer
+ with no orders will generate a C-O row with an HKey of
+ (cid, nllu) by default, but (cid) with LEFT_JOIN_SHORTENS_HKEY enabled.
+
+ parentType must be the immediate ancestor of childType. I.e., there
+ must not be any other type, T, such that parentType is the ancestor of
+ T, and T is the ancestor of childType.
+
+
+ <h1>Behavior</h1>
+
+ A row of parentType is recorded for later use, in processing child
+ rows.
+
+ A row of childType is flattened with the current parentType row and
+ written to output. The parent and child rows are written to the output
+ stream, in hkey order relative to the flattened row, under control of
+ the KEEP_PARENT and KEEP_CHILD flags.
+
+ Join semantics are implemented by tracking parents without children
+ (for left join), children without parents (for right join), and
+ parents with at least one child (for inner join). In the outer join
+ cases, the flattened row contains nulls for fields from the missing
+ row.
+
+ Rows of other types are passed through from the input stream to the
+ output stream.
+
+ <h1>Output</h1>
+
+ A flattened row contains all the fields of the parentType followed by
+ all the fields of the childType. For left and right joins, the fields
+ of the missing type are null.
+
+ When a parentType row and childType row are flattened, the hkey of the
+ flattened row is the same as that of the child, with nulls provided as
+ necessary in outerjoin cases. There is one exception to this: for a
+ left join row with null child LEFT_JOIN_SHORTENS_HKEY causes the
+ flattened row's hkey to be that of the parent. (This is useful in
+ processing group index updates, and is not expected to be used in an
+ execution plan resulting from a SELECT statement.)
+
+ <h1>Assumptions</h1>
+
+ The input stream is hkey-ordered, at least with respect to rows of
+ parentType and childType. For example, flattening Customer and Order
+ requires that each Customer is followed by all of its Orders (before
+ another Customer appears in the input), but does not require any
+ ordering among Customers.
+
+ h2. Performance
+
+ Flatten_HKeyOrdered does no IO. For each input row, the type is
+ determined, ancestry is checked, and for child rows, an output row is
+ generated.
+
+ h2. Memory Requirements
+
+ Rows are combined by creating a wrapper of input parent and child
+ rows, so while memory is consumed, there is no copying of fields from
+ one row to another. The operator stores up to three input rows at a
+ time.
+
+ */
+
 class Flatten_HKeyOrdered extends Operator
 {
     // Object interface

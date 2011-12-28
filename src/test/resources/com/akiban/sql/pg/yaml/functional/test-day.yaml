@@ -1,0 +1,26 @@
+# Test the DAY() function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
+---
+- Statement: select DAY('1999-12-15') from all_types;
+- output: [[15]]
+---
+- Include: all-datetime-schema.yaml
+---
+- Statement: select id,DAY(time_field),expected_DAY from datetime_matrix where DAY(time_field) is not null;
+- row_count: 0
+---
+- Statement: select id,DAY(timestamp_field),expected_DAY from datetime_matrix where DAY(timestamp_field) <> expected_DAY;
+- row_count: 0
+---
+- Statement: select id,DAY(date_field), expected_DAY from datetime_matrix where DAY(date_field) <> expected_DAY;
+- row_count: 0
+---
+- Statement: select DAY('A') from all_types;
+- output: [[null]]
+# ---
+# - Statement: select DAY(9999999) from all_types;
+# - output: [[null]]
+...

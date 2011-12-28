@@ -32,6 +32,121 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+/**
+
+ <h1>Overview</h1>
+
+ Aggregation_Partial applies a partial aggregation to rows. By partial
+ we mean that if the aggregation contains a GROUP BY, output rows will
+ be streamed out as soon as a change is detected in the GROUP BY
+ columns; no attempt is made to sort or hash values. This means that if
+ the incoming rows are not sorted by their GROUP BY columns, this
+ operator may output more than one aggregation per GROUP BY value. If
+ this happens, each aggregation happens independent of the others.
+
+ <h1>Arguments</h1>
+
+ <ul>
+
+ <li><b>input:</b> the input operator
+
+ <li><b>inputsIndex:</b> the first index of the input rows that
+ represents an input; indexes before this are GROUP BY
+ fields. Required: <i>0 <= inputsIndex < input.rowType().nFields()</i>
+
+ <li><b>aggregatorFactory:</b> a mapping of <i>String -> Aggregator</i>
+
+ <li><b>aggregatorNames:</b> a list of aggregator function to be given
+ to the factory. Required: <i>inputsIndex + aggregatorNames.size() ==
+ input.rowType().nFields()</i>
+
+ </ul>
+
+ <h1>Behavior</h1>
+
+ This operator takes as input a row which is interpreted as having two
+ sections: a GROUP BY section and an inputs section. These are
+ delimited by the <i>inputsIndex</i> argument, which specifies the
+ index of the first input. The operator also has a list of aggregator
+ functions (specified by the <i>aggregatorNames</i> list), one per
+ input.
+
+ For each input row of type <i>input.rowType()</i>, the
+ Aggregation_Partial's cursor applies each input to its appropriate
+ aggregator. When the cursor notices a change in any of the GROUP BY
+ columns, or when the input cursor is finished, the aggregation cursor
+ outputs a row with the GROUP BY columns and the result of each
+ aggregation.
+
+ <h2>Example</h2>
+
+ Let's say we have a table describing various SKUs in warehouses. Each
+ warehouse has a category for SKUs, but these categories are not unique
+ among all warehouses. We want to get the sum, min and max price of
+ each category in each warehouse.
+
+ <i>SELECT warehouse, product_category, SUM(price), MIN(price), MAX(price) FROM products GROUP BY warehouse, product_category</i>
+
+ The input rows to the Aggregation_Partial cursor would be something like:
+
+ <table>
+ <tr><td> warehouse </td><td> product_category </td><td> price </td><td> price </td><td> price </td><td> notes </td></tr>
+ <tr><td> 0001 </td><td> AAA </td><td>  5.00 </td><td>  5.00 </td><td>  5.00 </td><td> sku 1 </td></tr>
+ <tr><td> 0001 </td><td> AAA </td><td> 10.00 </td><td> 10.00 </td><td> 10.00 </td><td> sku 2 </td></tr>
+ <tr><td> 0002 </td><td> AAA </td><td>  7.00 </td><td>  7.00 </td><td>  7.00 </td><td> sku 3 </td></tr>
+ <tr><td> 0002 </td><td> AAA </td><td>  3.00 </td><td>  3.00 </td><td>  3.00 </td><td> sku 4 </td></tr>
+ <tr><td> 0002 </td><td> BBB </td><td> 11.00 </td><td> 11.00 </td><td> 11.00 </td><td> sku 5 </td></tr>
+ </table>
+
+ The <i>inputsIndex</i> here is <i>2</i>. Note that the "price" column has been repeated three times, once for each aggregate function. In this case, the input rows are already ordered by their GROUP BY columns; if we knew this were the case (due to another operator's ordering), this partial aggregation would also be a full aggregation.
+
+ The output rows would look like:
+
+ <table>
+ <tr><td> warehouse </td><td> product_category </td><td> SUM(price) </td><td> MIN(price) </td><td> MAX(price) </td></tr>
+ <tr><td> 0001 </td><td> AAA </td><td> 15.00 </td><td>  5.00 </td><td> 10.00 </td></tr>
+ <tr><td> 0002 </td><td> AAA </td><td> 10.00 </td><td>  3.00 </td><td>  7.00 </td></tr>
+ <tr><td> 0002 </td><td> BBB </td><td> 11.00 </td><td> 11.00 </td><td> 11.00 </td></tr>
+ </table>
+
+ <h2>Notes</h2>
+
+ If there are no input rows, behavior depends on
+ the <i>inputIndex</i>. If it is 0 (no GROUP BY) columns, this
+ Aggregation_Partial will not output any rows. If <i>inputIndex > 0</i>
+ (there is a GROUP BY), a single row will be outputted with all NULL
+ values. This is due to the SQL spec.
+
+ This operator cannot do something like an average directly. Instead,
+ the operator tree would use this operator to get a SUM and COUNT of
+ rows, and another operator would be responsible for dividing them to
+ get the average.
+
+ <h1>Output</h1>
+
+ All input rows are swallowed. Output rows are as described above. All
+ rows from the incoming operator with a type other
+ than <i>input.rowType()</i> are passed through unchanged.
+
+ <h1>Assumptions</h1>
+
+ None; but if you want a full aggregation, it is up to you to pre-order
+ the rows by their GROUP BY columns. If an aggregator is not amenable
+ to this piecemeal aggregation, you should not use it with a partial
+ aggregation (none of the aggregators we plan on writing have this
+ problem).
+
+ <h1>Performance</h1>
+
+ Partially dictated by aggregators, though expected to be
+ minimal. Comparison of GROUP BY columns is O(N).
+
+ <h1>Memory requirements</h1>
+
+ Constant space unless output rows are shared and can't be reused.
+
+ */
+
 final class Aggregate_Partial extends Operator
 {
 
@@ -46,7 +161,7 @@ final class Aggregate_Partial extends Operator
         return new AggregateCursor(
                 adapter,
                 inputOperator.cursor(adapter),
-                inputOperator.rowType(),
+                inputRowType,
                 aggregatorFactories,
                 aggregators,
                 inputsIndex,
@@ -72,12 +187,13 @@ final class Aggregate_Partial extends Operator
 
     // AggregationOperator interface
 
-    public Aggregate_Partial(Operator inputOperator, int inputsIndex, List<AggregatorFactory> aggregatorFactories) {
+    public Aggregate_Partial(Operator inputOperator, RowType inputRowType, int inputsIndex, List<AggregatorFactory> aggregatorFactories) {
         this(
                 inputOperator,
+                inputRowType,
                 inputsIndex,
                 aggregatorFactories,
-                inputOperator.rowType().schema().newAggregateType(inputOperator.rowType(), inputsIndex, aggregatorFactories)
+                inputRowType.schema().newAggregateType(inputRowType, inputsIndex, aggregatorFactories)
         );
     }
 
@@ -97,8 +213,9 @@ final class Aggregate_Partial extends Operator
 
     // package-private (for testing)
 
-    Aggregate_Partial(Operator inputOperator, int inputsIndex, List<AggregatorFactory> aggregatorFactories, AggregatedRowType outputType) {
+    Aggregate_Partial(Operator inputOperator, RowType inputRowType, int inputsIndex, List<AggregatorFactory> aggregatorFactories, AggregatedRowType outputType) {
         this.inputOperator = inputOperator;
+        this.inputRowType = inputRowType;
         this.inputsIndex = inputsIndex;
         this.aggregatorFactories = new ArrayList<AggregatorFactory>(aggregatorFactories);
         this.outputType = outputType;
@@ -108,15 +225,15 @@ final class Aggregate_Partial extends Operator
     // private methods
 
     private void validate() {
-        ArgumentValidation.isBetween("inputsIndex", 0, inputsIndex, inputOperator.rowType().nFields()+1);
-        if (inputsIndex + aggregatorFactories.size() != inputOperator.rowType().nFields()) {
+        if (inputOperator == null || inputRowType == null || outputType == null)
+            throw new NullPointerException();
+        ArgumentValidation.isBetween("inputsIndex", 0, inputsIndex, inputRowType.nFields()+1);
+        if (inputsIndex + aggregatorFactories.size() != inputRowType.nFields()) {
             throw new IllegalArgumentException(
                     String.format("inputsIndex(=%d) + aggregatorNames.size(=%d) != inputRowType.nFields(=%d)",
-                            inputsIndex, aggregatorFactories.size(), inputOperator.rowType().nFields()
+                            inputsIndex, aggregatorFactories.size(), inputRowType.nFields()
             ));
         }
-        if (outputType == null)
-            throw new NullPointerException();
     }
     
     // class state
@@ -125,6 +242,7 @@ final class Aggregate_Partial extends Operator
     // object state
 
     private final Operator inputOperator;
+    private final RowType inputRowType;
     private final AggregatedRowType outputType;
     private final int inputsIndex;
     private final List<AggregatorFactory> aggregatorFactories;

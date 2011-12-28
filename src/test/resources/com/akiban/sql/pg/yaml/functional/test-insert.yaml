@@ -27,7 +27,7 @@
 ---
 - Statement: SELECT (bigint_unsigned_field) from all_types
 - output: [[0], [1], [9223372036854775807]]
-- output_types: [BIGINT]
+- output_types: !select-engine {it:[NUMERIC], sys-aksql:[DECIMAL]}
 ---
 - Statement: DELETE from all_types
 

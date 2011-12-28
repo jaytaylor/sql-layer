@@ -54,10 +54,7 @@ import com.google.inject.Inject;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static com.akiban.qp.operator.API.ancestorLookup_Default;
 import static com.akiban.qp.operator.API.indexScan_Default;
@@ -77,6 +74,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         if ((columnSelector != null) && !rowDef.table().getGroupIndexes().isEmpty()) {
             throw new RuntimeException("group index maintence won't work with partial rows");
         }
+        BitSet changedColumnPositions = changedColumnPositions(rowDef, oldRowData, newRowData);
 
         PersistitAdapter adapter =
             new PersistitAdapter(SchemaCache.globalSchema(ais), persistitStore, treeService, session, config);
@@ -106,21 +104,26 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         UpdatePlannable updateOp = com.akiban.qp.operator.API.update_Default(scanOp, updateFunction);
 
         UPDATE_MAINTENANCE.in();
-        maintainGroupIndexes(
-                session, ais, adapter,
-                oldRowData, OperatorStoreGIHandler.forTable(adapter, userTable),
-                OperatorStoreGIHandler.Action.DELETE
-        );
+
+        maintainGroupIndexes(session,
+                             ais,
+                             adapter,
+                             oldRowData,
+                             changedColumnPositions,
+                             OperatorStoreGIHandler.forTable(adapter, userTable),
+                             OperatorStoreGIHandler.Action.DELETE);
 
         runCursor(oldRowData, rowDef, updateOp, adapter);
 
-        maintainGroupIndexes(
-                session, ais, adapter,
-                newRowData, OperatorStoreGIHandler.forTable(adapter, userTable),
-                OperatorStoreGIHandler.Action.STORE
-        );
-        UPDATE_MAINTENANCE.out();
+        maintainGroupIndexes(session,
+                             ais,
+                             adapter,
+                             newRowData,
+                             changedColumnPositions,
+                             OperatorStoreGIHandler.forTable(adapter, userTable),
+                             OperatorStoreGIHandler.Action.STORE);
 
+        UPDATE_MAINTENANCE.out();
         UPDATE_TOTAL.out();
     }
 
@@ -138,11 +141,12 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                                  config);
         UserTable uTable = ais.getUserTable(rowData.getRowDefId());
         super.writeRow(session, rowData);
-        maintainGroupIndexes(
-                session, ais, adapter,
-                rowData, OperatorStoreGIHandler.forTable(adapter, uTable),
-                OperatorStoreGIHandler.Action.STORE
-        );
+        maintainGroupIndexes(session,
+                             ais,
+                             adapter,
+                             rowData, null,
+                             OperatorStoreGIHandler.forTable(adapter, uTable),
+                             OperatorStoreGIHandler.Action.STORE);
 
         INSERT_MAINTENANCE.out();
         INSERT_TOTAL.out();
@@ -152,7 +156,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     public void deleteRow(Session session, RowData rowData) throws PersistitException {
         DELETE_TOTAL.in();
         DELETE_MAINTENANCE.in();
-
         AkibanInformationSchema ais = aisHolder.getAis();
         PersistitAdapter adapter =
             new PersistitAdapter(SchemaCache.globalSchema(ais),
@@ -162,13 +165,14 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                                  config);
         UserTable uTable = ais.getUserTable(rowData.getRowDefId());
 
-        maintainGroupIndexes(
-                session, ais, adapter,
-                rowData, OperatorStoreGIHandler.forTable(adapter, uTable),
-                OperatorStoreGIHandler.Action.DELETE
-        );
+        maintainGroupIndexes(session,
+                             ais,
+                             adapter,
+                             rowData,
+                             null,
+                             OperatorStoreGIHandler.forTable(adapter, uTable),
+                             OperatorStoreGIHandler.Action.DELETE);
         super.deleteRow(session, rowData);
-
         DELETE_MAINTENANCE.out();
         DELETE_TOTAL.out();
     }
@@ -240,9 +244,9 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             Session session,
             AkibanInformationSchema ais, PersistitAdapter adapter,
             RowData rowData,
+            BitSet columnDifferences,
             OperatorStoreGIHandler handler,
-            OperatorStoreGIHandler.Action action
-    )
+            OperatorStoreGIHandler.Action action)
     throws PersistitException
     {
         UserTable userTable = ais.getUserTable(rowData.getRowDefId());
@@ -265,12 +269,15 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
             for (GroupIndex groupIndex : optionallyOrderGroupIndexes(branchIndexes)) {
                 assert !groupIndex.isUnique() : "unique GI: " + groupIndex;
-                OperatorStoreMaintenance plan = groupIndexCreationPlan(
-                        ais,
-                        groupIndex,
-                        adapter.schema().userTableRowType(userTable)
-                );
-                plan.run(action, persistitHKey, rowData, adapter, handler);
+                if (columnDifferences == null || groupIndex.columnsOverlap(userTable, columnDifferences)) {
+                    OperatorStoreMaintenance plan = groupIndexCreationPlan(
+                            ais,
+                            groupIndex,
+                            adapter.schema().userTableRowType(userTable));
+                    plan.run(action, persistitHKey, rowData, adapter, handler);
+                } else {
+                    SKIP_MAINTENANCE.hit();
+                }
             }
         } finally {
             adapter.returnExchange(hEx);
@@ -319,6 +326,37 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
     }
 
+    private static BitSet changedColumnPositions(RowDef rowDef, RowData a, RowData b)
+    {
+        int fields = rowDef.getFieldCount();
+        BitSet differences = new BitSet(fields);
+        for (int f = 0; f < fields; f++) {
+            long aloc = rowDef.fieldLocation(a, f);
+            long bloc = rowDef.fieldLocation(b, f);
+            differences.set(f,
+                            !bytesEqual(a.getBytes(),
+                                        (int) aloc,
+                                        (int) (aloc >>> 32),
+                                        b.getBytes(),
+                                        (int) bloc,
+                                        (int) (bloc >>> 32)));
+        }
+        return differences;
+    }
+
+    static boolean bytesEqual(byte[] a, int aoffset, int asize, byte[] b, int boffset, int bsize)
+    {
+        if (asize != bsize) {
+            return false;
+        }
+        for (int i = 0; i < asize; i++) {
+            if (a[i + aoffset] != b[i + boffset]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     // object state
     private final ConfigurationService config;
     private final TreeService treeService;
@@ -333,6 +371,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     private static final Tap.InOutTap INSERT_MAINTENANCE = Tap.createTimer("write: write_maintenance");
     private static final Tap.InOutTap UPDATE_MAINTENANCE = Tap.createTimer("write: update_maintenance");
     private static final Tap.InOutTap DELETE_MAINTENANCE = Tap.createTimer("write: delete_maintenance");
+    private static final Tap.PointTap SKIP_MAINTENANCE = Tap.createCount("write: skip_maintenance");
 
 
     // nested classes

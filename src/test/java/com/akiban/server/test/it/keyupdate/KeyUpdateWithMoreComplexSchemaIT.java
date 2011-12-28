@@ -25,6 +25,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.concurrent.Callable;
 
 import static com.akiban.server.test.it.keyupdate.Schema.*;
 import static junit.framework.Assert.*;
@@ -354,71 +355,65 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
     private void checkDB()
         throws Exception
     {
-        Transaction txn = treeService().getTransaction(session());
-        txn.begin();
-        try {
-            // Records
-            RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
-            RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
-            testStore.traverse(session(), groupRowDef, testVisitor, realVisitor);
-            assertEquals(testVisitor.records(), realVisitor.records());
-            // Check indexes
-            CollectingIndexKeyVisitor indexVisitor;
-            // Customer PK index - skip. This index is hkey equivalent, and we've already checked the full records.
-            // Order PK index
-            indexVisitor = new CollectingIndexKeyVisitor();
-            testStore.traverse(session(), orderRowDef.getPKIndex(), indexVisitor);
-            assertEquals(orderPKIndex(testVisitor.records()), indexVisitor.records());
-            // Item PK index
-            indexVisitor = new CollectingIndexKeyVisitor();
-            testStore.traverse(session(), itemRowDef.getPKIndex(), indexVisitor);
-            assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
-            txn.commit();
-        }
-        finally {
-            txn.end();
-        }
+        transactionally(new Callable<Void>() {
+            public Void call() throws Exception {
+                // Records
+                RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
+                RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
+                testStore.traverse(session(), groupRowDef, testVisitor, realVisitor);
+                assertEquals(testVisitor.records(), realVisitor.records());
+                // Check indexes
+                CollectingIndexKeyVisitor indexVisitor;
+                // Customer PK index - skip. This index is hkey equivalent, and we've already checked the full records.
+                // Order PK index
+                indexVisitor = new CollectingIndexKeyVisitor();
+                testStore.traverse(session(), orderRowDef.getPKIndex(), indexVisitor);
+                assertEquals(orderPKIndex(testVisitor.records()), indexVisitor.records());
+                // Item PK index
+                indexVisitor = new CollectingIndexKeyVisitor();
+                testStore.traverse(session(), itemRowDef.getPKIndex(), indexVisitor);
+                assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
+                return null;
+            }
+        });
     }
 
     private void checkInitialState() throws Exception
     {
-        Transaction txn = treeService().getTransaction(session());
-        txn.begin();
-        try {
-            RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
-            RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
-            testStore.traverse(session(), groupRowDef, testVisitor, realVisitor);
-            Iterator<TreeRecord> expectedIterator = testVisitor.records().iterator();
-            Iterator<TreeRecord> actualIterator = realVisitor.records().iterator();
-            Map<Integer, Integer> expectedCounts = new HashMap<Integer, Integer>();
-            expectedCounts.put(customerRowDef.getRowDefId(), 0);
-            expectedCounts.put(orderRowDef.getRowDefId(), 0);
-            expectedCounts.put(itemRowDef.getRowDefId(), 0);
-            Map<Integer, Integer> actualCounts = new HashMap<Integer, Integer>();
-            actualCounts.put(customerRowDef.getRowDefId(), 0);
-            actualCounts.put(orderRowDef.getRowDefId(), 0);
-            actualCounts.put(itemRowDef.getRowDefId(), 0);
-            while (expectedIterator.hasNext() && actualIterator.hasNext()) {
-                TreeRecord expected = expectedIterator.next();
-                TreeRecord actual = actualIterator.next();
-                assertEquals(expected, actual);
-                assertEquals(hKey((TestRow) expected.row()), actual.hKey());
-                checkInitialState(actual.row());
-                expectedCounts.put(expected.row().getTableId(), expectedCounts.get(expected.row().getTableId()) + 1);
-                actualCounts.put(actual.row().getTableId(), actualCounts.get(actual.row().getTableId()) + 1);
+        transactionally(new Callable<Void>() {
+            public Void call() throws Exception {
+                RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
+                RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
+                testStore.traverse(session(), groupRowDef, testVisitor, realVisitor);
+                Iterator<TreeRecord> expectedIterator = testVisitor.records().iterator();
+                Iterator<TreeRecord> actualIterator = realVisitor.records().iterator();
+                Map<Integer, Integer> expectedCounts = new HashMap<Integer, Integer>();
+                expectedCounts.put(customerRowDef.getRowDefId(), 0);
+                expectedCounts.put(orderRowDef.getRowDefId(), 0);
+                expectedCounts.put(itemRowDef.getRowDefId(), 0);
+                Map<Integer, Integer> actualCounts = new HashMap<Integer, Integer>();
+                actualCounts.put(customerRowDef.getRowDefId(), 0);
+                actualCounts.put(orderRowDef.getRowDefId(), 0);
+                actualCounts.put(itemRowDef.getRowDefId(), 0);
+                while (expectedIterator.hasNext() && actualIterator.hasNext()) {
+                    TreeRecord expected = expectedIterator.next();
+                    TreeRecord actual = actualIterator.next();
+                    assertEquals(expected, actual);
+                    assertEquals(hKey((TestRow) expected.row()), actual.hKey());
+                    checkInitialState(actual.row());
+                    expectedCounts.put(expected.row().getTableId(), expectedCounts.get(expected.row().getTableId()) + 1);
+                    actualCounts.put(actual.row().getTableId(), actualCounts.get(actual.row().getTableId()) + 1);
+                }
+                assertEquals(3, expectedCounts.get(customerRowDef.getRowDefId()).intValue());
+                assertEquals(9, expectedCounts.get(orderRowDef.getRowDefId()).intValue());
+                assertEquals(27, expectedCounts.get(itemRowDef.getRowDefId()).intValue());
+                assertEquals(3, actualCounts.get(customerRowDef.getRowDefId()).intValue());
+                assertEquals(9, actualCounts.get(orderRowDef.getRowDefId()).intValue());
+                assertEquals(27, actualCounts.get(itemRowDef.getRowDefId()).intValue());
+                assertTrue(!expectedIterator.hasNext() && !actualIterator.hasNext());
+                return null;
             }
-            assertEquals(3, expectedCounts.get(customerRowDef.getRowDefId()).intValue());
-            assertEquals(9, expectedCounts.get(orderRowDef.getRowDefId()).intValue());
-            assertEquals(27, expectedCounts.get(itemRowDef.getRowDefId()).intValue());
-            assertEquals(3, actualCounts.get(customerRowDef.getRowDefId()).intValue());
-            assertEquals(9, actualCounts.get(orderRowDef.getRowDefId()).intValue());
-            assertEquals(27, actualCounts.get(itemRowDef.getRowDefId()).intValue());
-            assertTrue(!expectedIterator.hasNext() && !actualIterator.hasNext());
-            txn.commit();
-        }
-        finally {
-            txn.end();
-        }
+        });
     }
 
     private void checkInitialState(NewRow row)
@@ -587,43 +582,34 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
         return row;
     }
 
-    private void dbInsert(TestRow row) throws Exception
+    private void dbInsert(final TestRow row) throws Exception
     {
-        Transaction txn = treeService().getTransaction(session());
-        txn.begin();
-        try {
-            testStore.writeRow(session(), row);
-            txn.commit();
-        }
-        finally {
-            txn.end();
-        }
+        transactionally(new Callable<Void>() {
+            public Void call() throws Exception {
+                testStore.writeRow(session(), row);
+                return null;
+            }
+        });
     }
 
-    private void dbUpdate(TestRow oldRow, TestRow newRow) throws Exception
+    private void dbUpdate(final TestRow oldRow, final TestRow newRow) throws Exception
     {
-        Transaction txn = treeService().getTransaction(session());
-        txn.begin();
-        try {
-            testStore.updateRow(session(), oldRow, newRow, null);
-            txn.commit();
-        }
-        finally {
-            txn.end();
-        }
+        transactionally(new Callable<Void>() {
+           public Void call() throws Exception {
+                testStore.updateRow(session(), oldRow, newRow, null);
+                return null;
+           }
+        });
     }
 
-    private void dbDelete(TestRow row) throws Exception
+    private void dbDelete(final TestRow row) throws Exception
     {
-        Transaction txn = treeService().getTransaction(session());
-        txn.begin();
-        try {
-            testStore.deleteRow(session(), row);
-            txn.commit();
-        }
-        finally {
-            txn.end();
-        }
+        transactionally(new Callable<Void>() {
+            public Void call() throws Exception {
+                testStore.deleteRow(session(), row);
+                return null;
+            }
+        });
     }
 
     private HKey hKey(TestRow row)

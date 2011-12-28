@@ -1,0 +1,143 @@
+# testing Support IS NOT TRUE|FALSE|UNKNOWN
+# This function tests a value against a boolean value, where boolean_value can be TRUE, FALSE, or UNKNOWN. 
+#A NULL value is defined as unknown.
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field, boolean_field) VALUES (1, null)
+---
+- Statement: INSERT INTO all_types (bigint_field, boolean_field) VALUES (2, 1)
+---
+- Statement: INSERT INTO all_types (bigint_field, boolean_field) VALUES (3, 0)
+---
+- Statement: INSERT INTO all_types (bigint_field, boolean_field) VALUES (4, -1)
+---
+- Statement: INSERT INTO all_types (bigint_field, boolean_field) VALUES (5, 999)
+
+# ---
+# - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS TRUE and bigint_field = 1
+# - output: [[null]]
+# ---
+# - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS NOT TRUE and bigint_field = 1
+# - output: [[null]]
+# ---
+# - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS FALSE and bigint_field = 1
+# - output: [[null]]
+# ---
+# - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS NOT FALSE and bigint_field = 1
+# - output: [[null]]
+# ---
+# - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS UNKNOWN and bigint_field = 1
+# - output: [[null]]
+# ---
+# - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS NOT UNKNOWN and bigint_field = 1
+# - output: [[null]
+# ---
+# - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS TRUE and bigint_field = 2
+# - output: [[true]]
+# ---
+# - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS NOT TRUE and bigint_field = 2
+# - output: [[false]]
+# ---
+# - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS FALSE and bigint_field = 2
+# - output: [[false]]
+# ---
+# - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS NOT FALSE and bigint_field = 2
+# - output: [[true]]
+# ---
+# - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS UNKNOWN and bigint_field = 2
+# - output: [[false]]
+# ---
+# - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS NOT UNKNOWN and bigint_field = 2
+# - output: [[true]]
+# ---
+# - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS TRUE and bigint_field = 3
+# - output: [[true]]
+# ---
+# - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS NOT TRUE and bigint_field = 3
+# - output: [[false]]
+# ---
+# - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS FALSE and bigint_field = 3
+# - output: [[false]]
+# ---
+# - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS NOT FALSE and bigint_field = 3
+# - output: [[true]]
+# ---
+# - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS UNKNOWN and bigint_field = 3
+# - output: [[false]]
+# ---
+# - Statement: SELECT boolean_field FROM all_types WHERE boolean_field IS NOT UNKNOWN and bigint_field = 3
+# - output: [[true]]
+---
+- Statement: SELECT 1 IS TRUE FROM all_types
+- output: [[true],[true],[true],[true],[true]]
+---
+- Statement: SELECT 0 IS NOT TRUE FROM all_types
+- output: [[true],[true],[true],[true],[true]]
+---
+- Statement: SELECT 0 IS FALSE FROM all_types
+- output: [[true],[true],[true],[true],[true]]
+---
+- Statement: SELECT 1 IS NOT FALSE FROM all_types
+- output: [[true],[true],[true],[true],[true]]
+--- #bug 906989
+# - Statement: SELECT UNKNOWN IS UNKNOWN FROM all_types
+# - output: [[true],[true],[true],[true],[true]]
+# ---
+- Statement: SELECT 1 IS NOT UNKNOWN FROM all_types
+- output: [[true],[true],[true],[true],[true]]
+---
+- Statement: SELECT 0 IS TRUE FROM all_types
+- output: [[false],[false],[false],[false],[false]]
+---
+- Statement: SELECT 1 IS NOT TRUE FROM all_types
+- output: [[false],[false],[false],[false],[false]]
+---
+- Statement: SELECT 1 IS FALSE FROM all_types
+- output: [[false],[false],[false],[false],[false]]
+---
+- Statement: SELECT 0 IS NOT FALSE FROM all_types
+- output: [[false],[false],[false],[false],[false]]
+---
+- Statement: SELECT 0 IS UNKNOWN FROM all_types
+- output: [[false],[false],[false],[false],[false]]
+---
+# - Statement: SELECT UNKNOWN IS NOT UNKNOWN FROM all_types
+# - output: [[false],[false],[false],[false],[false]]
+# ---
+- Statement: SELECT (1+0-1) IS TRUE FROM all_types
+- output: [[false],[false],[false],[false],[false]]
+# ---
+# - Statement: SELECT CAST ( 1 ) as BOOLEAN FROM all_types
+# - output: [[true],[true],[true],[true],[true]]
+# ---
+# - Statement: SELECT UNKNOWN IS UNKNOWN FROM all_types
+# - output: [[true],[true],[true],[true],[true]]
+---
+- Statement: SELECT null IS UNKNOWN FROM all_types
+- output: [[true],[true],[true],[true],[true]]
+---
+- Statement: SELECT 999 IS TRUE FROM all_types
+- output: [[true],[true],[true],[true],[true]]
+---
+- Statement: SELECT 1 FROM all_types where 999 IS TRUE;
+- output: [[1],[1],[1],[1],[1]]
+---
+- Statement: SELECT ? IS TRUE FROM all_types
+- params: [[true]]
+- output: [[true],[true],[true],[true],[true]]
+# ---
+# - CreateTable: t (boolean_field boolean)
+# ---
+# - Statement: INSERT INTO t (boolean_field) VALUES (null)  
+# ---
+# - Statement: SELECT boolean_field FROM t WHERE boolean_field IS TRUE
+# - output: [[null]]
+# ---
+# - Statement: DELETE FROM t
+# ---  
+# - Statement: INSERT INTO t (boolean_field) VALUES (1)
+# --- #bug 906991
+# - Statement: SELECT boolean_field FROM t WHERE boolean_field IS TRUE
+# - output: [[null]]
+...

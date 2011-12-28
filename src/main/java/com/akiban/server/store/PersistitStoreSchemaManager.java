@@ -72,7 +72,7 @@ import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ParseException;
-import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.ProtectedTableDDLException;
 import com.akiban.server.error.ReferencedTableException;
@@ -152,7 +152,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private final Store store;
     private final TreeService treeService;
     private final ConfigurationService config;
-    private AtomicLong schemaGeneration;
+    private AtomicLong updateTimestamp;
     private int maxAISBufferSize;
     private ByteBuffer aisByteBuffer;
 
@@ -226,7 +226,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         try {
             commitAISChange(session, merge.getAIS(), schemaName);
         } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
+            throw new PersistitAdapterException(ex);
         }
             
         return newTable.getName();
@@ -275,7 +275,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         try {
             commitAISChange(session, newAIS, schemaName);
         } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
+            throw new PersistitAdapterException(ex);
         }
         return newTable.getName();
     }
@@ -318,7 +318,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 commitAISChange(session, newAIS, newName.getSchemaName());
             }
         } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
+            throw new PersistitAdapterException(ex);
         }
     }
 
@@ -455,7 +455,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             try {
                 commitAISChange(session, newAIS, schema);
             } catch (PersistitException ex) {
-                throw new PersistItErrorException (ex);
+                throw new PersistitAdapterException(ex);
             }
         }
         
@@ -499,7 +499,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             try {
                 commitAISChange(session, newAIS, schema);
             } catch (PersistitException ex) {
-                throw new PersistItErrorException (ex);
+                throw new PersistitAdapterException(ex);
             }
         }
     }
@@ -544,14 +544,14 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             // Success, remaining cleanup
             deleteTableStatuses(tables);
         } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
+            throw new PersistitAdapterException(ex);
         }
     }
 
     private void deleteTableStatuses(List<TableName> tables) throws PersistitException {
         for(final TableName tn : tables) {
             UserTable table = getAis().getUserTable(tn);
-            if (table != null) {
+            if(table != null) {
                 treeService.getTableStatusCache().drop(table.getTableId());
             }
         }
@@ -679,16 +679,21 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
         return ddlList;
     }
-    
+
+    @Override
+    public long getUpdateTimestamp() {
+        return updateTimestamp.get();
+    }
+
     @Override
     public int getSchemaGeneration() {
-        long ts = schemaGeneration.get();
+        long ts = getUpdateTimestamp();
         return (int) ts ^ (int) (ts >>> 32);
     }
     
     @Override
-    public void forceNewGeneration() {
-        schemaGeneration.set(treeService.getDb().getCurrentTimestamp());
+    public void forceNewTimestamp() {
+        updateTimestamp.set(treeService.getDb().getCurrentTimestamp());
     }
 
     @Override
@@ -703,7 +708,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     @Override
     public void start() {
-        schemaGeneration = new AtomicLong();
+        updateTimestamp = new AtomicLong();
         maxAISBufferSize = Integer.parseInt(config.getProperty(MAX_AIS_SIZE_PROPERTY));
         if(maxAISBufferSize < 0) {
             LOG.warn("Clamping property "+MAX_AIS_SIZE_PROPERTY+" to 0");
@@ -714,7 +719,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         try {
             afterStart();
         } catch (PersistitException e) {
-            throw new PersistItErrorException(e);
+            throw new PersistitAdapterException(e);
         } catch (IOException e) {
             throw new SchemaLoadIOException(e.getMessage());
         }
@@ -723,7 +728,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public void stop() {
         this.aish.setAis(null);
-        this.schemaGeneration = null;
+        this.updateTimestamp = null;
         this.maxAISBufferSize = 0;
         this.aisByteBuffer = null;
     }
@@ -790,7 +795,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         rowDefCache.clear();
         treeService.getTableStatusCache().detachAIS();
         rowDefCache.setAIS(newAis);
-        forceNewGeneration();
+        forceNewTimestamp();
         aish.setAis(newAis);
     }
 

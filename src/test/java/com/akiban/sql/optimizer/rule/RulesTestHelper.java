@@ -18,7 +18,6 @@ package com.akiban.sql.optimizer.rule;
 // TODO: Think about all this.
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.TableStatus;
 import com.akiban.server.rowdata.RowDef;
 
 import org.yaml.snakeyaml.Yaml;

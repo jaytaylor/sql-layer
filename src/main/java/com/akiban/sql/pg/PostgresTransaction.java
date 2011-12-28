@@ -15,8 +15,9 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.error.TransactionInProgressException;
-import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.error.TransactionReadOnlyException;
 import com.akiban.server.service.session.Session;
@@ -24,9 +25,6 @@ import com.akiban.server.service.session.Session;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 import java.io.InterruptedIOException;
@@ -53,13 +51,7 @@ public class PostgresTransaction
     }
 
     protected void handlePersistitException(PersistitException ex) {
-        Throwable cause = ex.getCause();
-        if ((cause instanceof InterruptedIOException) ||
-            (cause instanceof InterruptedException))
-            // Also check session.isCurrentQueryCanceled()?
-            throw new QueryCanceledException(session);
-        else
-            throw new PersistItErrorException(ex);
+        PersistitAdapter.handlePersistitException(session, ex);
     }
 
     public boolean isReadOnly() {

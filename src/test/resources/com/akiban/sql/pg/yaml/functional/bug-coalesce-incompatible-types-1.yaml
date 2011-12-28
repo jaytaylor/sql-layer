@@ -1,9 +1,0 @@
-# Coalescing incompatible types produces wrong exception
----
-- CreateTable: t (varchar_field varchar(32), integer_field integer)
----
-- Statement: INSERT INTO t VALUES ('abc', 123)
----
-- Statement: SELECT COALESCE(varchar_field, integer_field) FROM t
-- error: [42000]
-...
