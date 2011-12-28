@@ -53,6 +53,7 @@ public class PostgresValueEncoder
     }
 
     public ByteArrayOutputStream getByteStream() {
+        printWriter.flush();
         return byteStream;
     }
 
@@ -80,7 +81,7 @@ public class PostgresValueEncoder
 
     /** Reset the contents of the buffer. */
     public void reset() {
-        byteStream.reset();
+        getByteStream().reset();
     }
     
     /** Append the given value to the buffer. */
@@ -89,7 +90,7 @@ public class PostgresValueEncoder
         if (binary) {
             assert (type.getAkType() == AkType.VARBINARY);
             ByteSource asBytes = Extractors.getByteSourceExtractor().getObject(value);
-            byteStream.write(asBytes.byteArray(), asBytes.byteArrayOffset(), asBytes.byteArrayLength());
+            getByteStream().write(asBytes.byteArray(), asBytes.byteArrayOffset(), asBytes.byteArrayLength());
         }
         else {
             value.appendAsString(appender, Quote.NONE);
