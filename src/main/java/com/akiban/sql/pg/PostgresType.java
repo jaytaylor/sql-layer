@@ -146,12 +146,13 @@ public class PostgresType
     private int oid;
     private short length;
     private int modifier;
-    private LongExtractor converter;
+    private AkType akType;
 
-    public PostgresType(int oid, short length, int modifier) {
+    public PostgresType(int oid, short length, int modifier, AkType akType) {
         this.oid = oid;
         this.length = length;
         this.modifier = modifier;
+        this.akType = akType;
     }
 
     public int getOid() {
@@ -162,6 +163,9 @@ public class PostgresType
     }
     public int getModifier() {
         return modifier;
+    }
+    public AkType getAkType() {
+        return akType;
     }
 
     public static PostgresType fromAIS(Column aisColumn) {
@@ -199,7 +203,8 @@ public class PostgresType
         }
         else if ("U_BIGINT".equals(encoding))
             // Closest exact numeric type capable of holding 64-bit unsigned is DEC(20).
-            return new PostgresType(NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4);
+            return new PostgresType(NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4,
+                                    aisType.akType());
         else if ("DATE".equals(encoding))
             oid = DATE_TYPE_OID;
         else if ("TIME".equals(encoding))
@@ -243,14 +248,7 @@ public class PostgresType
             }
         }
 
-        PostgresType result = new PostgresType(oid, length, modifier);
-
-        // TODO: For now, these are the only ones needing special treatment.
-        // When we are better able to work with the encoder to get the
-        // raw bytes, can use this for all.
-        result.converter = Extractors.getLongExtractor(aisType.akType());
-
-        return result;
+        return new PostgresType(oid, length, modifier, aisType.akType());
     }
 
     public static PostgresType fromDerby(DataTypeDescriptor type)  {
@@ -260,92 +258,118 @@ public class PostgresType
 
         TypeId typeId = type.getTypeId();
 
-        LongExtractor converter = null;
+        AkType akType;
 
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
+            oid = INTERVAL_TYPE_OID;
+            akType = AkType.INTERVAL_MILLIS;
+            break;
         case TypeId.FormatIds.INTERVAL_YEAR_MONTH_ID:
             oid = INTERVAL_TYPE_OID;
+            akType = AkType.INTERVAL_MONTH;
             break;
         case TypeId.FormatIds.BIT_TYPE_ID:
             oid = BIT_TYPE_OID;
+            akType = AkType.INT;
             break;
         case TypeId.FormatIds.BOOLEAN_TYPE_ID:
             oid = BOOL_TYPE_OID;
+            akType = AkType.BOOL;
             break;
         case TypeId.FormatIds.CHAR_TYPE_ID:
             oid = CHAR_TYPE_OID;
+            akType = AkType.VARCHAR;
             break;
         case TypeId.FormatIds.DATE_TYPE_ID:
             oid = DATE_TYPE_OID;
-            converter = Extractors.getLongExtractor(AkType.DATE);
+            akType = AkType.DATE;
             break;
         case TypeId.FormatIds.DECIMAL_TYPE_ID:
         case TypeId.FormatIds.NUMERIC_TYPE_ID:
             oid = NUMERIC_TYPE_OID;
+            akType = AkType.DECIMAL;
             break;
         case TypeId.FormatIds.DOUBLE_TYPE_ID:
             oid = FLOAT8_TYPE_OID;
+            if (typeId.isUnsigned())
+                akType = AkType.U_DOUBLE;
+            else
+                akType = AkType.DOUBLE;
             break;
         case TypeId.FormatIds.INT_TYPE_ID:
             oid = INT4_TYPE_OID;
-            converter = Extractors.getLongExtractor(AkType.INT);
+            if (typeId.isUnsigned())
+                akType = AkType.U_INT;
+            else
+                akType = AkType.LONG;
             break;
         case TypeId.FormatIds.LONGINT_TYPE_ID:
-            // TODO: U_BIGINT is represented by BigInteger, so a
-            // LongExtractor won't work.  See comment above.
             if (typeId.isUnsigned())
-                return new PostgresType(NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4);
+                return new PostgresType(NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4,
+                                        AkType.U_BIGINT);
             oid = INT8_TYPE_OID;
-            converter = Extractors.getLongExtractor(AkType.INT);
+            akType = AkType.LONG;
             break;
         case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
             oid = TEXT_TYPE_OID;
+            akType = AkType.TEXT;
             break;
         case TypeId.FormatIds.LONGVARCHAR_TYPE_ID:
             oid = TEXT_TYPE_OID;
+            akType = AkType.TEXT;
             break;
         case TypeId.FormatIds.REAL_TYPE_ID:
             oid = FLOAT4_TYPE_OID;
+            if (typeId.isUnsigned())
+                akType = AkType.U_FLOAT;
+            else
+                akType = AkType.FLOAT;
             break;
         case TypeId.FormatIds.SMALLINT_TYPE_ID:
             oid = INT2_TYPE_OID;
             if (typeId == TypeId.YEAR_ID)
-                converter = Extractors.getLongExtractor(AkType.YEAR);
+                akType = AkType.YEAR;
             else
-                converter = Extractors.getLongExtractor(AkType.INT);
+                akType = AkType.INT;
             break;
         case TypeId.FormatIds.TIME_TYPE_ID:
             oid = TIME_TYPE_OID;
-            converter = Extractors.getLongExtractor(AkType.TIME);
+            akType = AkType.TIME;
             break;
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
             oid = TIMESTAMP_TYPE_OID;
             if (typeId == TypeId.DATETIME_ID)
-                converter = Extractors.getLongExtractor(AkType.DATETIME);
+                akType = AkType.DATETIME;
             else
                 // TODO: AkType.TIMESTAMP is MYSQL_TIMESTAMP, another
                 // way of representing seconds precision, not ISO
                 // timestamp with fractional seconds.
-                converter = Extractors.getLongExtractor(AkType.TIMESTAMP);
+                akType = AkType.TIMESTAMP;
             break;
         case TypeId.FormatIds.TINYINT_TYPE_ID:
             oid = INT2_TYPE_OID; // No INT1
+            akType = AkType.INT;
             break;
         case TypeId.FormatIds.VARBIT_TYPE_ID:
             oid = VARBIT_TYPE_OID;
+            akType = AkType.VARBINARY;
             break;
         case TypeId.FormatIds.BLOB_TYPE_ID:
             oid = TEXT_TYPE_OID;
+            akType = AkType.VARBINARY;
             break;
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
             oid = VARCHAR_TYPE_OID;
+            akType = AkType.VARCHAR;
             break;
         case TypeId.FormatIds.CLOB_TYPE_ID:
             oid = TEXT_TYPE_OID;
+            akType = AkType.TEXT;
             break;
         case TypeId.FormatIds.XML_TYPE_ID:
             oid = XML_TYPE_OID;
+            akType = AkType.TEXT;
             break;
         case TypeId.FormatIds.USERDEFINED_TYPE_ID:
             {
@@ -373,12 +397,7 @@ public class PostgresType
             length = (short)typeId.getMaximumMaximumWidth();
         }
         
-        PostgresType result = new PostgresType(oid, length, modifier);
-        
-        if (converter != null)
-            result.converter = converter;
-
-        return result;
+        return new PostgresType(oid, length, modifier, akType);
     }
 
     public static final DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
@@ -392,9 +411,6 @@ public class PostgresType
         try {
             if (binary) {
                 throw new UnsupportedCharsetException ("", "", "BINARY");
-            }
-            else if (converter != null) {
-                value = converter.asString((Long)value);
             }
             else if (value instanceof Date) {
                 DateFormat format = null;
@@ -420,10 +436,7 @@ public class PostgresType
     }
 
     public Object decodeParameter(String value) {
-        if ((converter != null) && (value != null))
-            return converter.getLong(value);
-        else
-            return value;
+        return value;
     }
 
 }

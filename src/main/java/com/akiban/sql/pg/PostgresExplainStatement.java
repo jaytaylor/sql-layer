@@ -15,8 +15,10 @@
 
 package com.akiban.sql.pg;
 
-import java.io.IOException;
+import com.akiban.server.types.AkType;
+
 import java.util.List;
+import java.io.IOException;
 
 /** SQL statement to explain another one. */
 public class PostgresExplainStatement implements PostgresStatement
@@ -34,7 +36,8 @@ public class PostgresExplainStatement implements PostgresStatement
                 maxlen = row.length();
         }
         colName = "OPERATORS";
-        colType = new PostgresType(PostgresType.VARCHAR_TYPE_OID, (short)-1, maxlen);
+        colType = new PostgresType(PostgresType.VARCHAR_TYPE_OID, (short)-1, maxlen,
+                                   AkType.VARCHAR);
     }
 
     @Override

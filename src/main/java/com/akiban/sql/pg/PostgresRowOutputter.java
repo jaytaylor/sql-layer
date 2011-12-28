@@ -16,6 +16,7 @@
 package com.akiban.sql.pg;
 
 import com.akiban.qp.row.Row;
+import com.akiban.server.types.ToObjectValueTarget;
 
 import java.io.IOException;
 
