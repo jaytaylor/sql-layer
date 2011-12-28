@@ -400,8 +400,4 @@ public class PostgresType
         return new PostgresType(oid, length, modifier, akType);
     }
 
-    public Object decodeParameter(String value) {
-        return value;
-    }
-
 }
