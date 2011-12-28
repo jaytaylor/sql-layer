@@ -18,6 +18,7 @@ package com.akiban.sql.pg;
 import com.akiban.qp.row.Row;
 
 import java.util.List;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public class PostgresDirectObjectOutputter extends PostgresOutputter<List<?>>
@@ -32,17 +33,16 @@ public class PostgresDirectObjectOutputter extends PostgresOutputter<List<?>>
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(ncols);
         for (int i = 0; i < ncols; i++) {
-            PostgresType type = columnTypes.get(i);
             Object field = row.get(i);
-            byte[] value = type.encodeValue(field,
-                                            messenger.getEncoding(),
-                                            statement.isColumnBinary(i));
-            if (value == null) {
+            PostgresType type = columnTypes.get(i);
+            boolean binary = statement.isColumnBinary(i);
+            ByteArrayOutputStream bytes = encoder.encodeObject(field, type, binary);
+            if (field == null) {
                 messenger.writeInt(-1);
             }
             else {
-                messenger.writeInt(value.length);
-                messenger.write(value);
+                messenger.writeInt(bytes.size());
+                messenger.writeByteStream(bytes);
             }
         }
         messenger.sendMessage();

@@ -400,41 +400,6 @@ public class PostgresType
         return new PostgresType(oid, length, modifier, akType);
     }
 
-    public static final DateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd");
-    public static final DateFormat timeFormatter = new SimpleDateFormat("hh:mm:ss");
-    public static final DateFormat datetimeFormatter = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
-
-    public byte[] encodeValue(Object value, String encoding, boolean binary) 
-            throws IOException {
-        if (value == null)
-            return null;
-        try {
-            if (binary) {
-                throw new UnsupportedCharsetException ("", "", "BINARY");
-            }
-            else if (value instanceof Date) {
-                DateFormat format = null;
-                switch (oid) {
-                case DATE_TYPE_OID:
-                    format = dateFormatter;
-                    break;
-                case TIME_TYPE_OID:
-                    format = timeFormatter;
-                    break;
-                case TIMESTAMP_TYPE_OID:
-                    format = datetimeFormatter;
-                    break;
-                }
-                if (format != null)
-                    value = format.format((Date)value);
-            }
-            return value.toString().getBytes(encoding);
-        }
-        catch (UnsupportedEncodingException ex) {
-            throw new UnsupportedCharsetException ("", "", encoding);
-        }
-    }
-
     public Object decodeParameter(String value) {
         return value;
     }
