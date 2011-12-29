@@ -49,7 +49,7 @@ public class PostgresMessenger implements DataInput, DataOutput
     private DataInputStream messageInput;
     private ByteArrayOutputStream byteOutput;
     private DataOutputStream messageOutput;
-    private String encoding = "ISO-8859-1";
+    private String encoding = "UTF-8";
     private boolean cancel = false;
 
     public PostgresMessenger(InputStream inputStream, OutputStream outputStream) {
