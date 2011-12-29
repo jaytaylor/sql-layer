@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.TreeMap;
+import java.util.concurrent.Callable;
 
 import static com.akiban.server.test.it.keyupdate.Schema.c_cid;
 import static com.akiban.server.test.it.keyupdate.Schema.c_cx;
@@ -184,25 +185,40 @@ public abstract class KeyUpdateBase extends ITBase {
         }
     }
 
-    protected final void dbInsert(TestRow row) throws Exception
+    protected final void dbInsert(final TestRow row) throws Exception
     {
-        testStore.writeRow(session(), row);
-        Integer oldCount = rowDefsToCounts.get(row.getTableId());
-        oldCount = (oldCount == null) ? 1 : oldCount+1;
-        rowDefsToCounts.put(row.getTableId(), oldCount);
+        transactionally(new Callable<Void>() {
+            public Void call() throws Exception {
+                testStore.writeRow(session(), row);
+                Integer oldCount = rowDefsToCounts.get(row.getTableId());
+                oldCount = (oldCount == null) ? 1 : oldCount+1;
+                rowDefsToCounts.put(row.getTableId(), oldCount);
+                return null;
+            }
+        });
     }
 
-    protected final void dbUpdate(TestRow oldRow, TestRow newRow) throws Exception
+    protected final void dbUpdate(final TestRow oldRow, final TestRow newRow) throws Exception
     {
-        testStore.updateRow(session(), oldRow, newRow, null);
+        transactionally(new Callable<Void>() {
+            public Void call() throws Exception {
+                testStore.updateRow(session(), oldRow, newRow, null);
+                return null;
+            }
+        });
     }
 
-    protected final void dbDelete(TestRow row) throws Exception
+    protected final void dbDelete(final TestRow row) throws Exception
     {
-        testStore.deleteRow(session(), row);
-        Integer oldCount = rowDefsToCounts.get(row.getTableId());
-        assertNotNull(oldCount);
-        rowDefsToCounts.put(row.getTableId(), oldCount - 1);
+        transactionally(new Callable<Void>() {
+            public Void call() throws Exception {
+                testStore.deleteRow(session(), row);
+                Integer oldCount = rowDefsToCounts.get(row.getTableId());
+                assertNotNull(oldCount);
+                rowDefsToCounts.put(row.getTableId(), oldCount - 1);
+                return null;
+            }
+        });
     }
 
     private int countAllRows() {
@@ -213,40 +229,44 @@ public abstract class KeyUpdateBase extends ITBase {
         return total;
     }
 
-    protected final void checkDB()
-            throws Exception
+    protected final void checkDB() throws Exception
     {
-        // Records
-        RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
-        RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
-        testStore.traverse(session(), groupRowDef, testVisitor, realVisitor);
-        assertEquals(testVisitor.records(), realVisitor.records());
-        assertEquals("records count", countAllRows(), testVisitor.records().size());
-        // Check indexes
-        CollectingIndexKeyVisitor indexVisitor;
-        if (checkChildPKs()) {
-            // Customer PK index - skip. This index is hkey equivalent, and we've already checked the full records.
-            // Order PK index
-            indexVisitor = new CollectingIndexKeyVisitor();
-            testStore.traverse(session(), orderRowDef.getPKIndex(), indexVisitor);
-            assertEquals(orderPKIndex(testVisitor.records()), indexVisitor.records());
-            assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
-            // Item PK index
-            indexVisitor = new CollectingIndexKeyVisitor();
-            testStore.traverse(session(), itemRowDef.getPKIndex(), indexVisitor);
-            assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
-            assertEquals("order PKs", countRows(itemRowDef), indexVisitor.records().size());
-        }
-        // Order priority index
-        indexVisitor = new CollectingIndexKeyVisitor();
-        testStore.traverse(session(), index(orderRowDef, "priority"), indexVisitor);
-        assertEquals(orderPriorityIndex(testVisitor.records()), indexVisitor.records());
-        assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
-        // Order timestamp index
-        indexVisitor = new CollectingIndexKeyVisitor();
-        testStore.traverse(session(), index(orderRowDef, "when"), indexVisitor);
-        assertEquals(orderWhenIndex(testVisitor.records()), indexVisitor.records());
-        assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
+        transactionally(new Callable<Void>() {
+            public Void call() throws Exception {
+                // Records
+                RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
+                RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
+                testStore.traverse(session(), groupRowDef, testVisitor, realVisitor);
+                assertEquals(testVisitor.records(), realVisitor.records());
+                assertEquals("records count", countAllRows(), testVisitor.records().size());
+                // Check indexes
+                CollectingIndexKeyVisitor indexVisitor;
+                if (checkChildPKs()) {
+                    // Customer PK index - skip. This index is hkey equivalent, and we've already checked the full records.
+                    // Order PK index
+                    indexVisitor = new CollectingIndexKeyVisitor();
+                    testStore.traverse(session(), orderRowDef.getPKIndex(), indexVisitor);
+                    assertEquals(orderPKIndex(testVisitor.records()), indexVisitor.records());
+                    assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
+                    // Item PK index
+                    indexVisitor = new CollectingIndexKeyVisitor();
+                    testStore.traverse(session(), itemRowDef.getPKIndex(), indexVisitor);
+                    assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
+                    assertEquals("order PKs", countRows(itemRowDef), indexVisitor.records().size());
+                }
+                // Order priority index
+                indexVisitor = new CollectingIndexKeyVisitor();
+                testStore.traverse(session(), index(orderRowDef, "priority"), indexVisitor);
+                assertEquals(orderPriorityIndex(testVisitor.records()), indexVisitor.records());
+                assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
+                // Order timestamp index
+                indexVisitor = new CollectingIndexKeyVisitor();
+                testStore.traverse(session(), index(orderRowDef, "when"), indexVisitor);
+                assertEquals(orderWhenIndex(testVisitor.records()), indexVisitor.records());
+                assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
+                return null;
+            }
+        });
     }
 
     private int countRows(RowDef rowDef) {
@@ -264,35 +284,40 @@ public abstract class KeyUpdateBase extends ITBase {
 
     protected final void checkInitialState() throws Exception
     {
-        RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
-        RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
-        testStore.traverse(session(), groupRowDef, testVisitor, realVisitor);
-        Iterator<TreeRecord> expectedIterator = testVisitor.records().iterator();
-        Iterator<TreeRecord> actualIterator = realVisitor.records().iterator();
-        Map<Integer, Integer> expectedCounts = new HashMap<Integer, Integer>();
-        expectedCounts.put(customerRowDef.getRowDefId(), 0);
-        expectedCounts.put(orderRowDef.getRowDefId(), 0);
-        expectedCounts.put(itemRowDef.getRowDefId(), 0);
-        Map<Integer, Integer> actualCounts = new HashMap<Integer, Integer>();
-        actualCounts.put(customerRowDef.getRowDefId(), 0);
-        actualCounts.put(orderRowDef.getRowDefId(), 0);
-        actualCounts.put(itemRowDef.getRowDefId(), 0);
-        while (expectedIterator.hasNext() && actualIterator.hasNext()) {
-            TreeRecord expected = expectedIterator.next();
-            TreeRecord actual = actualIterator.next();
-            assertEquals(expected, actual);
-            assertEquals(hKey((TestRow) expected.row()), actual.hKey());
-            checkInitialState(actual.row());
-            expectedCounts.put(expected.row().getTableId(), expectedCounts.get(expected.row().getTableId()) + 1);
-            actualCounts.put(actual.row().getTableId(), actualCounts.get(actual.row().getTableId()) + 1);
-        }
-        assertEquals(3, expectedCounts.get(customerRowDef.getRowDefId()).intValue());
-        assertEquals(9, expectedCounts.get(orderRowDef.getRowDefId()).intValue());
-        assertEquals(27, expectedCounts.get(itemRowDef.getRowDefId()).intValue());
-        assertEquals(3, actualCounts.get(customerRowDef.getRowDefId()).intValue());
-        assertEquals(9, actualCounts.get(orderRowDef.getRowDefId()).intValue());
-        assertEquals(27, actualCounts.get(itemRowDef.getRowDefId()).intValue());
-        assertTrue(!expectedIterator.hasNext() && !actualIterator.hasNext());
+        transactionally(new Callable<Void>() {
+            public Void call() throws Exception {
+                RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
+                RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
+                testStore.traverse(session(), groupRowDef, testVisitor, realVisitor);
+                Iterator<TreeRecord> expectedIterator = testVisitor.records().iterator();
+                Iterator<TreeRecord> actualIterator = realVisitor.records().iterator();
+                Map<Integer, Integer> expectedCounts = new HashMap<Integer, Integer>();
+                expectedCounts.put(customerRowDef.getRowDefId(), 0);
+                expectedCounts.put(orderRowDef.getRowDefId(), 0);
+                expectedCounts.put(itemRowDef.getRowDefId(), 0);
+                Map<Integer, Integer> actualCounts = new HashMap<Integer, Integer>();
+                actualCounts.put(customerRowDef.getRowDefId(), 0);
+                actualCounts.put(orderRowDef.getRowDefId(), 0);
+                actualCounts.put(itemRowDef.getRowDefId(), 0);
+                while (expectedIterator.hasNext() && actualIterator.hasNext()) {
+                    TreeRecord expected = expectedIterator.next();
+                    TreeRecord actual = actualIterator.next();
+                    assertEquals(expected, actual);
+                    assertEquals(hKey((TestRow) expected.row()), actual.hKey());
+                    checkInitialState(actual.row());
+                    expectedCounts.put(expected.row().getTableId(), expectedCounts.get(expected.row().getTableId()) + 1);
+                    actualCounts.put(actual.row().getTableId(), actualCounts.get(actual.row().getTableId()) + 1);
+                }
+                assertEquals(3, expectedCounts.get(customerRowDef.getRowDefId()).intValue());
+                assertEquals(9, expectedCounts.get(orderRowDef.getRowDefId()).intValue());
+                assertEquals(27, expectedCounts.get(itemRowDef.getRowDefId()).intValue());
+                assertEquals(3, actualCounts.get(customerRowDef.getRowDefId()).intValue());
+                assertEquals(9, actualCounts.get(orderRowDef.getRowDefId()).intValue());
+                assertEquals(27, actualCounts.get(itemRowDef.getRowDefId()).intValue());
+                assertTrue(!expectedIterator.hasNext() && !actualIterator.hasNext());
+                return null;
+            }
+        });
     }
 
     protected final void checkInitialState(NewRow row)

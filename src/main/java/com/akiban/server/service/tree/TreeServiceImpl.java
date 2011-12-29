@@ -32,7 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.akiban.server.TableStatusCache;
-import com.akiban.server.PersistitTransactionalCacheTableStatusCache;
+import com.akiban.server.PersistitAccumulatorTableStatusCache;
 import com.akiban.server.error.ConfigurationPropertiesLoadException;
 import com.akiban.server.error.InvalidVolumeException;
 import com.akiban.server.error.PersistitAdapterException;
@@ -51,7 +51,6 @@ import com.persistit.Volume;
 import com.persistit.VolumeSpecification;
 import com.persistit.exception.InvalidVolumeSpecificationException;
 import com.persistit.exception.PersistitException;
-import com.persistit.exception.PersistitInterruptedException;
 import com.persistit.logging.Slf4jAdapter;
 
 public class TreeServiceImpl
@@ -75,8 +74,6 @@ public class TreeServiceImpl
     // Must be one of 1024, 2048, 4096, 8192, 16384:
     static final int DEFAULT_BUFFER_SIZE = 16384;
 
-    static final int MAX_TRANSACTION_RETRY_COUNT = 10;
-
     private final ConfigurationService configService;
 
     private static int instanceCount = 0;
@@ -88,8 +85,6 @@ public class TreeServiceImpl
     private int volumeOffsetCounter = 0;
 
     private final Map<String, TreeLink> schemaLinkMap = new HashMap<String, TreeLink>();
-
-    private final Map<String, TreeLink> statusLinkMap = new HashMap<String, TreeLink>();
 
     private final SessionService sessionService;
 
@@ -259,7 +254,6 @@ public class TreeServiceImpl
         }
         synchronized (this) {
             schemaLinkMap.clear();
-            statusLinkMap.clear();
             // TODO - remove this when sure we don't need it
             --instanceCount;
             assert instanceCount == 0 : instanceCount;
@@ -333,12 +327,7 @@ public class TreeServiceImpl
     }
 
     @Override
-    public long getTimestamp(final Session session) {
-        return getDb().getTransaction().getTimestamp();
-    }
-
-    @Override
-    public void checkpoint()  throws PersistitInterruptedException {
+    public void checkpoint()  throws PersistitException {
         getDb().checkpoint();
     }
 
@@ -352,9 +341,8 @@ public class TreeServiceImpl
             final String treeName) throws PersistitException {
         Persistit db = getDb();
         final Volume sysVol = db.getSystemVolume();
-        final Volume txnVol = db.getTransactionVolume();
         for (final Volume volume : db.getVolumes()) {
-            if (volume != sysVol && volume != txnVol) {
+            if (volume != sysVol) {
                 final Tree tree = volume.getTree(treeName, false);
                 if (tree != null) {
                     final Exchange exchange = getExchange(session, tree);
@@ -414,11 +402,11 @@ public class TreeServiceImpl
         return tableId + offset;
     }
 
-    private TreeCache populateTreeCache(final TreeLink link) throws PersistitException  {
+    @Override
+    public TreeCache populateTreeCache(final TreeLink link) throws PersistitException {
         TreeCache cache = (TreeCache) link.getTreeCache();
         if (cache == null || !cache.getTree().isValid()) {
-            Volume volume = mappedVolume(link.getSchemaName(),
-                    link.getTreeName());
+            Volume volume = mappedVolume(link.getSchemaName(), link.getTreeName());
             final Tree tree = volume.getTree(link.getTreeName(), true);
             cache = new TreeCache(tree);
             link.setTreeCache(cache);
@@ -535,8 +523,7 @@ public class TreeServiceImpl
     }
 
     public TreeLink treeLink(final String schemaName, final String treeName) {
-        final Map<String, TreeLink> map = treeName == STATUS_TREE_NAME ? statusLinkMap
-                : schemaLinkMap;
+        final Map<String, TreeLink> map = schemaLinkMap;
         TreeLink link;
         synchronized (map) {
             link = map.get(schemaName);
@@ -667,9 +654,8 @@ public class TreeServiceImpl
     }
     
     private TableStatusCache createTableStatusCache() {
-        PersistitTransactionalCacheTableStatusCache tsc = new PersistitTransactionalCacheTableStatusCache(sessionService, getDb(), this);
-        tsc.register();
-        return tsc;
+        //return new MemoryOnlyTableStatusCache();
+        return new PersistitAccumulatorTableStatusCache(this);
     }
 
     @Override

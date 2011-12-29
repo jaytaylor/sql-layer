@@ -51,9 +51,9 @@ public final class CompositeHookTest {
                 "beta into GET_AIS",
                 "gamma into GET_AIS",
 
-                "alpha out of GET_AIS",
+                "gamma out of GET_AIS",
                 "beta out of GET_AIS",
-                "gamma out of GET_AIS"
+                "alpha out of GET_AIS"
         );
     }
 
@@ -71,13 +71,13 @@ public final class CompositeHookTest {
                 "beta into CREATE_TABLE",
                 "gamma into CREATE_TABLE",
 
-                "alpha caught MySampleException in CREATE_TABLE",
-                "beta caught MySampleException in CREATE_TABLE",
                 "gamma caught MySampleException in CREATE_TABLE",
+                "beta caught MySampleException in CREATE_TABLE",
+                "alpha caught MySampleException in CREATE_TABLE",
 
-                "alpha out of CREATE_TABLE",
+                "gamma out of CREATE_TABLE",
                 "beta out of CREATE_TABLE",
-                "gamma out of CREATE_TABLE"
+                "alpha out of CREATE_TABLE"
         );
     }
 
@@ -99,11 +99,11 @@ public final class CompositeHookTest {
                 "alpha into GET_AIS",
                 "beta: CRASH_IN into GET_AIS",
 
-                "alpha caught MySampleException in GET_AIS",
                 "beta: CRASH_IN caught MySampleException in GET_AIS",
+                "alpha caught MySampleException in GET_AIS",
 
-                "alpha out of GET_AIS",
-                "beta: CRASH_IN out of GET_AIS"
+                "beta: CRASH_IN out of GET_AIS",
+                "alpha out of GET_AIS"
         );
     }
 
@@ -126,13 +126,13 @@ public final class CompositeHookTest {
                 "beta: CRASH_CATCH into GET_AIS",
                 "gamma into GET_AIS",
 
-                "alpha caught MySampleException in GET_AIS",
-                "beta: CRASH_CATCH caught MySampleException in GET_AIS",
                 "gamma caught MySampleException in GET_AIS",
+                "beta: CRASH_CATCH caught MySampleException in GET_AIS",
+                "alpha caught MySampleException in GET_AIS",
 
-                "alpha out of GET_AIS",
+                "gamma out of GET_AIS",
                 "beta: CRASH_CATCH out of GET_AIS",
-                "gamma out of GET_AIS"
+                "alpha out of GET_AIS"
         );
     }
 
@@ -155,13 +155,13 @@ public final class CompositeHookTest {
                 "beta: CRASH_FINALLY into GET_AIS",
                 "gamma into GET_AIS",
 
-                "alpha caught MySampleException in GET_AIS",
-                "beta: CRASH_FINALLY caught MySampleException in GET_AIS",
                 "gamma caught MySampleException in GET_AIS",
+                "beta: CRASH_FINALLY caught MySampleException in GET_AIS",
+                "alpha caught MySampleException in GET_AIS",
 
-                "alpha out of GET_AIS",
+                "gamma out of GET_AIS",
                 "beta: CRASH_FINALLY out of GET_AIS",
-                "gamma out of GET_AIS"
+                "alpha out of GET_AIS"
         );
     }
 
@@ -198,15 +198,15 @@ public final class CompositeHookTest {
                 "gamma: CRASH_CATCH CRASH_FINALLY into GET_AIS",
                 "delta into GET_AIS",
 
-                "alpha caught MySampleException in GET_AIS",
-                "beta: CRASH_CATCH CRASH_FINALLY caught MySampleException in GET_AIS",
-                "gamma: CRASH_CATCH CRASH_FINALLY caught MySampleException in GET_AIS",
                 "delta caught MySampleException in GET_AIS",
+                "gamma: CRASH_CATCH CRASH_FINALLY caught MySampleException in GET_AIS",
+                "beta: CRASH_CATCH CRASH_FINALLY caught MySampleException in GET_AIS",
+                "alpha caught MySampleException in GET_AIS",
 
-                "alpha out of GET_AIS",
-                "beta: CRASH_CATCH CRASH_FINALLY out of GET_AIS",
+                "delta out of GET_AIS",
                 "gamma: CRASH_CATCH CRASH_FINALLY out of GET_AIS",
-                "delta out of GET_AIS"
+                "beta: CRASH_CATCH CRASH_FINALLY out of GET_AIS",
+                "alpha out of GET_AIS"
         );
 
     }
