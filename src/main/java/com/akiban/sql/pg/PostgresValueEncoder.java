@@ -87,12 +87,21 @@ public class PostgresValueEncoder
     /** Append the given value to the buffer. */
     public void appendValue(ValueSource value, PostgresType type, boolean binary) 
             throws IOException {
-        if (binary) {
-            assert (type.getAkType() == AkType.VARBINARY);
-            ByteSource asBytes = Extractors.getByteSourceExtractor().getObject(value);
-            getByteStream().write(asBytes.byteArray(), asBytes.byteArrayOffset(), asBytes.byteArrayLength());
+        if (type.getAkType() == AkType.VARBINARY) {
+            ByteSource bs = Extractors.getByteSourceExtractor().getObject(value);
+            byte[] ba = bs.byteArray();
+            int offset = bs.byteArrayOffset();
+            int length = bs.byteArrayLength();
+            if (binary)
+                getByteStream().write(ba, offset, length);
+            else {
+                for (int i = 0; i < length; i++) {
+                    printWriter.format("\\%03o", ba[offset+i]);
+                }
+            }
         }
         else {
+            assert !binary;
             value.appendAsString(appender, Quote.NONE);
         }
     }
