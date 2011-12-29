@@ -57,6 +57,10 @@ public class PostgresValueEncoder
         return byteStream;
     }
 
+    public AkibanAppender getAppender() {
+        return appender;
+    }
+
     /** Encode the given value into a stream that can then be passed
      * to {@link PostgresMessenger#writeByteStream}.
      */
