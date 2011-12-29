@@ -319,7 +319,7 @@ abstract class ExtractorsForDates extends LongExtractor {
         @Override
         public String asString(long value) {
             final long year = (value == 0) ? 0 : (1900 + value);
-            return String.format("%04d", year);
+            return String.format("%d", year);
         }
 
         @Override

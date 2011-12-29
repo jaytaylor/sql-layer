@@ -492,6 +492,9 @@ public class ASTStatementLoader extends BaseRule
             case NodeTypes.BOOLEAN_CONSTANT_NODE:
                 conditions.add(new BooleanConstantExpression(((BooleanConstantNode)condition).getBooleanValue()));
                 break;
+            case NodeTypes.UNTYPED_NULL_CONSTANT_NODE:
+                conditions.add(new BooleanConstantExpression(null));
+                break;
             case NodeTypes.PARAMETER_NODE:
                 if (condition.getType() == null)
                     condition.setType(new DataTypeDescriptor(TypeId.BOOLEAN_ID, true));
@@ -767,7 +770,7 @@ public class ASTStatementLoader extends BaseRule
                                       IsNode is)
                 throws StandardException {
             List<ExpressionNode> operands = new ArrayList<ExpressionNode>(1);
-            operands.add(toExpression(is.getLeftOperand()));
+            operands.add(toCondition(is.getLeftOperand()));
             String function;
             Boolean value = (Boolean)((ConstantNode)is.getRightOperand()).getValue();
             if (value == null)

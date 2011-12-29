@@ -37,8 +37,10 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types.util.ValueHolder;
+import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.akiban.util.Strings;
+import org.junit.After;
 import org.junit.Before;
 
 import java.util.ArrayList;
@@ -51,6 +53,24 @@ import static org.junit.Assert.fail;
 
 public class OperatorITBase extends ITBase
 {
+    private Transaction transaction;
+
+    @Before
+    public final void before_beginTransaction() throws PersistitException {
+        transaction = treeService().getTransaction(session());
+        transaction.begin();
+    }
+
+    @After
+    public final void after_endTransaction() throws PersistitException {
+        try {
+            transaction.commit();
+        }
+        finally {
+            transaction.end();
+        }
+    }
+
     @Before
     public void before() throws InvalidOperationException
     {

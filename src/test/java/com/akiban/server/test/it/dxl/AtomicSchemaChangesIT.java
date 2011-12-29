@@ -121,7 +121,7 @@ public class AtomicSchemaChangesIT extends ITBase
         checkInitialSchema();
         try {
             createTable("s", "child2",
-                        "id varchar(2020)",
+                        "id varchar(2052)",
                         "pid int",
                         "primary key(id)",
                         "constraint __akiban foreign key(pid) references parent(pid)");
@@ -140,7 +140,7 @@ public class AtomicSchemaChangesIT extends ITBase
             createTable("s", "child2",
                         "id int",
                         "pid int",
-                        "filler varchar(2020)",
+                        "filler varchar(2052)",
                         "primary key(id)",
                         "index(filler)",
                         "constraint __akiban foreign key(pid) references parent(pid)");

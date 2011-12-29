@@ -88,7 +88,9 @@ public class OperatorCompiler extends SchemaRulesContext
             return stmt;
         } 
         catch (StandardException ex) {
-            throw new ParseException("", ex.getMessage(), stmt.toString());
+            ParseException pe = new ParseException("", ex.getMessage(), stmt.toString());
+            pe.initCause(ex);
+            throw pe;
         }
     }
 

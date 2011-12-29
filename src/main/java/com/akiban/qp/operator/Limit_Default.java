@@ -25,6 +25,49 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+/**
+
+ <h1>Overview</h1>
+
+ Provides a very simple, count-based limit.
+
+ <h1>Arguments</h1>
+
+ <ul>
+
+ <li><b>PhysicalOperator inputOperator:</b> The input operator, whose
+ cursor will be limited
+
+ <li><b>int limit:</b>&nbsp;the number of rows to limit to; cannot be
+ negative
+
+ </ul>
+
+ <h1>Behavior</h1>
+
+ Limit_Default's cursor returns at most <i>limit</i> rows from the input
+ operator's cursor.  When the limit is reached, the input cursor is
+ automatically closed, and all subsequent calls to <i>next</i> will return
+ <i>false</i>.
+
+ <h1>Output</h1>
+
+ Nothing else to say.
+
+ <h1>Assumptions</h1>
+
+ None.
+
+ <h1>Performance</h1>
+
+ Essentially free.
+
+ <h1>Memory Requirements</h1>
+
+ None.
+
+ */
+
 final class Limit_Default extends Operator
 {
 
