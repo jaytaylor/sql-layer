@@ -293,7 +293,7 @@ public class TableDDL
         
         types.put(TypeId.DATE_ID, Types.DATE);
         types.put(TypeId.TIME_ID, Types.TIME);
-        types.put(TypeId.TIMESTAMP_ID, Types.TIMESTAMP);
+        types.put(TypeId.TIMESTAMP_ID, Types.DATETIME); // TODO: Types.TIMESTAMP?
         types.put(TypeId.DATETIME_ID, Types.DATETIME);
         types.put(TypeId.YEAR_ID, Types.YEAR);
         
