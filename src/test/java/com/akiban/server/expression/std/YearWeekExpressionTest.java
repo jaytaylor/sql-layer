@@ -76,6 +76,26 @@ public class YearWeekExpressionTest extends ComposedExpressionTestBase
     }
 
     @Test
+    public void bug_testYearWeek () // bug 905502 - unit test passes
+    {
+        String st = "1987-01-01";
+
+        // date
+        testBug(AkType.DATE, st);
+
+        // datetime
+        testBug(AkType.DATETIME, st += " 01:15:33");
+
+        // timestamp
+        testBug(AkType.TIMESTAMP, st);
+    }
+
+    private void testBug (AkType type, String st)
+    {
+        test(type, st, -1, 198652);
+    }
+    
+    @Test
     public void testNullFirst ()
     {
         Expression yearWeek = new YearWeekExpression(Arrays.asList(LiteralExpression.forNull(),
@@ -131,7 +151,7 @@ public class YearWeekExpressionTest extends ComposedExpressionTestBase
 
         Expression d = new LiteralExpression(type, date);
         Expression m = new LiteralExpression(AkType.INT, mode);
-        Expression yearWeek = new YearWeekExpression(Arrays.asList(d, m));
+        Expression yearWeek = new YearWeekExpression(mode < 0? Arrays.asList(d) : Arrays.asList(d, m));
 
         int actual = (int) yearWeek.evaluation().eval().getInt();
         assertEquals("assert topType is INT", AkType.INT, yearWeek.valueType());

@@ -18,28 +18,28 @@
     ('1234567-00-00'), ('abc')
 ---
 - Statement: SELECT YEAR(varchar_field) FROM all_types
-- output: [[null], [null],
+- output: [[null], [0],
            [0], [1], [20], [300],
            [1961], [2001], [3210], [9999],
-           [null], [null]]
----
-- Statement: SELECT varchar_field FROM all_types
-    WHERE YEAR(varchar_field) > '100'
-- output: [['0300-03-30'],
-           ['1961-01-11'], ['2001-09-11'], ['3210-04-04'], ['9999-01-01']]
+           [1234567], [null]]
+#---
+#- Statement: SELECT varchar_field FROM all_types
+#    WHERE YEAR(varchar_field) > YEAR('0100-01-01')
+#- output: [['0300-03-30'],
+#           ['1961-01-11'], ['2001-09-11'], ['3210-04-04'], ['9999-01-01']]
 
----
-- Statement: SELECT YEAR(varchar_field) > '100' FROM all_types
-- output: [[null], [null],
-           [false], [false], [false], [true],
-           [true], [true], [true], [true],
-           [null], [null]]
+#---
+#- Statement: SELECT YEAR(varchar_field) > '100' FROM all_types
+#- output: [[null], [null],
+#           [false], [false], [false], [true],
+#           [true], [true], [true], [true],
+#           [null], [null]]
 
 ---
 - Statement: SELECT varchar_field FROM all_types
     WHERE YEAR(varchar_field) <= ?
 - params: [[1961]]
-- output: [['0000-01-01'], ['0001-11-11'], ['0020-02-22'], ['0300-03-30'],
+- output: [['0000-00-00'], ['0000-01-01'], ['0001-11-11'], ['0020-02-22'], ['0300-03-30'],
            ['1961-01-11']]
 
 ...
