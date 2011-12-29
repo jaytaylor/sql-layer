@@ -579,19 +579,18 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         parser = new SQLParser();
 
         defaultSchemaName = getProperty("database");
-        // Temporary until completely removed.
         // TODO: Any way / need to ask AIS if schema exists and report error?
 
-        PostgresStatementGenerator compiler;
-        {
-            PostgresOperatorCompiler c = new PostgresOperatorCompiler(this);
-            compiler = c;
-            adapter = new PersistitAdapter(c.getSchema(),
-                                           reqs.store().getPersistitStore(),
-                                           reqs.treeService(),
-                                           session,
-                                           reqs.config());
-        }
+        PostgresOperatorCompiler compiler;
+        if (true)
+            compiler = new PostgresOperatorCompiler(this);
+        else
+            compiler = new PostgresJsonCompiler(this);
+        adapter = new PersistitAdapter(compiler.getSchema(),
+                                       reqs.store().getPersistitStore(),
+                                       reqs.treeService(),
+                                       session,
+                                       reqs.config());
 
         statementCache = server.getStatementCache(aisTimestamp);
         unparsedGenerators = new PostgresStatementParser[] {
