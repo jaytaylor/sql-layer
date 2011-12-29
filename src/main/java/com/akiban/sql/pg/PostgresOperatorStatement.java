@@ -70,7 +70,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             setEnvironmentBindings(server, bindings);
             cursor = API.cursor(resultOperator, server.getStore());
             cursor.open(bindings);
-            PostgresRowOutputter outputter = new PostgresRowOutputter(messenger, this);
+            PostgresOutputter<Row> outputter = getRowOutputter(messenger);
             Row row;
             while ((row = cursor.next()) != null) {
                 assert resultRowType == null || (row.rowType() == resultRowType) : row;
@@ -92,6 +92,10 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             messenger.sendMessage();
         }
         return nrows;
+    }
+
+    protected PostgresRowOutputter getRowOutputter(PostgresMessenger messenger) {
+        return new PostgresRowOutputter(messenger, this);
     }
 
     @Override
