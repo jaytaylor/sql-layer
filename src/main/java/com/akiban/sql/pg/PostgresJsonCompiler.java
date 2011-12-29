@@ -31,6 +31,7 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
 {
     public PostgresJsonCompiler(PostgresServerSession server) {
         super(server);
+        binder.setAllowSubqueryMultipleColumns(true);
     }    
 
     public static class JsonResultColumn extends PhysicalResultColumn {

@@ -47,6 +47,7 @@ public class AISBinder implements Visitor
     private Map<TableName,ViewDefinition> views;
     private Deque<BindingContext> bindingContexts;
     private Set<QueryTreeNode> visited;
+    private boolean allowSubqueryMultipleColumns;
 
     public AISBinder(AkibanInformationSchema ais, String defaultSchemaName) {
         this.ais = ais;
@@ -60,6 +61,14 @@ public class AISBinder implements Visitor
 
     public void setDefaultSchemaName(String defaultSchemaName) {
         this.defaultSchemaName = defaultSchemaName;
+    }
+
+    public boolean isAllowSubqueryMultipleColumns() {
+        return allowSubqueryMultipleColumns;
+    }
+
+    public void setAllowSubqueryMultipleColumns(boolean allowSubqueryMultipleColumns) {
+        this.allowSubqueryMultipleColumns = allowSubqueryMultipleColumns;
     }
 
     public void addView(ViewDefinition view) {
@@ -172,8 +181,10 @@ public class AISBinder implements Visitor
         ResultColumnList resultColumns = resultSet.getResultColumns();
         // The parser does not enforce the fact that a subquery can only
         // return a single column, so we must check here.
-        if (resultColumns.size() != 1) {
-            throw new SubqueryOneColumnException ();
+        if ((resultColumns.size() != 1) &&
+            (!allowSubqueryMultipleColumns ||
+             (subqueryNode.getLeftOperand() != null))) {
+            throw new SubqueryOneColumnException();
         }
 
         SubqueryNode.SubqueryType subqueryType = subqueryNode.getSubqueryType();

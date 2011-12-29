@@ -581,11 +581,15 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         defaultSchemaName = getProperty("database");
         // TODO: Any way / need to ask AIS if schema exists and report error?
 
+        rebuildCompiler();
+    }
+
+    protected void rebuildCompiler() {
         PostgresOperatorCompiler compiler;
-        if (true)
-            compiler = new PostgresOperatorCompiler(this);
+        if (useJsonCompiler())
+            compiler = new PostgresJsonCompiler(this); 
         else
-            compiler = new PostgresJsonCompiler(this);
+           compiler = new PostgresOperatorCompiler(this);
         adapter = new PersistitAdapter(compiler.getSchema(),
                                        reqs.store().getPersistitStore(),
                                        reqs.treeService(),
@@ -606,8 +610,16 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         };
     }
 
+    protected boolean useJsonCompiler() {
+        return "JSON".equals(getAttribute("outputFormat"));
+    }
+
     protected void sessionChanged() {
         if (parsedGenerators == null) return; // setAttribute() from generator's ctor.
+        if (useJsonCompiler() != (parsedGenerators[0] instanceof PostgresJsonCompiler)) {
+            rebuildCompiler();
+            return;
+        }
         for (PostgresStatementParser parser : unparsedGenerators) {
             parser.sessionChanged(this);
         }
