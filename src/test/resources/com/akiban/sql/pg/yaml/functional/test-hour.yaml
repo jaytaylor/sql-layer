@@ -164,8 +164,8 @@
 ---
 - Statement: select id,HOUR(timestamp_field),expected_hour from datetime_matrix where HOUR(timestamp_field) <> expected_HOUR;
 - row_count: 0
-#---
-#- Statement: select hour('A') from all_types where bigint_field = -99
-#- output: [[null]]
+---
+- Statement: select hour('A') from all_types where bigint_field = -99
+- output: [[null]]
 ...
 
