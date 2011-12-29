@@ -28,10 +28,9 @@ import java.util.List;
 
 public class DateTimeArithExpression extends ArithExpression
 {
-    @Scalar("add_date")
+    @Scalar({"adddate", "date_add"})
     public static final ExpressionComposer ADD_DATE_COMPOSER = new BinaryComposer ()
     {
-
         @Override
         protected Expression compose(Expression first, Expression second) 
         {
@@ -48,14 +47,17 @@ public class DateTimeArithExpression extends ArithExpression
         public void argumentTypes(List<AkType> argumentTypes) 
         {
             ArithOps.ADD.argumentTypes(argumentTypes);
+            argumentTypes.set(0, AkType.DATETIME);
+            if (argumentTypes.get(1) != AkType.INTERVAL_MILLIS)
+                argumentTypes.set(1, AkType.INTERVAL_MONTH);
         }
         
     };
     
-    @Scalar("add_time")
+    @Scalar("addtime")
     public static final ExpressionComposer ADD_TIME_COMPOSER = ADD_DATE_COMPOSER;
     
-    @Scalar("sub_date")
+    @Scalar({"subdate", "date_sub"})
     public static final ExpressionComposer SUB_DATE_COMPOSER = new BinaryComposer ()
     {
         @Override
@@ -74,10 +76,13 @@ public class DateTimeArithExpression extends ArithExpression
         public void argumentTypes(List<AkType> argumentTypes) 
         {
             ArithOps.MINUS.argumentTypes(argumentTypes);
+            argumentTypes.set(0, AkType.DATETIME);
+            if (argumentTypes.get(1) != AkType.INTERVAL_MILLIS)
+                argumentTypes.set(1, AkType.INTERVAL_MONTH);
         }
     };
     
-    @Scalar("sub_time")
+    @Scalar("subtime")
     public static final ExpressionComposer SUB_TIME_COMPOSER = SUB_DATE_COMPOSER;
     
     @Scalar("timediff")
@@ -174,7 +179,7 @@ public class DateTimeArithExpression extends ArithExpression
         @Override
         public long getLong ()
         {
-            return Calculator.getDay(rawInterval_Millis());
+            return Calculator.getDay(rawInterval());
         }
 
         /**
@@ -185,7 +190,7 @@ public class DateTimeArithExpression extends ArithExpression
         public long getTime ()
         {
             check(AkType.TIME);
-            long millis = rawInterval_Millis();
+            long millis = rawInterval();
             long sign;
             if (millis < 0)
                 millis *= (sign = -1);

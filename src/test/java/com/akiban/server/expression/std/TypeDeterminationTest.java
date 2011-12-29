@@ -26,11 +26,12 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Arrays;
 import java.util.Collection;
 import org.junit.runner.RunWith;
 import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(NamedParameterizedRunner.class)
 public class TypeDeterminationTest
@@ -77,7 +78,11 @@ public class TypeDeterminationTest
         param(pb, AkType.DATE, ArithOps.MINUS, AkType.DATE, AkType.INTERVAL_MILLIS);
         param(pb, AkType.DATE, ArithOps.MINUS, AkType.INTERVAL_MILLIS, AkType.DATE);
         param(pb, AkType.DATE, ArithOps.ADD, AkType.INTERVAL_MILLIS, AkType.DATE);
+        param(pb, AkType.DATE, ArithOps.ADD, AkType.INTERVAL_MONTH, AkType.DATE);
+        param(pb, AkType.DATE, ArithOps.MINUS, AkType.INTERVAL_MONTH, AkType.DATE);
         param(pb, AkType.INTERVAL_MILLIS, ArithOps.ADD, AkType.DATE, AkType.DATE);
+        param(pb, AkType.INTERVAL_MONTH, ArithOps.ADD, AkType.DATE, AkType.DATE);
+        param(pb, AkType.INTERVAL_MONTH, ArithOps.MINUS, AkType.DATE, null); // expect exception
         param(pb, AkType.INTERVAL_MILLIS, ArithOps.MINUS, AkType.DATE, null); // expect exception
         param(pb, AkType.DATE, ArithOps.DIVIDE, AkType.INTERVAL_MILLIS, null); // expect exception
         param(pb, AkType.DATE, ArithOps.ADD, AkType.DATE, null); // expect exception
@@ -85,6 +90,7 @@ public class TypeDeterminationTest
         // time
         param(pb, AkType.TIME, ArithOps.MINUS, AkType.TIME, AkType.INTERVAL_MILLIS);
         param(pb, AkType.TIME, ArithOps.ADD, AkType.INTERVAL_MILLIS, AkType.TIME);
+        param(pb, AkType.TIME, ArithOps.ADD, AkType.INTERVAL_MONTH, AkType.TIME);
         param(pb, AkType.TIME, ArithOps.MINUS, AkType.INTERVAL_MILLIS, AkType.TIME);
         param(pb, AkType.INTERVAL_MILLIS, ArithOps.ADD, AkType.TIME, AkType.TIME);
         param(pb, AkType.INTERVAL_MILLIS, ArithOps.MINUS, AkType.TIME, null); // expect exception
@@ -95,16 +101,25 @@ public class TypeDeterminationTest
         param(pb, AkType.YEAR, ArithOps.MINUS, AkType.INTERVAL_MILLIS, AkType.YEAR);
         param(pb, AkType.INTERVAL_MILLIS, ArithOps.ADD, AkType.YEAR, AkType.YEAR);
 
-        // INTERVAL_MILLIS
-        param(pb, AkType.INTERVAL_MILLIS, ArithOps.ADD, AkType.INTERVAL_MILLIS, AkType.INTERVAL_MILLIS);
-        param(pb, AkType.INTERVAL_MILLIS, ArithOps.MINUS, AkType.INTERVAL_MILLIS, AkType.INTERVAL_MILLIS);
-        param(pb, AkType.INTERVAL_MILLIS, ArithOps.MULTIPLY, AkType.LONG, AkType.INTERVAL_MILLIS);
-        param(pb, AkType.DECIMAL, ArithOps.MULTIPLY, AkType.INTERVAL_MILLIS, AkType.INTERVAL_MILLIS);
-        param(pb, AkType.INTERVAL_MILLIS, ArithOps.DIVIDE, AkType.U_BIGINT, AkType.INTERVAL_MILLIS);
-        param(pb, AkType.LONG, ArithOps.DIVIDE, AkType.INTERVAL_MILLIS, null); // expect exception
-        param(pb, AkType.INTERVAL_MILLIS, ArithOps.DIVIDE, AkType.INTERVAL_MILLIS, null); // expect exception
-        param(pb, AkType.INTERVAL_MILLIS, ArithOps.MULTIPLY, AkType.INTERVAL_MILLIS, null); // expect exception
-
+        // INTERVALs
+        for (AkType interval : Arrays.asList(AkType.INTERVAL_MILLIS, AkType.INTERVAL_MONTH))
+        {
+            param(pb, interval, ArithOps.ADD, interval, interval);
+            param(pb, interval, ArithOps.MINUS, interval, interval);
+            param(pb, interval, ArithOps.MULTIPLY, AkType.LONG, interval);
+            param(pb, AkType.DECIMAL, ArithOps.MULTIPLY, interval, interval);
+            param(pb, interval, ArithOps.DIVIDE, AkType.U_BIGINT, interval);
+            param(pb, AkType.LONG, ArithOps.DIVIDE, interval, null); // expect exception
+            param(pb, interval, ArithOps.DIVIDE, interval, null); // expect exception
+            param(pb, interval, ArithOps.MULTIPLY, interval, null); // expect exception
+        }
+        
+        // INTERVAL_MONTH and INTERVAL_MILLIS
+        param(pb, AkType.INTERVAL_MILLIS, ArithOps.ADD, AkType.INTERVAL_MONTH, null); // expect exception
+        param(pb, AkType.INTERVAL_MONTH, ArithOps.ADD, AkType.INTERVAL_MILLIS, null); // ditto
+        param(pb, AkType.INTERVAL_MILLIS, ArithOps.MINUS, AkType.INTERVAL_MONTH, null); // expect exception
+        param(pb, AkType.INTERVAL_MONTH, ArithOps.MINUS, AkType.INTERVAL_MILLIS, null); // ditto
+    
         // exceptions
         param(pb, AkType.DATE, ArithOps.MINUS, AkType.TIME, null);
         param(pb, AkType.LONG, ArithOps.ADD, AkType.DATE, null);
@@ -126,7 +141,7 @@ public class TypeDeterminationTest
         Expression right = getExp(input2);
         ArithExpression top = new ArithExpression(left, op, right);               
         top.evaluation().eval();
-        assertTrue(top.topT == expected);
+        assertEquals( expected,top.topT);
     }
     
     @OnlyIf("exceptionExpected()")
@@ -142,14 +157,15 @@ public class TypeDeterminationTest
     {
         switch (type)
         {
-            case LONG: return new LiteralExpression(type, 1L);
             case DOUBLE: return new LiteralExpression(type, 1.0);
             case DECIMAL: return new LiteralExpression(type, BigDecimal.ONE);
             case U_BIGINT: return new LiteralExpression(type, BigInteger.ONE);
-            case DATE: return new LiteralExpression(type, 1L);
-            case TIME: return new LiteralExpression(type, 1L);
-            case INTERVAL_MILLIS: return new LiteralExpression(type, 1L);
-            case YEAR: return new LiteralExpression(type, 1L);
+            case LONG:
+            case YEAR:
+            case DATE: 
+            case TIME: 
+            case INTERVAL_MONTH:
+            case INTERVAL_MILLIS: return new LiteralExpression(type, 1L); 
             case VARCHAR: return new LiteralExpression (type, "1");
             case NULL: return new LiteralExpression(type, null);
             default: return new LiteralExpression(AkType.UNSUPPORTED, null);

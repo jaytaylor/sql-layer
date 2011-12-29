@@ -16,10 +16,12 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.error.InvalidArgumentTypeException;
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.ValueSourceIsNullException;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.util.AbstractArithValueSource;
@@ -45,6 +47,7 @@ public class ArithExpression extends AbstractBinaryExpression
      * and regular numeric types
      */
     protected static final BidirectionalMap SUPPORTED_TYPES = new BidirectionalMap(10, 0.5f);
+    private static final int HIGHEST_KEY;
     static
     {
         // date/time types : key is even
@@ -54,6 +57,7 @@ public class ArithExpression extends AbstractBinaryExpression
         SUPPORTED_TYPES.put(AkType.DATETIME, 6);
         SUPPORTED_TYPES.put(AkType.YEAR, 8);
         SUPPORTED_TYPES.put(AkType.TIMESTAMP, 10);
+        SUPPORTED_TYPES.put(AkType.INTERVAL_MONTH, HIGHEST_KEY = 12);
 
         // regular numeric types: key is odd
         SUPPORTED_TYPES.put(AkType.DECIMAL, 1);
@@ -137,28 +141,34 @@ public class ArithExpression extends AbstractBinaryExpression
     {
        if (leftT == AkType.NULL || rightT == AkType.NULL)  return AkType.NULL;
        String msg = leftT.name() + " " + op.opName() + " " + rightT.name();
-       int l = SUPPORTED_TYPES.get(leftT), r = SUPPORTED_TYPES.get(rightT);
-       int prod = l*r, sum = r + l;
-
-       if (sum <= -1 ) throw new InvalidArgumentTypeException(msg); // both are NOT supported || interval and a NOT supported
-       if (prod == 0) // at least one is interval
+       int l = SUPPORTED_TYPES.get(leftT), r = SUPPORTED_TYPES.get(rightT), sum = l + r;
+       
+       if (sum == HIGHEST_KEY && l * r == 0)  // two *kinds* of INTERVALs
+           throw new InvalidArgumentTypeException(msg);  
+       
+       int l2 = l % HIGHEST_KEY, r2 = r % HIGHEST_KEY;
+       int prod2 = l2*r2, sum2 = r2 + l2;
+       
+       if (sum2 <= -1 ) throw new InvalidArgumentTypeException(msg); // both are NOT supported || interval and a NOT supported
+       if (prod2 == 0) // at least one is interval
        {
-           if (sum %2 == 0) // datetime and interval alone
+           if (sum2 %2 == 0) // datetime and interval alone
                switch (op.opName())
                {
-                  case '-': if (r != 0) throw new InvalidArgumentTypeException(msg); // fall thru;  check if second operandis NOT interval E.g inteval - date? => nonsense
-                  case '+': return SUPPORTED_TYPES.get(sum); // return date/time or interval
+                  case '-': if (r2 != 0) throw new InvalidArgumentTypeException(msg); // fall thru;  check if second operandis NOT interval E.g inteval - date? => nonsense
+                  case '+': return SUPPORTED_TYPES.get(sum2 == 0 ? sum /2: sum2); // return date/time or interval
                   default: throw new InvalidArgumentTypeException(msg);
                }
             else // number and interval: an interval can be multiply with || divide by a number
             {
-               if (op.opName() == '/' && l == 0 || op.opName() == '*') return AkType.INTERVAL_MILLIS;
+               AkType interval = l2 == 0 ? SUPPORTED_TYPES.get(l) : SUPPORTED_TYPES.get(r);
+               if (op.opName() == '/' && l2 == 0 || op.opName() == '*') return interval;
                else throw new InvalidArgumentTypeException(msg);
             }
         }
-        else if (prod > 0) // both are supported
+        else if (prod2 > 0) // both are supported and none is an interval
         {
-            if (prod % 2 == 1) // odd => numeric values only
+            if (prod2 % 2 == 1) // odd => numeric values only
                 return SUPPORTED_TYPES.get(l < r ? l : r);
             else // even => at least one is datetime
             {
@@ -168,8 +178,8 @@ public class ArithExpression extends AbstractBinaryExpression
         }
         else // left || right is not supported
         {
-            if( sum %2 == 1) throw new InvalidArgumentTypeException(msg); // date/times and unsupported
-            else return SUPPORTED_TYPES.get(sum+1);
+            if( sum2 %2 == 1) throw new InvalidArgumentTypeException(msg); // date/times and unsupported
+            else return SUPPORTED_TYPES.get(sum2+1);
         }   
     }
 
@@ -264,10 +274,10 @@ public class ArithExpression extends AbstractBinaryExpression
         }
 
         @Override
-        protected long rawInterval_Millis ()
+        protected long rawInterval ()
         {
             /*
-             * The rawInterval_Millis() is called only if the top's type is INTERVAL_MILLIS, which  only happens when
+             * The rawInterval() is called only if the top's type is INTERVAL_MILLIS, which  only happens when
              *      one of the two operands is an interval and the other is a regular numeric value
              *      or both operands are of the same date/time type, that is, both are date, or both are time, etc
              *
@@ -279,7 +289,8 @@ public class ArithExpression extends AbstractBinaryExpression
                     : must be date/times => rawLong
              *
              */
-            int pos = SUPPORTED_TYPES.get(left.getConversionType()) - SUPPORTED_TYPES.get(right.getConversionType());
+            int l = SUPPORTED_TYPES.get(left.getConversionType()), r = SUPPORTED_TYPES.get(right.getConversionType());
+            int pos = l% HIGHEST_KEY - r % HIGHEST_KEY;
             switch (pos)
             {
                 case -1:
@@ -288,35 +299,110 @@ public class ArithExpression extends AbstractBinaryExpression
                 case 3:     return (long)rawDouble();
                 case -5:
                 case 5:     return rawBigInteger().longValue();
-                default:    LongExtractor lEx = Extractors.getLongExtractor(left.getConversionType());
-                            LongExtractor rEx = Extractors.getLongExtractor(right.getConversionType());
-                            long leftUnix = lEx.stdLongToUnix(lEx.getLong(left));
-                            long rightUnix = rEx.stdLongToUnix(rEx.getLong(right));               
-                            return Extractors.getLongExtractor(SUPPORTED_TYPES.get(pos >= 0 ? pos : -pos)).
-                                    unixToStdLong(op.evaluate(leftUnix, rightUnix));
+                case 7:
+                case -7:
+                case 0:     if (l == 0 || l == HIGHEST_KEY) return rawLong();// left and right are intervals
+                            else return doArithMillis(pos); // left and right are date/times
+                default:    if (l == 0 || r == 0) return doArithMillis(pos); // left is date/time and right is interval or vice versa
+                            else return doArithMonth(); 
             }
-        }
-
-        @Override
-        public long rawInterval_Month ()
-        {
-
-            int pos = SUPPORTED_TYPES.get(left.getConversionType()) - SUPPORTED_TYPES.get(right.getConversionType());
-            switch (pos)
-            {
-                case -1:
-                case 1:     return rawDecimal().longValue();
-                case -3:
-                case 3:     return (long)rawDouble();
-                case -5:
-                case 5:     return rawBigInteger().longValue();
-                default:    throw new UnsupportedOperationException(); /* INTERVAL_MONTH should not be
-                            the result of two date/time, not in ArithExpression anyway.
-                            This method, though, could be overidden in sub-class(DateTimeArith) as needed  */
-            }
-
         }
         
+        protected long doArithMillis (int pos)
+        {
+            LongExtractor lEx = Extractors.getLongExtractor(left.getConversionType());
+            LongExtractor rEx = Extractors.getLongExtractor(right.getConversionType());
+            long leftUnix = lEx.stdLongToUnix(lEx.getLong(left));
+            long rightUnix = rEx.stdLongToUnix(rEx.getLong(right));               
+            return Extractors.getLongExtractor(SUPPORTED_TYPES.get(pos > 0 ? pos : -pos)). 
+                    unixToStdLong(op.evaluate(leftUnix, rightUnix));
+        }
+        
+     
+        protected long doArithMonth ()
+        {
+            long ymd_hms[];
+            long interval;
+            LongExtractor extract = Extractors.getLongExtractor(topT);
+   
+            if (left.getConversionType() == AkType.INTERVAL_MONTH)
+            {
+                interval = left.getInterval_Month();
+                ymd_hms = extract.getYearMonthDayHourMinuteSecond(extract.getLong(right));
+            }
+            else
+            {
+                interval = right.getInterval_Month();
+                ymd_hms = ymd_hms = extract.getYearMonthDayHourMinuteSecond(extract.getLong(left));
+            }
+
+            if (!vallidDayMonth(ymd_hms[0], ymd_hms[1], ymd_hms[2]))
+            {
+                topT = AkType.NULL;
+                throw new ValueSourceIsNullException();
+            }
+
+            if (op.opName() == '+' && interval >= 0)
+            {
+                ymd_hms[0] += (ymd_hms[1] += interval) / 12;
+                ymd_hms[1] = ymd_hms[1] % 12;
+            }
+            else
+            {
+                ymd_hms[1] -= (interval *= op.opName() == '+' ? -1 : 1) % 12;
+                ymd_hms[0] -= interval / 12;
+                if (ymd_hms[1] <= 0)
+                {
+                    ymd_hms[1] += 12;
+                    --ymd_hms[0];
+                }
+            }
+            
+            // adjust day value
+            switch ((int)ymd_hms[1])
+            {
+                case 2: ymd_hms[2] = Math.min(ymd_hms[0] % 400 == 0 || ymd_hms[0] % 4 == 0  && ymd_hms[0] % 100 != 0
+                                                                    ? 29 : 28,
+                                                                    ymd_hms[2]);
+                        break;
+                case 4:
+                case 6:
+                case 9:
+                case 11: ymd_hms[2] = Math.min(30, ymd_hms[2]);
+                         break;
+                case 3:
+                case 1:
+                case 5:
+                case 7:
+                case 8:
+                case 10:
+                case 12: ymd_hms[2] = Math.min(31, ymd_hms[2]);
+                         break;
+                default: throw new InvalidParameterValueException();
+            }
+            return extract.getEncoded(ymd_hms);
+        }
+
+        private static boolean vallidDayMonth (long y, long m, long d)
+        {
+            switch ((int)m)
+            {
+                case 2:     return d <= (y % 400 == 0 || y % 4 == 0 && y % 100 != 0 ? 29L : 28L);
+                case 4:
+                case 6:
+                case 9:
+                case 11:    return d <= 30;
+                case 3:
+                case 1:
+                case 5:
+                case 7:
+                case 8:
+                case 10:
+                case 12:    return d <= 31;
+                default:    return false;
+            }
+        }
+
         @Override
         public boolean isNull() 
         {

@@ -30,6 +30,7 @@ public abstract class LongExtractor extends AbstractExtractor {
     public abstract long stdLongToUnix (long longVal);
     public abstract long unixToStdLong (long unixVal);
     public abstract long[] getYearMonthDayHourMinuteSecond (long value);
+    public abstract long getEncoded (long ymd_hms[]);
     
     // package-private ctor
     LongExtractor(AkType targetConversionType) {

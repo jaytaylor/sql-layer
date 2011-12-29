@@ -90,6 +90,11 @@ abstract class ExtractorsForDates extends LongExtractor {
             final long day = value % 32;
             return new long[] {year, month, day, 0, 0, 0};
         }
+
+        @Override
+        public long getEncoded(long[] ymd_hms) {
+            return ymd_hms[0] * 512 + ymd_hms[1] * 32 + ymd_hms[2];
+        }
     };
 
     /**
@@ -172,6 +177,16 @@ abstract class ExtractorsForDates extends LongExtractor {
             long second = value / DATETIME_SEC_SCALE % 100;
             return new long[] {year, month, day, hour, minute, second};
         }
+
+        @Override
+        public long getEncoded(long[] ymd_hms) {
+            return ymd_hms[0] * DATETIME_YEAR_SCALE +
+                   ymd_hms[1] * DATETIME_MONTH_SCALE +
+                   ymd_hms[2] * DATETIME_DAY_SCALE +
+                   ymd_hms[3] * DATETIME_HOUR_SCALE +
+                   ymd_hms[4] * DATETIME_MIN_SCALE +
+                   ymd_hms[5] * DATETIME_SEC_SCALE;
+        }
     };
 
     /**
@@ -251,6 +266,13 @@ abstract class ExtractorsForDates extends LongExtractor {
             long second = abs - hour* TIME_HOURS_SCALE - minute* TIME_MINUTES_SCALE;
             return new long [] {0, 1, 1, hour, minute, second};
         }
+
+        @Override
+        public long getEncoded(long[] ymd_hms) {
+            return ymd_hms[3] * 10000 +
+                   ymd_hms[4] * 100 +
+                   ymd_hms[5];
+        }
     };
 
     /**
@@ -294,6 +316,16 @@ abstract class ExtractorsForDates extends LongExtractor {
         public long[] getYearMonthDayHourMinuteSecond(long value) {
             return Calculator.getYMDHMS(value * 1000);
         }
+
+        @Override
+        public long getEncoded(long[] ymd_hms) {
+            return Calculator.getMillis((int)ymd_hms[0], 
+                                        (int)ymd_hms[1], 
+                                        (int)ymd_hms[2], 
+                                        (int)ymd_hms[3], 
+                                        (int)ymd_hms[4], 
+                                        (int)ymd_hms[5]);
+        }
     };
 
     /**
@@ -336,6 +368,11 @@ abstract class ExtractorsForDates extends LongExtractor {
         @Override
         public long[] getYearMonthDayHourMinuteSecond(long value) {
             return new long[] {value == 0 ? 0 : 1900 + value, 1, 1, 0, 0, 0};
+        }
+
+        @Override
+        public long getEncoded(long[] ymd_hms) {
+            return ymd_hms[0] == 0 ? 0 : 1900 + ymd_hms[0];
         }
     };
 
@@ -394,6 +431,11 @@ abstract class ExtractorsForDates extends LongExtractor {
         public long[] getYearMonthDayHourMinuteSecond(long value) {
             throw new UnsupportedOperationException("Unsupported: Cannot extract Year/Month/.... from INTERVAL_MILLIS");
         }
+
+        @Override
+        public long getEncoded(long[] ymd_hms) {
+            throw new UnsupportedOperationException("Unsupported: Cannot encode Year/Month/... from INTERVAL_MILLIS");
+        }
     };
 
     final static ExtractorsForDates INTERVAL_MONTH = new ExtractorsForDates(AkType.INTERVAL_MONTH)
@@ -450,6 +492,12 @@ abstract class ExtractorsForDates extends LongExtractor {
         @Override
         public long[] getYearMonthDayHourMinuteSecond(long value) {
             throw new UnsupportedOperationException("Unsupported: Cannot extract Year/Month/... from INTERVAL_MONTH");
+        }
+
+        @Override
+        public long getEncoded(long[] ymd_hms) {
+            throw new UnsupportedOperationException("Unsupported: encode Year/Month/... to INTERVAL_MONTH");
+
         }
     };
 
