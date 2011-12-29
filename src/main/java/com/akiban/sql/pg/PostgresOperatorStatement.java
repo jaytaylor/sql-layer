@@ -94,7 +94,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         return nrows;
     }
 
-    protected PostgresRowOutputter getRowOutputter(PostgresMessenger messenger) {
+    protected PostgresOutputter<Row> getRowOutputter(PostgresMessenger messenger) {
         return new PostgresRowOutputter(messenger, this);
     }
 
