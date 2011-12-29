@@ -341,6 +341,14 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
 
     // ------------------------ GET HOUR (or HOUR_OF_DAY)-----------------------
     @Test
+    public void getHourFromChar ()
+    {
+        Expression str = new LiteralExpression(AkType.VARCHAR, "A");
+        Expression top = ExtractExpression.HOUR_COMPOSER.compose(Arrays.asList(str));
+        
+        assertTrue("top should be null", top.evaluation().eval().isNull());
+    }
+    @Test
     public void getHourFrom3DigitHrTime ()
     {
         Expression time = new LiteralExpression (AkType.TIME, Extractors.getLongExtractor(AkType.TIME).getLong("-999:12:20"));
