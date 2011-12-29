@@ -15,6 +15,7 @@
 
 package com.akiban.server.types;
 
+import com.akiban.qp.operator.Cursor;
 import com.akiban.server.Quote;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.util.AkibanAppender;
@@ -164,6 +165,11 @@ public final class FromObjectValueSource implements ValueSource {
     }
 
     @Override
+    public Cursor getResultSet() {
+        return as(Cursor.class, AkType.RESULT_SET);
+    }
+
+    @Override
     public void appendAsString(AkibanAppender appender, Quote quote) {
         AkType type = getConversionType();
         quote.quote(appender, type);
@@ -209,6 +215,8 @@ public final class FromObjectValueSource implements ValueSource {
              return AkType.BOOL;
         else if (object instanceof Character)
              return AkType.VARCHAR;
+        else if (object instanceof Cursor)
+             return AkType.RESULT_SET;
         else throw new UnsupportedOperationException("can't reflectively set " + object.getClass() + ": " + object);
     }
 

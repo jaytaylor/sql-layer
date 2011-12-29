@@ -15,6 +15,7 @@
 
 package com.akiban.server.types.util;
 
+import com.akiban.qp.operator.Cursor;
 import com.akiban.server.Quote;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types.AkType;
@@ -174,6 +175,11 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     @Override
     public boolean getBool() {
         return rawLong(AkType.BOOL) != 0;
+    }
+
+    @Override
+    public Cursor getResultSet() {
+        return rawObject(AkType.RESULT_SET, Cursor.class);
     }
 
     @Override
@@ -580,7 +586,7 @@ public final class ValueHolder implements ValueSource, ValueTarget {
         LONG_VAL (AkType.DATE, AkType.DATETIME, AkType.INT, AkType.LONG, AkType.TIME, AkType.TIMESTAMP, AkType.INTERVAL_MILLIS, AkType.INTERVAL_MONTH, AkType.U_INT, AkType.YEAR),
         DOUBLE_VAL(AkType.DOUBLE, AkType.U_DOUBLE),
         FLOAT_VAL(AkType.FLOAT, AkType.U_FLOAT),
-        OBJECT_VAL(AkType.DECIMAL, AkType.VARCHAR, AkType.TEXT, AkType.U_BIGINT, AkType.VARBINARY),
+        OBJECT_VAL(AkType.DECIMAL, AkType.VARCHAR, AkType.TEXT, AkType.U_BIGINT, AkType.VARBINARY, AkType.RESULT_SET),
         BOOL_VAL(AkType.BOOL),
         NULL_VAL(AkType.NULL),
         UNDEF_VAL()
