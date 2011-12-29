@@ -111,7 +111,7 @@ public abstract class PostgresBaseStatement implements PostgresStatement
             return parameterTypes.length;
     }
 
-    protected Bindings getParameterBindings(String[] parameters) {
+    protected Bindings getParameterBindings(Object[] parameters) {
         PostgresParameterDecoder decoder = new PostgresParameterDecoder();
         ArrayBindings bindings = new ArrayBindings(parameters.length);
         for (int i = 0; i < parameters.length; i++) {

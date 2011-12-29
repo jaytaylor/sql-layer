@@ -22,13 +22,23 @@ import com.akiban.server.types.conversion.Converters;
 
 public class PostgresParameterDecoder
 {
-    private FromObjectValueSource stringSource;
-    private ToObjectValueTarget objectTarget;
+    private FromObjectValueSource source;
+    private ToObjectValueTarget target;
     
     public PostgresParameterDecoder() {
     }
 
-    public Object decodeParameter(String value, PostgresType type) {
+    /** Decode the given parameter into a raw object according to the
+     * specified type.
+     * The object will later be married with the same type by the
+     * Variable expression.
+     * <code>value</code> is a string for most drivers most of the
+     * time, except in the case of a VARBINARY.  Since that is the
+     * only target type that will convert from a byte array, an error
+     * will be thrown for any other binary value in some Postgres
+     * format we don't know.
+     */
+    public Object decodeParameter(Object value, PostgresType type) {
         if (value == null)
             return null;
         if (type == null)
@@ -36,12 +46,12 @@ public class PostgresParameterDecoder
         AkType akType = type.getAkType();
         if (akType == AkType.VARCHAR)
             return value;
-        if (stringSource == null) {
-            stringSource = new FromObjectValueSource();
-            objectTarget = new ToObjectValueTarget();
+        if (source == null) {
+            source = new FromObjectValueSource();
+            target = new ToObjectValueTarget();
         }
-        stringSource.setReflectively(value);
-        objectTarget.expectType(akType);
-        return Converters.convert(stringSource, objectTarget).lastConvertedValue();
+        source.setReflectively(value);
+        target.expectType(akType);
+        return Converters.convert(source, target).lastConvertedValue();
     }
 }

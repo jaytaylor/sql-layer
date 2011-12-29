@@ -65,7 +65,7 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
     }
 
     @Override
-    public PostgresStatement getBoundStatement(String[] parameters,
+    public PostgresStatement getBoundStatement(Object[] parameters,
                                                boolean[] columnBinary, 
                                                boolean defaultColumnBinary) {
         return this;
