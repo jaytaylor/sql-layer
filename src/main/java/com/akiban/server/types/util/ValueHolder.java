@@ -318,6 +318,11 @@ public final class ValueHolder implements ValueSource, ValueTarget {
         putRaw(AkType.BOOL, value ? 1L : 0L);
     }
 
+    @Override
+    public void putResultSet(Cursor value) {
+        putRaw(AkType.RESULT_SET, value);
+    }
+
     // Object interface
 
     @Override
@@ -607,6 +612,7 @@ public final class ValueHolder implements ValueSource, ValueTarget {
                     || checkObjectClass(AkType.TEXT, type, String.class, value)
                     || checkObjectClass(AkType.U_BIGINT, type, BigInteger.class, value)
                     || checkObjectClass(AkType.VARBINARY, type, ByteSource.class, value)
+                    || checkObjectClass(AkType.RESULT_SET, type, Cursor.class, value)
                     ;
             if (!oneCheckedOut) {
                 throw new IllegalRawPutException(this, type);

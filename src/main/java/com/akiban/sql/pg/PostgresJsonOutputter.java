@@ -17,6 +17,7 @@ package com.akiban.sql.pg;
 
 import static com.akiban.sql.pg.PostgresJsonCompiler.JsonResultColumn;
 
+import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
 import com.akiban.server.Quote;
 import com.akiban.server.types.AkType;
@@ -63,11 +64,33 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
             Quote.DOUBLE_QUOTE.append(appender, resultColumn.getName());
             encoder.appendString("\":");
             AkType type = resultColumn.getAkType();
-            Quote.JSON_QUOTE.quote(appender, type);
-            encoder.appendValue(row.eval(i), valueType, false);
-            Quote.JSON_QUOTE.quote(appender, type);
+            if (type == AkType.RESULT_SET) {
+                outputNestedResultSet(row.eval(i).getResultSet(),
+                                      resultColumn.getNestedResultColumns());
+            }
+            else {
+                Quote.JSON_QUOTE.quote(appender, type);
+                encoder.appendValue(row.eval(i), valueType, false);
+                Quote.JSON_QUOTE.quote(appender, type);
+            }
         }
         encoder.appendString("}");
+    }
+
+    protected void outputNestedResultSet(Cursor cursor, 
+                                         List<JsonResultColumn> resultColumns) 
+            throws IOException {
+        encoder.appendString("[");
+        try {
+            Row row;
+            while ((row = cursor.next()) != null) {
+                outputRow(row, resultColumns);
+            }
+        }
+        finally {
+            cursor.close();
+        }
+        encoder.appendString("]");
     }
 
 }

@@ -34,29 +34,56 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
         binder.setAllowSubqueryMultipleColumns(true);
     }    
 
+    @Override
+    public boolean isSubqueryValueResultSet() {
+        return true;
+    }
+
     public static class JsonResultColumn extends PhysicalResultColumn {
         private AkType akType;
+        private List<JsonResultColumn> nestedResultColumns;
         
-        public JsonResultColumn(String name, AkType akType) {
+        public JsonResultColumn(String name, AkType akType, 
+                                List<JsonResultColumn> nestedResultColumns) {
             super(name);
             this.akType = akType;
+            this.nestedResultColumns = nestedResultColumns;
         }
 
         public AkType getAkType() {
             return akType;
         }
+
+        public List<JsonResultColumn> getNestedResultColumns() {
+            return nestedResultColumns;
+        }
     }
 
     @Override
     public PhysicalResultColumn getResultColumn(ResultField field) {
-        DataTypeDescriptor sqlType = field.getSQLtype();
+        return getJsonResultColumn(field.getName(), field.getSQLtype());
+    }
+
+    protected JsonResultColumn getJsonResultColumn(String name, 
+                                                   DataTypeDescriptor sqlType) {
         AkType akType;
+        List<JsonResultColumn> nestedResultColumns = null;
         if (sqlType == null)
             akType = AkType.VARCHAR;
+        else if (sqlType.getTypeId().isRowMultiSet()) {
+            TypeId.RowMultiSetTypeId typeId = 
+                (TypeId.RowMultiSetTypeId)sqlType.getTypeId();
+            String[] columnNames = typeId.getColumnNames();
+            DataTypeDescriptor[] columnTypes = typeId.getColumnTypes();
+            nestedResultColumns = new ArrayList<JsonResultColumn>(columnNames.length);
+            for (int i = 0; i < columnNames.length; i++) {
+                nestedResultColumns.add(getJsonResultColumn(columnNames[i], columnTypes[i]));
+            }
+            akType = AkType.RESULT_SET;
+        }
         else
             akType = TypesTranslation.sqlTypeToAkType(sqlType);
-        // TODO: Nested.
-        return new JsonResultColumn(field.getName(), akType);
+        return new JsonResultColumn(name, akType, nestedResultColumns);
     }
 
     @Override

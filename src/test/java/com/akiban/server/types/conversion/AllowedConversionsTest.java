@@ -357,6 +357,10 @@ public final class AllowedConversionsTest {
         }
 
         @Override
+        public void putResultSet(Cursor value) {
+        }
+
+        @Override
         public AkType getConversionType() {
             return akType;
         }

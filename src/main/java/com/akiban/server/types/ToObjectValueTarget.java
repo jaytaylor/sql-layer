@@ -15,6 +15,7 @@
 
 package com.akiban.server.types;
 
+import com.akiban.qp.operator.Cursor;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.ByteSource;
 
@@ -153,6 +154,11 @@ public final class ToObjectValueTarget implements ValueTarget {
     @Override
     public void putBool(boolean value) {
         internalPut(value, AkType.BOOL);
+    }
+
+    @Override
+    public void putResultSet(Cursor value) {
+        internalPut(value, AkType.RESULT_SET);
     }
 
     @Override
