@@ -72,8 +72,8 @@ public abstract class AbstractArithValueSource implements ValueSource
 
     @Override
     public float getFloat()
-    {
-        throw complain(AkType.FLOAT);
+    {   check(AkType.FLOAT);
+        return (float)rawDouble();
     }
 
     @Override

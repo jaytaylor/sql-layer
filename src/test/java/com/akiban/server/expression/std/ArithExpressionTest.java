@@ -38,6 +38,17 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
     private final CompositionTestInfo testInfo = new CompositionTestInfo(2, AkType.DOUBLE, true);
 
     @Test
+    public void longMinusFloat ()
+    {
+        Expression left = new LiteralExpression(AkType.LONG, 3);
+        Expression right = new LiteralExpression(AkType.FLOAT,2.5f);
+        Expression top = new ArithExpression(left, ex = ArithOps.MINUS, right);
+
+        assertEquals("top should be float", AkType.FLOAT, top.valueType());
+        assertEquals(0.5f, top.evaluation().eval().getFloat(), 0.0001);
+    }
+
+    @Test
     public void longMinusDouble ()
     {
         Expression left = new LiteralExpression(AkType.LONG, 5L);

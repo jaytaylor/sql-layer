@@ -62,8 +62,10 @@ public class ArithExpression extends AbstractBinaryExpression
         // regular numeric types: key is odd
         SUPPORTED_TYPES.put(AkType.DECIMAL, 1);
         SUPPORTED_TYPES.put(AkType.DOUBLE, 3);
-        SUPPORTED_TYPES.put(AkType.U_BIGINT, 5);
-        SUPPORTED_TYPES.put(AkType.LONG, 7);
+        SUPPORTED_TYPES.put(AkType.FLOAT, 5);
+        SUPPORTED_TYPES.put(AkType.U_BIGINT, 7);
+        SUPPORTED_TYPES.put(AkType.LONG, 9);
+        SUPPORTED_TYPES.put(AkType.INT, 11);
     }
 
     public ArithExpression (Expression lhs, ArithOp op, Expression rhs)
@@ -183,6 +185,11 @@ public class ArithExpression extends AbstractBinaryExpression
         }   
     }
 
+    protected static boolean isNumeric (AkType type)
+    {
+        return SUPPORTED_TYPES.get(type) % 2 == 1;
+    }
+    
     @Override
     protected boolean nullIsContaminating()
     {
@@ -291,16 +298,14 @@ public class ArithExpression extends AbstractBinaryExpression
              */
             int l = SUPPORTED_TYPES.get(left.getConversionType()), r = SUPPORTED_TYPES.get(right.getConversionType());
             int pos = l% HIGHEST_KEY - r % HIGHEST_KEY;
-            switch (pos)
+            switch (pos = pos > 0 ? pos : - pos)
             {
-                case -1:
                 case 1:     return rawDecimal().longValue();
-                case -3:
-                case 3:     return (long)rawDouble();
-                case -5:
-                case 5:     return rawBigInteger().longValue();
-                case 7:
-                case -7:
+                case 3:     
+                case 5:     return (long)rawDouble();
+                case 7:     return rawBigInteger().longValue();
+                case 9:
+                case 11:    return rawLong();
                 case 0:     if (l == 0 || l == HIGHEST_KEY) return rawLong();// left and right are intervals
                             else return doArithMillis(pos); // left and right are date/times
                 default:    if (l == 0 || r == 0) return doArithMillis(pos); // left is date/time and right is interval or vice versa
@@ -314,7 +319,7 @@ public class ArithExpression extends AbstractBinaryExpression
             LongExtractor rEx = Extractors.getLongExtractor(right.getConversionType());
             long leftUnix = lEx.stdLongToUnix(lEx.getLong(left));
             long rightUnix = rEx.stdLongToUnix(rEx.getLong(right));               
-            return Extractors.getLongExtractor(SUPPORTED_TYPES.get(pos > 0 ? pos : -pos)). 
+            return Extractors.getLongExtractor(SUPPORTED_TYPES.get(pos)). 
                     unixToStdLong(op.evaluate(leftUnix, rightUnix));
         }
         
