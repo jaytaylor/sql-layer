@@ -18,20 +18,19 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
-/** An expression evaluated by a subquery: first column of first row
- * or <code>NULL</code>.
+/** An expression representing a nested result set.
  */
-public class SubqueryValueExpression extends SubqueryExpression 
+public class SubqueryResultSetExpression extends SubqueryExpression 
 {
-    public SubqueryValueExpression(Subquery subquery, 
-                                   DataTypeDescriptor sqlType, ValueNode sqlSource) {
+    public SubqueryResultSetExpression(Subquery subquery, 
+                                       DataTypeDescriptor sqlType, ValueNode sqlSource) {
         super(subquery, sqlType, sqlSource);
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (!(obj instanceof SubqueryValueExpression)) return false;
-        SubqueryValueExpression other = (SubqueryValueExpression)obj;
+        if (!(obj instanceof SubqueryResultSetExpression)) return false;
+        SubqueryResultSetExpression other = (SubqueryResultSetExpression)obj;
         // Currently this is ==; don't match whole subquery.
         return getSubquery().equals(other.getSubquery());
     }

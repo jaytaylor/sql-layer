@@ -59,4 +59,8 @@ public class SchemaRulesContext extends RulesContext
         return indexEstimator;
     }
 
+    public boolean isSubqueryValueResultSet() {
+        return false;
+    }
+
 }

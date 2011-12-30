@@ -74,7 +74,8 @@ public class ASTStatementLoader extends BaseRule
         plan.putWhiteboard(MARKER, ast);
         DMLStatementNode stmt = ast.getStatement();
         try {
-            plan.setPlan(new Loader().toStatement(stmt));
+            plan.setPlan(new Loader((SchemaRulesContext)plan.getRulesContext())
+                         .toStatement(stmt));
         }
         catch (StandardException ex) {
             // TODO: Separate out Parser subsystem error from true parse error.
@@ -83,6 +84,12 @@ public class ASTStatementLoader extends BaseRule
     }
 
     static class Loader {
+        private SchemaRulesContext rulesContext;
+
+        protected Loader(SchemaRulesContext rulesContext) {
+            this.rulesContext = rulesContext;
+        }
+
         /** Convert given statement into appropriate intermediate form. */
         protected BaseStatement toStatement(DMLStatementNode stmt) throws StandardException {
             switch (stmt.getNodeType()) {
@@ -1123,12 +1130,19 @@ public class ASTStatementLoader extends BaseRule
             }
             else if (valueNode instanceof SubqueryNode) {
                 SubqueryNode subqueryNode = (SubqueryNode)valueNode;
-                PlanNode subquery = toQueryForSelect(subqueryNode.getResultSet(),
-                                                     subqueryNode.getOrderByList(),
-                                                     subqueryNode.getOffset(),
-                                                     subqueryNode.getFetchFirst());
-                return new SubqueryValueExpression(new Subquery(subquery),
-                                                   subqueryNode.getType(), subqueryNode);
+                PlanNode subquerySelect = toQueryForSelect(subqueryNode.getResultSet(),
+                                                           subqueryNode.getOrderByList(),
+                                                           subqueryNode.getOffset(),
+                                                           subqueryNode.getFetchFirst());
+                Subquery subquery = new Subquery(subquerySelect);
+                if (rulesContext.isSubqueryValueResultSet())
+                    return new SubqueryResultSetExpression(subquery,
+                                                           resultSetType(subqueryNode),
+                                                           subqueryNode);
+                else
+                    return new SubqueryValueExpression(subquery, 
+                                                       subqueryNode.getType(), 
+                                                       subqueryNode);
             }
             else if (valueNode instanceof JavaToSQLValueNode) {
                 return toExpression(((JavaToSQLValueNode)valueNode).getJavaValueNode(),
@@ -1325,4 +1339,23 @@ public class ASTStatementLoader extends BaseRule
         }
 
     }
+
+    /** Construct appropriate type for this subquery result set. */
+    // TODO: Consider moving this someplace earlier on and using the
+    // type to determine which kind of expression to make.
+    static DataTypeDescriptor resultSetType(SubqueryNode subqueryNode)
+            throws StandardException {
+        ResultSetNode resultSet = subqueryNode.getResultSet();
+        ResultColumnList resultColumns = resultSet.getResultColumns();
+        int ncols = resultColumns.size();
+        String[] columnNames = new String[ncols];
+        DataTypeDescriptor[] columnTypes = new DataTypeDescriptor[ncols];
+        for (int i = 0; i < ncols; i++) {
+            ResultColumn resultColumn = resultColumns.get(i);
+            columnNames[i] = resultColumn.getName();
+            columnTypes[i] = resultColumn.getType();
+        }
+        return DataTypeDescriptor.getRowMultiSet(columnNames, columnTypes);
+    }
+
 }
