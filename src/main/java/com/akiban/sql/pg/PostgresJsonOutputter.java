@@ -83,7 +83,12 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
         encoder.appendString("[");
         try {
             Row row;
+            boolean first = true;
             while ((row = cursor.next()) != null) {
+                if (first)
+                    first = false;
+                else
+                    encoder.appendString(",");
                 outputRow(row, resultColumns);
             }
         }
