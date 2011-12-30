@@ -15,6 +15,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.optimizer.NestedResultSetTypeComputer;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.PhysicalSelect;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
@@ -32,11 +33,7 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
     public PostgresJsonCompiler(PostgresServerSession server) {
         super(server);
         binder.setAllowSubqueryMultipleColumns(true);
-    }    
-
-    @Override
-    public boolean isSubqueryValueResultSet() {
-        return true;
+        typeComputer = new NestedResultSetTypeComputer(server.functionsRegistry());
     }
 
     public static class JsonResultColumn extends PhysicalResultColumn {
