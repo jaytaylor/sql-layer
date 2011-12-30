@@ -95,11 +95,6 @@ class DelayableScanCallable extends TimedCallable<List<NewRow>> {
             }
 
             @Override
-            public void retryHook() {
-                timePoints.mark("SCAN: RETRY");
-            }
-
-            @Override
             public void scanSomeFinishedWellHook() {
                 if (markFinish) {
                     timePoints.mark("SCAN: FINISH");

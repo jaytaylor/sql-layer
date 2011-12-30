@@ -15,18 +15,15 @@
 
 package com.akiban.server;
 
+import com.akiban.server.rowdata.RowDef;
+import com.persistit.exception.PersistitInterruptedException;
+
 public interface TableStatusCache {
     /**
      * Record that a row has been deleted.
      * @param tableID ID of the modified table.
      */
     void rowDeleted(int tableID);
-
-    /**
-     * Record that a row has been updated.
-     * @param tableID ID of the modified table.
-     */
-    void rowUpdated(int tableID);
 
     /**
      * Record that a row has been written.
@@ -38,42 +35,41 @@ public interface TableStatusCache {
      * Reset, but do not remove, the state of a table.
      * @param tableID ID of the table to truncate.
      */
-    void truncate(int tableID);
+    void truncate(int tableID) throws PersistitInterruptedException;
 
     /**
      * Completely remove the state of a table.
      * @param tableID ID of the table to dop.
      */
-    void drop(int tableID);
+    void drop(int tableID) throws PersistitInterruptedException;
 
     /**
      * Set the auto-increment value of a given table.
      * @param tableID ID of the table.
      * @param value The new auto-increment value.
      */
-    void setAutoIncrement(int tableID, long value);
+    void setAutoIncrement(int tableID, long value) throws PersistitInterruptedException;
+
+    /**
+     * Set the RowDef of a given table.
+     * @param tableID ID of the table.
+     * @param rowDef Associated RowDef.
+     */
+    void setRowDef(int tableID, RowDef rowDef);
 
     /**
      * Create a brand new, unique ID for the given table.
      * @param tableID ID of the table.
      * @return The new ID value.
      */
-    long createNewUniqueID(int tableID);
-
-    /**
-     * Set the unique ID value of a given table. Note: Attempting to
-     * decrease the current value is silently <b>ignored</b>.
-     * @param tableID ID of the table.
-     * @param value Value to set the unique ID to.
-     */
-    void setUniqueID(int tableID, long value);
+    long createNewUniqueID(int tableID) throws PersistitInterruptedException;
 
     /**
      * Set the ordinal value of a given table.
      * @param tableID ID of the table.
      * @param value Value to set the ordinal to.
      */
-    void setOrdinal(int tableID, int value);
+    void setOrdinal(int tableID, int value) throws PersistitInterruptedException;
 
     /**
      * Retrieve the, read-only, view of the table status for a given table.

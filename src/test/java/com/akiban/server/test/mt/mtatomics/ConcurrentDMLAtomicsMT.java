@@ -64,6 +64,7 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
     public void updateUnIndexedColumnWhileScanning() throws Exception {
         final int tableId = tableWithThreeRows();
         final int SCAN_WAIT = 5000;
+        final int UPDATE_WAIT = 2000;
 
         int indexId = ddl().getUserTable(session(), new TableName(SCHEMA, TABLE)).getIndex("PRIMARY").getIndexId();
         TimedCallable<List<NewRow>> scanCallable
@@ -74,7 +75,7 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
                 NewRow old = createNewRow(tableId, 2L, "mr melty");
                 NewRow updated = createNewRow(tableId, 2L, "icebox");
-                Timing.sleep(2000);
+                Timing.sleep(UPDATE_WAIT);
                 timePoints.mark("UPDATE: IN");
                 dml().updateRow(ServiceManagerImpl.newSession(), old, updated, new SetColumnSelector(1));
                 timePoints.mark("UPDATE: OUT");
@@ -88,7 +89,7 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 updateCallable,
                 Arrays.asList(
                         createNewRow(tableId, 1L, "the snowman"),
-                        createNewRow(tableId, 2L, "icebox"),
+                        createNewRow(tableId, 2L, "mr melty"),
                         createNewRow(tableId, 99L, "zebras in snow")
                 ),
                 Arrays.asList(
@@ -126,8 +127,8 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 scanCallable,
                 updateCallable,
                 Arrays.asList(
+                        createNewRow(tableId, 1L, "the snowman"),
                         createNewRow(tableId, 2L, "mr melty"),
-                        createNewRow(tableId, 5L, "the snowman"),
                         createNewRow(tableId, 99L, "zebras in snow")
                 ),
                 Arrays.asList(
@@ -172,8 +173,8 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 scanCallable,
                 updateCallable,
                 Arrays.asList(
-                        createNewRow(tableId, 1L, "a snowman"),
-                        createNewRow(tableId, 2L, "xtreme weather"),
+                        createNewRow(tableId, 2L, "mr melty"),
+                        createNewRow(tableId, 1L, "the snowman"),
                         createNewRow(tableId, 99L, "zebras in snow")
                 ),
                 Arrays.asList(
@@ -218,8 +219,8 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
                 scanCallable,
                 updateCallable,
                 Arrays.asList(
-                        createNewRow(tableId, 10L, "a snowman"),
-                        createNewRow(tableId, 2L, "xtreme weather"),
+                        createNewRow(tableId, 2L, "mr melty"),
+                        createNewRow(tableId, 1L, "the snowman"),
                         createNewRow(tableId, 99L, "zebras in snow")
                 ),
                 Arrays.asList(
