@@ -35,8 +35,8 @@ public abstract class AbstractArithValueSource implements ValueSource
     protected abstract double rawDouble();
     protected abstract BigDecimal rawDecimal();
     protected abstract BigInteger rawBigInteger();
-    protected abstract long rawInterval_Millis();
-    protected abstract long rawInterval_Month();
+    protected abstract long rawInterval();
+
     
     @Override
     public BigDecimal getDecimal()
@@ -73,8 +73,8 @@ public abstract class AbstractArithValueSource implements ValueSource
 
     @Override
     public float getFloat()
-    {
-        throw complain(AkType.FLOAT);
+    {   check(AkType.FLOAT);
+        return (float)rawDouble();
     }
 
     @Override
@@ -87,14 +87,14 @@ public abstract class AbstractArithValueSource implements ValueSource
     public long getDate()
     {
         check (AkType.DATE);
-        return rawInterval_Millis();
+        return rawInterval();
     }
 
     @Override
     public long getDateTime()
     {
         check (AkType.DATETIME);
-        return rawInterval_Millis();
+        return rawInterval();
     }
 
     @Override
@@ -115,28 +115,28 @@ public abstract class AbstractArithValueSource implements ValueSource
     public long getTime()
     {
        check(AkType.TIME);
-       return rawInterval_Millis();
+       return rawInterval();
     }
 
     @Override
     public long getTimestamp()
     {
         check(AkType.TIMESTAMP);
-        return rawInterval_Millis();
+        return rawInterval();
     }
 
     @Override
     public long getInterval_Millis()
     {
         check(AkType.INTERVAL_MILLIS);
-        return rawInterval_Millis();
+        return rawInterval();
     }
 
     @Override
     public long getInterval_Month()
     {
         check(AkType.INTERVAL_MONTH);
-        return rawInterval_Month();
+        return rawInterval();
     }
 
     @Override
@@ -150,7 +150,7 @@ public abstract class AbstractArithValueSource implements ValueSource
     public long getYear()
     {
         check(AkType.YEAR);
-        return rawInterval_Millis();
+        return rawInterval();
     }
 
     @Override

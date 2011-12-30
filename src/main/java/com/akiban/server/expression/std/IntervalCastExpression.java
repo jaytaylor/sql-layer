@@ -15,6 +15,9 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.error.InconvertibleTypesException;
+import com.akiban.server.types.extract.Extractors;
 import java.util.HashMap;
 import com.akiban.sql.types.TypeId;
 import com.akiban.server.error.InvalidIntervalFormatException;
@@ -86,18 +89,30 @@ public class IntervalCastExpression extends AbstractUnaryExpression
         {
             ValueSource source = operand();
             if (source.isNull()) return NullValueSource.only();
-            String interval = source.getString().trim();
-            
-            long result = 0;
+
+            String interval = null;
+            Long result = null;
+            AkType sourceType = source.getConversionType();
+
             try
             {
+                if (sourceType == AkType.VARCHAR)
+                    interval = source.getString().trim();
+                else if (!Converters.isConversionAllowed(sourceType, AkType.LONG))
+                    throw new InconvertibleTypesException(sourceType, endPoint.type);
+                else
+                    result = Extractors.getLongExtractor(AkType.LONG).getLong(source);
+
                 switch(endPoint)
                 {
-                    case YEAR: 
-                        result = Long.parseLong(interval)  * 12; 
+                    case YEAR:
+                        if (result == null)
+                            result = Long.parseLong(interval);
+                        result *= 12L;
                         break;
                     case MONTH: 
-                        result = Long.parseLong(interval); 
+                        if (result == null)
+                            result = Long.parseLong(interval); 
                         break;
                     case YEAR_MONTH: 
                         String yr_mth[] = interval.split("-");
@@ -106,16 +121,22 @@ public class IntervalCastExpression extends AbstractUnaryExpression
                         result = Long.parseLong(yr_mth[0]) * 12 + Long.parseLong(yr_mth[1]);
                         break;
                     case DAY:
-                        result = Long.parseLong(interval) * MULS[0]; 
+                        if (result == null)
+                            result = Long.parseLong(interval);
+                        result *= MULS[0];
                         break;
                     case HOUR:
-                        result = Long.parseLong(interval) * MULS[1]; 
+                        if (result == null)
+                            result = Long.parseLong(interval); 
+                        result *= MULS[1];
                         break;
                     case MINUTE:
-                        result = Long.parseLong(interval) * MULS[2]; 
+                        if (result == null)
+                            result = Long.parseLong(interval);
+                        result *=  MULS[2];
                         break;
                     case SECOND:
-                        result = Math.round(Double.parseDouble(interval) * 1000);
+                        result = Math.round(Extractors.getDoubleExtractor().getDouble(source) * 1000);
                         break;
                     case DAY_HOUR:
                         result = getResult(0, interval, "\\s+", 2, false);
@@ -137,12 +158,16 @@ public class IntervalCastExpression extends AbstractUnaryExpression
                         break;
                 }
                 
-                valueHolder().putRaw(endPoint.type, result);
+                valueHolder().putRaw(endPoint.type, result.longValue());
                 return valueHolder();
             } 
             catch (NumberFormatException ex)
             {
                 throw new InvalidIntervalFormatException (endPoint.name(), interval);
+            }
+            catch (NullPointerException ex) 
+            {
+                throw new InvalidIntervalFormatException (endPoint.name(), "");
             }
         }
         
