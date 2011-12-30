@@ -7,7 +7,7 @@
 - Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
 ---
 - Statement: select hour(date_field) from all_types
-- output: [[null]]
+- output: [[0]]
 ---
 - Statement: select hour(time_field) from all_types where bigint_field=1
 - output: [[1]]

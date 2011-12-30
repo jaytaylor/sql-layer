@@ -1,3 +1,9 @@
+akiban-server (0.9.2) natty; urgency=low
+
+  * Development Release.
+
+ -- Akiban Build User <build@akiban.com>  Wed, 28 Dec 2011 15:31:57 -0800
+
 akiban-server (0.9.1) natty; urgency=low
 
   * Development Release.

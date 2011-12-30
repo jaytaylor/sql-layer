@@ -25,6 +25,8 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
+import com.akiban.server.api.DMLFunctions;
+import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;
@@ -60,7 +62,7 @@ public abstract class AbstractScanBase extends ITSuiteBase {
             }
         }
         
-        populateTables();
+        populateTables(serviceManager.getDXL().dmlFunctions());
     }
 
     @AfterClass
@@ -68,7 +70,7 @@ public abstract class AbstractScanBase extends ITSuiteBase {
         tableMap.clear();
     }
 
-    protected static void populateTables() throws Exception {
+    protected static void populateTables(DMLFunctions dml) throws Exception {
         final RowData rowData = new RowData(new byte[256]);
         // Create the tables in alphabetical order. Because of the
         // way the tables are defined, this also creates all parents before
@@ -76,18 +78,14 @@ public abstract class AbstractScanBase extends ITSuiteBase {
         // PrintStream output = new PrintStream(new FileOutputStream(new File("/tmp/srt.out")));
         for (TableName name : tableMap.keySet()) {
             final RowDef rowDef = rowDefCache.getRowDef(name);
+            final LegacyRowWrapper rowWrapper = new LegacyRowWrapper(rowDef);
             final int level = name.getTableName().length();
             int k = (int) Math.pow(10, level);
             for (int i = 0; i < k; i++) {
-                rowData.createRow(rowDef, new Object[] { (i / 10), i, 7, 8,
-                        i + "X" });
+                rowData.createRow(rowDef, new Object[] { (i / 10), i, 7, 8, i + "X" });
+                rowWrapper.setRowData(rowData);
                 // output.println(rowData.toString(rowDefCache));
-                try {
-                    store.writeRow(session, rowData);
-                }
-                catch (Throwable t) {
-                    throw new Exception(t);
-                }
+                dml.writeRow(session, rowWrapper);
             }
         }
         // output.close();

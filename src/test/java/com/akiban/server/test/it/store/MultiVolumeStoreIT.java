@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.test.it.ITBase;
@@ -63,17 +64,21 @@ public class MultiVolumeStoreIT extends ITBase {
 
         final RowData rowData = new RowData(new byte[1024]);
         final Object[] values = new Object[] { 1, "Acme Manufacturing" };
+        final LegacyRowWrapper wrapper = new LegacyRowWrapper();
 
         rowData.createRow(defaultRowDef, values);
-        store().writeRow(session(), rowData);
+        wrapper.setRowData(rowData);
+        dml().writeRow(session(),  wrapper);
 
         rowData.createRow(test1RowDef, values);
-        store().writeRow(session(), rowData);
+        wrapper.setRowData(rowData);
+        dml().writeRow(session(), wrapper);
 
         for (int cid = 1; cid <= 5; cid++) {
             values[0] = cid;
             rowData.createRow(test2RowDef, values);
-            store().writeRow(session(), rowData);
+            wrapper.setRowData(rowData);
+            dml().writeRow(session(), wrapper);
         }
 
         List<RowData> rows;

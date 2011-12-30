@@ -39,8 +39,6 @@ public interface TreeService extends Service<TreeService> {
 
     final static String SCHEMA_TREE_NAME = "_schema_";
 
-    final static String STATUS_TREE_NAME = "_status_";
-
     final static String TREESPACE = "treespace";
 
     final static String SCHEMA = "schema";
@@ -61,8 +59,6 @@ public interface TreeService extends Service<TreeService> {
 
     void visitStorage(Session session, TreeVisitor visitor, String treeName) throws PersistitException;
 
-    long getTimestamp(Session session);
-
     boolean isContainer(Exchange exchange, TreeLink storageLink);
 
     int aisToStore(final TreeLink link, final int logicalTableId);
@@ -71,7 +67,7 @@ public interface TreeService extends Service<TreeService> {
 
     int storeToAis(final Volume volume, final int storedTableId);
 
-    void checkpoint() throws PersistitInterruptedException;
+    void checkpoint() throws PersistitException;
 
     TableStatusCache getTableStatusCache();
 
@@ -82,4 +78,6 @@ public interface TreeService extends Service<TreeService> {
     String volumeForTree(final String schemaName, final String treeName);
 
     boolean treeExists(final String schemaName, final String treeName);
+
+    TreeCache populateTreeCache(TreeLink link) throws PersistitException;
 }
