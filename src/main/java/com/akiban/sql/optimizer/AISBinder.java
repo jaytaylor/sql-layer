@@ -223,7 +223,9 @@ public class AISBinder implements Visitor
             return;
         }
         // Select * currently only valid for EXISTS/NOT EXISTS.
-        if (subqueryType != SubqueryNode.SubqueryType.EXISTS) {
+        if ((subqueryType != SubqueryNode.SubqueryType.EXISTS) &&
+            (!allowSubqueryMultipleColumns ||
+             (subqueryType != SubqueryNode.SubqueryType.EXPRESSION))) {
             throw new SelectExistsErrorException ();
         }
     }
