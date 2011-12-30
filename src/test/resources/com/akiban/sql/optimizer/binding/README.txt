@@ -22,6 +22,8 @@ select-6c: Column wildcard with ANSI joins
 
 select-6e: Column wildcard with EXISTS
 
+select-6n: NATURAL JOIN
+
 select-6q: Column wildcard from correlated subquery
 
 select-6v: Column wildcard from VALUES
