@@ -622,11 +622,11 @@ public class AISBinder implements Visitor
             FromBaseTable fromBaseTable = (FromBaseTable)fromTable;
             TableBinding tableBinding = (TableBinding)fromBaseTable.getUserData();
             assert (tableBinding != null) : "table not bound yet";
-                Table table = tableBinding.getTable();
-                Column column = table.getColumn(columnName);
-                if (column == null)
-                    return null;
-                return new ColumnBinding(fromTable, column, tableBinding.isNullable());
+            Table table = tableBinding.getTable();
+            Column column = table.getColumn(columnName);
+            if (column == null)
+                return null;
+            return new ColumnBinding(fromTable, column, tableBinding.isNullable());
         }
         else if (fromTable instanceof FromSubquery) {
             FromSubquery fromSubquery = (FromSubquery)fromTable;
