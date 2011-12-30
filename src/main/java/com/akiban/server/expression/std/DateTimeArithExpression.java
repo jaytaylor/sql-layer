@@ -20,73 +20,24 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.std.ArithOps.ArithOpComposer;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
-
-import java.util.Arrays;
 import java.util.List;
 
 public class DateTimeArithExpression extends ArithExpression
 {
-    @Scalar({"adddate", "date_add"})
-    public static final ExpressionComposer ADD_DATE_COMPOSER = new BinaryComposer ()
-    {
-        @Override
-        protected Expression compose(Expression first, Expression second) 
-        {
-            return ArithOps.ADD.compose(Arrays.asList(first, second));
-        }
-
-        @Override
-        protected ExpressionType composeType(ExpressionType first, ExpressionType second) 
-        {
-            return ArithOps.ADD.composeType(first, second);
-        }
-
-        @Override
-        public void argumentTypes(List<AkType> argumentTypes) 
-        {
-            ArithOps.ADD.argumentTypes(argumentTypes);
-            argumentTypes.set(0, AkType.DATETIME);
-            if (argumentTypes.get(1) != AkType.INTERVAL_MILLIS)
-                argumentTypes.set(1, AkType.INTERVAL_MONTH);
-        }
-        
-    };
-    
-    @Scalar("addtime")
-    public static final ExpressionComposer ADD_TIME_COMPOSER = ADD_DATE_COMPOSER;
+    @Scalar({"adddate", "date_add", "addtime"})
+    public static final ExpressionComposer ADD_DATE_COMPOSER = new AddSubComposer(ArithOps.ADD);        
     
     @Scalar({"subdate", "date_sub"})
-    public static final ExpressionComposer SUB_DATE_COMPOSER = new BinaryComposer ()
-    {
-        @Override
-        protected Expression compose(Expression first, Expression second) 
-        {
-            return ArithOps.MINUS.compose(Arrays.asList(first, second));
-        }
-
-        @Override
-        protected ExpressionType composeType(ExpressionType first, ExpressionType second) 
-        {
-            return ArithOps.MINUS.composeType(first, second);
-        }
-
-        @Override
-        public void argumentTypes(List<AkType> argumentTypes) 
-        {
-            ArithOps.MINUS.argumentTypes(argumentTypes);
-            argumentTypes.set(0, AkType.DATETIME);
-            if (argumentTypes.get(1) != AkType.INTERVAL_MILLIS)
-                argumentTypes.set(1, AkType.INTERVAL_MONTH);
-        }
-    };
+    public static final ExpressionComposer SUB_DATE_COMPOSER = new AddSubComposer(ArithOps.MINUS);
     
     @Scalar("subtime")
     public static final ExpressionComposer SUB_TIME_COMPOSER = SUB_DATE_COMPOSER;
     
     @Scalar("timediff")
-    public static final ExpressionComposer TIMEDIFF_COMPOSER = new InternalComposer(AkType.TIME)
+    public static final ExpressionComposer TIMEDIFF_COMPOSER = new DiffComposer(AkType.TIME)
     {
         @Override
         public void argumentTypes(List<AkType> argumentTypes) 
@@ -101,7 +52,7 @@ public class DateTimeArithExpression extends ArithExpression
     };
 
     @Scalar("datediff")
-    public static final ExpressionComposer DATEDIFF_COMPOSER = new InternalComposer(AkType.LONG)
+    public static final ExpressionComposer DATEDIFF_COMPOSER = new DiffComposer(AkType.LONG)
     {
         @Override
         public void argumentTypes(List<AkType> argumentTypes) 
@@ -109,14 +60,48 @@ public class DateTimeArithExpression extends ArithExpression
             if (argumentTypes.size() != 2) throw new WrongExpressionArityException(2, argumentTypes.size());
             for (int n = 0; n < 2; ++n)
                 argumentTypes.set(n, AkType.DATE);
-        }
-        
+        }     
     };
 
-    private abstract static class InternalComposer extends BinaryComposer
+    private static class AddSubComposer extends BinaryComposer
+    {
+        private final ArithOpComposer composer;
+        protected AddSubComposer (ArithOpComposer composer)
+        {
+            this.composer = composer;
+        }
+        @Override
+        protected Expression compose(Expression first, Expression second)
+        {
+            return composer.compose(first, second);
+        }
+
+        @Override
+        protected ExpressionType composeType(ExpressionType first, ExpressionType second)
+        {
+            return composer.composeType(first, second);
+        }
+
+        @Override
+        public void argumentTypes(List<AkType> argumentTypes)
+        {
+            if (argumentTypes.size() != 2) throw new WrongExpressionArityException(2, argumentTypes.size());
+            
+            // first arg
+            AkType firstArg = argumentTypes.get(0);
+            if (firstArg != AkType.TIME && firstArg != AkType.TIMESTAMP)
+                argumentTypes.set(0, AkType.DATETIME);
+
+            // second arg
+            if (argumentTypes.get(1) != AkType.INTERVAL_MILLIS)
+                argumentTypes.set(1, AkType.INTERVAL_MONTH);
+        }
+    }
+
+    private abstract static class DiffComposer extends BinaryComposer
     {
         private final AkType topT;
-        public InternalComposer (AkType topT)
+        public DiffComposer (AkType topT)
         {
             this.topT = topT;
         }

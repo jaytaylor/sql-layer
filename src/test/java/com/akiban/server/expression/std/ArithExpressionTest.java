@@ -163,9 +163,10 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
     @Test
     public void testDateMinusDatePlusTime ()
     {
+
         // date - date => interval
-        Expression date1 = new LiteralExpression (AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2006-11-07"));
-        Expression date2 = new LiteralExpression (AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2006-10-07"));
+        Expression date1 = new LiteralExpression (AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2006-10-07"));
+        Expression date2 = new LiteralExpression (AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2006-09-07"));
         Expression interval = new ArithExpression(date1, ex = ArithOps.MINUS, date2);
 
         // time + interval => time

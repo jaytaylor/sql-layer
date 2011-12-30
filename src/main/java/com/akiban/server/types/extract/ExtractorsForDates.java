@@ -16,6 +16,7 @@
 package com.akiban.server.types.extract;
 
 import com.akiban.server.error.InvalidDateFormatException;
+import com.akiban.server.error.InvalidIntervalFormatException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueSourceIsNullException;
@@ -26,6 +27,7 @@ import java.text.SimpleDateFormat;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -94,6 +96,19 @@ abstract class ExtractorsForDates extends LongExtractor {
         @Override
         public long getEncoded(long[] ymd_hms) {
             return ymd_hms[0] * 512 + ymd_hms[1] * 32 + ymd_hms[2];
+        }
+
+        @Override
+        protected long doConvert(ValueSource source)
+        {
+            long ymd[] = {0, 0, 0};
+            switch (source.getConversionType())
+            {
+                case DATETIME:   ymd = DATETIME.getYearMonthDayHourMinuteSecond(source.getDateTime()); break;
+                case TIMESTAMP:  ymd = TIMESTAMP.getYearMonthDayHourMinuteSecond(source.getTimestamp()); break;
+                default:         unsupportedConversion(source.getConversionType());
+            }
+            return getEncoded(ymd);
         }
     };
 
@@ -187,6 +202,19 @@ abstract class ExtractorsForDates extends LongExtractor {
                    ymd_hms[4] * DATETIME_MIN_SCALE +
                    ymd_hms[5] * DATETIME_SEC_SCALE;
         }
+
+        @Override
+        protected long doConvert(ValueSource source)
+        {
+            long ymd[];
+            switch (source.getConversionType())
+            {
+                case DATE:      ymd = DATE.getYearMonthDayHourMinuteSecond(source.getDate()); break;
+                case TIMESTAMP: ymd = TIMESTAMP.getYearMonthDayHourMinuteSecond(source.getTimestamp()); break;
+                default:    throw unsupportedConversion(source.getConversionType());
+            }
+            return getEncoded(ymd);
+        }
     };
 
     /**
@@ -273,6 +301,18 @@ abstract class ExtractorsForDates extends LongExtractor {
                    ymd_hms[4] * 100 +
                    ymd_hms[5];
         }
+
+        @Override
+        protected long doConvert(ValueSource source)
+        {
+            switch (source.getConversionType())
+            {
+                case YEAR:
+                case DATE:      return 0;
+                case DATETIME:  return source.getDateTime() % 1000000L;
+                default:        return getEncoded(TIMESTAMP.getYearMonthDayHourMinuteSecond(source.getTimestamp()));
+            }
+        }
     };
 
     /**
@@ -326,6 +366,17 @@ abstract class ExtractorsForDates extends LongExtractor {
                                         (int)ymd_hms[4], 
                                         (int)ymd_hms[5]);
         }
+
+        @Override
+        protected long doConvert(ValueSource source)
+        {
+            switch(source.getConversionType())
+            {
+                case DATE:      return DATE.stdLongToUnix(source.getDate())/ 1000;
+                case DATETIME:  return DATETIME.stdLongToUnix(source.getDateTime()) / 1000;
+                default:        throw unsupportedConversion(source.getConversionType());
+            }
+        }
     };
 
     /**
@@ -372,7 +423,21 @@ abstract class ExtractorsForDates extends LongExtractor {
 
         @Override
         public long getEncoded(long[] ymd_hms) {
-            return ymd_hms[0] == 0 ? 0 : 1900 + ymd_hms[0];
+            return ymd_hms[0] == 0 ? 0 : ymd_hms[0] - 1900;
+        }
+
+        @Override
+        protected long doConvert(ValueSource source)
+        {
+            long ymd[];
+            switch (source.getConversionType())
+            {
+                case DATE:      ymd = DATE.getYearMonthDayHourMinuteSecond(source.getDate()); break;
+                case DATETIME:  ymd = DATETIME.getYearMonthDayHourMinuteSecond(source.getDateTime()); break;
+                case TIMESTAMP: ymd = TIMESTAMP.getYearMonthDayHourMinuteSecond(source.getTimestamp()); break;
+                default:        throw unsupportedConversion(source.getConversionType());
+            }
+            return getEncoded(ymd);
         }
     };
 
@@ -405,7 +470,7 @@ abstract class ExtractorsForDates extends LongExtractor {
                 long value = Long.parseLong(st);
                 return value;
             } catch (NumberFormatException ex) {
-                throw new InvalidDateFormatException ("interval", st);
+                throw new InvalidIntervalFormatException ("INTERVAL_MILLIS", st);
             }
         }
 
@@ -435,6 +500,12 @@ abstract class ExtractorsForDates extends LongExtractor {
         @Override
         public long getEncoded(long[] ymd_hms) {
             throw new UnsupportedOperationException("Unsupported: Cannot encode Year/Month/... from INTERVAL_MILLIS");
+        }
+
+        @Override
+        protected long doConvert(ValueSource source)
+        {
+            throw unsupportedConversion(source.getConversionType());
         }
     };
 
@@ -467,7 +538,7 @@ abstract class ExtractorsForDates extends LongExtractor {
                 long value = Long.parseLong(st);
                 return value;
             } catch (NumberFormatException ex) {
-                throw new InvalidDateFormatException ("interval", st);
+                throw new InvalidIntervalFormatException ("INTERVAL_MONTH", st);
             }
         }
 
@@ -499,10 +570,16 @@ abstract class ExtractorsForDates extends LongExtractor {
             throw new UnsupportedOperationException("Unsupported: encode Year/Month/... to INTERVAL_MONTH");
 
         }
+
+        @Override
+        protected long doConvert(ValueSource source)
+        {
+            throw unsupportedConversion(source.getConversionType());
+        }
     };
 
     private static class Calculator {
-        private static Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT")); // Assume timezone is UTC for now
+        private static Calendar calendar = Calendar.getInstance(TimeZone.getDefault());
 
         public static long getMillis (int year, int mon, int day, int hr, int min, int sec) {
             calendar.set(Calendar.YEAR, year);
@@ -560,9 +637,16 @@ abstract class ExtractorsForDates extends LongExtractor {
             return new long[] {calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) +1, calendar.get(Calendar.DAY_OF_MONTH),
                 calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND)};
         }
+
+        public static void setTimeZone (String timezone) {
+            calendar.setTimeZone(TimeZone.getTimeZone(timezone));
+        }
+
     }
 
+    private static final EnumSet<AkType> DATETIMES = EnumSet.of(AkType.DATE, AkType.DATETIME, AkType.TIME, AkType.TIMESTAMP, AkType.YEAR);
     protected abstract long doGetLong(ValueSource source);
+    protected abstract long doConvert(ValueSource source);
 
     @Override
     public long getLong(ValueSource source) {
@@ -573,6 +657,8 @@ abstract class ExtractorsForDates extends LongExtractor {
                                            || targetConversionType() == AkType.INTERVAL_MONTH) {
             return doGetLong(source);
         }
+        if (DATETIMES.contains(type)) return doConvert(source);
+        
         switch (type) {
         case TEXT:      return getLong(source.getText());
         case VARCHAR:   return getLong(source.getString());
@@ -587,6 +673,7 @@ abstract class ExtractorsForDates extends LongExtractor {
 
     static void setGlobalTimezone(String timezone) {
         dateFormatProvider.set(new DateFormatProvider(timezone));
+        Calculator.setTimeZone(timezone);
     }
 
     private static DateFormat timestampFormat() {
