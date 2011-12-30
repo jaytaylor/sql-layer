@@ -29,11 +29,6 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
     }
 
     @Override
-    public synchronized void rowUpdated(int tableID) {
-        getInternalTableStatus(tableID).rowUpdated();
-    }
-
-    @Override
     public synchronized void rowWritten(int tableID) {
         getInternalTableStatus(tableID).rowWritten();
     }
@@ -59,13 +54,13 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
     }
 
     @Override
-    public synchronized void setUniqueID(int tableID, long value) {
-        getInternalTableStatus(tableID).setUniqueID(value);
+    public synchronized void setOrdinal(int tableID, int value) {
+        getInternalTableStatus(tableID).setOrdinal(value);
     }
 
     @Override
-    public synchronized void setOrdinal(int tableID, int value) {
-        getInternalTableStatus(tableID).setOrdinal(value);
+    public void setRowDef(int tableID, RowDef rowDef) {
+        getInternalTableStatus(tableID).setRowDef(rowDef);
     }
 
     @Override
@@ -97,10 +92,6 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
 
     private static class InternalTableStatus implements TableStatus {
         private long autoIncrement = 0;
-        private long creationTime = 0;
-        private long lastDeleteTime = 0;
-        private long lastUpdateTime = 0;
-        private long lastWriteTime = 0;
         private int ordinal = 0;
         private long rowCount = 0;
         private long uniqueID = 0;
@@ -110,26 +101,6 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
         @Override
         public synchronized long getAutoIncrement() {
             return autoIncrement;
-        }
-
-        @Override
-        public synchronized long getCreationTime() {
-            return creationTime;
-        }
-
-        @Override
-        public synchronized long getLastDeleteTime() {
-            return lastDeleteTime;
-        }
-
-        @Override
-        public synchronized long getLastUpdateTime() {
-            return lastUpdateTime;
-        }
-
-        @Override
-        public synchronized long getLastWriteTime() {
-            return lastWriteTime;
         }
 
         @Override
@@ -152,28 +123,16 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
             return rowDef;
         }
 
-        @Override
-        public synchronized void setRowDef(RowDef rowDef) {
+        synchronized void setRowDef(RowDef rowDef) {
             this.rowDef = rowDef;
-        }
-
-
-        static long now() {
-            return System.currentTimeMillis();
         }
 
         synchronized void rowDeleted() {
             rowCount = Math.max(0, rowCount - 1);
-            lastDeleteTime = now();
-        }
-
-        synchronized void rowUpdated() {
-            lastUpdateTime = now();
         }
 
         synchronized void rowWritten() {
             ++rowCount;
-            lastWriteTime = now();
         }
 
         synchronized void setAutoIncrement(long autoIncrement) {
@@ -196,7 +155,6 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
             autoIncrement = 0;
             uniqueID = 0;
             rowCount = 0;
-            lastDeleteTime = now();
         }
     }
 }
