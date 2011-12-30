@@ -27,13 +27,13 @@
 - row_count: 1
 - output: [[5]]
 ---
-# bug 906606  
-#- Statement: SELECT BITAND(-1,-1) from all_types;
-#- output: [['18446744073709551615']]
-# ---  
-# - Statement: SELECT BITAND(18446744073709551615,18446744073709551615) from all_types;
-# - output: [[18446744073709551615]]
-#---
+# formerly bug 906606  
+- Statement: SELECT BITAND(-1,-1) from all_types;
+- output: [['18446744073709551615']]
+---  #overflow test
+- Statement: SELECT BITAND(18446744073709551615,18446744073709551615) from all_types;
+- error: [70001]
+---
 - Statement: SELECT BITAND(4,3) from all_types;
 - output: [[0]]
 ---
