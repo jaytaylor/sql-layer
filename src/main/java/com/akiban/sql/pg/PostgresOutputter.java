@@ -13,10 +13,25 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.operator;
+package com.akiban.sql.pg;
 
-import com.akiban.qp.row.Row;
+import java.util.List;
+import java.io.IOException;
 
-public interface Cursor extends CursorBase<Row>
+public abstract class PostgresOutputter<T>
 {
+    protected PostgresMessenger messenger;
+    protected PostgresBaseStatement statement;
+    protected List<PostgresType> columnTypes;
+    protected int ncols;
+
+    public PostgresOutputter(PostgresMessenger messenger, 
+                             PostgresBaseStatement statement) {
+        this.messenger = messenger;
+        this.statement = statement;
+        columnTypes = statement.getColumnTypes();
+        ncols = columnTypes.size();
+    }
+
+    public abstract void output(T row) throws IOException;
 }

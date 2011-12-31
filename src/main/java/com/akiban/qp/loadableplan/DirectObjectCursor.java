@@ -13,10 +13,17 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.operator;
+package com.akiban.qp.loadableplan;
 
-import com.akiban.qp.row.Row;
+import com.akiban.qp.operator.CursorBase;
+import java.util.List;
 
-public interface Cursor extends CursorBase<Row>
+/** A cursor that returns column values directly.
+ * Return columns from <code>next</code>. If an empty list is
+ * returned, any buffered rows will be flushed and <code>next</code>
+ * will be called again. If <code>null</code> is returned, the cursor
+ * is exhausted and will be closed.
+ */
+public abstract class DirectObjectCursor implements CursorBase<List<?>>
 {
 }

@@ -55,7 +55,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     private final Object aisLock = new Object();
     private volatile long aisTimestamp = -1;
     private volatile PostgresStatementCache statementCache;
-    private final Map<String, LoadablePlan> loadablePlans = new HashMap<String, LoadablePlan>();
+    private final Map<String, LoadablePlan<?>> loadablePlans = new HashMap<String, LoadablePlan<?>>();
     // end AIS-dependent state
     private volatile Date overrideCurrentTime;
 
@@ -183,7 +183,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         return statementCache;
     }
 
-    public LoadablePlan loadablePlan(String planName) {
+    public LoadablePlan<?> loadablePlan(String planName) {
         return loadablePlans.get(planName);
     }
 
@@ -197,7 +197,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
                 if (statementCache != null) {
                     statementCache.invalidate();
                 }
-                loadablePlans.clear();
+                clearPlans();
                 aisTimestamp = timestamp;
             }
         }
@@ -311,6 +311,31 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     public void clearPlans()
     {
         loadablePlans.clear();
+        loadInitialPlans();
+    }
+
+    // (Re-)load any initial plans.
+    private void loadInitialPlans() {
+        String plans = reqs.config().getProperty("akserver.postgres.loadablePlans");
+        if (plans.length() > 0) {
+            for (String className : plans.split(",")) {
+                try {
+                    Class klass = Class.forName(className);
+                    LoadablePlan<?> loadablePlan = (LoadablePlan)klass.newInstance();
+                    LoadablePlan<?> prev = loadablePlans.put(loadablePlan.name(), loadablePlan);
+                    assert (prev == null) : className;
+                }
+                catch (ClassNotFoundException ex) {
+                    logger.error("Failed to load plan", ex);
+                }
+                catch (InstantiationException ex) {
+                    logger.error("Failed to create plan", ex);
+                }
+                catch (IllegalAccessException ex) {
+                    logger.error("Failed to create plan", ex);
+                }
+            }
+        }
     }
 
     @Override
@@ -325,8 +350,8 @@ public class PostgresServer implements Runnable, PostgresMXBean {
             URL url = new URL(String.format("file://%s", jarFilePath));
             URLClassLoader classLoader = new URLClassLoader(new URL[]{url});
             Class klass = classLoader.loadClass(className);
-            LoadablePlan loadablePlan = (LoadablePlan) klass.newInstance();
-            LoadablePlan previousPlan = loadablePlans.put(loadablePlan.name(), loadablePlan);
+            LoadablePlan<?> loadablePlan = (LoadablePlan) klass.newInstance();
+            LoadablePlan<?> previousPlan = loadablePlans.put(loadablePlan.name(), loadablePlan);
             status = String.format("%s %s -> %s",
                                    (previousPlan == null ? "Loaded" : "Reloaded"),
                                    loadablePlan.name(),
