@@ -482,38 +482,37 @@ public class AISBinder implements Visitor
         FromTable fromRight = (FromTable)joinNode.getRightResultSet();
         addFromTable(fromLeft);
         addFromTable(fromRight);
-        if (joinNode.getUsingClause() != null) {
+        if ((joinNode.getUsingClause() != null) || joinNode.isNaturalJoin()) {
             // Replace USING clause with equivalent equality predicates, all bound up.
             NodeFactory nodeFactory = joinNode.getNodeFactory();
             SQLParserContext parserContext = joinNode.getParserContext();
             ValueNode conditions = null;
-            for (ResultColumn rc : joinNode.getUsingClause()) {
-                String columnName = rc.getName();
-                ColumnBinding leftBinding = getColumnBinding(fromLeft, columnName);
-                if (leftBinding == null)
-                    throw new NoSuchColumnException (columnName);
-                ColumnBinding rightBinding = getColumnBinding(fromRight, columnName);
-                if (rightBinding == null)
-                    throw new NoSuchColumnException (columnName);
-                ColumnReference leftCR = (ColumnReference)
-                    nodeFactory.getNode(NodeTypes.COLUMN_REFERENCE,
-                                        columnName, leftBinding.getFromTable().getTableName(),
-                                        parserContext);
-                ColumnReference rightCR = (ColumnReference)
-                    nodeFactory.getNode(NodeTypes.COLUMN_REFERENCE,
-                                        columnName, rightBinding.getFromTable().getTableName(),
-                                        parserContext);
-                ValueNode condition = (ValueNode)
-                    nodeFactory.getNode(NodeTypes.BINARY_EQUALS_OPERATOR_NODE,
-                                        leftCR, rightCR,
-                                        parserContext);
-                if (conditions == null) {
-                    conditions = condition;
+            if (joinNode.getUsingClause() != null) {
+                for (ResultColumn rc : joinNode.getUsingClause()) {
+                    String columnName = rc.getName();
+                    ColumnBinding leftBinding = getColumnBinding(fromLeft, columnName);
+                    if (leftBinding == null)
+                        throw new NoSuchColumnException (columnName);
+                    ColumnBinding rightBinding = getColumnBinding(fromRight, columnName);
+                    if (rightBinding == null)
+                        throw new NoSuchColumnException (columnName);
+                    conditions = addJoinEquality(conditions, 
+                                                 columnName, leftBinding, rightBinding,
+                                                 nodeFactory, parserContext);
                 }
-                else {
-                    conditions = (AndNode)nodeFactory.getNode(NodeTypes.AND_NODE,
-                                                              conditions, condition,
-                                                              parserContext);
+            }
+            else if (joinNode.isNaturalJoin()) {
+                Map<String,ColumnBinding> leftCols = new HashMap<String,ColumnBinding>();
+                getUniqueColumnBindings(fromLeft, leftCols);
+                Map<String,ColumnBinding> rightCols = new HashMap<String,ColumnBinding>();
+                getUniqueColumnBindings(fromRight, rightCols);
+                for (String columnName : leftCols.keySet()) {
+                    ColumnBinding rightBinding = rightCols.get(columnName);
+                    if (rightBinding == null) continue;
+                    ColumnBinding leftBinding = leftCols.get(columnName);
+                    conditions = addJoinEquality(conditions, 
+                                                 columnName, leftBinding, rightBinding,
+                                                 nodeFactory, parserContext);
                 }
             }
             if (joinNode.getJoinClause() == null) {
@@ -530,6 +529,33 @@ public class AISBinder implements Visitor
         // Take care of any remaining column bindings in the ON clause.
         if (joinNode.getJoinClause() != null)
             joinNode.getJoinClause().accept(this);
+    }
+
+    protected ValueNode addJoinEquality(ValueNode conditions, 
+                                        String columnName, ColumnBinding leftBinding, ColumnBinding rightBinding,
+                                        NodeFactory nodeFactory, SQLParserContext parserContext) 
+            throws StandardException {
+        ColumnReference leftCR = (ColumnReference)
+            nodeFactory.getNode(NodeTypes.COLUMN_REFERENCE,
+                                columnName, leftBinding.getFromTable().getTableName(),
+                                parserContext);
+        ColumnReference rightCR = (ColumnReference)
+            nodeFactory.getNode(NodeTypes.COLUMN_REFERENCE,
+                                columnName, rightBinding.getFromTable().getTableName(),
+                                parserContext);
+        ValueNode condition = (ValueNode)
+            nodeFactory.getNode(NodeTypes.BINARY_EQUALS_OPERATOR_NODE,
+                                leftCR, rightCR,
+                                parserContext);
+        if (conditions == null) {
+            conditions = condition;
+        }
+        else {
+            conditions = (AndNode)nodeFactory.getNode(NodeTypes.AND_NODE,
+                                                      conditions, condition,
+                                                      parserContext);
+        }
+        return conditions;
     }
 
     protected void columnReference(ColumnReference columnReference) {
@@ -630,16 +656,48 @@ public class AISBinder implements Visitor
         return result;
     }
 
+    protected void getUniqueColumnBindings(FromTable fromTable, 
+                                           Map<String,ColumnBinding>  bindings) 
+            throws StandardException {
+        if (fromTable instanceof FromBaseTable) {
+            FromBaseTable fromBaseTable = (FromBaseTable)fromTable;
+            TableBinding tableBinding = (TableBinding)fromBaseTable.getUserData();
+            assert (tableBinding != null) : "table not bound yet";
+            Table table = tableBinding.getTable();
+            for (Column column : table.getColumns()) {
+                ColumnBinding prev = bindings.put(column.getName().toLowerCase(),
+                                                  new ColumnBinding(fromTable, column, 
+                                                                    tableBinding.isNullable()));
+                if (prev != null)
+                    throw new StandardException("Duplicate column name " + column.getName() + " not allowed with NATURAL JOIN");
+            }
+        }
+        else if (fromTable instanceof FromSubquery) {
+            FromSubquery fromSubquery = (FromSubquery)fromTable;
+            for (ResultColumn resultColumn : fromSubquery.getResultColumns()) {
+                ColumnBinding prev = bindings.put(resultColumn.getName().toLowerCase(),
+                                                  new ColumnBinding(fromTable, resultColumn));
+                if (prev != null)
+                    throw new StandardException("Duplicate column name " + resultColumn.getName() + " not allowed with NATURAL JOIN");
+            }
+        }
+        else if (fromTable instanceof JoinNode) {
+            JoinNode joinNode = (JoinNode)fromTable;
+            getUniqueColumnBindings((FromTable)joinNode.getLeftResultSet(), bindings);
+            getUniqueColumnBindings((FromTable)joinNode.getRightResultSet(), bindings);
+        }
+    }
+
     protected ColumnBinding getColumnBinding(FromTable fromTable, String columnName) {
         if (fromTable instanceof FromBaseTable) {
             FromBaseTable fromBaseTable = (FromBaseTable)fromTable;
             TableBinding tableBinding = (TableBinding)fromBaseTable.getUserData();
             assert (tableBinding != null) : "table not bound yet";
-                Table table = tableBinding.getTable();
-                Column column = table.getColumn(columnName);
-                if (column == null)
-                    return null;
-                return new ColumnBinding(fromTable, column, tableBinding.isNullable());
+            Table table = tableBinding.getTable();
+            Column column = table.getColumn(columnName);
+            if (column == null)
+                return null;
+            return new ColumnBinding(fromTable, column, tableBinding.isNullable());
         }
         else if (fromTable instanceof FromSubquery) {
             FromSubquery fromSubquery = (FromSubquery)fromTable;

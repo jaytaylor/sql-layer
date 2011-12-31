@@ -716,6 +716,18 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     @Override
+    public void setProperty(String key, String value) {
+        properties.put(key, value);
+        if ("client_encoding".equals(key)) {
+            if ("UNICODE".equals(value))
+                messenger.setEncoding("UTF-8");
+            else
+                messenger.setEncoding(value);
+        }
+        sessionChanged();
+    }
+
+    @Override
     public Map<String,Object> getAttributes() {
         return attributes;
     }

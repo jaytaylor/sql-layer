@@ -11,6 +11,12 @@
 - error: [42000]
 ---
 
+# Test recently supported types
+- CreateTable: table_datetime (datetime_field datetime)
+---
+- CreateTable: table_year (year_field year)
+---
+
 # Test unsupported types
 
 # bit is not supported, but returns the wrong error code
@@ -32,10 +38,6 @@
 
 # Test not yet supported types
 
-# datetime is not supported yet
-- CreateTable: table_datetime (datetime_field datetime)
-- error: [50008]
----
 # text is not supported yet
 - CreateTable: table_text (text_field text)
 - error: [50008]
@@ -43,10 +45,6 @@
 # tinyint is not supported yet
 - CreateTable: table_tinyint (tinyint_field tinyint)
 - error: [50008]
-#---
-# year is not supported yet, but returns the wrong error code
-# - CreateTable: table_year (year_field year)
-# - error: [50008]
 ...
 
 # Notes

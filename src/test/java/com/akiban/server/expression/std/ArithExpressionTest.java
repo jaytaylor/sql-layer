@@ -38,6 +38,17 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
     private final CompositionTestInfo testInfo = new CompositionTestInfo(2, AkType.DOUBLE, true);
 
     @Test
+    public void testFloatTimesInterval ()
+    {
+        Expression left = new LiteralExpression(AkType.FLOAT, 3.5f);
+        Expression right = new LiteralExpression(AkType.INTERVAL_MONTH, 2L);
+        Expression top = new ArithExpression(left, ArithOps.MULTIPLY, right);
+        
+        assertEquals("Top should be INTERVAL_MONTH ", AkType.INTERVAL_MONTH, top.valueType());
+        assertEquals(7L, top.evaluation().eval().getInterval_Month());
+    }
+    
+    @Test
     public void longMinusFloat ()
     {
         Expression left = new LiteralExpression(AkType.LONG, 3);
