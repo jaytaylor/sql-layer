@@ -586,7 +586,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
     protected void rebuildCompiler() {
         PostgresOperatorCompiler compiler;
-        if (useJsonCompiler())
+        String format = getProperty("OutputFormat", "table");
+        if (format.equals("json"))
             compiler = new PostgresJsonCompiler(this); 
         else
            compiler = new PostgresOperatorCompiler(this);
@@ -610,16 +611,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         };
     }
 
-    protected boolean useJsonCompiler() {
-        return "JSON".equals(getAttribute("outputFormat"));
-    }
-
     protected void sessionChanged() {
         if (parsedGenerators == null) return; // setAttribute() from generator's ctor.
-        if (useJsonCompiler() != (parsedGenerators[0] instanceof PostgresJsonCompiler)) {
-            rebuildCompiler();
-            return;
-        }
         for (PostgresStatementParser parser : unparsedGenerators) {
             parser.sessionChanged(this);
         }
@@ -723,6 +716,10 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 messenger.setEncoding("UTF-8");
             else
                 messenger.setEncoding(value);
+        }
+        else if ("OutputFormat".equals(key)) {
+            rebuildCompiler();
+            return;
         }
         sessionChanged();
     }
