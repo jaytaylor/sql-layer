@@ -241,6 +241,7 @@ public enum ErrorCode {
     MISSING_GROUP_INDEX_JOIN("42", "510", Importance.DEBUG, MissingGroupIndexJoinTypeException.class),
     TABLE_INDEX_JOIN        ("42", "511", Importance.DEBUG, TableIndexJoinTypeException.class),
     INSERT_WRONG_COUNT      ("42", "512", Importance.DEBUG, InsertWrongCountException.class),
+    UNSUPPORTED_CONFIGURATION ("42", "513", Importance.DEBUG, UnsupportedConfigurationException.class),
 
     // Class 44 - with check option violation
     

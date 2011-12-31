@@ -52,6 +52,9 @@ public interface PostgresServerSession
     /** Get a client property. */
     public String getProperty(String key, String defval);
 
+    /** Set a client property. */
+    public void setProperty(String key, String value);
+
     /** Get session attributes used to store state between statements. */
     public Map<String,Object> getAttributes();
 

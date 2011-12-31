@@ -705,6 +705,12 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     @Override
+    public void setProperty(String key, String value) {
+        properties.put(key, value);
+        sessionChanged();
+    }
+
+    @Override
     public Map<String,Object> getAttributes() {
         return attributes;
     }
