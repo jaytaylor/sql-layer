@@ -929,11 +929,54 @@ public class PersistitStore implements Store {
             throw new PersistitAdapterException(e);
         }
         for (Index index : rowDef.getIndexes()) {
-            IndexStatistics stats = indexStatistics.getIndexStatistics(session, index);
-            if (stats != null)
-                ts.addIndexStatistics(stats);
+            TableStatistics.Histogram histogram = indexStatisticsToHistogram(session, 
+                                                                             index);
+            if (histogram != null)
+                ts.addHistogram(histogram);
         }
         return ts;
+    }
+
+    /** Convert from new-format histogram to old for adapter. */
+    protected TableStatistics.Histogram indexStatisticsToHistogram(Session session,
+                                                                   Index index) {
+        IndexStatistics stats = indexStatistics.getIndexStatistics(session, index);
+        if (stats == null) return null;
+        IndexStatistics.Histogram fromHistogram = stats.getHistogram(index.getColumns().size());
+        if (fromHistogram == null) return null;
+        IndexDef indexDef = (IndexDef)index.indexDef();
+        RowDef indexRowDef = indexDef.getRowDef();
+        TableStatistics.Histogram toHistogram = new TableStatistics.Histogram(index.getIndexId());
+        Key key = new Key((Persistit)null);
+        RowData indexRowData = new RowData(new byte[4096]);
+        Object[] indexValues = new Object[indexRowDef.getFieldCount()];
+        long count = 0;
+        for (IndexStatistics.HistogramEntry entry : fromHistogram.getEntries()) {
+            // Decode the key.
+            int keylen = entry.getKeyBytes().length;
+            System.arraycopy(entry.getKeyBytes(), 0, key.getEncodedBytes(), 0, keylen);
+            key.setEncodedSize(keylen);
+            key.indexTo(0);
+            int depth = key.getDepth();
+            // Copy key fields to index row.
+            for (int field : indexDef.getFields()) {
+                if (--depth >= 0)
+                    indexValues[field] = key.decode();
+                else
+                    indexValues[field] = null;
+            }
+            indexRowData.createRow(indexRowDef, indexValues);
+            // Partial counts to running total.
+            count += entry.getLessCount() + entry.getEqualCount();
+            toHistogram.addSample(new TableStatistics.HistogramSample(indexRowData.copy(),
+                                                                      count));
+        }
+        // Add final entry with all nulls.
+        Arrays.fill(indexValues, null);
+        indexRowData.createRow(indexRowDef, indexValues);
+        toHistogram.addSample(new TableStatistics.HistogramSample(indexRowData.copy(),
+                                                                  count));
+        return toHistogram;
     }
 
     boolean hasNullIndexSegments(final RowData rowData, final Index index) {
