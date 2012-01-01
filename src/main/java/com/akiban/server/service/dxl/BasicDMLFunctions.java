@@ -125,7 +125,9 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     {
         logger.trace("stats for {} updating: {}", tableId, updateFirst);
         if (updateFirst) {
-            store().analyzeTable(session, tableId);
+            ddlFunctions.updateTableStatistics(session,
+                                               ddlFunctions.getTableName(session, tableId),
+                                               null);
         }
         return store().getTableStatistics(session, tableId);
     }
