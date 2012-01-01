@@ -71,6 +71,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
 
     @Override
     public void start() {
+        store.setIndexStatistics(this);
         cache = Collections.synchronizedMap(new WeakHashMap<Index,IndexStatistics>());
         storeStats = new PersistitStoreIndexStatistics(store, treeService);
     }

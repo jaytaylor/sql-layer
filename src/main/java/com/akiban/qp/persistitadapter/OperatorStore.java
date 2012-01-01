@@ -47,7 +47,6 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.AisHolder;
 import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.Tap;
@@ -221,8 +220,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     // OperatorStore interface
 
     @Inject
-    public OperatorStore(AisHolder aisHolder, TreeService treeService, ConfigurationService config, IndexStatisticsService indexStatistics) {
-        super(new PersistitStore(false, treeService, config, indexStatistics));
+    public OperatorStore(AisHolder aisHolder, TreeService treeService, ConfigurationService config) {
+        super(new PersistitStore(false, treeService, config));
         this.aisHolder = aisHolder;
         this.treeService = treeService;
         this.config = config;

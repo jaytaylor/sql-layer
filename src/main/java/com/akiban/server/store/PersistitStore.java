@@ -122,19 +122,20 @@ public class PersistitStore implements Store {
 
     private DisplayFilter originalDisplayFilter;
 
-    private final IndexStatisticsService indexStatistics;
+    private IndexStatisticsService indexStatistics;
 
     private final Map<Tree, SortedSet<KeyState>> deferredIndexKeys = new HashMap<Tree, SortedSet<KeyState>>();
 
     private int deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
 
-    public PersistitStore(boolean updateGroupIndexes, TreeService treeService, ConfigurationService config, IndexStatisticsService indexStatistics) {
+    public PersistitStore(boolean updateGroupIndexes, TreeService treeService, ConfigurationService config) {
         this.updateGroupIndexes = updateGroupIndexes;
         this.treeService = treeService;
         this.config = config;
         this.indexStatistics = indexStatistics;
     }
 
+    @Override
     public synchronized void start() {
         tableStatusCache = treeService.getTableStatusCache();
         rowDefCache = new RowDefCache(tableStatusCache);
@@ -148,6 +149,7 @@ public class PersistitStore implements Store {
         }
     }
 
+    @Override
     public synchronized void stop() {
         try {
             getDb().getManagement().setDisplayFilter(originalDisplayFilter);
@@ -732,6 +734,11 @@ public class PersistitStore implements Store {
             final int childRowDefId = groupRowDef.getUserTableRowDefs()[i].getRowDefId();
             tableStatusCache.truncate(childRowDefId);
         }
+    }
+
+    // This is to avoid circular dependencies in Guicer.
+    public void setIndexStatistics(IndexStatisticsService indexStatistics) {
+        this.indexStatistics = indexStatistics;
     }
 
     protected final void removeIndexTree(Session session, Index index) {
