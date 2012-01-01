@@ -17,6 +17,8 @@ package com.akiban.server;
 
 import com.akiban.server.rowdata.RowData;
 
+import com.akiban.server.store.statistics.IndexStatistics;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -172,5 +174,10 @@ public class TableStatistics {
             return String.format("%,8d->%s", rowCount, rowData.toString());
         }
 
+    }
+
+    /** Convert from new style stats to old style known to the adapter. */
+    public void addIndexStatistics(IndexStatistics stats) {
+        // TODO: do something.
     }
 }

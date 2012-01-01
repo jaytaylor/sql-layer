@@ -71,7 +71,7 @@ public final class FailureOnStartupIT extends ApiTestBase {
 
         @Inject
         public BadStore(AisHolder aisHolder, TreeService treeService) {
-            super(aisHolder, treeService, null);
+            super(aisHolder, treeService, null, null);
         }
 
         @Override

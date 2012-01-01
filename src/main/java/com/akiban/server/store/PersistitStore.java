@@ -19,6 +19,7 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -63,6 +64,8 @@ import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.RowDataCorruptionException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.statistics.IndexStatistics;
+import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.util.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -109,31 +112,31 @@ public class PersistitStore implements Store {
 
     RowDefCache rowDefCache;
 
-    final ConfigurationService config;
+    private final ConfigurationService config;
 
-    final TreeService treeService;
+    private final TreeService treeService;
 
-    TableStatusCache tableStatusCache;
+    private TableStatusCache tableStatusCache;
 
-    boolean forceToDisk = false; // default to "group commit"
+    private boolean forceToDisk = false; // default to "group commit"
 
     private DisplayFilter originalDisplayFilter;
 
-    private PersistitStoreIndexManager indexManager;
+    private final IndexStatisticsService indexStatistics;
 
     private final Map<Tree, SortedSet<KeyState>> deferredIndexKeys = new HashMap<Tree, SortedSet<KeyState>>();
 
     private int deferredIndexKeyLimit = MAX_INDEX_TRANCHE_SIZE;
 
-    public PersistitStore(boolean updateGroupIndexes, TreeService treeService, ConfigurationService config) {
+    public PersistitStore(boolean updateGroupIndexes, TreeService treeService, ConfigurationService config, IndexStatisticsService indexStatistics) {
         this.updateGroupIndexes = updateGroupIndexes;
         this.treeService = treeService;
         this.config = config;
+        this.indexStatistics = indexStatistics;
     }
 
     public synchronized void start() {
         tableStatusCache = treeService.getTableStatusCache();
-        indexManager = new PersistitStoreIndexManager(this, treeService);
         rowDefCache = new RowDefCache(tableStatusCache);
         try {
             getDb().getCoderManager().registerValueCoder(RowData.class, new RowDataValueCoder(this));
@@ -151,7 +154,6 @@ public class PersistitStore implements Store {
         } catch (RemoteException e) {
             throw new DisplayFilterSetException (e.getMessage());
         }
-        indexManager = null;
         rowDefCache = null;
     }
 
@@ -743,14 +745,8 @@ public class PersistitStore implements Store {
             releaseExchange(session, iEx);
         }
 
-        // index analysis only exists on table indexes for now; if/when we analyze GIs, the if should be removed
-        if (index.isTableIndex()) {
-            try {
-                indexManager.deleteIndexAnalysis(session, index);
-            } catch (PersistitException e) {
-                throw new PersistitAdapterException(e);
-            }
-        }
+        // Delete any statistics associated with index.
+        indexStatistics.deleteIndexStatistics(session, Collections.singletonList(index));
     }
 
     @Override
@@ -929,24 +925,15 @@ public class PersistitStore implements Store {
             // TODO - get correct values
             ts.setMeanRecordLength(100);
             ts.setBlockSize(8192);
-
-            indexManager.populateTableStatistics(session, ts);
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         }
+        for (Index index : rowDef.getIndexes()) {
+            IndexStatistics stats = indexStatistics.getIndexStatistics(session, index);
+            if (stats != null)
+                ts.addIndexStatistics(stats);
+        }
         return ts;
-    }
-
-    @Override
-    public void analyzeTable(final Session session, final int tableId) {
-        final RowDef rowDef = rowDefCache.getRowDef(tableId);
-        indexManager.analyzeTable(session, rowDef);
-    }
-
-    @Override
-    public void analyzeTable(Session session, int tableId, int sampleSize) {
-        final RowDef rowDef = rowDefCache.getRowDef(tableId);
-        indexManager.analyzeTable(session, rowDef, sampleSize);
     }
 
     boolean hasNullIndexSegments(final RowData rowData, final Index index) {

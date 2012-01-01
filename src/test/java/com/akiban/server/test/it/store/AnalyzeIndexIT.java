@@ -29,41 +29,11 @@ import org.junit.Test;
 import com.akiban.server.TableStatistics;
 
 public class AnalyzeIndexIT extends AbstractScanBase {
-    
-    @BeforeClass
-    static public void setUpTest() throws Exception {
-        Transaction txn = serviceManager.getTreeService().getTransaction(session);
-        txn.begin();
-        try {
-            for (final RowDef rowDef : rowDefCache.getRowDefs()) {
-                if(rowDef.isUserTable()) {
-                    store.analyzeTable(session, rowDef.getRowDefId(), 10);
-                }
-            }
-            txn.commit();
-        }
-        finally {
-            txn.end();
-        }
-    }
-    
-    private void doAnalyze(int tableID) throws PersistitException {
-        Transaction txn = serviceManager.getTreeService().getTransaction(session);
-        txn.begin();
-        try {
-            store.analyzeTable(session, tableID);
-            txn.commit();
-        }
-        finally {
-            txn.end();
-        }
-    }
 
     @Test
     public void testPopulateTableStatistics() throws Exception {
         final RowDef rowDef = rowDef("aa");
-        doAnalyze(rowDef.getRowDefId());
-        final TableStatistics ts = serviceManager.getDXL().dmlFunctions().getTableStatistics(session, rowDef.getRowDefId(), false);
+        final TableStatistics ts = serviceManager.getDXL().dmlFunctions().getTableStatistics(session, rowDef.getRowDefId(), true);
         {
             // Checks a secondary index
             //
@@ -96,33 +66,4 @@ public class AnalyzeIndexIT extends AbstractScanBase {
         }
     }
 
-    @Test(expected=IllegalArgumentException.class)
-    public void testGroupTableStatistics() throws Exception {
-        final RowDef rowDef = rowDef("_akiban_a");
-        doAnalyze(rowDef.getRowDefId());
-        fail("Expected to not be able to analyze group table!");
-    }
-    
-    @Test
-    public void testBug253() throws Exception {
-        Transaction txn = serviceManager.getTreeService().getTransaction(session);
-        txn.begin();
-        try {
-            final RowDef rowDef = rowDef("bug253");
-            final RowData rowData = new RowData(new byte[256]);
-            rowData.createRow(rowDef, new Object[]{1, "blog"});
-            store.writeRow(session, rowData);
-            rowData.createRow(rowDef, new Object[]{1, "book"});
-            store.writeRow(session, rowData);
-            try {
-            store.analyzeTable(session, rowDef.getRowDefId());
-            } catch (NumberFormatException nfe) {
-                fail("Bug 253 strikes again!");
-            }
-            txn.commit();
-        }
-        finally {
-            txn.end();
-        }
-    }
 }
