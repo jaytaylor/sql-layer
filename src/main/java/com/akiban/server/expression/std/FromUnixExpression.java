@@ -56,32 +56,6 @@ public class FromUnixExpression extends AbstractCompositeExpression
                 default: throw new WrongExpressionArityException(1, s);
             }
         }
-
-//        @Override
-//        public void argumentTypes(List<AkType> argumentTypes)
-//        {
-//            int s = argumentTypes.size();
-//            switch(s)
-//            {
-//                case 2: argumentTypes.set(1, AkType.VARCHAR); // fall thru
-//                case 1: argumentTypes.set(0, AkType.LONG); break;
-//                default: throw new WrongExpressionArityException(1, s);
-//            }
-//        }
-//
-//        @Override
-//        public ExpressionType composeType(List<? extends ExpressionType> argumentTypes)
-//        {
-//            int s = argumentTypes.size();
-//            switch(s)
-//            {
-//                case 2: return ExpressionTypes.varchar(argumentTypes.get(1).getScale() * 4); // each specifier is to be replaced with a "number", max length is 4
-//                case 1: return ExpressionTypes.DATETIME;
-//                default: throw new WrongExpressionArityException(1, s);
-//            }
-//        }
-
-
     };
 
     @Override
