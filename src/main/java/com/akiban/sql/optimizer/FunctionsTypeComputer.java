@@ -102,25 +102,16 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return null;        // Defer error until later.
         }
         int nargs = args.nargs();
-        List<ExpressionType> argTypes = new ArrayList<ExpressionType>(nargs);
-        List<AkType> origTypes = new ArrayList<AkType>(nargs);
-        for (int i = 0; i < nargs; i++) {
+        ArgList argTypes = new ArgList(args);
+        for (int i = 0; i < nargs; i++)
+        {
             ExpressionType argType = args.argType(i);
             if (argType == null)
                 return null;
             argTypes.add(argType);
-            origTypes.add(argType.getType());
-        }
-        List<AkType> requiredTypes = new ArrayList<AkType>(origTypes);
-        composer.argumentTypes(requiredTypes);
-        for (int i = 0; i < nargs; i++) {
-            if ((origTypes.get(i) == requiredTypes.get(i)) ||
-                (origTypes.get(i) == AkType.NULL))
-                continue;
-            // Need a different type: add a CAST.
-            argTypes.set(i, args.addCast(i, argTypes.get(i), requiredTypes.get(i)));
         }
         ExpressionType resultType = composer.composeType(argTypes);
+
         if (resultType == null)
             return null;
         return fromExpressionType(resultType);

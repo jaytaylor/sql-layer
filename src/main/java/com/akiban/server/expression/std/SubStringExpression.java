@@ -27,6 +27,8 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.ObjectExtractor;
+import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.ArgList;
 import java.util.List;
 import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.util.ValueHolder;
@@ -40,21 +42,18 @@ public class SubStringExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments) {
             return new SubStringExpression(arguments);
-        }        
-
-        @Override
-        public void argumentTypes(List<AkType> argumentTypes) {
-            argumentTypes.set(0, AkType.VARCHAR);
-            for (int i = 1; i < argumentTypes.size(); i++)
-                argumentTypes.set(i, AkType.LONG);
         }
 
         @Override
-        public ExpressionType composeType(List<? extends ExpressionType> arguments) {
-            // In the three-arg case with constants, we'd know it's shorter.
-            // But such knowledge is in the optimizer, not here, so
-            // it'll have to be its responsibility.
-            return arguments.get(0);
+        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        {
+            int size = argumentTypes.size();
+            if (size != 3 && size != 2)
+                throw new WrongExpressionArityException(3, size);
+            argumentTypes.setArgType(0, AkType.VARCHAR);
+            for (int i = 1; i < size; ++i)
+                argumentTypes.setArgType(i, AkType.LONG);
+            return argumentTypes.get(0);
         }
     };
     

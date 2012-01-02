@@ -20,6 +20,8 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.types.AkType;
+import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.ArgList;
 
 import java.util.List;
 
@@ -37,15 +39,10 @@ abstract class NoArgComposer implements ExpressionComposer {
     }
 
     @Override
-    public void argumentTypes(List<AkType> argumentTypes) {
+    public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+    {
         if (argumentTypes.size() != 0)
             throw new WrongExpressionArityException(0, argumentTypes.size());
-    }
-
-    @Override
-    public ExpressionType composeType(List<? extends ExpressionType> arguments) {
-        if (arguments.size() != 0)
-            throw new WrongExpressionArityException(0, arguments.size());
         return composeType();
     }
 }

@@ -25,6 +25,8 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.BooleanExtractor;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.BoolValueSource;
+import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.ArgList;
 
 import java.util.List;
 
@@ -106,24 +108,21 @@ public final class BoolLogicExpression extends AbstractBinaryExpression {
             return new BoolLogicExpression(first, logic, second);
         }
 
-        @Override
-        public void argumentTypes(List<AkType> argumentTypes) {
-            if (argumentTypes.size() != 2) 
-                throw new WrongExpressionArityException(2, argumentTypes.size());
-            argumentTypes.set(0, AkType.BOOL);
-            argumentTypes.set(1, AkType.BOOL);
-        }
-
-        @Override
-        protected ExpressionType composeType(ExpressionType first, ExpressionType second) {
-            return ExpressionTypes.BOOL;
-        }
-
         private InternalComposer(BooleanLogic logic) {
             this.logic = logic;
         }
 
         private final BooleanLogic logic;
+
+        @Override
+        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        {
+            if (argumentTypes.size() != 2)
+                throw new WrongExpressionArityException(2, argumentTypes.size());
+            argumentTypes.setArgType(0, AkType.BOOL);
+            argumentTypes.setArgType(1, AkType.BOOL);
+            return ExpressionTypes.BOOL;
+        }
     }
 
     private static class InternalEvaluation extends AbstractTwoArgExpressionEvaluation {

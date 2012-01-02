@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -24,6 +25,8 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.BoolValueSource;
+import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.ArgList;
 
 import java.util.List;
 
@@ -36,12 +39,10 @@ public final class NotExpression extends AbstractUnaryExpression {
         }
 
         @Override
-        protected AkType argumentType(AkType givenType) {
-            return AkType.BOOL;
-        }
-
-        @Override
-        protected ExpressionType composeType(ExpressionType argumentType) {
+        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        {
+            if (argumentTypes.size() != 1)
+                throw new WrongExpressionArityException(1, argumentTypes.size());
             return ExpressionTypes.BOOL;
         }
     };

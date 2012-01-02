@@ -3,25 +3,25 @@
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field) VALUES (1)
-#---
+---
 # bug 905447
-#- Statement: select WEEKOFYEAR('1987-01-01 01:15:33') from all_types;
-#- output: [['198652']]
-#---
-# - Statement: select WEEKOFYEAR('1864-02-28') from all_types;
-# - output: [['8']]
-# ---
-# - Statement: select WEEKOFYEAR('1900-01-15') from all_types;
-# - output: [['3']]
-# ---
-# - Statement: select WEEKOFYEAR('1999-12-31') from all_types;
-# - output: [[52]]
-# ---
-# - Statement: select WEEKOFYEAR('1987-03-05') from all_types;
-# - output: [[1]]
-# ---
-# - Statement: select WEEKOFYEAR('2000-06-04') from all_types;
-# - output: [[22]]
+- Statement: select WEEKOFYEAR('1987-01-01 01:15:33') from all_types;
+- output: [['198652']]
+---
+ - Statement: select WEEKOFYEAR('1864-02-28') from all_types;
+ - output: [['8']]
+---
+ - Statement: select WEEKOFYEAR('1900-01-15') from all_types;
+ - output: [['3']]
+---
+ - Statement: select WEEKOFYEAR('1999-12-31') from all_types;
+ - output: [[52]]
+---
+ - Statement: select WEEKOFYEAR('1987-03-05') from all_types;
+ - output: [[10]]
+---
+ - Statement: select WEEKOFYEAR('2000-06-04') from all_types;
+ - output: [[22]]
 #---
 #- Statement: select WEEKOFYEAR('A') from all_types;
 #- output: [[null]]

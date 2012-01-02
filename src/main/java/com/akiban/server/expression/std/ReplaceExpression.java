@@ -14,6 +14,7 @@
  */
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -22,7 +23,8 @@ import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.ValueHolder;
+import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.ArgList;
 import java.util.List;
 
 public class ReplaceExpression extends AbstractTernaryExpression
@@ -37,16 +39,17 @@ public class ReplaceExpression extends AbstractTernaryExpression
         }
 
         @Override
-        protected ExpressionType composeType(ExpressionType first, ExpressionType second, ExpressionType third)
+        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
         {
-            return ExpressionTypes.varchar(first.getPrecision() + second.getPrecision() - third.getPrecision());
-        }
-
-        @Override
-        public void argumentTypes(List<AkType> argumentTypes)
-        {
-            for (int n = 0; n < argumentTypes.size(); ++n)
-                argumentTypes.set(n, AkType.VARCHAR);
+            if (argumentTypes.size() != 3)
+                throw new WrongExpressionArityException(3, argumentTypes.size());
+            int length = 0;
+            for (int n  = 0; n < argumentTypes.size(); ++n)
+            {
+                argumentTypes.setArgType(n, AkType.VARCHAR);
+                length += argumentTypes.get(n).getPrecision();
+            }
+            return ExpressionTypes.varchar(length);
         }
     };
 

@@ -28,6 +28,8 @@ import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.ObjectExtractor;
 import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.ArgList;
 
 import java.util.EnumMap;
 import java.util.List;
@@ -220,17 +222,11 @@ public final class CompareExpression extends AbstractBinaryExpression {
         }
 
         @Override
-        public void argumentTypes(List<AkType> argumentTypes) {
-            if (argumentTypes.size() != 2) 
+        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        {
+            if (argumentTypes.size() != 2)
                 throw new WrongExpressionArityException(2, argumentTypes.size());
-            // This is what the code does, using childrenType().
-            // The actual rule applied by the SQL parser is that,
-            // e.g. string op number is a numeric comparison.
-            argumentTypes.set(1, argumentTypes.get(0));
-        }
-
-        @Override
-        protected ExpressionType composeType(ExpressionType first, ExpressionType second) {
+            argumentTypes.setArgType(1, argumentTypes.get(0).getType());
             return ExpressionTypes.BOOL;
         }
 

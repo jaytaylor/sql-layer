@@ -27,6 +27,8 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.DoubleExtractor;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.ArgList;
 import java.util.List;
 
 public class TrigExpression extends AbstractCompositeExpression
@@ -90,14 +92,17 @@ public class TrigExpression extends AbstractCompositeExpression
         }
 
         @Override
-        public void argumentTypes(List<AkType> argumentTypes) {
-            for (int i = 0; i < argumentTypes.size(); i++) {
-                argumentTypes.set(i, AkType.DOUBLE);
-            }
-        }
+        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        {
+            int size = argumentTypes.size();
 
-        @Override
-        public ExpressionType composeType(List<? extends ExpressionType> arguments) {
+            switch (name)
+            {
+                case ATAN2: if (size != 2) throw new WrongExpressionArityException(2, size);
+                default:    if (size != 1) throw new WrongExpressionArityException(1, size);
+            }
+            for (int i = 0; i < size; ++i)
+                argumentTypes.setArgType(i, AkType.DOUBLE);
             return ExpressionTypes.DOUBLE;
         }
     }

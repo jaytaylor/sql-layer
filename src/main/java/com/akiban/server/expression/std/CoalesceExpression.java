@@ -25,6 +25,8 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.ArgList;
 
 import java.util.List;
 
@@ -38,23 +40,20 @@ public final class CoalesceExpression extends AbstractCompositeExpression {
         }
 
         @Override
-        public void argumentTypes(List<AkType> argumentTypes) {
-            // Latch on to first non-null type.
-            AkType type = AkType.NULL;
-            for (int i = 0; i < argumentTypes.size(); i++) {
-                if (type != AkType.NULL)
-                    argumentTypes.set(i, type);
+        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        {
+            AkType akType = AkType.NULL;
+            for (int i = 0; i < argumentTypes.size(); i++)
+                if (akType != AkType.NULL)
+                    argumentTypes.setArgType(i, akType);
                 else
-                    type = argumentTypes.get(i);
-            }
-        }
+                    akType = argumentTypes.get(i).getType();
 
-        @Override
-        public ExpressionType composeType(List<? extends ExpressionType> argumentTypes) {
-            for (ExpressionType type : argumentTypes) {
+
+            for (ExpressionType type : argumentTypes) 
                 if (type.getType() != AkType.NULL)
                     return type;
-            }
+            
             return ExpressionTypes.NULL;
         }
     };
@@ -105,4 +104,4 @@ public final class CoalesceExpression extends AbstractCompositeExpression {
 
         private final AkType type;        
     }
-}
+    }

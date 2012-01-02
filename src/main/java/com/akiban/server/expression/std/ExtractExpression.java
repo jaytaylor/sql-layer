@@ -17,6 +17,7 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.error.InvalidDateFormatException;
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -27,6 +28,8 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.ArgList;
 import java.util.Calendar;
 import java.util.EnumSet;
 
@@ -559,17 +562,12 @@ public class ExtractExpression extends AbstractUnaryExpression
         }
 
         @Override
-        protected AkType argumentType(AkType givenType) 
+        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
         {
-            return givenType;
-        }
-
-        @Override
-        protected ExpressionType composeType(ExpressionType argumentType) 
-        {
-            return ExpressionTypes.newType(type.underlying, 0,0);
-        }
-        
+            if (argumentTypes.size() != 1)
+                throw new WrongExpressionArityException(1, argumentTypes.size());
+            return ExpressionTypes.newType(type.underlying, 0, 0);
+        }        
     }
             
     private final TargetExtractType extractType;

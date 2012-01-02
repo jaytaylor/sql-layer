@@ -25,6 +25,8 @@ import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.types.AkType;
+import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.ArgList;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -150,12 +152,10 @@ public final class FunctionsRegistryImplTest {
         public Expression compose(List<? extends Expression> arguments) {
             throw new UnsupportedOperationException();
         }
+
         @Override
-        public void argumentTypes(List<AkType> argumentTypes) {
-            throw new UnsupportedOperationException();
-        }
-        @Override
-        public ExpressionType composeType(List<? extends ExpressionType> argumentTypes) {
+        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        {
             throw new UnsupportedOperationException();
         }
     };

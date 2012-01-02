@@ -26,6 +26,8 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.ArgList;
 import com.akiban.util.AkibanAppender;
 
 import java.util.List;
@@ -39,14 +41,11 @@ public final class ConcatExpression extends AbstractCompositeExpression {
         }
 
         @Override
-        public void argumentTypes(List<AkType> argumentTypes) {
-            for (int i = 0; i < argumentTypes.size(); i++) {
-                argumentTypes.set(i, AkType.VARCHAR);
-            }
-        }
+        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        {
+            for (int i = 0; i < argumentTypes.size(); ++i)
+                argumentTypes.setArgType(i, AkType.VARCHAR);
 
-        @Override
-        public ExpressionType composeType(List<? extends ExpressionType> argumentTypes) {
             int length = 0;
             for (ExpressionType type : argumentTypes) {
                 switch (type.getType()) {
@@ -60,7 +59,7 @@ public final class ConcatExpression extends AbstractCompositeExpression {
                 }
             }
             return ExpressionTypes.varchar(length);
-        }
+        }      
     }
 
     @Scalar("concatenate")

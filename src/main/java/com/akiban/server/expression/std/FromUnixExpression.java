@@ -25,6 +25,8 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.ArgList;
 import java.util.List;
 import org.joda.time.DateTime;
 import org.joda.time.MutableDateTime;
@@ -41,28 +43,45 @@ public class FromUnixExpression extends AbstractCompositeExpression
         }
 
         @Override
-        public void argumentTypes(List<AkType> argumentTypes)
+        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
         {
             int s = argumentTypes.size();
-            switch(s)
+            switch (s)
             {
-                case 2: argumentTypes.set(1, AkType.VARCHAR); // fall thru
-                case 1: argumentTypes.set(0, AkType.LONG); break;
+                case 2: argumentTypes.setArgType(1, AkType.VARCHAR);
+                        argumentTypes.setArgType(0, AkType.LONG);
+                        return ExpressionTypes.varchar(argumentTypes.get(0).getPrecision() * 5);
+                case 1: argumentTypes.setArgType(0, AkType.LONG);
+                        return ExpressionTypes.DATETIME;
                 default: throw new WrongExpressionArityException(1, s);
             }
         }
 
-        @Override
-        public ExpressionType composeType(List<? extends ExpressionType> argumentTypes)
-        {
-            int s = argumentTypes.size();
-            switch(s)
-            {
-                case 2: return ExpressionTypes.varchar(argumentTypes.get(1).getScale() * 4); // each specifier is to be replaced with a "number", max length is 4
-                case 1: return ExpressionTypes.DATETIME;
-                default: throw new WrongExpressionArityException(1, s);
-            }
-        }
+//        @Override
+//        public void argumentTypes(List<AkType> argumentTypes)
+//        {
+//            int s = argumentTypes.size();
+//            switch(s)
+//            {
+//                case 2: argumentTypes.set(1, AkType.VARCHAR); // fall thru
+//                case 1: argumentTypes.set(0, AkType.LONG); break;
+//                default: throw new WrongExpressionArityException(1, s);
+//            }
+//        }
+//
+//        @Override
+//        public ExpressionType composeType(List<? extends ExpressionType> argumentTypes)
+//        {
+//            int s = argumentTypes.size();
+//            switch(s)
+//            {
+//                case 2: return ExpressionTypes.varchar(argumentTypes.get(1).getScale() * 4); // each specifier is to be replaced with a "number", max length is 4
+//                case 1: return ExpressionTypes.DATETIME;
+//                default: throw new WrongExpressionArityException(1, s);
+//            }
+//        }
+
+
     };
 
     @Override

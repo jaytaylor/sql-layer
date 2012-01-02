@@ -26,6 +26,8 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
+import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.ArgList;
 import java.util.Arrays;
 import java.util.List;
 import org.joda.time.MutableDateTime;
@@ -45,40 +47,50 @@ public class WeekExpression extends AbstractCompositeExpression
         }
 
         @Override
-        protected AkType argumentType(AkType givenType)
+        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
         {
-            return AkType.DATE;
-        }
-
-        @Override
-        protected ExpressionType composeType(ExpressionType argumentType)
-        {
-            return ExpressionTypes.INT;
+            if (argumentTypes.size() != 1)
+                throw new WrongExpressionArityException(1, argumentTypes.size());
+           InternalComposer.adjustFirstArg(argumentTypes);
+           return ExpressionTypes.INT;
         }
     };
     
     private static final class InternalComposer implements ExpressionComposer
     {
         @Override
-        public void argumentTypes(List<AkType> argumentTypes)
-        {
-            int s = argumentTypes.size();
-            if (s != 1 && s != 2) throw new WrongExpressionArityException(2, s);
-            argumentTypes.set(0, AkType.DATE);
-            if (s == 2) argumentTypes.set(1, AkType.INT);            
-        }
-
-        @Override
-        public ExpressionType composeType(List<? extends ExpressionType> argumentTypes)
-        {
-            return ExpressionTypes.INT;
-        }
-
-        @Override
         public Expression compose(List<? extends Expression> arguments)
         {
             return new WeekExpression(arguments);
-        }        
+        }
+
+        @Override
+        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        {
+            switch(argumentTypes.size())
+            {
+                case 2: argumentTypes.setArgType(1, AkType.INT); // fall thru
+                case 1: InternalComposer.adjustFirstArg(argumentTypes);
+                        return ExpressionTypes.INT;
+                default: throw new WrongExpressionArityException(2, argumentTypes.size());
+            }
+        }
+
+        protected static void adjustFirstArg (ArgList argumentTypes) throws StandardException
+        {
+            ExpressionType arg = argumentTypes.get(0);
+            switch(arg.getType())
+            {
+                case DATE:
+                case DATETIME:
+                case TIMESTAMP:  break;
+                case VARCHAR:    argumentTypes.setArgType(0, arg.getPrecision() > 10?
+                                                             AkType.DATETIME : AkType.DATE);
+                                 break;
+                default:         argumentTypes.setArgType(0, AkType.DATE);
+
+            }
+        }
     }
 
     private static final class InnerEvaluation extends AbstractCompositeExpressionEvaluation

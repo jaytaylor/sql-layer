@@ -16,6 +16,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -27,6 +28,8 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.ObjectExtractor;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.ArgList;
 
 
 public class TrimExpression extends AbstractUnaryExpression
@@ -106,13 +109,12 @@ public class TrimExpression extends AbstractUnaryExpression
         }
 
         @Override
-        protected AkType argumentType(AkType givenType) {
-            return AkType.VARCHAR;
-        }
-
-        @Override
-        protected ExpressionType composeType(ExpressionType argumentType) {
-            return argumentType; // Worst case is nothing removed: same width.
+        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        {
+            if (argumentTypes.size() != 1)
+                throw new WrongExpressionArityException(1, argumentTypes.size());
+            argumentTypes.setArgType(0, AkType.VARCHAR);
+            return argumentTypes.get(0);
         }
     }
   

@@ -23,7 +23,8 @@ import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.std.ArithOps.ArithOpComposer;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
-import java.util.List;
+import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.ArgList;
 
 public class DateTimeArithExpression extends ArithExpression
 {
@@ -37,14 +38,23 @@ public class DateTimeArithExpression extends ArithExpression
     public static final ExpressionComposer TIMEDIFF_COMPOSER = new DiffComposer(AkType.TIME)
     {
         @Override
-        public void argumentTypes(List<AkType> argumentTypes) 
+        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
         {
-            if (argumentTypes.size() != 2) throw new WrongExpressionArityException(2, argumentTypes.size());
-            
-            AkType type;
-            for (int n = 0; n < 2; ++n)
-                if ((type = argumentTypes.get(n)) != AkType.TIME && type != AkType.TIMESTAMP)
-                    argumentTypes.set(n, AkType.TIME);
+            if (argumentTypes.size() != 2)
+                throw new WrongExpressionArityException(2, argumentTypes.size());
+            ExpressionType dateType = argumentTypes.get(0);
+            switch(dateType.getType())
+            {
+                case DATE:
+                case TIME:
+                case DATETIME:
+                case TIMESTAMP: break;
+                case VARCHAR:   argumentTypes.setArgType(0, dateType.getPrecision() > 10 ?
+                                                     AkType.DATETIME: AkType.TIME);
+                default:        argumentTypes.setArgType(0, AkType.TIME);
+            }
+
+            return composeType(argumentTypes.get(0), argumentTypes.get(1));
         }
     };
 
@@ -52,12 +62,15 @@ public class DateTimeArithExpression extends ArithExpression
     public static final ExpressionComposer DATEDIFF_COMPOSER = new DiffComposer(AkType.LONG)
     {
         @Override
-        public void argumentTypes(List<AkType> argumentTypes) 
+        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
         {
-            if (argumentTypes.size() != 2) throw new WrongExpressionArityException(2, argumentTypes.size());
+            if (argumentTypes.size() != 2)
+                throw new WrongExpressionArityException(2, argumentTypes.size());
             for (int n = 0; n < 2; ++n)
-                argumentTypes.set(n, AkType.DATE);
-        }     
+                argumentTypes.setArgType(n, AkType.DATE);
+
+            return composeType(argumentTypes.get(0), argumentTypes.get(1));
+        }
     };
 
     private static class AddSubComposer extends BinaryComposer
@@ -76,33 +89,33 @@ public class DateTimeArithExpression extends ArithExpression
         }
 
         @Override
-        protected ExpressionType composeType(ExpressionType first, ExpressionType second)
+        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
         {
-            if (ArithExpression.isNumeric(second.getType()))
-                second = ExpressionTypes.INTERVAL_MILLIS;
-            return composer.composeType(first, second);
-        }
+             if (argumentTypes.size() != 2) throw new WrongExpressionArityException(2, argumentTypes.size());
 
-        @Override
-        public void argumentTypes(List<AkType> argumentTypes)
-        {
-            if (argumentTypes.size() != 2) throw new WrongExpressionArityException(2, argumentTypes.size());
-            
-            // first arg
-            AkType firstArg = argumentTypes.get(0);
-            AkType secondArg = argumentTypes.get(1);
-            if (firstArg != AkType.TIME && firstArg != AkType.TIMESTAMP &&
-                    !(firstArg == AkType.DATE && 
-                         (secondArg == AkType.INTERVAL_MONTH ||   // to make sure the time portion doesn't
-                          ArithExpression.isNumeric(secondArg) && isIntegral(secondArg)))) // get filled  when not needed
-                argumentTypes.set(0, AkType.DATETIME);                                          
+            AkType firstArg = argumentTypes.get(0).getType();
+            AkType secondArg = argumentTypes.get(1).getType();
 
-            // second arg
-            // does not need adjusting, since 
+            if (firstArg == AkType.VARCHAR)            
+                firstArg = argumentTypes.get(0).getPrecision() > 10 ?
+                           AkType.DATETIME : AkType.DATE;            
+
+            if (firstArg == AkType.DATE
+                    && (secondArg == AkType.INTERVAL_MILLIS || !isIntegral(secondArg)))
+                firstArg = AkType.DATETIME;
+
+            // adjust first arg
+            argumentTypes.setArgType(0, firstArg);
+
+            // second arg does not need *real* adjusting since
             //  - if it's a numeric type, it'll be *casted* to an interval_millis in compose()
             //  - if it's an interval , => expected
             //  - if it's anything else, then InvalidArgumentType will be thrown
-        }
+            if (ArithExpression.isNumeric(secondArg))
+                argumentTypes.set(1, ExpressionTypes.INTERVAL_MILLIS);
+
+            return composer.composeType(argumentTypes);
+        }        
         
         protected static boolean isIntegral (AkType type)
         {
@@ -132,7 +145,7 @@ public class DateTimeArithExpression extends ArithExpression
             return new DateTimeArithExpression(first, second, topT);
         }
 
-        @Override
+       // @Override
         protected ExpressionType composeType(ExpressionType first, ExpressionType second)
         {
             return ExpressionTypes.newType(topT, 0, 0);
