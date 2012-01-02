@@ -145,7 +145,6 @@ public class DateTimeArithExpression extends ArithExpression
             return new DateTimeArithExpression(first, second, topT);
         }
 
-       // @Override
         protected ExpressionType composeType(ExpressionType first, ExpressionType second)
         {
             return ExpressionTypes.newType(topT, 0, 0);
