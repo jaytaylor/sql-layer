@@ -6,7 +6,7 @@
 ---
 # bug 905447
 - Statement: select WEEKOFYEAR('1987-01-01 01:15:33') from all_types;
-- output: [['198652']]
+- output: [['1']]
 ---
  - Statement: select WEEKOFYEAR('1864-02-28') from all_types;
  - output: [['8']]

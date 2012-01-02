@@ -27,7 +27,7 @@ import static org.junit.Assert.assertEquals;
 public class ConcatExpressionTest
 {
     @Test
-   public void typeLength() throws StandardException
+    public void typeLength() throws StandardException
     {
         ArgList argLists = new ArgList(new DummyArgAccess(3));
 
@@ -64,6 +64,5 @@ public class ConcatExpressionTest
         {
            throw new UnsupportedOperationException();
         }
-
     }
 }
