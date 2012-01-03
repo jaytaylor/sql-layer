@@ -25,6 +25,14 @@ import com.persistit.exception.PersistitInterruptedException;
 
 public class AccumulatorHandler {
 
+    public static long getSnapshot(AccumInfo accumInfo, TreeService treeService, Tree tree)
+    throws PersistitInterruptedException
+    {
+        Accumulator accumulator = getAccumulator(accumInfo, tree);
+        Transaction txn = getCurrentTrx(treeService);
+        return accumulator.getSnapshotValue(txn);
+    }
+    
     public long getSnapshot() throws PersistitInterruptedException {
         return accumulator.getSnapshotValue(getCurrentTrx());
     }
@@ -50,7 +58,7 @@ public class AccumulatorHandler {
         this.accumulator = getAccumulator(accumInfo, tree);
     }
 
-    private Accumulator getAccumulator(AccumInfo accumInfo, Tree tree) {
+    private static Accumulator getAccumulator(AccumInfo accumInfo, Tree tree) {
         try {
             return tree.getAccumulator(accumInfo.getType(), accumInfo.getIndex());
         } catch (PersistitException e) {
@@ -59,6 +67,10 @@ public class AccumulatorHandler {
     }
 
     private Transaction getCurrentTrx() {
+        return getCurrentTrx(treeService);
+    }
+
+    private static Transaction getCurrentTrx(TreeService treeService) {
         return treeService.getDb().getTransaction();
     }
 

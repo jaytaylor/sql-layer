@@ -26,6 +26,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -191,9 +192,14 @@ public final class IndexEntryCountIT extends ITBase {
         countEntries(index, expectedEntryCount);
     }
 
-    private void countEntries(Index index, int expectedEntryCount) {
-        IndexStatisticsService indexStatsService = serviceManager().getServiceByClass(IndexStatisticsService.class);
-        long actual = indexStatsService.countEntries(session(), index);
+    private void countEntries(final Index index, int expectedEntryCount) {
+        final IndexStatisticsService idxStats = serviceManager().getServiceByClass(IndexStatisticsService.class);
+        long  actual = transactionallyUnchecked(new Callable<Long>() {
+            @Override
+            public Long call() throws Exception {
+                return idxStats.countEntries(session(), index);
+            }
+        });
         assertEquals("entries for " + index, expectedEntryCount, actual);
     }
 

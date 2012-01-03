@@ -18,8 +18,11 @@ package com.akiban.server.store.statistics;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Group;
+import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.AccumulatorHandler;
 import com.akiban.server.error.PersistitAdapterException;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
@@ -31,7 +34,9 @@ import com.akiban.server.store.Store;
 
 import com.google.inject.Inject;
 
+import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
+import com.persistit.exception.PersistitInterruptedException;
 
 import java.util.*;
 import java.io.File;
@@ -89,8 +94,18 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     /* IndexStatisticsService */
 
     @Override
-    public long countEntries(Session session, Index index) {
-        throw new UnsupportedOperationException(); // TODO
+    public long countEntries(Session session, Index index) throws PersistitInterruptedException {
+        Tree tree;
+        if (index.isPrimaryKey()) {
+            Table table = index.leafMostTable();
+            assert table == index.rootMostTable() : table + " != " + index.rootMostTable();
+            RowDef rowDef = (RowDef) table.rowDef();
+            tree = store.getExchange(session, rowDef).getTree();
+        }
+        else {
+            tree = store.getExchange(session, index).getTree();
+        }
+        return AccumulatorHandler.getSnapshot(AccumulatorHandler.AccumInfo.ROW_COUNT, treeService, tree);
     }
 
     @Override

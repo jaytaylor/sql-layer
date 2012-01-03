@@ -726,4 +726,12 @@ public class ApiTestBase {
             txn.end();
         }
     }
+    
+    protected <T> T transactionallyUnchecked(Callable<T> callable) {
+        try {
+            return transactionally(callable);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 }
