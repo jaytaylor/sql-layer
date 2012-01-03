@@ -1,0 +1,11 @@
+# Bug with interval computation (bug 911335)
+---
+- CreateTable: dates (d1 date, d2 date)
+---
+- Statement: INSERT INTO dates VALUES ('2000-06-01', '2010-06-01')
+---
+# 2010-06-01 - 2000-01-01 = 151 days
+# 2010-10-30 - 2000-06-01 = 151 days
+- Statement: SELECT d1 + (d2 - DATE('2000-01-01')) FROM dates
+- output: [['2010-10-30']]
+...
