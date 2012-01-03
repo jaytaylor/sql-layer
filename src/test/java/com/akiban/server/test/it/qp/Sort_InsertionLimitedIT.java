@@ -18,17 +18,22 @@ package com.akiban.server.test.it.qp;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types.AkType;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.Expression;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static com.akiban.server.expression.std.Expressions.field;
+import static com.akiban.server.expression.std.Expressions.literal;
 import static com.akiban.qp.operator.API.*;
 
 public class Sort_InsertionLimitedIT extends OperatorITBase
@@ -489,6 +494,36 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             row(projectType, 2L),
             row(projectType, 3L),
             row(projectType, 5L),
+        };
+        compareRows(expected, cursor(plan, adapter));
+    }
+
+    @Test
+    public void testFreeze()
+    {
+        RowType valuesType = schema.newValuesType(AkType.LONG);
+        List<BindableRow> valuesRows = new ArrayList<BindableRow>();
+        valuesRows.add(BindableRow.of(valuesType, Collections.singletonList(literal(3L))));
+        valuesRows.add(BindableRow.of(valuesType, Collections.singletonList(literal(2L))));
+        valuesRows.add(BindableRow.of(valuesType, Collections.singletonList(literal(4L))));
+        valuesRows.add(BindableRow.of(valuesType, Collections.singletonList(literal(1L))));
+        Operator project = project_Default(valuesScan_Default(valuesRows, valuesType),
+                                           valuesType,
+                                           Arrays.asList(field(valuesType, 0)));
+        RowType projectType = project.rowType();
+        Operator plan =
+            sort_InsertionLimited(
+                project,
+                projectType,
+                ordering(field(projectType, 0), true),
+                SortOption.PRESERVE_DUPLICATES,
+                4);
+
+        RowBase[] expected = new RowBase[]{
+            row(projectType, 1L),
+            row(projectType, 2L),
+            row(projectType, 3L),
+            row(projectType, 4L),
         };
         compareRows(expected, cursor(plan, adapter));
     }
