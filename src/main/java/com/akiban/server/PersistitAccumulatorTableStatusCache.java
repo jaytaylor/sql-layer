@@ -190,10 +190,10 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             if(rowDef == null && tree == null) {
                 return;
             }
-            ordinal = new AccumulatorHandler(treeService, AccumInfo.ORDINAL, tree);
-            rowCount = new AccumulatorHandler(treeService, AccumInfo.ROW_COUNT, tree);
-            uniqueID = new AccumulatorHandler(treeService, AccumInfo.UNIQUE_ID, tree);
-            autoIncrement = new AccumulatorHandler(treeService, AccumInfo.AUTO_INC, tree);
+            ordinal = new AccumulatorHandler(AccumulatorHandler.AccumInfo.ORDINAL, treeService, tree);
+            rowCount = new AccumulatorHandler(AccumulatorHandler.AccumInfo.ROW_COUNT, treeService, tree);
+            uniqueID = new AccumulatorHandler(AccumulatorHandler.AccumInfo.UNIQUE_ID, treeService, tree);
+            autoIncrement = new AccumulatorHandler(AccumulatorHandler.AccumInfo.AUTO_INC, treeService, tree);
         }
         
         long createNewUniqueID() throws PersistitInterruptedException {

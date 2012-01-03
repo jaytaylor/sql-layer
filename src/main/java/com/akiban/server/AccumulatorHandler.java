@@ -33,7 +33,7 @@ public class AccumulatorHandler {
         return accumulator.update(value, getCurrentTrx());
     }
 
-    public AccumulatorHandler(TreeService treeService, AccumInfo accumInfo, Tree tree) {
+    public AccumulatorHandler(AccumInfo accumInfo, TreeService treeService, Tree tree) {
         this.treeService = treeService;
         this.accumulator = getAccumulator(accumInfo, tree);
     }
@@ -52,4 +52,36 @@ public class AccumulatorHandler {
 
     private final TreeService treeService;
     private final Accumulator accumulator;
+
+    /**
+     * Mapping of indexes and types for the Accumulators used by the table status.
+     * <p>
+     * Note: Remember that <i>any</i> modification to existing values is an
+     * <b>incompatible</b> data format change. It is only safe to stop using
+     * an index position or add new ones at the end of the range.
+     * </p>
+     */
+    public static enum AccumInfo {
+        ORDINAL(0, Accumulator.Type.SUM),
+        ROW_COUNT(1, Accumulator.Type.SUM),
+        UNIQUE_ID(2, Accumulator.Type.SEQ),
+        AUTO_INC(3, Accumulator.Type.SUM),
+        ;
+    
+        AccumInfo(int index, Accumulator.Type type) {
+            this.index = index;
+            this.type = type;
+        }
+    
+        private int getIndex() {
+            return index;
+        }
+    
+        private Accumulator.Type getType() {
+            return type;
+        }
+    
+        private final int index;
+        private final Accumulator.Type type;
+    }
 }
