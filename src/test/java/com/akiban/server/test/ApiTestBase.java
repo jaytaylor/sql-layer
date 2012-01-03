@@ -696,9 +696,9 @@ public class ApiTestBase {
     private class RowUpdaterImpl implements RowUpdater {
         @Override
         public void to(Object... values) {
+            boolean removed = unfinishedRowUpdaters.remove(this);
             NewRow newRow = createNewRow(oldRow.getTableId(), values);
             dml().updateRow(session(), oldRow, newRow, null);
-            boolean removed = unfinishedRowUpdaters.remove(this);
             assertTrue("couldn't remove row updater " + toString(), removed);
         }
 
