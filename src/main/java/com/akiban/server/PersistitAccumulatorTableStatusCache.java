@@ -19,8 +19,6 @@ import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.tree.TreeService;
-import com.persistit.Accumulator;
-import com.persistit.Transaction;
 import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
@@ -131,29 +129,29 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
     private class InternalTableStatus implements TableStatus {
         private volatile RowDef rowDef;
-        private volatile Accumulator ordinal;
-        private volatile Accumulator rowCount;
-        private volatile Accumulator uniqueID;
-        private volatile Accumulator autoIncrement;
+        private volatile AccumulatorHandler ordinal;
+        private volatile AccumulatorHandler rowCount;
+        private volatile AccumulatorHandler uniqueID;
+        private volatile AccumulatorHandler autoIncrement;
 
         @Override
         public long getAutoIncrement() throws PersistitInterruptedException {
-            return getSnapshot(autoIncrement);
+            return autoIncrement.getSnapshot();
         }
 
         @Override
         public int getOrdinal() throws PersistitInterruptedException {
-            return (int) getSnapshot(ordinal);
+            return (int) ordinal.getSnapshot();
         }
 
         @Override
         public long getRowCount() throws PersistitInterruptedException {
-            return getSnapshot(rowCount);
+            return rowCount.getSnapshot();
         }
 
         @Override
         public long getUniqueID() throws PersistitInterruptedException {
-            return getSnapshot(uniqueID);
+            return uniqueID.getSnapshot();
         }
 
         @Override
@@ -162,29 +160,29 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         void rowDeleted() {
-            rowCount.update(-1, getCurrentTrx());
+            rowCount.update(-1);
         }
 
         void rowWritten() {
-            rowCount.update(1, getCurrentTrx());
+            rowCount.update(1);
         }
 
         void setRowCount(long rowCountValue) throws PersistitInterruptedException {
-            long diff = rowCountValue - getSnapshot(rowCount);
-            this.rowCount.update(diff, getCurrentTrx());
+            long diff = rowCountValue - rowCount.getSnapshot();
+            this.rowCount.update(diff);
         }
 
         void setAutoIncrement(long autoIncrementValue, boolean evenIfLess) throws PersistitInterruptedException {
-            long current = getSnapshot(autoIncrement);
+            long current = autoIncrement.getSnapshot();
             if(autoIncrementValue > current || evenIfLess) {
                 long diff = autoIncrementValue - current;
-                this.autoIncrement.update(diff, getCurrentTrx());
+                this.autoIncrement.update(diff);
             }
         }
 
         void setOrdinal(int ordinalValue) throws PersistitInterruptedException {
-            long diff = ordinalValue - getSnapshot(ordinal);
-            this.ordinal.update(diff, getCurrentTrx());
+            long diff = ordinalValue - ordinal.getSnapshot();
+            this.ordinal.update(diff);
         }
 
         synchronized void setRowDef(RowDef rowDef, Tree tree) {
@@ -192,27 +190,19 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             if(rowDef == null && tree == null) {
                 return;
             }
-            ordinal = AccumInfo.ORDINAL.getAccumulator(tree);
-            rowCount = AccumInfo.ROW_COUNT.getAccumulator(tree);
-            uniqueID = AccumInfo.UNIQUE_ID.getAccumulator(tree);
-            autoIncrement = AccumInfo.AUTO_INC.getAccumulator(tree);
+            ordinal = new AccumulatorHandler(treeService, AccumInfo.ORDINAL, tree);
+            rowCount = new AccumulatorHandler(treeService, AccumInfo.ROW_COUNT, tree);
+            uniqueID = new AccumulatorHandler(treeService, AccumInfo.UNIQUE_ID, tree);
+            autoIncrement = new AccumulatorHandler(treeService, AccumInfo.AUTO_INC, tree);
         }
         
         long createNewUniqueID() throws PersistitInterruptedException {
-            return this.uniqueID.update(1, getCurrentTrx());
+            return this.uniqueID.update(1);
         }
 
         void truncate() throws PersistitInterruptedException {
             setRowCount(0);
             setAutoIncrement(0, true);
-        }
-
-        private Transaction getCurrentTrx() {
-            return treeService.getDb().getTransaction();
-        }
-
-        private long getSnapshot(Accumulator accumulator) throws PersistitInterruptedException {
-            return accumulator.getSnapshotValue(getCurrentTrx());
         }
     }
 }

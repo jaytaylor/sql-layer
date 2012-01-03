@@ -28,31 +28,23 @@ import com.persistit.exception.PersistitException;
  * an index position or add new ones at the end of the range.
  * </p>
  */
-enum AccumInfo {
+public enum AccumInfo {
     ORDINAL(0, Accumulator.Type.SUM),
     ROW_COUNT(1, Accumulator.Type.SUM),
     UNIQUE_ID(2, Accumulator.Type.SEQ),
     AUTO_INC(3, Accumulator.Type.SUM),
     ;
 
-    public Accumulator getAccumulator(Tree tree) {
-        try {
-            return tree.getAccumulator(getType(), getIndex());
-        } catch (PersistitException e) {
-            throw new PersistitAdapterException(e);
-        }
-    }
-
     AccumInfo(int index, Accumulator.Type type) {
         this.index = index;
         this.type = type;
     }
 
-    private int getIndex() {
+    int getIndex() {
         return index;
     }
 
-    private Accumulator.Type getType() {
+    Accumulator.Type getType() {
         return type;
     }
 
