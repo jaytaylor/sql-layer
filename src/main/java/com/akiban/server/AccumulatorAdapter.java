@@ -24,7 +24,7 @@ import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
 
-public class AccumulatorHandler {
+public class AccumulatorAdapter {
 
     public static long getSnapshot(AccumInfo accumInfo, TreeService treeService, Tree tree)
     throws PersistitInterruptedException
@@ -59,7 +59,7 @@ public class AccumulatorHandler {
         }
     }
 
-    public AccumulatorHandler(AccumInfo accumInfo, TreeService treeService, Tree tree) {
+    public AccumulatorAdapter(AccumInfo accumInfo, TreeService treeService, Tree tree) {
         this.treeService = treeService;
         this.accumulator = getAccumulator(accumInfo, tree);
     }

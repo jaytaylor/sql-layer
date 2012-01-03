@@ -18,11 +18,9 @@ package com.akiban.server.store.statistics;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Group;
-import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.AccumulatorHandler;
+import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.error.PersistitAdapterException;
-import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
@@ -96,7 +94,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Override
     public long countEntries(Session session, Index index) throws PersistitInterruptedException {
         Tree tree = store.getExchange(session, index).getTree();
-        return AccumulatorHandler.getSnapshot(AccumulatorHandler.AccumInfo.ROW_COUNT, treeService, tree);
+        return AccumulatorAdapter.getSnapshot(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, tree);
     }
 
     @Override

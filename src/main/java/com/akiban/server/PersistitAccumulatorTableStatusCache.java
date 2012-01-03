@@ -129,10 +129,10 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
     private class InternalTableStatus implements TableStatus {
         private volatile RowDef rowDef;
-        private volatile AccumulatorHandler ordinal;
-        private volatile AccumulatorHandler rowCount;
-        private volatile AccumulatorHandler uniqueID;
-        private volatile AccumulatorHandler autoIncrement;
+        private volatile AccumulatorAdapter ordinal;
+        private volatile AccumulatorAdapter rowCount;
+        private volatile AccumulatorAdapter uniqueID;
+        private volatile AccumulatorAdapter autoIncrement;
 
         @Override
         public long getAutoIncrement() throws PersistitInterruptedException {
@@ -184,10 +184,10 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             if(rowDef == null && tree == null) {
                 return;
             }
-            ordinal = new AccumulatorHandler(AccumulatorHandler.AccumInfo.ORDINAL, treeService, tree);
-            rowCount = new AccumulatorHandler(AccumulatorHandler.AccumInfo.ROW_COUNT, treeService, tree);
-            uniqueID = new AccumulatorHandler(AccumulatorHandler.AccumInfo.UNIQUE_ID, treeService, tree);
-            autoIncrement = new AccumulatorHandler(AccumulatorHandler.AccumInfo.AUTO_INC, treeService, tree);
+            ordinal = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ORDINAL, treeService, tree);
+            rowCount = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, tree);
+            uniqueID = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, treeService, tree);
+            autoIncrement = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.AUTO_INC, treeService, tree);
         }
         
         long createNewUniqueID() throws PersistitInterruptedException {
