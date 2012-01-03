@@ -29,8 +29,20 @@ public class AccumulatorHandler {
         return accumulator.getSnapshotValue(getCurrentTrx());
     }
 
-    public long update(long value) {
+    public long updateAndGet(long value) {
         return accumulator.update(value, getCurrentTrx());
+    }
+
+    public void set(long value) throws PersistitInterruptedException {
+        set(value, true);
+    }
+
+    void set(long value, boolean evenIfLess) throws PersistitInterruptedException {
+        long current = getSnapshot();
+        if(evenIfLess || value > current) {
+            long diff = value - current;
+            this.updateAndGet(diff);
+        }
     }
 
     public AccumulatorHandler(AccumInfo accumInfo, TreeService treeService, Tree tree) {

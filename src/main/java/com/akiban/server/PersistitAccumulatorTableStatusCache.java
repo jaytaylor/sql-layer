@@ -160,29 +160,23 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         void rowDeleted() {
-            rowCount.update(-1);
+            rowCount.updateAndGet(-1);
         }
 
         void rowWritten() {
-            rowCount.update(1);
+            rowCount.updateAndGet(1);
         }
 
         void setRowCount(long rowCountValue) throws PersistitInterruptedException {
-            long diff = rowCountValue - rowCount.getSnapshot();
-            this.rowCount.update(diff);
+            rowCount.set(rowCountValue);
         }
 
         void setAutoIncrement(long autoIncrementValue, boolean evenIfLess) throws PersistitInterruptedException {
-            long current = autoIncrement.getSnapshot();
-            if(autoIncrementValue > current || evenIfLess) {
-                long diff = autoIncrementValue - current;
-                this.autoIncrement.update(diff);
-            }
+            autoIncrement.set(autoIncrementValue, evenIfLess);
         }
 
         void setOrdinal(int ordinalValue) throws PersistitInterruptedException {
-            long diff = ordinalValue - ordinal.getSnapshot();
-            this.ordinal.update(diff);
+            ordinal.set(ordinalValue);
         }
 
         synchronized void setRowDef(RowDef rowDef, Tree tree) {
@@ -197,7 +191,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
         
         long createNewUniqueID() throws PersistitInterruptedException {
-            return this.uniqueID.update(1);
+            return uniqueID.updateAndGet(1);
         }
 
         void truncate() throws PersistitInterruptedException {
