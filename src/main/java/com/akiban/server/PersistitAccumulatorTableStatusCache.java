@@ -28,8 +28,6 @@ import com.persistit.exception.PersistitInterruptedException;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.persistit.Accumulator.Type;
-
 public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     private Map<Integer, InternalTableStatus> tableStatusMap = new HashMap<Integer, InternalTableStatus>();
     private TreeService treeService;
@@ -132,39 +130,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     }
 
 
-    /**
-     * Mapping of indexes and types for the Accumulators used by the table status.
-     * <p>
-     * Note: Remember that <i>any</i> modification to existing values is an
-     * <b>incompatible</b> data format change. It is only safe to stop using
-     * an index position or add new ones at the end of the range.
-     * </p>
-     */
-    private static enum AccumInfo {
-        ORDINAL(0, Type.SUM),
-        ROW_COUNT(1, Type.SUM),
-        UNIQUE_ID(2, Type.SEQ),
-        AUTO_INC(3, Type.SUM),
-        ;
-
-        AccumInfo(int index, Type type) {
-            this.index = index;
-            this.type = type;
-        }
-        
-        int getIndex() {
-            return index;
-        }
-        
-        Type getType() {
-            return type;
-        }
-
-        private final int index;
-        private final Accumulator.Type type;
-    }
-
-    
     private class InternalTableStatus implements TableStatus {
         private volatile RowDef rowDef;
         private volatile Accumulator ordinal;
