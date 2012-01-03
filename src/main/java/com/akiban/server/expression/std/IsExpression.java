@@ -25,7 +25,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.sql.StandardException;
-import com.akiban.sql.optimizer.ArgList;
+import com.akiban.server.expression.TypesList;
 
 public class IsExpression extends AbstractUnaryExpression
 {    
@@ -66,11 +66,11 @@ public class IsExpression extends AbstractUnaryExpression
        }
 
         @Override
-        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             if (argumentTypes.size() != 1)
                 throw new WrongExpressionArityException(1, argumentTypes.size());
-            argumentTypes.setArgType(0, AkType.BOOL);
+            argumentTypes.setType(0, AkType.BOOL);
             return ExpressionTypes.BOOL;
         }
     }

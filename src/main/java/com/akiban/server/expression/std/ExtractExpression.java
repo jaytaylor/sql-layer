@@ -22,6 +22,7 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.TypesList;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
@@ -29,7 +30,6 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.sql.StandardException;
-import com.akiban.sql.optimizer.ArgList;
 import java.util.Calendar;
 import java.util.EnumSet;
 
@@ -562,7 +562,7 @@ public class ExtractExpression extends AbstractUnaryExpression
         }
 
         @Override
-        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             if (argumentTypes.size() != 1)
                 throw new WrongExpressionArityException(1, argumentTypes.size());

@@ -27,7 +27,7 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.StandardException;
-import com.akiban.sql.optimizer.ArgList;
+import com.akiban.server.expression.TypesList;
 import java.util.Arrays;
 import java.util.List;
 import org.joda.time.MutableDateTime;
@@ -47,7 +47,7 @@ public class WeekExpression extends AbstractCompositeExpression
         }
 
         @Override
-        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             if (argumentTypes.size() != 1)
                 throw new WrongExpressionArityException(1, argumentTypes.size());
@@ -65,18 +65,18 @@ public class WeekExpression extends AbstractCompositeExpression
         }
 
         @Override
-        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             switch(argumentTypes.size())
             {
-                case 2: argumentTypes.setArgType(1, AkType.INT); // fall thru
+                case 2: argumentTypes.setType(1, AkType.INT); // fall thru
                 case 1: InternalComposer.adjustFirstArg(argumentTypes);
                         return ExpressionTypes.INT;
                 default: throw new WrongExpressionArityException(2, argumentTypes.size());
             }
         }
 
-        protected static void adjustFirstArg (ArgList argumentTypes) throws StandardException
+        protected static void adjustFirstArg (TypesList argumentTypes) throws StandardException
         {
             ExpressionType arg = argumentTypes.get(0);
             switch(arg.getType())
@@ -84,10 +84,10 @@ public class WeekExpression extends AbstractCompositeExpression
                 case DATE:
                 case DATETIME:
                 case TIMESTAMP:  break;
-                case VARCHAR:    argumentTypes.setArgType(0, arg.getPrecision() > 10?
+                case VARCHAR:    argumentTypes.setType(0, arg.getPrecision() > 10?
                                                              AkType.DATETIME : AkType.DATE);
                                  break;
-                default:         argumentTypes.setArgType(0, AkType.DATE);
+                default:         argumentTypes.setType(0, AkType.DATE);
 
             }
         }

@@ -13,28 +13,17 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.optimizer;
+package com.akiban.server.expression;
 
-import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.StandardException;
-import com.akiban.sql.optimizer.FunctionsTypeComputer.ArgumentsAccess;
 import java.util.ArrayList;
 
-public class ArgList extends ArrayList<ExpressionType>
+public abstract class TypesList extends ArrayList<ExpressionType>
 {
-    private ArgumentsAccess args;
-
-    public ArgList(ArgumentsAccess args)
+    protected TypesList (int size)
     {
-        super(args.nargs());
-        this.args = args;
+        super(size);
     }
-
-    public void setArgType (int index, AkType newType) throws StandardException
-    {
-        ExpressionType oldType = get(index);
-        if (oldType.getType() != newType)
-            set(index, args.addCast(index, oldType, newType));
-    }
+    abstract public void setType(int index, AkType newType) throws StandardException;
 }

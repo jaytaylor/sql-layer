@@ -21,13 +21,12 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.TypesList;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.ValueHolder;
 import com.akiban.sql.StandardException;
-import com.akiban.sql.optimizer.ArgList;
 import com.akiban.util.AkibanAppender;
 
 import java.util.List;
@@ -41,10 +40,10 @@ public final class ConcatExpression extends AbstractCompositeExpression {
         }
 
         @Override
-        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             for (int i = 0; i < argumentTypes.size(); ++i)
-                argumentTypes.setArgType(i, AkType.VARCHAR);
+                argumentTypes.setType(i, AkType.VARCHAR);
 
             int length = 0;
             for (ExpressionType type : argumentTypes) {

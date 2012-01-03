@@ -19,9 +19,8 @@ import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionType;
-import com.akiban.server.types.AkType;
 import com.akiban.sql.StandardException;
-import com.akiban.sql.optimizer.ArgList;
+import com.akiban.server.expression.TypesList;
 
 import java.util.List;
 
@@ -39,7 +38,7 @@ abstract class NoArgComposer implements ExpressionComposer {
     }
 
     @Override
-    public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+    public ExpressionType composeType(TypesList argumentTypes) throws StandardException
     {
         if (argumentTypes.size() != 0)
             throw new WrongExpressionArityException(0, argumentTypes.size());

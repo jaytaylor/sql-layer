@@ -27,7 +27,7 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.sql.StandardException;
-import com.akiban.sql.optimizer.ArgList;
+import com.akiban.server.expression.TypesList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -44,11 +44,11 @@ public class LocateExpression extends AbstractCompositeExpression
         }
 
         @Override
-        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             if (argumentTypes.size() != 2) throw new WrongExpressionArityException(2, argumentTypes.size());
-            argumentTypes.setArgType(0, AkType.VARCHAR);
-            argumentTypes.setArgType(1, AkType.VARCHAR);
+            argumentTypes.setType(0, AkType.VARCHAR);
+            argumentTypes.setType(1, AkType.VARCHAR);
 
             return ExpressionTypes.LONG;
         }        
@@ -64,13 +64,13 @@ public class LocateExpression extends AbstractCompositeExpression
         }
 
         @Override
-        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             int s = argumentTypes.size();
             if (s!= 2 && s != 3) throw new WrongExpressionArityException(2, s);
-            argumentTypes.setArgType(0, AkType.VARCHAR);
-            argumentTypes.setArgType(1, AkType.VARCHAR);
-            if (s == 3) argumentTypes.setArgType(2, AkType.LONG);
+            argumentTypes.setType(0, AkType.VARCHAR);
+            argumentTypes.setType(1, AkType.VARCHAR);
+            if (s == 3) argumentTypes.setType(2, AkType.LONG);
 
             return ExpressionTypes.LONG;
         }

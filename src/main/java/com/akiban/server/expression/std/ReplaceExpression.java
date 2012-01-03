@@ -24,7 +24,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.sql.StandardException;
-import com.akiban.sql.optimizer.ArgList;
+import com.akiban.server.expression.TypesList;
 import java.util.List;
 
 public class ReplaceExpression extends AbstractTernaryExpression
@@ -39,14 +39,14 @@ public class ReplaceExpression extends AbstractTernaryExpression
         }
 
         @Override
-        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             if (argumentTypes.size() != 3)
                 throw new WrongExpressionArityException(3, argumentTypes.size());
             int length = 0;
             for (int n  = 0; n < argumentTypes.size(); ++n)
             {
-                argumentTypes.setArgType(n, AkType.VARCHAR);
+                argumentTypes.setType(n, AkType.VARCHAR);
                 length += argumentTypes.get(n).getPrecision();
             }
             return ExpressionTypes.varchar(length);

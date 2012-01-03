@@ -27,7 +27,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.sql.StandardException;
-import com.akiban.sql.optimizer.ArgList;
+import com.akiban.server.expression.TypesList;
 import java.util.List;
 
 
@@ -64,12 +64,12 @@ public class LikeExpression extends AbstractCompositeExpression
         }
 
         @Override
-        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             int s = argumentTypes.size();
             if (s!= 2 && s != 3) throw new WrongExpressionArityException(2, s);
             for (int n = 0; n < s; ++n)
-                argumentTypes.setArgType(n, AkType.VARCHAR);
+                argumentTypes.setType(n, AkType.VARCHAR);
 
             return ExpressionTypes.BOOL;
         }

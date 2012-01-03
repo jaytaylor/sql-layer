@@ -20,13 +20,13 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.TypesList;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.util.ConversionUtil;
 import com.akiban.sql.StandardException;
-import com.akiban.sql.optimizer.ArgList;
 import java.util.List;
 import org.joda.time.MutableDateTime;
 
@@ -42,12 +42,12 @@ public class DateFormatExpression extends AbstractBinaryExpression
         }
 
         @Override
-        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             if (argumentTypes.size() != 2)
                 throw new WrongExpressionArityException(2, argumentTypes.size());
 
-            argumentTypes.setArgType(1, AkType.VARCHAR);
+            argumentTypes.setType(1, AkType.VARCHAR);
             ExpressionType dateType = argumentTypes.get(0);
             switch(dateType.getType())
             {
@@ -55,9 +55,9 @@ public class DateFormatExpression extends AbstractBinaryExpression
                 case TIME:
                 case DATETIME:
                 case TIMESTAMP: break;
-                case VARCHAR:   argumentTypes.setArgType(0, dateType.getPrecision() > 10 ?
+                case VARCHAR:   argumentTypes.setType(0, dateType.getPrecision() > 10 ?
                                                      AkType.DATETIME: AkType.DATE);
-                default:        argumentTypes.setArgType(0, AkType.DATE);
+                default:        argumentTypes.setType(0, AkType.DATE);
             }            
 
             return ExpressionTypes.varchar(argumentTypes.get(1).getPrecision() * 5);

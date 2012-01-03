@@ -27,10 +27,8 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.ObjectExtractor;
-import com.akiban.server.types.util.ValueHolder;
 import com.akiban.sql.StandardException;
-import com.akiban.sql.optimizer.ArgList;
-
+import com.akiban.server.expression.TypesList;
 
 public class TrimExpression extends AbstractUnaryExpression
 {
@@ -109,11 +107,11 @@ public class TrimExpression extends AbstractUnaryExpression
         }
 
         @Override
-        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             if (argumentTypes.size() != 1)
                 throw new WrongExpressionArityException(1, argumentTypes.size());
-            argumentTypes.setArgType(0, AkType.VARCHAR);
+            argumentTypes.setType(0, AkType.VARCHAR);
             return argumentTypes.get(0);
         }
     }

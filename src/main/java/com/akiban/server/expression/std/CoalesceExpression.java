@@ -19,6 +19,7 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.TypesList;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
@@ -26,7 +27,6 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.sql.StandardException;
-import com.akiban.sql.optimizer.ArgList;
 
 import java.util.List;
 
@@ -40,12 +40,12 @@ public final class CoalesceExpression extends AbstractCompositeExpression {
         }
 
         @Override
-        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             AkType akType = AkType.NULL;
             for (int i = 0; i < argumentTypes.size(); i++)
                 if (akType != AkType.NULL)
-                    argumentTypes.setArgType(i, akType);
+                    argumentTypes.setType(i, akType);
                 else
                     akType = argumentTypes.get(i).getType();
 

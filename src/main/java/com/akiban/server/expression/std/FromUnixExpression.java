@@ -20,13 +20,13 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.TypesList;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.sql.StandardException;
-import com.akiban.sql.optimizer.ArgList;
 import java.util.List;
 import org.joda.time.DateTime;
 import org.joda.time.MutableDateTime;
@@ -43,15 +43,15 @@ public class FromUnixExpression extends AbstractCompositeExpression
         }
 
         @Override
-        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             int s = argumentTypes.size();
             switch (s)
             {
-                case 2: argumentTypes.setArgType(1, AkType.VARCHAR);
-                        argumentTypes.setArgType(0, AkType.LONG);
+                case 2: argumentTypes.setType(1, AkType.VARCHAR);
+                        argumentTypes.setType(0, AkType.LONG);
                         return ExpressionTypes.varchar(argumentTypes.get(0).getPrecision() * 5);
-                case 1: argumentTypes.setArgType(0, AkType.LONG);
+                case 1: argumentTypes.setType(0, AkType.LONG);
                         return ExpressionTypes.DATETIME;
                 default: throw new WrongExpressionArityException(1, s);
             }

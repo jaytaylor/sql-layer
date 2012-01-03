@@ -15,9 +15,7 @@
 
 package com.akiban.server.expression;
 
-import com.akiban.server.types.AkType;
 import com.akiban.sql.StandardException;
-import com.akiban.sql.optimizer.ArgList;
 
 import java.util.List;
 
@@ -38,7 +36,7 @@ public interface ExpressionComposer {
      * this method can expect to be called with
      * <code>ExpressionType</code>s that are based on those.
      */
-    ExpressionType composeType(ArgList argumentTypes) throws StandardException;
+    ExpressionType composeType(TypesList argumentTypes) throws StandardException;
 
     /** Return an expression with the given expressions as its arguments. 
      * If the function has simple type requirements, it can use {@link #argumentTypes}

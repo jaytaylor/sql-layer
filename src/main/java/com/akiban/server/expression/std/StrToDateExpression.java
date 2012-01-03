@@ -26,7 +26,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.ObjectExtractor;
 import com.akiban.sql.StandardException;
-import com.akiban.sql.optimizer.ArgList;
+import com.akiban.server.expression.TypesList;
 import java.util.Calendar;
 import java.util.EnumMap;
 import java.util.List;
@@ -44,12 +44,12 @@ public class StrToDateExpression extends AbstractBinaryExpression
         }
 
         @Override
-        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             int size = argumentTypes.size();
             if (size != 2) throw new WrongExpressionArityException(2, size);
-            argumentTypes.setArgType(0, AkType.VARCHAR);
-            argumentTypes.setArgType(1, AkType.VARCHAR);
+            argumentTypes.setType(0, AkType.VARCHAR);
+            argumentTypes.setType(1, AkType.VARCHAR);
 
             return ExpressionTypes.DATETIME;
         }

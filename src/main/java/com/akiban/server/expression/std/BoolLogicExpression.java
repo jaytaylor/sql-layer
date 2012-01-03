@@ -19,6 +19,7 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.TypesList;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
@@ -26,7 +27,6 @@ import com.akiban.server.types.extract.BooleanExtractor;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.sql.StandardException;
-import com.akiban.sql.optimizer.ArgList;
 
 import java.util.List;
 
@@ -115,12 +115,12 @@ public final class BoolLogicExpression extends AbstractBinaryExpression {
         private final BooleanLogic logic;
 
         @Override
-        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             if (argumentTypes.size() != 2)
                 throw new WrongExpressionArityException(2, argumentTypes.size());
-            argumentTypes.setArgType(0, AkType.BOOL);
-            argumentTypes.setArgType(1, AkType.BOOL);
+            argumentTypes.setType(0, AkType.BOOL);
+            argumentTypes.setType(1, AkType.BOOL);
             return ExpressionTypes.BOOL;
         }
     }

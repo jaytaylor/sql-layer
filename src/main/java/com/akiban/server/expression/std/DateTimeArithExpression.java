@@ -20,11 +20,11 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.TypesList;
 import com.akiban.server.expression.std.ArithOps.ArithOpComposer;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.StandardException;
-import com.akiban.sql.optimizer.ArgList;
 
 public class DateTimeArithExpression extends ArithExpression
 {
@@ -38,7 +38,7 @@ public class DateTimeArithExpression extends ArithExpression
     public static final ExpressionComposer TIMEDIFF_COMPOSER = new DiffComposer(AkType.TIME)
     {
         @Override
-        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             if (argumentTypes.size() != 2)
                 throw new WrongExpressionArityException(2, argumentTypes.size());
@@ -49,9 +49,9 @@ public class DateTimeArithExpression extends ArithExpression
                 case TIME:
                 case DATETIME:
                 case TIMESTAMP: break;
-                case VARCHAR:   argumentTypes.setArgType(0, dateType.getPrecision() > 10 ?
+                case VARCHAR:   argumentTypes.setType(0, dateType.getPrecision() > 10 ?
                                                      AkType.DATETIME: AkType.TIME);
-                default:        argumentTypes.setArgType(0, AkType.TIME);
+                default:        argumentTypes.setType(0, AkType.TIME);
             }
 
             return composeType(argumentTypes.get(0), argumentTypes.get(1));
@@ -62,12 +62,12 @@ public class DateTimeArithExpression extends ArithExpression
     public static final ExpressionComposer DATEDIFF_COMPOSER = new DiffComposer(AkType.LONG)
     {
         @Override
-        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             if (argumentTypes.size() != 2)
                 throw new WrongExpressionArityException(2, argumentTypes.size());
             for (int n = 0; n < 2; ++n)
-                argumentTypes.setArgType(n, AkType.DATE);
+                argumentTypes.setType(n, AkType.DATE);
 
             return composeType(argumentTypes.get(0), argumentTypes.get(1));
         }
@@ -89,7 +89,7 @@ public class DateTimeArithExpression extends ArithExpression
         }
 
         @Override
-        public ExpressionType composeType(ArgList argumentTypes) throws StandardException
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
              if (argumentTypes.size() != 2) throw new WrongExpressionArityException(2, argumentTypes.size());
 
@@ -105,7 +105,7 @@ public class DateTimeArithExpression extends ArithExpression
                 firstArg = AkType.DATETIME;
 
             // adjust first arg
-            argumentTypes.setArgType(0, firstArg);
+            argumentTypes.setType(0, firstArg);
 
             // second arg does not need *real* adjusting since
             //  - if it's a numeric type, it'll be *casted* to an interval_millis in compose()

@@ -19,9 +19,10 @@ import com.akiban.server.error.DivisionByZeroException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.TypesList;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
-import com.akiban.sql.optimizer.ArgList;
+import com.akiban.sql.StandardException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -156,9 +157,9 @@ public class ArithOps
         {
             return new ArithExpression(first, this, second);
         }
-        
+
         @Override
-        public ExpressionType composeType(ArgList arguments)
+        public ExpressionType composeType(TypesList arguments) throws StandardException
         {
             if(arguments.size() != 2) throw new WrongExpressionArityException(2, arguments.size());
             ExpressionType first = arguments.get(0), second = arguments.get(1);

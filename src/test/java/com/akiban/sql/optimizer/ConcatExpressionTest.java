@@ -18,9 +18,9 @@ package com.akiban.sql.optimizer;
 import com.akiban.server.expression.std.ConcatExpression;
 import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.TypesList;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.StandardException;
-import com.akiban.sql.optimizer.FunctionsTypeComputer.ArgumentsAccess;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
@@ -29,7 +29,7 @@ public class ConcatExpressionTest
     @Test
     public void typeLength() throws StandardException
     {
-        ArgList argLists = new ArgList(new DummyArgAccess(3));
+        TypesList argLists = new DummyTypesList(3);
 
         argLists.add(ExpressionTypes.varchar(6));
         argLists.add(ExpressionTypes.varchar(10));
@@ -39,30 +39,18 @@ public class ConcatExpressionTest
         assertEquals(20, concatType.getPrecision());
     }
 
-    private static class DummyArgAccess implements ArgumentsAccess
+    private static class DummyTypesList extends TypesList
     {
-        int size;
-        protected DummyArgAccess (int size)
+        DummyTypesList (int size)
         {
-            this.size = size;
+            super(size);      
         }
 
         @Override
-        public int nargs()
+        public void setType(int index, AkType newType) throws StandardException
         {
-            return size;
+            // do nothing
         }
 
-        @Override
-        public ExpressionType argType(int index) throws StandardException
-        {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public ExpressionType addCast(int index, ExpressionType argType, AkType requiredType) throws StandardException
-        {
-           throw new UnsupportedOperationException();
-        }
     }
 }

@@ -24,19 +24,15 @@ import com.akiban.sql.types.TypeId;
 import com.akiban.server.expression.EnvironmentExpressionFactory;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.TypesList;
 import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.service.functions.FunctionsRegistry;
-
 import com.akiban.server.types.AkType;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoSuchFunctionException;
 
 import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 /** Calculate types from expression composers. */
 public class FunctionsTypeComputer extends AISTypeComputer
@@ -102,7 +98,7 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return null;        // Defer error until later.
         }
         int nargs = args.nargs();
-        ArgList argTypes = new ArgList(args);
+        TypesList argTypes = new ArgTypesList(args);
         for (int i = 0; i < nargs; i++)
         {
             ExpressionType argType = args.argType(i);
