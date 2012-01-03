@@ -105,7 +105,7 @@ public final class IndexEntryCountIT extends ITBase {
 
     @Test
     public void addAndCheckGI() {
-        Index nameWhen = createGroupIndex(groupName(), "gi_idx", "customers.name,orders.when");
+        Index nameWhen = createGroupIndex(groupName(), "gi_idx", "customers.name,orders.when", Index.JoinType.RIGHT);
         countEntries(nameWhen, 1);
         writeRow(oId, 12L, 2L, "2002-02-02");
         countEntries(nameWhen, 2);
@@ -113,7 +113,7 @@ public final class IndexEntryCountIT extends ITBase {
 
     @Test
     public void deleteAndCheckGI() {
-        Index nameWhen = createGroupIndex(groupName(), "gi_idx", "customers.name,orders.when");
+        Index nameWhen = createGroupIndex(groupName(), "gi_idx", "customers.name,orders.when", Index.JoinType.RIGHT);
         countEntries(nameWhen, 1);
         deleteRow(oId, 11L, 1L, "2001-01-01");
         countEntries(nameWhen, 0);
@@ -121,7 +121,7 @@ public final class IndexEntryCountIT extends ITBase {
 
     @Test
     public void updateAndCheckGI() {
-        Index nameWhen = createGroupIndex(groupName(), "gi_idx", "customers.name,orders.when");
+        Index nameWhen = createGroupIndex(groupName(), "gi_idx", "customers.name,orders.when", Index.JoinType.RIGHT);
         countEntries(nameWhen, 1);
         update(oId, 11L, 1L, "2001-01-01").to(12L, 2, "2002-02-02");
         countEntries(nameWhen, 1);

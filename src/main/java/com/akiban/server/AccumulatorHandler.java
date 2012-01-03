@@ -18,6 +18,7 @@ package com.akiban.server;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.tree.TreeService;
 import com.persistit.Accumulator;
+import com.persistit.Exchange;
 import com.persistit.Transaction;
 import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
@@ -32,11 +33,10 @@ public class AccumulatorHandler {
         Transaction txn = getCurrentTrx(treeService);
         return accumulator.getSnapshotValue(txn);
     }
-    
-    public static long updateAndGet(AccumInfo accumInfo, TreeService treeService, Tree tree, long value) {
-        Accumulator accumulator = getAccumulator(accumInfo, tree);
-        Transaction txn = getCurrentTrx(treeService);
-        return accumulator.update(value, txn);
+
+    public static long updateAndGet(AccumInfo accumInfo, Exchange exchange, long value) {
+        Accumulator accumulator = getAccumulator(accumInfo, exchange.getTree());
+        return accumulator.update(value, exchange.getTransaction());
     }
     
     public long getSnapshot() throws PersistitInterruptedException {
