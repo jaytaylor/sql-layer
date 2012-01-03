@@ -15,8 +15,6 @@
 
 package com.akiban.server.expression.std;
 
-import java.util.List;
-import java.util.ArrayList;
 import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.extract.LongExtractor;
@@ -56,18 +54,6 @@ public class DateTimeArithExpressionTest extends ComposedExpressionTestBase
     @Test
     public void testDateAdd_IntervalMonth ()
     {   
-        List<AkType> argType = new ArrayList<AkType>();
-        argType.add(AkType.DATE);
-        argType.add(AkType.INTERVAL_MONTH);
-        
-        List<AkType> newArgType = new ArrayList<AkType>(argType);
-        
-        //test argumentTypes ()
-        DateTimeArithExpression.ADD_DATE_COMPOSER.argumentTypes(newArgType);
-        for (int n = 0; n < argType.size(); ++n)
-            assertTrue("Assert type list doesn't get changed", argType.get(n) == newArgType.get(n));
-        
-        
         Expression left = new LiteralExpression(AkType.DATE, extractor.getLong("2008-02-29"));
         Expression right = new LiteralExpression(AkType.INTERVAL_MONTH, 12L);
         

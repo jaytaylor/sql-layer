@@ -27,7 +27,8 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.extract.ObjectExtractor;
-import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.expression.TypesList;
+import com.akiban.sql.StandardException;
 import java.math.BigInteger;
 import java.util.List;
 import org.slf4j.LoggerFactory;
@@ -115,18 +116,14 @@ public class BinaryBitExpression extends AbstractBinaryExpression
         }
 
         @Override
-        protected ExpressionType composeType(ExpressionType first, ExpressionType second)
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
-            return ExpressionTypes.U_BIGINT;
-        }
-
-        @Override
-        public void argumentTypes(List<AkType> argumentTypes)
-        {
-            if (argumentTypes.size() != 2) 
+            if (argumentTypes.size() != 2)
                 throw new WrongExpressionArityException(2, argumentTypes.size());
-            argumentTypes.set(0, AkType.U_BIGINT);
-            argumentTypes.set(1, op.ordinal() >= BitOperator.LEFT_SHIFT.ordinal() ? AkType.LONG : AkType.U_BIGINT );
+            argumentTypes.setType(0, AkType.U_BIGINT);
+            argumentTypes.setType(1, op.ordinal() >= BitOperator.LEFT_SHIFT.ordinal() ?
+                                        AkType.LONG : AkType.U_BIGINT);
+            return ExpressionTypes.U_BIGINT;
         }
     }
 

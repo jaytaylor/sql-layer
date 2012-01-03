@@ -125,8 +125,12 @@ abstract class ExtractorsForDates extends LongExtractor {
 
         @Override
         public long getLong(String string) {
-            final String parts[] = string.split(" ");
-            if(parts.length != 2) {
+            String parts[] = string.split(" ");
+            if (parts.length == 1) {
+                string += " 00:00:00";
+                parts = string.split(" ");
+            }
+            else if(parts.length != 2) {
                 throw new InvalidDateFormatException ("date time", string);
             }
 
