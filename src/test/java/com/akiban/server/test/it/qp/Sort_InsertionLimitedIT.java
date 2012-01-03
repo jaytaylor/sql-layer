@@ -32,8 +32,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import static com.akiban.server.expression.std.Expressions.field;
-import static com.akiban.server.expression.std.Expressions.literal;
+import static com.akiban.server.expression.std.Expressions.*;
 import static com.akiban.qp.operator.API.*;
 
 public class Sort_InsertionLimitedIT extends OperatorITBase
@@ -501,19 +500,24 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
     @Test
     public void testFreeze()
     {
-        RowType valuesType = schema.newValuesType(AkType.LONG);
-        List<BindableRow> valuesRows = new ArrayList<BindableRow>();
-        valuesRows.add(BindableRow.of(valuesType, Collections.singletonList(literal(3L))));
-        valuesRows.add(BindableRow.of(valuesType, Collections.singletonList(literal(2L))));
-        valuesRows.add(BindableRow.of(valuesType, Collections.singletonList(literal(4L))));
-        valuesRows.add(BindableRow.of(valuesType, Collections.singletonList(literal(1L))));
-        Operator project = project_Default(valuesScan_Default(valuesRows, valuesType),
-                                           valuesType,
-                                           Arrays.asList(field(valuesType, 0)));
+        RowType outerValuesRowType = schema.newValuesType(AkType.LONG);
+        List<BindableRow> outerValuesRows = new ArrayList<BindableRow>();
+        outerValuesRows.add(BindableRow.of(outerValuesRowType, Collections.singletonList(literal(3L))));
+        outerValuesRows.add(BindableRow.of(outerValuesRowType, Collections.singletonList(literal(2L))));
+        outerValuesRows.add(BindableRow.of(outerValuesRowType, Collections.singletonList(literal(4L))));
+        outerValuesRows.add(BindableRow.of(outerValuesRowType, Collections.singletonList(literal(1L))));
+        RowType innerValuesRowType = schema.newValuesType(AkType.NULL);
+        List<BindableRow> innerValuesRows = new ArrayList<BindableRow>();
+        innerValuesRows.add(BindableRow.of(innerValuesRowType, Collections.singletonList(literal(null))));
+        Operator project = project_Default(valuesScan_Default(innerValuesRows, innerValuesRowType),
+                                           innerValuesRowType,
+                                           Arrays.asList(boundField(outerValuesRowType, 0, 0)));
         RowType projectType = project.rowType();
         Operator plan =
             sort_InsertionLimited(
-                project,
+                map_NestedLoops(
+                    valuesScan_Default(outerValuesRows, outerValuesRowType), 
+                    project, 0),
                 projectType,
                 ordering(field(projectType, 0), true),
                 SortOption.PRESERVE_DUPLICATES,
