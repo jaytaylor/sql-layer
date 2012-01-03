@@ -737,6 +737,7 @@ public class PersistitStore implements Store {
             Exchange iEx = getExchange(session, index);
             try {
                 iEx.removeAll();
+                new AccumulatorHandler(AccumulatorHandler.AccumInfo.ROW_COUNT, treeService, iEx.getTree()).set(0);
             } catch (PersistitException e) {
                 throw new PersistitAdapterException(e);
             }
@@ -990,6 +991,13 @@ public class PersistitStore implements Store {
         } else {
             try {
                 iEx.store();
+                if (!index.isPrimaryKey()) {
+                    AccumulatorHandler.updateAndGet(
+                            AccumulatorHandler.AccumInfo.ROW_COUNT,
+                            treeService,
+                            iEx.getTree(),
+                            1);
+                }
             } catch (PersistitException e) {
                 throw new PersistitAdapterException(e);
             }
@@ -1068,6 +1076,8 @@ public class PersistitStore implements Store {
         final Exchange iEx = getExchange(session, index);
         constructIndexKey(new PersistitKeyAppender(iEx.getKey()), rowData, index, hkey);
         boolean removed = iEx.remove();
+        if (!index.isPrimaryKey())
+            AccumulatorHandler.updateAndGet(AccumulatorHandler.AccumInfo.ROW_COUNT, treeService, iEx.getTree(), -1);
         releaseExchange(session, iEx);
     }
 

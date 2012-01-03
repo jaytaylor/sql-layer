@@ -33,6 +33,12 @@ public class AccumulatorHandler {
         return accumulator.getSnapshotValue(txn);
     }
     
+    public static long updateAndGet(AccumInfo accumInfo, TreeService treeService, Tree tree, long value) {
+        Accumulator accumulator = getAccumulator(accumInfo, tree);
+        Transaction txn = getCurrentTrx(treeService);
+        return accumulator.update(value, txn);
+    }
+    
     public long getSnapshot() throws PersistitInterruptedException {
         return accumulator.getSnapshotValue(getCurrentTrx());
     }
