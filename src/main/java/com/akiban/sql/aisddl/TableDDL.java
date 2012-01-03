@@ -263,11 +263,11 @@ public class TableDDL
     
     private static Map<TypeId, Type> typeMapping() {
         HashMap<TypeId, Type> types = new HashMap<TypeId, Type>();
-        types.put (TypeId.BOOLEAN_ID, Types.TINYINT);
-        types.put (TypeId.TINYINT_ID, Types.TINYINT);
-        types.put (TypeId.SMALLINT_ID, Types.SMALLINT);
-        types.put (TypeId.INTEGER_ID, Types.INT);
-        types.put (TypeId.BIGINT_ID, Types.BIGINT);
+        types.put(TypeId.BOOLEAN_ID, Types.TINYINT);
+        types.put(TypeId.TINYINT_ID, Types.TINYINT);
+        types.put(TypeId.SMALLINT_ID, Types.SMALLINT);
+        types.put(TypeId.INTEGER_ID, Types.INT);
+        types.put(TypeId.BIGINT_ID, Types.BIGINT);
         
         types.put(TypeId.TINYINT_UNSIGNED_ID, Types.U_TINYINT);
         types.put(TypeId.SMALLINT_UNSIGNED_ID, Types.U_SMALLINT);
@@ -293,7 +293,9 @@ public class TableDDL
         
         types.put(TypeId.DATE_ID, Types.DATE);
         types.put(TypeId.TIME_ID, Types.TIME);
-        types.put(TypeId.TIMESTAMP_ID, Types.DATETIME);
+        types.put(TypeId.TIMESTAMP_ID, Types.DATETIME); // TODO: Types.TIMESTAMP?
+        types.put(TypeId.DATETIME_ID, Types.DATETIME);
+        types.put(TypeId.YEAR_ID, Types.YEAR);
         
         types.put(TypeId.BLOB_ID, Types.LONGBLOB);
         types.put(TypeId.CLOB_ID, Types.LONGTEXT);

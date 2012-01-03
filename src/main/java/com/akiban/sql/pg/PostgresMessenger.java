@@ -151,10 +151,6 @@ public class PostgresMessenger implements DataInput, DataOutput
 
     /** Send outgoing message. */
     protected void sendMessage() throws IOException {
-        sendMessage(false);
-    }
-    /** Send outgoing message and optionally flush stream. */
-    protected void sendMessage(boolean flush) throws IOException {
         messageOutput.flush();
         byte[] msg = byteOutput.toByteArray();
         
@@ -167,14 +163,22 @@ public class PostgresMessenger implements DataInput, DataOutput
         msg[3] = (byte)(len >> 8);
         msg[4] = (byte)len;
         outputStream.write(msg);
-        if (flush) {
-            try {
-                xmitTap.in();
-                outputStream.flush();
-            }
-            finally {
-                xmitTap.out();
-            }
+    }
+
+    /** Send outgoing message and optionally flush stream. */
+    protected void sendMessage(boolean flush) throws IOException {
+        sendMessage();
+        if (flush)
+            flush();
+    }
+
+    protected void flush() throws IOException {
+        try {
+            xmitTap.in();
+            outputStream.flush();
+        }
+        finally {
+            xmitTap.out();
         }
     }
 

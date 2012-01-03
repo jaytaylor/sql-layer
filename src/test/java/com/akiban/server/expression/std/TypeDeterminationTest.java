@@ -104,14 +104,19 @@ public class TypeDeterminationTest
         // INTERVALs
         for (AkType interval : Arrays.asList(AkType.INTERVAL_MILLIS, AkType.INTERVAL_MONTH))
         {
+                        
             param(pb, interval, ArithOps.ADD, interval, interval);
             param(pb, interval, ArithOps.MINUS, interval, interval);
-            param(pb, interval, ArithOps.MULTIPLY, AkType.LONG, interval);
-            param(pb, AkType.DECIMAL, ArithOps.MULTIPLY, interval, interval);
-            param(pb, interval, ArithOps.DIVIDE, AkType.U_BIGINT, interval);
-            param(pb, AkType.LONG, ArithOps.DIVIDE, interval, null); // expect exception
             param(pb, interval, ArithOps.DIVIDE, interval, null); // expect exception
             param(pb, interval, ArithOps.MULTIPLY, interval, null); // expect exception
+            
+            for (AkType numeric : Arrays.asList(AkType.LONG, AkType.DECIMAL, AkType.DOUBLE,
+                        AkType.U_BIGINT, AkType.FLOAT, AkType.INT))
+            {
+                param(pb, interval, ArithOps.MULTIPLY, numeric, interval);
+                param(pb, numeric, ArithOps.MULTIPLY, interval, interval);
+                param(pb, numeric, ArithOps.DIVIDE, interval, null); // expect exception
+            }
         }
         
         // INTERVAL_MONTH and INTERVAL_MILLIS
@@ -119,11 +124,12 @@ public class TypeDeterminationTest
         param(pb, AkType.INTERVAL_MONTH, ArithOps.ADD, AkType.INTERVAL_MILLIS, null); // ditto
         param(pb, AkType.INTERVAL_MILLIS, ArithOps.MINUS, AkType.INTERVAL_MONTH, null); // expect exception
         param(pb, AkType.INTERVAL_MONTH, ArithOps.MINUS, AkType.INTERVAL_MILLIS, null); // ditto
-    
+        
         // exceptions
         param(pb, AkType.DATE, ArithOps.MINUS, AkType.TIME, null);
         param(pb, AkType.LONG, ArithOps.ADD, AkType.DATE, null);
         param(pb, AkType.YEAR, ArithOps.MULTIPLY, AkType.LONG, null);
+        
 
         return pb.asList();
     }
@@ -157,9 +163,11 @@ public class TypeDeterminationTest
     {
         switch (type)
         {
+            case FLOAT: return new LiteralExpression(type, 1.0f);
             case DOUBLE: return new LiteralExpression(type, 1.0);
             case DECIMAL: return new LiteralExpression(type, BigDecimal.ONE);
             case U_BIGINT: return new LiteralExpression(type, BigInteger.ONE);
+            case INT:
             case LONG:
             case YEAR:
             case DATE: 
