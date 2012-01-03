@@ -95,16 +95,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
 
     @Override
     public long countEntries(Session session, Index index) throws PersistitInterruptedException {
-        Tree tree;
-        if (index.isPrimaryKey()) {
-            Table table = index.leafMostTable();
-            assert table == index.rootMostTable() : table + " != " + index.rootMostTable();
-            RowDef rowDef = (RowDef) table.rowDef();
-            tree = store.getExchange(session, rowDef).getTree();
-        }
-        else {
-            tree = store.getExchange(session, index).getTree();
-        }
+        Tree tree = store.getExchange(session, index).getTree();
         return AccumulatorHandler.getSnapshot(AccumulatorHandler.AccumInfo.ROW_COUNT, treeService, tree);
     }
 
