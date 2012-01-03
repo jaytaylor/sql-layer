@@ -63,7 +63,12 @@ public class ProjectedRow extends AbstractRow
 
     @Override
     public ValueSource eval(int i) {
-        return holderFor(i).copyFrom(evaluations.get(i).eval());
+        ValueHolder holder = holders[i];
+        if (holder == null) {
+            holders[i] = holder = new ValueHolder();
+            holder.copyFrom(evaluations.get(i).eval());
+        }
+        return holder;
     }
 
     @Override
@@ -102,13 +107,16 @@ public class ProjectedRow extends AbstractRow
         super.runId(row.runId());
     }
 
-    // For use by this class
-
-    private ValueHolder holderFor(int i) {
-        if (holders[i] == null)
-            holders[i] = new ValueHolder();
-        return holders[i];
+    /** Make sure all the <code>ValueHolder</code>s are full. */
+    public void freeze() {
+        for (int i = 0; i < holders.length; i++) {
+            if (holders[i] == null) {
+                eval(i);
+            }
+        }
     }
+
+    // For use by this class
 
     private List<ExpressionEvaluation> createEvaluations(List<Expression> expressions, 
                                                          Row row, Bindings bindings, StoreAdapter adapter)
