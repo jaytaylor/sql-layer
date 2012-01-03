@@ -129,7 +129,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
     }
 
-
     private class InternalTableStatus implements TableStatus {
         private volatile RowDef rowDef;
         private volatile Accumulator ordinal;
@@ -193,14 +192,10 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             if(rowDef == null && tree == null) {
                 return;
             }
-            try {
-                ordinal = getAccumulator(tree, AccumInfo.ORDINAL);
-                rowCount = getAccumulator(tree, AccumInfo.ROW_COUNT);
-                uniqueID = getAccumulator(tree, AccumInfo.UNIQUE_ID);
-                autoIncrement = getAccumulator(tree, AccumInfo.AUTO_INC);
-            } catch(PersistitException e) {
-                throw new PersistitAdapterException(e);
-            }
+            ordinal = AccumInfo.ORDINAL.getAccumulator(tree);
+            rowCount = AccumInfo.ROW_COUNT.getAccumulator(tree);
+            uniqueID = AccumInfo.UNIQUE_ID.getAccumulator(tree);
+            autoIncrement = AccumInfo.AUTO_INC.getAccumulator(tree);
         }
         
         long createNewUniqueID() throws PersistitInterruptedException {
@@ -214,10 +209,6 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
 
         private Transaction getCurrentTrx() {
             return treeService.getDb().getTransaction();
-        }
-
-        private Accumulator getAccumulator(Tree tree, AccumInfo info) throws PersistitException {
-            return tree.getAccumulator(info.getType(), info.getIndex());
         }
 
         private long getSnapshot(Accumulator accumulator) throws PersistitInterruptedException {

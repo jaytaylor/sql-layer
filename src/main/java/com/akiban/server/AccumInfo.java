@@ -15,7 +15,10 @@
 
 package com.akiban.server;
 
+import com.akiban.server.error.PersistitAdapterException;
 import com.persistit.Accumulator;
+import com.persistit.Tree;
+import com.persistit.exception.PersistitException;
 
 /**
  * Mapping of indexes and types for the Accumulators used by the table status.
@@ -32,16 +35,24 @@ enum AccumInfo {
     AUTO_INC(3, Accumulator.Type.SUM),
     ;
 
+    public Accumulator getAccumulator(Tree tree) {
+        try {
+            return tree.getAccumulator(getType(), getIndex());
+        } catch (PersistitException e) {
+            throw new PersistitAdapterException(e);
+        }
+    }
+
     AccumInfo(int index, Accumulator.Type type) {
         this.index = index;
         this.type = type;
     }
 
-    int getIndex() {
+    private int getIndex() {
         return index;
     }
 
-    Accumulator.Type getType() {
+    private Accumulator.Type getType() {
         return type;
     }
 
