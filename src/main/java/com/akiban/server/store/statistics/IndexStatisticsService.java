@@ -23,6 +23,8 @@ import java.io.IOException;
 
 public interface IndexStatisticsService
 {
+    public long countEntries(Session session, Index index);
+    
     /** Get available statistics for the given index. */
     public IndexStatistics getIndexStatistics(Session session, Index index);
 

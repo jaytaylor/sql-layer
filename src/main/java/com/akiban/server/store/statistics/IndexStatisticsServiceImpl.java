@@ -89,6 +89,11 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     /* IndexStatisticsService */
 
     @Override
+    public long countEntries(Session session, Index index) {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
     public IndexStatistics getIndexStatistics(Session session, Index index) {
         // TODO: Use getAnalysisTimestamp() of -1 to mark an "empty"
         // analysis to save going to disk for the same index every
