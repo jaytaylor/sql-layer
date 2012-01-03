@@ -6,7 +6,7 @@
 - Statement: INSERT INTO all_types (bigint_field) VALUES (1)
 ---
 - Statement: select YEARWEEK('1987-01-01 01:15:33') from all_types;
-- output: [[198653]]
+- output: [[198652]]
 ---
 - Statement: select YEARWEEK('2000-01-01') from all_types;
 - output: [[199952]]
