@@ -122,7 +122,7 @@ public class PersistitStore implements Store {
 
     private DisplayFilter originalDisplayFilter;
 
-    private IndexStatisticsService indexStatistics;
+    private volatile IndexStatisticsService indexStatistics;
 
     private final Map<Tree, SortedSet<KeyState>> deferredIndexKeys = new HashMap<Tree, SortedSet<KeyState>>();
 
@@ -132,7 +132,6 @@ public class PersistitStore implements Store {
         this.updateGroupIndexes = updateGroupIndexes;
         this.treeService = treeService;
         this.config = config;
-        this.indexStatistics = indexStatistics;
     }
 
     @Override
@@ -736,7 +735,11 @@ public class PersistitStore implements Store {
         }
     }
 
-    // This is to avoid circular dependencies in Guicer.
+    // This is to avoid circular dependencies in Guicer.  
+    // TODO: There is still a functional circularity: store needs
+    // stats to clear them when deleting a group; stats need store to
+    // persist the stats. It would be better to separate out the
+    // higher level store functions from what other services require.
     public void setIndexStatistics(IndexStatisticsService indexStatistics) {
         this.indexStatistics = indexStatistics;
     }
