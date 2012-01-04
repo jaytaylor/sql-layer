@@ -19,6 +19,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
@@ -31,7 +32,9 @@ import com.akiban.server.store.Store;
 
 import com.google.inject.Inject;
 
+import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
+import com.persistit.exception.PersistitInterruptedException;
 
 import java.util.*;
 import java.io.File;
@@ -87,6 +90,12 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     }
 
     /* IndexStatisticsService */
+
+    @Override
+    public long countEntries(Session session, Index index) throws PersistitInterruptedException {
+        Tree tree = store.getExchange(session, index).getTree();
+        return AccumulatorAdapter.getSnapshot(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, tree);
+    }
 
     @Override
     public IndexStatistics getIndexStatistics(Session session, Index index) {
