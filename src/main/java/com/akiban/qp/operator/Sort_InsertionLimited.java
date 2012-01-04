@@ -16,6 +16,7 @@
 package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
+import com.akiban.qp.row.ProjectedRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.ToObjectValueTarget;
@@ -135,6 +136,7 @@ class Sort_InsertionLimited extends Operator
                         }
                         if (sorted.size() < limit) {
                             // Still room: add it in.
+                            holder.freeze();
                             boolean added = sorted.add(holder);
                             assert !preserveDuplicates || added;
                         }
@@ -146,6 +148,7 @@ class Sort_InsertionLimited extends Operator
                                 // instead.
                                 sorted.remove(last);
                                 last.empty();
+                                holder.freeze();
                                 boolean added = sorted.add(holder);
                                 assert added;
                             }
@@ -247,6 +250,13 @@ class Sort_InsertionLimited extends Operator
             Row result = row.get();
             row.release();
             return result;
+        }
+
+        // Make sure the Row we save doesn't depend on Bindings that may change.
+        public void freeze() {
+            Row arow = row.get();
+            if (arow instanceof ProjectedRow)
+                ((ProjectedRow)arow).freeze();
         }
 
         public int compareTo(Holder other) {

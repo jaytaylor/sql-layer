@@ -44,6 +44,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -109,6 +111,7 @@ import org.yaml.snakeyaml.nodes.Tag;
      - params: [[<parameter value>, ...], ...]
      - param_types: [<column type>, ...]
      - output: [[<output value>, ...], ...]
+     - output_ordered: [[<output value>, ...], ...]
      - row_count: <number of rows>
      - output_types: [<column type>, ...]
      - explain: <explain plan>
@@ -134,14 +137,13 @@ import org.yaml.snakeyaml.nodes.Tag;
      output
    - The statement text should not create a table -- use the CreateTable
      command for that purpose
+   - output_ordered: does a sort on the expected and actual during comparison  
 */
 class YamlTester {
 
     private static final boolean DEBUG = Boolean.getBoolean("test.DEBUG");
-    private static final Map<String, Integer> typeNameToNumber =
-	new HashMap<String, Integer>();
-    private static final Map<Integer, String> typeNumberToName =
-	new HashMap<Integer, String>();
+    private static final Map<String, Integer> typeNameToNumber = new HashMap<String, Integer>();
+    private static final Map<Integer, String> typeNumberToName = new HashMap<Integer, String>();
     static {
 	addTypeNameAndNumber("BIGINT", Types.BIGINT);
 	addTypeNameAndNumber("BLOB", Types.BLOB);
@@ -176,9 +178,9 @@ class YamlTester {
     private String commandName = null;
     private boolean suppressed = false;
     private static final DateFormat DEFAULT_DATE_FORMAT = new SimpleDateFormat(
-            "yyyy-MM-dd");
+	    "yyyy-MM-dd");
     private static final DateFormat DEFAULT_DATETIME_FORMAT = new SimpleDateFormat(
-            "yyyy-MM-dd HH:mm:ss.S");
+	    "yyyy-MM-dd HH:mm:ss.S");
 
     /**
      * Creates an instance of this class.
@@ -206,10 +208,10 @@ class YamlTester {
 		++commandNumber;
 		commandName = null;
 		Object document = documents.next();
-		List<Object> sequence =
-		    nonEmptySequence(document, "command document");
-		Entry<Object, Object> firstEntry = firstEntry(
-		    sequence.get(0), "first element of the document");
+		List<Object> sequence = nonEmptySequence(document,
+			"command document");
+		Entry<Object, Object> firstEntry = firstEntry(sequence.get(0),
+			"first element of the document");
 		commandName = string(firstEntry.getKey(), "command name");
 		Object value = firstEntry.getValue();
 		if ("Include".equals(commandName)) {
@@ -218,6 +220,8 @@ class YamlTester {
 		    propertiesCommand(value, sequence);
 		} else if ("CreateTable".equals(commandName)) {
 		    createTableCommand(value, sequence);
+		} else if ("DropTable".equals(commandName)) {
+		    dropTableCommand(value);
 		} else if ("Statement".equals(commandName)) {
 		    statementCommand(value, sequence);
 		} else {
@@ -247,8 +251,8 @@ class YamlTester {
 	File include = new File(includeValue);
 	if (sequence.size() > 1) {
 	    throw new ContextAssertionError(
-		"The Include command does not support attributes" +
-		"\nFound: " + sequence.get(1));
+		    "The Include command does not support attributes"
+			    + "\nFound: " + sequence.get(1));
 	}
 	if (!include.isAbsolute()) {
 	    String parent = filename;
@@ -257,15 +261,15 @@ class YamlTester {
 	    }
 	    if (parent != null) {
 		include = new File(new File(parent).getParent(),
-				   include.toString());
+			include.toString());
 	    }
 	}
 	Reader in = null;
 	try {
 	    in = new FileReader(include);
 	} catch (IOException e) {
-	    throw new ContextAssertionError(
-		"Problem accessing include file " + include + ": " + e, e);
+	    throw new ContextAssertionError("Problem accessing include file "
+		    + include + ": " + e, e);
 	}
 	int originalCommandNumber = commandNumber;
 	commandNumber = 0;
@@ -289,8 +293,8 @@ class YamlTester {
 	String engine = string(value, "Properties framework engine");
 	if (ALL_ENGINE.equals(engine) || IT_ENGINE.equals(engine)) {
 	    for (Object elem : sequence) {
-		Entry<Object, Object> entry =
-		    onlyEntry(elem, "Properties entry");
+		Entry<Object, Object> entry = onlyEntry(elem,
+			"Properties entry");
 		if ("suppressed".equals(entry.getKey())) {
 		    suppressed = bool(entry.getValue(), "suppressed value");
 		}
@@ -304,6 +308,7 @@ class YamlTester {
 	boolean errorSpecified;
 	String errorCode;
 	String errorMessage;
+	boolean sorted;
 
 	/** Handle a statement with the specified statement text. */
 	AbstractStatementCommand(String statement) {
@@ -316,16 +321,15 @@ class YamlTester {
 		return;
 	    }
 	    assertFalse("The error attribute must not appear more than once",
-			errorSpecified);
+		    errorSpecified);
 	    errorSpecified = true;
-	    List<Object> errorInfo =
-		nonEmptyScalarSequence(value, "error value");
+	    List<Object> errorInfo = nonEmptyScalarSequence(value,
+		    "error value");
 	    errorCode = scalar(errorInfo.get(0), "error code").toString();
 	    if (errorInfo.size() > 1) {
 		errorMessage = string(errorInfo.get(1), "error message").trim();
-		assertTrue("The error attribute can have at most two" +
-			   " elements",
-			   errorInfo.size() < 3);
+		assertTrue("The error attribute can have at most two"
+			+ " elements", errorInfo.size() < 3);
 	    }
 	}
 
@@ -335,54 +339,49 @@ class YamlTester {
 	 */
 	void checkFailure(SQLException sqlException) {
 	    if (DEBUG) {
-		System.err.println(
-		    "Generated error code: " + sqlException.getSQLState() +
-		    "\nException: " + sqlException);
+		System.err.println("Generated error code: "
+			+ sqlException.getSQLState() + "\nException: "
+			+ sqlException);
 	    }
 	    if (!errorSpecified) {
 		throw new ContextAssertionError(
-		    "Unexpected statement execution failure: " + sqlException,
-		    sqlException);
+			"Unexpected statement execution failure: "
+				+ sqlException, sqlException);
 	    }
 	    if (!errorCode.equals(sqlException.getSQLState())) {
-		throw new ContextAssertionError(
-		    "Unexpected error code:" +
-		    "\nExpected: " + errorCode +
-		    "\n     got: " + sqlException.getSQLState(),
-		    sqlException);
+		throw new ContextAssertionError("Unexpected error code:"
+			+ "\nExpected: " + errorCode + "\n     got: "
+			+ sqlException.getSQLState(), sqlException);
 	    }
 	    if (errorMessage != null) {
 		if (!errorMessage.equals(sqlException.getMessage().trim())) {
 		    throw new ContextAssertionError(
-			"Unexpected exception message:" +
-			"\nExpected: '" + errorMessage + "'",
-			sqlException);
+			    "Unexpected exception message:" + "\nExpected: '"
+				    + errorMessage + "'", sqlException);
 		}
 	    }
 	}
     }
 
     private void createTableCommand(Object value, List<Object> sequence)
-	    throws SQLException
-    {
+	    throws SQLException {
 	new CreateTableCommand(value, sequence).execute();
     }
 
     private class CreateTableCommand extends AbstractStatementCommand {
-
 	CreateTableCommand(Object value, List<Object> sequence) {
 	    super("CREATE TABLE " + string(value, "CreateTable argument"));
 	    for (int i = 1; i < sequence.size(); i++) {
-		Entry<Object, Object> map =
-		    onlyEntry(sequence.get(i), "CreateTable attribute");
-		String attribute =
-		    string(map.getKey(), "CreateTable attribute name");
+		Entry<Object, Object> map = onlyEntry(sequence.get(i),
+			"CreateTable attribute");
+		String attribute = string(map.getKey(),
+			"CreateTable attribute name");
 		Object attributeValue = map.getValue();
 		if ("error".equals(attribute)) {
 		    parseError(attributeValue);
 		} else {
-		    fail("The '" + attribute + "' attribute name was not" +
-			 " recognized");
+		    fail("The '" + attribute + "' attribute name was not"
+			    + " recognized");
 		}
 	    }
 	}
@@ -399,22 +398,51 @@ class YamlTester {
 		}
 	    } catch (SQLException e) {
 		if (DEBUG) {
-		    System.err.println(
-			"Generated error code: " + e.getSQLState() +
-			"\nException: " + e);
+		    System.err.println("Generated error code: "
+			    + e.getSQLState() + "\nException: " + e);
 		}
 		checkFailure(e);
 		return;
 	    }
-	    assertFalse("Statement execution succeeded, but was expected" +
-			" to generate an error",
-			errorSpecified);
+	    assertFalse("Statement execution succeeded, but was expected"
+		    + " to generate an error", errorSpecified);
+	}
+    }
+
+    private void dropTableCommand(Object value) throws SQLException {
+	new DropTableCommand(value).execute();
+    }
+
+    private class DropTableCommand extends AbstractStatementCommand {
+	DropTableCommand(Object value) {
+	    super("DROP TABLE " + string(value, "DropTable argument"));
+	}
+
+	void execute() throws SQLException {
+	    Statement stmt = connection.createStatement();
+	    if (DEBUG) {
+		System.err.println("Executing statement: " + statement);
+	    }
+	    try {
+		stmt.execute(statement);
+		if (DEBUG) {
+		    System.err.println("Statement executed successfully");
+		}
+	    } catch (SQLException e) {
+		if (DEBUG) {
+		    System.err.println("Generated error code: "
+			    + e.getSQLState() + "\nException: " + e);
+		}
+		checkFailure(e);
+		return;
+	    }
+	    assertFalse("Statement execution succeeded, but was expected"
+		    + " to generate an error", errorSpecified);
 	}
     }
 
     private void statementCommand(Object value, List<Object> sequence)
-	throws SQLException
-    {
+	    throws SQLException {
 	if (value != null) {
 	    new StatementCommand(value, sequence).execute();
 	}
@@ -444,20 +472,24 @@ class YamlTester {
 	    super(string(value, "Statement value"));
 	    if (statement.regionMatches(true, 0, "CREATE TABLE", 0, 12)) {
 		throw new ContextAssertionError(
-		    "The Statement command should not be used for CREATE" +
-		    " TABLE statements");
+			"The Statement command should not be used for CREATE"
+				+ " TABLE statements");
 	    }
 	    for (int i = 1; i < sequence.size(); i++) {
-		Entry<Object, Object> map =
-		    onlyEntry(sequence.get(i), "Statement attribute");
-		String attribute =
-		    string(map.getKey(), "Statement attribute name");
+		Entry<Object, Object> map = onlyEntry(sequence.get(i),
+			"Statement attribute");
+		String attribute = string(map.getKey(),
+			"Statement attribute name");
 		Object attributeValue = map.getValue();
 		if ("params".equals(attribute)) {
 		    parseParams(attributeValue);
 		} else if ("param_types".equals(attribute)) {
 		    parseParamTypes(attributeValue);
 		} else if ("output".equals(attribute)) {
+		    this.sorted = false;
+		    parseOutput(attributeValue);
+		} else if ("output_ordered".equals(attribute)) {
+		    this.sorted = true;
 		    parseOutput(attributeValue);
 		} else if ("row_count".equals(attribute)) {
 		    parseRowCount(attributeValue);
@@ -468,40 +500,38 @@ class YamlTester {
 		} else if ("explain".equals(attribute)) {
 		    parseExplain(attributeValue);
 		} else {
-		    fail("The '" + attribute + "' attribute name was not" +
-			 " recognized");
+		    fail("The '" + attribute + "' attribute name was not"
+			    + " recognized");
 		}
 	    }
 	    if (paramTypes != null) {
 		if (params == null) {
-		    fail("Cannot specify the param_types attribute without" +
-			 " params attribute");
+		    fail("Cannot specify the param_types attribute without"
+			    + " params attribute");
 		} else {
-		    assertEquals("The params_types attribute must be the same" +
-				 " length as the row length of the params" +
-				 " attribute:",
-				 params.get(0).size(), paramTypes.size());
+		    assertEquals("The params_types attribute must be the same"
+			    + " length as the row length of the params"
+			    + " attribute:", params.get(0).size(),
+			    paramTypes.size());
 		}
 	    }
 	    if (rowCount != -1) {
 		if (output != null) {
-		    assertEquals("The row_count attribute must be the same" +
-				 " as the length of the rows in the output"+
-				 " attribute:",
-				 output.get(0).size(), rowCount);
+		    assertEquals("The row_count attribute must be the same"
+			    + " as the length of the rows in the output"
+			    + " attribute:", output.get(0).size(), rowCount);
 		} else if (outputTypes != null) {
-		    assertEquals("The row_count attribute must be the same" +
-				 " as the length of the output_types" +
-				 " attribute:",
-				 outputTypes.size(), rowCount);
+		    assertEquals("The row_count attribute must be the same"
+			    + " as the length of the output_types"
+			    + " attribute:", outputTypes.size(), rowCount);
 		}
 	    }
 	    if (outputTypes != null) {
 		if (output != null) {
-		    assertEquals("The output_types attribute must be the same" +
-				 " length as the length of the rows in the" +
-				 " output attribute:",
-				 output.get(0).size(), outputTypes.size());
+		    assertEquals("The output_types attribute must be the same"
+			    + " length as the length of the rows in the"
+			    + " output attribute:", output.get(0).size(),
+			    outputTypes.size());
 		}
 	    }
 	    if (errorSpecified && output != null) {
@@ -517,7 +547,7 @@ class YamlTester {
 		return;
 	    }
 	    assertNull("The params attribute must not appear more than once",
-		       params);
+		    params);
 	    params = rows(value, "params value");
 	}
 
@@ -526,15 +556,15 @@ class YamlTester {
 		return;
 	    }
 	    assertNull(
-		"The param_types attribute must not appear more than once",
-		paramTypes);
-	    List<String> paramTypeNames =
-		nonEmptyStringSequence(value, "param_types value");
+		    "The param_types attribute must not appear more than once",
+		    paramTypes);
+	    List<String> paramTypeNames = nonEmptyStringSequence(value,
+		    "param_types value");
 	    paramTypes = new ArrayList<Integer>(paramTypeNames.size());
 	    for (String typeName : paramTypeNames) {
 		Integer typeNumber = getTypeNumber(typeName);
 		assertNotNull("Unknown type name in param_types: " + typeName,
-			      typeNumber);
+			typeNumber);
 		paramTypes.add(typeNumber);
 	    }
 	}
@@ -544,7 +574,7 @@ class YamlTester {
 		return;
 	    }
 	    assertNull("The output attribute must not appear more than once",
-		       output);
+		    output);
 	    output = rows(value, "output value");
 	}
 
@@ -552,11 +582,12 @@ class YamlTester {
 	    if (value == null) {
 		return;
 	    }
-	    assertTrue("The row_count attribute must not appear more than once",
-		       rowCount == -1);
+	    assertTrue(
+		    "The row_count attribute must not appear more than once",
+		    rowCount == -1);
 	    rowCount = integer(value, "row_count value");
 	    assertTrue("The row_count value must not be negative",
-		       rowCount >= 0);
+		    rowCount >= 0);
 	}
 
 	private void parseOutputTypes(Object value) {
@@ -564,12 +595,12 @@ class YamlTester {
 		return;
 	    }
 	    assertNull(
-		"The output_types attribute must not appear more than once",
-		paramTypes);
+		    "The output_types attribute must not appear more than once",
+		    paramTypes);
 	    outputTypes = nonEmptyStringSequence(value, "output_types value");
 	    for (String typeName : outputTypes) {
 		assertNotNull("Unknown type name in output_types: " + typeName,
-			      getTypeNumber(typeName));
+			getTypeNumber(typeName));
 	    }
 	}
 
@@ -578,7 +609,7 @@ class YamlTester {
 		return;
 	    }
 	    assertNull("The explain attribute must not appear more than once",
-		       explain);
+		    explain);
 	    explain = string(value, "explain value").trim();
 	}
 
@@ -598,13 +629,12 @@ class YamlTester {
 			checkFailure(e);
 			return;
 		    }
-		    checkSuccess(stmt);
+		    checkSuccess(stmt, sorted);
 		} finally {
 		    stmt.close();
 		}
 	    } else {
-		PreparedStatement stmt =
-		    connection.prepareStatement(statement);
+		PreparedStatement stmt = connection.prepareStatement(statement);
 		try {
 		    int numParams = params.get(0).size();
 		    for (List<Object> paramsList : params) {
@@ -619,11 +649,11 @@ class YamlTester {
 				stmt.setObject(i + 1, param);
 			    }
 			}
-			SQLException sqlException = null;
 			if (DEBUG) {
-			    System.err.println(
-				"Executing statement: " + statement +
-				"\nParameters: " + paramsList);
+			    System.err
+				    .println("Executing statement: "
+					    + statement + "\nParameters: "
+					    + paramsList);
 			}
 			try {
 			    stmt.execute();
@@ -631,7 +661,7 @@ class YamlTester {
 			    checkFailure(e);
 			    continue;
 			}
-			checkSuccess(stmt);
+			checkSuccess(stmt, sorted);
 			paramsRow++;
 		    }
 		    commandName = "Statement";
@@ -664,27 +694,26 @@ class YamlTester {
 	    }
 	}
 
-	private void checkSuccess(Statement stmt) throws SQLException {
-	    assertFalse("Statement execution succeeded, but was expected" +
-			" to generate an error",
-			errorSpecified);
+	private void checkSuccess(Statement stmt, boolean sorted)
+		throws SQLException {
+	    assertFalse("Statement execution succeeded, but was expected"
+		    + " to generate an error", errorSpecified);
 	    ResultSet rs = stmt.getResultSet();
 	    if (rs == null) {
 		assertNull("Query did not produce results output", output);
-		assertNull("Query did not produce results, so output_types" +
-			   " are not supported",
-			   outputTypes);
+		assertNull("Query did not produce results, so output_types"
+			+ " are not supported", outputTypes);
 		if (rowCount != -1) {
 		    int updateCount = stmt.getUpdateCount();
 		    assertFalse("Query did not produce an update count",
-				updateCount == -1);
+			    updateCount == -1);
 		    outputRow += updateCount;
 		    checkRowCount(rowCount, false);
 		}
 	    } else {
-		checkResults(rs);
+		checkResults(rs, sorted);
 		assertFalse("Multiple result sets not supported",
-			    stmt.getMoreResults());
+			stmt.getMoreResults());
 	    }
 	}
 
@@ -702,22 +731,17 @@ class YamlTester {
 		got++;
 	    }
 	    if (got > expected) {
-		throw new ContextAssertionError(
-		    "Too many output rows:" +
-		    "\nExpected: " + expected +
-		    "\n     got: " + got);
-	    } else if (!more &&
-		       (params == null || paramsRow == params.size()) &&
-		       (got < expected))
-	    {
-		throw new ContextAssertionError(
-		    "Too few output rows:" +
-		    "\nExpected: " + expected +
-		    "\n     got: " + got);
+		throw new ContextAssertionError("Too many output rows:"
+			+ "\nExpected: " + expected + "\n     got: " + got);
+	    } else if (!more && (params == null || paramsRow == params.size())
+		    && (got < expected)) {
+		throw new ContextAssertionError("Too few output rows:"
+			+ "\nExpected: " + expected + "\n     got: " + got);
 	    }
 	}
 
-	private void checkResults(ResultSet rs) throws SQLException {
+	private void checkResults(ResultSet rs, boolean sorted)
+		throws SQLException {
 	    if (outputTypes != null && outputRow == 0) {
 		checkOutputTypes(rs);
 	    }
@@ -728,39 +752,103 @@ class YamlTester {
 		ResultSetMetaData metaData = rs.getMetaData();
 		int numColumns = metaData.getColumnCount();
 		boolean resultsEmpty = false;
-		for ( ; true; outputRow++) {
-		    if (!rs.next()) {
-			resultsEmpty = true;
-			break;
-		    } else if (outputRow >= output.size()) {
-			break;
+		if (sorted) {
+		    List<List<Object>> resultsList = new ArrayList<List<Object>>();
+
+		    for (; true; outputRow++) {
+			if (!rs.next()) {
+			    resultsEmpty = true;
+			    break;
+			} else if (outputRow >= output.size()) {
+			    break;
+			}
+			List<Object> row = output.get(outputRow);
+			if (outputRow == 0) {
+			    assertEquals(
+				    "Unexpected number of columns in output:",
+				    row.size(), numColumns);
+			}
+			List<Object> resultsRow = new ArrayList<Object>(
+				row.size());
+			for (int i = 1; i <= numColumns; i++) {
+			    resultsRow.add(rs.getObject(i));
+			}
+			resultsList.add(resultsRow);
+			if (DEBUG) {
+			    System.err.println(arrayString(resultsRow));
+			}
 		    }
-		    List<Object> row = output.get(outputRow);
-		    if (outputRow == 0) {
-			assertEquals("Unexpected number of columns in output:",
-				     row.size(), numColumns);
+		    if (sorted) {
+			Comparator<? super Object> compare = new Comparator<Object>() {
+
+			    public int compare(Object o1, Object o2) {
+				int retVal = 0;
+
+				retVal = String
+					.valueOf(o1)
+					.compareToIgnoreCase(String.valueOf(o2));
+
+				return retVal;
+			    }
+			};
+			Collections.sort(output, compare);
+			Collections.sort(resultsList, compare);
 		    }
-		    List<Object> resultsRow = new ArrayList<Object>(row.size());
-		    for (int i = 1; i <= numColumns; i++) {
-			resultsRow.add(rs.getObject(i));
+		    for (outputRow = 0; outputRow < output.size(); outputRow++) {
+			List<Object> row = output.get(outputRow);
+			List<Object> resultsRow = null;
+			if (outputRow <= resultsList.size()) {
+			    resultsRow = resultsList.get(outputRow);
+			}
+			if (!rowsEqual(row, resultsRow)) {
+			    throw new ContextAssertionError(
+				    "Unexpected output in row "
+					    + (outputRow + 1) + ":"
+					    + "\nExpected: " + arrayString(row)
+					    + "\n     got: "
+					    + arrayString(resultsRow));
+			}
+
 		    }
-		    if (DEBUG) {
-			System.err.println(arrayString(resultsRow));
+		    checkRowCount(output.size(), !resultsEmpty);
+		} else {
+		    for (; true; outputRow++) {
+			if (!rs.next()) {
+			    resultsEmpty = true;
+			    break;
+			} else if (outputRow >= output.size()) {
+			    break;
+			}
+			List<Object> row = output.get(outputRow);
+			if (outputRow == 0) {
+			    assertEquals(
+				    "Unexpected number of columns in output:",
+				    row.size(), numColumns);
+			}
+			List<Object> resultsRow = new ArrayList<Object>(
+				row.size());
+			for (int i = 1; i <= numColumns; i++) {
+			    resultsRow.add(rs.getObject(i));
+			}
+			if (DEBUG) {
+			    System.err.println(arrayString(resultsRow));
+			}
+			if (!rowsEqual(row, resultsRow)) {
+			    throw new ContextAssertionError(
+				    "Unexpected output in row "
+					    + (outputRow + 1) + ":"
+					    + "\nExpected: " + arrayString(row)
+					    + "\n     got: "
+					    + arrayString(resultsRow));
+			}
 		    }
-		    if (!rowsEqual(row, resultsRow)) {
-			throw new ContextAssertionError(
-			    "Unexpected output in row " + (outputRow + 1) +
-			    ":" +
-			    "\nExpected: " + arrayString(row) +
-			    "\n     got: " + arrayString(resultsRow));
-		    }
+		    checkRowCount(output.size(), !resultsEmpty);
 		}
-		checkRowCount(output.size(), !resultsEmpty);
 	    } else {
 		ResultSetMetaData metaData = rs.getMetaData();
 		int numColumns = metaData.getColumnCount();
-		List<Object> resultsRow =
-		    DEBUG ? new ArrayList<Object>(numColumns) : null;
+		List<Object> resultsRow = DEBUG ? new ArrayList<Object>(
+			numColumns) : null;
 		while (rs.next()) {
 		    outputRow++;
 		    for (int i = 1; i <= numColumns; i++) {
@@ -780,24 +868,26 @@ class YamlTester {
 	    }
 	}
 
-        private void checkOutputTypes(ResultSet rs) throws SQLException {
+	private void checkOutputTypes(ResultSet rs) throws SQLException {
 	    ResultSetMetaData metaData = rs.getMetaData();
 	    int numColumns = metaData.getColumnCount();
-	    assertEquals("Wrong number of output types:",
-			 outputTypes.size(), numColumns);
+	    assertEquals("Wrong number of output types:", outputTypes.size(),
+		    numColumns);
 	    for (int i = 1; i <= numColumns; i++) {
 		int columnType = metaData.getColumnType(i);
 		String columnTypeName = getTypeName(columnType);
 		if (columnTypeName == null) {
-		    columnTypeName = "<unknown " +
-			metaData.getColumnTypeName(i) + " (" + columnType + ")>";
+		    columnTypeName = "<unknown "
+			    + metaData.getColumnTypeName(i) + " (" + columnType
+			    + ")>";
 		}
 		assertEquals("Wrong output type for column " + i + ":",
-			     outputTypes.get(i - 1), columnTypeName);
+			outputTypes.get(i - 1), columnTypeName);
 	    }
 	}
 
-        private boolean rowsEqual(List<Object> pattern, List<Object> row) {
+	private boolean rowsEqual(List<Object> pattern, List<Object> row) {
+
 	    int size = pattern.size();
 	    if (size != row.size()) {
 		return false;
@@ -806,14 +896,14 @@ class YamlTester {
 		Object patternElem = pattern.get(i);
 		Object rowElem = row.get(i);
 		if (patternElem instanceof OutputComparator) {
-		    return ((OutputComparator) patternElem).compareOutput(
-			rowElem);
+		    return ((OutputComparator) patternElem)
+			    .compareOutput(rowElem);
 		} else if (patternElem == null) {
 		    if (rowElem != null) {
 			return false;
 		    }
 		} else if (!arrayElementString(patternElem).equals(
-			       arrayElementString(rowElem))) {
+			arrayElementString(rowElem))) {
 		    return false;
 		}
 	    }
@@ -891,34 +981,32 @@ class YamlTester {
     }
 
     static Object scalar(Object object, String desc) {
-	assertThat("The " + desc + " must be a scalar",
-		   object,
-		   not(anyOf(instanceOf(Collection.class),
-			     instanceOf(Map.class))));
+	assertThat("The " + desc + " must be a scalar", object,
+		not(anyOf(instanceOf(Collection.class), instanceOf(Map.class))));
 	return object;
     }
 
     static String string(Object object, String desc) {
-	assertThat("The " + desc + " must be a string",
-		   object, instanceOf(String.class));
+	assertThat("The " + desc + " must be a string", object,
+		instanceOf(String.class));
 	return (String) object;
     }
 
     static int integer(Object object, String desc) {
-	assertThat("The " + desc + " must be an integer",
-		   object, instanceOf(Integer.class));
+	assertThat("The " + desc + " must be an integer", object,
+		instanceOf(Integer.class));
 	return (Integer) object;
     }
 
     static boolean bool(Object object, String desc) {
-	assertThat("The " + desc + " must be a boolean",
-		   object, instanceOf(Boolean.class));
+	assertThat("The " + desc + " must be a boolean", object,
+		instanceOf(Boolean.class));
 	return (Boolean) object;
     }
 
     static Map<Object, Object> map(Object object, String desc) {
-	assertThat("The " + desc + " must be a map",
-		   object, instanceOf(Map.class));
+	assertThat("The " + desc + " must be a map", object,
+		instanceOf(Map.class));
 	return (Map<Object, Object>) object;
     }
 
@@ -932,8 +1020,8 @@ class YamlTester {
 
     static Entry<Object, Object> onlyEntry(Object object, String desc) {
 	Map<Object, Object> map = map(object, desc);
-	assertEquals("The " + desc + " must contain exactly one entry:",
-		     1, map.size());
+	assertEquals("The " + desc + " must contain exactly one entry:", 1,
+		map.size());
 	for (Entry<Object, Object> entry : map.entrySet()) {
 	    return entry;
 	}
@@ -941,8 +1029,8 @@ class YamlTester {
     }
 
     static List<Object> sequence(Object object, String desc) {
-	assertThat("The " + desc + " must be a sequence",
-		   object, instanceOf(List.class));
+	assertThat("The " + desc + " must be a sequence", object,
+		instanceOf(List.class));
 	return (List<Object>) object;
     }
 
@@ -955,10 +1043,11 @@ class YamlTester {
     static List<Object> scalarSequence(Object object, String desc) {
 	List<Object> list = sequence(object, desc);
 	for (Object elem : list) {
-	    assertThat("The element of the " + desc + " must be a scalar",
-		       elem,
-		       not(anyOf(instanceOf(Collection.class),
-				 instanceOf(Map.class))));
+	    assertThat(
+		    "The element of the " + desc + " must be a scalar",
+		    elem,
+		    not(anyOf(instanceOf(Collection.class),
+			    instanceOf(Map.class))));
 	}
 	return list;
     }
@@ -974,7 +1063,7 @@ class YamlTester {
 	List<String> strList = new ArrayList<String>(list.size());
 	for (Object elem : list) {
 	    assertThat("The element of the " + desc + " must be a string",
-		       elem, instanceOf(String.class));
+		    elem, instanceOf(String.class));
 	    strList.add((String) elem);
 	}
 	return strList;
@@ -991,15 +1080,13 @@ class YamlTester {
 	List<List<Object>> rows = new ArrayList<List<Object>>();
 	int rowLength = -1;
 	for (int i = 0; i < list.size(); i++) {
-	    List<Object> row =
-		nonEmptyScalarSequence(list.get(i), desc + " element");
+	    List<Object> row = nonEmptyScalarSequence(list.get(i), desc
+		    + " element");
 	    if (i == 0) {
 		rowLength = row.size();
 	    } else {
-		assertEquals(
-		    desc + " row " + (i + 1) + " has a different" +
-		    " length than previous rows:",
-		    rowLength, row.size());
+		assertEquals(desc + " row " + (i + 1) + " has a different"
+			+ " length than previous rows:", rowLength, row.size());
 	    }
 	    rows.add(row);
 	}
@@ -1024,15 +1111,19 @@ class YamlTester {
      */
     static class DontCare implements OutputComparator {
 	static final DontCare INSTANCE = new DontCare();
-	private DontCare() { }
-        @Override
-        public boolean compareOutput(Object output) {
+
+	private DontCare() {
+	}
+
+	@Override
+	public boolean compareOutput(Object output) {
 	    return true;
 	}
+
 	@Override
-        public String toString() {
-            return "!dc";
-        }
+	public String toString() {
+	    return "!dc";
+	}
     }
 
     /**
@@ -1041,25 +1132,27 @@ class YamlTester {
      */
     static class Regexp implements OutputComparator {
 	private final Pattern pattern;
+
 	Regexp(String pattern) {
 	    this.pattern = Pattern.compile(convertPattern(pattern));
 	    if (DEBUG) {
-		System.err.println("Regexp: '" + pattern + "' => '" +
-				   this.pattern + "'");
+		System.err.println("Regexp: '" + pattern + "' => '"
+			+ this.pattern + "'");
 	    }
 	}
+
 	@Override
-        public boolean compareOutput(Object object) {
+	public boolean compareOutput(Object object) {
 	    boolean result = pattern.matcher(String.valueOf(object)).matches();
 	    if (DEBUG) {
-		System.err.println("Regexp.compareOutput pattern='" + pattern +
-				   "', object='" + object + "' => '" + result +
-				   "'");
+		System.err.println("Regexp.compareOutput pattern='" + pattern
+			+ "', object='" + object + "' => '" + result + "'");
 	    }
 	    return result;
 	}
+
 	@Override
-        public String toString() {
+	public String toString() {
 	    return "!re '" + pattern + "'";
 	}
     }
@@ -1082,7 +1175,7 @@ class YamlTester {
 	     * regexp processing to treat them as literals.
 	     */
 	    return pattern.replaceAll(
-		"(\\A|\\G|[^\\\\]|\\\\\\\\)[{]([0-9]+)[}]", "$1\\\\$2");
+		    "(\\A|\\G|[^\\\\]|\\\\\\\\)[{]([0-9]+)[}]", "$1\\\\$2");
 	}
     }
 
@@ -1095,88 +1188,90 @@ class YamlTester {
 	    yamlConstructors.put(new Tag("!dc"), new ConstructDontCare());
 	    yamlConstructors.put(new Tag("!re"), new ConstructRegexp());
 	    yamlConstructors.put(new Tag("!select-engine"),
-				 new ConstructSelectEngine());
-            yamlConstructors.put(new Tag("!date"), new ConstructSystemDate());
-            yamlConstructors.put(new Tag("!time"), new ConstructSystemTime());
-            yamlConstructors.put(new Tag("!datetime"),
-                    new ConstructSystemDateTime());
+		    new ConstructSelectEngine());
+	    yamlConstructors.put(new Tag("!date"), new ConstructSystemDate());
+	    yamlConstructors.put(new Tag("!time"), new ConstructSystemTime());
+	    yamlConstructors.put(new Tag("!datetime"),
+		    new ConstructSystemDateTime());
 	}
+
 	private static class ConstructDontCare extends AbstractConstruct {
 	    @Override
 	    public Object construct(Node node) {
 		return DontCare.INSTANCE;
 	    }
 	}
+
 	private static class ConstructRegexp extends AbstractConstruct {
 	    @Override
 	    public Object construct(Node node) {
 		if (!(node instanceof ScalarNode)) {
-		    fail("The value of the regular expression (!re) tag must" +
-			 " be a scalar");
+		    fail("The value of the regular expression (!re) tag must"
+			    + " be a scalar");
 		}
 		return new Regexp(((ScalarNode) node).getValue());
 	    }
 	}
+
 	private class ConstructSelectEngine extends AbstractConstruct {
 	    @Override
 	    public Object construct(Node node) {
 		if (!(node instanceof MappingNode)) {
-		    fail("The value of the !select-engine tag must be a map" +
-			 "\nGot: " + node);
+		    fail("The value of the !select-engine tag must be a map"
+			    + "\nGot: " + node);
 		}
-                String matchingKey = null;
-                Object result = null;
+		String matchingKey = null;
+		Object result = null;
 		for (NodeTuple tuple : ((MappingNode) node).getValue()) {
 		    Node keyNode = tuple.getKeyNode();
 		    if (!(keyNode instanceof ScalarNode)) {
-			fail("The key in a !select-engine map must be a scalar" +
-			     "\nGot: " + constructObject(keyNode));
+			fail("The key in a !select-engine map must be a scalar"
+				+ "\nGot: " + constructObject(keyNode));
 		    }
 		    String key = ((ScalarNode) keyNode).getValue();
-		    if (IT_ENGINE.equals(key) ||
-                        (matchingKey == null && ALL_ENGINE.equals(key)))
-                    {
-                        matchingKey = key;
+		    if (IT_ENGINE.equals(key)
+			    || (matchingKey == null && ALL_ENGINE.equals(key))) {
+			matchingKey = key;
 			result = constructObject(tuple.getValueNode());
 		    }
 		}
-                if (matchingKey != null) {
-                    if (DEBUG) {
-                        System.err.println("Select engine: '" + matchingKey +
-                                           "' => '" + result + "'");
-                    }
-                    return result;
-                } else {
-                    if (DEBUG) {
-                        System.err.println("Select engine: no match");
-                    }
-                    return null;
-                }
+		if (matchingKey != null) {
+		    if (DEBUG) {
+			System.err.println("Select engine: '" + matchingKey
+				+ "' => '" + result + "'");
+		    }
+		    return result;
+		} else {
+		    if (DEBUG) {
+			System.err.println("Select engine: no match");
+		    }
+		    return null;
+		}
 	    }
 	}
 
-        private static class ConstructSystemDate extends AbstractConstruct {
-            @Override
-            public Object construct(Node node) {
-                Date today = Calendar.getInstance().getTime();
-                return DEFAULT_DATE_FORMAT.format(today);
-            }
+	private static class ConstructSystemDate extends AbstractConstruct {
+	    @Override
+	    public Object construct(Node node) {
+		Date today = Calendar.getInstance().getTime();
+		return DEFAULT_DATE_FORMAT.format(today);
+	    }
 
-        }
+	}
 
-        private static class ConstructSystemTime extends AbstractConstruct {
-            @Override
-            public Object construct(Node node) {
-                return new TimeChecker();
-            }
-        }
+	private static class ConstructSystemTime extends AbstractConstruct {
+	    @Override
+	    public Object construct(Node node) {
+		return new TimeChecker();
+	    }
+	}
 
-        private static class ConstructSystemDateTime extends AbstractConstruct {
-            @Override
-            public Object construct(Node node) {
-                return new DateTimeChecker();
-            }
-        }
+	private static class ConstructSystemDateTime extends AbstractConstruct {
+	    @Override
+	    public Object construct(Node node) {
+		return new DateTimeChecker();
+	    }
+	}
 
     }
 
@@ -1185,30 +1280,27 @@ class YamlTester {
      */
     static class TimeChecker implements OutputComparator {
 
-        private static final int MINUTES_IN_SECONDS = 60;
-        private static final int HOURS_IN_MINUTES = 60;
-        private static final int SECONDS_IN_MILLISECONDS = 1000;
+	private static final int MINUTES_IN_SECONDS = 60;
+	private static final int HOURS_IN_MINUTES = 60;
 
-        @Override
-        public boolean compareOutput(Object object) {
-            String[] timeAsString = String.valueOf(object).split(":");
-            Calendar localCalendar = Calendar.getInstance();
-            
-            long localTimeInSeconds = localCalendar
-                    .get(Calendar.HOUR_OF_DAY)
-                    * MINUTES_IN_SECONDS
-                    * HOURS_IN_MINUTES;
-            localTimeInSeconds += localCalendar.get(Calendar.MINUTE)
-                    * MINUTES_IN_SECONDS;
-            localTimeInSeconds += localCalendar.get(Calendar.SECOND);
-            long resultTime = Integer.parseInt(timeAsString[0])
-                    * MINUTES_IN_SECONDS * HOURS_IN_MINUTES;
-            resultTime += Integer.parseInt(timeAsString[1])
-                    * MINUTES_IN_SECONDS;
-            resultTime += Integer.parseInt(timeAsString[2]);
-            boolean results = Math.abs(resultTime - localTimeInSeconds) < (1 * MINUTES_IN_SECONDS);
-            return results;
-        }
+	@Override
+	public boolean compareOutput(Object object) {
+	    String[] timeAsString = String.valueOf(object).split(":");
+	    Calendar localCalendar = Calendar.getInstance();
+
+	    long localTimeInSeconds = localCalendar.get(Calendar.HOUR_OF_DAY)
+		    * MINUTES_IN_SECONDS * HOURS_IN_MINUTES;
+	    localTimeInSeconds += localCalendar.get(Calendar.MINUTE)
+		    * MINUTES_IN_SECONDS;
+	    localTimeInSeconds += localCalendar.get(Calendar.SECOND);
+	    long resultTime = Integer.parseInt(timeAsString[0])
+		    * MINUTES_IN_SECONDS * HOURS_IN_MINUTES;
+	    resultTime += Integer.parseInt(timeAsString[1])
+		    * MINUTES_IN_SECONDS;
+	    resultTime += Integer.parseInt(timeAsString[2]);
+	    boolean results = Math.abs(resultTime - localTimeInSeconds) < (1 * MINUTES_IN_SECONDS);
+	    return results;
+	}
 
     }
 
@@ -1217,22 +1309,22 @@ class YamlTester {
      */
     static class DateTimeChecker implements OutputComparator {
 
-        private static final int MINUTES_IN_SECONDS = 60;
-        private static final int SECONDS_IN_MILLISECONDS = 1000;
+	private static final int MINUTES_IN_SECONDS = 60;
+	private static final int SECONDS_IN_MILLISECONDS = 1000;
 
-        @Override
-        public boolean compareOutput(Object object) {
-            long testResult = 0;
-            try {
-                Date result = DEFAULT_DATETIME_FORMAT.parse(String
-                       .valueOf(object));
-                testResult = (result.getTime() - System.currentTimeMillis());
-            } catch (ParseException e) {
-                fail(e.getMessage());
-            }
-            boolean results = Math.abs(testResult) < (1 * MINUTES_IN_SECONDS * SECONDS_IN_MILLISECONDS);
-            return results;
-        }
+	@Override
+	public boolean compareOutput(Object object) {
+	    long testResult = 0;
+	    try {
+		Date result = DEFAULT_DATETIME_FORMAT.parse(String
+			.valueOf(object));
+		testResult = (result.getTime() - System.currentTimeMillis());
+	    } catch (ParseException e) {
+		fail(e.getMessage());
+	    }
+	    boolean results = Math.abs(testResult) < (1 * MINUTES_IN_SECONDS * SECONDS_IN_MILLISECONDS);
+	    return results;
+	}
 
     }
 
@@ -1254,6 +1346,7 @@ class YamlTester {
 	ContextAssertionError(String message) {
 	    super(context() + message);
 	}
+
 	ContextAssertionError(String message, Throwable cause) {
 	    super(context() + message);
 	    initCause(cause);
