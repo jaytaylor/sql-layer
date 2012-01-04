@@ -3,7 +3,6 @@
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field) VALUES (1)
-<<<<<<< TREE
 #---  #bug 905447
 #- Statement: select WEEKOFYEAR('1987-01-01 01:15:33') from all_types;
 # output: [['1']]
@@ -25,28 +24,6 @@
 ---
 - Statement: select WEEKOFYEAR('2007-02-03') from all_types;
 - output: [[5]]
-
-=======
----
-# bug 905447
-- Statement: select WEEKOFYEAR('1987-01-01 01:15:33') from all_types;
-- output: [['1']]
----
- - Statement: select WEEKOFYEAR('1864-02-28') from all_types;
- - output: [['8']]
----
- - Statement: select WEEKOFYEAR('1900-01-15') from all_types;
- - output: [['3']]
----
- - Statement: select WEEKOFYEAR('1999-12-31') from all_types;
- - output: [[52]]
----
- - Statement: select WEEKOFYEAR('1987-03-05') from all_types;
- - output: [[10]]
----
- - Statement: select WEEKOFYEAR('2000-06-04') from all_types;
- - output: [[22]]
->>>>>>> MERGE-SOURCE
 #---
 #- Statement: select WEEKOFYEAR('A') from all_types;
 #- output: [[null]]
@@ -54,8 +31,8 @@
 #- Statement: select WEEKOFYEAR(9999999) from all_types;
 #- output: [[null]]
 #   same as week(date, mode 3)
----
-- Include: all-datetime-schema.yaml
+#---
+#- Include: all-datetime-schema.yaml
 #---  not relevant conversion?
 #- Statement: select id,WEEKOFYEAR(time_field),WEEKOFYEAR from datetime_matrix where WEEKOFYEAR(time_field) is not null;
 #- row_count: 0
