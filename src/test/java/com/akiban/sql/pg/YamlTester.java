@@ -220,8 +220,6 @@ class YamlTester {
                     propertiesCommand(value, sequence);
                 } else if ("CreateTable".equals(commandName)) {
                     createTableCommand(value, sequence);
-                } else if ("Pause".equals(commandName)) {
-                    pauseCommand(value, sequence);
                 } else if ("DropTable".equals(commandName)) {
                     dropTableCommand(value);
                 } else if ("Statement".equals(commandName)) {
@@ -242,23 +240,6 @@ class YamlTester {
         } catch (Throwable e) {
             /* Add context */
             throw new ContextAssertionError(e.toString(), e);
-        }
-    }
-
-    private void pauseCommand(Object value, List<Object> sequence) {
-        int pause = integer(value, "Pause");
-        try {
-            System.out.println("Pausing for " + (pause / 1000) + " seconds");
-            System.gc();
-            Thread.sleep(pause);
-            System.gc();
-            System.out.println("Finishing Pausing");
-        } catch (NumberFormatException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (InterruptedException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
         }
     }
 
