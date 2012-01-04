@@ -19,11 +19,12 @@ import com.akiban.server.error.DivisionByZeroException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.TypesList;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
+import com.akiban.sql.StandardException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.List;
 
 public class ArithOps 
 {
@@ -156,18 +157,12 @@ public class ArithOps
         {
             return new ArithExpression(first, this, second);
         }
-        
-        @Override
-        public void argumentTypes(List<AkType> argumentTypes) {
-            // only needs to check for number of arguments
-            // the casting, if necessary is done in the function
-            // because there are cases when the top type is completely
-            // different from the children's type (DATE - DATE => INTERVAL)
-            if (argumentTypes.size() != 2) throw new WrongExpressionArityException(2, argumentTypes.size());
-        }
 
         @Override
-        protected ExpressionType composeType(ExpressionType first, ExpressionType second) {
+        public ExpressionType composeType(TypesList arguments) throws StandardException
+        {
+            if(arguments.size() != 2) throw new WrongExpressionArityException(2, arguments.size());
+            ExpressionType first = arguments.get(0), second = arguments.get(1);
             AkType top = ArithExpression.getTopType(first.getType(), second.getType(), this);
             int scale = first.getScale() + second.getScale();
             int pre = first.getPrecision() + second.getPrecision();

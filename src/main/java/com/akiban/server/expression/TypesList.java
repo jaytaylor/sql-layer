@@ -13,22 +13,17 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.expression.std;
+package com.akiban.server.expression;
 
-import com.akiban.server.error.WrongExpressionArityException;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
+import com.akiban.server.types.AkType;
+import com.akiban.sql.StandardException;
+import java.util.ArrayList;
 
-import java.util.List;
-
-abstract class BinaryComposer implements ExpressionComposer {
-
-    protected abstract Expression compose(Expression first, Expression second);
-
-    @Override
-    public Expression compose(List<? extends Expression> arguments) {
-        if (arguments.size() != 2)
-            throw new WrongExpressionArityException(2, arguments.size());
-        return compose(arguments.get(0), arguments.get(1));
+public abstract class TypesList extends ArrayList<ExpressionType>
+{
+    protected TypesList (int size)
+    {
+        super(size);
     }
+    abstract public void setType(int index, AkType newType) throws StandardException;
 }

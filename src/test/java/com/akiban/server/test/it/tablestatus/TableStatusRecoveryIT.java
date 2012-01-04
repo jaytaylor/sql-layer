@@ -28,6 +28,7 @@ import com.akiban.server.TableStatus;
 import com.akiban.server.service.config.Property;
 import com.persistit.Persistit;
 
+@org.junit.Ignore("911849")
 public class TableStatusRecoveryIT extends ITBase {
     
     @Test
