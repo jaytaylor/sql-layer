@@ -368,7 +368,7 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
     private static void testNegMod (AkType leftT, AkType rightT)
     {
         int sign = -1;
-        while (sign == 1 || sign == -1)
+        for (int count = 0; count < 2; ++count)
         {
             int expectedSign = sign;
             Expression leftExp = getArg(leftT, NUM[0] * sign);
@@ -378,7 +378,6 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
             rightExp = getArg(rightT, NUM[1] * (sign *= -1));
             check(leftExp, rightExp, expectedSign);
         }
-        
     }
 
     private static void check (Expression l, Expression r, int sign)
