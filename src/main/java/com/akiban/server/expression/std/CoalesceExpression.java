@@ -28,7 +28,6 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.sql.StandardException;
-import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 
@@ -45,7 +44,7 @@ public final class CoalesceExpression extends AbstractCompositeExpression {
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException 
         {
             // args types don't really need adjusting
-            AkType top = getTopType2(argumentTypes);
+            AkType top = getTopType(argumentTypes);
             
             int maxScale = 0, maxPre = 0;
             int scale = 0, pre =0;
@@ -78,16 +77,7 @@ public final class CoalesceExpression extends AbstractCompositeExpression {
     }
 
     public CoalesceExpression(List<? extends Expression> children) {
-        super(getTop(children), children);
-    }
-
-    private static AkType getTop(List <? extends Expression> children)
-    {
-        List<AkType> argTypes = new ArrayList<AkType>(children.size());
-        
-        for (Expression child : children)
-            argTypes.add(child.valueType());
-        return getTopType(argTypes);
+        super(getTopType(children), children);
     }
     
     /**
@@ -107,20 +97,20 @@ public final class CoalesceExpression extends AbstractCompositeExpression {
      * then type-promotion rules apply. 
      * 
      */
-    protected static AkType getTopType (List<AkType> args)
-    {
+     protected static <T> AkType getTopType(List<T> args)
+     {
         if (args.isEmpty()) throw new WrongExpressionArityException(2, 0);
         int n = 0;
         AkType top;
-        
+
         do
         {
-            top = args.get(n++);
+            top = getAk(args.get(n++));
         }while (top == AkType.NULL && n < args.size());
-        
+
         for (; n < args.size(); ++n)
         {
-            AkType iter = args.get(n);
+            AkType iter = getAk(args.get(n));
             if (iter != top && iter != AkType.NULL)
             {
                 if (NUMERICS.containsKey(top) && NUMERICS.containsKey(iter))
@@ -131,30 +121,18 @@ public final class CoalesceExpression extends AbstractCompositeExpression {
         }
         return top;
     }
-    
-    protected static AkType getTopType2(List<ExpressionType> args)
+
+    protected static <T> AkType getAk (T arg)
     {
-        if (args.isEmpty()) throw new WrongExpressionArityException(2, 0);
-        int n = 0;
-        AkType top;
-        
-        do
-        {
-            top = args.get(n++).getType();
-        }while (top == AkType.NULL && n < args.size());
-        
-        for (; n < args.size(); ++n)
-        {
-            AkType iter = args.get(n).getType();
-            if (iter != top && iter != AkType.NULL)
-            {
-                if (NUMERICS.containsKey(top) && NUMERICS.containsKey(iter))
-                    top = NUMERICS.get(top) <= NUMERICS.get(iter) ? top : iter;
-                else
-                    return AkType.VARCHAR;
-            }
-        }
-        return top;
+        if (arg instanceof AkType)
+            return (AkType)arg;
+        else if (arg instanceof ExpressionType)
+            return ((ExpressionType)arg).getType();
+        else if (arg instanceof Expression)
+            return ((Expression)arg).valueType();
+        else
+            throw new RuntimeException ("Unexpected args");
+
     }
     
     private static final class InnerEvaluation extends AbstractCompositeExpressionEvaluation {
