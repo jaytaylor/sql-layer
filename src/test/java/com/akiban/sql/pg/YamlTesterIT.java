@@ -1435,4 +1435,29 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    out.close();
 	}
     }
+    
+    @Test
+    public void testSortedOutput() throws Exception {
+        testYamlFail(
+                "---\n" +
+                "- CreateTable: c (cid int, name varchar(32))\n" +
+                "---\n" +
+                "- Statement: INSERT INTO c VALUES (1, 'Smith'), (2, 'Jones'), (3, 'Zoolander'), (4, 'Adams') \n" +
+                "---\n" +
+                "- Statement: SELECT * FROM c\n" +
+                "- output: [[1, 'Smith'],[2, 'Jones'],[4, 'Adams'],[3, 'Zoolander']]");
+        testYaml("---\n" +
+                "- Statement: SELECT * FROM c\n" +
+                "- output_ordered: [[1, 'Smith'],[2, 'Jones'],[4, 'Adams'],[3, 'Zoolander']]");
+        testYaml("---\n" +
+                "- Statement: SELECT * FROM c\n" +
+                "- output_ordered: [[3, 'Zoolander'],[1, 'Smith'],[2, 'Jones'],[4, 'Adams']]");
+        testYamlFail("---\n" +
+                "- Statement: SELECT * FROM c\n" +
+                "- output_ordered: [[3, 'Zoolander'],[1, 'Wendel'],[2, 'Jones'],[4, 'Adams']]");
+        testYamlFail("---\n" +
+                "- Statement: SELECT * FROM c order by cid desc \n" +
+                "- output: [[3, 'Zoolander'],[1, 'Smith'],[2, 'Jones'],[4, 'Adams']]");
+    }
+    
 }
