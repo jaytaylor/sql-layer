@@ -12,6 +12,8 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
+
+
 package com.akiban.server.expression.std;
 
 import java.util.EnumSet;
@@ -127,7 +129,7 @@ public class TypeDeterminationTest
                 paramNonSym(pb, numeric, ArithOps.DIVIDE, interval, null); // expect exception
             }
         }
-
+        
         // INTERVAL_MONTH and INTERVAL_MILLIS
         for (ArithOp op : Arrays.asList(ArithOps.ADD, ArithOps.MINUS,
                 ArithOps.DIVIDE, ArithOps.MOD, ArithOps.MULTIPLY))
@@ -162,7 +164,7 @@ public class TypeDeterminationTest
 
     @OnlyIfNot("exceptionExpected()")
     @Test
-    public void test()
+    public void test ()
     {
         Expression left = getExp(input1);
         Expression right = getExp(input2);
@@ -172,26 +174,22 @@ public class TypeDeterminationTest
     }
 
     @OnlyIf("exceptionExpected()")
-    @Test(expected = InvalidArgumentTypeException.class)
-    public void testWithException()
+    @Test (expected = InvalidArgumentTypeException.class)
+    public void testWithException ()
     {
         Expression left = getExp(input1);
         Expression right = getExp(input2);
         ArithExpression top = new ArithExpression(left, op, right);
     }
 
-    private Expression getExp(AkType type)
+    private Expression getExp (AkType type)
     {
         switch (type)
         {
-            case FLOAT:
-                return new LiteralExpression(type, 1.0f);
-            case DOUBLE:
-                return new LiteralExpression(type, 1.0);
-            case DECIMAL:
-                return new LiteralExpression(type, BigDecimal.ONE);
-            case U_BIGINT:
-                return new LiteralExpression(type, BigInteger.ONE);
+            case FLOAT: return new LiteralExpression(type, 1.0f);
+            case DOUBLE: return new LiteralExpression(type, 1.0);
+            case DECIMAL: return new LiteralExpression(type, BigDecimal.ONE);
+            case U_BIGINT: return new LiteralExpression(type, BigInteger.ONE);
             case INT:
             case LONG:
             case YEAR:
@@ -200,19 +198,15 @@ public class TypeDeterminationTest
             case TIMESTAMP:
             case TIME:
             case INTERVAL_MONTH:
-            case INTERVAL_MILLIS:
-                return new LiteralExpression(type, 1L);
-            case VARCHAR:
-                return new LiteralExpression(type, "1");
-            case NULL:
-                return new LiteralExpression(type, null);
-            default:
-                return new LiteralExpression(AkType.UNSUPPORTED, null);
+            case INTERVAL_MILLIS: return new LiteralExpression(type, 1L);
+            case VARCHAR: return new LiteralExpression(type, "1");
+            case NULL: return new LiteralExpression(type, null);
+            default: return new LiteralExpression(AkType.UNSUPPORTED, null);
         }
     }
 
-    public boolean exceptionExpected()
+    public boolean exceptionExpected ()
     {
         return expected == null;
-    }
+    } 
 }
