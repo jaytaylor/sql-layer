@@ -16,7 +16,9 @@
 package com.akiban.sql.test;
 
 import org.joda.time.DateTime;
+import static org.joda.time.DateTimeZone.UTC;
 import org.joda.time.Duration;
+import org.joda.time.Interval;
 import org.joda.time.Period;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -26,18 +28,18 @@ import org.joda.time.format.PeriodFormatterBuilder;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.io.FileWriter;
+import java.io.Writer;
+import java.util.Formatter;
 
 /*
- * Create a YAML test file for testing time intervals.
+ * Create a YAML test file for testing time intervals.  Includes tests for
+ * year/month and day/hour/minute/second intervals and
+ * date, time, datetime, and timestamp data types.
  */
 public class IntervalMatrixCreator {
 
-    @Test
-    public void create() throws IOException {
-        main(new String[0]);
-    }
-
-    static final String timeZero = ("00:00:00");
+    static final DateTime timeZero = new DateTime("T00:00:00", UTC);
 
     private static final String[] times = {
         "00:00:00",
@@ -82,9 +84,7 @@ public class IntervalMatrixCreator {
         .appendSeconds()
         .toFormatter();
 
-    private static final String dateZero = "2000-01-01";
-
-    private static final DateTime zero = new DateTime(dateZero);
+    private static final DateTime dateZero = new DateTime("2000-01-01", UTC);
 
     private static final String[] days = { "01", "31", "17" };
 
@@ -95,16 +95,19 @@ public class IntervalMatrixCreator {
     private static final DateTimeFormatter dateFormatter =
         DateTimeFormat.forPattern("YYYY-MM-dd");
 
-    private static final DateTimeFormatter timestampFormatter =
+    private static final DateTimeFormatter dateTimeFormatter =
         DateTimeFormat.forPattern("YYYY-MM-dd HH:mm:ss");
 
-    private static final String[] dayIntervals = { "1", "31", "17" };
-
-    private static final String[] weekIntervals = { "1", "13", "51" };
+    private static final String[] dayIntervals = { "1", "31", "17", "42" };
 
     private static final String[] monthIntervals = { "1", "5", "11" };
 
     private static final String[] yearIntervals = { "1", "33", "127" };
+
+    @Test
+    public void create() throws IOException {
+        main(new String[] { "foo.yaml" });
+    }
 
     public static void main(String[] args) throws IOException {
         StringBuilder sb = new StringBuilder();
@@ -114,12 +117,22 @@ public class IntervalMatrixCreator {
         createDateTable(sb);
         insertDates(sb);
         selectDates(sb);
-        /* Interval computations on timestamps are not currently working. */
-        // createTimestampTable(sb);
-        // insertTimestamps(sb);
-        // selectTimestamps(sb);
+        createDateTimeTable(sb);
+        insertDateTimes(sb);
+        selectDateTimes(sb);
         sb.append("...\n");
-        System.out.println(sb);
+        if (args.length == 0) {
+            System.out.println(sb);
+        } else {
+            Writer out = new FileWriter(args[0]);
+            try {
+                out.write(sb.toString());
+                out.close();
+                System.out.println("Wrote to file " + args[0]);
+            } finally {
+                out.close();
+            }
+        }
     }
 
     private static void createTimeTable(StringBuilder out) {
@@ -131,25 +144,91 @@ public class IntervalMatrixCreator {
     /* ind, t1 (time), t2 (interval), t3 (t1 + t2), t4 (t1 - t2) */
     private static void insertTimes(StringBuilder out) throws IOException {
         int index = 1;
-        DateTime zero = new DateTime("T" + timeZero);
         for (String timeString : times) {
-            DateTime time = new DateTime("T" + timeString);
+            DateTime time = new DateTime("T" + timeString, UTC);
             for (String intervalString : timeIntervals) {
-                Period interval =
+                Period period =
                     timeIntervalFormatter.parsePeriod(intervalString);
+                /* Insert */
                 out.append("---\n");
                 out.append("- Statement: INSERT INTO times\n");
                 out.append("    VALUES (");
-                out.append(index++).append(", '");
+                out.append(index).append(", '");
                 timeFormatter.printTo(out, time);
                 out.append("', '");
-                timeFormatter.printTo(out, zero.plus(interval));
+                timeFormatter.printTo(out, timeZero.plus(period));
                 out.append("', '");
-                timeFormatter.printTo(out, time.plus(interval));
+                timeFormatter.printTo(out, time.plus(period));
                 out.append("', '");
-                timeFormatter.printTo(out, time.minus(interval));
+                timeFormatter.printTo(out, time.minus(period));
                 out.append("')\n");
+                /* Test interval */
+                out.append("---\n");
+                out.append("- Statement: SELECT t1 + ");
+                insertTimeInterval(out, period);
+                out.append(" FROM times WHERE ind = ").append(index);
+                out.append("\n");
+                out.append("- output: [['");
+                timeFormatter.printTo(out, time.plus(period));
+                out.append("']]\n");
+                index++;
             }
+        }
+    }
+
+    private static void insertTimeInterval(StringBuilder out, Period period)
+            throws IOException
+    {
+        out.append("INTERVAL '");
+        int hours = period.getHours();
+        Duration duration = period.toDurationFrom(timeZero);
+        int days = (int) duration.getStandardDays();
+        if (days != 0) {
+            hours += 24 * days;
+        }
+        if (hours != 0) {
+            if (period.getMinutes() != 0) {
+                if (period.getSeconds() != 0) {
+                    /* HH:MM:SS */
+                    new Formatter(out)
+                        .format("%02d:%02d:%02d' HOUR TO SECOND",
+                                hours,
+                                period.getMinutes(),
+                                period.getSeconds());
+                } else {
+                    /* HH:MM */
+                    new Formatter(out)
+                        .format("%02d:%02d' HOUR to MINUTE",
+                                hours,
+                                period.getMinutes());
+                }
+            } else {
+                if (period.getSeconds() != 0) {
+                    /* HH:MM:SS */
+                    new Formatter(out)
+                        .format("%02d:%02d:%02d' HOUR TO SECOND",
+                                hours,
+                                period.getMinutes(),
+                                period.getSeconds());
+                } else {
+                    /* HH */
+                    new Formatter(out).format("%d' HOUR", hours);
+                }
+            }
+        } else if (period.getMinutes() != 0) {
+            if (period.getSeconds() != 0) {
+                /* MM:SS */
+                new Formatter(out)
+                    .format("%02d:%02d' MINUTE TO SECOND",
+                            period.getMinutes(),
+                            period.getSeconds());
+            } else {
+                /* MM */
+                new Formatter(out).format("%d' MINUTE", period.getMinutes());
+       }
+        } else {
+            /* SS */
+            new Formatter(out).format("%d' SECOND", period.getSeconds());
         }
     }
 
@@ -177,19 +256,19 @@ public class IntervalMatrixCreator {
         for (String day : days) {
             index = insertDates(
                 out,
-                new DateTime(years[0] + "-" + months[0] + "-" + day),
+                new DateTime(years[0] + "-" + months[0] + "-" + day, UTC),
                 index);
         }
         for (String month : months) {
             index = insertDates(
                 out,
-                new DateTime(years[0] + "-" + month + "-" + days[0]),
+                new DateTime(years[0] + "-" + month + "-" + days[0], UTC),
                 index);
         }
         for (String year : years) {
             index = insertDates(
                 out,
-                new DateTime(year + "-" + months[0] + "-" + days[0]),
+                new DateTime(year + "-" + months[0] + "-" + days[0], UTC),
                 index);
         }
     }
@@ -201,44 +280,80 @@ public class IntervalMatrixCreator {
     {
         for (String interval : dayIntervals) {
             insertOneDate(out, date,
-                          zero.plusDays(Integer.parseInt(interval)),
-                          index++);
-        }
-        for (String interval : weekIntervals) {
-            insertOneDate(out, date,
-                          zero.plusWeeks(Integer.parseInt(interval)),
+                          Period.days(Integer.parseInt(interval)),
                           index++);
         }
         for (String interval : monthIntervals) {
             insertOneDate(out, date,
-                          zero.plusMonths(Integer.parseInt(interval)),
+                          Period.months(Integer.parseInt(interval)),
                           index++);
             }
         for (String interval : yearIntervals) {
+            Period period = Period.years(Integer.parseInt(interval));
+            insertOneDate(out, date, period, index++);
+            String monthInterval =
+                monthIntervals[(index + 7) % monthIntervals.length];
             insertOneDate(out, date,
-                          zero.plusMonths(Integer.parseInt(interval)),
+                          period.withMonths(Integer.parseInt(monthInterval)),
                           index++);
         }
         return index;
     }
 
     private static void insertOneDate(StringBuilder out, DateTime date,
-                                      DateTime intervalEnd, int index)
+                                      Period period, int index)
             throws IOException
     {
-        Duration interval = new Duration(zero, intervalEnd);
+        Duration duration = period.toDurationFrom(dateZero);
+        /* Insert */
         out.append("---\n");
         out.append("- Statement: INSERT INTO dates\n");
         out.append("    VALUES (");
         out.append(index).append(", '");
         dateFormatter.printTo(out, date);
         out.append("', '");
-        dateFormatter.printTo(out, zero.plus(interval));
+        dateFormatter.printTo(out, dateZero.plus(duration));
         out.append("', '");
-        dateFormatter.printTo(out, date.plus(interval));
+        dateFormatter.printTo(out, date.plus(duration));
         out.append("', '");
-        dateFormatter.printTo(out, date.minus(interval));
+        dateFormatter.printTo(out, date.minus(duration));
         out.append("')\n");
+        /* Test interval */
+        out.append("---\n");
+        out.append("- Statement: SELECT d1 + ");
+        insertDateInterval(out, period);
+        out.append(" FROM dates WHERE ind = ").append(index);
+        out.append("\n");
+        out.append("- output: [['");
+        dateFormatter.printTo(out, date.plus(period));
+        out.append("']]\n");
+    }
+
+    private static void insertDateInterval(StringBuilder out, Period period)
+            throws IOException
+    {
+        assert period.getHours() == 0 : period;
+        assert period.getMinutes() == 0 : period;
+        assert period.getSeconds() == 0 : period;
+        out.append("INTERVAL '");
+        if (period.getDays() != 0) {
+            int days = (int) period.toDurationFrom(dateZero).getStandardDays();
+            /* DD */
+            out.append(days).append("' DAY");
+        } else if (period.getYears() != 0) {
+            if (period.getMonths() != 0) {
+                /* YYYY-MM */
+                out.append(period.getYears()).append("-");
+                out.append(period.getMonths());
+                out.append("' YEAR TO MONTH");
+            } else {
+                /* YYYY */
+                out.append(period.getYears()).append("' YEAR");
+            }
+        } else {
+            /* MM */
+            out.append(period.getMonths()).append("' MONTH");
+        }
     }
 
     private static void selectDates(StringBuilder out) {
@@ -254,112 +369,144 @@ public class IntervalMatrixCreator {
         out.append("- row_count: 0\n");
     }
 
-    private static void createTimestampTable(StringBuilder out) {
+    private static void createDateTimeTable(StringBuilder out) {
         out.append("---\n");
-        out.append("- CreateTable: timestamps (ind int, ts1 timestamp," +
-                   " ts2 timestamp,\n" +
-                   "    ts3 timestamp, ts4 timestamp)\n");
+        out.append("- CreateTable: datetimes (ind int, dt1 datetime," +
+                   " dt2 datetime,\n" +
+                   "    dt3 datetime, dt4 datetime)\n");
     }
 
-    private static void insertTimestamps(StringBuilder out)
+    private static void insertDateTimes(StringBuilder out)
             throws IOException
     {
         int index = 1;
         for (String day : days) {
-            String timeString = times[(index * 7) % times.length];
+            String timeString = times[index % times.length];
             String timeIntervalString =
-                timeIntervals[(index * 11) % timeIntervals.length];
-            index = insertTimestamps(
+                timeIntervals[index % timeIntervals.length];
+            index = insertDateTimes(
                 out,
                 new DateTime(years[0] + "-" + months[0] + "-" + day +
-                             "T" + timeString),
+                             "T" + timeString,
+                             UTC),
                 timeIntervalString,
                 index);
         }
         for (String month : months) {
-            String timeString = times[(index * 13) % times.length];
-            String timeIntervalString =
-                timeIntervals[(index * 17) % timeIntervals.length];
-            index = insertTimestamps(
+            String timeString = times[(index + 1) % times.length];
+            index = insertDateTimes(
                 out,
                 new DateTime(years[0] + "-" + month + "-" + days[0] +
-                             "T" + timeString),
-                timeIntervalString,
+                             "T" + timeString,
+                             UTC),
+                "00:00:00",
                 index);
         }
         for (String year : years) {
-            String timeString = times[(index * 19) % times.length];
-            String timeIntervalString =
-                timeIntervals[(index * 23) % timeIntervals.length];
-            index = insertTimestamps(
+            String timeString = times[(index + 2) % times.length];
+            index = insertDateTimes(
                 out,
                 new DateTime(year + "-" + months[0] + "-" + days[0] +
-                             "T" + timeString),
-                timeIntervalString,
+                             "T" + timeString,
+                             UTC),
+                "00:00:00",
                 index);
         }
     }
 
-    private static int insertTimestamps(StringBuilder out,
-                                        DateTime date,
-                                        String timeIntervalString,
-                                        int index)
+    private static int insertDateTimes(StringBuilder out,
+                                       DateTime date,
+                                       String timeIntervalString,
+                                       int index)
             throws IOException
     {
-        DateTime base =
-            zero.plus(timeIntervalFormatter.parsePeriod(timeIntervalString));
+        Period timePeriod =
+            timeIntervalFormatter.parsePeriod(timeIntervalString);
         for (String interval : dayIntervals) {
-            insertOneTimestamp(out, date,
-                               base.plusDays(Integer.parseInt(interval)),
-                               index++);
+            insertOneDateTime(out, date,
+                              timePeriod.plusDays(Integer.parseInt(interval)),
+                              index++);
         }
-        for (String interval : weekIntervals) {
-            insertOneTimestamp(out, date,
-                               base.plusWeeks(Integer.parseInt(interval)),
-                               index++);
-        }
-        for (String interval : monthIntervals) {
-            insertOneTimestamp(out, date,
-                               base.plusMonths(Integer.parseInt(interval)),
-                               index++);
+        if (date.getHourOfDay() == 0 &&
+            date.getMinuteOfHour() == 0 &&
+            date.getSecondOfMinute() == 0)
+        {
+            for (String interval : monthIntervals) {
+                insertOneDateTime(
+                    out, date,
+                    timePeriod.plusMonths(Integer.parseInt(interval)),
+                    index++);
             }
-        for (String interval : yearIntervals) {
-            insertOneTimestamp(out, date,
-                               base.plusMonths(Integer.parseInt(interval)),
-                               index++);
+            for (String interval : yearIntervals) {
+                Period yearPeriod =
+                    timePeriod.plusYears(Integer.parseInt(interval));
+                insertOneDateTime(out, date, yearPeriod, index++);
+                String montInterval =
+                    monthIntervals[(index + 3) % monthIntervals.length];
+                insertOneDateTime(
+                    out, date,
+                    yearPeriod.plusMonths(Integer.parseInt(interval)),
+                    index++);
+            }
         }
         return index;
     }
 
-    private static void insertOneTimestamp(StringBuilder out, DateTime date,
-                                           DateTime intervalEnd, int index)
+    private static void insertOneDateTime(StringBuilder out, DateTime date,
+                                          Period period, int index)
             throws IOException
     {
-        Duration interval = new Duration(zero, intervalEnd);
+        /* Insert */
         out.append("---\n");
-        out.append("- Statement: INSERT INTO timestamps\n");
+        out.append("- Statement: INSERT INTO datetimes\n");
         out.append("    VALUES (");
         out.append(index).append(", '");
-        timestampFormatter.printTo(out, date);
+        dateTimeFormatter.printTo(out, date);
         out.append("', '");
-        timestampFormatter.printTo(out, zero.plus(interval));
+        dateTimeFormatter.printTo(out, dateZero.plus(period));
         out.append("',\n   '");
-        timestampFormatter.printTo(out, date.plus(interval));
+        dateTimeFormatter.printTo(out, date.plus(period));
         out.append("', '");
-        timestampFormatter.printTo(out, date.minus(interval));
+        dateTimeFormatter.printTo(out, date.minus(period));
         out.append("')\n");
+        /* Test datetime interval */
+        out.append("---\n");
+        out.append("- Statement: SELECT dt1 + ");
+        insertDateTimeInterval(out, period);
+        out.append(" FROM datetimes WHERE ind = ").append(index);
+        out.append("\n");
+        out.append("- output: [[!re '");
+        dateTimeFormatter.printTo(out, date.plus(period));
+        out.append("([.]0)?']]\n");
+        index++;
+        /* Test timestamp interval */
     }
 
-    private static void selectTimestamps(StringBuilder out) {
+    private static void insertDateTimeInterval(StringBuilder out, Period period)
+            throws IOException
+    {
+        if (period.getHours() != 0 ||
+            period.getMinutes() != 0 ||
+            period.getSeconds() != 0)
+        {
+            insertTimeInterval(out, period);
+        } else {
+            insertDateInterval(out, period);
+        }
+    }
+
+    private static void selectDateTimes(StringBuilder out) {
         out.append("---\n");
-        out.append("- Statement: SELECT ind, ts1 + (ts2 - DATE('2000-01-01'))" +
-                   " FROM timestamps\n");
-        out.append("    WHERE ts1 + (ts1 - TIMESTAMP('2000-01-01')) <> ts3\n");
+        out.append(
+            "- Statement: SELECT ind, dt1 + (dt2 - DATETIME('2000-01-01'))" +
+            " FROM datetimes\n");
+        out.append("    WHERE dt1 + (dt2 - DATETIME('2000-01-01')) <> dt3\n");
         out.append("- row_count: 0\n");
         out.append("---\n");
-        out.append("- Statement: SELECT ind, ts1 - (ts2 - DATE('2000-01-01'))" +
-                   " FROM timestamps\n");
-        out.append("    WHERE ts1 - (ts2 - DATE('2000-01-01')) <> ts4\n");
+        out.append(
+            "- Statement: SELECT ind, dt1 - (dt2 - DATETIME('2000-01-01'))" +
+            " FROM datetimes\n");
+        out.append("    WHERE dt1 - (dt2 - DATETIME('2000-01-01')) <> dt4\n");
         out.append("- row_count: 0\n");
     }
 }
