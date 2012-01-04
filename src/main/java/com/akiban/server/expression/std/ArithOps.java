@@ -87,8 +87,6 @@ public class ArithOps
     @Scalar("mod")
     public static final ArithOpComposer MOD = new ArithOpComposer ('%')
     {
-        // TODO handling of neg remainder ?
-
         @Override
         public long evaluate(long one, long two)
         {
