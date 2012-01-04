@@ -97,7 +97,7 @@ public final class CoalesceExpression extends AbstractCompositeExpression {
      * then type-promotion rules apply. 
      * 
      */
-     protected static <T> AkType getTopType(List<T> args)
+     protected static AkType getTopType(List<?> args)
      {
         if (args.isEmpty()) throw new WrongExpressionArityException(2, 0);
         int n = 0;
@@ -122,7 +122,7 @@ public final class CoalesceExpression extends AbstractCompositeExpression {
         return top;
     }
 
-    protected static <T> AkType getAk (T arg)
+    private static AkType getAk (Object arg)
     {
         if (arg instanceof AkType)
             return (AkType)arg;
