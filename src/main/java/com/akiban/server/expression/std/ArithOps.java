@@ -83,7 +83,45 @@ public class ArithOps
            return one.subtract(two);
        }        
     };
-    
+
+    @Scalar("mod")
+    public static final ArithOpComposer MOD = new ArithOpComposer ('%')
+    {
+        // TODO handling of neg remainder ?
+
+        @Override
+        public long evaluate(long one, long two)
+        {
+            if (two == 0)
+                throw new DivisionByZeroException();
+            return one % two;
+        }
+
+        @Override
+        public double evaluate(double one, double two)
+        {
+            if (two == 0)
+                throw new DivisionByZeroException();
+            return one % two;
+        }
+
+        @Override
+        public BigDecimal evaluate(BigDecimal one, BigDecimal two)
+        {
+            if (two.equals(BigDecimal.ZERO))
+                throw new DivisionByZeroException();
+            return one.remainder(two);
+        }
+
+        @Override
+        public BigInteger evaluate(BigInteger one, BigInteger two)
+        {
+            if (two.equals(BigInteger.ZERO))
+                throw new DivisionByZeroException();
+            return one.remainder(two);
+        }
+    };
+
     @Scalar("divide")
     public static final ArithOpComposer DIVIDE = new ArithOpComposer('/')
     {

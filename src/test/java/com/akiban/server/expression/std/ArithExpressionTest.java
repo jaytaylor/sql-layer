@@ -38,16 +38,48 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
     private final CompositionTestInfo testInfo = new CompositionTestInfo(2, AkType.DOUBLE, true);
 
     @Test
+    public void testLongModDouble ()
+    {
+        Expression left = new LiteralExpression(AkType.LONG, 2L);
+        Expression right = new LiteralExpression(AkType.DOUBLE, 3.4);
+        Expression top = ArithOps.MOD.compose(left, right);
+
+        assertEquals("Top should be DOUBLE ", AkType.DOUBLE, top.valueType());
+        assertEquals(2.0, top.evaluation().eval().getDouble(), 0.0001);
+    }
+
+    @Test public void testLongModLong ()
+    {
+        Expression left = new LiteralExpression(AkType.LONG, 2L);
+        Expression right = new LiteralExpression(AkType.DOUBLE, 3.4);
+        Expression top = ArithOps.MOD.compose(left, right);
+
+        assertEquals("Top should be DOUBLE ", AkType.DOUBLE, top.valueType());
+        assertEquals(2.0, top.evaluation().eval().getDouble(), 0.0001);
+    }
+
+    @Test
     public void testFloatTimesInterval ()
     {
-        Expression left = new LiteralExpression(AkType.FLOAT, 3.5f);
-        Expression right = new LiteralExpression(AkType.INTERVAL_MONTH, 2L);
-        Expression top = new ArithExpression(left, ArithOps.MULTIPLY, right);
+        Expression left = new LiteralExpression(AkType.LONG, 12);
+        Expression right = new LiteralExpression(AkType.LONG, 2L);
+        Expression top = new ArithExpression(left, ArithOps.MOD, right);
         
-        assertEquals("Top should be INTERVAL_MONTH ", AkType.INTERVAL_MONTH, top.valueType());
-        assertEquals(7L, top.evaluation().eval().getInterval_Month());
+        assertEquals("Top should be LONG ", AkType.LONG, top.valueType());
+        assertEquals(0L, top.evaluation().eval().getLong());
     }
-    
+
+    @Test (expected=DivisionByZeroException.class)
+    public void modWithZero ()
+    {
+        Expression left = new LiteralExpression(AkType.LONG, 1L);
+        Expression right = new LiteralExpression(AkType.FLOAT, 0f);
+        Expression top = new ArithExpression(left, ArithOps.MOD, right);
+
+        assertEquals("Top should be FLOAT ", AkType.FLOAT, top.valueType());
+        top.evaluation().eval().getFloat();
+    }
+
     @Test
     public void longMinusFloat ()
     {
