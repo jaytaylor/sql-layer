@@ -43,7 +43,7 @@ public class TypeDeterminationTest
     private AkType expected;
     private ArithOp op;
 
-    public TypeDeterminationTest(AkType input1, ArithOp op, AkType input2, AkType expected)
+    public TypeDeterminationTest (AkType input1, ArithOp op, AkType input2, AkType expected)
     {
         this.input1 = input1;
         this.input2 = input2;
