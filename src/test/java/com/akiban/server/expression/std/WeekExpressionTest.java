@@ -58,7 +58,17 @@ public class WeekExpressionTest extends ComposedExpressionTestBase
         test(st,1,18);
         test(st,0,19);
     }
-    
+
+    @Test
+    public void testWeekOfYear_bug () // bug 905447 - unit-test passes
+    {
+        Expression week = WeekExpression.WEEK_OF_YEAR_COMPOSER.
+                compose(Arrays.asList(new LiteralExpression(AkType.DATE,
+                    Extractors.getLongExtractor(AkType.DATE).getLong("1864-02-28"))));
+        int actual = (int)week.evaluation().eval().getInt();
+        assertEquals("week of year: ", 8, actual);
+    }
+
     @Test 
     public void testNullFirst ()
     {

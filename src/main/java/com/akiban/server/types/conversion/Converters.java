@@ -163,22 +163,35 @@ public final class Converters {
                 INTERVAL_MONTH
         );
         builder.legalConversions(DATE,
+                DATETIME,
+                TIMESTAMP,
                 VARCHAR,
                 LONG
         );
         builder.legalConversions(DATETIME,
+                DATE,
+                TIMESTAMP,
                 VARCHAR,
                 LONG
         );
         builder.legalConversions(TIME,
+                DATE,
+                YEAR,
+                DATETIME,
+                TIMESTAMP,
                 VARCHAR,
                 LONG
         );
         builder.legalConversions(TIMESTAMP,
+                DATETIME,
+                DATE,
                 VARCHAR,
                 LONG
         );
         builder.legalConversions(YEAR,
+                DATE,
+                DATETIME,
+                TIMESTAMP,
                 VARCHAR,
                 LONG
         );

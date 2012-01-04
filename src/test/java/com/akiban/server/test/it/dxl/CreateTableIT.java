@@ -79,7 +79,7 @@ public final class CreateTableIT extends ITBase {
         ddl().createTable(session(), "test", "CREATE TABLE t(c1 INT AUTO_INCREMENT KEY) AUTO_INCREMENT=10");
         final int tid = tableId("test", "t");
         // This value gets sent as last_row_id so everything lines up on the adapter, where all auto_inc stuff is done
-        assertEquals(9, store().getTableStatistics(session(), tid).getAutoIncrementValue());
+        assertEquals(9, dml().getTableStatistics(session(),  tid, false).getAutoIncrementValue());
     }
 
     @Test // bug696321

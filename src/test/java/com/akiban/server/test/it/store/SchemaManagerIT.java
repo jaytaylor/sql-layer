@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.Callable;
 
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
@@ -66,28 +67,46 @@ public final class SchemaManagerIT extends ITBase {
 
     private SchemaManager schemaManager;
 
-    private void createTableDef(String schema, String ddl) throws Exception {
-        schemaManager.createTableDefinition(session(), schema, ddl);
-    }
-
-    private void deleteTableDef(String schema, String table) throws Exception {
-        schemaManager.deleteTableDefinition(session(), schema, table);
-    }
-
-    private TableDefinition getTableDef(String schema, String table) throws Exception {
-        return schemaManager.getTableDefinition(session(), new TableName(schema, table));
-    }
-
-    private List<String> getSchemaStringsWithouAIS(boolean withGroupTables) throws Exception {
-        List<String> statements = schemaManager.schemaStrings(session(), withGroupTables);
-        Iterator<String> it = statements.iterator();
-        while(it.hasNext()) {
-            String ddl = it.next();
-            if(ddl.contains("akiban_information_schema")) {
-                it.remove();
+    private void createTableDef(final String schema, final String ddl) throws Exception {
+        transactionally(new Callable<Void>() {
+            public Void call() throws Exception {
+                schemaManager.createTableDefinition(session(), schema, ddl);
+                return null;
             }
-        }
-        return statements;
+        });
+    }
+
+    private void deleteTableDef(final String schema, final String table) throws Exception {
+        transactionally(new Callable<Void>() {
+            public Void call() throws Exception {
+                schemaManager.deleteTableDefinition(session(), schema, table);
+                return null;
+            }
+        });
+    }
+
+    private TableDefinition getTableDef(final String schema, final String table) throws Exception {
+        return transactionally(new Callable<TableDefinition>() {
+            public TableDefinition call() throws Exception {
+                return schemaManager.getTableDefinition(session(), new TableName(schema, table));
+            }
+        });
+    }
+
+    private List<String> getSchemaStringsWithoutAIS(final boolean withGroupTables) throws Exception {
+        return transactionally(new Callable<List<String>>() {
+            public List<String> call() throws Exception {
+                List<String> statements = schemaManager.schemaStrings(session(), withGroupTables);
+                Iterator<String> it = statements.iterator();
+                while(it.hasNext()) {
+                    String ddl = it.next();
+                    if(ddl.contains("akiban_information_schema")) {
+                        it.remove();
+                    }
+                }
+                return statements;
+            }
+        });
     }
     
     @Override
@@ -276,6 +295,7 @@ public final class SchemaManagerIT extends ITBase {
         assertTablesInSchema(SCHEMA_VOL2_B);
     }
 
+
     @Test
     public void updateTimestampChangesWithCreate() throws Exception {
         final long first = schemaManager.getUpdateTimestamp();
@@ -352,7 +372,7 @@ public final class SchemaManagerIT extends ITBase {
         final String SCHEMA_DDL = "create schema if not exists `foo`;";
         final String TABLE_CANONICAL = "create table `foo`.`bar`(`id` int, PRIMARY KEY(`id`)) engine=akibandb";
         createTableDef("foo", TABLE_DDL);
-        final List<String> ddls = getSchemaStringsWithouAIS(false);
+        final List<String> ddls = getSchemaStringsWithoutAIS(false);
         assertEquals("ddl count", 2, ddls.size()); // schema and table
         assertTrue("create schema", ddls.get(0).startsWith("create schema"));
         assertEquals("create schema is canonical", SCHEMA_DDL, ddls.get(0));
@@ -498,7 +518,7 @@ public final class SchemaManagerIT extends ITBase {
     private void assertSchemaStrings(Map<String, List<String>> schemaAndTables) throws Exception {
         final String CREATE_SCHEMA = "create schema if not exists `";
         final String CREATE_TABLE = "create table `";
-        final List<String> ddls = getSchemaStringsWithouAIS(false);
+        final List<String> ddls = getSchemaStringsWithoutAIS(false);
         final Set<String> sawSchemas = new HashSet<String>();
         for(String statement : ddls) {
             if(statement.startsWith(CREATE_SCHEMA)) {

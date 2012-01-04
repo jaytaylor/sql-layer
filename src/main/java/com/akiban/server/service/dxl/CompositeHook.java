@@ -21,6 +21,7 @@ import com.akiban.util.MultipleCauseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.ListIterator;
 
 public final class CompositeHook implements DXLFunctionsHook {
     private final Session.Key<Integer> COUNT = Session.Key.named("SUCCESS_COUNT");
@@ -51,8 +52,11 @@ public final class CompositeHook implements DXLFunctionsHook {
     @Override
     public void hookFunctionCatch(Session session, DXLFunction function, Throwable throwable) {
         RuntimeException eToThrow = null;
-        for (DXLFunctionsHook hook : hooks(session) ) {
+        List<DXLFunctionsHook> allHooks = hooks(session);
+        ListIterator<DXLFunctionsHook> revIt = allHooks.listIterator(allHooks.size());
+        while (revIt.hasPrevious()) {
             try {
+                DXLFunctionsHook hook = revIt.previous();
                 hook.hookFunctionCatch(session, function, throwable);
             } catch (RuntimeException e) {
                 eToThrow = forException(eToThrow, e);
@@ -66,8 +70,11 @@ public final class CompositeHook implements DXLFunctionsHook {
     @Override
     public void hookFunctionFinally(Session session, DXLFunction function, Throwable throwable) {
         RuntimeException eToThrow = null;
-        for (DXLFunctionsHook hook : hooks(session) ) {
+        List<DXLFunctionsHook> allHooks = hooks(session);
+        ListIterator<DXLFunctionsHook> revIt = allHooks.listIterator(allHooks.size());
+        while (revIt.hasPrevious()) {
             try {
+                DXLFunctionsHook hook = revIt.previous();
                 hook.hookFunctionFinally(session, function, throwable);
             } catch (RuntimeException e) {
                 eToThrow = forException(eToThrow, e);

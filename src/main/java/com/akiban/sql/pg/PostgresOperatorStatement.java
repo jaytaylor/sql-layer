@@ -17,7 +17,6 @@ package com.akiban.sql.pg;
 
 import com.akiban.server.service.session.Session;
 import com.akiban.qp.operator.*;
-import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
@@ -38,8 +37,6 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
 {
     private Operator resultOperator;
     private RowType resultRowType;
-    private int offset = 0;
-    private int limit = -1;
 
     private static final Tap.InOutTap EXECUTE_TAP = Tap.createTimer("PostgresOperatorStatement: execute shared");
     private static final Tap.InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresOperatorStatement: acquire shared lock");
@@ -49,14 +46,10 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                                      List<String> columnNames,
                                      List<PostgresType> columnTypes,
                                      PostgresType[] parameterTypes,
-                                     List<EnvironmentExpressionSetting> environmentSettings,
-                                     int offset,
-                                     int limit) {
+                                     List<EnvironmentExpressionSetting> environmentSettings) {
         super(columnNames, columnTypes, parameterTypes, environmentSettings);
         this.resultOperator = resultOperator;
         this.resultRowType = resultRowType;
-        this.offset = offset;
-        this.limit = limit;
     }
     
     @Override
@@ -70,11 +63,6 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
         Session session = server.getSession();
-        int nskip = offset;
-        if (limit > 0) {
-            if ((maxrows <= 0) || (maxrows > limit))
-                maxrows = limit;
-        }
         int nrows = 0;
         Cursor cursor = null;
         try {
@@ -82,33 +70,11 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             setEnvironmentBindings(server, bindings);
             cursor = API.cursor(resultOperator, server.getStore());
             cursor.open(bindings);
-            List<PostgresType> columnTypes = getColumnTypes();
-            int ncols = columnTypes.size();
+            PostgresRowOutputter outputter = new PostgresRowOutputter(messenger, this);
             Row row;
-            ToObjectValueTarget target = new ToObjectValueTarget();
             while ((row = cursor.next()) != null) {
                 assert resultRowType == null || (row.rowType() == resultRowType) : row;
-                if (nskip > 0) {
-                    nskip--;
-                    continue;
-                }
-                messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
-                messenger.writeShort(ncols);
-                for (int i = 0; i < ncols; i++) {
-                    Object field = target.convertFromSource(row.eval(i));
-                    PostgresType type = columnTypes.get(i);
-                    byte[] value = type.encodeValue(field,
-                                                    messenger.getEncoding(),
-                                                    isColumnBinary(i));
-                    if (value == null) {
-                        messenger.writeInt(-1);
-                    }
-                    else {
-                        messenger.writeInt(value.length);
-                        messenger.write(value);
-                    }
-                }
-                messenger.sendMessage();
+                outputter.output(row);
                 nrows++;
                 if ((maxrows > 0) && (nrows >= maxrows))
                     break;
@@ -152,12 +118,11 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                               RowType resultRowType,
                               List<String> columnNames,
                               List<PostgresType> columnTypes,
-                              int offset, int limit,
                               Bindings bindings, int nparams,
                               boolean[] columnBinary, boolean defaultColumnBinary,
                               List<EnvironmentExpressionSetting> environmentSettings) {
             super(resultOperator, resultRowType, columnNames, columnTypes, 
-                  null, environmentSettings, offset, limit);
+                  null, environmentSettings);
             this.bindings = bindings;
             this.nparams = nparams;
             this.columnBinary = columnBinary;
@@ -201,7 +166,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         }
         return new BoundStatement(resultOperator, resultRowType,
                                   getColumnNames(), getColumnTypes(),
-                                  offset, limit, bindings, nparams,
+                                  bindings, nparams,
                                   columnBinary, defaultColumnBinary,
                                   getEnvironmentSettings());
     }

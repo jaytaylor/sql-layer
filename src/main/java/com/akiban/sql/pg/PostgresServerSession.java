@@ -89,7 +89,7 @@ public interface PostgresServerSession
     public TreeService getTreeService();
 
     /** Return the LoadablePlan with the given name. */
-    public LoadablePlan loadablePlan(String planName);
+    public LoadablePlan<?> loadablePlan(String planName);
 
     /** Begin a new transaction. */
     public void beginTransaction();

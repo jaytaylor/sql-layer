@@ -35,7 +35,7 @@ public class PostgresCallStatementGenerator extends PostgresBaseStatementGenerat
                                       StatementNode stmt,
                                       List<ParameterNode> params, int[] paramTypes)
     {
-        PostgresLoadablePlan statement = null;
+        PostgresStatement statement = null;
         if (stmt instanceof CallStatementNode) {
             CallStatementNode call = (CallStatementNode)stmt;
             StaticMethodCallNode methodCall = (StaticMethodCallNode)call.methodCall().getJavaValueNode();

@@ -20,6 +20,8 @@ import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Table;
 import com.akiban.server.MemoryOnlyTableStatusCache;
+import com.akiban.server.error.PersistitAdapterException;
+import com.persistit.exception.PersistitInterruptedException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -46,7 +48,11 @@ public class SchemaFactory {
 
     public RowDefCache rowDefCache(AkibanInformationSchema ais) {
         RowDefCache rowDefCache = new FakeRowDefCache();
-        rowDefCache.setAIS(ais);
+        try {
+            rowDefCache.setAIS(ais);
+        } catch(PersistitInterruptedException e) {
+            throw new PersistitAdapterException(e);
+        }
         return rowDefCache;
     }
 
@@ -56,16 +62,16 @@ public class SchemaFactory {
         }
 
         @Override
-        protected Map<Table,Integer> fixUpOrdinals() {
+        protected Map<Table,Integer> fixUpOrdinals() throws PersistitInterruptedException {
             Map<Table,Integer> ordinalMap = new HashMap<Table,Integer>();
             for (RowDef groupRowDef : getRowDefs()) {
                 if (groupRowDef.isGroupTable()) {
-                    tableStatusCache.setOrdinal(groupRowDef.getRowDefId(), 0);
                     ordinalMap.put(groupRowDef.table(), 0);
                     int userTableOrdinal = 1;
                     for (RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
                         int ordinal = userTableOrdinal++;
                         tableStatusCache.setOrdinal(userRowDef.getRowDefId(), ordinal);
+                        userRowDef.setOrdinalCache(ordinal);
                         ordinalMap.put(userRowDef.table(), ordinal);
                     }
                 }

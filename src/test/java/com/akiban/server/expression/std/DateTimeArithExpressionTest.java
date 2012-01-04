@@ -15,6 +15,8 @@
 
 package com.akiban.server.expression.std;
 
+import java.util.List;
+import java.util.ArrayList;
 import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.extract.LongExtractor;
@@ -28,6 +30,51 @@ import static org.junit.Assert.*;
 
 public class DateTimeArithExpressionTest extends ComposedExpressionTestBase
 {
+    LongExtractor extractor = Extractors.getLongExtractor(AkType.DATE);
+    
+    @Test
+    public void testDateAdd ()
+    {       
+        Expression left1 = new LiteralExpression(AkType.DATE, extractor.getLong("2009-12-12"));
+        Expression right1 = new LiteralExpression(AkType.LONG, 12L); // second arg is a LONG
+        
+        Expression left2 = new LiteralExpression(AkType.DATE, extractor.getLong("2009-12-24"));
+        
+        // top1 is a DATE: ADDDATE('2009-12-12', 12)
+        Expression top1 = DateTimeArithExpression.ADD_DATE_COMPOSER.compose(Arrays.asList(left1, right1));
+        
+        // top2 is an interval
+        Expression top2 = ArithOps.MINUS.compose(Arrays.asList(left2, left1));
+        
+        // top3 is a DATE: ADDDATE("2009-12-12", interval 12 days)
+        Expression top3 = DateTimeArithExpression.ADD_DATE_COMPOSER.compose(Arrays.asList(left1, top2));
+        
+        assertEquals("assert top1 == 2009-12-24", extractor.getLong("2009-12-24"),top1.evaluation().eval().getDate());
+        assertEquals("assert top3 == top1", top1.evaluation().eval().getDate(), top3.evaluation().eval().getDate());
+    }
+    
+    @Test
+    public void testDateAdd_IntervalMonth ()
+    {   
+        List<AkType> argType = new ArrayList<AkType>();
+        argType.add(AkType.DATE);
+        argType.add(AkType.INTERVAL_MONTH);
+        
+        List<AkType> newArgType = new ArrayList<AkType>(argType);
+        
+        //test argumentTypes ()
+        DateTimeArithExpression.ADD_DATE_COMPOSER.argumentTypes(newArgType);
+        for (int n = 0; n < argType.size(); ++n)
+            assertTrue("Assert type list doesn't get changed", argType.get(n) == newArgType.get(n));
+        
+        
+        Expression left = new LiteralExpression(AkType.DATE, extractor.getLong("2008-02-29"));
+        Expression right = new LiteralExpression(AkType.INTERVAL_MONTH, 12L);
+        
+        Expression top = DateTimeArithExpression.ADD_DATE_COMPOSER.compose(Arrays.asList(left, right));
+        assertEquals(extractor.getLong("2009-02-28"), top.evaluation().eval().getDate());
+    }
+    
     @Test
     public void testTimeDiff ()
     {

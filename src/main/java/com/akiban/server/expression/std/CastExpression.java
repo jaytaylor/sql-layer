@@ -21,7 +21,6 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types.util.ValueHolder;
 
 public class CastExpression extends AbstractUnaryExpression
 {
@@ -52,14 +51,10 @@ public class CastExpression extends AbstractUnaryExpression
                 return NullValueSource.only();
             if (type.equals(operandSource.getConversionType()))
                 return operandSource;
-            return Converters.convert(operandSource, holder());
-        }
-
-        private ValueHolder holder() {
             valueHolder().expectType(type);
-            return valueHolder();
+            return Converters.convert(operandSource, valueHolder());
         }
-
+        
         private final AkType type;        
     }
 }
