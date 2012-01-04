@@ -497,26 +497,21 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
         compareRows(expected, cursor(plan, adapter));
     }
 
-    @Test
+    @Test 
     public void testFreeze()
     {
-        RowType outerValuesRowType = schema.newValuesType(AkType.LONG);
-        List<BindableRow> outerValuesRows = new ArrayList<BindableRow>();
-        outerValuesRows.add(BindableRow.of(outerValuesRowType, Collections.singletonList(literal(3L))));
-        outerValuesRows.add(BindableRow.of(outerValuesRowType, Collections.singletonList(literal(2L))));
-        outerValuesRows.add(BindableRow.of(outerValuesRowType, Collections.singletonList(literal(4L))));
-        outerValuesRows.add(BindableRow.of(outerValuesRowType, Collections.singletonList(literal(1L))));
         RowType innerValuesRowType = schema.newValuesType(AkType.NULL);
         List<BindableRow> innerValuesRows = new ArrayList<BindableRow>();
         innerValuesRows.add(BindableRow.of(innerValuesRowType, Collections.singletonList(literal(null))));
         Operator project = project_Default(valuesScan_Default(innerValuesRows, innerValuesRowType),
                                            innerValuesRowType,
-                                           Arrays.asList(boundField(outerValuesRowType, 0, 0)));
+                                           Arrays.asList(boundField(customerRowType, 0, 1)));
         RowType projectType = project.rowType();
         Operator plan =
             sort_InsertionLimited(
                 map_NestedLoops(
-                    valuesScan_Default(outerValuesRows, outerValuesRowType), 
+                    filter_Default(groupScan_Default(coi),
+                                   Collections.singleton(customerRowType)),
                     project, 0),
                 projectType,
                 ordering(field(projectType, 0), true),
@@ -524,10 +519,10 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 4);
 
         RowBase[] expected = new RowBase[]{
-            row(projectType, 1L),
-            row(projectType, 2L),
-            row(projectType, 3L),
-            row(projectType, 4L),
+            row(projectType, "foundation"),
+            row(projectType, "highland"),
+            row(projectType, "matrix"),
+            row(projectType, "northbridge"),
         };
         compareRows(expected, cursor(plan, adapter));
     }
