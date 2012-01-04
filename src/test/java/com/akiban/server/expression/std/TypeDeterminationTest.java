@@ -170,9 +170,9 @@ public class TypeDeterminationTest
         Expression right = getExp(input2);
         ArithExpression top = new ArithExpression(left, op, right);
         top.evaluation().eval();
-        assertEquals(expected, top.topT);
+        assertEquals( expected, top.topT);
     }
-
+    
     @OnlyIf("exceptionExpected()")
     @Test (expected = InvalidArgumentTypeException.class)
     public void testWithException ()
@@ -181,7 +181,7 @@ public class TypeDeterminationTest
         Expression right = getExp(input2);
         ArithExpression top = new ArithExpression(left, op, right);
     }
-
+    
     private Expression getExp (AkType type)
     {
         switch (type)
@@ -198,13 +198,13 @@ public class TypeDeterminationTest
             case TIMESTAMP:
             case TIME:
             case INTERVAL_MONTH:
-            case INTERVAL_MILLIS: return new LiteralExpression(type, 1L);
-            case VARCHAR: return new LiteralExpression(type, "1");
+            case INTERVAL_MILLIS: return new LiteralExpression(type, 1L); 
+            case VARCHAR: return new LiteralExpression (type, "1");
             case NULL: return new LiteralExpression(type, null);
             default: return new LiteralExpression(AkType.UNSUPPORTED, null);
         }
     }
-
+    
     public boolean exceptionExpected ()
     {
         return expected == null;
