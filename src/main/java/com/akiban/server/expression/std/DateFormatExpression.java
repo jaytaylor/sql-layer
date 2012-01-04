@@ -20,11 +20,13 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.TypesList;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.util.ConversionUtil;
+import com.akiban.sql.StandardException;
 import java.util.List;
 import org.joda.time.MutableDateTime;
 
@@ -40,22 +42,25 @@ public class DateFormatExpression extends AbstractBinaryExpression
         }
 
         @Override
-        protected ExpressionType composeType(ExpressionType first, ExpressionType second)
-        {
-            return ExpressionTypes.varchar(second.getPrecision() * 5);
-        }
-
-        @Override
-        public void argumentTypes(List<AkType> argumentTypes)
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             if (argumentTypes.size() != 2)
                 throw new WrongExpressionArityException(2, argumentTypes.size());
 
-            argumentTypes.set(1, AkType.VARCHAR);
-            AkType dateType = argumentTypes.get(0);
-            if (dateType != AkType.DATE && dateType != AkType.DATETIME
-                    && dateType != AkType.TIME && dateType != AkType.TIMESTAMP)
-                argumentTypes.set(0, AkType.DATE);
+            argumentTypes.setType(1, AkType.VARCHAR);
+            ExpressionType dateType = argumentTypes.get(0);
+            switch(dateType.getType())
+            {
+                case DATE:
+                case TIME:
+                case DATETIME:
+                case TIMESTAMP: break;
+                case VARCHAR:   argumentTypes.setType(0, dateType.getPrecision() > 10 ?
+                                                     AkType.DATETIME: AkType.DATE);
+                default:        argumentTypes.setType(0, AkType.DATE);
+            }            
+
+            return ExpressionTypes.varchar(argumentTypes.get(1).getPrecision() * 5);
         }
     };
     private static final class InnerEvaluation extends AbstractTwoArgExpressionEvaluation

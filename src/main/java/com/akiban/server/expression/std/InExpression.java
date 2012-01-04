@@ -25,6 +25,8 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.sql.StandardException;
+import com.akiban.server.expression.TypesList;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.ArrayList;
@@ -41,15 +43,11 @@ public final class InExpression extends AbstractCompositeExpression {
         }
 
         @Override
-        public void argumentTypes(List<AkType> argumentTypes) {
-            for (int i = 1; i < argumentTypes.size(); i++) {
-                // Everything should have type of LHS.
-                argumentTypes.set(i, argumentTypes.get(0));
-            }
-        }
-
-        @Override
-        public ExpressionType composeType(List<? extends ExpressionType> argumentTypes) {
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
+        {
+            AkType firstArg = argumentTypes.get(0).getType();
+            for (int i = 1; i < argumentTypes.size(); ++i)
+                argumentTypes.setType(i, firstArg);
             return ExpressionTypes.BOOL;
         }
     };

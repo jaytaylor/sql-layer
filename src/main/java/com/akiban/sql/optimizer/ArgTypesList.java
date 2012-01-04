@@ -13,24 +13,29 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.expression.std;
+package com.akiban.sql.optimizer;
 
-import com.akiban.server.error.WrongExpressionArityException;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.TypesList;
 import com.akiban.server.types.AkType;
+import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.FunctionsTypeComputer.ArgumentsAccess;
 
-import java.util.List;
+class ArgTypesList extends TypesList
+{
+    private ArgumentsAccess args;
 
-abstract class UnaryComposer implements ExpressionComposer {
-
-    protected abstract Expression compose(Expression argument);
+     ArgTypesList (ArgumentsAccess args)
+    {
+        super(args.nargs());
+        this.args = args;
+    }
 
     @Override
-    public Expression compose(List<? extends Expression> arguments) {
-        if (arguments.size() != 1)
-            throw new WrongExpressionArityException(1, arguments.size());
-        return compose(arguments.get(0));
+    public void setType(int index, AkType newType) throws StandardException
+    {
+        ExpressionType oldType = get(index);
+        if (oldType.getType() != newType)
+            set(index, args.addCast(index, oldType, newType));
     }
 }
