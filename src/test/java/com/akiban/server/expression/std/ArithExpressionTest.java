@@ -27,6 +27,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.EnumSet;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -36,6 +37,24 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
 {
     protected ArithOp ex =  ArithOps.MINUS;
     private final CompositionTestInfo testInfo = new CompositionTestInfo(2, AkType.DOUBLE, true);
+
+    @Test
+    public void testNegativeMod ()
+    {
+           EnumSet<AkType> numerics = EnumSet.of(AkType.DOUBLE, AkType.LONG, AkType.FLOAT,
+                                                 AkType.INT, AkType.DECIMAL, AkType.U_BIGINT);
+
+           for (AkType left : numerics)
+           {
+               testNegMod(left, left);
+               numerics.remove(left);
+               for (AkType right : numerics)
+               {
+                   testNegMod(left, right);
+                   testNegMod(right, left);
+               }
+           }
+    }
 
     @Test
     public void testLongModDouble ()
@@ -345,4 +364,46 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
     {
         return false;
     }
+
+    private static void testNegMod (AkType leftT, AkType rightT)
+    {
+        int sign = 1;
+
+        for (int count = 0; count < 2; ++count)
+        {
+            int expectedSign = sign;
+            Expression leftExp = getArg(leftT, NUM[0] * sign);
+            Expression rightExp = getArg(rightT, NUM[1] * sign);
+            check(leftExp, rightExp, expectedSign);
+
+            rightExp = getArg(rightT, NUM[1] * (sign *= -1));
+            check(leftExp, rightExp, expectedSign);
+        }
+        
+    }
+
+    private static void check (Expression l, Expression r, int sign)
+    {
+        Expression top = ArithOps.MOD.compose(l, r);
+        double actual = Extractors.getDoubleExtractor().getDouble(top.evaluation().eval());
+
+        assertEquals(EXP * sign, actual, 0.0001);
+    }
+
+    private static Expression getArg (AkType type, double num)
+    {
+        switch (type)
+        {
+            case DOUBLE:    return new LiteralExpression(type, num);
+            case FLOAT:     return new LiteralExpression(type, (float)num);
+            case LONG:
+            case INT:       return new LiteralExpression(type, (long)num);
+            case U_BIGINT:  return new LiteralExpression(type, BigInteger.valueOf((long)num));
+            case DECIMAL:   return new LiteralExpression (type, BigDecimal.valueOf(num));
+            default:        throw new RuntimeException ("unexpected type");
+        }
+    }
+
+    private static final double[] NUM = {3, 5};
+    private static final double EXP = 3;
 }
