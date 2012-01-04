@@ -459,7 +459,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     protected void processBind() throws IOException {
         String portalName = messenger.readString();
         String stmtName = messenger.readString();
-        String[] params = null;
+        Object[] params = null;
         {
             boolean[] paramsBinary = null;
             short nformats = messenger.readShort();
@@ -470,7 +470,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             }
             short nparams = messenger.readShort();
             if (nparams > 0) {
-                params = new String[nparams];
+                params = new Object[nparams];
                 boolean binary = false;
                 for (int i = 0; i < nparams; i++) {
                     if (i < nformats)
@@ -480,7 +480,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                     byte[] param = new byte[len];
                     messenger.readFully(param, 0, len);
                     if (binary) {
-                        throw new IOException("Don't know how to parse binary format.");
+                        params[i] = param;
                     }
                     else {
                         params[i] = new String(param, messenger.getEncoding());
@@ -504,7 +504,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
         PostgresStatement pstmt = preparedStatements.get(stmtName);
         boundPortals.put(portalName, 
-                         pstmt.getBoundStatement(params, 
+                         pstmt.getBoundStatement(params,
                                                  resultsBinary, defaultResultsBinary));
         messenger.beginMessage(PostgresMessages.BIND_COMPLETE_TYPE.code());
         messenger.sendMessage();
