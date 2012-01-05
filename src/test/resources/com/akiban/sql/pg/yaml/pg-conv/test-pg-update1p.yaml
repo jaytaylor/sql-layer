@@ -2,10 +2,10 @@
 - Include: all-update-schema.yaml
 ---
 - Statement: UPDATE customers SET name = ? WHERE name = ?
-- params: ['Smyth','Smith'] 
+- params: [['Smyth','Smith']] 
 ---
 - Statement: select * from customers;
-- output_ordered: [[1,Smyth],[2,Jones]]
+- output_ordered: [[1,'Smyth'],[2,'Jones']]
 ---
 - Statement: select * from orders 
 - output_ordered: [[101,1,'2011-03-01'],[102,1,'2011-03-02'],[201,2,'2011-03-03']]

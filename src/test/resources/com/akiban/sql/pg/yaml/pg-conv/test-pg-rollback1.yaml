@@ -1,6 +1,6 @@
 ---
 - Include: all-update-schema.yaml
---- # not working, I am suspicious of the tool
+#--- # not working, I am suspicious of the tool
 #- Statement: BEGIN; UPDATE items SET quan = 0; ROLLBACK;
 ---
 - Statement: select * from customers;
