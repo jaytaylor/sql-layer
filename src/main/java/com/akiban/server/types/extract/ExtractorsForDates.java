@@ -30,6 +30,9 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.MutableDateTime;
 
 abstract class ExtractorsForDates extends LongExtractor {
 
@@ -102,6 +105,7 @@ abstract class ExtractorsForDates extends LongExtractor {
         protected long doConvert(ValueSource source)
         {
             long ymd[] = {0, 0, 0};
+
             switch (source.getConversionType())
             {
                 case DATETIME:   ymd = DATETIME.getYearMonthDayHourMinuteSecond(source.getDateTime()); break;
@@ -374,10 +378,13 @@ abstract class ExtractorsForDates extends LongExtractor {
         @Override
         protected long doConvert(ValueSource source)
         {
+            long rawLong = 0;
             switch(source.getConversionType())
             {
-                case DATE:      return DATE.stdLongToUnix(source.getDate())/ 1000;
-                case DATETIME:  return DATETIME.stdLongToUnix(source.getDateTime()) / 1000;
+                case DATE:      rawLong = source.getDate();
+                                return rawLong == 0 ? 0 : DATE.stdLongToUnix(rawLong)/ 1000;
+                case DATETIME:  rawLong = source.getDateTime();
+                                return rawLong == 0 ? 0 : DATETIME.stdLongToUnix(rawLong) / 1000;
                 default:        throw unsupportedConversion(source.getConversionType());
             }
         }
@@ -583,69 +590,62 @@ abstract class ExtractorsForDates extends LongExtractor {
     };
 
     private static class Calculator {
-        private static Calendar calendar = Calendar.getInstance(TimeZone.getDefault());
-
+        
         public static long getMillis (int year, int mon, int day, int hr, int min, int sec) {
-            calendar.set(Calendar.YEAR, year);
-            calendar.set(Calendar.MONTH, mon -1); // month in calendar is 0-based
-            calendar.set(Calendar.DAY_OF_MONTH, day );
-            calendar.set(Calendar.HOUR_OF_DAY, hr);
-            calendar.set(Calendar.MINUTE, min);
-            calendar.set(Calendar.SECOND, sec);
-            calendar.set(Calendar.MILLISECOND, 0);
-            
-            return calendar.getTimeInMillis();
+            DateTime date = new DateTime(year, mon, day, hr, min, sec, DateTimeZone.getDefault());
+            return date.getMillis();
         }
 
         public static long getYear (long millis)  {
-            calendar.setTimeInMillis(millis);
-            return calendar.get(Calendar.YEAR);
+            DateTime date = new DateTime(millis, DateTimeZone.getDefault());
+            return date.getYear();
         }
 
         public static int getMonth (long millis) {
-            calendar.setTimeInMillis(millis);
-            return calendar.get(Calendar.MONTH) + 1; // month in Calendar is 0-based
+            DateTime date = new DateTime(millis, DateTimeZone.getDefault());
+            return date.getMonthOfYear();
         }
 
         public static int getDay (long millis) {
-            calendar.setTimeInMillis(millis);
-            return calendar.get(Calendar.DAY_OF_MONTH);
+            DateTime date = new DateTime(millis, DateTimeZone.getDefault());
+            return date.getDayOfMonth();
         }
 
         public static int getHour (long millis) {
-            calendar.setTimeInMillis(millis);
-            return calendar.get(Calendar.HOUR_OF_DAY);
+            DateTime date = new DateTime(millis, DateTimeZone.getDefault());
+            return date.getHourOfDay();
         }
 
         public static int getMinute (long millis) {
-            calendar.setTimeInMillis(millis);
-            return calendar.get(Calendar.MINUTE);
+            MutableDateTime date = new MutableDateTime(DateTimeZone.getDefault());
+            date.setMillis(millis);
+            return date.getMinuteOfHour();
         }
 
         public static int getSec (long millis) {
-            calendar.setTimeInMillis(millis);
-            return calendar.get(Calendar.SECOND);
+            DateTime date = new DateTime(millis, DateTimeZone.getDefault());
+            return date.getSecondOfMinute();
         }
 
         public static long[] getYearMonthDay (long millis) {
-            calendar.setTimeInMillis(millis);
-            return new long[] {calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) +1, calendar.get(Calendar.DAY_OF_MONTH)};
+            DateTime date = new DateTime(millis, DateTimeZone.getDefault());
+            return new long[] {date.getYear(), date.getMonthOfYear(), date.getDayOfMonth()};
         }
 
         public static int[] getHrMinSec (long millis) {
-            calendar.setTimeInMillis(millis);
-            return new int[] {calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND)};
+            DateTime date = new DateTime(millis, DateTimeZone.getDefault());
+            return new int[] {date.getHourOfDay(), date.getMinuteOfHour(), date.getSecondOfMinute()};
         }
-        public static long[] getYMDHMS (long millis) {
-            calendar.setTimeInMillis(millis);
-            return new long[] {calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH) +1, calendar.get(Calendar.DAY_OF_MONTH),
-                calendar.get(Calendar.HOUR_OF_DAY), calendar.get(Calendar.MINUTE), calendar.get(Calendar.SECOND)};
-        }
+        public static long[] getYMDHMS(long millis)
+        {
+            DateTime date = new DateTime(millis, DateTimeZone.getDefault());
 
-        public static void setTimeZone (String timezone) {
-            calendar.setTimeZone(TimeZone.getTimeZone(timezone));
+            return new long[]
+                    {
+                        date.getYear(), date.getMonthOfYear(), date.getDayOfMonth(),
+                        date.getHourOfDay(), date.getMinuteOfHour(), date.getSecondOfMinute()
+                    };
         }
-
     }
 
     private static final EnumSet<AkType> DATETIMES = EnumSet.of(AkType.DATE, AkType.DATETIME, AkType.TIME, AkType.TIMESTAMP, AkType.YEAR);
@@ -677,7 +677,7 @@ abstract class ExtractorsForDates extends LongExtractor {
 
     static void setGlobalTimezone(String timezone) {
         dateFormatProvider.set(new DateFormatProvider(timezone));
-        Calculator.setTimeZone(timezone);
+        DateTimeZone.setDefault(DateTimeZone.forID(timezone));
     }
 
     private static DateFormat timestampFormat() {
