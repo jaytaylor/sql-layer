@@ -240,18 +240,25 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
     @Test
     public void testAddMul12Months ()
     {
-        testAddMonth("2000-10-12", 12L, "2001-10-12");
-        testAddMonth("2000-11-12", 12L, "2001-11-12");
-        testAddMonth("2000-12-12", 12L, "2001-12-12");
-        testAddMonth("2000-12-12", 24L, "2002-12-12");
+        int year = 2000, month = 1, day = 12;
+        int d = 12;
+
+        // test adding a multiple of 12 months
+        // starting with "2000-01-12" to "2000-12-12"
+        for (; month <= 12; ++month)
+            for (int n = 0; n <= 4; ++n)
+                testAddMonth(year + "-" + month + "-" + day,
+                        d * n, (year + n) + "-" + String.format("%02d", month) + "-" + day);
     }
 
     @Test
-    public void testAdd13Months ()
-    {
+    public void testAddMul13Months ()
+    {   
+        testAddMonth("2004-02-29", 0L, "2004-02-29");
         testAddMonth("2004-01-30", 13L, "2005-02-28");
-        testAddMonth("2002-02-28", 13L, "2003-03-28");
-        testAddMonth("2001-01-30", 11L, "2001-12-30");
+        testAddMonth("2002-03-31", 26L, "2004-05-31");
+        testAddMonth("2001-04-30", 39L, "2004-07-30");
+        testAddMonth("2003-05-31", 52L, "2007-09-30");
     }
 
     private static void testAddMonth (String date, long month, String expectedDate)
@@ -262,7 +269,7 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
         Expression top = new ArithExpression(left, ArithOps.ADD, right);
         String actual = Extractors.getLongExtractor(AkType.DATE).asString(top.evaluation().eval().getDate());
 
-        assertEquals(date + " + " + month + "MONTHS :",expectedDate, actual);
+        assertEquals(date + " + " + month + " MONTHS :",expectedDate, actual);
     }
     
     @Test
