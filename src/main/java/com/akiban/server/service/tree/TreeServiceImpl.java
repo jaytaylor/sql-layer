@@ -465,7 +465,7 @@ public class TreeServiceImpl
      * @param tree
      * @return
      */
-    private List<Exchange> exchangeList(final Session session, final Tree tree) {
+    List<Exchange> exchangeList(final Session session, final Tree tree) {
         Map<Tree, List<Exchange>> map = session.get(EXCHANGE_MAP);
         List<Exchange> list;
         if (map == null) {
