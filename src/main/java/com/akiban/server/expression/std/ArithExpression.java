@@ -354,7 +354,8 @@ public class ArithExpression extends AbstractBinaryExpression
                 if (ymd_hms[1] > 12)
                 {
                     long tempMonth = ymd_hms[1] % 12;
-                    ymd_hms[0] += (ymd_hms[1] - (tempMonth = (tempMonth == 0 ? 12 : tempMonth))) /12;
+                    tempMonth = tempMonth == 0 ? 12 : tempMonth;
+                    ymd_hms[0] += (ymd_hms[1] - tempMonth) /12;
                     ymd_hms[1] = tempMonth;
                 }
             }
