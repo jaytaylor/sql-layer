@@ -12,4 +12,6 @@
 ---
 - Statement: select * from items 
 - output_ordered: [[1011,101,1234,100],[1012,101,4567,50],[2011,201,9876,1]]
+---
+- Statement: SET SESSION CHARACTERISTICS AS TRANSACTION READ WRITE; 
 ...

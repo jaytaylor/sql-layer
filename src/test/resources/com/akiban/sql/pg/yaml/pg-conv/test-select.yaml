@@ -48,7 +48,7 @@
 - row_count: 0
 ---
 - Statement: SELECT MIN(order_date), MAX(order_date), COUNT(*) FROM orders WHERE oid=999 
-- output: [['null','null','0']]
+- output: [[null,null,'0']]
 ---
 - Statement: select name from customers WHERE 1 ORDER BY name 
 - output: [['Jones'],['Smith']]
@@ -69,7 +69,7 @@
 - output_ordered: [['Smith','2011-03-01','1234','100'],['Jones','2011-02-28','1234','99'],['Smith','2011-03-01','4567','50']]
 ---
 - Statement: SELECT name FROM customers WHERE cid IN (1000, 999, ?) 
-- params: [['1']]
+- params: [[1]]
 - output: [['Smith']]
 ---
 - Statement: SELECT customers.name, (SELECT MAX(order_date) FROM orders WHERE customers.cid = orders.cid) AS max_date FROM customers 
@@ -80,22 +80,22 @@
 ---
 - Statement: SELECT * FROM customers WHERE name IN (SELECT c2.name FROM customers c2, orders WHERE c2.cid = orders.cid AND order_date > '2011-01-01') 
 - output: [['1','Smith'],['2','Jones']]
----
-- Statement: SELECT customers.name,order_date,sku,quan FROM items INNER JOIN orders ON orders.oid = items.oid LEFT OUTER JOIN customers ON customers.cid = orders.cid WHERE order_date < '2011-03-01' 
-- output_ordered: [['null','2010-01-01','9999','888'],['Jones','2011-02-28','1234','99']]
----
-- Statement: SELECT customers.name,order_date,sku,quan FROM items INNER JOIN orders ON orders.oid = items.oid LEFT OUTER JOIN customers ON customers.cid = orders.cid WHERE order_date < '2011-03-01' ORDER BY order_date, name 
-- output: [['null','2010-01-01','9999','888'],['Jones','2011-02-28','1234','99']]
+#---
+#- Statement: SELECT customers.name,order_date,sku,quan FROM items INNER JOIN orders ON orders.oid = items.oid LEFT OUTER JOIN customers ON customers.cid = orders.cid WHERE order_date < '2011-03-01' 
+#- output_ordered: [[null,'2010-01-01','9999','888'],['Jones','2011-02-28','1234','99']]
+#---
+#- Statement: SELECT customers.name,order_date,sku,quan FROM items INNER JOIN orders ON orders.oid = items.oid LEFT OUTER JOIN customers ON customers.cid = orders.cid WHERE order_date < '2011-03-01' ORDER BY order_date, name 
+# output: [[null,'2010-01-01','9999','888'],['Jones','2011-02-28','1234','99']]
 ---
 - Statement: SELECT CURRENT_USER AS "schema", SESSION_USER AS "user" FROM items WHERE iid = ? 
-- params: [['2011']]
+- params: [[2011]]
 - output: [['user','auser']]
 ---
 - Statement: SELECT name, order_date FROM customers RIGHT JOIN orders USING (cid) WHERE (order_date != '2011-03-02' AND order_date != '2011-02-28') 
-- output_ordered: [['null','2010-01-01'],['Smith','2011-03-01'],['Jones','2011-03-03']]
+- output_ordered: [[null,'2010-01-01'],['Smith','2011-03-01'],['Jones','2011-03-03']]
 ---
 - Statement: SELECT name, order_date FROM customers RIGHT JOIN orders USING (cid) WHERE (order_date != '2011-03-02' AND order_date != '2011-02-28') OR order_date IS NULL 
-- output_ordered: [['null','2010-01-01'],['Smith','2011-03-01'],['Jones','2011-03-03']]
+- output_ordered: [[null,'2010-01-01'],['Smith','2011-03-01'],['Jones','2011-03-03']]
 ---
 - Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku = '1234' 
 - output: [['Smith','2011-03-01','1234','100'],['Jones','2011-02-28','1234','99']]
@@ -136,13 +136,13 @@
 - output_ordered: [['Jones','1','foo'],['Smith','1','foo']]
 ---
 - Statement: SELECT customers.name,order_date,sku,quan FROM customers INNER JOIN orders ON customers.cid = orders.cid LEFT OUTER JOIN items ON orders.oid = items.oid WHERE order_date > '2011-01-01'  
-- output_ordered: [['Jones','2011-02-28','1234','99'],['Smith','2011-03-01','1234','100'],['Smith','2011-03-01','4567','50'],['Smith','2011-03-02','null','null'],['Jones','2011-03-03','9876','1']]
+- output_ordered: [['Jones','2011-02-28','1234','99'],['Smith','2011-03-01','1234','100'],['Smith','2011-03-01','4567','50'],['Smith','2011-03-02',null,null],['Jones','2011-03-03','9876','1']]
 ---
 - Statement: SELECT customers.name,sku FROM customers LEFT JOIN orders ON customers.cid = orders.cid LEFT JOIN items ON orders.oid = items.oid WHERE name > 'M' 
-- output_ordered: [['Smith','null'],['Smith','1234'],['Smith','4567']]
+- output_ordered: [['Smith',null],['Smith','1234'],['Smith','4567']]
 --- # timestamp formats funny with JDBC driver
 - Statement: SELECT * FROM types 
-- output: [['1','100','-1000000.0','1.23','1000.0','3456.0','3.14','2.72','foo','2011-04-01','13:15:01','2011-01-04 15:59:59.0','2011-01-04 15:01:02.0','1969','long text']]
+- output: [['1','100','-1000000.0','1.23','1000.0','3456.0','3.14','2.72','foo','2011-04-01','13:15:01','2011-01-04 15:59:59','2011-01-04 15:01:02','1969','long text']]
 ---
 - Statement: SELECT a_int FROM types WHERE a_date = '2011-04-01' 
 - output: [['1']]
