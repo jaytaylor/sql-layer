@@ -18,6 +18,7 @@ package com.akiban.server.encoding;
 import java.nio.ByteBuffer;
 
 import com.akiban.server.rowdata.FieldDef;
+import com.akiban.util.ByteSource;
 
 public final class VarBinaryEncoder extends VariableWidthEncoding {
 
@@ -36,6 +37,10 @@ public final class VarBinaryEncoder extends VariableWidthEncoding {
         }
         else if(value instanceof ByteBuffer) {
             buffer = (ByteBuffer)value;
+        }
+        else if(value instanceof ByteSource) {
+            ByteSource bs = (ByteSource)value;
+            buffer = ByteBuffer.wrap(bs.byteArray(), bs.byteArrayOffset(), bs.byteArrayLength());
         }
         else {
             throw new IllegalArgumentException("Requires byte[] or ByteBuffer");

@@ -24,19 +24,15 @@ import com.akiban.sql.types.TypeId;
 import com.akiban.server.expression.EnvironmentExpressionFactory;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.TypesList;
 import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.service.functions.FunctionsRegistry;
-
 import com.akiban.server.types.AkType;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoSuchFunctionException;
 
 import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 /** Calculate types from expression composers. */
 public class FunctionsTypeComputer extends AISTypeComputer
@@ -102,25 +98,16 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return null;        // Defer error until later.
         }
         int nargs = args.nargs();
-        List<ExpressionType> argTypes = new ArrayList<ExpressionType>(nargs);
-        List<AkType> origTypes = new ArrayList<AkType>(nargs);
-        for (int i = 0; i < nargs; i++) {
+        TypesList argTypes = new ArgTypesList(args);
+        for (int i = 0; i < nargs; i++)
+        {
             ExpressionType argType = args.argType(i);
             if (argType == null)
                 return null;
             argTypes.add(argType);
-            origTypes.add(argType.getType());
-        }
-        List<AkType> requiredTypes = new ArrayList<AkType>(origTypes);
-        composer.argumentTypes(requiredTypes);
-        for (int i = 0; i < nargs; i++) {
-            if ((origTypes.get(i) == requiredTypes.get(i)) ||
-                (origTypes.get(i) == AkType.NULL))
-                continue;
-            // Need a different type: add a CAST.
-            argTypes.set(i, args.addCast(i, argTypes.get(i), requiredTypes.get(i)));
         }
         ExpressionType resultType = composer.composeType(argTypes);
+
         if (resultType == null)
             return null;
         return fromExpressionType(resultType);

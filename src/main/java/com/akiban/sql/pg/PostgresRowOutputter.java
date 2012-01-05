@@ -16,18 +16,16 @@
 package com.akiban.sql.pg;
 
 import com.akiban.qp.row.Row;
-import com.akiban.server.types.ToObjectValueTarget;
+import com.akiban.server.types.ValueSource;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public class PostgresRowOutputter extends PostgresOutputter<Row>
 {
-    private ToObjectValueTarget target;
-
     public PostgresRowOutputter(PostgresMessenger messenger, 
                                 PostgresBaseStatement statement) {
         super(messenger, statement);
-        target = new ToObjectValueTarget();
     }
 
     @Override
@@ -35,17 +33,16 @@ public class PostgresRowOutputter extends PostgresOutputter<Row>
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(ncols);
         for (int i = 0; i < ncols; i++) {
-            Object field = target.convertFromSource(row.eval(i));
+            ValueSource field = row.eval(i);
             PostgresType type = columnTypes.get(i);
-            byte[] value = type.encodeValue(field,
-                                            messenger.getEncoding(),
-                                            statement.isColumnBinary(i));
-            if (value == null) {
+            boolean binary = statement.isColumnBinary(i);
+            ByteArrayOutputStream bytes = encoder.encodeValue(field, type, binary);
+            if (bytes == null) {
                 messenger.writeInt(-1);
             }
             else {
-                messenger.writeInt(value.length);
-                messenger.write(value);
+                messenger.writeInt(bytes.size());
+                messenger.writeByteStream(bytes);
             }
         }
         messenger.sendMessage();

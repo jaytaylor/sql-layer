@@ -15,18 +15,9 @@
 
 package com.akiban.sql.pg;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-
 import com.akiban.util.Tap;
 
+import java.io.*;
 
 /**
  * Basic implementation of Postgres wire protocol for SQL integration.
@@ -58,7 +49,7 @@ public class PostgresMessenger implements DataInput, DataOutput
     private DataInputStream messageInput;
     private ByteArrayOutputStream byteOutput;
     private DataOutputStream messageOutput;
-    private String encoding = "ISO-8859-1";
+    private String encoding = "UTF-8";
     private boolean cancel = false;
 
     public PostgresMessenger(InputStream inputStream, OutputStream outputStream) {
@@ -199,6 +190,11 @@ public class PostgresMessenger implements DataInput, DataOutput
         byte[] ba = s.getBytes(encoding);
         messageOutput.write(ba);
         messageOutput.write(0);
+    }
+
+    /** Write the raw contents of the given byte stream's buffer. */
+    public void writeByteStream(ByteArrayOutputStream s) throws IOException {
+        s.writeTo(messageOutput);
     }
 
     /*** DataInput ***/

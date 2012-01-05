@@ -16,7 +16,6 @@
 package com.akiban.sql.pg;
 
 import com.akiban.qp.row.Row;
-import com.akiban.server.types.ToObjectValueTarget;
 
 import java.util.List;
 import java.io.IOException;
@@ -35,17 +34,16 @@ public class PostgresDirectObjectCopier extends PostgresOutputter<List<?>>
     @Override
     public void output(List<?> row) throws IOException {
         messenger.beginMessage(PostgresMessages.COPY_DATA_TYPE.code());
+        encoder.reset();
         for (int i = 0; i < ncols; i++) {
-            if (i > 0) messenger.write('|');
+            if (i > 0) encoder.appendString("|");
             Object field = row.get(i);
             PostgresType type = columnTypes.get(i);
-            byte[] value = type.encodeValue(field,
-                                            messenger.getEncoding(),
-                                            statement.isColumnBinary(i));
-            if (value != null)
-                messenger.write(value);
+            if (field != null)
+                encoder.appendObject(field, type, false);
         }
-        messenger.write('\n');
+        encoder.appendString("\n");
+        messenger.writeByteStream(encoder.getByteStream());
         messenger.sendMessage();
     }
 
@@ -54,7 +52,8 @@ public class PostgresDirectObjectCopier extends PostgresOutputter<List<?>>
         messenger.write(0);
         messenger.writeShort(ncols);
         for (int i = 0; i < ncols; i++) {
-            messenger.writeShort(statement.isColumnBinary(i) ? 1 : 0);
+            assert !statement.isColumnBinary(i);
+            messenger.writeShort(0);
         }
         messenger.sendMessage();
     }
