@@ -18,7 +18,6 @@ package com.akiban.sql.test;
 import org.joda.time.DateTime;
 import static org.joda.time.DateTimeZone.UTC;
 import org.joda.time.Duration;
-import org.joda.time.Interval;
 import org.joda.time.Period;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -27,19 +26,19 @@ import org.joda.time.format.PeriodFormatterBuilder;
 
 import org.junit.Test;
 
-import java.io.IOException;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.io.Writer;
 import java.util.Formatter;
 
 /*
- * Create a YAML test file for testing time intervals.  Includes tests for
- * year/month and day/hour/minute/second intervals and
- * date, time, datetime, and timestamp data types.
+ * Create the contents of a YAML test file for testing time intervals.
+ * Includes tests for year/month and day/hour/minute/second intervals and date,
+ * time, datetime, and timestamp data types.
+ *
+ * <p>Specify this class explicitly as a unit test class to generate the file.
  */
 public class IntervalMatrixCreator {
-
-    static final DateTime timeZero = new DateTime("T00:00:00", UTC);
 
     private static final String[] times = {
         "00:00:00",
@@ -55,9 +54,6 @@ public class IntervalMatrixCreator {
         "23:59:59",
         "17:07:23"
     };
-
-    private static final DateTimeFormatter timeFormatter =
-        DateTimeFormat.forPattern("HH:mm:ss");
 
     private static final String[] timeIntervals = {
         "00:00:01",
@@ -75,6 +71,29 @@ public class IntervalMatrixCreator {
         "14:22:41"
     };
 
+    static final String timeZeroString = "00:00:00";
+
+    static final DateTime timeZero = new DateTime("T" + timeZeroString, UTC);
+
+    static final String dateZeroString = "2000-01-01";
+
+    private static final DateTime dateZero = new DateTime(dateZeroString, UTC);
+
+    private static final String[] days = { "01", "31", "17" };
+
+    private static final String[] months = { "01", "11", "06" };
+
+    private static final String[] years = { "2000", "1999", "1961" };
+
+    private static final String[] dayIntervals = { "1", "31", "17", "42" };
+
+    private static final String[] monthIntervals = { "1", "5", "11" };
+
+    private static final String[] yearIntervals = { "1", "33", "127" };
+
+    private static final DateTimeFormatter timeFormatter =
+        DateTimeFormat.forPattern("HH:mm:ss");
+
     private static final PeriodFormatter timeIntervalFormatter =
         new PeriodFormatterBuilder()
         .appendHours()
@@ -84,31 +103,22 @@ public class IntervalMatrixCreator {
         .appendSeconds()
         .toFormatter();
 
-    private static final DateTime dateZero = new DateTime("2000-01-01", UTC);
-
-    private static final String[] days = { "01", "31", "17" };
-
-    private static final String[] months = { "01", "11", "06" };
-
-    private static final String[] years = { "2000", "1999", "1961" };
-
     private static final DateTimeFormatter dateFormatter =
         DateTimeFormat.forPattern("YYYY-MM-dd");
 
     private static final DateTimeFormatter dateTimeFormatter =
         DateTimeFormat.forPattern("YYYY-MM-dd HH:mm:ss");
 
-    private static final String[] dayIntervals = { "1", "31", "17", "42" };
-
-    private static final String[] monthIntervals = { "1", "5", "11" };
-
-    private static final String[] yearIntervals = { "1", "33", "127" };
-
+    /** Generate the YAML file. */
     @Test
     public void create() throws IOException {
         main(new String[] { "foo.yaml" });
     }
 
+    /**
+     * Generate the YAML output, printing it in the file named by the first
+     * argument or printing it to standard output if no argument is supplied.
+     */
     public static void main(String[] args) throws IOException {
         StringBuilder sb = new StringBuilder();
         createTimeTable(sb);
@@ -141,7 +151,9 @@ public class IntervalMatrixCreator {
                    " t4 time)\n");
     }
 
-    /* ind, t1 (time), t2 (interval), t3 (t1 + t2), t4 (t1 - t2) */
+    /**
+     * Insert time values and add interval tests.
+     */
     private static void insertTimes(StringBuilder out) throws IOException {
         int index = 1;
         for (String timeString : times) {
@@ -149,7 +161,11 @@ public class IntervalMatrixCreator {
             for (String intervalString : timeIntervals) {
                 Period period =
                     timeIntervalFormatter.parsePeriod(intervalString);
-                /* Insert */
+                /*
+                 * Insert row values: ind (index), t1 (time), t2 (time to
+                 * subtract timeZero from, for interval), t3 (t1 + (t2 -
+                 * timeZero)), t4 (t1 - (t2 - timeZero))
+                 */
                 out.append("---\n");
                 out.append("- Statement: INSERT INTO times\n");
                 out.append("    VALUES (");
@@ -234,14 +250,16 @@ public class IntervalMatrixCreator {
 
     private static void selectTimes(StringBuilder out) {
         out.append("---\n");
-        out.append("- Statement: SELECT ind, t1 + (t2 - TIME('00:00:00'))" +
-                   " FROM times\n");
-        out.append("    WHERE t1 + (t2 - TIME('00:00:00')) <> t3\n");
+        out.append("- Statement: SELECT ind, t1 + (t2 - TIME('" +
+                   timeZeroString + "')) FROM times\n");
+        out.append("    WHERE t1 + (t2 - TIME('" + timeZeroString +
+                   "')) <> t3\n");
         out.append("- row_count: 0\n");
         out.append("---\n");
-        out.append("- Statement: SELECT ind, t1 - (t2 - TIME('00:00:00'))" +
-                   " FROM times\n");
-        out.append("    WHERE t1 - (t2 - TIME('00:00:00')) <> t4\n");
+        out.append("- Statement: SELECT ind, t1 - (t2 - TIME('" +
+                   timeZeroString + "')) FROM times\n");
+        out.append("    WHERE t1 - (t2 - TIME('" + timeZeroString +
+                   "')) <> t4\n");
         out.append("- row_count: 0\n");
     }
 
@@ -305,7 +323,11 @@ public class IntervalMatrixCreator {
             throws IOException
     {
         Duration duration = period.toDurationFrom(dateZero);
-        /* Insert */
+        /*
+         * Insert row values: ind (index), d1 (date), d2 (date to subtract
+         * dateZero from, for interval), d3 (d1 + (d2 - dateZero)), d4 (d1 -
+         * (d2 - dateZero))
+         */
         out.append("---\n");
         out.append("- Statement: INSERT INTO dates\n");
         out.append("    VALUES (");
@@ -358,14 +380,16 @@ public class IntervalMatrixCreator {
 
     private static void selectDates(StringBuilder out) {
         out.append("---\n");
-        out.append("- Statement: SELECT ind, d1 + (d2 - DATE('2000-01-01'))" +
-                   " FROM dates\n");
-        out.append("    WHERE d1 + (d2 - DATE('2000-01-01')) <> d3\n");
+        out.append("- Statement: SELECT ind, d1 + (d2 - DATE('" +
+                   dateZeroString + "')) FROM dates\n");
+        out.append("    WHERE d1 + (d2 - DATE('" + dateZeroString +
+                   "')) <> d3\n");
         out.append("- row_count: 0\n");
         out.append("---\n");
-        out.append("- Statement: SELECT ind, d1 - (d2 - DATE('2000-01-01'))" +
-                   " FROM dates\n");
-        out.append("    WHERE d1 - (d2 - DATE('2000-01-01')) <> d4\n");
+        out.append("- Statement: SELECT ind, d1 - (d2 - DATE('" +
+                   dateZeroString + "')) FROM dates\n");
+        out.append("    WHERE d1 - (d2 - DATE('" + dateZeroString +
+                   "')) <> d4\n");
         out.append("- row_count: 0\n");
     }
 
@@ -456,7 +480,11 @@ public class IntervalMatrixCreator {
                                           Period period, int index)
             throws IOException
     {
-        /* Insert */
+        /*
+         * Insert row values: ind (index), dt1 (datetime), dt2 (datetime to
+         * subtract dateZero from, for interval), dt3 (dt1 + (dt2 - dateZero)),
+         * dt4 (dt1 - (dt2 - dateZero))
+         */
         out.append("---\n");
         out.append("- Statement: INSERT INTO datetimes\n");
         out.append("    VALUES (");
@@ -479,7 +507,11 @@ public class IntervalMatrixCreator {
         dateTimeFormatter.printTo(out, date.plus(period));
         out.append("([.]0)?']]\n");
         index++;
-        /* Test timestamp interval */
+        /*
+         * TODO: Need to test timestamp intervals once we clear up the issue of
+         * controlling the timezone for timestamps from tests.
+         * -tblackman@akiban.com (01/05/2012)
+         */
     }
 
     private static void insertDateTimeInterval(StringBuilder out, Period period)
@@ -497,16 +529,16 @@ public class IntervalMatrixCreator {
 
     private static void selectDateTimes(StringBuilder out) {
         out.append("---\n");
-        out.append(
-            "- Statement: SELECT ind, dt1 + (dt2 - DATETIME('2000-01-01'))" +
-            " FROM datetimes\n");
-        out.append("    WHERE dt1 + (dt2 - DATETIME('2000-01-01')) <> dt3\n");
+        out.append("- Statement: SELECT ind, dt1 + (dt2 - DATETIME('" +
+                   dateZeroString + "')) FROM datetimes\n");
+        out.append("    WHERE dt1 + (dt2 - DATETIME('" + dateZeroString +
+                   "')) <> dt3\n");
         out.append("- row_count: 0\n");
         out.append("---\n");
-        out.append(
-            "- Statement: SELECT ind, dt1 - (dt2 - DATETIME('2000-01-01'))" +
-            " FROM datetimes\n");
-        out.append("    WHERE dt1 - (dt2 - DATETIME('2000-01-01')) <> dt4\n");
+        out.append("- Statement: SELECT ind, dt1 - (dt2 - DATETIME('" +
+                   dateZeroString + "')) FROM datetimes\n");
+        out.append("    WHERE dt1 - (dt2 - DATETIME('" + dateZeroString +
+                   "')) <> dt4\n");
         out.append("- row_count: 0\n");
     }
 }
