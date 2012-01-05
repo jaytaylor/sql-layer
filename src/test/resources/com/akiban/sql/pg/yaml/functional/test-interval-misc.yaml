@@ -1,0 +1,55 @@
+# Test time intervals -- miscellaneous
+---
+- CreateTable: t (ind int, time_field time, date_field date,
+    datetime_field datetime)
+
+---
+- Statement: INSERT INTO t VALUES
+    (1, '00:00:00', '2000-01-01', '2000-01-01 00:00:00'),
+    (2, '00:00:01', '2000-01-02', '2000-01-01 00:00:01')
+
+# Bad syntax
+---
+- Statement: SELECT INTERVAL FROM t
+- error: [42000]
+---
+- Statement: SELECT INTERVAL '1-2' MINUTE TO t
+- error: [42000]
+# Triggers assertion in server -- bug 912343
+# ---
+# - Statement: SELECT INTERVAL '1-2 3' MONTH TO HOUR
+# - error: [42000]
+---
+- Statement: SELECT INTERVAL 'abc' SECOND FROM t
+- error: [22006]
+---
+- Statement: SELECT INTERVAL '1' MINUTE TO SECOND FROM t
+- error: [22006]
+
+# Null value
+---
+- Statement: SELECT time_field + INTERVAL null MINUTE FROM t
+- output: [[null], [null]]
+
+# DAY TO HOUR
+---
+- Statement: SELECT datetime_field + INTERVAL '3 7' DAY TO HOUR FROM t
+    WHERE ind=1
+- output: [[!re '2000-01-04 07:00:00([.]0)?']]
+
+# Use in WHERE clause
+---
+- Statement: SELECT time_field FROM t
+    WHERE time_field + INTERVAL '2' SECOND = TIME('00:00:02')
+- output: [['00:00:00']]
+---
+- Statement: SELECT date_field FROM t
+    WHERE date_field + INTERVAL '4' MONTH = DATE('2000-05-02')
+- output: [['2000-01-02']]
+---
+- Statement: SELECT datetime_field FROM t
+    WHERE datetime_field + INTERVAL '12-8' YEAR TO MONTH =
+    DATETIME('2012-09-01 00:00:00')
+- output: [[!re '2000-01-01 00:00:00([.]0)?']]
+
+...

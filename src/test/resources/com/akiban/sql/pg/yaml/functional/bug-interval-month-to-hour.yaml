@@ -1,0 +1,9 @@
+# Invalid MONTH TO HOUR interval triggers assertion (bug 912343)
+---
+- CreateTable: t (dummy int)
+---
+- Statement: INSERT INTO t VALUES (null)
+---
+- Statement: SELECT INTERVAL '1-2 3' MONTH TO HOUR
+- error: [42000]
+...

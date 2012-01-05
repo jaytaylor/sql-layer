@@ -1,0 +1,8 @@
+# Failing adding month interval (bug 912261)
+---
+- CreateTable: t (dummy int)
+---
+- Statement: INSERT INTO t VALUES (NULL)
+---
+- Statement: SELECT DATE('2000-01-01') + INTERVAL '11' MONTH FROM t
+...
