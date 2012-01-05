@@ -372,7 +372,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     private static final Tap.InOutTap UPDATE_MAINTENANCE = Tap.createTimer("write: update_maintenance");
     private static final Tap.InOutTap DELETE_MAINTENANCE = Tap.createTimer("write: delete_maintenance");
     private static final Tap.PointTap SKIP_MAINTENANCE = Tap.createCount("write: skip_maintenance");
-    private static final Tap.InOutTap COMMIT = Tap.createTimer("write: OperatorStore commit");
 
 
     // nested classes
