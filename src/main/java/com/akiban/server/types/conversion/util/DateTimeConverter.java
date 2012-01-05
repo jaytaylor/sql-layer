@@ -20,6 +20,7 @@ import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
+import org.joda.time.DateTimeZone;
 import org.joda.time.MutableDateTime;
 
 class DateTimeConverter implements AbstractConverter<MutableDateTime>
@@ -53,7 +54,7 @@ class DateTimeConverter implements AbstractConverter<MutableDateTime>
         }
         
         return new MutableDateTime((int)ymd_hms[0], (int)ymd_hms[1], (int)ymd_hms[2],
-                (int)ymd_hms[3], (int)ymd_hms[4], (int)ymd_hms[5], 0);
+                (int)ymd_hms[3], (int)ymd_hms[4], (int)ymd_hms[5], 0, DateTimeZone.getDefault());
     }
 
     private static void checkArgs (long [] ymd_hms)

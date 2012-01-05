@@ -29,6 +29,7 @@ import com.akiban.server.types.util.ValueHolder;
 import com.akiban.sql.StandardException;
 import java.util.List;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.MutableDateTime;
 
 public class FromUnixExpression extends AbstractCompositeExpression
@@ -86,13 +87,15 @@ public class FromUnixExpression extends AbstractCompositeExpression
 
             switch(children().size())
             {
-                case 1:     return new ValueHolder(AkType.DATETIME, new DateTime(unix));
+                case 1:     return new ValueHolder(AkType.DATETIME, new DateTime(unix, DateTimeZone.getDefault()));
 
                 default:    ValueSource str = children().get(1).eval();
                             if (str.isNull())
                                 return NullValueSource.only();
                             else
-                                return new ValueHolder(AkType.VARCHAR, DateTimeField.getFormatted(new MutableDateTime(unix), str.getString()));
+                                return new ValueHolder(AkType.VARCHAR, DateTimeField.getFormatted(
+                                        new MutableDateTime(unix, DateTimeZone.getDefault()),
+                                        str.getString()));
             }
 
         }
