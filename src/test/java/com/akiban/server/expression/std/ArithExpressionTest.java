@@ -27,6 +27,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.EnumSet;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -36,6 +37,38 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
 {
     protected ArithOp ex =  ArithOps.MINUS;
     private final CompositionTestInfo testInfo = new CompositionTestInfo(2, AkType.DOUBLE, true);
+
+    @Test
+    public void testLongModDouble ()
+    {
+        Expression left = new LiteralExpression(AkType.LONG, 2L);
+        Expression right = new LiteralExpression(AkType.DOUBLE, 3.4);
+        Expression top = ArithOps.MOD.compose(left, right);
+
+        assertEquals("Top should be DOUBLE ", AkType.DOUBLE, top.valueType());
+        assertEquals(2.0, top.evaluation().eval().getDouble(), 0.0001);
+    }
+
+    @Test public void testLongModLong ()
+    {
+        Expression left = new LiteralExpression(AkType.LONG, 2L);
+        Expression right = new LiteralExpression(AkType.DOUBLE, 3.4);
+        Expression top = ArithOps.MOD.compose(left, right);
+
+        assertEquals("Top should be DOUBLE ", AkType.DOUBLE, top.valueType());
+        assertEquals(2.0, top.evaluation().eval().getDouble(), 0.0001);
+    }
+
+    @Test (expected=DivisionByZeroException.class)
+    public void modWithZero ()
+    {
+        Expression left = new LiteralExpression(AkType.LONG, 1L);
+        Expression right = new LiteralExpression(AkType.FLOAT, 0f);
+        Expression top = new ArithExpression(left, ArithOps.MOD, right);
+
+        assertEquals("Top should be FLOAT ", AkType.FLOAT, top.valueType());
+        top.evaluation().eval().getFloat();
+    }
 
     @Test
     public void testFloatTimesInterval ()
