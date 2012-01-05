@@ -32,6 +32,8 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.joda.time.DateTimeZone;
+import org.joda.time.MutableDateTime;
 
 public class StrToDateExpression extends AbstractBinaryExpression
 {
@@ -198,12 +200,13 @@ public class StrToDateExpression extends AbstractBinaryExpression
                   Long dayOfYear = valuesMap.get(DateTimeField.j);
                   if (dayOfYear != null && dayOfYear.intValue() >= 0)
                   {
-                      Calendar cal = Calendar.getInstance();
-                      cal.set(Calendar.YEAR, y.intValue());
-                      cal.set(Calendar.DAY_OF_YEAR, dayOfYear.intValue());
-                      y = (long)cal.get(Calendar.YEAR);
-                      m = (long)cal.get(Calendar.MONTH) +1;
-                      d = (long)cal.get(Calendar.DAY_OF_MONTH);
+                      MutableDateTime date = new MutableDateTime(DateTimeZone.getDefault());
+                      date.setYear(y.intValue());
+                      date.setDayOfYear(dayOfYear.intValue());
+
+                      y = (long)date.getYear();
+                      m = (long)date.getMonthOfYear();
+                      d = (long)date.getDayOfMonth();
                   }
               }
               
