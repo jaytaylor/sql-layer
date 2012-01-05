@@ -1,0 +1,6 @@
+---
+- Include: all-update-schema.yaml
+---
+- Statement: INSERT INTO customers VALUES(4,'Brown') 
+#- output: [['orders,101,1,1029729'],['items,1011,101,1234,100'],['items,1012,101,4567,50'],['orders,102,1,1029730'],['customers,2,Jones'],['orders,201,2,1029731'],['items,2011,201,9876,1'],['customers,4,Brown']]
+...

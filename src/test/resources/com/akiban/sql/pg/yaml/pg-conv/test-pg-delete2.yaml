@@ -1,0 +1,58 @@
+---
+- Include: all-update-schema.yaml
+---
+- Statement: DELETE FROM items WHERE iid = 1012
+---
+- Statement: select * from items 
+- output_ordered: [[1011,101,1234,100],[2011,201,9876,1]]
+---
+- Statement: select * from orders 
+- output_ordered: [[101,1,'2011-03-01'],[102,1,'2011-03-02'],[201,2,'2011-03-03']]
+---
+- Statement: select * from customers
+- output_ordered: [[1,Smith],[2,Jones]]
+---
+- DropTable: items;
+---
+- DropTable: orders;
+---
+- DropTable: customers;
+---
+- Include: all-update-schema.yaml
+---
+- Statement: DELETE FROM items where quan=0
+---
+- Statement: select * from customers;
+- output_ordered: [[1,Smith],[2,Jones]]
+---
+- Statement: select * from orders 
+- output_ordered: [[101,1,'2011-03-01'],[102,1,'2011-03-02'],[201,2,'2011-03-03']]
+---
+- Statement: select * from items 
+- output_ordered: [[1011,101,1234,100],[1012,101,4567,50],[2011,201,9876,1]]
+---
+- Statement: INSERT INTO customers VALUES(4,'Brown') 
+#- output: [['orders,101,1,1029729'],['items,1011,101,1234,100'],['items,1012,101,4567,50'],['orders,102,1,1029730'],['customers,2,Jones'],['orders,201,2,1029731'],['items,2011,201,9876,1'],['customers,4,Brown']]
+---
+- Statement: insert into CUSTOMERS (name, cid) values ('Brown', 4), ('Williams', 5) 
+#- output: [['orders,101,1,1029729'],['items,1011,101,1234,100'],['items,1012,101,4567,50'],['orders,102,1,1029730'],['customers,2,Jones'],['orders,201,2,1029731'],['items,2011,201,9876,1'],['customers,4,Brown'],['customers,5,Williams']]
+---
+- Statement: insert into orders (oid, cid) select 205, cid from customers where name = 'Jones' 
+#- output: [['orders,101,1,1029729'],['items,1011,101,1234,100'],['items,1012,101,4567,50'],['orders,102,1,1029730'],['customers,2,Jones'],['orders,201,2,1029731'],['items,2011,201,9876,1'],['orders,205,2,null']]
+---
+- Statement: insert into log (cid, event_date, what) values(1, 20110101, 'abc'); 
+#- output: [['orders,101,1,1029729'],['items,1011,101,1234,100'],['items,1012,101,4567,50'],['orders,102,1,1029730'],['log,1,20110101,abc,1'],['customers,2,Jones'],['orders,201,2,1029731'],['items,2011,201,9876,1']]
+---
+- Statement: UPDATE customers SET name = 'Smyth' WHERE name = 'Smith' 
+#- output: [['orders,101,1,1029729'],['items,1011,101,1234,100'],['items,1012,101,4567,50'],['orders,102,1,1029730'],['customers,2,Jones'],['orders,201,2,1029731'],['items,2011,201,9876,1']]
+---
+- Statement: UPDATE customers SET name = ? WHERE name = ? 
+- params: [['Smyth'],['Smith']]
+#- output: [['orders,101,1,1029729'],['items,1011,101,1234,100'],['items,1012,101,4567,50'],['orders,102,1,1029730'],['customers,2,Jones'],['orders,201,2,1029731'],['items,2011,201,9876,1']]
+---
+- Statement: UPDATE ITEMS SET quan = quan, sku = 42 
+#- output: [['orders,101,1,1029729'],['items,1011,101,42,100'],['items,1012,101,42,50'],['orders,102,1,1029730'],['customers,2,Jones'],['orders,201,2,1029731'],['items,2011,201,42,1']]
+---
+- Statement: UPDATE items SET quan = 66 WHERE oid IN (SELECT orders.oid FROM orders WHERE order_date > '2011-03-02') 
+#- output: [['orders,101,1,1029729'],['items,1011,101,1234,100'],['items,1012,101,4567,50'],['orders,102,1,1029730'],['customers,2,Jones'],['orders,201,2,1029731'],['items,2011,201,9876,66']]
+...
