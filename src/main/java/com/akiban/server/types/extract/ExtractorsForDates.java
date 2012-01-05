@@ -510,7 +510,7 @@ abstract class ExtractorsForDates extends LongExtractor {
 
         @Override
         public long getEncoded(long[] ymd_hms) {
-            throw new UnsupportedOperationException("Unsupported: Cannot encode Year/Month/... from INTERVAL_MILLIS");
+            throw new UnsupportedOperationException("Unsupported: Cannot encode Year/Month/... to INTERVAL_MILLIS");
         }
 
         @Override
@@ -592,39 +592,31 @@ abstract class ExtractorsForDates extends LongExtractor {
     private static class Calculator {
         
         public static long getMillis (int year, int mon, int day, int hr, int min, int sec) {
-            DateTime date = new DateTime(year, mon, day, hr, min, sec, DateTimeZone.getDefault());
-            return date.getMillis();
+            return (new DateTime(year, mon, day, hr, min, sec, DateTimeZone.getDefault())).getMillis();
         }
 
         public static long getYear (long millis)  {
-            DateTime date = new DateTime(millis, DateTimeZone.getDefault());
-            return date.getYear();
+            return (new DateTime(millis, DateTimeZone.getDefault())).getYear();
         }
 
         public static int getMonth (long millis) {
-            DateTime date = new DateTime(millis, DateTimeZone.getDefault());
-            return date.getMonthOfYear();
+            return (new DateTime(millis, DateTimeZone.getDefault())).getMonthOfYear();
         }
 
         public static int getDay (long millis) {
-            DateTime date = new DateTime(millis, DateTimeZone.getDefault());
-            return date.getDayOfMonth();
+            return (new DateTime(millis, DateTimeZone.getDefault())).getDayOfMonth();
         }
 
         public static int getHour (long millis) {
-            DateTime date = new DateTime(millis, DateTimeZone.getDefault());
-            return date.getHourOfDay();
+            return (new DateTime(millis, DateTimeZone.getDefault())).getHourOfDay();
         }
 
         public static int getMinute (long millis) {
-            MutableDateTime date = new MutableDateTime(DateTimeZone.getDefault());
-            date.setMillis(millis);
-            return date.getMinuteOfHour();
+            return (new DateTime(DateTimeZone.getDefault())).getMinuteOfHour();
         }
 
         public static int getSec (long millis) {
-            DateTime date = new DateTime(millis, DateTimeZone.getDefault());
-            return date.getSecondOfMinute();
+            return (new DateTime(DateTimeZone.getDefault())).getSecondOfMinute();
         }
 
         public static long[] getYearMonthDay (long millis) {
