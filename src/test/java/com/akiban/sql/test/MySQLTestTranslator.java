@@ -107,13 +107,9 @@ public class MySQLTestTranslator {
                     + System.getProperty("line.separator"));
         }
         //data.append("---" + System.getProperty("line.separator"));
-
+        BufferedReader br = null;
         try {
-            final FileInputStream fstream = new FileInputStream(filename);
-            // Get the object of DataInputStream
-            final DataInputStream in = new DataInputStream(fstream);
-            final BufferedReader br = new BufferedReader(new InputStreamReader(
-                    in));
+            br = new BufferedReader(new FileReader(filename));
             String strLine;
             //Read File Line By Line
             while ((strLine = br.readLine()) != null) {
@@ -187,9 +183,15 @@ public class MySQLTestTranslator {
                 }
             }
             //Close the input stream
-            in.close();
+            
         } catch (final Exception e) {//Catch exception if any
             System.err.println("Error: " + e.getMessage());
+        } finally {
+            try {
+                br.close();
+            } catch (IOException e) {
+                System.err.println("Error: " + e.getMessage());
+            }
         }
 
         data.append("..." + System.getProperty("line.separator"));
