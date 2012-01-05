@@ -17,8 +17,8 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.AbstractRow;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.PersistitKeyValueSource;
@@ -26,6 +26,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.AkibanAppender;
+import com.akiban.util.SparseArray;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
@@ -61,6 +62,7 @@ public class PersistitIndexRow extends AbstractRow
     @Override
     public ValueSource eval(int i) {
         IndexColumn column = index().getColumns().get(i);
+        PersistitKeyValueSource keySource = keySource(i);
         keySource.attach(indexRow, column);
         return keySource;
     }
@@ -79,7 +81,6 @@ public class PersistitIndexRow extends AbstractRow
         this.indexRowType = indexRowType;
         this.indexRow = adapter.persistit().getKey(adapter.session());
         this.hKey = new PersistitHKey(adapter, index().hKey());
-        this.keySource = new PersistitKeyValueSource();
     }
 
     // For use by this package
@@ -101,11 +102,21 @@ public class PersistitIndexRow extends AbstractRow
         return indexRowType.index();
     }
 
+    private PersistitKeyValueSource keySource(int i)
+    {
+        return keySources.get(i);
+    }
+    
     // Object state
 
     private final PersistitAdapter adapter;
     private final IndexRowType indexRowType;
-    private final PersistitKeyValueSource keySource;
+    private final SparseArray<PersistitKeyValueSource> keySources = new SparseArray<PersistitKeyValueSource>() {
+        @Override
+        protected PersistitKeyValueSource initialValue() {
+            return new PersistitKeyValueSource();
+        }
+    };
     private final Key indexRow;
     private PersistitHKey hKey;
 }

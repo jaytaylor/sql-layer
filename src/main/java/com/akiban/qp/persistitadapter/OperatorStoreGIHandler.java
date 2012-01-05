@@ -20,9 +20,10 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.Row;
+import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.ArgumentValidation;
 import com.persistit.Exchange;
@@ -102,8 +103,9 @@ class OperatorStoreGIHandler {
     private void storeExchange(GroupIndex groupIndex, Exchange exchange) {
         try {
             exchange.store();
+            AccumulatorAdapter.updateAndGet(AccumulatorAdapter.AccumInfo.ROW_COUNT, exchange, 1);
         } catch (PersistitException e) {
-            throw new PersistItErrorException (e);
+            throw new PersistitAdapterException(e);
         }
         if (giHandlerHook != null) {
             giHandlerHook.storeHook(groupIndex, exchange.getKey(), exchange.getValue().get());
@@ -113,8 +115,9 @@ class OperatorStoreGIHandler {
     private void removeExchange(GroupIndex groupIndex, Exchange exchange) {
         try {
             exchange.remove();
+            AccumulatorAdapter.updateAndGet(AccumulatorAdapter.AccumInfo.ROW_COUNT, exchange, -1);
         } catch (PersistitException e) {
-            throw new PersistItErrorException (e);
+            throw new PersistitAdapterException(e);
         }
         if (giHandlerHook != null) {
             giHandlerHook.removeHook(groupIndex, exchange.getKey());

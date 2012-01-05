@@ -19,20 +19,22 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.AccumulatorAdapter;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
-import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 
 import com.google.inject.Inject;
 
+import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
+import com.persistit.exception.PersistitInterruptedException;
 
 import java.util.*;
 import java.io.File;
@@ -90,6 +92,12 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     /* IndexStatisticsService */
 
     @Override
+    public long countEntries(Session session, Index index) throws PersistitInterruptedException {
+        Tree tree = store.getExchange(session, index).getTree();
+        return AccumulatorAdapter.getSnapshot(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, tree);
+    }
+
+    @Override
     public IndexStatistics getIndexStatistics(Session session, Index index) {
         // TODO: Use getAnalysisTimestamp() of -1 to mark an "empty"
         // analysis to save going to disk for the same index every
@@ -106,7 +114,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             result = storeStats.loadIndexStatistics(session, index);
         }
         catch (PersistitException ex) {
-            throw new PersistItErrorException(ex);
+            throw new PersistitAdapterException(ex);
         }
         if (result != null)
             return result;
@@ -129,7 +137,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 }
             }
             catch (PersistitException ex) {
-                throw new PersistItErrorException(ex);
+                throw new PersistitAdapterException(ex);
             }
         }
     }
@@ -142,7 +150,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 storeStats.deleteIndexStatistics(session, index);
             }
             catch (PersistitException ex) {
-                throw new PersistItErrorException(ex);
+                throw new PersistitAdapterException(ex);
             }
         }
     }
@@ -160,7 +168,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 storeStats.storeIndexStatistics(session, indexStatistics);
             }
             catch (PersistitException ex) {
-                throw new PersistItErrorException(ex);
+                throw new PersistitAdapterException(ex);
             }
             cache.put(index, indexStatistics);
         }

@@ -60,7 +60,7 @@ import com.akiban.server.error.CursorIsUnknownException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.OldAISException;
-import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.RowOutputException;
 import com.akiban.server.error.ScanRetryAbandonedException;
 import com.akiban.server.error.TableDefinitionChangedException;
@@ -74,7 +74,6 @@ import com.akiban.server.store.Store;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Tap;
 import com.google.inject.Inject;
-import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
@@ -88,7 +87,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     private final static Logger logger = LoggerFactory.getLogger(BasicDMLFunctions.class);
     private final DDLFunctions ddlFunctions;
     private final Scanner scanner;
-    private static final int SCAN_RETRY_COUNT = 10;
+    private static final int SCAN_RETRY_COUNT = 0;
 
     private static Tap.PointTap SCAN_RETRY_COUNT_TAP = Tap.createCount("BasicDMLFunctions: scan retries", true);
     private static Tap.PointTap SCAN_RETRY_ABANDON_TAP = Tap.createCount("BasicDMLFunctions: scan abandons", true);
@@ -103,7 +102,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     interface ScanHooks {
         void loopStartHook();
         void preWroteRowHook();
-        void retryHook();
         void scanSomeFinishedWellHook();
     }
 
@@ -114,11 +112,6 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
 
         @Override
         public void preWroteRowHook() {
-        }
-
-        @Override
-        public void retryHook() {
-            SCAN_RETRY_COUNT_TAP.hit();
         }
 
         @Override
@@ -307,43 +300,19 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             throw new CursorIsFinishedException(cursorId);
         }
         
-        Transaction transaction = treeService().getTransaction(session);
-        int retriesLeft = SCAN_RETRY_COUNT;
-        while (true) {
-            output.mark();
-            try {
-                transaction.begin();
-                try {
-                    if (!cursor.getRowCollector().hasMore()) { // this implies it's a freshly opened CursorId
-                        assert CursorState.FRESH.equals(cursor.getState()) : cursor.getState();
-                        cursor.getRowCollector().open();
-                    }
-                    try {
-                        scanner.doScan(cursor, cursorId, output, scanHooks);
-                    } catch (BufferFullException e) {
-                        transaction.commit(); // if this fails, it'll be handled in one of the catches below
-                        throw e;
-                    }
-                    transaction.commit();
-                    scanHooks.scanSomeFinishedWellHook();
-                    return;
-                } catch (RollbackException e) {
-                    logger.trace("PersistIt error; retrying", e);
-                    scanHooks.retryHook();
-                    output.rewind();
-                    if (--retriesLeft <= 0) {
-                        SCAN_RETRY_ABANDON_TAP.hit();
-                        throw new ScanRetryAbandonedException(SCAN_RETRY_COUNT);
-                    }
-                    cursor = reopen(session, cursorId, cursor.getScanRequest(), false);
-                } catch (PersistitException e) {
-                    throw new PersistItErrorException(e);
-                } finally {
-                    transaction.end();
-                }
-            } catch (PersistitException e) {
-                throw new PersistItErrorException(e);
+        output.mark();
+        try {
+            if (!cursor.getRowCollector().hasMore()) { // this implies it's a freshly opened CursorId
+                assert CursorState.FRESH.equals(cursor.getState()) : cursor.getState();
+                cursor.getRowCollector().open();
             }
+            scanner.doScan(cursor, cursorId, output, scanHooks);
+            scanHooks.scanSomeFinishedWellHook();
+        } catch (RollbackException e) {
+            logger.trace("PersistIt error; aborting", e);
+            output.rewind();
+            SCAN_RETRY_ABANDON_TAP.hit();
+            throw new ScanRetryAbandonedException(SCAN_RETRY_COUNT);
         }
     }
 
@@ -600,7 +569,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         try {
             store().writeRow(session, rowData);
         } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
+            throw new PersistitAdapterException(ex);
         }
         return null;
     }
@@ -613,7 +582,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         try {
             store().deleteRow(session, rowData);
         } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
+            throw new PersistitAdapterException(ex);
         }
     }
 
@@ -644,7 +613,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         try {
             store().updateRow(session, oldData, newData, columnSelector);
         } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
+            throw new PersistitAdapterException(ex);
         }
             
     }
@@ -756,7 +725,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
             try {
                 store().truncateGroup(session, rowDef.getRowDefId());
             } catch (PersistitException ex) {
-                throw new PersistItErrorException (ex);
+                throw new PersistitAdapterException(ex);
             }
                 
             return;
@@ -817,7 +786,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         try {
             store().truncateTableStatus(session, tableId);
         } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
+            throw new PersistitAdapterException(ex);
         }
         if (thrown != null) {
             throw thrown;

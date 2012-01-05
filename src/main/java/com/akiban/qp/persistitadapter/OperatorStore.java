@@ -52,9 +52,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.util.Tap;
 import com.google.inject.Inject;
 import com.persistit.Exchange;
-import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
-import com.persistit.exception.RollbackException;
 
 import java.util.*;
 
@@ -105,126 +103,77 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
         UpdatePlannable updateOp = com.akiban.qp.operator.API.update_Default(scanOp, updateFunction);
 
-        Transaction transaction = treeService.getTransaction(session);
-        for(int retryCount=0; ; ++retryCount) {
-            try {
-                UPDATE_MAINTENANCE.in();
-                transaction.begin();
+        UPDATE_MAINTENANCE.in();
 
-                maintainGroupIndexes(session,
-                                     ais,
-                                     adapter,
-                                     oldRowData,
-                                     changedColumnPositions,
-                                     OperatorStoreGIHandler.forTable(adapter, userTable),
-                                     OperatorStoreGIHandler.Action.DELETE);
+        maintainGroupIndexes(session,
+                             ais,
+                             adapter,
+                             oldRowData,
+                             changedColumnPositions,
+                             OperatorStoreGIHandler.forTable(adapter, userTable),
+                             OperatorStoreGIHandler.Action.DELETE);
 
-                runCursor(oldRowData, rowDef, updateOp, adapter);
+        runCursor(oldRowData, rowDef, updateOp, adapter);
 
-                maintainGroupIndexes(session,
-                                     ais,
-                                     adapter,
-                                     newRowData,
-                                     changedColumnPositions,
-                                     OperatorStoreGIHandler.forTable(adapter, userTable),
-                                     OperatorStoreGIHandler.Action.STORE);
+        maintainGroupIndexes(session,
+                             ais,
+                             adapter,
+                             newRowData,
+                             changedColumnPositions,
+                             OperatorStoreGIHandler.forTable(adapter, userTable),
+                             OperatorStoreGIHandler.Action.STORE);
 
-                COMMIT.in();
-                transaction.commit();
-                COMMIT.out();
-                break;
-            } catch (RollbackException e) {
-                if (retryCount >= MAX_RETRIES) {
-                    throw e;
-                }
-            } finally {
-                transaction.end();
-                UPDATE_MAINTENANCE.out();
-            }
-        }
+        UPDATE_MAINTENANCE.out();
         UPDATE_TOTAL.out();
     }
 
     @Override
     public void writeRow(Session session, RowData rowData) throws PersistitException {
         INSERT_TOTAL.in();
-        Transaction transaction = treeService.getTransaction(session);
-        for(int retryCount=0; ; ++retryCount) {
-            try {
-                INSERT_MAINTENANCE.in();
-                transaction.begin();
+        INSERT_MAINTENANCE.in();
 
-                AkibanInformationSchema ais = aisHolder.getAis();
-                PersistitAdapter adapter =
-                    new PersistitAdapter(SchemaCache.globalSchema(ais),
-                                         getPersistitStore(),
-                                         treeService,
-                                         session,
-                                         config);
-                UserTable uTable = ais.getUserTable(rowData.getRowDefId());
-                super.writeRow(session, rowData);
-                maintainGroupIndexes(session,
-                                     ais,
-                                     adapter,
-                                     rowData, null,
-                                     OperatorStoreGIHandler.forTable(adapter, uTable),
-                                     OperatorStoreGIHandler.Action.STORE);
+        AkibanInformationSchema ais = aisHolder.getAis();
+        PersistitAdapter adapter =
+            new PersistitAdapter(SchemaCache.globalSchema(ais),
+                                 getPersistitStore(),
+                                 treeService,
+                                 session,
+                                 config);
+        UserTable uTable = ais.getUserTable(rowData.getRowDefId());
+        super.writeRow(session, rowData);
+        maintainGroupIndexes(session,
+                             ais,
+                             adapter,
+                             rowData, null,
+                             OperatorStoreGIHandler.forTable(adapter, uTable),
+                             OperatorStoreGIHandler.Action.STORE);
 
-                COMMIT.in();
-                transaction.commit();
-                COMMIT.out();
-                break;
-            } catch (RollbackException e) {
-                if (retryCount >= MAX_RETRIES) {
-                    throw e;
-                }
-            } finally {
-                transaction.end();
-                INSERT_MAINTENANCE.out();
-            }
-        }
+        INSERT_MAINTENANCE.out();
         INSERT_TOTAL.out();
     }
 
     @Override
     public void deleteRow(Session session, RowData rowData) throws PersistitException {
         DELETE_TOTAL.in();
-        Transaction transaction = treeService.getTransaction(session);
-        for(int retryCount=0; ; ++retryCount) {
-            try {
-                DELETE_MAINTENANCE.in();
-                transaction.begin();
-                AkibanInformationSchema ais = aisHolder.getAis();
-                PersistitAdapter adapter =
-                    new PersistitAdapter(SchemaCache.globalSchema(ais),
-                                         getPersistitStore(),
-                                         treeService,
-                                         session,
-                                         config);
-                UserTable uTable = ais.getUserTable(rowData.getRowDefId());
+        DELETE_MAINTENANCE.in();
+        AkibanInformationSchema ais = aisHolder.getAis();
+        PersistitAdapter adapter =
+            new PersistitAdapter(SchemaCache.globalSchema(ais),
+                                 getPersistitStore(),
+                                 treeService,
+                                 session,
+                                 config);
+        UserTable uTable = ais.getUserTable(rowData.getRowDefId());
 
-                maintainGroupIndexes(session,
-                                     ais,
-                                     adapter,
-                                     rowData,
-                                     null,
-                                     OperatorStoreGIHandler.forTable(adapter, uTable),
-                                     OperatorStoreGIHandler.Action.DELETE);
-                super.deleteRow(session, rowData);
-                COMMIT.in();
-                transaction.commit();
-                COMMIT.out();
-
-                break;
-            } catch (RollbackException e) {
-                if (retryCount >= MAX_RETRIES) {
-                    throw e;
-                }
-            } finally {
-                transaction.end();
-                DELETE_MAINTENANCE.out();
-            }
-        }
+        maintainGroupIndexes(session,
+                             ais,
+                             adapter,
+                             rowData,
+                             null,
+                             OperatorStoreGIHandler.forTable(adapter, uTable),
+                             OperatorStoreGIHandler.Action.DELETE);
+        super.deleteRow(session, rowData);
+        DELETE_MAINTENANCE.out();
         DELETE_TOTAL.out();
     }
 

@@ -20,98 +20,121 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.TypesList;
+import com.akiban.server.expression.std.ArithOps.ArithOpComposer;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
-
-import java.util.Arrays;
-import java.util.List;
+import com.akiban.sql.StandardException;
 
 public class DateTimeArithExpression extends ArithExpression
 {
-    @Scalar("add_date")
-    public static final ExpressionComposer ADD_DATE_COMPOSER = new BinaryComposer ()
-    {
-
-        @Override
-        protected Expression compose(Expression first, Expression second) 
-        {
-            return ArithOps.ADD.compose(Arrays.asList(first, second));
-        }
-
-        @Override
-        protected ExpressionType composeType(ExpressionType first, ExpressionType second) 
-        {
-            return ArithOps.ADD.composeType(first, second);
-        }
-
-        @Override
-        public void argumentTypes(List<AkType> argumentTypes) 
-        {
-            ArithOps.ADD.argumentTypes(argumentTypes);
-        }
-        
-    };
+    @Scalar({"adddate", "date_add", "addtime"})
+    public static final ExpressionComposer ADD_DATE_COMPOSER = new AddSubComposer(ArithOps.ADD);    
     
-    @Scalar("add_time")
-    public static final ExpressionComposer ADD_TIME_COMPOSER = ADD_DATE_COMPOSER;
-    
-    @Scalar("sub_date")
-    public static final ExpressionComposer SUB_DATE_COMPOSER = new BinaryComposer ()
-    {
-        @Override
-        protected Expression compose(Expression first, Expression second) 
-        {
-            return ArithOps.MINUS.compose(Arrays.asList(first, second));
-        }
-
-        @Override
-        protected ExpressionType composeType(ExpressionType first, ExpressionType second) 
-        {
-            return ArithOps.MINUS.composeType(first, second);
-        }
-
-        @Override
-        public void argumentTypes(List<AkType> argumentTypes) 
-        {
-            ArithOps.MINUS.argumentTypes(argumentTypes);
-        }
-    };
-    
-    @Scalar("sub_time")
-    public static final ExpressionComposer SUB_TIME_COMPOSER = SUB_DATE_COMPOSER;
+    @Scalar({"subdate", "date_sub", "subtime"})
+    public static final ExpressionComposer SUB_DATE_COMPOSER = new AddSubComposer(ArithOps.MINUS);
     
     @Scalar("timediff")
-    public static final ExpressionComposer TIMEDIFF_COMPOSER = new InternalComposer(AkType.TIME)
+    public static final ExpressionComposer TIMEDIFF_COMPOSER = new DiffComposer(AkType.TIME)
     {
         @Override
-        public void argumentTypes(List<AkType> argumentTypes) 
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
-            if (argumentTypes.size() != 2) throw new WrongExpressionArityException(2, argumentTypes.size());
-            
-            AkType type;
-            for (int n = 0; n < 2; ++n)
-                if ((type = argumentTypes.get(n)) != AkType.TIME && type != AkType.TIMESTAMP)
-                    argumentTypes.set(n, AkType.TIME);
+            if (argumentTypes.size() != 2)
+                throw new WrongExpressionArityException(2, argumentTypes.size());
+            ExpressionType dateType = argumentTypes.get(0);
+            switch(dateType.getType())
+            {
+                case DATE:
+                case TIME:
+                case DATETIME:
+                case TIMESTAMP: break;
+                case VARCHAR:   argumentTypes.setType(0, dateType.getPrecision() > 10 ?
+                                                     AkType.DATETIME: AkType.TIME);
+                default:        argumentTypes.setType(0, AkType.TIME);
+            }
+
+            return composeType(argumentTypes.get(0), argumentTypes.get(1));
         }
     };
 
     @Scalar("datediff")
-    public static final ExpressionComposer DATEDIFF_COMPOSER = new InternalComposer(AkType.LONG)
+    public static final ExpressionComposer DATEDIFF_COMPOSER = new DiffComposer(AkType.LONG)
     {
         @Override
-        public void argumentTypes(List<AkType> argumentTypes) 
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
-            if (argumentTypes.size() != 2) throw new WrongExpressionArityException(2, argumentTypes.size());
+            if (argumentTypes.size() != 2)
+                throw new WrongExpressionArityException(2, argumentTypes.size());
             for (int n = 0; n < 2; ++n)
-                argumentTypes.set(n, AkType.DATE);
+                argumentTypes.setType(n, AkType.DATE);
+
+            return composeType(argumentTypes.get(0), argumentTypes.get(1));
         }
-        
     };
 
-    private abstract static class InternalComposer extends BinaryComposer
+    private static class AddSubComposer extends BinaryComposer
+    {
+        private final ArithOpComposer composer;
+        protected AddSubComposer (ArithOpComposer composer)
+        {
+            this.composer = composer;
+        }
+        @Override
+        protected Expression compose(Expression first, Expression second)
+        {
+            if (ArithExpression.isNumeric(second.valueType()))
+                second = new NumericToIntervalDay(second);
+            return composer.compose(first, second);
+        }
+
+        @Override
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
+        {
+             if (argumentTypes.size() != 2) throw new WrongExpressionArityException(2, argumentTypes.size());
+
+            AkType firstArg = argumentTypes.get(0).getType();
+            AkType secondArg = argumentTypes.get(1).getType();
+
+            if (firstArg == AkType.VARCHAR)            
+                firstArg = argumentTypes.get(0).getPrecision() > 10 ?
+                           AkType.DATETIME : AkType.DATE;            
+
+            if (firstArg == AkType.DATE
+                    && (secondArg == AkType.INTERVAL_MILLIS || !isIntegral(secondArg)))
+                firstArg = AkType.DATETIME;
+
+            // adjust first arg
+            argumentTypes.setType(0, firstArg);
+
+            // second arg does not need *real* adjusting since
+            //  - if it's a numeric type, it'll be *casted* to an interval_millis in compose()
+            //  - if it's an interval , => expected
+            //  - if it's anything else, then InvalidArgumentType will be thrown
+            if (ArithExpression.isNumeric(secondArg))
+                argumentTypes.set(1, ExpressionTypes.INTERVAL_MILLIS);
+
+            return composer.composeType(argumentTypes);
+        }        
+        
+        protected static boolean isIntegral (AkType type)
+        {
+            switch (type)
+            {
+                case DOUBLE:
+                case DECIMAL:  return false;
+                case LONG:
+                case INT:
+                case U_BIGINT:  
+                default:        return true;
+            }
+        }
+    }
+
+    private abstract static class DiffComposer extends BinaryComposer
     {
         private final AkType topT;
-        public InternalComposer (AkType topT)
+        public DiffComposer (AkType topT)
         {
             this.topT = topT;
         }
@@ -122,7 +145,6 @@ public class DateTimeArithExpression extends ArithExpression
             return new DateTimeArithExpression(first, second, topT);
         }
 
-        @Override
         protected ExpressionType composeType(ExpressionType first, ExpressionType second)
         {
             return ExpressionTypes.newType(topT, 0, 0);
@@ -174,7 +196,7 @@ public class DateTimeArithExpression extends ArithExpression
         @Override
         public long getLong ()
         {
-            return Calculator.getDay(rawInterval_Millis());
+            return Calculator.getDay(rawInterval());
         }
 
         /**
@@ -185,7 +207,7 @@ public class DateTimeArithExpression extends ArithExpression
         public long getTime ()
         {
             check(AkType.TIME);
-            long millis = rawInterval_Millis();
+            long millis = rawInterval();
             long sign;
             if (millis < 0)
                 millis *= (sign = -1);
@@ -220,4 +242,5 @@ public class DateTimeArithExpression extends ArithExpression
     {
         return new InnerEvaluation(op, topT, this, childrenEvaluations());
     }
+    
 }

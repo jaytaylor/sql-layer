@@ -268,19 +268,17 @@ public class ASTStatementLoader extends BaseRule
                 }
                 else
                     query = new Distinct(query);
-                if ((offsetClause != null) || 
-                    (fetchFirstClause != null))
-                    query = toLimit(query, offsetClause, fetchFirstClause);
             }
             else {
                 if (!sorts.isEmpty()) {
                     query = new Sort(query, sorts);
                 }
-                if ((offsetClause != null) || 
-                    (fetchFirstClause != null))
-                    query = toLimit(query, offsetClause, fetchFirstClause);
                 query = new Project(query, projects);
             }
+
+            if ((offsetClause != null) || 
+                (fetchFirstClause != null))
+                query = toLimit(query, offsetClause, fetchFirstClause);
 
             query = new ResultSet(query, results);
 
@@ -491,6 +489,9 @@ public class ASTStatementLoader extends BaseRule
 
             case NodeTypes.BOOLEAN_CONSTANT_NODE:
                 conditions.add(new BooleanConstantExpression(((BooleanConstantNode)condition).getBooleanValue()));
+                break;
+            case NodeTypes.UNTYPED_NULL_CONSTANT_NODE:
+                conditions.add(new BooleanConstantExpression(null));
                 break;
             case NodeTypes.PARAMETER_NODE:
                 if (condition.getType() == null)
@@ -767,7 +768,7 @@ public class ASTStatementLoader extends BaseRule
                                       IsNode is)
                 throws StandardException {
             List<ExpressionNode> operands = new ArrayList<ExpressionNode>(1);
-            operands.add(toExpression(is.getLeftOperand()));
+            operands.add(toCondition(is.getLeftOperand()));
             String function;
             Boolean value = (Boolean)((ConstantNode)is.getRightOperand()).getValue();
             if (value == null)

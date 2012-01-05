@@ -16,6 +16,7 @@
 package com.akiban.server;
 
 import com.akiban.server.rowdata.RowDef;
+import com.persistit.exception.PersistitInterruptedException;
 
 /**
  * Structure denotes summary information about a table, including row count,
@@ -26,52 +27,25 @@ public interface TableStatus {
     /**
      * @return Current auto-increment value of the assocated table.
      */
-    long getAutoIncrement();
-
-    /**
-     * @return Timestamp, in milliseconds, of when this table was created.
-     */
-    long getCreationTime();
-
-    /**
-     * @return Timestamp, in milliseconds, of the last delete operation.
-     */
-    long getLastDeleteTime();
-
-    /**
-     * @return Timestamp, in milliseconds, of the last update operation.
-     */
-    long getLastUpdateTime();
-
-    /**
-     * @return Timestamp, in milliseconds, of the last write operation.
-     */
-    long getLastWriteTime();
+    long getAutoIncrement() throws PersistitInterruptedException;
 
     /**
      * @return Ordinal of the associated table.
      */
-    int getOrdinal();
+    int getOrdinal() throws PersistitInterruptedException;
 
     /**
      * @return Current number of rows in the associated table.
      */
-    long getRowCount();
+    long getRowCount() throws PersistitInterruptedException;
 
     /**
      * @return The <b>last</b> unique value used for the associated table.
      */
-    long getUniqueID();
+    long getUniqueID() throws PersistitInterruptedException;
 
     /**
-     * @return RowDef of the associated table. Only meaningful if
-     * {@link #setRowDef(RowDef)} has been called since instantiation.
+     * @return RowDef of the associated table.
      */
     RowDef getRowDef();
-
-    /**
-     * Set the RowDef of the associated table.
-     * @param rowDef The RowDef.
-     */
-    void setRowDef(RowDef rowDef);
 }

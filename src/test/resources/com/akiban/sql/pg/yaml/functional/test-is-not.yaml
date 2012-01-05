@@ -113,22 +113,23 @@
 # ---
 # - Statement: SELECT UNKNOWN IS UNKNOWN FROM all_types
 # - output: [[true],[true],[true],[true],[true]]
-# ---
-# - Statement: SELECT null IS UNKNOWN FROM all_types
-# - output: [[true],[true],[true],[true],[true]]
+---
+- Statement: SELECT null IS UNKNOWN FROM all_types
+- output: [[true],[true],[true],[true],[true]]
 ---
 - Statement: SELECT 999 IS TRUE FROM all_types
 - output: [[true],[true],[true],[true],[true]]
 ---
 - Statement: SELECT 1 FROM all_types where 999 IS TRUE;
 - output: [[1],[1],[1],[1],[1]]
+---
+- Statement: SELECT ? IS TRUE FROM all_types
+- params: [[true]]
+- output: [[true],[true],[true],[true],[true]]
 # ---
 # - CreateTable: t (boolean_field boolean)
 # ---
 # - Statement: INSERT INTO t (boolean_field) VALUES (null)  
-# --- bug 906989
-# - Statement: SELECT null IS UNKNOWN FROM t
-# - output: [[true]]
 # ---
 # - Statement: SELECT boolean_field FROM t WHERE boolean_field IS TRUE
 # - output: [[null]]
@@ -136,14 +137,7 @@
 # - Statement: DELETE FROM t
 # ---  
 # - Statement: INSERT INTO t (boolean_field) VALUES (1)
-# ---
-# - Statement: SELECT null IS UNKNOWN FROM t
-# - output: [[true]]
 # --- #bug 906991
 # - Statement: SELECT boolean_field FROM t WHERE boolean_field IS TRUE
 # - output: [[null]]
-# --- # bug 906992
-# - Statement: SELECT ? IS TRUE FROM t
-# - params: [[true]]
-# - output: [[true]]
 ...

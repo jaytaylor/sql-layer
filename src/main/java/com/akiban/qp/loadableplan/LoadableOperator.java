@@ -13,12 +13,11 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.operator;
+package com.akiban.qp.loadableplan;
 
-public class StoreAdapterRuntimeException extends RuntimeException
+import com.akiban.qp.operator.Operator;
+
+/** A loadable plan that implements an operator tree. */
+public abstract class LoadableOperator extends LoadablePlan<Operator>
 {
-    public StoreAdapterRuntimeException(Exception exception)
-    {
-        super(exception);
-    }
 }

@@ -43,7 +43,7 @@ import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchIndexException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
-import com.akiban.server.error.PersistItErrorException;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.error.UnsupportedDropException;
@@ -181,7 +181,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         try {
             store().truncateGroup(session, rowDef.getRowDefId());
         } catch (PersistitException ex) {
-            throw new PersistItErrorException (ex);
+            throw new PersistitAdapterException(ex);
         }
         schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
         checkCursorsForDDLModification(session, table);
@@ -262,6 +262,11 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     public int getGeneration() {
         return schemaManager().getSchemaGeneration();
+    }
+
+    @Override
+    public long getTimestamp() {
+        return schemaManager().getUpdateTimestamp();
     }
 
     @Override

@@ -17,22 +17,6 @@ package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
 
-public interface Cursor
+public interface Cursor extends CursorBase<Row>
 {
-    /**
-     * Starts a complete scan of the underlying table or index.
-     * @param bindings Values of variables referenced in the underlying query.
-     */
-    void open(Bindings bindings);
-
-    /**
-     * Advances to and returns the next row of the underlying table or index.
-     * @return The next row of the scan, or null if all rows have been visited.
-     */
-    Row next();
-
-    /**
-     * Terminates the scan of the underlying table or index. Further calls to next() will return false.
-     */
-    void close();
 }

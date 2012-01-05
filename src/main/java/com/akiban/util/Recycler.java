@@ -12,16 +12,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package com.akiban.server.error;
 
-import com.persistit.exception.PersistitException;
+package com.akiban.util;
 
-public class PersistItErrorException extends InvalidOperationException {
-    public PersistItErrorException (PersistitException ex) {
-        super(ErrorCode.PERSISTIT_ERROR, ex.getMessage());
-        exception = ex;
-    }
-    public PersistitException getException () { return exception; }
-    
-    private PersistitException exception; 
+public interface Recycler<T> {
+    void recycle(T element);
 }

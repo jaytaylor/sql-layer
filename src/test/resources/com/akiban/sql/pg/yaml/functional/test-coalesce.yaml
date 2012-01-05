@@ -7,6 +7,16 @@
 - Statement: SELECT COALESCE() FROM all_types
 - error: [42000]
 
+# Test mixed types
+---
+- Statement: INSERT INTO all_types (varchar_field, integer_field)
+    VALUES ('abc', 123)
+---
+- Statement: SELECT COALESCE(varchar_field, integer_field) FROM all_types
+- error: [22018]
+---
+- Statement: DELETE FROM all_types
+
 # Test single element lists with an empty table
 ---
 - Statement: SELECT COALESCE(bigint_field) FROM all_types

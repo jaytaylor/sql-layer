@@ -25,8 +25,8 @@ import java.util.TreeMap;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
-import com.akiban.server.TableStatus;
 import com.akiban.server.TableStatusCache;
+import com.persistit.exception.PersistitInterruptedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -156,7 +156,7 @@ public class RowDefCache {
      * 
      * @param ais
      */
-    public synchronized void setAIS(final AkibanInformationSchema ais) {
+    public synchronized void setAIS(final AkibanInformationSchema ais) throws PersistitInterruptedException {
         this.ais = ais;
         
         for (final UserTable table : ais.getUserTables().values()) {
@@ -188,7 +188,7 @@ public class RowDefCache {
      * start-ups, that value is loaded and reused from the status tree.
      * @return Map of Table->Ordinal for all Tables/RowDefs in the RowDefCache
      */
-    protected Map<Table,Integer> fixUpOrdinals() {
+    protected Map<Table,Integer> fixUpOrdinals() throws PersistitInterruptedException {
         Map<Table,Integer> ordinalMap = new HashMap<Table,Integer>();
         for (final RowDef groupRowDef : getRowDefs()) {
             if (groupRowDef.isGroupTable()) {
@@ -197,8 +197,7 @@ public class RowDefCache {
                 final HashSet<Integer> assigned = new HashSet<Integer>();
                 // First pass: merge already assigned values
                 for (final RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
-                    final TableStatus tableStatus = userRowDef.getTableStatus();
-                    int ordinal = tableStatus.getOrdinal();
+                    int ordinal = userRowDef.getTableStatus().getOrdinal();
                     if (ordinal != 0 && !assigned.add(ordinal)) {
                         throw new IllegalStateException(String.format(
                                 "Non-unique ordinal value %s added to %s",
@@ -207,7 +206,7 @@ public class RowDefCache {
                 }
                 int nextOrdinal = 1;
                 for (final RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
-                    int ordinal = userRowDef.getOrdinal();
+                    int ordinal = userRowDef.getTableStatus().getOrdinal();
                     if (ordinal == 0) {
                         // find an unassigned value. Here we could try to optimize layout
                         // by assigning "bushy" values in some optimal pattern
@@ -220,6 +219,7 @@ public class RowDefCache {
                     }
                     assigned.add(ordinal);
                     ordinalMap.put(userRowDef.table(), ordinal);
+                    userRowDef.setOrdinalCache(ordinal);
                 }
                 if (assigned.size() != groupRowDef.getUserTableRowDefs().length) {
                     throw new IllegalStateException("Inconsistent ordinal number assignments: " + assigned);
@@ -230,19 +230,10 @@ public class RowDefCache {
     }
 
     private RowDef createRowDefCommon(Table table) {
-        RowDef rowDef = new RowDef(table, tableStatusCache.getTableStatus(table.getTableId()));
-        if(table.isUserTable()) {
-            UserTable uTable = (UserTable)table;
-            Column autoIncColumn = uTable.getAutoIncrementColumn();
-            if(autoIncColumn != null) {
-                long initialAutoIncrementValue = autoIncColumn.getInitialAutoIncrementValue();
-                tableStatusCache.setAutoIncrement(table.getTableId(), initialAutoIncrementValue);
-            }
-        }
-        return rowDef;
+        return new RowDef(table, tableStatusCache.getTableStatus(table.getTableId()));
     }
 
-    private RowDef createUserTableRowDef(UserTable table) {
+    private RowDef createUserTableRowDef(UserTable table) throws PersistitInterruptedException {
         RowDef rowDef = createRowDefCommon(table);
         // parentRowDef
         int[] parentJoinFields;
@@ -287,8 +278,15 @@ public class RowDefCache {
         }
         rowDef.setParentJoinFields(parentJoinFields);
         rowDef.setIndexes(indexList.toArray(new Index[indexList.size()]));
-        return rowDef;
 
+        tableStatusCache.setRowDef(rowDef.getRowDefId(), rowDef);
+        Column autoIncColumn = table.getAutoIncrementColumn();
+        if(autoIncColumn != null) {
+            long initialAutoIncrementValue = autoIncColumn.getInitialAutoIncrementValue();
+            tableStatusCache.setAutoIncrement(table.getTableId(), initialAutoIncrementValue);
+        }
+
+        return rowDef;
     }
 
     private RowDef createGroupTableRowDef(GroupTable table) {
@@ -344,7 +342,7 @@ public class RowDefCache {
         nameMap.put(name, key);
     }
     
-    private void analyzeAll() {
+    private void analyzeAll() throws PersistitInterruptedException {
         Map<Table,Integer> ordinalMap = fixUpOrdinals();
         for (final RowDef rowDef : cacheMap.values()) {
             rowDef.computeFieldAssociations(ordinalMap);

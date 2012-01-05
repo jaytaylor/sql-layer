@@ -21,6 +21,7 @@ import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.util.ShareHolder;
 import com.persistit.Exchange;
 import com.persistit.Key;

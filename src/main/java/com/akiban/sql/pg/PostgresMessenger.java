@@ -15,18 +15,9 @@
 
 package com.akiban.sql.pg;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-
 import com.akiban.util.Tap;
 
+import java.io.*;
 
 /**
  * Basic implementation of Postgres wire protocol for SQL integration.
@@ -58,7 +49,7 @@ public class PostgresMessenger implements DataInput, DataOutput
     private DataInputStream messageInput;
     private ByteArrayOutputStream byteOutput;
     private DataOutputStream messageOutput;
-    private String encoding = "ISO-8859-1";
+    private String encoding = "UTF-8";
     private boolean cancel = false;
 
     public PostgresMessenger(InputStream inputStream, OutputStream outputStream) {
@@ -151,10 +142,6 @@ public class PostgresMessenger implements DataInput, DataOutput
 
     /** Send outgoing message. */
     protected void sendMessage() throws IOException {
-        sendMessage(false);
-    }
-    /** Send outgoing message and optionally flush stream. */
-    protected void sendMessage(boolean flush) throws IOException {
         messageOutput.flush();
         byte[] msg = byteOutput.toByteArray();
         
@@ -167,14 +154,22 @@ public class PostgresMessenger implements DataInput, DataOutput
         msg[3] = (byte)(len >> 8);
         msg[4] = (byte)len;
         outputStream.write(msg);
-        if (flush) {
-            try {
-                xmitTap.in();
-                outputStream.flush();
-            }
-            finally {
-                xmitTap.out();
-            }
+    }
+
+    /** Send outgoing message and optionally flush stream. */
+    protected void sendMessage(boolean flush) throws IOException {
+        sendMessage();
+        if (flush)
+            flush();
+    }
+
+    protected void flush() throws IOException {
+        try {
+            xmitTap.in();
+            outputStream.flush();
+        }
+        finally {
+            xmitTap.out();
         }
     }
 
@@ -195,6 +190,11 @@ public class PostgresMessenger implements DataInput, DataOutput
         byte[] ba = s.getBytes(encoding);
         messageOutput.write(ba);
         messageOutput.write(0);
+    }
+
+    /** Write the raw contents of the given byte stream's buffer. */
+    public void writeByteStream(ByteArrayOutputStream s) throws IOException {
+        s.writeTo(messageOutput);
     }
 
     /*** DataInput ***/

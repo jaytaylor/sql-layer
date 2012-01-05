@@ -25,6 +25,8 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.ObjectExtractor;
+import com.akiban.sql.StandardException;
+import com.akiban.server.expression.TypesList;
 import java.util.Calendar;
 import java.util.EnumMap;
 import java.util.List;
@@ -42,24 +44,15 @@ public class StrToDateExpression extends AbstractBinaryExpression
         }
 
         @Override
-        protected ExpressionType composeType(ExpressionType first, ExpressionType second)
-        {
-            //TODO: str_to_date  return type coudl be a DATE, TIME or DATETIME depending on the format specifiers
-            // which can only be known at evaluation time....
-            // For now, this method returns a DATETIME. (so does StrToDateExpression.getValueType())
-            return ExpressionTypes.DATETIME;
-        }
-
-        @Override
-        public void argumentTypes(List<AkType> argumentTypes)
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             int size = argumentTypes.size();
-            if (size != 2)  throw new WrongExpressionArityException(2, size);
+            if (size != 2) throw new WrongExpressionArityException(2, size);
+            argumentTypes.setType(0, AkType.VARCHAR);
+            argumentTypes.setType(1, AkType.VARCHAR);
 
-            for (int n = 0; n < size; ++n)
-                argumentTypes.set(n, AkType.VARCHAR);
+            return ExpressionTypes.DATETIME;
         }
-
     };
 
     private static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
@@ -299,7 +292,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
             switch ((int) m)
             {
                 case 0:     return d <= 31;
-                case 2:     return d <= (y % 4 == 0 ? 29L : 28L);
+                case 2:     return d <= (y % 400 == 0 || y % 4 == 0 && y != 100? 29L : 28L);
                 case 4:
                 case 6:
                 case 9:

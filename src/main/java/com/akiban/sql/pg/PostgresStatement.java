@@ -24,7 +24,7 @@ import java.io.IOException;
 public interface PostgresStatement
 {
     /** Get the bound version of this statement with the given parameters. */
-    public PostgresStatement getBoundStatement(String[] parameters,
+    public PostgresStatement getBoundStatement(Object[] parameters,
                                                boolean[] columnBinary, 
                                                boolean defaultColumnBinary);
 

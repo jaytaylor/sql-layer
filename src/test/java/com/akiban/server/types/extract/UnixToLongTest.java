@@ -24,9 +24,13 @@ import static org.junit.Assert.assertEquals;
 
 public class UnixToLongTest
 {
+    private final TimeZone defaultTimeZone = TimeZone.getDefault();
+    private final String testTimeZone = "UTC";
+
     @Test
     public void testDate()
     {
+        ConverterTestUtils.setGlobalTimezone(testTimeZone);
         long unix = Extractors.getLongExtractor(AkType.DATE).stdLongToUnix(1008673L);
         assertEquals(0, unix);
 
@@ -37,8 +41,9 @@ public class UnixToLongTest
     @Test
     public void testDateTime()
     {
+        ConverterTestUtils.setGlobalTimezone(testTimeZone);
         long unix = Extractors.getLongExtractor(AkType.DATETIME).stdLongToUnix(20061107123010L);
-        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(testTimeZone));
         calendar.set(Calendar.YEAR, 2006);
         calendar.set(Calendar.MONTH, 10);
         calendar.set(Calendar.DAY_OF_MONTH, 7);
@@ -49,16 +54,17 @@ public class UnixToLongTest
         assertEquals((long)calendar.getTimeInMillis(), unix);
 
         long stdDate = Extractors.getLongExtractor(AkType.DATETIME).unixToStdLong(unix);
-        assertEquals(20061107123010L, stdDate);
+        assertEquals(20061107123010L, stdDate);     
     }
 
     @Test
     public void testTime()
     {
+        ConverterTestUtils.setGlobalTimezone(testTimeZone);
         long stdLong = 123010L;
         long unix = Extractors.getLongExtractor(AkType.TIME).stdLongToUnix(stdLong);
 
-        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(testTimeZone));
         calendar.set(Calendar.HOUR_OF_DAY, 12);
         calendar.set(Calendar.MINUTE, 30);
         calendar.set(Calendar.SECOND, 10);
@@ -74,10 +80,13 @@ public class UnixToLongTest
     @Test
     public void testYear()
     {
+        ConverterTestUtils.setGlobalTimezone(testTimeZone);
         int year = 1991;
         long unix = Extractors.getLongExtractor(AkType.YEAR).stdLongToUnix(year);
 
         long stdLong1 = Extractors.getLongExtractor(AkType.YEAR).unixToStdLong(unix);
         assertEquals(year, stdLong1);
+     
+        ConverterTestUtils.setGlobalTimezone(defaultTimeZone.getID());
     }
 }

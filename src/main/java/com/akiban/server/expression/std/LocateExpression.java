@@ -26,6 +26,8 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.sql.StandardException;
+import com.akiban.server.expression.TypesList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -42,46 +44,35 @@ public class LocateExpression extends AbstractCompositeExpression
         }
 
         @Override
-        protected ExpressionType composeType(ExpressionType first, ExpressionType second) 
-        {
-            return ExpressionTypes.LONG;
-        }
-
-        @Override
-        public void argumentTypes(List<AkType> argumentTypes) 
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             if (argumentTypes.size() != 2) throw new WrongExpressionArityException(2, argumentTypes.size());
-            argumentTypes.set(0, AkType.VARCHAR);
-            argumentTypes.set(0, AkType.VARCHAR);
-        }
-        
+            argumentTypes.setType(0, AkType.VARCHAR);
+            argumentTypes.setType(1, AkType.VARCHAR);
+
+            return ExpressionTypes.LONG;
+        }        
     };
     
     @Scalar ("locate")
     public static final ExpressionComposer LOCATE_COMPOSER = new ExpressionComposer ()
     {
-
-        @Override
-        public void argumentTypes(List<AkType> argumentTypes) 
-        {
-            int s = argumentTypes.size();
-            if (s!= 2 && s != 3) throw new WrongExpressionArityException(2, s);
-            argumentTypes.set(0, AkType.VARCHAR);
-            argumentTypes.set(1, AkType.VARCHAR);
-            if (s == 3) argumentTypes.set(2, AkType.LONG);
-        }
-
-        @Override
-        public ExpressionType composeType(List<? extends ExpressionType> argumentTypes) 
-        {
-            if (argumentTypes.size()!= 2 && argumentTypes.size() != 3) throw new WrongExpressionArityException(2, argumentTypes.size());
-            return ExpressionTypes.LONG;
-        }
-
         @Override
         public Expression compose(List<? extends Expression> arguments) 
         {
             return new LocateExpression(arguments);
+        }
+
+        @Override
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
+        {
+            int s = argumentTypes.size();
+            if (s!= 2 && s != 3) throw new WrongExpressionArityException(2, s);
+            argumentTypes.setType(0, AkType.VARCHAR);
+            argumentTypes.setType(1, AkType.VARCHAR);
+            if (s == 3) argumentTypes.setType(2, AkType.LONG);
+
+            return ExpressionTypes.LONG;
         }
         
     };

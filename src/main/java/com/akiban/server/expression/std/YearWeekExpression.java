@@ -27,6 +27,8 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.sql.StandardException;
+import com.akiban.server.expression.TypesList;
 import java.util.List;
 import org.joda.time.DateTimeConstants;
 import org.joda.time.MutableDateTime;
@@ -37,25 +39,37 @@ public class YearWeekExpression extends AbstractCompositeExpression
     public static final ExpressionComposer WEEK_COMPOSER = new ExpressionComposer()
     {
         @Override
-        public void argumentTypes(List<AkType> argumentTypes)
-        {
-            int s = argumentTypes.size();
-            if (s != 1 && s != 2) throw new WrongExpressionArityException(2, s);
-            if (argumentTypes.get(0) != AkType.TIMESTAMP && argumentTypes.get(0) != AkType.DATETIME)
-                argumentTypes.set(0, AkType.DATE);
-            if (s == 2) argumentTypes.set(1, AkType.INT);
-        }
-
-        @Override
-        public ExpressionType composeType(List<? extends ExpressionType> argumentTypes)
-        {
-            return ExpressionTypes.INT;
-        }
-
-        @Override
         public Expression compose(List<? extends Expression> arguments)
         {
             return new YearWeekExpression(arguments);
+        }
+
+        @Override
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
+        {
+            switch(argumentTypes.size())
+            {
+                case 2: argumentTypes.setType(1, AkType.INT); // fall thru
+                case 1: adjustFirstArg(argumentTypes);
+                        return ExpressionTypes.INT;
+                default: throw new WrongExpressionArityException(2, argumentTypes.size());
+            }
+        }
+
+        protected void adjustFirstArg (TypesList argumentTypes) throws StandardException
+        {
+            ExpressionType arg = argumentTypes.get(0);
+            switch(arg.getType())
+            {
+                case DATE:
+                case DATETIME:
+                case TIMESTAMP:  break;
+                case VARCHAR:    argumentTypes.setType(0, arg.getPrecision() > 10?
+                                                             AkType.DATETIME : AkType.DATE);
+                                 break;
+                default:         argumentTypes.setType(0, AkType.DATE);
+
+            }
         }
     };
 

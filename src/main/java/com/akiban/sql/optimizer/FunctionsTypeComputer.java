@@ -24,19 +24,15 @@ import com.akiban.sql.types.TypeId;
 import com.akiban.server.expression.EnvironmentExpressionFactory;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.TypesList;
 import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.service.functions.FunctionsRegistry;
-
 import com.akiban.server.types.AkType;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoSuchFunctionException;
 
 import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 /** Calculate types from expression composers. */
 public class FunctionsTypeComputer extends AISTypeComputer
@@ -102,25 +98,16 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return null;        // Defer error until later.
         }
         int nargs = args.nargs();
-        List<ExpressionType> argTypes = new ArrayList<ExpressionType>(nargs);
-        List<AkType> origTypes = new ArrayList<AkType>(nargs);
-        for (int i = 0; i < nargs; i++) {
+        TypesList argTypes = new ArgTypesList(args);
+        for (int i = 0; i < nargs; i++)
+        {
             ExpressionType argType = args.argType(i);
             if (argType == null)
                 return null;
             argTypes.add(argType);
-            origTypes.add(argType.getType());
-        }
-        List<AkType> requiredTypes = new ArrayList<AkType>(origTypes);
-        composer.argumentTypes(requiredTypes);
-        for (int i = 0; i < nargs; i++) {
-            if ((origTypes.get(i) == requiredTypes.get(i)) ||
-                (origTypes.get(i) == AkType.NULL))
-                continue;
-            // Need a different type: add a CAST.
-            argTypes.set(i, args.addCast(i, argTypes.get(i), requiredTypes.get(i)));
         }
         ExpressionType resultType = composer.composeType(argTypes);
+
         if (resultType == null)
             return null;
         return fromExpressionType(resultType);
@@ -497,11 +484,25 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return ExpressionTypes.decimal(sqlType.getPrecision(),
                                            sqlType.getScale());
         case TypeId.FormatIds.DOUBLE_TYPE_ID:
-            return ExpressionTypes.DOUBLE;
+            if (typeId.isUnsigned())
+                return ExpressionTypes.U_DOUBLE;
+            else
+                return ExpressionTypes.DOUBLE;
+        case TypeId.FormatIds.SMALLINT_TYPE_ID:
+            if (typeId == TypeId.YEAR_ID)
+                return ExpressionTypes.YEAR;
+            /* else falls through */
+        case TypeId.FormatIds.TINYINT_TYPE_ID:
         case TypeId.FormatIds.INT_TYPE_ID:
-            return ExpressionTypes.INT;
+            if (typeId.isUnsigned())
+                return ExpressionTypes.U_INT;
+            else
+                return ExpressionTypes.INT;
         case TypeId.FormatIds.LONGINT_TYPE_ID:
-            return ExpressionTypes.LONG;
+            if (typeId.isUnsigned())
+                return ExpressionTypes.U_BIGINT;
+            else
+                return ExpressionTypes.LONG;
         case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
         case TypeId.FormatIds.LONGVARCHAR_TYPE_ID:
         case TypeId.FormatIds.BLOB_TYPE_ID:
@@ -509,18 +510,25 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case TypeId.FormatIds.XML_TYPE_ID:
             return ExpressionTypes.TEXT;
         case TypeId.FormatIds.REAL_TYPE_ID:
-            return ExpressionTypes.FLOAT;
-        case TypeId.FormatIds.SMALLINT_TYPE_ID:
-        case TypeId.FormatIds.TINYINT_TYPE_ID:
-            return ExpressionTypes.INT;
+            if (typeId.isUnsigned())
+                return ExpressionTypes.U_FLOAT;
+            else
+                return ExpressionTypes.FLOAT;
         case TypeId.FormatIds.TIME_TYPE_ID:
             return ExpressionTypes.TIME;
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
-            return ExpressionTypes.TIMESTAMP;
+            if (typeId == TypeId.DATETIME_ID)
+                return ExpressionTypes.DATETIME;
+            else
+                return ExpressionTypes.TIMESTAMP;
         case TypeId.FormatIds.VARBIT_TYPE_ID:
             return ExpressionTypes.varbinary(sqlType.getMaximumWidth());
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
             return ExpressionTypes.varchar(sqlType.getMaximumWidth());
+        case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
+            return ExpressionTypes.INTERVAL_MILLIS;
+        case TypeId.FormatIds.INTERVAL_YEAR_MONTH_ID:
+            return ExpressionTypes.INTERVAL_MONTH;
         case TypeId.FormatIds.USERDEFINED_TYPE_ID:
             return ExpressionTypes.newType(AkType.valueOf(sqlType.getFullSQLTypeName().toUpperCase()), 
                                            sqlType.getPrecision(), sqlType.getScale());
@@ -572,7 +580,13 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case NULL:
             return null;
         case DATETIME:
+            return new DataTypeDescriptor(TypeId.DATETIME_ID, true);
         case YEAR:
+            return new DataTypeDescriptor(TypeId.YEAR_ID, true);
+        case INTERVAL_MILLIS:
+            return new DataTypeDescriptor(TypeId.INTERVAL_SECOND_ID, true);
+        case INTERVAL_MONTH:
+            return new DataTypeDescriptor(TypeId.INTERVAL_MONTH_ID, true);
         default:
             try {
                 return new DataTypeDescriptor(TypeId.getUserDefinedTypeId(null,
@@ -643,6 +657,10 @@ public class FunctionsTypeComputer extends AISTypeComputer
             else
                 return ExpressionTypes.decimal(TypeId.DECIMAL_ID.getMaximumPrecision(),
                                                TypeId.DECIMAL_ID.getMaximumScale());
+        case INTERVAL_MILLIS:
+            return ExpressionTypes.INTERVAL_MILLIS;
+        case INTERVAL_MONTH:
+            return ExpressionTypes.INTERVAL_MONTH;
         default:
             return ExpressionTypes.newType(toType, 0, 0);
         }

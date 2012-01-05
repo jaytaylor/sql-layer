@@ -80,7 +80,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         new HashMap<String,PostgresStatement>();
 
     private Session session;
-    private int aisGeneration = -1;
+    private long aisTimestamp = -1;
     private AkibanInformationSchema ais;
     private StoreAdapter adapter;
     private String defaultSchemaName;
@@ -459,7 +459,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     protected void processBind() throws IOException {
         String portalName = messenger.readString();
         String stmtName = messenger.readString();
-        String[] params = null;
+        Object[] params = null;
         {
             boolean[] paramsBinary = null;
             short nformats = messenger.readShort();
@@ -470,7 +470,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
             }
             short nparams = messenger.readShort();
             if (nparams > 0) {
-                params = new String[nparams];
+                params = new Object[nparams];
                 boolean binary = false;
                 for (int i = 0; i < nparams; i++) {
                     if (i < nformats)
@@ -480,7 +480,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                     byte[] param = new byte[len];
                     messenger.readFully(param, 0, len);
                     if (binary) {
-                        throw new IOException("Don't know how to parse binary format.");
+                        params[i] = param;
                     }
                     else {
                         params[i] = new String(param, messenger.getEncoding());
@@ -504,7 +504,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         }
         PostgresStatement pstmt = preparedStatements.get(stmtName);
         boundPortals.put(portalName, 
-                         pstmt.getBoundStatement(params, 
+                         pstmt.getBoundStatement(params,
                                                  resultsBinary, defaultResultsBinary));
         messenger.beginMessage(PostgresMessages.BIND_COMPLETE_TYPE.code());
         messenger.sendMessage();
@@ -570,10 +570,10 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         // TODO: This could be more reliable if the AIS object itself
         // also knew its generation. Right now, can get new generation
         // # and old AIS and not notice until next change.
-        int currentGeneration = ddl.getGeneration();
-        if (aisGeneration == currentGeneration) 
+        long currentTimestamp = ddl.getTimestamp();
+        if (aisTimestamp == currentTimestamp) 
             return;             // Unchanged.
-        aisGeneration = currentGeneration;
+        aisTimestamp = currentTimestamp;
         ais = ddl.getAIS(session);
 
         parser = new SQLParser();
@@ -593,7 +593,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                                            reqs.config());
         }
 
-        statementCache = server.getStatementCache(aisGeneration);
+        statementCache = server.getStatementCache(aisTimestamp);
         unparsedGenerators = new PostgresStatementParser[] {
             new PostgresEmulatedMetaDataStatementParser(this)
         };
@@ -767,7 +767,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     }
 
     @Override
-    public LoadablePlan loadablePlan(String planName)
+    public LoadablePlan<?> loadablePlan(String planName)
     {
         return server.loadablePlan(planName);
     }

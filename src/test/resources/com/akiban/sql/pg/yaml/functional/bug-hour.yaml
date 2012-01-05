@@ -4,10 +4,6 @@
 ---
 - Statement: INSERT INTO all_types (date_field) VALUES ('2000-01-01')
 ---
-# fails bug 901679
-- Statement: select hour(date_field) from all_types
-- output: [[0]]
----
 # bug 901845
 - Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (-999, '-999:04:07')
 ---

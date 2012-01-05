@@ -15,7 +15,6 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -23,37 +22,25 @@ import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.ValueHolder;
-import java.util.List;
 import org.joda.time.DateTime;
 
 
 public class SysDateExpression extends AbstractNoArgExpression
 {
     @Scalar("sysdate")
-    public static final ExpressionComposer COMPOSER = new ExpressionComposer()
+    public static final ExpressionComposer COMPOSER = new NoArgComposer()
     {
-
         @Override
-        public void argumentTypes(List<AkType> argumentTypes) 
+        protected Expression compose()
         {
-            if (!argumentTypes.isEmpty()) throw new WrongExpressionArityException(0, argumentTypes.size());
+            return new SysDateExpression();
         }
 
         @Override
-        public ExpressionType composeType(List<? extends ExpressionType> argumentTypes) 
+        protected ExpressionType composeType()
         {
-             if (!argumentTypes.isEmpty()) throw new WrongExpressionArityException(0, argumentTypes.size());
-             else return ExpressionTypes.TIMESTAMP;
-        }
-
-        @Override
-        public Expression compose(List<? extends Expression> arguments) 
-        {
-            if (!arguments.isEmpty()) throw new WrongExpressionArityException(0, arguments.size());
-            else return new SysDateExpression();
-        }
-        
+            return ExpressionTypes.TIMESTAMP;
+        }        
     };
     
     private static class InnerEvaluation extends AbstractNoArgExpressionEvaluation
