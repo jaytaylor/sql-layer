@@ -349,8 +349,9 @@ public class ArithExpression extends AbstractBinaryExpression
 
             if (op.opName() == '+' && interval >= 0)
             {
-                ymd_hms[0] += (ymd_hms[1] += interval) / 12;
+                ymd_hms[0] += (ymd_hms[1] += interval) / 13;
                 ymd_hms[1] = ymd_hms[1] % 12;
+                ymd_hms[1] = ymd_hms[1] == 0 ? 12 : ymd_hms[1];
             }
             else
             {

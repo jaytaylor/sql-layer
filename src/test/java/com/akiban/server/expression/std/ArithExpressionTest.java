@@ -231,6 +231,40 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
         ValueSource actual = new ValueHolder(top.evaluation().eval());
     }
 
+      @Test
+    public void testBug912261 ()
+    {
+        testAddMonth("2000-10-02", 2L, "2000-12-02");
+    }
+
+    @Test
+    public void testAddMul12Months ()
+    {
+        testAddMonth("2000-10-12", 12L, "2001-10-12");
+        testAddMonth("2000-11-12", 12L, "2001-11-12");
+        testAddMonth("2000-12-12", 12L, "2001-12-12");
+        testAddMonth("2000-12-12", 24L, "2002-12-12");
+    }
+
+    @Test
+    public void testAdd13Months ()
+    {
+        testAddMonth("2004-01-30", 13L, "2005-02-28");
+        testAddMonth("2002-02-28", 13L, "2003-03-28");
+        testAddMonth("2001-01-30", 11L, "2001-12-30");
+    }
+
+    private static void testAddMonth (String date, long month, String expectedDate)
+    {
+        Expression left = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong(date));
+        Expression right = new LiteralExpression(AkType.INTERVAL_MONTH, month);
+
+        Expression top = new ArithExpression(left, ArithOps.ADD, right);
+        String actual = Extractors.getLongExtractor(AkType.DATE).asString(top.evaluation().eval().getDate());
+
+        assertEquals(date + " + " + month + "MONTHS :",expectedDate, actual);
+    }
+    
     @Test
     public void testDatePlusIntervalMonth ()
     {
