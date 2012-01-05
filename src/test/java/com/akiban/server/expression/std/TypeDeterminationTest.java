@@ -16,6 +16,7 @@
 
 package com.akiban.server.expression.std;
 
+import java.util.EnumSet;
 import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.junit.OnlyIf;
 import com.akiban.junit.OnlyIfNot;
@@ -35,108 +36,130 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(NamedParameterizedRunner.class)
 public class TypeDeterminationTest
-
 {
+
     private AkType input1;
     private AkType input2;
     private AkType expected;
     private ArithOp op;
-    
-    public TypeDeterminationTest (AkType input1, ArithOp op,  AkType input2, AkType expected)
+
+    public TypeDeterminationTest (AkType input1, ArithOp op, AkType input2, AkType expected)
     {
         this.input1 = input1;
         this.input2 = input2;
         this.op = op;
         this.expected = expected;
     }
-    
+
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params()
     {
         ParameterizationBuilder pb = new ParameterizationBuilder();
 
-        // decimal
-        param(pb, AkType.DECIMAL, ArithOps.ADD, AkType.DECIMAL, AkType.DECIMAL);
-        param(pb, AkType.U_BIGINT, ArithOps.DIVIDE, AkType.DECIMAL, AkType.DECIMAL);
-        param(pb, AkType.DOUBLE, ArithOps.MINUS, AkType.DECIMAL, AkType.DECIMAL);
-        param(pb, AkType.LONG, ArithOps.MULTIPLY, AkType.DECIMAL, AkType.DECIMAL);
-        param(pb, AkType.DECIMAL, ArithOps.ADD, AkType.VARCHAR, AkType.DECIMAL);
+        // ------------------ numeric types only -------------------------------
+        for (ArithOp op : Arrays.asList(ArithOps.ADD, ArithOps.MINUS,
+                ArithOps.DIVIDE, ArithOps.MOD, ArithOps.MULTIPLY))
+        {
+            // decimal
+            paramNonSym(pb, AkType.DECIMAL, op, AkType.DECIMAL, AkType.DECIMAL);
+            paramSym(pb, AkType.DECIMAL, op, AkType.DOUBLE, AkType.DECIMAL);
+            paramSym(pb, AkType.DECIMAL, op, AkType.FLOAT, AkType.DECIMAL);
+            paramSym(pb, AkType.DECIMAL, op, AkType.U_BIGINT, AkType.DECIMAL);
+            paramSym(pb, AkType.DECIMAL, op, AkType.LONG, AkType.DECIMAL);
+            paramSym(pb, AkType.DECIMAL, op, AkType.INT, AkType.DECIMAL);
+
+            // double
+            paramNonSym(pb, AkType.DOUBLE, op, AkType.DOUBLE, AkType.DOUBLE);
+            paramSym(pb, AkType.DOUBLE, op, AkType.FLOAT, AkType.DOUBLE);
+            paramSym(pb, AkType.DOUBLE, op, AkType.U_BIGINT, AkType.DOUBLE);
+            paramSym(pb, AkType.DOUBLE, op, AkType.LONG, AkType.DOUBLE);
+            paramSym(pb, AkType.DOUBLE, op, AkType.INT, AkType.DOUBLE);
+
+            // float
+            paramNonSym(pb, AkType.FLOAT, op, AkType.FLOAT, AkType.FLOAT);
+            paramSym(pb, AkType.FLOAT, op, AkType.U_BIGINT, AkType.FLOAT);
+            paramSym(pb, AkType.FLOAT, op, AkType.LONG, AkType.FLOAT);
+            paramSym(pb, AkType.FLOAT, op, AkType.INT, AkType.FLOAT);
+
+            // u_bigint
+            paramNonSym(pb, AkType.U_BIGINT, op, AkType.U_BIGINT, AkType.U_BIGINT);
+            paramSym(pb, AkType.U_BIGINT, op, AkType.LONG, AkType.U_BIGINT);
+            paramSym(pb, AkType.U_BIGINT, op, AkType.INT, AkType.U_BIGINT);
+
+            // long
+            paramNonSym(pb, AkType.LONG, op, AkType.LONG, AkType.LONG);
+            paramSym(pb, AkType.LONG, op, AkType.INT, AkType.LONG);
+
+            // int
+            paramNonSym(pb, AkType.INT, op, AkType.INT, AkType.INT);
+
+        }
+
+        // ------------------ date/time types only -------------------------------
+        for (AkType datetime : Arrays.asList(AkType.DATE, AkType.DATETIME,
+                                             AkType.TIME, AkType.TIMESTAMP, AkType.YEAR))
+        {
+            paramNonSym(pb, datetime, ArithOps.MINUS, datetime, AkType.INTERVAL_MILLIS);
+            paramNonSym(pb,datetime, ArithOps.MINUS, AkType.INTERVAL_MILLIS, datetime);
+            paramNonSym(pb, datetime, ArithOps.MINUS, AkType.INTERVAL_MONTH, datetime);
+            paramSym(pb, datetime, ArithOps.ADD, AkType.INTERVAL_MILLIS, datetime);
+            paramSym(pb,datetime, ArithOps.ADD, AkType.INTERVAL_MONTH,datetime);
+
+            paramNonSym(pb, AkType.INTERVAL_MONTH, ArithOps.MINUS, datetime, null); // expect exception
+            paramNonSym(pb, AkType.INTERVAL_MILLIS, ArithOps.MINUS, datetime, null); // expect exception
+
+            for (ArithOp op : Arrays.asList(ArithOps.ADD, ArithOps.DIVIDE,
+                                            ArithOps.MOD, ArithOps.MULTIPLY))
+                paramNonSym(pb, datetime, op, datetime, null); // expect exception
+        }
         
-        // double
-        param (pb, AkType.DOUBLE, ArithOps.MULTIPLY, AkType.U_BIGINT, AkType.DOUBLE);
-        param(pb, AkType.LONG, ArithOps.ADD, AkType.DOUBLE, AkType.DOUBLE);
-        param(pb, AkType.DOUBLE, ArithOps.DIVIDE, AkType.DOUBLE, AkType.DOUBLE);
-        
-        // u_bigint
-        param(pb, AkType.U_BIGINT, ArithOps.MINUS, AkType.U_BIGINT, AkType.U_BIGINT);
-        param(pb, AkType.LONG, ArithOps.MULTIPLY, AkType.U_BIGINT, AkType.U_BIGINT);
-        
-        //long
-        param(pb, AkType.LONG, ArithOps.ADD, AkType.LONG, AkType.LONG);
-
-        // date
-        param(pb, AkType.DATE, ArithOps.MINUS, AkType.DATE, AkType.INTERVAL_MILLIS);
-        param(pb, AkType.DATE, ArithOps.MINUS, AkType.INTERVAL_MILLIS, AkType.DATE);
-        param(pb, AkType.DATE, ArithOps.ADD, AkType.INTERVAL_MILLIS, AkType.DATE);
-        param(pb, AkType.DATE, ArithOps.ADD, AkType.INTERVAL_MONTH, AkType.DATE);
-        param(pb, AkType.DATE, ArithOps.MINUS, AkType.INTERVAL_MONTH, AkType.DATE);
-        param(pb, AkType.INTERVAL_MILLIS, ArithOps.ADD, AkType.DATE, AkType.DATE);
-        param(pb, AkType.INTERVAL_MONTH, ArithOps.ADD, AkType.DATE, AkType.DATE);
-        param(pb, AkType.INTERVAL_MONTH, ArithOps.MINUS, AkType.DATE, null); // expect exception
-        param(pb, AkType.INTERVAL_MILLIS, ArithOps.MINUS, AkType.DATE, null); // expect exception
-        param(pb, AkType.DATE, ArithOps.DIVIDE, AkType.INTERVAL_MILLIS, null); // expect exception
-        param(pb, AkType.DATE, ArithOps.ADD, AkType.DATE, null); // expect exception
-
-        // time
-        param(pb, AkType.TIME, ArithOps.MINUS, AkType.TIME, AkType.INTERVAL_MILLIS);
-        param(pb, AkType.TIME, ArithOps.ADD, AkType.INTERVAL_MILLIS, AkType.TIME);
-        param(pb, AkType.TIME, ArithOps.ADD, AkType.INTERVAL_MONTH, AkType.TIME);
-        param(pb, AkType.TIME, ArithOps.MINUS, AkType.INTERVAL_MILLIS, AkType.TIME);
-        param(pb, AkType.INTERVAL_MILLIS, ArithOps.ADD, AkType.TIME, AkType.TIME);
-        param(pb, AkType.INTERVAL_MILLIS, ArithOps.MINUS, AkType.TIME, null); // expect exception
-
-        // year
-        param(pb, AkType.YEAR, ArithOps.MINUS, AkType.YEAR, AkType.INTERVAL_MILLIS);
-        param(pb, AkType.YEAR, ArithOps.ADD, AkType.INTERVAL_MILLIS, AkType.YEAR);
-        param(pb, AkType.YEAR, ArithOps.MINUS, AkType.INTERVAL_MILLIS, AkType.YEAR);
-        param(pb, AkType.INTERVAL_MILLIS, ArithOps.ADD, AkType.YEAR, AkType.YEAR);
-
         // INTERVALs
         for (AkType interval : Arrays.asList(AkType.INTERVAL_MILLIS, AkType.INTERVAL_MONTH))
         {
-                        
-            param(pb, interval, ArithOps.ADD, interval, interval);
-            param(pb, interval, ArithOps.MINUS, interval, interval);
-            param(pb, interval, ArithOps.DIVIDE, interval, null); // expect exception
-            param(pb, interval, ArithOps.MULTIPLY, interval, null); // expect exception
-            
+
+            paramNonSym(pb, interval, ArithOps.ADD, interval, interval);
+            paramNonSym(pb, interval, ArithOps.MINUS, interval, interval);
+            paramNonSym(pb, interval, ArithOps.DIVIDE, interval, null); // expect exception
+            paramNonSym(pb, interval, ArithOps.MULTIPLY, interval, null); // expect exception
+
             for (AkType numeric : Arrays.asList(AkType.LONG, AkType.DECIMAL, AkType.DOUBLE,
-                        AkType.U_BIGINT, AkType.FLOAT, AkType.INT))
+                    AkType.U_BIGINT, AkType.FLOAT, AkType.INT))
             {
-                param(pb, interval, ArithOps.MULTIPLY, numeric, interval);
-                param(pb, numeric, ArithOps.MULTIPLY, interval, interval);
-                param(pb, numeric, ArithOps.DIVIDE, interval, null); // expect exception
+                paramSym(pb, interval, ArithOps.MULTIPLY, numeric, interval);
+                paramNonSym(pb, numeric, ArithOps.DIVIDE, interval, null); // expect exception
             }
         }
         
         // INTERVAL_MONTH and INTERVAL_MILLIS
-        param(pb, AkType.INTERVAL_MILLIS, ArithOps.ADD, AkType.INTERVAL_MONTH, null); // expect exception
-        param(pb, AkType.INTERVAL_MONTH, ArithOps.ADD, AkType.INTERVAL_MILLIS, null); // ditto
-        param(pb, AkType.INTERVAL_MILLIS, ArithOps.MINUS, AkType.INTERVAL_MONTH, null); // expect exception
-        param(pb, AkType.INTERVAL_MONTH, ArithOps.MINUS, AkType.INTERVAL_MILLIS, null); // ditto
-        
-        // exceptions
-        param(pb, AkType.DATE, ArithOps.MINUS, AkType.TIME, null);
-        param(pb, AkType.LONG, ArithOps.ADD, AkType.DATE, null);
-        param(pb, AkType.YEAR, ArithOps.MULTIPLY, AkType.LONG, null);
-        
+        for (ArithOp op : Arrays.asList(ArithOps.ADD, ArithOps.MINUS,
+                ArithOps.DIVIDE, ArithOps.MOD, ArithOps.MULTIPLY))
+            paramSym(pb, AkType.INTERVAL_MILLIS, op, AkType.INTERVAL_MONTH, null); // expect exception
 
+        // mixing date/times
+        EnumSet<AkType> DATES = EnumSet.of
+                (AkType.DATE, AkType.DATETIME, AkType.TIME, AkType.TIMESTAMP, AkType.YEAR);
+
+        for (AkType type1 : DATES)
+        {
+            DATES.remove(type1);
+            for (AkType type2 : DATES)
+                for (ArithOp op : Arrays.asList(ArithOps.ADD, ArithOps.MINUS,
+                            ArithOps.DIVIDE, ArithOps.MOD, ArithOps.MULTIPLY))
+                    paramSym(pb, type1, op, type2, null);            
+        }
+        
         return pb.asList();
     }
-    
-    private static void param(ParameterizationBuilder pb, AkType input1, ArithOp op, AkType input2, AkType expected)
+
+    private static void paramNonSym(ParameterizationBuilder pb, AkType input1, ArithOp op, AkType input2, AkType expected)
     {
-        pb.add(input1.name() +  op.opName() + input2.name(), input1, op, input2, expected);       
+        pb.add(input1.name() + op.opName() + input2.name(), input1, op, input2, expected);
+    }
+
+    private static void paramSym(ParameterizationBuilder pb, AkType input1, ArithOp op, AkType input2, AkType expected)
+    {
+        pb.add(input1.name() + op.opName() + input2.name(), input1, op, input2, expected);
+        pb.add(input2.name() + op.opName() + input1.name(), input2, op, input1, expected);
     }
 
     @OnlyIfNot("exceptionExpected()")
@@ -145,9 +168,9 @@ public class TypeDeterminationTest
     {
         Expression left = getExp(input1);
         Expression right = getExp(input2);
-        ArithExpression top = new ArithExpression(left, op, right);               
+        ArithExpression top = new ArithExpression(left, op, right);
         top.evaluation().eval();
-        assertEquals( expected,top.topT);
+        assertEquals( expected, top.topT);
     }
     
     @OnlyIf("exceptionExpected()")
@@ -170,8 +193,10 @@ public class TypeDeterminationTest
             case INT:
             case LONG:
             case YEAR:
-            case DATE: 
-            case TIME: 
+            case DATE:
+            case DATETIME:
+            case TIMESTAMP:
+            case TIME:
             case INTERVAL_MONTH:
             case INTERVAL_MILLIS: return new LiteralExpression(type, 1L); 
             case VARCHAR: return new LiteralExpression (type, "1");

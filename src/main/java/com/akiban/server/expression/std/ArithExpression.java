@@ -164,7 +164,8 @@ public class ArithExpression extends AbstractBinaryExpression
             else // number and interval: an interval can be multiply with || divide by a number
             {
                AkType interval = l2 == 0 ? SUPPORTED_TYPES.get(l) : SUPPORTED_TYPES.get(r);
-               if (op.opName() == '/' && l2 == 0 || op.opName() == '*') return interval;
+               char opName = op.opName();
+               if ((opName == '/' || opName == '%')&& l2 == 0 || opName == '*') return interval;
                else throw new InvalidArgumentTypeException(msg);
             }
         }
