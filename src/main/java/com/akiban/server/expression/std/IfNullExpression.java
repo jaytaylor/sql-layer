@@ -22,7 +22,6 @@ import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.TypesList;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.sql.StandardException;
-import java.util.Arrays;
 import java.util.List;
 
 public class IfNullExpression extends CoalesceExpression
