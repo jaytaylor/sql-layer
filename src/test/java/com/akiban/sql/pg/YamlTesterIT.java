@@ -15,6 +15,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.types.extract.ConverterTestUtils;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -27,6 +28,10 @@ import org.junit.Test;
 /** Test the {@code YamlTester} class. */
 public class YamlTesterIT extends PostgresServerYamlITBase {
 
+    static
+    {
+        ConverterTestUtils.setGlobalTimezone("UTC");
+    }
     /* Tests */
 
     /* Test general syntax */

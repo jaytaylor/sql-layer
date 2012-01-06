@@ -302,7 +302,9 @@ public class PersistitStoreIndexStatistics
             throws PersistitException {
         PersistitIndexStatisticsVisitor visitor = 
             new PersistitIndexStatisticsVisitor(index);
+        visitor.init();
         store.traverse(session, index, visitor);
+        visitor.finish();
         IndexStatistics result = visitor.getIndexStatistics();
         logger.debug("Analyzed: " + result);
         return result;

@@ -30,6 +30,7 @@ import com.akiban.sql.StandardException;
 import com.akiban.server.expression.TypesList;
 import java.util.Arrays;
 import java.util.List;
+import org.joda.time.DateTimeZone;
 import org.joda.time.MutableDateTime;
 
 public class WeekExpression extends AbstractCompositeExpression
@@ -201,7 +202,8 @@ public class WeekExpression extends AbstractCompositeExpression
                 throw new InvalidParameterValueException();
             else
             {
-                valueHolder().putRaw(AkType.INT, modes[(int) mode].getWeek(new MutableDateTime(), (int)ymd[0], (int)ymd[1], (int)ymd[2]));
+                valueHolder().putRaw(AkType.INT, modes[(int) mode].getWeek(new MutableDateTime(DateTimeZone.getDefault()),
+                        (int)ymd[0], (int)ymd[1], (int)ymd[2]));
                 return valueHolder();
             }
         }

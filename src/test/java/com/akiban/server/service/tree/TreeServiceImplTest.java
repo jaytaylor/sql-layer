@@ -52,5 +52,5 @@ public class TreeServiceImplTest {
         assertNotNull(properties.getProperty("datapath"));
         assertNotNull(properties.getProperty("buffer.memory.16384"));
     }
-
+    
 }
