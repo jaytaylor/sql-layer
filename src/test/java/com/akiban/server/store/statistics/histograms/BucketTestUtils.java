@@ -18,6 +18,7 @@ package com.akiban.server.store.statistics.histograms;
 import com.akiban.util.Recycler;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -33,14 +34,14 @@ final class BucketTestUtils {
         result.addLessThanDistincts(lessThanDistincts);
         return result;
     }
-    public static <T> List<Bucket<T>> compileSingleStream(Iterable<? extends T> inputs, int maxBuckets, long seed) {
-        return compileSingleStream(inputs, maxBuckets, seed, new SingletonSplitter<T>(), new NoOpRecycler<T>());
+    public static <T> List<Bucket<T>> compileSingleStream(Collection<? extends T> inputs, int maxBuckets) {
+        return compileSingleStream(inputs, maxBuckets, new SingletonSplitter<T>(), new NoOpRecycler<T>());
     }
     
-    public static <T> List<Bucket<T>> compileSingleStream(Iterable<? extends T> inputs, int maxBuckets, long seed,
+    public static <T> List<Bucket<T>> compileSingleStream(Collection<? extends T> inputs, int maxBuckets,
                                                           Splitter<T> splitter, Recycler<? super T> recycler
     ) {
-        Sampler<T> sampler = new Sampler<T>(splitter, maxBuckets, seed, recycler);
+        Sampler<T> sampler = new Sampler<T>(splitter, maxBuckets, new MyLong(inputs.size()), recycler);
         sampler.init();
         for (T input : inputs) {
             List<? extends T> recycles = sampler.visit(input);
@@ -51,10 +52,6 @@ final class BucketTestUtils {
         List<List<Bucket<T>>> result = sampler.toBuckets();
         assertEquals("result length: " + result, 1, result.size());
         return result.get(0);
-    }
-
-    public static <T> List<Bucket<T>> compileSingleStream(Iterable<? extends T> inputs, int maxBuckets) {
-        return compileSingleStream(inputs, maxBuckets, 37L);
     }
 
     public static class SingletonSplitter<T> implements Splitter<T> {

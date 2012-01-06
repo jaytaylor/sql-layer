@@ -21,7 +21,6 @@ import com.akiban.util.Recycler;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 /**
  * Combines the SplitHandler (T visitor) with Buckets (T aggregator).
@@ -33,7 +32,8 @@ public class Sampler<T> extends SplitHandler<T> {
         BucketSampler<T> bucketSampler = bucketSamplerList.get(segmentIndex);
         Bucket<T> bucket = bucketsFlywheel.get();
         bucket.init(input, count);
-        bucketSampler.add(bucket, bucketsFlywheel);
+        if (!bucketSampler.add(bucket))
+            bucketsFlywheel.recycle(bucket);
     }
 
     @Override
@@ -54,17 +54,16 @@ public class Sampler<T> extends SplitHandler<T> {
     }
 
     public Sampler(Splitter<T> splitter, int maxSize, Recycler<? super T> recycler) {
-        this(splitter, maxSize, System.nanoTime(), recycler);
+        this(splitter, maxSize, null, recycler);
     }
 
-    Sampler(Splitter<T> splitter, int maxSize, long randSeed, Recycler<? super T> recycler) {
+    Sampler(Splitter<T> splitter, int maxSize, MyLong expectedInputs, Recycler<? super T> recycler) {
         super(splitter);
         int segments = splitter.segments();
         ArgumentValidation.isGT("segments", segments, 0);
         bucketSamplerList =  new ArrayList<BucketSampler<T>>(segments);
-        Random random = new Random(randSeed);
         for (int i=0; i < segments; ++i) {
-            bucketSamplerList.add(new BucketSampler<T>(maxSize, random, recycler));
+            bucketSamplerList.add(new BucketSampler<T>(maxSize, expectedInputs));
         }
         this.maxSize = maxSize;
         this.segments = segments;
@@ -82,6 +81,12 @@ public class Sampler<T> extends SplitHandler<T> {
             ++created;
             assert created <= (maxSize+1) * segments : created + " > " + (maxSize+1)*segments;
             return new Bucket<T>();
+        }
+
+        @Override
+        public void recycle(Bucket<T> element) {
+            super.recycle(element);
+            recycler.recycle(element.value());
         }
 
         private int created;

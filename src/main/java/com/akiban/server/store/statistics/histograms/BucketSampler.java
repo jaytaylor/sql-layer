@@ -15,226 +15,67 @@
 
 package com.akiban.server.store.statistics.histograms;
 
-import com.akiban.util.Flywheel;
-import com.akiban.util.Recycler;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.Random;
-import java.util.TreeMap;
 
 final class BucketSampler<T> {
-    
-    void add(Bucket<T> bucket, Flywheel<Bucket<T>> releaseTo) {
-        BucketNode<T> node = nodeFor(bucket);
-        node.prev = last;
-        last.next = node;
-        last = node;
-        if (++size > maxSize) { // need to trim
-            BucketNode<T> removeNode = nodeToRemove();
-            assert removeNode.next != null : removeNode;
-            Bucket<T> removeBucket = removeNode.bucket;
-            releaseTo.recycle(removeBucket);
 
-            Bucket<T> foldIntoBucket = removeNode.next.bucket;
-            assert foldIntoBucket != null;
-            foldIntoBucket.addLessThans(removeBucket.getEqualsCount() + removeBucket.getLessThanCount());
-            foldIntoBucket.addLessThanDistincts(removeBucket.getLessThanDistinctsCount() + 1);
-            // update the removeNode's prev and next to point to each other
-            removeNode.prev.next = removeNode.next;
-            if (removeNode.next != null)
-                removeNode.next.prev = removeNode.prev;
-            --size;
-            checkIntegrity();
-            bucketNodeReserves.recycle(removeNode);
-            recycler.recycle(removeBucket.value());
+    boolean add(Bucket<T> bucket) {
+        long bucketsRepresented = (bucket.getEqualsCount() + bucket.getLessThanCount());
+        inputsCount += bucketsRepresented;
+        // last bucket is always in
+        if (inputsCount > expectedCount)
+            throw new IllegalStateException("expected " + expectedCount + " elements, but saw " + inputsCount);
+        // see if we've crossed a median point (or are at the end)
+        boolean hitMedianOrEnd = (inputsCount == expectedCount);
+        if (!hitMedianOrEnd) {
+            while (inputsCount >= nextMedianPoint) {
+                hitMedianOrEnd = true;
+                nextMedianPoint += medianPointDistance;
+            }
+        }
+        if (hitMedianOrEnd) {
+            bucket.addLessThanDistincts(runningLessThanDistincts);
+            bucket.addLessThans(runningLessThans);
+            buckets.add(bucket);
+            runningLessThanDistincts = 0;
+            runningLessThans = 0;
         }
         else {
-            addPenultToBucketNodeSets();
+            runningLessThans += bucketsRepresented;
+            runningLessThanDistincts += bucket.getLessThanDistinctsCount() + 1;
         }
+        return hitMedianOrEnd;
     }
 
     List<Bucket<T>> buckets() {
-        List<Bucket<T>> results = new ArrayList<Bucket<T>>(size);
-        for(BucketNode<T> node = sentinel.next; node != null; node = node.next) {
-            results.add(node.bucket);
-        }
-        return results;
+        if (expectedCount != inputsCount)
+            throw new IllegalStateException("expected " + expectedCount + " inputs but saw " + inputsCount);
+        return buckets;
     }
 
-    private void checkIntegrity() {
-        BucketNode<T> last = null;
-        for(BucketNode<T> node = sentinel; node != null; node = node.next) {
-            if (node.prev != last)
-                System.out.printf("expected node.prev=%s but was %s%n", last, node.prev);
-            last = node;
-        }
+    BucketSampler(int maxSize, MyLong expectedInputs) {
+        if (maxSize < 1)
+            throw new IllegalArgumentException("max must be at least 1");
+        if (expectedInputs.val() < 0)
+            throw new IllegalArgumentException("expectedInputs must be non-negative: " + expectedInputs.val());
+        this.expectedCount = expectedInputs.val();
+        this.buckets = new ArrayList<Bucket<T>>(maxSize + 1);
+        long medianPointDistance = expectedCount / maxSize;
+        this.medianPointDistance = medianPointDistance == 0 ? 1 : medianPointDistance;
+        this.nextMedianPoint = this.medianPointDistance;
+        assert this.nextMedianPoint > 0 : this.nextMedianPoint;
     }
 
-    BucketSampler(int maxSize, Random usingRandom, Recycler<? super T> recycler) {
-        if (maxSize < 2)
-            throw new IllegalArgumentException("max must be at least 2");
-        this.maxSize = maxSize;
-        this.sentinel = new BucketNode<T>();
-        this.last = sentinel;
-        this.bucketNodeSets = new TreeMap<Long, BucketNodeSet<T>>();
-        this.random = usingRandom;
-        this.recycler = recycler;
-    }
+    private final long expectedCount;
+    private final long medianPointDistance;
+
+    private long nextMedianPoint;
+    private long inputsCount;
+    private long runningLessThans;
+    private long runningLessThanDistincts;
     
-    protected long popularity(Bucket<T> bucket) {
-        return bucket.getEqualsCount();
-    }
-
-    private BucketNode<T> nodeToRemove() {
-        BucketNode<T> penult = last.prev;
-        long lastNodePopularity = popularity(penult.bucket);
-        Map.Entry<Long,BucketNodeSet<T>> leastPopularEntry = bucketNodeSets.firstEntry();
-        long leastPopular = leastPopularEntry.getKey();
-        if (lastNodePopularity < leastPopular) {
-            return penult;
-        }
-        if (lastNodePopularity == leastPopular) {
-            BucketNodeSet<T> bucketNodeSet = leastPopularEntry.getValue();
-            if (bucketNodeSet.totalSeen > bucketNodeSet.bucketNodes.size()) {
-                // if there have been T buckets seen, and there are S buckets now, then
-                // T-S buckets have been removed. That means each bucket has had a (T-S)/T chance of being removed.
-                // Another way of looking at it: there have been T total, and there are S now. So each nosw in here has
-                // had an S/T chance of being picked, which means a 1 - (S/T) chance of being removed.
-                //     1 - (S/T) = T/T - S/T = (T-S)/T
-                // So, we need to give this guy the same opportunity!
-                int numer = bucketNodeSet.totalSeen - bucketNodeSet.bucketNodes.size();
-                int denom = bucketNodeSet.totalSeen + 1;
-                if (rand(denom) < numer) {
-                    bucketNodeSet.totalSeen++;
-                    return penult;
-                }
-                else {
-                    bucketNodeSet.add(penult);
-                }
-            }
-            else {
-                bucketNodeSet.add(penult);
-            }
-        }
-        else {
-            // not the least popular! Add this to its entry, creating if needed
-            addPenultToBucketNodeSets();
-        }
-        // now, clear a random one out of the least popular entry
-        BucketNodeSet<T> bucketNodeSet = leastPopularEntry.getValue();
-        final BucketNode<T> result;
-        if (bucketNodeSet.bucketNodes.size() == 1) {
-            // last element! get it and remove this node set from the map.
-            // this is safe to do because the final results are guaranteed to have only
-            // nodes which are more popular than this one.
-            result = bucketNodeSet.bucketNodes.get(0);
-            BucketNodeSet<T> removed = bucketNodeSets.remove(leastPopular);
-            assert removed != null;
-            bucketNodeSetReserves.recycle(removed);
-        }
-        else {
-            List<BucketNode<T>> list = bucketNodeSet.bucketNodes;
-            result = list.remove(rand(list.size()));
-            bucketNodeSet.battles++;
-        }
-        return result;
-    }
-
-    private void addPenultToBucketNodeSets() {
-        if (last.prev != sentinel)
-            addToBucketNodeSets(last.prev);
-    }
-
-    private void addToBucketNodeSets(BucketNode<T> node) {
-        long nodePopularity = popularity(node.bucket);
-        BucketNodeSet<T> bucketNodeSet = bucketNodeSets.get(nodePopularity);
-        if (bucketNodeSet == null) {
-            if (bucketNodeSetReserves == null) {
-                bucketNodeSetReserves = new Flywheel<BucketNodeSet<T>>() {
-                    @Override
-                    protected BucketNodeSet<T> createNew() {
-                        return new BucketNodeSet<T>();
-                    }
-                };
-            }
-            bucketNodeSet = bucketNodeSetReserves.get();
-            bucketNodeSet.init();
-            bucketNodeSets.put(nodePopularity, bucketNodeSet);
-        }
-        bucketNodeSet.add(node);
-    }
-
-    private BucketNode<T> nodeFor(Bucket<T> bucket) {
-        if (bucketNodeReserves == null) {
-            bucketNodeReserves = new Flywheel<BucketNode<T>>() {
-                @Override
-                protected BucketNode<T> createNew() {
-                    return new BucketNode<T>();
-                }
-            };
-        }
-        BucketNode<T> result = bucketNodeReserves.get();
-        result.init(bucket);
-        return result;
-    }
+    private final List<Bucket<T>> buckets;
     
-    private int rand(int n) {
-        if (random == null)
-            random = new Random(System.nanoTime());
-        return random.nextInt(n);
-    }
-
-    private final int maxSize;
-    private int size;
-    private final BucketNode<T> sentinel;
-    private final NavigableMap<Long,BucketNodeSet<T>> bucketNodeSets;
-    private Random random;
-    private BucketNode<T> last;
-    private final Recycler<? super T> recycler;
-    private Flywheel<BucketNode<T>> bucketNodeReserves;
-    private Flywheel<BucketNodeSet<T>> bucketNodeSetReserves;
-    
-    private static class BucketNode<A> {
-
-        @Override
-        public String toString() {
-            return (prev==null) ? "SENTINAL" : String.valueOf(bucket);
-        }
-
-        public void init(Bucket<A> bucket) {
-            this.bucket = bucket;
-            this.next = null;
-            this.prev = null;
-        }
-
-        Bucket<A> bucket;
-        BucketNode<A> next;
-        BucketNode<A> prev;
-    }
-    
-    private static class BucketNodeSet<T> {
-
-        @Override
-        public String toString() {
-            return String.format("%d buckets (%d total), %d battles", bucketNodes.size(), totalSeen, battles);
-        }
-
-        public void add(BucketNode<T> node) {
-            bucketNodes.add(node);
-            ++totalSeen;
-        }
-
-        public void init() {
-            bucketNodes.clear();
-            totalSeen = 0;
-            battles = 0;
-        }
-        
-        private final List<BucketNode<T>> bucketNodes = new ArrayList<BucketNode<T>>();
-        private int totalSeen = 0;
-        private int battles = 0;
-    }
 }
