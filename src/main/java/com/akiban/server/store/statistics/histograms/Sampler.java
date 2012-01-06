@@ -65,15 +65,13 @@ public class Sampler<T> extends SplitHandler<T> {
         for (int i=0; i < segments; ++i) {
             bucketSamplerList.add(new BucketSampler<T>(maxSize, expectedInputs));
         }
-        this.maxSize = maxSize;
         this.segments = segments;
         this.bucketsFlywheel = new BucketFlywheel<T>(maxSize, segments, recycler);
     }
 
-    final List<BucketSampler<T>> bucketSamplerList;
-    final int maxSize;
-    final int segments;
-    boolean finished = false;
+    private final List<BucketSampler<T>> bucketSamplerList;
+    private final int segments;
+    private boolean finished = false;
     private final Flywheel<Bucket<T>> bucketsFlywheel;
 
     private static class BucketFlywheel<T> extends Flywheel<Bucket<T>> {
