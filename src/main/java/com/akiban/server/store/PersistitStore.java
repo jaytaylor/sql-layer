@@ -737,7 +737,8 @@ public class PersistitStore implements Store {
             Exchange iEx = getExchange(session, index);
             try {
                 iEx.removeAll();
-                new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, iEx.getTree()).set(0);
+                if (index.isGroupIndex())
+                    new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, iEx.getTree()).set(0);
             } catch (PersistitException e) {
                 throw new PersistitAdapterException(e);
             }
@@ -991,8 +992,6 @@ public class PersistitStore implements Store {
         } else {
             try {
                 iEx.store();
-                if (!index.isPrimaryKey())
-                    AccumulatorAdapter.updateAndGet(AccumulatorAdapter.AccumInfo.ROW_COUNT, iEx, 1);
             } catch (PersistitException e) {
                 throw new PersistitAdapterException(e);
             }
@@ -1071,8 +1070,6 @@ public class PersistitStore implements Store {
         final Exchange iEx = getExchange(session, index);
         constructIndexKey(new PersistitKeyAppender(iEx.getKey()), rowData, index, hkey);
         boolean removed = iEx.remove();
-        if (!index.isPrimaryKey())
-            AccumulatorAdapter.updateAndGet(AccumulatorAdapter.AccumInfo.ROW_COUNT, iEx, -1);
         releaseExchange(session, iEx);
     }
 
@@ -1346,4 +1343,12 @@ public class PersistitStore implements Store {
         return visitor;
     }
 
+    public TableStatus getTableStatus(Table table) {
+        TableStatus ts = null;
+        RowDef rowDef = rowDefCache.getRowDef(table.getTableId());
+        if (rowDef != null) {
+            ts = rowDef.getTableStatus();
+        }
+        return ts;
+    }
 }
