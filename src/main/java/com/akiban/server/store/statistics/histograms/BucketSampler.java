@@ -22,8 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 final class BucketSampler<T> {
-
-    boolean add(Bucket<T> bucket) {
+    
+    public boolean add(Bucket<T> bucket) {
         long bucketEqualsCount = bucket.getEqualsCount();
         long bucketsRepresented = (bucketEqualsCount + bucket.getLessThanCount());
         inputsCount += bucketsRepresented;
@@ -39,11 +39,7 @@ final class BucketSampler<T> {
             }
         }
         if (insertIntoResults) {
-            bucket.addLessThanDistincts(runningLessThanDistincts);
-            bucket.addLessThans(runningLessThans);
-            buckets.add(bucket);
-            runningLessThanDistincts = 0;
-            runningLessThans = 0;
+            appendToResults(bucket);
         }
         else {
             runningLessThans += bucketsRepresented;
@@ -56,6 +52,14 @@ final class BucketSampler<T> {
         ++bucketsSeen;
         equalsSeen += bucketEqualsCount;
         return insertIntoResults;
+    }
+    
+    public void appendToResults(Bucket<T> bucket) {
+        bucket.addLessThanDistincts(runningLessThanDistincts);
+        bucket.addLessThans(runningLessThans);
+        buckets.add(bucket);
+        runningLessThanDistincts = 0;
+        runningLessThans = 0;
     }
 
     List<Bucket<T>> buckets() {

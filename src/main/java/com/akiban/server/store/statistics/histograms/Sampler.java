@@ -19,7 +19,9 @@ import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Flywheel;
 import com.akiban.util.Recycler;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 
@@ -62,15 +64,14 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
 
     private PopularitySplit<T> splitByPopularity(BucketSampler<T> sampler) {
         List<Bucket<T>> samples = sampler.buckets();
-        List<Bucket<T>> popular = new ArrayList<Bucket<T>>(samples.size());
+        Deque<Bucket<T>> popular = new ArrayDeque<Bucket<T>>(samples.size());
 
         // a bucket is "exceptionally popular" if its popularity (equals-count) is more than one standard dev
         // above average
         long popularityCutoff = Math.round(sampler.getEqualsMean() + sampler.getEqualsStdDev());
         for (Iterator<Bucket<T>> iter = samples.iterator(); iter.hasNext(); ) {
             Bucket<T> sample = iter.next();
-            // the last bucket is also treated as exceptionally popular
-            if (!iter.hasNext() || (sample.getEqualsCount() >= popularityCutoff)) {
+            if (sample.getEqualsCount() >= popularityCutoff) {
                 iter.remove();
                 popular.add(sample);
             }
@@ -89,15 +90,31 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
 
 
     private List<Bucket<T>> mergePopularitySplit(PopularitySplit<T> split) {
-        List<Bucket<T>> populars = split.popularBuckets;
+        Deque<Bucket<T>> populars = split.popularBuckets;
         if (populars.size() == maxSize)
-            return populars;
+            return new ArrayList<Bucket<T>>(populars);
         if (populars.size() > maxSize)
             return trimmed(populars);
-        throw new UnsupportedOperationException("TODO"); // TODO
+        // We're going to sample the unpopular buckets, but unconditionally append the popular ones into the results
+        int unpopularsNeeded = maxSize - populars.size();
+        BucketSampler<T> sampler = new BucketSampler<T>(unpopularsNeeded, new MyLong(split.regularBuckets.size()));
+        for (Bucket<T> regularBucket : split.regularBuckets) {
+            while (!populars.isEmpty()) {
+                T regularValue = regularBucket.value();
+                T popularValue = populars.getFirst().value();
+                if (popularValue.compareTo(regularValue) < 0)
+                    sampler.appendToResults(populars.removeFirst()); // and the loop will try again
+                else
+                    break;
+            }
+            sampler.add(regularBucket);
+        }
+        for (Bucket<T> popularBucket : populars)
+            sampler.appendToResults(popularBucket);
+        return sampler.buckets();
     }
 
-    private List<Bucket<T>> trimmed(List<Bucket<T>> buckets) {
+    private List<Bucket<T>> trimmed(Deque<Bucket<T>> buckets) {
         BucketSampler<T> sampler = new BucketSampler<T>(maxSize, new MyLong(buckets.size()), false);
         for (Bucket<T> bucket : buckets)
             sampler.add(bucket);
@@ -133,13 +150,13 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
     private static final int OVERSAMPLE_FACTOR = 50;
 
     private static class PopularitySplit<T> {
-        private PopularitySplit(List<Bucket<T>> regularBuckets, List<Bucket<T>> popularBuckets) {
+        private PopularitySplit(List<Bucket<T>> regularBuckets, Deque<Bucket<T>> popularBuckets) {
             this.regularBuckets = regularBuckets;
             this.popularBuckets = popularBuckets;
         }
 
         private final List<Bucket<T>> regularBuckets;
-        private final List<Bucket<T>> popularBuckets;
+        private final Deque<Bucket<T>> popularBuckets;
     }
 
     private static class BucketFlywheel<T> extends Flywheel<Bucket<T>> {
