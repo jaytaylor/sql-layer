@@ -670,6 +670,7 @@ abstract class ExtractorsForDates extends LongExtractor {
     static void setGlobalTimezone(String timezone) {
         dateFormatProvider.set(new DateFormatProvider(timezone));
         DateTimeZone.setDefault(DateTimeZone.forID(timezone));
+        TimeZone.setDefault(TimeZone.getTimeZone(timezone));
     }
 
     private static DateFormat timestampFormat() {
