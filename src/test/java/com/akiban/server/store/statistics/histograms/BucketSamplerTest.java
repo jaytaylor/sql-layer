@@ -182,13 +182,13 @@ public final class BucketSamplerTest {
 
     @Test
     public void testEqualityMean() {
-        BucketSampler<String> sampler = runSampler(32, "a a a    b b  c c c c   d d d   e  f f f f f");
+        BucketSampler<String> sampler = runSampler(1, "a a a    b b  c c c c   d d d   e  f f f f f");
         assertEquals("mean equality", 3.0d, sampler.getEqualsMean(), 0.0);
     }
 
     @Test
     public void testEqualityStdDev() {
-        BucketSampler<String> sampler = runSampler(32, "a a a    b b  c c c c   d d d   e  f f f f f ");
+        BucketSampler<String> sampler = runSampler(1, "a a a    b b  c c c c   d d d   e  f f f f f ");
         assertEquals("equality std dev", 1.41421d, sampler.getEqualsStdDev(), 0.00001d);
     }
 
