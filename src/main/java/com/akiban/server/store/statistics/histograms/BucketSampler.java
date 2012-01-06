@@ -58,7 +58,8 @@ final class BucketSampler<T> {
     }
 
     List<Bucket<T>> buckets() {
-        checkFinished();
+        if (expectedCount != inputsCount)
+            throw new IllegalStateException("expected " + expectedCount + " inputs but saw " + inputsCount);
         return buckets;
     }
     
@@ -68,11 +69,6 @@ final class BucketSampler<T> {
 
     public double getEqualsMean() {
         return ((double)equalsSeen) / ((double)bucketsSeen);
-    }
-
-    private void checkFinished() {
-        if (expectedCount != inputsCount)
-            throw new IllegalStateException("expected " + expectedCount + " inputs but saw " + inputsCount);
     }
 
     BucketSampler(int maxSize, MyLong expectedInputs) {
