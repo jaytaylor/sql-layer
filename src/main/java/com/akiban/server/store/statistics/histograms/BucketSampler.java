@@ -31,14 +31,14 @@ final class BucketSampler<T> {
         if (inputsCount > expectedCount)
             throw new IllegalStateException("expected " + expectedCount + " elements, but saw " + inputsCount);
         // see if we've crossed a median point (or are at the end)
-        boolean hitMedianOrEnd = (inputsCount == expectedCount);
-        if (!hitMedianOrEnd) {
+        boolean insertIntoResults = (inputsCount == expectedCount);
+        if (!insertIntoResults) {
             while (inputsCount >= nextMedianPoint) {
-                hitMedianOrEnd = true;
+                insertIntoResults = true;
                 nextMedianPoint += medianPointDistance;
             }
         }
-        if (hitMedianOrEnd) {
+        if (insertIntoResults) {
             bucket.addLessThanDistincts(runningLessThanDistincts);
             bucket.addLessThans(runningLessThans);
             buckets.add(bucket);
@@ -55,7 +55,7 @@ final class BucketSampler<T> {
             stdDev.increment(bucketEqualsCount);
         ++bucketsSeen;
         equalsSeen += bucketEqualsCount;
-        return hitMedianOrEnd;
+        return insertIntoResults;
     }
 
     List<Bucket<T>> buckets() {
