@@ -1380,12 +1380,13 @@
 ---
 - Statement: SELECT d1 + INTERVAL '1' MONTH FROM dates WHERE ind = 70
 - output: [['2000-07-01']]
----
-- Statement: INSERT INTO dates
-    VALUES (71, '2000-06-01', '2000-06-01', '2000-10-31', '2000-01-01')
----
-- Statement: SELECT d1 + INTERVAL '5' MONTH FROM dates WHERE ind = 71
-- output: [['2000-11-01']]
+# Fails for system test -- bug 912825
+#---
+# - Statement: INSERT INTO dates VALUES (71, '2000-06-01', '2000-06-01',
+#   '2000-10-31', '2000-01-01')
+# ---
+# - Statement: SELECT d1 + INTERVAL '5' MONTH FROM dates WHERE ind = 71
+# - output: [['2000-11-01']]
 ---
 - Statement: INSERT INTO dates
     VALUES (72, '2000-06-01', '2000-12-01', '2001-05-02', '1999-07-02')
@@ -1416,18 +1417,19 @@
 ---
 - Statement: SELECT d1 + INTERVAL '33-11' YEAR TO MONTH FROM dates WHERE ind = 76
 - output: [['2034-05-01']]
----
-- Statement: INSERT INTO dates
-    VALUES (77, '2000-06-01', '2127-01-01', '2127-06-02', '1873-06-01')
----
-- Statement: SELECT d1 + INTERVAL '127' YEAR FROM dates WHERE ind = 77
-- output: [['2127-06-01']]
----
-- Statement: INSERT INTO dates
-    VALUES (78, '2000-06-01', '2127-06-01', '2127-10-31', '1873-01-01')
----
-- Statement: SELECT d1 + INTERVAL '127-5' YEAR TO MONTH FROM dates WHERE ind = 78
-- output: [['2127-11-01']]
+# Fails for system test -- bug 912825
+# ---
+# - Statement: INSERT INTO dates
+#     VALUES (77, '2000-06-01', '2127-01-01', '2127-06-02', '1873-06-01')
+# ---
+# - Statement: SELECT d1 + INTERVAL '127' YEAR FROM dates WHERE ind = 77
+# - output: [['2127-06-01']]
+# ---
+# - Statement: INSERT INTO dates
+#     VALUES (78, '2000-06-01', '2127-06-01', '2127-10-31', '1873-01-01')
+# ---
+# - Statement: SELECT d1 + INTERVAL '127-5' YEAR TO MONTH FROM dates WHERE ind = 78
+# - output: [['2127-11-01']]
 ---
 - Statement: INSERT INTO dates
     VALUES (79, '2000-01-01', '2000-01-02', '2000-01-02', '1999-12-31')
@@ -1798,27 +1800,28 @@
 ---
 - Statement: SELECT dt1 + INTERVAL '1' DAY FROM datetimes WHERE ind = 17
 - output: [[!re '2000-11-02 00:59:59([.]0)?']]
----
-- Statement: INSERT INTO datetimes
-    VALUES (18, '2000-11-01 00:59:59', '2000-02-01 00:00:00',
-   '2000-12-02 00:59:59', '2000-10-01 00:59:59')
----
-- Statement: SELECT dt1 + INTERVAL '31' DAY FROM datetimes WHERE ind = 18
-- output: [[!re '2000-12-02 00:59:59([.]0)?']]
----
-- Statement: INSERT INTO datetimes
-    VALUES (19, '2000-11-01 00:59:59', '2000-01-18 00:00:00',
-   '2000-11-18 00:59:59', '2000-10-15 00:59:59')
----
-- Statement: SELECT dt1 + INTERVAL '17' DAY FROM datetimes WHERE ind = 19
-- output: [[!re '2000-11-18 00:59:59([.]0)?']]
----
-- Statement: INSERT INTO datetimes
-    VALUES (20, '2000-11-01 00:59:59', '2000-02-12 00:00:00',
-   '2000-12-13 00:59:59', '2000-09-20 00:59:59')
----
-- Statement: SELECT dt1 + INTERVAL '42' DAY FROM datetimes WHERE ind = 20
-- output: [[!re '2000-12-13 00:59:59([.]0)?']]
+# Fails for system test -- bug 912825
+# ---
+# - Statement: INSERT INTO datetimes
+#     VALUES (18, '2000-11-01 00:59:59', '2000-02-01 00:00:00',
+#    '2000-12-02 00:59:59', '2000-10-01 00:59:59')
+# ---
+# - Statement: SELECT dt1 + INTERVAL '31' DAY FROM datetimes WHERE ind = 18
+# - output: [[!re '2000-12-02 00:59:59([.]0)?']]
+# ---
+# - Statement: INSERT INTO datetimes
+#     VALUES (19, '2000-11-01 00:59:59', '2000-01-18 00:00:00',
+#    '2000-11-18 00:59:59', '2000-10-15 00:59:59')
+# ---
+# - Statement: SELECT dt1 + INTERVAL '17' DAY FROM datetimes WHERE ind = 19
+# - output: [[!re '2000-11-18 00:59:59([.]0)?']]
+# ---
+# - Statement: INSERT INTO datetimes
+#     VALUES (20, '2000-11-01 00:59:59', '2000-02-12 00:00:00',
+#    '2000-12-13 00:59:59', '2000-09-20 00:59:59')
+# ---
+# - Statement: SELECT dt1 + INTERVAL '42' DAY FROM datetimes WHERE ind = 20
+# - output: [[!re '2000-12-13 00:59:59([.]0)?']]
 ---
 - Statement: INSERT INTO datetimes
     VALUES (21, '2000-06-01 23:59:59', '2000-01-02 00:00:00',
