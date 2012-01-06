@@ -94,11 +94,16 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
             return populars;
         if (populars.size() > maxSize)
             return trimmed(populars);
-        throw new UnsupportedOperationException("TODO");
+        throw new UnsupportedOperationException("TODO"); // TODO
     }
 
     private List<Bucket<T>> trimmed(List<Bucket<T>> buckets) {
-        throw new UnsupportedOperationException("TODO");
+        BucketSampler<T> sampler = new BucketSampler<T>(maxSize, new MyLong(buckets.size()), false);
+        for (Bucket<T> bucket : buckets)
+            sampler.add(bucket);
+        List<Bucket<T>> results = sampler.buckets();
+        assert results.size() <= maxSize : results.size() + " > " + maxSize;
+        return results;
     }
 
     public Sampler(Splitter<T> splitter, int maxSize, Recycler<? super T> recycler) {

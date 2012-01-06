@@ -51,7 +51,8 @@ final class BucketSampler<T> {
         }
 
         // stats
-        stdDev.increment(bucketEqualsCount);
+        if (stdDev != null)
+            stdDev.increment(bucketEqualsCount);
         ++bucketsSeen;
         equalsSeen += bucketEqualsCount;
         return hitMedianOrEnd;
@@ -64,6 +65,8 @@ final class BucketSampler<T> {
     }
     
     public double getEqualsStdDev() {
+        if (stdDev == null)
+            throw new IllegalStateException("standard deviation not computed");
         return stdDev.getResult();
     }
 
@@ -72,6 +75,10 @@ final class BucketSampler<T> {
     }
 
     BucketSampler(int maxSize, MyLong expectedInputs) {
+        this(maxSize, expectedInputs, true);
+    }
+
+    BucketSampler(int maxSize, MyLong expectedInputs, boolean calculateStandardDeviation) {
         if (maxSize < 1)
             throw new IllegalArgumentException("max must be at least 1");
         if (expectedInputs.val() < 0)
@@ -82,7 +89,7 @@ final class BucketSampler<T> {
         this.medianPointDistance = medianPointDistance == 0 ? 1 : medianPointDistance;
         this.nextMedianPoint = this.medianPointDistance;
         assert this.nextMedianPoint > 0 : this.nextMedianPoint;
-        this.stdDev = new StandardDeviation();
+        this.stdDev = calculateStandardDeviation ? new StandardDeviation() : null;
     }
 
     private final long expectedCount;
