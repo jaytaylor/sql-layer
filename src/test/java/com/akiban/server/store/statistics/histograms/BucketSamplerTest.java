@@ -23,6 +23,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.akiban.server.store.statistics.histograms.BucketTestUtils.bucket;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public final class BucketSamplerTest {
 
@@ -178,6 +180,18 @@ public final class BucketSamplerTest {
         );
     }
 
+    @Test
+    public void testEqualityMean() {
+        BucketSampler<String> sampler = runSampler(32, "a a a    b b  c c c c   d d d   e  f f f f f");
+        assertEquals("mean equality", 3.0d, sampler.getEqualsMean(), 0.0);
+    }
+
+    @Test
+    public void testEqualityStdDev() {
+        BucketSampler<String> sampler = runSampler(32, "a a a    b b  c c c c   d d d   e  f f f f f ");
+        assertEquals("equality std dev", 1.41421d, sampler.getEqualsStdDev(), 0.00001d);
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void maxIsZero() {
         new BucketSampler<String>(0, new MyLong(1));
@@ -207,10 +221,31 @@ public final class BucketSamplerTest {
         sampler.buckets();
     }
 
+    private BucketSampler<String> runSampler(int maxBuckets, String inputString) {
+        String[] splits = inputString.length() == 0 ? new String[0] : inputString.split("\\s+");
+        
+        List<Bucket<String>> buckets = new ArrayList<Bucket<String>>();
+        Bucket<String> lastBucket = null;
+        for (String split : splits) {
+            if (lastBucket == null || !split.equals(lastBucket.value())) {
+                lastBucket = new Bucket<String>();
+                lastBucket.init(split, 1);
+                buckets.add(lastBucket);
+            }
+            else {
+                lastBucket.addEquals();
+            }
+        }
+        
+        BucketSampler<String> sampler = new BucketSampler<String>(maxBuckets, new MyLong(splits.length));
+        for (Bucket<String> bucket : buckets)
+            sampler.add(bucket);
+        return sampler;
+    }
+    
     private void check(int maxBuckets, String inputs, List<Bucket<String>> expected) {
-        String[] splits = inputs.length() == 0 ? new String[0] : inputs.split("\\s+");
-        List<Bucket<String>> actual = BucketTestUtils.compileSingleStream(Arrays.asList(splits), maxBuckets);
-        AssertUtils.assertCollectionEquals("compiled buckets", expected, actual);
+        BucketSampler<String> sampler = runSampler(maxBuckets, inputs);
+        AssertUtils.assertCollectionEquals("compiled buckets", expected, sampler.buckets());
     }
 
     private List<Bucket<String>> bucketsList(Bucket<?>... buckets) {

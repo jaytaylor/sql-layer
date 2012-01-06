@@ -16,13 +16,16 @@
 package com.akiban.server.store.statistics.histograms;
 
 
+import org.apache.commons.math.stat.descriptive.moment.StandardDeviation;
+
 import java.util.ArrayList;
 import java.util.List;
 
 final class BucketSampler<T> {
 
     boolean add(Bucket<T> bucket) {
-        long bucketsRepresented = (bucket.getEqualsCount() + bucket.getLessThanCount());
+        long bucketEqualsCount = bucket.getEqualsCount();
+        long bucketsRepresented = (bucketEqualsCount + bucket.getLessThanCount());
         inputsCount += bucketsRepresented;
         // last bucket is always in
         if (inputsCount > expectedCount)
@@ -46,13 +49,30 @@ final class BucketSampler<T> {
             runningLessThans += bucketsRepresented;
             runningLessThanDistincts += bucket.getLessThanDistinctsCount() + 1;
         }
+
+        // stats
+        stdDev.increment(bucketEqualsCount);
+        ++bucketsSeen;
+        equalsSeen += bucketEqualsCount;
         return hitMedianOrEnd;
     }
 
     List<Bucket<T>> buckets() {
+        checkFinished();
+        return buckets;
+    }
+    
+    public double getEqualsStdDev() {
+        return stdDev.getResult();
+    }
+
+    public double getEqualsMean() {
+        return ((double)equalsSeen) / ((double)bucketsSeen);
+    }
+
+    private void checkFinished() {
         if (expectedCount != inputsCount)
             throw new IllegalStateException("expected " + expectedCount + " inputs but saw " + inputsCount);
-        return buckets;
     }
 
     BucketSampler(int maxSize, MyLong expectedInputs) {
@@ -66,15 +86,19 @@ final class BucketSampler<T> {
         this.medianPointDistance = medianPointDistance == 0 ? 1 : medianPointDistance;
         this.nextMedianPoint = this.medianPointDistance;
         assert this.nextMedianPoint > 0 : this.nextMedianPoint;
+        this.stdDev = new StandardDeviation();
     }
 
     private final long expectedCount;
     private final long medianPointDistance;
+    private final StandardDeviation stdDev;
 
     private long nextMedianPoint;
     private long inputsCount;
     private long runningLessThans;
     private long runningLessThanDistincts;
+    private long bucketsSeen;
+    private long equalsSeen;
     
     private final List<Bucket<T>> buckets;
     
