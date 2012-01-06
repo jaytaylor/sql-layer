@@ -67,28 +67,36 @@ public class Sampler<T> extends SplitHandler<T> {
         }
         this.maxSize = maxSize;
         this.segments = segments;
-        this.recycler = recycler;
+        this.bucketsFlywheel = new BucketFlywheel<T>(maxSize, segments, recycler);
     }
 
     final List<BucketSampler<T>> bucketSamplerList;
     final int maxSize;
     final int segments;
-    private final Recycler<? super T> recycler;
     boolean finished = false;
-    final Flywheel<Bucket<T>> bucketsFlywheel = new Flywheel<Bucket<T>>() {
+    private final Flywheel<Bucket<T>> bucketsFlywheel;
+
+    private static class BucketFlywheel<T> extends Flywheel<Bucket<T>> {
         @Override
         protected Bucket<T> createNew() {
             ++created;
-            assert created <= (maxSize+1) * segments : created + " > " + (maxSize+1)*segments;
+            assert created <= createdLimit : created + " > " + createdLimit;
             return new Bucket<T>();
         }
 
         @Override
         public void recycle(Bucket<T> element) {
             super.recycle(element);
-            recycler.recycle(element.value());
+            valueRecycler.recycle(element.value());
         }
 
+        private BucketFlywheel(int maxSize, int segments, Recycler<? super T> valueRecycler) {
+            this.createdLimit = (maxSize+1) * segments;
+            this.valueRecycler = valueRecycler;
+        }
+
+        private final Recycler<? super T> valueRecycler;
+        private final int createdLimit;
         private int created;
-    };
+    }
 }
