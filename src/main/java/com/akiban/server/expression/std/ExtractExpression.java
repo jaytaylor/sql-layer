@@ -30,8 +30,9 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.sql.StandardException;
-import java.util.Calendar;
 import java.util.EnumSet;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 public class ExtractExpression extends AbstractUnaryExpression
 {
@@ -48,7 +49,7 @@ public class ExtractExpression extends AbstractUnaryExpression
      * extract the HOUR from a DATETIME/TIME/TIMESTAMP expression.
      * (24-hr format)
      */
-    @Scalar ({"hour", "hourofday"})
+    @Scalar ({"hour", "hour_of_day"})
     public static final ExpressionComposer HOUR_COMPOSER = new InternalComposer(TargetExtractType.HOUR);
 
     @Scalar ("minute")
@@ -89,11 +90,10 @@ public class ExtractExpression extends AbstractUnaryExpression
                                     return vallidDayMonth(year, month,day) ? day + month*32 + year*512 : null;
                         
                     case TIMESTAMP: rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
-                                    Calendar calendar = Calendar.getInstance();
-                                    calendar.setTimeInMillis(rawLong * 1000);
-                                    long y = calendar.get(Calendar.YEAR);
-                                    long m = calendar.get(Calendar.MONTH) +1; // month in calendar is 0-based
-                                    long d = calendar.get(Calendar.DAY_OF_MONTH);
+                                    DateTime datetime = new DateTime(rawLong * 1000, DateTimeZone.getDefault());
+                                    long y = datetime.getYear();
+                                    long m = datetime.getMonthOfYear();
+                                    long d = datetime.getDayOfMonth();
                                     return d + m*32 + y*512;
                     default:        return null;
                 }
@@ -127,14 +127,13 @@ public class ExtractExpression extends AbstractUnaryExpression
                                     d = rawLong / 1000000L % 100;
                                     return vallidDayMonth(y,m,d) ? rawLong : null;
                     case TIMESTAMP: rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
-                                    Calendar calendar = Calendar.getInstance();
-                                    calendar.setTimeInMillis(rawLong * 1000);
-                                    y = calendar.get(Calendar.YEAR);
-                                    m = calendar.get(Calendar.MONTH) +1; // month in calendar is 0-based
-                                    d = calendar.get(Calendar.DAY_OF_MONTH);
-                                    hr = calendar.get(Calendar.HOUR_OF_DAY);
-                                    min = calendar.get(Calendar.MINUTE);
-                                    sec = calendar.get(Calendar.SECOND);
+                                    DateTime datetime = new DateTime(rawLong * 1000, DateTimeZone.getDefault());
+                                    y = datetime.getYear();
+                                    m = datetime.getMonthOfYear();
+                                    d = datetime.getDayOfMonth();
+                                    hr = datetime.getHourOfDay();
+                                    min = datetime.getMinuteOfHour();
+                                    sec = datetime.getSecondOfMinute();
                                     return y * 10000000000L + m * 100000000L + d * 1000000L + hr * 10000 + min * 100 + sec;
                     default:        return null;
                 }
@@ -161,9 +160,8 @@ public class ExtractExpression extends AbstractUnaryExpression
                                     long da = rawLong / 1000000L % 100;
                                     return vallidDayMonth(yr,mo,da) ? da : null;
                     case TIMESTAMP: rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
-                                    Calendar calendar = Calendar.getInstance();
-                                    calendar.setTimeInMillis(rawLong * 1000);
-                                    return (long)calendar.get(Calendar.DAY_OF_MONTH);                    
+                                    DateTime datetime = new DateTime(rawLong * 1000, DateTimeZone.getDefault());
+                                    return (long)datetime.getDayOfMonth();
                     default: /*year*/       return null;
                 }
             }
@@ -193,9 +191,8 @@ public class ExtractExpression extends AbstractUnaryExpression
                                     hr = rawLong / 10000L % 100;
                                     return vallidDayMonth(yr, mo,da) && vallidHrMinSec(hr, min,sec) ? hr : null;
                     case TIMESTAMP: rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
-                                    Calendar calendar = Calendar.getInstance();
-                                    calendar.setTimeInMillis(rawLong * 1000);
-                                    return (long)calendar.get(Calendar.HOUR_OF_DAY);                    
+                                    DateTime datetime = new DateTime(rawLong * 1000, DateTimeZone.getDefault());
+                                    return (long)datetime.getHourOfDay();
                     default:        return null;
                 }
             }
@@ -224,9 +221,8 @@ public class ExtractExpression extends AbstractUnaryExpression
                                     hr = rawLong / 10000 % 100;
                                     return vallidDayMonth(yr, mo,da) && vallidHrMinSec(hr, min,sec) ? min : null;
                     case TIMESTAMP: rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
-                                    Calendar calendar = Calendar.getInstance();
-                                    calendar.setTimeInMillis(rawLong * 1000);
-                                    return (long)calendar.get(Calendar.MINUTE);                             
+                                    DateTime datetime = new DateTime(rawLong * 1000, DateTimeZone.getDefault());
+                                    return (long)datetime.getMinuteOfHour();
                     default:        return null;
                 }
                 
@@ -253,9 +249,8 @@ public class ExtractExpression extends AbstractUnaryExpression
                                     long da = rawLong / 1000000L % 100;
                                     return vallidDayMonth(yr,mo,da) ? mo : null;
                     case TIMESTAMP: rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
-                                    Calendar calendar = Calendar.getInstance();
-                                    calendar.setTimeInMillis(rawLong * 1000);
-                                    return calendar.get(Calendar.MONTH) +1L;                    
+                                    DateTime datetime = new DateTime(rawLong * 1000, DateTimeZone.getDefault());
+                                    return (long)datetime.getMonthOfYear();
                     default: /*year*/       return null;
                 }
             }
@@ -282,9 +277,8 @@ public class ExtractExpression extends AbstractUnaryExpression
                                     long sec = rawLong % 100;
                                     return vallidDayMonth(yr,mo,da) && vallidHrMinSec(hr, min,sec) ? sec : null;
                     case TIMESTAMP: rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
-                                    Calendar calendar = Calendar.getInstance();
-                                    calendar.setTimeInMillis(rawLong * 1000);
-                                    return (long)calendar.get(Calendar.SECOND);                             
+                                    DateTime datetime = new DateTime(rawLong * 1000, DateTimeZone.getDefault());
+                                    return (long)datetime.getSecondOfMinute();
                     default:        return null;
                 }
                 
@@ -310,11 +304,10 @@ public class ExtractExpression extends AbstractUnaryExpression
                                     long sec = rawLong % 100;
                                     return vallidDayMonth(yr,mo,da) && vallidHrMinSec(hr, min,sec) ? rawLong % 1000000L : null;
                     case TIMESTAMP: rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
-                                    Calendar calendar = Calendar.getInstance();
-                                    calendar.setTimeInMillis(rawLong * 1000);
-                                    long h =  calendar.get(Calendar.HOUR_OF_DAY);
-                                    long m = calendar.get(Calendar.MINUTE);
-                                    long s = calendar.get(Calendar.SECOND);
+                                    DateTime datetime = new DateTime(rawLong * 1000, DateTimeZone.getDefault());
+                                    long h = datetime.getHourOfDay();
+                                    long m = datetime.getMinuteOfHour();
+                                    long s = datetime.getSecondOfMinute();
                                     return h*10000 + m*100 + s;  
                     default:        return null;
                 }
@@ -343,9 +336,9 @@ public class ExtractExpression extends AbstractUnaryExpression
                                     m = rawLong / 32 % 16;
                                     d = rawLong % 32;
                                     if (!vallidDayMonth(y,m,d)) return null;
-                                    Calendar cal = Calendar.getInstance();
-                                    cal.set((int)y, (int)m -1, (int)d,0,0,0);
-                                    return cal.getTimeInMillis() / 1000L;                        
+                                    DateTime dt = new DateTime((int)y, (int)m, (int)d,
+                                            0, 0, 0, DateTimeZone.getDefault());
+                                    return dt.getMillis() / 1000L;
                     case TIME:      return null;                        
                     case DATETIME:  rawLong = source.getDateTime();
                                     y = rawLong / 10000000000L;
@@ -355,9 +348,9 @@ public class ExtractExpression extends AbstractUnaryExpression
                                     min = rawLong / 100L % 100;
                                     sec = rawLong % 100;
                                     if (!vallidDayMonth(y,m,d) || !vallidHrMinSec(hr, min,sec)) return null;
-                                    Calendar calendar = Calendar.getInstance();
-                                    calendar.set((int)y, (int)m -1, (int)d, (int)hr, (int)min, (int)sec);
-                                    return calendar.getTimeInMillis() / 1000;                        
+                                    DateTime datetime = new DateTime((int)y, (int)m, (int)d,
+                                            (int)hr, (int)min, (int)sec, DateTimeZone.getDefault());
+                                    return datetime.getMillis() / 1000;
                     case TIMESTAMP: return source.getTimestamp();                        
                     default:        return null;
                 }
@@ -388,9 +381,9 @@ public class ExtractExpression extends AbstractUnaryExpression
                                     long sec = rawLong % 100;
                                     return vallidDayMonth(yr,mo,da) && vallidHrMinSec(hr,min,sec) ? (yr == 0 ? 0 : yr - 1900) : null;
                     case TIMESTAMP: rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
-                                    Calendar calendar = Calendar.getInstance();
-                                    calendar.setTimeInMillis(rawLong * 1000);
-                                    return calendar.get(Calendar.YEAR) -1900L;                    
+                                    DateTime dt = new DateTime(rawLong * 1000, DateTimeZone.getDefault());
+                                    long year = dt.getYear();
+                                    return year == 0 ? year : year - 1900;
                     default: /*year*/       return source.getYear();
                 }
             }

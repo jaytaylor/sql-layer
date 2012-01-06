@@ -27,7 +27,6 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.EnumSet;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -76,11 +75,11 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
         Expression left = new LiteralExpression(AkType.FLOAT, 3.5f);
         Expression right = new LiteralExpression(AkType.INTERVAL_MONTH, 2L);
         Expression top = new ArithExpression(left, ArithOps.MULTIPLY, right);
-        
+
         assertEquals("Top should be INTERVAL_MONTH ", AkType.INTERVAL_MONTH, top.valueType());
         assertEquals(7L, top.evaluation().eval().getInterval_Month());
     }
-    
+
     @Test
     public void longMinusFloat ()
     {
@@ -187,11 +186,12 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
         Expression year2 = new LiteralExpression (AkType.YEAR,Extractors.getLongExtractor(AkType.YEAR).getLong("1991"));
         Expression interval = new ArithExpression (year1, ex = ArithOps.MINUS, year2);
 
-        Expression datetime = new LiteralExpression (AkType.DATETIME, 19940229123010L); // 1994-02-29 12:30:10
+        Expression datetime = new LiteralExpression (AkType.DATETIME, 19960229123010L); // 1996-02-29 12:30:10
         Expression rst = new ArithExpression (datetime, ex = ArithOps.ADD, interval);
 
-        // 2006 minus 1991 plus 1994-02-29 12:30:10 equals 2009-03-01 12:30:10L (1994 is a leap year, while 2009 is NOT)
-        assertEquals(20090301123010L, rst.evaluation().eval().getDateTime());
+        // 2006 minus 1991 plus 1996-02-29 12:30:10 equals 2011-03-01 12:30:10L (1996 is a leap year, while 2011 is NOT)
+        assertEquals("2011-03-01 12:30:10",
+                Extractors.getLongExtractor(AkType.DATETIME).asString(rst.evaluation().eval().getDateTime()));
     }
 
 
