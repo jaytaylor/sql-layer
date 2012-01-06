@@ -62,6 +62,7 @@ public class Sampler<T> extends SplitHandler<T> {
         int segments = splitter.segments();
         ArgumentValidation.isGT("segments", segments, 0);
         bucketSamplerList =  new ArrayList<BucketSampler<T>>(segments);
+        maxSize *= OVERSAMPLE_FACTOR;
         for (int i=0; i < segments; ++i) {
             bucketSamplerList.add(new BucketSampler<T>(maxSize, expectedInputs));
         }
@@ -73,6 +74,8 @@ public class Sampler<T> extends SplitHandler<T> {
     private final int segments;
     private boolean finished = false;
     private final Flywheel<Bucket<T>> bucketsFlywheel;
+    
+    private static final int OVERSAMPLE_FACTOR = 50;
 
     private static class BucketFlywheel<T> extends Flywheel<Bucket<T>> {
         @Override
