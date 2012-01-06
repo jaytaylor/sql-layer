@@ -44,23 +44,33 @@ class PersistitIndexCursor implements Cursor
     {
         Row next;
         try {
-            boolean needAnother;
-            do {
-                if ((next = sortCursor.next()) != null) {
-                    needAnother = !(isTableIndex ||
-                                    // The value of a group index is the depth at which it's defined, as an int.
-                                    // See OperatorStoreGIHandler, search for "Description of group index entry values"
-                                    // TODO: It would be better to limit the use of exchange to SortCursor, which means
-                                    // TODO: that the selector would need to be pushed down. Alternatively, the exchange's
-                                    // TODO: value could be made available here in PersistitIndexRow.
-                                    selector.matchesAll() ||
-                                    (exchange.getKey().getEncodedSize() > 0 &&
-                                     selector.matches(exchange.fetch().getValue().getLong())));
-                } else {
-                    close();
-                    needAnother = false;
+            if (first) {
+                PersistitAdapter.CURSOR_FIRST_ROW_TAP.in();
+            }
+            try {
+                boolean needAnother;
+                do {
+                    if ((next = sortCursor.next()) != null) {
+                        needAnother = !(isTableIndex ||
+                                        // The value of a group index is the depth at which it's defined, as an int.
+                                        // See OperatorStoreGIHandler, search for "Description of group index entry values"
+                                        // TODO: It would be better to limit the use of exchange to SortCursor, which means
+                                        // TODO: that the selector would need to be pushed down. Alternatively, the exchange's
+                                        // TODO: value could be made available here in PersistitIndexRow.
+                                        selector.matchesAll() ||
+                                        (exchange.getKey().getEncodedSize() > 0 &&
+                                         selector.matches(exchange.fetch().getValue().getLong())));
+                    } else {
+                        close();
+                        needAnother = false;
+                    }
+                } while (needAnother);
+            } finally {
+                if (first) {
+                    PersistitAdapter.CURSOR_FIRST_ROW_TAP.out();
+                    first = false;
                 }
-            } while (needAnother);
+            }
         } catch (PersistitException e) {
             adapter.handlePersistitException(e);
             throw new AssertionError();
@@ -123,6 +133,7 @@ class PersistitIndexCursor implements Cursor
     private IndexScanSelector selector;
     private Exchange exchange;
     private SortCursor sortCursor;
+    private boolean first = true;
 
     // Inner classes
 

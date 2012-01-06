@@ -12,20 +12,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package com.akiban.qp.persistitadapter;
 
-public final class OperatorStoreMaintenanceLoader {
-    public static void load() {
-        try {
-            load(OperatorStore.class);
-            load(OperatorStoreMaintenance.class);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
+package com.akiban.util;
 
-    public static void load(Class klass) throws ClassNotFoundException
-    {
-        Class.forName(klass.getCanonicalName());
-    }
+public interface Recycler<T> {
+    void recycle(T element);
 }

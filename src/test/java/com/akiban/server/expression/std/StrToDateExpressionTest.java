@@ -93,7 +93,13 @@ public class StrToDateExpressionTest
         param(pb, "%r - year-month-day to datetime", "00:30:10 2006~07Nov", "%r %Y~%d%b", "2006-11-07 00:30:10", AkType.DATETIME);
         param(pb, "%T - week - day to datetime", "12:30:40201203 Tuesday", "%T%X%V %W", "2012-01-17 12:30:40", AkType.DATETIME);
         param(pb, "%r %p week -day %x%v to datetime", "06:23:30 pm 2004 04 Mon", "%r %p %x %v %a", "2004-01-19 18:23:30", AkType.DATETIME);
-       
+
+        // year / week
+        param(pb, "First day of week: ", "2009 1 Thursday", "%x %v %W", "2009-01-01 00:00:00", AkType.DATETIME);
+        param(pb, "First day of week: ", "2008 52 Thursday", "%X %V %W", "2009-01-01 00:00:00", AkType.DATETIME);
+        param(pb, "", "2011 18 Sunday", "%x %v %W", "2011-05-08 00:00:00", AkType.DATETIME);
+        param(pb, "", "2011 19 Sunday", "%X %V %W", "2011-05-08 00:00:00", AkType.DATETIME);
+
         // unknown specifier
         param(pb, "unknown specifier %z, expect null", "2009-01-01", "%Y-%z-%d", "", AkType.DATETIME);
   

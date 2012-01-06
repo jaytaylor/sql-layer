@@ -15,6 +15,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.types.extract.ConverterTestUtils;
 import static org.junit.Assert.fail;
 
 import java.util.Calendar;
@@ -29,6 +30,11 @@ import com.akiban.sql.pg.YamlTester.TimeChecker;
  */
 public class YamlTesterDateTimeTest {
 
+    static
+    {
+        ConverterTestUtils.setGlobalTimezone("UTC");
+    }
+    
     @Test
     public void testTimeTag() {
         Calendar cal = Calendar.getInstance();
