@@ -27,6 +27,7 @@ import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.ObjectExtractor;
 import com.akiban.sql.StandardException;
 import com.akiban.server.expression.TypesList;
+import com.akiban.server.service.functions.Scalar;
 import java.util.Calendar;
 import java.util.EnumMap;
 import java.util.List;
@@ -37,6 +38,7 @@ import org.joda.time.MutableDateTime;
 
 public class StrToDateExpression extends AbstractBinaryExpression
 {
+    @Scalar("str_to_date")
     public static final ExpressionComposer COMPOSER = new BinaryComposer ()
     {
         @Override
@@ -66,7 +68,6 @@ public class StrToDateExpression extends AbstractBinaryExpression
         public InnerEvaluation (AkType type, List<? extends ExpressionEvaluation> childrenEval)
         {
             super(childrenEval);
-            //topType = type;
         }
 
         @Override
@@ -231,7 +232,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
                       if ((wk = valuesMap.get(DateTimeField.v)) == null
                               || (dWeek = valuesMap.get(DateTimeField.W)) == null)
                           return validYMD(y, m, d) ? y * 10000L + m * 100 + d: -1;
-                      cal.setMinimalDaysInFirstWeek(1);
+                      cal.setMinimalDaysInFirstWeek(4);
                       cal.setFirstDayOfWeek(Calendar.MONDAY); 
                   }
                   cal.set(Calendar.YEAR, yr.intValue()); 
