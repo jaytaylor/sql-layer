@@ -19,7 +19,7 @@ import com.akiban.util.AssertUtils;
 import org.junit.Test;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static com.akiban.server.store.statistics.histograms.BucketTestUtils.bucket;
@@ -181,14 +181,55 @@ public final class BucketSamplerTest {
     }
 
     @Test
+    public void appendingKeepsSamplingUnchanged() {
+        // pipe is median, V is inserted bucket      V       V      |               |V|V
+        StringToBuckets inputs = new StringToBuckets("a a a b c c c c d e e e e f f f g");
+        assertEquals("buckets count", 7, inputs.buckets().size());
+        BucketSampler<String> sampler = new BucketSampler<String>(2, new MyLong(inputs.inputsCount()), true);
+
+        // insert one before everyone
+        sampler.appendToResults(bucket("FIRST", 17, 100, 1000));
+
+        // insert one right before a median
+        sampler.add(inputs.popBucket()); // Bucket a
+        sampler.add(inputs.popBucket()); // Bucket b
+        sampler.appendToResults(bucket("SECOND", 23, 200, 2000));
+
+        // insert one right after a median
+        sampler.add(inputs.popBucket()); // Bucket c
+        sampler.add(inputs.popBucket()); // Bucket d
+        sampler.add(inputs.popBucket()); // Bucket e
+        sampler.add(inputs.popBucket()); // Bucket f
+        sampler.appendToResults(bucket("THIRD", 37, 300, 3000));
+
+        // insert one at the end
+        sampler.add(inputs.popBucket()); // Bucket 6
+        sampler.appendToResults(bucket("FOURTH", 41, 400, 4000));
+        
+        assertEquals("emptied buckets() list", Collections.emptyList(), inputs.buckets());
+        assertEquals("equality std dev", 1.39728d, sampler.getEqualsStdDev(), 0.00001d);
+        assertEquals("equality mean", 2.42857d, sampler.getEqualsMean(), 0.00001d);
+        List<Bucket<String>> expected = bucketsList(
+                bucket("FIRST", 17, 100, 1000),
+                bucket("SECOND", 23, 204, 2002),
+                bucket("c", 4, 0, 0),
+                bucket("f", 3, 5, 2),
+                bucket("THIRD", 37, 300, 3000),
+                bucket("g", 1, 0, 0),
+                bucket("FOURTH", 41, 400, 4000)
+        );
+        AssertUtils.assertCollectionEquals("compiled buckets", expected, sampler.buckets());
+    }
+
+    @Test
     public void testEqualityMean() {
-        BucketSampler<String> sampler = runSampler(1, "a a a    b b  c c c c   d d d   e  f f f f f");
+        BucketSampler<String> sampler = runSampler(1, "a a a    b b   c c c c   d d d   e  f f f f f");
         assertEquals("mean equality", 3.0d, sampler.getEqualsMean(), 0.0);
     }
 
     @Test
     public void testEqualityStdDev() {
-        BucketSampler<String> sampler = runSampler(1, "a a a    b b  c c c c   d d d   e  f f f f f ");
+        BucketSampler<String> sampler = runSampler(1, "a a a    b b   c c c c   d d d   e  f f f f f ");
         assertEquals("equality std dev", 1.41421d, sampler.getEqualsStdDev(), 0.00001d);
     }
 
@@ -220,29 +261,25 @@ public final class BucketSamplerTest {
         BucketSampler<String> sampler = new BucketSampler<String>(16, new MyLong(1));
         sampler.buckets();
     }
+    
+    @Test(expected = IllegalStateException.class)
+    public void stdDevRequestedButNotCalculated() {
+        BucketSampler<String> sampler = runSampler(1, "a b c", false);
+        sampler.getEqualsStdDev();
+    }
 
     private BucketSampler<String> runSampler(int maxBuckets, String inputString) {
-        String[] splits = inputString.length() == 0 ? new String[0] : inputString.split("\\s+");
-        
-        List<Bucket<String>> buckets = new ArrayList<Bucket<String>>();
-        Bucket<String> lastBucket = null;
-        for (String split : splits) {
-            if (lastBucket == null || !split.equals(lastBucket.value())) {
-                lastBucket = new Bucket<String>();
-                lastBucket.init(split, 1);
-                buckets.add(lastBucket);
-            }
-            else {
-                lastBucket.addEquals();
-            }
-        }
-        
-        BucketSampler<String> sampler = new BucketSampler<String>(maxBuckets, new MyLong(splits.length));
-        for (Bucket<String> bucket : buckets)
+        return runSampler(maxBuckets, inputString, true);
+    }
+
+    private BucketSampler<String> runSampler(int maxBuckets, String inputString, boolean calculateStdDev) {
+        StringToBuckets inputs = new StringToBuckets(inputString);
+        BucketSampler<String> sampler = new BucketSampler<String>(maxBuckets, new MyLong(inputs.inputsCount()), calculateStdDev);
+        for (Bucket<String> bucket : inputs.buckets())
             sampler.add(bucket);
         return sampler;
     }
-    
+
     private void check(int maxBuckets, String inputs, List<Bucket<String>> expected) {
         BucketSampler<String> sampler = runSampler(maxBuckets, inputs);
         AssertUtils.assertCollectionEquals("compiled buckets", expected, sampler.buckets());
@@ -256,5 +293,39 @@ public final class BucketSamplerTest {
             list.add(cast);
         }
         return list;
+    }
+
+    private class StringToBuckets {
+        public StringToBuckets(String inputString) {
+            String[] splits = inputString.length() == 0 ? new String[0] : inputString.split("\\s+");
+            buckets = new ArrayList<Bucket<String>>();
+            Bucket<String> lastBucket = null;
+            for (String split : splits) {
+                if (lastBucket == null || !split.equals(lastBucket.value())) {
+                    lastBucket = new Bucket<String>();
+                    lastBucket.init(split, 1);
+                    buckets.add(lastBucket);
+                }
+                else {
+                    lastBucket.addEquals();
+                }
+            }
+            inputsCount = splits.length;
+        }
+
+        public int inputsCount() {
+            return inputsCount;
+        }
+
+        public List<Bucket<String>> buckets() {
+            return buckets;
+        }
+
+        public Bucket<String> popBucket() {
+            return buckets.remove(0);
+        }
+
+        private int inputsCount;
+        private List<Bucket<String>> buckets;
     }
 }

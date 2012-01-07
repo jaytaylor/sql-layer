@@ -97,7 +97,7 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
             return trimmed(populars);
         // We're going to sample the unpopular buckets, but unconditionally append the popular ones into the results
         int unpopularsNeeded = maxSize - populars.size();
-        BucketSampler<T> sampler = new BucketSampler<T>(unpopularsNeeded, new MyLong(split.regularBuckets.size()));
+        BucketSampler<T> sampler = new BucketSampler<T>(unpopularsNeeded, new MyLong(split.regularBuckets.size()), false);
         for (Bucket<T> regularBucket : split.regularBuckets) {
             while (!populars.isEmpty()) {
                 T regularValue = regularBucket.value();

@@ -20,6 +20,12 @@ public final class MyLong {
 //    TODO REMOVE THIS CLASS
 //    THIS IS ONLY HERE TO AS A SEMANTICLY STRICTER STANDIN FOR LONG
 
+
+    @Override
+    public String toString() {
+        return Long.toString(val());
+    }
+
     public long val() {
         return value;
     }
