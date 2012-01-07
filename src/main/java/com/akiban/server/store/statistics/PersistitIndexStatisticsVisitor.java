@@ -21,6 +21,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.server.store.IndexVisitor;
 
 import com.akiban.server.store.statistics.histograms.Bucket;
+import com.akiban.server.store.statistics.histograms.MyLong;
 import com.akiban.server.store.statistics.histograms.Sampler;
 import com.akiban.server.store.statistics.histograms.Splitter;
 import com.akiban.util.Flywheel;
@@ -52,14 +53,14 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
         }
     };
 
-    public PersistitIndexStatisticsVisitor(Index index) {
+    public PersistitIndexStatisticsVisitor(Index index, long indexRowCount) {
         this.index = index;
         
         columnCount = index.getColumns().size();
         timestamp = System.currentTimeMillis();
         rowCount = 0;
         KeySplitter splitter = new KeySplitter(columnCount, keysFlywheel);
-        keySampler = new Sampler<Key>(splitter, BUCKETS_COUNT, keysFlywheel);
+        keySampler = new Sampler<Key>(splitter, BUCKETS_COUNT, new MyLong(indexRowCount), keysFlywheel);
     }
     
     private static class KeySplitter implements Splitter<Key> {

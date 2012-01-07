@@ -123,11 +123,7 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
         return results;
     }
 
-    public Sampler(Splitter<T> splitter, int maxSize, Recycler<? super T> recycler) {
-        this(splitter, maxSize, null, recycler);
-    }
-
-    Sampler(Splitter<T> splitter, int maxSize, MyLong expectedInputs, Recycler<? super T> recycler) {
+    public Sampler(Splitter<T> splitter, int maxSize, MyLong expectedInputs, Recycler<? super T> recycler) {
         super(splitter);
         int segments = splitter.segments();
         ArgumentValidation.isGT("segments", segments, 0);
