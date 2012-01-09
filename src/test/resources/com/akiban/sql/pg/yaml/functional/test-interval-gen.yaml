@@ -1461,10 +1461,9 @@
 ---
 - Statement: INSERT INTO dates
     VALUES (7, '2000-01-01', '2000-12-01', '2000-12-01', '1999-01-31')
-# Bug 912261
-# ---
-# - Statement: SELECT d1 + INTERVAL '11' MONTH FROM dates WHERE ind = 7
-# - output: [['2000-12-01']]
+---
+- Statement: SELECT d1 + INTERVAL '11' MONTH FROM dates WHERE ind = 7
+- output: [['2000-12-01']]
 ---
 - Statement: SELECT d1 + INTERVAL '-11' MONTH FROM dates WHERE ind = 7
 - output: [['1999-02-01']]
@@ -1510,10 +1509,9 @@
 ---
 - Statement: INSERT INTO dates
     VALUES (13, '2000-01-01', '2127-12-01', '2127-12-01', '1872-02-01')
-# Bug 912261
-# ---
-# - Statement: SELECT d1 + INTERVAL '127-11' YEAR TO MONTH FROM dates WHERE ind = 13
-# - output: [['2127-12-01']]
+---
+- Statement: SELECT d1 + INTERVAL '127-11' YEAR TO MONTH FROM dates WHERE ind = 13
+- output: [['2127-12-01']]
 ---
 - Statement: INSERT INTO dates
     VALUES (14, '2000-01-31', '2000-01-02', '2000-02-01', '2000-01-30')
@@ -1559,10 +1557,9 @@
 ---
 - Statement: INSERT INTO dates
     VALUES (20, '2000-01-31', '2000-12-01', '2000-12-31', '1999-03-02')
-# Bug 912261
-# ---
-# - Statement: SELECT d1 + INTERVAL '11' MONTH FROM dates WHERE ind = 20
-# - output: [['2000-12-31']]
+---
+- Statement: SELECT d1 + INTERVAL '11' MONTH FROM dates WHERE ind = 20
+- output: [['2000-12-31']]
 ---
 - Statement: SELECT d1 + INTERVAL '-11' MONTH FROM dates WHERE ind = 20
 - output: [['1999-02-28']]
@@ -1578,10 +1575,9 @@
 ---
 - Statement: INSERT INTO dates
     VALUES (22, '2000-01-31', '2001-12-01', '2001-12-31', '1998-03-02')
-# Bug 912261
-# ---
-# - Statement: SELECT d1 + INTERVAL '1-11' YEAR TO MONTH FROM dates WHERE ind = 22
-# - output: [['2001-12-31']]
+---
+- Statement: SELECT d1 + INTERVAL '1-11' YEAR TO MONTH FROM dates WHERE ind = 22
+- output: [['2001-12-31']]
 ---
 - Statement: INSERT INTO dates
     VALUES (23, '2000-01-31', '2033-01-01', '2033-01-31', '1967-01-30')
@@ -1657,10 +1653,9 @@
 ---
 - Statement: INSERT INTO dates
     VALUES (33, '2000-01-17', '2000-12-01', '2000-12-17', '1999-02-16')
-# Bug 912261
-# ---
-# - Statement: SELECT d1 + INTERVAL '11' MONTH FROM dates WHERE ind = 33
-# - output: [['2000-12-17']]
+---
+- Statement: SELECT d1 + INTERVAL '11' MONTH FROM dates WHERE ind = 33
+- output: [['2000-12-17']]
 ---
 - Statement: SELECT d1 + INTERVAL '-11' MONTH FROM dates WHERE ind = 33
 - output: [['1999-02-17']]
@@ -1691,10 +1686,9 @@
 ---
 - Statement: INSERT INTO dates
     VALUES (37, '2000-01-17', '2033-12-01', '2033-12-17', '1966-02-16')
-# Bug 912261
-# ---
-# - Statement: SELECT d1 + INTERVAL '33-11' YEAR TO MONTH FROM dates WHERE ind = 37
-# - output: [['2033-12-17']]
+---
+- Statement: SELECT d1 + INTERVAL '33-11' YEAR TO MONTH FROM dates WHERE ind = 37
+- output: [['2033-12-17']]
 ---
 - Statement: INSERT INTO dates
     VALUES (38, '2000-01-17', '2127-01-01', '2127-01-17', '1873-01-16')
@@ -1755,10 +1749,9 @@
 ---
 - Statement: INSERT INTO dates
     VALUES (46, '2000-01-01', '2000-12-01', '2000-12-01', '1999-01-31')
-# Bug 912261
-# ---
-# - Statement: SELECT d1 + INTERVAL '11' MONTH FROM dates WHERE ind = 46
-# - output: [['2000-12-01']]
+---
+- Statement: SELECT d1 + INTERVAL '11' MONTH FROM dates WHERE ind = 46
+- output: [['2000-12-01']]
 ---
 - Statement: SELECT d1 + INTERVAL '-11' MONTH FROM dates WHERE ind = 46
 - output: [['1999-02-01']]
@@ -1804,10 +1797,9 @@
 ---
 - Statement: INSERT INTO dates
     VALUES (52, '2000-01-01', '2127-12-01', '2127-12-01', '1872-02-01')
-# Bug 912261
-# ---
-# - Statement: SELECT d1 + INTERVAL '127-11' YEAR TO MONTH FROM dates WHERE ind = 52
-# - output: [['2127-12-01']]
+---
+- Statement: SELECT d1 + INTERVAL '127-11' YEAR TO MONTH FROM dates WHERE ind = 52
+- output: [['2127-12-01']]
 ---
 - Statement: INSERT INTO dates
     VALUES (53, '2000-11-01', '2000-01-02', '2000-11-02', '2000-10-31')
@@ -1817,10 +1809,9 @@
 ---
 - Statement: INSERT INTO dates
     VALUES (54, '2000-11-01', '2000-02-01', '2000-12-02', '2000-10-01')
-# Bug 912261
-# ---
-# - Statement: SELECT d1 + INTERVAL '31' DAY FROM dates WHERE ind = 54
-# - output: [['2000-12-02']]
+---
+- Statement: SELECT d1 + INTERVAL '31' DAY FROM dates WHERE ind = 54
+- output: [['2000-12-02']]
 ---
 - Statement: INSERT INTO dates
     VALUES (55, '2000-11-01', '2000-01-18', '2000-11-18', '2000-10-15')
@@ -1831,16 +1822,14 @@
 - Statement: INSERT INTO dates
     VALUES (56, '2000-11-01', '2000-02-12', '2000-12-13', '2000-09-20')
 ---
-# Bug 912261
-# - Statement: SELECT d1 + INTERVAL '42' DAY FROM dates WHERE ind = 56
-# - output: [['2000-12-13']]
-# ---
+- Statement: SELECT d1 + INTERVAL '42' DAY FROM dates WHERE ind = 56
+- output: [['2000-12-13']]
+---
 - Statement: INSERT INTO dates
     VALUES (57, '2000-11-01', '2000-02-01', '2000-12-02', '2000-10-01')
-# Bug 912261
-# ---
-# - Statement: SELECT d1 + INTERVAL '1' MONTH FROM dates WHERE ind = 57
-# - output: [['2000-12-01']]
+---
+- Statement: SELECT d1 + INTERVAL '1' MONTH FROM dates WHERE ind = 57
+- output: [['2000-12-01']]
 ---
 - Statement: SELECT d1 + INTERVAL '-1' MONTH FROM dates WHERE ind = 57
 - output: [['2000-10-01']]
@@ -1904,10 +1893,9 @@
 ---
 - Statement: INSERT INTO dates
     VALUES (65, '2000-11-01', '2127-02-01', '2127-12-03', '1873-10-01')
-# Bug 912261
-# ---
-# - Statement: SELECT d1 + INTERVAL '127-1' YEAR TO MONTH FROM dates WHERE ind = 65
-# - output: [['2127-12-01']]
+---
+- Statement: SELECT d1 + INTERVAL '127-1' YEAR TO MONTH FROM dates WHERE ind = 65
+- output: [['2127-12-01']]
 ---
 - Statement: INSERT INTO dates
     VALUES (66, '2000-06-01', '2000-01-02', '2000-06-02', '2000-05-31')
@@ -2052,10 +2040,9 @@
 ---
 - Statement: INSERT INTO dates
     VALUES (85, '2000-01-01', '2000-12-01', '2000-12-01', '1999-01-31')
-# Bug 912261
-# ---
-# - Statement: SELECT d1 + INTERVAL '11' MONTH FROM dates WHERE ind = 85
-# - output: [['2000-12-01']]
+---
+- Statement: SELECT d1 + INTERVAL '11' MONTH FROM dates WHERE ind = 85
+- output: [['2000-12-01']]
 ---
 - Statement: SELECT d1 + INTERVAL '-11' MONTH FROM dates WHERE ind = 85
 - output: [['1999-02-01']]
@@ -2101,10 +2088,9 @@
 ---
 - Statement: INSERT INTO dates
     VALUES (91, '2000-01-01', '2127-12-01', '2127-12-01', '1872-02-01')
-# Bug 912261
-# ---
-# - Statement: SELECT d1 + INTERVAL '127-11' YEAR TO MONTH FROM dates WHERE ind = 91
-# - output: [['2127-12-01']]
+---
+- Statement: SELECT d1 + INTERVAL '127-11' YEAR TO MONTH FROM dates WHERE ind = 91
+- output: [['2127-12-01']]
 ---
 - Statement: INSERT INTO dates
     VALUES (92, '1999-01-01', '2000-01-02', '1999-01-02', '1998-12-31')
@@ -2150,10 +2136,9 @@
 ---
 - Statement: INSERT INTO dates
     VALUES (98, '1999-01-01', '2000-12-01', '1999-12-02', '1998-01-31')
-# Bug 912261
-# ---
-# - Statement: SELECT d1 + INTERVAL '11' MONTH FROM dates WHERE ind = 98
-# - output: [['1999-12-01']]
+---
+- Statement: SELECT d1 + INTERVAL '11' MONTH FROM dates WHERE ind = 98
+- output: [['1999-12-01']]
 ---
 - Statement: SELECT d1 + INTERVAL '-11' MONTH FROM dates WHERE ind = 98
 - output: [['1998-02-01']]
@@ -2169,10 +2154,9 @@
 ---
 - Statement: INSERT INTO dates
     VALUES (100, '1999-01-01', '2001-12-01', '2000-12-01', '1997-01-31')
-# Bug 912261
-# ---
-# - Statement: SELECT d1 + INTERVAL '1-11' YEAR TO MONTH FROM dates WHERE ind = 100
-# - output: [['2000-12-01']]
+---
+- Statement: SELECT d1 + INTERVAL '1-11' YEAR TO MONTH FROM dates WHERE ind = 100
+- output: [['2000-12-01']]
 ---
 - Statement: INSERT INTO dates
     VALUES (101, '1999-01-01', '2033-01-01', '2032-01-02', '1965-12-31')
@@ -2248,10 +2232,9 @@
 ---
 - Statement: INSERT INTO dates
     VALUES (111, '1961-01-01', '2000-12-01', '1961-12-02', '1960-02-01')
-# Bug 912261
-# ---
-# - Statement: SELECT d1 + INTERVAL '11' MONTH FROM dates WHERE ind = 111
-# - output: [['1961-12-01']]
+---
+- Statement: SELECT d1 + INTERVAL '11' MONTH FROM dates WHERE ind = 111
+- output: [['1961-12-01']]
 ---
 - Statement: SELECT d1 + INTERVAL '-11' MONTH FROM dates WHERE ind = 111
 - output: [['1960-02-01']]
@@ -2282,10 +2265,9 @@
 ---
 - Statement: INSERT INTO dates
     VALUES (115, '1961-01-01', '2033-12-01', '1994-12-02', '1927-02-01')
-# Bug 912261
-# ---
-# - Statement: SELECT d1 + INTERVAL '33-11' YEAR TO MONTH FROM dates WHERE ind = 115
-# - output: [['1994-12-01']]
+---
+- Statement: SELECT d1 + INTERVAL '33-11' YEAR TO MONTH FROM dates WHERE ind = 115
+- output: [['1994-12-01']]
 ---
 - Statement: INSERT INTO dates
     VALUES (116, '1961-01-01', '2127-01-01', '2088-01-01', '1834-01-01')
