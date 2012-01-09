@@ -42,19 +42,25 @@ public class DateTimeArithExpression extends ArithExpression
         {
             if (argumentTypes.size() != 2)
                 throw new WrongExpressionArityException(2, argumentTypes.size());
-            ExpressionType dateType = argumentTypes.get(0);
-            switch(dateType.getType())
+            adjustVarchar(argumentTypes, 0);
+            adjustVarchar(argumentTypes, 1);
+
+            return composeType(argumentTypes.get(0), argumentTypes.get(1));
+        }
+
+        private void adjustVarchar (TypesList argumentTypes, int index) throws StandardException
+        {
+            ExpressionType dateType = argumentTypes.get(index);
+            switch (dateType.getType())
             {
                 case DATE:
                 case TIME:
                 case DATETIME:
                 case TIMESTAMP: break;
-                case VARCHAR:   argumentTypes.setType(0, dateType.getPrecision() > 10 ?
+                case VARCHAR:   argumentTypes.setType(index, dateType.getPrecision() > 10 ?
                                                      AkType.DATETIME: AkType.TIME);
-                default:        argumentTypes.setType(0, AkType.TIME);
+                default:        argumentTypes.setType(index, AkType.TIME);
             }
-
-            return composeType(argumentTypes.get(0), argumentTypes.get(1));
         }
     };
 
