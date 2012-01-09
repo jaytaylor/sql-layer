@@ -232,40 +232,49 @@ public class IntervalMatrixCreator {
             throws IOException
     {
         out.append("INTERVAL '");
-        int hours = period.getHours();
-        Duration duration = period.toDurationFrom(timeZero);
-        int days = (int) duration.getStandardDays();
-        if (days != 0) {
-            hours += 24 * days;
-        }
-        if (hours != 0) {
-            if (period.getMinutes() != 0) {
-                if (period.getSeconds() != 0) {
-                    /* HH:MM:SS */
-                    new Formatter(out)
-                        .format("%02d:%02d:%02d' HOUR TO SECOND",
-                                hours,
-                                period.getMinutes(),
-                                period.getSeconds());
-                } else {
-                    /* HH:MM */
-                    new Formatter(out)
-                        .format("%02d:%02d' HOUR to MINUTE",
-                                hours,
-                                period.getMinutes());
-                }
+        if (period.getDays() != 0) {
+            if (period.getSeconds() != 0) {
+                /* DD HH:MM:SS */
+                new Formatter(out)
+                    .format("%d %02d:%02d:%02d' DAY TO SECOND",
+                            period.getDays(),
+                            period.getHours(),
+                            period.getMinutes(),
+                            period.getSeconds());
+            } else if (period.getMinutes() != 0) {
+                /* DD HH:MM */
+                new Formatter(out)
+                    .format("%d %02d:%02d' DAY TO MINUTE",
+                            period.getDays(),
+                            period.getHours(),
+                            period.getMinutes());
+            } else if (period.getHours() != 0) {
+                /* DD HH */
+                new Formatter(out)
+                    .format("%d %02d' DAY TO HOUR",
+                            period.getDays(),
+                            period.getHours());
             } else {
-                if (period.getSeconds() != 0) {
-                    /* HH:MM:SS */
-                    new Formatter(out)
-                        .format("%02d:%02d:%02d' HOUR TO SECOND",
-                                hours,
-                                period.getMinutes(),
-                                period.getSeconds());
-                } else {
-                    /* HH */
-                    new Formatter(out).format("%d' HOUR", hours);
-                }
+                /* DD */
+                new Formatter(out).format("%d' DAY", period.getDays());
+            }
+        } else if (period.getHours() != 0) {
+            if (period.getSeconds() != 0) {
+                /* HH:MM:SS */
+                new Formatter(out)
+                    .format("%02d:%02d:%02d' HOUR TO SECOND",
+                            period.getHours(),
+                            period.getMinutes(),
+                            period.getSeconds());
+            } else if (period.getMinutes() != 0) {
+                /* HH:MM */
+                new Formatter(out)
+                    .format("%02d:%02d' HOUR to MINUTE",
+                            period.getHours(),
+                            period.getMinutes());
+            } else {
+                /* HH */
+                new Formatter(out).format("%d' HOUR", period.getHours());
             }
         } else if (period.getMinutes() != 0) {
             if (period.getSeconds() != 0) {
@@ -277,7 +286,7 @@ public class IntervalMatrixCreator {
             } else {
                 /* MM */
                 new Formatter(out).format("%d' MINUTE", period.getMinutes());
-       }
+            }
         } else {
             /* SS */
             new Formatter(out).format("%d' SECOND", period.getSeconds());
@@ -386,6 +395,14 @@ public class IntervalMatrixCreator {
             out.append("- output: [['");
             dateFormatter.printTo(out, date.plus(period));
             out.append("']]\n");
+            /*
+             * Disable negative values for YEAR TO MONTH intervals because of
+             * Bug 913813: Adding YEAR TO MONTH INTERVAL with negative year
+             * fails
+             */
+            if (period.getYears() != 0 && period.getMonths() != 0) {
+                break;
+            }
             Period negatedPeriod = negatePeriod(period);
             if (negatedPeriod.equals(period)) {
                 break;
@@ -550,6 +567,14 @@ public class IntervalMatrixCreator {
             out.append("- output: [[!re '");
             dateTimeFormatter.printTo(out, date.plus(period));
             out.append("([.]0)?']]\n");
+            /*
+             * Disable negative values for YEAR TO MONTH intervals because of
+             * Bug 913813: Adding YEAR TO MONTH INTERVAL with negative year
+             * fails
+             */
+            if (period.getYears() != 0 && period.getMonths() != 0) {
+                break;
+            }
             Period negatedPeriod = negatePeriod(period);
             if (negatedPeriod.equals(period)) {
                 break;
