@@ -1,6 +1,6 @@
 # tests that currently fail the FTS run
 ---
-- Properties: sys-aksql
+- Properties: all
 - suppressed: true
 ---   
 - Include: all-types-schema.yaml

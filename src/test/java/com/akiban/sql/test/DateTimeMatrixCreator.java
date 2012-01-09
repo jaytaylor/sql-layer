@@ -210,6 +210,7 @@ public class DateTimeMatrixCreator implements Runnable {
 
     private void wackyYearTest() {
         Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.MONTH, 1);
         cal.set(Calendar.MILLISECOND, 0);
         cal.set(Calendar.YEAR, 300);
         recordSQL(cal);

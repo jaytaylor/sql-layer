@@ -15,6 +15,9 @@
 - Statement: select id,MINUTE(timestamp_field),expected_MINUTE from datetime_matrix where MINUTE(timestamp_field) <> expected_MINUTE;
 - row_count: 0
 ---
+- Statement: select id,MINUTE(date_field) from datetime_matrix where MINUTE(date_field) is null;
+- row_count: 0
+---
 - Statement: select MINUTE('A') from all_types;
 - output: [[null]]
 ---
