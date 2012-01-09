@@ -27,9 +27,9 @@ import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
-import com.akiban.sql.optimizer.rule.IndexEstimator;
+import com.akiban.sql.optimizer.rule.CostEstimator;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
-import com.akiban.sql.optimizer.rule.TestIndexEstimator;
+import com.akiban.sql.optimizer.rule.TestCostEstimator;
 
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.NamedParameterizedRunner.TestParameters;
@@ -69,7 +69,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
         compiler = TestOperatorCompiler.create(parser, ais, 
                                                OptimizerTestBase.DEFAULT_SCHEMA,
                                                new FunctionsRegistryImpl(),
-                                               new TestIndexEstimator(ais, OptimizerTestBase.DEFAULT_SCHEMA, statsFile));
+                                               new TestCostEstimator(ais, OptimizerTestBase.DEFAULT_SCHEMA, statsFile));
     }
 
     static class TestResultColumn extends PhysicalResultColumn {
@@ -95,17 +95,17 @@ public class OperatorCompilerTest extends NamedParamsTestBase
                                               AkibanInformationSchema ais, 
                                               String defaultSchemaName,
                                               FunctionsRegistry functionsRegistry,
-                                              IndexEstimator indexEstimator) {
+                                              CostEstimator costEstimator) {
             RulesTestHelper.ensureRowDefs(ais);
-            return new TestOperatorCompiler(parser, ais, defaultSchemaName, functionsRegistry, indexEstimator);
+            return new TestOperatorCompiler(parser, ais, defaultSchemaName, functionsRegistry, costEstimator);
         }
 
         private TestOperatorCompiler(SQLParser parser, 
                                      AkibanInformationSchema ais, 
                                      String defaultSchemaName,
                                      FunctionsRegistry functionsRegistry,
-                                     IndexEstimator indexEstimator) {
-            super(parser, ais, defaultSchemaName, functionsRegistry, indexEstimator);
+                                     CostEstimator costEstimator) {
+            super(parser, ais, defaultSchemaName, functionsRegistry, costEstimator);
         }
 
         @Override

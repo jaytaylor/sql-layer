@@ -19,7 +19,7 @@ import com.akiban.server.store.statistics.IndexStatistics;
 
 import com.akiban.ais.model.Index;
 
-public abstract class IndexEstimator
+public abstract class CostEstimator
 {
     public abstract IndexStatistics getIndexStatistics(Index index);
 

@@ -17,7 +17,7 @@ package com.akiban.sql.pg;
 
 import com.akiban.sql.parser.SQLParser;
 
-import com.akiban.sql.optimizer.rule.IndexEstimator;
+import com.akiban.sql.optimizer.rule.CostEstimator;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.qp.loadableplan.LoadablePlan;
@@ -115,6 +115,6 @@ public interface PostgresServerSession
     /** Get a current environment value. */
     public Object getEnvironmentValue(EnvironmentExpressionSetting setting);
 
-    /** Get the index estimator. */
-    public IndexEstimator indexEstimator();
+    /** Get the index cost estimator. */
+    public CostEstimator costEstimator();
 }

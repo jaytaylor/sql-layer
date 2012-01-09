@@ -13,34 +13,29 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.akiban.sql.pg;
 
-import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.sql.optimizer.rule.CostEstimator;
+
 import com.akiban.ais.model.Index;
-
+import com.akiban.server.service.session.Session;
 import com.akiban.server.store.statistics.IndexStatistics;
-import com.akiban.server.store.statistics.IndexStatisticsYamlLoader;
+import com.akiban.server.store.statistics.IndexStatisticsService;
 
-import java.util.Map;
-import java.util.Collections;
-import java.io.File;
-import java.io.IOException;
-
-public class TestIndexEstimator extends IndexEstimator
+// TODO: Maybe move this someplace else. Right now this is where things meet.
+public class ServiceCostEstimator extends CostEstimator
 {
-    private final Map<Index,IndexStatistics> stats;
+    private Session session;
+    private IndexStatisticsService indexStatistics;
 
-    public TestIndexEstimator(AkibanInformationSchema ais, String defaultSchema,
-                              File statsFile) 
-            throws IOException {
-        if (statsFile == null)
-            stats = Collections.<Index,IndexStatistics>emptyMap();
-        else
-            stats = new IndexStatisticsYamlLoader(ais, defaultSchema).load(statsFile);
+    public ServiceCostEstimator(PostgresServiceRequirements reqs,
+                                Session session) {
+        this.session = session;
+        indexStatistics = reqs.indexStatistics();
     }
 
     @Override
     public IndexStatistics getIndexStatistics(Index index) {
-        return stats.get(index);
+        return indexStatistics.getIndexStatistics(session, index);
     }
 }

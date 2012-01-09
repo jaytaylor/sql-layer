@@ -53,7 +53,7 @@ public class PostgresOperatorCompiler extends OperatorCompiler
 
     public PostgresOperatorCompiler(PostgresServerSession server) {
         super(server.getParser(), server.getAIS(), server.getDefaultSchemaName(),
-              server.functionsRegistry(), server.indexEstimator());
+              server.functionsRegistry(), server.costEstimator());
 
         server.setAttribute("aisBinder", binder);
         server.setAttribute("compiler", this);

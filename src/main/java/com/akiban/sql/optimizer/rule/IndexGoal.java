@@ -105,7 +105,7 @@ public class IndexGoal implements Comparator<IndexScan>
     private AggregateSource grouping;
     private Sort ordering;
     private Project projectDistinct;
-    private IndexEstimator indexEstimator;
+    private CostEstimator costEstimator;
 
     private TableNode updateTarget;
 
@@ -119,13 +119,13 @@ public class IndexGoal implements Comparator<IndexScan>
                      Sort ordering,
                      Project projectDistinct,
                      Collection<TableSource> tables,
-                     IndexEstimator indexEstimator) {
+                     CostEstimator costEstimator) {
         this.boundTables = boundTables;
         this.conditionSources = conditionSources;
         this.grouping = grouping;
         this.ordering = ordering;
         this.projectDistinct = projectDistinct;
-        this.indexEstimator = indexEstimator;
+        this.costEstimator = costEstimator;
         
         if (conditionSources.size() == 1)
             conditions = conditionSources.get(0);
@@ -240,7 +240,7 @@ public class IndexGoal implements Comparator<IndexScan>
             !index.hasConditions() &&
             !index.isCovering())
             return false;
-        estimateCost(indexEstimator, index);
+        estimateCost(costEstimator, index);
         return true;
     }
 
@@ -731,8 +731,8 @@ public class IndexGoal implements Comparator<IndexScan>
         return requiredAfter.isEmpty();
     }
 
-    protected void estimateCost(IndexEstimator indexEstimator, IndexScan index) {
-        IndexStatistics indexStatistics = indexEstimator.getIndexStatistics(index.getIndex());
+    protected void estimateCost(CostEstimator costEstimator, IndexScan index) {
+        IndexStatistics indexStatistics = costEstimator.getIndexStatistics(index.getIndex());
         if (indexStatistics != null) {
             // TODO: Here is where we will actually use those statistics.
         }
