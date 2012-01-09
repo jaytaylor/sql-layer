@@ -512,7 +512,7 @@ public class ExtractExpression extends AbstractUnaryExpression
                     case TEXT:
                     case VARCHAR:  String st = Extractors.getStringExtractor().getObject(operand());
                                    l = Extractors.getLongExtractor(t = (targetType == AkType.DATE && st.length() > 10 ? AkType.DATETIME : targetType)).
-                                           getLong(operand().getString());
+                                           getLong(st);
                                    break;
                     case LONG:     long raw = operand().getLong();
                                    if (targetType == AkType.TIMESTAMP) return null;
