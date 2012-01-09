@@ -15,8 +15,8 @@
 - Statement: select id,SECOND(timestamp_field),expected_SECOND from datetime_matrix where SECOND(timestamp_field) <> expected_SECOND;
 - row_count: 0
 ---
-- Statement: select id,SECOND(date_field) from datetime_matrix where SECOND(date_field) is not null;
-- row_count: 2064
+- Statement: select id,SECOND(date_field) from datetime_matrix where SECOND(date_field) is null;
+- row_count: 0
 ---
 - Statement: select SECOND('A') from all_types;
 - output: [[null]]
