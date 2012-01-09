@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.types.extract.Extractors;
@@ -71,7 +72,6 @@ public class IntervalCastExpression extends AbstractUnaryExpression
         ID_MAP.put(TypeId.INTERVAL_HOUR_MINUTE_ID, EndPoint.HOUR_MINUTE);
         ID_MAP.put(TypeId.INTERVAL_HOUR_SECOND_ID, EndPoint.HOUR_SECOND);
         ID_MAP.put(TypeId.INTERVAL_MINUTE_SECOND_ID, EndPoint.MINUTE_SECOND);
-
     }
 
     private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation
@@ -106,10 +106,8 @@ public class IntervalCastExpression extends AbstractUnaryExpression
                     if (ch == '-' || ch == '+')
                     {
                         sign = ch == '-' ? -1 : 1;
-                        interval = interval.substring(1, interval.length());
-                        
+                        interval = interval.substring(1, interval.length()); 
                     }
-            
                 }
                 else if (!Converters.isConversionAllowed(sourceType, AkType.LONG))
                     throw new InconvertibleTypesException(sourceType, endPoint.type);
@@ -170,7 +168,7 @@ public class IntervalCastExpression extends AbstractUnaryExpression
                         result = sign * getResult(2, interval, ":", 2, true);
                         break;
                     default:
-                        throw new InvalidIntervalFormatException (endPoint.name(), interval);
+                        throw new InvalidArgumentTypeException ("INTERVAL _" + endPoint.name() + " is not supported");
                 }
                 
                 valueHolder().putRaw(endPoint.type, result.longValue());
