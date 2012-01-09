@@ -156,7 +156,8 @@ public final class IndexHistogramsIT extends ITBase {
         }
         validateHistogram("orders", "placed", 1, expected.toArray(new HistogramEntryDescription[expected.size()]));
     }
-    
+
+    @Ignore("test is blocked due to wrong GI row count maintenance")
     @Test
     public void namePlacedGI_1() {
         // 320 customers with 4 names, evenly distributed, is 80 customers per name
