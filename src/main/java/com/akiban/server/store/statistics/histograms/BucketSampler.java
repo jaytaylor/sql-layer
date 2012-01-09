@@ -78,16 +78,16 @@ final class BucketSampler<T> {
         return ((double)equalsSeen) / ((double)bucketsSeen);
     }
 
-    BucketSampler(int maxSize, MyLong expectedInputs) {
+    BucketSampler(int maxSize, long expectedInputs) {
         this(maxSize, expectedInputs, true);
     }
 
-    BucketSampler(int maxSize, MyLong expectedInputs, boolean calculateStandardDeviation) {
+    BucketSampler(int maxSize, long expectedInputs, boolean calculateStandardDeviation) {
         if (maxSize < 1)
             throw new IllegalArgumentException("max must be at least 1");
-        if (expectedInputs.val() < 0)
-            throw new IllegalArgumentException("expectedInputs must be non-negative: " + expectedInputs.val());
-        this.expectedCount = expectedInputs.val();
+        if (expectedInputs < 0)
+            throw new IllegalArgumentException("expectedInputs must be non-negative: " + expectedInputs);
+        this.expectedCount = expectedInputs;
         this.buckets = new ArrayList<Bucket<T>>(maxSize + 1);
         long medianPointDistance = Math.round(((double)expectedCount) / maxSize);
         this.medianPointDistance = medianPointDistance == 0 ? 1 : medianPointDistance;

@@ -97,7 +97,7 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
             return trimmed(populars);
         // We're going to sample the unpopular buckets, but unconditionally append the popular ones into the results
         int unpopularsNeeded = maxSize - populars.size();
-        BucketSampler<T> sampler = new BucketSampler<T>(unpopularsNeeded, new MyLong(split.regularBuckets.size()), false);
+        BucketSampler<T> sampler = new BucketSampler<T>(unpopularsNeeded, split.regularBuckets.size(), false);
         for (Bucket<T> regularBucket : split.regularBuckets) {
             while (!populars.isEmpty()) {
                 T regularValue = regularBucket.value();
@@ -115,7 +115,7 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
     }
 
     private List<Bucket<T>> trimmed(Deque<Bucket<T>> buckets) {
-        BucketSampler<T> sampler = new BucketSampler<T>(maxSize, new MyLong(buckets.size()), false);
+        BucketSampler<T> sampler = new BucketSampler<T>(maxSize, buckets.size(), false);
         for (Bucket<T> bucket : buckets)
             sampler.add(bucket);
         List<Bucket<T>> results = sampler.buckets();
@@ -123,7 +123,7 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
         return results;
     }
 
-    public Sampler(Splitter<T> splitter, int maxSize, MyLong expectedInputs, Recycler<? super T> recycler) {
+    public Sampler(Splitter<T> splitter, int maxSize, long expectedInputs, Recycler<? super T> recycler) {
         super(splitter);
         int segments = splitter.segments();
         ArgumentValidation.isGT("segments", segments, 0);
