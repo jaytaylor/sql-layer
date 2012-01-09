@@ -71,6 +71,7 @@ public class IntervalCastExpression extends AbstractUnaryExpression
         ID_MAP.put(TypeId.INTERVAL_HOUR_MINUTE_ID, EndPoint.HOUR_MINUTE);
         ID_MAP.put(TypeId.INTERVAL_HOUR_SECOND_ID, EndPoint.HOUR_SECOND);
         ID_MAP.put(TypeId.INTERVAL_MINUTE_SECOND_ID, EndPoint.MINUTE_SECOND);
+
     }
 
     private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation
@@ -93,11 +94,23 @@ public class IntervalCastExpression extends AbstractUnaryExpression
             String interval = null;
             Long result = null;
             AkType sourceType = source.getConversionType();
+            int sign = 1;
 
             try
             {
                 if (sourceType == AkType.VARCHAR)
+                {
                     interval = source.getString().trim();
+                    char ch = interval.charAt(0);
+
+                    if (ch == '-' || ch == '+')
+                    {
+                        sign = ch == '-' ? -1 : 1;
+                        interval = interval.substring(1, interval.length());
+                        
+                    }
+            
+                }
                 else if (!Converters.isConversionAllowed(sourceType, AkType.LONG))
                     throw new InconvertibleTypesException(sourceType, endPoint.type);
                 else
@@ -108,54 +121,56 @@ public class IntervalCastExpression extends AbstractUnaryExpression
                     case YEAR:
                         if (result == null)
                             result = Long.parseLong(interval);
-                        result *= 12L;
+                        result *= 12L * sign;
                         break;
                     case MONTH: 
                         if (result == null)
-                            result = Long.parseLong(interval); 
+                            result = sign * Long.parseLong(interval);
                         break;
                     case YEAR_MONTH: 
-                        String yr_mth[] = interval.split("-");
+                        String yr_mth[] = interval.split("-");                       
                         if (yr_mth.length != 2) 
                             throw new InvalidIntervalFormatException (endPoint.name(), interval);
-                        result = Long.parseLong(yr_mth[0]) * 12 + Long.parseLong(yr_mth[1]);
+                        result = sign * (Long.parseLong(yr_mth[0]) * 12 + Long.parseLong(yr_mth[1]));
                         break;
                     case DAY:
                         if (result == null)
                             result = Long.parseLong(interval);
-                        result *= MULS[0];
+                        result *= MULS[0] * sign;
                         break;
                     case HOUR:
                         if (result == null)
                             result = Long.parseLong(interval); 
-                        result *= MULS[1];
+                        result *= MULS[1]* sign;
                         break;
                     case MINUTE:
                         if (result == null)
                             result = Long.parseLong(interval);
-                        result *=  MULS[2];
+                        result *=  MULS[2] * sign;
                         break;
                     case SECOND:
                         result = Math.round(Extractors.getDoubleExtractor().getDouble(source) * 1000);
                         break;
                     case DAY_HOUR:
-                        result = getResult(0, interval, "\\s+", 2, false);
+                        result = sign * getResult(0, interval, "\\s+", 2, false);
                         break;
                     case DAY_MINUTE:
-                        result = getResult(0, interval, "\\s+|:", 3, false);
+                        result = sign * getResult(0, interval, "\\s+|:", 3, false);
                         break;
                     case DAY_SECOND:
-                        result = getResult(0, interval, "\\s+|:", 4, true);
+                        result = sign * getResult(0, interval, "\\s+|:", 4, true);
                         break;
                     case HOUR_MINUTE:
-                        result = getResult(1,interval, ":", 2, false);
+                        result = sign * getResult(1,interval, ":", 2, false);
                         break;
                     case HOUR_SECOND:
-                        result = getResult(1, interval, ":", 3, true);
+                        result = sign * getResult(1, interval, ":", 3, true);
                         break;
-                    default: // MINUTE_SECOND
-                        result = getResult(2, interval, ":", 2, true);
+                    case MINUTE_SECOND:
+                        result = sign * getResult(2, interval, ":", 2, true);
                         break;
+                    default:
+                        throw new InvalidIntervalFormatException (endPoint.name(), interval);
                 }
                 
                 valueHolder().putRaw(endPoint.type, result.longValue());
