@@ -435,7 +435,7 @@ public class ExtractExpression extends AbstractUnaryExpression
             this.type = type;
         }
         
-        private static final EnumSet<AkType> DATES = EnumSet.of( AkType.DATE, AkType.DATETIME, AkType.TIMESTAMP, AkType.YEAR);
+        private static final EnumSet<AkType> DATES = EnumSet.of( AkType.DATETIME, AkType.DATE, AkType.TIMESTAMP, AkType.YEAR);
         private static final EnumSet<AkType> TIMES = EnumSet.of(AkType.TIME, AkType.TIMESTAMP, AkType.DATETIME);
 
         private AkType t;
@@ -510,7 +510,15 @@ public class ExtractExpression extends AbstractUnaryExpression
                 switch (argType)
                 {
                     case TEXT:
-                    case VARCHAR: l = Extractors.getLongExtractor(targetType).getLong(operand().getString()); break;
+                    case VARCHAR:  String st = Extractors.getStringExtractor().getObject(operand());
+                                   if (targetType == AkType.DATE && st.length() > 10)
+                                   {
+                                        l = Extractors.getLongExtractor(AkType.DATETIME).getLong(operand().getString());
+                                        t = AkType.DATETIME;
+                                   }
+                                   else
+                                        l = Extractors.getLongExtractor(targetType).getLong(operand().getString());
+                                   break;
                     case LONG:     long raw = operand().getLong();
                                    if (targetType == AkType.TIMESTAMP) return null;
                                    else if (targetType == AkType.DATE )
