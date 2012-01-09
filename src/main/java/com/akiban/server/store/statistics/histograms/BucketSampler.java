@@ -89,7 +89,7 @@ final class BucketSampler<T> {
             throw new IllegalArgumentException("expectedInputs must be non-negative: " + expectedInputs.val());
         this.expectedCount = expectedInputs.val();
         this.buckets = new ArrayList<Bucket<T>>(maxSize + 1);
-        long medianPointDistance = expectedCount / maxSize;
+        long medianPointDistance = Math.round(((double)expectedCount) / maxSize);
         this.medianPointDistance = medianPointDistance == 0 ? 1 : medianPointDistance;
         this.nextMedianPoint = this.medianPointDistance;
         assert this.nextMedianPoint > 0 : this.nextMedianPoint;
