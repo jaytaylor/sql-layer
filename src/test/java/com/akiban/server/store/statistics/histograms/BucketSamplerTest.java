@@ -24,7 +24,6 @@ import java.util.List;
 
 import static com.akiban.server.store.statistics.histograms.BucketTestUtils.bucket;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 public final class BucketSamplerTest {
 
@@ -46,12 +45,11 @@ public final class BucketSamplerTest {
     public void medianPointNotAtEnd() {
         check(
                 4,
-                "a b c   d e f   g h i   j k l   m n",
+                "a b c d   e f g h   i j k l   m n",
                 bucketsList(
-                        bucket("c", 1, 2, 2),
-                        bucket("f", 1, 2, 2),
-                        bucket("i", 1, 2, 2),
-                        bucket("l", 1, 2, 2),
+                        bucket("d", 1, 3, 3),
+                        bucket("h", 1, 3, 3),
+                        bucket("l", 1, 3, 3),
                         bucket("n", 1, 1, 1)
                 )
         );
@@ -182,7 +180,7 @@ public final class BucketSamplerTest {
 
     @Test
     public void appendingKeepsSamplingUnchanged() {
-        // pipe is median, V is inserted bucket      V       V      |               |V|V
+        // pipe is median, V is inserted bucket      V       V        |              V|V
         StringToBuckets inputs = new StringToBuckets("a a a b c c c c d e e e e f f f g");
         assertEquals("buckets count", 7, inputs.buckets().size());
         BucketSampler<String> sampler = new BucketSampler<String>(2, new MyLong(inputs.inputsCount()), true);
@@ -212,9 +210,8 @@ public final class BucketSamplerTest {
         List<Bucket<String>> expected = bucketsList(
                 bucket("FIRST", 17, 100, 1000),
                 bucket("SECOND", 23, 204, 2002),
-                bucket("c", 4, 0, 0),
-                bucket("f", 3, 5, 2),
-                bucket("THIRD", 37, 300, 3000),
+                bucket("d", 1, 4, 1),
+                bucket("THIRD", 37, 307, 3002),
                 bucket("g", 1, 0, 0),
                 bucket("FOURTH", 41, 400, 4000)
         );
