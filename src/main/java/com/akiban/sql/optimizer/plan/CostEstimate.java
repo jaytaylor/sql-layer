@@ -37,4 +37,20 @@ public class CostEstimate implements Comparable<CostEstimate>
     public int compareTo(CostEstimate other) {
         return Double.compare(cost, other.cost);
     }
+
+    /** Cost of one operation after the other. */
+    public CostEstimate add(CostEstimate next) {
+        return new CostEstimate(next.rowCount, cost + next.cost);
+    }
+
+    /** Cost of operation repeated. */
+    public CostEstimate multiply(long count) {
+        return new CostEstimate(rowCount * count, cost * count);
+    }
+
+    /** Cost of one operation nested within another. */
+    public CostEstimate multiply(CostEstimate inner) {
+        return new CostEstimate(rowCount * inner.rowCount,
+                                cost + rowCount * inner.cost);
+    }
 }
