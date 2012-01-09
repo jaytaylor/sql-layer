@@ -179,17 +179,53 @@ public class IntervalMatrixCreator {
                 timeFormatter.printTo(out, time.minus(period));
                 out.append("')\n");
                 /* Test interval */
-                out.append("---\n");
-                out.append("- Statement: SELECT t1 + ");
-                insertTimeInterval(out, period);
-                out.append(" FROM times WHERE ind = ").append(index);
-                out.append("\n");
-                out.append("- output: [['");
-                timeFormatter.printTo(out, time.plus(period));
-                out.append("']]\n");
+                for (int i = 0; i < 2; i++) {
+                    out.append("---\n");
+                    out.append("- Statement: SELECT t1 + ");
+                    insertTimeInterval(out, period);
+                    out.append(" FROM times WHERE ind = ").append(index);
+                    out.append("\n");
+                    out.append("- output: [['");
+                    timeFormatter.printTo(out, time.plus(period));
+                    out.append("']]\n");
+                    Period negatedPeriod = negatePeriod(period);
+                    if (negatedPeriod.equals(period)) {
+                        break;
+                    }
+                    period = negatedPeriod;
+                }
                 index++;
             }
         }
+    }
+
+    private static Period negatePeriod(Period period) {
+        /*
+         * Make sure that intervals with multiple components separated by
+         * dashes only have a negative value for the leading component.
+         */
+        boolean dateNegated = false;
+        int years = -period.getYears();
+        if (years != 0) {
+            dateNegated = true;
+        }
+        int months = period.getMonths();
+        if (!dateNegated) {
+            months = -months;
+            dateNegated = true;
+        }
+        int days = period.getDays();
+        if (!dateNegated) {
+            days = -days;
+        }
+        return new Period(years,
+                          months,
+                          0 /* weeks */,
+                          days,
+                          -period.getHours(),
+                          -period.getMinutes(),
+                          -period.getSeconds(),
+                          0 /* millis */);
     }
 
     private static void insertTimeInterval(StringBuilder out, Period period)
@@ -341,14 +377,21 @@ public class IntervalMatrixCreator {
         dateFormatter.printTo(out, date.minus(duration));
         out.append("')\n");
         /* Test interval */
-        out.append("---\n");
-        out.append("- Statement: SELECT d1 + ");
-        insertDateInterval(out, period);
-        out.append(" FROM dates WHERE ind = ").append(index);
-        out.append("\n");
-        out.append("- output: [['");
-        dateFormatter.printTo(out, date.plus(period));
-        out.append("']]\n");
+        for (int i = 0; i < 2; i++) {
+            out.append("---\n");
+            out.append("- Statement: SELECT d1 + ");
+            insertDateInterval(out, period);
+            out.append(" FROM dates WHERE ind = ").append(index);
+            out.append("\n");
+            out.append("- output: [['");
+            dateFormatter.printTo(out, date.plus(period));
+            out.append("']]\n");
+            Period negatedPeriod = negatePeriod(period);
+            if (negatedPeriod.equals(period)) {
+                break;
+            }
+            period = negatedPeriod;
+        }
     }
 
     private static void insertDateInterval(StringBuilder out, Period period)
@@ -498,14 +541,21 @@ public class IntervalMatrixCreator {
         dateTimeFormatter.printTo(out, date.minus(period));
         out.append("')\n");
         /* Test datetime interval */
-        out.append("---\n");
-        out.append("- Statement: SELECT dt1 + ");
-        insertDateTimeInterval(out, period);
-        out.append(" FROM datetimes WHERE ind = ").append(index);
-        out.append("\n");
-        out.append("- output: [[!re '");
-        dateTimeFormatter.printTo(out, date.plus(period));
-        out.append("([.]0)?']]\n");
+        for (int i = 0; i < 2; i++) {
+            out.append("---\n");
+            out.append("- Statement: SELECT dt1 + ");
+            insertDateTimeInterval(out, period);
+            out.append(" FROM datetimes WHERE ind = ").append(index);
+            out.append("\n");
+            out.append("- output: [[!re '");
+            dateTimeFormatter.printTo(out, date.plus(period));
+            out.append("([.]0)?']]\n");
+            Period negatedPeriod = negatePeriod(period);
+            if (negatedPeriod.equals(period)) {
+                break;
+            }
+            period = negatedPeriod;
+        }
         index++;
         /*
          * TODO: Need to test timestamp intervals once we clear up the issue of
