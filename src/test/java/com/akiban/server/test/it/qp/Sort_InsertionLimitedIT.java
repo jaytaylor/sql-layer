@@ -18,17 +18,21 @@ package com.akiban.server.test.it.qp;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types.AkType;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.Expression;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
-import static com.akiban.server.expression.std.Expressions.field;
+import static com.akiban.server.expression.std.Expressions.*;
 import static com.akiban.qp.operator.API.*;
 
 public class Sort_InsertionLimitedIT extends OperatorITBase
@@ -489,6 +493,36 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             row(projectType, 2L),
             row(projectType, 3L),
             row(projectType, 5L),
+        };
+        compareRows(expected, cursor(plan, adapter));
+    }
+
+    @Test 
+    public void testFreeze()
+    {
+        RowType innerValuesRowType = schema.newValuesType(AkType.NULL);
+        List<BindableRow> innerValuesRows = new ArrayList<BindableRow>();
+        innerValuesRows.add(BindableRow.of(innerValuesRowType, Collections.singletonList(literal(null))));
+        Operator project = project_Default(valuesScan_Default(innerValuesRows, innerValuesRowType),
+                                           innerValuesRowType,
+                                           Arrays.asList(boundField(customerRowType, 0, 1)));
+        RowType projectType = project.rowType();
+        Operator plan =
+            sort_InsertionLimited(
+                map_NestedLoops(
+                    filter_Default(groupScan_Default(coi),
+                                   Collections.singleton(customerRowType)),
+                    project, 0),
+                projectType,
+                ordering(field(projectType, 0), true),
+                SortOption.PRESERVE_DUPLICATES,
+                4);
+
+        RowBase[] expected = new RowBase[]{
+            row(projectType, "foundation"),
+            row(projectType, "highland"),
+            row(projectType, "matrix"),
+            row(projectType, "northbridge"),
         };
         compareRows(expected, cursor(plan, adapter));
     }

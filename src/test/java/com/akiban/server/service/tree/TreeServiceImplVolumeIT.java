@@ -32,37 +32,6 @@ import static org.junit.Assert.assertTrue;
 
 public class TreeServiceImplVolumeIT extends ITBase {
 
-    private class TestLink implements TreeLink {
-        final String schemaName;
-        final String treeName;
-        TreeCache cache;
-
-        TestLink(String s, String t) {
-            schemaName = s;
-            treeName = t;
-        }
-
-        @Override
-        public String getSchemaName() {
-            return schemaName;
-        }
-
-        @Override
-        public String getTreeName() {
-            return treeName;
-        }
-
-        @Override
-        public void setTreeCache(TreeCache cache) {
-            this.cache = cache;
-        }
-
-        @Override
-        public TreeCache getTreeCache() {
-            return cache;
-        }
-    }
-
     @Override
     protected Collection<Property> startupConfigProperties() {
         final Collection<Property> properties = new ArrayList<Property>();

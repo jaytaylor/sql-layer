@@ -16,6 +16,8 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.error.UnsupportedParametersException;
+import com.akiban.server.types.AkType;
+
 import java.io.IOException;
 
 /**
@@ -47,7 +49,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     }
 
     @Override
-    public PostgresStatement getBoundStatement(String[] parameters,
+    public PostgresStatement getBoundStatement(Object[] parameters,
                                                boolean[] columnBinary, 
                                                boolean defaultColumnBinary)  {
         if (parameters != null)
@@ -56,7 +58,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     }
 
     static final PostgresType OID_PG_TYPE = 
-        new PostgresType(PostgresType.OID_TYPE_OID, (short)4, -1);
+        new PostgresType(PostgresType.OID_TYPE_OID, (short)4, -1, AkType.LONG);
 
     @Override
     public void sendDescription(PostgresServerSession server, boolean always) 

@@ -36,6 +36,7 @@ import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -351,6 +352,22 @@ public class ApiTestBase {
         }
         unifiedDef.setLength(unifiedDef.length() - 1);
         return createTable(schema, table, unifiedDef.toString());
+    }
+
+    protected final TableIndex createTableIndex(int tableId, String indexName, boolean unique, String... columns) {
+        return createTableIndex(getUserTable(tableId), indexName, unique, columns);
+    }
+    
+    protected final TableIndex createTableIndex(UserTable table, String indexName, boolean unique, String... columns) {
+        TableIndex index = new TableIndex(table, indexName, -1, unique, "KEY");
+        int pos = 0;
+        for (String columnName : columns) {
+            Column column = table.getColumn(columnName);
+            IndexColumn indexColumn = new IndexColumn(index, column, pos++, true, null);
+            index.addColumn(indexColumn);
+        }
+        ddl().createIndexes(session(), Collections.singleton(index));
+        return getUserTable(table.getTableId()).getIndex(indexName);
     }
 
     protected final GroupIndex createGroupIndex(String groupName, String indexName, String tableColumnPairs)
@@ -679,9 +696,9 @@ public class ApiTestBase {
     private class RowUpdaterImpl implements RowUpdater {
         @Override
         public void to(Object... values) {
+            boolean removed = unfinishedRowUpdaters.remove(this);
             NewRow newRow = createNewRow(oldRow.getTableId(), values);
             dml().updateRow(session(), oldRow, newRow, null);
-            boolean removed = unfinishedRowUpdaters.remove(this);
             assertTrue("couldn't remove row updater " + toString(), removed);
         }
 
@@ -707,6 +724,14 @@ public class ApiTestBase {
         }
         finally {
             txn.end();
+        }
+    }
+    
+    protected <T> T transactionallyUnchecked(Callable<T> callable) {
+        try {
+            return transactionally(callable);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }

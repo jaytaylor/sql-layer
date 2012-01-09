@@ -254,7 +254,7 @@ public class DateTimeMatrixCreator implements Runnable {
                     if (min_counter < 60) {
                         min_counter++;
                     } else {
-                        min_counter = 1;
+                        min_counter = 0;
                     }
                     if (sec_counter < 60) {
                         sec_counter++;
@@ -266,7 +266,7 @@ public class DateTimeMatrixCreator implements Runnable {
                     } else {
                         hour_counter = 0;
                     }
-                    if (min_counter <= 24 && min_counter >= 0) {
+                    if (hour_counter <= 24 && hour_counter >= 0) {
                         cal.set(Calendar.HOUR, hour_counter);
                     } else {
                         cal.set(Calendar.HOUR, 1);

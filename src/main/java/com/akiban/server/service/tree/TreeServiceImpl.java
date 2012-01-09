@@ -317,8 +317,15 @@ public class TreeServiceImpl
     public void releaseExchange(final Session session, final Exchange exchange) {
         exchange.getKey().clear();
         exchange.getValue().clear();
-        final List<Exchange> list = exchangeList(session, exchange.getTree());
-        list.add(exchange);
+        if (exchange.getTree().isValid()) {
+            final List<Exchange> list = exchangeList(session, exchange.getTree());
+            list.add(exchange);
+        } else {
+            Map<Tree, List<Exchange>> map = session.get(EXCHANGE_MAP);
+            if (map != null) {
+                map.remove(exchange.getTree());
+            }
+        }
     }
 
     @Override
@@ -458,7 +465,7 @@ public class TreeServiceImpl
      * @param tree
      * @return
      */
-    private List<Exchange> exchangeList(final Session session, final Tree tree) {
+    List<Exchange> exchangeList(final Session session, final Tree tree) {
         Map<Tree, List<Exchange>> map = session.get(EXCHANGE_MAP);
         List<Exchange> list;
         if (map == null) {
