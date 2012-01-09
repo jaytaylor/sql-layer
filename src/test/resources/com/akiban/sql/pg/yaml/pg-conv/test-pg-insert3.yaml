@@ -4,7 +4,7 @@
 - Statement: insert into CUSTOMERS (name, cid) values ('Brown', 4), ('Williams', 5) 
 ---
 - Statement: select * from customers;
-- output_ordered: [[1,Smith],[2,Jones],[4,Brown],[4,Williams]]
+- output_ordered: [[1,Smith],[2,Jones],[4,Brown],[5,Williams]]
 ---
 - Statement: select * from orders 
 - output_ordered: [[101,1,'2011-03-01'],[102,1,'2011-03-02'],[201,2,'2011-03-03']]

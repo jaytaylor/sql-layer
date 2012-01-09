@@ -4,7 +4,7 @@
 - Statement: BEGIN; UPDATE items SET quan = 0; COMMIT; 
 ---
 - Statement: select * from customers;
-- output_ordered: [[1,Smith],[2,Jones],[4,Brown]]
+- output_ordered: [[1,Smith],[2,Jones]]
 ---
 - Statement: select * from orders 
 - output_ordered: [[101,1,'2011-03-01'],[102,1,'2011-03-02'],[201,2,'2011-03-03']]

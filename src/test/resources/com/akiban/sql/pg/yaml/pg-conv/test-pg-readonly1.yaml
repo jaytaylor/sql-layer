@@ -1,7 +1,9 @@
 ---
 - Include: all-update-schema.yaml
 ---
-- Statement: SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY; SELECT name FROM customers;
+- Statement: SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY; 
+---
+- Statement: SELECT name FROM customers;
 - output_ordered: [[Smith],[Jones]]
 ---
 - Statement: select * from customers;

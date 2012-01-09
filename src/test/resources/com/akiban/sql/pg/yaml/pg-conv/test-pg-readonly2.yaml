@@ -2,7 +2,7 @@
 - Include: all-update-schema.yaml
 ---
 - Statement: SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY; UPDATE customers SET name = 'Kilroy' WHERE cid = 1;
-- error: [25003, 'org.postgresql.util.PSQLException: ERROR: Write operation in read-only transaction']
+- error: [25003]
 ---
 - Statement: select * from customers;
 - output_ordered: [[1,Smith],[2,Jones]]
