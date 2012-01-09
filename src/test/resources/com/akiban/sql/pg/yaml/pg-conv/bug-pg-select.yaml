@@ -8,6 +8,8 @@
 - Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku < ? AND items.quan = ? 
 - params: [['8888','100']]
 - output: [['Smith','2011-03-01','1234','100']]
-
-
+---
+- Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku < ? 
+- params: [['8888']]
+- output_ordered: [['Smith','2011-03-01','1234','100'],['Jones','2011-02-28','1234','99'],['Smith','2011-03-01','4567','50']]
 ...
