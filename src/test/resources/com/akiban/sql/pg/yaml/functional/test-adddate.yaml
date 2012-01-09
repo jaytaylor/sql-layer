@@ -22,7 +22,7 @@
 ---
 # <DATE-like VARCHAR expr> + floating point ===> result in DATETIME
 - Statement: SELECT ADDDATE('2007-02-28', 2.5) from all_types;
-- output: [['2007-03-02 12:00:00.0']]
+- output: [[!re '2007-03-02 12:00:00([.]0)?']]
 ---
 # <DATETIME-like VARCHAR expr>
 - Statement: SELECT ADDDATE('2008-02-29 12:30:00', 2) from all_types;

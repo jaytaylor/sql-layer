@@ -32,7 +32,6 @@ import java.util.TreeSet;
 
 import static org.junit.Assert.assertEquals;
 
-@org.junit.Ignore("911849")
 public class RenameTableIT extends ITBase {
     private static final String SCHEMA = "test";
     private static final String C_NAME = "c";
