@@ -31,7 +31,7 @@ import com.akiban.sql.StandardException;
 import java.util.EnumMap;
 import java.util.List;
 
-public final class CoalesceExpression extends AbstractCompositeExpression {
+public class CoalesceExpression extends AbstractCompositeExpression {
 
     @Scalar("coalesce")
     public static final ExpressionComposer COMPOSER = new ExpressionComposer() {

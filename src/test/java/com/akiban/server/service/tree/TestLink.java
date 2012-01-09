@@ -12,20 +12,36 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package com.akiban.qp.persistitadapter;
 
-public final class OperatorStoreMaintenanceLoader {
-    public static void load() {
-        try {
-            load(OperatorStore.class);
-            load(OperatorStoreMaintenance.class);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+package com.akiban.server.service.tree;
+
+class TestLink implements TreeLink {
+    final String schemaName;
+    final String treeName;
+    TreeCache cache;
+
+    TestLink(String s, String t) {
+        schemaName = s;
+        treeName = t;
     }
 
-    public static void load(Class klass) throws ClassNotFoundException
-    {
-        Class.forName(klass.getCanonicalName());
+    @Override
+    public String getSchemaName() {
+        return schemaName;
+    }
+
+    @Override
+    public String getTreeName() {
+        return treeName;
+    }
+
+    @Override
+    public void setTreeCache(TreeCache cache) {
+        this.cache = cache;
+    }
+
+    @Override
+    public TreeCache getTreeCache() {
+        return cache;
     }
 }

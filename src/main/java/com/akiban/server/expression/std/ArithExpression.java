@@ -350,8 +350,14 @@ public class ArithExpression extends AbstractBinaryExpression
 
             if (op.opName() == '+' && interval >= 0)
             {
-                ymd_hms[0] += (ymd_hms[1] += interval) / 12;
-                ymd_hms[1] = ymd_hms[1] % 12;
+                ymd_hms[1] += interval;
+                if (ymd_hms[1] > 12)
+                {
+                    long tempMonth = ymd_hms[1] % 12;
+                    tempMonth = tempMonth == 0 ? 12 : tempMonth;
+                    ymd_hms[0] += (ymd_hms[1] - tempMonth) /12;
+                    ymd_hms[1] = tempMonth;
+                }
             }
             else
             {
