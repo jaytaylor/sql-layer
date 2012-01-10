@@ -565,7 +565,7 @@ public class PostgresServerConnection extends ServerSessionBase
         if (format.equals("json"))
             compiler = new PostgresJsonCompiler(this); 
         else
-           compiler = new PostgresOperatorCompiler(this);
+            compiler = new PostgresOperatorCompiler(this);
         adapter = new PersistitAdapter(compiler.getSchema(),
                                        reqs.store().getPersistitStore(),
                                        reqs.treeService(),
@@ -692,8 +692,9 @@ public class PostgresServerConnection extends ServerSessionBase
                 messenger.setEncoding(value);
         }
         else if ("OutputFormat".equals(key)) {
+            properties.setProperty(key, value);
             rebuildCompiler();
-            return;
+            return;             // Skipping sessionChanged(); everything is brand new.
         }
         super.setProperty(key, value);
     }
