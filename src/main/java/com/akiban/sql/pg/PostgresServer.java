@@ -54,7 +54,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     // AIS-dependent state
     private final Object aisLock = new Object();
     private volatile long aisTimestamp = -1;
-    private volatile PostgresStatementCache statementCache;
+    private volatile ServerStatementCache<PostgresStatement> statementCache;
     private final Map<String, LoadablePlan<?>> loadablePlans = new HashMap<String, LoadablePlan<?>>();
     // end AIS-dependent state
     private volatile Date overrideCurrentTime;
@@ -64,7 +64,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     public PostgresServer(int port, int statementCacheCapacity, PostgresServiceRequirements reqs) {
         this.port = port;
         if (statementCacheCapacity > 0)
-            statementCache = new PostgresStatementCache(statementCacheCapacity);
+            statementCache = new ServerStatementCache<PostgresStatement>(statementCacheCapacity);
         this.reqs = reqs;
     }
 
@@ -179,7 +179,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         return getConnection(pid).getRemoteAddress();
     }
 
-    public PostgresStatementCache getStatementCache() {
+    public ServerStatementCache<PostgresStatement> getStatementCache() {
         return statementCache;
     }
 
@@ -189,7 +189,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     /** This is the version for use by connections. */
     // TODO: This could create a new one if we didn't want to share them.
-    public PostgresStatementCache getStatementCache(long timestamp)
+    public ServerStatementCache<PostgresStatement> getStatementCache(long timestamp)
     {
         synchronized (aisLock) {
             if (aisTimestamp != timestamp) {
@@ -218,7 +218,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
             statementCache = null;
         }
         else if (statementCache == null)
-            statementCache = new PostgresStatementCache(capacity);
+            statementCache = new ServerStatementCache<PostgresStatement>(capacity);
         else
             statementCache.setCapacity(capacity);
     }

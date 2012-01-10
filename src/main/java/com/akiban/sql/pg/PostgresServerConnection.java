@@ -15,44 +15,28 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.server.ServerSessionTracer;
+
 import com.akiban.sql.StandardException;
+import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.parser.ParameterNode;
 
-import com.akiban.sql.optimizer.rule.IndexEstimator;
-
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
-import com.akiban.qp.loadableplan.LoadablePlan;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.persistitadapter.OperatorStore;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.*;
-import com.akiban.server.expression.EnvironmentExpressionSetting;
-import com.akiban.server.expression.ExpressionRegistry;
 import com.akiban.server.service.EventTypes;
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.service.instrumentation.SessionTracer;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.tree.TreeService;
-import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.Store;
-import com.akiban.server.store.statistics.IndexStatistics;
-import com.akiban.server.store.statistics.IndexStatisticsService;
 
 import com.akiban.util.Tap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.joda.time.DateTime;
+
 import java.net.*;
 import java.io.*;
 import java.util.*;
-import org.joda.time.DateTime;
 
 /**
  * Connection to a Postgres server client.
@@ -66,47 +50,34 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     private static final Tap.InOutTap PROCESS_MESSAGE = Tap.createTimer("PostgresServerConnection: process message");
 
     private final PostgresServer server;
-    private final PostgresServiceRequirements reqs;
     private boolean running = false, ignoreUntilSync = false;
     private Socket socket;
     private PostgresMessenger messenger;
     private int pid, secret;
     private int version;
-    private Properties properties;
-    private Map<String,Object> attributes = new HashMap<String,Object>();
     private Map<String,PostgresStatement> preparedStatements =
         new HashMap<String,PostgresStatement>();
     private Map<String,PostgresStatement> boundPortals =
         new HashMap<String,PostgresStatement>();
 
-    private Session session;
-    private long aisTimestamp = -1;
-    private AkibanInformationSchema ais;
-    private StoreAdapter adapter;
-    private String defaultSchemaName;
-    private SQLParser parser;
-    private PostgresStatementCache statementCache;
+    private ServerStatementCache<PostgresStatement> statementCache;
     private PostgresStatementParser[] unparsedGenerators;
     private PostgresStatementGenerator[] parsedGenerators;
     private Thread thread;
-    private PostgresTransaction transaction;
-    private boolean transactionDefaultReadOnly = false;
     
     private boolean instrumentationEnabled = false;
     private String sql;
-    private PostgresSessionTracer sessionTracer;
 
     public PostgresServerConnection(PostgresServer server, Socket socket, 
                                     int pid, int secret,
-                                    PostgresServiceRequirements reqs
-    ) {
+                                    PostgresServiceRequirements reqs) {
+        super(reqs)
         this.server = server;
-        this.reqs = reqs;
 
         this.socket = socket;
         this.pid = pid;
         this.secret = secret;
-        this.sessionTracer = new PostgresSessionTracer(pid, server.isInstrumentationEnabled());
+        this.sessionTracer = new ServerSessionTracer(pid, server.isInstrumentationEnabled());
         sessionTracer.setRemoteAddress(socket.getInetAddress().getHostAddress());
     }
 
@@ -680,216 +651,42 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     /* PostgresServerSession */
 
     @Override
-    public PostgresMessenger getMessenger() {
-        return messenger;
-    }
-
-    @Override
     public int getVersion() {
         return version;
     }
 
     @Override
-    public Properties getProperties() {
-        return properties;
+    public PostgresMessenger getMessenger() {
+        return messenger;
     }
 
-    @Override
-    public String getProperty(String key) {
-        return properties.getProperty(key);
-    }
+    /* PostgresMXBean */
 
     @Override
-    public String getProperty(String key, String defval) {
-        return properties.getProperty(key, defval);
-    }
-
-    @Override
-    public Map<String,Object> getAttributes() {
-        return attributes;
-    }
-
-    @Override
-    public Object getAttribute(String key) {
-        return attributes.get(key);
-    }
-
-    @Override
-    public void setAttribute(String key, Object attr) {
-        attributes.put(key, attr);
-        sessionChanged();
-    }
-
-    @Override
-    public DXLService getDXL() {
-        return reqs.dxl();
-    }
-
-    @Override
-    public Session getSession() {
-        return session;
-    }
-
-    @Override
-    public String getDefaultSchemaName() {
-        return defaultSchemaName;
-    }
-
-    @Override
-    public void setDefaultSchemaName(String defaultSchemaName) {
-        this.defaultSchemaName = defaultSchemaName;
-        sessionChanged();
-    }
-
-    @Override
-    public AkibanInformationSchema getAIS() {
-        return ais;
-    }
-
-    @Override
-    public SQLParser getParser() {
-        return parser;
-    }
-    
-    @Override
-    public SessionTracer getSessionTracer() {
-        return sessionTracer;
-     }
-
-    @Override
-    public StoreAdapter getStore() {
-        return adapter;
-    }
-
-    @Override
-    public TreeService getTreeService() {
-        return reqs.treeService();
-    }
-
-    @Override
-    public LoadablePlan<?> loadablePlan(String planName)
-    {
-        return server.loadablePlan(planName);
-    }
-
     public boolean isInstrumentationEnabled() {
         return instrumentationEnabled;
     }
     
+    @Override
     public void enableInstrumentation() {
         sessionTracer.enable();
         instrumentationEnabled = true;
     }
     
+    @Override
     public void disableInstrumentation() {
         sessionTracer.disable();
         instrumentationEnabled = false;
     }
     
+    @Override
     public String getSqlString() {
         return sql;
     }
     
+    @Override
     public String getRemoteAddress() {
         return socket.getInetAddress().getHostAddress();
-    }
-
-    @Override
-    public void beginTransaction() {
-        if (transaction != null)
-            throw new TransactionInProgressException ();
-        transaction = new PostgresTransaction(this, transactionDefaultReadOnly);
-    }
-
-    @Override
-    public void commitTransaction() {
-        if (transaction == null)
-            throw new NoTransactionInProgressException();
-        try {
-            transaction.commit();            
-        }
-        finally {
-            transaction = null;
-        }
-    }
-
-    @Override
-    public void rollbackTransaction() {
-        if (transaction == null)
-            throw new NoTransactionInProgressException();
-        try {
-            transaction.rollback();
-        }
-        finally {
-            transaction = null;
-        }
-    }
-
-    @Override
-    public void setTransactionReadOnly(boolean readOnly) {
-        if (transaction == null)
-            throw new NoTransactionInProgressException();
-        transaction.setReadOnly(readOnly);
-    }
-
-    @Override
-    public void setTransactionDefaultReadOnly(boolean readOnly) {
-        this.transactionDefaultReadOnly = readOnly;
-    }
-
-    @Override
-    public FunctionsRegistry functionsRegistry() {
-        return reqs.functionsRegistry();
-    }
-
-    @Override
-    public Date currentTime() {
-        Date override = server.getOverrideCurrentTime();
-        if (override != null)
-            return override;
-        else
-            return new Date();
-    }
-
-    @Override
-    public Object getEnvironmentValue(EnvironmentExpressionSetting setting) {
-        switch (setting) {
-        case CURRENT_DATETIME:
-            return new DateTime((transaction != null) ? transaction.getTime(this)
-                                                      : currentTime());
-        case CURRENT_USER:
-            return defaultSchemaName;
-        case SESSION_USER:
-            return properties.getProperty("user");
-        case SYSTEM_USER:
-            return System.getProperty("user.name");
-        default:
-            throw new AkibanInternalException("Unknown environment value: " +
-                                              setting);
-        }
-    }
-
-    // TODO: Maybe move this someplace else. Right now this is where things meet.
-    public static class ServiceIndexEstimator extends IndexEstimator
-    {
-        private IndexStatisticsService indexStatistics;
-        private Session session;
-
-        public ServiceIndexEstimator(IndexStatisticsService indexStatistics,
-                                     Session session) {
-            this.indexStatistics = indexStatistics;
-            this.session = session;
-        }
-
-        @Override
-        public IndexStatistics getIndexStatistics(Index index) {
-            return indexStatistics.getIndexStatistics(session, index);
-        }
-    }
-
-    @Override
-    public IndexEstimator indexEstimator() {
-        return new ServiceIndexEstimator(reqs.indexStatistics(), session);
     }
 
 }

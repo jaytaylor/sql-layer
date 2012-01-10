@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.pg;
+package com.akiban.sql.server;
 
 import com.akiban.server.Quote;
 import com.akiban.server.error.UnsupportedCharsetException;
@@ -26,7 +26,7 @@ import com.akiban.util.ByteSource;
 
 import java.io.*;
 
-public class PostgresValueEncoder
+public class ServerValueEncoder
 {
     private String encoding;
     private ByteArrayOutputStream byteStream;
@@ -34,7 +34,7 @@ public class PostgresValueEncoder
     private AkibanAppender appender;
     private FromObjectValueSource objectSource;
 
-    public PostgresValueEncoder(String encoding) {
+    public ServerValueEncoder(String encoding) {
         this.encoding = encoding;
 
         byteStream = new ByteArrayOutputStream();
@@ -62,9 +62,9 @@ public class PostgresValueEncoder
     }
 
     /** Encode the given value into a stream that can then be passed
-     * to {@link PostgresMessenger#writeByteStream}.
+     * to <code>writeByteStream</code>.
      */
-    public ByteArrayOutputStream encodeValue(ValueSource value, PostgresType type, 
+    public ByteArrayOutputStream encodeValue(ValueSource value, ServerType type, 
                                              boolean binary) throws IOException {
         if (value.isNull())
             return null;
@@ -74,7 +74,7 @@ public class PostgresValueEncoder
     }
 
     /** Encode the given direct value. */
-    public ByteArrayOutputStream encodeObject(Object value, PostgresType type, 
+    public ByteArrayOutputStream encodeObject(Object value, ServerType type, 
                                               boolean binary) throws IOException {
         if (value == null)
             return null;
@@ -89,7 +89,7 @@ public class PostgresValueEncoder
     }
     
     /** Append the given value to the buffer. */
-    public void appendValue(ValueSource value, PostgresType type, boolean binary) 
+    public void appendValue(ValueSource value, ServerType type, boolean binary) 
             throws IOException {
         if (type.getAkType() == AkType.VARBINARY) {
             ByteSource bs = Extractors.getByteSourceExtractor().getObject(value);
@@ -111,7 +111,7 @@ public class PostgresValueEncoder
     }
     
     /** Append the given direct object to the buffer. */
-    public void appendObject(Object value, PostgresType type, boolean binary) 
+    public void appendObject(Object value, ServerType type, boolean binary) 
             throws IOException {
         AkType akType = type.getAkType();
         if ((akType == AkType.VARCHAR) && (value instanceof String)) {
