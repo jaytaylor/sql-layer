@@ -132,6 +132,11 @@ public final class CastExpressionTest
 
         value = new ValueHolder(AkType.YEAR, 2006L - 1900L);
         assertEquals(expected, cast(value, AkType.TIME));
+
+        // varchar to date
+        value = new ValueHolder(AkType.VARCHAR, "2006-10-06 12:30:10");
+        expected = new ValueHolder(AkType.DATE, dateExtractor.getLong("2006-10-06"));
+        assertEquals(expected, cast(value, AkType.DATE));
         
         // reset timezone
         ConverterTestUtils.setGlobalTimezone(defaultTimeZone);
