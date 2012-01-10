@@ -86,10 +86,10 @@
 ---
 - Statement: SELECT customers.name,order_date,sku,quan FROM items INNER JOIN orders ON orders.oid = items.oid LEFT OUTER JOIN customers ON customers.cid = orders.cid WHERE order_date < '2011-03-01' ORDER BY order_date, name 
 - output: [[null,'2010-01-01','9999','888'],['Jones','2011-02-28','1234','99']]
-#---
-#- Statement: SELECT CURRENT_USER AS "schema", SESSION_USER AS "user" FROM items WHERE iid = ? 
-#- params: [[2011]]
-#- output: [['user','auser']]
+---
+- Statement: SELECT CURRENT_USER AS "schema", SESSION_USER AS "user" FROM items WHERE iid = ? 
+- params: [[2011]]
+- output: [['user','auser']]
 ---
 - Statement: SELECT name, order_date FROM customers RIGHT JOIN orders USING (cid) WHERE (order_date != '2011-03-02' AND order_date != '2011-02-28') 
 - output_ordered: [[null,'2010-01-01'],['Smith','2011-03-01'],['Jones','2011-03-03']]
@@ -102,17 +102,33 @@
 ---
 - Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku >= '0' AND items.sku < '8888' 
 - output_ordered: [['Smith','2011-03-01','1234','100'],['Jones','2011-02-28','1234','99'],['Smith','2011-03-01','4567','50']]
-#--- #BUG 913853
-#- Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku < ? 
-#- params: [['8888']]
-#- output_ordered: [['Smith','2011-03-01','1234','100'],['Jones','2011-02-28','1234','99'],['Smith','2011-03-01','4567','50']]
+--- 
+- Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku < ? 
+- params: [['8888']]
+- output: [['Smith','2011-03-01','1234','100'],['Smith','2011-03-01','4567','50'],['Jones','2011-02-28','1234','99']]
+---
+- Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku < ? 
+- params: [['8888']]
+- output_ordered: [['Smith','2011-03-01','1234','100'],['Jones','2011-02-28','1234','99'],['Smith','2011-03-01','4567','50']]
+---
+- Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku < ? 
+- params: [['8888']]
+- row_count: 3
 ---
 - Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku < '8888' AND items.quan = 100 
 - output: [['Smith','2011-03-01','1234','100']]
-#--- #BUG 913853
-#- Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku < ? AND items.quan = ? 
-#- params: [['8888','100']]
-#- output: [['Smith','2011-03-01','1234','100']]
+--- 
+- Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku < ? AND items.quan = ? 
+- params: [['8888','100']]
+- output: [['Smith','2011-03-01','1234','100']]
+--- 
+- Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku < ? AND items.quan = ? 
+- params: [['8888','100']]
+- output_ordered: [['Smith','2011-03-01','1234','100']]
+--- 
+- Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku < ? AND items.quan = ? 
+- params: [['8888','100']]
+- row_count: 1
 ---
 - Statement: SELECT customers.name,order_date,sku,quan FROM customers INNER JOIN orders ON customers.cid = orders.cid INNER JOIN items ON orders.oid = items.oid WHERE items.sku < '8888' 
 - output_ordered: [['Smith','2011-03-01','1234','100'],['Jones','2011-02-28','1234','99'],['Smith','2011-03-01','4567','50']]
