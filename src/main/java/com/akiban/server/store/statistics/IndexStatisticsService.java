@@ -17,12 +17,16 @@ package com.akiban.server.store.statistics;
 
 import com.akiban.server.service.session.Session;
 import com.akiban.ais.model.Index;
+import com.persistit.exception.PersistitInterruptedException;
+
 import java.util.Collection;
 import java.io.File;
 import java.io.IOException;
 
 public interface IndexStatisticsService
 {
+    public long countEntries(Session session, Index index) throws PersistitInterruptedException;
+    
     /** Get available statistics for the given index. */
     public IndexStatistics getIndexStatistics(Session session, Index index);
 

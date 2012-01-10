@@ -24,7 +24,7 @@ import java.util.List;
 public abstract class TernaryComposer implements ExpressionComposer
 {
     protected abstract Expression compose(Expression first, Expression second, Expression third);
-    protected abstract ExpressionType composeType(ExpressionType first, ExpressionType second, ExpressionType third);
+//    protected abstract ExpressionType composeType(ExpressionType first, ExpressionType second, ExpressionType third);
 
     @Override
     public Expression compose(List<? extends Expression> arguments)
@@ -34,11 +34,11 @@ public abstract class TernaryComposer implements ExpressionComposer
         return compose(arguments.get(0), arguments.get(1), arguments.get(2));
     }
 
-    @Override
-    public ExpressionType composeType(List<? extends ExpressionType> arguments)
-    {
-        if (arguments.size() != 3)
-            throw new WrongExpressionArityException(3, arguments.size());
-        return composeType(arguments.get(0), arguments.get(1), arguments.get(2));
-    }
+//    @Override
+//    public ExpressionType composeType(List<? extends ExpressionType> arguments)
+//    {
+//        if (arguments.size() != 3)
+//            throw new WrongExpressionArityException(3, arguments.size());
+//        return composeType(arguments.get(0), arguments.get(1), arguments.get(2));
+//    }
 }

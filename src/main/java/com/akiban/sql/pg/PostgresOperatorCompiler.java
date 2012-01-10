@@ -15,16 +15,15 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.sql.StandardException;
+import com.akiban.sql.server.ServerOperatorCompiler;
 
-import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PhysicalSelect;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.PhysicalUpdate;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
-import com.akiban.sql.optimizer.rule.BaseRule;
 
+import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.*;
 import com.akiban.sql.types.DataTypeDescriptor;
 
@@ -32,7 +31,6 @@ import com.akiban.ais.model.Column;
 
 import com.akiban.server.error.ParseException;
 import com.akiban.server.service.EventTypes;
-import com.akiban.server.service.instrumentation.SessionTracer;
 
 import com.akiban.server.expression.EnvironmentExpressionSetting;
 
@@ -44,21 +42,13 @@ import java.util.*;
 /**
  * Compile SQL SELECT statements into operator trees if possible.
  */
-public class PostgresOperatorCompiler extends OperatorCompiler
+public class PostgresOperatorCompiler extends ServerOperatorCompiler
                                       implements PostgresStatementGenerator
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorCompiler.class);
 
-    private SessionTracer tracer;
-
     public PostgresOperatorCompiler(PostgresServerSession server) {
-        super(server.getParser(), server.getAIS(), server.getDefaultSchemaName(),
-              server.functionsRegistry(), server.indexEstimator());
-
-        server.setAttribute("aisBinder", binder);
-        server.setAttribute("compiler", this);
-
-        tracer = server.getSessionTracer();
+        super(server);
     }
 
     @Override
@@ -78,17 +68,6 @@ public class PostgresOperatorCompiler extends OperatorCompiler
     @Override
     public void sessionChanged(PostgresServerSession server) {
         binder.setDefaultSchemaName(server.getDefaultSchemaName());
-    }
-
-    @Override
-    protected DMLStatementNode bindAndTransform(DMLStatementNode stmt)  {
-        try {
-            tracer.beginEvent(EventTypes.BIND_AND_GROUP); // TODO: rename.
-            return super.bindAndTransform(stmt);
-        } 
-        finally {
-            tracer.endEvent();
-        }
     }
 
     static class PostgresResultColumn extends PhysicalResultColumn {
@@ -170,16 +149,6 @@ public class PostgresOperatorCompiler extends OperatorCompiler
                                                  columnNames, columnTypes,
                                                  parameterTypes, environmentSettings);
         }
-    }
-
-    @Override
-    public void beginRule(BaseRule rule) {
-        tracer.beginEvent(rule.getTraceName());
-    }
-
-    @Override
-    public void endRule(BaseRule rule) {
-        tracer.endEvent();
     }
 
 }

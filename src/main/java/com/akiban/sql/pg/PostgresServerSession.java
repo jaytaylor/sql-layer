@@ -15,109 +15,15 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.sql.parser.SQLParser;
+import com.akiban.sql.server.ServerSession;
 
-import com.akiban.sql.optimizer.rule.IndexEstimator;
-
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.qp.loadableplan.LoadablePlan;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.server.expression.EnvironmentExpressionSetting;
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.service.instrumentation.SessionTracer;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.tree.TreeService;
-
-import java.util.Date;
-import java.util.Map;
-import java.util.Properties;
-
-/** A session has the state needed to execute SQL statements and
- * return results to the client. */
-public interface PostgresServerSession
+/** A Postgres server session. */
+public interface PostgresServerSession extends ServerSession
 {
-    /** Return the messenger used to communicate with client. */
-    public PostgresMessenger getMessenger();
-
     /** Return the protocol version in use. */
     public int getVersion();
 
-    /** Return properties specified by the client. */
-    public Properties getProperties();
+    /** Return the messenger used to communicate with client. */
+    public PostgresMessenger getMessenger();
 
-    /** Get a client property. */
-    public String getProperty(String key);
-
-    /** Get a client property. */
-    public String getProperty(String key, String defval);
-
-    /** Set a client property. */
-    public void setProperty(String key, String value);
-
-    /** Get session attributes used to store state between statements. */
-    public Map<String,Object> getAttributes();
-
-    /** Get a session attribute. */
-    public Object getAttribute(String key);
-
-    /** Set a session attribute. */
-    public void setAttribute(String key, Object attr);
-
-    /** Return Akiban Server manager. */
-    public DXLService getDXL();
-
-    /** Return Akiban Server session. */
-    public Session getSession();
-
-    /** Return the default schema for SQL objects. */
-    public String getDefaultSchemaName();
-
-    /** Set the default schema for SQL objects. */
-    public void setDefaultSchemaName(String defaultSchemaName);
-
-    /** Return server's AIS. */
-    public AkibanInformationSchema getAIS();
-    
-    /** Return a parser for SQL statements. */
-    public SQLParser getParser();
-    
-    /** Return the object used to trace pg sessions. */
-    public SessionTracer getSessionTracer();
-
-    /** Return an adapter for the session's store. */
-    public StoreAdapter getStore();
-
-    /** Return the tree service. */
-    public TreeService getTreeService();
-
-    /** Return the LoadablePlan with the given name. */
-    public LoadablePlan<?> loadablePlan(String planName);
-
-    /** Begin a new transaction. */
-    public void beginTransaction();
-
-    /** Commit the current transaction. */
-    public void commitTransaction();
-
-    /** Rollback the current transaction. */
-    public void rollbackTransaction();
-
-    /** Set current transaction to read-only / read-write. */
-    public void setTransactionReadOnly(boolean readOnly);
-
-    /** Set following transaction to read-only / read-write. */
-    public void setTransactionDefaultReadOnly(boolean readOnly);
-
-    /** Get the functions registry. */
-    public FunctionsRegistry functionsRegistry();
-
-    /** Get the server's idea of the current time. */
-    public Date currentTime();
-
-    /** Get a current environment value. */
-    public Object getEnvironmentValue(EnvironmentExpressionSetting setting);
-
-    /** Get the index estimator. */
-    public IndexEstimator indexEstimator();
 }

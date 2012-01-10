@@ -737,6 +737,8 @@ public class PersistitStore implements Store {
             Exchange iEx = getExchange(session, index);
             try {
                 iEx.removeAll();
+                if (index.isGroupIndex())
+                    new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, iEx.getTree()).set(0);
             } catch (PersistitException e) {
                 throw new PersistitAdapterException(e);
             }
@@ -1341,4 +1343,12 @@ public class PersistitStore implements Store {
         return visitor;
     }
 
+    public TableStatus getTableStatus(Table table) {
+        TableStatus ts = null;
+        RowDef rowDef = rowDefCache.getRowDef(table.getTableId());
+        if (rowDef != null) {
+            ts = rowDef.getTableStatus();
+        }
+        return ts;
+    }
 }

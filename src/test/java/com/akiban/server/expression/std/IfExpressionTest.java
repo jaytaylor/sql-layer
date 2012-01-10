@@ -118,16 +118,14 @@ public class IfExpressionTest
     {        
         Expression cond = getExp(condType, evaluateRes);
         Expression trExp = getExp(trueExType, true);
-        Expression faExp = getExp(falseExType, false);
+        Expression faExp = getExp(falseExType, false);        
 
         // cast second and third args as necessary
-        List<AkType> argTypes = Arrays.asList(condType, trueExType, falseExType);
-        IfExpression.COMPOSER.argumentTypes(argTypes);        
-        trExp = new CastExpression(argTypes.get(1), trExp);
-        faExp = new CastExpression(argTypes.get(2), faExp);
+        AkType top = IfExpression.getTopType(trueExType, falseExType);
+        trExp = new CastExpression(top, trExp);
+        faExp = new CastExpression(top, faExp);
 
         Expression ifExp = new IfExpression(Arrays.asList(cond, trExp, faExp));
-        
         assertEquals (expected, new ValueHolder(ifExp.evaluation().eval()));
     }
 

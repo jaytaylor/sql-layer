@@ -20,13 +20,16 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.TypesList;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.sql.StandardException;
 import java.util.List;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.MutableDateTime;
 
 public class FromUnixExpression extends AbstractCompositeExpression
@@ -41,25 +44,16 @@ public class FromUnixExpression extends AbstractCompositeExpression
         }
 
         @Override
-        public void argumentTypes(List<AkType> argumentTypes)
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             int s = argumentTypes.size();
-            switch(s)
+            switch (s)
             {
-                case 2: argumentTypes.set(1, AkType.VARCHAR); // fall thru
-                case 1: argumentTypes.set(0, AkType.LONG); break;
-                default: throw new WrongExpressionArityException(1, s);
-            }
-        }
-
-        @Override
-        public ExpressionType composeType(List<? extends ExpressionType> argumentTypes)
-        {
-            int s = argumentTypes.size();
-            switch(s)
-            {
-                case 2: return ExpressionTypes.varchar(argumentTypes.get(1).getScale() * 4); // each specifier is to be replaced with a "number", max length is 4
-                case 1: return ExpressionTypes.DATETIME;
+                case 2: argumentTypes.setType(1, AkType.VARCHAR);
+                        argumentTypes.setType(0, AkType.LONG);
+                        return ExpressionTypes.varchar(argumentTypes.get(0).getPrecision() * 5);
+                case 1: argumentTypes.setType(0, AkType.LONG);
+                        return ExpressionTypes.DATETIME;
                 default: throw new WrongExpressionArityException(1, s);
             }
         }
@@ -93,13 +87,15 @@ public class FromUnixExpression extends AbstractCompositeExpression
 
             switch(children().size())
             {
-                case 1:     return new ValueHolder(AkType.DATETIME, new DateTime(unix));
+                case 1:     return new ValueHolder(AkType.DATETIME, new DateTime(unix, DateTimeZone.getDefault()));
 
                 default:    ValueSource str = children().get(1).eval();
                             if (str.isNull())
                                 return NullValueSource.only();
                             else
-                                return new ValueHolder(AkType.VARCHAR, DateTimeField.getFormatted(new MutableDateTime(unix), str.getString()));
+                                return new ValueHolder(AkType.VARCHAR, DateTimeField.getFormatted(
+                                        new MutableDateTime(unix, DateTimeZone.getDefault()),
+                                        str.getString()));
             }
 
         }

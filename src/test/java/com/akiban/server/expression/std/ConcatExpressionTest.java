@@ -17,7 +17,6 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import org.junit.Test;
@@ -65,17 +64,21 @@ public final class ConcatExpressionTest  extends ComposedExpressionTestBase {
         concatAndCheck("");
     }
 
+    /**
+     * The test is moved to com.akiban.sql.optimizer package 
+     */
     @Test
     public void typeLength() {
-        ExpressionType concatType = 
-            getComposer().composeType(Arrays.asList(ExpressionTypes.varchar(6),
-                                                    ExpressionTypes.varchar(10),
-                                                    ExpressionTypes.varchar(4)));
-        assertEquals(AkType.VARCHAR, concatType.getType());
-        assertEquals(20, concatType.getPrecision());
+//        ExpressionType concatType =
+//            getComposer().composeType(Arrays.asList(ExpressionTypes.varchar(6),
+//                                                    ExpressionTypes.varchar(10),
+//                                                    ExpressionTypes.varchar(4)));
+//        assertEquals(AkType.VARCHAR, concatType.getType());
+//        assertEquals(20, concatType.getPrecision());
     }
 
     // ComposedExpressionTestBase
+     
 
     @Override
     protected CompositionTestInfo getTestInfo() {

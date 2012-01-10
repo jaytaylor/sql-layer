@@ -12,20 +12,23 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package com.akiban.qp.persistitadapter;
 
-public final class OperatorStoreMaintenanceLoader {
-    public static void load() {
-        try {
-            load(OperatorStore.class);
-            load(OperatorStoreMaintenance.class);
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+package com.akiban.sql.server;
+
+import com.akiban.server.types.AkType;
+
+/** A type according to the server's regime.
+ */
+public abstract class ServerType
+{
+    private AkType akType;
+
+    protected ServerType(AkType akType) {
+        this.akType = akType;
     }
 
-    public static void load(Class klass) throws ClassNotFoundException
-    {
-        Class.forName(klass.getCanonicalName());
+    public AkType getAkType() {
+        return akType;
     }
+
 }

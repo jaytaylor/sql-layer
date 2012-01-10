@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.pg;
+package com.akiban.sql.server;
 
 import java.util.Date;
 import java.util.EmptyStackException;
@@ -27,12 +27,12 @@ import com.akiban.server.service.instrumentation.Event;
 import com.akiban.server.service.instrumentation.EventImpl;
 import com.akiban.server.service.instrumentation.SessionTracer;
 
-public class PostgresSessionTracer implements SessionTracer {
+public class ServerSessionTracer implements SessionTracer {
     
     // PostgresSessionTracer interface
     
-    public PostgresSessionTracer(int sessionId,
-                                 boolean enabled) {
+    public ServerSessionTracer(int sessionId,
+                               boolean enabled) {
         this.sessionId = sessionId;
         this.currentStatement = null;
         this.remoteAddress = null;

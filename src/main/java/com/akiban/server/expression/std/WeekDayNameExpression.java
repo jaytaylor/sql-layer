@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -24,7 +25,8 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.util.ConversionUtil;
-import com.akiban.server.types.extract.Extractors;
+import com.akiban.sql.StandardException;
+import com.akiban.server.expression.TypesList;
 import org.joda.time.MutableDateTime;
 import org.joda.time.IllegalFieldValueException;
 import org.slf4j.LoggerFactory;
@@ -73,31 +75,34 @@ public class WeekDayNameExpression extends AbstractUnaryExpression
         }
 
         @Override
-        protected AkType argumentType(AkType givenType)
+        public String toString()
         {
-            switch(givenType)
-            {
-                case DATE:
-                case TIMESTAMP:
-                case DATETIME:  return givenType;
-                default:        return AkType.DATETIME;
-            }
+            return field.name();
         }
 
         @Override
-        protected ExpressionType composeType(ExpressionType argumentType)
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
+            if (argumentTypes.size() != 1)
+                throw new WrongExpressionArityException(1, argumentTypes.size());
+
+            ExpressionType givenType = argumentTypes.get(0);
+            switch (givenType.getType())
+            {
+                case DATE:
+                case DATETIME:
+                case TIMESTAMP: break;
+                case VARCHAR:   argumentTypes.setType(0, givenType.getPrecision() > 10 ?
+                                                            AkType.DATETIME: AkType.DATE);
+                                break;
+                default:        argumentTypes.setType(0, AkType.DATE);
+            }
+
             switch(field)
             {
                 case DAYNAME:   return ExpressionTypes.varchar(9); // max length of a day-of-week name is 9
                 default:        return ExpressionTypes.INT;
             }
-        }
-
-        @Override
-        public String toString()
-        {
-            return field.name();
         }
     }
     private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation

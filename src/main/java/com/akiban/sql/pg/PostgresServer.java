@@ -15,6 +15,9 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.server.ServerServiceRequirements;
+import com.akiban.sql.server.ServerStatementCache;
+
 import com.akiban.qp.loadableplan.LoadablePlan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +45,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 */
 public class PostgresServer implements Runnable, PostgresMXBean {
     private final int port;
-    private final PostgresServiceRequirements reqs;
+    private final ServerServiceRequirements reqs;
     private ServerSocket socket = null;
     private boolean running = false;
     private volatile long startTime = 0;
@@ -54,17 +57,17 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     // AIS-dependent state
     private final Object aisLock = new Object();
     private volatile long aisTimestamp = -1;
-    private volatile PostgresStatementCache statementCache;
+    private volatile ServerStatementCache<PostgresStatement> statementCache;
     private final Map<String, LoadablePlan<?>> loadablePlans = new HashMap<String, LoadablePlan<?>>();
     // end AIS-dependent state
     private volatile Date overrideCurrentTime;
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresServer.class);
 
-    public PostgresServer(int port, int statementCacheCapacity, PostgresServiceRequirements reqs) {
+    public PostgresServer(int port, int statementCacheCapacity, ServerServiceRequirements reqs) {
         this.port = port;
         if (statementCacheCapacity > 0)
-            statementCache = new PostgresStatementCache(statementCacheCapacity);
+            statementCache = new ServerStatementCache<PostgresStatement>(statementCacheCapacity);
         this.reqs = reqs;
     }
 
@@ -179,7 +182,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         return getConnection(pid).getRemoteAddress();
     }
 
-    public PostgresStatementCache getStatementCache() {
+    public ServerStatementCache<PostgresStatement> getStatementCache() {
         return statementCache;
     }
 
@@ -189,7 +192,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     /** This is the version for use by connections. */
     // TODO: This could create a new one if we didn't want to share them.
-    public PostgresStatementCache getStatementCache(long timestamp)
+    public ServerStatementCache<PostgresStatement> getStatementCache(long timestamp)
     {
         synchronized (aisLock) {
             if (aisTimestamp != timestamp) {
@@ -218,7 +221,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
             statementCache = null;
         }
         else if (statementCache == null)
-            statementCache = new PostgresStatementCache(capacity);
+            statementCache = new ServerStatementCache<PostgresStatement>(capacity);
         else
             statementCache.setCapacity(capacity);
     }

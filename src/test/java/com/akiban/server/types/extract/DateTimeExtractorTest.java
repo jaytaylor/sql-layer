@@ -16,6 +16,7 @@
 package com.akiban.server.types.extract;
 
 import org.junit.Test;
+import static org.junit.Assert.*;
 
 import com.akiban.server.error.InvalidDateFormatException;
 
@@ -69,9 +70,13 @@ public class DateTimeExtractorTest extends LongExtractorTestBase {
         encodeAndDecode("2000-01-01 00:00:00:00");
     }
 
-    @Test(expected=InvalidDateFormatException.class)
+    // does not expect exception
+    // missing time-fields will just be filled with 00:00:00
+    @Test//(expected=InvalidDateFormatException.class)
     public void onlyDatePart() {
         encodeAndDecode("2000-01-01");
+        long actual = ExtractorsForDates.DATETIME.getLong("2000-01-01");
+        assertEquals(20000101000000L, actual);
     }
 
     @Test(expected=InvalidDateFormatException.class)

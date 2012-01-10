@@ -164,7 +164,8 @@ public class ArithExpression extends AbstractBinaryExpression
             else // number and interval: an interval can be multiply with || divide by a number
             {
                AkType interval = l2 == 0 ? SUPPORTED_TYPES.get(l) : SUPPORTED_TYPES.get(r);
-               if (op.opName() == '/' && l2 == 0 || op.opName() == '*') return interval;
+               char opName = op.opName();
+               if ((opName == '/' || opName == '%')&& l2 == 0 || opName == '*') return interval;
                else throw new InvalidArgumentTypeException(msg);
             }
         }
@@ -349,8 +350,14 @@ public class ArithExpression extends AbstractBinaryExpression
 
             if (op.opName() == '+' && interval >= 0)
             {
-                ymd_hms[0] += (ymd_hms[1] += interval) / 12;
-                ymd_hms[1] = ymd_hms[1] % 12;
+                ymd_hms[1] += interval;
+                if (ymd_hms[1] > 12)
+                {
+                    long tempMonth = ymd_hms[1] % 12;
+                    tempMonth = tempMonth == 0 ? 12 : tempMonth;
+                    ymd_hms[0] += (ymd_hms[1] - tempMonth) /12;
+                    ymd_hms[1] = tempMonth;
+                }
             }
             else
             {
