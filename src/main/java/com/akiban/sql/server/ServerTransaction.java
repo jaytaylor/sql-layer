@@ -70,7 +70,16 @@ public class ServerTransaction
         case WRITE:
             if (readOnly)
                 throw new TransactionReadOnlyException();
+            checkFirstUpdate();
         }
+    }
+
+    public void checkFirstUpdate() {
+        if (transaction.getCurrentStep() == 0)
+            // On the first non-read statement in a transaction, move
+            // to step 1 to enable isolation against later steps.
+            // Step 1 will do the read part and step 2 the write part.
+            transaction.incrementStep();
     }
 
     /** Commit transaction. */

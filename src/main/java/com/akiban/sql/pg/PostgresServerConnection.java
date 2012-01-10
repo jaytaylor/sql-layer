@@ -611,28 +611,7 @@ public class PostgresServerConnection extends ServerSessionBase
 
     protected int executeStatement(PostgresStatement pstmt, int maxrows) 
             throws IOException {
-        PostgresStatement.TransactionMode transactionMode = pstmt.getTransactionMode();
-        ServerTransaction localTransaction = null;
-        if (transaction != null) {
-            transaction.checkTransactionMode(transactionMode);
-        }
-        else {
-            switch (transactionMode) {
-            case REQUIRED:
-            case REQUIRED_WRITE:
-                throw new NoTransactionInProgressException();
-            case READ:
-            case NEW:
-                localTransaction = new ServerTransaction(this, true);
-                break;
-            case WRITE:
-            case NEW_WRITE:
-                if (transactionDefaultReadOnly)
-                    throw new TransactionReadOnlyException();
-                localTransaction = new ServerTransaction(this, false);
-                break;
-            }
-        }
+        ServerTransaction localTransaction = transactionForExecute(pstmt);
         int rowsProcessed = 0;
         boolean success = false;
         try {

@@ -20,6 +20,7 @@ import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoTransactionInProgressException;
 import com.akiban.server.error.TransactionInProgressException;
+import com.akiban.server.error.TransactionReadOnlyException;
 import com.akiban.server.expression.EnvironmentExpressionSetting;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
@@ -205,6 +206,37 @@ public abstract class ServerSessionBase implements ServerSession
             throw new AkibanInternalException("Unknown environment value: " +
                                               setting);
         }
+    }
+
+    /** Set of transaction for executing the given statement.
+     * Uses current global transaction or makes a new local one.
+     * Returns any local transaction that should be committed / rolled back immediately.
+     */
+    protected ServerTransaction transactionForExecute(ServerStatement stmt) {
+        ServerStatement.TransactionMode transactionMode = stmt.getTransactionMode();
+        ServerTransaction localTransaction = null;
+        if (transaction != null) {
+            transaction.checkTransactionMode(transactionMode);
+        }
+        else {
+            switch (transactionMode) {
+            case REQUIRED:
+            case REQUIRED_WRITE:
+                throw new NoTransactionInProgressException();
+            case READ:
+            case NEW:
+                localTransaction = new ServerTransaction(this, true);
+                break;
+            case WRITE:
+            case NEW_WRITE:
+                if (transactionDefaultReadOnly)
+                    throw new TransactionReadOnlyException();
+                localTransaction = new ServerTransaction(this, false);
+                localTransaction.checkFirstUpdate();
+                break;
+            }
+        }
+        return localTransaction;
     }
 
     // TODO: Maybe move this someplace else. Right now this is where things meet.
