@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.pg;
+package com.akiban.sql.server;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -21,12 +21,12 @@ import java.util.Map;
 /**
  * Cache of parsed statements.
  */
-public class PostgresStatementCache
+public class ServerStatementCache<T extends ServerStatement>
 {
-    private Cache cache;
+    private Cache<T> cache;
     private int hits, misses;
 
-    static class Cache extends LinkedHashMap<String,PostgresStatement> {
+    static class Cache<T> extends LinkedHashMap<String,T> {
         private int capacity;
 
         public Cache(int capacity) {
@@ -48,8 +48,8 @@ public class PostgresStatementCache
         }  
     }
 
-    public PostgresStatementCache(int size) {
-        cache = new Cache(size);
+    public ServerStatementCache(int size) {
+        cache = new Cache<T>(size);
     }
 
     public int getCapacity() {
@@ -61,8 +61,8 @@ public class PostgresStatementCache
         cache.clear();
     }
 
-    public synchronized PostgresStatement get(String sql) {
-        PostgresStatement entry = cache.get(sql);
+    public synchronized T get(String sql) {
+        T entry = cache.get(sql);
         if (entry != null)
             hits++;
         else
@@ -70,7 +70,7 @@ public class PostgresStatementCache
         return entry;
     }
 
-    public synchronized void put(String sql, PostgresStatement stmt) {
+    public synchronized void put(String sql, T stmt) {
         // TODO: Count number of times this is non-null, meaning that
         // two threads computed the same statement?
         cache.put(sql, stmt);

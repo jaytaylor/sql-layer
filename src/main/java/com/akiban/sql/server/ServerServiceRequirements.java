@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.pg;
+package com.akiban.sql.server;
 
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.service.config.ConfigurationService;
@@ -25,16 +25,16 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 
-public final class PostgresServiceRequirements {
+public final class ServerServiceRequirements {
 
-    public PostgresServiceRequirements(DXLService dxlService,
-                                       InstrumentationService instrumentation,
-                                       SessionService sessionService,
-                                       Store store,
-                                       TreeService treeService,
-                                       FunctionsRegistry functionsRegistry,
-                                       ConfigurationService config,
-                                       IndexStatisticsService indexStatistics) {
+    public ServerServiceRequirements(DXLService dxlService,
+                                     InstrumentationService instrumentation,
+                                     SessionService sessionService,
+                                     Store store,
+                                     TreeService treeService,
+                                     FunctionsRegistry functionsRegistry,
+                                     ConfigurationService config,
+                                     IndexStatisticsService indexStatistics) {
         this.instrumentation = instrumentation;
         this.dxlService = dxlService;
         this.sessionService = sessionService;

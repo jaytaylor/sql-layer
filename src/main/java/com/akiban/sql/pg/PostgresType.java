@@ -15,6 +15,8 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.server.ServerType;
+
 import com.akiban.server.error.UnknownDataTypeException;
 import com.akiban.server.error.UnknownTypeSizeException;
 import com.akiban.server.error.UnsupportedCharsetException;
@@ -37,7 +39,7 @@ import java.util.*;
  * Information corresponds more-or-less directly to what's in the 
  * <code>pg_attribute</code> table.
  */
-public class PostgresType
+public class PostgresType extends ServerType
 {
     /*** Type OIDs ***/
 
@@ -149,10 +151,10 @@ public class PostgresType
     private AkType akType;
 
     public PostgresType(int oid, short length, int modifier, AkType akType) {
+        super(akType);
         this.oid = oid;
         this.length = length;
         this.modifier = modifier;
-        this.akType = akType;
     }
 
     public int getOid() {
@@ -163,9 +165,6 @@ public class PostgresType
     }
     public int getModifier() {
         return modifier;
-    }
-    public AkType getAkType() {
-        return akType;
     }
 
     public static PostgresType fromAIS(Column aisColumn) {

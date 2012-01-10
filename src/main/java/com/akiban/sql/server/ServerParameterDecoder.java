@@ -13,19 +13,19 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.pg;
+package com.akiban.sql.server;
 
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.conversion.Converters;
 
-public class PostgresParameterDecoder
+public class ServerParameterDecoder
 {
     private FromObjectValueSource source;
     private ToObjectValueTarget target;
     
-    public PostgresParameterDecoder() {
+    public ServerParameterDecoder() {
     }
 
     /** Decode the given parameter into a raw object according to the
@@ -35,10 +35,10 @@ public class PostgresParameterDecoder
      * <code>value</code> is a string for most drivers most of the
      * time, except in the case of a VARBINARY.  Since that is the
      * only target type that will convert from a byte array, an error
-     * will be thrown for any other binary value in some Postgres
+     * will be thrown for any other binary value in some server
      * format we don't know.
      */
-    public Object decodeParameter(Object value, PostgresType type) {
+    public Object decodeParameter(Object value, ServerType type) {
         if (value == null)
             return null;
         if (type == null)
