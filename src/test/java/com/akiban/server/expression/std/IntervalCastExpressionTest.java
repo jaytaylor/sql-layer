@@ -131,6 +131,12 @@ public class IntervalCastExpressionTest
  
     }
 
+    @Test (expected = InvalidIntervalFormatException.class)
+    public void testEmptyString ()
+    {
+        test("", MONTH, INTERVAL_MONTH, 0);
+    }
+    
     private static void test(String str, EndPoint endPoint, AkType expType, long exp)
     {
         testAndCheck(new LiteralExpression(AkType.VARCHAR, str), endPoint, expType,exp);

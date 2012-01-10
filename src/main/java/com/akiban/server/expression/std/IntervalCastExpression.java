@@ -101,9 +101,9 @@ public class IntervalCastExpression extends AbstractUnaryExpression
                 if (sourceType == AkType.VARCHAR)
                 {
                     interval = source.getString().trim();
-                    char ch = interval.charAt(0);
-
-                    if (ch == '-' || ch == '+')
+                    char ch = '\0';
+                    if (!interval.isEmpty() &&
+                            (ch = interval.charAt(0)) == '-' || ch == '+')
                     {
                         sign = ch == '-' ? -1 : 1;
                         interval = interval.substring(1, interval.length()); 
@@ -126,7 +126,7 @@ public class IntervalCastExpression extends AbstractUnaryExpression
                             result = sign * Long.parseLong(interval);
                         break;
                     case YEAR_MONTH: 
-                        String yr_mth[] = interval.split("-");                       
+                        String yr_mth[] = interval.split("-");
                         if (yr_mth.length != 2) 
                             throw new InvalidIntervalFormatException (endPoint.name(), interval);
                         result = sign * (Long.parseLong(yr_mth[0]) * 12 + Long.parseLong(yr_mth[1]));
