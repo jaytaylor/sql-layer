@@ -157,27 +157,63 @@ public final class IndexHistogramsIT extends ITBase {
         validateHistogram("orders", "placed", 1, expected.toArray(new HistogramEntryDescription[expected.size()]));
     }
 
-    @Ignore("test is blocked due to wrong GI row count maintenance")
     @Test
     public void namePlacedGI_1() {
-        // 320 customers with 4 names, evenly distributed, is 80 customers per name
+        // 320*3=960 customers with 4 names, evenly distributed, is 240 customers per name
         validateHistogram(namePlacedGi, 1,
-                entry("{\"Adam\"}", 80, 0, 0),
-                entry("{\"Bob\"}", 80, 0, 0),
-                entry("{\"Carla\"}", 80, 0, 0),
-                entry("{\"Dot\"}", 80, 0, 0)
+                entry("{\"Adam\"}", 240, 0, 0),
+                entry("{\"Bob\"}", 240, 0, 0),
+                entry("{\"Carla\"}", 240, 0, 0),
+                entry("{\"Dot\"}", 240, 0, 0)
         );
     }
 
-    @Ignore("test is blocked due to wrong GI row count maintenance")
     @Test
     public void namePlacedGI_2() {
         // 320 customers with 4 names, evenly distributed, is 80 customers per name
         // See ordersPlaced() for analysis for "placed"
         // Each name will have placed=0 192/4 = 48 times.
         // It will have placed=50 110/4=27.5 times
-        // There are 658 remaining "placed" values, distributed evenly among the four names: 164.5 oids per name.
-        validateHistogram(namePlacedGi, 2);
+        // There are 658 remaining "placed" values, distributed evenly among the remaining buckets.
+        // There are 32 buckets originally, minus the 8 for all the (name,0)s and (name,50)s, so 24 buckets. This means
+        // the remaining buckets should each represent about 658/24 = ~27 buckets, plus or minus due to some buckets
+        // being included in the less-thans of (name,0)s and (name,50)s.
+        // I ran the tested, eyeballed the results, and copied them here.
+        validateHistogram(namePlacedGi, 2,
+                entry("{\"Adam\",\"0000\"}", 48, 0, 0),     // important to get this right!
+                entry("{\"Adam\",\"0050\"}", 28, 10, 10),   // important to get this right!
+                entry("{\"Adam\",\"0156\"}", 1, 16, 16),
+                entry("{\"Adam\",\"0314\"}", 1, 26, 26),
+                entry("{\"Adam\",\"0458\"}", 1, 26, 26),
+                entry("{\"Adam\",\"0626\"}", 1, 26, 26),
+                entry("{\"Adam\",\"0792\"}", 1, 26, 26),
+                entry("{\"Adam\",\"0937\"}", 1, 26, 26),
+                entry("{\"Bob\",\"0000\"}", 48, 2, 2),      // important to get this right!
+                entry("{\"Bob\",\"0050\"}", 28, 8, 8),      // important to get this right!
+                entry("{\"Bob\",\"0148\"}", 1, 16, 16),
+                entry("{\"Bob\",\"0293\"}", 1, 26, 26),
+                entry("{\"Bob\",\"0459\"}", 1, 26, 26),
+                entry("{\"Bob\",\"0627\"}", 1, 26, 26),
+                entry("{\"Bob\",\"0771\"}", 1, 26, 26),
+                entry("{\"Bob\",\"0929\"}", 1, 26, 26),
+                entry("{\"Carla\",\"0000\"}", 48, 4, 4),    // important to get this right!
+                entry("{\"Carla\",\"0050\"}", 28, 8, 8),    // important to get this right!
+                entry("{\"Carla\",\"0138\"}", 1, 14, 14),
+                entry("{\"Carla\",\"0283\"}", 1, 26, 26),
+                entry("{\"Carla\",\"0451\"}", 1, 26, 26),
+                entry("{\"Carla\",\"0606\"}", 1, 26, 26),
+                entry("{\"Carla\",\"0762\"}", 1, 26, 26),
+                entry("{\"Carla\",\"0919\"}", 1, 26, 26),
+                entry("{\"Dot\",\"0000\"}", 48, 6, 6),      // important to get this right!
+                entry("{\"Dot\",\"0050\"}", 26, 8, 8),      // important to get this right!
+                entry("{\"Dot\",\"0117\"}", 1, 12, 12),
+                entry("{\"Dot\",\"0274\"}", 1, 26, 26),
+                entry("{\"Dot\",\"0442\"}", 1, 26, 26),
+                entry("{\"Dot\",\"0587\"}", 1, 26, 26),
+                entry("{\"Dot\",\"0753\"}", 1, 26, 26),
+                entry("{\"Dot\",\"0909\"}", 1, 26, 26),
+                entry("{\"Dot\",\"0958\"}", 1, 9, 9)
+        );
     }
 
     /**
