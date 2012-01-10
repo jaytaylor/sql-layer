@@ -87,6 +87,7 @@ public class UpdateIT extends OperatorITBase
     }
     
     @Test
+    // http://en.wikipedia.org/wiki/Halloween_Problem
     public void halloweenProblem() throws Exception {
         use(db);
 
