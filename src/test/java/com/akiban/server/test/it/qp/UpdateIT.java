@@ -24,6 +24,9 @@ import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.conversion.Converters;
@@ -81,4 +84,40 @@ public class UpdateIT extends OperatorITBase
         compareRows(expected, executable);
     }
     
+    @Test
+    public void halloween() throws Exception {
+        // A table without any primary key will have a generated one,
+        // which changes on update.
+        final int tableId = createTable("schema", "nokey", "i int, j int");
+        schema = new Schema(rowDefCache().ais());
+        adapter = persistitAdapter(schema);
+        final RowType tableRowType = schema.userTableRowType(userTable(tableId));
+
+        NewRow[] db = new NewRow[] { createNewRow(tableId, 1L, 0L) };
+        use(db);
+
+        UpdateFunction updateFunction = new UpdateFunction() {
+                @Override
+                public boolean rowIsSelected(Row row) {
+                    return row.rowType().equals(tableRowType);
+                }
+
+                @Override
+                public Row evaluate(Row original, Bindings bindings) {
+                    long j = original.eval(1).getInt();
+                    return new OverlayingRow(original).overlay(1, j+1);
+                }
+            };
+
+        Operator groupScan = groupScan_Default(groupTable(tableId));
+        UpdatePlannable updateOperator = update_Default(groupScan, updateFunction);
+        UpdateResult result = updateOperator.run(NO_BINDINGS, adapter);
+        assertEquals("rows touched", 1, result.rowsTouched());
+        assertEquals("rows modified", 1, result.rowsModified());
+
+        Cursor executable = cursor(groupScan, adapter);
+        RowBase[] expected = new RowBase[] { row(tableRowType, 1L, 1L) };
+        compareRows(expected, executable);
+    }
+
 }
