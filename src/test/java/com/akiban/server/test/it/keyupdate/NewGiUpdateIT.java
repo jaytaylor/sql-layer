@@ -2145,7 +2145,7 @@ public final class NewGiUpdateIT extends ITBase {
                     return idxStats.countEntries(session(), groupIndex);
                 }
             });
-            assertEquals("row count", expected.size(), giRowCount);
+            assertEquals("row count for " + groupIndex.getIndexName().getName(), expected.size(), giRowCount);
         }
 
         private GisCheckerImpl(Map<GroupIndex, List<String>> expectedStrings) {
