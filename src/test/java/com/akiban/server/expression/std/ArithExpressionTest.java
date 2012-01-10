@@ -27,7 +27,6 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.EnumSet;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -76,11 +75,11 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
         Expression left = new LiteralExpression(AkType.FLOAT, 3.5f);
         Expression right = new LiteralExpression(AkType.INTERVAL_MONTH, 2L);
         Expression top = new ArithExpression(left, ArithOps.MULTIPLY, right);
-        
+
         assertEquals("Top should be INTERVAL_MONTH ", AkType.INTERVAL_MONTH, top.valueType());
         assertEquals(7L, top.evaluation().eval().getInterval_Month());
     }
-    
+
     @Test
     public void longMinusFloat ()
     {
@@ -187,11 +186,12 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
         Expression year2 = new LiteralExpression (AkType.YEAR,Extractors.getLongExtractor(AkType.YEAR).getLong("1991"));
         Expression interval = new ArithExpression (year1, ex = ArithOps.MINUS, year2);
 
-        Expression datetime = new LiteralExpression (AkType.DATETIME, 19940229123010L); // 1994-02-29 12:30:10
+        Expression datetime = new LiteralExpression (AkType.DATETIME, 19960229123010L); // 1996-02-29 12:30:10
         Expression rst = new ArithExpression (datetime, ex = ArithOps.ADD, interval);
 
-        // 2006 minus 1991 plus 1994-02-29 12:30:10 equals 2009-03-01 12:30:10L (1994 is a leap year, while 2009 is NOT)
-        assertEquals(20090301123010L, rst.evaluation().eval().getDateTime());
+        // 2006 minus 1991 plus 1996-02-29 12:30:10 equals 2011-03-01 12:30:10L (1996 is a leap year, while 2011 is NOT)
+        assertEquals("2011-03-01 12:30:10",
+                Extractors.getLongExtractor(AkType.DATETIME).asString(rst.evaluation().eval().getDateTime()));
     }
 
 
@@ -264,6 +264,47 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
         ValueSource actual = new ValueHolder(top.evaluation().eval());
     }
 
+      @Test
+    public void testBug912261 ()
+    {
+        testAddMonth("2000-10-02", 2L, "2000-12-02");
+    }
+
+    @Test
+    public void testAddMul12Months ()
+    {
+        int year = 2000, month = 1, day = 12;
+        int d = 12;
+
+        // test adding a multiple of 12 months
+        // starting with "2000-01-12" to "2000-12-12"
+        for (; month <= 12; ++month)
+            for (int n = 0; n <= 4; ++n)
+                testAddMonth(year + "-" + month + "-" + day,
+                        d * n, (year + n) + "-" + String.format("%02d", month) + "-" + day);
+    }
+
+    @Test
+    public void testAddMul13Months ()
+    {   
+        testAddMonth("2004-02-29", 0L, "2004-02-29");
+        testAddMonth("2004-01-30", 13L, "2005-02-28");
+        testAddMonth("2002-03-31", 26L, "2004-05-31");
+        testAddMonth("2001-04-30", 39L, "2004-07-30");
+        testAddMonth("2003-05-31", 52L, "2007-09-30");
+    }
+
+    private static void testAddMonth (String date, long month, String expectedDate)
+    {
+        Expression left = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong(date));
+        Expression right = new LiteralExpression(AkType.INTERVAL_MONTH, month);
+
+        Expression top = new ArithExpression(left, ArithOps.ADD, right);
+        String actual = Extractors.getLongExtractor(AkType.DATE).asString(top.evaluation().eval().getDate());
+
+        assertEquals(date + " + " + month + " MONTHS :",expectedDate, actual);
+    }
+    
     @Test
     public void testDatePlusIntervalMonth ()
     {

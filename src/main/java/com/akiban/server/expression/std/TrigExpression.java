@@ -98,6 +98,7 @@ public class TrigExpression extends AbstractCompositeExpression
             switch (name)
             {
                 case ATAN2: if (size != 2) throw new WrongExpressionArityException(2, size);
+                            break;
                 default:    if (size != 1) throw new WrongExpressionArityException(1, size);
             }
             for (int i = 0; i < size; ++i)

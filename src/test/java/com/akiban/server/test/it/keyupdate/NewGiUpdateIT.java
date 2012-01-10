@@ -20,8 +20,8 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.persistitadapter.OperatorStoreMaintenanceLoader;
 import com.akiban.server.store.IndexRecordVisitor;
+import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.AssertUtils;
 import com.akiban.util.Strings;
@@ -29,6 +29,7 @@ import com.akiban.util.Tap;
 import com.akiban.util.TapReport;
 import com.persistit.exception.PersistitException;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -46,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -1873,13 +1875,13 @@ public final class NewGiUpdateIT extends ITBase {
     public TestName name = new TestName();
 
     @BeforeClass
-    public static void tapHeaders() {
-        OperatorStoreMaintenanceLoader.load();
-        Tap.setEnabled(TAP_PATTERN, true);
-        log(TAP_HEADER
-                + "name\t"
-                + Strings.join(reportsByName().keySet(), "\t")
-        );
+    public static void tapsDefaultToOn() {
+        Tap.defaultToOn(true);
+    }
+    
+    @AfterClass
+    public static void tapsDefaultToOff() {
+        Tap.defaultToOn(false);
     }
 
     @Before
@@ -1891,7 +1893,7 @@ public final class NewGiUpdateIT extends ITBase {
         a = createTable(SCHEMA, "a", "aid int key, c_id int, street varchar(56), a_extra int", akibanFK("c_id", "c", "cid") );
 
         String groupName = group().getName();
-        Tap.setEnabled(TAP_PATTERN, true);
+        Tap.setEnabled(TAP_PATTERN, false);
         createGroupIndex(groupName, ___LEFT_name_when___________, "c.name,o.when", Index.JoinType.LEFT);
         createGroupIndex(groupName, ___LEFT_sku_instructions____, "i.sku, h.handling_instructions", Index.JoinType.LEFT);
         createGroupIndex(groupName, ___RIGHT_name_when__________, "c.name,o.when", Index.JoinType.RIGHT);
@@ -1903,6 +1905,13 @@ public final class NewGiUpdateIT extends ITBase {
     
     @After
     public final void forgetTables() throws PersistitException {
+        if (needTapHeaders) {
+            log(TAP_HEADER
+                    + "name\t"
+                    + Strings.join(reportsByName().keySet(), "\t")
+            );
+            needTapHeaders = false;
+        }
         log(TAP_HEADER
                 + name.getMethodName() + "\t"
                 + Strings.join(reportsByName().values(), "\t")
@@ -1979,6 +1988,7 @@ public final class NewGiUpdateIT extends ITBase {
     private static final String ___RIGHT_street_name________ = "street_name_RIGHT";
     private static final String TAP_PATTERN = "GI maintenance: (.+)|.+(skip_maintenance)";
     private static final String TAP_HEADER = "GI TAPS:\t";
+    private static boolean needTapHeaders = true;
     private static final Logger log = LoggerFactory.getLogger(NewGiUpdateIT.class);
 
     // nested classes
@@ -2114,7 +2124,7 @@ public final class NewGiUpdateIT extends ITBase {
             }
         }
 
-        private void checkIndex(GroupIndex groupIndex, List<String> expected) {
+        private void checkIndex(final GroupIndex groupIndex, List<String> expected) {
             final StringsIndexScanner scanner;
             try {
                 scanner= persistitStore().traverse(session(), groupIndex, new StringsIndexScanner());
@@ -2127,6 +2137,15 @@ public final class NewGiUpdateIT extends ITBase {
                     expected,
                     scanner.strings()
             );
+            
+            long giRowCount = transactionallyUnchecked(new Callable<Long>() {
+                @Override
+                public Long call() throws Exception {
+                    IndexStatisticsService idxStats = serviceManager().getServiceByClass(IndexStatisticsService.class);
+                    return idxStats.countEntries(session(), groupIndex);
+                }
+            });
+            assertEquals("row count for " + groupIndex.getIndexName().getName(), expected.size(), giRowCount);
         }
 
         private GisCheckerImpl(Map<GroupIndex, List<String>> expectedStrings) {
