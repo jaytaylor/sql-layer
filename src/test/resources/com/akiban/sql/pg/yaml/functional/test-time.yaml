@@ -15,8 +15,8 @@
 - Statement: select id,TIME(timestamp_field) from datetime_matrix where TIME(timestamp_field) <> TIME(CONCAT(expected_hour,':',expected_minute,':',expected_second));
 - row_count: 0
 ---
-- Statement: select id,TIME(date_field) from datetime_matrix where TIME(date_field) is not null;
-- row_count: 2064
+- Statement: select id,TIME(date_field) from datetime_matrix where TIME(date_field) is null;
+- row_count: 0
 ---
 - Statement: select TIME('A') from all_types;
 - output: [[null]]

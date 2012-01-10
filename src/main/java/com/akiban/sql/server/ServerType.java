@@ -13,17 +13,22 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.pg;
+package com.akiban.sql.server;
 
-import com.akiban.sql.server.ServerSession;
+import com.akiban.server.types.AkType;
 
-/** A Postgres server session. */
-public interface PostgresServerSession extends ServerSession
+/** A type according to the server's regime.
+ */
+public abstract class ServerType
 {
-    /** Return the protocol version in use. */
-    public int getVersion();
+    private AkType akType;
 
-    /** Return the messenger used to communicate with client. */
-    public PostgresMessenger getMessenger();
+    protected ServerType(AkType akType) {
+        this.akType = akType;
+    }
+
+    public AkType getAkType() {
+        return akType;
+    }
 
 }

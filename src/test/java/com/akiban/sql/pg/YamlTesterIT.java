@@ -807,6 +807,19 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     }
 
     @Test
+    public void testStatementOutputEmptyValue() {
+        testYaml(
+	    "---\n" +
+	    "- CreateTable: t (x varchar(32), y varchar(32))\n" +
+	    "---\n" +
+	    "- Statement: INSERT INTO t VALUES ('', 'abc')\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
+	    "- output:\n" +
+	    "  - ['', 'abc']\n");
+    }
+
+    @Test
     public void testStatementOutputDontCare() {
 	testYaml(
 	    "---\n" +
