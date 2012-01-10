@@ -49,8 +49,13 @@ abstract class ExtractorsForDates extends LongExtractor {
 
         @Override
         public long getLong(String string) {
-            // YYYY-MM-DD
-            final String values[] = string.split("-");
+            String values[];
+            // YYY-MM-DD HH:MM:SS
+            String parts[] = string.split(" ");
+            if (parts.length == 2)
+                values = parts[0].split("-"); // truncate time fields
+            else
+                values = string.split("-");
             long y = 0, m = 0, d = 0;
             try {
                 switch(values.length) {
