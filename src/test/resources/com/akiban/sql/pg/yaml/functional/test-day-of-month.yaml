@@ -3,24 +3,31 @@
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
-#---
-#- Statement: select DAYOFMONTH('1999-12-15') from all_types;
-#- output: [[15]]
-#---
-#- Include: all-datetime-schema.yaml
-#---
-#- Statement: select id,DAYOFMONTH(time_field) from datetime_matrix where DAYOFMONTH(time_field) is not null;
-#- row_count: 0
-#---
-#- Statement: select id,DAYOFMONTH(timestamp_field),DAYOFMONTH from datetime_matrix where DAYOFMONTH(timestamp_field) <> DAYOFMONTH;
-#- row_count: 0
-#---
-#- Statement: select id,DAYOFMONTH(date_field), DAYOFMONTH from datetime_matrix where DAYOFMONTH(date_field) <> DAYOFMONTH;
-#- row_count: 0
-#---
-#- Statement: select DAYOFMONTH('A') from all_types;
-#- output: [[null]]
-#---
-#- Statement: select DAYOFMONTH(9999999) from all_types;
-#- output: [[null]]
+---
+- Statement: select DAYOFMONTH('1999-12-15') from all_types;
+- output: [[15]]
+---
+- Statement: select dayofmonth('2007-02-03') from all_types; 
+- output: [[3]]
+#--- # bug 913792
+#- Statement: select dayofmonth(?) from all_types;
+#- params: [['2007-02-03']] 
+#- output: [[3]]
+---
+- Include: all-datetime-schema.yaml
+---
+- Statement: select id,DAYOFMONTH(time_field) from datetime_matrix where DAYOFMONTH(time_field) is not null;
+- row_count: 0
+---
+- Statement: select id,DAYOFMONTH(timestamp_field) from datetime_matrix where DAYOFMONTH(timestamp_field) <> DAYOFMONTH;
+- row_count: 0
+---
+- Statement: select id,DAYOFMONTH(date_field) from datetime_matrix where DAYOFMONTH(date_field) <> DAYOFMONTH;
+- row_count: 0
+---
+- Statement: select DAYOFMONTH('A') from all_types;
+- output: [[null]]
+---
+- Statement: select DAYOFMONTH(9999999) from all_types;
+- output: [[null]]
 ...

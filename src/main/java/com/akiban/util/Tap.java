@@ -206,7 +206,7 @@ public abstract class Tap {
 
         private final Tap internal;
     }
-
+    
     private static final Logger LOG = LoggerFactory.getLogger(Tap.class.getName());
 
     public final static String NEW_LINE = System.getProperty("line.separator");
@@ -216,7 +216,7 @@ public abstract class Tap {
     private static boolean registered;
 
     public static PointTap createCount(String name) {
-        return new PointTap(add(new PerThread(name, Count.class)));
+        return createCount(name, defaultOn());
     }
     
     public static PointTap createCount(String name, boolean enabled) {
@@ -226,7 +226,17 @@ public abstract class Tap {
     }
 
     public static InOutTap createTimer(String name) {
-        return new InOutTap(add(new PerThread(name, TimeAndCount.class)));
+        return createTimer(name, defaultOn());
+    }
+
+    public static InOutTap createTimer(String name, boolean enabled) {
+        InOutTap ret = new InOutTap(add(new PerThread(name, TimeAndCount.class)));
+        Tap.setEnabled(name, enabled);
+        return ret;
+    }
+
+    public static void defaultToOn(boolean defaultIsOn) {
+        System.getProperties().setProperty(DEFAULT_ON_PROPERTY, Boolean.toString(defaultIsOn));
     }
 
     /**
@@ -243,6 +253,10 @@ public abstract class Tap {
             dispatches.put(tap.getName(), dispatch);
         }
         return dispatch;
+    }
+    
+    private static boolean defaultOn() {
+        return Boolean.getBoolean(DEFAULT_ON_PROPERTY);
     }
 
     /**
@@ -452,6 +466,8 @@ public abstract class Tap {
      * @return A Result object or <tt>null</tt>
      */
     public abstract TapReport getReport();
+    
+    private static String DEFAULT_ON_PROPERTY = "taps_default_on";
 
     /**
      * A {@link Tap} Implementation that simply dispatches to another Tap

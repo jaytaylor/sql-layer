@@ -1,0 +1,12 @@
+## Test the WEEKOFYEAR() function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field) VALUES (1)
+---  #bug 905447
+- Statement: select WEEKOFYEAR('1987-01-01 01:15:33') from all_types;
+- output: [['1']]
+--- ## null or error?
+- Statement: select WEEKOFYEAR('A') from all_types;
+- output: [[null]]
+...

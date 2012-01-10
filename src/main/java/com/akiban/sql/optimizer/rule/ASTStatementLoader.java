@@ -268,19 +268,17 @@ public class ASTStatementLoader extends BaseRule
                 }
                 else
                     query = new Distinct(query);
-                if ((offsetClause != null) || 
-                    (fetchFirstClause != null))
-                    query = toLimit(query, offsetClause, fetchFirstClause);
             }
             else {
                 if (!sorts.isEmpty()) {
                     query = new Sort(query, sorts);
                 }
-                if ((offsetClause != null) || 
-                    (fetchFirstClause != null))
-                    query = toLimit(query, offsetClause, fetchFirstClause);
                 query = new Project(query, projects);
             }
+
+            if ((offsetClause != null) || 
+                (fetchFirstClause != null))
+                query = toLimit(query, offsetClause, fetchFirstClause);
 
             query = new ResultSet(query, results);
 

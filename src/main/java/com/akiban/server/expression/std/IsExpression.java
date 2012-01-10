@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -23,6 +24,8 @@ import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.BoolValueSource;
+import com.akiban.sql.StandardException;
+import com.akiban.server.expression.TypesList;
 
 public class IsExpression extends AbstractUnaryExpression
 {    
@@ -56,23 +59,20 @@ public class IsExpression extends AbstractUnaryExpression
             return new IsExpression(argument, triVal);
         }
 
-        @Override
-        protected AkType argumentType(AkType givenType)
-        {
-            return AkType.BOOL;
-        }
-
-        @Override
-        protected ExpressionType composeType(ExpressionType argumentType)
-        {
-            return ExpressionTypes.BOOL;
-        }
-
        @Override
        public String toString()
        {
            return "IS " + triVal;
        }
+
+        @Override
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
+        {
+            if (argumentTypes.size() != 1)
+                throw new WrongExpressionArityException(1, argumentTypes.size());
+            argumentTypes.setType(0, AkType.BOOL);
+            return ExpressionTypes.BOOL;
+        }
     }
 
     private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation

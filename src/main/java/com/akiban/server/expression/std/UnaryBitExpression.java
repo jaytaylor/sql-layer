@@ -17,6 +17,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.error.InconvertibleTypesException;
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -26,6 +27,8 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.sql.StandardException;
+import com.akiban.server.expression.TypesList;
 import java.math.BigInteger;
 import org.slf4j.LoggerFactory;
 
@@ -93,14 +96,11 @@ public class UnaryBitExpression extends AbstractUnaryExpression
         }
 
         @Override
-        protected AkType argumentType(AkType givenType) 
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
-            return givenType;
-        }
+            if (argumentTypes.size() != 1)
+                throw new WrongExpressionArityException(1, argumentTypes.size());
 
-        @Override
-        protected ExpressionType composeType(ExpressionType argumentType) 
-        {
             return op == UnaryBitOperator.COUNT ? ExpressionTypes.LONG : ExpressionTypes.U_BIGINT;
         }
     }

@@ -25,14 +25,20 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.ObjectExtractor;
+import com.akiban.sql.StandardException;
+import com.akiban.server.expression.TypesList;
+import com.akiban.server.service.functions.Scalar;
 import java.util.Calendar;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.joda.time.DateTimeZone;
+import org.joda.time.MutableDateTime;
 
 public class StrToDateExpression extends AbstractBinaryExpression
 {
+    @Scalar("str_to_date")
     public static final ExpressionComposer COMPOSER = new BinaryComposer ()
     {
         @Override
@@ -42,24 +48,15 @@ public class StrToDateExpression extends AbstractBinaryExpression
         }
 
         @Override
-        protected ExpressionType composeType(ExpressionType first, ExpressionType second)
-        {
-            //TODO: str_to_date  return type coudl be a DATE, TIME or DATETIME depending on the format specifiers
-            // which can only be known at evaluation time....
-            // For now, this method returns a DATETIME. (so does StrToDateExpression.getValueType())
-            return ExpressionTypes.DATETIME;
-        }
-
-        @Override
-        public void argumentTypes(List<AkType> argumentTypes)
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             int size = argumentTypes.size();
-            if (size != 2)  throw new WrongExpressionArityException(2, size);
+            if (size != 2) throw new WrongExpressionArityException(2, size);
+            argumentTypes.setType(0, AkType.VARCHAR);
+            argumentTypes.setType(1, AkType.VARCHAR);
 
-            for (int n = 0; n < size; ++n)
-                argumentTypes.set(n, AkType.VARCHAR);
+            return ExpressionTypes.DATETIME;
         }
-
     };
 
     private static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
@@ -71,7 +68,6 @@ public class StrToDateExpression extends AbstractBinaryExpression
         public InnerEvaluation (AkType type, List<? extends ExpressionEvaluation> childrenEval)
         {
             super(childrenEval);
-            //topType = type;
         }
 
         @Override
@@ -205,12 +201,13 @@ public class StrToDateExpression extends AbstractBinaryExpression
                   Long dayOfYear = valuesMap.get(DateTimeField.j);
                   if (dayOfYear != null && dayOfYear.intValue() >= 0)
                   {
-                      Calendar cal = Calendar.getInstance();
-                      cal.set(Calendar.YEAR, y.intValue());
-                      cal.set(Calendar.DAY_OF_YEAR, dayOfYear.intValue());
-                      y = (long)cal.get(Calendar.YEAR);
-                      m = (long)cal.get(Calendar.MONTH) +1;
-                      d = (long)cal.get(Calendar.DAY_OF_MONTH);
+                      MutableDateTime date = new MutableDateTime(DateTimeZone.getDefault());
+                      date.setYear(y.intValue());
+                      date.setDayOfYear(dayOfYear.intValue());
+
+                      y = (long)date.getYear();
+                      m = (long)date.getMonthOfYear();
+                      d = (long)date.getDayOfMonth();
                   }
               }
               
@@ -235,7 +232,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
                       if ((wk = valuesMap.get(DateTimeField.v)) == null
                               || (dWeek = valuesMap.get(DateTimeField.W)) == null)
                           return validYMD(y, m, d) ? y * 10000L + m * 100 + d: -1;
-                      cal.setMinimalDaysInFirstWeek(1);
+                      cal.setMinimalDaysInFirstWeek(4);
                       cal.setFirstDayOfWeek(Calendar.MONDAY); 
                   }
                   cal.set(Calendar.YEAR, yr.intValue()); 

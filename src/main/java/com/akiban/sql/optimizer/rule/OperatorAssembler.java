@@ -663,6 +663,9 @@ public class OperatorAssembler extends BaseRule
                                     PlanNode input, PlanNode output, 
                                     API.SortOption sortOption) {
             int maxrows = -1;
+            if (output instanceof Project) {
+                output = output.getOutput();
+            }
             if (output instanceof Limit) {
                 Limit limit = (Limit)output;
                 if (!limit.isOffsetParameter() && !limit.isLimitParameter()) {

@@ -192,7 +192,7 @@ public class ConstantFolder extends BaseRule
                 return isTrueExpression(fun);
             else if ("isFalse".equals(fname))
                 return isFalseExpression(fun);
-            else if ("COALESCE".equals(fname))
+            else if ("COALESCE".equals(fname) || "ifnull".equals(fname))
                 return coalesceExpression(fun);
             else if ("if".equals(fname))
                 return ifFunction(fun);

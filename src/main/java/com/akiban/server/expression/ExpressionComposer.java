@@ -15,7 +15,7 @@
 
 package com.akiban.server.expression;
 
-import com.akiban.server.types.AkType;
+import com.akiban.sql.StandardException;
 
 import java.util.List;
 
@@ -28,19 +28,15 @@ import java.util.List;
  * @see com.akiban.server.service.functions.Scalar.
  */
 public interface ExpressionComposer {
-    /** Given arguments of the specified types, adjust them for any
-     * type requirements, including from promotion based on other
-     * argument types. {@link #compose} and {@link #composeType} can then
-     * expect to receive those types and throw an exception if they do not.
-     */
-    void argumentTypes(List<AkType> argumentTypes);
-
-    /** Return the type of a composed expression when passed the given types. 
+    /**
+     * - Adjust input types, if needed
+     * - Return the type of a composed expression when passed the given types.
+     *
      * If {@link #argumentTypes} adjusted the <code>AkType</code>s,
      * this method can expect to be called with
      * <code>ExpressionType</code>s that are based on those.
      */
-    ExpressionType composeType(List<? extends ExpressionType> argumentTypes);
+    ExpressionType composeType(TypesList argumentTypes) throws StandardException;
 
     /** Return an expression with the given expressions as its arguments. 
      * If the function has simple type requirements, it can use {@link #argumentTypes}
