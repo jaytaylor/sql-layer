@@ -35,6 +35,8 @@ import static com.akiban.qp.operator.API.*;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
+import java.util.Arrays;
+
 public class UpdateIT extends OperatorITBase
 {
     @Test
@@ -85,38 +87,41 @@ public class UpdateIT extends OperatorITBase
     }
     
     @Test
-    public void halloween() throws Exception {
-        // A table without any primary key will have a generated one,
-        // which changes on update.
-        final int tableId = createTable("schema", "nokey", "i int, j int");
-        schema = new Schema(rowDefCache().ais());
-        adapter = persistitAdapter(schema);
-        final RowType tableRowType = schema.userTableRowType(userTable(tableId));
-
-        NewRow[] db = new NewRow[] { createNewRow(tableId, 1L, 0L) };
+    public void halloweenProblem() throws Exception {
         use(db);
 
+        Operator scan = filter_Default(
+            ancestorLookup_Default(
+                indexScan_Default(customerCidIndexRowType),
+                coi,
+                customerCidIndexRowType,
+                Arrays.asList(customerRowType),
+                LookupOption.DISCARD_INPUT),
+            Arrays.asList(customerRowType));
+        
         UpdateFunction updateFunction = new UpdateFunction() {
                 @Override
                 public boolean rowIsSelected(Row row) {
-                    return row.rowType().equals(tableRowType);
+                    return row.rowType().equals(customerRowType);
                 }
 
                 @Override
                 public Row evaluate(Row original, Bindings bindings) {
-                    long j = original.eval(1).getInt();
-                    return new OverlayingRow(original).overlay(1, j+1);
+                    long id = original.eval(0).getInt();
+                    return new OverlayingRow(original).overlay(0, 1000 + id);
                 }
             };
 
-        Operator groupScan = groupScan_Default(groupTable(tableId));
-        UpdatePlannable updateOperator = update_Default(groupScan, updateFunction);
+        UpdatePlannable updateOperator = update_Default(scan, updateFunction);
         UpdateResult result = updateOperator.run(NO_BINDINGS, adapter);
-        assertEquals("rows touched", 1, result.rowsTouched());
-        assertEquals("rows modified", 1, result.rowsModified());
+        assertEquals("rows touched", db.length, result.rowsTouched());
+        assertEquals("rows modified", 2, result.rowsModified());
 
-        Cursor executable = cursor(groupScan, adapter);
-        RowBase[] expected = new RowBase[] { row(tableRowType, 1L, 1L) };
+        Cursor executable = cursor(scan, adapter);
+        RowBase[] expected = new RowBase[] { 
+            row(customerRowType, 1L, "xyz"),
+            row(customerRowType, 2L, "abc") 
+        };
         compareRows(expected, executable);
     }
 
