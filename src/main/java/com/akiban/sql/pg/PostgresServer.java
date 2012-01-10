@@ -15,6 +15,9 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.server.ServerServiceRequirements;
+import com.akiban.sql.server.ServerStatementCache;
+
 import com.akiban.qp.loadableplan.LoadablePlan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +45,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 */
 public class PostgresServer implements Runnable, PostgresMXBean {
     private final int port;
-    private final PostgresServiceRequirements reqs;
+    private final ServerServiceRequirements reqs;
     private ServerSocket socket = null;
     private boolean running = false;
     private volatile long startTime = 0;
@@ -61,7 +64,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresServer.class);
 
-    public PostgresServer(int port, int statementCacheCapacity, PostgresServiceRequirements reqs) {
+    public PostgresServer(int port, int statementCacheCapacity, ServerServiceRequirements reqs) {
         this.port = port;
         if (statementCacheCapacity > 0)
             statementCache = new ServerStatementCache<PostgresStatement>(statementCacheCapacity);

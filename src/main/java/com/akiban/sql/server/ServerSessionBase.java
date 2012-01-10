@@ -16,7 +16,6 @@
 package com.akiban.sql.server;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoTransactionInProgressException;
@@ -27,31 +26,34 @@ import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.sql.parser.SQLParser;
 
 import com.akiban.sql.optimizer.rule.IndexEstimator;
 import com.akiban.ais.model.Index;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 
+import org.joda.time.DateTime;
+
 import java.util.*;
 
-public class ServerSessionBase implements ServerSession
+public abstract class ServerSessionBase implements ServerSession
 {
     protected final ServerServiceRequirements reqs;
     protected Properties properties;
     protected Map<String,Object> attributes = new HashMap<String,Object>();
     
-    private Session session;
-    private long aisTimestamp = -1;
-    private AkibanInformationSchema ais;
-    private StoreAdapter adapter;
-    private String defaultSchemaName;
-    private SQLParser parser;
-    private ServerTransaction transaction;
-    private boolean transactionDefaultReadOnly = false;
-    private ServerSessionTracer sessionTracer;
+    protected Session session;
+    protected long aisTimestamp = -1;
+    protected AkibanInformationSchema ais;
+    protected StoreAdapter adapter;
+    protected String defaultSchemaName;
+    protected SQLParser parser;
+    protected ServerTransaction transaction;
+    protected boolean transactionDefaultReadOnly = false;
+    protected ServerSessionTracer sessionTracer;
 
-    public PostgresServerConnection(PostgresServiceRequirements reqs) {
+    public ServerSessionBase(ServerServiceRequirements reqs) {
         this.reqs = reqs;
     }
 
@@ -85,6 +87,8 @@ public class ServerSessionBase implements ServerSession
         attributes.put(key, attr);
         sessionChanged();
     }
+
+    protected abstract void sessionChanged();
 
     @Override
     public DXLService getDXL() {
@@ -130,12 +134,6 @@ public class ServerSessionBase implements ServerSession
     @Override
     public TreeService getTreeService() {
         return reqs.treeService();
-    }
-
-    @Override
-    public LoadablePlan<?> loadablePlan(String planName)
-    {
-        return server.loadablePlan(planName);
     }
 
     @Override
@@ -188,11 +186,7 @@ public class ServerSessionBase implements ServerSession
 
     @Override
     public Date currentTime() {
-        Date override = server.getOverrideCurrentTime();
-        if (override != null)
-            return override;
-        else
-            return new Date();
+        return new Date();
     }
 
     @Override

@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.pg;
+package com.akiban.sql.server;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -23,10 +23,10 @@ import java.util.Map;
  */
 public class ServerStatementCache<T extends ServerStatement>
 {
-    private Cache cache;
+    private Cache<T> cache;
     private int hits, misses;
 
-    static class Cache extends LinkedHashMap<String,T> {
+    static class Cache<T> extends LinkedHashMap<String,T> {
         private int capacity;
 
         public Cache(int capacity) {
@@ -49,7 +49,7 @@ public class ServerStatementCache<T extends ServerStatement>
     }
 
     public ServerStatementCache(int size) {
-        cache = new Cache(size);
+        cache = new Cache<T>(size);
     }
 
     public int getCapacity() {

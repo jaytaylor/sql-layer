@@ -15,6 +15,8 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.server.ServerValueEncoder;
+
 import com.akiban.server.types.AkType;
 
 import java.util.List;
@@ -73,7 +75,7 @@ public class PostgresExplainStatement implements PostgresStatement
     public int execute(PostgresServerSession server, int maxrows)
             throws IOException {
         PostgresMessenger messenger = server.getMessenger();
-        PostgresValueEncoder encoder = new PostgresValueEncoder(messenger.getEncoding());
+        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
         int nrows = 0;
         for (String row : explanation) {
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());

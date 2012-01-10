@@ -73,7 +73,7 @@ public interface ServerSession
     /** Return a parser for SQL statements. */
     public SQLParser getParser();
     
-    /** Return the object used to trace pg sessions. */
+    /** Return the object used to trace sessions. */
     public SessionTracer getSessionTracer();
 
     /** Return an adapter for the session's store. */

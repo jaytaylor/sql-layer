@@ -42,7 +42,6 @@ import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.UpdateNode;
 import com.akiban.sql.parser.ValueNode;
-import com.akiban.sql.pg.PostgresSessionTracer;
 import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.ddl.SchemaDef;

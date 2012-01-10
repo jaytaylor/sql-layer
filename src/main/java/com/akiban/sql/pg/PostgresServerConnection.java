@@ -15,13 +15,18 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.server.ServerServiceRequirements;
+import com.akiban.sql.server.ServerSessionBase;
 import com.akiban.sql.server.ServerSessionTracer;
+import com.akiban.sql.server.ServerStatementCache;
+import com.akiban.sql.server.ServerTransaction;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 
+import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.*;
@@ -32,8 +37,6 @@ import com.akiban.util.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.joda.time.DateTime;
-
 import java.net.*;
 import java.io.*;
 import java.util.*;
@@ -43,7 +46,8 @@ import java.util.*;
  * Runs in its own thread; has its own AkServer Session.
  *
  */
-public class PostgresServerConnection implements PostgresServerSession, Runnable
+public class PostgresServerConnection extends ServerSessionBase
+                                      implements PostgresServerSession, Runnable
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresServerConnection.class);
     private static final Tap.InOutTap READ_MESSAGE = Tap.createTimer("PostgresServerConnection: read message");
@@ -70,8 +74,8 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
 
     public PostgresServerConnection(PostgresServer server, Socket socket, 
                                     int pid, int secret,
-                                    PostgresServiceRequirements reqs) {
-        super(reqs)
+                                    ServerServiceRequirements reqs) {
+        super(reqs);
         this.server = server;
 
         this.socket = socket;
@@ -608,7 +612,7 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
     protected int executeStatement(PostgresStatement pstmt, int maxrows) 
             throws IOException {
         PostgresStatement.TransactionMode transactionMode = pstmt.getTransactionMode();
-        PostgresTransaction localTransaction = null;
+        ServerTransaction localTransaction = null;
         if (transaction != null) {
             transaction.checkTransactionMode(transactionMode);
         }
@@ -619,13 +623,13 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
                 throw new NoTransactionInProgressException();
             case READ:
             case NEW:
-                localTransaction = new PostgresTransaction(this, true);
+                localTransaction = new ServerTransaction(this, true);
                 break;
             case WRITE:
             case NEW_WRITE:
                 if (transactionDefaultReadOnly)
                     throw new TransactionReadOnlyException();
-                localTransaction = new PostgresTransaction(this, false);
+                localTransaction = new ServerTransaction(this, false);
                 break;
             }
         }
@@ -648,6 +652,21 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         return rowsProcessed;
     }
 
+    @Override
+    public LoadablePlan<?> loadablePlan(String planName)
+    {
+        return server.loadablePlan(planName);
+    }
+
+    @Override
+    public Date currentTime() {
+        Date override = server.getOverrideCurrentTime();
+        if (override != null)
+            return override;
+        else
+            return super.currentTime();
+    }
+
     /* PostgresServerSession */
 
     @Override
@@ -660,31 +679,26 @@ public class PostgresServerConnection implements PostgresServerSession, Runnable
         return messenger;
     }
 
-    /* PostgresMXBean */
+    /* MBean-related access */
 
-    @Override
     public boolean isInstrumentationEnabled() {
         return instrumentationEnabled;
     }
     
-    @Override
     public void enableInstrumentation() {
         sessionTracer.enable();
         instrumentationEnabled = true;
     }
     
-    @Override
     public void disableInstrumentation() {
         sessionTracer.disable();
         instrumentationEnabled = false;
     }
     
-    @Override
     public String getSqlString() {
         return sql;
     }
     
-    @Override
     public String getRemoteAddress() {
         return socket.getInetAddress().getHostAddress();
     }
