@@ -180,58 +180,30 @@ public class IntervalMatrixCreator {
                 out.append("')\n");
                 /* Test interval */
                 for (int i = 0; i < 2; i++) {
+                    boolean negate = (i == 1);
                     out.append("---\n");
                     out.append("- Statement: SELECT t1 + ");
-                    insertTimeInterval(out, period);
+                    insertTimeInterval(out, period, negate);
                     out.append(" FROM times WHERE ind = ").append(index);
                     out.append("\n");
                     out.append("- output: [['");
-                    timeFormatter.printTo(out, time.plus(period));
+                    timeFormatter.printTo(
+                        out, negate ? time.minus(period) : time.plus(period));
                     out.append("']]\n");
-                    Period negatedPeriod = negatePeriod(period);
-                    if (negatedPeriod.equals(period)) {
-                        break;
-                    }
-                    period = negatedPeriod;
                 }
                 index++;
             }
         }
     }
 
-    private static Period negatePeriod(Period period) {
-        /*
-         * Make sure that intervals with multiple components separated by
-         * dashes only have a negative value for the leading component.
-         */
-        boolean dateNegated = false;
-        int years = -period.getYears();
-        if (years != 0) {
-            dateNegated = true;
-        }
-        int months = period.getMonths();
-        if (!dateNegated) {
-            months = -months;
-            dateNegated = true;
-        }
-        int days = period.getDays();
-        if (!dateNegated) {
-            days = -days;
-        }
-        return new Period(years,
-                          months,
-                          0 /* weeks */,
-                          days,
-                          -period.getHours(),
-                          -period.getMinutes(),
-                          -period.getSeconds(),
-                          0 /* millis */);
-    }
-
-    private static void insertTimeInterval(StringBuilder out, Period period)
+    private static void insertTimeInterval(StringBuilder out, Period period,
+                                           boolean negate)
             throws IOException
     {
         out.append("INTERVAL '");
+        if (negate) {
+            out.append("-");
+        }
         if (period.getDays() != 0) {
             if (period.getSeconds() != 0) {
                 /* DD HH:MM:SS */
@@ -387,13 +359,15 @@ public class IntervalMatrixCreator {
         out.append("')\n");
         /* Test interval */
         for (int i = 0; i < 2; i++) {
+            boolean negate = (i == 1);
             out.append("---\n");
             out.append("- Statement: SELECT d1 + ");
-            insertDateInterval(out, period);
+            insertDateInterval(out, period, negate);
             out.append(" FROM dates WHERE ind = ").append(index);
             out.append("\n");
             out.append("- output: [['");
-            dateFormatter.printTo(out, date.plus(period));
+            dateFormatter.printTo(
+                out, negate ? date.minus(period) : date.plus(period));
             out.append("']]\n");
             /*
              * Disable negative values for YEAR TO MONTH intervals because of
@@ -403,21 +377,20 @@ public class IntervalMatrixCreator {
             if (period.getYears() != 0 && period.getMonths() != 0) {
                 break;
             }
-            Period negatedPeriod = negatePeriod(period);
-            if (negatedPeriod.equals(period)) {
-                break;
-            }
-            period = negatedPeriod;
         }
     }
 
-    private static void insertDateInterval(StringBuilder out, Period period)
+    private static void insertDateInterval(StringBuilder out, Period period,
+                                           boolean negate)
             throws IOException
     {
         assert period.getHours() == 0 : period;
         assert period.getMinutes() == 0 : period;
         assert period.getSeconds() == 0 : period;
         out.append("INTERVAL '");
+        if (negate) {
+            out.append("-");
+        }
         if (period.getDays() != 0) {
             int days = (int) period.toDurationFrom(dateZero).getStandardDays();
             /* DD */
@@ -559,13 +532,15 @@ public class IntervalMatrixCreator {
         out.append("')\n");
         /* Test datetime interval */
         for (int i = 0; i < 2; i++) {
+            boolean negate = (i == 1);
             out.append("---\n");
             out.append("- Statement: SELECT dt1 + ");
-            insertDateTimeInterval(out, period);
+            insertDateTimeInterval(out, period, negate);
             out.append(" FROM datetimes WHERE ind = ").append(index);
             out.append("\n");
             out.append("- output: [[!re '");
-            dateTimeFormatter.printTo(out, date.plus(period));
+            dateTimeFormatter.printTo(
+                out, negate ? date.minus(period) : date.plus(period));
             out.append("([.]0)?']]\n");
             /*
              * Disable negative values for YEAR TO MONTH intervals because of
@@ -575,11 +550,6 @@ public class IntervalMatrixCreator {
             if (period.getYears() != 0 && period.getMonths() != 0) {
                 break;
             }
-            Period negatedPeriod = negatePeriod(period);
-            if (negatedPeriod.equals(period)) {
-                break;
-            }
-            period = negatedPeriod;
         }
         index++;
         /*
@@ -589,16 +559,17 @@ public class IntervalMatrixCreator {
          */
     }
 
-    private static void insertDateTimeInterval(StringBuilder out, Period period)
+    private static void insertDateTimeInterval(StringBuilder out, Period period,
+                                               boolean negate)
             throws IOException
     {
         if (period.getHours() != 0 ||
             period.getMinutes() != 0 ||
             period.getSeconds() != 0)
         {
-            insertTimeInterval(out, period);
+            insertTimeInterval(out, period, negate);
         } else {
-            insertDateInterval(out, period);
+            insertDateInterval(out, period, negate);
         }
     }
 
