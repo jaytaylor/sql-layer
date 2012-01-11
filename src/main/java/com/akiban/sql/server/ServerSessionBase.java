@@ -208,11 +208,11 @@ public abstract class ServerSessionBase implements ServerSession
         }
     }
 
-    /** Set of transaction for executing the given statement.
+    /** Prepare to execute given statement.
      * Uses current global transaction or makes a new local one.
      * Returns any local transaction that should be committed / rolled back immediately.
      */
-    protected ServerTransaction transactionForExecute(ServerStatement stmt) {
+    protected ServerTransaction beforeExecute(ServerStatement stmt) {
         ServerStatement.TransactionMode transactionMode = stmt.getTransactionMode();
         ServerTransaction localTransaction = null;
         if (transaction != null) {
@@ -232,11 +232,30 @@ public abstract class ServerSessionBase implements ServerSession
                 if (transactionDefaultReadOnly)
                     throw new TransactionReadOnlyException();
                 localTransaction = new ServerTransaction(this, false);
-                localTransaction.checkFirstUpdate();
+                localTransaction.beforeUpdate();
                 break;
             }
         }
         return localTransaction;
+    }
+
+    protected void afterExecute(ServerStatement stmt, 
+                                ServerTransaction localTransaction,
+                                boolean success) {
+        if (localTransaction != null) {
+            if (success)
+                localTransaction.commit();
+            else
+                localTransaction.abort();
+        }
+        else {
+            switch (stmt.getTransactionMode()) {
+            case REQUIRED_WRITE:
+            case WRITE:
+                transaction.afterUpdate();
+                break;
+            }
+        }
     }
 
     // TODO: Maybe move this someplace else. Right now this is where things meet.

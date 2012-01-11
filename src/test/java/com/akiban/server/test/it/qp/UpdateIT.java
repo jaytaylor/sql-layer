@@ -32,6 +32,8 @@ import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.conversion.Converters;
 import static com.akiban.qp.operator.API.*;
 
+import com.persistit.Transaction;
+
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
@@ -90,24 +92,27 @@ public class UpdateIT extends OperatorITBase
     // http://en.wikipedia.org/wiki/Halloween_Problem
     public void halloweenProblem() throws Exception {
         use(db);
+        Transaction transaction = adapter.transaction();
+        transaction.incrementStep(); // Enter isolation mode.
 
         Operator scan = filter_Default(
             ancestorLookup_Default(
-                indexScan_Default(customerCidIndexRowType),
+                indexScan_Default(itemIidIndexRowType),
                 coi,
-                customerCidIndexRowType,
-                Arrays.asList(customerRowType),
+                itemIidIndexRowType,
+                Arrays.asList(itemRowType),
                 LookupOption.DISCARD_INPUT),
-            Arrays.asList(customerRowType));
+            Arrays.asList(itemRowType));
         
         UpdateFunction updateFunction = new UpdateFunction() {
                 @Override
                 public boolean rowIsSelected(Row row) {
-                    return row.rowType().equals(customerRowType);
+                    return row.rowType().equals(itemRowType);
                 }
 
                 @Override
                 public Row evaluate(Row original, Bindings bindings) {
+                    System.out.println("RRR " + original);
                     long id = original.eval(0).getInt();
                     return new OverlayingRow(original).overlay(0, 1000 + id);
                 }
@@ -115,13 +120,27 @@ public class UpdateIT extends OperatorITBase
 
         UpdatePlannable updateOperator = update_Default(scan, updateFunction);
         UpdateResult result = updateOperator.run(NO_BINDINGS, adapter);
-        assertEquals("rows touched", db.length, result.rowsTouched());
-        assertEquals("rows modified", 2, result.rowsModified());
+        assertEquals("rows touched", 8, result.rowsTouched());
+        assertEquals("rows modified", 8, result.rowsModified());
+
+        try {
+            transaction.commit();
+        }
+        finally {
+            transaction.end();
+        }
+        transaction.begin();
 
         Cursor executable = cursor(scan, adapter);
         RowBase[] expected = new RowBase[] { 
-            row(customerRowType, 1L, "xyz"),
-            row(customerRowType, 2L, "abc") 
+            row(itemRowType, 111L, 11L),
+            row(itemRowType, 112L, 11L),
+            row(itemRowType, 121L, 12L),
+            row(itemRowType, 122L, 12L),
+            row(itemRowType, 211L, 21L),
+            row(itemRowType, 212L, 21L),
+            row(itemRowType, 221L, 22L),
+            row(itemRowType, 222L, 22L),
         };
         compareRows(expected, executable);
     }

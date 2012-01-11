@@ -611,7 +611,7 @@ public class PostgresServerConnection extends ServerSessionBase
 
     protected int executeStatement(PostgresStatement pstmt, int maxrows) 
             throws IOException {
-        ServerTransaction localTransaction = transactionForExecute(pstmt);
+        ServerTransaction localTransaction = beforeExecute(pstmt);
         int rowsProcessed = 0;
         boolean success = false;
         try {
@@ -620,12 +620,7 @@ public class PostgresServerConnection extends ServerSessionBase
             success = true;
         }
         finally {
-            if (localTransaction != null) {
-                if (success)
-                    localTransaction.commit();
-                else
-                    localTransaction.abort();
-            }
+            afterExecute(pstmt, localTransaction, success);
             sessionTracer.endEvent();
         }
         return rowsProcessed;
