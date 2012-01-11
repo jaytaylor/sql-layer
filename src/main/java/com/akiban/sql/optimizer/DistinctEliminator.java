@@ -27,7 +27,8 @@ import java.util.*;
 
 /** Eliminate DISTINCT from SELECT when result is already distinct.
  *
- * Derby has a somewhat different version of this.
+ * Derby has a somewhat different version of this, but it does not try
+ * multiple result tables or outer joins.
  *
  * It would be nicer if this could be an actual rule, but it really
  * has to run before ASTStatementLoader to keep from trying to sort on
@@ -35,11 +36,10 @@ import java.util.*;
  */
 public class DistinctEliminator
 {
-    SQLParserContext parserContext;
-    NodeFactory nodeFactory;
+    private SQLParserContext parserContext;
+    private FromBaseTable unjoinedTable;
     public DistinctEliminator(SQLParserContext parserContext) {
         this.parserContext = parserContext;
-        this.nodeFactory = parserContext.getNodeFactory();
     }
 
     public DMLStatementNode eliminate(DMLStatementNode stmt) throws StandardException {
@@ -64,18 +64,26 @@ public class DistinctEliminator
         // May have eliminated from subquery, but can't from main one.
         if (foundSubquery) return;
         
-        // Nothing more to do if not now distinct.
-        if (!selectNode.isDistinct()) return;
+        // Nothing more to do if not distinct or if grouped.
+        if (!selectNode.isDistinct() ||
+            (selectNode.getGroupByList() != null))
+            return;
+
+        unjoinedTable = null;
 
         ResultColumnList resultColumns = selectNode.getResultColumns();
         AndNode whereConditions = (AndNode)selectNode.getWhereClause();
         for (FromTable fromTable : selectNode.getFromList()) {
-            if (!isTableDistinct(fromTable, resultColumns, whereConditions, null))
+            if (!isTableDistinct(fromTable, resultColumns, whereConditions, null)) {
                 return;
+            }
         }
 
-        // Everything looks distinct already.
-        selectNode.clearDistinct();
+        // Some table needs to not just be joined, so that don't get fooled by
+        // SELECT 1 FROM t1,t2 WHERE t1.pk = t2.pk
+        if (unjoinedTable != null)
+            // Everything looks distinct already.
+            selectNode.clearDistinct();
     }
 
     protected boolean isTableDistinct(FromTable fromTable,
@@ -135,62 +143,63 @@ public class DistinctEliminator
                                       ResultColumnList resultColumns, 
                                       AndNode whereConditions, AndNode joinConditions)
             throws StandardException {
+        boolean found = false;
         for (Index index : binding.getTable().getIndexes()) {
             if (!index.isUnique()) continue;
-            // A table's contribution is distinct if every column in
-            // some unique index is not nullable and appears in the
-            // select list. More joining (with the same condition)
-            // won't introduce duplicates.
-            if (!binding.isNullable()) {
-                boolean allSelect = true;
-                for (IndexColumn indexColumn : index.getColumns()) {
-                    Column column = indexColumn.getColumn();
-                    if (column.getNullable() || 
-                        !columnInResult(column, resultColumns)) {
-                        allSelect = false;
-                        break;
-                    }
-                }
-                if (allSelect)
-                    return true;
-            }
             Set<FromTable> joinTables = null;
             Set<FromTable> columnJoinTables = new HashSet<FromTable>();
-            boolean allConstrained = true;
-            // A table is unique (occurs zero or one times) if every
-            // column of some unique index participates in an equality
-            // constraint either with a constant or with a single
-            // other table.
-
-            // At least some cases of unique index columns joined to
-            // two or more other tables don't keep it unique, such as:
-            //   (1,2) (2,3) (3,1)
-            //   (1,2) (2,4) (4,1)
-            // So don't bother with those cases.
+            boolean handled = true, joined = false;
             for (IndexColumn indexColumn : index.getColumns()) {
                 Column column = indexColumn.getColumn();
+                // A table's contribution is distinct if every column
+                // in some unique index is not nullable and appears in
+                // the select list. More joining (with the same
+                // condition) won't introduce duplicates.
+                if (!binding.isNullable() && 
+                    !column.getNullable() &&
+                    columnInResult(column, resultColumns)) {
+                    continue;
+                }
+                // A table is unique (occurs zero or one times) if
+                // every column of some unique index participates in
+                // an equality constraint either with a constant or
+                // with a single other table.
+
+                // At least some cases of unique index columns joined
+                // to two or more other tables don't keep it unique,
+                // such as:
+                //   (1,2) (2,3) (3,1)
+                //   (1,2) (2,4) (4,1)
+                // So don't bother with those cases.
                 columnJoinTables.clear();
                 if (!(columnInConditions(column, whereConditions, columnJoinTables) ||
                       columnInConditions(column, joinConditions, columnJoinTables))) {
                     if (columnJoinTables.isEmpty()) {
-                        allConstrained = false;
+                        handled = false;
                         break;
                     }
+                    joined = true;
                     if (joinTables == null)
                         joinTables = new HashSet<FromTable>(columnJoinTables);
                     else {
                         joinTables.retainAll(columnJoinTables);
                         if (joinTables.isEmpty()) {
-                            allConstrained = false;
+                            handled = false;
                             break;
                         }
                     }
                 }
             }
-            if (allConstrained)
-                return true;
+            if (handled) {
+                found = true;
+                if (!joined && (unjoinedTable == null))
+                    unjoinedTable = table;
+                if (unjoinedTable != null)
+                    break;
+                // If needed to join, try other indexes; they might not with same table.
+            }
         }
-        return false;
+        return found;
     }
 
     // Does the given column appear in the result set directly?
@@ -220,7 +229,8 @@ public class DistinctEliminator
                         otherOperand = equals.getRightOperand();
                     else if (isColumnReference(equals.getRightOperand(), column))
                         otherOperand = equals.getLeftOperand();
-                    if (otherOperand instanceof ConstantNode)
+                    if ((otherOperand instanceof ConstantNode) ||
+                        (otherOperand instanceof ParameterNode))
                         return true;
                     else if (otherOperand instanceof ColumnReference) {
                         ColumnBinding columnBinding = (ColumnBinding)
