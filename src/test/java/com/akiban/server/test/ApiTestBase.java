@@ -95,6 +95,11 @@ import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.session.Session;
 import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.rules.MethodRule;
+import org.junit.rules.TestWatchman;
+import org.junit.runners.model.FrameworkMethod;
+import org.junit.runners.model.Statement;
 
 /**
  * <p>Base class for all API tests. Contains a @SetUp that gives you a fresh DDLFunctions and DMLFunctions, plus
@@ -154,7 +159,8 @@ public class ApiTestBase {
     private int aisGeneration;
     private int akibanFKCount;
     private final Set<RowUpdater> unfinishedRowUpdaters = new HashSet<RowUpdater>();
-    private static Collection<Property> lastStartupConfigProperties;
+    private static Collection<Property> lastStartupConfigProperties = null;
+    private static boolean lastTestFailed = false;
 
     @Before
     public final void startTestServices() throws Exception {
@@ -162,9 +168,12 @@ public class ApiTestBase {
         try {
             ConverterTestUtils.setGlobalTimezone("UTC");
             Collection<Property> startupConfigProperties = startupConfigProperties();
-            if (lastStartupConfigProperties == null || !lastStartupConfigProperties.equals(startupConfigProperties)) {
-                boolean needShutdown = lastStartupConfigProperties != null;
+            if (lastTestFailed || lastStartupConfigProperties == null ||
+                    !lastStartupConfigProperties.equals(startupConfigProperties))
+            {
+                boolean needShutdown = lastTestFailed || lastStartupConfigProperties != null;
                 if (needShutdown) {
+                    lastTestFailed = false; // clear the flag if it was set
                     stopTestServices();
                 }
                 assertNull("lastStartupConfigProperties should be null", lastStartupConfigProperties);
@@ -182,11 +191,14 @@ public class ApiTestBase {
             handleStartupFailure(e);
         }
     }
-    
-    @BeforeClass
-    public static void resetLastStartupConfigProperties() {
-        lastStartupConfigProperties = null;
-    }
+
+    @Rule
+    public MethodRule exceptionCatchingRule = new TestWatchman() {
+        @Override
+        public void failed(Throwable e, FrameworkMethod method)  {
+            lastTestFailed = true;
+        }
+    };
 
     /**
      * Handle a failure during services startup. The default implementation is to just throw the exception, and
@@ -247,7 +259,6 @@ public class ApiTestBase {
         }
     }
 
-    @AfterClass
     public static void stopTestServices() throws Exception {
         ServiceManagerImpl.setServiceManager(null);
         if (lastStartupConfigProperties == null) {
