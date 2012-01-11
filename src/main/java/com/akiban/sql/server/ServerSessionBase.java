@@ -216,6 +216,7 @@ public abstract class ServerSessionBase implements ServerSession
         ServerStatement.TransactionMode transactionMode = stmt.getTransactionMode();
         ServerTransaction localTransaction = null;
         if (transaction != null) {
+            // Use global transaction.
             transaction.checkTransactionMode(transactionMode);
         }
         else {
@@ -249,6 +250,7 @@ public abstract class ServerSessionBase implements ServerSession
                 localTransaction.abort();
         }
         else {
+            // Make changes visible in open global transaction.
             switch (stmt.getTransactionMode()) {
             case REQUIRED_WRITE:
             case WRITE:

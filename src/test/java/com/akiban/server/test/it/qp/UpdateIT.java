@@ -135,7 +135,7 @@ public class UpdateIT extends OperatorITBase
         compareRows(expected, executable);
     }
 
-    @Test @Ignore
+    @Test
     // http://en.wikipedia.org/wiki/Halloween_Problem
     public void halloweenProblem() throws Exception {
         use(db);
@@ -170,13 +170,7 @@ public class UpdateIT extends OperatorITBase
         assertEquals("rows touched", 8, result.rowsTouched());
         assertEquals("rows modified", 8, result.rowsModified());
 
-        try {
-            transaction.commit();
-        }
-        finally {
-            transaction.end();
-        }
-        transaction.begin();
+        transaction.incrementStep(); // Make changes visible.
 
         Cursor executable = cursor(scan, adapter);
         RowBase[] expected = new RowBase[] { 

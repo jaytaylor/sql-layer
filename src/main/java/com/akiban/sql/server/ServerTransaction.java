@@ -75,6 +75,7 @@ public class ServerTransaction
     }
 
     public void beforeUpdate() {
+        System.out.println("BEFORE " + transaction.getCurrentStep());
         if (transaction.getCurrentStep() == 0)
             // On the first non-read statement in a transaction, move
             // to step 1 to enable isolation against later steps.
@@ -84,6 +85,7 @@ public class ServerTransaction
 
     public void afterUpdate() {
         transaction.incrementStep();
+        System.out.println("AFTER " + transaction.getCurrentStep());
     }
 
     /** Commit transaction. */
