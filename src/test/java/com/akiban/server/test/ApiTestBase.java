@@ -62,6 +62,7 @@ import com.persistit.Transaction;
 import junit.framework.Assert;
 
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 
 import com.akiban.ais.model.GroupTable;
@@ -92,6 +93,7 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.session.Session;
+import org.junit.BeforeClass;
 
 /**
  * <p>Base class for all API tests. Contains a @SetUp that gives you a fresh DDLFunctions and DMLFunctions, plus
@@ -146,31 +148,39 @@ public class ApiTestBase {
         }
     }
 
-    private ServiceManager sm;
+    private static ServiceManager sm;
     private Session session;
     private int aisGeneration;
     private int akibanFKCount;
-    private boolean testServicesStarted;
     private final Set<RowUpdater> unfinishedRowUpdaters = new HashSet<RowUpdater>();
+    private static Collection<Property> lastStartupConfigProperties;
 
     @Before
     public final void startTestServices() throws Exception {
         assertTrue("some row updaters were left over: " + unfinishedRowUpdaters, unfinishedRowUpdaters.isEmpty());
         try {
             ConverterTestUtils.setGlobalTimezone("UTC");
-            testServicesStarted = false;
-            sm = createServiceManager( startupConfigProperties() );
-            sm.startServices();
-            ServiceManagerImpl.setServiceManager(sm);
-            session = sm.getSessionService().createSession();
-            testServicesStarted = true;
-            if (TAPS != null) {
-                sm.getStatisticsService().reset(TAPS);
-                sm.getStatisticsService().setEnabled(TAPS, true);
+            Collection<Property> startupConfigProperties = startupConfigProperties();
+            if (lastStartupConfigProperties == null || !lastStartupConfigProperties.equals(startupConfigProperties)) {
+                lastStartupConfigProperties = null;
+                sm = createServiceManager(startupConfigProperties);
+                sm.startServices();
+                ServiceManagerImpl.setServiceManager(sm);
+                lastStartupConfigProperties = startupConfigProperties;
+                if (TAPS != null) {
+                    sm.getStatisticsService().reset(TAPS);
+                    sm.getStatisticsService().setEnabled(TAPS, true);
+                }
             }
+            session = sm.getSessionService().createSession();
         } catch (Exception e) {
             handleStartupFailure(e);
         }
+    }
+    
+    @BeforeClass
+    public static void resetLastStartupConfigProperties() {
+        lastStartupConfigProperties = null;
     }
 
     /**
@@ -193,12 +203,18 @@ public class ApiTestBase {
     }
 
     @After
-    public final void stopTestServices() throws Exception {
+    public void tearDownAllTables() throws Exception {
         Set<RowUpdater> localUnfinishedUpdaters = new HashSet<RowUpdater>(unfinishedRowUpdaters);
         unfinishedRowUpdaters.clear();
-        ServiceManagerImpl.setServiceManager(null);
-        if (!testServicesStarted) {
-            return;
+        dropAllTables();
+        assertTrue("not all updaters were used: " + localUnfinishedUpdaters, localUnfinishedUpdaters.isEmpty());
+        String openCursorsMessage = null;
+        if (sm.serviceIsStarted(DXLService.class)) {
+            DXLTestHooks dxlTestHooks = DXLTestHookRegistry.get();
+            // Check for any residual open cursors
+            if (dxlTestHooks.openCursorsExist()) {
+                openCursorsMessage = "open cursors remaining:" + dxlTestHooks.describeOpenCursors();
+            }
         }
         if (TAPS != null) {
             TapReport[] reports = sm.getStatisticsService().getReport(TAPS);
@@ -217,24 +233,21 @@ public class ApiTestBase {
                 );
             }
         }
-        String openCursorsMessage = null;
-        if (sm.serviceIsStarted(DXLService.class)) {
-            DXLTestHooks dxlTestHooks = DXLTestHookRegistry.get();
-            // Check for any residual open cursors
-            if (dxlTestHooks.openCursorsExist()) {
-                openCursorsMessage = "open cursors remaining:" + dxlTestHooks.describeOpenCursors();
-            }
-        }
-
         session.close();
-        sm.stopServices();
-        sm = null;
-        session = null;
+
         if (openCursorsMessage != null) {
             fail(openCursorsMessage);
         }
-        testServicesStarted = false;
-        assertTrue("not all updaters were used: " + localUnfinishedUpdaters, localUnfinishedUpdaters.isEmpty());
+    }
+
+    @AfterClass
+    public static void stopTestServices() throws Exception {
+        ServiceManagerImpl.setServiceManager(null);
+        if (lastStartupConfigProperties == null) {
+            return;
+        }
+        lastStartupConfigProperties = null;
+        sm.stopServices();
     }
     
     public final void crashTestServices() throws Exception {
