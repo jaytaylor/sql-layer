@@ -32,7 +32,7 @@ import java.util.Collections;
 
 import static com.akiban.qp.operator.API.*;
 
-public class HKeyChangePropagationIT extends QPProfileITBase
+public class HKeyChangePropagationProfileIT extends QPProfileITBase
 {
     @Test
     @Ignore
