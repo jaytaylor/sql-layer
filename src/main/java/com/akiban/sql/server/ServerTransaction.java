@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.pg;
+package com.akiban.sql.server;
 
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.error.TransactionInProgressException;
@@ -29,7 +29,7 @@ import com.persistit.exception.RollbackException;
 import java.util.Date;
 import java.io.InterruptedIOException;
 
-public class PostgresTransaction
+public class ServerTransaction
 {
     private Session session;
     private Transaction transaction;
@@ -37,7 +37,7 @@ public class PostgresTransaction
     private Date transactionTime;
     
     /** Begin a new transaction or signal an exception. */
-    public PostgresTransaction(PostgresServerSession server, boolean readOnly) {
+    public ServerTransaction(ServerSession server, boolean readOnly) {
         session = server.getSession();
         transaction = server.getTreeService().getTransaction(session);
         boolean transactionBegun = false;
@@ -61,7 +61,7 @@ public class PostgresTransaction
         this.readOnly = readOnly;
     }
 
-    public void checkTransactionMode(PostgresStatement.TransactionMode transactionMode) {
+    public void checkTransactionMode(ServerStatement.TransactionMode transactionMode) {
         switch (transactionMode) {
         case NONE:
         case NEW:
@@ -98,7 +98,7 @@ public class PostgresTransaction
     
     /** Return the transaction's time, which is fixed the first time
      * something asks for it. */
-    public Date getTime(PostgresServerSession server) {
+    public Date getTime(ServerSession server) {
         if (transactionTime == null)
             transactionTime = server.currentTime();
         return transactionTime;

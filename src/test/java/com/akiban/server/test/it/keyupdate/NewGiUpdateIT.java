@@ -21,6 +21,7 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.store.IndexRecordVisitor;
+import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.AssertUtils;
 import com.akiban.util.Strings;
@@ -46,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -2122,7 +2124,7 @@ public final class NewGiUpdateIT extends ITBase {
             }
         }
 
-        private void checkIndex(GroupIndex groupIndex, List<String> expected) {
+        private void checkIndex(final GroupIndex groupIndex, List<String> expected) {
             final StringsIndexScanner scanner;
             try {
                 scanner= persistitStore().traverse(session(), groupIndex, new StringsIndexScanner());
@@ -2135,6 +2137,15 @@ public final class NewGiUpdateIT extends ITBase {
                     expected,
                     scanner.strings()
             );
+            
+            long giRowCount = transactionallyUnchecked(new Callable<Long>() {
+                @Override
+                public Long call() throws Exception {
+                    IndexStatisticsService idxStats = serviceManager().getServiceByClass(IndexStatisticsService.class);
+                    return idxStats.countEntries(session(), groupIndex);
+                }
+            });
+            assertEquals("row count for " + groupIndex.getIndexName().getName(), expected.size(), giRowCount);
         }
 
         private GisCheckerImpl(Map<GroupIndex, List<String>> expectedStrings) {
