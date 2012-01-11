@@ -50,6 +50,7 @@ public class OperatorCompiler extends SchemaRulesContext
     protected AISTypeComputer typeComputer;
     protected BooleanNormalizer booleanNormalizer;
     protected SubqueryFlattener subqueryFlattener;
+    protected DistinctEliminator distinctEliminator;
 
     public OperatorCompiler(SQLParser parser, 
                             AkibanInformationSchema ais, String defaultSchemaName,
@@ -63,6 +64,7 @@ public class OperatorCompiler extends SchemaRulesContext
         typeComputer = new FunctionsTypeComputer(functionsRegistry);
         booleanNormalizer = new BooleanNormalizer(parser);
         subqueryFlattener = new SubqueryFlattener(parser);
+        distinctEliminator = new DistinctEliminator(parser);
     }
 
     public void addView(ViewDefinition view) throws StandardException {
@@ -85,6 +87,7 @@ public class OperatorCompiler extends SchemaRulesContext
             stmt = (DMLStatementNode)booleanNormalizer.normalize(stmt);
             typeComputer.compute(stmt);
             stmt = subqueryFlattener.flatten(stmt);
+            stmt = distinctEliminator.eliminate(stmt);
             return stmt;
         } 
         catch (StandardException ex) {
