@@ -1,0 +1,1 @@
+SELECT user.parent.name AS name FROM user.parent
