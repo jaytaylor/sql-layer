@@ -34,6 +34,7 @@ public class DateTimeMatrixCreator implements Runnable {
     public static int counter = 1;
     public static int min_counter = 1;
     public static int sec_counter = 50;
+    public static int hour_counter = 3;
     StringBuffer data = new StringBuffer();
     StringBuffer sql_data = new StringBuffer();
 
@@ -63,6 +64,7 @@ public class DateTimeMatrixCreator implements Runnable {
         String yearweek = year
                 + String.valueOf(data.get(Calendar.WEEK_OF_YEAR));
         String dayname = convertDayName(data.get(Calendar.DAY_OF_WEEK));
+        String dayOfmonth = String.valueOf(data.get(Calendar.DAY_OF_MONTH));
         String database = "datetime_matrix";
         if (sql) {
             database = "test." + database;
@@ -80,13 +82,13 @@ public class DateTimeMatrixCreator implements Runnable {
                 + database
                 + " (id, date_field, time_field, timestamp_field, "
                 + "expected_year, expected_month, expected_day, expected_hour, "
-                + "expected_minute, expected_second, expected_millisecond,day_of_week, weekday, weekofyear, yearweek, dayname) "
+                + "expected_minute, expected_second, expected_millisecond,day_of_week, weekday, weekofyear, yearweek, dayname, dayofmonth) "
                 + "values (" + (counter++) + ",'" + year + "-" + month + "-"
                 + day + "', '" + hour + ":" + minute + ":" + second + "',"
                 + timestamp + " , " + year + ", " + month + " , " + day + " , "
                 + hour + " , " + minute + " , " + second + " , " + millisecond
                 + " , " + day_of_week + " , " + weekday + " , " + weekofyear
-                + " , " + yearweek + ", '" + dayname + "')";
+                + " , " + yearweek + ", '" + dayname + "'," + dayOfmonth + ")";
     }
 
     private String convertDayName(int day_of_week) {
@@ -179,7 +181,7 @@ public class DateTimeMatrixCreator implements Runnable {
                 + System.getProperty("line.separator")
                 + "      yearweek integer,"
                 + System.getProperty("line.separator")
-                + "      dayname varchar(15), week int"
+                + "      dayname varchar(15), week int, dayofmonth int"
                 + System.getProperty("line.separator") + "      )"
 
                 + System.getProperty("line.separator"));
@@ -196,9 +198,11 @@ public class DateTimeMatrixCreator implements Runnable {
         wackyYearTest();
         data.append("..." + System.getProperty("line.separator"));
         try {
-            //TODO find better spot for output
-            save("all-datetime-schema.yaml", data);
-            save("data.sql", sql_data);
+            
+            String path = System.getProperty("user.dir")
+                    + "/src/test/resources/com/akiban/sql/pg/yaml/functional/";
+            save(path + "all-datetime-schema.yaml", data);
+            //save("data.sql", sql_data);
         } catch (IOException e) {
             System.err.println("Error: " + e.getMessage());
         }
@@ -206,6 +210,7 @@ public class DateTimeMatrixCreator implements Runnable {
 
     private void wackyYearTest() {
         Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.MONTH, 1);
         cal.set(Calendar.MILLISECOND, 0);
         cal.set(Calendar.YEAR, 300);
         recordSQL(cal);
@@ -239,33 +244,56 @@ public class DateTimeMatrixCreator implements Runnable {
 
     private void processYear(int year) {
         Calendar cal = Calendar.getInstance();
+        cal.setLenient(false);
         cal.set(Calendar.MILLISECOND, 0);
         cal.set(Calendar.YEAR, year);
         for (int month = 1; month < cal.getActualMaximum(Calendar.MONTH); month++) {
             cal.set(Calendar.MONTH, month);
             for (int day = 1; day < cal.getActualMaximum(Calendar.DAY_OF_MONTH); day++) {
-                cal.set(Calendar.DAY_OF_MONTH, day);
-                if (min_counter < 999) {
-                    min_counter++;
-                } else {
-                    min_counter = -999;
+                try {
+                    cal.set(Calendar.DAY_OF_MONTH, day);
+                    if (min_counter < 60) {
+                        min_counter++;
+                    } else {
+                        min_counter = 0;
+                    }
+                    if (sec_counter < 60) {
+                        sec_counter++;
+                    } else {
+                        sec_counter = 0;
+                    }
+                    if (hour_counter < 24) {
+                        hour_counter++;
+                    } else {
+                        hour_counter = 0;
+                    }
+                    if (hour_counter <= 24 && hour_counter >= 0) {
+                        cal.set(Calendar.HOUR, hour_counter);
+                    } else {
+                        cal.set(Calendar.HOUR, 1);
+                    }
+                    if (min_counter <= 60 && min_counter > 0) {
+                        cal.set(Calendar.MINUTE, min_counter);
+                    } else {
+                        cal.set(Calendar.MINUTE, 7);
+                    }
+                    if (sec_counter < 60 && sec_counter > 0) {
+                        cal.set(Calendar.SECOND, sec_counter);
+                    } else {
+                        cal.set(Calendar.SECOND, 15);
+                    }
+                    recordSQL(cal);
+                } catch (Exception e) {
+                    /// just skip bad dates
+                    System.out.println("bad date");
+                    cal = Calendar.getInstance();
+                    cal.setLenient(false);
+                    cal.set(Calendar.MILLISECOND, 0);
+                    cal.set(Calendar.YEAR, year);
+                    cal.set(Calendar.MONTH, month);
+                    cal.set(Calendar.DAY_OF_MONTH, 1);
                 }
-                if (sec_counter < 999) {
-                    sec_counter++;
-                } else {
-                    sec_counter = -999;
-                }
-                if (min_counter < MAX_TIME && min_counter > -MAX_TIME) {
-                    cal.set(Calendar.MINUTE, min_counter);
-                } else {
-                    cal.set(Calendar.MINUTE, MAX_TIME);
-                }
-                if (sec_counter < MAX_TIME && sec_counter > -MAX_TIME) {
-                    cal.set(Calendar.SECOND, sec_counter);
-                } else {
-                    cal.set(Calendar.SECOND, MAX_TIME);
-                }
-                recordSQL(cal);
+
             }
         }
     }

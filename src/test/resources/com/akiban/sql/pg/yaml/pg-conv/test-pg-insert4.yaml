@@ -1,6 +1,6 @@
 ---
 - Include: all-update-schema.yaml
----
+--- #original sql has no date in it, but the column is NOT NULL
 - Statement: insert into orders (oid, cid, order_date) select 205, cid, '2011-12-31' from customers where name = 'Jones'
 ---
 - Statement: select * from customers;
