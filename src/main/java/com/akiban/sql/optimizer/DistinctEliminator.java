@@ -137,8 +137,10 @@ public class DistinctEliminator
             throws StandardException {
         for (Index index : binding.getTable().getIndexes()) {
             if (!index.isUnique()) continue;
-            // A table is unique if every column in some unique index
-            // is not nullable and appears in the select list.
+            // A table's contribution is distinct if every column in
+            // some unique index is not nullable and appears in the
+            // select list. More joining (with the same condition)
+            // won't introduce duplicates.
             if (!binding.isNullable()) {
                 boolean allSelect = true;
                 for (IndexColumn indexColumn : index.getColumns()) {
@@ -152,6 +154,41 @@ public class DistinctEliminator
                 if (allSelect)
                     return true;
             }
+            Set<FromTable> joinTables = null;
+            Set<FromTable> columnJoinTables = new HashSet<FromTable>();
+            boolean allConstrained = true;
+            // A table is unique (occurs zero or one times) if every
+            // column of some unique index participates in an equality
+            // constraint either with a constant or with a single
+            // other table.
+
+            // At least some cases of unique index columns joined to
+            // two or more other tables don't keep it unique, such as:
+            //   (1,2) (2,3) (3,1)
+            //   (1,2) (2,4) (4,1)
+            // So don't bother with those cases.
+            for (IndexColumn indexColumn : index.getColumns()) {
+                Column column = indexColumn.getColumn();
+                columnJoinTables.clear();
+                if (!(columnInConditions(column, whereConditions, columnJoinTables) ||
+                      columnInConditions(column, joinConditions, columnJoinTables))) {
+                    if (columnJoinTables.isEmpty()) {
+                        allConstrained = false;
+                        break;
+                    }
+                    if (joinTables == null)
+                        joinTables = new HashSet<FromTable>(columnJoinTables);
+                    else {
+                        joinTables.retainAll(columnJoinTables);
+                        if (joinTables.isEmpty()) {
+                            allConstrained = false;
+                            break;
+                        }
+                    }
+                }
+            }
+            if (allConstrained)
+                return true;
         }
         return false;
     }
@@ -160,12 +197,56 @@ public class DistinctEliminator
     protected boolean columnInResult(Column column, ResultColumnList resultColumns)
             throws StandardException {
         for (ResultColumn resultColumn : resultColumns) {
-            if (resultColumn.getExpression() instanceof ColumnReference) {
-                ColumnBinding columnBinding = (ColumnBinding)
-                    ((ColumnReference)resultColumn.getExpression()).getUserData();
-                if ((columnBinding != null) && 
-                    (column == columnBinding.getColumn()))
-                    return true;
+            if (isColumnReference(resultColumn.getExpression(), column)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Is there some equality condition on this column in these conditions,
+    // either to a constant (return true) or some other table(s) (return them)?
+    protected boolean columnInConditions(Column column, AndNode conditions,
+                                         Set<FromTable> joinTables) 
+            throws StandardException {
+        if (conditions != null) {
+            while (true) {
+                ValueNode leftOperand = conditions.getLeftOperand();
+                ValueNode rightOperand = conditions.getRightOperand();
+                if (leftOperand.getNodeType() == NodeTypes.BINARY_EQUALS_OPERATOR_NODE) {
+                    BinaryComparisonOperatorNode equals = (BinaryComparisonOperatorNode)leftOperand;
+                    ValueNode otherOperand = null;
+                    if (isColumnReference(equals.getLeftOperand(), column))
+                        otherOperand = equals.getRightOperand();
+                    else if (isColumnReference(equals.getRightOperand(), column))
+                        otherOperand = equals.getLeftOperand();
+                    if (otherOperand instanceof ConstantNode)
+                        return true;
+                    else if (otherOperand instanceof ColumnReference) {
+                        ColumnBinding columnBinding = (ColumnBinding)
+                            ((ColumnReference)otherOperand).getUserData();
+                        if (columnBinding != null)
+                            joinTables.add(columnBinding.getFromTable());
+                    }
+                }
+                if (rightOperand instanceof AndNode)
+                    conditions = (AndNode)rightOperand;
+                else
+                    break;
+            }
+        }
+        return false;
+    }
+
+    // This is a reference to the given column?
+    protected boolean isColumnReference(ValueNode value, Column column) 
+            throws StandardException {
+        if (value instanceof ColumnReference) {
+            ColumnBinding columnBinding = (ColumnBinding)
+                ((ColumnReference)value).getUserData();
+            if ((columnBinding != null) && 
+                (column == columnBinding.getColumn())) {
+                return true;
             }
         }
         return false;
