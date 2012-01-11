@@ -6,7 +6,7 @@
 ---
 - Statement: SELECT name FROM customers WHERE cid = 1 
 - output: [['Smith']]
-#- comment: ['select-0: single column of primary key match']
+#- comment: ['select-0: single column of primary key match']1
 ---
 - Statement: SELECT * FROM customers 
 - output: [['1','Smith'],['2','Jones']]
