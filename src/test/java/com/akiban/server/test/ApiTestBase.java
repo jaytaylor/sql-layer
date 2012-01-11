@@ -17,6 +17,7 @@ package com.akiban.server.test;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -162,15 +163,19 @@ public class ApiTestBase {
             ConverterTestUtils.setGlobalTimezone("UTC");
             Collection<Property> startupConfigProperties = startupConfigProperties();
             if (lastStartupConfigProperties == null || !lastStartupConfigProperties.equals(startupConfigProperties)) {
-                lastStartupConfigProperties = null;
+                boolean needShutdown = lastStartupConfigProperties != null;
+                if (needShutdown) {
+                    stopTestServices();
+                }
+                assertNull("lastStartupConfigProperties should be null", lastStartupConfigProperties);
                 sm = createServiceManager(startupConfigProperties);
                 sm.startServices();
                 ServiceManagerImpl.setServiceManager(sm);
-                lastStartupConfigProperties = startupConfigProperties;
                 if (TAPS != null) {
                     sm.getStatisticsService().reset(TAPS);
                     sm.getStatisticsService().setEnabled(TAPS, true);
                 }
+                lastStartupConfigProperties = startupConfigProperties;
             }
             session = sm.getSessionService().createSession();
         } catch (Exception e) {
@@ -204,6 +209,8 @@ public class ApiTestBase {
 
     @After
     public void tearDownAllTables() throws Exception {
+        if (lastStartupConfigProperties == null)
+            return; // services never started up
         Set<RowUpdater> localUnfinishedUpdaters = new HashSet<RowUpdater>(unfinishedRowUpdaters);
         unfinishedRowUpdaters.clear();
         dropAllTables();
@@ -254,12 +261,14 @@ public class ApiTestBase {
         sm.crashServices();
         sm = null;
         session = null;
+        lastStartupConfigProperties = null;
     }
     
     public final void restartTestServices(Collection<Property> properties) throws Exception {
         sm = createServiceManager( properties );
         sm.startServices();
         session = sm.getSessionService().createSession();
+        lastStartupConfigProperties = properties;
         ddl(); // loads up the schema manager et al
     }
 
