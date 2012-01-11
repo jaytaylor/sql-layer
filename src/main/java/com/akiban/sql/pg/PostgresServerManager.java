@@ -15,6 +15,8 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.server.ServerServiceRequirements;
+
 import com.akiban.server.error.InvalidPortException;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
@@ -33,8 +35,8 @@ import com.google.inject.Inject;
  * @see PostgresServer
 */
 public class PostgresServerManager implements PostgresService, Service<PostgresService>, JmxManageable {
+    private final ServerServiceRequirements reqs;
     private PostgresServer server = null;
-    private final PostgresServiceRequirements reqs;
 
     @Inject
     public PostgresServerManager(ConfigurationService config,
@@ -45,7 +47,7 @@ public class PostgresServerManager implements PostgresService, Service<PostgresS
                                  TreeService treeService,
                                  FunctionsRegistry functionsRegistry,
                                  IndexStatisticsService indexStatisticsService) {
-        this.reqs = new PostgresServiceRequirements(dxlService, instrumentation, sessionService, store, treeService, functionsRegistry, config, indexStatisticsService);
+        reqs = new ServerServiceRequirements(dxlService, instrumentation, sessionService, store, treeService, functionsRegistry, config, indexStatisticsService);
     }
 
     /*** Service<PostgresService> ***/

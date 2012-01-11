@@ -18,12 +18,15 @@ package com.akiban.server.test.it.keyupdate;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.util.Tap;
+import com.akiban.util.TapReport;
 import org.junit.Test;
 
 import java.util.*;
 
 import static com.akiban.server.test.it.keyupdate.Schema.*;
 import static junit.framework.Assert.*;
+import static junit.framework.Assert.assertEquals;
 
 public class KeyUpdateIT extends KeyUpdateBase
 {
@@ -237,6 +240,21 @@ public class KeyUpdateIT extends KeyUpdateBase
         checkDB();
         checkInitialState();
     }
+
+    @Test
+    public void testHKeyChangePropagations() throws Exception
+    {
+        TestRow oldRow = testStore.find(new HKey(customerRowDef, 1L));
+        TestRow newRow = copyRow(oldRow);
+        newRow.put(0, 99);
+        Tap.setEnabled(".*propagate.*", true);
+        dbUpdate(oldRow, newRow);
+        TapReport[] tapReports = Tap.getReport(".*propagate.*");
+        TapReport propagateTap = tapReports[0];
+        // There should be two propagations, one for deletion of the old row, and one for insertion of the new row
+        assertEquals(2, propagateTap.getInCount());
+    }
+
 
     @Override
     protected void createSchema() throws InvalidOperationException

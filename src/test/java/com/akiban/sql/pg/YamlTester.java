@@ -940,8 +940,9 @@ class YamlTester {
 	}
 	StringBuilder sb = new StringBuilder();
 	sb.append('[');
-	for (Object elem : array) {
-	    if (sb.length() != 1) {
+        for (int i = 0; i < array.size(); i++) {
+            Object elem = array.get(i);
+            if (i != 0) {
 		sb.append(", ");
 	    }
 	    sb.append(arrayElementString(elem));

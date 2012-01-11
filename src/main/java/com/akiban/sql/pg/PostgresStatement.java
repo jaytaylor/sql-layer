@@ -15,13 +15,15 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.server.ServerStatement;
+
 import java.io.IOException;
 
 /**
  * An SQL statement compiled for use with Postgres server.
  * @see PostgresStatementGenerator
  */
-public interface PostgresStatement
+public interface PostgresStatement extends ServerStatement
 {
     /** Get the bound version of this statement with the given parameters. */
     public PostgresStatement getBoundStatement(Object[] parameters,
@@ -32,20 +34,6 @@ public interface PostgresStatement
      * if no result set. */
     public void sendDescription(PostgresServerSession server, boolean always) 
             throws IOException;
-
-    /** What transaction mode(s) does this statement use? */
-    public enum TransactionMode { 
-        ALLOWED,                // Does not matter.
-        NONE,                   // Must not have a transaction; none created.
-        NEW,                    // Must not have a transaction: read only created.
-        NEW_WRITE,              // Must not have a transaction: read write created.
-        READ,                   // New read only or existing allowed.
-        WRITE,                  // New or existing read write allowed.
-        REQUIRED,               // Must have transaction: read only okay.
-        REQUIRED_WRITE          // Must have read write transaction.
-    };
-
-    public TransactionMode getTransactionMode();
 
     /** Execute statement and output results. Return number of rows processed. */
     public int execute(PostgresServerSession server, int maxrows)
