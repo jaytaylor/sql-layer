@@ -180,16 +180,15 @@ public class UpdateIT extends OperatorITBase
         transaction.incrementStep(); // Make changes visible.
 
         if (true) {
-            Cursor cursor = cursor(groupScan_Default(coi), adapter);
+            com.persistit.Exchange exchange = 
+                adapter.takeExchange(coi).clear().append(com.persistit.Key.BEFORE);
             try {
-                cursor.open(NO_BINDINGS);
-                Row arow;
-                while ((arow = cursor.next()) != null) {
-                    System.out.println(arow);
+                while (exchange.traverse(com.persistit.Key.GT, true)) {
+                    System.out.println(exchange.getKey() + "\t" + exchange.getValue());
                 }
             }
             finally {
-                cursor.close();
+                adapter.returnExchange(exchange);
             }
         }
 
