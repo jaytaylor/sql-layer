@@ -34,6 +34,7 @@ import static com.akiban.qp.operator.API.*;
 
 import com.persistit.Transaction;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
@@ -89,6 +90,52 @@ public class UpdateIT extends OperatorITBase
     }
     
     @Test
+    public void changePrimaryKeys() throws Exception {
+        use(db);
+
+        Operator scan = filter_Default(
+            ancestorLookup_Default(
+                indexScan_Default(itemIidIndexRowType),
+                coi,
+                itemIidIndexRowType,
+                Arrays.asList(itemRowType),
+                LookupOption.DISCARD_INPUT),
+            Arrays.asList(itemRowType));
+        
+        UpdateFunction updateFunction = new UpdateFunction() {
+                @Override
+                public boolean rowIsSelected(Row row) {
+                    return row.rowType().equals(itemRowType);
+                }
+
+                @Override
+                public Row evaluate(Row original, Bindings bindings) {
+                    long id = original.eval(0).getInt();
+                    // Make smaller to avoid Halloween (see next test).
+                    return new OverlayingRow(original).overlay(0, id - 100);
+                }
+            };
+
+        UpdatePlannable updateOperator = update_Default(scan, updateFunction);
+        UpdateResult result = updateOperator.run(NO_BINDINGS, adapter);
+        assertEquals("rows touched", 8, result.rowsTouched());
+        assertEquals("rows modified", 8, result.rowsModified());
+
+        Cursor executable = cursor(scan, adapter);
+        RowBase[] expected = new RowBase[] { 
+            row(itemRowType, 11L, 11L),
+            row(itemRowType, 12L, 11L),
+            row(itemRowType, 21L, 12L),
+            row(itemRowType, 22L, 12L),
+            row(itemRowType, 111L, 21L),
+            row(itemRowType, 112L, 21L),
+            row(itemRowType, 121L, 22L),
+            row(itemRowType, 122L, 22L),
+        };
+        compareRows(expected, executable);
+    }
+
+    @Test @Ignore
     // http://en.wikipedia.org/wiki/Halloween_Problem
     public void halloweenProblem() throws Exception {
         use(db);
