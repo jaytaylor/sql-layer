@@ -24,10 +24,12 @@ import com.akiban.server.rowdata.RowDef;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.akiban.server.TableStatistics;
 
+@Ignore("creates tables too quickly; runs out of space on a ramdisk")
 public class AnalyzeIndexIT extends AbstractScanBase {
     
     @BeforeClass
