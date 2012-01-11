@@ -135,7 +135,40 @@ public class DistinctEliminator
                                       ResultColumnList resultColumns, 
                                       AndNode whereConditions, AndNode joinConditions)
             throws StandardException {
-        return true;
+        for (Index index : binding.getTable().getIndexes()) {
+            if (!index.isUnique()) continue;
+            // A table is unique if every column in some unique index
+            // is not nullable and appears in the select list.
+            if (!binding.isNullable()) {
+                boolean allSelect = true;
+                for (IndexColumn indexColumn : index.getColumns()) {
+                    Column column = indexColumn.getColumn();
+                    if (column.getNullable() || 
+                        !columnInResult(column, resultColumns)) {
+                        allSelect = false;
+                        break;
+                    }
+                }
+                if (allSelect)
+                    return true;
+            }
+        }
+        return false;
+    }
+
+    // Does the given column appear in the result set directly?
+    protected boolean columnInResult(Column column, ResultColumnList resultColumns)
+            throws StandardException {
+        for (ResultColumn resultColumn : resultColumns) {
+            if (resultColumn.getExpression() instanceof ColumnReference) {
+                ColumnBinding columnBinding = (ColumnBinding)
+                    ((ColumnReference)resultColumn.getExpression()).getUserData();
+                if ((columnBinding != null) && 
+                    (column == columnBinding.getColumn()))
+                    return true;
+            }
+        }
+        return false;
     }
 
 }
