@@ -33,6 +33,11 @@ import java.util.*;
  * It would be nicer if this could be an actual rule, but it really
  * has to run before ASTStatementLoader to keep from trying to sort on
  * all the extra columns.
+ *
+ * Likewise, if this runs before SubqueryFlattener, it can remove a
+ * DISTINCT from a derived table and allow it to flatten. If it runs
+ * after, it will not be stopped by derived tables that do get
+ * flattened.  Really, the two need to cooperate more closely.
  */
 public class DistinctEliminator
 {
