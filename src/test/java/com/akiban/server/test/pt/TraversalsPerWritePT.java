@@ -37,6 +37,7 @@ public final class TraversalsPerWritePT extends PTBase {
         pb.add("20-LEFT", 20, Index.JoinType.LEFT);
         pb.add("1-RIGHT", 1, Index.JoinType.RIGHT);
         pb.add("20-RIGHT", 20, Index.JoinType.RIGHT);
+        pb.multiplyParametersByAppending("-narrow", false, "-bushy", true);
         return pb.asList();
     }
 
@@ -128,8 +129,18 @@ public final class TraversalsPerWritePT extends PTBase {
     @Override
     protected void beforeProfiling() {
         cTable = createTable(SCHEMA, "customers", "cid int key, name varchar(32)");
+        int aTable = createTable(SCHEMA, "addresses", "aid int key, cid int, where varchar(32)",
+                akibanFK("cid", "customers", "cid")
+        );
+        // creating the oTable after aTable will give it a higher ordinal, sandwiching it in the bushy group
         oTable = createTable(SCHEMA, "orders", "oid int key, cid int, when varchar(32)",
                 akibanFK("cid", "customers", "cid)"));
+        int pTable = createTable(SCHEMA, "pets", "pid int key, cid int, where varchar(32)",
+                akibanFK("cid", "customers", "cid")
+        );
+        int vTable = createTable(SCHEMA, "vehicles", "vid int key, cid int, model varchar(32)",
+                akibanFK("cid", "customers", "cid")
+        );
         
         // write one customer
         writeRow(cTable, 1L, "alpha");
@@ -138,12 +149,19 @@ public final class TraversalsPerWritePT extends PTBase {
             for (long oidSegment = 1; oidSegment <= ordersPerCustomer; ++oidSegment) {
                 NewRow row = ordersRow(cid, oidSegment);
                 writeRows(row);
+                if (bushy) {
+                    writeRows(
+                            customersChild(aTable,  cid, oidSegment),
+                            customersChild(pTable,  cid, oidSegment),
+                            customersChild(vTable,  cid, oidSegment)
+                    );
+                }
             }
         }
         // write a third customer
         writeRow(cTable, 9L, "joda"); // like "iota", the ninth letter. This joke is a bit "forced"
 
-        groupIndex = createGroupIndex(
+        createGroupIndex(
                 getUserTable(cTable).getGroup().getName(),
                 "test_gi",
                 "customers.name,orders.when",
@@ -152,21 +170,26 @@ public final class TraversalsPerWritePT extends PTBase {
     }
 
     private NewRow ordersRow(long cid, long oidSegment) {
+        return customersChild(oTable, cid, oidSegment);
+    }
+    
+    private NewRow customersChild(int tableId, long cid, long oidSegment) {
         long oid = cid + oidSegment  * 10;
-        return createNewRow(oTable, oid, cid, String.valueOf(1900+oid));
+        return createNewRow(tableId, oid, cid, String.valueOf(1900+oid));
     }
 
-    public TraversalsPerWritePT(int ordersPerCustomer, Index.JoinType joinType) {
+    public TraversalsPerWritePT(int ordersPerCustomer, Index.JoinType joinType, boolean bushy) {
         this.ordersPerCustomer = ordersPerCustomer;
         this.joinType = joinType;
+        this.bushy = bushy;
     }
 
     private final int ordersPerCustomer;
     private final Index.JoinType joinType;
+    private final boolean bushy;
 
     private int oTable;
     private int cTable;
-    private GroupIndex groupIndex;
 
     private static final String SCHEMA = "tpwpt";
 }
