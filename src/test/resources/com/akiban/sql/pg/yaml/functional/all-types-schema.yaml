@@ -18,7 +18,8 @@
       smallint_field smallint,
       time_field time,
       timestamp_field timestamp,
-      varchar_field varchar(32))
+      varchar_field varchar(32),
+      datetime_field datetime)
 # mysql script for create table `test`.`all_types` (
 #      bigint_field bigint,
 #      bigint_unsigned_field bigint unsigned,
