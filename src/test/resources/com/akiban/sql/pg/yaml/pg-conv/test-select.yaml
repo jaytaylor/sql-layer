@@ -1,7 +1,8 @@
 ---  # based on files in server /src/test/resources/com/akiban/sql/pg/select
 - Include: all-schema.yaml
+#--- bug 915379
 #- Statement: EXPLAIN SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku < '8888' 
-#- output: [['project([Field(1), Field(4), Field(7), Field(8)])'],['Flatten_HKeyOrdered(flatten(user.customers, user.orders) INNER user.items)'],['Flatten_HKeyOrdered(user.customers INNER user.orders)'],['AncestorLookup_Default(Index(user.items.sku[IndexColumn(sku)]) -> [user.customers, user.orders, user.items])'],['IndexScan_Default(Index(user.items.sku[IndexColumn(sku)]) (>UnboundExpressions[Literal(NULL)],<UnboundExpressions[Literal(8888)]))']]
+#- output: [['project([Field(1), Field(4), Field(7), Field(8)])'],['  Flatten_HKeyOrdered(flatten(user.customers, user.orders) INNER user.items)'],['    Flatten_HKeyOrdered(user.customers INNER user.orders)'],['      AncestorLookup_Default(Index(user.items.sku[IndexColumn(sku)]) -> [user.customers, user.orders, user.items])'],['        IndexScan_Default(Index(user.items.sku[IndexColumn(sku)]) (>UnboundExpressions[Literal(NULL)],<UnboundExpressions[Literal(8888)]))']]
 #- comment: ['explain-2: explain group joins']
 ---
 - Statement: SELECT name FROM customers WHERE cid = 1 
@@ -92,9 +93,9 @@
 - params: [[1]]
 - output: [['Smith']]
 #- comment: ['select-20: IN with parameter']
----
-- Statement: SELECT customers.name, (SELECT MAX(order_date) FROM orders WHERE customers.cid = orders.cid) AS max_date FROM customers 
-- output: [['Smith','2011-03-02'],['Jones','2011-03-03']]
+#--- ## BUG 915369
+#- Statement: SELECT customers.name, (SELECT MAX(order_date) FROM orders WHERE customers.cid = orders.cid) AS max_date FROM customers 
+#- output: [['Smith','2011-03-02'],['Jones','2011-03-03']]
 #- comment: ['select-21: subquery for value']
 ---
 - Statement: SELECT iid, sku, quan FROM items WHERE EXISTS (SELECT * FROM items i2 WHERE items.sku = i2.sku AND items.iid <> i2.iid) OR iid < 0 
@@ -108,14 +109,14 @@
 - Statement: SELECT customers.name,order_date,sku,quan FROM items INNER JOIN orders ON orders.oid = items.oid LEFT OUTER JOIN customers ON customers.cid = orders.cid WHERE order_date < '2011-03-01' 
 - output_ordered: [[null,'2010-01-01','9999','888'],['Jones','2011-02-28','1234','99']]
 #- comment: ['select-24: RIGHT join']
-#--- # bug 914780 
-#- Statement: SELECT customers.name,order_date,sku,quan FROM items INNER JOIN orders ON orders.oid = items.oid LEFT OUTER JOIN customers ON customers.cid = orders.cid WHERE order_date < '2011-03-01' ORDER BY order_date, name 
-#- output: [[null,'2010-01-01','9999','888'],['Jones','2011-02-28','1234','99']]
+--- 
+- Statement: SELECT customers.name,order_date,sku,quan FROM items INNER JOIN orders ON orders.oid = items.oid LEFT OUTER JOIN customers ON customers.cid = orders.cid WHERE order_date < '2011-03-01' ORDER BY order_date, name 
+- output: [[null,'2010-01-01','9999','888'],['Jones','2011-02-28','1234','99']]
 #- comment: [''select-24g: RIGHT join group index]
----
-- Statement: SELECT CURRENT_USER AS "schema", SESSION_USER AS "user" FROM items WHERE iid = ? 
-- params: [[2011]]
-- output: [['user','auser']]
+#--- bug #914780
+#- Statement: SELECT CURRENT_USER AS "schema", SESSION_USER AS "user" FROM items WHERE iid = ? 
+#- params: [[2011]]
+#- output: [['user','auser']]
 #- comment: ['select-25u: USER environment functions']
 ---
 - Statement: SELECT name, order_date FROM customers RIGHT JOIN orders USING (cid) WHERE (order_date != '2011-03-02' AND order_date != '2011-02-28') 
@@ -136,7 +137,7 @@
 ---
 - Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku < ? 
 - params: [['8888']]
-- output: [['Smith','2011-03-01','1234','100'],['Smith','2011-03-01','4567','50'],['Jones','2011-02-28','1234','99']]
+- output_ordered: [['Smith','2011-03-01','1234','100'],['Smith','2011-03-01','4567','50'],['Jones','2011-02-28','1234','99']]
 #- comment: ['select-2p: index with parameter']
 ---
 - Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku < '8888' AND items.quan = 100 
