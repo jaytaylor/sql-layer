@@ -108,9 +108,9 @@
 - Statement: SELECT customers.name,order_date,sku,quan FROM items INNER JOIN orders ON orders.oid = items.oid LEFT OUTER JOIN customers ON customers.cid = orders.cid WHERE order_date < '2011-03-01' 
 - output_ordered: [[null,'2010-01-01','9999','888'],['Jones','2011-02-28','1234','99']]
 #- comment: ['select-24: RIGHT join']
----
-- Statement: SELECT customers.name,order_date,sku,quan FROM items INNER JOIN orders ON orders.oid = items.oid LEFT OUTER JOIN customers ON customers.cid = orders.cid WHERE order_date < '2011-03-01' ORDER BY order_date, name 
-- output: [[null,'2010-01-01','9999','888'],['Jones','2011-02-28','1234','99']]
+#--- # bug 914780 
+#- Statement: SELECT customers.name,order_date,sku,quan FROM items INNER JOIN orders ON orders.oid = items.oid LEFT OUTER JOIN customers ON customers.cid = orders.cid WHERE order_date < '2011-03-01' ORDER BY order_date, name 
+#- output: [[null,'2010-01-01','9999','888'],['Jones','2011-02-28','1234','99']]
 #- comment: [''select-24g: RIGHT join group index]
 ---
 - Statement: SELECT CURRENT_USER AS "schema", SESSION_USER AS "user" FROM items WHERE iid = ? 
