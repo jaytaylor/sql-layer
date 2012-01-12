@@ -30,7 +30,7 @@ public class IntervalCastExpressionTest
 {
     @Test
     public void testRegularCases()
-    {  
+    {
         // year - month intervals
         test("123-34", YEAR_MONTH, INTERVAL_MONTH, 1510L);
         test("123", EndPoint.YEAR, INTERVAL_MONTH, 1476L);
@@ -40,7 +40,7 @@ public class IntervalCastExpressionTest
         // day intervals
         test("1", DAY, INTERVAL_MILLIS, 86400000L);
         test(1, DAY, INTERVAL_MILLIS, 86400000L);
-        
+
         // day - sec intervals
         test("0 0:0:0.123", DAY_SECOND, INTERVAL_MILLIS, 123L);
         test("0            0:1:0.123", DAY_SECOND, INTERVAL_MILLIS, 60123L);
@@ -69,7 +69,7 @@ public class IntervalCastExpressionTest
         test("   1.123", SECOND, INTERVAL_MILLIS, 1123L);
         test("1.05", SECOND, INTERVAL_MILLIS, 1050L);
         test(25, SECOND, INTERVAL_MILLIS, 25000L);
-        
+
         // min
         test("    20           ", MINUTE, INTERVAL_MILLIS, 1200000L);
         test("2", MINUTE, INTERVAL_MILLIS, 120000L);
@@ -94,20 +94,47 @@ public class IntervalCastExpressionTest
     @Test(expected = InvalidIntervalFormatException.class)
     public void testInvalidFormatYear ()
     {
-        test("abc", YEAR_MONTH, INTERVAL_MONTH, 0); 
-        
+        test("abc", YEAR_MONTH, INTERVAL_MONTH, 0);
+
     }
-    
+
     @Test(expected = InvalidIntervalFormatException.class)
     public void testMissingFields ()
     {
         test("12 ", YEAR_MONTH, INTERVAL_MONTH, 0);
     }
-    
+
     @Test(expected = InvalidIntervalFormatException.class)
     public void testRedundantFields ()
     {
         test("12 2:12", YEAR_MONTH, INTERVAL_MONTH, 0);
+    }
+
+    @Test
+    public void testSignedInterval ()
+    {
+        // negative
+        test("-1-5", YEAR_MONTH,  INTERVAL_MONTH, -17);
+        test("-1", EndPoint.YEAR, INTERVAL_MONTH, -12);
+        test("-2", EndPoint.MONTH, INTERVAL_MONTH, -2);
+        test("-1 1", DAY_HOUR, INTERVAL_MILLIS, -90000000L);
+        test("-1 1:0:1", DAY_SECOND, INTERVAL_MILLIS, -90001000L);
+        test("-1", SECOND, INTERVAL_MILLIS, -1000);
+
+        // positive
+        test("+1-5", YEAR_MONTH,  INTERVAL_MONTH, 17);
+        test("+1", EndPoint.YEAR, INTERVAL_MONTH, 12);
+        test("+2", EndPoint.MONTH, INTERVAL_MONTH,2);
+        test("+1 1", DAY_HOUR, INTERVAL_MILLIS, 90000000L);
+        test("+1 1:0:1", DAY_SECOND, INTERVAL_MILLIS, 90001000L);
+        test("+1", SECOND, INTERVAL_MILLIS, 1000);
+ 
+    }
+
+    @Test (expected = InvalidIntervalFormatException.class)
+    public void testEmptyString ()
+    {
+        test("", MONTH, INTERVAL_MONTH, 0);
     }
     
     private static void test(String str, EndPoint endPoint, AkType expType, long exp)
@@ -126,7 +153,7 @@ public class IntervalCastExpressionTest
         ValueSource source = interval.evaluation().eval();
 
         assertEquals("Assert INTERVAL type: ", expType, interval.valueType());
-        assertEquals("Assert INTERVAL value: ", exp,
+        assertEquals("Assert INTERVAL_" + endPoint + ": ", exp,
                 expType == INTERVAL_MONTH ? source.getInterval_Month() : source.getInterval_Millis());
     }
 }
