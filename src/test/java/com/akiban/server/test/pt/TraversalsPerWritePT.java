@@ -123,7 +123,7 @@ public final class TraversalsPerWritePT extends PTBase {
 
     @Override
     protected String paramName() {
-        return String.format("%d-%s", ordersPerCustomer, joinType);
+        return String.format("%d-%s-%s", ordersPerCustomer, joinType, bushy ? "bushy" : "narrow");
     }
 
     @Override
