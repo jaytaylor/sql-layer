@@ -2,17 +2,17 @@
 ---
 - Include: all-types-schema.yaml
 ---
-- Statement: Insert into all_types (bigint_field, date_field, time_field, timestamp_field) values (1,'2011-01-01','13:45:12','2011-01-01 13:45:12')
+- Statement: Insert into all_types (bigint_field, date_field, time_field, timestamp_field, datetime_field) values (1,'2011-01-01','13:45:12','2011-01-01 13:45:12','2011-01-01 13:45:12')
 ---
-- Statement: Insert into all_types (bigint_field, date_field, time_field, timestamp_field) values (2,'0000-00-00','00:00:00','0000-00-00 00:00:00')
+- Statement: Insert into all_types (bigint_field, date_field, time_field, timestamp_field, datetime_field) values (2,'0000-00-00','00:00:00','0000-00-00 00:00:00','0000-00-00 00:00:00')
 ---
-- Statement: Insert into all_types (bigint_field, date_field, time_field, timestamp_field) values (3,'0000-00-00','00:00:00','2000-04-11 11:22:33')
+- Statement: Insert into all_types (bigint_field, date_field, time_field, timestamp_field, datetime_field) values (3,'0000-00-00','00:00:00','2000-04-11 11:22:33','2000-04-11 11:22:33')
 ---
-- Statement: Insert into all_types (bigint_field, date_field, time_field, timestamp_field) values (4,'2011-12-15','00:00:00','0000-00-00 00:00:00')
+- Statement: Insert into all_types (bigint_field, date_field, time_field, timestamp_field, datetime_field) values (4,'2011-12-15','00:00:00','0000-00-00 00:00:00','0000-00-00 00:00:00')
 ---
-- Statement: Insert into all_types (bigint_field, date_field, time_field, timestamp_field) values (5,'2011-12-15','04:12:56','0000-00-00 00:00:00')
+- Statement: Insert into all_types (bigint_field, date_field, time_field, timestamp_field, datetime_field) values (5,'2011-12-15','04:12:56','0000-00-00 00:00:00','1988-02-12 23:48:12')
 ---
-- Statement: Insert into all_types (bigint_field, date_field, time_field, timestamp_field) values (6,null,null,null)
+- Statement: Insert into all_types (bigint_field, date_field, time_field, timestamp_field, datetime_field) values (6,null,null,null,null)
 ---
 - Statement: Select bigint_field from all_types where date_field = '0000-00-00'
 - output: [[2],[3]]
@@ -23,6 +23,9 @@
 - Statement: Select bigint_field from all_types where timestamp_field = '0000-00-00 00:00:00'
 - output: [[2],[4],[5]]
 ---
+- Statement: Select bigint_field from all_types where datetime_field = '0000-00-00 00:00:00'
+- output: [[2],[4]]
+---
 - Statement: Select bigint_field from all_types where date_field is null
 - output: [[6]]
 ---
@@ -31,7 +34,11 @@
 ---
 - Statement: Select bigint_field from all_types where timestamp_field is null
 - output: [[6]]
-#--- bug # 
+---
+- Statement: Select bigint_field from all_types where datetime_field is null
+- output: [[6]]
+
+#--- bug # 913921
 #- Statement: update all_types set date_field = '0000-00-00' where bigint_field = 5 
 #---
 #- Statement: Select bigint_field from all_types where date_field = '0000-00-00'
@@ -46,6 +53,8 @@
 #---
 #- Statement: Select bigint_field from all_types where timestamp_field = '0000-00-00 00:00:00'
 #- output: [[2],[3],[4],[5]]
+#---
+#- Statement: update all_types set datetime_field = '0000-00-00 00:00:00' where bigint_field = 1
 ---
 - Statement: Select bigint_field from all_types 
 - row_count: 6
@@ -61,6 +70,9 @@
 - Statement: Select bigint_field from all_types 
 - row_count: 4
 ---
+- Statement: Select bigint_field from all_types where datetime_field = '0000-00-00'
+- row_count: 1
+---
 - CreateTable: T1 ( varchar_field varchar(32) )
 ---
 - Statement: INSERT INTO T1 (varchar_field) VALUES
@@ -74,6 +86,10 @@
             [1], [20], [300],
            [1961], [2001], [3210], [9999],
            [1234567], [null]]
+---
+- Statement: SELECT YEAR(datetime_field) FROM all_types
+- output: [[2011],[0],[1988],[null]]
+           
 #--- bug 913922
 #- Statement: SELECT varchar_field FROM T1
 #    WHERE YEAR(varchar_field) > YEAR('0100-01-01')
