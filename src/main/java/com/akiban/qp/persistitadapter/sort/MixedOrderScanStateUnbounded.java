@@ -15,6 +15,7 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
+import com.akiban.util.Tap;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
@@ -31,6 +32,7 @@ class  MixedOrderScanStateUnbounded extends MixedOrderScanState
             cursor.exchange.append(Key.AFTER);
             direction = Key.LT;
         }
+        TRAVERSE_COUNT.hit();
         return cursor.exchange.traverse(direction, false);
     }
 
@@ -38,4 +40,6 @@ class  MixedOrderScanStateUnbounded extends MixedOrderScanState
     {
         super(cursor, field, cursor.ordering().ascending(field));
     }
+    
+    private static final Tap.PointTap TRAVERSE_COUNT = Tap.createCount("traverse_moss_u");
 }

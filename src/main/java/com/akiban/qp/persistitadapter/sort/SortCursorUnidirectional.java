@@ -30,6 +30,7 @@ import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
+import com.akiban.util.Tap;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
@@ -70,6 +71,7 @@ class SortCursorUnidirectional extends SortCursor
         Row next = null;
         if (exchange != null) {
             try {
+                TRAVERSE_COUNT.hit();
                 if (exchange.traverse(keyComparison, true)) {
                     next = row();
                     if (bounded) {
@@ -349,4 +351,6 @@ class SortCursorUnidirectional extends SortCursor
     protected Key endKey;
     protected final PersistitKeyValueTarget startKeyTarget = new PersistitKeyValueTarget();
     protected final PersistitKeyValueTarget endKeyTarget = new PersistitKeyValueTarget();
+    
+    private static final Tap.PointTap TRAVERSE_COUNT = Tap.createCount("traverse_scu");
 }

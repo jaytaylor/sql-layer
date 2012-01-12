@@ -24,6 +24,7 @@ import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
+import com.akiban.util.Tap;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
@@ -64,6 +65,7 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
                 setupEndComparison(loInclusive ? Comparison.GE : Comparison.GT, loSource);
             }
         }
+        TRAVERSE_COUNT.hit();
         return cursor.exchange.traverse(direction, false) && !pastEnd();
     }
 
@@ -155,4 +157,6 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
     private Expression endComparison;
     private Expression loEQHi;
     private AkType fieldType;
+
+    private static final Tap.PointTap TRAVERSE_COUNT = Tap.createCount("traverse_moss_b");
 }
