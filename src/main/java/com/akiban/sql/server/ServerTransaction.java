@@ -78,7 +78,8 @@ public class ServerTransaction
         if (transaction.getCurrentStep() == 0)
             // On the first non-read statement in a transaction, move
             // to step 1 to enable isolation against later steps.
-            // Step 1 will do the read part and step 2 the write part.
+            // Step 1 will do the update and then we'll move to step 2
+            // to make it visible.
             transaction.incrementStep();
     }
 

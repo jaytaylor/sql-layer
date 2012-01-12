@@ -240,6 +240,9 @@ public abstract class ServerSessionBase implements ServerSession
         return localTransaction;
     }
 
+    /** Complete execute given statement.
+     * @see #beforeExecute
+     */
     protected void afterExecute(ServerStatement stmt, 
                                 ServerTransaction localTransaction,
                                 boolean success) {
