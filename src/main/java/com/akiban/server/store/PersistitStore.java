@@ -70,6 +70,7 @@ import com.persistit.KeyFilter;
 import com.persistit.KeyState;
 import com.persistit.Management.DisplayFilter;
 import com.persistit.Persistit;
+import com.persistit.Transaction;
 import com.persistit.Tree;
 import com.persistit.Value;
 import com.persistit.exception.PersistitException;
@@ -974,7 +975,7 @@ public class PersistitStore implements Store {
         final Exchange iEx = getExchange(session, index);
         constructIndexKey(new PersistitKeyAppender(iEx.getKey()), rowData, index, hkey);
 
-        checkUniqueness(index, rowData, iEx);
+        checkUniqueness(index, rowData, iEx, session);
 
         iEx.getValue().clear();
         if (deferIndexes) {
@@ -999,12 +1000,18 @@ public class PersistitStore implements Store {
         releaseExchange(session, iEx);
     }
 
-    private void checkUniqueness(Index index, RowData rowData, Exchange iEx)
+    private void checkUniqueness(Index index, RowData rowData, Exchange iEx, Session session)
     {
         if (index.isUnique() && !hasNullIndexSegments(rowData, index)) {
             final Key key = iEx.getKey();
             KeyState ks = new KeyState(key);
             key.setDepth(((IndexDef) index.indexDef()).getIndexKeySegmentCount());
+            Transaction transaction = treeService.getTransaction(session);
+            int step = transaction.getCurrentStep();
+            // If we are isolated from seeing our own updates,
+            // temporarily make them visible while we check.
+            if (step > 0)
+                transaction.incrementStep();
             try {
                 if (iEx.hasChildren()) {
                     ks.copyTo(key);
@@ -1012,6 +1019,10 @@ public class PersistitStore implements Store {
                 }
             } catch (PersistitException e) {
                 throw new PersistitAdapterException(e);
+            }
+            finally {
+                if (step > 0)
+                    transaction.setStep(step);
             }
             ks.copyTo(key);
         }
@@ -1048,7 +1059,7 @@ public class PersistitStore implements Store {
                 Exchange newExchange = getExchange(session, index);
                 constructIndexKey(new PersistitKeyAppender(newExchange.getKey()), newRowData, index, hkey);
 
-                checkUniqueness(index, newRowData, newExchange);
+                checkUniqueness(index, newRowData, newExchange, session);
 
                 oldExchange.getValue().clear();
                 newExchange.getValue().clear();
