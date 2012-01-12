@@ -140,9 +140,7 @@ public class UpdateIT extends OperatorITBase
     public void halloweenProblem() throws Exception {
         use(db);
         Transaction transaction = adapter.transaction();
-        if (true) {
         transaction.incrementStep(); // Enter isolation mode.
-        }
 
         Operator scan = filter_Default(
             ancestorLookup_Default(
@@ -154,17 +152,13 @@ public class UpdateIT extends OperatorITBase
             Arrays.asList(itemRowType));
         
         UpdateFunction updateFunction = new UpdateFunction() {
-                int limit = 100; // TODO: Temporary to keep from looping when disabled.
-
                 @Override
                 public boolean rowIsSelected(Row row) {
-                    if (limit-- < 0) return false; // TODO: temp.
                     return row.rowType().equals(itemRowType);
                 }
 
                 @Override
                 public Row evaluate(Row original, Bindings bindings) {
-                    System.out.println("RRR " + original); // TODO: temp
                     long id = original.eval(0).getInt();
                     return new OverlayingRow(original).overlay(0, 1000 + id);
                 }
@@ -172,36 +166,21 @@ public class UpdateIT extends OperatorITBase
 
         UpdatePlannable updateOperator = update_Default(scan, updateFunction);
         UpdateResult result = updateOperator.run(NO_BINDINGS, adapter);
-        if (false) {
         assertEquals("rows touched", 8, result.rowsTouched());
         assertEquals("rows modified", 8, result.rowsModified());
-        }
 
         transaction.incrementStep(); // Make changes visible.
 
-        if (true) {
-            com.persistit.Exchange exchange = 
-                adapter.takeExchange(coi).clear().append(com.persistit.Key.BEFORE);
-            try {
-                while (exchange.traverse(com.persistit.Key.GT, true)) {
-                    System.out.println(exchange.getKey() + "\t" + exchange.getValue());
-                }
-            }
-            finally {
-                adapter.returnExchange(exchange);
-            }
-        }
-
         Cursor executable = cursor(scan, adapter);
         RowBase[] expected = new RowBase[] { 
-            row(itemRowType, 111L, 11L),
-            row(itemRowType, 112L, 11L),
-            row(itemRowType, 121L, 12L),
-            row(itemRowType, 122L, 12L),
-            row(itemRowType, 211L, 21L),
-            row(itemRowType, 212L, 21L),
-            row(itemRowType, 221L, 22L),
-            row(itemRowType, 222L, 22L),
+            row(itemRowType, 1111L, 11L),
+            row(itemRowType, 1112L, 11L),
+            row(itemRowType, 1121L, 12L),
+            row(itemRowType, 1122L, 12L),
+            row(itemRowType, 1211L, 21L),
+            row(itemRowType, 1212L, 21L),
+            row(itemRowType, 1221L, 22L),
+            row(itemRowType, 1222L, 22L),
         };
         compareRows(expected, executable);
     }
