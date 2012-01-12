@@ -103,7 +103,12 @@ public class ServerTransaction
 
     /** Rollback transaction. */
     public void rollback() {
-        transaction.rollback();
+        try {
+            transaction.rollback();
+        }
+        finally {
+            transaction.end();
+        }
     }
 
     /** Abort transaction that still exists on exit. */
