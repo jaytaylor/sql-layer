@@ -34,11 +34,35 @@ public abstract class CostEstimator
         return true;
     }
 
+    // TODO: These need to be figured out for real.
+    public static final double RANDOM_ACCESS_COST = 5.0;
+    public static final double SEQUENTIAL_ACCESS_COST = 1.0;
+
     /** Estimate cost of scanning from this index. */
     public CostEstimate costIndexScan(Index index,
                                       List<ExpressionNode> equalityComparands,
                                       ExpressionNode lowComparand, boolean lowInclusive,
                                       ExpressionNode highComparand, boolean highInclusive) {
+        if (index.isUnique()) {
+            if ((equalityComparands != null) &&
+                (equalityComparands.size() == index.getColumns().size())) {
+                // Exact match from unique index; probably one row.
+                return new CostEstimate(1, RANDOM_ACCESS_COST);
+            }
+        }
+        IndexStatistics indexStats = getIndexStatistics(index);
+        long rowCount = getTableRowCount(index.leafMostTable());
+        if ((indexStats == null) ||
+            (indexStats.getRowCount() == 0) ||
+            ((equalityComparands == null) &&
+             (lowComparand == null) &&
+             (highComparand == null))) {
+            // No stats or just used for ordering.
+            // TODO: Is this too conservative?
+            return new CostEstimate(rowCount, 
+                                    RANDOM_ACCESS_COST + (rowCount * SEQUENTIAL_ACCESS_COST));
+        }
+        double scale = (double)rowCount / indexStats.getRowCount();
         return new CostEstimate(0, 0);
     }
 
