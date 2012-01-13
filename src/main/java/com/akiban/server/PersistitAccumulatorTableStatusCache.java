@@ -150,7 +150,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
-        public long getApproximateRowCount() throws PersistitInterruptedException {
+        public long getApproximateRowCount() {
             return rowCount.getLiveValue();
         }
 

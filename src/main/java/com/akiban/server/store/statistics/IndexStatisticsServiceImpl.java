@@ -93,7 +93,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     /* IndexStatisticsService */
 
     @Override
-    public long countEntries(Session session, Index index) throws PersistitInterruptedException {
+    public long countEntries(Session session, Index index) {
         if (index.isTableIndex()) {
             return store.getTableStatus(((TableIndex)index).getTable()).getApproximateRowCount();
         }
