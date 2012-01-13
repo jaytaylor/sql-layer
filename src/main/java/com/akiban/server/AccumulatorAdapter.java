@@ -40,7 +40,6 @@ public class AccumulatorAdapter {
     }
     
     public static long getLiveValue(AccumInfo accumInfo, TreeService treeService, Tree tree)
-    throws PersistitInterruptedException
     {
         Accumulator accumulator = getAccumulator(accumInfo, tree);
         return accumulator.getLiveValue();
@@ -54,7 +53,7 @@ public class AccumulatorAdapter {
         return accumulator.update(value, getCurrentTrx());
     }
 
-    public long getLiveValue() throws PersistitInterruptedException {
+    public long getLiveValue() {
         return accumulator.getLiveValue();
     }
 

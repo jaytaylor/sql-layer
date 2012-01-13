@@ -42,7 +42,7 @@ public interface TableStatus {
     /**
      * @return Approximate number of rows in the associated table.
      */
-    long getApproximateRowCount() throws PersistitInterruptedException;
+    long getApproximateRowCount();
 
     /**
      * @return The <b>last</b> unique value used for the associated table.
