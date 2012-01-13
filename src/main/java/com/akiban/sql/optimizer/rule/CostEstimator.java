@@ -18,9 +18,11 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.server.store.statistics.IndexStatistics;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Table;
 
 public abstract class CostEstimator
 {
+    public abstract long getTableRowCount(Table table);
     public abstract IndexStatistics getIndexStatistics(Index index);
 
     // TODO: More non-abstract to come.
