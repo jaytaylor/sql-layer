@@ -105,12 +105,13 @@ public class IndexGoal implements Comparator<IndexScan>
     private AggregateSource grouping;
     private Sort ordering;
     private Project projectDistinct;
-    private CostEstimator costEstimator;
 
     private TableNode updateTarget;
 
     // All the columns besides those in conditions that will be needed.
     private RequiredColumns requiredColumns;
+
+    private CostEstimator costEstimator;
 
     public IndexGoal(BaseQuery query,
                      Set<ColumnSource> boundTables, 
@@ -516,8 +517,11 @@ public class IndexGoal implements Comparator<IndexScan>
         return bestIndex;
     }
 
-    // TODO: This is a pretty poor substitute for evidence-based comparison.
     public int compare(IndexScan i1, IndexScan i2) {
+        if (costEstimator.isEnabled()) {
+            return costEstimate(i1).compareTo(costEstimate(i2));
+        }
+        // TODO: This is a pretty poor substitute for evidence-based comparison.
         if (i1.getOrderEffectiveness() != i2.getOrderEffectiveness())
             // These are ordered worst to best.
             return i1.getOrderEffectiveness().compareTo(i2.getOrderEffectiveness());
@@ -561,6 +565,42 @@ public class IndexGoal implements Comparator<IndexScan>
                 ? +1 : -1;
         // Deeper better than shallower.
         return i1.getLeafMostTable().getTable().getTable().getTableId().compareTo(i2.getLeafMostTable().getTable().getTable().getTableId());
+    }
+
+    protected CostEstimate costEstimate(IndexScan index) {
+        if (index.getCostEstimate() == null) {
+            CostEstimate cost = 
+                costEstimator.costIndexScan(index.getIndex(),
+                                            index.getEqualityComparands(),
+                                            index.getLowComparand(), 
+                                            index.isLowInclusive(),
+                                            index.getHighComparand(), 
+                                            index.isHighInclusive());
+            if (!index.isCovering()) {
+                CostEstimate flatten = 
+                    costEstimator.costFlatten(index.getLeafMostTable(),
+                                              index.getRequiredTables(),
+                                              cost.getRowCount());
+                cost = cost.sequence(flatten);
+            }
+            if (needSort(index)) {
+                CostEstimate sort = costEstimator.costSort(cost.getRowCount());
+                cost = cost.sequence(sort);
+            }
+            index.setCostEstimate(cost);
+        }
+        return index.getCostEstimate();
+    }
+
+    protected boolean needSort(IndexScan index) {
+        IndexScan.OrderEffectiveness effectiveness = index.getOrderEffectiveness();
+        if ((ordering != null) ||
+            (projectDistinct != null))
+            return (effectiveness != IndexScan.OrderEffectiveness.SORTED);
+        if (grouping != null)
+            return ((effectiveness != IndexScan.OrderEffectiveness.SORTED) &&
+                    (effectiveness != IndexScan.OrderEffectiveness.GROUPED));
+        return false;
     }
 
     static class RequiredColumnsFiller implements PlanVisitor, ExpressionVisitor {

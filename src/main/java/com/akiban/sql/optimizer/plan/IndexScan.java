@@ -60,6 +60,9 @@ public class IndexScan extends BasePlanNode
     // Tables that would still need to be fetched if this index were used.
     private Set<TableSource> requiredTables;
 
+    // Estimated cost of using this index.
+    private CostEstimate costEstimate;
+
     public IndexScan(Index index, TableSource table) {
         this.index = index;
         rootMostTable = rootMostInnerTable = leafMostInnerTable = leafMostTable = table;
@@ -233,6 +236,13 @@ public class IndexScan extends BasePlanNode
     }
     public void setRequiredTables(Set<TableSource> requiredTables) {
         this.requiredTables = requiredTables;
+    }
+
+    public CostEstimate getCostEstimate() {
+        return costEstimate;
+    }
+    public void setCostEstimate(CostEstimate costEstimate) {
+        this.costEstimate = costEstimate;
     }
 
     @Override

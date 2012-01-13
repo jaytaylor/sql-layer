@@ -15,15 +15,48 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.sql.optimizer.plan.*;
+
 import com.akiban.server.store.statistics.IndexStatistics;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
+
+import java.util.*;
 
 public abstract class CostEstimator
 {
     public abstract long getTableRowCount(Table table);
     public abstract IndexStatistics getIndexStatistics(Index index);
 
-    // TODO: More non-abstract to come.
+    // TODO: Temporary until fully installed.
+    public boolean isEnabled() {
+        return true;
+    }
+
+    /** Estimate cost of scanning from this index. */
+    public CostEstimate costIndexScan(Index index,
+                                      List<ExpressionNode> equalityComparands,
+                                      ExpressionNode lowComparand, boolean lowInclusive,
+                                      ExpressionNode highComparand, boolean highInclusive) {
+        return new CostEstimate(0, 0);
+    }
+
+    /** Estimate the cost of starting at the given table's index and
+     * fetching the given tables, then joining them with Flatten and
+     * Product. */
+    // TODO: Lots of overlap with BranchJoiner. Once group joins are
+    // picked through the same join enumeration of other kinds, this
+    // should be better integrated.
+    public CostEstimate costFlatten(TableSource indexTable,
+                                    Collection<TableSource> requiredTables,
+                                    long repeat) {
+        int nbranches = indexTable.getTable().getTree().colorBranches();
+        return new CostEstimate(0, 0);
+    }
+
+    /** Estimate the cost of a sort of the given size. */
+    public CostEstimate costSort(long size) {
+        return new CostEstimate(0, 0);
+    }
 }

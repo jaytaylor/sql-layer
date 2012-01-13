@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Table;
 
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsYamlLoader;
@@ -42,5 +43,15 @@ public class TestCostEstimator extends CostEstimator
     @Override
     public IndexStatistics getIndexStatistics(Index index) {
         return stats.get(index);
+    }
+
+    @Override
+    public long getTableRowCount(Table table) {
+        for (Index index : table.getIndexes()) {
+            IndexStatistics istats = stats.get(index);
+            if (istats != null)
+                return istats.getRowCount();
+        }
+        return 1;
     }
 }

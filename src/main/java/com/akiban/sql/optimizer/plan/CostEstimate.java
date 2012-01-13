@@ -39,17 +39,17 @@ public class CostEstimate implements Comparable<CostEstimate>
     }
 
     /** Cost of one operation after the other. */
-    public CostEstimate add(CostEstimate next) {
+    public CostEstimate sequence(CostEstimate next) {
         return new CostEstimate(next.rowCount, cost + next.cost);
     }
 
     /** Cost of operation repeated. */
-    public CostEstimate multiply(long count) {
+    public CostEstimate repeat(long count) {
         return new CostEstimate(rowCount * count, cost * count);
     }
 
     /** Cost of one operation nested within another. */
-    public CostEstimate multiply(CostEstimate inner) {
+    public CostEstimate nest(CostEstimate inner) {
         return new CostEstimate(rowCount * inner.rowCount,
                                 cost + rowCount * inner.cost);
     }
