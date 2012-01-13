@@ -15,28 +15,45 @@
 
 package com.akiban.server.test.pt;
 
-import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.api.dml.scan.NewRow;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.util.Collection;
 
+/**
+ * <p>Test to profile traverse counts for various CUD operations. The test is on a modified COI: there is no
+ * items table, and customers has additional children tables only in some parameterizations. There are three
+ * parameterizations to this test:
+ * <ol>
+ *     <li>how many children rows are in each of the customer's child tables (1 or 20)</li>
+ *     <li>whether the GI is a LEFT or RIGHT join</li>
+ *     <li>whether the schema is bushy or "narrow"</li>
+ * </ol>
+ * </p>
+ *
+ * <p>If the schema is narrow, customers only has one child table: orders. If it's bushy, the customers table has
+ * three additional children: addresses, pets and vehicles. The orders table is created after addresses, so that
+ * the ordinals are (a, o, p, v).</p>
+ *
+ * <p>To set up, we create two customers, at cid(1) and cid(9). We then create children rows for cid(0) (these rows
+ * are all orphaned) and cid(1). cid(9) has no children.</p>
+ *
+ * <p>Each test then writes, deletes or moves (updates) various rows.</p>
+ */
 @RunWith(NamedParameterizedRunner.class)
 public final class TraversalsPerWritePT extends PTBase {
 
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> params() {
         ParameterizationBuilder pb = new ParameterizationBuilder();
-        pb.add("1-LEFT", 1, Index.JoinType.LEFT);
-        pb.add("20-LEFT", 20, Index.JoinType.LEFT);
-        pb.add("1-RIGHT", 1, Index.JoinType.RIGHT);
-        pb.add("20-RIGHT", 20, Index.JoinType.RIGHT);
+        pb.add("");
+        pb.multiplyParametersByAppending("1", 1, "20", 20);
+        pb.multiplyParametersByAppending("-LEFT", Index.JoinType.LEFT, "-RIGHT", Index.JoinType.RIGHT);
         pb.multiplyParametersByAppending("-narrow", false, "-bushy", true);
         return pb.asList();
     }
@@ -141,7 +158,7 @@ public final class TraversalsPerWritePT extends PTBase {
         int vTable = createTable(SCHEMA, "vehicles", "vid int key, cid int, model varchar(32)",
                 akibanFK("cid", "customers", "cid")
         );
-        
+
         // write one customer
         writeRow(cTable, 1L, "alpha");
         // write orders for two customers, one of which (cid=0) doesn't exist
@@ -172,7 +189,7 @@ public final class TraversalsPerWritePT extends PTBase {
     private NewRow ordersRow(long cid, long oidSegment) {
         return customersChild(oTable, cid, oidSegment);
     }
-    
+
     private NewRow customersChild(int tableId, long cid, long oidSegment) {
         long oid = cid + oidSegment  * 10;
         return createNewRow(tableId, oid, cid, String.valueOf(1900+oid));
