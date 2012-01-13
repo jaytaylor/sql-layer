@@ -39,12 +39,23 @@ public class AccumulatorAdapter {
         return accumulator.update(value, exchange.getTransaction());
     }
     
+    public static long getLiveValue(AccumInfo accumInfo, TreeService treeService, Tree tree)
+    throws PersistitInterruptedException
+    {
+        Accumulator accumulator = getAccumulator(accumInfo, tree);
+        return accumulator.getLiveValue();
+    }
+
     public long getSnapshot() throws PersistitInterruptedException {
         return accumulator.getSnapshotValue(getCurrentTrx());
     }
 
     public long updateAndGet(long value) {
         return accumulator.update(value, getCurrentTrx());
+    }
+
+    public long getLiveValue() throws PersistitInterruptedException {
+        return accumulator.getLiveValue();
     }
 
     public void set(long value) throws PersistitInterruptedException {
