@@ -679,6 +679,17 @@ public class PostgresServerConnection extends ServerSessionBase
         return messenger;
     }
 
+    @Override
+    public void setProperty(String key, String value) {
+        if ("client_encoding".equals(key)) {
+            if ("UNICODE".equals(value))
+                messenger.setEncoding("UTF-8");
+            else
+                messenger.setEncoding(value);
+        }
+        super.setProperty(key, value);
+    }
+
     /* MBean-related access */
 
     public boolean isInstrumentationEnabled() {
