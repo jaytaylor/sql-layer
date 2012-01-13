@@ -143,7 +143,7 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
     private boolean finished = false;
     private final Flywheel<Bucket<T>> bucketsFlywheel;
 
-    private static final int OVERSAMPLE_FACTOR = 50;
+    public static final int OVERSAMPLE_FACTOR = 50;
 
     private static class PopularitySplit<T> {
         private PopularitySplit(List<Bucket<T>> regularBuckets, Deque<Bucket<T>> popularBuckets) {

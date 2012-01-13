@@ -38,7 +38,7 @@ import java.util.*;
 public class PersistitIndexStatisticsVisitor extends IndexVisitor
 {
     private static final Logger logger = LoggerFactory.getLogger(PersistitIndexStatisticsVisitor.class);
-    private static final int BUCKETS_COUNT = 32;
+    public static final int BUCKETS_COUNT = 32;
     
     private Index index;
     private int columnCount;

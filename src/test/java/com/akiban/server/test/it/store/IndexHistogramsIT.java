@@ -19,6 +19,8 @@ import com.akiban.ais.model.Index;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.server.store.statistics.IndexStatistics.HistogramEntryDescription;
+import com.akiban.server.store.statistics.PersistitIndexStatisticsVisitor;
+import com.akiban.server.store.statistics.histograms.Sampler;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.AssertUtils;
 import org.junit.Before;
@@ -213,6 +215,44 @@ public final class IndexHistogramsIT extends ITBase {
                 entry("{\"Dot\",\"0909\"}", 1, 26, 26),
                 entry("{\"Dot\",\"0958\"}", 1, 9, 9)
         );
+    }
+
+    @Test
+    public void edgeAnalysis() {
+        int cTable = getUserTable(SCHEMA, "customers").getTableId();
+        int oTable = getUserTable(SCHEMA, "orders").getTableId();
+        int maxCid = PersistitIndexStatisticsVisitor.BUCKETS_COUNT * Sampler.OVERSAMPLE_FACTOR;
+        insertRows(cTable, oTable, CUSTOMERS_COUNT, maxCid);
+
+        HistogramEntryDescription[] expected = new HistogramEntryDescription[32];
+        // there are 1600 customers and 32 buckets, so 50 histograms per bucket. Each bucket is defined by its
+        // *last* entry, and we're 0 based. So it's 0049, 0099, 0149...
+        for (int i=0; i < expected.length; ++i) {
+            int entryCid = 49 + 50*i;
+            String entryString = String.format("{\"%04d\"}", entryCid);
+            expected[i] = entry(entryString, 1, 49, 49);
+        }
+        validateHistogram("customers", PK, 1, expected);
+    }
+
+    @Test
+    public void largeAnalysis() {
+        int cTable = getUserTable(SCHEMA, "customers").getTableId();
+        int oTable = getUserTable(SCHEMA, "orders").getTableId();
+        int maxCid = PersistitIndexStatisticsVisitor.BUCKETS_COUNT * Sampler.OVERSAMPLE_FACTOR+1;
+        insertRows(cTable, oTable, CUSTOMERS_COUNT, maxCid);
+
+        HistogramEntryDescription[] expected = new HistogramEntryDescription[33];
+        // there are 1600 customers and 32 buckets, so 50 histograms per bucket. Each bucket is defined by its
+        // *last* entry, and we're 0 based. So it's 0049, 0099, 0149...
+        // In this case, we'll have 32 normal buckets, plus a "caboose" for the last entry
+        for (int i=0; i < expected.length-1; ++i) {
+            int entryCid = 49 + 50*i;
+            String entryString = String.format("{\"%04d\"}", entryCid);
+            expected[i] = entry(entryString, 1, 49, 49);
+        }
+        expected[32] = entry("{\"1600\"}", 1, 0, 0);
+        validateHistogram("customers", PK, 1, expected);
     }
 
     /**
