@@ -22,7 +22,6 @@ import com.akiban.server.store.statistics.IndexStatistics.HistogramEntryDescript
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.AssertUtils;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -254,9 +253,14 @@ public final class IndexHistogramsIT extends ITBase {
         namePlacedGi = createGroupIndex(groupName, "namePlaced", "customers.name,orders.placed");
 
         // insert data
+        int startingCid = 0;
+        int endingCid = CUSTOMERS_COUNT;
+        insertRows(cTable, oTable, startingCid, endingCid);
+    }
+
+    private void insertRows(int cTable, int oTable, int startingCid, int endingCid) {
         String[] names = {"Adam", "Bob", "Carla", "Dot"}; // inefficient object alloc, but inlined to be easier to read
-        int oidCounter = 0;
-        for (int cid=0; cid < CUSTOMERS_COUNT; ++cid) {
+        for (int cid=startingCid; cid < endingCid; ++cid) {
             // customer
             String name = names[ cid % names.length ];
             int dobYear = (divisibleBy(cid, 4)) ? 1983 : (1900 + cid/2);
@@ -336,8 +340,8 @@ public final class IndexHistogramsIT extends ITBase {
 
     private GroupIndex namePlacedGi;
     private Set<Index> analyzedIndexes = new HashSet<Index>();
+    private int oidCounter = 0;
 
-    
     private static final String SCHEMA = "indexes";
     private static final String PK = "PK";
     private static final int CUSTOMERS_COUNT = 320;
