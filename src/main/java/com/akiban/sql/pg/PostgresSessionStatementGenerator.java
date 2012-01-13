@@ -58,6 +58,8 @@ public class PostgresSessionStatementGenerator extends PostgresBaseStatementGene
             return new PostgresSessionStatement(PostgresSessionStatement.Operation.TRANSACTION_ISOLATION, stmt);
         case NodeTypes.SET_TRANSACTION_ACCESS_NODE:
             return new PostgresSessionStatement(PostgresSessionStatement.Operation.TRANSACTION_ACCESS, stmt);
+        case NodeTypes.SET_CONFIGURATION_NODE:
+            return new PostgresSessionStatement(PostgresSessionStatement.Operation.CONFIGURATION, stmt);
         default:
             return null;
         }

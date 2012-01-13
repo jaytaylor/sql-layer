@@ -69,6 +69,12 @@ public abstract class ServerSessionBase implements ServerSession
     }
 
     @Override
+    public void setProperty(String key, String value) {
+        properties.setProperty(key, value);
+        sessionChanged();
+    }
+
+    @Override
     public Map<String,Object> getAttributes() {
         return attributes;
     }
