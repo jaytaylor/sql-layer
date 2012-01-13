@@ -119,7 +119,7 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
         for (Bucket<T> bucket : buckets)
             sampler.add(bucket);
         List<Bucket<T>> results = sampler.buckets();
-        assert results.size() <= maxSize : results.size() + " > " + maxSize;
+        assert results.size() <= maxSize+1 : results.size() + " > " + maxSize+1;
         return results;
     }
 
