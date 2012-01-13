@@ -87,6 +87,16 @@ public class IndexStatistics
             return entries;
         }
 
+        public long totalDistinctCount() {
+            long total = 0;
+            for (HistogramEntry entry : entries) {
+                if (entry.getEqualCount() > 0)
+                    total++;
+                total += entry.getDistinctCount();
+            }
+            return total;
+        }
+
         @Override
         public String toString() {
             StringBuilder str = new StringBuilder(getClass().getSimpleName());

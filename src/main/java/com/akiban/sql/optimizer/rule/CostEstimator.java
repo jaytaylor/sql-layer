@@ -18,6 +18,7 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.sql.optimizer.plan.*;
 
 import com.akiban.server.store.statistics.IndexStatistics;
+import static com.akiban.server.store.statistics.IndexStatistics.*;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
@@ -52,20 +53,66 @@ public abstract class CostEstimator
         }
         IndexStatistics indexStats = getIndexStatistics(index);
         long rowCount = getTableRowCount(index.leafMostTable());
+        int columnCount = 0;
+        if (equalityComparands != null)
+            columnCount = equalityComparands.size();
+        if ((lowComparand != null) || (highComparand != null))
+            columnCount++;
+        Histogram histogram;
         if ((indexStats == null) ||
             (indexStats.getRowCount() == 0) ||
-            ((equalityComparands == null) &&
-             (lowComparand == null) &&
-             (highComparand == null))) {
+            (columnCount == 0) ||
+            ((histogram = indexStats.getHistogram(columnCount)) == null)) {
             // No stats or just used for ordering.
             // TODO: Is this too conservative?
             return new CostEstimate(rowCount, 
                                     RANDOM_ACCESS_COST + (rowCount * SEQUENTIAL_ACCESS_COST));
         }
-        double scale = (double)rowCount / indexStats.getRowCount();
-        return new CostEstimate(0, 0);
+        long nrows;
+        if ((lowComparand == null) && (highComparand == null)) {
+            // Equality lookup.
+            byte[] keyBytes = encodeKeyBytes(index, equalityComparands, null);
+            if (keyBytes == null) {
+                // Variable.
+                nrows = indexStats.getRowCount() / histogram.totalDistinctCount();
+            }
+            else {
+                nrows = rowsEqual(histogram, keyBytes);
+            }
+        }
+        else {
+            byte[] lowBytes = encodeKeyBytes(index, equalityComparands, lowComparand);
+            byte[] highBytes = encodeKeyBytes(index, equalityComparands, highComparand);
+            if ((lowBytes == null) && (highBytes == null)) {
+                // Range completely unknown.
+                nrows = indexStats.getRowCount();
+            }
+            else {
+                nrows = rowsBetween(histogram, lowBytes, lowInclusive, highBytes, highInclusive);
+            }
+        }
+        if (true)
+            nrows = (nrows * rowCount) / indexStats.getRowCount();
+        return new CostEstimate(nrows, 
+                                RANDOM_ACCESS_COST + (nrows * SEQUENTIAL_ACCESS_COST));
     }
 
+    protected byte[] encodeKeyBytes(Index index, 
+                                    List<ExpressionNode> fields,
+                                    ExpressionNode anotherField) {
+        return null;
+    }
+
+    protected long rowsEqual(Histogram histogram, byte[] keyBytes) {
+        return 0;
+    }
+
+    protected long rowsBetween(Histogram histogram, 
+                               byte[] lowBytes, boolean lowInclusive,
+                               byte[] highBytes, boolean highInclusive) {
+        return 0;
+    }
+    
     /** Estimate the cost of starting at the given table's index and
      * fetching the given tables, then joining them with Flatten and
      * Product. */
