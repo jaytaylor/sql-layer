@@ -211,7 +211,7 @@ public abstract class ServerSessionBase implements ServerSession
 
     @Override
     public CostEstimator costEstimator() {
-        return new ServerCostEstimator(reqs, session);
+        return new ServerCostEstimator(this, reqs);
     }
 
 }

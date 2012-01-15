@@ -20,29 +20,33 @@ import com.akiban.sql.optimizer.rule.CostEstimator;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.service.session.Session;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 
 public class ServerCostEstimator extends CostEstimator
 {
-    private Session session;
+    private ServerSession session;
     private IndexStatisticsService indexStatistics;
 
-    public ServerCostEstimator(ServerServiceRequirements reqs,
-                               Session session) {
+    public ServerCostEstimator(ServerSession session,
+                               ServerServiceRequirements reqs) {
         this.session = session;
         indexStatistics = reqs.indexStatistics();
     }
 
     @Override
     public IndexStatistics getIndexStatistics(Index index) {
-        return indexStatistics.getIndexStatistics(session, index);
+        return indexStatistics.getIndexStatistics(session.getSession(), index);
     }
 
     @Override
     public long getTableRowCount(Table table) {
         return ((RowDef)table.rowDef()).getTableStatus().getApproximateRowCount();
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return "true".equals(session.getProperty("cbo"));
     }
 
 }

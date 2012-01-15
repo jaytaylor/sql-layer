@@ -17,22 +17,34 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.plan.*;
 
-import com.akiban.server.store.statistics.IndexStatistics;
-import static com.akiban.server.store.statistics.IndexStatistics.*;
-
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
+import com.akiban.server.PersistitKeyValueTarget;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.store.statistics.IndexStatistics;
+import static com.akiban.server.store.statistics.IndexStatistics.*;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.conversion.Converters;
+import com.persistit.Key;
+import com.persistit.Persistit;
 
 import java.util.*;
 
 public abstract class CostEstimator
 {
+    private final Key key = new Key((Persistit)null);
+    private final PersistitKeyValueTarget keyTarget = new PersistitKeyValueTarget();
+
+    protected CostEstimator() {
+    }
+
     public abstract long getTableRowCount(Table table);
     public abstract IndexStatistics getIndexStatistics(Index index);
 
     // TODO: Temporary until fully installed.
     public boolean isEnabled() {
-        return true;
+        return false;
     }
 
     // TODO: These need to be figured out for real.
@@ -97,10 +109,47 @@ public abstract class CostEstimator
                                 RANDOM_ACCESS_COST + (nrows * SEQUENTIAL_ACCESS_COST));
     }
 
+    /** Encode the given field expressions a comparable key byte array.
+     * Or return <code>null</code> if some field is not a constant.
+     */
     protected byte[] encodeKeyBytes(Index index, 
                                     List<ExpressionNode> fields,
                                     ExpressionNode anotherField) {
-        return null;
+        key.clear();
+        keyTarget.attach(key);
+        int i = 0;
+        if (fields != null) {
+            for (ExpressionNode field : fields) {
+                if (!encodeKeyValue(field, index, i++)) {
+                    return null;
+                }
+            }
+        }
+        if (anotherField != null) {
+            if (!encodeKeyValue(anotherField, index, i++)) {
+                return null;
+            }
+        }
+        byte[] keyBytes = new byte[key.getEncodedSize()];
+        System.arraycopy(key.getEncodedBytes(), 0, keyBytes, 0, keyBytes.length);
+        return keyBytes;
+    }
+
+    protected boolean encodeKeyValue(ExpressionNode node, Index index, int column) {
+        Expression expr = null;
+        if (node instanceof ConstantExpression) {
+            if (node.getAkType() == null)
+                expr = Expressions.literal(((ConstantExpression)node).getValue());
+            else
+                expr = Expressions.literal(((ConstantExpression)node).getValue(),
+                                           node.getAkType());
+        }
+        if (expr == null)
+            return false;
+        ValueSource valueSource = expr.evaluation().eval();
+        keyTarget.expectingType(index.getColumns().get(column).getColumn().getType().akType());
+        Converters.convert(valueSource, keyTarget);
+        return true;
     }
 
     protected long rowsEqual(Histogram histogram, byte[] keyBytes) {
