@@ -1,0 +1,229 @@
+Table: customers
+Index: PRIMARY
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [2]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [3]
+    lt: 0
+---
+Table: customers
+Index: name
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [Adams]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [Jones]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [Smith]
+    lt: 0
+---
+Table: orders
+Index: PRIMARY
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [101]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [102]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [201]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [202]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [301]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [401]
+    lt: 0
+---
+Table: orders
+Index: __akiban_fk_0
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 2
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: [2]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [3]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [4]
+    lt: 0
+---
+Table: orders
+Index: order_date
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [1029665]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [1029724]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [1029729]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [1029730]
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: [1029731]
+    lt: 0
+---
+Table: items
+Index: PRIMARY
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [7]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [8]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [9]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [10]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [11]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [12]
+    lt: 0
+---
+Table: items
+Index: __akiban_fk_1
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 2
+    key: [101]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [201]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [202]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [301]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [401]
+    lt: 0
+---
+Table: items
+Index: sku
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 3
+    key: ['1234']
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: ['4567']
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: ['9876']
+    lt: 0
+---
+Table: addresses
+Index: PRIMARY
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [101]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [201]
+    lt: 0
+---
+Table: addresses
+Index: __akiban_fk_2
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [2]
+    lt: 0
+---
+Table: addresses
+Index: state
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [MA]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [NY]
+    lt: 0
