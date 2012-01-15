@@ -29,14 +29,20 @@ import com.akiban.server.types.conversion.Converters;
 import com.persistit.Key;
 import com.persistit.Persistit;
 
+import com.google.common.primitives.UnsignedBytes;
+
 import java.util.*;
 
 public abstract class CostEstimator
 {
-    private final Key key = new Key((Persistit)null);
-    private final PersistitKeyValueTarget keyTarget = new PersistitKeyValueTarget();
+    private final Key key;
+    private final PersistitKeyValueTarget keyTarget;
+    private final Comparator<byte[]> bytesComparator;
 
     protected CostEstimator() {
+        key = new Key((Persistit)null);
+        keyTarget = new PersistitKeyValueTarget();
+        bytesComparator = UnsignedBytes.lexicographicalComparator();
     }
 
     public abstract long getTableRowCount(Table table);
@@ -153,6 +159,16 @@ public abstract class CostEstimator
     }
 
     protected long rowsEqual(Histogram histogram, byte[] keyBytes) {
+        // TODO; Could use Collections.binarySearch if we had
+        // something that looked like a HistogramEntry.
+        List<HistogramEntry> entries = histogram.getEntries();
+        int i = 0;
+        while (i < entries.size()) {
+            HistogramEntry entry = entries.get(i);
+            int compare = bytesComparator.compare(keyBytes, entry.getKeyBytes());
+            if (compare == 0)
+                return entry.getEqualCount();
+        }
         return 0;
     }
 
