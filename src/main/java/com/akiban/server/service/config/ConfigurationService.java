@@ -54,8 +54,7 @@ public interface ConfigurationService
      *         <td>3</td>
      *     </tr>
      * </table>
-     * ...then {@code deriveProperties(a.)} would result in a Properties instance with ke
-y-value pairs:
+     * ...then {@code deriveProperties(a.)} would result in a Properties instance with key-value pairs:
      * <table border="1">
      *     <tr>
      *         <th>key</th>
