@@ -37,6 +37,7 @@ import com.akiban.server.error.ParseException;
 import com.akiban.ais.model.AkibanInformationSchema;
 
 import java.util.List;
+import java.util.Properties;
 
 /**
  * Compile SQL statements into operator trees.
@@ -51,11 +52,11 @@ public class OperatorCompiler extends SchemaRulesContext
     protected BooleanNormalizer booleanNormalizer;
     protected SubqueryFlattener subqueryFlattener;
 
-    public OperatorCompiler(SQLParser parser, 
+    public OperatorCompiler(SQLParser parser, Properties properties,
                             AkibanInformationSchema ais, String defaultSchemaName,
                             FunctionsRegistry functionsRegistry,
                             IndexEstimator indexEstimator) {
-        super(ais, functionsRegistry, indexEstimator, DEFAULT_RULES);
+        super(ais, functionsRegistry, indexEstimator, DEFAULT_RULES, properties);
         parserContext = parser;
         nodeFactory = parserContext.getNodeFactory();
         binder = new AISBinder(ais, defaultSchemaName);

@@ -39,9 +39,11 @@ import static junit.framework.Assert.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Properties;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
@@ -53,7 +55,7 @@ public class RulesTest extends OptimizerTestBase
     public static final File RESOURCE_DIR = 
         new File(OptimizerTestBase.RESOURCE_DIR, "rule");
 
-    protected File rulesFile, schemaFile, indexFile, statsFile;
+    protected File rulesFile, schemaFile, indexFile, statsFile, propertiesFile;
 
     @TestParameters
     public static Collection<Parameterization> statements() throws Exception {
@@ -72,14 +74,18 @@ public class RulesTest extends OptimizerTestBase
                 File statsFile = new File(subdir, "stats.yaml");
                 if (!statsFile.exists())
                     statsFile = null;
+                File propertiesFile = new File(subdir, "compiler.properties");
+                if (!propertiesFile.exists())
+                    propertiesFile = null;
                 for (Object[] args : sqlAndExpected(subdir)) {
-                    Object[] nargs = new Object[args.length+4];
+                    Object[] nargs = new Object[args.length+5];
                     nargs[0] = subdir.getName() + "/" + args[0];
                     nargs[1] = rulesFile;
                     nargs[2] = schemaFile;
                     nargs[3] = indexFile;
                     nargs[4] = statsFile;
-                    System.arraycopy(args, 1, nargs, 5, args.length-1);
+                    nargs[5] = propertiesFile;
+                    System.arraycopy(args, 1, nargs, 6, args.length-1);
                     result.add(nargs);
                 }
             }
@@ -88,13 +94,14 @@ public class RulesTest extends OptimizerTestBase
     }
 
     public RulesTest(String caseName, 
-                     File rulesFile, File schemaFile, File indexFile, File statsFile,
+                     File rulesFile, File schemaFile, File indexFile, File statsFile, File propertiesFile,
                      String sql, String expected, String error) {
         super(caseName, sql, expected, error);
         this.rulesFile = rulesFile;
         this.schemaFile = schemaFile;
         this.indexFile = indexFile;
         this.statsFile = statsFile;
+        this.propertiesFile = propertiesFile;
     }
 
     protected RulesContext rules;
@@ -104,8 +111,19 @@ public class RulesTest extends OptimizerTestBase
         AkibanInformationSchema ais = loadSchema(schemaFile);
         if (indexFile != null)
             OptimizerTestBase.loadGroupIndexes(ais, indexFile);
+        Properties properties = new Properties();
+        if (propertiesFile != null) {
+            FileInputStream fstr = new FileInputStream(propertiesFile);
+            try {
+                properties.load(fstr);
+            }
+            finally {
+                fstr.close();
+            }
+        }
         rules = new RulesTestContext(ais, DEFAULT_SCHEMA, statsFile,
-                                     RulesTestHelper.loadRules(rulesFile));
+                                     RulesTestHelper.loadRules(rulesFile),
+                                     properties);
     }
 
     @Test
