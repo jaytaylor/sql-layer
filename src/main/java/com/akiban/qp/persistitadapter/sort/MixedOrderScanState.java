@@ -15,8 +15,9 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.util.Tap;
 import com.persistit.exception.PersistitException;
+
+import static com.akiban.qp.persistitadapter.sort.SortCursor.SORT_TRAVERSE;
 
 abstract class MixedOrderScanState
 {
@@ -24,7 +25,7 @@ abstract class MixedOrderScanState
 
     public boolean advance() throws PersistitException
     {
-        TRAVERSE_COUNT.hit();
+        SORT_TRAVERSE.hit();
         return ascending ? cursor.exchange.next(false) : cursor.exchange.previous(false);
     }
 
@@ -38,6 +39,4 @@ abstract class MixedOrderScanState
     protected final SortCursorMixedOrder cursor;
     protected final int field;
     protected final boolean ascending;
-    
-    private static final Tap.PointTap TRAVERSE_COUNT = SortCursor.SORT_TRAVERSE;
 }

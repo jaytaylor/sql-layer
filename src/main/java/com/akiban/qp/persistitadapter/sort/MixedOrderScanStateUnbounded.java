@@ -15,9 +15,10 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.util.Tap;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
+
+import static com.akiban.qp.persistitadapter.sort.SortCursor.SORT_TRAVERSE;
 
 class  MixedOrderScanStateUnbounded extends MixedOrderScanState
 {
@@ -32,7 +33,7 @@ class  MixedOrderScanStateUnbounded extends MixedOrderScanState
             cursor.exchange.append(Key.AFTER);
             direction = Key.LT;
         }
-        TRAVERSE_COUNT.hit();
+        SORT_TRAVERSE.hit();
         return cursor.exchange.traverse(direction, false);
     }
 
@@ -40,6 +41,4 @@ class  MixedOrderScanStateUnbounded extends MixedOrderScanState
     {
         super(cursor, field, cursor.ordering().ascending(field));
     }
-    
-    private static final Tap.PointTap TRAVERSE_COUNT = SortCursor.SORT_TRAVERSE;
 }
