@@ -69,16 +69,18 @@ public abstract class CostEstimator
                 return new CostEstimate(1, RANDOM_ACCESS_COST);
             }
         }
-        IndexStatistics indexStats = getIndexStatistics(index);
         long rowCount = getTableRowCount(index.leafMostTable());
+        long statsCount = 0;
+        IndexStatistics indexStats = getIndexStatistics(index);
+        if (indexStats != null)
+            statsCount = indexStats.getRowCount();
         int columnCount = 0;
         if (equalityComparands != null)
             columnCount = equalityComparands.size();
         if ((lowComparand != null) || (highComparand != null))
             columnCount++;
         Histogram histogram;
-        if ((indexStats == null) ||
-            (indexStats.getRowCount() == 0) ||
+        if ((statsCount == 0) ||
             (columnCount == 0) ||
             ((histogram = indexStats.getHistogram(columnCount)) == null)) {
             // No stats or just used for ordering.
@@ -109,12 +111,45 @@ public abstract class CostEstimator
                 nrows = rowsBetween(histogram, lowBytes, lowInclusive, highBytes, highInclusive);
             }
         }
-        if (true)
-            nrows = (nrows * rowCount) / indexStats.getRowCount();
+        if (true)               // TODO: Except equals when entry is almost unique.
+            nrows = (nrows * rowCount) / statsCount;
         return new CostEstimate(nrows, 
                                 RANDOM_ACCESS_COST + (nrows * SEQUENTIAL_ACCESS_COST));
     }
 
+    protected long rowsEqual(Histogram histogram, byte[] keyBytes) {
+        // TODO; Could use Collections.binarySearch if we had
+        // something that looked like a HistogramEntry.
+        List<HistogramEntry> entries = histogram.getEntries();
+        int nentries = entries.size();
+        int i = 0;
+        while (i < nentries) {
+            HistogramEntry entry = entries.get(i);
+            int compare = bytesComparator.compare(keyBytes, entry.getKeyBytes());
+            if (compare == 0)
+                return entry.getEqualCount();
+            else if (compare < 0) {
+                long d = entry.getDistinctCount();
+                if (d == 0)
+                    return 1;
+                return (entry.getLessCount() + d / 2) / d;
+            }
+        }
+        HistogramEntry lastEntry = entries.get(nentries - 1);
+        long d = lastEntry.getDistinctCount();
+        if (d == 0)
+            return 1;
+        d++;
+        return (lastEntry.getLessCount() + lastEntry.getEqualCount() + d / 2) / d;
+    }
+    
+    protected long rowsBetween(Histogram histogram, 
+                               byte[] lowBytes, boolean lowInclusive,
+                               byte[] highBytes, boolean highInclusive) {
+        boolean before = (lowBytes != null);
+        return 0;
+    }
+    
     /** Encode the given field expressions a comparable key byte array.
      * Or return <code>null</code> if some field is not a constant.
      */
@@ -158,26 +193,6 @@ public abstract class CostEstimator
         return true;
     }
 
-    protected long rowsEqual(Histogram histogram, byte[] keyBytes) {
-        // TODO; Could use Collections.binarySearch if we had
-        // something that looked like a HistogramEntry.
-        List<HistogramEntry> entries = histogram.getEntries();
-        int i = 0;
-        while (i < entries.size()) {
-            HistogramEntry entry = entries.get(i);
-            int compare = bytesComparator.compare(keyBytes, entry.getKeyBytes());
-            if (compare == 0)
-                return entry.getEqualCount();
-        }
-        return 0;
-    }
-
-    protected long rowsBetween(Histogram histogram, 
-                               byte[] lowBytes, boolean lowInclusive,
-                               byte[] highBytes, boolean highInclusive) {
-        return 0;
-    }
-    
     /** Estimate the cost of starting at the given table's index and
      * fetching the given tables, then joining them with Flatten and
      * Product. */
