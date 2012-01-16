@@ -88,7 +88,9 @@ public class OperatorCompiler extends SchemaRulesContext
             stmt = (DMLStatementNode)booleanNormalizer.normalize(stmt);
             typeComputer.compute(stmt);
             stmt = subqueryFlattener.flatten(stmt);
-            stmt = distinctEliminator.eliminate(stmt);
+            // TODO: Temporary for safety.
+            if (Boolean.parseBoolean(getProperty("eliminate-distincts", "true")))
+                stmt = distinctEliminator.eliminate(stmt);
             return stmt;
         } 
         catch (StandardException ex) {
