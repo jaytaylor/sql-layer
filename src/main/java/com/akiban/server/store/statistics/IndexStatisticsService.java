@@ -25,7 +25,11 @@ import java.io.IOException;
 
 public interface IndexStatisticsService
 {
+    /** Get current count of number of entries in the given index. */
     public long countEntries(Session session, Index index) throws PersistitInterruptedException;
+    
+    /** Get <em>approximate</em> count of number of entries in the given index. */
+    public long countEntriesApproximate(Session session, Index index);
     
     /** Get available statistics for the given index. */
     public IndexStatistics getIndexStatistics(Session session, Index index);
