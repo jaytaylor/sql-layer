@@ -107,6 +107,20 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     }
 
     @Override
+    public long countEntriesApproximate(Session session, Index index) {
+        if (index.isTableIndex()) {
+            return store.getTableStatus(((TableIndex)index).getTable()).getApproximateRowCount();
+        }
+        final Exchange ex = store.getExchange(session, index);
+        try {
+            return AccumulatorAdapter.getLiveValue(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, ex.getTree());
+        }
+        finally {
+            store.releaseExchange(session, ex);
+        }
+    }
+
+    @Override
     public IndexStatistics getIndexStatistics(Session session, Index index) {
         // TODO: Use getAnalysisTimestamp() of -1 to mark an "empty"
         // analysis to save going to disk for the same index every

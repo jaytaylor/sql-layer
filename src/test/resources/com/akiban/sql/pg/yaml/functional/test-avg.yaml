@@ -29,56 +29,57 @@
 - Statement: INSERT INTO all_types
     (bigint_field, bigint_unsigned_field, boolean_field, decimal_field,
      double_field, float_field, integer_field, numeric_field,
-     smallint_field)
-    VALUES (1, 1, 1, 1.0, 1.0, 1.0, 1, 1.0, 1)
+     real_field, smallint_field)
+    VALUES (1, 1, 1, 1.0, 1.0, 1.0, 1, 1.0, 1.0, 1)
 ---
 - Statement: SELECT AVG(bigint_field), AVG(bigint_unsigned_field),
     AVG(boolean_field), AVG(decimal_field), AVG(double_field),
     AVG(float_field), AVG(integer_field), AVG(numeric_field),
-    AVG(smallint_field) FROM all_types
-- output: [[1, 1, 1, 1, 1.0, 1.0, 1, 1, 1]]
+    AVG(real_field), AVG(smallint_field) FROM all_types
+- output: [[1, 1, 1, 1, 1.0, 1.0, 1, 1, 1.0, 1]]
 
 # Insert duplicate row
 ---
 - Statement: INSERT INTO all_types
     (bigint_field, bigint_unsigned_field, boolean_field, decimal_field,
      double_field, float_field, integer_field, numeric_field,
-     smallint_field)
-    VALUES (1, 1, 1, 1.0, 1.0, 1.0, 1, 1.0, 1)
+     real_field, smallint_field)
+    VALUES (1, 1, 1, 1.0, 1.0, 1.0, 1, 1.0, 1.0, 1)
 ---
 - Statement: SELECT AVG(bigint_field), AVG(bigint_unsigned_field),
     AVG(boolean_field), AVG(decimal_field), AVG(double_field),
     AVG(float_field), AVG(integer_field), AVG(numeric_field),
-    AVG(smallint_field) FROM all_types
-- output: [[1, 1, 1, 1, 1.0, 1.0, 1, 1, 1]]
+    AVG(real_field), AVG(smallint_field) FROM all_types
+- output: [[1, 1, 1, 1, 1.0, 1.0, 1, 1, 1.0, 1]]
 
 # Rounding (1+1+2+2)/4 = 6/4 = 1.5
 ---
 - Statement: INSERT INTO all_types
     (bigint_field, bigint_unsigned_field, decimal_field, double_field,
-     float_field, integer_field, numeric_field, smallint_field)
+     float_field, integer_field, numeric_field, real_field, smallint_field)
     VALUES
-    (2, 2, 2.0, 2.0, 2.0, 2, 2.0, 2),
-    (2, 2, 2.0, 2.0, 2.0, 2, 2.0, 2)
+    (2, 2, 2.0, 2.0, 2.0, 2, 2.0, 2.0, 2),
+    (2, 2, 2.0, 2.0, 2.0, 2, 2.0, 2.0, 2)
 ---
 - Statement: SELECT AVG(bigint_field), AVG(bigint_unsigned_field),
     AVG(decimal_field), AVG(double_field), AVG(float_field),
-    AVG(integer_field), AVG(numeric_field), AVG(smallint_field) FROM
-    all_types
-- output: [[1, 1, 1.5, 1.5, 1.5, 1, 1.5, 1]]
+    AVG(integer_field), AVG(numeric_field), AVG(real_field),
+    AVG(smallint_field)
+    FROM all_types
+- output: [[1, 1, 1.5, 1.5, 1.5, 1, 1.5, 1.5, 1]]
 
 # Back to zero
 ---
 - Statement: INSERT INTO all_types
     (bigint_field, decimal_field, double_field, float_field,
-     integer_field, numeric_field, smallint_field)
+     integer_field, numeric_field, real_field, smallint_field)
     VALUES
-    (-6, -6.0, -6.0, -6.0, -6, -6.0, -6)
+    (-6, -6.0, -6.0, -6.0, -6, -6.0, -6.0, -6)
 ---
 - Statement: SELECT AVG(bigint_field), AVG(decimal_field),
     AVG(double_field), AVG(float_field), AVG(integer_field),
-    AVG(numeric_field), AVG(smallint_field) FROM all_types
-- output: [[0, 0, 0.0, 0.0, 0, 0, 0]]
+    AVG(numeric_field), AVG(real_field), AVG(smallint_field) FROM all_types
+- output: [[0, 0, 0.0, 0.0, 0, 0, 0.0, 0]]
 
 # Do boolean specially
 # Returns incorrect results -- see bug-avg-boolean.yaml
