@@ -158,5 +158,5 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
     private Expression loEQHi;
     private AkType fieldType;
 
-    private static final Tap.PointTap TRAVERSE_COUNT = Tap.createCount("traverse_moss_b");
+    private static final Tap.PointTap TRAVERSE_COUNT = SortCursor.SORT_TRAVERSE;
 }

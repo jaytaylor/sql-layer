@@ -41,5 +41,5 @@ class  MixedOrderScanStateUnbounded extends MixedOrderScanState
         super(cursor, field, cursor.ordering().ascending(field));
     }
     
-    private static final Tap.PointTap TRAVERSE_COUNT = Tap.createCount("traverse_moss_u");
+    private static final Tap.PointTap TRAVERSE_COUNT = SortCursor.SORT_TRAVERSE;
 }

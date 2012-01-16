@@ -57,5 +57,5 @@ class MixedOrderScanStateRestOfKey extends MixedOrderScanState
 
     private Key subtreeRootKey;
     
-    private static final Tap.PointTap TRAVERSE_COUNT = Tap.createCount("traverse_moss_rok");
+    private static final Tap.PointTap TRAVERSE_COUNT = SortCursor.SORT_TRAVERSE;
 }

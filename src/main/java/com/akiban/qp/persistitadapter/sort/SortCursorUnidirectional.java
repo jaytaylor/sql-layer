@@ -352,5 +352,5 @@ class SortCursorUnidirectional extends SortCursor
     protected final PersistitKeyValueTarget startKeyTarget = new PersistitKeyValueTarget();
     protected final PersistitKeyValueTarget endKeyTarget = new PersistitKeyValueTarget();
     
-    private static final Tap.PointTap TRAVERSE_COUNT = Tap.createCount("traverse_scu");
+    private static final Tap.PointTap TRAVERSE_COUNT = SortCursor.SORT_TRAVERSE;
 }

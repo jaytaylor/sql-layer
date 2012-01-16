@@ -39,5 +39,5 @@ abstract class MixedOrderScanState
     protected final int field;
     protected final boolean ascending;
     
-    private static final Tap.PointTap TRAVERSE_COUNT = Tap.createCount("traverse_moss");
+    private static final Tap.PointTap TRAVERSE_COUNT = SortCursor.SORT_TRAVERSE;
 }
