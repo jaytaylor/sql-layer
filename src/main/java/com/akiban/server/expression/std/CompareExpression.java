@@ -82,7 +82,6 @@ public final class CompareExpression extends AbstractBinaryExpression {
 
     private static Map<AkType,CompareOp> createCompareOpsMap() {
         Map<AkType,CompareOp> map = new EnumMap<AkType, CompareOp>(AkType.class);
-        CompareOp doubleCompareOp = createDoubleCompareOp();
         for (AkType type : AkType.values()) {
             if (type == AkType.NULL || type == AkType.UNSUPPORTED)
                 continue;
@@ -94,8 +93,10 @@ public final class CompareExpression extends AbstractBinaryExpression {
                     map.put(type, createLongCompareOp(type));
                     break;
                 case FLOAT_AKTYPE:
+                    map.put(type, createFloatCompareOp());
+                    break;
                 case DOUBLE_AKTYPE:
-                    map.put(type, doubleCompareOp);
+                    map.put(type, createDoubleCompareOp());
                     break;
                 case OBJECT_AKTYPE:
                     map.put(type, createObjectCompareOp(type));
@@ -124,6 +125,19 @@ public final class CompareExpression extends AbstractBinaryExpression {
                 double aDouble = Extractors.getDoubleExtractor().getDouble(a);
                 double bDouble = Extractors.getDoubleExtractor().getDouble(b);
                 return Double.compare(aDouble, bDouble);
+            }
+        };
+    }
+
+    private static CompareOp createFloatCompareOp() {
+        return new CompareOp() {
+            @Override
+            public int compare(ValueSource a, ValueSource b) {
+                // There are no float extractors. But still need to be
+                // comparison with only float precision.
+                float aFloat = (float)Extractors.getDoubleExtractor().getDouble(a);
+                float bFloat = (float)Extractors.getDoubleExtractor().getDouble(b);
+                return Float.compare(aFloat, bFloat);
             }
         };
     }
