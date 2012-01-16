@@ -1,5 +1,6 @@
 Table: customers
 Index: PRIMARY
+RowCount: 3
 Statistics:
 - Columns: 1
   Histogram:
@@ -18,6 +19,7 @@ Statistics:
 ---
 Table: customers
 Index: name
+RowCount: 3
 Statistics:
 - Columns: 1
   Histogram:
@@ -36,6 +38,7 @@ Statistics:
 ---
 Table: orders
 Index: PRIMARY
+RowCount: 6
 Statistics:
 - Columns: 1
   Histogram:
@@ -66,6 +69,7 @@ Statistics:
 ---
 Table: orders
 Index: __akiban_fk_0
+RowCount: 6
 Statistics:
 - Columns: 1
   Histogram:
@@ -88,6 +92,7 @@ Statistics:
 ---
 Table: orders
 Index: order_date
+RowCount: 6
 Statistics:
 - Columns: 1
   Histogram:
@@ -114,6 +119,7 @@ Statistics:
 ---
 Table: items
 Index: PRIMARY
+RowCount: 6
 Statistics:
 - Columns: 1
   Histogram:
@@ -144,6 +150,7 @@ Statistics:
 ---
 Table: items
 Index: __akiban_fk_1
+RowCount: 6
 Statistics:
 - Columns: 1
   Histogram:
@@ -170,6 +177,7 @@ Statistics:
 ---
 Table: items
 Index: sku
+RowCount: 6
 Statistics:
 - Columns: 1
   Histogram:
@@ -188,6 +196,7 @@ Statistics:
 ---
 Table: addresses
 Index: PRIMARY
+RowCount: 3
 Statistics:
 - Columns: 1
   Histogram:
@@ -202,6 +211,7 @@ Statistics:
 ---
 Table: addresses
 Index: __akiban_fk_2
+RowCount: 3
 Statistics:
 - Columns: 1
   Histogram:
@@ -216,6 +226,7 @@ Statistics:
 ---
 Table: addresses
 Index: state
+RowCount: 3
 Statistics:
 - Columns: 1
   Histogram:

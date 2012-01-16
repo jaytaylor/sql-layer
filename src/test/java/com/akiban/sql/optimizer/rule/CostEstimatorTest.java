@@ -59,7 +59,7 @@ public class CostEstimatorTest
         List<ExpressionNode> equals = Collections.singletonList(constant("1234", AkType.VARCHAR));
         CostEstimate costEstimate = costEstimator.costIndexScan(index, equals,
                                                                 null, false, null, false);
-        assertEquals(100, costEstimate.getRowCount());
+        assertEquals(3, costEstimate.getRowCount());
     }
 
 }
