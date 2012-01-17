@@ -30,12 +30,17 @@ import java.util.Locale;
  * */
 public class AllQueryComboCreator extends GenericCreator implements Runnable {
 
-    private static final String TARGET_AREA = "query-combo";
+    public static final String STR_METHOD = "[s]=";
+    public static final String DT_METHOD = "[d]=";
+    public static final String INT_METHOD = "[i]=";
+    static final String TARGET_AREA = "query-combo";
     StringBuilder yaml_file_contents = new StringBuilder();
     String server = "localhost";
     String username = "root";
     String password = "";
     int counter = 0;
+    StringBuilder sb = new StringBuilder();
+    Formatter formatter = new Formatter(sb, Locale.US);
 
     /**
      * @param args
@@ -45,19 +50,19 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
         b.run();
     }
 
-    final String[] QUANTIFIERS = { "Distinct", "All", "" };
-    final String[] INT_FIELDS = { "customers.customer_id" };
-    final String[] STR_FIELDS = { "customers.customer_title",
+    public final String[] QUANTIFIERS = { "Distinct", "All", "" };
+    public final String[] INT_FIELDS = { "customers.customer_id" };
+    public final String[] STR_FIELDS = { "customers.customer_title",
             "customers.customer_name", "customers.primary_payment_code",
             "customers.payment_status", "orders.ship_priority" };
-    final String[] DT_FIELDS = { "orders.order_date", "orders.ship_date" };
-    final String[] TABLES = { "customers", "orders" };
-    final String[] INT_PARAMS = { "-5", "0", "2", "99" };
-    final String[] STR_PARAMS = { "ABCD", "FONDUE", "CCCCC", "ABDFTERE" };
-    final String[] DT_PARAMS = { "1999-03-04", "2012-12-31" };
-    final String[] FUNCTION_LIST = { "[i]=[i] MOD [i]", "[i]=AVG([i],[i],[i])",
+    public final String[] DT_FIELDS = { "orders.order_date", "orders.ship_date" };
+    public final String[] TABLES = { "customers", "orders" };
+    public final String[] INT_PARAMS = { "-5", "0", "2", "99" };
+    public final String[] STR_PARAMS = { "ABCD", "FONDUE", "CCCCC", "ABDFTERE" };
+    public final String[] DT_PARAMS = { "1999-03-04", "2012-12-31" };
+    public final String[] FUNCTION_LIST = { "[i]=%3$s = %1$s MOD %2$s",
             "[s]=%1$s = CONCAT('%2$s','%3$s')",
-            "[d]=DATE_ADD([d], INTERVAL [i] HOUR)" };
+            "[d]=DATE_ADD(%1$s, INTERVAL %2$s HOUR)" };
     final Relationship[] RELATIONSHIPS = {
             new Relationship("customers", "orders", "customer_id",
                     "customer_id"),
@@ -87,65 +92,101 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
 
         justSelectIterations(select_fields);
 
-        justWhereIterationsString(new HashSet<String>(Arrays.asList(STR_FIELDS)));
-        justWhereIterationsInteger(new HashSet<String>(
-                Arrays.asList(INT_FIELDS)));
-        justWhereIterationsDate(new HashSet<String>(Arrays.asList(DT_FIELDS)));
+        justWhereIterations(string_array);
+
+        justJoinIterations(string_array);
 
         finalizeFile();
     }
 
-    private void justWhereIterationsInteger(HashSet<String> hashSet) {
-        // TODO Auto-generated method stub
-
-    }
-
-    private void justWhereIterationsDate(HashSet<String> hashSet) {
-        // TODO Auto-generated method stub
-
-    }
-
-    private void justWhereIterationsString(HashSet<String> string_array) {
-        StringBuilder sb = new StringBuilder();
-        Formatter formatter = new Formatter(sb, Locale.US);
-
-        String from = extractFromClause(string_array.toString());
-        Iterator<String> i = string_array.iterator();
-        while (i.hasNext()) {
-            String field = i.next();
-
-            String full_sql = "select " + field + from;
-            for (int a = 0; a < FUNCTION_LIST.length; a++) {
-                String function = new String(FUNCTION_LIST[a]).substring(4);
-                if (FUNCTION_LIST[a].startsWith("[s]=")) {
-                    for (int x = 0; x < STR_PARAMS.length; x++) {
-                        formatter.format(function, field, STR_PARAMS[x],
-                                STR_PARAMS[Math.min(STR_PARAMS.length - 1,
-                                        (x + 1))]);
-                        writeYamlBlock(full_sql + " where " + sb.toString());
-                        sb.setLength(0);
-                    }
-                }
+    private void justJoinIterations(HashSet<String> string_array) {
+        SQLStatement stmt = new SQLStatement();
+        stmt.fields = turnArrayToCommaDelimtedList(string_array);
+        stmt.tableList = extractTableList(string_array.toString());
+        for (int x = 0; x < RELATIONSHIPS.length; x++) {
+            if (stmt.tableList.contains(RELATIONSHIPS[x].primaryTable)
+                    && stmt.tableList.contains(RELATIONSHIPS[x].secondaryTable)) {
+                stmt.tableList.remove(RELATIONSHIPS[x].secondaryTable);
+                formatter.format(" JOIN %3$s ON %1$s.%2$s = %3$s.%4$s ",
+                        RELATIONSHIPS[x].primaryTable,
+                        RELATIONSHIPS[x].primaryKey,
+                        RELATIONSHIPS[x].secondaryTable,
+                        RELATIONSHIPS[x].secondaryKey);
+                stmt.joins = sb.toString();
+                writeYamlBlock(stmt.getSQL());
+                sb.setLength(0);
+                formatter.format(" LEFT JOIN %3$s ON %1$s.%2$s = %3$s.%4$s ",
+                        RELATIONSHIPS[x].primaryTable,
+                        RELATIONSHIPS[x].primaryKey,
+                        RELATIONSHIPS[x].secondaryTable,
+                        RELATIONSHIPS[x].secondaryKey);
+                stmt.joins = sb.toString();
+                writeYamlBlock(stmt.getSQL());
+                sb.setLength(0);
             }
         }
 
     }
 
+    private void justWhereIterations(HashSet<String> string_array) {
+        SQLStatement stmt = new SQLStatement();
+        stmt.fields = turnArrayToCommaDelimtedList(string_array);
+        stmt.tableList = extractTableList(string_array.toString());
+
+        Iterator<String> i = string_array.iterator();
+        while (i.hasNext()) {
+            String field = i.next();
+
+            for (int a = 0; a < FUNCTION_LIST.length; a++) {
+                if (FUNCTION_LIST[a].startsWith(STR_METHOD)) {
+                    for (int x = 0; x < STR_PARAMS.length; x++) {
+                        stmt.setWhere(format(x, a, field, STR_PARAMS));
+                        writeYamlBlock(stmt.getSQL());
+                    }
+                }
+                if (FUNCTION_LIST[a].startsWith(INT_METHOD)) {
+                    for (int x = 0; x < INT_PARAMS.length; x++) {
+                        stmt.setWhere(format(x, a, field, INT_PARAMS));
+                        writeYamlBlock(stmt.getSQL());
+                    }
+                }
+                if (FUNCTION_LIST[a].startsWith(DT_METHOD)) {
+                    for (int x = 0; x < DT_PARAMS.length; x++) {
+                        stmt.setWhere(format(x, a, field, DT_PARAMS));
+                        writeYamlBlock(stmt.getSQL());
+                    }
+                }
+            }
+        }
+    }
+
+    protected String format(int x, int a, String field, String[] source) {
+        formatter.format(new String(FUNCTION_LIST[a]).substring(4), field,
+                source[x], source[Math.min(source.length - 1, (x + 1))],
+                source[Math.min(source.length - 1, (x + 2))],
+                source[Math.min(source.length - 1, (x + 3))],
+                source[Math.min(source.length - 1, (x + 4))]);
+        String retVal = sb.toString();
+        sb.setLength(0);
+        return retVal;
+    }
+
+    private String turnArrayToCommaDelimtedList(HashSet<String> string_array) {
+        return turnArrayToCommaDelimtedList(new ArrayList<String>(string_array));
+    }
+
     private void justSelectIterations(HashSet<HashSet<String>> select_fields) {
-        String quan;
-        String from;
+        SQLStatement stmt = new SQLStatement();
         Iterator<HashSet<String>> i = select_fields.iterator();
         while (i.hasNext()) {
             ArrayList<String> next = new ArrayList<String>(i.next());
 
-            from = extractFromClause(next.toString());
-
-            String full_sql = "select " + turnArrayToCommaDelimtedList(next)
-                    + from;
-            writeYamlBlock(full_sql);
+            stmt.tableList = extractTableList(next.toString());
+            stmt.fields = turnArrayToCommaDelimtedList(next);
+            writeYamlBlock(stmt.getSQL());
 
             for (int a = 0; a < QUANTIFIERS.length; a++) {
-                quan = " " + QUANTIFIERS[a] + " ";
+                stmt.quantifier = " " + QUANTIFIERS[a] + " ";
 
                 for (int b = 0; b < next.size(); b++) {
                     @SuppressWarnings("unchecked")
@@ -155,39 +196,39 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
                     if (QUANTIFIERS[a].length() > 0) {
                         Collections.swap(next, 0, b);
                         temp_select_fields = (ArrayList<String>) next.clone();
-                        temp_select_fields.set(0,
-                                quan + temp_select_fields.get(b));
+                        temp_select_fields.set(0, temp_select_fields.get(b));
+                        stmt.setGroupby(temp_select_fields.get(b));
 
-                        full_sql = "select "
-                                + turnArrayToCommaDelimtedList(temp_select_fields)
-                                + from;
-                        writeYamlBlock(full_sql);
+                        stmt.fields = turnArrayToCommaDelimtedList(temp_select_fields);
+
+                        writeYamlBlock(stmt.getSQL());
 
                         temp_select_fields = (ArrayList<String>) next.clone();
+                        stmt.quantifier = "";
+
                         temp_select_fields.set(0, " count("
                                 + temp_select_fields.get(b) + ") ");
 
-                        full_sql = "select "
-                                + turnArrayToCommaDelimtedList(temp_select_fields)
-                                + from;
-                        writeYamlBlock(full_sql);
+                        stmt.fields = turnArrayToCommaDelimtedList(temp_select_fields);
+
+                        writeYamlBlock(stmt.getSQL());
 
                         temp_select_fields = (ArrayList<String>) next.clone();
                         temp_select_fields.set(0, " count(distinct "
                                 + temp_select_fields.get(b) + ") ");
 
-                        full_sql = "select "
-                                + turnArrayToCommaDelimtedList(temp_select_fields)
-                                + from;
-                        writeYamlBlock(full_sql);
+                        stmt.fields = turnArrayToCommaDelimtedList(temp_select_fields);
+
+                        writeYamlBlock(stmt.getSQL());
+                        stmt.setGroupby("");
                     }
                 }
             }
         }
     }
 
-    protected String extractFromClause(String sql) {
-        String retVal = " from ";
+    protected ArrayList<String> extractTableList(String sql) {
+        ArrayList<String> retVal = new ArrayList<String>();
         if (sql.length() > 2) {
             sql = sql.replace("[", " ");
             if (sql.contains(",")) {
@@ -201,7 +242,7 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
                                     .substring(temp2[y].indexOf(" "));
                         }
                         if (!retVal.contains(temp_str)) {
-                            retVal += temp_str + " , ";
+                            retVal.add(temp_str.trim());
                         }
                     }
                 }
@@ -214,17 +255,12 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
                         temp_str = temp2[y].substring(temp2[y].indexOf(" "));
                     }
                     if (!retVal.contains(temp_str)) {
-                        retVal += temp_str.trim() + " , ";
+                        retVal.add(temp_str.trim());
                     }
                 }
             }
         }
-        if (!retVal.equals(" from ")) {
-            retVal = " "
-                    + retVal.trim().substring(0, retVal.trim().length() - 1);
-        } else {
-            retVal = " from dual ";
-        }
+
         return retVal;
     }
 
@@ -242,7 +278,9 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
         try {
             retVal = generateOutputFromInno(server, username, password, sql,
                     null);
+            System.out.print(".");
         } catch (Exception e) {
+            System.out.println("");
             System.out.println("MySQL: " + sql);
             System.out.println("MySQL: " + retVal);
             System.out.println("MySQL ERROR:  " + e.getMessage());
@@ -259,7 +297,7 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
     private void finalizeFile() {
         // will drop the files in the same branch as where this code is running
         // sql gets dropped in the root directory of branch
-        String path = System.getProperty("user.dir")+"/";
+        String path = System.getProperty("user.dir") + "/src/test/resources/com/akiban/sql/pg/yaml/functional/";
         recordYamlToDisk(path);
         System.out.println(yaml_file_contents.toString());
         System.out.println("Test generated is " + counter);
@@ -269,7 +307,8 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
         yaml_file_contents
                 .append("# generated by com.akiban.sql.test.AllQueryComboCreator on "
                         + new Date() + eol);
-        yaml_file_contents.append("---" + eol + "- Include: all-caoi-schema.yaml" + eol);
+        yaml_file_contents.append("---" + eol
+                + "- Include: all-caoi-schema.yaml" + eol);
     }
 
     private void recordYamlToDisk(String path) {
@@ -321,6 +360,57 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
         public String secondaryTable;
         public String primaryKey;
         public String secondaryKey;
+    }
+
+    private class SQLStatement {
+        public String quantifier = "";
+        public String fields = "";
+        public String from = "";
+        public String joins = "";
+        private String where = "";
+        private String groupby = "";
+        public String having = "";
+        public String orderby = "";
+        public String limit = "";
+
+        public String getSQL() {
+            if (tableList.size() > 0) {
+                from = " From " + turnArrayToCommaDelimtedList(tableList);
+            }
+            return "select " + quantifier + fields + from + joins + getWhere()
+                    + getGroupby() + having + orderby + limit;
+        }
+
+        public String getWhere() {
+            return where;
+        }
+
+        public void setWhere(String where) {
+            this.where = " where " + where;
+        }
+
+        public void addWhere(String where_fragment) {
+            this.where += where_fragment;
+        }
+
+        public String getGroupby() {
+            return groupby;
+        }
+
+        public void setGroupby(String groupby) {
+            if (groupby.length() > 0) {
+                this.groupby = " group by " + groupby;
+            } else {
+                this.groupby = "";
+            }
+        }
+
+        public void addGroupby(String groupby_fragment) {
+            this.groupby += groupby_fragment;
+        }
+
+        ArrayList<String> tableList = new ArrayList<String>();
+
     }
 
 }
