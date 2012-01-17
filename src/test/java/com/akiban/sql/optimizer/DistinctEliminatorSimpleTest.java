@@ -35,17 +35,9 @@ import java.util.regex.Pattern;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(NamedParameterizedRunner.class)
-public final class DistinctEliminatorSimpleTest extends OptimizerTestBase {
+public final class DistinctEliminatorSimpleTest extends DistinctEliminatorTestBase {
 
-    public static final File RESOURCE_DIR = 
-        new File(OptimizerTestBase.RESOURCE_DIR, "eliminate-distincts");
     private static final File SIMPLE_TEST = new File(RESOURCE_DIR, "simple-distincts.txt");
-
-    @Before
-    public void loadDDL() throws Exception {
-        loadSchema(new File(RESOURCE_DIR, "schema.ddl"));
-        ((BoundNodeToString)unparser).setUseBindings(true);
-    }
 
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> statements() throws Exception {
@@ -114,16 +106,6 @@ public final class DistinctEliminatorSimpleTest extends OptimizerTestBase {
                 : KeepOrOptimize.OPTIMIZED;
         assertEquals(optimized, distinctExpectedOptimized, distinctActualOptimized);
         
-    }
-    
-    private String optimized() throws Exception {
-        StatementNode stmt = parser.parseStatement(sql);
-        binder.bind(stmt);
-        stmt = booleanNormalizer.normalize(stmt);
-        typeComputer.compute(stmt);
-        stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
-        stmt = distinctEliminator.eliminate((DMLStatementNode)stmt);
-        return unparser.toString(stmt);
     }
 
     public DistinctEliminatorSimpleTest(String sql, KeepOrOptimize distinctExpectedOptimized) {
