@@ -1,0 +1,19 @@
+optimize    SELECT DISTINCT sa.* FROM sa LEFT JOIN sb ON a = b
+keep	    SELECT DISTINCT sa.* FROM sa RIGHT JOIN sb ON a = b
+optimize	SELECT DISTINCT sa.* FROM sa JOIN sb ON a = b
+# optimize	SELECT DISTINCT sa.* FROM sa JOIN sb WHERE a = b # syntax not yet supported
+
+optimize	SELECT DISTINCT sa.a FROM sa LEFT JOIN sb ON a = b
+keep	    SELECT DISTINCT sa.a FROM sa RIGHT JOIN sb ON a = b
+optimize	SELECT DISTINCT sa.a FROM sa JOIN sb ON a = b
+
+optimize	SELECT DISTINCT sa.* FROM sa LEFT JOIN sb ON a = b WHERE sa.a = 5
+keep	    SELECT DISTINCT sa.* FROM sa RIGHT JOIN sb ON a = b WHERE sa.a = 5
+optimize	SELECT DISTINCT sa.* FROM sa JOIN sb ON a = b WHERE sa.a = 5
+
+optimize	SELECT DISTINCT ma.* FROM ma JOIN mb ON (a1=b1 AND a2=b2)
+
+optimize	SELECT DISTINCT ma.* FROM ma JOIN mb ON (a1=b1 AND a2=b2) WHERE a1=5
+optimize	SELECT DISTINCT ma.* FROM ma JOIN mb ON (a1=b1 AND a2=b2) WHERE a1=5 AND b1=3
+
+optimize	SELECT DISTINCT * FROM ma JOIN mb ON (a1=b1 AND a2=b2) WHERE a1=5 AND b1=3
