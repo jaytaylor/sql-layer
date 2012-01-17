@@ -21,6 +21,7 @@ import com.akiban.sql.optimizer.AISBinder;
 import com.akiban.sql.optimizer.AISTypeComputer;
 import com.akiban.sql.optimizer.BindingNodeFactory;
 import com.akiban.sql.optimizer.BoundNodeToString;
+import com.akiban.sql.optimizer.DistinctEliminator;
 import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.OperatorCompilerTest;
 import com.akiban.sql.optimizer.SubqueryFlattener;
@@ -63,7 +64,7 @@ public class Tester
         ECHO, PARSE, CLONE,
         PRINT_TREE, PRINT_SQL, PRINT_BOUND_SQL,
         BIND, COMPUTE_TYPES,
-        BOOLEAN_NORMALIZE, FLATTEN_SUBQUERIES,
+        BOOLEAN_NORMALIZE, FLATTEN_SUBQUERIES, ELIMINATE_DISTINCTS,
         PLAN, OPERATORS
     }
 
@@ -76,6 +77,7 @@ public class Tester
     AISTypeComputer typeComputer;
     BooleanNormalizer booleanNormalizer;
     SubqueryFlattener subqueryFlattener;
+    DistinctEliminator distinctEliminator;
     OperatorCompiler operatorCompiler;
     List<BaseRule> planRules;
     RulesContext rulesContext;
@@ -91,6 +93,7 @@ public class Tester
         typeComputer = new AISTypeComputer();
         booleanNormalizer = new BooleanNormalizer(parser);
         subqueryFlattener = new SubqueryFlattener(parser);
+        distinctEliminator = new DistinctEliminator(parser);
     }
 
     public void addAction(Action action) {
@@ -155,6 +158,9 @@ public class Tester
                 break;
             case FLATTEN_SUBQUERIES:
                 stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
+                break;
+            case ELIMINATE_DISTINCTS:
+                stmt = distinctEliminator.eliminate((DMLStatementNode)stmt);
                 break;
             case PLAN:
                 {
@@ -317,6 +323,8 @@ public class Tester
                     tester.addAction(Action.BOOLEAN_NORMALIZE);
                 else if ("-flatten".equals(arg))
                     tester.addAction(Action.FLATTEN_SUBQUERIES);
+                else if ("-distinct".equals(arg))
+                    tester.addAction(Action.ELIMINATE_DISTINCTS);
                 else if ("-plan".equals(arg)) {
                     String rules = args[i++];
                     if (rules.startsWith("@"))
