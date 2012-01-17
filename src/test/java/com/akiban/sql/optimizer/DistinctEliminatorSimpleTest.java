@@ -19,12 +19,15 @@ import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -34,7 +37,7 @@ import static org.junit.Assert.assertEquals;
 @RunWith(NamedParameterizedRunner.class)
 public final class DistinctEliminatorSimpleTest extends DistinctEliminatorTestBase {
 
-    private static final File SIMPLE_TEST = new File(RESOURCE_DIR, "simple-distincts.txt");
+    private static final File SIMPLE_TEST = new File(RESOURCE_DIR, "simple-distincts.yaml");
 
     @NamedParameterizedRunner.TestParameters
     public static Collection<Parameterization> statements() throws Exception {
@@ -42,43 +45,23 @@ public final class DistinctEliminatorSimpleTest extends DistinctEliminatorTestBa
         try {
             ParameterizationBuilder pb = new ParameterizationBuilder();
             BufferedReader buffered = new BufferedReader(fileReader);
-            int lineNo = 0;
-            Set<String> pbNames = new HashSet<String>();
-            for (String line; (line = buffered.readLine()) != null; ) {
-                ++lineNo;
-                line = line.trim();
-                if (line.length() == 0 || line.startsWith("#"))
-                    continue;
-                //Pattern.compile("(!)?\\s*(keep|optimize)\\s+((SELECT DISTINCT)?.*)?", Pattern.CASE_INSENSITIVE);
-                Matcher matcher = LINE_PATTERN.matcher(line);
-                if (!matcher.find())
-                    throw new RuntimeException(lineNo + ": " + line);
-                    
-                String ignoredStr = matcher.group(1);
-                boolean ignored = ignoredStr != null;
-                String keepOrOptimize = matcher.group(2);
-                String sql = matcher.group(3);
-                String selectDistinct = matcher.group(4);
+            Yaml yaml = new Yaml();
+            for (Object objRaw : yaml.loadAll(buffered)) {
+                List<?> asList = (List<?>) objRaw;
+                for (Object lineRaw : asList) {
+                    Map<?,?> line = (Map<?,?>) lineRaw;
+                    if (line.size() != 1)
+                        throw new RuntimeException("need key-val pair:" + line);
+                    String actionStr = (String) line.keySet().iterator().next();
+                    String sql = (String) line.get(actionStr);
 
-                String name = sql;
-                if (name.startsWith("SELECT DISTINCT"))
-                    name = name.substring("SELECT DISTINCT".length());
-                name = lineNo + ": " + name;
+                    String name = sql;
+                    if (name.startsWith("SELECT DISTINCT"))
+                        name = name.substring("SELECT DISTINCT".length());
 
-                KeepOrOptimize distinctIsOptimized;
-                if ("keep".equalsIgnoreCase(keepOrOptimize))
-                    distinctIsOptimized = KeepOrOptimize.KEPT;
-                else if ("optimize".equalsIgnoreCase(keepOrOptimize))
-                    distinctIsOptimized = KeepOrOptimize.OPTIMIZED;
-                else
-                    throw new RuntimeException(lineNo + ": first word must be 'keep' or 'optimize'");
-                
-                if (selectDistinct == null)
-                    throw new RuntimeException(lineNo + ": must be a SELECT DISTINCT");
-
-                if (!pbNames.add(name))
-                    throw new RuntimeException("duplicate at line " + lineNo + ": " + name);
-                pb.create(name, !ignored, sql, distinctIsOptimized);
+                    KeepOrOptimize action = KeepOrOptimize.valueOf(actionStr.toUpperCase());
+                    pb.create(name, action != KeepOrOptimize.IGNORED, sql,  action);
+                }
             }
             return pb.asList();
         }
@@ -110,6 +93,6 @@ public final class DistinctEliminatorSimpleTest extends DistinctEliminatorTestBa
             = Pattern.compile("(!)?\\s*(keep|optimize)\\s+((SELECT\\s+DISTINCT)?.*)?", Pattern.CASE_INSENSITIVE);
     
     private enum KeepOrOptimize {
-        KEPT, OPTIMIZED
+        KEPT, OPTIMIZED, IGNORED
     }
 }
