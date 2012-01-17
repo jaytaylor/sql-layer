@@ -56,10 +56,15 @@ public class CostEstimatorTest
     @Test
     public void testSingleEquals() throws Exception {
         Index index = ais.getTable(SCHEMA, "items").getIndex("sku");
-        List<ExpressionNode> equals = Collections.singletonList(constant("1234", AkType.VARCHAR));
+        List<ExpressionNode> equals = Collections.singletonList(constant("0121", AkType.VARCHAR));
         CostEstimate costEstimate = costEstimator.costIndexScan(index, equals,
                                                                 null, false, null, false);
-        assertEquals(3, costEstimate.getRowCount());
+        assertEquals(113, costEstimate.getRowCount());
+
+        equals = Collections.singletonList(constant("0123", AkType.VARCHAR));
+        costEstimate = costEstimator.costIndexScan(index, equals,
+                                                   null, false, null, false);
+        assertEquals(103, costEstimate.getRowCount());
     }
 
 }

@@ -122,9 +122,7 @@ public abstract class CostEstimator
         // something that looked like a HistogramEntry.
         List<HistogramEntry> entries = histogram.getEntries();
         int nentries = entries.size();
-        int i = 0;
-        while (i < nentries) {
-            HistogramEntry entry = entries.get(i);
+        for (HistogramEntry entry : entries) {
             int compare = bytesComparator.compare(keyBytes, entry.getKeyBytes());
             if (compare == 0)
                 return entry.getEqualCount();
