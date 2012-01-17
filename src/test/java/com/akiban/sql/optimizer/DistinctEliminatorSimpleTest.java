@@ -17,9 +17,6 @@ package com.akiban.sql.optimizer;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
-import com.akiban.sql.parser.DMLStatementNode;
-import com.akiban.sql.parser.StatementNode;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -50,24 +47,23 @@ public final class DistinctEliminatorSimpleTest extends DistinctEliminatorTestBa
             for (String line; (line = buffered.readLine()) != null; ) {
                 ++lineNo;
                 line = line.trim();
-                if (line.length() == 0)
+                if (line.length() == 0 || line.startsWith("#"))
                     continue;
-                //    private static final Pattern LINE_PATTERN = Pattern.compile("\\s*(#?)\\s*((keep|optimize)\\s+(.*))");
+                //Pattern.compile("(!)?\\s*(keep|optimize)\\s+((SELECT DISTINCT)?.*)?", Pattern.CASE_INSENSITIVE);
                 Matcher matcher = LINE_PATTERN.matcher(line);
                 if (!matcher.find())
                     throw new RuntimeException(lineNo + ": " + line);
                     
-                String comment = matcher.group(1);
-                String keepOrOptimize = matcher.group(3);
-                String sql = matcher.group(4);
+                String ignoredStr = matcher.group(1);
+                boolean ignored = ignoredStr != null;
+                String keepOrOptimize = matcher.group(2);
+                String sql = matcher.group(3);
+                String selectDistinct = matcher.group(4);
                 
-                if (comment != null) {
-                    if (keepOrOptimize != null)
-                        pb.addFailing(name(lineNo, sql), null, null);
-                    continue;
-                }
-
-                String name = name(lineNo, sql);
+                String name = sql;
+                if (name.startsWith("SELECT DISTINCT"))
+                    name = name.substring("SELECT DISTINCT".length());
+                name = lineNo + ": " + name;
 
                 KeepOrOptimize distinctIsOptimized;
                 if ("keep".equalsIgnoreCase(keepOrOptimize))
@@ -76,24 +72,19 @@ public final class DistinctEliminatorSimpleTest extends DistinctEliminatorTestBa
                     distinctIsOptimized = KeepOrOptimize.OPTIMIZED;
                 else
                     throw new RuntimeException(lineNo + ": first word must be 'keep' or 'optimize'");
+                
+                if (selectDistinct == null)
+                    throw new RuntimeException(lineNo + ": must be a SELECT DISTINCT");
 
                 if (!pbNames.add(name))
                     throw new RuntimeException("duplicate at line " + lineNo + ": " + name);
-
-                pb.add(name, sql, distinctIsOptimized);
+                pb.create(name, !ignored, sql, distinctIsOptimized);
             }
             return pb.asList();
         }
         finally {
             fileReader.close();
         }
-    }
-
-    private static String name(int lineNo, String name) {
-        if (name.startsWith("SELECT DISTINCT"))
-            name = name.substring("SELECT DISTINCT".length());
-        name = lineNo + ": " + name;
-        return name;
     }
 
     @Test
@@ -115,7 +106,8 @@ public final class DistinctEliminatorSimpleTest extends DistinctEliminatorTestBa
     
     public final KeepOrOptimize distinctExpectedOptimized;
     
-    private static final Pattern LINE_PATTERN = Pattern.compile("\\s*(#)?\\s*((keep|optimize)\\s+(.*))?");
+    private static final Pattern LINE_PATTERN
+            = Pattern.compile("(!)?\\s*(keep|optimize)\\s+((SELECT\\s+DISTINCT)?.*)?", Pattern.CASE_INSENSITIVE);
     
     private enum KeepOrOptimize {
         KEPT, OPTIMIZED

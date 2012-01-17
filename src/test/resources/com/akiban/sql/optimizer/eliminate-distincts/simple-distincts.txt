@@ -1,15 +1,21 @@
+# File format:
+# Comments start with octothorpe, blank lines are ignored.
+# Each test line must start with "optimize" or "keep", which describes what happens to the DISTINCT -- is it
+# optimized out or kept? After that is a query, which must start with SELECT DISTINCT.
+# To ignore a test (because it's known to fail), prefix it with a bang.
+
 # sa-sb in various flavors
 optimize    SELECT DISTINCT sa.* FROM sa LEFT JOIN sb ON a = b
 keep        SELECT DISTINCT sa.* FROM sa RIGHT JOIN sb ON a = b
 optimize    SELECT DISTINCT sa.* FROM sa JOIN sb ON a = b
 optimize    SELECT DISTINCT sa.* FROM sa JOIN sb on 1 = 1 WHERE a = b
-# optimize  SELECT DISTINCT sa.* FROM sa JOIN sb WHERE a = b # syntax not yet supported
+! optimize  SELECT DISTINCT sa.* FROM sa JOIN sb WHERE a = b # syntax not yet supported
 
 # similar flavors to above, but with sb.* instead of sa.*
 keep        SELECT DISTINCT sb.* FROM sa LEFT JOIN sb ON a = b
 optimize    SELECT DISTINCT sb.* FROM sa RIGHT JOIN sb ON a = b
 optimize    SELECT DISTINCT sb.* FROM sa JOIN sb ON a = b
-# optimize  SELECT DISTINCT sb.* FROM sa JOIN sb WHERE a = b # syntax not yet supported
+! optimize  SELECT DISTINCT sb.* FROM sa JOIN sb WHERE a = b # syntax not yet supported
 
 # only sa.a instead of sa.*
 optimize    SELECT DISTINCT sa.a FROM sa LEFT JOIN sb ON a = b
@@ -54,7 +60,6 @@ optimize    SELECT DISTINCT ma.* FROM ma JOIN mb ON (a1=b1 AND a2=b2) WHERE a1=5
 # ma-mb-mc
 optimize    SELECT DISTINCT * from ma, mb, mc
 keep        SELECT DISTINCT ma.* FROM ma, mb, mc WHERE a1 = b1 AND b2 = c1
-# TODO verify this should be kept
 keep        SELECT DISTINCT ma.* FROM ma, mb, mc WHERE a1 = b1 AND b2 = c1 AND c2 = a1
 
 # mix and match join conditions and predicate conditions
@@ -71,8 +76,8 @@ optimize    SELECT DISTINCT ma.*,mb.*   FROM ma, mb, mc WHERE c1 = 5 AND c2 = ?
     # ma        mb      mc
     # (1, 2)    (1, 2)  (5, 1)
     # (1, 3)    (1, 3)  (5, 7)
-optimize    SELECT DISTINCT ma.*,mb.*   FROM ma, mb, mc WHERE c1 = 5
-optimize    SELECT DISTINCT ma.*,mb.*   FROM ma, mb, mc WHERE c1 = 5 AND c2 = c2
+keep        SELECT DISTINCT ma.*,mb.*   FROM ma, mb, mc WHERE c1 = 5
+keep        SELECT DISTINCT ma.*,mb.*   FROM ma, mb, mc WHERE c1 = 5 AND c2 = c2
 
 # LEFT JOIN on ma-mb-mc
 optimize    SELECT DISTINCT ma.* FROM ma LEFT JOIN mb ON a1 = b1 AND a2 = b2 LEFT JOIN mc ON b1 = c1 AND b2 = c2
