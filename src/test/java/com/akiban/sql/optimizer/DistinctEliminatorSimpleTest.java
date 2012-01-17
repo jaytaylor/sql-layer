@@ -26,10 +26,11 @@ import org.junit.runner.RunWith;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 
@@ -59,19 +60,22 @@ public final class DistinctEliminatorSimpleTest extends OptimizerTestBase {
                 line = line.trim();
                 if (line.length() == 0)
                     continue;
-                if (line.startsWith("#")) {
-                    String name = name(lineNo, line.substring(1));
-                    pb.addFailing(name, null, null);
+                //    private static final Pattern LINE_PATTERN = Pattern.compile("\\s*(#?)\\s*((keep|optimize)\\s+(.*))");
+                Matcher matcher = LINE_PATTERN.matcher(line);
+                if (!matcher.find())
+                    throw new RuntimeException(lineNo + ": " + line);
+                    
+                String comment = matcher.group(1);
+                String keepOrOptimize = matcher.group(3);
+                String sql = matcher.group(4);
+                
+                if (comment != null) {
+                    if (keepOrOptimize != null)
+                        pb.addFailing(name(lineNo, sql), null, null);
                     continue;
                 }
-                String[] split = line.split("\\s+", 2);
-                if (split.length != 2)
-                    throw new RuntimeException(lineNo + ": " + Arrays.toString(split));
 
-                String keepOrOptimize = split[0];
-                String sql = split[1];
-                String name = sql;
-                name = name(lineNo, name);
+                String name = name(lineNo, sql);
 
                 KeepOrOptimize distinctIsOptimized;
                 if ("keep".equalsIgnoreCase(keepOrOptimize))
@@ -128,6 +132,8 @@ public final class DistinctEliminatorSimpleTest extends OptimizerTestBase {
     }
     
     public final KeepOrOptimize distinctExpectedOptimized;
+    
+    private static final Pattern LINE_PATTERN = Pattern.compile("\\s*(#)?\\s*((keep|optimize)\\s+(.*))?");
     
     private enum KeepOrOptimize {
         KEPT, OPTIMIZED
