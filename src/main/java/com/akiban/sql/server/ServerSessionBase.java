@@ -35,6 +35,8 @@ import java.util.*;
 
 public abstract class ServerSessionBase implements ServerSession
 {
+    public static final String COMPILER_PROPERTIES_PREFIX = "optimizer.";
+
     protected final ServerServiceRequirements reqs;
     protected Properties properties;
     protected Map<String,Object> attributes = new HashMap<String,Object>();
@@ -123,6 +125,11 @@ public abstract class ServerSessionBase implements ServerSession
         return parser;
     }
     
+    @Override
+    public Properties getCompilerProperties() {
+        return reqs.config().deriveProperties(COMPILER_PROPERTIES_PREFIX);
+    }
+
     @Override
     public SessionTracer getSessionTracer() {
         return sessionTracer;

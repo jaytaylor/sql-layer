@@ -28,9 +28,9 @@ public abstract class ServerOperatorCompiler extends OperatorCompiler
     protected SessionTracer tracer;
 
     protected ServerOperatorCompiler(ServerSession server) {
-        super(server.getParser(), server.getAIS(), server.getDefaultSchemaName(),
+        super(server.getParser(), server.getCompilerProperties(), 
+              server.getAIS(), server.getDefaultSchemaName(),
               server.functionsRegistry(), server.costEstimator());
-
         server.setAttribute("aisBinder", binder);
         server.setAttribute("compiler", this);
 

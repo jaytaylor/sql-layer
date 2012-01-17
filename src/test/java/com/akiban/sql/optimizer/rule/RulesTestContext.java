@@ -19,18 +19,19 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
 
 import java.util.List;
+import java.util.Properties;
 import java.io.File;
 import java.io.IOException;
 
 public class RulesTestContext extends SchemaRulesContext
 {
     public RulesTestContext(AkibanInformationSchema ais, String defaultSchema, 
-                            File statsFile, List<BaseRule> rules) 
+                            File statsFile, List<BaseRule> rules, Properties properties)
             throws IOException {
         super(ais, 
               new FunctionsRegistryImpl(), 
               new TestCostEstimator(ais, defaultSchema, statsFile),
-              rules);
+              rules, properties);
         RulesTestHelper.ensureRowDefs(ais);
     }
 }
