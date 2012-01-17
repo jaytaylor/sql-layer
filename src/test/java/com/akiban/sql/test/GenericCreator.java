@@ -23,12 +23,12 @@ public abstract class GenericCreator {
             out.write(data.toString());
             // Close the output stream
             out.close();
-        } catch (Exception e) {// Catch exception if any
+        } catch (Exception e) {// Catch exception if any            
             System.err.println("Error: " + e.getMessage());
         }
         File f = new File(filename);
-        System.out.println(f.getCanonicalPath());
-        System.out.println(data.toString());
+        //System.out.println(f.getCanonicalPath());
+        //System.out.println(data.toString());
 
     }
 
@@ -38,13 +38,13 @@ public abstract class GenericCreator {
         Class.forName("com.mysql.jdbc.Driver");
         String url = "jdbc:mysql://" + server + "/test";
         Connection conn = DriverManager.getConnection(url, username, password);
-
-        System.out.println(sql);
+        String output_str = null;
+        //System.out.println(sql);
         PreparedStatement stmt = conn.prepareStatement(sql);
         if (args != null) {
-        for (int i = 0; i < args.length; i++) {
-            stmt.setString(i + 1, args[i]);
-        }
+            for (int i = 0; i < args.length; i++) {
+                stmt.setString(i + 1, args[i]);
+            }
         }
         if (stmt.execute()) {
             ResultSet rs = stmt.getResultSet();
@@ -54,29 +54,33 @@ public abstract class GenericCreator {
                 for (int i = 1; i <= md.getColumnCount(); i++) {
                     if (i > 1)
                         output.append(",");
-                    output.append("'"+rs.getString(i)+"'");
+                    output.append("'" + rs.getString(i) + "'");
                 }
-                output.append("]");
+                output.append("],");
 
+            }
+            output_str = output.toString();
+            if (output_str.length() > 4) {
+                output_str = output_str.substring(0, output_str.length()-1);
             }
         } else {
             int count = stmt.getUpdateCount();
-            System.out.println(count + " rows updated.");
+            //System.out.println(count + " rows updated.");
         }
         stmt.close();
         conn.close();
-        return "- output: [" + output.toString() + "]"
+        return "- output: [" + output_str + "]"
                 + System.getProperty("line.separator");
     }
 
     protected String turnArrayToCommaDelimtedList(ArrayList<String> arrayList) {
         StringBuilder sb = new StringBuilder();
-        for (String s : arrayList)
-        {
+        for (String s : arrayList) {
             sb.append(s);
             sb.append(",");
         }
-        return sb.toString();
+        String retVal = sb.toString();
+        return retVal.substring(0, retVal.length() - 1);
     }
 
     protected String trimOuterComma(String fields1) {
