@@ -179,6 +179,7 @@ public class DistinctEliminator
                 columnJoinTables.clear();
                 if (!(columnInConditions(column, whereConditions, columnJoinTables) ||
                       columnInConditions(column, joinConditions, columnJoinTables))) {
+                    columnJoinTables.remove(table);
                     if (columnJoinTables.isEmpty()) {
                         handled = false;
                         break;
