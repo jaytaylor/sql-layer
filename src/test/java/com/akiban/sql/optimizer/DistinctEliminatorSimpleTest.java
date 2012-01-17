@@ -59,7 +59,7 @@ public final class DistinctEliminatorSimpleTest extends DistinctEliminatorTestBa
                 String keepOrOptimize = matcher.group(2);
                 String sql = matcher.group(3);
                 String selectDistinct = matcher.group(4);
-                
+
                 String name = sql;
                 if (name.startsWith("SELECT DISTINCT"))
                     name = name.substring("SELECT DISTINCT".length());
