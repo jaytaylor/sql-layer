@@ -89,9 +89,6 @@ public final class DistinctEliminatorSimpleTest extends DistinctEliminatorTestBa
     
     public final KeepOrOptimize distinctExpectedOptimized;
     
-    private static final Pattern LINE_PATTERN
-            = Pattern.compile("(!)?\\s*(keep|optimize)\\s+((SELECT\\s+DISTINCT)?.*)?", Pattern.CASE_INSENSITIVE);
-    
     private enum KeepOrOptimize {
         KEPT, OPTIMIZED, IGNORED
     }
