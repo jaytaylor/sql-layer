@@ -92,8 +92,13 @@ public class PersistitStore implements Store {
     private static final Tap.InOutTap TABLE_INDEX_MAINTENANCE_TAP = Tap.createTimer("index: maintain_table");
 
     private static final Tap.InOutTap NEW_COLLECTOR_TAP = Tap.createTimer("read: new_collector");
-    
+
+    // an InOutTap would be nice, but pre-propagateDownGroup optimization, propagateDownGroup was called recursively
+    // (via writeRow). PointTap handles this correctly, InOutTap does not, currently.
     private static final Tap.PointTap PROPAGATE_HKEY_CHANGE_TAP = Tap.createCount("write: propagate_hkey_change");
+
+    // TODO: Temporary
+    private static final boolean PDG_OPTIMIZATION = System.getProperty("pdgOptimization", "true").equals("true");
 
     private final static int MEGA = 1024 * 1024;
 
@@ -685,7 +690,7 @@ public class PersistitStore implements Store {
                 }
             }
             // Reinsert it, recomputing the hkey and maintaining indexes
-            writeRow(session, descendentRowData, false);
+            writeRow(session, descendentRowData, !PDG_OPTIMIZATION);
         }
     }
 
