@@ -99,13 +99,14 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
 
 
     private List<Bucket<T>> mergePopularitySplit(PopularitySplit<T> split) {
+        // if populars.size() > maxSize,
+        //     we sample the populars, merging the unpopular buckets into the sampled populars as we go
+        // if populars.size() < maxSize,
+        //     we sample the unpopulars, appending the popular buckets into the sampling as we go
         Deque<Bucket<T>> populars = split.popularBuckets;
-        if (populars.size() == maxSize)
-            return new ArrayList<Bucket<T>>(populars);
-        if (populars.size() > maxSize)
-            return mergeUnpopularsIntoPopulars(split);
-        // We're going to sample the unpopular buckets, but unconditionally append the popular ones into the results
-        return mergePopularsIntoUnpopulars(split);
+        return split.popularBuckets.size() >= maxSize
+                ? mergeUnpopularsIntoPopulars(split)
+                : mergePopularsIntoUnpopulars(split);
     }
 
     private List<Bucket<T>> mergePopularsIntoUnpopulars(PopularitySplit<T> split) {
