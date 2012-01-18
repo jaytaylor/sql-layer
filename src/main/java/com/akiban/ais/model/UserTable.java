@@ -423,6 +423,15 @@ public class UserTable extends Table
                 newSegment.addColumn(pkColumn);
             }
         }
+        // Determine whether the table contains its own hkey, i.e., whether all hkey columns come from this table.
+        containsOwnHKey = true;
+        for (HKeySegment segment : hKey().segments()) {
+            for (HKeyColumn hKeyColumn : segment.columns()) {
+                if (hKeyColumn.column().getTable() != this) {
+                    containsOwnHKey = false;
+                }
+            }
+        }
     }
 
     private TableIndex createAkibanPrimaryKeyIndex()
@@ -472,6 +481,7 @@ public class UserTable extends Table
     private List<Join> candidateChildJoins = new ArrayList<Join>();
     private PrimaryKey primaryKey;
     private transient HKey hKey;
+    private transient boolean containsOwnHKey;
     private transient HKey branchHKey;
     private transient List<Column> allHKeyColumns;
     private transient Integer depth = null;
