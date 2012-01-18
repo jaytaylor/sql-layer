@@ -58,6 +58,7 @@ public abstract class CostEstimator
     // TODO: These need to be figured out for real.
     public static final double RANDOM_ACCESS_COST = 5.0;
     public static final double SEQUENTIAL_ACCESS_COST = 1.0;
+    public static final double SORT_COST = 1.0;
 
     /** Estimate cost of scanning from this index. */
     public CostEstimate costIndexScan(Index index,
@@ -376,6 +377,6 @@ public abstract class CostEstimator
 
     /** Estimate the cost of a sort of the given size. */
     public CostEstimate costSort(long size) {
-        return new CostEstimate(0, 0);
+        return new CostEstimate(size, size * Math.log(size) * SORT_COST);
     }
 }
