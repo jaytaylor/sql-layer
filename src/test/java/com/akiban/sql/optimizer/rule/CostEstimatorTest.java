@@ -65,6 +65,12 @@ public class CostEstimatorTest
         costEstimate = costEstimator.costIndexScan(index, equals,
                                                    null, false, null, false);
         assertEquals(103, costEstimate.getRowCount());
+
+        index = ais.getTable(SCHEMA, "addresses").getIndex("state");
+        equals = Collections.singletonList(constant(null, AkType.NULL));
+        costEstimate = costEstimator.costIndexScan(index, equals,
+                                                   null, false, null, false);
+        assertEquals(13, costEstimate.getRowCount());
     }
 
 }
