@@ -18,6 +18,7 @@ package com.akiban.server.service.tree;
 import java.rmi.RemoteException;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import com.akiban.qp.loadableplan.DirectObjectCursor;
@@ -35,45 +36,45 @@ import com.persistit.Persistit;
 import com.persistit.Task;
 
 /**
- * Invokes the akiban-persistit CLI via a PSQL statement through a loadable plan.
+ * Invokes the akiban-persistit CLI via a PSQL statement through a loadable
+ * plan.
  */
-public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan {
+public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan implements ServerServiceRequirementsReceiver {
+
+    private volatile ServerServiceRequirements reqs;
+
+    @Override
+    public void setServerServiceRequirements(ServerServiceRequirements reqs) {
+        this.reqs = reqs;
+    }
+
     @Override
     public String name() {
-        return "persistit.cli";
+        return "persistitcli";
     }
 
     @Override
     public DirectObjectPlan plan() {
-        return new PersistitCliDirectObjectPlan();
-    }
+        return new DirectObjectPlan() {
 
-    private static class PersistitCliDirectObjectPlan extends DirectObjectPlan implements
-            ServerServiceRequirementsReceiver {
+            @Override
+            public DirectObjectCursor cursor(Session session) {
+                return new PersistitCliDirectObjectCursor(session, reqs.treeService().getDb());
+            }
 
-        private volatile ServerServiceRequirements reqs;
-
-        @Override
-        public DirectObjectCursor cursor(Session session) {
-            return new PersistitCliDirectObjectCursor(session, reqs.treeService().getDb());
-        }
-
-        @Override
-        public boolean useCopyData() {
-            return true;
-        }
-
-        @Override
-        public void setServerServiceRequirements(ServerServiceRequirements reqs) {
-            this.reqs = reqs;
-        }
+            @Override
+            public boolean useCopyData() {
+                return true;
+            }
+        };
     }
 
     public static class PersistitCliDirectObjectCursor extends DirectObjectCursor {
         final Persistit db;
         final Session session;
-        volatile boolean done = false;
-        volatile long taskId;
+        boolean done = false;
+        long taskId;
+        ArrayList<String> messages = new ArrayList<String>();
 
         public PersistitCliDirectObjectCursor(Session session, Persistit db) {
             this.session = session;
@@ -101,56 +102,64 @@ public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan {
             } catch (RemoteException e) {
                 throw new AkibanInternalException(e.toString());
             }
-            taskId = Long.parseLong(taskIdString);
+            try {
+                taskId = Long.parseLong(taskIdString);
+            } catch (NumberFormatException e) {
+                messages.add("Not launched: " + taskIdString);
+                done = true;
+            }
         }
 
         @Override
         public List<String> next() {
-            final List<String> result = new ArrayList<String>();
-            try {
-                if (done) {
-                    return null;
+            while (true) {
+                if (!messages.isEmpty()) {
+                    return Collections.singletonList(messages.remove(0));
                 }
-                TaskStatus[] tsArray = db.getManagement().queryTaskStatus(taskId, true, true);
-                if (tsArray.length != 1) {
-                    result.add("Invalid queryTask response: " + tsArray);
+                try {
+                    if (done) {
+                        return null;
+                    }
+                    TaskStatus[] tsArray = db.getManagement().queryTaskStatus(taskId, true, true);
+                    if (tsArray.length != 1) {
+                        messages.add("Invalid queryTask response: " + tsArray);
+                        stopTask();
+                    }
+                    TaskStatus ts = tsArray[0];
+                    for (final String message : ts.getMessages()) {
+                        messages.add(message);
+                    }
+                    switch (ts.getState()) {
+                    case Task.STATE_DONE:
+                        done = true;
+                        break;
+                    case Task.STATE_ENDED:
+                        done = true;
+                        messages.add("Task " + taskId + " ended");
+                        break;
+                    case Task.STATE_EXPIRED:
+                        done = true;
+                        messages.add("Task " + taskId + " time limit expired");
+                        break;
+                    case Task.STATE_FAILED:
+                        done = true;
+                        messages.add("Task " + taskId + " failed");
+                        break;
+                    default:
+                        // continue
+                    }
+                    if (!done && messages.isEmpty()) {
+                        Thread.sleep(TIMEOUT);
+                    }
+                } catch (InterruptedException ex) {
                     stopTask();
-                }
-                TaskStatus ts = tsArray[0];
-                for (final String message : ts.getMessages()) {
-                    result.add(message);
-                }
-                switch (ts.getState()) {
-                case Task.STATE_DONE:
+                    throw new QueryCanceledException(session);
+                } catch (Exception e) {
+                    messages.add(e.toString());
+                    stopTask();
                     done = true;
-                    break;
-                case Task.STATE_ENDED:
-                    done = true;
-                    result.add("Task " + taskId + " ended");
-                    break;
-                case Task.STATE_EXPIRED:
-                    done = true;
-                    result.add("Task " + taskId + " time limit expired");
-                    break;
-                case Task.STATE_FAILED:
-                    done = true;
-                    result.add("Task " + taskId + " failed");
-                    break;
-                default:
-                    // continue
                 }
-                if (!done && result.isEmpty()) {
-                    Thread.sleep(TIMEOUT);
-                }
-            } catch (InterruptedException ex) {
-                stopTask();
-                throw new QueryCanceledException(session);
-            } catch (Exception e) {
-                result.add(e.toString());
-                stopTask();
-                done = true;
             }
-            return result;
         }
 
         @Override
