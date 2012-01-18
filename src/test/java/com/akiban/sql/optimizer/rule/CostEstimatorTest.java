@@ -73,4 +73,12 @@ public class CostEstimatorTest
         assertEquals(13, costEstimate.getRowCount());
     }
 
+    @Test
+    public void testSingleRange() throws Exception {
+        Index index = ais.getTable(SCHEMA, "customers").getIndex("name");
+        CostEstimate costEstimate = costEstimator.costIndexScan(index, null,
+                                                                constant("M", AkType.VARCHAR), true, constant("N", AkType.VARCHAR), false); // LIKE 'M%'.
+        assertEquals(16, costEstimate.getRowCount());
+    }
+
 }

@@ -121,7 +121,6 @@ public abstract class CostEstimator
         // TODO; Could use Collections.binarySearch if we had
         // something that looked like a HistogramEntry.
         List<HistogramEntry> entries = histogram.getEntries();
-        int nentries = entries.size();
         for (HistogramEntry entry : entries) {
             int compare = bytesComparator.compare(keyBytes, entry.getKeyBytes());
             if (compare == 0)
@@ -133,7 +132,7 @@ public abstract class CostEstimator
                 return (entry.getLessCount() + d / 2) / d;
             }
         }
-        HistogramEntry lastEntry = entries.get(nentries - 1);
+        HistogramEntry lastEntry = entries.get(entries.size() - 1);
         long d = lastEntry.getDistinctCount();
         if (d == 0)
             return 1;
@@ -145,9 +144,46 @@ public abstract class CostEstimator
                                byte[] lowBytes, boolean lowInclusive,
                                byte[] highBytes, boolean highInclusive) {
         boolean before = (lowBytes != null);
-        return 0;
+        long rowCount = 0;
+        for (HistogramEntry entry : histogram.getEntries()) {
+            long portionStart = 0;
+            if (before) {
+                int compare = bytesComparator.compare(lowBytes, entry.getKeyBytes());
+                if (compare > 0)
+                    continue;
+                if (compare == 0) {
+                    if (lowInclusive)
+                        rowCount += entry.getEqualCount();
+                    continue;
+                }
+                portionStart = entryPortion(entry, lowBytes, false);
+                // Fall through to check high in same entry.
+            }
+            if (highBytes != null) {
+                int compare = bytesComparator.compare(highBytes, entry.getKeyBytes());
+                if (compare == 0) {
+                    rowCount += entry.getLessCount() - portionStart;
+                    if (highInclusive)
+                        rowCount += entry.getEqualCount();
+                    break;
+                }
+                if (compare < 0) {
+                    portionStart += entryPortion(entry, highBytes, true);
+                    rowCount += entry.getLessCount() - portionStart;
+                    break;
+                }
+            }
+            rowCount += entry.getLessCount() + entry.getEqualCount() - portionStart;
+        }
+        return Math.max(rowCount, 1);
     }
     
+    protected long entryPortion(HistogramEntry entry, byte[] keyBytes, 
+                                boolean fromRight) {
+        // TODO: Compute fraction based on position within entry.
+        return 0;
+    }
+
     /** Encode the given field expressions a comparable key byte array.
      * Or return <code>null</code> if some field is not a constant.
      */
