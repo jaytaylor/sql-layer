@@ -284,11 +284,11 @@ public abstract class CostEstimator
             }
             else if (ftable.table.getDepth() == root.table.getDepth()) {
                 // Move up to common ancestor, which is new root.
-                do {
+                while (root != ftable) {
                     root = flattened(root.table.parentTable(), ftables);
                     ftable = flattened(ftable.table.parentTable(), ftables);
                     root.ancestor = ftable.ancestor = true;
-                } while (root != ftable);
+                }
             }
         }
         // Limit branchPoint markers to leaves; that's the number that will joined.
