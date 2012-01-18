@@ -18,13 +18,20 @@ package com.akiban.server.service.dxl;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.util.MultipleCauseException;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 
 public class DXLTransactionHook implements DXLFunctionsHook {
+    private static final Session.StackKey<Runnable> AFTER_COMMIT_RUNNABLES
+            = Session.StackKey.stackNamed("AFTER_COMMIT_RUNNABLES");
     private static final Session.StackKey<Boolean> AUTO_TRX_CLOSE = Session.StackKey.stackNamed("AUTO_TRX_CLOSE");
     private final TreeService treeService;
 
+    public static void addCommitSuccessCallback(Session session, Runnable callback) {
+        session.push(AFTER_COMMIT_RUNNABLES, callback);
+    }
+    
     public DXLTransactionHook(TreeService treeService) {
         this.treeService = treeService;
     }
@@ -82,6 +89,17 @@ public class DXLTransactionHook implements DXLFunctionsHook {
                 finally {
                     trx.end();
                 }
+                RuntimeException callbackExceptions = null;
+                for (Runnable callback; (callback = session.pop(AFTER_COMMIT_RUNNABLES)) != null; ) {
+                    try {
+                        callback.run();
+                    }
+                    catch (RuntimeException e) {
+                        callbackExceptions = MultipleCauseException.combine(callbackExceptions, e);
+                    }
+                }
+                if (callbackExceptions != null)
+                    throw callbackExceptions;
             }
         }
     }
