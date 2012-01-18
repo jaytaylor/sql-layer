@@ -28,12 +28,11 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.util.Tap;
-import com.persistit.Transaction;
-import com.persistit.exception.PersistitException;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Collections;
+import java.util.concurrent.Callable;
 
 import static com.akiban.qp.operator.API.*;
 
@@ -88,24 +87,35 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
     private RowType    child2RowType;
     private GroupTable group;
 
-    protected void populateDB(int grandparents, int parentsPerGrandparent, int childrenPerParent)
+    protected void populateDB(final int grandparents, 
+                              final int parentsPerGrandparent, 
+                              final int childrenPerParent) throws Exception
     {
-        long gid = 0;
-        long pid = 0;
-        long cid = 0;
-        for (int c = 0; c < grandparents; c++) {
-            dml().writeRow(session(), createNewRow(grandparent, gid, gid));
-            for (int o = 0; o < parentsPerGrandparent; o++) {
-                dml().writeRow(session(), createNewRow(parent, pid, gid, pid));
-                for (int i = 0; i < childrenPerParent; i++) {
-                    dml().writeRow(session(), createNewRow(child1, cid, pid, cid));
-                    dml().writeRow(session(), createNewRow(child2, cid, pid, cid));
-                    cid++;
+        transactionally(
+            new Callable<Void>()
+            {
+                @Override
+                public Void call() throws Exception
+                {
+                    long gid = 0;
+                    long pid = 0;
+                    long cid = 0;
+                    for (int c = 0; c < grandparents; c++) {
+                        dml().writeRow(session(), createNewRow(grandparent, gid, gid));
+                        for (int o = 0; o < parentsPerGrandparent; o++) {
+                            dml().writeRow(session(), createNewRow(parent, pid, gid, pid));
+                            for (int i = 0; i < childrenPerParent; i++) {
+                                dml().writeRow(session(), createNewRow(child1, cid, pid, cid));
+                                dml().writeRow(session(), createNewRow(child2, cid, pid, cid));
+                                cid++;
+                            }
+                            pid++;
+                        }
+                        gid++;
+                    }
+                    return null;
                 }
-                pid++;
-            }
-            gid++;
-        }
+            });
     }
 
     @Override
@@ -115,7 +125,7 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
     }
 
     @Test
-    public void profileHKeyChangePropagation() throws PersistitException
+    public void profileHKeyChangePropagation() throws Exception
     {
         final int WARMUP_SCANS = 10; // Number of times to update each parent.gid during warmup
         final int SCANS = 100; // Number of times to update each parent.gid
@@ -127,7 +137,7 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
             filter_Default(
                 groupScan_Default(group),
                 Collections.singleton(parentRowType));
-        UpdatePlannable updatePlan =
+        final UpdatePlannable updatePlan =
             update_Default(scanPlan,
                            new UpdateFunction()
                            {
@@ -145,22 +155,30 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                                    return true;
                                }
                            });
-        Transaction transaction = treeService().getTransaction(session());
-        transaction.begin();
         long start = Long.MIN_VALUE;
         for (int s = 0; s < WARMUP_SCANS + SCANS; s++) {
-            if (s == WARMUP_SCANS) {
-                Tap.setEnabled(".*propagate.*", true);
-                start = System.nanoTime();
-            }
-            updatePlan.run(NO_BINDINGS, adapter);
-            transaction.commit();
-            transaction.end();
-            transaction.begin();
+            final int sFinal = s;
+            long mightBeStartTime = transactionally(
+                new Callable<Long>()
+                {
+                    @Override
+                    public Long call() throws Exception
+                    {
+                        long start = -1L;
+                        if (sFinal == WARMUP_SCANS) {
+                            Tap.setEnabled(".*propagate.*", true);
+                            start = System.nanoTime();
+                        }
+                        updatePlan.run(NO_BINDINGS, adapter);
+                        return start;
+                    }
+                });
+            if (mightBeStartTime != -1L) {
+                start = mightBeStartTime;
+            } 
         }
-        transaction.commit();
-        transaction.end();
         long end = System.nanoTime();
+        assert start != Long.MIN_VALUE;
         double sec = (end - start) / (1000.0 * 1000 * 1000);
         System.out.println(String.format("PDG optimization: %s", PersistitStore.PDG_OPTIMIZATION));
         System.out.println(String.format("scans: %s, db: %s/%s/%s, time: %s",
