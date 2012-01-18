@@ -18,7 +18,9 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.sql.optimizer.plan.*;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.UserTable;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Expressions;
@@ -129,7 +131,7 @@ public abstract class CostEstimator
                 long d = entry.getDistinctCount();
                 if (d == 0)
                     return 1;
-                return (entry.getLessCount() + d / 2) / d;
+                return simpleRound(entry.getLessCount(), d);
             }
         }
         HistogramEntry lastEntry = entries.get(entries.size() - 1);
@@ -137,9 +139,13 @@ public abstract class CostEstimator
         if (d == 0)
             return 1;
         d++;
-        return (lastEntry.getLessCount() + lastEntry.getEqualCount() + d / 2) / d;
+        return simpleRound(lastEntry.getLessCount(), d);
     }
     
+    protected static long simpleRound(long n, long d) {
+        return (n + d / 2) / d;
+    }
+
     protected long rowsBetween(Histogram histogram, 
                                byte[] lowBytes, boolean lowInclusive,
                                byte[] highBytes, boolean highInclusive) {
@@ -230,14 +236,142 @@ public abstract class CostEstimator
     /** Estimate the cost of starting at the given table's index and
      * fetching the given tables, then joining them with Flatten and
      * Product. */
-    // TODO: Lots of overlap with BranchJoiner. Once group joins are
-    // picked through the same join enumeration of other kinds, this
-    // should be better integrated.
+    // TODO: Lots of logical overlap with BranchJoiner. Once group
+    // joins are picked through the same join enumeration of other
+    // kinds, this should be better integrated.
     public CostEstimate costFlatten(TableSource indexTable,
-                                    Collection<TableSource> requiredTables,
-                                    long repeat) {
-        int nbranches = indexTable.getTable().getTree().colorBranches();
-        return new CostEstimate(0, 0);
+                                    Collection<TableSource> requiredTables) {
+        indexTable.getTable().getTree().colorBranches();
+        Map<UserTable,FlattenedTable> ftables = new HashMap<UserTable,FlattenedTable>();
+        long indexMask = indexTable.getTable().getBranches();
+        FlattenedTable iftable = flattened(indexTable, ftables);
+        for (TableSource table : requiredTables) {
+            FlattenedTable ftable = flattened(table, ftables);
+            long common = indexMask & table.getTable().getBranches();
+            if (common == indexMask) {
+                // The index table or one of its descendants or single branch.
+                if (indexTable.getTable().getDepth() >= table.getTable().getDepth()) {
+                    ftable.ancestor = true; // Just ancestor until branch needed.
+                }
+                else {
+                    ftable.branchPoint = iftable;
+                    iftable.branch = true; // Proper descendant, need whole branch.
+                }
+            }
+            else if (common != 0) {
+                // Ancestor
+                ftable.ancestor = true;
+            }
+            else {
+                // No common ancestor, need higher branchpoint.
+                TableNode tnode = table.getTable();
+                do {
+                    TableNode prev = tnode;
+                    tnode = tnode.getParent();
+                    if ((tnode.getBranches() & indexMask) != 0) {
+                        ftable.branchPoint = flattened(prev.getTable(), ftables);
+                        ftable.branchPoint.branch = true;
+                        break;
+                    }
+                } while (tnode != null);
+            }
+        }
+        // Find single root from which all the flattens descend.
+        FlattenedTable root = null;
+        for (FlattenedTable ftable : new ArrayList<FlattenedTable>(ftables.values())) {
+            if ((root == null) || (ftable.table.getDepth() < root.table.getDepth())) {
+                root = ftable;
+            }
+            else if (ftable.table.getDepth() == root.table.getDepth()) {
+                // Move up to common ancestor, which is new root.
+                do {
+                    root = flattened(root.table.parentTable(), ftables);
+                    ftable = flattened(ftable.table.parentTable(), ftables);
+                    root.ancestor = ftable.ancestor = true;
+                } while (root != ftable);
+            }
+        }
+        // Limit branchPoint markers to leaves; that's the number that will joined.
+        for (FlattenedTable ftable : new ArrayList<FlattenedTable>(ftables.values())) {
+            if (ftable.branchPoint != null) {
+                while (ftable != root) {
+                    ftable = flattened(ftable.table.parentTable(), ftables);
+                    ftable.branchPoint = null;
+                }
+            }
+        }
+        // Account for database accesses.
+        long rowCount = 1;
+        double cost = 0.0;
+        for (FlattenedTable ftable : new ArrayList<FlattenedTable>(ftables.values())) {
+            // Multiple rows come in from branches and they all get producted together.
+            if (ftable.branchPoint != null)
+                rowCount *= branchScale(getTableRowCount(ftable.table), 
+                                        ftable.branchPoint, iftable);
+            if (ftable.branch) {
+                cost += RANDOM_ACCESS_COST;
+                cost += SEQUENTIAL_ACCESS_COST * (branchRowCount(ftable, iftable) - 1);
+            }
+            else if (ftable.ancestor) {
+                cost += RANDOM_ACCESS_COST;
+            }
+        }
+        return new CostEstimate(rowCount, cost);
+    }
+
+    // A source of flattened rows.
+    static class FlattenedTable {
+        UserTable table;
+        boolean ancestor, branch;
+        FlattenedTable branchPoint;
+        
+        public FlattenedTable(UserTable table) {
+            this.table = table;
+        }
+    }
+
+    protected FlattenedTable flattened(UserTable table, 
+                                       Map<UserTable,FlattenedTable> map) {
+        FlattenedTable ftable = map.get(table);
+        if (ftable == null) {
+            ftable = new FlattenedTable(table);
+            map.put(table, ftable);
+        }
+        return ftable;
+    }
+
+    protected FlattenedTable flattened(TableSource table, 
+                                       Map<UserTable,FlattenedTable> map) {
+        return flattened(table.getTable().getTable(), map);
+    }
+
+    // Number of rows that come in from a BranchLookup starting at
+    // this table, including ones that aren't even known to the
+    // optimizer / operator plan and will just get ignored. They still
+    // stream through.
+    protected long branchRowCount(FlattenedTable ftable, FlattenedTable indexTable) {
+        long total = totalCardinalities(ftable.table);
+        return branchScale(total, ftable, indexTable);
+    }
+    
+    // Branching from the index just has one branchpoint
+    // row. Branching from someplace else has as many as there are per
+    // the common ancestor, which is the immediate parent of the
+    // branchpoint.
+    protected long branchScale(long total, 
+                               FlattenedTable ftable, FlattenedTable indexTable) {
+        return simpleRound(total,
+                           getTableRowCount((ftable == indexTable) ?
+                                            ftable.table :
+                                            ftable.table.parentTable()));
+    }
+
+    protected long totalCardinalities(UserTable table) {
+        long total = getTableRowCount(table);
+        for (Join childJoin : table.getChildJoins()) {
+            total += totalCardinalities(childJoin.getChild());
+        }
+        return total;
     }
 
     /** Estimate the cost of a sort of the given size. */

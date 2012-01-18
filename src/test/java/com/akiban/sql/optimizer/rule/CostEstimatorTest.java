@@ -15,15 +15,16 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.sql.optimizer.plan.ConstantExpression;
-import com.akiban.sql.optimizer.plan.CostEstimate;
-import com.akiban.sql.optimizer.plan.ExpressionNode;
-import com.akiban.sql.optimizer.plan.ParameterExpression;
-
 import com.akiban.sql.optimizer.OptimizerTestBase;
+
+import static com.akiban.sql.optimizer.rule.CostEstimator.*;
+
+import com.akiban.sql.optimizer.plan.*;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.UserTable;
 import com.akiban.server.types.AkType;
 
 import org.junit.Before;
@@ -40,14 +41,32 @@ public class CostEstimatorTest
     public static final String SCHEMA = OptimizerTestBase.DEFAULT_SCHEMA;
 
     protected AkibanInformationSchema ais;
+    protected TableTree tree;
     protected CostEstimator costEstimator;
     
     @Before
     public void loadSchema() throws Exception {
         ais = OptimizerTestBase.parseSchema(new File(RESOURCE_DIR, "schema.ddl"));
         OptimizerTestBase.loadGroupIndexes(ais, new File(RESOURCE_DIR, "group.idx"));
+        tree = new TableTree();
         costEstimator = new TestCostEstimator(ais, SCHEMA,
                                               new File(RESOURCE_DIR, "stats.yaml"));
+    }
+
+    protected Table table(String name) {
+        return ais.getTable(SCHEMA, name);
+    }
+
+    protected Index index(String table, String name) {
+        return table(table).getIndex(name);
+    }
+
+    protected TableNode tableNode(String name) {
+        return tree.addNode((UserTable)table(name));
+    }
+
+    protected TableSource tableSource(String name) {
+        return new TableSource(tableNode(name), true);
     }
 
     protected static ExpressionNode constant(Object value, AkType type) {
@@ -60,7 +79,7 @@ public class CostEstimatorTest
 
     @Test
     public void testSingleEquals() throws Exception {
-        Index index = ais.getTable(SCHEMA, "items").getIndex("sku");
+        Index index = index("items", "sku");
         List<ExpressionNode> equals = Collections.singletonList(constant("0121", AkType.VARCHAR));
         CostEstimate costEstimate = costEstimator.costIndexScan(index, equals,
                                                                 null, false, null, false);
@@ -71,7 +90,7 @@ public class CostEstimatorTest
                                                    null, false, null, false);
         assertEquals(103, costEstimate.getRowCount());
 
-        index = ais.getTable(SCHEMA, "addresses").getIndex("state");
+        index = index("addresses", "state");
         equals = Collections.singletonList(constant(null, AkType.NULL));
         costEstimate = costEstimator.costIndexScan(index, equals,
                                                    null, false, null, false);
@@ -80,7 +99,7 @@ public class CostEstimatorTest
 
     @Test
     public void testSingleRange() throws Exception {
-        Index index = ais.getTable(SCHEMA, "customers").getIndex("name");
+        Index index = index("customers", "name");
         CostEstimate costEstimate = costEstimator.costIndexScan(index, null,
                                                                 constant("M", AkType.VARCHAR), true, constant("N", AkType.VARCHAR), false); // LIKE 'M%'.
         assertEquals(16, costEstimate.getRowCount());
@@ -88,16 +107,86 @@ public class CostEstimatorTest
 
     @Test
     public void testVariableEquals() throws Exception {
-        Index index = ais.getTable(SCHEMA, "customers").getIndex("PRIMARY");
+        Index index = index("customers", "PRIMARY");
         List<ExpressionNode> equals = Collections.singletonList(variable(AkType.VARCHAR));
         CostEstimate costEstimate = costEstimator.costIndexScan(index, equals,
                                                                 null, false, null, false);
         assertEquals(1, costEstimate.getRowCount());
 
-        index = ais.getTable(SCHEMA, "customers").getIndex("name");
+        index = index("customers", "name");
         costEstimate = costEstimator.costIndexScan(index, equals,
                                                    null, false, null, false);
-        assertEquals(1, costEstimate.getRowCount());        
+        assertEquals(1, costEstimate.getRowCount());
+    }
+
+    /* Cardinalities are: 
+     *   100 customers, 1000 (10x) orders, 20000 (20x) items, 100 (1x) addresses 
+     */
+
+    @Test
+    public void testI2COI() throws Exception {
+        TableSource c = tableSource("customers");
+        TableSource o = tableSource("orders");
+        TableSource i = tableSource("items");
+        CostEstimate costEstimate = costEstimator.costFlatten(i, Arrays.asList(c, o, i));
+        assertEquals(1, costEstimate.getRowCount());
+        assertEquals(RANDOM_ACCESS_COST * 3, costEstimate.getCost());
+    }
+
+    @Test
+    public void testO2COI() throws Exception {
+        TableSource c = tableSource("customers");
+        TableSource o = tableSource("orders");
+        TableSource i = tableSource("items");
+        CostEstimate costEstimate = costEstimator.costFlatten(o, Arrays.asList(c, o, i));
+        assertEquals(20, costEstimate.getRowCount());
+        assertEquals(RANDOM_ACCESS_COST * 2 + SEQUENTIAL_ACCESS_COST * 20,
+                     costEstimate.getCost());
+    }
+
+    @Test
+    public void testC2COI() throws Exception {
+        TableSource c = tableSource("customers");
+        TableSource o = tableSource("orders");
+        TableSource i = tableSource("items");
+        CostEstimate costEstimate = costEstimator.costFlatten(c, Arrays.asList(c, o, i));
+        assertEquals(200, costEstimate.getRowCount());
+        // Pay for (1) address that isn't used.
+        assertEquals(RANDOM_ACCESS_COST * 1 + SEQUENTIAL_ACCESS_COST * (10 + 200 + 1),
+                     costEstimate.getCost());
+    }
+
+    @Test
+    public void testI2COIA() throws Exception {
+        TableSource c = tableSource("customers");
+        TableSource o = tableSource("orders");
+        TableSource i = tableSource("items");
+        TableSource a = tableSource("addresses");
+        CostEstimate costEstimate = costEstimator.costFlatten(i, Arrays.asList(c, o, i, a));
+        assertEquals(1, costEstimate.getRowCount());
+        assertEquals(RANDOM_ACCESS_COST * 4, costEstimate.getCost());
+    }
+
+    @Test
+    public void testI2A() throws Exception {
+        TableSource i = tableSource("items");
+        TableSource a = tableSource("addresses");
+        CostEstimate costEstimate = costEstimator.costFlatten(i, Arrays.asList(a));
+        assertEquals(1, costEstimate.getRowCount());
+        assertEquals(RANDOM_ACCESS_COST * 1, costEstimate.getCost());
+    }
+
+    @Test
+    public void testA2I() throws Exception {
+        TableSource a = tableSource("addresses");
+        TableSource i = tableSource("items");
+        CostEstimate costEstimate = costEstimator.costFlatten(a, Arrays.asList(i));
+        assertEquals(200, costEstimate.getRowCount());
+        // The customer random access doesn't actually happen in this
+        // side-branch case, but that complexity isn't in the
+        // estimation.
+        assertEquals(RANDOM_ACCESS_COST * (1 + 1) + SEQUENTIAL_ACCESS_COST * (10 + 200 - 1),
+                     costEstimate.getCost());
     }
 
 }

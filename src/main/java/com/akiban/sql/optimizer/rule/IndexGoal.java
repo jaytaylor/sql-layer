@@ -579,9 +579,8 @@ public class IndexGoal implements Comparator<IndexScan>
             if (!index.isCovering()) {
                 CostEstimate flatten = 
                     costEstimator.costFlatten(index.getLeafMostTable(),
-                                              index.getRequiredTables(),
-                                              cost.getRowCount());
-                cost = cost.sequence(flatten);
+                                              index.getRequiredTables());
+                cost = cost.nest(flatten);
             }
             if (needSort(index)) {
                 CostEstimate sort = costEstimator.costSort(cost.getRowCount());
