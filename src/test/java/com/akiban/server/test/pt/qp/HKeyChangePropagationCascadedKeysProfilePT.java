@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.test.it.qp;
+package com.akiban.server.test.pt.qp;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.exec.UpdatePlannable;
@@ -35,11 +35,10 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.util.Collections;
+import static com.akiban.qp.operator.API.groupScan_Default;
+import static com.akiban.qp.operator.API.update_Default;
 
-import static com.akiban.qp.operator.API.*;
-
-public class HKeyChangePropagationProfileIT extends QPProfileITBase
+public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
 {
     @Before
     public void before() throws InvalidOperationException
@@ -47,30 +46,36 @@ public class HKeyChangePropagationProfileIT extends QPProfileITBase
         // Changes to parent.gid propagate to children hkeys.
         grandparent = createTable(
             "schema", "grandparent",
-            "gid int not null key",
-            "gid_copy int," +
+            "gid int not null",
+            "gid_copy int",
+            "primary key(gid)",
             "index(gid_copy)");
         parent = createTable(
             "schema", "parent",
-            "pid int not null key",
-            "gid int",
-            "pid_copy int," +
+            "gid int not null",
+            "pid int not null",
+            "pid_copy int",
             "index(pid_copy)",
+            "primary key(gid, pid)",
             "constraint __akiban_pg foreign key __akiban_pg(gid) references grandparent(gid)");
         child1 = createTable(
             "schema", "child1",
-            "cid1 int not null key",
-            "pid int",
-            "cid1_copy int," +
+            "gid int not null",
+            "pid int not null",
+            "cid1 int not null",
+            "cid1_copy int",
             "index(cid1_copy)",
-            "constraint __akiban_c1p foreign key __akiban_c1p(pid) references parent(pid)");
+            "primary key(gid, pid, cid1)",
+            "constraint __akiban_c1p foreign key __akiban_c1p(gid, pid) references parent(gid, pid)");
         child2 = createTable(
             "schema", "child2",
-            "cid2 int not null key",
-            "pid int",
-            "cid2_copy int," +
+            "gid int not null",
+            "pid int not null",
+            "cid2 int not null",
+            "cid2_copy int",
             "index(cid2_copy)",
-            "constraint __akiban_c2p foreign key __akiban_c2p(pid) references parent(pid)");
+            "primary key(gid, pid, cid2)",
+            "constraint __akiban_c2p foreign key __akiban_c2p(gid, pid) references parent(gid, pid)");
         schema = new Schema(rowDefCache().ais());
         grandparentRowType = schema.userTableRowType(userTable(grandparent));
         parentRowType = schema.userTableRowType(userTable(parent));
@@ -78,6 +83,12 @@ public class HKeyChangePropagationProfileIT extends QPProfileITBase
         child2RowType = schema.userTableRowType(userTable(child2));
         group = groupTable(grandparent);
         adapter = persistitAdapter(schema);
+    }
+
+    @Override
+    protected void relevantTaps(TapsRegexes tapsRegexes)
+    {
+        tapsRegexes.add(".*propagate.*");
     }
 
     private int        grandparent;
@@ -98,10 +109,10 @@ public class HKeyChangePropagationProfileIT extends QPProfileITBase
         for (int c = 0; c < grandparents; c++) {
             dml().writeRow(session(), createNewRow(grandparent, gid, gid));
             for (int o = 0; o < parentsPerGrandparent; o++) {
-                dml().writeRow(session(), createNewRow(parent, pid, gid, pid));
+                dml().writeRow(session(), createNewRow(parent, gid, pid, pid));
                 for (int i = 0; i < childrenPerParent; i++) {
-                    dml().writeRow(session(), createNewRow(child1, cid, pid, cid));
-                    dml().writeRow(session(), createNewRow(child2, cid, pid, cid));
+                    dml().writeRow(session(), createNewRow(child1, gid, pid, cid, cid));
+                    dml().writeRow(session(), createNewRow(child2, gid, pid, cid, cid));
                     cid++;
                 }
                 pid++;
@@ -111,19 +122,16 @@ public class HKeyChangePropagationProfileIT extends QPProfileITBase
     }
 
     @Test
-    @Ignore
     public void profileHKeyChangePropagation() throws PersistitException
     {
         final int WARMUP_SCANS = 10; // Number of times to update each parent.gid during warmup
         final int SCANS = 100; // Number of times to update each parent.gid
         final int GRANDPARENTS = 1;
         final int PARENTS_PER_GRANDPARENT = 10;
-        final int CHILDREN_PER_PARENT = 100;
+        final int CHILDREN_PER_PARENT = 10;
         populateDB(GRANDPARENTS, PARENTS_PER_GRANDPARENT, CHILDREN_PER_PARENT);
-        Operator scanPlan =
-            filter_Default(
-                groupScan_Default(group),
-                Collections.singleton(parentRowType));
+        // Change gid of every row of every type
+        Operator scanPlan = groupScan_Default(group);
         UpdatePlannable updatePlan =
             update_Default(scanPlan,
                            new UpdateFunction()
@@ -132,7 +140,7 @@ public class HKeyChangePropagationProfileIT extends QPProfileITBase
                                public Row evaluate(Row original, Bindings bindings)
                                {
                                    OverlayingRow updatedRow = new OverlayingRow(original);
-                                   updatedRow.overlay(1, original.eval(1).getInt() - 1000000);
+                                   updatedRow.overlay(0, original.eval(0).getInt() - 1000000);
                                    return updatedRow;
                                }
 
@@ -162,8 +170,6 @@ public class HKeyChangePropagationProfileIT extends QPProfileITBase
         System.out.println(String.format("PDG optimization: %s", PersistitStore.PDG_OPTIMIZATION));
         System.out.println(String.format("scans: %s, db: %s/%s/%s, time: %s",
                                          SCANS, GRANDPARENTS, PARENTS_PER_GRANDPARENT, CHILDREN_PER_PARENT, sec));
-        TapReport propagateReport = Tap.getReport(".*propagate.*")[0];
-        System.out.println(String.format("propagations: %s", propagateReport.getInCount()));
     }
 
     private static final Bindings NO_BINDINGS = UndefBindings.only();

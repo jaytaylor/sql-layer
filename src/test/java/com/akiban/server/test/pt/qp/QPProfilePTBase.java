@@ -13,26 +13,28 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.test.it.qp;
+package com.akiban.server.test.pt.qp;
 
 import com.akiban.ais.model.*;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.persistitadapter.PersistitGroupRow;
-import com.akiban.qp.persistitadapter.PersistitRowLimit;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Limit;
 import com.akiban.qp.operator.UndefBindings;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.persistitadapter.PersistitGroupRow;
+import com.akiban.qp.persistitadapter.PersistitRowLimit;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.server.test.it.qp.TestRow;
+import com.akiban.server.test.pt.PTBase;
 import com.akiban.server.types.ToObjectValueTarget;
 import org.junit.Before;
 
@@ -43,69 +45,8 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class QPProfileITBase extends ITBase
+public class QPProfilePTBase extends PTBase
 {
-    @Before
-    public void before() throws InvalidOperationException
-    {
-        customer = createTable(
-            "schema", "customer",
-            "cid int not null key",
-            "name varchar(20)," +
-            "index(name)");
-        order = createTable(
-            "schema", "order",
-            "oid int not null key",
-            "cid int",
-            "salesman varchar(20)",
-            "constraint __akiban_oc foreign key __akiban_oc(cid) references customer(cid)",
-            "index(salesman)");
-        item = createTable(
-            "schema", "item",
-            "iid int not null key",
-            "oid int",
-            "constraint __akiban_io foreign key __akiban_io(oid) references order(oid)");
-        address = createTable(
-            "schema", "address",
-            "aid int not null key",
-            "cid int",
-            "address varchar(100)",
-            "constraint __akiban_ac foreign key __akiban_ac(cid) references customer(cid)",
-            "index(address)");
-        schema = new Schema(rowDefCache().ais());
-        customerRowType = schema.userTableRowType(userTable(customer));
-        orderRowType = schema.userTableRowType(userTable(order));
-        itemRowType = schema.userTableRowType(userTable(item));
-        addressRowType = schema.userTableRowType(userTable(address));
-        customerNameIndexRowType = indexType(customer, "name");
-        orderSalesmanIndexRowType = indexType(order, "salesman");
-        itemOidIndexRowType = indexType(item, "oid");
-        itemIidIndexRowType = indexType(item, "iid");
-        customerCidIndexRowType = indexType(customer, "cid");
-        addressAddressIndexRowType = indexType(address, "address");
-        coi = groupTable(customer);
-        adapter = persistitAdapter(schema);
-    }
-
-    protected void populateDB(int customers, int ordersPerCustomer, int itemsPerOrder)
-    {
-        long cid = 0;
-        long oid = 0;
-        long iid = 0;
-        for (int c = 0; c < customers; c++) {
-            dml().writeRow(session(), createNewRow(customer, cid, String.format("customer %s", cid)));
-            for (int o = 0; o < ordersPerCustomer; o++) {
-                dml().writeRow(session(), createNewRow(order, oid, cid, String.format("salesman %s", oid)));
-                for (int i = 0; i < itemsPerOrder; i++) {
-                    dml().writeRow(session(), createNewRow(item, iid, oid));
-                    iid++;
-                }
-                oid++;
-            }
-            cid++;
-        }
-    }
-
     protected GroupTable groupTable(int userTableId)
     {
         RowDef userTableRowDef = rowDefCache().rowDef(userTableId);
@@ -232,21 +173,6 @@ public class QPProfileITBase extends ITBase
     protected static final Bindings NO_BINDINGS = UndefBindings.only();
     protected static final Limit NO_LIMIT = new PersistitRowLimit(ScanLimit.NONE);
 
-    protected int customer;
-    protected int order;
-    protected int item;
-    protected int address;
-    protected RowType customerRowType;
-    protected RowType orderRowType;
-    protected RowType itemRowType;
-    protected RowType addressRowType;
-    protected IndexRowType customerCidIndexRowType;
-    protected IndexRowType customerNameIndexRowType;
-    protected IndexRowType orderSalesmanIndexRowType;
-    protected IndexRowType itemOidIndexRowType;
-    protected IndexRowType itemIidIndexRowType;
-    protected IndexRowType addressAddressIndexRowType;
-    protected GroupTable coi;
     protected Schema schema;
-    PersistitAdapter adapter;
+    protected PersistitAdapter adapter;
 }
