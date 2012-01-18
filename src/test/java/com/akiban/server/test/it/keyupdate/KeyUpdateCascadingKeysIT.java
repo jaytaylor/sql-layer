@@ -18,6 +18,8 @@ package com.akiban.server.test.it.keyupdate;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.util.Tap;
+import com.akiban.util.TapReport;
 import org.junit.Test;
 
 import java.util.List;
@@ -37,10 +39,14 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         TestRow oldRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L, itemRowDef, 222L));
         TestRow newRow = copyRow(oldRow);
         updateRow(newRow, i_oid, 0L);
+        startMonitoringHKeyPropagation();
         dbUpdate(oldRow, newRow);
+        checkHKeyPropagation(2, 0);
         checkDB();
         // Revert change
+        startMonitoringHKeyPropagation();
         dbUpdate(newRow, oldRow);
+        checkHKeyPropagation(2, 0);
         checkDB();
         checkInitialState();
     }
@@ -52,10 +58,14 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         TestRow oldRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L, itemRowDef, 222L));
         TestRow newRow = copyRow(oldRow);
         updateRow(newRow, i_iid, 0L);
+        startMonitoringHKeyPropagation();
         dbUpdate(oldRow, newRow);
+        checkHKeyPropagation(2, 0);
         checkDB();
         // Revert change
+        startMonitoringHKeyPropagation();
         dbUpdate(newRow, oldRow);
+        checkHKeyPropagation(2, 0);
         checkDB();
         checkInitialState();
     }
@@ -91,7 +101,9 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
             testStore.deleteTestRow(oldItemRow);
             testStore.writeTestRow(newItemRow);
         }
+        startMonitoringHKeyPropagation();
         dbUpdate(oldOrderRow, newOrderRow);
+        checkHKeyPropagation(2, 0);
         checkDB();
         // Revert change
         for (long iid = 221; iid <= 223; iid++) {
@@ -101,7 +113,9 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
             testStore.deleteTestRow(oldItemRow);
             testStore.writeTestRow(newItemRow);
         }
+        startMonitoringHKeyPropagation();
         dbUpdate(newOrderRow, oldOrderRow);
+        checkHKeyPropagation(2, 0);
         checkDB();
         checkInitialState();
     }
@@ -121,7 +135,9 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
             testStore.deleteTestRow(oldItemRow);
             testStore.writeTestRow(newItemRow);
         }
+        startMonitoringHKeyPropagation();
         dbUpdate(oldOrderRow, newOrderRow);
+        checkHKeyPropagation(2, 0);
         checkDB();
         // Revert change
         for (long iid = 221; iid <= 223; iid++) {
@@ -131,7 +147,9 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
             testStore.deleteTestRow(oldItemRow);
             testStore.writeTestRow(newItemRow);
         }
+        startMonitoringHKeyPropagation();
         dbUpdate(newOrderRow, oldOrderRow);
+        checkHKeyPropagation(2, 0);
         checkDB();
         checkInitialState();
     }
@@ -159,10 +177,14 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         TestRow oldCustomerRow = testStore.find(new HKey(customerRowDef, 2L));
         TestRow newCustomerRow = copyRow(oldCustomerRow);
         updateRow(newCustomerRow, c_cid, 0L);
+        startMonitoringHKeyPropagation();
         dbUpdate(oldCustomerRow, newCustomerRow);
+        checkHKeyPropagation(2, 0);
         checkDB();
         // Revert change
+        startMonitoringHKeyPropagation();
         dbUpdate(newCustomerRow, oldCustomerRow);
+        checkHKeyPropagation(2, 0);
         checkDB();
         checkInitialState();
     }
@@ -187,10 +209,14 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
     public void testItemDelete() throws Exception
     {
         TestRow itemRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L, itemRowDef, 222L));
+        startMonitoringHKeyPropagation();
         dbDelete(itemRow);
+        checkHKeyPropagation(1, 0);
         checkDB();
         // Revert change
+        startMonitoringHKeyPropagation();
         dbInsert(itemRow);
+        checkHKeyPropagation(1, 0);
         checkDB();
         checkInitialState();
     }
@@ -207,7 +233,9 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
             testStore.deleteTestRow(oldItemRow);
             testStore.writeTestRow(newItemRow);
         }
+        startMonitoringHKeyPropagation();
         dbDelete(orderRow);
+        checkHKeyPropagation(1, 0);
         checkDB();
         // Revert change
         for (long iid = 221; iid <= 223; iid++) {
@@ -217,7 +245,9 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
             testStore.deleteTestRow(oldItemRow);
             testStore.writeTestRow(newItemRow);
         }
+        startMonitoringHKeyPropagation();
         dbInsert(orderRow);
+        checkHKeyPropagation(1, 0);
         checkDB();
         checkInitialState();
     }
@@ -226,14 +256,18 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
     public void testCustomerDelete() throws Exception
     {
         TestRow customerRow = testStore.find(new HKey(customerRowDef, 2L));
+        startMonitoringHKeyPropagation();
         dbDelete(customerRow);
+        checkHKeyPropagation(1, 0);
         checkDB();
         // Revert change
+        startMonitoringHKeyPropagation();
         dbInsert(customerRow);
+        checkHKeyPropagation(1, 0);
         checkDB();
         checkInitialState();
     }
-
+    
     @Override
     protected void createSchema() throws InvalidOperationException
     {
