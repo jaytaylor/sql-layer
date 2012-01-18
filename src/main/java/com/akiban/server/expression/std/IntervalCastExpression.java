@@ -32,7 +32,7 @@ import static com.akiban.server.types.AkType.*;
 
 public class IntervalCastExpression extends AbstractUnaryExpression
 {
-    protected static enum EndPoint
+    public static enum EndPoint
     {
         YEAR(INTERVAL_MONTH), 
         MONTH(INTERVAL_MONTH), 
