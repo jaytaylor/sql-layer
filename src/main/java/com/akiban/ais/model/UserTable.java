@@ -374,14 +374,8 @@ public class UserTable extends Table
 
     public boolean containsOwnHKey()
     {
-        for (HKeySegment segment : hKey().segments()) {
-            for (HKeyColumn hKeyColumn : segment.columns()) {
-                if (hKeyColumn.column().getTable() != this) {
-                    return false;
-                }
-            }
-        }
-        return true;
+        hKey(); // Force computation of hKey and containsOwnHKey
+        return containsOwnHKey;
     }
 
     public UserTable parentTable()
