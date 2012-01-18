@@ -89,17 +89,19 @@ public class DXLTransactionHook implements DXLFunctionsHook {
                 finally {
                     trx.end();
                 }
-                RuntimeException callbackExceptions = null;
-                for (Runnable callback; (callback = session.pop(AFTER_COMMIT_RUNNABLES)) != null; ) {
-                    try {
-                        callback.run();
+                if (throwable == null) {
+                    RuntimeException callbackExceptions = null;
+                    for (Runnable callback; (callback = session.pop(AFTER_COMMIT_RUNNABLES)) != null; ) {
+                        try {
+                            callback.run();
+                        }
+                        catch (RuntimeException e) {
+                            callbackExceptions = MultipleCauseException.combine(callbackExceptions, e);
+                        }
                     }
-                    catch (RuntimeException e) {
-                        callbackExceptions = MultipleCauseException.combine(callbackExceptions, e);
-                    }
+                    if (callbackExceptions != null)
+                        throw callbackExceptions;
                 }
-                if (callbackExceptions != null)
-                    throw callbackExceptions;
             }
         }
     }
