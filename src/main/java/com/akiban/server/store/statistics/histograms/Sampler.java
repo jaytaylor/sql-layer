@@ -18,6 +18,8 @@ package com.akiban.server.store.statistics.histograms;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Flywheel;
 import com.akiban.util.Recycler;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.PeekingIterator;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -65,18 +67,25 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
     private PopularitySplit<T> splitByPopularity(BucketSampler<T> sampler) {
         List<Bucket<T>> samples = sampler.buckets();
         Deque<Bucket<T>> popular = new ArrayDeque<Bucket<T>>(samples.size());
+        int popularsCount = 0;
+        int regularsCount = 0;
 
         // a bucket is "exceptionally popular" if its popularity (equals-count) is more than one standard dev
         // above average
         long popularityCutoff = Math.round(sampler.getEqualsMean() + sampler.getEqualsStdDev());
         for (Iterator<Bucket<T>> iter = samples.iterator(); iter.hasNext(); ) {
             Bucket<T> sample = iter.next();
+            long sampleCount = sample.getEqualsCount() + sample.getLessThanCount();
             if (sample.getEqualsCount() >= popularityCutoff) {
                 iter.remove();
                 popular.add(sample);
+                popularsCount += sampleCount;
+            }
+            else {
+                regularsCount += sampleCount;
             }
         }
-        return new PopularitySplit<T>(samples, popular);
+        return new PopularitySplit<T>(regularsCount, samples, popularsCount, popular);
     }
 
     private List<List<Bucket<T>>> mergePopularitySplitStreams(List<PopularitySplit<T>> popularitySplits) {
@@ -94,10 +103,16 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
         if (populars.size() == maxSize)
             return new ArrayList<Bucket<T>>(populars);
         if (populars.size() > maxSize)
-            return trimmed(populars);
+            return mergeUnpopularsIntoPopulars(split);
         // We're going to sample the unpopular buckets, but unconditionally append the popular ones into the results
+        return mergePopularsIntoUnpopulars(split);
+    }
+
+    private List<Bucket<T>> mergePopularsIntoUnpopulars(PopularitySplit<T> split) {
+        Deque<Bucket<T>> populars = split.popularBuckets;
+        assert populars.size() < maxSize : "failed populars.size[" + populars.size() + "] < maxSize[" + maxSize + "]";
         int unpopularsNeeded = maxSize - populars.size();
-        BucketSampler<T> sampler = new BucketSampler<T>(unpopularsNeeded, split.regularBuckets.size(), false);
+        BucketSampler<T> sampler = new BucketSampler<T>(unpopularsNeeded, split.regularsCount, false);
         for (Bucket<T> regularBucket : split.regularBuckets) {
             while (!populars.isEmpty()) {
                 T regularValue = regularBucket.value();
@@ -114,13 +129,41 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
         return sampler.buckets();
     }
 
-    private List<Bucket<T>> trimmed(Deque<Bucket<T>> buckets) {
-        BucketSampler<T> sampler = new BucketSampler<T>(maxSize, buckets.size(), false);
-        for (Bucket<T> bucket : buckets)
-            sampler.add(bucket);
-        List<Bucket<T>> results = sampler.buckets();
-        assert results.size() <= maxSize+1 : results.size() + " > " + maxSize+1;
+    private List<Bucket<T>> mergeUnpopularsIntoPopulars(PopularitySplit<T> split) {
+        Deque<Bucket<T>> populars = split.popularBuckets;
+        assert populars.size() >= maxSize : "failed  populars.size[" + populars.size() + "] >= maxSize[" + maxSize + "]";
+
+        PeekingIterator<Bucket<T>> unpopulars = Iterators.peekingIterator(split.regularBuckets.iterator());
+        List<Bucket<T>> results = new ArrayList<Bucket<T>>(populars.size());
+        
+        BucketSampler<T> sampler = new BucketSampler<T>(maxSize, split.popularsCount, false);
+        for (Bucket<T> popular : populars) {
+            if (sampler.add(popular)) {
+                // merge in all the unpopulars less than this one
+                while (unpopulars.hasNext() && unpopulars.peek().value().compareTo(popular.value()) <= 0) {
+                    Bucket<T> mergeMe = unpopulars.next();
+                    mergeUp(mergeMe, popular);
+                }
+                results.add(popular);
+            }
+        }
+        // now, create one last value which merges in all of the remaining populars
+        Bucket<T> last = null;
+        while(unpopulars.hasNext()) {
+            Bucket<T> unpopular = unpopulars.next();
+            if (last != null)
+                mergeUp(last,  unpopular);
+            last = unpopular;
+        }
+        if (last != null)
+            results.add(last);
+        
         return results;
+    }
+
+    private void mergeUp(Bucket<T> from, Bucket<T> into) {
+        into.addLessThanDistincts(from.getLessThanDistinctsCount() + 1);
+        into.addLessThans(from.getLessThanCount() + from.getEqualsCount());
     }
 
     public Sampler(Splitter<T> splitter, int maxSize, long expectedInputs, Recycler<? super T> recycler) {
@@ -146,13 +189,19 @@ public class Sampler<T extends Comparable<? super T>> extends SplitHandler<T> {
     public static final int OVERSAMPLE_FACTOR = 50;
 
     private static class PopularitySplit<T> {
-        private PopularitySplit(List<Bucket<T>> regularBuckets, Deque<Bucket<T>> popularBuckets) {
+        private PopularitySplit(int regularsCount, List<Bucket<T>> regularBuckets,
+                                int popularsCount, Deque<Bucket<T>> popularBuckets
+        ) {
             this.regularBuckets = regularBuckets;
             this.popularBuckets = popularBuckets;
+            this.popularsCount = popularsCount;
+            this.regularsCount = regularsCount;
         }
 
         private final List<Bucket<T>> regularBuckets;
         private final Deque<Bucket<T>> popularBuckets;
+        private final int popularsCount;
+        private final int regularsCount;
     }
 
     private static class BucketFlywheel<T> extends Flywheel<Bucket<T>> {
