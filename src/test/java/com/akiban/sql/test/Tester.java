@@ -21,6 +21,7 @@ import com.akiban.sql.optimizer.AISBinder;
 import com.akiban.sql.optimizer.AISTypeComputer;
 import com.akiban.sql.optimizer.BindingNodeFactory;
 import com.akiban.sql.optimizer.BoundNodeToString;
+import com.akiban.sql.optimizer.DistinctEliminator;
 import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.OperatorCompilerTest;
 import com.akiban.sql.optimizer.SubqueryFlattener;
@@ -63,18 +64,20 @@ public class Tester
         ECHO, PARSE, CLONE,
         PRINT_TREE, PRINT_SQL, PRINT_BOUND_SQL,
         BIND, COMPUTE_TYPES,
-        BOOLEAN_NORMALIZE, FLATTEN_SUBQUERIES,
+        BOOLEAN_NORMALIZE, FLATTEN_SUBQUERIES, ELIMINATE_DISTINCTS,
         PLAN, OPERATORS
     }
 
     List<Action> actions;
     SQLParser parser;
+    Properties compilerProperties;
     BoundNodeToString unparser;
     AkibanInformationSchema ais;
     AISBinder binder;
     AISTypeComputer typeComputer;
     BooleanNormalizer booleanNormalizer;
     SubqueryFlattener subqueryFlattener;
+    DistinctEliminator distinctEliminator;
     OperatorCompiler operatorCompiler;
     List<BaseRule> planRules;
     RulesContext rulesContext;
@@ -85,10 +88,12 @@ public class Tester
         actions = new ArrayList<Action>();
         parser = new SQLParser();
         parser.setNodeFactory(new BindingNodeFactory(parser.getNodeFactory()));
+        compilerProperties = new Properties();
         unparser = new BoundNodeToString();
         typeComputer = new AISTypeComputer();
         booleanNormalizer = new BooleanNormalizer(parser);
         subqueryFlattener = new SubqueryFlattener(parser);
+        distinctEliminator = new DistinctEliminator(parser);
     }
 
     public void addAction(Action action) {
@@ -154,6 +159,9 @@ public class Tester
             case FLATTEN_SUBQUERIES:
                 stmt = subqueryFlattener.flatten((DMLStatementNode)stmt);
                 break;
+            case ELIMINATE_DISTINCTS:
+                stmt = distinctEliminator.eliminate((DMLStatementNode)stmt);
+                break;
             case PLAN:
                 {
                     PlanContext plan = 
@@ -186,10 +194,11 @@ public class Tester
         if (actions.contains(Action.BIND))
             binder = new AISBinder(ais, DEFAULT_SCHEMA);
         if (actions.contains(Action.OPERATORS))
-            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, ais, DEFAULT_SCHEMA, new FunctionsRegistryImpl(), new TestIndexEstimator(ais, DEFAULT_SCHEMA, statsFile));
+            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, compilerProperties, ais, DEFAULT_SCHEMA, new FunctionsRegistryImpl(), new TestIndexEstimator(ais, DEFAULT_SCHEMA, statsFile));
         if (actions.contains(Action.PLAN))
             rulesContext = new RulesTestContext(ais, DEFAULT_SCHEMA, 
-                                                statsFile, planRules);
+                                                statsFile, planRules,
+                                                compilerProperties);
     }
 
     public void addGroupIndex(String cols) throws Exception {
@@ -232,6 +241,20 @@ public class Tester
 
     public void parsePlanRules(String rules) throws Exception {
         planRules = RulesTestHelper.parseRules(rules);
+    }
+
+    public void loadCompilerProperties(File file) throws Exception {
+        FileInputStream fstr = new FileInputStream(file);
+        try {
+            compilerProperties.load(fstr);
+        }
+        finally {
+            fstr.close();
+        }
+    }
+
+    public void parseCompilerProperties(String props) throws Exception {
+        compilerProperties.load(new StringReader(props));
     }
 
     public static String maybeFile(String sql) throws Exception {
@@ -300,6 +323,8 @@ public class Tester
                     tester.addAction(Action.BOOLEAN_NORMALIZE);
                 else if ("-flatten".equals(arg))
                     tester.addAction(Action.FLATTEN_SUBQUERIES);
+                else if ("-distinct".equals(arg))
+                    tester.addAction(Action.ELIMINATE_DISTINCTS);
                 else if ("-plan".equals(arg)) {
                     String rules = args[i++];
                     if (rules.startsWith("@"))
@@ -309,6 +334,13 @@ public class Tester
                     else
                         tester.parsePlanRules(rules);
                     tester.addAction(Action.PLAN);
+                }
+                else if ("-compiler-properties".equals(arg)) {
+                    String props = args[i++];
+                    if (props.startsWith("@"))
+                        tester.loadCompilerProperties(new File(props.substring(1)));
+                    else
+                        tester.parseCompilerProperties(props);
                 }
                 else if ("-operators".equals(arg))
                     tester.addAction(Action.OPERATORS);

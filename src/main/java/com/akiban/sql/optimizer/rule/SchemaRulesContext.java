@@ -25,6 +25,7 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
 
 import java.util.List;
+import java.util.Properties;
 
 /** The context associated with an AIS schema. */
 public class SchemaRulesContext extends RulesContext
@@ -36,8 +37,9 @@ public class SchemaRulesContext extends RulesContext
     public SchemaRulesContext(AkibanInformationSchema ais,
                               FunctionsRegistry functionsRegistry,
                               IndexEstimator indexEstimator,
-                              List<BaseRule> rules) {
-        super(rules);
+                              List<BaseRule> rules,
+                              Properties properties) {
+        super(rules, properties);
         schema = SchemaCache.globalSchema(ais);
         this.functionsRegistry = functionsRegistry;
         this.indexEstimator = indexEstimator;

@@ -61,7 +61,7 @@ public abstract class GenericCreator {
             }
             output_str = output.toString();
             if (output_str.length() > 4) {
-                output_str = output_str.substring(0, output_str.length()-1);
+                output_str = output_str.substring(0, output_str.length() - 1);
             }
         } else {
             int count = stmt.getUpdateCount();
@@ -74,13 +74,17 @@ public abstract class GenericCreator {
     }
 
     protected String turnArrayToCommaDelimtedList(ArrayList<String> arrayList) {
-        StringBuilder sb = new StringBuilder();
-        for (String s : arrayList) {
-            sb.append(s);
-            sb.append(",");
+        String retVal = "";
+        if (arrayList.size() > 0) {
+            StringBuilder sb = new StringBuilder();
+            for (String s : arrayList) {
+                sb.append(s);
+                sb.append(",");
+            }
+            retVal = sb.toString();
+            retVal = retVal.substring(0, retVal.length() - 1);
         }
-        String retVal = sb.toString();
-        return retVal.substring(0, retVal.length() - 1);
+        return retVal;
     }
 
     protected String trimOuterComma(String fields1) {
