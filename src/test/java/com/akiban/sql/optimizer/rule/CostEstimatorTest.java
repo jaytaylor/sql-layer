@@ -18,6 +18,7 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.sql.optimizer.plan.ConstantExpression;
 import com.akiban.sql.optimizer.plan.CostEstimate;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
+import com.akiban.sql.optimizer.plan.ParameterExpression;
 
 import com.akiban.sql.optimizer.OptimizerTestBase;
 
@@ -53,6 +54,10 @@ public class CostEstimatorTest
         return new ConstantExpression(value, type);
     }
 
+    protected static ExpressionNode variable(AkType type) {
+        return new ParameterExpression(0, null, type, null);
+    }
+
     @Test
     public void testSingleEquals() throws Exception {
         Index index = ais.getTable(SCHEMA, "items").getIndex("sku");
@@ -79,6 +84,20 @@ public class CostEstimatorTest
         CostEstimate costEstimate = costEstimator.costIndexScan(index, null,
                                                                 constant("M", AkType.VARCHAR), true, constant("N", AkType.VARCHAR), false); // LIKE 'M%'.
         assertEquals(16, costEstimate.getRowCount());
+    }
+
+    @Test
+    public void testVariableEquals() throws Exception {
+        Index index = ais.getTable(SCHEMA, "customers").getIndex("PRIMARY");
+        List<ExpressionNode> equals = Collections.singletonList(variable(AkType.VARCHAR));
+        CostEstimate costEstimate = costEstimator.costIndexScan(index, equals,
+                                                                null, false, null, false);
+        assertEquals(1, costEstimate.getRowCount());
+
+        index = ais.getTable(SCHEMA, "customers").getIndex("name");
+        costEstimate = costEstimator.costIndexScan(index, equals,
+                                                   null, false, null, false);
+        assertEquals(1, costEstimate.getRowCount());        
     }
 
 }
