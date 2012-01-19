@@ -43,7 +43,7 @@ import static com.akiban.qp.operator.API.update_Default;
 public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
 {
     @Before
-    public void before() throws InvalidOperationException
+    public void setUpProfiling() throws Exception
     {
         // Changes to parent.gid propagate to children hkeys.
         grandparent = createTable(
@@ -85,6 +85,11 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
         child2RowType = schema.userTableRowType(userTable(child2));
         group = groupTable(grandparent);
         adapter = persistitAdapter(schema);
+        // The following is adapter from super.setUpProfiling. Leave taps disabled, they'll be enabled after loading
+        // and warmup
+        beforeProfiling();
+        tapsRegexes.regexes.clear();
+        relevantTaps(tapsRegexes);
     }
 
     @Override

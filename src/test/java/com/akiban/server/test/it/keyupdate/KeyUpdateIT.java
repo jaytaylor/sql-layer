@@ -18,15 +18,12 @@ package com.akiban.server.test.it.keyupdate;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.util.Tap;
-import com.akiban.util.TapReport;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.List;
 
 import static com.akiban.server.test.it.keyupdate.Schema.*;
 import static junit.framework.Assert.*;
-import static junit.framework.Assert.assertEquals;
 
 public class KeyUpdateIT extends KeyUpdateBase
 {
@@ -184,14 +181,12 @@ public class KeyUpdateIT extends KeyUpdateBase
         updateRow(newCustomerRow, c_cid, 0L, null);
         startMonitoringHKeyPropagation();
         dbUpdate(oldCustomerRow, newCustomerRow);
-        // 9: customers and orders contain their own hkeys, but items do not. So only items will actually
-        // be deleted/reinserted on hkey propagation. Customer 2 has 9 items.
-        checkHKeyPropagation(2, 9);
+        checkHKeyPropagation(2, 0);
         checkDB();
         // Revert change
         startMonitoringHKeyPropagation();
         dbUpdate(newCustomerRow, oldCustomerRow);
-        checkHKeyPropagation(2, 9);
+        checkHKeyPropagation(2, 0);
         checkDB();
         checkInitialState();
     }
@@ -265,14 +260,13 @@ public class KeyUpdateIT extends KeyUpdateBase
         TestRow customerRow = testStore.find(new HKey(customerRowDef, 2L));
         startMonitoringHKeyPropagation();
         dbDelete(customerRow);
-        // Why 9: Only items do not contain their own hkeys, and so hkeyPropagateDown deletes/reinserts them.
-        // Customer 2 has 9 items.
-        checkHKeyPropagation(1, 9);
+        // 12; 3 orders, with 3 items each
+        checkHKeyPropagation(1, 12);
         checkDB();
         // Revert change
         startMonitoringHKeyPropagation();
         dbInsert(customerRow);
-        checkHKeyPropagation(1, 9);
+        checkHKeyPropagation(1, 12);
         checkDB();
         checkInitialState();
     }
@@ -289,7 +283,7 @@ public class KeyUpdateIT extends KeyUpdateBase
         Tap.reset(".*propagate$");
 */
         dbUpdate(oldRow, newRow);
-        checkHKeyPropagation(2, 9);
+        checkHKeyPropagation(2, 0);
 /*
         TapReport[] tapReports = Tap.getReport(".*propagate_hkey_change$");
         assertEquals(1, tapReports.length);

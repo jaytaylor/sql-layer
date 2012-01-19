@@ -30,6 +30,7 @@ import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
 
+import java.util.BitSet;
 import java.util.Collection;
 
 /**

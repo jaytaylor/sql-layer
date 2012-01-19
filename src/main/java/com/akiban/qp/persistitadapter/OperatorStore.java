@@ -64,7 +64,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     // Store interface
 
     @Override
-    public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector) throws PersistitException
+    public void updateRow(Session session, RowData oldRowData, RowData newRowData, ColumnSelector columnSelector)
+        throws PersistitException
     {
         UPDATE_TOTAL.in();
         PersistitStore persistitStore = getPersistitStore();

@@ -15,6 +15,7 @@
 
 package com.akiban.ais.model;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -43,12 +44,38 @@ public class HKeyColumn
     public List<Column> equivalentColumns()
     {
         if (equivalentColumns == null) {
-            assert column.getTable().isGroupTable() : "null equivalentColumns on non-group-table column: "  + column;
-            throw new UnsupportedOperationException("group tables have no equivalent columns");
+            synchronized (lazyDerivedDataLock) {
+                if (equivalentColumns == null) {
+                    assert column.getTable().isGroupTable() : "null equivalentColumns on non-group-table column: " + column;
+                    throw new UnsupportedOperationException("group tables have no equivalent columns");
+                }
+            }
         }
         return equivalentColumns;
     }
 
+    // Returns a list of tables whose hkey would be affected by a modification of this column. E.g.,
+    // in a COI schema, the dependentTables of the hkey column O.CIDs are (O, I). I is included because
+    // its hkey depends on O.CID, not having a CID of its own.
+    //
+    // The return value is null for an hkey column not belonging to this hkey column's segment's hkey's table.
+    // E.g. The hkey of I contains O.CID, so dependentTables is null.
+    public List<UserTable> dependentTables()
+    {
+        boolean mayHaveDependentTables = segment.hKey().userTable() == column.getUserTable();
+        if (mayHaveDependentTables) {
+            if (dependentTables == null) {
+                synchronized (lazyDerivedDataLock) {
+                    if (dependentTables == null) {
+                        dependentTables = new ArrayList<UserTable>();
+                        findDependentTables(column, column.getUserTable(), dependentTables);
+                    }
+                }
+            }
+        }
+        return dependentTables;
+    }
+    
     public int positionInHKey()
     {
         return positionInHKey;
@@ -65,13 +92,33 @@ public class HKeyColumn
         }
     }
 
+    // For use by this class
+    
+    private void findDependentTables(Column column, UserTable table, List<UserTable> dependentTables)
+    {
+        boolean dependent = false;
+        for (HKeySegment segment : table.hKey().segments()) {
+            for (HKeyColumn hKeyColumn : segment.columns()) {
+                dependent = dependent || hKeyColumn.column() == column;
+            }
+        }
+        if (dependent) {
+            dependentTables.add(table);
+        }
+        for (Join join : table.getChildJoins()) {
+            findDependentTables(column, join.getChild(), dependentTables);
+        }
+    }
+
     // State
 
     private HKeySegment segment;
     private Column column;
     private int positionInHKey;
+    private final Object lazyDerivedDataLock = new Object();
     // If column is a group table column, then we need to know all columns in the group table that are constrained
     // to have matching values, e.g. customer$cid and order$cid. For a user table, equivalentColumns contains just
     // column.
-    private List<Column> equivalentColumns;
+    private volatile List<Column> equivalentColumns;
+    private volatile List<UserTable> dependentTables;
 }

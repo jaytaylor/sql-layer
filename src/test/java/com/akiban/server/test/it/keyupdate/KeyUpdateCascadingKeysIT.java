@@ -235,7 +235,7 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         }
         startMonitoringHKeyPropagation();
         dbDelete(orderRow);
-        checkHKeyPropagation(1, 0);
+        checkHKeyPropagation(1, 3);
         checkDB();
         // Revert change
         for (long iid = 221; iid <= 223; iid++) {
@@ -247,7 +247,7 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         }
         startMonitoringHKeyPropagation();
         dbInsert(orderRow);
-        checkHKeyPropagation(1, 0);
+        checkHKeyPropagation(1, 3);
         checkDB();
         checkInitialState();
     }
@@ -258,12 +258,12 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         TestRow customerRow = testStore.find(new HKey(customerRowDef, 2L));
         startMonitoringHKeyPropagation();
         dbDelete(customerRow);
-        checkHKeyPropagation(1, 0);
+        checkHKeyPropagation(1, 12);
         checkDB();
         // Revert change
         startMonitoringHKeyPropagation();
         dbInsert(customerRow);
-        checkHKeyPropagation(1, 0);
+        checkHKeyPropagation(1, 12);
         checkDB();
         checkInitialState();
     }

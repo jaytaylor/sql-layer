@@ -103,7 +103,7 @@ public abstract class PTBase extends ApiTestBase {
         afterProfileReporting();
     }
 
-    private final ListTapsRegexes tapsRegexes;
+    protected final ListTapsRegexes tapsRegexes;
 
     private static final Comparator<TapReport> REPORTS_BY_NAME = new Comparator<TapReport>() {
         @Override
@@ -116,13 +116,13 @@ public abstract class PTBase extends ApiTestBase {
         void add(String regex);
     }
     
-    private static final class ListTapsRegexes implements TapsRegexes {
+    protected static final class ListTapsRegexes implements TapsRegexes {
 
         @Override
         public void add(String regex) {
             regexes.add(regex);
         }
 
-        private final List<String> regexes = new ArrayList<String>();
+        public final List<String> regexes = new ArrayList<String>();
     }
 }

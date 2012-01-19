@@ -80,6 +80,18 @@ public class RowDefCache {
         return cacheMap.containsKey(Integer.valueOf(rowDefId));
     }
     
+    public int maxOrdinal()
+    {
+        int maxOrdinal = -1;
+        for (RowDef rowDef : cacheMap.values()) {
+            if (rowDef.getOrdinal() > maxOrdinal) {
+                maxOrdinal = rowDef.getOrdinal();
+            }
+        }
+        assert maxOrdinal >= 0;
+        return maxOrdinal;
+    }
+    
     /**
      * Look up and return a RowDef for a supplied rowDefId value.
      * 
