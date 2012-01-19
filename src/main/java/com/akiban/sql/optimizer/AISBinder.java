@@ -22,6 +22,7 @@ import com.akiban.server.error.JoinNodeAdditionException;
 import com.akiban.server.error.MultipleJoinsToTableException;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.error.SelectExistsErrorException;
 import com.akiban.server.error.SubqueryOneColumnException;
 import com.akiban.server.error.SubqueryResultsSetupException;
@@ -163,8 +164,9 @@ public class AISBinder implements Visitor
         if (subqueryNode.getLeftOperand() != null) {
             try {
                 subqueryNode.getLeftOperand().accept(this);
-            } catch (StandardException e) {
-                throw new com.akiban.server.error.ParseException ("", e.getMessage(), subqueryNode.toString());
+            } 
+            catch (StandardException ex) {
+                throw new SQLParserInternalException(ex);
             }
         }
 
@@ -193,8 +195,9 @@ public class AISBinder implements Visitor
         if (subqueryType == SubqueryNode.SubqueryType.EXISTS) {
             try {
                 resultSet = setResultToBooleanTrueNode(resultSet);
-            } catch (StandardException e) {
-                throw new SubqueryResultsSetupException (e.getMessage());
+            } 
+            catch (StandardException ex) {
+                throw new SQLParserInternalException(ex);
             }
             subqueryNode.setResultSet(resultSet);
         }
@@ -829,8 +832,7 @@ public class AISBinder implements Visitor
             }
         } 
         catch (StandardException ex) {
-            throw new com.akiban.server.error.ParseException("", ex.getMessage(), 
-                                                             (allTableName == null) ? null : allTableName.getFullTableName());
+            throw new SQLParserInternalException(ex);
         }
     }
 
@@ -963,18 +965,16 @@ public class AISBinder implements Visitor
             // TODO: This isn't really correct, but it's where the names come from.
             node.getResultColumns().accept(this);
         }
-        catch (StandardException e) {
-            throw new com.akiban.server.error.ParseException("", e.getMessage(), 
-                                                             node.getLeftResultSet().toString());
+        catch (StandardException ex) {
+            throw new SQLParserInternalException(ex);
         }
         popBindingContext();
         pushBindingContext(null);
         try {
             node.getRightResultSet().accept(this);
         }
-        catch (StandardException e) {
-            throw new com.akiban.server.error.ParseException("", e.getMessage(), 
-                                                             node.getRightResultSet().toString());
+        catch (StandardException ex) {
+            throw new SQLParserInternalException(ex);
         }
         popBindingContext();
     }

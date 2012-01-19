@@ -24,6 +24,7 @@ import com.akiban.sql.server.ServerTransaction;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.SQLParser;
+import com.akiban.sql.parser.SQLParserException;
 import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.qp.loadableplan.LoadablePlan;
@@ -374,8 +375,12 @@ public class PostgresServerConnection extends ServerSessionBase
             try {
                 sessionTracer.beginEvent(EventTypes.PARSE);
                 stmts = parser.parseStatements(sql);
-            } catch (StandardException ex) {
-                throw new ParseException ("", ex.getMessage(), sql);
+            } 
+            catch (SQLParserException ex) {
+                throw new SQLParseException(ex);
+            }
+            catch (StandardException ex) {
+                throw new SQLParserInternalException(ex);
             }
             finally {
                 sessionTracer.endEvent();
@@ -416,8 +421,12 @@ public class PostgresServerConnection extends ServerSessionBase
                 sessionTracer.beginEvent(EventTypes.PARSE);
                 stmt = parser.parseStatement(sql);
                 params = parser.getParameterList();
-            } catch (StandardException ex) {
-                throw new ParseException ("", ex.getMessage(), sql);
+            } 
+            catch (SQLParserException ex) {
+                throw new SQLParseException(ex);
+            }
+            catch (StandardException ex) {
+                throw new SQLParserInternalException(ex);
             }
             finally {
                 sessionTracer.endEvent();
