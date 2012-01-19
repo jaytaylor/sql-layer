@@ -19,16 +19,12 @@ import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.tree.TreeService;
-import com.persistit.Accumulator;
-import com.persistit.Transaction;
 import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
 
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.persistit.Accumulator.Type;
 
 public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     private Map<Integer, InternalTableStatus> tableStatusMap = new HashMap<Integer, InternalTableStatus>();
@@ -131,65 +127,36 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
     }
 
-
-    /**
-     * Mapping of indexes and types for the Accumulators used by the table status.
-     * <p>
-     * Note: Remember that <i>any</i> modification to existing values is an
-     * <b>incompatible</b> data format change. It is only safe to stop using
-     * an index position or add new ones at the end of the range.
-     * </p>
-     */
-    private static enum AccumInfo {
-        ORDINAL(0, Type.SUM),
-        ROW_COUNT(1, Type.SUM),
-        UNIQUE_ID(2, Type.SEQ),
-        AUTO_INC(3, Type.SUM),
-        ;
-
-        AccumInfo(int index, Type type) {
-            this.index = index;
-            this.type = type;
-        }
-        
-        int getIndex() {
-            return index;
-        }
-        
-        Type getType() {
-            return type;
-        }
-
-        private final int index;
-        private final Accumulator.Type type;
-    }
-
-    
     private class InternalTableStatus implements TableStatus {
         private volatile RowDef rowDef;
-        private volatile Accumulator ordinal;
-        private volatile Accumulator rowCount;
-        private volatile Accumulator uniqueID;
-        private volatile Accumulator autoIncrement;
+        private volatile AccumulatorAdapter ordinal;
+        private volatile AccumulatorAdapter rowCount;
+        private volatile AccumulatorAdapter uniqueID;
+        private volatile AccumulatorAdapter autoIncrement;
 
         @Override
         public long getAutoIncrement() throws PersistitInterruptedException {
-            return getSnapshot(autoIncrement);
+            return autoIncrement.getSnapshot();
         }
 
         @Override
         public int getOrdinal() throws PersistitInterruptedException {
-            return (int) getSnapshot(ordinal);
+            return (int) ordinal.getSnapshot();
         }
 
         @Override
         public long getRowCount() throws PersistitInterruptedException {
-            return getSnapshot(rowCount);
+            return rowCount.getSnapshot();
+        }
+
+        @Override
+        public long getApproximateRowCount() {
+            return rowCount.getLiveValue();
         }
 
         @Override
         public long getUniqueID() throws PersistitInterruptedException {
-            return getSnapshot(uniqueID);
+            return uniqueID.getSnapshot();
         }
 
         @Override
@@ -198,29 +165,23 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         void rowDeleted() {
-            rowCount.update(-1, getCurrentTrx());
+            rowCount.updateAndGet(-1);
         }
 
         void rowWritten() {
-            rowCount.update(1, getCurrentTrx());
+            rowCount.updateAndGet(1);
         }
 
         void setRowCount(long rowCountValue) throws PersistitInterruptedException {
-            long diff = rowCountValue - getSnapshot(rowCount);
-            this.rowCount.update(diff, getCurrentTrx());
+            rowCount.set(rowCountValue);
         }
 
         void setAutoIncrement(long autoIncrementValue, boolean evenIfLess) throws PersistitInterruptedException {
-            long current = getSnapshot(autoIncrement);
-            if(autoIncrementValue > current || evenIfLess) {
-                long diff = autoIncrementValue - current;
-                this.autoIncrement.update(diff, getCurrentTrx());
-            }
+            autoIncrement.set(autoIncrementValue, evenIfLess);
         }
 
         void setOrdinal(int ordinalValue) throws PersistitInterruptedException {
-            long diff = ordinalValue - getSnapshot(ordinal);
-            this.ordinal.update(diff, getCurrentTrx());
+            ordinal.set(ordinalValue);
         }
 
         synchronized void setRowDef(RowDef rowDef, Tree tree) {
@@ -228,35 +189,19 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             if(rowDef == null && tree == null) {
                 return;
             }
-            try {
-                ordinal = getAccumulator(tree, AccumInfo.ORDINAL);
-                rowCount = getAccumulator(tree, AccumInfo.ROW_COUNT);
-                uniqueID = getAccumulator(tree, AccumInfo.UNIQUE_ID);
-                autoIncrement = getAccumulator(tree, AccumInfo.AUTO_INC);
-            } catch(PersistitException e) {
-                throw new PersistitAdapterException(e);
-            }
+            ordinal = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ORDINAL, treeService, tree);
+            rowCount = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, tree);
+            uniqueID = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.UNIQUE_ID, treeService, tree);
+            autoIncrement = new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.AUTO_INC, treeService, tree);
         }
         
         long createNewUniqueID() throws PersistitInterruptedException {
-            return this.uniqueID.update(1, getCurrentTrx());
+            return uniqueID.updateAndGet(1);
         }
 
         void truncate() throws PersistitInterruptedException {
             setRowCount(0);
             setAutoIncrement(0, true);
-        }
-
-        private Transaction getCurrentTrx() {
-            return treeService.getDb().getTransaction();
-        }
-
-        private Accumulator getAccumulator(Tree tree, AccumInfo info) throws PersistitException {
-            return tree.getAccumulator(info.getType(), info.getIndex());
-        }
-
-        private long getSnapshot(Accumulator accumulator) throws PersistitInterruptedException {
-            return accumulator.getSnapshotValue(getCurrentTrx());
         }
     }
 }

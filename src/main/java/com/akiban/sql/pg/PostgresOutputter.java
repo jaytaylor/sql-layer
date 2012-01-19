@@ -15,6 +15,8 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.server.ServerValueEncoder;
+
 import java.util.List;
 import java.io.IOException;
 
@@ -24,6 +26,7 @@ public abstract class PostgresOutputter<T>
     protected PostgresBaseStatement statement;
     protected List<PostgresType> columnTypes;
     protected int ncols;
+    protected ServerValueEncoder encoder;
 
     public PostgresOutputter(PostgresMessenger messenger, 
                              PostgresBaseStatement statement) {
@@ -31,6 +34,7 @@ public abstract class PostgresOutputter<T>
         this.statement = statement;
         columnTypes = statement.getColumnTypes();
         ncols = columnTypes.size();
+        encoder = new ServerValueEncoder(messenger.getEncoding());
     }
 
     public abstract void output(T row) throws IOException;

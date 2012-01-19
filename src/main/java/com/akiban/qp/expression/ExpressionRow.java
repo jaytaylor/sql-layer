@@ -49,7 +49,6 @@ public class ExpressionRow extends AbstractRow
             evaluation.of(bindings);
             this.evaluations.add(evaluation);
         }
-        this.bindings = bindings;
     }
 
     /* AbstractRow */
@@ -99,15 +98,4 @@ public class ExpressionRow extends AbstractRow
         str.append(']');
         return str.toString();
     }
-
-    // private methods
-
-    private Bindings bindings() {
-        return bindings;
-    }
-
-    // object state
-
-    private final FromObjectValueSource source = new FromObjectValueSource();
-    private final Bindings bindings;
 }

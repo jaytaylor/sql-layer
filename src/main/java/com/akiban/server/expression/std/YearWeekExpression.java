@@ -31,6 +31,7 @@ import com.akiban.sql.StandardException;
 import com.akiban.server.expression.TypesList;
 import java.util.List;
 import org.joda.time.DateTimeConstants;
+import org.joda.time.DateTimeZone;
 import org.joda.time.MutableDateTime;
 
 public class YearWeekExpression extends AbstractCompositeExpression
@@ -164,11 +165,11 @@ public class YearWeekExpression extends AbstractCompositeExpression
                 ValueSource sOp = children().get(1).eval();
                 if (sOp.isNull()) return NullValueSource.only();
 
-                mode = (int)sOp.getInt();
+                mode = (int)Extractors.getLongExtractor(AkType.INT).getLong(sOp);
             }
             if (mode < 0 || mode > 7) throw new InvalidParameterValueException();
             return new ValueHolder(AkType.INT, modes[(int)mode].getYearWeek(
-                    new MutableDateTime(),(int)ymd[0], (int)ymd[1], (int)ymd[2]));
+                    new MutableDateTime(DateTimeZone.getDefault()),(int)ymd[0], (int)ymd[1], (int)ymd[2]));
         }
     }
 

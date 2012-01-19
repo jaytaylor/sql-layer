@@ -23,6 +23,7 @@ import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 
 public class SysDateExpression extends AbstractNoArgExpression
@@ -48,7 +49,7 @@ public class SysDateExpression extends AbstractNoArgExpression
         @Override
         public ValueSource eval() 
         {
-            valueHolder().putTimestamp(new DateTime());
+            valueHolder().putTimestamp(new DateTime(DateTimeZone.getDefault()));
             return valueHolder();
         }        
     }

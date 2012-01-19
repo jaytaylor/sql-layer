@@ -17,12 +17,12 @@ package com.akiban.sql.pg;
 
 import com.akiban.qp.operator.ArrayBindings;
 import com.akiban.qp.operator.Bindings;
+import com.akiban.server.expression.EnvironmentExpressionSetting;
 import com.akiban.server.service.dxl.DXLFunctionsHook;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
+import com.akiban.sql.server.ServerParameterDecoder;
 import com.akiban.util.Tap;
-
-import com.akiban.server.expression.EnvironmentExpressionSetting;
 
 import java.io.IOException;
 import java.util.List;
@@ -111,12 +111,12 @@ public abstract class PostgresBaseStatement implements PostgresStatement
             return parameterTypes.length;
     }
 
-    protected Bindings getParameterBindings(String[] parameters) {
+    protected Bindings getParameterBindings(Object[] parameters) {
+        ServerParameterDecoder decoder = new ServerParameterDecoder();
         ArrayBindings bindings = new ArrayBindings(parameters.length);
         for (int i = 0; i < parameters.length; i++) {
             PostgresType pgType = (parameterTypes == null) ? null : parameterTypes[i];
-            bindings.set(i, (pgType == null) ? parameters[i]
-                                             : pgType.decodeParameter(parameters[i]));
+            bindings.set(i, decoder.decodeParameter(parameters[i], pgType));
         }
         return bindings;
     }

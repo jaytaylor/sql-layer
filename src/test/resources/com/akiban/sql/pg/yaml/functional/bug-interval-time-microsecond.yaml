@@ -1,0 +1,9 @@
+# Adding MICROSECOND INTERVAL to TIME produces DATETIME (bug 913796)
+---
+- CreateTable: t (time_field time)
+---
+- Statement: INSERT INTO t VALUES ('00:00:01')
+---
+- Statement: SELECT time_field + INTERVAL '2' MICROSECOND FROM t
+- output: [['00:00:01']]
+...

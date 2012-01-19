@@ -15,6 +15,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.types.extract.ConverterTestUtils;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -27,6 +28,10 @@ import org.junit.Test;
 /** Test the {@code YamlTester} class. */
 public class YamlTesterIT extends PostgresServerYamlITBase {
 
+    static
+    {
+        ConverterTestUtils.setGlobalTimezone("UTC");
+    }
     /* Tests */
 
     /* Test general syntax */
@@ -799,6 +804,19 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "- output:\n" +
 	    "  - [1, Smith]\n" +
 	    "  - [2, Jones]\n");
+    }
+
+    @Test
+    public void testStatementOutputEmptyValue() {
+        testYaml(
+	    "---\n" +
+	    "- CreateTable: t (x varchar(32), y varchar(32))\n" +
+	    "---\n" +
+	    "- Statement: INSERT INTO t VALUES ('', 'abc')\n" +
+	    "---\n" +
+	    "- Statement: SELECT * FROM t\n" +
+	    "- output:\n" +
+	    "  - ['', 'abc']\n");
     }
 
     @Test

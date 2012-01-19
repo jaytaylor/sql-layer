@@ -75,7 +75,7 @@ public class DuplicatePlanTest extends OptimizerTestBase
         PlanNode plan = new AST((DMLStatementNode)stmt, parser.getParameterList());
         {
             RulesContext rulesContext = 
-                new RulesContext(Collections.<BaseRule>singletonList(new ASTStatementLoader()));
+                new RulesContext(Collections.<BaseRule>singletonList(new ASTStatementLoader()), new Properties());
             PlanContext planContext = new PlanContext(rulesContext, plan);
             rulesContext.applyRules(planContext);
             plan = planContext.getPlan();

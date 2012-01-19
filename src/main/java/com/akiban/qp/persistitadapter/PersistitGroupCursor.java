@@ -23,6 +23,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
@@ -152,6 +153,9 @@ class PersistitGroupCursor implements GroupCursor
     private boolean hKeyDeep;
     private GroupScan groupScan;
 
+    // static state
+    private static final Tap.PointTap TRAVERSE_COUNT = Tap.createCount("traverse_pgc");
+    
     // Inner classes
 
     interface GroupScan
@@ -170,8 +174,19 @@ class PersistitGroupCursor implements GroupCursor
         @Override
         public void advance() throws PersistitException, InvalidOperationException
         {
-            if (!exchange.traverse(direction, true)) {
-                close();
+            if (first) {
+                PersistitAdapter.CURSOR_FIRST_ROW_TAP.in();
+            }
+            try {
+                TRAVERSE_COUNT.hit();
+                if (!exchange.traverse(direction, true)) {
+                    close();
+                }
+            } finally {
+                if (first) {
+                    PersistitAdapter.CURSOR_FIRST_ROW_TAP.out();
+                    first = false;
+                }
             }
         }
 
@@ -182,6 +197,7 @@ class PersistitGroupCursor implements GroupCursor
         }
 
         private final Key.Direction direction;
+        private boolean first = true;
     }
 
     private class HKeyAndDescendentsScan implements GroupScan
@@ -189,11 +205,22 @@ class PersistitGroupCursor implements GroupCursor
         @Override
         public void advance() throws PersistitException, InvalidOperationException
         {
-            if (!exchange.traverse(direction, true) ||
-                exchange.getKey().firstUniqueByteIndex(controllingHKey) < controllingHKey.getEncodedSize()) {
-                close();
+            if (first) {
+                PersistitAdapter.CURSOR_FIRST_ROW_TAP.in();
             }
-            direction = Key.GT;
+            try {
+                TRAVERSE_COUNT.hit();
+                if (!exchange.traverse(direction, true) ||
+                    exchange.getKey().firstUniqueByteIndex(controllingHKey) < controllingHKey.getEncodedSize()) {
+                    close();
+                }
+                direction = Key.GT;
+            } finally {
+                if (first) {
+                    PersistitAdapter.CURSOR_FIRST_ROW_TAP.out();
+                    first = false;
+                }
+            }
         }
 
         HKeyAndDescendentsScan(PersistitHKey hKey) throws PersistitException
@@ -203,6 +230,7 @@ class PersistitGroupCursor implements GroupCursor
         }
 
         private Key.Direction direction = Key.GTEQ;
+        private boolean first = true;
     }
 
     private class HKeyWithoutDescendentsScan implements GroupScan
@@ -211,11 +239,17 @@ class PersistitGroupCursor implements GroupCursor
         public void advance() throws PersistitException, InvalidOperationException
         {
             if (first) {
-                exchange.fetch();
-                if (!exchange.getValue().isDefined()) {
-                    close();
+                PersistitAdapter.CURSOR_FIRST_ROW_TAP.in();
+                try {
+                    TRAVERSE_COUNT.hit();
+                    exchange.fetch();
+                    if (!exchange.getValue().isDefined()) {
+                        close();
+                    }
+                    first = false;
+                } finally {
+                    PersistitAdapter.CURSOR_FIRST_ROW_TAP.out();
                 }
-                first = false;
             } else {
                 close();
             }

@@ -15,8 +15,13 @@
 
 package com.akiban.sql.pg;
 
-import java.io.IOException;
+import com.akiban.sql.server.ServerValueEncoder;
+
+import com.akiban.server.types.AkType;
+
 import java.util.List;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 
 /** SQL statement to explain another one. */
 public class PostgresExplainStatement implements PostgresStatement
@@ -34,11 +39,12 @@ public class PostgresExplainStatement implements PostgresStatement
                 maxlen = row.length();
         }
         colName = "OPERATORS";
-        colType = new PostgresType(PostgresType.VARCHAR_TYPE_OID, (short)-1, maxlen);
+        colType = new PostgresType(PostgresType.VARCHAR_TYPE_OID, (short)-1, maxlen,
+                                   AkType.VARCHAR);
     }
 
     @Override
-    public PostgresStatement getBoundStatement(String[] parameters,
+    public PostgresStatement getBoundStatement(Object[] parameters,
                                                boolean[] columnBinary, 
                                                boolean defaultColumnBinary)  {
         return this;
@@ -69,13 +75,14 @@ public class PostgresExplainStatement implements PostgresStatement
     public int execute(PostgresServerSession server, int maxrows)
             throws IOException {
         PostgresMessenger messenger = server.getMessenger();
+        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
         int nrows = 0;
         for (String row : explanation) {
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(1);
-            byte[] value = colType.encodeValue(row, messenger.getEncoding(), false);
-            messenger.writeInt(value.length);
-            messenger.write(value);
+            ByteArrayOutputStream bytes = encoder.encodeObject(row, colType, false);
+            messenger.writeInt(bytes.size());
+            messenger.writeByteStream(bytes);
             messenger.sendMessage();
             nrows++;
             if ((maxrows > 0) && (nrows >= maxrows))

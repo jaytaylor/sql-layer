@@ -20,11 +20,13 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.Row;
+import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
@@ -102,6 +104,7 @@ class OperatorStoreGIHandler {
     private void storeExchange(GroupIndex groupIndex, Exchange exchange) {
         try {
             exchange.store();
+            AccumulatorAdapter.updateAndGet(AccumulatorAdapter.AccumInfo.ROW_COUNT, exchange, 1);
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         }
@@ -112,7 +115,12 @@ class OperatorStoreGIHandler {
 
     private void removeExchange(GroupIndex groupIndex, Exchange exchange) {
         try {
-            exchange.remove();
+            if (exchange.fetch().getValue().isDefined()) { // see bug 914044 for why we can't do if(exchange.remove())
+                exchange.remove();
+                AccumulatorAdapter.updateAndGet(AccumulatorAdapter.AccumInfo.ROW_COUNT, exchange, -1);
+            }
+            else
+                UNNEEDED_DELETE_TAP.hit();
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         }
@@ -167,7 +175,10 @@ class OperatorStoreGIHandler {
     private final PersistitAdapter adapter;
     private final UserTable sourceTable;
     private final PersistitKeyValueTarget target = new PersistitKeyValueTarget();
+    
+    // class state
     private static volatile GIHandlerHook giHandlerHook;
+    private static final Tap.PointTap UNNEEDED_DELETE_TAP = Tap.createCount("superfluous_delete");
 
     // nested classes
 

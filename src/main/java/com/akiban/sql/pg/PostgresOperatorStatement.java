@@ -151,7 +151,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     /** Get a bound version of a predicate by applying given parameters
      * and requested result formats. */
     @Override
-    public PostgresStatement getBoundStatement(String[] parameters,
+    public PostgresStatement getBoundStatement(Object[] parameters,
                                                boolean[] columnBinary, 
                                                boolean defaultColumnBinary)  {
         if ((parameters == null) && 

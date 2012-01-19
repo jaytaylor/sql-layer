@@ -180,7 +180,7 @@ class YamlTester {
     private static final DateFormat DEFAULT_DATE_FORMAT = new SimpleDateFormat(
 	    "yyyy-MM-dd");
     private static final DateFormat DEFAULT_DATETIME_FORMAT = new SimpleDateFormat(
-	    "yyyy-MM-dd HH:mm:ss.S");
+	    "yyyy-MM-dd HH:mm:ss.S z");
 
     /**
      * Creates an instance of this class.
@@ -940,8 +940,9 @@ class YamlTester {
 	}
 	StringBuilder sb = new StringBuilder();
 	sb.append('[');
-	for (Object elem : array) {
-	    if (sb.length() != 1) {
+        for (int i = 0; i < array.size(); i++) {
+            Object elem = array.get(i);
+            if (i != 0) {
 		sb.append(", ");
 	    }
 	    sb.append(arrayElementString(elem));
@@ -1253,7 +1254,7 @@ class YamlTester {
 	private static class ConstructSystemDate extends AbstractConstruct {
 	    @Override
 	    public Object construct(Node node) {
-		Date today = Calendar.getInstance().getTime();
+		Date today = new Date();
 		return DEFAULT_DATE_FORMAT.format(today);
 	    }
 
@@ -1287,6 +1288,7 @@ class YamlTester {
 	public boolean compareOutput(Object object) {
 	    String[] timeAsString = String.valueOf(object).split(":");
 	    Calendar localCalendar = Calendar.getInstance();
+            localCalendar.setTimeInMillis(System.currentTimeMillis());
 
 	    long localTimeInSeconds = localCalendar.get(Calendar.HOUR_OF_DAY)
 		    * MINUTES_IN_SECONDS * HOURS_IN_MINUTES;
@@ -1314,14 +1316,16 @@ class YamlTester {
 
 	@Override
 	public boolean compareOutput(Object object) {
-	    long testResult = 0;
+            Date now = new Date();
+            Date date;
 	    try {
-		Date result = DEFAULT_DATETIME_FORMAT.parse(String
-			.valueOf(object));
-		testResult = (result.getTime() - System.currentTimeMillis());
+                date = DEFAULT_DATETIME_FORMAT.parse(
+                    String.valueOf(object) + " UTC");
 	    } catch (ParseException e) {
 		fail(e.getMessage());
+                throw new AssertionError();
 	    }
+            long testResult = date.getTime() - now.getTime();
 	    boolean results = Math.abs(testResult) < (1 * MINUTES_IN_SECONDS * SECONDS_IN_MILLISECONDS);
 	    return results;
 	}
