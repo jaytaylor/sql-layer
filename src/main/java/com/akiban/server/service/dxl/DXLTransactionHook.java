@@ -29,6 +29,8 @@ public class DXLTransactionHook implements DXLFunctionsHook {
     private final TreeService treeService;
 
     public static void addCommitSuccessCallback(Session session, Runnable callback) {
+        if (session.isEmpty(AFTER_COMMIT_RUNNABLES))
+            throw new IllegalStateException("not within a transaction");
         session.push(AFTER_COMMIT_RUNNABLES, callback);
     }
     
