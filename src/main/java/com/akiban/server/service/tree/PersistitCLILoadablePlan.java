@@ -73,6 +73,7 @@ public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan implement
         final Persistit db;
         final Session session;
         boolean done = false;
+        boolean delivered = false;
         long taskId;
         ArrayList<String> messages = new ArrayList<String>();
 
@@ -112,10 +113,8 @@ public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan implement
 
         @Override
         public List<String> next() {
-            while (true) {
-                if (!messages.isEmpty()) {
-                    return Collections.singletonList(messages.remove(0));
-                }
+
+            if (messages.isEmpty()) {
                 try {
                     if (done) {
                         return null;
@@ -151,6 +150,7 @@ public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan implement
                     if (!done && messages.isEmpty()) {
                         Thread.sleep(TIMEOUT);
                     }
+
                 } catch (InterruptedException ex) {
                     stopTask();
                     throw new QueryCanceledException(session);
@@ -159,6 +159,12 @@ public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan implement
                     stopTask();
                     done = true;
                 }
+            }
+            if (messages.isEmpty()) {
+                return messages;
+            } else {
+                String message= messages.remove(0);
+                return Collections.singletonList(message);
             }
         }
 
