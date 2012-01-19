@@ -482,10 +482,10 @@ public class AISBinder implements Visitor
                     String columnName = rc.getName();
                     ColumnBinding leftBinding = getColumnBinding(fromLeft, columnName);
                     if (leftBinding == null)
-                        throw new NoSuchColumnException (columnName);
+                        throw new NoSuchColumnException(columnName, rc);
                     ColumnBinding rightBinding = getColumnBinding(fromRight, columnName);
                     if (rightBinding == null)
-                        throw new NoSuchColumnException (columnName);
+                        throw new NoSuchColumnException(columnName, rc);
                     conditions = addJoinEquality(conditions, 
                                                  columnName, leftBinding, rightBinding,
                                                  nodeFactory, parserContext);
@@ -558,7 +558,7 @@ public class AISBinder implements Visitor
             FromTable fromTable = findFromTable(columnReference.getTableNameNode());
             columnBinding = getColumnBinding(fromTable, columnName);
             if (columnBinding == null)
-                throw new NoSuchColumnException(columnName);
+                throw new NoSuchColumnException(columnName, columnReference);
         }
         else {
             boolean ambiguous = false;
@@ -592,9 +592,9 @@ public class AISBinder implements Visitor
                 }
                 if (columnBinding == null) {
                     if (ambiguous)
-                        throw new AmbiguousColumNameException(columnName);
+                        throw new AmbiguousColumNameException(columnName, columnReference);
                     else
-                        throw new NoSuchColumnException(columnName);
+                        throw new NoSuchColumnException(columnName, columnReference);
                 }
             }
         }
@@ -607,7 +607,7 @@ public class AISBinder implements Visitor
             schemaName = defaultSchemaName;
         Table result = ais.getUserTable(schemaName, tableName.getTableName());
         if (result == null)
-            throw new NoSuchTableException (tableName.getSchemaName(), tableName.getTableName());
+            throw new NoSuchTableException(schemaName, tableName.getTableName(), tableName);
         return result;
     }
 
@@ -642,7 +642,7 @@ public class AISBinder implements Visitor
             }
         }
         if (result == null)
-            throw new NoSuchTableException (tableNameNode.getSchemaName(), tableNameNode.getTableName());
+            throw new NoSuchTableException(schemaName, tableName, tableNameNode);
         return result;
     }
 
@@ -810,7 +810,7 @@ public class AISBinder implements Visitor
 
         // Give an error if the qualification name did not match an exposed name.
         if (resultColumnList == null) {
-            throw new NoSuchTableException (allTableName.getSchemaName(), allTableName.getTableName());
+            throw new NoSuchTableException(allTableName.getSchemaName(), allTableName.getTableName(), allTableName);
         }
 
         return resultColumnList;
@@ -951,7 +951,7 @@ public class AISBinder implements Visitor
                 String columnName = columnReference.getColumnName();
                 Column column = table.getColumn(columnName);
                 if (column == null)
-                    throw new NoSuchColumnException (columnName);
+                    throw new NoSuchColumnException(columnName, columnReference);
                 ColumnBinding columnBinding = new ColumnBinding(null, column, false);
                 columnReference.setUserData(columnBinding);
             }

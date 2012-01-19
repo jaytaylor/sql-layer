@@ -39,6 +39,12 @@ public class BaseSQLException extends InvalidOperationException
             errorPosition = sql.getBeginOffset();
     }
     
+    protected BaseSQLException(ErrorCode code, String msg1, String msg2, QueryTreeNode sql) {
+        super(code, msg1, msg2, formatSQL(sql));
+        if (sql != null)
+            errorPosition = sql.getBeginOffset();
+    }
+    
     public int getErrorPosition() {
         return errorPosition;
     }
