@@ -374,14 +374,8 @@ public class UserTable extends Table
 
     public boolean containsOwnHKey()
     {
-        for (HKeySegment segment : hKey().segments()) {
-            for (HKeyColumn hKeyColumn : segment.columns()) {
-                if (hKeyColumn.column().getTable() != this) {
-                    return false;
-                }
-            }
-        }
-        return true;
+        hKey(); // Force computation of hKey and containsOwnHKey
+        return containsOwnHKey;
     }
 
     public UserTable parentTable()
@@ -421,6 +415,15 @@ public class UserTable extends Table
         for (Column pkColumn : getPrimaryKeyIncludingInternal().getColumns()) {
             if (!hKeyColumns.contains(pkColumn)) {
                 newSegment.addColumn(pkColumn);
+            }
+        }
+        // Determine whether the table contains its own hkey, i.e., whether all hkey columns come from this table.
+        containsOwnHKey = true;
+        for (HKeySegment segment : hKey().segments()) {
+            for (HKeyColumn hKeyColumn : segment.columns()) {
+                if (hKeyColumn.column().getTable() != this) {
+                    containsOwnHKey = false;
+                }
             }
         }
     }
@@ -472,6 +475,7 @@ public class UserTable extends Table
     private List<Join> candidateChildJoins = new ArrayList<Join>();
     private PrimaryKey primaryKey;
     private transient HKey hKey;
+    private transient boolean containsOwnHKey;
     private transient HKey branchHKey;
     private transient List<Column> allHKeyColumns;
     private transient Integer depth = null;

@@ -92,8 +92,14 @@ public class PersistitStore implements Store {
     private static final Tap.InOutTap TABLE_INDEX_MAINTENANCE_TAP = Tap.createTimer("index: maintain_table");
 
     private static final Tap.InOutTap NEW_COLLECTOR_TAP = Tap.createTimer("read: new_collector");
-    
+
+    // an InOutTap would be nice, but pre-propagateDownGroup optimization, propagateDownGroup was called recursively
+    // (via writeRow). PointTap handles this correctly, InOutTap does not, currently.
     private static final Tap.PointTap PROPAGATE_HKEY_CHANGE_TAP = Tap.createCount("write: propagate_hkey_change");
+    private static final Tap.PointTap PROPAGATE_HKEY_CHANGE_ROW_REPLACE_TAP = Tap.createCount("write: propagate_hkey_change_row_replace");
+
+    // TODO: Temporary
+    public static final boolean PDG_OPTIMIZATION = System.getProperty("pdgOptimization", "true").equals("true");
 
     private final static int MEGA = 1024 * 1024;
 
@@ -675,17 +681,20 @@ public class PersistitStore implements Store {
             expandRowData(exchange, descendentRowData);
             int descendentRowDefId = descendentRowData.getRowDefId();
             RowDef descendentRowDef = rowDefCache.getRowDef(descendentRowDefId);
-            // Delete the current row from the tree. Don't call deleteRow, because we don't need to recompute
-            // the hkey.
-            exchange.remove();
-            tableStatusCache.rowDeleted(descendentRowDefId);
-            for (Index index : descendentRowDef.getIndexes()) {
-                if (!index.isHKeyEquivalent()) {
-                    deleteIndex(session, index, descendentRowData, exchange.getKey());
+            if (!PDG_OPTIMIZATION || !descendentRowDef.userTable().containsOwnHKey()) {
+                PROPAGATE_HKEY_CHANGE_ROW_REPLACE_TAP.hit();
+                // Delete the current row from the tree. Don't call deleteRow, because we don't need to recompute
+                // the hkey.
+                exchange.remove();
+                tableStatusCache.rowDeleted(descendentRowDefId);
+                for (Index index : descendentRowDef.getIndexes()) {
+                    if (!index.isHKeyEquivalent()) {
+                        deleteIndex(session, index, descendentRowData, exchange.getKey());
+                    }
                 }
+                // Reinsert it, recomputing the hkey and maintaining indexes
+                writeRow(session, descendentRowData, !PDG_OPTIMIZATION);
             }
-            // Reinsert it, recomputing the hkey and maintaining indexes
-            writeRow(session, descendentRowData, false);
         }
     }
 
