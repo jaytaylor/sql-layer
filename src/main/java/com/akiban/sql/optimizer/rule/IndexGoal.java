@@ -28,11 +28,16 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.store.statistics.IndexStatistics;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 
 /** A goal for indexing: conditions on joined tables and ordering / grouping. */
 public class IndexGoal implements Comparator<IndexScan>
 {
+    private static final Logger logger = LoggerFactory.getLogger(IndexGoal.class);
+
     public static class RequiredColumns {
         private Map<TableSource,Set<ColumnExpression>> map;
         
@@ -241,7 +246,7 @@ public class IndexGoal implements Comparator<IndexScan>
             !index.hasConditions() &&
             !index.isCovering())
             return false;
-        estimateCost(costEstimator, index);
+        index.setCostEstimate(estimateCost(index));
         return true;
     }
 
@@ -498,8 +503,17 @@ public class IndexGoal implements Comparator<IndexScan>
 
     protected IndexScan betterIndex(IndexScan bestIndex, IndexScan candidate) {
         if (usable(candidate)) {
-            if ((bestIndex == null) || (compare(candidate, bestIndex) > 0))
+            if (bestIndex == null) {
+                logger.debug("Selecting {}", candidate);
                 return candidate;
+            }
+            else if (compare(candidate, bestIndex) > 0) {
+                logger.debug("Preferring {}", candidate);
+                return candidate;
+            }
+            else {
+                logger.debug("Rejecting {}", candidate);
+            }
         }
         return bestIndex;
     }
@@ -519,7 +533,7 @@ public class IndexGoal implements Comparator<IndexScan>
 
     public int compare(IndexScan i1, IndexScan i2) {
         if (costEstimator.isEnabled()) {
-            return costEstimate(i1).compareTo(costEstimate(i2));
+            return i2.getCostEstimate().compareTo(i1.getCostEstimate());
         }
         // TODO: This is a pretty poor substitute for evidence-based comparison.
         if (i1.getOrderEffectiveness() != i2.getOrderEffectiveness())
@@ -565,30 +579,6 @@ public class IndexGoal implements Comparator<IndexScan>
                 ? +1 : -1;
         // Deeper better than shallower.
         return i1.getLeafMostTable().getTable().getTable().getTableId().compareTo(i2.getLeafMostTable().getTable().getTable().getTableId());
-    }
-
-    protected CostEstimate costEstimate(IndexScan index) {
-        if (index.getCostEstimate() == null) {
-            CostEstimate cost = 
-                costEstimator.costIndexScan(index.getIndex(),
-                                            index.getEqualityComparands(),
-                                            index.getLowComparand(), 
-                                            index.isLowInclusive(),
-                                            index.getHighComparand(), 
-                                            index.isHighInclusive());
-            if (!index.isCovering()) {
-                CostEstimate flatten = 
-                    costEstimator.costFlatten(index.getLeafMostTable(),
-                                              index.getRequiredTables());
-                cost = cost.nest(flatten);
-            }
-            if (needSort(index)) {
-                CostEstimate sort = costEstimator.costSort(cost.getRowCount());
-                cost = cost.sequence(sort);
-            }
-            index.setCostEstimate(cost);
-        }
-        return index.getCostEstimate();
     }
 
     protected boolean needSort(IndexScan index) {
@@ -770,11 +760,24 @@ public class IndexGoal implements Comparator<IndexScan>
         return requiredAfter.isEmpty();
     }
 
-    protected void estimateCost(CostEstimator costEstimator, IndexScan index) {
-        IndexStatistics indexStatistics = costEstimator.getIndexStatistics(index.getIndex());
-        if (indexStatistics != null) {
-            // TODO: Here is where we will actually use those statistics.
+    protected CostEstimate estimateCost(IndexScan index) {
+        if (!costEstimator.isEnabled()) return null;
+        CostEstimate cost = costEstimator.costIndexScan(index.getIndex(),
+                                                        index.getEqualityComparands(),
+                                                        index.getLowComparand(), 
+                                                        index.isLowInclusive(),
+                                                        index.getHighComparand(), 
+                                                        index.isHighInclusive());
+        if (!index.isCovering()) {
+            CostEstimate flatten = costEstimator.costFlatten(index.getLeafMostTable(),
+                                                             index.getRequiredTables());
+            cost = cost.nest(flatten);
         }
+        if (needSort(index)) {
+            CostEstimate sort = costEstimator.costSort(cost.getRowCount());
+            cost = cost.sequence(sort);
+        }
+        return cost;
     }
 
     /** Change WHERE, GROUP BY, and ORDER BY upstream of

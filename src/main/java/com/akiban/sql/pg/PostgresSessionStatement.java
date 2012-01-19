@@ -42,7 +42,7 @@ public class PostgresSessionStatement implements PostgresStatement
     };
 
     public static final String[] ALLOWED_CONFIGURATION = new String[] {
-      "client_encoding", "DateStyle", "geqo", "ksqo",
+      "client_encoding", "DateStyle", "geqo", "ksqo", "cbo"
     };
 
     private Operation operation;

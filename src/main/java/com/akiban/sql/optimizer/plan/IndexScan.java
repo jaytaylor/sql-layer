@@ -318,6 +318,10 @@ public class IndexScan extends BasePlanNode
             str.append(", UNIONs of ");
             str.append(conditionRange.describeRanges());
         }
+        if (costEstimate != null) {
+            str.append(", ");
+            str.append(costEstimate);
+        }
         str.append(")");
         return str.toString();
     }
