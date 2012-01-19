@@ -165,7 +165,12 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 throw new PersistitAdapterException(ex);
             }
         }
-        installUpdates(session, updates);
+        DXLTransactionHook.addCommitSuccessCallback(session, new Runnable() {
+            @Override
+            public void run() {
+                cache.putAll(updates);
+            }
+        });
     }
 
     @Override
@@ -254,18 +259,5 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 session.close();
             }
         }
-    }
-
-    protected void installUpdates(Session session, final Map<? extends Index, ? extends IndexStatistics> updates) {
-        DXLTransactionHook.addCommitSuccessCallback(session, new Runnable() {
-            @Override
-            public void run() {
-                updateCache(updates);
-            }
-        });
-    }
-
-    protected final void updateCache(Map<? extends Index, ? extends IndexStatistics> updates) {
-        cache.putAll(updates);
     }
 }

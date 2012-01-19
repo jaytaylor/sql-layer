@@ -128,8 +128,8 @@ public final class IndexHistogramsIT extends ITBase {
 
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
-        return super.serviceBindingsProvider()
-                .bind(IndexStatisticsService.class, NonTransactionallyInstallingStatsService.class);
+        return super.serviceBindingsProvider();
+//                .bind(IndexStatisticsService.class, NonTransactionallyInstallingStatsService.class);
     }
 
     @Before
@@ -243,8 +243,13 @@ public final class IndexHistogramsIT extends ITBase {
             Index index, int expectedColumns, int expectedEntries, int expectedCount, int expectedDistinct
     ) {
         IndexStatisticsService statsService = statsService();
-        if (analyzedIndexes.add(index))
-            statsService.updateIndexStatistics(session(), Collections.singleton(index));
+        if (analyzedIndexes.add(index)) {
+            ddl().updateTableStatistics(
+                    session(),
+                    index.leafMostTable().getName(),
+                    Collections.singleton(index.getIndexName().getName())
+            );
+        }
         IndexStatistics stats = statsService.getIndexStatistics(session(), index);
         IndexStatistics.Histogram histogram = stats.getHistogram(expectedColumns);
 
@@ -272,20 +277,6 @@ public final class IndexHistogramsIT extends ITBase {
         assertEquals("histogram rows count", expectedCount, actualCount);
         assertEquals("histogram distinct rows", expectedDistinct, actualDistinct);
         return result;
-    }
-    
-    public static class NonTransactionallyInstallingStatsService extends IndexStatisticsServiceImpl {
-        @Inject
-        public NonTransactionallyInstallingStatsService(Store store, TreeService treeService,
-                                                         SchemaManager schemaManager,
-                                                         SessionService sessionService) {
-            super(store, treeService, schemaManager, sessionService);
-        }
-
-        @Override
-        protected void installUpdates(Session session, Map<? extends Index, ? extends IndexStatistics> updates) {
-            updateCache(updates);
-        }
     }
 
     private GroupIndex skuByPlaced;
