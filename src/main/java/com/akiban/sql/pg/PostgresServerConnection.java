@@ -232,6 +232,13 @@ public class PostgresServerConnection extends ServerSessionBase
             messenger.writeString(errorCode.getFormattedValue());
             messenger.write('M');
             messenger.writeString(message);
+            if (exception instanceof BaseSQLException) {
+                int pos = ((BaseSQLException)exception).getErrorPosition();
+                if (pos > 0) {
+                    messenger.write('P');
+                    messenger.writeString(Integer.toString(pos));
+                }
+            }
             messenger.write(0);
             messenger.sendMessage(true);
         }
