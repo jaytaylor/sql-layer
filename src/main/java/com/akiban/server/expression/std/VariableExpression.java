@@ -15,13 +15,11 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
 
 public final class VariableExpression implements Expression {
@@ -76,17 +74,13 @@ public final class VariableExpression implements Expression {
         }
 
         @Override
-        public void of(Bindings bindings) {
-            this.bindings = bindings;
-        }
-
-        @Override
-        public void of(StoreAdapter adapter) {
+        public void of(QueryContext context) {
+            this.context = context;
         }
 
         @Override
         public ValueSource eval() {
-            return source.setExplicitly(bindings.get(position), type);
+            return bindings.getValue(position);
         }
 
         @Override
@@ -112,8 +106,7 @@ public final class VariableExpression implements Expression {
 
         private final AkType type;
         private final int position;
-        private final FromObjectValueSource source = new FromObjectValueSource();
-        private Bindings bindings;
+        private QueryContext context;
         private int ownedBy = 0;
     }
 }

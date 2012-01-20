@@ -15,8 +15,7 @@
 
 package com.akiban.server.expression;
 
-import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.Shareable;
@@ -26,7 +25,7 @@ import com.akiban.util.Shareable;
  * Expression as Row is to PhysicalOperators. Note that there is no equivalent to Cursor within the Expression
  * framework.</p>
  *
- * <p>Expressions can come in various flavors: they can require a Row, a Bindings or neither before they can be
+ * <p>Expressions can come in various flavors: they can require a Row, a QueryContext or neither before they can be
  * evaluated. If an Expression requires input, that input is given to its ExpressionEvaluation. E.g.:</p>
  *
  * <pre>
@@ -72,20 +71,14 @@ public interface ExpressionEvaluation extends Shareable {
     void of(Row row);
 
     /**
-     * Binds this evaluation to a Bindings
-     * @param bindings the bindings to be evaluated against
+     * Binds this evaluation to a query context
+     * @param context the query context to use to access storage and bindings
      */
-    void of(Bindings bindings);
-
-    /**
-     * Binds this evaluation to a StoreAdapter
-     * @param adapter the adapter to use to access storage
-     */
-    void of(StoreAdapter adapter);
+    void of(QueryContext context);
 
     /**
      * Gets a ValueSource that represents this evaluation. The returned ValueSource is mutable, and may change
-     * if you call either {@code of} method <em>or</em> let the bound (input) Bindings or Row change. The ValueSource
+     * if you call either {@code of} method <em>or</em> let the bound (input) QueryContext or Row change. The ValueSource
      * may be lazily evaluated, too.
      * @return a possibly-lazy, possibly-mutable representation of this evaluation's value
      */
