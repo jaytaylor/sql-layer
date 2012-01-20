@@ -18,8 +18,8 @@ package com.akiban.server.service.stats;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
-import com.akiban.util.Tap;
-import com.akiban.util.TapReport;
+import com.akiban.util.tap.Tap;
+import com.akiban.util.tap.TapReport;
 import com.google.inject.Inject;
 
 public final class StatisticsServiceImpl implements StatisticsService,

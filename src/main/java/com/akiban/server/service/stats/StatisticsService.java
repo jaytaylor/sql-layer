@@ -15,7 +15,7 @@
 
 package com.akiban.server.service.stats;
 
-import com.akiban.util.TapReport;
+import com.akiban.util.tap.TapReport;
 
 public interface StatisticsService {
 
