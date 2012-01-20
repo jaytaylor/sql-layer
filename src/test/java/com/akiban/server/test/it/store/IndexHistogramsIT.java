@@ -355,12 +355,11 @@ public final class IndexHistogramsIT extends ITBase {
     ) {
         final IndexStatisticsService statsService = statsService();
         if (analyzedIndexes.add(index)) {
-            transactionallyUnchecked(new Runnable() {
-                @Override
-                public void run() {
-                    statsService.updateIndexStatistics(session(), Collections.singleton(index));
-                }
-            });
+            ddl().updateTableStatistics(
+                    session(),
+                    index.leafMostTable().getName(),
+                    Collections.singleton(index.getIndexName().getName())
+            );
         }
             
         IndexStatistics stats = statsService.getIndexStatistics(session(), index);
