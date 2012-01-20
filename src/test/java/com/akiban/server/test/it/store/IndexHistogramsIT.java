@@ -16,10 +16,18 @@ package com.akiban.server.test.it.store;
 
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
+import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.akiban.server.service.session.Session;
+import com.akiban.server.service.session.SessionService;
+import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.SchemaManager;
+import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsService;
+import com.akiban.server.store.statistics.IndexStatisticsServiceImpl;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.ArgumentValidation;
+import com.google.inject.Inject;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -32,7 +40,7 @@ import java.util.Set;
 import static org.junit.Assert.*;
 
 public final class IndexHistogramsIT extends ITBase {
-    
+
     @Test
     public void customersPk() {
         validateHistogram("customers", PK, 1, 32, CUSTOMERS_COUNT, CUSTOMERS_COUNT);
@@ -116,6 +124,12 @@ public final class IndexHistogramsIT extends ITBase {
             }
         }
         assertTrue("entries left over: " + copy.keySet(), copy.isEmpty());
+    }
+
+    @Override
+    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        return super.serviceBindingsProvider();
+//                .bind(IndexStatisticsService.class, NonTransactionallyInstallingStatsService.class);
     }
 
     @Before
@@ -229,8 +243,13 @@ public final class IndexHistogramsIT extends ITBase {
             Index index, int expectedColumns, int expectedEntries, int expectedCount, int expectedDistinct
     ) {
         IndexStatisticsService statsService = statsService();
-        if (analyzedIndexes.add(index))
-            statsService.updateIndexStatistics(session(), Collections.singleton(index));
+        if (analyzedIndexes.add(index)) {
+            ddl().updateTableStatistics(
+                    session(),
+                    index.leafMostTable().getName(),
+                    Collections.singleton(index.getIndexName().getName())
+            );
+        }
         IndexStatistics stats = statsService.getIndexStatistics(session(), index);
         IndexStatistics.Histogram histogram = stats.getHistogram(expectedColumns);
 
@@ -262,7 +281,6 @@ public final class IndexHistogramsIT extends ITBase {
 
     private GroupIndex skuByPlaced;
     private Set<Index> analyzedIndexes = new HashSet<Index>();
-
     
     private static final String SCHEMA = "indexes";
     private static final String PK = "PK";

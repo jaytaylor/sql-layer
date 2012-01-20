@@ -115,6 +115,9 @@ public interface ServerSession
     /** Get a current environment value. */
     public Object getEnvironmentValue(EnvironmentExpressionSetting setting);
 
+    /** Get compatibilty mode for MySQL zero dates. */
+    public ServerValueEncoder.ZeroDateTimeBehavior getZeroDateTimeBehavior();
+
     /** Get the index cost estimator. */
     public CostEstimator costEstimator();
 }

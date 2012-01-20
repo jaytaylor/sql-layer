@@ -51,6 +51,8 @@ public abstract class ServerSessionBase implements ServerSession
     protected boolean transactionDefaultReadOnly = false;
     protected ServerSessionTracer sessionTracer;
 
+    protected ServerValueEncoder.ZeroDateTimeBehavior zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.NONE;
+
     public ServerSessionBase(ServerServiceRequirements reqs) {
         this.reqs = reqs;
     }
@@ -73,8 +75,27 @@ public abstract class ServerSessionBase implements ServerSession
     @Override
     public void setProperty(String key, String value) {
         properties.setProperty(key, value);
+        if (!propertySet(key, value))
+            sessionChanged();   // Give individual handlers a chance.
+    }
+
+    protected void setProperties(Properties properties) {
+        this.properties = properties;
+        for (String key : properties.stringPropertyNames()) {
+            propertySet(key, properties.getProperty(key));
+        }
         sessionChanged();
     }
+
+    protected boolean propertySet(String key, String value) {
+        if ("zeroDateTimeBehavior".equals(key)) {
+            zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.fromProperty(value);
+            return true;
+        }
+        return false;
+    }
+
+    protected abstract void sessionChanged();
 
     @Override
     public Map<String,Object> getAttributes() {
@@ -91,8 +112,6 @@ public abstract class ServerSessionBase implements ServerSession
         attributes.put(key, attr);
         sessionChanged();
     }
-
-    protected abstract void sessionChanged();
 
     @Override
     public DXLService getDXL() {
@@ -214,6 +233,11 @@ public abstract class ServerSessionBase implements ServerSession
             throw new AkibanInternalException("Unknown environment value: " +
                                               setting);
         }
+    }
+
+    @Override
+    public ServerValueEncoder.ZeroDateTimeBehavior getZeroDateTimeBehavior() {
+        return zeroDateTimeBehavior;
     }
 
     @Override

@@ -28,13 +28,14 @@ public abstract class PostgresOutputter<T>
     protected int ncols;
     protected ServerValueEncoder encoder;
 
-    public PostgresOutputter(PostgresMessenger messenger, 
+    public PostgresOutputter(PostgresServerSession server,
                              PostgresBaseStatement statement) {
-        this.messenger = messenger;
+        messenger = server.getMessenger();
         this.statement = statement;
         columnTypes = statement.getColumnTypes();
         ncols = columnTypes.size();
-        encoder = new ServerValueEncoder(messenger.getEncoding());
+        encoder = new ServerValueEncoder(messenger.getEncoding(), 
+                                         server.getZeroDateTimeBehavior());
     }
 
     public abstract void output(T row) throws IOException;

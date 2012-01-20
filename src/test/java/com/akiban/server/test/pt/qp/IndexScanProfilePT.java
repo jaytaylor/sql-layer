@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.test.it.qp;
+package com.akiban.server.test.pt.qp;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.expression.IndexBound;
@@ -29,14 +29,13 @@ import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.expression.std.FieldExpression;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Random;
 
 import static com.akiban.qp.operator.API.*;
 
-public class IndexScanProfileIT extends QPProfileITBase
+public class IndexScanProfilePT extends QPProfilePTBase
 {
     @Before
     public void before() throws InvalidOperationException
@@ -58,7 +57,6 @@ public class IndexScanProfileIT extends QPProfileITBase
     }
 
     @Test
-    @Ignore
     public void profileGroupScan()
     {
         final int ROWS = 1000;

@@ -32,7 +32,7 @@ import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.SQLParserContext;
 import com.akiban.sql.views.ViewDefinition;
 
-import com.akiban.server.error.ParseException;
+import com.akiban.server.error.SQLParserInternalException;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 
@@ -94,9 +94,7 @@ public class OperatorCompiler extends SchemaRulesContext
             return stmt;
         } 
         catch (StandardException ex) {
-            ParseException pe = new ParseException("", ex.getMessage(), stmt.toString());
-            pe.initCause(ex);
-            throw pe;
+            throw new SQLParserInternalException(ex);
         }
     }
 

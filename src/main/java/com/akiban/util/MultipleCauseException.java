@@ -45,4 +45,18 @@ public final class MultipleCauseException extends RuntimeException {
     public List<Throwable> getCauses() {
         return Collections.unmodifiableList(causes);
     }
+    
+    public static RuntimeException combine(RuntimeException oldProblem, RuntimeException newProblem) {
+        if (oldProblem == null)
+            return newProblem;
+        if (oldProblem instanceof MultipleCauseException) {
+            MultipleCauseException mce = (MultipleCauseException) oldProblem;
+            mce.addCause(newProblem);
+            return mce;
+        }
+        MultipleCauseException mce = new MultipleCauseException();
+        mce.addCause(oldProblem);
+        mce.addCause(newProblem);
+        return mce;
+    }
 }
