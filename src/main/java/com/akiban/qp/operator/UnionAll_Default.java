@@ -55,8 +55,8 @@ final class UnionAll_Default extends Operator {
     }
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter) {
-        return new Execution(adapter, inputs, inputTypes, outputRowType);
+    protected Cursor cursor(QueryContext context) {
+        return new Execution(context, inputs, inputTypes, outputRowType);
     }
 
     UnionAll_Default(Operator input1, RowType input1Type, Operator input2, RowType input2Type) {
@@ -113,16 +113,11 @@ final class UnionAll_Default extends Operator {
 
 
         @Override
-        public void open(Bindings bindings) {
-            if (bindings == null)
-                throw new IllegalArgumentException("bindings may not be null");
-            this.bindings = bindings;
+        public void open() {
         }
 
         @Override
         public Row next() {
-            if (bindings == null)
-                throw new IllegalStateException("no bindings set");
             Row outputRow;
             if (currentCursor == null) {
                 outputRow = nextCursorFirstRow();
@@ -144,7 +139,6 @@ final class UnionAll_Default extends Operator {
         @Override
         public void close() {
             inputOperatorsIndex = -1;
-            this.bindings = null;
             if (currentCursor != null)
                 currentCursor.close();
             else
@@ -153,12 +147,12 @@ final class UnionAll_Default extends Operator {
             rowHolder.release();
         }
 
-        private Execution(StoreAdapter adapter,
+        private Execution(QueryContext context,
                           List<? extends Operator> inputOperators,
                           List<? extends RowType> inputRowTypes,
                           RowType outputType)
         {
-            this.adapter = adapter;
+            this.context = context;
             this.inputOperators = inputOperators;
             this.inputRowTypes = inputRowTypes;
             this.outputRowType = outputType;
@@ -173,10 +167,9 @@ final class UnionAll_Default extends Operator {
          * @return the first row of the next cursor that has a non-null row, or null if no such cursors remain
          */
         private Row nextCursorFirstRow() {
-            assert bindings != null;
             while (++inputOperatorsIndex < inputOperators.size()) {
-                Cursor nextCursor = inputOperators.get(inputOperatorsIndex).cursor(adapter);
-                nextCursor.open(bindings);
+                Cursor nextCursor = inputOperators.get(inputOperatorsIndex).cursor(contexxt);
+                nextCursor.open();
                 Row nextRow = nextCursor.next();
                 if (nextRow == null) {
                     nextCursor.close();
@@ -210,13 +203,12 @@ final class UnionAll_Default extends Operator {
             return row;
         }
 
-        private final StoreAdapter adapter;
+        private final QueryContext context;
         private final List<? extends Operator> inputOperators;
         private final List<? extends RowType> inputRowTypes;
         private final RowType outputRowType;
         private final ShareHolder<MasqueradingRow> rowHolder = new ShareHolder<MasqueradingRow>();
         private int inputOperatorsIndex = -1; // right before the first operator
-        private Bindings bindings;
         private Cursor currentCursor;
         private RowType currentInputRowType;
     }

@@ -53,7 +53,7 @@ final class OperatorStoreMaintenance {
         Bindings bindings = new ArrayBindings(1);
         final List<Column> lookupCols = rowType.userTable().getPrimaryKey().getColumns();
 
-        bindings.set(OperatorStoreMaintenance.HKEY_BINDING_POSITION, hKey);
+        bindings.setHKey(OperatorStoreMaintenance.HKEY_BINDING_POSITION, hKey);
 
         // Copy the values into the array bindings
         ToObjectValueTarget target = new ToObjectValueTarget();

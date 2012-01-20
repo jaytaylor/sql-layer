@@ -154,9 +154,9 @@ class IndexScan_Default extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter)
+    protected Cursor cursor(QueryContext context)
     {
-        return new Execution(adapter);
+        return new Execution(context);
     }
 
     // IndexScan_Default interface
@@ -194,10 +194,10 @@ class IndexScan_Default extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
             INDEX_SCAN_COUNT.hit();
-            cursor.open(bindings);
+            cursor.open();
         }
 
         @Override
@@ -224,9 +224,9 @@ class IndexScan_Default extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter)
+        Execution(QueryContext context)
         {
-            super(adapter);
+            super(context);
             this.cursor = adapter.newIndexCursor(index, indexKeyRange, ordering, scanSelector);
         }
 

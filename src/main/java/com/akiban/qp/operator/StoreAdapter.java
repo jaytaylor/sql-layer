@@ -39,17 +39,17 @@ public abstract class StoreAdapter
         return schema;
     }
 
-    public abstract void updateRow(Row oldRow, Row newRow, Bindings bindings);
+    public abstract void updateRow(Row oldRow, Row newRow, QueryContext context);
     
-    public abstract void writeRow (Row newRow, Bindings bindings);
+    public abstract void writeRow (Row newRow, QueryContext context);
     
-    public abstract void deleteRow (Row oldRow, Bindings bindings);
+    public abstract void deleteRow (Row oldRow, QueryContext context);
 
     public abstract Cursor sort(Cursor input,
                                 RowType rowType,
                                 API.Ordering ordering,
                                 API.SortOption sortOption,
-                                Bindings bindings);
+                                QueryContext context);
 
     public abstract void checkQueryCancelation(long queryStartMsec);
 

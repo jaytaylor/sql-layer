@@ -22,33 +22,31 @@ public abstract class OperatorExecutionBase
         return startTimeMsec;
     }
 
-    // Operators that implement cursors have an adapter at construction time
-    protected OperatorExecutionBase(StoreAdapter adapter)
+    // Operators that implement cursors have a context at construction time
+    protected OperatorExecutionBase(QueryContext context)
     {
-        this();
-        this.adapter = adapter;
+        this.context = context;
     }
 
-    // Update operators don't get the adapter until later
+    // Update operators don't get the context until later
     protected OperatorExecutionBase()
     {
-        this.startTimeMsec = System.currentTimeMillis();
     }
 
-    protected void adapter(StoreAdapter adapter)
+    protected void context(QueryContext context)
     {
-        this.adapter = adapter;
+        this.context = context;
     }
 
     protected void checkQueryCancelation()
     {
-        adapter.checkQueryCancelation(startTimeMsec);
+        adapter().checkQueryCancelation(context.getStartTime());
     }
 
-    protected StoreAdapter adapter;
-    // startTimeMsec is used to control query timeouts. There is no central place in which a query's start time
-    // is recorded. Instead, each operator's cursor in a plan records System.currentTimeMillis(). This should
-    // be good enough for query timeouts unless some operator cursors are created much later (e.g. seconds) than others
-    // in the same query.
-    private final long startTimeMsec;
+   protected StoreAdapter adapter()
+    {
+        return context.getStore();
+    }
+
+    protected QueryContext context;
 }

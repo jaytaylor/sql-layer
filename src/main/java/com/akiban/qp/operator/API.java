@@ -448,10 +448,10 @@ public class API
 
     // Execution interface
 
-    public static Cursor cursor(Operator root, StoreAdapter adapter)
+    public static Cursor cursor(Operator root, QueryContext context)
     {
         // if all they need is the wrapped cursor, create it directly
-        return new TopLevelWrappingCursor(adapter, root.cursor(adapter));
+        return new TopLevelWrappingCursor(adapter, root.cursor(context));
     }
 
     // Options

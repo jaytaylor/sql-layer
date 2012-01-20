@@ -78,18 +78,18 @@ class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
     }
 
     @Override
-    public UpdateResult run(Bindings bindings, StoreAdapter adapter) {
-        adapter(adapter);
+    public UpdateResult run(QueryContext context) {
+        context(context);
         int seen = 0, modified = 0;
         INSERT_TAP.in();
-        Cursor inputCursor = inputOperator.cursor(adapter);
-        inputCursor.open(bindings);
+        Cursor inputCursor = inputOperator.cursor(context);
+        inputCursor.open();
         try {
             Row row;
             while ((row = inputCursor.next()) != null) {
                 checkQueryCancelation();
                 ++seen;
-                adapter.writeRow(row, bindings);
+                adapter.writeRow(row, context);
                 ++modified;
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Insert: row {}", row);

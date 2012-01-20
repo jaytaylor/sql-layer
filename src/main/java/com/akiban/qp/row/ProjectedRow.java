@@ -16,8 +16,7 @@
 package com.akiban.qp.row;
 
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.ProjectedRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.Quote;
@@ -98,11 +97,11 @@ public class ProjectedRow extends AbstractRow
 
     // ProjectedRow interface
 
-    public ProjectedRow(ProjectedRowType rowType, Row row, Bindings bindings, StoreAdapter adapter, List<Expression> expressions)
+    public ProjectedRow(ProjectedRowType rowType, Row row, QueryContext context, List<Expression> expressions)
     {
         this.rowType = rowType;
         this.row = row;
-        this.evaluations = createEvaluations(expressions, row, bindings, adapter);
+        this.evaluations = createEvaluations(expressions, row, context);
         this.holders = new ValueHolder[expressions.size()];
         super.runId(row.runId());
     }
@@ -119,13 +118,12 @@ public class ProjectedRow extends AbstractRow
     // For use by this class
 
     private List<ExpressionEvaluation> createEvaluations(List<Expression> expressions, 
-                                                         Row row, Bindings bindings, StoreAdapter adapter)
+                                                         Row row, QueryContext context)
     {
         List<ExpressionEvaluation> result = new ArrayList<ExpressionEvaluation>();
         for (Expression expression : expressions) {
             ExpressionEvaluation evaluation = expression.evaluation();
-            evaluation.of(adapter);
-            evaluation.of(bindings);
+            evaluation.of(context);
             evaluation.of(row);
             result.add(evaluation);
         }

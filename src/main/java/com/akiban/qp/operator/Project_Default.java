@@ -44,9 +44,9 @@ class Project_Default extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter)
+    protected Cursor cursor(QueryContext context)
     {
-        return new Execution(adapter, inputOperator.cursor(adapter));
+        return new Execution(context, inputOperator.cursor(adapter));
     }
 
     @Override
@@ -121,10 +121,9 @@ class Project_Default extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
-            input.open(bindings);
-            this.bindings = bindings;
+            input.open();
         }
 
         @Override
@@ -136,7 +135,7 @@ class Project_Default extends Operator
             if ((inputRow = input.next()) != null) {
                 projectedRow =
                     inputRow.rowType() == rowType
-                    ? new ProjectedRow(projectType, inputRow, bindings, adapter, projections)
+                    ? new ProjectedRow(projectType, inputRow, context, projections)
                     : inputRow;
             }
             return projectedRow;
@@ -150,15 +149,14 @@ class Project_Default extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, Cursor input)
+        Execution(QueryContext context, Cursor input)
         {
-            super(adapter);
+            super(context);
             this.input = input;
         }
 
         // Object state
 
         private final Cursor input;
-        private Bindings bindings;
     }
 }
