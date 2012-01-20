@@ -71,7 +71,7 @@ public class PostgresServerConnection extends ServerSessionBase
     
     private boolean instrumentationEnabled = false;
     private String sql;
-
+    
     public PostgresServerConnection(PostgresServer server, Socket socket, 
                                     int pid, int secret,
                                     ServerServiceRequirements reqs) {
@@ -681,6 +681,7 @@ public class PostgresServerConnection extends ServerSessionBase
             else
                 messenger.setEncoding(value);
         }
+        super.propertySet(key, value);
     }
 
     /* MBean-related access */

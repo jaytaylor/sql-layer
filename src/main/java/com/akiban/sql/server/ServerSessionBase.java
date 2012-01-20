@@ -55,6 +55,8 @@ public abstract class ServerSessionBase implements ServerSession
     protected boolean transactionDefaultReadOnly = false;
     protected ServerSessionTracer sessionTracer;
 
+    protected ServerValueEncoder.ZeroDateTimeBehavior zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.NONE;
+
     public ServerSessionBase(ServerServiceRequirements reqs) {
         this.reqs = reqs;
     }
@@ -90,6 +92,9 @@ public abstract class ServerSessionBase implements ServerSession
     }
 
     protected void propertySet(String key, String value) {
+        if ("zeroDateTimeBehavior".equals(key)) {
+            zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.fromProperty(value);
+        }
     }
 
     protected abstract void sessionChanged();
@@ -230,6 +235,11 @@ public abstract class ServerSessionBase implements ServerSession
             throw new AkibanInternalException("Unknown environment value: " +
                                               setting);
         }
+    }
+
+    @Override
+    public ServerValueEncoder.ZeroDateTimeBehavior getZeroDateTimeBehavior() {
+        return zeroDateTimeBehavior;
     }
 
     // TODO: Maybe move this someplace else. Right now this is where things meet.
