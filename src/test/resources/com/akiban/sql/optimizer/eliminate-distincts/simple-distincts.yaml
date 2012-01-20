@@ -1,0 +1,102 @@
+# sa-sb in various flavors
+
+- optimized: SELECT DISTINCT sa.* FROM sa LEFT JOIN sb ON a = b
+- kept:      SELECT DISTINCT sa.* FROM sa RIGHT JOIN sb ON a = b
+- optimized: SELECT DISTINCT sa.* FROM sa JOIN sb ON a = b
+- optimized: SELECT DISTINCT sa.* FROM sa JOIN sb on 1 = 1 WHERE a = b
+- ignored:   SELECT DISTINCT sa.* FROM sa JOIN sb WHERE a = b # syntax not yet supported
+
+# similar flavors to above, but with sb.* instead of sa.*
+
+- kept:      SELECT DISTINCT sb.* FROM sa LEFT JOIN sb ON a = b
+- optimized: SELECT DISTINCT sb.* FROM sa RIGHT JOIN sb ON a = b
+- optimized: SELECT DISTINCT sb.* FROM sa JOIN sb ON a = b
+- ignored:   SELECT DISTINCT sb.* FROM sa JOIN sb WHERE a = b # syntax not yet supported
+
+# only sa.a instead of sa.*
+
+- optimized: SELECT DISTINCT sa.a FROM sa LEFT JOIN sb ON a = b
+- kept:      SELECT DISTINCT sa.a FROM sa RIGHT JOIN sb ON a = b
+- optimized: SELECT DISTINCT sa.a FROM sa JOIN sb ON a = b
+
+# only sa.f instead of sa.*
+
+- kept:      SELECT DISTINCT sa.f FROM sa LEFT JOIN sb ON a = b
+- kept:      SELECT DISTINCT sa.f FROM sa RIGHT JOIN sb ON a = b
+- kept:      SELECT DISTINCT sa.f FROM sa JOIN sb ON a = b
+
+# only sb.g instead of sb.*
+
+- kept:      SELECT DISTINCT sb.g FROM sa LEFT JOIN sb ON a = b
+- kept:      SELECT DISTINCT sb.g FROM sa RIGHT JOIN sb ON a = b
+- kept:      SELECT DISTINCT sb.g FROM sa JOIN sb ON a = b
+
+# no join conditions
+
+- kept:      SELECT DISTINCT sa.a FROM sa JOIN sb ON 1 = 1
+- kept:      SELECT DISTINCT sa.a FROM sa, sb
+- kept:      SELECT DISTINCT sa.a FROM sa, sb WHERE a = 1
+- kept:      SELECT DISTINCT sa.a FROM sa, sb WHERE a = ?
+- optimized: SELECT DISTINCT sa.a FROM sa, sb WHERE b = 1
+- optimized: SELECT DISTINCT sa.a FROM sa, sb WHERE b = ?
+- optimized: SELECT DISTINCT sa.a,sb.b FROM sa JOIN sb ON 1 = 1
+
+# join conditions plus const conditions
+
+- optimized: SELECT DISTINCT sa.* FROM sa LEFT JOIN sb ON a = b WHERE sa.a = 5
+- kept:      SELECT DISTINCT sa.* FROM sa RIGHT JOIN sb ON a = b WHERE sa.a = 5
+- optimized: SELECT DISTINCT sa.* FROM sa JOIN sb ON a = b WHERE sa.a = 5
+
+# sa-sb-sc
+
+- optimized: SELECT DISTINCT sa.a, sb.b, sc.c FROM sa, sb, sc WHERE a = b AND a = c
+
+# ma-mb with join conditions
+
+- optimized: SELECT DISTINCT ma.* FROM ma JOIN mb ON (a1=b1 AND a2=b2)
+- kept:      SELECT DISTINCT ma.* FROM ma JOIN mb ON (a1=b1)
+- optimized: SELECT DISTINCT * FROM ma JOIN mb ON (a1=b1)
+
+# ma-mb with join conditions plus const conditions
+
+- optimized: SELECT DISTINCT ma.* FROM ma JOIN mb ON (a1=b1 AND a2=b2) WHERE a1=5
+
+# ma-mb-mc
+
+- optimized: SELECT DISTINCT * from ma, mb, mc
+- kept:      SELECT DISTINCT ma.* FROM ma, mb, mc WHERE a1 = b1 AND b2 = c1
+- kept:      SELECT DISTINCT ma.* FROM ma, mb, mc WHERE a1 = b1 AND b2 = c1 AND c2 = a1
+
+# mix and match join conditions and predicate conditions
+
+- optimized: SELECT DISTINCT ma.a1,ma.a2 FROM ma, mb, mc WHERE a1 = b1 AND a2 = b2 AND c1 = 5 AND c2 = ?
+- optimized: SELECT DISTINCT ma.a1       FROM ma, mb, mc WHERE a1 = b1 AND a2 = b2 AND c1 = 5 AND c2 = ?
+- kept:      SELECT DISTINCT ma.a1       FROM ma, mb, mc WHERE a1 = b1 AND a2 = b2 AND c1 = 5
+
+# mix and match join conditions and projections
+
+- optimized: SELECT DISTINCT ma.*,mb.*   FROM ma, mb, mc WHERE b1 = c1 AND b2 = c2
+
+# mix and match equality and projections
+
+- optimized: SELECT DISTINCT ma.*,mb.*   FROM ma, mb, mc WHERE c1 = 5 AND c2 = ?
+# for the next couple, imagine
+
+# ma        mb      mc
+
+# (1, 2)    (1, 2)  (5, 1)
+
+# (1, 3)    (1, 3)  (5, 7)
+
+- kept:      SELECT DISTINCT ma.*,mb.*   FROM ma, mb, mc WHERE c1 = 5
+- kept:      SELECT DISTINCT ma.*,mb.*   FROM ma, mb, mc WHERE c1 = 5 AND c2 = c2
+
+# LEFT JOIN on ma-mb-mc
+
+- optimized: SELECT DISTINCT ma.* FROM ma LEFT JOIN mb ON a1 = b1 AND a2 = b2 LEFT JOIN mc ON b1 = c1 AND b2 = c2
+- kept:      SELECT DISTINCT ma.* FROM ma LEFT JOIN mb ON a1 = b1 AND a2 = b2 LEFT JOIN mc ON b1 = c1
+- kept:      SELECT DISTINCT ma.* FROM ma LEFT JOIN mb ON a1 = b1 AND a2 = b2 LEFT JOIN mc ON c1 = 1
+- kept:      SELECT DISTINCT ma.* FROM ma LEFT JOIN mb ON a1 = b1 AND a2 = b2 LEFT JOIN mc ON c1 = 1 AND c2 = c2
+- optimized: SELECT DISTINCT ma.* FROM ma LEFT JOIN mb ON a1 = b1 AND a2 = b2 LEFT JOIN mc ON c1 = 1 AND c2 = ?
+- kept:      SELECT DISTINCT mb.* FROM ma LEFT JOIN mb ON a1 = b1 AND a2 = b2 LEFT JOIN mc ON b1 = c1 AND b2 = c2
+- kept:      SELECT DISTINCT mc.* FROM ma LEFT JOIN mb ON a1 = b1 AND a2 = b2 LEFT JOIN mc ON b1 = c1 AND b2 = c2

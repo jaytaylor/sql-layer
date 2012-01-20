@@ -21,13 +21,13 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import com.akiban.sql.pg.PostgresSessionTracer;
+import com.akiban.sql.server.ServerSessionTracer;
 
 public class SessionTracerTest {
     
     @Test
     public void testBasicUse() {
-        SessionTracer tracer = new PostgresSessionTracer(1, false);
+        SessionTracer tracer = new ServerSessionTracer(1, false);
         assertEquals(false, tracer.isEnabled());
         tracer.enable();
         assertEquals(true, tracer.isEnabled());
@@ -49,7 +49,7 @@ public class SessionTracerTest {
     
     @Test
     public void testManyEvents() {
-        SessionTracer tracer = new PostgresSessionTracer(1, true);
+        SessionTracer tracer = new ServerSessionTracer(1, true);
         for (int i = 0; i < 1000; i++) {
             tracer.beginEvent("event:" + i);
             tracer.endEvent();

@@ -58,6 +58,7 @@ public class OptimizerTestBase extends ASTTransformTestBase
     protected TypeComputer typeComputer;
     protected BooleanNormalizer booleanNormalizer;
     protected SubqueryFlattener subqueryFlattener;
+    protected DistinctEliminator distinctEliminator;
 
     @Before
     public void makeTransformers() throws Exception {
@@ -67,6 +68,7 @@ public class OptimizerTestBase extends ASTTransformTestBase
         typeComputer = new FunctionsTypeComputer(new FunctionsRegistryImpl());
         booleanNormalizer = new BooleanNormalizer(parser);
         subqueryFlattener = new SubqueryFlattener(parser);
+        distinctEliminator = new DistinctEliminator(parser);
     }
 
     public static AkibanInformationSchema parseSchema(File schema) throws Exception {

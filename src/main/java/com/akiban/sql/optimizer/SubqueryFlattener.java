@@ -262,7 +262,8 @@ public class SubqueryFlattener
             throws StandardException {
         if (fromSubquery.getSubquery() instanceof SelectNode) {
             SelectNode selectNode = (SelectNode)fromSubquery.getSubquery();
-            if ((selectNode.getGroupByList() != null) ||
+            if (selectNode.isDistinct() ||
+                (selectNode.getGroupByList() != null) ||
                 (selectNode.getHavingClause() != null))
                 return false;
         }

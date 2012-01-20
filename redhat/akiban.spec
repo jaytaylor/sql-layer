@@ -1,6 +1,6 @@
 Name:           akiban
-Version:        0.0.3
-Release:        rc1
+Version:        1.0.1
+Release:        1
 Summary:        Akiban Technologies stack.
 Group:          Applications/Databases
 License:        AGPL

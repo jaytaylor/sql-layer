@@ -93,6 +93,8 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.session.Session;
+import org.junit.Rule;
+import org.junit.rules.TestName;
 
 /**
  * <p>Base class for all API tests. Contains a @SetUp that gives you a fresh DDLFunctions and DMLFunctions, plus
@@ -153,6 +155,13 @@ public class ApiTestBase {
     private int akibanFKCount;
     private boolean testServicesStarted;
     private final Set<RowUpdater> unfinishedRowUpdaters = new HashSet<RowUpdater>();
+    
+    @Rule
+    public static final TestName testName = new TestName();
+    
+    protected String testName() {
+        return testName.getMethodName();
+    }
 
     @Before
     public final void startTestServices() throws Exception {
@@ -432,11 +441,16 @@ public class ApiTestBase {
         dml().writeRow(session(), createNewRow(tableId, values));
     }
 
-    protected final RowUpdater update(int tableId, Object... values) {
-        NewRow oldRow = createNewRow(tableId, values);
+
+    protected final RowUpdater update(NewRow oldRow) {
         RowUpdater updater = new RowUpdaterImpl(oldRow);
         unfinishedRowUpdaters.add(updater);
         return updater;
+    }
+    
+    protected final RowUpdater update(int tableId, Object... values) {
+        NewRow oldRow = createNewRow(tableId, values);
+        return update(oldRow);
     }
 
     protected final int writeRows(NewRow... rows) throws InvalidOperationException {
@@ -690,13 +704,19 @@ public class ApiTestBase {
 
     public interface RowUpdater {
         void to(Object... values);
+        void to(NewRow newRow);
     }
 
     private class RowUpdaterImpl implements RowUpdater {
         @Override
         public void to(Object... values) {
-            boolean removed = unfinishedRowUpdaters.remove(this);
             NewRow newRow = createNewRow(oldRow.getTableId(), values);
+            to(newRow);
+        }
+
+        @Override
+        public void to(NewRow newRow) {
+            boolean removed = unfinishedRowUpdaters.remove(this);
             dml().updateRow(session(), oldRow, newRow, null);
             assertTrue("couldn't remove row updater " + toString(), removed);
         }
