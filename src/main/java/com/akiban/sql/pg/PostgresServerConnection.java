@@ -694,18 +694,20 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     @Override
-    protected void propertySet(String key, String value) {
+    protected boolean propertySet(String key, String value) {
         if ("client_encoding".equals(key)) {
             if ("UNICODE".equals(value))
                 messenger.setEncoding("UTF-8");
             else
                 messenger.setEncoding(value);
+            return true;
         }
         else if ("OutputFormat".equals(key)) {
-            properties.setProperty(key, value);
-            rebuildCompiler();
+            if (parsedGenerators != null)
+                rebuildCompiler();
+            return true;
         }
-        super.propertySet(key, value);
+        return super.propertySet(key, value);
     }
 
     /* MBean-related access */
