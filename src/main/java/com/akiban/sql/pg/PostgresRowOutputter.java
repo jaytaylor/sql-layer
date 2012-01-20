@@ -23,9 +23,9 @@ import java.io.IOException;
 
 public class PostgresRowOutputter extends PostgresOutputter<Row>
 {
-    public PostgresRowOutputter(PostgresMessenger messenger, 
+    public PostgresRowOutputter(PostgresServerSession server,
                                 PostgresBaseStatement statement) {
-        super(messenger, statement);
+        super(server, statement);
     }
 
     @Override

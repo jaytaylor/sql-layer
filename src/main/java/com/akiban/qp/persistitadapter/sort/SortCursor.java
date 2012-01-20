@@ -20,6 +20,7 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
+import com.akiban.util.Tap;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 
@@ -67,4 +68,6 @@ public abstract class SortCursor implements Cursor
     protected final PersistitAdapter adapter;
     protected final Exchange exchange;
     protected final IterationHelper iterationHelper;
+    
+    static final Tap.PointTap SORT_TRAVERSE = Tap.createCount("traverse_sort");
 }

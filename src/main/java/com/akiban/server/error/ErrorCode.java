@@ -168,6 +168,7 @@ public enum ErrorCode {
     TABLE_DEFINITION_CHANGED("22", "501", Importance.DEBUG, TableDefinitionChangedException.class),
     NEGATIVE_LIMIT          ("22", "502", Importance.DEBUG, NegativeLimitException.class),
     INVALID_ARGUMENT_TYPE   ("22", "503", Importance.DEBUG, InvalidArgumentTypeException.class),
+    ZERO_DATE_TIME          ("22", "504", Importance.DEBUG, ZeroDateTimeException.class),
 
     // Class 23 - integrity constraint violation
     DUPLICATE_KEY           ("23", "501", Importance.DEBUG, DuplicateKeyException.class),
@@ -222,7 +223,7 @@ public enum ErrorCode {
     // Class 42 - syntax error or access rule violation
     // These exceptions are re-thrown errors from the parser and from the
     // AISBinder, ASTStatementLoader, BasicDDLFunctions, or BasicDMLFunctions
-    PARSE_EXCEPTION         ("42", "000", Importance.DEBUG, ParseException.class),
+    SQL_PARSE_EXCEPTION     ("42", "000", Importance.DEBUG, SQLParseException.class),
     NO_SUCH_TABLE           ("42", "501", Importance.DEBUG, NoSuchTableException.class), 
     NO_INDEX                ("42", "502", Importance.DEBUG, NoSuchIndexException.class),
     NO_SUCH_GROUP           ("42", "503", Importance.DEBUG, NoSuchGroupException.class), 
@@ -242,6 +243,8 @@ public enum ErrorCode {
     TABLE_INDEX_JOIN        ("42", "511", Importance.DEBUG, TableIndexJoinTypeException.class),
     INSERT_WRONG_COUNT      ("42", "512", Importance.DEBUG, InsertWrongCountException.class),
     UNSUPPORTED_CONFIGURATION ("42", "513", Importance.DEBUG, UnsupportedConfigurationException.class),
+    SCHEMA_DEF_PARSE_EXCEPTION ("42", "514", Importance.DEBUG, SchemaDefParseException.class),
+    SQL_PARSER_INTERNAL_EXCEPTION ("42", "515", Importance.DEBUG, SQLParserInternalException.class),
 
     // Class 44 - with check option violation
     

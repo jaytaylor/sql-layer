@@ -510,7 +510,10 @@ public class ExtractExpression extends AbstractUnaryExpression
                 switch (argType)
                 {
                     case TEXT:
-                    case VARCHAR: l = Extractors.getLongExtractor(targetType).getLong(operand().getString()); break;
+                    case VARCHAR:  String st = Extractors.getStringExtractor().getObject(operand());
+                                   l = Extractors.getLongExtractor(t = (targetType == AkType.DATE && st.length() > 10 ? AkType.DATETIME : targetType)).
+                                           getLong(st);
+                                   break;
                     case LONG:     long raw = operand().getLong();
                                    if (targetType == AkType.TIMESTAMP) return null;
                                    else if (targetType == AkType.DATE )

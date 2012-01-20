@@ -76,6 +76,9 @@ public interface ServerSession
     /** Return a parser for SQL statements. */
     public SQLParser getParser();
     
+    /** Return configured properties. */
+    public Properties getCompilerProperties();
+
     /** Return the object used to trace sessions. */
     public SessionTracer getSessionTracer();
 
@@ -111,6 +114,9 @@ public interface ServerSession
 
     /** Get a current environment value. */
     public Object getEnvironmentValue(EnvironmentExpressionSetting setting);
+
+    /** Get compatibilty mode for MySQL zero dates. */
+    public ServerValueEncoder.ZeroDateTimeBehavior getZeroDateTimeBehavior();
 
     /** Get the index estimator. */
     public IndexEstimator indexEstimator();

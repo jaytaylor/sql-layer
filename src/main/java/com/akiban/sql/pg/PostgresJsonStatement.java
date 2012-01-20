@@ -43,8 +43,8 @@ public class PostgresJsonStatement extends PostgresOperatorStatement
     }
 
     @Override
-    protected PostgresOutputter<Row> getRowOutputter(PostgresMessenger messenger) {
-        return new PostgresJsonOutputter(messenger, this, 
+    protected PostgresOutputter<Row> getRowOutputter(PostgresServerSession server) {
+        return new PostgresJsonOutputter(server, this, 
                                          resultColumns, getColumnTypes().get(0));
     }
     

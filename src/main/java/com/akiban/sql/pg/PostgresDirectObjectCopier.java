@@ -26,9 +26,9 @@ import java.io.IOException;
  */
 public class PostgresDirectObjectCopier extends PostgresOutputter<List<?>>
 {
-    public PostgresDirectObjectCopier(PostgresMessenger messenger, 
+    public PostgresDirectObjectCopier(PostgresServerSession server, 
                                       PostgresBaseStatement statement) {
-        super(messenger, statement);
+        super(server, statement);
     }
 
     @Override

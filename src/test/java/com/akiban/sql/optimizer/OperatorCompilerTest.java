@@ -45,8 +45,10 @@ import org.junit.Before;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Properties;
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.io.IOException;
 
 @RunWith(NamedParameterizedRunner.class)
@@ -56,7 +58,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     public static final File RESOURCE_DIR = 
         new File(OptimizerTestBase.RESOURCE_DIR, "operator");
 
-    protected File schemaFile, indexFile, statsFile;
+    protected File schemaFile, indexFile, statsFile, propertiesFile;
     protected SQLParser parser;
     protected OperatorCompiler compiler;
 
@@ -66,7 +68,17 @@ public class OperatorCompilerTest extends NamedParamsTestBase
         AkibanInformationSchema ais = OptimizerTestBase.parseSchema(schemaFile);
         if (indexFile != null)
             OptimizerTestBase.loadGroupIndexes(ais, indexFile);
-        compiler = TestOperatorCompiler.create(parser, ais, 
+        Properties properties = new Properties();
+        if (propertiesFile != null) {
+            FileInputStream fstr = new FileInputStream(propertiesFile);
+            try {
+                properties.load(fstr);
+            }
+            finally {
+                fstr.close();
+            }
+        }
+        compiler = TestOperatorCompiler.create(parser, properties, ais, 
                                                OptimizerTestBase.DEFAULT_SCHEMA,
                                                new FunctionsRegistryImpl(),
                                                new TestIndexEstimator(ais, OptimizerTestBase.DEFAULT_SCHEMA, statsFile));
@@ -91,21 +103,21 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     }
     
     public static class TestOperatorCompiler extends OperatorCompiler {
-        public static OperatorCompiler create(SQLParser parser, 
+        public static OperatorCompiler create(SQLParser parser, Properties properties,
                                               AkibanInformationSchema ais, 
                                               String defaultSchemaName,
                                               FunctionsRegistry functionsRegistry,
                                               IndexEstimator indexEstimator) {
             RulesTestHelper.ensureRowDefs(ais);
-            return new TestOperatorCompiler(parser, ais, defaultSchemaName, functionsRegistry, indexEstimator);
+            return new TestOperatorCompiler(parser, properties, ais, defaultSchemaName, functionsRegistry, indexEstimator);
         }
 
-        private TestOperatorCompiler(SQLParser parser, 
+        private TestOperatorCompiler(SQLParser parser, Properties properties,
                                      AkibanInformationSchema ais, 
                                      String defaultSchemaName,
                                      FunctionsRegistry functionsRegistry,
                                      IndexEstimator indexEstimator) {
-            super(parser, ais, defaultSchemaName, functionsRegistry, indexEstimator);
+            super(parser, properties, ais, defaultSchemaName, functionsRegistry, indexEstimator);
         }
 
         @Override
@@ -136,13 +148,17 @@ public class OperatorCompilerTest extends NamedParamsTestBase
                 File statsFile = new File(subdir, "stats.yaml");
                 if (!statsFile.exists())
                     statsFile = null;
+                File propertiesFile = new File(subdir, "compiler.properties");
+                if (!propertiesFile.exists())
+                    propertiesFile = null;
                 for (Object[] args : sqlAndExpected(subdir)) {
-                    Object[] nargs = new Object[args.length+3];
+                    Object[] nargs = new Object[args.length+4];
                     nargs[0] = subdir.getName() + "/" + args[0];
                     nargs[1] = schemaFile;
                     nargs[2] = indexFile;
                     nargs[3] = statsFile;
-                    System.arraycopy(args, 1, nargs, 4, args.length-1);
+                    nargs[4] = propertiesFile;
+                    System.arraycopy(args, 1, nargs, 5, args.length-1);
                     result.add(nargs);
                 }
             }
@@ -151,12 +167,13 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     }
 
     public OperatorCompilerTest(String caseName, 
-                                File schemaFile, File indexFile, File statsFile,
+                                File schemaFile, File indexFile, File statsFile, File propertiesFile,
                                 String sql, String expected, String error) {
         super(caseName, sql, expected, error);
         this.schemaFile = schemaFile;
         this.indexFile = indexFile;
         this.statsFile = statsFile;
+        this.propertiesFile = propertiesFile;
     }
 
     @Test

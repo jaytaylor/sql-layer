@@ -60,7 +60,6 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     @Override
     public int execute(PostgresServerSession server, int maxrows)
         throws IOException {
-        PostgresMessenger messenger = server.getMessenger();
         Bindings bindings = getBindings();
         Session session = server.getSession();
         int nrows = 0;
@@ -70,7 +69,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             setEnvironmentBindings(server, bindings);
             cursor = API.cursor(resultOperator, server.getStore());
             cursor.open(bindings);
-            PostgresOutputter<Row> outputter = getRowOutputter(messenger);
+            PostgresOutputter<Row> outputter = getRowOutputter(server);
             Row row;
             while ((row = cursor.next()) != null) {
                 assert resultRowType == null || (row.rowType() == resultRowType) : row;
@@ -87,6 +86,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             unlock(session, UNSPECIFIED_DML_READ);
         }
         {        
+            PostgresMessenger messenger = server.getMessenger();
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
             messenger.writeString("SELECT " + nrows);
             messenger.sendMessage();
@@ -94,8 +94,8 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         return nrows;
     }
 
-    protected PostgresOutputter<Row> getRowOutputter(PostgresMessenger messenger) {
-        return new PostgresRowOutputter(messenger, this);
+    protected PostgresOutputter<Row> getRowOutputter(PostgresServerSession server) {
+        return new PostgresRowOutputter(server, this);
     }
 
     @Override

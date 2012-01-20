@@ -56,7 +56,7 @@ public class IntervalCastExpression extends AbstractUnaryExpression
         final AkType type;
     }
     
-    public static final HashMap<TypeId,EndPoint> ID_MAP = new HashMap();
+    private static final HashMap<TypeId,EndPoint> ID_MAP = new HashMap();
     static
     {
         ID_MAP.put(TypeId.INTERVAL_YEAR_ID, EndPoint.YEAR);
@@ -201,12 +201,25 @@ public class IntervalCastExpression extends AbstractUnaryExpression
     }
     
     private final EndPoint endPoint;
-    public IntervalCastExpression (Expression str, EndPoint endPoint)
+    protected IntervalCastExpression (Expression str, EndPoint endPoint)
     {
         super(endPoint.type, str);
         this.endPoint = endPoint;
     }
-    
+
+    public IntervalCastExpression (Expression str, TypeId id)
+    {
+        this (str, getEndPoint(id));
+    }
+
+    static private EndPoint getEndPoint (TypeId id)
+    {
+        EndPoint ep = ID_MAP.get(id);
+        if (ep == null)
+            throw new InvalidArgumentTypeException ("Unsupported INTERVAL format - " + id.getSQLTypeName());
+        else
+            return ep;
+    }
     @Override
     protected String name() 
     {

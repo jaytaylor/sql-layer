@@ -29,7 +29,7 @@ import com.akiban.server.error.JoinToUnknownTableException;
 import com.akiban.server.error.JoinToWrongColumnsException;
 import com.akiban.server.error.JoinColumnMismatchException;
 import com.akiban.server.error.JoinToProtectedTableException;
-import com.akiban.server.error.ParseException;
+import com.akiban.server.error.SchemaDefParseException;
 import com.akiban.server.error.UnsupportedCharsetException;
 import com.akiban.server.error.UnsupportedDataTypeException;
 import com.akiban.server.error.UnsupportedIndexDataTypeException;
@@ -177,7 +177,7 @@ public final class CreateTableIT extends ITBase {
         }
     }
 
-    @Test(expected=ParseException.class) // bug706347
+    @Test(expected=SchemaDefParseException.class) // bug706347
     public void createTableAsSelect() throws InvalidOperationException {
         // Note: Fixing would require parsing/computing the result column set of any valid SELECT statement
         int tid1 = createTable("test", "src", "c1 INT NOT NULL AUTO_INCREMENT, c2 INT NULL, PRIMARY KEY(c1))");

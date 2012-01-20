@@ -20,15 +20,18 @@ import com.akiban.sql.optimizer.plan.PlanContext;
 import org.slf4j.Logger;
 
 import java.util.List;
+import java.util.Properties;
 
 /** The context / owner of a {@link PlanContext}, shared among several of them. */
 public class RulesContext
 {
     // TODO: Need more much sophisticated invocation mechanism.
     private List<BaseRule> rules;
+    private Properties properties;
 
-    public RulesContext(List<BaseRule> rules) {
+    public RulesContext(List<BaseRule> rules, Properties properties) {
         this.rules = rules;
+        this.properties = properties;
     }
 
     public void applyRules(PlanContext plan) {
@@ -57,5 +60,13 @@ public class RulesContext
     public void beginRule(BaseRule rule) {
     }
     public void endRule(BaseRule rule) {
+    }
+
+    /** Get optimizer configuration property. */
+    public String getProperty(String key) {
+        return properties.getProperty(key);
+    }
+    public String getProperty(String key, String defval) {
+        return properties.getProperty(key, defval);
     }
 }

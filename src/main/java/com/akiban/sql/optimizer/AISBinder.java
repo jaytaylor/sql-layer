@@ -22,6 +22,7 @@ import com.akiban.server.error.JoinNodeAdditionException;
 import com.akiban.server.error.MultipleJoinsToTableException;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.error.SelectExistsErrorException;
 import com.akiban.server.error.SubqueryOneColumnException;
 import com.akiban.server.error.SubqueryResultsSetupException;
@@ -172,8 +173,9 @@ public class AISBinder implements Visitor
         if (subqueryNode.getLeftOperand() != null) {
             try {
                 subqueryNode.getLeftOperand().accept(this);
-            } catch (StandardException e) {
-                throw new com.akiban.server.error.ParseException ("", e.getMessage(), subqueryNode.toString());
+            } 
+            catch (StandardException ex) {
+                throw new SQLParserInternalException(ex);
             }
         }
 
@@ -204,8 +206,9 @@ public class AISBinder implements Visitor
         if (subqueryType == SubqueryNode.SubqueryType.EXISTS) {
             try {
                 resultSet = setResultToBooleanTrueNode(resultSet);
-            } catch (StandardException e) {
-                throw new SubqueryResultsSetupException (e.getMessage());
+            } 
+            catch (StandardException ex) {
+                throw new SQLParserInternalException(ex);
             }
             subqueryNode.setResultSet(resultSet);
         }
@@ -492,10 +495,10 @@ public class AISBinder implements Visitor
                     String columnName = rc.getName();
                     ColumnBinding leftBinding = getColumnBinding(fromLeft, columnName);
                     if (leftBinding == null)
-                        throw new NoSuchColumnException (columnName);
+                        throw new NoSuchColumnException(columnName, rc);
                     ColumnBinding rightBinding = getColumnBinding(fromRight, columnName);
                     if (rightBinding == null)
-                        throw new NoSuchColumnException (columnName);
+                        throw new NoSuchColumnException(columnName, rc);
                     conditions = addJoinEquality(conditions, 
                                                  columnName, leftBinding, rightBinding,
                                                  nodeFactory, parserContext);
@@ -568,7 +571,7 @@ public class AISBinder implements Visitor
             FromTable fromTable = findFromTable(columnReference.getTableNameNode());
             columnBinding = getColumnBinding(fromTable, columnName);
             if (columnBinding == null)
-                throw new NoSuchColumnException(columnName);
+                throw new NoSuchColumnException(columnName, columnReference);
         }
         else {
             boolean ambiguous = false;
@@ -602,9 +605,9 @@ public class AISBinder implements Visitor
                 }
                 if (columnBinding == null) {
                     if (ambiguous)
-                        throw new AmbiguousColumNameException(columnName);
+                        throw new AmbiguousColumNameException(columnName, columnReference);
                     else
-                        throw new NoSuchColumnException(columnName);
+                        throw new NoSuchColumnException(columnName, columnReference);
                 }
             }
         }
@@ -617,7 +620,7 @@ public class AISBinder implements Visitor
             schemaName = defaultSchemaName;
         Table result = ais.getUserTable(schemaName, tableName.getTableName());
         if (result == null)
-            throw new NoSuchTableException (tableName.getSchemaName(), tableName.getTableName());
+            throw new NoSuchTableException(schemaName, tableName.getTableName(), tableName);
         return result;
     }
 
@@ -652,7 +655,7 @@ public class AISBinder implements Visitor
             }
         }
         if (result == null)
-            throw new NoSuchTableException (tableNameNode.getSchemaName(), tableNameNode.getTableName());
+            throw new NoSuchTableException(schemaName, tableName, tableNameNode);
         return result;
     }
 
@@ -820,7 +823,7 @@ public class AISBinder implements Visitor
 
         // Give an error if the qualification name did not match an exposed name.
         if (resultColumnList == null) {
-            throw new NoSuchTableException (allTableName.getSchemaName(), allTableName.getTableName());
+            throw new NoSuchTableException(allTableName.getSchemaName(), allTableName.getTableName(), allTableName);
         }
 
         return resultColumnList;
@@ -842,8 +845,7 @@ public class AISBinder implements Visitor
             }
         } 
         catch (StandardException ex) {
-            throw new com.akiban.server.error.ParseException("", ex.getMessage(), 
-                                                             (allTableName == null) ? null : allTableName.getFullTableName());
+            throw new SQLParserInternalException(ex);
         }
     }
 
@@ -962,7 +964,7 @@ public class AISBinder implements Visitor
                 String columnName = columnReference.getColumnName();
                 Column column = table.getColumn(columnName);
                 if (column == null)
-                    throw new NoSuchColumnException (columnName);
+                    throw new NoSuchColumnException(columnName, columnReference);
                 ColumnBinding columnBinding = new ColumnBinding(null, column, false);
                 columnReference.setUserData(columnBinding);
             }
@@ -976,18 +978,16 @@ public class AISBinder implements Visitor
             // TODO: This isn't really correct, but it's where the names come from.
             node.getResultColumns().accept(this);
         }
-        catch (StandardException e) {
-            throw new com.akiban.server.error.ParseException("", e.getMessage(), 
-                                                             node.getLeftResultSet().toString());
+        catch (StandardException ex) {
+            throw new SQLParserInternalException(ex);
         }
         popBindingContext();
         pushBindingContext(null);
         try {
             node.getRightResultSet().accept(this);
         }
-        catch (StandardException e) {
-            throw new com.akiban.server.error.ParseException("", e.getMessage(), 
-                                                             node.getRightResultSet().toString());
+        catch (StandardException ex) {
+            throw new SQLParserInternalException(ex);
         }
         popBindingContext();
     }

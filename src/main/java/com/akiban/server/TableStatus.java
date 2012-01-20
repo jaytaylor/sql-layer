@@ -40,6 +40,11 @@ public interface TableStatus {
     long getRowCount() throws PersistitInterruptedException;
 
     /**
+     * @return Approximate number of rows in the associated table.
+     */
+    long getApproximateRowCount();
+
+    /**
      * @return The <b>last</b> unique value used for the associated table.
      */
     long getUniqueID() throws PersistitInterruptedException;
