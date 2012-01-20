@@ -265,7 +265,7 @@ public class PostgresServerConnection extends ServerSessionBase
             String param = messenger.readString();
             if (param.length() == 0) break;
             String value = messenger.readString();
-            properties.put(param, value);
+            clientProperties.put(param, value);
         }
         logger.debug("Properties: {}", clientProperties);
         setProperties(clientProperties);
