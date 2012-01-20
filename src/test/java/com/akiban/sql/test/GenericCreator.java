@@ -39,7 +39,7 @@ public abstract class GenericCreator {
         String url = "jdbc:mysql://" + server + "/test";
         Connection conn = DriverManager.getConnection(url, username, password);
         String output_str = null;
-        //System.out.println(sql);
+        System.out.println("generateOutputFromInno: "+sql);
         PreparedStatement stmt = conn.prepareStatement(sql);
         if (args != null) {
             for (int i = 0; i < args.length; i++) {
@@ -69,8 +69,17 @@ public abstract class GenericCreator {
         }
         stmt.close();
         conn.close();
-        return "- output: [" + output_str + "]"
-                + System.getProperty("line.separator");
+
+        if (output_str != null && output_str.length() > 0) {
+            if (output_str.indexOf("order by") > 0) {
+                output_str = "- output: [" + output_str + "]"
+                        + System.getProperty("line.separator");
+            } else {
+                output_str = "- output_ordered: [" + output_str + "]"
+                        + System.getProperty("line.separator");
+            }
+        }
+        return output_str;
     }
 
     protected String turnArrayToCommaDelimtedList(ArrayList<String> arrayList) {
