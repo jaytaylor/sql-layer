@@ -85,10 +85,10 @@ public class PersistitAdapter extends StoreAdapter
                        RowType rowType,
                        API.Ordering ordering,
                        API.SortOption sortOption,
-                       Bindings bindings)
+                       QueryContext context)
     {
         try {
-            return new Sorter(this, input, rowType, ordering, sortOption, bindings).sort();
+            return new Sorter(this, input, rowType, ordering, sortOption, context).sort();
         } catch (PersistitException e) {
             handlePersistitException(e);
             throw new AssertionError();
@@ -117,15 +117,15 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public void updateRow(Row oldRow, Row newRow, Bindings bindings) {
+    public void updateRow(Row oldRow, Row newRow) {
         RowDef rowDef = (RowDef) oldRow.rowType().userTable().rowDef();
         Object rowDefNewRow = newRow.rowType().userTable().rowDef();
         if (rowDef != rowDefNewRow) {
             throw new IllegalArgumentException(String.format("%s != %s", rowDef, rowDefNewRow));
         }
 
-        RowData oldRowData = rowData(rowDef, oldRow, bindings);
-        RowData newRowData = rowData(rowDef, newRow, bindings);
+        RowData oldRowData = rowData(rowDef, oldRow);
+        RowData newRowData = rowData(rowDef, newRow);
         try {
             persistit.updateRow(session, oldRowData, newRowData, null);
         } catch (PersistitException e) {
@@ -134,9 +134,9 @@ public class PersistitAdapter extends StoreAdapter
         }
     }
     @Override
-    public void writeRow (Row newRow, Bindings bindings) {
+    public void writeRow (Row newRow) {
         RowDef rowDef = (RowDef)newRow.rowType().userTable().rowDef();
-        RowData newRowData = rowData (rowDef, newRow, bindings);
+        RowData newRowData = rowData (rowDef, newRow, context);
         try {
             persistit.writeRow(session, newRowData);
         } catch (PersistitException e) {
@@ -146,9 +146,9 @@ public class PersistitAdapter extends StoreAdapter
     }
     
     @Override
-    public void deleteRow (Row oldRow, Bindings bindings) {
+    public void deleteRow (Row oldRow) {
         RowDef rowDef = (RowDef)oldRow.rowType().userTable().rowDef();
-        RowData oldRowData = rowData(rowDef, oldRow, bindings);
+        RowData oldRowData = rowData(rowDef, oldRow);
         try {
             persistit.deleteRow(session, oldRowData);
         } catch (PersistitException e) {
@@ -197,7 +197,7 @@ public class PersistitAdapter extends StoreAdapter
         return row;
     }
 
-    public RowData rowData(RowDef rowDef, RowBase row, Bindings bindings)
+    public RowData rowData(RowDef rowDef, RowBase row)
     {
         if (row instanceof PersistitGroupRow) {
             return ((PersistitGroupRow) row).rowData();

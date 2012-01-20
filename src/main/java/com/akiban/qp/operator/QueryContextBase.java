@@ -21,15 +21,15 @@ import com.akiban.util.SparseArray;
 
 import java.util.Date;
 
-public abstract class QueryContextBase implements QueryContext
+public class QueryContextBase implements QueryContext
 {
-    private SparseArray<Object> bindings;
+    private StoreAdapter adapter;
+    private SparseArray<Object> bindings = new SparseArray<Object>();
     // startTimeMsec is used to control query timeouts.
-    private final long startTimeMsec;
+    private final long startTimeMsec = System.currentTimeMillis();
 
-    protected QueryContextBase() {
-        bindings = new SparseArray<Object>();
-        startTimeMsec = System.currentTimeMillis();
+    public QueryContextBase(StoreAdapter adapter) {
+        this.adapter = adapter;
     }
 
     @Override
@@ -87,8 +87,28 @@ public abstract class QueryContextBase implements QueryContext
     }
 
     @Override
+    public StoreAdapter getStore() {
+        return adapter;
+    }
+
+    @Override
+    public Session getSession() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public Date getCurrentDate() {
         return new Date();
+    }
+
+    @Override
+    public String getCurrentUser() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String getSessionUser() {
+        throw new UnsupportedOperationException();
     }
 
     @Override

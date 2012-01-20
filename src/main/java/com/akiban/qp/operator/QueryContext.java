@@ -100,7 +100,6 @@ public interface class QueryContext
      */
     public String getSystemUser();
 
-
     /**
      * Get the system time at which the query started.
      */

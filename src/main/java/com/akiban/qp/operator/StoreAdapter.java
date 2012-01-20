@@ -39,11 +39,11 @@ public abstract class StoreAdapter
         return schema;
     }
 
-    public abstract void updateRow(Row oldRow, Row newRow, QueryContext context);
+    public abstract void updateRow(Row oldRow, Row newRow);
     
-    public abstract void writeRow (Row newRow, QueryContext context);
+    public abstract void writeRow (Row newRow);
     
-    public abstract void deleteRow (Row oldRow, QueryContext context);
+    public abstract void deleteRow (Row oldRow);
 
     public abstract Cursor sort(Cursor input,
                                 RowType rowType,

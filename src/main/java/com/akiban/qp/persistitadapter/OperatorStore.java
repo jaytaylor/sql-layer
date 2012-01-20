@@ -26,7 +26,6 @@ import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
-import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
@@ -103,6 +102,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
         UpdatePlannable updateOp = com.akiban.qp.operator.API.update_Default(scanOp, updateFunction);
 
+        QueryContext context = new QueryContextBase(adapter);
+
         UPDATE_MAINTENANCE.in();
 
         maintainGroupIndexes(session,
@@ -113,7 +114,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                              OperatorStoreGIHandler.forTable(adapter, userTable),
                              OperatorStoreGIHandler.Action.DELETE);
 
-        runCursor(oldRowData, rowDef, updateOp, adapter);
+        runCursor(oldRowData, rowDef, updateOp, context);
 
         maintainGroupIndexes(session,
                              ais,
@@ -204,13 +205,13 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                                  treeService,
                                  session,
                                  config);
+        QueryContext context = new QueryContextBase(adapter);
         for(GroupIndex groupIndex : groupIndexes) {
             Operator plan = OperatorStoreMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex);
             runMaintenancePlan(
-                    adapter,
+                    context,
                     groupIndex,
                     plan,
-                    UndefBindings.only(),
                     OperatorStoreGIHandler.forBuilding(adapter),
                     OperatorStoreGIHandler.Action.STORE
             );
@@ -285,16 +286,15 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
 
     private void runMaintenancePlan(
-            PersistitAdapter adapter,
+            QueryContext context,
             GroupIndex groupIndex,
             Operator rootOperator,
-            Bindings bindings,
             OperatorStoreGIHandler handler,
             OperatorStoreGIHandler.Action action
     )
     {
-        Cursor cursor = API.cursor(rootOperator, adapter);
-        cursor.open(bindings);
+        Cursor cursor = API.cursor(rootOperator, context);
+        cursor.open();
         try {
             Row row;
             while ((row = cursor.next()) != null) {
@@ -315,9 +315,9 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // private static methods
 
-    private static void runCursor(RowData oldRowData, RowDef rowDef, UpdatePlannable plannable, PersistitAdapter adapter)
+    private static void runCursor(RowData oldRowData, RowDef rowDef, UpdatePlannable plannable, QueryContext context)
     {
-        final UpdateResult result  = plannable.run(UndefBindings.only(), adapter);
+        final UpdateResult result  = plannable.run(context);
         if (result.rowsModified() == 0 || result.rowsTouched() == 0) {
             throw new NoRowsUpdatedException (oldRowData, rowDef);
         }
@@ -397,7 +397,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
 
         @Override
-        public Row evaluate(Row original, Bindings bindings) {
+        public Row evaluate(Row original, QueryContext context) {
             // TODO
             // ideally we'd like to use an OverlayingRow, but ModifiablePersistitGroupCursor requires
             // a PersistitGroupRow if an hkey changes
