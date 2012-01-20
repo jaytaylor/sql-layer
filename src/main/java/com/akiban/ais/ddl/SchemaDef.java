@@ -41,7 +41,7 @@ import org.antlr.runtime.Parser;
 import org.antlr.runtime.RecognitionException;
 
 import com.akiban.ais.model.Column;
-import com.akiban.server.error.ParseException;
+import com.akiban.server.error.SchemaDefParseException;
 
 /**
  * Structures used to hold the results of parsing DDL statements. DDLSource.g
@@ -1223,7 +1223,7 @@ public class SchemaDef {
      * @return
      * @throws Exception
      */
-    public UserTableDef parseCreateTable(final String createTableStatement) throws ParseException, SchemaDefException {
+    public UserTableDef parseCreateTable(final String createTableStatement) throws SchemaDefParseException, SchemaDefException {
         DDLSourceLexer lex = new DDLSourceLexer(new SDStringStream(
                 createTableStatement));
         CommonTokenStream tokens = new CommonTokenStream(lex);
@@ -1231,23 +1231,23 @@ public class SchemaDef {
         try {
             tsparser.table(this);
             if (tsparser.getNumberOfSyntaxErrors() > 0) {
-                throw new ParseException ("", "Syntax Error", createTableStatement);
+                throw new SchemaDefParseException ("", "Syntax Error", createTableStatement);
             }
         } catch (RecognitionException e) {
-            throw new ParseException ("",  tsparser.getErrorHeader(e), createTableStatement);
+            throw new SchemaDefParseException ("",  tsparser.getErrorHeader(e), createTableStatement);
         }
         return getCurrentTable();
     }
 
-    public static SchemaDef parseSchema(final String schema) throws ParseException  {
+    public static SchemaDef parseSchema(final String schema) throws SchemaDefParseException  {
         return parseSchemaFromANTLRStream(new SDStringStream(schema));
     }
 
-    public static SchemaDef parseSchemaFromFile(final String fileName) throws IOException, ParseException {
+    public static SchemaDef parseSchemaFromFile(final String fileName) throws IOException, SchemaDefParseException {
         return parseSchemaFromANTLRStream(new SDFileStream(fileName));
     }
 
-    public static SchemaDef parseSchemaFromStream(InputStream stream)  throws ParseException, IOException {
+    public static SchemaDef parseSchemaFromStream(InputStream stream)  throws SchemaDefParseException, IOException {
         return parseSchemaFromANTLRStream(new SDInputStream(stream));
     }
 
@@ -1259,7 +1259,7 @@ public class SchemaDef {
         try {
             tsparser.schema(schemaDef);
         } catch (RecognitionException e) {
-            throw new ParseException ("", tsparser.getErrorHeader(e), tsparser.getErrorMessage(e, tsparser.getTokenNames()));
+            throw new SchemaDefParseException ("", tsparser.getErrorHeader(e), tsparser.getErrorMessage(e, tsparser.getTokenNames()));
         }
         return schemaDef;
     }

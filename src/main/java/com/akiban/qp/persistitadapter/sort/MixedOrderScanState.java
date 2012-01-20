@@ -17,12 +17,15 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.persistit.exception.PersistitException;
 
+import static com.akiban.qp.persistitadapter.sort.SortCursor.SORT_TRAVERSE;
+
 abstract class MixedOrderScanState
 {
     public abstract boolean startScan() throws PersistitException;
 
     public boolean advance() throws PersistitException
     {
+        SORT_TRAVERSE.hit();
         return ascending ? cursor.exchange.next(false) : cursor.exchange.previous(false);
     }
 

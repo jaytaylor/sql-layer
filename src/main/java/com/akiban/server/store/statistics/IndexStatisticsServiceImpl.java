@@ -23,6 +23,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.Service;
+import com.akiban.server.service.dxl.DXLTransactionHook;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
@@ -107,6 +108,20 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     }
 
     @Override
+    public long countEntriesApproximate(Session session, Index index) {
+        if (index.isTableIndex()) {
+            return store.getTableStatus(((TableIndex)index).getTable()).getApproximateRowCount();
+        }
+        final Exchange ex = store.getExchange(session, index);
+        try {
+            return AccumulatorAdapter.getLiveValue(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, ex.getTree());
+        }
+        finally {
+            store.releaseExchange(session, ex);
+        }
+    }
+
+    @Override
     public IndexStatistics getIndexStatistics(Session session, Index index) {
         // TODO: Use getAnalysisTimestamp() of -1 to mark an "empty"
         // analysis to save going to disk for the same index every
@@ -136,19 +151,26 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Override
     public void updateIndexStatistics(Session session, 
                                       Collection<? extends Index> indexes) {
+        final Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics>(indexes.size());
         for (Index index : indexes) {
             try {
                 IndexStatistics indexStatistics = 
                     storeStats.computeIndexStatistics(session, index);
                 if (indexStatistics != null) {
                     storeStats.storeIndexStatistics(session, indexStatistics);
-                    cache.put(index, indexStatistics);
+                    updates.put(index, indexStatistics);
                 }
             }
             catch (PersistitException ex) {
                 throw new PersistitAdapterException(ex);
             }
         }
+        DXLTransactionHook.addCommitSuccessCallback(session, new Runnable() {
+            @Override
+            public void run() {
+                cache.putAll(updates);
+            }
+        });
     }
 
     @Override
@@ -238,5 +260,4 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             }
         }
     }
-
 }

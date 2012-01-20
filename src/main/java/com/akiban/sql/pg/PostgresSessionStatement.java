@@ -16,26 +16,34 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.error.NoSuchSchemaException;
+import com.akiban.server.error.UnsupportedConfigurationException;
 import com.akiban.server.error.UnsupportedParametersException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.aisddl.SchemaDDL;
 import com.akiban.sql.parser.AccessMode;
 import com.akiban.sql.parser.IsolationLevel;
+import com.akiban.sql.parser.SetConfigurationNode;
 import com.akiban.sql.parser.SetSchemaNode;
 import com.akiban.sql.parser.SetTransactionAccessNode;
 import com.akiban.sql.parser.SetTransactionIsolationNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.StatementType;
 
+import java.util.Arrays;
 import java.io.IOException;
 
 /** SQL statements that affect session / environment state. */
 public class PostgresSessionStatement implements PostgresStatement
 {
     enum Operation {
-        USE,
+        USE, CONFIGURATION,
         BEGIN_TRANSACTION, COMMIT_TRANSACTION, ROLLBACK_TRANSACTION,
         TRANSACTION_ISOLATION, TRANSACTION_ACCESS
+    };
+
+    public static final String[] ALLOWED_CONFIGURATION = new String[] {
+      "client_encoding", "DateStyle", "geqo", "ksqo",
+      "zeroDateTimeBehavior"
     };
 
     private Operation operation;
@@ -117,6 +125,15 @@ public class PostgresSessionStatement implements PostgresStatement
                     server.setTransactionReadOnly(readOnly);
                 else
                     server.setTransactionDefaultReadOnly(readOnly);
+            }
+            break;
+        case CONFIGURATION:
+            {
+                SetConfigurationNode node = (SetConfigurationNode)statement;
+                String variable = node.getVariable();
+                if (!Arrays.asList(ALLOWED_CONFIGURATION).contains(variable))
+                    throw new UnsupportedConfigurationException(variable);
+                server.setProperty(variable, node.getValue());
             }
             break;
         default:

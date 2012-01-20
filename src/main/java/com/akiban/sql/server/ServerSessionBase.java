@@ -40,6 +40,8 @@ import java.util.*;
 
 public abstract class ServerSessionBase implements ServerSession
 {
+    public static final String COMPILER_PROPERTIES_PREFIX = "optimizer.";
+
     protected final ServerServiceRequirements reqs;
     protected Properties properties;
     protected Map<String,Object> attributes = new HashMap<String,Object>();
@@ -53,6 +55,8 @@ public abstract class ServerSessionBase implements ServerSession
     protected ServerTransaction transaction;
     protected boolean transactionDefaultReadOnly = false;
     protected ServerSessionTracer sessionTracer;
+
+    protected ServerValueEncoder.ZeroDateTimeBehavior zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.NONE;
 
     public ServerSessionBase(ServerServiceRequirements reqs) {
         this.reqs = reqs;
@@ -74,6 +78,29 @@ public abstract class ServerSessionBase implements ServerSession
     }
 
     @Override
+    public void setProperty(String key, String value) {
+        properties.setProperty(key, value);
+        propertySet(key, value);
+        sessionChanged();
+    }
+
+    protected void setProperties(Properties properties) {
+        this.properties = properties;
+        for (String key : properties.stringPropertyNames()) {
+            propertySet(key, properties.getProperty(key));
+        }
+        sessionChanged();
+    }
+
+    protected void propertySet(String key, String value) {
+        if ("zeroDateTimeBehavior".equals(key)) {
+            zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.fromProperty(value);
+        }
+    }
+
+    protected abstract void sessionChanged();
+
+    @Override
     public Map<String,Object> getAttributes() {
         return attributes;
     }
@@ -88,8 +115,6 @@ public abstract class ServerSessionBase implements ServerSession
         attributes.put(key, attr);
         sessionChanged();
     }
-
-    protected abstract void sessionChanged();
 
     @Override
     public DXLService getDXL() {
@@ -122,6 +147,11 @@ public abstract class ServerSessionBase implements ServerSession
         return parser;
     }
     
+    @Override
+    public Properties getCompilerProperties() {
+        return reqs.config().deriveProperties(COMPILER_PROPERTIES_PREFIX);
+    }
+
     @Override
     public SessionTracer getSessionTracer() {
         return sessionTracer;
@@ -206,6 +236,11 @@ public abstract class ServerSessionBase implements ServerSession
             throw new AkibanInternalException("Unknown environment value: " +
                                               setting);
         }
+    }
+
+    @Override
+    public ServerValueEncoder.ZeroDateTimeBehavior getZeroDateTimeBehavior() {
+        return zeroDateTimeBehavior;
     }
 
     /** Prepare to execute given statement.

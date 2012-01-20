@@ -114,6 +114,11 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
         }
 
         @Override
+        public synchronized long getApproximateRowCount() {
+            return rowCount;
+        }
+
+        @Override
         public synchronized long getUniqueID() {
             return uniqueID;
         }

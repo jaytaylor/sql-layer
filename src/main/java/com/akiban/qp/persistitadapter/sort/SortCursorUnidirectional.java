@@ -35,6 +35,8 @@ import com.persistit.exception.PersistitException;
 
 import java.util.List;
 
+import static com.akiban.qp.persistitadapter.sort.SortCursor.SORT_TRAVERSE;
+
 class SortCursorUnidirectional extends SortCursor
 {
     // Cursor interface
@@ -70,6 +72,7 @@ class SortCursorUnidirectional extends SortCursor
         Row next = null;
         if (exchange != null) {
             try {
+                SORT_TRAVERSE.hit();
                 if (exchange.traverse(keyComparison, true)) {
                     next = row();
                     if (bounded) {

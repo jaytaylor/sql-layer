@@ -32,11 +32,12 @@ import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.SQLParserContext;
 import com.akiban.sql.views.ViewDefinition;
 
-import com.akiban.server.error.ParseException;
+import com.akiban.server.error.SQLParserInternalException;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 
 import java.util.List;
+import java.util.Properties;
 
 /**
  * Compile SQL statements into operator trees.
@@ -50,12 +51,13 @@ public class OperatorCompiler extends SchemaRulesContext
     protected AISTypeComputer typeComputer;
     protected BooleanNormalizer booleanNormalizer;
     protected SubqueryFlattener subqueryFlattener;
+    protected DistinctEliminator distinctEliminator;
 
-    public OperatorCompiler(SQLParser parser, 
+    public OperatorCompiler(SQLParser parser, Properties properties,
                             AkibanInformationSchema ais, String defaultSchemaName,
                             FunctionsRegistry functionsRegistry,
                             IndexEstimator indexEstimator) {
-        super(ais, functionsRegistry, indexEstimator, DEFAULT_RULES);
+        super(ais, functionsRegistry, indexEstimator, DEFAULT_RULES, properties);
         parserContext = parser;
         nodeFactory = parserContext.getNodeFactory();
         binder = new AISBinder(ais, defaultSchemaName);
@@ -63,6 +65,7 @@ public class OperatorCompiler extends SchemaRulesContext
         typeComputer = new FunctionsTypeComputer(functionsRegistry);
         booleanNormalizer = new BooleanNormalizer(parser);
         subqueryFlattener = new SubqueryFlattener(parser);
+        distinctEliminator = new DistinctEliminator(parser);
     }
 
     public void addView(ViewDefinition view) throws StandardException {
@@ -85,12 +88,13 @@ public class OperatorCompiler extends SchemaRulesContext
             stmt = (DMLStatementNode)booleanNormalizer.normalize(stmt);
             typeComputer.compute(stmt);
             stmt = subqueryFlattener.flatten(stmt);
+            // TODO: Temporary for safety.
+            if (Boolean.parseBoolean(getProperty("eliminate-distincts", "true")))
+                stmt = distinctEliminator.eliminate(stmt);
             return stmt;
         } 
         catch (StandardException ex) {
-            ParseException pe = new ParseException("", ex.getMessage(), stmt.toString());
-            pe.initCause(ex);
-            throw pe;
+            throw new SQLParserInternalException(ex);
         }
     }
 
