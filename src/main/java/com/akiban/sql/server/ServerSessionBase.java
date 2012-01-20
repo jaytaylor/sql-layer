@@ -77,8 +77,22 @@ public abstract class ServerSessionBase implements ServerSession
     @Override
     public void setProperty(String key, String value) {
         properties.setProperty(key, value);
+        propertySet(key, value);
         sessionChanged();
     }
+
+    protected void setProperties(Properties properties) {
+        this.properties = properties;
+        for (String key : properties.stringPropertyNames()) {
+            propertySet(key, properties.getProperty(key));
+        }
+        sessionChanged();
+    }
+
+    protected void propertySet(String key, String value) {
+    }
+
+    protected abstract void sessionChanged();
 
     @Override
     public Map<String,Object> getAttributes() {
@@ -95,8 +109,6 @@ public abstract class ServerSessionBase implements ServerSession
         attributes.put(key, attr);
         sessionChanged();
     }
-
-    protected abstract void sessionChanged();
 
     @Override
     public DXLService getDXL() {
