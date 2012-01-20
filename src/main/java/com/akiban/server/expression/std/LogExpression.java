@@ -35,19 +35,25 @@ import java.util.List;
 
 public class LogExpression extends AbstractCompositeExpression
 {   
+    protected static interface LogComposer 
+    {
+        public String toString();
+    }
+    
     @Scalar("log2")
-    public static final ExpressionComposer LOG2 = new InnerComposer (2);
+    public static final ExpressionComposer LOG2 = new InnerComposer (2, "LOG2");
     
     @Scalar("log10")
-    public static final ExpressionComposer LOG10 = new InnerComposer(10);
+    public static final ExpressionComposer LOG10 = new InnerComposer(10, "LOG10");
     
     @Scalar("ln")
-    public static final ExpressionComposer LN = new InnerComposer(Math.E);
+    public static final ExpressionComposer LN = new InnerComposer(Math.E, "LN");
     
     @Scalar("log")
-    public static final ExpressionComposer LOG = new ExpressionComposer ()
+    public static final ExpressionComposer LOG = new CompositeComposer();
+      
+    private static class CompositeComposer implements LogComposer, ExpressionComposer
     {
-
         @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
@@ -63,24 +69,34 @@ public class LogExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments)
         {
-            return new LogExpression(arguments, new CompositeEvaluation(arguments));
+            int size = arguments.size();
+            if (size != 1 && size != 2)
+                throw new WrongExpressionArityException(2, size);
+ 
+            return new LogExpression(arguments, new CompositeEvaluation(arguments), "LOG");
         }
         
-    };
-            
-    private static class InnerComposer extends UnaryComposer
-    {
-        double base;
+        @Override
+        public String toString ()
+        {
+            return "LOG";
+        }
         
-        public InnerComposer (double base)
+    }
+    private static class InnerComposer extends UnaryComposer implements LogComposer
+    {
+        private double base;
+        private String name;
+        public InnerComposer (double base, String name)
         {
             this.base = base;
+            this.name = name;
         }
         
         @Override
         protected Expression compose(Expression argument)
         {
-            return new LogExpression(Arrays.asList(argument), new UnaryEvaluation(argument, base));
+            return new LogExpression(Arrays.asList(argument), new UnaryEvaluation(argument, base), name);
         }
 
         @Override
@@ -92,6 +108,11 @@ public class LogExpression extends AbstractCompositeExpression
             return ExpressionTypes.DOUBLE;
         }
         
+        @Override
+        public String toString ()
+        {
+            return name;
+        }
     }
 
     private static class CompositeEvaluation extends AbstractCompositeExpressionEvaluation
@@ -160,20 +181,15 @@ public class LogExpression extends AbstractCompositeExpression
             valueHolder().putDouble(Math.log(num) / Math.log(base));
             return valueHolder();
         } 
-        
-        @Override
-        public String toString()
-        {
-            return "LOG_" + base; 
-        }
     }
     
     private ExpressionEvaluation eval;
-    
-    protected LogExpression (List<? extends Expression> children, ExpressionEvaluation eval)
+    private String name;
+    protected LogExpression (List<? extends Expression> children, ExpressionEvaluation eval, String name)
     {
         super(AkType.DOUBLE, children);
         this.eval = eval;
+        this.name = name;
     }
     
     @Override
@@ -185,7 +201,7 @@ public class LogExpression extends AbstractCompositeExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append(eval.toString());
+        sb.append(name);
     }
 
     @Override
