@@ -127,22 +127,30 @@ public class PersistitAdapter extends StoreAdapter
 
         RowData oldRowData = rowData(rowDef, oldRow, bindings);
         RowData newRowData = rowData(rowDef, newRow, bindings);
+        int oldStep = enterUpdateStep();
         try {
             persistit.updateRow(session, oldRowData, newRowData, null);
         } catch (PersistitException e) {
             handlePersistitException(e);
             assert false;
         }
+        finally {
+            leaveUpdateStep(oldStep);
+        }
     }
     @Override
     public void writeRow (Row newRow, Bindings bindings) {
         RowDef rowDef = (RowDef)newRow.rowType().userTable().rowDef();
         RowData newRowData = rowData (rowDef, newRow, bindings);
+        int oldStep = enterUpdateStep();
         try {
             persistit.writeRow(session, newRowData);
         } catch (PersistitException e) {
             handlePersistitException(e);
             assert false;
+        }
+        finally {
+            leaveUpdateStep(oldStep);
         }
     }
     
@@ -150,11 +158,15 @@ public class PersistitAdapter extends StoreAdapter
     public void deleteRow (Row oldRow, Bindings bindings) {
         RowDef rowDef = (RowDef)oldRow.rowType().userTable().rowDef();
         RowData oldRowData = rowData(rowDef, oldRow, bindings);
+        int oldStep = enterUpdateStep();
         try {
             persistit.deleteRow(session, oldRowData);
         } catch (PersistitException e) {
             handlePersistitException(e);
             assert false;
+        }
+        finally {
+            leaveUpdateStep(oldStep);
         }
     }
 
@@ -267,6 +279,19 @@ public class PersistitAdapter extends StoreAdapter
     
     public Transaction transaction() {
         return treeService.getTransaction(session);
+    }
+
+    public int enterUpdateStep()
+    {
+        Transaction transaction = transaction();
+        int step = transaction.getCurrentStep();
+        if (step > 0)
+            transaction.incrementStep();
+        return step;
+    }
+
+    public void leaveUpdateStep(int step) {
+        transaction().setStep(step);
     }
 
     public PersistitAdapter(Schema schema,
