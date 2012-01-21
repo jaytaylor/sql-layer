@@ -15,103 +15,106 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.expression.EnvironmentExpressionFactory;
-import com.akiban.server.expression.EnvironmentExpressionSetting;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
-import com.akiban.server.expression.std.EnvironmentExpression.EnvironmentEvaluation;
-import com.akiban.server.service.functions.EnvironmentValue;
+import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import org.joda.time.DateTime;
 
-public class CurrentDateTimeExpression extends EnvironmentExpression
+public class CurrentDateTimeExpression extends AbstractNoArgExpression
 {
     /**
      * return current_date() expression 
      */
-    @EnvironmentValue({"current_date", "curdate"})
-    public static final EnvironmentExpressionFactory CURRENT_DATE_COMPOSER 
-            = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_DATETIME, AkType.DATE);
+    @Scalar({"current_date", "curdate"})
+    public static final ExpressionComposer CURRENT_DATE_COMPOSER 
+            = new DateTimeComposer(AkType.DATE);
     
     /**
      * return current_time() expression 
      */
-    @EnvironmentValue({"current_time", "curtime"})
-    public static final EnvironmentExpressionFactory CURRENT_TIME_COMPOSER 
-            = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_DATETIME, AkType.TIME);
+    @Scalar({"current_time", "curtime"})
+    public static final ExpressionComposer CURRENT_TIME_COMPOSER 
+            = new DateTimeComposer(AkType.TIME);
     
     /**
      * return current_timestamp() expression in String
      * current_timestamp, now, localtime and localtimestamp all mean the same thimg
      */
-    @EnvironmentValue({"current_timestamp", "now", "localtime", "localtimestamp"})
-    public static final EnvironmentExpressionFactory CURRENT_TIMESTAMP_COMPOSER 
-            = new DateTimeEnvironmentFactory(EnvironmentExpressionSetting.CURRENT_DATETIME,  AkType.DATETIME);
+    @Scalar({"current_timestamp", "now", "localtime", "localtimestamp"})
+    public static final ExpressionComposer CURRENT_TIMESTAMP_COMPOSER 
+            = new DateTimeComposer(AkType.DATETIME);
 
 
     private final AkType currentType;
 
-    public CurrentDateTimeExpression (EnvironmentExpressionSetting environmentSetting, int bindingPos,
-            AkType currentType)
+    public CurrentDateTimeExpression (AkType currentType)
     {
-        super(checkType(currentType), environmentSetting, bindingPos);
+        super(checkType(currentType));
         this.currentType = currentType;
     }
 
-    private static final class InnerEvaluation extends EnvironmentEvaluation<DateTime>
+    private static final class InnerEvaluation extends AbstractNoArgExpressionEvaluation
     {
-        private  AkType currentType;
+        private AkType currentType;
+        private QueryContext context;
 
-        public InnerEvaluation (int bindingPos, AkType currentType)
+        public InnerEvaluation(AkType currentType)
         {
-            super(bindingPos);
             this.currentType = currentType;
+        }
+
+        @Override
+        public void of(QueryContext context) {
+            this.context = context;
         }
 
         @Override
         public ValueSource eval()
         {
-            valueHolder().putRaw(currentType, environmentValue());
+            valueHolder().putRaw(currentType, new DateTime(context.getCurrentDate()));
             return valueHolder();
         }
     }
-    
-    static class DateTimeEnvironmentFactory implements EnvironmentExpressionFactory 
-    {
-        private final EnvironmentExpressionSetting environmentSetting;
+
+    @Override
+    public boolean isConstant() {
+        return true;
+    }
+
+    @Override
+    public boolean needsBindings() {
+        return true;
+    }
+
+    private static final class DateTimeComposer extends NoArgComposer {
         private final AkType currentType;
-        public DateTimeEnvironmentFactory (EnvironmentExpressionSetting environmentSetting,
-               AkType currentType)
+
+        public DateTimeComposer(AkType currentType)
         {
-            this.environmentSetting = environmentSetting;
             this.currentType = currentType;
-        }
-
-        @Override
-        public EnvironmentExpressionSetting environmentSetting() 
-        {
-            return environmentSetting;
-        }
-
-        @Override
-        public Expression get(int bindingPosition) 
-        {
-            return new CurrentDateTimeExpression(environmentSetting, bindingPosition, currentType);
         }
         
         @Override
-        public ExpressionType getType() 
+        protected Expression compose()
+        {
+            return new CurrentDateTimeExpression(currentTime);
+        }
+
+        @Override
+        protected ExpressionType composeType()
         {
             return ExpressionTypes.newType(currentType, 0, 0);
-        }
+        }        
     }
 
     @Override
     public ExpressionEvaluation evaluation()
     {
-        return new InnerEvaluation (bindingPosition(), currentType);
+        return new InnerEvaluation(currentType);
     }
 
     @Override
