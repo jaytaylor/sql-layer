@@ -20,7 +20,7 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.util.ArgumentValidation;
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

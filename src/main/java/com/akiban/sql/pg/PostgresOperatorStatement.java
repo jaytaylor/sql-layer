@@ -19,7 +19,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
 

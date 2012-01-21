@@ -15,7 +15,7 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 
 class TopLevelWrappingCursor extends ChainedCursor {
 

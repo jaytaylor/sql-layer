@@ -24,7 +24,7 @@ import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
 import com.akiban.util.Strings;
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 
 /**
 

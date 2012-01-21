@@ -16,7 +16,7 @@
 package com.akiban.sql.pg;
 
 import com.akiban.qp.loadableplan.LoadableOperator;
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 
 import java.io.IOException;
 

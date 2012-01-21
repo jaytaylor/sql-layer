@@ -21,7 +21,7 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 

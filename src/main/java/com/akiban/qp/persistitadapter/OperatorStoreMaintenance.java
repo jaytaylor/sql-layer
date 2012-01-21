@@ -36,7 +36,7 @@ import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDataValueSource;
 import com.akiban.server.types.conversion.Converters;
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 
 import java.util.*;
 

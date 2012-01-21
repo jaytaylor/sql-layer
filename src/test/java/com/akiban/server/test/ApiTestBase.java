@@ -58,7 +58,7 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.types.extract.ConverterTestUtils;
 import com.akiban.server.util.GroupIndexCreator;
 import com.akiban.util.Strings;
-import com.akiban.util.TapReport;
+import com.akiban.util.tap.TapReport;
 import com.akiban.util.Undef;
 import com.persistit.Transaction;
 import junit.framework.Assert;
