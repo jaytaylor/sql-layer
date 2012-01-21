@@ -245,8 +245,8 @@ class Product_NestedLoops extends Operator
         Execution(QueryContext context)
         {
             super(context);
-            this.outerInput = outerInputOperator.cursor(adapter);
-            this.innerRows = new InnerRows(innerInputOperator.cursor(adapter));
+            this.outerInput = outerInputOperator.cursor(context);
+            this.innerRows = new InnerRows(innerInputOperator.cursor(context));
         }
 
         // For use by this class

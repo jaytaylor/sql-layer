@@ -26,14 +26,16 @@ import com.akiban.server.types.ValueSource;
 
 public abstract class CurrentUserExpression extends AbstractNoArgExpression
 {
+    private final String name;
+
     @Scalar("current_user")
     public static final ExpressionComposer CURRENT_USER = 
         new UserComposer() {
             @Override
             protected Expression compose() {
-                return new CurrentUserExpression() {
+                return new CurrentUserExpression("CURRENT_USER") {
                         @Override
-                        public abstract String environmentValue(QueryContext context) {
+                        public String environmentValue(QueryContext context) {
                             return context.getCurrentUser();
                         }
                     };
@@ -45,9 +47,9 @@ public abstract class CurrentUserExpression extends AbstractNoArgExpression
         new UserComposer() {
             @Override
             protected Expression compose() {
-                return new CurrentUserExpression(QueryContext context) {
+                return new CurrentUserExpression("SESSION_USER") {
                         @Override
-                        public abstract String environmentValue() {
+                        public String environmentValue(QueryContext context) {
                             return context.getSessionUser();
                         }
                     };
@@ -59,9 +61,9 @@ public abstract class CurrentUserExpression extends AbstractNoArgExpression
         new UserComposer() {
             @Override
             protected Expression compose() {
-                return new CurrentUserExpression(QueryContext context) {
+                return new CurrentUserExpression("SYSTEM_USER") {
                         @Override
-                        public abstract String environmentValue() {
+                        public String environmentValue(QueryContext context) {
                             return context.getSystemUser();
                         }
                     };
@@ -69,6 +71,17 @@ public abstract class CurrentUserExpression extends AbstractNoArgExpression
         };
      
     public abstract String environmentValue(QueryContext context);
+
+    public CurrentUserExpression(String name)
+    {
+        super(AkType.VARCHAR);
+        this.name = name;
+    }
+    
+    @Override
+    public String name() {
+        return name;
+    }
 
     @Override
     public boolean isConstant() {
@@ -91,14 +104,14 @@ public abstract class CurrentUserExpression extends AbstractNoArgExpression
     @Override
     public ExpressionEvaluation evaluation()
     {
-        return new InnerEvaluation(this);
+        return new InnerEvaluation();
     }
 
     private final class InnerEvaluation extends AbstractNoArgExpressionEvaluation
     {
         private QueryContext context;
 
-        public InnerEvaluation(QueryContext context) {
+        public InnerEvaluation() {
         }
 
         @Override
@@ -109,7 +122,7 @@ public abstract class CurrentUserExpression extends AbstractNoArgExpression
         @Override
         public ValueSource eval() 
         {
-            valueHolder().putString(environmentValue());
+            valueHolder().putString(environmentValue(context));
             return valueHolder();
         }
     }

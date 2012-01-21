@@ -27,7 +27,8 @@ public abstract class StoreAdapter
 {
     public abstract GroupCursor newGroupCursor(GroupTable groupTable);
 
-    public abstract Cursor newIndexCursor(Index index,
+    public abstract Cursor newIndexCursor(QueryContext context,
+                                          Index index,
                                           IndexKeyRange keyRange,
                                           API.Ordering ordering,
                                           IndexScanSelector scanSelector);

@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -51,7 +52,7 @@ public class CurrentDateTimeExpression extends AbstractNoArgExpression
 
     private final AkType currentType;
 
-    public CurrentDateTimeExpression (AkType currentType)
+    public CurrentDateTimeExpression(AkType currentType)
     {
         super(checkType(currentType));
         this.currentType = currentType;
@@ -101,7 +102,7 @@ public class CurrentDateTimeExpression extends AbstractNoArgExpression
         @Override
         protected Expression compose()
         {
-            return new CurrentDateTimeExpression(currentTime);
+            return new CurrentDateTimeExpression(currentType);
         }
 
         @Override

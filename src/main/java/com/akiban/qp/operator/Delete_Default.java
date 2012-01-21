@@ -103,7 +103,7 @@ class Delete_Default extends OperatorExecutionBase implements UpdatePlannable {
             while ((oldRow = inputCursor.next()) != null) {
                 checkQueryCancelation();
                 ++seen;
-                adapter.deleteRow(oldRow, context);
+                adapter().deleteRow(oldRow);
                 ++modified;
             }
         } finally {

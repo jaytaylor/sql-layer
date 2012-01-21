@@ -38,7 +38,6 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
     {
         super(loadablePlan.columnNames(),
               loadablePlan.columnTypes(),
-              null, 
               null);
         this.args = args;
 
@@ -64,15 +63,16 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
     }
     
     @Override
-    public void sendDescription(PostgresServerSession server, boolean always)
+    public void sendDescription(PostgresQueryContext context, boolean always)
             throws IOException {
         // The copy case will be handled below.
         if (!useCopy)
-            super.sendDescription(server, always);
+            super.sendDescription(context, always);
     }
 
     @Override
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+        PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         Session session = server.getSession();
         int nrows = 0;
@@ -85,11 +85,11 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
             cursor.open();
             List<?> row;
             if (useCopy) {
-                outputter = copier = new PostgresDirectObjectCopier(messenger, this);
+                outputter = copier = new PostgresDirectObjectCopier(messenger, context, this);
                 copier.respond();
             }
             else
-                outputter = new PostgresDirectObjectOutputter(messenger, this);
+                outputter = new PostgresDirectObjectOutputter(messenger, context, this);
             while ((row = cursor.next()) != null) {
                 if (row.isEmpty()) {
                     messenger.flush();

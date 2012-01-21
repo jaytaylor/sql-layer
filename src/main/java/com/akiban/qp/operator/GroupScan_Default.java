@@ -195,7 +195,7 @@ class GroupScan_Default extends Operator
         @Override
         public Cursor cursor(QueryContext context)
         {
-            return adapter.newGroupCursor(groupTable());
+            return context.getStore().newGroupCursor(groupTable());
         }
 
         // FullGroupCursorCreator interface

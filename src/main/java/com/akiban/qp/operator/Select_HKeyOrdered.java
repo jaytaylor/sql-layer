@@ -49,7 +49,7 @@ class Select_HKeyOrdered extends Operator
     @Override
     protected Cursor cursor(QueryContext context)
     {
-        return new Execution(context, inputOperator.cursor(adapter));
+        return new Execution(context, inputOperator.cursor(context));
     }
 
     @Override
@@ -141,7 +141,7 @@ class Select_HKeyOrdered extends Operator
             super(context);
             this.input = input;
             this.evaluation = predicate.evaluation();
-            evaluation.of(adapter);
+            evaluation.of(context);
         }
 
         // Object state

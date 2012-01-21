@@ -128,7 +128,7 @@ class AncestorLookup_Default extends Operator
     @Override
     protected Cursor cursor(QueryContext context)
     {
-        return new Execution(context, inputOperator.cursor(adapter));
+        return new Execution(context, inputOperator.cursor(context));
     }
 
     @Override
@@ -293,7 +293,7 @@ class AncestorLookup_Default extends Operator
             this.input = input;
             // Why + 1: Because the input row (whose ancestors get discovered) also goes into pending.
             this.pending = new PendingRows(ancestorTypeDepth.length + 1);
-            this.ancestorCursor = adapter.newGroupCursor(groupTable);
+            this.ancestorCursor = adapter().newGroupCursor(groupTable);
         }
 
         // For use by this class

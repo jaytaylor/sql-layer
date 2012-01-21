@@ -51,9 +51,9 @@ class Filter_Default extends Operator
     }
 
     @Override
-    protected Cursor cursor(QueryContext contextStoreAdapter adapter)
+    protected Cursor cursor(QueryContext context)
     {
-        return new Execution(context, inputOperator.cursor(adapter));
+        return new Execution(context, inputOperator.cursor(context));
     }
 
     @Override

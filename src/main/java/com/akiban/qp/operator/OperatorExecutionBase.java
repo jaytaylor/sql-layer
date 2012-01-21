@@ -17,11 +17,6 @@ package com.akiban.qp.operator;
 
 public abstract class OperatorExecutionBase
 {
-    public long startTimeMsec()
-    {
-        return startTimeMsec;
-    }
-
     // Operators that implement cursors have a context at construction time
     protected OperatorExecutionBase(QueryContext context)
     {

@@ -20,6 +20,9 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Tap;
 import com.akiban.server.error.NegativeLimitException;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.extract.Extractors;
 
 import java.util.Collections;
 import java.util.List;
@@ -75,7 +78,7 @@ final class Limit_Default extends Operator
 
     @Override
     protected Cursor cursor(QueryContext context) {
-        return new Execution(context, inputOperator.cursor(adapter));
+        return new Execution(context, inputOperator.cursor(context));
     }
 
     // Plannable interface

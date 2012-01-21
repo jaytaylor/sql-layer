@@ -80,7 +80,7 @@ public abstract class PostgresBaseStatement implements PostgresStatement
                 messenger.writeInt(type.getOid()); // atttypid
                 messenger.writeShort(type.getLength()); // attlen
                 messenger.writeInt(type.getModifier()); // atttypmod
-                messenger.writeShort(isColumnBinary(i) ? 1 : 0);
+                messenger.writeShort(context.isColumnBinary(i) ? 1 : 0);
             }
         }
         messenger.sendMessage();

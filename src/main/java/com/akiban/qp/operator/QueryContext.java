@@ -23,7 +23,7 @@ import com.akiban.server.types.ValueSource;
 
 import java.util.Date;
 
-public interface class QueryContext 
+public interface QueryContext 
 {
     /**
      * Gets the value bound to the given index.

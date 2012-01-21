@@ -48,7 +48,7 @@ class Sort_Tree extends Operator
     @Override
     protected Cursor cursor(QueryContext context)
     {
-        return new Execution(context, inputOperator.cursor(adapter));
+        return new Execution(context, inputOperator.cursor(context));
     }
 
     @Override
@@ -112,7 +112,7 @@ class Sort_Tree extends Operator
             checkQueryCancelation();
             if (output == null) {
                 SORT_TREE_COUNT.hit();
-                output = adapter.sort(input, sortType, ordering, sortOption, context);
+                output = adapter().sort(input, sortType, ordering, sortOption, context);
             }
             Row row = null;
             if (!closed) {

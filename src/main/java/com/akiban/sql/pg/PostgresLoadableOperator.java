@@ -18,6 +18,8 @@ package com.akiban.sql.pg;
 import com.akiban.qp.loadableplan.LoadableOperator;
 import com.akiban.util.Tap;
 
+import java.io.IOException;
+
 public class PostgresLoadableOperator extends PostgresOperatorStatement
 {
     private static final Tap.InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadableOperator: execute shared");
@@ -31,7 +33,6 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
               null,
               loadableOperator.columnNames(),
               loadableOperator.columnTypes(),
-              null, 
               null);
         this.args = args;
     }
@@ -52,7 +53,7 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
     public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         // Overwrite the query parameters with the call parameters.
         PostgresLoadablePlan.setParameters(context, args);
-        return super.execute(server, context, maxrow);
+        return super.execute(context, maxrows);
     }
 
 }

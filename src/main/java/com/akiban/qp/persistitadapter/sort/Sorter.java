@@ -56,9 +56,7 @@ public class Sorter
     {
         this.adapter = adapter;
         this.input = input;
-        // This typecast is pretty bad. But I really don't want to pass the query start time as an argument from
-        // the Sort_Tree operator, through the StoreAdapter interface, to here.
-        this.queryStartTimeMsec = ((OperatorExecutionBase) input).startTimeMsec();
+        this.queryStartTimeMsec = context.getStartTime();
         this.rowType = rowType;
         this.ordering = ordering.copy();
         this.context = context;

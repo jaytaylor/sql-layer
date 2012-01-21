@@ -44,8 +44,14 @@ public class PostgresExplainStatement implements PostgresStatement
     }
 
     @Override
-    public void sendDescription(PostgresServerSession server, boolean always) 
+    public PostgresType[] getParameterTypes() {
+        return null;
+    }
+
+    @Override
+    public void sendDescription(PostgresQueryContext context, boolean always) 
             throws IOException {
+        PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         messenger.beginMessage(PostgresMessages.ROW_DESCRIPTION_TYPE.code());
         messenger.writeShort(1);

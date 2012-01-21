@@ -50,7 +50,7 @@ class Sort_InsertionLimited extends Operator
     @Override
     protected Cursor cursor(QueryContext context)
     {
-        return new Execution(context, inputOperator.cursor(adapter));
+        return new Execution(context, inputOperator.cursor(context));
     }
 
     @Override
@@ -203,7 +203,7 @@ class Sort_InsertionLimited extends Operator
             evaluations = new ArrayList<ExpressionEvaluation>(nsort);
             for (int i = 0; i < nsort; i++) {
                 ExpressionEvaluation evaluation = ordering.expression(i).evaluation();
-                evaluation.of(adapter);
+                evaluation.of(context);
                 evaluations.add(evaluation);
             }
         }

@@ -63,7 +63,7 @@ final class OperatorStoreMaintenance {
             context.setValue(bindingsIndex, source);
         }
 
-        Cursor cursor = API.cursor(context);
+        Cursor cursor = API.cursor(planOperator, context);
         RUN_TAP.in();
         cursor.open();
         try {

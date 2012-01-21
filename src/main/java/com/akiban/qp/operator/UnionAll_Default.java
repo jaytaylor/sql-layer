@@ -168,7 +168,7 @@ final class UnionAll_Default extends Operator {
          */
         private Row nextCursorFirstRow() {
             while (++inputOperatorsIndex < inputOperators.size()) {
-                Cursor nextCursor = inputOperators.get(inputOperatorsIndex).cursor(contexxt);
+                Cursor nextCursor = inputOperators.get(inputOperatorsIndex).cursor(context);
                 nextCursor.open();
                 Row nextRow = nextCursor.next();
                 if (nextRow == null) {

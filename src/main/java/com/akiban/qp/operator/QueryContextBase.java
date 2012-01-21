@@ -15,9 +15,13 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.row.HKey;
+import com.akiban.qp.row.Row;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.SparseArray;
 
@@ -44,27 +48,27 @@ public abstract class QueryContextBase implements QueryContext
     }
 
     @Override
-    public void setValue(int index, ValueSource value, AkType type);
+    public void setValue(int index, ValueSource value, AkType type)
     {
         ValueHolder holder;
         if (bindings.isDefined(index))
-            holder = bindings.get(index);
+            holder = (ValueHolder)bindings.get(index);
         else {
             holder = new ValueHolder();
             bindings.set(index, holder);
         }
         holder.expectType(type);
-        Converters.convert(source, holder);
+        Converters.convert(value, holder);
     }
 
     @Override
-    public void setValue(int index, ValueSource value);
+    public void setValue(int index, ValueSource value)
     {
         setValue(index, value, value.getConversionType());
     }
 
     @Override
-    public void setValue(int index, Object value);
+    public void setValue(int index, Object value)
     {
         FromObjectValueSource source = new FromObjectValueSource();
         source.setReflectively(value);
@@ -72,7 +76,7 @@ public abstract class QueryContextBase implements QueryContext
     }
 
     @Override
-    public void setValue(int index, Object value, AkType type);
+    public void setValue(int index, Object value, AkType type)
     {
         FromObjectValueSource source = new FromObjectValueSource();
         source.setReflectively(value);
@@ -87,7 +91,7 @@ public abstract class QueryContextBase implements QueryContext
     }
 
     @Override
-    public void setRow(int index, Row row);
+    public void setRow(int index, Row row)
     {
         // TODO: Should this use a RowHolder or will that make things worse?
         bindings.set(index, row);
@@ -101,7 +105,7 @@ public abstract class QueryContextBase implements QueryContext
     }
 
     @Override
-    public void setHKey(int index, HKey hKey);
+    public void setHKey(int index, HKey hKey)
     {
         bindings.set(index, hKey);
     }

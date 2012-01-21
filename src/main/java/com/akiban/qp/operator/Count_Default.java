@@ -48,7 +48,7 @@ class Count_Default extends Operator
     @Override
     protected Cursor cursor(QueryContext context)
     {
-        return new Execution(context, inputOperator.cursor(adapter));
+        return new Execution(context, inputOperator.cursor(context));
     }
 
     @Override

@@ -80,7 +80,7 @@ public final class VariableExpression implements Expression {
 
         @Override
         public ValueSource eval() {
-            return bindings.getValue(position);
+            return context.getValue(position);
         }
 
         @Override

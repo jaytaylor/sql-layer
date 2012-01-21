@@ -227,7 +227,7 @@ class IndexScan_Default extends Operator
         Execution(QueryContext context)
         {
             super(context);
-            this.cursor = adapter.newIndexCursor(index, indexKeyRange, ordering, scanSelector);
+            this.cursor = adapter().newIndexCursor(context, index, indexKeyRange, ordering, scanSelector);
         }
 
         // Object state

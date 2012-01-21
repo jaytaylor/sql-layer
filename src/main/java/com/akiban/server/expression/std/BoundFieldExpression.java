@@ -73,7 +73,7 @@ public final class BoundFieldExpression implements Expression {
 
         @Override
         public void of(QueryContext context) {
-            fieldExpressionEvaluation.of(bindings.getRow(rowBindingPosition));
+            fieldExpressionEvaluation.of(context.getRow(rowBindingPosition));
         }
 
         @Override

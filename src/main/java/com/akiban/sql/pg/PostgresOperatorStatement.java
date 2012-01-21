@@ -62,9 +62,9 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         Cursor cursor = null;
         try {
             lock(session, UNSPECIFIED_DML_READ);
-            cursor = API.cursor(context);
+            cursor = API.cursor(resultOperator, context);
             cursor.open();
-            PostgresRowOutputter outputter = new PostgresRowOutputter(messenger, this);
+            PostgresRowOutputter outputter = new PostgresRowOutputter(messenger, context, this);
             Row row;
             while ((row = cursor.next()) != null) {
                 assert resultRowType == null || (row.rowType() == resultRowType) : row;

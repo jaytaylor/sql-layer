@@ -52,7 +52,12 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         new PostgresType(PostgresType.OID_TYPE_OID, (short)4, -1, AkType.LONG);
 
     @Override
-    public void sendDescription(PostgresServerSession server, boolean always) 
+    public PostgresType[] getParameterTypes() {
+        return null;
+    }
+
+    @Override
+    public void sendDescription(PostgresQueryContext context, boolean always) 
             throws IOException {
         int ncols;
         String[] names;
@@ -67,6 +72,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             return;
         }
 
+        PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         messenger.beginMessage(PostgresMessages.ROW_DESCRIPTION_TYPE.code());
         messenger.writeShort(ncols);

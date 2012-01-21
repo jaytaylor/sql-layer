@@ -89,7 +89,7 @@ class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
             while ((row = inputCursor.next()) != null) {
                 checkQueryCancelation();
                 ++seen;
-                adapter.writeRow(row, context);
+                adapter().writeRow(row);
                 ++modified;
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Insert: row {}", row);

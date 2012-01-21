@@ -308,10 +308,11 @@ class SortCursorUnidirectional extends SortCursor
     // For use by this class
 
     private SortCursorUnidirectional(PersistitAdapter adapter,
+                                     QueryContext context,
                                      IterationHelper iterationHelper,
                                      API.Ordering ordering)
     {
-        super(adapter, iterationHelper);
+        super(adapter, context, iterationHelper);
         this.bounded = false;
         if (ordering.allAscending()) {
             this.startBoundary = Key.BEFORE;

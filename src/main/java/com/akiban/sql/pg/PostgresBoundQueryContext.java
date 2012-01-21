@@ -23,11 +23,11 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
     private boolean[] columnBinary;
     private boolean defaultColumnBinary;
     
-    public PostgresQueryContext(PostgresServerSession server, 
-                                PostgresStatement statement,
-                                Object[] parameters,
-                                boolean[] columnBinary, 
-                                boolean defaultColumnBinary) {
+    public PostgresBoundQueryContext(PostgresServerSession server, 
+                                     PostgresStatement statement,
+                                     Object[] parameters,
+                                     boolean[] columnBinary, 
+                                     boolean defaultColumnBinary) {
         super(server);
         this.statement = statement;
         this.columnBinary = columnBinary;
@@ -56,7 +56,7 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
                 akType = pgType.getAkType();
             if (akType == null)
                 akType = AkType.VARCHAR;
-            context.setValue(i, parameters[i], akType);
+            setValue(i, parameters[i], akType);
         }
     }
 

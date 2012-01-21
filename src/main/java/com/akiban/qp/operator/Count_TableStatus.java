@@ -88,7 +88,7 @@ class Count_TableStatus extends Operator
         {
             checkQueryCancelation();
             if (pending) {
-                long rowCount = adapter.rowCount(tableType);
+                long rowCount = adapter().rowCount(tableType);
                 close();
                 return new ValuesRow(resultType, new Object[] { rowCount });
             }

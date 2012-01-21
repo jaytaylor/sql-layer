@@ -68,11 +68,11 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public Cursor newIndexCursor(Index index, IndexKeyRange keyRange, API.Ordering ordering, IndexScanSelector selector)
+    public Cursor newIndexCursor(QueryContext context, Index index, IndexKeyRange keyRange, API.Ordering ordering, IndexScanSelector selector)
     {
         Cursor cursor;
         try {
-            cursor = new PersistitIndexCursor(this, schema.indexRowType(index), keyRange, ordering, selector);
+            cursor = new PersistitIndexCursor(this, context, schema.indexRowType(index), keyRange, ordering, selector);
         } catch (PersistitException e) {
             handlePersistitException(e);
             throw new AssertionError();
@@ -136,7 +136,7 @@ public class PersistitAdapter extends StoreAdapter
     @Override
     public void writeRow (Row newRow) {
         RowDef rowDef = (RowDef)newRow.rowType().userTable().rowDef();
-        RowData newRowData = rowData (rowDef, newRow, context);
+        RowData newRowData = rowData (rowDef, newRow);
         try {
             persistit.writeRow(session, newRowData);
         } catch (PersistitException e) {

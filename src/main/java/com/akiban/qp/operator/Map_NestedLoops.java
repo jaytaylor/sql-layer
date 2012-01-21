@@ -148,8 +148,8 @@ class Map_NestedLoops extends Operator
         Execution(QueryContext context)
         {
             super(context);
-            this.outerInput = outerInputOperator.cursor(adapter);
-            this.innerInput = innerInputOperator.cursor(adapter);
+            this.outerInput = outerInputOperator.cursor(context);
+            this.innerInput = innerInputOperator.cursor(context);
         }
 
         // For use by this class

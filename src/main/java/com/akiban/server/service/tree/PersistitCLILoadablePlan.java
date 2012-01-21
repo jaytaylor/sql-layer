@@ -24,13 +24,12 @@ import java.util.List;
 import com.akiban.qp.loadableplan.DirectObjectCursor;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
-import com.akiban.qp.loadableplan.ServerServiceRequirementsReceiver;
 import com.akiban.qp.operator.BindingNotSetException;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.service.session.Session;
-import com.akiban.sql.server.ServerServiceRequirements;
 import com.persistit.Management.TaskStatus;
 import com.persistit.Persistit;
 import com.persistit.Task;
@@ -40,7 +39,7 @@ import com.persistit.Task;
  * plan.
  */
 public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan
-
+{
     @Override
     public String name() {
         return "persistitcli";
@@ -73,7 +72,7 @@ public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan
 
         public PersistitCliDirectObjectCursor(QueryContext context) {
             this.context = context;
-            this.db = context.getStore().persistit().db();
+            this.db = ((PersistitAdapter)context.getStore()).persistit().getDb();
             this.session = context.getSession();
         }
 

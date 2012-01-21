@@ -57,9 +57,15 @@ public class PostgresDDLStatement implements PostgresStatement
     }
 
     @Override
-    public void sendDescription(PostgresServerSession server, boolean always) 
+    public PostgresType[] getParameterTypes() {
+        return null;
+    }
+
+    @Override
+    public void sendDescription(PostgresQueryContext context, boolean always) 
             throws IOException {
         if (always) {
+            PostgresServerSession server = context.getServer();
             PostgresMessenger messenger = server.getMessenger();
             messenger.beginMessage(PostgresMessages.NO_DATA_TYPE.code());
             messenger.sendMessage();

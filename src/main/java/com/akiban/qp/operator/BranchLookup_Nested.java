@@ -229,8 +229,8 @@ public class BranchLookup_Nested extends Operator
         Execution(QueryContext context)
         {
             super(context);
-            this.cursor = adapter.newGroupCursor(groupTable);
-            this.hKey = adapter.newHKey(outputRowType);
+            this.cursor = adapter().newGroupCursor(groupTable);
+            this.hKey = adapter().newHKey(outputRowType);
         }
 
         // Object state

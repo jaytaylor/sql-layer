@@ -159,7 +159,7 @@ final class Aggregate_Partial extends Operator
             aggregators.add(factory.get());
         }
         return new AggregateCursor(
-                adapter,
+                context,
                 inputOperator.cursor(context),
                 inputRowType,
                 aggregatorFactories,

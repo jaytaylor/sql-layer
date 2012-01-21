@@ -115,7 +115,7 @@ class Update_Default extends OperatorExecutionBase implements UpdatePlannable {
                 ++seen;
                 if (updateFunction.rowIsSelected(oldRow)) {
                     Row newRow = updateFunction.evaluate(oldRow, context);
-                    adapter.updateRow(oldRow, newRow, context);
+                    adapter().updateRow(oldRow, newRow);
                     ++modified;
                 }
             }

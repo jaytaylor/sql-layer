@@ -15,6 +15,7 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.server.service.session.Session;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;

@@ -15,6 +15,8 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.server.ServerQueryContext;
+
 public class PostgresQueryContext extends ServerQueryContext<PostgresServerSession>
 {
     public PostgresQueryContext(PostgresServerSession server) {

@@ -170,8 +170,8 @@ class AncestorLookup_Nested extends Operator
         {
             super(context);
             this.pending = new PendingRows(ancestorTypeDepth.length);
-            this.ancestorCursor = adapter.newGroupCursor(groupTable);
-            this.hKey = adapter.newHKey(rowType);
+            this.ancestorCursor = adapter().newGroupCursor(groupTable);
+            this.hKey = adapter().newHKey(rowType);
         }
 
         // For use by this class

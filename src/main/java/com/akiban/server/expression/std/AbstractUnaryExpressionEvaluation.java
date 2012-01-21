@@ -29,7 +29,7 @@ public abstract class AbstractUnaryExpressionEvaluation implements ExpressionEva
 
     @Override
     public void of(QueryContext context) {
-        operandEvaluation.of(bindings);
+        operandEvaluation.of(context);
     }
 
     @Override
