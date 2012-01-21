@@ -16,6 +16,8 @@
 package com.akiban.sql.server;
 
 import com.akiban.qp.operator.QueryContextBase;
+import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.server.service.session.Session;
 
 public class ServerQueryContext<T extends ServerSession> extends QueryContextBase
 {
@@ -27,6 +29,26 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
 
     public T getServer() {
         return server;
+    }
+
+    @Override
+    public StoreAdapter getStore() {
+        return server.getStore();
+    }
+
+    @Override
+    public Session getSession() {
+        return server.getSession();
+    }
+
+    @Override
+    public String getCurrentUser() {
+        return server.getDefaultSchemaName();
+    }
+
+    @Override
+    public String getSessionUser() {
+        return server.getProperty("user");
     }
 
 }
