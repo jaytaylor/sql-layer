@@ -54,8 +54,8 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     }
 
     @Override
-    public int execute(PostgresServerSession server, QueryContext context, int maxrows)
-        throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+        PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         Session session = server.getSession();
         int nrows = 0;

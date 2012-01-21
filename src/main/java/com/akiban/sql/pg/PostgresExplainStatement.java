@@ -44,13 +44,6 @@ public class PostgresExplainStatement implements PostgresStatement
     }
 
     @Override
-    public PostgresStatement getBoundStatement(Object[] parameters,
-                                               boolean[] columnBinary, 
-                                               boolean defaultColumnBinary)  {
-        return this;
-    }
-
-    @Override
     public void sendDescription(PostgresServerSession server, boolean always) 
             throws IOException {
         PostgresMessenger messenger = server.getMessenger();
@@ -72,8 +65,8 @@ public class PostgresExplainStatement implements PostgresStatement
     }
 
     @Override
-    public int execute(PostgresServerSession server, int maxrows)
-            throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+        PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
         int nrows = 0;

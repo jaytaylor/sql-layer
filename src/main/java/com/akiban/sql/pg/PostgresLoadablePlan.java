@@ -34,7 +34,7 @@ public class PostgresLoadablePlan
         return null;
     }
     
-    public static void setParameters(QueryContext context, Object[] args) {
+    public static void setParameters(PostgresQueryContext context, Object[] args) {
         if (args != null) {
             for (int i = 0; i < args.length; i++) {
                 context.setValue(i, args[i]);

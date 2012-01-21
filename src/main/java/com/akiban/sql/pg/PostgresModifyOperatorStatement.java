@@ -18,8 +18,6 @@ package com.akiban.sql.pg;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 
-import com.akiban.qp.operator.QueryContext;
-
 import java.util.List;
 import java.io.IOException;
 
@@ -57,9 +55,8 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         return TransactionMode.WRITE;
     }
 
-    public int execute(PostgresServerSession server, QueryContext context, int maxrows)
-        throws IOException {
-
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+        PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         Session session = server.getSession();
         final UpdateResult updateResult;

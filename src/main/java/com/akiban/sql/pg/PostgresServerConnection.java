@@ -61,8 +61,8 @@ public class PostgresServerConnection extends ServerSessionBase
     private int version;
     private Map<String,PostgresStatement> preparedStatements =
         new HashMap<String,PostgresStatement>();
-    private Map<String,PostgresStatement> boundPortals =
-        new HashMap<String,PostgresStatement>();
+    private Map<String,PostgresBoundQueryContext> boundPortals =
+        new HashMap<String,PostgresBoundQueryContext>();
 
     private ServerStatementCache<PostgresStatement> statementCache;
     private PostgresStatementParser[] unparsedGenerators;
@@ -352,6 +352,7 @@ public class PostgresServerConnection extends ServerSessionBase
 
         updateAIS();
 
+        PostgresQueryContext context = new PostgresQueryContext(this);
         PostgresStatement pstmt = null;
         if (statementCache != null)
             pstmt = statementCache.get(sql);
@@ -366,7 +367,7 @@ public class PostgresServerConnection extends ServerSessionBase
         }
         if (pstmt != null) {
             pstmt.sendDescription(this, false);
-            rowsProcessed = executeStatement(pstmt, -1);
+            rowsProcessed = executeStatement(pstmt, context, -1);
         }
         else {
             // Parse as a _list_ of statements and process each in turn.
@@ -385,7 +386,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 if ((statementCache != null) && (stmts.size() == 1))
                     statementCache.put(sql, pstmt);
                 pstmt.sendDescription(this, false);
-                rowsProcessed = executeStatement(pstmt, -1);
+                rowsProcessed = executeStatement(pstmt, context, -1);
             }
         }
         readyForQuery();
@@ -478,9 +479,8 @@ public class PostgresServerConnection extends ServerSessionBase
             }
         }
         PostgresStatement pstmt = preparedStatements.get(stmtName);
-        boundPortals.put(portalName, 
-                         pstmt.getBoundStatement(params,
-                                                 resultsBinary, defaultResultsBinary));
+        boundPortals.put(portalName, new PostgresBoundQueryContext(this, pstmt, 
+                                                                   params, resultsBinary, defaultResultsBinary));
         messenger.beginMessage(PostgresMessages.BIND_COMPLETE_TYPE.code());
         messenger.sendMessage();
     }
@@ -488,13 +488,13 @@ public class PostgresServerConnection extends ServerSessionBase
     protected void processDescribe() throws IOException{
         byte source = messenger.readByte();
         String name = messenger.readString();
-        PostgresStatement pstmt;        
+        PostgresStatement pstmt;
         switch (source) {
         case (byte)'S':
             pstmt = preparedStatements.get(name);
             break;
         case (byte)'P':
-            pstmt = boundPortals.get(name);
+            pstmt = boundPortals.get(name).getStatement();
             break;
         default:
             throw new IOException("Unknown describe source: " + (char)source);
@@ -507,9 +507,11 @@ public class PostgresServerConnection extends ServerSessionBase
         int rowsProcessed = 0;
         String portalName = messenger.readString();
         int maxrows = messenger.readInt();
-        PostgresStatement pstmt = boundPortals.get(portalName);
-        logger.info("Execute: {}", pstmt.toString());
-        rowsProcessed = executeStatement(pstmt, maxrows);
+        PostgresBoundQueryContext context = boundPortals.get(portalName);
+        PostgresStatement pstmt = bound.getStatement();
+        logger.info("Execute: {}", pstmt);
+        pstmt.
+        rowsProcessed = executeStatement(statement, context, maxrows);
         logger.debug("Execute complete");
         if (reqs.instrumentation().isQueryLogEnabled()) {
             reqs.instrumentation().logQuery(pid, sql, (System.nanoTime() - startTime), rowsProcessed);
@@ -609,7 +611,7 @@ public class PostgresServerConnection extends ServerSessionBase
         throw new UnsupportedSQLException ("", stmt);
     }
 
-    protected int executeStatement(PostgresStatement pstmt, int maxrows) 
+    protected int executeStatement(PostgresStatement pstmt, PostgresQueryContext context, int maxrows) 
             throws IOException {
         PostgresStatement.TransactionMode transactionMode = pstmt.getTransactionMode();
         ServerTransaction localTransaction = null;
@@ -637,7 +639,7 @@ public class PostgresServerConnection extends ServerSessionBase
         boolean success = false;
         try {
             sessionTracer.beginEvent(EventTypes.EXECUTE);
-            rowsProcessed = pstmt.execute(this, maxrows);
+            rowsProcessed = pstmt.execute(context, maxrows);
             success = true;
         }
         finally {

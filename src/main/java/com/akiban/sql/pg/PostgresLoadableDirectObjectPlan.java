@@ -18,7 +18,6 @@ package com.akiban.sql.pg;
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectCursor;
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.service.session.Session;
 import com.akiban.util.Tap;
 
@@ -73,7 +72,7 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
     }
 
     @Override
-    public int execute(PostgresServerSession server, QueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
         PostgresMessenger messenger = server.getMessenger();
         Session session = server.getSession();
         int nrows = 0;

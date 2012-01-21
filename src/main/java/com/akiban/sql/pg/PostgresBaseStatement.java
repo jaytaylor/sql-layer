@@ -15,11 +15,9 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.service.dxl.DXLFunctionsHook;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.types.AkType;
 import com.akiban.util.Tap;
 
 import java.io.IOException;
@@ -54,16 +52,15 @@ public abstract class PostgresBaseStatement implements PostgresStatement
         return columnTypes;
     }
 
-    public boolean isColumnBinary(int i) {
-        return false;
-    }
-
+    @Override
     public PostgresType[] getParameterTypes() {
         return parameterTypes;
     }
 
-    public void sendDescription(PostgresServerSession server, boolean always) 
+    @Override
+    public void sendDescription(PostgresQueryContext context, boolean always) 
             throws IOException {
+        PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         List<PostgresType> columnTypes = getColumnTypes();
         if (columnTypes == null) {
@@ -87,25 +84,6 @@ public abstract class PostgresBaseStatement implements PostgresStatement
             }
         }
         messenger.sendMessage();
-    }
-
-    protected int getNParameters() {
-        if (parameterTypes == null)
-            return 0;
-        else
-            return parameterTypes.length;
-    }
-
-    protected void decodeParameters(QueryContext context, Object[] parameters) {
-        for (int i = 0; i < parameters.length; i++) {
-            PostgresType pgType = (parameterTypes == null) ? null : parameterTypes[i];
-            AkType akType = null;
-            if (pgType != null)
-                akType = pgType.getAkType();
-            if (akType == null)
-                akType = AkType.VARCHAR;
-            context.setValue(i, parameters[i], akType);
-        }
     }
 
     protected abstract Tap.InOutTap executeTap();

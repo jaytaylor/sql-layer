@@ -78,8 +78,8 @@ public class PostgresSessionStatement implements PostgresStatement
     }
 
     @Override
-    public int execute(PostgresServerSession server, int maxrows)
-            throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+        PostgresServerSession server = context.getServer();
         doOperation(server);
         {        
             PostgresMessenger messenger = server.getMessenger();

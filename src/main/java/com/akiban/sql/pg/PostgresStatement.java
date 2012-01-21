@@ -17,8 +17,6 @@ package com.akiban.sql.pg;
 
 import com.akiban.sql.server.ServerStatement;
 
-import com.akiban.qp.operator.QueryContext;
-
 import java.io.IOException;
 
 /**
@@ -27,13 +25,14 @@ import java.io.IOException;
  */
 public interface PostgresStatement extends ServerStatement
 {
+    /** Get the types of any parameters. */
+    public PostgresType[] getParameterTypes();
+
     /** Send a description message. If <code>always</code>, do so even
      * if no result set. */
-    public void sendDescription(PostgresServerSession server, boolean always) 
-            throws IOException;
+    public void sendDescription(PostgresQueryContext context, boolean always) throws IOException;
 
     /** Execute statement and output results. Return number of rows processed. */
-    public int execute(PostgresServerSession server, QueryContext context, int maxrows)
-            throws IOException;
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException;
 
 }

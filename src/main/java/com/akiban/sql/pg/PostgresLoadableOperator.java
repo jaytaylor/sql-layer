@@ -16,7 +16,6 @@
 package com.akiban.sql.pg;
 
 import com.akiban.qp.loadableplan.LoadableOperator;
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.util.Tap;
 
 public class PostgresLoadableOperator extends PostgresOperatorStatement
@@ -50,8 +49,8 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
     }
 
     @Override
-    public int execute(PostgresServerSession server, QueryContext context, int maxrows)
-        throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+        // Overwrite the query parameters with the call parameters.
         PostgresLoadablePlan.setParameters(context, args);
         return super.execute(server, context, maxrow);
     }

@@ -57,15 +57,6 @@ public class PostgresDDLStatement implements PostgresStatement
     }
 
     @Override
-    public PostgresStatement getBoundStatement(Object[] parameters,
-                                               boolean[] columnBinary, 
-                                               boolean defaultColumnBinary){
-        if (parameters != null)
-            throw new UnsupportedParametersException ();
-        return this;
-    }
-
-    @Override
     public void sendDescription(PostgresServerSession server, boolean always) 
             throws IOException {
         if (always) {
@@ -81,8 +72,8 @@ public class PostgresDDLStatement implements PostgresStatement
     }
 
     @Override
-    public int execute(PostgresServerSession server, int maxrows)
-            throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+        PostgresServerSession server = context.getServer();
         AkibanInformationSchema ais = server.getAIS();
         String schema = server.getDefaultSchemaName();
         DDLFunctions ddlFunctions = server.getDXL().ddlFunctions();

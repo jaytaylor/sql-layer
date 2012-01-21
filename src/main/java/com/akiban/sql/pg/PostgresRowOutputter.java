@@ -24,8 +24,9 @@ import java.io.IOException;
 public class PostgresRowOutputter extends PostgresOutputter<Row>
 {
     public PostgresRowOutputter(PostgresMessenger messenger, 
+                                PostgresQueryContext context,
                                 PostgresBaseStatement statement) {
-        super(messenger, statement);
+        super(messenger, context, statement);
     }
 
     @Override
@@ -35,7 +36,7 @@ public class PostgresRowOutputter extends PostgresOutputter<Row>
         for (int i = 0; i < ncols; i++) {
             ValueSource field = row.eval(i);
             PostgresType type = columnTypes.get(i);
-            boolean binary = statement.isColumnBinary(i);
+            boolean binary = context.isColumnBinary(i);
             ByteArrayOutputStream bytes = encoder.encodeValue(field, type, binary);
             if (bytes == null) {
                 messenger.writeInt(-1);
