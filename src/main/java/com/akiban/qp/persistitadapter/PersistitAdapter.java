@@ -42,7 +42,7 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
