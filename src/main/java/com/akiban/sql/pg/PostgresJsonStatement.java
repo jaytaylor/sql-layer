@@ -20,7 +20,6 @@ import static com.akiban.sql.pg.PostgresJsonCompiler.JsonResultColumn;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.expression.EnvironmentExpressionSetting;
 import com.akiban.server.types.AkType;
 
 import java.util.*;
@@ -31,20 +30,19 @@ public class PostgresJsonStatement extends PostgresOperatorStatement
 
     public PostgresJsonStatement(Operator resultOperator, RowType resultRowType,
                                  List<JsonResultColumn> resultColumns,
-                                 PostgresType[] parameterTypes,
-                                 List<EnvironmentExpressionSetting> environmentSettings) {
+                                 PostgresType[] parameterTypes) {
         super(resultOperator, resultRowType,
               // Looks like just one unlimited VARCHAR to the client.
               Collections.singletonList("JSON"),
               Collections.singletonList(new PostgresType(PostgresType.VARCHAR_TYPE_OID,
                                                          (short)-1, -1, AkType.VARCHAR)),
-              parameterTypes, environmentSettings);
+              parameterTypes);
         this.resultColumns = resultColumns;
     }
 
     @Override
-    protected PostgresOutputter<Row> getRowOutputter(PostgresServerSession server) {
-        return new PostgresJsonOutputter(server, this, 
+    protected PostgresOutputter<Row> getRowOutputter(PostgresQueryContext context) {
+        return new PostgresJsonOutputter(context, this, 
                                          resultColumns, getColumnTypes().get(0));
     }
     

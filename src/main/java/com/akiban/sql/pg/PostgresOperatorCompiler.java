@@ -33,8 +33,6 @@ import com.akiban.server.error.SQLParseException;
 import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.service.EventTypes;
 
-import com.akiban.server.expression.EnvironmentExpressionSetting;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -130,25 +128,23 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
             }
         }
 
-        List<EnvironmentExpressionSetting> environmentSettings = result.getEnvironmentSettings();        
-
         if (result.isUpdate())
             return generateUpdate((PhysicalUpdate)result, stmt.statementToString(),
-                                  parameterTypes, environmentSettings);
+                                  parameterTypes);
         else
             return generateSelect((PhysicalSelect)result,
-                                  parameterTypes, environmentSettings);
+                                  parameterTypes);
     }
 
     protected PostgresStatement generateUpdate(PhysicalUpdate update, String statementType,
-                                               PostgresType[] parameterTypes, List<EnvironmentExpressionSetting> environmentSettings) {
+                                               PostgresType[] parameterTypes) {
         return new PostgresModifyOperatorStatement(statementType,
                                                    update.getUpdatePlannable(),
-                                                   parameterTypes, environmentSettings);
+                                                   parameterTypes);
     }
 
     protected PostgresStatement generateSelect(PhysicalSelect select,
-                                               PostgresType[] parameterTypes, List<EnvironmentExpressionSetting> environmentSettings) {
+                                               PostgresType[] parameterTypes) {
         int ncols = select.getResultColumns().size();
         List<String> columnNames = new ArrayList<String>(ncols);
         List<PostgresType> columnTypes = new ArrayList<PostgresType>(ncols);
@@ -160,7 +156,7 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
         return new PostgresOperatorStatement(select.getResultOperator(),
                                              select.getResultRowType(),
                                              columnNames, columnTypes,
-                                             parameterTypes, environmentSettings);
+                                             parameterTypes);
     }
 
 }

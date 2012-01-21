@@ -57,18 +57,15 @@ public class PostgresDDLStatement implements PostgresStatement
     }
 
     @Override
-    public PostgresStatement getBoundStatement(Object[] parameters,
-                                               boolean[] columnBinary, 
-                                               boolean defaultColumnBinary){
-        if (parameters != null)
-            throw new UnsupportedParametersException ();
-        return this;
+    public PostgresType[] getParameterTypes() {
+        return null;
     }
 
     @Override
-    public void sendDescription(PostgresServerSession server, boolean always) 
+    public void sendDescription(PostgresQueryContext context, boolean always) 
             throws IOException {
         if (always) {
+            PostgresServerSession server = context.getServer();
             PostgresMessenger messenger = server.getMessenger();
             messenger.beginMessage(PostgresMessages.NO_DATA_TYPE.code());
             messenger.sendMessage();
@@ -81,8 +78,8 @@ public class PostgresDDLStatement implements PostgresStatement
     }
 
     @Override
-    public int execute(PostgresServerSession server, int maxrows)
-            throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+        PostgresServerSession server = context.getServer();
         AkibanInformationSchema ais = server.getAIS();
         String schema = server.getDefaultSchemaName();
         DDLFunctions ddlFunctions = server.getDXL().ddlFunctions();

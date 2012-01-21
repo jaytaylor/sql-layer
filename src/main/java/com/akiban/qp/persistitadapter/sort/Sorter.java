@@ -16,9 +16,9 @@
 package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.OperatorExecutionBase;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
@@ -47,21 +47,19 @@ import java.util.concurrent.atomic.AtomicLong;
 public class Sorter
 {
     public Sorter(PersistitAdapter adapter, 
+                  QueryContext context,
                   Cursor input, 
                   RowType rowType, 
                   API.Ordering ordering,
-                  API.SortOption sortOption,
-                  Bindings bindings)
+                  API.SortOption sortOption)
         throws PersistitException
     {
         this.adapter = adapter;
+        this.context = context;
         this.input = input;
-        // This typecast is pretty bad. But I really don't want to pass the query start time as an argument from
-        // the Sort_Tree operator, through the StoreAdapter interface, to here.
-        this.queryStartTimeMsec = ((OperatorExecutionBase) input).startTimeMsec();
+        this.queryStartTimeMsec = context.getStartTime();
         this.rowType = rowType;
         this.ordering = ordering.copy();
-        this.bindings = bindings;
         String sortTreeName = SORT_TREE_NAME_PREFIX + SORTER_ID_GENERATOR.getAndIncrement();
         this.exchange =
             SORT_USING_TEMP_VOLUME
@@ -91,8 +89,7 @@ public class Sorter
         for (int i = 0; i < nsort; i++) {
             orderingTypes[i] = this.ordering.type(i);
             ExpressionEvaluation evaluation = this.ordering.expression(i).evaluation();
-            evaluation.of(adapter);
-            evaluation.of(bindings);
+            evaluation.of(context);
             evaluations.add(evaluation);
         }
     }
@@ -148,8 +145,8 @@ public class Sorter
     private Cursor cursor()
     {
         exchange.clear();
-        SortCursor cursor = SortCursor.create(adapter, null, ordering, new SorterIterationHelper());
-        cursor.open(bindings);
+        SortCursor cursor = SortCursor.create(adapter, context, null, ordering, new SorterIterationHelper());
+        cursor.open();
         return cursor;
     }
 
@@ -217,7 +214,7 @@ public class Sorter
     final API.Ordering ordering;
     final boolean preserveDuplicates;
     final List<ExpressionEvaluation> evaluations;
-    final Bindings bindings;
+    final QueryContext context;
     final Key key;
     final Value value;
     final PersistitKeyValueTarget keyTarget;

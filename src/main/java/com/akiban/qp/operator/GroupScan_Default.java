@@ -82,9 +82,9 @@ class GroupScan_Default extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter)
+    protected Cursor cursor(QueryContext context)
     {
-        return new Execution(adapter, cursorCreator);
+        return new Execution(context, cursorCreator);
     }
 
     // GroupScan_Default interface
@@ -111,10 +111,10 @@ class GroupScan_Default extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
             GROUP_SCAN_COUNT.hit();
-            cursor.open(bindings);
+            cursor.open();
         }
 
         @Override
@@ -137,10 +137,10 @@ class GroupScan_Default extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, GroupCursorCreator cursorCreator)
+        Execution(QueryContext context, GroupCursorCreator cursorCreator)
         {
-            super(adapter);
-            this.cursor = cursorCreator.cursor(adapter);
+            super(context);
+            this.cursor = cursorCreator.cursor(context);
         }
 
         // Object state
@@ -150,7 +150,7 @@ class GroupScan_Default extends Operator
 
     static interface GroupCursorCreator
     {
-        Cursor cursor(StoreAdapter adapter);
+        Cursor cursor(QueryContext context);
 
         GroupTable groupTable();
     }
@@ -193,9 +193,9 @@ class GroupScan_Default extends Operator
         // GroupCursorCreator interface
 
         @Override
-        public Cursor cursor(StoreAdapter adapter)
+        public Cursor cursor(QueryContext context)
         {
-            return adapter.newGroupCursor(groupTable());
+            return context.getStore().newGroupCursor(groupTable());
         }
 
         // FullGroupCursorCreator interface
@@ -220,9 +220,9 @@ class GroupScan_Default extends Operator
         // GroupCursorCreator interface
 
         @Override
-        public Cursor cursor(StoreAdapter adapter)
+        public Cursor cursor(QueryContext context)
         {
-            return new HKeyBoundCursor(adapter, adapter.newGroupCursor(groupTable()), hKeyBindingPosition, deep, hKeyType, shortenUntil);
+            return new HKeyBoundCursor(context, context.getStore().newGroupCursor(groupTable()), hKeyBindingPosition, deep, hKeyType, shortenUntil);
         }
 
         // PositionalGroupCursorCreator interface
@@ -267,12 +267,11 @@ class GroupScan_Default extends Operator
     {
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
-            this.bindings = bindings;
             HKey hKey = getHKeyFromBindings();
             input.rebind(hKey, deep);
-            input.open(bindings);
+            input.open();
         }
 
         @Override
@@ -297,18 +296,18 @@ class GroupScan_Default extends Operator
             atTable = atTable.parentTable();
             HKey hkey = getHKeyFromBindings();
             hkey.useSegments(atTable.getDepth() + 1);
-            open(bindings);
+            open();
             return next();
         }
 
-        HKeyBoundCursor(StoreAdapter adapter,
+        HKeyBoundCursor(QueryContext context,
                         GroupCursor input,
                         int hKeyBindingPosition,
                         boolean deep,
                         UserTable hKeyType,
                         UserTable shortenUntil)
         {
-            super(adapter, input);
+            super(context, input);
             this.input = input;
             this.hKeyBindingPosition = hKeyBindingPosition;
             this.deep = deep;
@@ -326,12 +325,7 @@ class GroupScan_Default extends Operator
         }
 
         private HKey getHKeyFromBindings() {
-            Object supposedHKey = bindings.get(hKeyBindingPosition);
-            if (!(supposedHKey instanceof HKey)) {
-                throw new RuntimeException(String.format("%s doesn't contain hkey at position %s",
-                        bindings, hKeyBindingPosition));
-            }
-            return (HKey) supposedHKey;
+            return context.getHKey(hKeyBindingPosition);
         }
 
         private final GroupCursor input;
@@ -340,6 +334,5 @@ class GroupScan_Default extends Operator
         private UserTable atTable;
         private final UserTable stopSearchTable;
         private boolean sawOne = false;
-        private Bindings bindings;
     }
 }

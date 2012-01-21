@@ -21,6 +21,8 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.row.Row;
@@ -129,6 +131,7 @@ public class OperatorITBase extends ITBase
                           createNewRow(item, 221L, 22L),
                           createNewRow(item, 222L, 22L)};
         adapter = persistitAdapter(schema);
+        queryContext = queryContext(adapter);
     }
 
     protected void use(NewRow[] db)
@@ -231,7 +234,7 @@ public class OperatorITBase extends ITBase
     {
         List<RowBase> actualRows = new ArrayList<RowBase>(); // So that result is viewable in debugger
         try {
-            cursor.open(NO_BINDINGS);
+            cursor.open();
             RowBase actualRow;
             while ((actualRow = cursor.next()) != null) {
                 actualRows.add(actualRow);
@@ -246,7 +249,7 @@ public class OperatorITBase extends ITBase
     {
         List<String> strings = new ArrayList<String>();
         try {
-            cursor.open(NO_BINDINGS);
+            cursor.open();
             Row row;
             while ((row = cursor.next()) != null) {
                 strings.add(String.valueOf(row));
@@ -263,14 +266,14 @@ public class OperatorITBase extends ITBase
     @SuppressWarnings("unused") // useful for debugging
     protected void dumpToAssertion(Operator plan)
     {
-        dumpToAssertion(cursor(plan, adapter));
+        dumpToAssertion(cursor(plan, queryContext));
     }
 
     protected void compareRenderedHKeys(String[] expected, Cursor cursor)
     {
         int count;
         try {
-            cursor.open(NO_BINDINGS);
+            cursor.open();
             count = 0;
             List<RowBase> actualRows = new ArrayList<RowBase>(); // So that result is viewable in debugger
             RowBase actualRow;
@@ -311,5 +314,6 @@ public class OperatorITBase extends ITBase
     protected Schema schema;
     protected NewRow[] db;
     protected NewRow[] emptyDB = new NewRow[0];
-    PersistitAdapter adapter;
+    protected PersistitAdapter adapter;
+    protected QueryContext queryContext;
 }

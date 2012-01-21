@@ -17,10 +17,9 @@ package com.akiban.server.service.functions;
 
 import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.expression.ExpressionRegistry;
-import com.akiban.server.expression.EnvironmentExpressionRegistry;
 
-public interface FunctionsRegistry extends AggregatorRegistry, ExpressionRegistry, EnvironmentExpressionRegistry {
-    public enum FunctionKind { SCALAR, AGGREGATE, ENVIRONMENT };
+public interface FunctionsRegistry extends AggregatorRegistry, ExpressionRegistry {
+    public enum FunctionKind { SCALAR, AGGREGATE };
 
     public FunctionKind getFunctionKind(String name);
 }

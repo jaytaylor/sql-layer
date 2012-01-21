@@ -15,12 +15,12 @@
 
 package com.akiban.qp.loadableplan;
 
-import com.akiban.server.service.session.Session;
+import com.akiban.qp.operator.QueryContext;
 
 /** A plan that uses a {@link DirectObjectCursor}. */
 public abstract class DirectObjectPlan
 {
-    public abstract DirectObjectCursor cursor(Session session);
+    public abstract DirectObjectCursor cursor(QueryContext context);
 
     /** Return <code>true</code> to stream a single column with text formatting. */
     public boolean useCopyData() {

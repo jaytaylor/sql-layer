@@ -23,7 +23,6 @@ import com.akiban.sql.optimizer.plan.TypesTranslation;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
-import com.akiban.server.expression.EnvironmentExpressionSetting;
 import com.akiban.server.types.AkType;
 
 import java.util.*;
@@ -85,7 +84,7 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
 
     @Override
     protected PostgresStatement generateSelect(PhysicalSelect select,
-                                               PostgresType[] parameterTypes, List<EnvironmentExpressionSetting> environmentSettings) {
+                                               PostgresType[] parameterTypes) {
         int ncols = select.getResultColumns().size();
         List<JsonResultColumn> resultColumns = new ArrayList<JsonResultColumn>();
         for (PhysicalResultColumn physColumn : select.getResultColumns()) {
@@ -95,7 +94,7 @@ public class PostgresJsonCompiler extends PostgresOperatorCompiler
         return new PostgresJsonStatement(select.getResultOperator(),
                                          select.getResultRowType(),
                                          resultColumns,
-                                         parameterTypes, environmentSettings);
+                                         parameterTypes);
     }
     
 }

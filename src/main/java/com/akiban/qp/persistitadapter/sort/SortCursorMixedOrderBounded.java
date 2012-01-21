@@ -18,6 +18,7 @@ package com.akiban.qp.persistitadapter.sort;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.types.ValueSource;
 import com.persistit.exception.PersistitException;
@@ -29,8 +30,8 @@ class SortCursorMixedOrderBounded extends SortCursorMixedOrder
     @Override
     public void initializeScanStates() throws PersistitException
     {
-        BoundExpressions lo = keyRange.lo().boundExpressions(bindings, adapter);
-        BoundExpressions hi = keyRange.hi().boundExpressions(bindings, adapter);
+        BoundExpressions lo = keyRange.lo().boundExpressions(context);
+        BoundExpressions hi = keyRange.hi().boundExpressions(context);
         // Set lo and hi bounds for each key segment
         int f = 0;
         while (f < boundColumns()) {
@@ -87,11 +88,12 @@ class SortCursorMixedOrderBounded extends SortCursorMixedOrder
     // SortCursorMixedOrderBounded interface
 
     public SortCursorMixedOrderBounded(PersistitAdapter adapter,
+                                       QueryContext context,
                                        IterationHelper iterationHelper,
                                        IndexKeyRange keyRange,
                                        API.Ordering ordering)
     {
-        super(adapter, iterationHelper, keyRange, ordering);
+        super(adapter, context, iterationHelper, keyRange, ordering);
     }
 
     // For use by this class

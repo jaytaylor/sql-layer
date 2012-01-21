@@ -158,9 +158,9 @@ public class BranchLookup_Default extends Operator
     }
 
     @Override
-    public Cursor cursor(StoreAdapter adapter)
+    public Cursor cursor(QueryContext context)
     {
-        return new Execution(adapter, inputOperator.cursor(adapter));
+        return new Execution(context, inputOperator.cursor(context));
     }
 
     @Override
@@ -285,10 +285,10 @@ public class BranchLookup_Default extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
             BRANCH_LOOKUP_COUNT.hit();
-            inputCursor.open(bindings);
+            inputCursor.open();
             advanceInput();
         }
 
@@ -339,12 +339,12 @@ public class BranchLookup_Default extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, Cursor input)
+        Execution(QueryContext context, Cursor input)
         {
-            super(adapter);
+            super(context);
             this.inputCursor = input;
-            this.lookupCursor = adapter.newGroupCursor(groupTable);
-            this.lookupRowHKey = adapter.newHKey(outputRowType);
+            this.lookupCursor = adapter().newGroupCursor(groupTable);
+            this.lookupRowHKey = adapter().newHKey(outputRowType);
         }
 
         // For use by this class
@@ -378,7 +378,7 @@ public class BranchLookup_Default extends Operator
                     lookupRow.release();
                     computeLookupRowHKey(currentInputRow.hKey());
                     lookupCursor.rebind(lookupRowHKey, true);
-                    lookupCursor.open(UndefBindings.only());
+                    lookupCursor.open();
                 }
                 inputRow.hold(currentInputRow);
             } else {

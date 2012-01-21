@@ -32,11 +32,11 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
     private List<JsonResultColumn> resultColumns;
     private PostgresType valueType;
     
-    public PostgresJsonOutputter(PostgresServerSession server, 
+    public PostgresJsonOutputter(PostgresQueryContext context, 
                                  PostgresBaseStatement statement,
                                  List<JsonResultColumn> resultColumns,
                                  PostgresType valueType) {
-        super(server, statement);
+        super(context, statement);
         this.resultColumns = resultColumns;
         this.valueType = valueType;
     }

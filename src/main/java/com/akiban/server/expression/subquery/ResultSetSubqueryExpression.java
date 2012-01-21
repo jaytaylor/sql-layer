@@ -16,10 +16,9 @@
 package com.akiban.server.expression.subquery;
 
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
@@ -56,13 +55,8 @@ public final class ResultSetSubqueryExpression extends SubqueryExpression {
     // TODO: Could refactor SubqueryExpressionEvaluation into a common piece.
     private static final class InnerEvaluation implements ExpressionEvaluation {
         @Override
-        public void of(StoreAdapter adapter) {
-            this.adapter = adapter;
-        }
-
-        @Override
-        public void of(Bindings bindings) {
-            this.bindings = bindings;
+        public void of(QueryContext context) {
+            this.context = context;
         }
 
         @Override
@@ -76,9 +70,9 @@ public final class ResultSetSubqueryExpression extends SubqueryExpression {
 
         @Override
         public ValueSource eval() {
-            bindings.set(bindingPosition, outerRow);
-            Cursor cursor = API.cursor(subquery, adapter);
-            cursor.open(bindings);
+            context.setRow(bindingPosition, outerRow);
+            Cursor cursor = API.cursor(subquery, context);
+            cursor.open();
             return new ValueHolder(AkType.RESULT_SET, cursor);
         }
 
@@ -110,8 +104,7 @@ public final class ResultSetSubqueryExpression extends SubqueryExpression {
         private final Operator subquery;
         private final RowType outerRowType;
         private final int bindingPosition;
-        private StoreAdapter adapter;
-        private Bindings bindings;
+        private QueryContext context;
         private Row outerRow;
     }
 
