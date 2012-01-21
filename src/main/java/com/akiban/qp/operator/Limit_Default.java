@@ -181,7 +181,7 @@ final class Limit_Default extends Operator
                 throw new NegativeLimitException("OFFSET", skipLeft);
             if (isLimitBinding()) {
                 ValueSource value = context.getValue(limit());
-                if (!value.isNull())
+                if (value.isNull())
                     this.limitLeft = Integer.MAX_VALUE;
                 else
                     this.limitLeft = (int)Extractors.getLongExtractor(AkType.LONG).getLong(value);
