@@ -26,7 +26,7 @@ import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.loadableplan.ServerServiceRequirementsReceiver;
 import com.akiban.qp.operator.BindingNotSetException;
-import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.service.session.Session;
@@ -39,14 +39,7 @@ import com.persistit.Task;
  * Invokes the akiban-persistit CLI via a PSQL statement through a loadable
  * plan.
  */
-public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan implements ServerServiceRequirementsReceiver {
-
-    private volatile ServerServiceRequirements reqs;
-
-    @Override
-    public void setServerServiceRequirements(ServerServiceRequirements reqs) {
-        this.reqs = reqs;
-    }
+public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan
 
     @Override
     public String name() {
@@ -58,8 +51,8 @@ public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan implement
         return new DirectObjectPlan() {
 
             @Override
-            public DirectObjectCursor cursor(Session session) {
-                return new PersistitCliDirectObjectCursor(session, reqs.treeService().getDb());
+            public DirectObjectCursor cursor(QueryContext context) {
+                return new PersistitCliDirectObjectCursor(context);
             }
 
             @Override
@@ -70,6 +63,7 @@ public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan implement
     }
 
     public static class PersistitCliDirectObjectCursor extends DirectObjectCursor {
+        final QueryContext context;
         final Persistit db;
         final Session session;
         boolean done = false;
@@ -77,23 +71,22 @@ public class PersistitCLILoadablePlan extends LoadableDirectObjectPlan implement
         long taskId;
         ArrayList<String> messages = new ArrayList<String>();
 
-        public PersistitCliDirectObjectCursor(Session session, Persistit db) {
-            this.session = session;
-            this.db = db;
+        public PersistitCliDirectObjectCursor(QueryContext context) {
+            this.context = context;
+            this.db = context.getStore().persistit().db();
+            this.session = context.getSession();
         }
 
         @Override
-        public void open(Bindings bindings) {
+        public void open() {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < 100; i++) {
                 String carg;
                 try {
-                    carg = (String) bindings.get(i);
+                    carg = context.getValue(i).getString();
                 } catch (BindingNotSetException ex) {
                     break;
                 }
-                if (carg == null)
-                    break;
                 sb.append(carg);
                 sb.append(' ');
             }
