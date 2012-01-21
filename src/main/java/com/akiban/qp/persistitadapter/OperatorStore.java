@@ -102,7 +102,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
         UpdatePlannable updateOp = com.akiban.qp.operator.API.update_Default(scanOp, updateFunction);
 
-        QueryContext context = new QueryContextBase(adapter);
+        QueryContext context = new SimpleQueryContext(adapter);
 
         UPDATE_MAINTENANCE.in();
 
@@ -205,7 +205,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                                  treeService,
                                  session,
                                  config);
-        QueryContext context = new QueryContextBase(adapter);
+        QueryContext context = new SimpleQueryContext(adapter);
         for(GroupIndex groupIndex : groupIndexes) {
             Operator plan = OperatorStoreMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex);
             runMaintenancePlan(

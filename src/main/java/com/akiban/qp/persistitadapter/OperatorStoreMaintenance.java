@@ -24,7 +24,7 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.QueryContextBase;
+import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.FlattenedRow;
 import com.akiban.qp.row.Row;
@@ -49,7 +49,7 @@ final class OperatorStoreMaintenance {
         Operator planOperator = rootOperator();
         if (planOperator == null)
             return;
-        QueryContext context = new QueryContextBase(adapter);
+        QueryContext context = new SimpleQueryContext(adapter);
         final List<Column> lookupCols = rowType.userTable().getPrimaryKey().getColumns();
 
         context.setHKey(OperatorStoreMaintenance.HKEY_BINDING_POSITION, hKey);
