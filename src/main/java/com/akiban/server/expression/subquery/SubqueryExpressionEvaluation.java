@@ -28,6 +28,7 @@ public abstract class SubqueryExpressionEvaluation implements ExpressionEvaluati
 
     @Override
     public void of(QueryContext context) {
+        this.context = context;
         this.cursor = API.cursor(subquery, context);
     }
 

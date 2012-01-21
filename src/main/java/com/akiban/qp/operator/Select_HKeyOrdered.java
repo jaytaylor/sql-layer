@@ -141,7 +141,6 @@ class Select_HKeyOrdered extends Operator
             super(context);
             this.input = input;
             this.evaluation = predicate.evaluation();
-            evaluation.of(context);
         }
 
         // Object state
