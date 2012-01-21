@@ -15,13 +15,14 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 
-/** A {@link QueryContext} for use without a server for internal plans / testing. */
+/** A {@link QueryContext} for use without a full server for internal plans / testing. */
 public class SimpleQueryContext extends QueryContextBase
 {
     private StoreAdapter adapter;
@@ -37,7 +38,10 @@ public class SimpleQueryContext extends QueryContextBase
 
     @Override
     public Session getSession() {
-        throw new UnsupportedOperationException();
+        if (adapter instanceof PersistitAdapter)
+            return ((PersistitAdapter)adapter).session();
+        else
+            throw new UnsupportedOperationException();
     }
 
     @Override
