@@ -20,7 +20,7 @@ import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectCursor;
 import com.akiban.qp.operator.Bindings;
 import com.akiban.server.service.session.Session;
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 
 import java.util.List;
 import java.io.IOException;

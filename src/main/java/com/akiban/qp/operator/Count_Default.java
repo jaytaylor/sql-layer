@@ -21,7 +21,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.types.AkType;
 import com.akiban.util.ArgumentValidation;
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 
 import java.util.Collections;
 import java.util.List;

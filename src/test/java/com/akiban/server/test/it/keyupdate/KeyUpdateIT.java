@@ -18,8 +18,8 @@ package com.akiban.server.test.it.keyupdate;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.util.Tap;
-import com.akiban.util.TapReport;
+import com.akiban.util.tap.Tap;
+import com.akiban.util.tap.TapReport;
 import org.junit.Test;
 
 import java.util.*;

@@ -15,7 +15,7 @@
 
 package com.akiban.server.service.instrumentation;
 
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
