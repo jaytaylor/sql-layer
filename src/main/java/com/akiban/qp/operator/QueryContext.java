@@ -18,6 +18,7 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 
 import java.util.Date;
@@ -33,11 +34,33 @@ public interface class QueryContext
     public ValueSource getValue(int index);
 
     /**
-     * Bind a value to the given index. Used for variables introduced by execution plan, not for query parameters.
+     * Bind a value to the given index.
      * @param index the index to set
      * @param value the value to assign
      */
     public void setValue(int index, ValueSource value);
+
+    /**
+     * Bind a value to the given index.
+     * @param index the index to set
+     * @param value the value to assign
+     * @param type the type to convert the value to for binding
+     */
+    public void setValue(int index, ValueSource value, AkType type);
+
+    /**
+     * Bind a value to the given index.
+     * @param index the index to set
+     * @param value the value to assign
+     */
+    public void setValue(int index, Object value);
+
+    /**
+     * Bind a value to the given index.
+     * @param index the index to set
+     * @param value the value to assign
+     */
+    public void setValue(int index, Object value, AkType type);
 
     /**
      * Gets the row bound to the given index.
@@ -48,7 +71,7 @@ public interface class QueryContext
     public Row getRow(int index);
 
     /**
-     * Bind a value to the given index. Used for variables introduced by execution plan, not for query parameters.
+     * Bind a row to the given index.
      * @param index the index to set
      * @param row the row to assign
      */
@@ -63,7 +86,7 @@ public interface class QueryContext
     public HKey getHKey(int index);
 
     /**
-     * Bind a value to the given index. Used for variables introduced by execution plan, not for query parameters.
+     * Bind an hkey to the given index.
      * @param index the index to set
      * @param hKey the hKey to assign
      */

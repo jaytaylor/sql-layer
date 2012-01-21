@@ -15,6 +15,8 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.SparseArray;
@@ -47,7 +49,7 @@ public class QueryContextBase implements QueryContext
     }
 
     @Override
-    public void setValue(int index, ValueSource value);
+    public void setValue(int index, ValueSource value, AkType type);
     {
         ValueHolder holder;
         if (bindings.isDefined(index))
@@ -56,7 +58,30 @@ public class QueryContextBase implements QueryContext
             holder = new ValueHolder();
             bindings.set(index, holder);
         }
-        holder.copyFrom(value);
+        holder.expectType(type);
+        Converters.convert(source, holder);
+    }
+
+    @Override
+    public void setValue(int index, ValueSource value);
+    {
+        setValue(index, value, value.getConversionType());
+    }
+
+    @Override
+    public void setValue(int index, Object value);
+    {
+        FromObjectValueSource source = new FromObjectValueSource();
+        source.setReflectively(value);
+        setValue(index, value);
+    }
+
+    @Override
+    public void setValue(int index, Object value, AkType type);
+    {
+        FromObjectValueSource source = new FromObjectValueSource();
+        source.setReflectively(value);
+        setValue(index, value, type);
     }
 
     @Override
