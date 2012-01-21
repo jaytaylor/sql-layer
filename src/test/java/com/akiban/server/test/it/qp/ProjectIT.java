@@ -88,7 +88,7 @@ public class ProjectIT extends OperatorITBase
         Operator plan = project_Default(groupScan_Default(coi),
                                                 customerRowType,
                                                 Arrays.asList(field(customerRowType, 0)));
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowType projectedRowType = plan.rowType();
         RowBase[] expected = new RowBase[]{
             row(projectedRowType, 1L),
@@ -119,7 +119,7 @@ public class ProjectIT extends OperatorITBase
         Operator plan = project_Default(groupScan_Default(coi),
                                                 customerRowType,
                                                 Arrays.asList(field(customerRowType, 1), field(customerRowType, 0)));
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowType projectedRowType = plan.rowType();
         RowBase[] expected = new RowBase[]{
             row(projectedRowType, "northbridge", 1L),
@@ -165,7 +165,7 @@ public class ProjectIT extends OperatorITBase
                                 field(coiType, 1), // customer name
                                 field(coiType, 4), // salesman
                                 field(coiType, 5))); // iid
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowType projectedRowType = plan.rowType();
         RowBase[] expected = new RowBase[]{
             row(projectedRowType, "northbridge", "ori", 111L),

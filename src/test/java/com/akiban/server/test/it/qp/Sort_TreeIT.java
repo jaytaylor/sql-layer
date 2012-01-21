@@ -19,7 +19,6 @@ import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.UndefBindings;
 import com.akiban.qp.persistitadapter.sort.Sorter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -79,7 +78,7 @@ public class Sort_TreeIT extends OperatorITBase
                 customerRowType,
                 ordering(field(customerRowType, 1), true),
                 SortOption.PRESERVE_DUPLICATES);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 2L, "foundation"),
             row(customerRowType, 4L, "highland"),
@@ -100,7 +99,7 @@ public class Sort_TreeIT extends OperatorITBase
                 orderRowType,
                 ordering(field(orderRowType, 2), true, field(orderRowType, 1), false),
                 SortOption.PRESERVE_DUPLICATES);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 31L, 3L, "david"),
             row(orderRowType, 21L, 2L, "david"),
@@ -123,7 +122,7 @@ public class Sort_TreeIT extends OperatorITBase
                 orderRowType,
                 ordering(field(orderRowType, 2), true),
                 SortOption.PRESERVE_DUPLICATES);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             // Order among equals in group.
             row(orderRowType, 12L, 1L, "david"),
@@ -157,7 +156,7 @@ public class Sort_TreeIT extends OperatorITBase
                 oiType,
                 ordering(cidField, true, oidField, true, iidField, true),
                 SortOption.PRESERVE_DUPLICATES);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(oiType, 11L, 1L, "ori", 111L, 11L),
             row(oiType, 11L, 1L, "ori", 112L, 11L),
@@ -192,7 +191,7 @@ public class Sort_TreeIT extends OperatorITBase
                 oiType,
                 ordering(cidField, true, oidField, true, iidField, false),
                 SortOption.PRESERVE_DUPLICATES);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(oiType, 11L, 1L, "ori", 112L, 11L),
             row(oiType, 11L, 1L, "ori", 111L, 11L),
@@ -227,7 +226,7 @@ public class Sort_TreeIT extends OperatorITBase
                 oiType,
                 ordering(cidField, true, oidField, false, iidField, true),
                 SortOption.PRESERVE_DUPLICATES);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(oiType, 12L, 1L, "david", 121L, 12L),
             row(oiType, 12L, 1L, "david", 122L, 12L),
@@ -262,7 +261,7 @@ public class Sort_TreeIT extends OperatorITBase
                 oiType,
                 ordering(cidField, true, oidField, false, iidField, false),
                 SortOption.PRESERVE_DUPLICATES);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(oiType, 12L, 1L, "david", 122L, 12L),
             row(oiType, 12L, 1L, "david", 121L, 12L),
@@ -297,7 +296,7 @@ public class Sort_TreeIT extends OperatorITBase
                 oiType,
                 ordering(cidField, false, oidField, true, iidField, true),
                 SortOption.PRESERVE_DUPLICATES);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(oiType, 21L, 2L, "david", 211L, 21L),
             row(oiType, 21L, 2L, "david", 212L, 21L),
@@ -332,7 +331,7 @@ public class Sort_TreeIT extends OperatorITBase
                 oiType,
                 ordering(cidField, false, oidField, true, iidField, false),
                 SortOption.PRESERVE_DUPLICATES);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(oiType, 21L, 2L, "david", 212L, 21L),
             row(oiType, 21L, 2L, "david", 211L, 21L),
@@ -367,7 +366,7 @@ public class Sort_TreeIT extends OperatorITBase
                 oiType,
                 ordering(cidField, false, oidField, false, iidField, true),
                 SortOption.PRESERVE_DUPLICATES);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(oiType, 22L, 2L, "jack", 221L, 22L),
             row(oiType, 22L, 2L, "jack", 222L, 22L),
@@ -402,7 +401,7 @@ public class Sort_TreeIT extends OperatorITBase
                 oiType,
                 ordering(cidField, false, oidField, false, iidField, false),
                 SortOption.PRESERVE_DUPLICATES);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(oiType, 22L, 2L, "jack", 222L, 22L),
             row(oiType, 22L, 2L, "jack", 221L, 22L),
@@ -448,7 +447,7 @@ public class Sort_TreeIT extends OperatorITBase
             Session.Key<Sorter.TempVolumeState> tempVolumeStateKey = Session.Key.named("TEMP_VOLUME_STATE");
             Sorter.TempVolumeState tempVolumeState = session().get(tempVolumeStateKey);
             assertTrue(tempVolumeState == null);
-            compareRows(expected, cursor(plan, adapter));
+            compareRows(expected, cursor(plan, queryContext));
             tempVolumeState = session().get(tempVolumeStateKey);
             assertTrue(tempVolumeState == null);
         }
@@ -480,7 +479,7 @@ public class Sort_TreeIT extends OperatorITBase
             row(projectType, 3L),
             row(projectType, 5L),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -507,7 +506,7 @@ public class Sort_TreeIT extends OperatorITBase
             row(projectType, 3L),
             row(projectType, 5L),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     private Ordering ordering(Object... objects)
@@ -524,8 +523,7 @@ public class Sort_TreeIT extends OperatorITBase
 
     private Row intRow(RowType rowType, int x)
     {
-        return new ExpressionRow(rowType,
-                                 UndefBindings.only(), null,
+        return new ExpressionRow(rowType, queryContext,
                                  Arrays.asList((Expression) new LiteralExpression(AkType.INT, x)));
     }
 }

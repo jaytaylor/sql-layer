@@ -46,11 +46,11 @@ public abstract class StoreAdapter
     
     public abstract void deleteRow (Row oldRow);
 
-    public abstract Cursor sort(Cursor input,
+    public abstract Cursor sort(QueryContext context,
+                                Cursor input,
                                 RowType rowType,
                                 API.Ordering ordering,
-                                API.SortOption sortOption,
-                                QueryContext context);
+                                API.SortOption sortOption);
 
     public abstract void checkQueryCancelation(long queryStartMsec);
 

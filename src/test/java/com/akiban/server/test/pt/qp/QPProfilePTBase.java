@@ -16,10 +16,9 @@
 package com.akiban.server.test.pt.qp;
 
 import com.akiban.ais.model.*;
-import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Limit;
-import com.akiban.qp.operator.UndefBindings;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.persistitadapter.PersistitRowLimit;
@@ -112,14 +111,9 @@ public class QPProfilePTBase extends PTBase
 
     protected void compareRows(RowBase[] expected, Cursor cursor)
     {
-        compareRows(expected, cursor, NO_BINDINGS);
-    }
-
-    protected void compareRows(RowBase[] expected, Cursor cursor, Bindings bindings)
-    {
         List<RowBase> actualRows = new ArrayList<RowBase>(); // So that result is viewable in debugger
         try {
-            cursor.open(bindings);
+            cursor.open();
             RowBase actualRow;
             while ((actualRow = cursor.next()) != null) {
                 int count = actualRows.size();
@@ -141,7 +135,7 @@ public class QPProfilePTBase extends PTBase
     {
         int count;
         try {
-            cursor.open(NO_BINDINGS);
+            cursor.open();
             count = 0;
             List<RowBase> actualRows = new ArrayList<RowBase>(); // So that result is viewable in debugger
             RowBase actualRow;
@@ -170,9 +164,9 @@ public class QPProfilePTBase extends PTBase
         return equal;
     }
 
-    protected static final Bindings NO_BINDINGS = UndefBindings.only();
     protected static final Limit NO_LIMIT = new PersistitRowLimit(ScanLimit.NONE);
 
     protected Schema schema;
     protected PersistitAdapter adapter;
+    protected QueryContext queryContext;
 }

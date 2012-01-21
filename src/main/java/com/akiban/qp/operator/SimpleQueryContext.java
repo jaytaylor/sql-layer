@@ -22,7 +22,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 
 /** A {@link QueryContext} for use without a server for internal plans / testing. */
-public final class SimpleQueryContext extends QueryContextBase
+public class SimpleQueryContext extends QueryContextBase
 {
     private StoreAdapter adapter;
 

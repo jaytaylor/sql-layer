@@ -47,19 +47,19 @@ import java.util.concurrent.atomic.AtomicLong;
 public class Sorter
 {
     public Sorter(PersistitAdapter adapter, 
+                  QueryContext context,
                   Cursor input, 
                   RowType rowType, 
                   API.Ordering ordering,
-                  API.SortOption sortOption,
-                  QueryContext context)
+                  API.SortOption sortOption)
         throws PersistitException
     {
         this.adapter = adapter;
+        this.context = context;
         this.input = input;
         this.queryStartTimeMsec = context.getStartTime();
         this.rowType = rowType;
         this.ordering = ordering.copy();
-        this.context = context;
         String sortTreeName = SORT_TREE_NAME_PREFIX + SORTER_ID_GENERATOR.getAndIncrement();
         this.exchange =
             SORT_USING_TEMP_VOLUME

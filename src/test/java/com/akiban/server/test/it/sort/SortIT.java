@@ -17,9 +17,9 @@ package com.akiban.server.test.it.sort;
 
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.RowsBuilder;
 import com.akiban.qp.operator.TestOperator;
-import com.akiban.qp.operator.UndefBindings;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.sort.Sorter;
 import com.akiban.qp.row.Row;
@@ -43,16 +43,17 @@ public final class SortIT extends ITBase {
         PersistitAdapter adapter = persistitAdapter(schema);
         TestOperator inputOperator = new TestOperator(rowsBuilder);
 
-        Cursor inputCursor = API.cursor(inputOperator, adapter);
-        inputCursor.open(UndefBindings.only());
+        QueryContext context = queryContext(adapter);
+        Cursor inputCursor = API.cursor(inputOperator, context);
+        inputCursor.open();
         API.Ordering ordering = new API.Ordering();
         ordering.append(new FieldExpression(inputOperator.rowType(), 0), true);
         Sorter sorter = new Sorter(adapter,
+                                   context,
                                    inputCursor,
                                    inputOperator.rowType(),
                                    ordering,
-                                   API.SortOption.PRESERVE_DUPLICATES,
-                                   UndefBindings.only());
+                                   API.SortOption.PRESERVE_DUPLICATES);
         Cursor sortedCursor = sorter.sort();
 
         // check expected output

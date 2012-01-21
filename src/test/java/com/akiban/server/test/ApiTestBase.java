@@ -39,6 +39,8 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.AkServerInterface;
@@ -308,6 +310,10 @@ public class ApiTestBase {
 
     protected final PersistitAdapter persistitAdapter(Schema schema) {
         return new PersistitAdapter(schema, persistitStore(), treeService(), session(), configService());
+    }
+
+    protected final QueryContext queryContext(PersistitAdapter adapter) {
+        return new SimpleQueryContext(adapter);
     }
 
     protected final MemcacheService memcache() {

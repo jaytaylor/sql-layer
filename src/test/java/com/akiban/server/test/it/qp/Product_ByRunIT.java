@@ -119,7 +119,7 @@ public class Product_ByRunIT extends OperatorITBase
                                 addressRowType,
                                 INNER_JOIN);
         Operator plan = product_ByRun(flattenCA, flattenCO.rowType(), flattenCA.rowType());
-        scan(cursor(plan, adapter));
+        scan(cursor(plan, queryContext));
     }
 
     @Test(expected = IncompatibleRowException.class)
@@ -143,7 +143,7 @@ public class Product_ByRunIT extends OperatorITBase
                                 addressRowType,
                                 INNER_JOIN);
         Operator plan = product_ByRun(flattenCA, flattenCO.rowType(), flattenCA.rowType());
-        scan(cursor(plan, adapter));
+        scan(cursor(plan, queryContext));
     }
 
     @Test
@@ -170,7 +170,7 @@ public class Product_ByRunIT extends OperatorITBase
                                 INNER_JOIN);
         Operator plan = product_ByRun(flattenCA, flattenCO.rowType(), flattenCA.rowType());
         RowType coaRowType = plan.rowType();
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2000L, 2L, "222 2000 st"),
             row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2000L, 2L, "222 2000 st"),
@@ -208,7 +208,7 @@ public class Product_ByRunIT extends OperatorITBase
                                 INNER_JOIN);
         Operator plan = product_ByRun(flattenCA, flattenCO.rowType(), flattenCA.rowType());
         RowType coaRowType = plan.rowType();
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2000L, 2L, "222 2000 st"),
             row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2000L, 2L, "222 2000 st"),

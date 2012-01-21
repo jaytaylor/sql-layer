@@ -86,6 +86,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
                           createNewRow(c, 28L, 2L, "c28"),
         };
         adapter = persistitAdapter(schema);
+        queryContext = queryContext(adapter);
         use(db);
     }
 
@@ -131,7 +132,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
                 indexScan_Default(aValueIndexRowType),
                 branchLookup_Nested(rabc, aValueIndexRowType, rRowType, LookupOption.DISCARD_INPUT, 0),
                 0);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             // Each r row, and everything below it, is duplicated, because the A index refers to each r value twice.
             row(rRowType, 1L, "r1"),
@@ -179,7 +180,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
                     LookupOption.DISCARD_INPUT),
                 branchLookup_Nested(rabc, aRowType, rRowType, LookupOption.DISCARD_INPUT, 0),
                 0);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             // Each r row, and everything below it, is duplicated, because the A index refers to each r value twice.
             row(rRowType, 1L, "r1"),
@@ -224,7 +225,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
                     Collections.singleton(aRowType)),
                 branchLookup_Nested(rabc, aRowType, bRowType, LookupOption.DISCARD_INPUT, 0),
                 0);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(bRowType, 15L, 1L, "b15"),
             row(bRowType, 16L, 1L, "b16"),
@@ -251,7 +252,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
                     0),
                 branchLookup_Nested(rabc, bRowType, cRowType, LookupOption.KEEP_INPUT, 1),
                 1);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(bRowType, 15L, 1L, "b15"),
             row(cRowType, 17L, 1L, "c17"),

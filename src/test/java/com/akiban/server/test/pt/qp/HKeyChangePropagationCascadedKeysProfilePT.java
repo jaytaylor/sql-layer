@@ -17,9 +17,8 @@ package com.akiban.server.test.pt.qp;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.UndefBindings;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
@@ -85,6 +84,7 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
         child2RowType = schema.userTableRowType(userTable(child2));
         group = groupTable(grandparent);
         adapter = persistitAdapter(schema);
+        queryContext = queryContext(adapter);
     }
 
     @Override
@@ -150,7 +150,7 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
                            new UpdateFunction()
                            {
                                @Override
-                               public Row evaluate(Row original, Bindings bindings)
+                               public Row evaluate(Row original, QueryContext context)
                                {
                                    OverlayingRow updatedRow = new OverlayingRow(original);
                                    updatedRow.overlay(0, original.eval(0).getInt() - 1000000);
@@ -177,7 +177,7 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
                             Tap.setEnabled(".*propagate.*", true);
                             start = System.nanoTime();
                         }
-                        updatePlan.run(NO_BINDINGS, adapter);
+                        updatePlan.run(queryContext);
                         return start;
                     }
                 });
@@ -192,6 +192,4 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
         System.out.println(String.format("scans: %s, db: %s/%s/%s, time: %s",
                                          SCANS, GRANDPARENTS, PARENTS_PER_GRANDPARENT, CHILDREN_PER_PARENT, sec));
     }
-
-    private static final Bindings NO_BINDINGS = UndefBindings.only();
 }

@@ -22,7 +22,6 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.UndefBindings;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -116,7 +115,7 @@ public class IfEmptyIT extends OperatorITBase
             row(orderRowType, 200L, 2L, "david"),
             row(orderRowType, 201L, 2L, "david"),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -135,7 +134,7 @@ public class IfEmptyIT extends OperatorITBase
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 999L, 999L, "herman"),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     private IndexKeyRange cidKeyRange(int cid)
