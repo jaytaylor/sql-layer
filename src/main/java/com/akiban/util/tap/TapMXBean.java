@@ -13,14 +13,25 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.stats;
+package com.akiban.util.tap;
 
-import com.akiban.util.tap.TapReport;
+public interface TapMXBean {
 
-public interface StatisticsService {
+    public void enableAll();
 
-    public void setEnabled(final String regExPattern, final boolean on); 
+    public void disableAll();
+
+    public void setEnabled(final String regExPattern, final boolean on);
+
+    public void setCustomTap(final String regExPattern, final String className)
+            throws Exception;
+
     public void reset(final String regExPattern);
-    public TapReport[] getReport(final String regExPattern);    
-    
+
+    public void resetAll();
+
+    public String getReport();
+
+    public TapReport[] getReports(final String regExPattern);
+
 }

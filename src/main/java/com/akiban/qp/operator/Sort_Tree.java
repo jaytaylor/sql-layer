@@ -18,7 +18,7 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 
 import java.util.Collections;
 import java.util.List;
