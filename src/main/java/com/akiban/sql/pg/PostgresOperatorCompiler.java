@@ -29,7 +29,8 @@ import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.ais.model.Column;
 
-import com.akiban.server.error.ParseException;
+import com.akiban.server.error.SQLParseException;
+import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.service.EventTypes;
 
 import org.slf4j.Logger;
@@ -58,8 +59,11 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
             return generate(server, parser.parseStatement(sql), 
                             parser.getParameterList(), paramTypes);
         } 
-        catch (StandardException e) {
-            throw new ParseException("", e.getMessage(), sql);
+        catch (SQLParserException ex) {
+            throw new SQLParseException(ex);
+        }
+        catch (StandardException ex) {
+            throw new SQLParserInternalException(ex);
         }
     }
 

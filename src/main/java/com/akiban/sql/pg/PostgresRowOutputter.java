@@ -23,10 +23,9 @@ import java.io.IOException;
 
 public class PostgresRowOutputter extends PostgresOutputter<Row>
 {
-    public PostgresRowOutputter(PostgresMessenger messenger, 
-                                PostgresQueryContext context,
+    public PostgresRowOutputter(PostgresQueryContext context,
                                 PostgresBaseStatement statement) {
-        super(messenger, context, statement);
+        super(context, statement);
     }
 
     @Override

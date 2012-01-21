@@ -24,6 +24,7 @@ import com.akiban.sql.server.ServerTransaction;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.SQLParser;
+import com.akiban.sql.parser.SQLParserException;
 import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.qp.loadableplan.LoadablePlan;
@@ -71,7 +72,7 @@ public class PostgresServerConnection extends ServerSessionBase
     
     private boolean instrumentationEnabled = false;
     private String sql;
-
+    
     public PostgresServerConnection(PostgresServer server, Socket socket, 
                                     int pid, int secret,
                                     ServerServiceRequirements reqs) {
@@ -231,6 +232,13 @@ public class PostgresServerConnection extends ServerSessionBase
             messenger.writeString(errorCode.getFormattedValue());
             messenger.write('M');
             messenger.writeString(message);
+            if (exception instanceof BaseSQLException) {
+                int pos = ((BaseSQLException)exception).getErrorPosition();
+                if (pos > 0) {
+                    messenger.write('P');
+                    messenger.writeString(Integer.toString(pos));
+                }
+            }
             messenger.write(0);
             messenger.sendMessage(true);
         }
@@ -260,21 +268,15 @@ public class PostgresServerConnection extends ServerSessionBase
             logger.debug("Version {}.{}", (version >> 16), (version & 0xFFFF));
         }
 
-        properties = new Properties();
+        Properties clientProperties = new Properties(server.getProperties());
         while (true) {
             String param = messenger.readString();
             if (param.length() == 0) break;
             String value = messenger.readString();
-            properties.put(param, value);
+            clientProperties.put(param, value);
         }
-        logger.debug("Properties: {}", properties);
-        String enc = properties.getProperty("client_encoding");
-        if (enc != null) {
-            if ("UNICODE".equals(enc))
-                messenger.setEncoding("UTF-8");
-            else
-                messenger.setEncoding(enc);
-        }
+        logger.debug("Properties: {}", clientProperties);
+        setProperties(clientProperties);
 
         // Get initial version of AIS.
         session = reqs.sessionService().createSession();
@@ -375,8 +377,12 @@ public class PostgresServerConnection extends ServerSessionBase
             try {
                 sessionTracer.beginEvent(EventTypes.PARSE);
                 stmts = parser.parseStatements(sql);
-            } catch (StandardException ex) {
-                throw new ParseException ("", ex.getMessage(), sql);
+            } 
+            catch (SQLParserException ex) {
+                throw new SQLParseException(ex);
+            }
+            catch (StandardException ex) {
+                throw new SQLParserInternalException(ex);
             }
             finally {
                 sessionTracer.endEvent();
@@ -417,8 +423,12 @@ public class PostgresServerConnection extends ServerSessionBase
                 sessionTracer.beginEvent(EventTypes.PARSE);
                 stmt = parser.parseStatement(sql);
                 params = parser.getParameterList();
-            } catch (StandardException ex) {
-                throw new ParseException ("", ex.getMessage(), sql);
+            } 
+            catch (SQLParserException ex) {
+                throw new SQLParseException(ex);
+            }
+            catch (StandardException ex) {
+                throw new SQLParserInternalException(ex);
             }
             finally {
                 sessionTracer.endEvent();
@@ -687,14 +697,15 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     @Override
-    public void setProperty(String key, String value) {
+    protected boolean propertySet(String key, String value) {
         if ("client_encoding".equals(key)) {
             if ("UNICODE".equals(value))
                 messenger.setEncoding("UTF-8");
             else
                 messenger.setEncoding(value);
+            return true;
         }
-        super.setProperty(key, value);
+        return super.propertySet(key, value);
     }
 
     /* MBean-related access */

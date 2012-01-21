@@ -16,7 +16,7 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.ParseException;
+import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.error.UnsupportedParametersException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.dxl.DXLFunctionsHook;
@@ -103,8 +103,9 @@ public class PostgresDDLStatement implements PostgresStatement
                 // TODO: Need to store persistently in AIS (or its extension).
                 try {
                     ((AISBinder)server.getAttribute("aisBinder")).addView(new ViewDefinition(ddl, server.getParser()));
-                } catch (StandardException ex) {
-                    throw new ParseException ("", ex.getMessage(), ddl.toString());
+                } 
+                catch (StandardException ex) {
+                    throw new SQLParserInternalException(ex);
                 }
                 break;
             case NodeTypes.DROP_VIEW_NODE:

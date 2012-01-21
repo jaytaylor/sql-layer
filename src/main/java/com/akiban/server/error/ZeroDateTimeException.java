@@ -12,12 +12,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
+
 package com.akiban.server.error;
 
-import com.akiban.sql.parser.QueryTreeNode;
-
-public class AmbiguousColumNameException extends BaseSQLException {
-    public AmbiguousColumNameException (String columnName, QueryTreeNode referenceNode) {
-        super(ErrorCode.AMBIGUOUS_COLUMN_NAME, columnName, referenceNode);
+public final class ZeroDateTimeException extends InvalidOperationException {
+    public ZeroDateTimeException() {
+        super(ErrorCode.ZERO_DATE_TIME);
     }
 }

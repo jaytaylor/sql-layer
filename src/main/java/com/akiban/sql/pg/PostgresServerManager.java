@@ -17,7 +17,6 @@ package com.akiban.sql.pg;
 
 import com.akiban.sql.server.ServerServiceRequirements;
 
-import com.akiban.server.error.InvalidPortException;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
@@ -29,6 +28,7 @@ import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
+
 import com.google.inject.Inject;
 
 /** The PostgreSQL server service.
@@ -61,17 +61,8 @@ public class PostgresServerManager implements PostgresService, Service<PostgresS
     }
 
     public void start() throws ServiceStartupException {
-        String portString = reqs.config().getProperty("akserver.postgres.port");
-        int port = Integer.parseInt(portString);
-        String capacityString = reqs.config().getProperty("akserver.postgres.statementCacheCapacity");
-        int statementCacheCapacity = Integer.parseInt(capacityString);
-
-        if (port > 0) {
-            server = new PostgresServer(port, statementCacheCapacity, reqs);
-            server.start();
-        } else {
-            throw new InvalidPortException(port);
-        }
+        server = new PostgresServer(reqs);
+        server.start();
     }
 
     public void stop() {

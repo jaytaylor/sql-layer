@@ -15,8 +15,11 @@
 
 package com.akiban.server.error;
 
-public final class ParseException extends InvalidOperationException {
-    public ParseException(String schemaName, String message, String ddl) {
-        super(ErrorCode.PARSE_EXCEPTION, schemaName, message, ddl);
+import com.akiban.sql.StandardException;
+
+public final class SQLParserInternalException extends InvalidOperationException {
+    public SQLParserInternalException(StandardException cause) {
+        super(ErrorCode.SQL_PARSER_INTERNAL_EXCEPTION, cause.getMessage());
+        initCause(cause);
     }
 }
