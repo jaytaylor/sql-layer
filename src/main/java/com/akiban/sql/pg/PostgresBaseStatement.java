@@ -15,13 +15,11 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.qp.operator.ArrayBindings;
-import com.akiban.qp.operator.Bindings;
-import com.akiban.server.expression.EnvironmentExpressionSetting;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.service.dxl.DXLFunctionsHook;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
-import com.akiban.sql.server.ServerParameterDecoder;
+import com.akiban.server.types.AkType;
 import com.akiban.util.Tap;
 
 import java.io.IOException;
@@ -35,22 +33,17 @@ public abstract class PostgresBaseStatement implements PostgresStatement
     private List<String> columnNames;
     private List<PostgresType> columnTypes;
     private PostgresType[] parameterTypes;
-    private List<EnvironmentExpressionSetting> environmentSettings;
 
-    protected PostgresBaseStatement(PostgresType[] parameterTypes,
-                                    List<EnvironmentExpressionSetting> environmentSettings) {
+    protected PostgresBaseStatement(PostgresType[] parameterTypes) {
         this.parameterTypes = parameterTypes;
-        this.environmentSettings = environmentSettings;
     }
 
     protected PostgresBaseStatement(List<String> columnNames, 
                                     List<PostgresType> columnTypes,
-                                    PostgresType[] parameterTypes,
-                                    List<EnvironmentExpressionSetting> environmentSettings) {
+                                    PostgresType[] parameterTypes) {
         this.columnNames = columnNames;
         this.columnTypes = columnTypes;
         this.parameterTypes = parameterTypes;
-        this.environmentSettings = environmentSettings;
     }
 
     public List<String> getColumnNames() {
@@ -67,10 +60,6 @@ public abstract class PostgresBaseStatement implements PostgresStatement
 
     public PostgresType[] getParameterTypes() {
         return parameterTypes;
-    }
-
-    public List<EnvironmentExpressionSetting> getEnvironmentSettings() {
-        return environmentSettings;
     }
 
     public void sendDescription(PostgresServerSession server, boolean always) 
@@ -100,10 +89,6 @@ public abstract class PostgresBaseStatement implements PostgresStatement
         messenger.sendMessage();
     }
 
-    protected Bindings getBindings() {
-        return new ArrayBindings(0);
-    }
-
     protected int getNParameters() {
         if (parameterTypes == null)
             return 0;
@@ -111,23 +96,15 @@ public abstract class PostgresBaseStatement implements PostgresStatement
             return parameterTypes.length;
     }
 
-    protected Bindings getParameterBindings(Object[] parameters) {
-        ServerParameterDecoder decoder = new ServerParameterDecoder();
-        ArrayBindings bindings = new ArrayBindings(parameters.length);
+    protected void decodeParameters(QueryContext context, Object[] parameters) {
         for (int i = 0; i < parameters.length; i++) {
             PostgresType pgType = (parameterTypes == null) ? null : parameterTypes[i];
-            bindings.set(i, decoder.decodeParameter(parameters[i], pgType));
-        }
-        return bindings;
-    }
-
-    protected void setEnvironmentBindings(PostgresServerSession session, 
-                                          Bindings bindings) {
-        if (environmentSettings != null) {
-            int position = getNParameters();
-            for (EnvironmentExpressionSetting environmentSetting : environmentSettings) {
-                bindings.set(position++, session.getEnvironmentValue(environmentSetting));
-            }
+            AkType akType = null;
+            if (pgType != null)
+                akType = pgType.getAkType();
+            if (akType == null)
+                akType = AkType.VARCHAR;
+            context.setValue(i, parameters[i], akType);
         }
     }
 

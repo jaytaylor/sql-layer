@@ -18,7 +18,7 @@ package com.akiban.sql.pg;
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectCursor;
-import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.service.session.Session;
 import com.akiban.util.Tap;
 
@@ -60,18 +60,6 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
     }
 
     @Override
-    public Bindings getBindings() {
-        return PostgresLoadablePlan.getBindings(args);
-    }
-
-    @Override
-    public PostgresStatement getBoundStatement(Object[] parameters,
-                                               boolean[] columnBinary, 
-                                               boolean defaultColumnBinary) {
-        return this;
-    }
-
-    @Override
     public TransactionMode getTransactionMode() {
         return TransactionMode.NONE;
     }
@@ -85,17 +73,17 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
     }
 
     @Override
-    public int execute(PostgresServerSession server, int maxrows) throws IOException {
+    public int execute(PostgresServerSession server, QueryContext context, int maxrows) throws IOException {
         PostgresMessenger messenger = server.getMessenger();
-        Bindings bindings = getBindings();
         Session session = server.getSession();
         int nrows = 0;
         DirectObjectCursor cursor = null;
         PostgresOutputter<List<?>> outputter = null;
         PostgresDirectObjectCopier copier = null;
+        PostgresLoadablePlan.setParameters(context, args);
         try {
-            cursor = plan.cursor(session);
-            cursor.open(bindings);
+            cursor = plan.cursor(context);
+            cursor.open();
             List<?> row;
             if (useCopy) {
                 outputter = copier = new PostgresDirectObjectCopier(messenger, this);
