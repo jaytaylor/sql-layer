@@ -176,7 +176,6 @@ class IfEmpty_Default extends Operator
                 this.evaluations = new ArrayList<ExpressionEvaluation>();
                 for (Expression outerJoinRowExpression : expressions) {
                     ExpressionEvaluation eval = outerJoinRowExpression.evaluation();
-                    eval.of(context);
                     evaluations.add(eval);
                 }
             }

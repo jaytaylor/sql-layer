@@ -203,7 +203,6 @@ class Sort_InsertionLimited extends Operator
             evaluations = new ArrayList<ExpressionEvaluation>(nsort);
             for (int i = 0; i < nsort; i++) {
                 ExpressionEvaluation evaluation = ordering.expression(i).evaluation();
-                evaluation.of(context);
                 evaluations.add(evaluation);
             }
         }

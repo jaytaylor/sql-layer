@@ -72,7 +72,7 @@ public abstract class QueryContextBase implements QueryContext
     {
         FromObjectValueSource source = new FromObjectValueSource();
         source.setReflectively(value);
-        setValue(index, value);
+        setValue(index, source);
     }
 
     @Override
@@ -80,7 +80,7 @@ public abstract class QueryContextBase implements QueryContext
     {
         FromObjectValueSource source = new FromObjectValueSource();
         source.setReflectively(value);
-        setValue(index, value, type);
+        setValue(index, source, type);
     }
 
     @Override
