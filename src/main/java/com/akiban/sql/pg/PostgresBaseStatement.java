@@ -22,7 +22,7 @@ import com.akiban.server.service.dxl.DXLFunctionsHook;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.server.ServerParameterDecoder;
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 
 import java.io.IOException;
 import java.util.List;

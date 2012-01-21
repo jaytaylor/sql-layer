@@ -24,7 +24,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 
 import java.util.*;
 

@@ -33,7 +33,7 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.*;
 import com.akiban.server.service.EventTypes;
 
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -664,14 +664,15 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     @Override
-    protected void propertySet(String key, String value) {
+    protected boolean propertySet(String key, String value) {
         if ("client_encoding".equals(key)) {
             if ("UNICODE".equals(value))
                 messenger.setEncoding("UTF-8");
             else
                 messenger.setEncoding(value);
+            return true;
         }
-        super.propertySet(key, value);
+        return super.propertySet(key, value);
     }
 
     /* MBean-related access */

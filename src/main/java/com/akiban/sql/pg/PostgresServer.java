@@ -20,6 +20,7 @@ import com.akiban.sql.server.ServerStatementCache;
 
 import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.server.error.InvalidPortException;
+import com.akiban.qp.loadableplan.ServerServiceRequirementsReceiver;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -343,6 +344,9 @@ public class PostgresServer implements Runnable, PostgresMXBean {
                 try {
                     Class klass = Class.forName(className);
                     LoadablePlan<?> loadablePlan = (LoadablePlan)klass.newInstance();
+                    if (loadablePlan instanceof ServerServiceRequirementsReceiver) {
+                        ((ServerServiceRequirementsReceiver)loadablePlan).setServerServiceRequirements(reqs);
+                    }
                     LoadablePlan<?> prev = loadablePlans.put(loadablePlan.name(), loadablePlan);
                     assert (prev == null) : className;
                 }

@@ -80,8 +80,8 @@ public abstract class ServerSessionBase implements ServerSession
     @Override
     public void setProperty(String key, String value) {
         properties.setProperty(key, value);
-        propertySet(key, value);
-        sessionChanged();
+        if (!propertySet(key, value))
+            sessionChanged();   // Give individual handlers a chance.
     }
 
     protected void setProperties(Properties properties) {
@@ -92,10 +92,12 @@ public abstract class ServerSessionBase implements ServerSession
         sessionChanged();
     }
 
-    protected void propertySet(String key, String value) {
+    protected boolean propertySet(String key, String value) {
         if ("zeroDateTimeBehavior".equals(key)) {
             zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.fromProperty(value);
+            return true;
         }
+        return false;
     }
 
     protected abstract void sessionChanged();
