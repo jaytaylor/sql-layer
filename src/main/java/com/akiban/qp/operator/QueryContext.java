@@ -19,6 +19,7 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 
@@ -143,4 +144,9 @@ public interface QueryContext
      * the implementation.
      */
     public void notifyClient(NOTIFICATION_LEVEL level, ErrorCode errorCode, String message);
+
+    /**
+     * Send a warning notification to the remote client from the given exception.
+     */
+    public void warnClient(InvalidOperationException exception);
 }
