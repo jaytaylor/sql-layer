@@ -689,6 +689,7 @@ public class PostgresServerConnection extends ServerSessionBase
     public void notifyClient(QueryContext.NOTIFICATION_LEVEL level, ErrorCode errorCode, String message) 
             throws IOException {
         if (level.ordinal() <= maxNotificationLevel.ordinal()) {
+            Object state = messenger.suspendMessage();
             messenger.beginMessage(PostgresMessages.NOTICE_RESPONSE_TYPE.code());
             messenger.write('S');
             switch (level) {
@@ -711,6 +712,7 @@ public class PostgresServerConnection extends ServerSessionBase
             messenger.writeString(message);
             messenger.write(0);
             messenger.sendMessage(true);
+            messenger.resumeMessage(state);
         }
     }
 
