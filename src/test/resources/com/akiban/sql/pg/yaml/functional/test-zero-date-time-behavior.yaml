@@ -1,4 +1,4 @@
-# Test the ADDDATE() function
+# Test MySQL zero date/time handling option.
 ---
 - Include: all-types-schema.yaml
 ---
