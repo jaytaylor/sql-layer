@@ -16,6 +16,7 @@
 package com.akiban.qp.operator;
 
 import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.server.error.ErrorCode;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
@@ -60,16 +61,16 @@ public class SimpleQueryContext extends QueryContextBase
     }
 
     @Override
-    public void notifyClient(NOTIFICATION_LEVEL level, String message) {
+    public void notifyClient(NOTIFICATION_LEVEL level, ErrorCode errorCode, String message) {
         switch (level) {
         case WARNING:
-            logger.warn(message);
+            logger.warn("{} {}", errorCode, message);
             break;
         case INFO:
-            logger.info(message);
+            logger.info("{} {}", errorCode, message);
             break;
         case DEBUG:
-            logger.debug(message);
+            logger.debug("{} {}", errorCode, message);
             break;
         }
     }

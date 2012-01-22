@@ -686,7 +686,7 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     @Override
-    public void notifyClient(QueryContext.NOTIFICATION_LEVEL level, String message) 
+    public void notifyClient(QueryContext.NOTIFICATION_LEVEL level, ErrorCode errorCode, String message) 
             throws IOException {
         if (level.ordinal() <= maxNotificationLevel.ordinal()) {
             messenger.beginMessage(PostgresMessages.NOTICE_RESPONSE_TYPE.code());
@@ -702,6 +702,10 @@ public class PostgresServerConnection extends ServerSessionBase
                 messenger.writeString("DEBUG");
                 break;
             // Other possibilities are "NOTICE" and "LOG".
+            }
+            if (errorCode != null) {
+                messenger.write('C');
+                messenger.writeString(errorCode.getFormattedValue());
             }
             messenger.write('M');
             messenger.writeString(message);

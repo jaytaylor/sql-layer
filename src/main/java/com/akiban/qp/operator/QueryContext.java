@@ -18,6 +18,7 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.error.ErrorCode;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 
@@ -141,5 +142,5 @@ public interface QueryContext
      * perhaps immediately or perhaps at its completion, depending on
      * the implementation.
      */
-    public void notifyClient(NOTIFICATION_LEVEL level, String message);
+    public void notifyClient(NOTIFICATION_LEVEL level, ErrorCode errorCode, String message);
 }
