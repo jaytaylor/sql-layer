@@ -20,7 +20,7 @@ import com.akiban.qp.operator.*;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 
 import com.akiban.server.expression.EnvironmentExpressionSetting;
 

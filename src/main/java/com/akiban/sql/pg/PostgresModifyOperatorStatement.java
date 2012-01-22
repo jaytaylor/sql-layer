@@ -26,7 +26,7 @@ import java.io.IOException;
 import com.akiban.qp.operator.UndefBindings;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

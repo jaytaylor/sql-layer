@@ -72,7 +72,7 @@ import com.akiban.server.store.RowCollector;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.util.ArgumentValidation;
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 import com.google.inject.Inject;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;

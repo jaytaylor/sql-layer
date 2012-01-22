@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.util;
+package com.akiban.util.tap;
 
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Constructor;
