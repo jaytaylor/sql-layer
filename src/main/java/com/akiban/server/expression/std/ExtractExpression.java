@@ -439,6 +439,7 @@ public class ExtractExpression extends AbstractUnaryExpression
         
         @Override
         public void of(QueryContext context) {
+            super.of(context);
             this.context = context;
         }
 
@@ -504,7 +505,8 @@ public class ExtractExpression extends AbstractUnaryExpression
             }
             catch (InvalidDateFormatException ex)
             {
-                context.warnClient(ex);
+                if (context != null)
+                    context.warnClient(ex);
                 return NullValueSource.only();
             }
         }
@@ -539,12 +541,14 @@ public class ExtractExpression extends AbstractUnaryExpression
             }
             catch (InconvertibleTypesException ex)
             {
-                context.warnClient(ex);
+                if (context != null)
+                    context.warnClient(ex);
                 return null;
             }
             catch (InvalidDateFormatException ex)
             {
-                context.warnClient(ex);
+                if (context != null)
+                    context.warnClient(ex);
                 return null;
             }
         }
