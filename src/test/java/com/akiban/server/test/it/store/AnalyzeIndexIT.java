@@ -46,7 +46,7 @@ public class AnalyzeIndexIT extends AbstractScanBase {
                 }
             }
             assertEquals(35, histogram.getHistogramSamples().size());
-            assertEquals(99, histogram.getHistogramSamples().get(32)
+            assertEquals(100, histogram.getHistogramSamples().get(34)
                     .getRowCount());
         }
         {
@@ -61,7 +61,7 @@ public class AnalyzeIndexIT extends AbstractScanBase {
                 }
             }
             assertEquals(35, histogram.getHistogramSamples().size());
-            assertEquals(99, histogram.getHistogramSamples().get(32)
+            assertEquals(100, histogram.getHistogramSamples().get(34)
                     .getRowCount());
         }
     }
