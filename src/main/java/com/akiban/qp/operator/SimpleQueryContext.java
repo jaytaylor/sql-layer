@@ -22,9 +22,14 @@ import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /** A {@link QueryContext} for use without a full server for internal plans / testing. */
 public class SimpleQueryContext extends QueryContextBase
 {
+    private static final Logger logger = LoggerFactory.getLogger(SimpleQueryContext.class);
+
     private StoreAdapter adapter;
 
     public SimpleQueryContext(StoreAdapter adapter) {
@@ -52,6 +57,21 @@ public class SimpleQueryContext extends QueryContextBase
     @Override
     public String getSessionUser() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void notifyClient(NOTIFICATION_LEVEL level, String message) {
+        switch (level) {
+        case WARNING:
+            logger.warn(message);
+            break;
+        case INFO:
+            logger.info(message);
+            break;
+        case DEBUG:
+            logger.debug(message);
+            break;
+        }
     }
 
 }

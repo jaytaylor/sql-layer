@@ -127,4 +127,19 @@ public interface QueryContext
      * Get the system time at which the query started.
      */
     public long getStartTime();
+
+    /**
+     * Possible notification levels for {@link #notifyClient}.
+     */
+    public enum NOTIFICATION_LEVEL {
+        WARNING, INFO, DEBUG
+    }
+
+    /**
+     * Send a warning (or other) notification to the remote client.
+     * The message will be delivered as part of the current operation,
+     * perhaps immediately or perhaps at its completion, depending on
+     * the implementation.
+     */
+    public void notifyClient(NOTIFICATION_LEVEL level, String message);
 }
