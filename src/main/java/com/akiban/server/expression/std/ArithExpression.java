@@ -255,9 +255,12 @@ public class ArithExpression extends AbstractBinaryExpression
 
         @Override
         protected long rawLong() 
-        {            
-            return op.evaluate(Extractors.getLongExtractor(left.getConversionType()).getLong(left),
-                    Extractors.getLongExtractor(right.getConversionType()).getLong(right));
+        {
+            return op.evaluate(
+                    Extractors.getLongExtractor(
+                        (left.getConversionType() == AkType.VARCHAR ? topT : left.getConversionType())).getLong(left),
+                    Extractors.getLongExtractor(
+                        (right.getConversionType() == AkType.VARCHAR ? topT : right.getConversionType())).getLong(right));
         }
 
         @Override
