@@ -18,12 +18,15 @@ package com.akiban.server.test.it.keyupdate;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.util.tap.Tap;
+import com.akiban.util.tap.TapReport;
 import org.junit.Test;
 
 import java.util.*;
 
 import static com.akiban.server.test.it.keyupdate.Schema.*;
 import static junit.framework.Assert.*;
+import static junit.framework.Assert.assertEquals;
 
 public class KeyUpdateIT extends KeyUpdateBase
 {
@@ -34,10 +37,14 @@ public class KeyUpdateIT extends KeyUpdateBase
         TestRow oldRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L, itemRowDef, 222L));
         TestRow newRow = copyRow(oldRow);
         updateRow(newRow, i_oid, 0L, null);
+        startMonitoringHKeyPropagation();
         dbUpdate(oldRow, newRow);
+        checkHKeyPropagation(2, 0);
         checkDB();
         // Revert change
+        startMonitoringHKeyPropagation();
         dbUpdate(newRow, oldRow);
+        checkHKeyPropagation(2, 0);
         checkDB();
         checkInitialState();
     }
@@ -51,10 +58,14 @@ public class KeyUpdateIT extends KeyUpdateBase
         TestRow parent = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L));
         assertNotNull(parent);
         updateRow(newRow, i_iid, 0L, parent);
+        startMonitoringHKeyPropagation();
         dbUpdate(oldRow, newRow);
+        checkHKeyPropagation(2, 0);
         checkDB();
         // Revert change
+        startMonitoringHKeyPropagation();
         dbUpdate(newRow, oldRow);
+        checkHKeyPropagation(2, 0);
         checkDB();
         checkInitialState();
     }
@@ -93,7 +104,9 @@ public class KeyUpdateIT extends KeyUpdateBase
             testStore.deleteTestRow(oldItemRow);
             testStore.writeTestRow(newItemRow);
         }
+        startMonitoringHKeyPropagation();
         dbUpdate(oldOrderRow, newOrderRow);
+        checkHKeyPropagation(2, 6); // 2: 2 calls, 6: 3 items on each call
         checkDB();
         // Revert change
         for (long iid = 221; iid <= 223; iid++) {
@@ -103,7 +116,9 @@ public class KeyUpdateIT extends KeyUpdateBase
             testStore.deleteTestRow(oldItemRow);
             testStore.writeTestRow(newItemRow);
         }
+        startMonitoringHKeyPropagation();
         dbUpdate(newOrderRow, oldOrderRow);
+        checkHKeyPropagation(2, 6);
         checkDB();
         checkInitialState();
     }
@@ -123,7 +138,9 @@ public class KeyUpdateIT extends KeyUpdateBase
             testStore.deleteTestRow(oldItemRow);
             testStore.writeTestRow(newItemRow);
         }
+        startMonitoringHKeyPropagation();
         dbUpdate(oldOrderRow, newOrderRow);
+        checkHKeyPropagation(2, 3); // 3: 3 items become orphans. Not 6, because with oid 0, there are no affected items.
         checkDB();
         // Revert change
         for (long iid = 221; iid <= 223; iid++) {
@@ -133,7 +150,9 @@ public class KeyUpdateIT extends KeyUpdateBase
             testStore.deleteTestRow(oldItemRow);
             testStore.writeTestRow(newItemRow);
         }
+        startMonitoringHKeyPropagation();
         dbUpdate(newOrderRow, oldOrderRow);
+        checkHKeyPropagation(2, 3);
         checkDB();
         checkInitialState();
     }
@@ -163,10 +182,16 @@ public class KeyUpdateIT extends KeyUpdateBase
         TestRow oldCustomerRow = testStore.find(new HKey(customerRowDef, 2L));
         TestRow newCustomerRow = copyRow(oldCustomerRow);
         updateRow(newCustomerRow, c_cid, 0L, null);
+        startMonitoringHKeyPropagation();
         dbUpdate(oldCustomerRow, newCustomerRow);
+        // 9: customers and orders contain their own hkeys, but items do not. So only items will actually
+        // be deleted/reinserted on hkey propagation. Customer 2 has 9 items.
+        checkHKeyPropagation(2, 9);
         checkDB();
         // Revert change
+        startMonitoringHKeyPropagation();
         dbUpdate(newCustomerRow, oldCustomerRow);
+        checkHKeyPropagation(2, 9);
         checkDB();
         checkInitialState();
     }
@@ -191,10 +216,14 @@ public class KeyUpdateIT extends KeyUpdateBase
     public void testItemDelete() throws Exception
     {
         TestRow itemRow = testStore.find(new HKey(customerRowDef, 2L, orderRowDef, 22L, itemRowDef, 222L));
+        startMonitoringHKeyPropagation();
         dbDelete(itemRow);
+        checkHKeyPropagation(1, 0);
         checkDB();
         // Revert change
+        startMonitoringHKeyPropagation();
         dbInsert(itemRow);
+        checkHKeyPropagation(1, 0);
         checkDB();
         checkInitialState();
     }
@@ -211,7 +240,9 @@ public class KeyUpdateIT extends KeyUpdateBase
             testStore.deleteTestRow(oldItemRow);
             testStore.writeTestRow(newItemRow);
         }
+        startMonitoringHKeyPropagation();
         dbDelete(orderRow);
+        checkHKeyPropagation(1, 3);
         checkDB();
         // Revert change
         for (long iid = 221; iid <= 223; iid++) {
@@ -221,7 +252,9 @@ public class KeyUpdateIT extends KeyUpdateBase
             testStore.deleteTestRow(oldItemRow);
             testStore.writeTestRow(newItemRow);
         }
+        startMonitoringHKeyPropagation();
         dbInsert(orderRow);
+        checkHKeyPropagation(1, 3);
         checkDB();
         checkInitialState();
     }
@@ -230,13 +263,42 @@ public class KeyUpdateIT extends KeyUpdateBase
     public void testCustomerDelete() throws Exception
     {
         TestRow customerRow = testStore.find(new HKey(customerRowDef, 2L));
+        startMonitoringHKeyPropagation();
         dbDelete(customerRow);
+        // Why 9: Only items do not contain their own hkeys, and so hkeyPropagateDown deletes/reinserts them.
+        // Customer 2 has 9 items.
+        checkHKeyPropagation(1, 9);
         checkDB();
         // Revert change
+        startMonitoringHKeyPropagation();
         dbInsert(customerRow);
+        checkHKeyPropagation(1, 9);
         checkDB();
         checkInitialState();
     }
+
+    @Test
+    public void testHKeyChangePropagations() throws Exception
+    {
+        TestRow oldRow = testStore.find(new HKey(customerRowDef, 1L));
+        TestRow newRow = copyRow(oldRow);
+        newRow.put(0, 99);
+        startMonitoringHKeyPropagation();
+/*
+        Tap.setEnabled(".*propagate$", true);
+        Tap.reset(".*propagate$");
+*/
+        dbUpdate(oldRow, newRow);
+        checkHKeyPropagation(2, 9);
+/*
+        TapReport[] tapReports = Tap.getReport(".*propagate_hkey_change$");
+        assertEquals(1, tapReports.length);
+        TapReport propagateTap = tapReports[0];
+        // There should be two propagations, one for deletion of the old row, and one for insertion of the new row
+        assertEquals(2, propagateTap.getInCount());
+*/
+    }
+
 
     @Override
     protected void createSchema() throws InvalidOperationException

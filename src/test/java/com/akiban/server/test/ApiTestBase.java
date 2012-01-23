@@ -56,14 +56,13 @@ import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.types.extract.ConverterTestUtils;
 import com.akiban.server.util.GroupIndexCreator;
-import com.akiban.util.Strings;
-import com.akiban.util.TapReport;
+import com.akiban.util.AssertUtils;
+import com.akiban.util.tap.TapReport;
 import com.akiban.util.Undef;
 import com.persistit.Transaction;
 import junit.framework.Assert;
 
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 
 import com.akiban.ais.model.GroupTable;
@@ -94,12 +93,11 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.session.Session;
-import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.MethodRule;
+import org.junit.rules.TestName;
 import org.junit.rules.TestWatchman;
 import org.junit.runners.model.FrameworkMethod;
-import org.junit.runners.model.Statement;
 
 /**
  * <p>Base class for all API tests. Contains a @SetUp that gives you a fresh DDLFunctions and DMLFunctions, plus
@@ -161,6 +159,13 @@ public class ApiTestBase {
     private final Set<RowUpdater> unfinishedRowUpdaters = new HashSet<RowUpdater>();
     private static Collection<Property> lastStartupConfigProperties = null;
     private static boolean lastTestFailed = false;
+    
+    @Rule
+    public static final TestName testName = new TestName();
+    
+    protected String testName() {
+        return testName.getMethodName();
+    }
 
     @Before
     public final void startTestServices() throws Exception {
@@ -464,11 +469,16 @@ public class ApiTestBase {
         dml().writeRow(session(), createNewRow(tableId, values));
     }
 
-    protected final RowUpdater update(int tableId, Object... values) {
-        NewRow oldRow = createNewRow(tableId, values);
+
+    protected final RowUpdater update(NewRow oldRow) {
         RowUpdater updater = new RowUpdaterImpl(oldRow);
         unfinishedRowUpdaters.add(updater);
         return updater;
+    }
+    
+    protected final RowUpdater update(int tableId, Object... values) {
+        NewRow oldRow = createNewRow(tableId, values);
+        return update(oldRow);
     }
 
     protected final int writeRows(NewRow... rows) throws InvalidOperationException {
@@ -613,10 +623,8 @@ public class ApiTestBase {
         Assert.assertEquals("user tables", Collections.<TableName>emptySet(), uTables);
     }
 
-    protected static <T> void assertEqualLists(String message, List<T> expected, List<T> actual) {
-        if (!expected.equals(actual)) {
-            assertEquals(message, Strings.join(expected), Strings.join(actual));
-        }
+    protected static <T> void assertEqualLists(String message, List<? extends T> expected, List<? extends T> actual) {
+        AssertUtils.assertCollectionEquals(message, expected, actual);
     }
 
     protected static class TestException extends RuntimeException {
@@ -724,13 +732,19 @@ public class ApiTestBase {
 
     public interface RowUpdater {
         void to(Object... values);
+        void to(NewRow newRow);
     }
 
     private class RowUpdaterImpl implements RowUpdater {
         @Override
         public void to(Object... values) {
-            boolean removed = unfinishedRowUpdaters.remove(this);
             NewRow newRow = createNewRow(oldRow.getTableId(), values);
+            to(newRow);
+        }
+
+        @Override
+        public void to(NewRow newRow) {
+            boolean removed = unfinishedRowUpdaters.remove(this);
             dml().updateRow(session(), oldRow, newRow, null);
             assertTrue("couldn't remove row updater " + toString(), removed);
         }
@@ -766,5 +780,15 @@ public class ApiTestBase {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+    
+    protected void transactionallyUnchecked(final Runnable runnable) {
+        transactionallyUnchecked(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                runnable.run();
+                return null;
+            }
+        });
     }
 }

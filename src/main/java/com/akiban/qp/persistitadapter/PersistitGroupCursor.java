@@ -23,6 +23,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
@@ -152,6 +153,9 @@ class PersistitGroupCursor implements GroupCursor
     private boolean hKeyDeep;
     private GroupScan groupScan;
 
+    // static state
+    private static final Tap.PointTap TRAVERSE_COUNT = Tap.createCount("traverse_pgc");
+    
     // Inner classes
 
     interface GroupScan
@@ -174,6 +178,7 @@ class PersistitGroupCursor implements GroupCursor
                 PersistitAdapter.CURSOR_FIRST_ROW_TAP.in();
             }
             try {
+                TRAVERSE_COUNT.hit();
                 if (!exchange.traverse(direction, true)) {
                     close();
                 }
@@ -204,6 +209,7 @@ class PersistitGroupCursor implements GroupCursor
                 PersistitAdapter.CURSOR_FIRST_ROW_TAP.in();
             }
             try {
+                TRAVERSE_COUNT.hit();
                 if (!exchange.traverse(direction, true) ||
                     exchange.getKey().firstUniqueByteIndex(controllingHKey) < controllingHKey.getEncodedSize()) {
                     close();
@@ -235,6 +241,7 @@ class PersistitGroupCursor implements GroupCursor
             if (first) {
                 PersistitAdapter.CURSOR_FIRST_ROW_TAP.in();
                 try {
+                    TRAVERSE_COUNT.hit();
                     exchange.fetch();
                     if (!exchange.getValue().isDefined()) {
                         close();

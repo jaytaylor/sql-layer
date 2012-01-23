@@ -18,6 +18,8 @@ package com.akiban.qp.persistitadapter.sort;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
+import static com.akiban.qp.persistitadapter.sort.SortCursor.SORT_TRAVERSE;
+
 class  MixedOrderScanStateUnbounded extends MixedOrderScanState
 {
     @Override
@@ -31,6 +33,7 @@ class  MixedOrderScanStateUnbounded extends MixedOrderScanState
             cursor.exchange.append(Key.AFTER);
             direction = Key.LT;
         }
+        SORT_TRAVERSE.hit();
         return cursor.exchange.traverse(direction, false);
     }
 
