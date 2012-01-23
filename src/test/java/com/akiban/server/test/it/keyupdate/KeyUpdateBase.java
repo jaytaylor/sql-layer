@@ -22,6 +22,8 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.util.tap.Tap;
+import com.akiban.util.tap.TapReport;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -431,6 +433,27 @@ public abstract class KeyUpdateBase extends ITBase {
             return index;
         }
     }
+
+    protected void startMonitoringHKeyPropagation()
+    {
+        Tap.setEnabled(HKEY_PROPAGATION_TAP_PATTERN, true);
+        Tap.reset(HKEY_PROPAGATION_TAP_PATTERN);
+    }
+
+    protected void checkHKeyPropagation(int propagateDownGroupCalls, int propagateDownGroupRowReplace)
+    {
+        for (TapReport report : Tap.getReport(HKEY_PROPAGATION_TAP_PATTERN)) {
+            if (report.getName().endsWith("propagate_hkey_change")) {
+                assertEquals(propagateDownGroupCalls, report.getInCount());
+            } else if (report.getName().endsWith("propagate_hkey_change_row_replace")) {
+                assertEquals(propagateDownGroupRowReplace, report.getInCount());
+            } else {
+                fail();
+            }
+        }
+    }
+
+    private static final String HKEY_PROPAGATION_TAP_PATTERN = ".*propagate_hkey_change.*";
 
     abstract protected void createSchema() throws Exception;
     abstract protected void populateTables() throws Exception;

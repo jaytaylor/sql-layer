@@ -23,6 +23,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.Service;
+import com.akiban.server.service.dxl.DXLTransactionHook;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
@@ -76,7 +77,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Override
     public void start() {
         cache = Collections.synchronizedMap(new WeakHashMap<Index,IndexStatistics>());
-        storeStats = new PersistitStoreIndexStatistics(store, treeService);
+        storeStats = new PersistitStoreIndexStatistics(store, treeService, this);
     }
 
     @Override
@@ -150,19 +151,26 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Override
     public void updateIndexStatistics(Session session, 
                                       Collection<? extends Index> indexes) {
+        final Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics>(indexes.size());
         for (Index index : indexes) {
             try {
                 IndexStatistics indexStatistics = 
                     storeStats.computeIndexStatistics(session, index);
                 if (indexStatistics != null) {
                     storeStats.storeIndexStatistics(session, indexStatistics);
-                    cache.put(index, indexStatistics);
+                    updates.put(index, indexStatistics);
                 }
             }
             catch (PersistitException ex) {
                 throw new PersistitAdapterException(ex);
             }
         }
+        DXLTransactionHook.addCommitSuccessCallback(session, new Runnable() {
+            @Override
+            public void run() {
+                cache.putAll(updates);
+            }
+        });
     }
 
     @Override
@@ -252,5 +260,4 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             }
         }
     }
-
 }

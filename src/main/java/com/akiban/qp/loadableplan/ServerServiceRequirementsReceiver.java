@@ -12,26 +12,17 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
+package com.akiban.qp.loadableplan;
 
-package com.akiban.util;
+import com.akiban.sql.server.ServerServiceRequirements;
+/**
+ * "Temporary" hack to allow PostgresServer to inject a ServerServiceRequirements
+ * instance into a loadable plan.
+ * 
+ * @author peter
+ */
 
-public interface TapMXBean {
+public interface ServerServiceRequirementsReceiver {
 
-    public void enableAll();
-
-    public void disableAll();
-
-    public void setEnabled(final String regExPattern, final boolean on);
-
-    public void setCustomTap(final String regExPattern, final String className)
-            throws Exception;
-
-    public void reset(final String regExPattern);
-
-    public void resetAll();
-
-    public String getReport();
-
-    public TapReport[] getReports(final String regExPattern);
-
+    void setServerServiceRequirements(ServerServiceRequirements reqs);
 }

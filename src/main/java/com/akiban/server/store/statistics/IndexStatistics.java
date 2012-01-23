@@ -102,43 +102,80 @@ public class IndexStatistics
 
     }
 
-    public static class HistogramEntry {
-        private String keyString;
+    public static class HistogramEntry extends HistogramEntryDescription {
         private byte[] keyBytes;
-        private long equalCount, lessCount, distinctCount;
 
         protected HistogramEntry(String keyString, byte[] keyBytes,
                                  long equalCount, long lessCount, long distinctCount) {
-            this.keyString = keyString;
+            super(keyString, equalCount, lessCount, distinctCount);
             this.keyBytes = keyBytes;
-            this.equalCount = equalCount;
-            this.lessCount = lessCount;
+        }
+
+        public byte[] getKeyBytes() {
+            return keyBytes;
+        }
+    }
+    
+    public static class HistogramEntryDescription {
+
+        protected String keyString;
+        protected long equalCount;
+        protected long lessCount;
+        protected long distinctCount;
+
+        public HistogramEntryDescription(String keyString, long equalCount, long lessCount, long distinctCount) {
             this.distinctCount = distinctCount;
+            this.equalCount = equalCount;
+            this.keyString = keyString;
+            this.lessCount = lessCount;
         }
 
         public String getKeyString() {
             return keyString;
         }
-        public byte[] getKeyBytes() {
-            return keyBytes;
-        }
+
         public long getEqualCount() {
             return equalCount;
         }
+
         public long getLessCount() {
             return lessCount;
         }
+
         public long getDistinctCount() {
             return distinctCount;
         }
 
         @Override
+        final public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof HistogramEntryDescription)) return false;
+
+            HistogramEntryDescription that = (HistogramEntryDescription) o;
+
+            return distinctCount == that.distinctCount
+                    && equalCount == that.equalCount
+                    && lessCount == that.lessCount
+                    && keyString.equals(that.keyString);
+
+        }
+
+        @Override
+        final public int hashCode() {
+            int result = keyString.hashCode();
+            result = 31 * result + (int) (equalCount ^ (equalCount >>> 32));
+            result = 31 * result + (int) (lessCount ^ (lessCount >>> 32));
+            result = 31 * result + (int) (distinctCount ^ (distinctCount >>> 32));
+            return result;
+        }
+
+        @Override
         public String toString() {
-            return "{" + keyString +
-                ": = " + equalCount +
-                ", < " + lessCount +
-                ", distinct " + distinctCount +
-                "}";
+            return "{" + getKeyString() +
+                    ": = " + getEqualCount() +
+                    ", < " + getLessCount() +
+                    ", distinct " + getDistinctCount() +
+                    "}";
         }
     }
 

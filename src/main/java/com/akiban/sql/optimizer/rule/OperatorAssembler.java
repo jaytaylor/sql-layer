@@ -61,7 +61,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.GroupTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
