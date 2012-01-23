@@ -16,80 +16,29 @@
 package com.akiban.sql.test;
 
 import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Formatter;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.Locale;
 
 /*
  * creates tests for bitwise math operations
  * */
 public class AllQueryComboCreator extends GenericCreator implements Runnable {
 
-    public static final String STR_METHOD = "[s]=";
-    public static final String DT_METHOD = "[d]=";
-    public static final String INT_METHOD = "[i]=";
-    static final String TARGET_AREA = "query-combo";
-    StringBuilder yaml_file_contents = null;
-    String server = "localhost";
-    String username = "root";
-    String password = "";
-    int counter = 0;
-    StringBuilder sb = new StringBuilder();
-    Formatter formatter = new Formatter(sb, Locale.US);
-    public final String[] QUANTIFIERS = { "Distinct", "All", "" };
-    public final String[] FUNCTION_LIST = { "[s]=%1$s = CONCAT('%2$s','%3$s')",
-            "[s]=%1$s like ('%2$s')" };
-    public final String[] AG_FUNCTION_LIST = { "SUM", "AVG", "COUNT", "MIN",
-            "MAX", "COUNT(*)" };
-    //    sum([all|distinct] expression)
-    //
-    //    Total of the (distinct) values in the expression
-    //
-    //    avg([all|distinct] expression)
-    //
-    //    Average of the (distinct) values in the expression
-    //
-    //    count([all|distinct] expression)
-    //
-    //    Number of (distinct) non-null values in the expression
-    //
-    //    count(*)
-    //
-    //    Number of selected rows
-    //
-    //    max(expression)
-    //
-    //    Highest value in the expression
-    //
-    //    min(expression)
-    //
-    //    Lowest value in the expression
-    String path = System.getProperty("user.dir")
-            + "/src/test/resources/com/akiban/sql/pg/yaml/functional/";
-
-    /**
-     * @param args
-     */
-    public static void main(String[] args) {
-        AllQueryComboCreator b = new AllQueryComboCreator();
-        b.setup();
-        b.run();
+    private void cleanup() {
+        deleteFile("test1");
+        deleteFile("select");
+        deleteFile("where");
+        deleteFile("join");
+        deleteFile("orderby");
+        deleteFile("limit");
     }
 
+    public final String[] NO_FIELDS = new String[0];
     public final String[] INT_FIELDS = { "test.customers.customer_id",
             "test.addresses.customer_id", "test.orders.customer_id",
             "test.orders.order_id" };
@@ -98,10 +47,10 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
             "test.customers.customer_name" }; //, "customers.primary_payment_code", "customers.payment_status", "orders.ship_priority" };
     public final String[] DT_FIELDS = { "test.orders.order_date",
             "test.orders.ship_date" };
-    public final String[] TABLES = { "test.customers", "test.orders",
+    public final String[] TABLES = { "TEST.CUSTOMERS", "test.orders",
             "test.addresses", "test.books", "test.states", "test.items" };
-    final Relationship[] RELATIONSHIPS = {
-            new Relationship("test.customers", "test.orders", "customer_id",
+    final static Relationship[] RELATIONSHIPS = {
+            new Relationship("TEST.CUSTOMERS", "test.orders", "customer_id",
                     "customer_id"),
             new Relationship("test.customers", "test.addresses", "customer_id",
                     "customer_id"),
@@ -109,11 +58,13 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
                     "order_id"),
             new Relationship("test.books", "test.items", "book_id", "book_id"),
             new Relationship("test.states", "test.addresses", "code", "state") };
-
     public final String[] INT_PARAMS = { "-5", "0", "2", "99" };
-    public final String[] STR_PARAMS = { "ABCD", "FONDUE", "CCCCC", "ABDFTERE" };
+    public final String[] STR_PARAMS = { "New York", "FONDUE", "CCCCC",
+            "ABDFTERE" };
     public final String[] DT_PARAMS = { "1999-03-04", "2012-12-31" };
-
+    public final int[] LIMITS = { 1, 2, 100, 0 };
+    int master_counter = 0;
+    
     //  SELECT [ <set quantifier> ] <select list> <table expression>
     //    <table expression>    ::= 
     //            <from clause>
@@ -122,27 +73,20 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
     //            [ <having clause> ]
     // order by
     // limit 
-
     // subquery
-
     // complex joins (number, conditions)
 
+    BufferedWriter master_writer;
+    HashSet<HashSet<String>> select_fields;
+    HashSet<String> string_array;
+
     public void setup() {
+        TARGET_AREA = "query-combo";
 
-    }
-
-    @Override
-    public void run() {
-        HashSet<String> string_array;
-        HashSet<HashSet<String>> select_fields;
-        BufferedWriter master_writer;
         // only needed when changing data loads
         //loadData();
 
-        yaml_file_contents = new StringBuilder(header());
-
         string_array = new HashSet<String>();
-
         string_array.addAll(new ArrayList<String>(Arrays.asList(STR_FIELDS)));
         string_array.addAll(new ArrayList<String>(Arrays.asList(INT_FIELDS)));
         string_array.addAll(new ArrayList<String>(Arrays.asList(DT_FIELDS)));
@@ -153,87 +97,95 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
         System.out.println(eol + "" + (System.currentTimeMillis() - time)
                 + " ms");
         System.out.println(select_fields.size());
+    }
+
+    @Override
+    public void run() {
+        master_writer = getAppender("test1");
         
-        ArrayList<SQLStatement> stmt_list =  new ArrayList<AllQueryComboCreator.SQLStatement>();
-        Iterator<HashSet<String>> i = select_fields.iterator();
-        while (i.hasNext()) {
-            SQLStatement temp = new SQLStatement();
-            
-            temp.setRoot_string_array(new HashSet<String>(i.next()));
-            temp.setFields(turnArrayToCommaDelimtedList(temp.getRoot_string_array()));
-            temp.setTableList(temp.getRoot_string_array().toString());
-            if (!stmt_list.contains(temp)) {
-                stmt_list.add(temp);
-            } else {
-                System.out.println("dup");
-            }
+        // select str fields from where_str
+        SQLStatementGenerator stmt = new SQLStatementGenerator();
+        for (int x=0;x < STR_PARAMS.length;x++) {
+            stmt = new SQLStatementGenerator();
+            stmt.setRoot_string_array(STR_FIELDS);
+            stmt = modifySQLforWhereClause(stmt, x, STR_PARAMS,
+                    STR_METHOD);
+            writeYamlBlock(master_writer, stmt.getSQL());
+         // select str fields from where_str limit
+            modifyAndSaveWithLimits(master_writer, stmt);
+         // select str fields from where_str order by limit
+            modifyAndSaveWithOrderBy(master_writer, stmt);
+            stmt.clearLimit();
+            // select str fields from where_str order by 
+            modifyAndSaveWithOrderBy(master_writer, stmt);
+         // select str fields from where_str join order by (limit)
+            justJoinIterations(master_writer, stmt);
         }
+        for (int x=0;x < INT_PARAMS.length;x++) {
+            stmt = new SQLStatementGenerator();
+            
+            stmt.setRoot_int_array(INT_FIELDS);
+            stmt = modifySQLforWhereClause(stmt, x, INT_PARAMS,
+                    INT_METHOD);
+            writeYamlBlock(master_writer, stmt.getSQL());
+         // select str fields from where_str limit
+            modifyAndSaveWithLimits(master_writer, stmt);
+         // select str fields from where_str order by limit
+            modifyAndSaveWithOrderBy(master_writer, stmt);
+            stmt.clearLimit();
+            // select str fields from where_str order by 
+            modifyAndSaveWithOrderBy(master_writer, stmt);
+         // select str fields from where_str join order by (limit)
+            justJoinIterations(master_writer, stmt);
+        }
+        System.out.println("Done!");
+    }
 
-        //        master_writer = getAppender("select");
-        //        try {
-        //            try {
-        //                justSelectIterations(master_writer, select_fields);
-        //            } catch (IOException e) {
-        //                System.out.println(e.getMessage());
-        //            }
-        //        } finally {
-        //            try {
-        //                master_writer.close();
-        //            } catch (IOException e) {
-        //                System.out.println(e.getMessage());
-        //            }
-        //        }
+   
 
-        //        master_writer = getAppender("where");
-        //        try {
-        //            justWhereIterations_String(master_writer, new HashSet<String>(
-        //                    Arrays.asList(STR_FIELDS)));
-        //            master_writer.flush();
-        //            justWhereIterations_Integer(master_writer, new HashSet<String>(
-        //                    Arrays.asList(INT_FIELDS)));
-        //            master_writer.flush();
-        //            justWhereIterations_DateTime(master_writer, new HashSet<String>(
-        //                    Arrays.asList(DT_FIELDS)));
-        //        } catch (IOException e) {
-        //            e.printStackTrace();
-        //        } finally {
-        //            try {
-        //                master_writer.close();
-        //            } catch (IOException e) {
-        //                System.out.println(e.getMessage());
-        //            }
-        //        }
-        //
-        //        master_writer = getAppender("join");
-        //        try {
-        //            justJoinIterations(master_writer, string_array);
-        //        } catch (IOException e) {
-        //            e.printStackTrace();
-        //        } finally {
-        //            try {
-        //                master_writer.close();
-        //            } catch (IOException e) {
-        //                System.out.println(e.getMessage());
-        //            }
-        //        }
-        //
-        //        master_writer = getAppender("orderby");
-        //        try {
-        //            justOrderby(master_writer, select_fields);
-        //        } catch (IOException e) {
-        //            e.printStackTrace();
-        //        } finally {
-        //            try {
-        //                master_writer.close();
-        //            } catch (IOException e) {
-        //                System.out.println(e.getMessage());
-        //            }
-        //        }
+    @Override
+    protected void writeYamlBlock(BufferedWriter writer, String sql) {
+        super.writeYamlBlock(writer, sql);
+        System.out.print(".");
+        //if (counter >= 1000) {
+          //  try {
+            //    writer.close();
+            //} catch (IOException e) {
+              //  System.out.println(e.getMessage());
+           // }
+          //  master_writer = getAppender("next"+(master_counter++));
+            
+       // }
+    }
 
-//        master_writer = getAppender("limit");
+    /* Limit */
+    private void doLimitLoops(BufferedWriter writer, SQLStatementGenerator stmt) {
+        //master_writer = getAppender("limit");
+        //try {
+            modifyAndSaveWithLimits(writer, stmt);
+        //} finally {
+          //  try {
+            //    master_writer.close();
+            //} catch (IOException e) {
+              //  System.out.println(e.getMessage());
+           // }
+        //}
+    }
+
+    private void modifyAndSaveWithLimits(BufferedWriter writer,
+            SQLStatementGenerator stmt) {
+        for (int x = 0; x < LIMITS.length; x++) {
+            stmt.setLimit(LIMITS[x]);
+            writeYamlBlock(writer, stmt.getSQL());
+        }
+    }
+
+//    private void doJoinLoops() {
+//        master_writer = getAppender("join");
 //        try {
-//            justLimitIterations(master_writer, string_array);
+//            justJoinIterations(master_writer, string_array);
 //        } catch (IOException e) {
+//            // TODO Auto-generated catch block
 //            e.printStackTrace();
 //        } finally {
 //            try {
@@ -242,155 +194,139 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
 //                System.out.println(e.getMessage());
 //            }
 //        }
-        
-      master_writer = getAppender("test1");
-      try {
-          for (int x=0;x < stmt_list.size();x++) {
-              //for (int a=1;a < stmt_list.get(x).getRoot_string_array().size();a++) {
-                  
-                  stmt_list.set(x, justWhereIterations_DateTime(stmt_list.get(x), 1));
-                  writeYamlBlock(master_writer, stmt_list.get(x).getSQL());
-              //}
-          }
-      } catch (IOException e) {
-          System.out.println("Error(test1):"+e.getMessage());
-      } finally {
-          try {
-              master_writer.close();
-          } catch (IOException e) {
-              System.out.println("Error(test1):"+e.getMessage());
-          }
-      }
-        
-        
-        
-        System.out.println("Done!");
-    }
+//    }
 
-    private BufferedWriter getAppender(String modifier) {
-        OutputStream os = null;
+    private void doSelectLoops() {
+        master_writer = getAppender("select");
         try {
-            os = new FileOutputStream(path + "test-" + TARGET_AREA + "-"
-                    + modifier + ".yaml");
-        } catch (FileNotFoundException e) {
-            System.out.println("Error(getAppender):"+e.getMessage());
-        }
-        Writer writer = null;
-        try {
-            writer = new OutputStreamWriter(os, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            System.out.println("Error(getAppender):"+e.getMessage());
-        }
-        return new BufferedWriter(writer);
-    }
-
-    private void justWhereIterations_DateTime(BufferedWriter writer,
-            HashSet<String> string_array) throws IOException {
-        SQLStatement stmt = new SQLStatement();
-        stmt.setFields(turnArrayToCommaDelimtedList(string_array));
-        stmt.setTableList(string_array.toString());
-
-        Iterator<String> i = string_array.iterator();
-        while (i.hasNext()) {
-            String field = i.next();
-
-            for (int a = 0; a < FUNCTION_LIST.length; a++) {
-                if (FUNCTION_LIST[a].startsWith(DT_METHOD)) {
-                    for (int x = 0; x < DT_PARAMS.length; x++) {
-                        stmt.setWhere(format(x, a, field, DT_PARAMS));
-                        writeYamlBlock(writer, stmt.getSQL());
-                    }
-                }
+            try {
+                justSelectIterations(master_writer, select_fields);
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+            }
+        } finally {
+            try {
+                master_writer.close();
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
             }
         }
-
     }
 
-    private SQLStatement justWhereIterations_DateTime(SQLStatement stmt, int iterations)
-            throws IOException {
-        Iterator<String> i = stmt.root_string_array.iterator();
-        while (i.hasNext() && iterations-- >= 0) {
-            String field = i.next();
-            for (int a = 0; a < FUNCTION_LIST.length; a++) {
-                if (FUNCTION_LIST[a].startsWith(DT_METHOD)) {
-                    for (int x = 0; x < DT_PARAMS.length; x++) {
-                        stmt.setWhere(format(x, a, field, DT_PARAMS));
-                    }
-                }
+    private void doWhereClauseLoop(String testName, int total_iterations) {
+        master_writer = getAppender(testName);
+        try {
+            header();
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+        try {
+            for (int iterations = 0; iterations < total_iterations; iterations++) {
+                SQLStatementGenerator stmt = new SQLStatementGenerator();
+                stmt.setRoot_string_array(STR_FIELDS);
+                stmt = modifySQLforWhereClause(stmt, iterations, STR_PARAMS,
+                        STR_METHOD);
+
+                writeYamlBlock(master_writer, stmt.getSQL());
+                doLimitLoops(master_writer, stmt);
+                modifyAndSaveWithLimits(master_writer, stmt);
+
+                stmt = new SQLStatementGenerator();
+                stmt.setRoot_dt_array(DT_FIELDS);
+                stmt = modifySQLforWhereClause(stmt, total_iterations,
+                        DT_PARAMS, DT_METHOD);
+
+                writeYamlBlock(master_writer, stmt.getSQL());
+                doLimitLoops(master_writer, stmt);
+
+                stmt = new SQLStatementGenerator();
+                stmt.setRoot_string_array(INT_FIELDS);
+                stmt = modifySQLforWhereClause(stmt, total_iterations,
+                        INT_PARAMS, INT_METHOD);
+                doLimitLoops(master_writer, stmt);
+
+                writeYamlBlock(master_writer, stmt.getSQL());
+                doLimitLoops(master_writer, stmt);
+                modifyAndSaveWithOrderBy(master_writer, stmt);
+            }
+
+        } finally {
+            try {
+                master_writer.close();
+            } catch (IOException e) {
+                System.out.println("Error(test1):" + e.getMessage());
+            }
+        }
+    }
+
+
+    
+    // expected valid stmt passed in; we add where clause
+    private SQLStatementGenerator modifySQLforWhereClause(
+            SQLStatementGenerator stmt, int iterations, String[] param_list,
+            String filter) {
+        Iterator<String> i = stmt.getRoot_array().iterator();
+        ArrayList<String> filtered_function_list = filterFunctionList(filter);
+        for (int a = 0; a < filtered_function_list.size() && iterations >= 0; a++) {
+            while (i.hasNext() && iterations-- >= 0) {
+                String field = i.next();
+                stmt.addWhere(format(
+                        Math.min(a, filtered_function_list.size()), a, field,
+                        param_list, filter));
             }
         }
         return stmt;
-
     }
 
-    private void justWhereIterations_Integer(BufferedWriter writer,
-            HashSet<String> p_string_array) throws IOException {
-        SQLStatement stmt = new SQLStatement();
-        stmt.setFields(turnArrayToCommaDelimtedList(p_string_array));
-        stmt.setTableList(p_string_array.toString());
-
-        Iterator<String> i = p_string_array.iterator();
-        while (i.hasNext()) {
-            String field = i.next();
-
-            for (int a = 0; a < FUNCTION_LIST.length; a++) {
-                if (FUNCTION_LIST[a].startsWith(INT_METHOD)) {
-                    for (int x = 0; x < INT_PARAMS.length; x++) {
-                        stmt.setWhere(format(x, a, field, INT_PARAMS));
-                        writeYamlBlock(writer, stmt.getSQL());
-                    }
-                }
-            }
-        }
-
-    }
-
-    public static final String[] ORDER_BY_DIRECTION = { " ASC ", " DESC " };
-
-    @SuppressWarnings("unchecked")
     private void justOrderby(BufferedWriter writer,
             HashSet<HashSet<String>> p_string_array) throws IOException {
-        SQLStatement stmt = new SQLStatement();
-        ArrayList<String> temp_row;
-        ArrayList<String> temp_row2;
+        SQLStatementGenerator stmt = new SQLStatementGenerator();
         Iterator<HashSet<String>> i = p_string_array.iterator();
         while (i.hasNext()) {
             HashSet<String> row = (HashSet<String>) i.next();
-            stmt.setFields(turnArrayToCommaDelimtedList(row));
-            stmt.setTableList(row.toString());
+            stmt.setRoot_string_array(row);
+            modifyAndSaveWithOrderBy(writer, stmt);
+        }
+    }
 
-            for (int x = 0; x < row.size(); x++) {
-                for (int b = 0; b < row.size(); b++) {
-                    temp_row = new ArrayList<String>(row);
-                    Collections.swap(temp_row, x, b);
-                    for (int a = 0; a < ORDER_BY_DIRECTION.length; a++) {
-                        temp_row2 = new ArrayList<String>(temp_row);
-                        temp_row2.set(x, temp_row2.get(x)
-                                + ORDER_BY_DIRECTION[a]);
-                        stmt.setOrderby(turnArrayToCommaDelimtedList(temp_row2));
-                        writeYamlBlock(writer, stmt.getSQL());
-                    }
+    private void doOrderByLoops() {
+        master_writer = getAppender("orderby");
+        try {
+            justOrderby(master_writer, select_fields);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                master_writer.close();
+            } catch (IOException e) {
+                System.out.println(e.getMessage());
+            }
+        }
+    }
+
+    private void modifyAndSaveWithOrderBy(BufferedWriter writer,
+            SQLStatementGenerator stmt)  {
+        ArrayList<String> temp_row;
+        ArrayList<String> temp_row2;
+        for (int x = 0; x < stmt.getRoot_array().size(); x++) {
+            for (int b = 0; b < stmt.getRoot_array().size(); b++) {
+                temp_row = new ArrayList<String>(stmt.getRoot_array());
+                
+                Collections.swap(temp_row, x, b);
+                for (int a = 0; a < ORDER_BY_DIRECTION.length; a++) {
+                    temp_row2 = new ArrayList<String>(temp_row);
+                    temp_row2.set(x, temp_row2.get(x) + ORDER_BY_DIRECTION[a]);
+                    stmt.setOrderby((temp_row2));
+                    writeYamlBlock(writer, stmt.getSQL());
+                    doLimitLoops(writer, stmt);
                 }
             }
         }
     }
 
-    public static final String[] JOIN_OTHER = { " CROSS JOIN %3$s " }; // " (%3$s) "
-
-    public static final String[] JOIN_NATURAL = { " NATURAL ", " " };
-    public static final String[] JOIN_TYPE = { " INNER ", " LEFT ", " RIGHT ",
-            " LEFT OUTER ", " RIGHT OUTER ", " " }; // MySQL does not support " FULL ", " FULL OUTER ", " UNION ", 
-    public static final String[] JOIN_SPEC = { " ON %1$s.%2$s = %3$s.%4$s ",
-            " USING (%4$s) " }; // unconditional join not supported in MySQL , "" };
-    public static final String JOIN = " JOIN %3$s ";
-
     private void justJoinIterations(BufferedWriter writer,
-            HashSet<String> string_array) throws IOException {
-        SQLStatement stmt = new SQLStatement();
-        stmt.setFields(turnArrayToCommaDelimtedList(string_array));
-
+            SQLStatementGenerator stmt) {
         for (int x = 0; x < RELATIONSHIPS.length; x++) {
-            stmt.setTableList(string_array.toString());
             if (stmt.getTableList().contains(
                     RELATIONSHIPS[x].primaryTable.toUpperCase())
                     && stmt.getTableList().contains(
@@ -410,20 +346,64 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
                                     RELATIONSHIPS[x].primaryKey,
                                     RELATIONSHIPS[x].secondaryTable,
                                     RELATIONSHIPS[x].secondaryKey);
-                            stmt.joins = sb.toString();
+                            stmt.setJoins(sb.toString());
+                            stmt.fixFrom(RELATIONSHIPS[x].primaryTable.toUpperCase());
                             writeYamlBlock(writer, stmt.getSQL());
+                            doLimitLoops(master_writer, stmt);
+                            stmt.clearLimit();
+                            Iterator<String> i = stmt.getRoot_array().iterator();
+                            while (i.hasNext()) {
+                                String field = i.next();
+
+                                for (int z = 0;z < FUNCTION_LIST.length; z++) {
+                                    if (FUNCTION_LIST[z].startsWith(STR_METHOD)) {
+                                        for (int y = 0; y < STR_PARAMS.length; y++) {
+                                            stmt.setWhere(format(y, z, field, STR_PARAMS,
+                                                    STR_METHOD));
+                                            writeYamlBlock(writer, stmt.getSQL());
+                                        }
+                                    }
+                                }
+                            }
+                            doLimitLoops(master_writer, stmt);
+
                             sb.setLength(0);
                         }
                     }
                 }
                 for (int a = 0; a < JOIN_OTHER.length; a++) {
+                    sb.setLength(0);
                     formatter.format(JOIN_OTHER[a],
-                            RELATIONSHIPS[x].primaryTable,
-                            RELATIONSHIPS[x].primaryKey,
-                            RELATIONSHIPS[x].secondaryTable,
-                            RELATIONSHIPS[x].secondaryKey);
-                    stmt.joins = sb.toString();
+                            RELATIONSHIPS[x].primaryTable.toUpperCase(),
+                            RELATIONSHIPS[x].primaryKey.toUpperCase(),
+                            RELATIONSHIPS[x].secondaryTable.toUpperCase(),
+                            RELATIONSHIPS[x].secondaryKey.toUpperCase());
+                    
+                    stmt.setJoins(sb.toString());
+                    stmt.getTableList().remove(RELATIONSHIPS[x].secondaryTable.toUpperCase());
+                    stmt.fixFrom(RELATIONSHIPS[x].primaryTable.toUpperCase());
                     writeYamlBlock(writer, stmt.getSQL());
+                    doLimitLoops(master_writer, stmt);
+                    stmt.clearLimit();
+                    stmt.setTableList(stmt.getRoot_array().toString());
+                    stmt.getTableList().remove(RELATIONSHIPS[x].secondaryTable.toUpperCase());
+                    Iterator<String> i = stmt.getRoot_array().iterator();
+                    while (i.hasNext()) {
+                        String field = i.next();
+
+                        for (int z = 0;z < FUNCTION_LIST.length; z++) {
+                            if (FUNCTION_LIST[z].startsWith(STR_METHOD)) {
+                                for (int y = 0; y < STR_PARAMS.length; y++) {
+                                    stmt.setWhere(format(y, z, field, STR_PARAMS,
+                                            STR_METHOD));
+                                    stmt.getTableList().remove(RELATIONSHIPS[x].secondaryTable.toUpperCase());
+                                    writeYamlBlock(writer, stmt.getSQL());
+                                }
+                            }
+                        }
+                    }
+                    doLimitLoops(master_writer, stmt);
+
                     sb.setLength(0);
                 }
 
@@ -434,8 +414,8 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
 
     private void justWhereIterations_String(BufferedWriter writer,
             HashSet<String> string_array) throws IOException {
-        SQLStatement stmt = new SQLStatement();
-        stmt.setFields(turnArrayToCommaDelimtedList(string_array));
+        SQLStatementGenerator stmt = new SQLStatementGenerator();
+        stmt.setFields((string_array));
         stmt.setTableList(string_array.toString());
 
         Iterator<String> i = string_array.iterator();
@@ -445,7 +425,8 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
             for (int a = 0; a < FUNCTION_LIST.length; a++) {
                 if (FUNCTION_LIST[a].startsWith(STR_METHOD)) {
                     for (int x = 0; x < STR_PARAMS.length; x++) {
-                        stmt.setWhere(format(x, a, field, STR_PARAMS));
+                        stmt.setWhere(format(x, a, field, STR_PARAMS,
+                                STR_METHOD));
                         writeYamlBlock(writer, stmt.getSQL());
                     }
                 }
@@ -453,396 +434,98 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
         }
     }
 
-    private void justLimitIterations(BufferedWriter writer,
-            HashSet<String> string_array) throws IOException {
-        SQLStatement stmt = new SQLStatement();
-        stmt.setFields(turnArrayToCommaDelimtedList(string_array));
-        stmt.setTableList(string_array.toString());
-
-        Iterator<String> i = string_array.iterator();
-        while (i.hasNext()) {
-            String field = i.next();
-            stmt.setLimit(1);
-            writeYamlBlock(writer, stmt.getSQL());
+    private SQLStatementGenerator justLimitIterations(
+            SQLStatementGenerator stmt, int limit) {
+        if (stmt.getFields().isEmpty()) {
+            stmt.setFields((string_array));
         }
-    }
-
-    protected String format(int x, int a, String field, String[] source) {
-        formatter.format(new String(FUNCTION_LIST[a]).substring(4), field,
-                source[x], source[Math.min(source.length - 1, (x + 1))],
-                source[Math.min(source.length - 1, (x + 2))],
-                source[Math.min(source.length - 1, (x + 3))],
-                source[Math.min(source.length - 1, (x + 4))]);
-        String retVal = sb.toString();
-        sb.setLength(0);
-        return retVal;
-    }
-
-    private String turnArrayToCommaDelimtedList(HashSet<String> string_array) {
-        return turnArrayToCommaDelimtedList(new ArrayList<String>(string_array));
+        stmt.setLimit(limit);
+        return stmt;
     }
 
     private void justSelectIterations(BufferedWriter writer,
-            HashSet<HashSet<String>> select_fields) throws IOException {
-        SQLStatement stmt = new SQLStatement();
-        Iterator<HashSet<String>> i = select_fields.iterator();
+            HashSet<HashSet<String>> p_select_fields) throws IOException {
+        SQLStatementGenerator stmt = new SQLStatementGenerator();
+        Iterator<HashSet<String>> i = p_select_fields.iterator();
         while (i.hasNext()) {
             ArrayList<String> next = new ArrayList<String>(i.next());
+            for (int b = 0; b < next.size(); b++) {
+                ArrayList<String> select_fields = new ArrayList<String>(next);
+                Collections.swap(select_fields, 0, b);
 
-            stmt.setTableList(next.toString());
-            stmt.setFields(turnArrayToCommaDelimtedList(next));
-            // select A,B,C
-            writeYamlBlock(writer, stmt.getSQL());
+                stmt.setTableList(next.toString());
+                stmt.setFields((next));
+                writeYamlBlock(writer, stmt.getSQL());
+                doLimitLoops(writer, stmt);
 
-            processEachColumn(writer, stmt, next);
+                stmt = modifySQLforSelectClause("distinct", stmt, select_fields);
+                writeYamlBlock(writer, stmt.getSQL());
+                doLimitLoops(writer, stmt);
 
+                stmt = modifySQLforSelectClause("all", stmt, select_fields);
+
+                writeYamlBlock(writer, stmt.getSQL());
+                doLimitLoops(writer, stmt);
+            }
             writer.flush();
         }
     }
 
-    public void processEachColumn(BufferedWriter writer, SQLStatement stmt,
-            ArrayList<String> next) throws IOException {
-
-        // all combinations of each string, changing order
-        for (int b = 0; b < next.size(); b++) {
-            ArrayList<String> select_fields = new ArrayList<String>(next);
-            Collections.swap(select_fields, 0, b);
-            for (int c = 1; c < next.size(); c++) {
-                if (c == b) {
-                    continue;
-                }
-                ArrayList<String> temp_select_fields = new ArrayList<String>(
-                        select_fields);
-                Collections.swap(temp_select_fields, c, b);
-                stmt.setGroupby(turnArrayToCommaDelimtedList(temp_select_fields));
-
-                temp_select_fields.set(0,
-                        " distinct " + temp_select_fields.get(b));
-                stmt.setFields(turnArrayToCommaDelimtedList(temp_select_fields));
-                writeYamlBlock(writer, stmt.getSQL());
-
-                temp_select_fields = new ArrayList<String>(select_fields);
-                temp_select_fields.set(0, " all " + temp_select_fields.get(b));
-                stmt.setFields(turnArrayToCommaDelimtedList(temp_select_fields));
-                writeYamlBlock(writer, stmt.getSQL());
-
-                stmt.setGroupby("");
-            }
-        }
-    }
-
-    protected ArrayList<String> extractTableList(String sql) {
-        ArrayList<String> retVal = new ArrayList<String>();
-        sql = sql.replace("[", "");
-        String[] data = sql.split("[,]");
-        if (data.length > 0 && sql.trim().length() > 0) {
-            for (int x = 0; x < data.length; x++) {
-                String table = data[x].substring(0, data[x].lastIndexOf("."))
-                        .toUpperCase().trim();
-                if (!retVal.contains(table)) {
-                    retVal.add(table);
-                }
-            }
-        }
-        return retVal;
-    }
-
-    private void writeYamlBlock(BufferedWriter writer, String sql)
+    public SQLStatementGenerator modifySQLforSelectClause(String quan,
+            SQLStatementGenerator stmt, ArrayList<String> field_list)
             throws IOException {
-        writer.append("---" + eol);
-        writer.append("- Statement: " + sql + eol);
-        String mySQL_sql = generateMySQL(sql);
-        String expected_output = callMySQL(mySQL_sql);
-        writer.append(expected_output + eol);
-        //System.out.println(sql);
-        counter++;
+        stmt.setGroupby(field_list);
+        stmt.setQuantifier(quan);
+        stmt.setFields(field_list);
+        return stmt;
     }
 
-    private String callMySQL(String sql) {
-        String retVal = null;
+    //    private void finalizeFile(String modifier) {
+    //        // will drop the files in the same branch as where this code is running
+    //        // sql gets dropped in the root directory of branch
+    //
+    //        recordYamlToDisk(path, modifier);
+    //        System.out.println("Test count generated is " + counter);
+    //        counter = 0;
+    //    }
 
-        try {
-            retVal = generateOutputFromInno(server, username, password, sql,
-                    null);
-            //System.out.print(".");
-        } catch (Exception e) {
-            System.out.println("");
-            System.out.println("MySQL: " + sql);
-            System.out.println("MySQL: " + retVal);
-            System.out.println("MySQL ERROR:  " + e.getMessage());
-            System.exit(-1);
-        }
-        return retVal;
+    private void header() throws IOException {
+        master_writer
+                .append("# generated by com.akiban.sql.test.AllQueryComboCreator on "
+                        + new Date()
+                        + eol
+                        + "---"
+                        + eol
+                        + "- Include: all-caoi-schema.yaml" + eol);
     }
 
-    private String generateMySQL(String sql) {
-        // replace any syntax that is different between systems
-        return sql;
-    }
-
-    private void finalizeFile(String modifier) {
-        // will drop the files in the same branch as where this code is running
-        // sql gets dropped in the root directory of branch
-
-        recordYamlToDisk(path, modifier);
-        System.out.println("Test count generated is " + counter);
-        counter = 0;
-    }
-
-    private String header() {
-        return "# generated by com.akiban.sql.test.AllQueryComboCreator on "
-                + new Date() + eol + "---" + eol
-                + "- Include: all-caoi-schema.yaml" + eol;
-    }
-
-    private void recordYamlToDisk(String path, String modifier) {
-        try {
-            save(path + "test-" + TARGET_AREA + "-" + modifier + ".yaml",
-                    yaml_file_contents);
-            System.out.println(eol + "contents saved to " + path + "test-"
-                    + TARGET_AREA + "-" + modifier + ".yaml");
-            yaml_file_contents = new StringBuilder(header());
-        } catch (IOException e) {
-            System.err.println("Error: " + e.getMessage());
-        }
-    }
+    //    private void recordYamlToDisk(String path, String modifier) {
+    //        try {
+    //            
+    //            yaml_file_contents.append("...");
+    //            save(path + "test-" + TARGET_AREA + "-" + modifier + ".yaml",
+    //                    yaml_file_contents);
+    //            System.out.println(eol + "contents saved to " + path + "test-"
+    //                    + TARGET_AREA + "-" + modifier + ".yaml");
+    //            yaml_file_contents = new StringBuilder(header());
+    //        } catch (IOException e) {
+    //            System.err.println("Error: " + e.getMessage());
+    //        }
+    //    }
 
     // all combinations of strings (not considering order)
     public HashSet<HashSet<String>> allCombos(HashSet<String> string_array) {
         HashSet<HashSet<String>> retVal = new HashSet<HashSet<String>>();
         retVal.add(string_array);
-        for (int a = 0; a < string_array.size(); a += 3) {
+        for (int a = 0; a < string_array.size(); a++) {
             HashSet<String> temp = new HashSet<String>(string_array);
             temp.remove(temp.toArray()[a]);
-
             if (temp.size() > 0) {
-
                 HashSet<HashSet<String>> list = allCombos(temp);
                 retVal.addAll(list);
             }
         }
-        //System.out.println("*");
         return retVal;
-    }
-
-    private class Relationship {
-
-        public Relationship(String primaryTable, String secondaryTable,
-                String primaryKey, String secondaryKey) {
-            super();
-            this.primaryTable = primaryTable;
-            this.secondaryTable = secondaryTable;
-            this.primaryKey = primaryKey;
-            this.secondaryKey = secondaryKey;
-        }
-
-        public String primaryTable;
-        public String secondaryTable;
-        public String primaryKey;
-        public String secondaryKey;
-    }
-
-    private class SQLStatement {
-        @Override
-        public int hashCode() {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + getOuterType().hashCode();
-            result = prime * result
-                    + ((fields == null) ? 0 : fields.hashCode());
-            result = prime * result + ((from == null) ? 0 : from.hashCode());
-            result = prime * result
-                    + ((groupby == null) ? 0 : groupby.hashCode());
-            result = prime * result
-                    + ((having == null) ? 0 : having.hashCode());
-            result = prime * result + ((joins == null) ? 0 : joins.hashCode());
-            result = prime * result + ((limit == null) ? 0 : limit.hashCode());
-            result = prime * result
-                    + ((orderby == null) ? 0 : orderby.hashCode());
-            result = prime * result
-                    + ((quantifier == null) ? 0 : quantifier.hashCode());
-            result = prime
-                    * result
-                    + ((root_string_array == null) ? 0 : root_string_array
-                            .hashCode());
-            result = prime * result
-                    + ((tableList == null) ? 0 : tableList.hashCode());
-            result = prime * result + ((where == null) ? 0 : where.hashCode());
-            return result;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (this == obj)
-                return true;
-            if (obj == null)
-                return false;
-            if (getClass() != obj.getClass())
-                return false;
-            SQLStatement other = (SQLStatement) obj;
-            if (!getOuterType().equals(other.getOuterType()))
-                return false;
-            if (fields == null) {
-                if (other.fields != null)
-                    return false;
-            } else if (!fields.equals(other.fields))
-                return false;
-            if (from == null) {
-                if (other.from != null)
-                    return false;
-            } else if (!from.equals(other.from))
-                return false;
-            if (groupby == null) {
-                if (other.groupby != null)
-                    return false;
-            } else if (!groupby.equals(other.groupby))
-                return false;
-            if (having == null) {
-                if (other.having != null)
-                    return false;
-            } else if (!having.equals(other.having))
-                return false;
-            if (joins == null) {
-                if (other.joins != null)
-                    return false;
-            } else if (!joins.equals(other.joins))
-                return false;
-            if (limit == null) {
-                if (other.limit != null)
-                    return false;
-            } else if (!limit.equals(other.limit))
-                return false;
-            if (orderby == null) {
-                if (other.orderby != null)
-                    return false;
-            } else if (!orderby.equals(other.orderby))
-                return false;
-            if (quantifier == null) {
-                if (other.quantifier != null)
-                    return false;
-            } else if (!quantifier.equals(other.quantifier))
-                return false;
-            if (root_string_array == null) {
-                if (other.root_string_array != null)
-                    return false;
-            } else if (!root_string_array.equals(other.root_string_array))
-                return false;
-            if (tableList == null) {
-                if (other.tableList != null)
-                    return false;
-            } else if (!tableList.equals(other.tableList))
-                return false;
-            if (where == null) {
-                if (other.where != null)
-                    return false;
-            } else if (!where.equals(other.where))
-                return false;
-            return true;
-        }
-
-        private HashSet<String> root_string_array;
-        public String quantifier = "";
-        private String fields = "";
-        public String from = "";
-        public String joins = "";
-        private String where = "";
-        private String groupby = "";
-        public String having = "";
-        private String orderby = "";
-        private String limit = "";
-        private ArrayList<String> tableList = new ArrayList<String>();
-
-        public String getSQL() {
-            if (getTableList().size() > 0) {
-                from = " From " + turnArrayToCommaDelimtedList(getTableList());
-            } else {
-                System.out.println("no tables to select from");
-                System.exit(-1);
-            }
-
-            return "select " + quantifier + getFields() + from + joins
-                    + getWhere() + getGroupby() + having + getOrderby()
-                    + getLimit();
-        }
-
-        public String getWhere() {
-            return where;
-        }
-
-        public void setWhere(String where) {
-            this.where = " where " + where;
-        }
-
-        public void addWhere(String where_fragment) {
-            this.where += where_fragment;
-        }
-
-        public String getGroupby() {
-            return groupby;
-        }
-
-        public void setGroupby(String p_groupby) {
-            if (p_groupby.length() > 0) {
-                this.groupby = " group by " + p_groupby;
-            } else {
-                this.groupby = "";
-            }
-        }
-
-        public void addGroupby(String groupby_fragment) {
-            this.groupby += groupby_fragment;
-        }
-
-        public String getOrderby() {
-            return orderby;
-        }
-
-        public void setOrderby(String p_orderby) {
-            if (p_orderby.length() > 0) {
-                this.orderby = " order by " + p_orderby;
-            } else {
-                this.orderby = "";
-            }
-        }
-
-        public String getFields() {
-            return fields;
-        }
-
-        public void setFields(String p_fields) {
-            this.fields = p_fields;
-
-        }
-
-        private ArrayList<String> getTableList() {
-            return tableList;
-        }
-
-        private void setTableList(String p_fields) {
-            this.tableList = extractTableList(p_fields);
-        }
-
-        public String getLimit() {
-            return limit;
-        }
-
-        public void setLimit(int p_limit) {
-            this.limit = " LIMIT " + p_limit;
-        }
-
-        public HashSet<String> getRoot_string_array() {
-            return root_string_array;
-        }
-
-        public void setRoot_string_array(HashSet<String> p_root_string_array) {
-            this.root_string_array = new HashSet<String>();
-            this.root_string_array = p_root_string_array;
-        }
-
-        private AllQueryComboCreator getOuterType() {
-            return AllQueryComboCreator.this;
-        }
-
     }
 
     //    private ArrayList<String> getColumnsforTable(String table) {
@@ -1148,7 +831,8 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
             generateOutputFromInno(server, username, password, "use test;",
                     null);
         } catch (Exception e1) {
-            System.out.println("Error(generateOutputFromInno):"+e1.getMessage());
+            System.out.println("Error(generateOutputFromInno):"
+                    + e1.getMessage());
         }
         //sb.append("---" + eol + "- Statement: Use test;" + eol);
         for (int x = 0; x < drop_list.size(); x++) {
@@ -1160,7 +844,8 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
                 //      + eol);
             } catch (Exception e) {
                 System.out.println(mysql_sql);
-                System.out.println("Error(generateOutputFromInno):"+e.getMessage());
+                System.out.println("Error(generateOutputFromInno):"
+                        + e.getMessage());
             }
         }
 
@@ -1175,7 +860,8 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
                         null);
             } catch (Exception e) {
                 System.out.println(mysql_sql);
-                System.out.println("Error(generateOutputFromInno):"+e.getMessage());
+                System.out.println("Error(generateOutputFromInno):"
+                        + e.getMessage());
             }
 
             sb.append("---" + eol + "- CreateTable: " + create_list.get(x)
@@ -1189,7 +875,8 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
                         insert_list.get(x), null);
             } catch (Exception e) {
                 System.out.println(insert_list.get(x));
-                System.out.println("Error(generateOutputFromInno):"+e.getMessage());
+                System.out.println("Error(generateOutputFromInno):"
+                        + e.getMessage());
             }
             sb.append("---" + eol + "- Statement: " + insert_list.get(x) + eol);
 
@@ -1198,9 +885,16 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
         try {
             save(path + "all-caoi-schema.yaml", sb);
         } catch (IOException e) {
-            System.out.println("Error(save):"+e.getMessage());
+            System.out.println("Error(save):" + e.getMessage());
         }
         System.out.println("Load finished");
+    }
+
+    public static void main(String[] args) {
+        AllQueryComboCreator b = new AllQueryComboCreator();
+        b.cleanup();
+        b.setup();
+        b.run();
     }
 
 }
