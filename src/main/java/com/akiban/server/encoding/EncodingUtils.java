@@ -76,11 +76,7 @@ abstract class EncodingUtils {
         key.append(bytes);
     }
 
-    // TODO - These methods destroy character encoding
-
-    static int stringByteLength(final String s) {
-        return s.length();
-    }
+    // TODO - This method destroys character encoding
 
     private static byte[] stringBytes(final String s) {
         final byte[] b = new byte[s.length()];
