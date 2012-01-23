@@ -22,8 +22,8 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.test.it.ITBase;
-import com.akiban.util.Tap;
-import com.akiban.util.TapReport;
+import com.akiban.util.tap.Tap;
+import com.akiban.util.tap.TapReport;
 import org.junit.Before;
 import org.junit.Test;
 

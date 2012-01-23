@@ -55,8 +55,9 @@ import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.types.extract.ConverterTestUtils;
 import com.akiban.server.util.GroupIndexCreator;
+import com.akiban.util.AssertUtils;
 import com.akiban.util.Strings;
-import com.akiban.util.TapReport;
+import com.akiban.util.tap.TapReport;
 import com.akiban.util.Undef;
 import com.persistit.Transaction;
 import junit.framework.Assert;
@@ -594,10 +595,8 @@ public class ApiTestBase {
         Assert.assertEquals("user tables", Collections.<TableName>emptySet(), uTables);
     }
 
-    protected static <T> void assertEqualLists(String message, List<T> expected, List<T> actual) {
-        if (!expected.equals(actual)) {
-            assertEquals(message, Strings.join(expected), Strings.join(actual));
-        }
+    protected static <T> void assertEqualLists(String message, List<? extends T> expected, List<? extends T> actual) {
+        AssertUtils.assertCollectionEquals(message, expected, actual);
     }
 
     protected static class TestException extends RuntimeException {
@@ -753,5 +752,15 @@ public class ApiTestBase {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+    
+    protected void transactionallyUnchecked(final Runnable runnable) {
+        transactionallyUnchecked(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                runnable.run();
+                return null;
+            }
+        });
     }
 }

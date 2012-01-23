@@ -18,6 +18,8 @@ package com.akiban.server.test.it.keyupdate;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.util.tap.Tap;
+import com.akiban.util.tap.TapReport;
 import org.junit.Test;
 
 import java.util.List;
@@ -278,19 +280,8 @@ public class KeyUpdateIT extends KeyUpdateBase
         TestRow newRow = copyRow(oldRow);
         newRow.put(0, 99);
         startMonitoringHKeyPropagation();
-/*
-        Tap.setEnabled(".*propagate$", true);
-        Tap.reset(".*propagate$");
-*/
         dbUpdate(oldRow, newRow);
         checkHKeyPropagation(2, 0);
-/*
-        TapReport[] tapReports = Tap.getReport(".*propagate_hkey_change$");
-        assertEquals(1, tapReports.length);
-        TapReport propagateTap = tapReports[0];
-        // There should be two propagations, one for deletion of the old row, and one for insertion of the new row
-        assertEquals(2, propagateTap.getInCount());
-*/
     }
 
 

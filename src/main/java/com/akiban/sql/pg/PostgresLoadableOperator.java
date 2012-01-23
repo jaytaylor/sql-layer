@@ -17,7 +17,7 @@ package com.akiban.sql.pg;
 
 import com.akiban.qp.loadableplan.LoadableOperator;
 import com.akiban.qp.operator.Bindings;
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 
 public class PostgresLoadableOperator extends PostgresOperatorStatement
 {

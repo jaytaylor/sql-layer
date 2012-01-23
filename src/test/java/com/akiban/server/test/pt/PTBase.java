@@ -16,8 +16,8 @@
 package com.akiban.server.test.pt;
 
 import com.akiban.server.test.ApiTestBase;
-import com.akiban.util.Tap;
-import com.akiban.util.TapReport;
+import com.akiban.util.tap.Tap;
+import com.akiban.util.tap.TapReport;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;

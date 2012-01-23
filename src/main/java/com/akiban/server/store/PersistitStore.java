@@ -47,7 +47,7 @@ import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.RowDataCorruptionException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyFilter;

@@ -22,7 +22,7 @@ import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 
 import java.util.ArrayList;
 import java.util.List;

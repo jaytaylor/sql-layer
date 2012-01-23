@@ -38,7 +38,7 @@ import java.util.*;
 public class PersistitIndexStatisticsVisitor extends IndexVisitor
 {
     private static final Logger logger = LoggerFactory.getLogger(PersistitIndexStatisticsVisitor.class);
-    private static final int BUCKETS_COUNT = 32;
+    public static final int BUCKETS_COUNT = 32;
     
     private Index index;
     private int columnCount;
@@ -52,14 +52,14 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
         }
     };
 
-    public PersistitIndexStatisticsVisitor(Index index) {
+    public PersistitIndexStatisticsVisitor(Index index, long indexRowCount) {
         this.index = index;
         
         columnCount = index.getColumns().size();
         timestamp = System.currentTimeMillis();
         rowCount = 0;
         KeySplitter splitter = new KeySplitter(columnCount, keysFlywheel);
-        keySampler = new Sampler<Key>(splitter, BUCKETS_COUNT, keysFlywheel);
+        keySampler = new Sampler<Key>(splitter, BUCKETS_COUNT, indexRowCount, keysFlywheel);
     }
     
     private static class KeySplitter implements Splitter<Key> {
