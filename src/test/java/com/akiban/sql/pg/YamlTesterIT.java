@@ -472,12 +472,12 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "- error:\n" +
 	    "  - 42000\n" +
 	    "  - |\n" +
-	    "    ERROR: [] com.akiban.sql.parser.ParseException:" +
-	    " Encountered \" <IDENTIFIER> \"FR \"\" at line 1, column 10.\n" +
+	    "    ERROR: Encountered \" <IDENTIFIER> \"FR \"\" at line 1, column 10.\n" +
 	    "    Was expecting one of:\n" +
 	    "        \"from\" ...\n" +
 	    "        \",\" ...\n" +
-	    "        : SELECT * FR");
+	    "        \n" +
+	    "      Position: 10");
     }
 
     @Test
@@ -1357,12 +1357,12 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "- error:\n" +
 	    "  - 42000\n" +
 	    "  - |\n" +
-	    "    ERROR: [] com.akiban.sql.parser.ParseException: " +
-	    "Encountered \" <IDENTIFIER> \"FR \"\" at line 1, column 10.\n" +
+	    "    ERROR: Encountered \" <IDENTIFIER> \"FR \"\" at line 1, column 10.\n" +
 	    "    Was expecting one of:\n" +
 	    "        \"from\" ...\n" +
 	    "        \",\" ...\n" +
-	    "        : SELECT * FR");
+	    "        \n" +
+	    "      Position: 10");
     }
 
     @Test
