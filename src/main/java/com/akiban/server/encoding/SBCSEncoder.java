@@ -17,17 +17,20 @@ package com.akiban.server.encoding;
 
 import com.akiban.server.rowdata.FieldDef;
 
-public class StringEncoder extends VariableWidthEncoding {
+/** Single byte encoding. */
+public class SBCSEncoder extends VariableWidthEncoding {
 
-    public static final Encoding INSTANCE = new StringEncoder();
+    public static final Encoding INSTANCE = new SBCSEncoder();
 
-    private StringEncoder() {
+    private SBCSEncoder() {
     }
 
     @Override
     public int widthFromObject(final FieldDef fieldDef, final Object value) {
         int prefixWidth = fieldDef.getPrefixSize();
-        final String s = value == null ? "" : value.toString();
-        return EncodingUtils.stringByteLength(s) + prefixWidth;
+        if (value == null)
+            return prefixWidth;
+        else
+            return value.toString().length() + prefixWidth;
     }
 }
