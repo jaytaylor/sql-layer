@@ -680,19 +680,10 @@ public class PersistitStore implements Store {
             // propagation work, find which tables (descendents of the updated table) are affected by hkey
             // changes.
             tablesRequiringHKeyMaintenance = new BitSet(rowDefCache.maxOrdinal() + 1);
-            HKey hKey = rowDef.userTable().hKey();
-            for (int s = 0; s < hKey.segments().size(); s++) {
-                HKeySegment segment = hKey.segments().get(s);
-                for (int c = 0; c < segment.columns().size(); c++) {
-                    HKeyColumn hKeyColumn = segment.columns().get(c);
-                    List<UserTable> dependentTables = hKeyColumn.dependentTables();
-                    if (dependentTables != null) {
-                        for (UserTable table : dependentTables) {
-                            int ordinal = ((RowDef) table.rowDef()).getOrdinal();
-                            tablesRequiringHKeyMaintenance.set(ordinal, true);
-                        }
-                    }
-                }
+            UserTable table = rowDef.userTable();
+            for (UserTable hKeyDependentTable : table.hKeyDependentTables()) {
+                int ordinal = ((RowDef) hKeyDependentTable.rowDef()).getOrdinal();
+                tablesRequiringHKeyMaintenance.set(ordinal, true);
             }
         }
         return tablesRequiringHKeyMaintenance;

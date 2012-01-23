@@ -244,7 +244,7 @@ public abstract class KeyUpdateBase extends ITBase {
                 // Check indexes
                 CollectingIndexKeyVisitor indexVisitor;
                 if (checkChildPKs()) {
-                    // Customer PK index - skip. This index is hkey equivalent, and we've already checked the full records.
+                    // TODO: This is no longer true: Customer PK index - skip. This index is hkey equivalent, and we've already checked the full records.
                     // Order PK index
                     indexVisitor = new CollectingIndexKeyVisitor();
                     testStore.traverse(session(), orderRowDef.getPKIndex(), indexVisitor);

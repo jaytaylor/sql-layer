@@ -31,10 +31,10 @@ public abstract class PTBase extends ApiTestBase {
 
     protected PTBase() {
         super("PT");
-        tapsRegexes = new ListTapsRegexes();
+        tapsRegexes = new ArrayList<String>();
     }
     
-    protected void relevantTaps(TapsRegexes tapsRegexes) {
+    protected void registerTaps() {
         // none by default
     }
     
@@ -57,8 +57,8 @@ public abstract class PTBase extends ApiTestBase {
     @Before
     public void setUpProfiling() throws Exception {
         beforeProfiling();
-        tapsRegexes.regexes.clear();
-        relevantTaps(tapsRegexes);
+        tapsRegexes.clear();
+        registerTaps();
         Tap.setEnabled(".*", true);
         Tap.reset(".*");
         Tap.defaultToOn(true);
@@ -77,7 +77,7 @@ public abstract class PTBase extends ApiTestBase {
         for (TapReport report : reportsArray) {
             String name = report.getName();
             boolean include = false;
-            for (String regex : tapsRegexes.regexes) {
+            for (String regex : tapsRegexes) {
                 if (name.matches(regex)) {
                     include = true;
                     break;
@@ -103,7 +103,7 @@ public abstract class PTBase extends ApiTestBase {
         afterProfileReporting();
     }
 
-    protected final ListTapsRegexes tapsRegexes;
+    protected final List<String> tapsRegexes;
 
     private static final Comparator<TapReport> REPORTS_BY_NAME = new Comparator<TapReport>() {
         @Override
@@ -111,18 +111,4 @@ public abstract class PTBase extends ApiTestBase {
             return o1.getName().compareTo(o2.getName());
         }
     };
-    
-    public interface TapsRegexes {
-        void add(String regex);
-    }
-    
-    protected static final class ListTapsRegexes implements TapsRegexes {
-
-        @Override
-        public void add(String regex) {
-            regexes.add(regex);
-        }
-
-        public final List<String> regexes = new ArrayList<String>();
-    }
 }

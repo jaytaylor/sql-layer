@@ -39,6 +39,7 @@ import static com.akiban.qp.operator.API.*;
 public class HKeyChangePropagationProfilePT extends QPProfilePTBase
 {
     @Before
+    @Override
     public void setUpProfiling() throws Exception
     {
         // Changes to parent.gid propagate to children hkeys.
@@ -78,8 +79,8 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
         // The following is adapter from super.setUpProfiling. Leave taps disabled, they'll be enabled after loading
         // and warmup
         beforeProfiling();
-        tapsRegexes.regexes.clear();
-        relevantTaps(tapsRegexes);
+        tapsRegexes.clear();
+        registerTaps();
     }
 
     private int        grandparent;
@@ -124,7 +125,7 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
     }
 
     @Override
-    protected void relevantTaps(TapsRegexes tapsRegexes)
+    protected void registerTaps()
     {
         tapsRegexes.add(".*propagate.*");
     }
