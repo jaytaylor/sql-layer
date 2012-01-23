@@ -15,7 +15,7 @@
 
 package com.akiban.server.service.instrumentation;
 
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 
 public class EventImpl implements Event {
     

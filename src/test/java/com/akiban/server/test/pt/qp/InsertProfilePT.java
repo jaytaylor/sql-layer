@@ -24,7 +24,7 @@ import com.akiban.server.error.InvalidOperationException;
 import org.junit.Before;
 import org.junit.Test;
 
-public class InsertProfileIT extends QPProfilePTBase
+public class InsertProfilePT extends QPProfilePTBase
 {
     @Before
     public void before() throws InvalidOperationException

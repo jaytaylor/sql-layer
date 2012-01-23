@@ -33,7 +33,7 @@ import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.test.pt.PTBase;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ToObjectValueTarget;
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -45,7 +45,7 @@ import java.util.List;
 
 import static com.akiban.qp.operator.API.*;
 
-public class GIUpdateProfileIT extends PTBase
+public class GIUpdateProfilePT extends PTBase
 {
     @Before
     public void before() throws InvalidOperationException

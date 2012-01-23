@@ -38,7 +38,7 @@ import com.akiban.server.api.HapiOutputter;
 import com.akiban.server.api.HapiProcessor;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.service.session.Session;
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 
 import com.thimbleware.jmemcached.CacheElement;
 import com.thimbleware.jmemcached.LocalCacheElement;

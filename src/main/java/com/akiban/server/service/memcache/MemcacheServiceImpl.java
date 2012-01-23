@@ -54,7 +54,7 @@ import com.akiban.server.service.Service;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
-import com.akiban.util.Tap;
+import com.akiban.util.tap.Tap;
 
 public class MemcacheServiceImpl implements MemcacheService,
         Service<MemcacheService>, JmxManageable {
