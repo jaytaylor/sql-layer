@@ -17,6 +17,7 @@ package com.akiban.server.rowdata;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
+import com.akiban.ais.model.Types;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.encoding.EncoderFactory;
 import com.akiban.server.encoding.Encoding;
@@ -155,7 +156,7 @@ public class FieldDef {
         this.column = column;
         this.columnName = name;
         this.type = type;
-        this.encoding = EncoderFactory.valueOf(type.encoding(), type);
+        this.encoding = EncoderFactory.valueOf(type.encoding(), type, column.getCharsetAndCollation().charset());
         this.maxStorageSize = maxStorageSize;
         this.prefixSize = prefixSize;
         this.typeParameter1 = typeParameter1;

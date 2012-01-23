@@ -23,6 +23,9 @@ import java.util.Map;
 
 import com.akiban.ais.model.Type;
 
+import java.nio.charset.Charset;
+import java.nio.charset.UnsupportedCharsetException;
+
 @SuppressWarnings("unused")
 public final class EncoderFactory {
     private EncoderFactory() {
@@ -37,10 +40,10 @@ public final class EncoderFactory {
     public static final Encoding U_DOUBLE = DoubleEncoder.INSTANCE;
     public static final Encoding DECIMAL = DecimalEncoder.INSTANCE;
     public static final Encoding U_DECIMAL = DecimalEncoder.INSTANCE;
-    public static final Encoding VARCHAR = StringEncoder.INSTANCE;
+    public static final Encoding VARCHAR = SBCSEncoder.INSTANCE;
     public static final Encoding VARBINARY = VarBinaryEncoder.INSTANCE;
-    public static final Encoding BLOB = StringEncoder.INSTANCE;  // TODO - temporarily we handle just like TEXT
-    public static final Encoding TEXT = StringEncoder.INSTANCE;
+    public static final Encoding BLOB = SBCSEncoder.INSTANCE;  // TODO - temporarily we handle just like TEXT
+    public static final Encoding TEXT = SBCSEncoder.INSTANCE;
     public static final Encoding DATE = LongEncoder.INSTANCE;
     public static final Encoding TIME = LongEncoder.INSTANCE;
     public static final Encoding DATETIME = LongEncoder.INSTANCE;
@@ -49,6 +52,7 @@ public final class EncoderFactory {
 
     private static final Object ENCODING_MAP_LOCK = EncoderFactory.class;
     private static Map<String,Encoding> encodingMap = null;
+    private static Map<String,Encoding> charEncodingMap = null;
 
     /**
      * Gets an encoding by name.
@@ -94,5 +98,41 @@ public final class EncoderFactory {
      */
     public static Encoding valueOf(String name, Type type) {
         return valueOf(name);
+    }
+
+    public static Encoding valueOf(String name, Type type, String charset) {
+        Encoding encoding = valueOf(name);
+        if ((encoding == VARCHAR) && (charset != null))
+            return charEncoding(charset);
+        else
+            return encoding;
+    }
+
+    /**
+     * Get the encoding for a character column.
+     */
+    public static Encoding charEncoding(String charsetName) {
+        synchronized (ENCODING_MAP_LOCK) {
+            if (charEncodingMap == null)
+                charEncodingMap = new HashMap<String,Encoding>();
+            Encoding encoding = encodingMap.get(charsetName);
+            if (encoding == null) {
+                try {
+                    Charset charset = Charset.forName(charsetName);
+                    if (charset.name().equals("UTF-8"))
+                        encoding = UTF8Encoder.INSTANCE;
+                    else if (charset.newEncoder().maxBytesPerChar() == 1.0)
+                        encoding = SBCSEncoder.INSTANCE;
+                }
+                catch (UnsupportedCharsetException ex) {
+                }
+                catch (UnsupportedOperationException ex) {
+                }
+                if (encoding == null)
+                    encoding = new SlowMBCSEncoder(charsetName);
+                charEncodingMap.put(charsetName, encoding);
+            }
+            return encoding;
+        }
     }
 }
