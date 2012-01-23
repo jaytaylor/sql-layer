@@ -206,7 +206,6 @@ public class PersistitStoreIndexStatistics
                                   });
                 store.constructHKey(session, exchange, 
                                     indexStatisticsRowDef, rowData, false);
-                exchange.cut();
                 exchange.remove(Key.GT);
                 // TODO: Need to get a count back from
                 // exchange.remove() in order to tell the row count in
