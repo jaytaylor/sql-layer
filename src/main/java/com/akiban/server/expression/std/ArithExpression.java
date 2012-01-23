@@ -188,9 +188,17 @@ public class ArithExpression extends AbstractBinaryExpression
 
     protected static boolean isNumeric (AkType type)
     {
-        return SUPPORTED_TYPES.get(type) % 2 == 1;
+        int t = SUPPORTED_TYPES.get(type);
+        if (t < 0) throw new InvalidArgumentTypeException(type + " is not supported");
+        else return t % 2 == 1;
     }
     
+    protected static boolean isDateTime (AkType type)
+    {
+        int t = SUPPORTED_TYPES.get(type);
+        if (t < 0) throw new InvalidArgumentTypeException(type + " is not supported");
+        else return t % 2 == 0;
+    }
     @Override
     protected boolean nullIsContaminating()
     {

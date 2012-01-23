@@ -9,19 +9,28 @@
 #---
 #- Statement: SELECT DATE_ADD('2000-12-31 23:59:59', '2000-12-31 23:59:59'-'2000-12-30 23:59:59') from all_types;
 #- output: [[ '2001-01-01 00:00:00']] 
-#---  
+---  
 # bug 903191
-#- Statement: select '2008-12-31 23:59:59' + INTERVAL 1 SECOND from all_types;
-#- output: [['2009-01-01 00:00:00']] 
-#---
-#- Statement: SELECT '2005-01-01' - INTERVAL 1 SECOND from all_types;
-#- output: [['2004-12-31 23:59:59']] 
-#---
-#- Statement: SELECT DATE_ADD('2000-12-31 23:59:59', INTERVAL 1 SECOND) from all_types;
-#- output: [[ '2001-01-01 00:00:00']] 
-#---
-#- Statement: SELECT DATE_ADD('2010-12-31 23:59:59', INTERVAL 1 DAY) from all_types;
-#- output: [[ '2011-01-01 23:59:59']] 
+- Statement: select '2008-12-31 23:59:59' + INTERVAL 1 SECOND from all_types;
+- output: [[!re '2009-01-01 00:00:00([.]0)?']] 
+---
+- Statement: SELECT '2005-01-01' - INTERVAL 1 SECOND from all_types;
+- output: [['2004-12-31']]
+---
+- Statement: SELECT DATE_ADD('2000-12-31 23:59:59', INTERVAL 1 SECOND) from all_types;
+- output: [[!re '2001-01-01 00:00:00([.]0)?']]
+---
+- Statement: SELECT '2010-12-31' + INTERVAL 1 DAY from all_types;
+- output: [[ '2011-01-01']]
+---
+- Statement: SELECT  ('2000-12-12') + ('2007' - YEAR('2006-12-12')) from all_types;
+- output: [['2001-12-12']]
+---
+- Statement: SELECT '1999-12-12 12:30:10' + (YEAR('2006-12-12') - '2007') from all_types;
+- output: [[!re '1998-12-12 12:30:10([.]0)?']]
+---
+- Statement: SELECT '2000-01-01' + interval 1 WEEK from all_types;
+- output: [['2000-01-08']]
 #---
 #- Statement: SELECT DATE_ADD('2100-12-31 23:59:59', INTERVAL '1:1' MINUTE_SECOND) from all_types;
 #- output: [[ [['2101-01-01 00:01:00']] 
