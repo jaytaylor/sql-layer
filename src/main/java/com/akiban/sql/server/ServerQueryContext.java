@@ -17,7 +17,10 @@ package com.akiban.sql.server;
 
 import com.akiban.qp.operator.QueryContextBase;
 import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.server.error.ErrorCode;
 import com.akiban.server.service.session.Session;
+
+import java.io.IOException;
 
 public class ServerQueryContext<T extends ServerSession> extends QueryContextBase
 {
@@ -49,6 +52,15 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
     @Override
     public String getSessionUser() {
         return server.getProperty("user");
+    }
+
+    @Override
+    public void notifyClient(NOTIFICATION_LEVEL level, ErrorCode errorCode, String message) {
+        try {
+            server.notifyClient(level, errorCode, message);
+        }
+        catch (IOException ex) {
+        }
     }
 
 }

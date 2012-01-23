@@ -173,6 +173,19 @@ public class PostgresMessenger implements DataInput, DataOutput
         }
     }
 
+    /** Save whatever portion of the current message there is so that
+     * something asynchronous can be sent. */
+    protected Object suspendMessage() throws IOException {
+        messageOutput.flush();
+        return byteOutput;
+    }
+
+    /** Restore the state from {@link #suspendMessage}. */
+    protected void resumeMessage(Object state) throws IOException {
+        byteOutput = (ByteArrayOutputStream)state;
+        messageOutput = new DataOutputStream(byteOutput);
+    }
+
     /** Read null-terminated string. */
     public String readString() throws IOException {
         ByteArrayOutputStream bs = new ByteArrayOutputStream();

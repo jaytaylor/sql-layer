@@ -18,6 +18,8 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 
@@ -127,4 +129,24 @@ public interface QueryContext
      * Get the system time at which the query started.
      */
     public long getStartTime();
+
+    /**
+     * Possible notification levels for {@link #notifyClient}.
+     */
+    public enum NOTIFICATION_LEVEL {
+        WARNING, INFO, DEBUG
+    }
+
+    /**
+     * Send a warning (or other) notification to the remote client.
+     * The message will be delivered as part of the current operation,
+     * perhaps immediately or perhaps at its completion, depending on
+     * the implementation.
+     */
+    public void notifyClient(NOTIFICATION_LEVEL level, ErrorCode errorCode, String message);
+
+    /**
+     * Send a warning notification to the remote client from the given exception.
+     */
+    public void warnClient(InvalidOperationException exception);
 }

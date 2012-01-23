@@ -21,13 +21,16 @@ import com.akiban.sql.optimizer.rule.IndexEstimator;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.qp.loadableplan.LoadablePlan;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.server.error.ErrorCode;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 
+import java.io.IOException;
 import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
@@ -113,6 +116,9 @@ public interface ServerSession
 
     /** Get compatibilty mode for MySQL zero dates. */
     public ServerValueEncoder.ZeroDateTimeBehavior getZeroDateTimeBehavior();
+
+    /** Send a warning message to the client. */
+    public void notifyClient(QueryContext.NOTIFICATION_LEVEL level, ErrorCode errorCode, String message) throws IOException;
 
     /** Get the index estimator. */
     public IndexEstimator indexEstimator();
