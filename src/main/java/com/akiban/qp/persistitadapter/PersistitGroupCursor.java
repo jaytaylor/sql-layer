@@ -23,6 +23,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -154,7 +155,7 @@ class PersistitGroupCursor implements GroupCursor
     private GroupScan groupScan;
 
     // static state
-    private static final Tap.PointTap TRAVERSE_COUNT = Tap.createCount("traverse_pgc");
+    private static final PointTap TRAVERSE_COUNT = Tap.createCount("traverse_pgc");
     
     // Inner classes
 

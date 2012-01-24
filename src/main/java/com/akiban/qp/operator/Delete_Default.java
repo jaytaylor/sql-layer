@@ -21,6 +21,7 @@ import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
 import com.akiban.util.Strings;
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
 /**
@@ -129,6 +130,6 @@ class Delete_Default extends OperatorExecutionBase implements UpdatePlannable {
     }
 
     private final Operator inputOperator;
-    private static final Tap.InOutTap DELETE_TAP = Tap.createTimer("operator: delete");
+    private static final InOutTap DELETE_TAP = Tap.createTimer("operator: delete");
 
 }
