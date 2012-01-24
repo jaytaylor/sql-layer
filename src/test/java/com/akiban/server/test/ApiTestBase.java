@@ -65,7 +65,6 @@ import junit.framework.Assert;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Before;
 
 import com.akiban.ais.model.GroupTable;
@@ -161,7 +160,7 @@ public class ApiTestBase {
     private int akibanFKCount;
     private final Set<RowUpdater> unfinishedRowUpdaters = new HashSet<RowUpdater>();
     private static Collection<Property> lastStartupConfigProperties = null;
-    private static boolean lastTestFailed = false;
+    private static boolean needServicesRestart = false;
     
     @Rule
     public static final TestName testName = new TestName();
@@ -176,12 +175,15 @@ public class ApiTestBase {
         try {
             ConverterTestUtils.setGlobalTimezone("UTC");
             Collection<Property> startupConfigProperties = startupConfigProperties();
-            if (lastTestFailed || lastStartupConfigProperties == null ||
+            if (needServicesRestart || lastStartupConfigProperties == null ||
                     !lastStartupConfigProperties.equals(startupConfigProperties))
             {
-                boolean needShutdown = lastTestFailed || lastStartupConfigProperties != null;
+                // we need a shutdown if we needed a restart, or if the lastStartupConfigProperties are not null,
+                // which (because of the condition on the "if" above) implies the last startup config properties
+                // are different from this one's
+                boolean needShutdown = needServicesRestart || lastStartupConfigProperties != null;
                 if (needShutdown) {
-                    lastTestFailed = false; // clear the flag if it was set
+                    needServicesRestart = false; // clear the flag if it was set
                     stopTestServices();
                 }
                 if (!TestConfigService.TESTDIR.mkdirs() && !TestConfigService.TESTDIR.isDirectory())
@@ -207,7 +209,7 @@ public class ApiTestBase {
     public MethodRule exceptionCatchingRule = new TestWatchman() {
         @Override
         public void failed(Throwable e, FrameworkMethod method)  {
-            lastTestFailed = true;
+            needServicesRestart = true;
         }
     };
 
@@ -272,7 +274,7 @@ public class ApiTestBase {
         // try to clean up space if needed. If you can't, request a services reboot
         if (runningOutOfSpace()) {
             sm.getTreeService().flushAll();
-            lastTestFailed |= runningOutOfSpace();
+            needServicesRestart |= runningOutOfSpace();
         }
     }
 
