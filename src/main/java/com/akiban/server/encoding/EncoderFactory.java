@@ -24,6 +24,7 @@ import java.util.Map;
 import com.akiban.ais.model.Type;
 
 import java.nio.charset.Charset;
+import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 
 @SuppressWarnings("unused")
@@ -124,9 +125,14 @@ public final class EncoderFactory {
                     else if (charset.newEncoder().maxBytesPerChar() == 1.0)
                         encoding = SBCSEncoder.INSTANCE;
                 }
+                catch (IllegalCharsetNameException ex) {
+                    encoding = SBCSEncoder.INSTANCE;
+                }
                 catch (UnsupportedCharsetException ex) {
+                    encoding = SBCSEncoder.INSTANCE;
                 }
                 catch (UnsupportedOperationException ex) {
+                    encoding = SBCSEncoder.INSTANCE;
                 }
                 if (encoding == null)
                     encoding = new SlowMBCSEncoder(charsetName);
