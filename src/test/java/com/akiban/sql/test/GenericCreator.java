@@ -17,14 +17,8 @@ package com.akiban.sql.test;
 
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
-import java.io.Writer;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -41,24 +35,28 @@ import java.util.Locale;
 public abstract class GenericCreator {
 
     public static final String eol = System.getProperty("line.separator");
-    public static String TARGET_AREA = "query-combo";
+    public static String targetArea = "query-combo";
     public static final String STR_METHOD = "[s]=";
     public static final String DT_METHOD = "[d]=";
     public static final String INT_METHOD = "[i]=";
-    public final String[] QUANTIFIERS = { "Distinct", "All", "" };
-    public final String[] FUNCTION_LIST = {
+    public static final String[] QUANTIFIERS = { "Distinct", "All", "" };
+    public static final String[] FUNCTION_LIST = {
             "[s]=%1$s = '%2$s'",
             "[d]=%1$s = %2$s", "[i]=%1$s = '%2$s'" };
-    public final String[] AG_FUNCTION_LIST = { "[i]=SUM(%1$s)",
+    public static final String[] AG_FUNCTION_LIST = { "[i]=SUM(%1$s)",
             "[i]=AVG(%1$s)", "[i]=COUNT(%1$s)", "[i]=MIN(%1$s)",
             "[i]= MAX(%1$s)", "[i]=COUNT(*)" };
     protected StringBuilder sb = new StringBuilder();
     protected Formatter formatter = new Formatter(sb, Locale.US);
     String path = System.getProperty("user.dir")
             + "/src/test/resources/com/akiban/sql/pg/yaml/functional/";
+    
+    // should be paramterized
     protected String server = "localhost";
     protected String username = "root";
     protected String password = "";
+    
+    
     int counter = 0;
     public static final String[] ORDER_BY_DIRECTION = { " ASC ", " DESC " };
     public static final String[] JOIN_OTHER = { " CROSS JOIN %3$s " };
@@ -76,20 +74,15 @@ public abstract class GenericCreator {
     }
     
     protected void save(String filename, StringBuilder data) throws IOException {
+        BufferedWriter out = null;
         try {
             // Create file
             FileWriter fstream = new FileWriter(filename);
-            BufferedWriter out = new BufferedWriter(fstream);
+            out = new BufferedWriter(fstream);
             out.write(data.toString());
-            // Close the output stream
+        } finally {
             out.close();
-        } catch (Exception e) {// Catch exception if any            
-            System.err.println("Error: " + e.getMessage());
         }
-        File f = new File(filename);
-        //System.out.println(f.getCanonicalPath());
-        //System.out.println(data.toString());
-
     }
 
     public String generateOutputFromInno(String server, String username,
@@ -111,20 +104,20 @@ public abstract class GenericCreator {
                 ResultSet rs = stmt.getResultSet();
                 ResultSetMetaData md = rs.getMetaData();
                 while (rs.next()) {
+                    if (output.length() > 0) {
+                        output.append(",");
+                    }
                     output.append("[");
                     for (int i = 1; i <= md.getColumnCount(); i++) {
                         if (i > 1)
                             output.append(",");
                         output.append("'" + rs.getString(i) + "'");
                     }
-                    output.append("],");
+                    output.append("]");
 
                 }
                 output_str = output.toString();
-                if (output_str.length() > 4) {
-                    output_str = output_str.substring(0,
-                            output_str.length() - 1);
-                }
+                
             } 
         } finally {
             stmt.close();
@@ -134,7 +127,7 @@ public abstract class GenericCreator {
             empty_counter++;
         }
         if (output_str != null && output_str.length() > 0
-                && output_str.indexOf("order by") <= 0) {
+                && sql.indexOf("order by") <= 0) {
             output_str = "- output_ordered: [" + output_str + "]"
                     + System.getProperty("line.separator");
         } else {
@@ -145,14 +138,7 @@ public abstract class GenericCreator {
         return output_str;
     }
 
-    protected String trimOuterComma(String fields1) {
-        String retVal = fields1.trim();
-        if (retVal.endsWith(",")) {
-            retVal = retVal.substring(0, retVal.length() - 1);
-        }
-        return retVal.trim();
-    }
-
+    
     protected String format(int start_param_index, int function_index,
             String field, String[] source, String filter) {
         sb.setLength(0);
@@ -187,7 +173,7 @@ public abstract class GenericCreator {
     protected boolean deleteFile(String modifier) {
         String path = System.getProperty("user.dir")
                 + "/src/test/resources/com/akiban/sql/pg/yaml/functional/";
-        return new File(path + "test-" + TARGET_AREA + "-" + modifier + ".yaml")
+        return new File(path + "test-" + targetArea + "-" + modifier + ".yaml")
                 .delete();
     }
 

@@ -67,10 +67,10 @@ public class AllQueryComboCreatorTest {
         AllQueryComboCreator a = new AllQueryComboCreator();
         Assert.assertEquals("aa = CONCAT('" + a.STR_PARAMS[1] + "','"
                 + a.STR_PARAMS[2] + "')",
-                a.format(1, 0, "aa", a.STR_PARAMS, a.STR_METHOD));
+                a.format(1, 0, "aa", a.STR_PARAMS, GenericCreator.STR_METHOD));
         Assert.assertEquals("ABC = CONCAT('" + a.STR_PARAMS[2] + "','"
                 + a.STR_PARAMS[3] + "')",
-                a.format(2, 0, "ABC", a.STR_PARAMS, a.STR_METHOD));
+                a.format(2, 0, "ABC", a.STR_PARAMS, GenericCreator.STR_METHOD));
 
     }
 
