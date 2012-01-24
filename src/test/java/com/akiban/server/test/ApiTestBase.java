@@ -184,6 +184,9 @@ public class ApiTestBase {
                     lastTestFailed = false; // clear the flag if it was set
                     stopTestServices();
                 }
+                if (!TestConfigService.TESTDIR.mkdirs() && !TestConfigService.TESTDIR.isDirectory())
+                    throw new RuntimeException("couldn't create dir: " + TestConfigService.TESTDIR);
+                FileUtils.cleanDirectory(TestConfigService.TESTDIR);
                 assertNull("lastStartupConfigProperties should be null", lastStartupConfigProperties);
                 sm = createServiceManager(startupConfigProperties);
                 sm.startServices();
@@ -266,14 +269,15 @@ public class ApiTestBase {
             fail(openCursorsMessage);
         }
 
-        String journalsize = sm.getConfigurationService().getProperty("persistit.journalsize");
-        Long flushAt = Long.parseLong(journalsize);
-        long size = FileUtils.sizeOfDirectory(datadir());
-        if (size >= flushAt) {
+        // try to clean up space if needed. If you can't, request a services reboot
+        if (runningOutOfSpace()) {
             sm.getTreeService().flushAll();
+            lastTestFailed |= runningOutOfSpace();
         }
-        boolean runningOutOfSpace = datadir().getFreeSpace() < 128 * 1024 * 1024;
-        lastTestFailed |= runningOutOfSpace;
+    }
+
+    private boolean runningOutOfSpace() {
+        return datadir().getFreeSpace() < 128 * 1024 * 1024;
     }
 
     private static File datadir() {
@@ -282,14 +286,12 @@ public class ApiTestBase {
     }
 
     public static void stopTestServices() throws Exception {
-        File oldDataDir = datadir();
         ServiceManagerImpl.setServiceManager(null);
         if (lastStartupConfigProperties == null) {
             return;
         }
         lastStartupConfigProperties = null;
         sm.stopServices();
-        FileUtils.deleteDirectory(oldDataDir);
     }
     
     public final void crashTestServices() throws Exception {
