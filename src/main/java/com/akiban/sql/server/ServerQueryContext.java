@@ -55,7 +55,7 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
     }
 
     @Override
-    public void notifyClient(NOTIFICATION_LEVEL level, ErrorCode errorCode, String message) {
+    public void notifyClient(NotificationLevel level, ErrorCode errorCode, String message) {
         try {
             server.notifyClient(level, errorCode, message);
         }

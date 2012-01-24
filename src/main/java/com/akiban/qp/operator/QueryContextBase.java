@@ -128,7 +128,7 @@ public abstract class QueryContextBase implements QueryContext
 
     @Override
     public void warnClient(InvalidOperationException exception) {
-        notifyClient(NOTIFICATION_LEVEL.WARNING, exception.getCode(), exception.getShortMessage());
+        notifyClient(NotificationLevel.WARNING, exception.getCode(), exception.getShortMessage());
     }
 
 }

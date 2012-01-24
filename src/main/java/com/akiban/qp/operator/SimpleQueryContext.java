@@ -61,7 +61,7 @@ public class SimpleQueryContext extends QueryContextBase
     }
 
     @Override
-    public void notifyClient(NOTIFICATION_LEVEL level, ErrorCode errorCode, String message) {
+    public void notifyClient(NotificationLevel level, ErrorCode errorCode, String message) {
         switch (level) {
         case WARNING:
             logger.warn("{} {}", errorCode, message);

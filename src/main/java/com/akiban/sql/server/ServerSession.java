@@ -118,7 +118,7 @@ public interface ServerSession
     public ServerValueEncoder.ZeroDateTimeBehavior getZeroDateTimeBehavior();
 
     /** Send a warning message to the client. */
-    public void notifyClient(QueryContext.NOTIFICATION_LEVEL level, ErrorCode errorCode, String message) throws IOException;
+    public void notifyClient(QueryContext.NotificationLevel level, ErrorCode errorCode, String message) throws IOException;
 
     /** Get the index estimator. */
     public IndexEstimator indexEstimator();
