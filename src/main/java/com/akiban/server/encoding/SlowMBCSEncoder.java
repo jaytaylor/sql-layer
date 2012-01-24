@@ -21,7 +21,10 @@ import com.akiban.server.rowdata.FieldDef;
 
 import java.io.UnsupportedEncodingException;
 
-/** Single byte encoding. */
+/** General multi-byte byte encoding. Don't know what it will do, so
+ * have to go through the full conversion to bytes only to get the
+ * length.
+*/
 public class SlowMBCSEncoder extends VariableWidthEncoding {
     private final String charset;
     
