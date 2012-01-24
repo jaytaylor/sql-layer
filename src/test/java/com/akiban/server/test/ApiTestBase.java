@@ -21,6 +21,7 @@ import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -62,7 +63,9 @@ import com.akiban.util.Undef;
 import com.persistit.Transaction;
 import junit.framework.Assert;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Before;
 
 import com.akiban.ais.model.GroupTable;
@@ -225,7 +228,7 @@ public class ApiTestBase {
     }
 
     @After
-    public void tearDownAllTables() throws Exception {
+    public final void tearDownAllTables() throws Exception {
         if (lastStartupConfigProperties == null)
             return; // services never started up
         Set<RowUpdater> localUnfinishedUpdaters = new HashSet<RowUpdater>(unfinishedRowUpdaters);
@@ -262,6 +265,19 @@ public class ApiTestBase {
         if (openCursorsMessage != null) {
             fail(openCursorsMessage);
         }
+
+        String datadir = sm.getConfigurationService().getProperty("akserver.datapath");
+        File datadirFile = new File(datadir);
+        long size = FileUtils.sizeOfDirectory(datadirFile);
+        if (size >= 64 * 1024 * 1024) {
+            sm.getTreeService().flushAll();
+            System.out.println("flushing");
+        }
+
+    }
+
+    @AfterClass
+    public static void cleanupAfterClass() throws Exception {
     }
 
     public static void stopTestServices() throws Exception {

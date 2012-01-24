@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.sql.Connection;
 
+import com.akiban.server.test.it.ITBase;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -35,35 +36,37 @@ import org.junit.Test;
  * should call {@link #testYaml} with the file to use for the test.
  */
 @Ignore
-public class PostgresServerYamlITBase {
+public class PostgresServerYamlITBase extends PostgresServerITBase {
 
     /** Whether to enable debugging output. */
     protected static final boolean DEBUG = Boolean.getBoolean("test.DEBUG");
 
-    private static final PostgresServerIT manageServer = new PostgresServerIT();
+//    private static final PostgresServerIT manageServer = new PostgresServerIT();
 
-    protected static Connection connection;
+//    protected static Connection connection;
 
     protected PostgresServerYamlITBase() { }
 
-    @BeforeClass
-    public static void openTheConnection() throws Exception {
-	manageServer.startTestServices();
-	manageServer.openTheConnection();
-	connection = manageServer.getConnection();
-    }
 
-    @AfterClass
-    public static void closeTheConnection() throws Exception {
-	manageServer.stopTestServices();
-	manageServer.closeTheConnection();
-	connection = null;
-    }
 
-    @Before
-    public void dropAllTables() {
-	manageServer.accessDropAllTables();
-    }
+//    @BeforeClass
+//    public static void openTheConnection() throws Exception {
+//	manageServer.startTestServices();
+//	manageServer.openTheConnection();
+//	connection = manageServer.getConnection();
+//    }
+//
+//    @AfterClass
+//    public static void closeTheConnection() throws Exception {
+//	manageServer.stopTestServices();
+//	manageServer.closeTheConnection();
+//	connection = null;
+//    }
+//
+//    @Before
+//    public void dropAllTables() {
+//	manageServer.accessDropAllTables();
+//    }
 
     /**
      * Run a test with YAML input from the specified file.
@@ -102,17 +105,17 @@ public class PostgresServerYamlITBase {
 	}
     }
 
-    /**
-     * Subclass of PostgresServerITBase to permit accessing its non-public
-     * methods.
-     */
-    @Ignore
-    private static class PostgresServerIT extends PostgresServerITBase {
-	void accessDropAllTables() throws InvalidOperationException {
-	    dropAllTables();
-	}
-	Connection getConnection() {
-	    return connection;
-	}
-    }
+//    /**
+//     * Subclass of PostgresServerITBase to permit accessing its non-public
+//     * methods.
+//     */
+//    @Ignore
+//    private static class PostgresServerIT extends PostgresServerITBase {
+//	void accessDropAllTables() throws InvalidOperationException {
+//	    dropAllTables();
+//	}
+//	Connection getConnection() {
+//	    return connection;
+//	}
+//    }
 }
