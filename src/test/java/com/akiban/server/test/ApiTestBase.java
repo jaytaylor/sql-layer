@@ -279,7 +279,7 @@ public class ApiTestBase {
     }
 
     private boolean runningOutOfSpace() {
-        return datadir().getFreeSpace() < 128 * 1024 * 1024;
+        return datadir().getFreeSpace() < 256 * 1024 * 1024;
     }
 
     private static File datadir() {
