@@ -2,12 +2,12 @@
 ---
 - Include: all-types-schema.yaml
 ---
-- Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
---- #Constants bug 913786 - too much not working to finish test or list all here.  revisit when fixed
-- Statement: select TIMEDIFF('12:31:15', '00:00:01') from all_types;
-- output: [['12:31:14']]
+- Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06') 
 ---
-- Statement: select TIMEDIFF('2010-01-01 01:00:00', '2010-01-01 00:00:01') from all_types;
-- output: [['00:59:59']]
-
+- Statement: select TIMEDIFF(timestamp_field, ?) from all_types;
+- params: [['00:00:01']]
+- output: [['12:30:59']]
+---
+- Statement: select TIMEDIFF(timestamp_field, '00:00:01') from all_types;
+- output: [['01:05:05']]
 ...

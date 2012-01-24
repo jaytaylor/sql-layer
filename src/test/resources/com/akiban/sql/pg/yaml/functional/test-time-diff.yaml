@@ -1,24 +1,27 @@
-# Test the TIMEDIFF() function - broken
-- Properties: all
-- suppressed: true
+# Test the TIMEDIFF() function 
 ---
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field, time_field, timestamp_field, varchar_field) VALUES (1, '01:05:06', '2012-01-01 12:31:00', '2012-03-04 18:22:15')
-#--- #Constants bug 913786
-#- Statement: select TIMEDIFF('12:31:15', '00:00:01') from all_types;
-#- output: [['12:31:14']]
-#---
-#- Statement: select TIMEDIFF('2010-01-01 01:00:00', '2010-01-01 00:00:01') from all_types;
-#- output: [['00:59:59']]
+--- 
+- Statement: select TIMEDIFF('12:31:15', '00:00:01') from all_types;
+- output: [['12:31:14']]
+---
+- Statement: select TIMEDIFF('2010-01-01 01:00:00', '2010-01-01 00:00:01') from all_types;
+- output: [['00:59:59']]
 --- #Constants & params
 - Statement: select TIMEDIFF(time_field, ?) from all_types;
 - params: [['00:00:01']]
 - output: [['01:05:05']]
+#---
+#- Statement: select TIMEDIFF(timestamp_field, ?) from all_types;
+#- params: [['00:00:01']]
+#- output: [['12:30:59']]
 ---
-- Statement: select TIMEDIFF(timestamp_field, ?) from all_types;
+- Statement: select TIMEDIFF(varchar_field, ?) from all_types;
 - params: [['00:00:01']]
-- output: [['12:30:59']]
+- output: [['18:22:14']]
+
 --- #params & fields in select
 - Statement: select TIMEDIFF(time_field, ?) from all_types;
 - params: [['00:00:01']]
@@ -26,24 +29,20 @@
 ---
 - Statement: select 1 from all_types WHERE TIMEDIFF(time_field, ?);
 - params: [['00:00:01']]
-- output: [['01:05:05']]
+- output: [['1']]
 --- #fields in select
 - Statement: select TIMEDIFF(time_field, '00:00:01') from all_types;
 - output: [['01:05:05']]
 ---
-- Statement: select TIMEDIFF(timestamp_field, '00:00:01') from all_types;
-- output: [['01:05:05']]
----
+#- Statement: select TIMEDIFF(timestamp_field, '00:00:01') from all_types;
+#- output: [['01:05:05']]
+#---
 - Statement: select TIMEDIFF(varchar_field, '00:00:01') from all_types;
-- output: [['01:05:05']]
+- output: [['18:22:14']]
 --- #fields in where
 - Statement: select 1 from all_types where TIMEDIFF(time_field, '00:00:01');
-- output: [['01:05:05']]
----
-- Statement: select 1 from all_types WHERE TIMEDIFF(time_field, '00:00:01');
-- output: [['01:05:05']]
+- output: [['1']]
 ---
 - Statement: select 1 from all_types WHERE TIMEDIFF(varchar_field, '00:00:01');
-- output: [['01:05:05']]
-
+- output: [['1']]
 ...
