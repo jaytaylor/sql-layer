@@ -283,8 +283,7 @@ public class PersistitStoreIndexStatistics
                                   });
                 store.constructHKey(session, exchange, 
                                     indexStatisticsRowDef, rowData, false);
-                exchange.cut();
-                exchange.remove(Key.GT);
+                exchange.remove(Key.GTEQ);
                 // TODO: See exchange.remove() above.
                 transaction.commit(forceToDisk);
                 break;
