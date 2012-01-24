@@ -266,27 +266,30 @@ public class ApiTestBase {
             fail(openCursorsMessage);
         }
 
-        String datadir = sm.getConfigurationService().getProperty("akserver.datapath");
-        File datadirFile = new File(datadir);
-        long size = FileUtils.sizeOfDirectory(datadirFile);
-        if (size >= 64 * 1024 * 1024) {
+        String journalsize = sm.getConfigurationService().getProperty("persistit.journalsize");
+        Long flushAt = Long.parseLong(journalsize);
+        long size = FileUtils.sizeOfDirectory(datadir());
+        if (size >= flushAt) {
             sm.getTreeService().flushAll();
-            System.out.println("flushing");
         }
-
+        boolean runningOutOfSpace = datadir().getFreeSpace() < 128 * 1024 * 1024;
+        lastTestFailed |= runningOutOfSpace;
     }
 
-    @AfterClass
-    public static void cleanupAfterClass() throws Exception {
+    private static File datadir() {
+        String datadir = sm.getConfigurationService().getProperty("akserver.datapath");
+        return new File(datadir);
     }
 
     public static void stopTestServices() throws Exception {
+        File oldDataDir = datadir();
         ServiceManagerImpl.setServiceManager(null);
         if (lastStartupConfigProperties == null) {
             return;
         }
         lastStartupConfigProperties = null;
         sm.stopServices();
+        FileUtils.deleteDirectory(oldDataDir);
     }
     
     public final void crashTestServices() throws Exception {

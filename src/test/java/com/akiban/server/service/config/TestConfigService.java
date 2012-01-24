@@ -56,7 +56,8 @@ public class TestConfigService extends ConfigurationServiceImpl {
             }
         }
         String journalSizeKey = "persistit.journalsize";
-        ret.put(journalSizeKey, new Property(journalSizeKey, "128m"));
+
+        ret.put(journalSizeKey, new Property(journalSizeKey, Integer.toString(128 * 1024 * 1024)));
         return ret;
     }
 
