@@ -1286,6 +1286,8 @@ public class PersistitStore implements Store {
                 releaseExchange(session, iEx);
             }
         }
+
+        indexStatistics.deleteIndexStatistics(session, indexes);
     }
 
     public void flushIndexes(final Session session) {
@@ -1311,6 +1313,7 @@ public class PersistitStore implements Store {
                 throw new PersistitAdapterException(e);
             }
         }
+        indexStatistics.deleteIndexStatistics(session, indexes);
     }
 
     private void buildIndexAddKeys(final SortedSet<KeyState> keys,
