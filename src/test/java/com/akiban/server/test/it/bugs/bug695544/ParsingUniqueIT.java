@@ -17,7 +17,7 @@ package com.akiban.server.test.it.bugs.bug695544;
 
 import com.akiban.server.error.DuplicateKeyException;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.ParseException;
+import com.akiban.server.error.SchemaDefParseException;
 import com.akiban.server.test.it.ITBase;
 import org.junit.After;
 import org.junit.Test;
@@ -87,17 +87,17 @@ public final class ParsingUniqueIT extends ITBase {
         expectIndexColumns(tableId, "PRIMARY", "c1");
     }
 
-    @Test(expected=ParseException.class)
+    @Test(expected=SchemaDefParseException.class)
     public void fail_PRIMARY() throws InvalidOperationException {
         create("id int primary");
     }
 
-    @Test(expected=ParseException.class)
+    @Test(expected=SchemaDefParseException.class)
     public void fail_PRIMARY_UNIQUE_KEY() throws InvalidOperationException {
         create("id int primary unique key");
     }
 
-    @Test(expected=ParseException.class)
+    @Test(expected=SchemaDefParseException.class)
     public void fail_twoColsWithKEY() throws InvalidOperationException {
         create("id1 int key, id2 int key");
     }
