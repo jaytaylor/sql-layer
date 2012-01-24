@@ -87,9 +87,9 @@
 ---
 - Statement: select TIMEDIFF('12:34:55', 17) from all_types;
 - output: [['12:34:38']]
----
-- Statement: select TIMEDIFF('12:34:55', -17) from all_types;
-- output: [['12:35:12']]
+#--- 921127
+#- Statement: select TIMEDIFF('12:34:55', -17) from all_types;
+#- output: [['12:35:12']]
 #--- #921122
 #- Statement: select TIMEDIFF('12:34:55', 17.495) from all_types;
 #- output: [['12:34:37.505000']]
