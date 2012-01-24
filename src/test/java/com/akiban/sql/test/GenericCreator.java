@@ -46,9 +46,9 @@ public abstract class GenericCreator {
     public static final String DT_METHOD = "[d]=";
     public static final String INT_METHOD = "[i]=";
     public final String[] QUANTIFIERS = { "Distinct", "All", "" };
-    public final String[] FUNCTION_LIST = { "[s]=%1$s = CONCAT('%2$s','%3$s')",
-            "[s]=%1$s like ('%2$s')", "[s]=%1$s = '%2$s'",
-            "[d]=%1$s = HOUR(%2$s)", "[i]=%1$s = '%2$s'" };
+    public final String[] FUNCTION_LIST = {
+            "[s]=%1$s = '%2$s'",
+            "[d]=%1$s = %2$s", "[i]=%1$s = '%2$s'" };
     public final String[] AG_FUNCTION_LIST = { "[i]=SUM(%1$s)",
             "[i]=AVG(%1$s)", "[i]=COUNT(%1$s)", "[i]=MIN(%1$s)",
             "[i]= MAX(%1$s)", "[i]=COUNT(*)" };
@@ -65,10 +65,16 @@ public abstract class GenericCreator {
     public static final String[] JOIN_NATURAL = { " NATURAL ", " " };
     public static final String[] JOIN_TYPE = { " INNER ", " LEFT ", " RIGHT ",
             " LEFT OUTER ", " RIGHT OUTER ", " " };
-    public static final String[] JOIN_SPEC = { " ON %1$s.%2$s = %3$s.%4$s ",
-            " USING (%4$s) " };
+    public static final String[] JOIN_SPEC = { " ON %1$s.%2$s = %3$s.%4$s " };
+            //" USING (%4$s) " };
     public static final String JOIN = " JOIN %3$s ";
-
+    int empty_counter = 0;
+    
+    protected void close() {
+        System.out.println("Empty Counter: "+empty_counter);
+        
+    }
+    
     protected void save(String filename, StringBuilder data) throws IOException {
         try {
             // Create file
@@ -92,38 +98,41 @@ public abstract class GenericCreator {
         Class.forName("com.mysql.jdbc.Driver");
         String url = "jdbc:mysql://" + server + "/test";
         Connection conn = DriverManager.getConnection(url, username, password);
-        String output_str = null;
-        System.out.println("generateOutputFromInno: " + sql);
+        String output_str = "";
+        //System.out.println("generateOutputFromInno: " + sql);
         PreparedStatement stmt = conn.prepareStatement(sql);
         if (args != null) {
             for (int i = 0; i < args.length; i++) {
                 stmt.setString(i + 1, args[i]);
             }
         }
-        if (stmt.execute()) {
-            ResultSet rs = stmt.getResultSet();
-            ResultSetMetaData md = rs.getMetaData();
-            while (rs.next()) {
-                output.append("[");
-                for (int i = 1; i <= md.getColumnCount(); i++) {
-                    if (i > 1)
-                        output.append(",");
-                    output.append("'" + rs.getString(i) + "'");
+        try {
+            if (stmt.execute()) {
+                ResultSet rs = stmt.getResultSet();
+                ResultSetMetaData md = rs.getMetaData();
+                while (rs.next()) {
+                    output.append("[");
+                    for (int i = 1; i <= md.getColumnCount(); i++) {
+                        if (i > 1)
+                            output.append(",");
+                        output.append("'" + rs.getString(i) + "'");
+                    }
+                    output.append("],");
+
                 }
-                output.append("],");
-
-            }
-            output_str = output.toString();
-            if (output_str.length() > 4) {
-                output_str = output_str.substring(0, output_str.length() - 1);
-            }
-        } else {
-            int count = stmt.getUpdateCount();
-            //System.out.println(count + " rows updated.");
+                output_str = output.toString();
+                if (output_str.length() > 4) {
+                    output_str = output_str.substring(0,
+                            output_str.length() - 1);
+                }
+            } 
+        } finally {
+            stmt.close();
+            conn.close();
         }
-        stmt.close();
-        conn.close();
-
+        if (output_str == null || output_str.trim().equals("")) {
+            empty_counter++;
+        }
         if (output_str != null && output_str.length() > 0
                 && output_str.indexOf("order by") <= 0) {
             output_str = "- output_ordered: [" + output_str + "]"
@@ -170,21 +179,9 @@ public abstract class GenericCreator {
         return retVal;
     }
 
-    protected BufferedWriter getAppender(String modifier) {
-        OutputStream os = null;
-        try {
-            os = new FileOutputStream(path + "test-" + TARGET_AREA + "-"
-                    + modifier + ".yaml");
-        } catch (FileNotFoundException e) {
-            System.out.println("Error(getAppender):" + e.getMessage());
-        }
-        Writer writer = null;
-        try {
-            writer = new OutputStreamWriter(os, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            System.out.println("Error(getAppender):" + e.getMessage());
-        }
-        return new BufferedWriter(writer);
+    protected StringBuilder getAppender(String modifier) {
+         
+        return new StringBuilder();
     }
 
     protected boolean deleteFile(String modifier) {
@@ -199,7 +196,7 @@ public abstract class GenericCreator {
         return sql;
     }
 
-    protected void writeYamlBlock(BufferedWriter writer, String sql) {
+    protected void writeYamlBlock(StringBuilder writer, String sql) {
         try {
             writer.append("---" + eol);
 
@@ -210,18 +207,21 @@ public abstract class GenericCreator {
             //System.out.println(sql);
             counter++;
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.out.println("ERROR(wyb):  " + e.getMessage());
         }
     }
 
     private String callMySQL(String sql) {
-        String retVal = null;
+        String retVal = "";
 
         try {
             retVal = generateOutputFromInno(server, username, password, sql,
                     null);
-            //System.out.print(".");
+            if (retVal == null) {
+                retVal = "";
+                throw new Exception("Result was null");
+            }
         } catch (Exception e) {
             System.out.println("");
             System.out.println("MySQL: " + sql);

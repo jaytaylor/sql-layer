@@ -15,7 +15,6 @@
 
 package com.akiban.sql.test;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,6 +27,8 @@ import java.util.Iterator;
  * creates tests for bitwise math operations
  * */
 public class AllQueryComboCreator extends GenericCreator implements Runnable {
+
+    private static final int MAX_LOOPS = 5000;
 
     private void cleanup() {
         deleteFile("test1");
@@ -42,14 +43,13 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
     public final String[] INT_FIELDS = { "test.customers.customer_id",
             "test.addresses.customer_id", "test.orders.customer_id",
             "test.orders.order_id" };
-    public final String[] STR_FIELDS = { "test.customers.customer_title",
-            "test.addresses.state", "test.states.name", "test.books.book_name",
-            "test.customers.customer_name" }; //, "customers.primary_payment_code", "customers.payment_status", "orders.ship_priority" };
+    public final String[] STR_FIELDS = { 
+            "test.addresses.state", "test.items.color" }; //, "customers.primary_payment_code", "customers.payment_status", "orders.ship_priority" };
     public final String[] DT_FIELDS = { "test.orders.order_date",
             "test.orders.ship_date" };
     public final String[] TABLES = { "TEST.CUSTOMERS", "test.orders",
             "test.addresses", "test.books", "test.states", "test.items" };
-    final static Relationship[] RELATIONSHIPS = {
+    public final static Relationship[] RELATIONSHIPS = {
             new Relationship("TEST.CUSTOMERS", "test.orders", "customer_id",
                     "customer_id"),
             new Relationship("test.customers", "test.addresses", "customer_id",
@@ -58,13 +58,12 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
                     "order_id"),
             new Relationship("test.books", "test.items", "book_id", "book_id"),
             new Relationship("test.states", "test.addresses", "code", "state") };
-    public final String[] INT_PARAMS = { "-5", "0", "2", "99" };
-    public final String[] STR_PARAMS = { "New York", "FONDUE", "CCCCC",
-            "ABDFTERE" };
-    public final String[] DT_PARAMS = { "1999-03-04", "2012-12-31" };
-    public final int[] LIMITS = { 1, 2, 100, 0 };
-    int master_counter = 0;
-    
+    public final String[] INT_PARAMS = { "1", "2", "3", "4" };
+    public final String[] STR_PARAMS = { "MA", "NY", "RI", "CT", "Red", "Blue" };
+    public final String[] DT_PARAMS = { "'2011-01-02'", "'2011-01-02'" };
+    public final int[] LIMITS = { 1, 2, 5, 0 };
+    public static int master_counter = 0;
+
     //  SELECT [ <set quantifier> ] <select list> <table expression>
     //    <table expression>    ::= 
     //            <from clause>
@@ -76,15 +75,32 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
     // subquery
     // complex joins (number, conditions)
 
-    BufferedWriter master_writer;
     HashSet<HashSet<String>> select_fields;
     HashSet<String> string_array;
+    static public StringBuilder master_writer;
+
+    protected void close() {
+        super.close();
+        System.out.println("Counter: "+(counter+(master_counter*MAX_LOOPS)));
+        master_counter++;
+        String path = System.getProperty("user.dir")
+                + "/src/test/resources/com/akiban/sql/pg/yaml/functional/";
+        try {
+            save(path + "test-" + TARGET_AREA + "-" + master_counter
+                    + ".yaml", master_writer);
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+    }
 
     public void setup() {
         TARGET_AREA = "query-combo";
 
         // only needed when changing data loads
-        //loadData();
+        loadData();
+
+        master_writer = getAppender("test");
 
         string_array = new HashSet<String>();
         string_array.addAll(new ArrayList<String>(Arrays.asList(STR_FIELDS)));
@@ -101,78 +117,90 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
 
     @Override
     public void run() {
-        master_writer = getAppender("test1");
-        
+
+        header(master_writer);
+
         // select str fields from where_str
         SQLStatementGenerator stmt = new SQLStatementGenerator();
-        for (int x=0;x < STR_PARAMS.length;x++) {
+        for (int x = 0; x < STR_PARAMS.length; x++) {
             stmt = new SQLStatementGenerator();
             stmt.setRoot_string_array(STR_FIELDS);
-            stmt = modifySQLforWhereClause(stmt, x, STR_PARAMS,
-                    STR_METHOD);
+            stmt = modifySQLforWhereClause(stmt, x, STR_PARAMS, STR_METHOD);
             writeYamlBlock(master_writer, stmt.getSQL());
-         // select str fields from where_str limit
+            // select str fields from where_str limit
             modifyAndSaveWithLimits(master_writer, stmt);
-         // select str fields from where_str order by limit
+            // select str fields from where_str order by limit
             modifyAndSaveWithOrderBy(master_writer, stmt);
             stmt.clearLimit();
             // select str fields from where_str order by 
             modifyAndSaveWithOrderBy(master_writer, stmt);
-         // select str fields from where_str join order by (limit)
+            // select str fields from where_str join order by (limit)
             justJoinIterations(master_writer, stmt);
         }
-        for (int x=0;x < INT_PARAMS.length;x++) {
+        for (int x = 0; x < INT_PARAMS.length; x++) {
             stmt = new SQLStatementGenerator();
-            
+
             stmt.setRoot_int_array(INT_FIELDS);
-            stmt = modifySQLforWhereClause(stmt, x, INT_PARAMS,
-                    INT_METHOD);
+            stmt = modifySQLforWhereClause(stmt, x, INT_PARAMS, INT_METHOD);
             writeYamlBlock(master_writer, stmt.getSQL());
-         // select str fields from where_str limit
+            // select str fields from where_str limit
             modifyAndSaveWithLimits(master_writer, stmt);
-         // select str fields from where_str order by limit
+            // select str fields from where_str order by limit
             modifyAndSaveWithOrderBy(master_writer, stmt);
             stmt.clearLimit();
             // select str fields from where_str order by 
             modifyAndSaveWithOrderBy(master_writer, stmt);
-         // select str fields from where_str join order by (limit)
+            // select str fields from where_str join order by (limit)
+            justJoinIterations(master_writer, stmt);
+        }
+        for (int x = 0; x < DT_PARAMS.length; x++) {
+            stmt = new SQLStatementGenerator();
+
+            stmt.setRoot_dt_array(DT_FIELDS);
+            stmt = modifySQLforWhereClause(stmt, x, DT_PARAMS, DT_METHOD);
+            writeYamlBlock(master_writer, stmt.getSQL());
+            // select str fields from where_str limit
+            modifyAndSaveWithLimits(master_writer, stmt);
+            // select str fields from where_str order by limit
+            modifyAndSaveWithOrderBy(master_writer, stmt);
+            stmt.clearLimit();
+            // select str fields from where_str order by 
+            modifyAndSaveWithOrderBy(master_writer, stmt);
+            // select str fields from where_str join order by (limit)
             justJoinIterations(master_writer, stmt);
         }
         System.out.println("Done!");
     }
 
-   
-
     @Override
-    protected void writeYamlBlock(BufferedWriter writer, String sql) {
+    protected void writeYamlBlock(StringBuilder writer, String sql) {
         super.writeYamlBlock(writer, sql);
         System.out.print(".");
-        //if (counter >= 1000) {
-          //  try {
-            //    writer.close();
-            //} catch (IOException e) {
-              //  System.out.println(e.getMessage());
-           // }
-          //  master_writer = getAppender("next"+(master_counter++));
-            
-       // }
+
+        if (counter > MAX_LOOPS) {
+            counter = 0;
+            master_counter++;
+            String path = System.getProperty("user.dir")
+                    + "/src/test/resources/com/akiban/sql/pg/yaml/functional/";
+            try {
+                save(path + "test-" + TARGET_AREA + "-" + master_counter
+                        + ".yaml", writer);
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            writer.setLength(0);
+
+            header(writer);
+        }
     }
 
     /* Limit */
-    private void doLimitLoops(BufferedWriter writer, SQLStatementGenerator stmt) {
-        //master_writer = getAppender("limit");
-        //try {
-            modifyAndSaveWithLimits(writer, stmt);
-        //} finally {
-          //  try {
-            //    master_writer.close();
-            //} catch (IOException e) {
-              //  System.out.println(e.getMessage());
-           // }
-        //}
+    private void doLimitLoops(StringBuilder writer, SQLStatementGenerator stmt) {
+        modifyAndSaveWithLimits(writer, stmt);
     }
 
-    private void modifyAndSaveWithLimits(BufferedWriter writer,
+    private void modifyAndSaveWithLimits(StringBuilder writer,
             SQLStatementGenerator stmt) {
         for (int x = 0; x < LIMITS.length; x++) {
             stmt.setLimit(LIMITS[x]);
@@ -180,87 +208,6 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
         }
     }
 
-//    private void doJoinLoops() {
-//        master_writer = getAppender("join");
-//        try {
-//            justJoinIterations(master_writer, string_array);
-//        } catch (IOException e) {
-//            // TODO Auto-generated catch block
-//            e.printStackTrace();
-//        } finally {
-//            try {
-//                master_writer.close();
-//            } catch (IOException e) {
-//                System.out.println(e.getMessage());
-//            }
-//        }
-//    }
-
-    private void doSelectLoops() {
-        master_writer = getAppender("select");
-        try {
-            try {
-                justSelectIterations(master_writer, select_fields);
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
-            }
-        } finally {
-            try {
-                master_writer.close();
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
-            }
-        }
-    }
-
-    private void doWhereClauseLoop(String testName, int total_iterations) {
-        master_writer = getAppender(testName);
-        try {
-            header();
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-        try {
-            for (int iterations = 0; iterations < total_iterations; iterations++) {
-                SQLStatementGenerator stmt = new SQLStatementGenerator();
-                stmt.setRoot_string_array(STR_FIELDS);
-                stmt = modifySQLforWhereClause(stmt, iterations, STR_PARAMS,
-                        STR_METHOD);
-
-                writeYamlBlock(master_writer, stmt.getSQL());
-                doLimitLoops(master_writer, stmt);
-                modifyAndSaveWithLimits(master_writer, stmt);
-
-                stmt = new SQLStatementGenerator();
-                stmt.setRoot_dt_array(DT_FIELDS);
-                stmt = modifySQLforWhereClause(stmt, total_iterations,
-                        DT_PARAMS, DT_METHOD);
-
-                writeYamlBlock(master_writer, stmt.getSQL());
-                doLimitLoops(master_writer, stmt);
-
-                stmt = new SQLStatementGenerator();
-                stmt.setRoot_string_array(INT_FIELDS);
-                stmt = modifySQLforWhereClause(stmt, total_iterations,
-                        INT_PARAMS, INT_METHOD);
-                doLimitLoops(master_writer, stmt);
-
-                writeYamlBlock(master_writer, stmt.getSQL());
-                doLimitLoops(master_writer, stmt);
-                modifyAndSaveWithOrderBy(master_writer, stmt);
-            }
-
-        } finally {
-            try {
-                master_writer.close();
-            } catch (IOException e) {
-                System.out.println("Error(test1):" + e.getMessage());
-            }
-        }
-    }
-
-
-    
     // expected valid stmt passed in; we add where clause
     private SQLStatementGenerator modifySQLforWhereClause(
             SQLStatementGenerator stmt, int iterations, String[] param_list,
@@ -278,40 +225,14 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
         return stmt;
     }
 
-    private void justOrderby(BufferedWriter writer,
-            HashSet<HashSet<String>> p_string_array) throws IOException {
-        SQLStatementGenerator stmt = new SQLStatementGenerator();
-        Iterator<HashSet<String>> i = p_string_array.iterator();
-        while (i.hasNext()) {
-            HashSet<String> row = (HashSet<String>) i.next();
-            stmt.setRoot_string_array(row);
-            modifyAndSaveWithOrderBy(writer, stmt);
-        }
-    }
-
-    private void doOrderByLoops() {
-        master_writer = getAppender("orderby");
-        try {
-            justOrderby(master_writer, select_fields);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                master_writer.close();
-            } catch (IOException e) {
-                System.out.println(e.getMessage());
-            }
-        }
-    }
-
-    private void modifyAndSaveWithOrderBy(BufferedWriter writer,
-            SQLStatementGenerator stmt)  {
+    private void modifyAndSaveWithOrderBy(StringBuilder writer,
+            SQLStatementGenerator stmt) {
         ArrayList<String> temp_row;
         ArrayList<String> temp_row2;
         for (int x = 0; x < stmt.getRoot_array().size(); x++) {
             for (int b = 0; b < stmt.getRoot_array().size(); b++) {
                 temp_row = new ArrayList<String>(stmt.getRoot_array());
-                
+
                 Collections.swap(temp_row, x, b);
                 for (int a = 0; a < ORDER_BY_DIRECTION.length; a++) {
                     temp_row2 = new ArrayList<String>(temp_row);
@@ -324,7 +245,7 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
         }
     }
 
-    private void justJoinIterations(BufferedWriter writer,
+    private void justJoinIterations(StringBuilder writer,
             SQLStatementGenerator stmt) {
         for (int x = 0; x < RELATIONSHIPS.length; x++) {
             if (stmt.getTableList().contains(
@@ -334,8 +255,10 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
                 stmt.getTableList().remove(
                         RELATIONSHIPS[x].secondaryTable.toUpperCase());
                 for (int a = 0; a < JOIN_NATURAL.length; a++) {
+                    
                     for (int b = 0; b < JOIN_TYPE.length; b++) {
                         for (int c = 0; c < JOIN_SPEC.length; c++) {
+                            stmt.clearJoins(x);
                             if (JOIN_NATURAL[a].equalsIgnoreCase(" NATURAL ")
                                     && JOIN_TYPE[a].equalsIgnoreCase(" INNER ")) {
                                 continue; // MySQL does not support this case
@@ -346,31 +269,39 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
                                     RELATIONSHIPS[x].primaryKey,
                                     RELATIONSHIPS[x].secondaryTable,
                                     RELATIONSHIPS[x].secondaryKey);
-                            stmt.setJoins(sb.toString());
-                            stmt.fixFrom(RELATIONSHIPS[x].primaryTable.toUpperCase());
+                            stmt.setJoins(x, sb.toString());
+                            stmt.fixFrom(RELATIONSHIPS[x].primaryTable
+                                    .toUpperCase());
                             writeYamlBlock(writer, stmt.getSQL());
-                            doLimitLoops(master_writer, stmt);
+                            doLimitLoops(writer, stmt);
                             stmt.clearLimit();
-                            Iterator<String> i = stmt.getRoot_array().iterator();
-                            while (i.hasNext()) {
-                                String field = i.next();
+                            if (stmt.getRoot_string_array() != null) {
+                                Iterator<String> i = stmt
+                                        .getRoot_string_array().iterator();
+                                while (i.hasNext()) {
+                                    String field = i.next();
 
-                                for (int z = 0;z < FUNCTION_LIST.length; z++) {
-                                    if (FUNCTION_LIST[z].startsWith(STR_METHOD)) {
-                                        for (int y = 0; y < STR_PARAMS.length; y++) {
-                                            stmt.setWhere(format(y, z, field, STR_PARAMS,
-                                                    STR_METHOD));
-                                            writeYamlBlock(writer, stmt.getSQL());
+                                    for (int z = 0; z < FUNCTION_LIST.length; z++) {
+                                        if (FUNCTION_LIST[z]
+                                                .startsWith(STR_METHOD)) {
+                                            for (int y = 0; y < STR_PARAMS.length; y++) {
+                                                stmt.setWhere(format(y, z,
+                                                        field, STR_PARAMS,
+                                                        STR_METHOD));
+                                                writeYamlBlock(writer,
+                                                        stmt.getSQL());
+                                            }
                                         }
                                     }
                                 }
                             }
-                            doLimitLoops(master_writer, stmt);
+                            doLimitLoops(writer, stmt);
 
                             sb.setLength(0);
                         }
                     }
                 }
+                
                 for (int a = 0; a < JOIN_OTHER.length; a++) {
                     sb.setLength(0);
                     formatter.format(JOIN_OTHER[a],
@@ -378,31 +309,38 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
                             RELATIONSHIPS[x].primaryKey.toUpperCase(),
                             RELATIONSHIPS[x].secondaryTable.toUpperCase(),
                             RELATIONSHIPS[x].secondaryKey.toUpperCase());
-                    
-                    stmt.setJoins(sb.toString());
-                    stmt.getTableList().remove(RELATIONSHIPS[x].secondaryTable.toUpperCase());
+
+                    stmt.setJoins(a, sb.toString());
+                    stmt.getTableList().remove(
+                            RELATIONSHIPS[x].secondaryTable.toUpperCase());
                     stmt.fixFrom(RELATIONSHIPS[x].primaryTable.toUpperCase());
                     writeYamlBlock(writer, stmt.getSQL());
-                    doLimitLoops(master_writer, stmt);
+                    doLimitLoops(writer, stmt);
                     stmt.clearLimit();
                     stmt.setTableList(stmt.getRoot_array().toString());
-                    stmt.getTableList().remove(RELATIONSHIPS[x].secondaryTable.toUpperCase());
-                    Iterator<String> i = stmt.getRoot_array().iterator();
-                    while (i.hasNext()) {
-                        String field = i.next();
+                    stmt.getTableList().remove(
+                            RELATIONSHIPS[x].secondaryTable.toUpperCase());
+                    if (stmt.getRoot_string_array() != null) {
+                        Iterator<String> i = stmt.getRoot_string_array()
+                                .iterator();
+                        while (i.hasNext()) {
+                            String field = i.next();
 
-                        for (int z = 0;z < FUNCTION_LIST.length; z++) {
-                            if (FUNCTION_LIST[z].startsWith(STR_METHOD)) {
-                                for (int y = 0; y < STR_PARAMS.length; y++) {
-                                    stmt.setWhere(format(y, z, field, STR_PARAMS,
-                                            STR_METHOD));
-                                    stmt.getTableList().remove(RELATIONSHIPS[x].secondaryTable.toUpperCase());
-                                    writeYamlBlock(writer, stmt.getSQL());
+                            for (int z = 0; z < FUNCTION_LIST.length; z++) {
+                                if (FUNCTION_LIST[z].startsWith(STR_METHOD)) {
+                                    for (int y = 0; y < STR_PARAMS.length; y++) {
+                                        stmt.setWhere(format(y, z, field,
+                                                STR_PARAMS, STR_METHOD));
+                                        stmt.getTableList().remove(
+                                                RELATIONSHIPS[x].secondaryTable
+                                                        .toUpperCase());
+                                        writeYamlBlock(writer, stmt.getSQL());
+                                    }
                                 }
                             }
                         }
                     }
-                    doLimitLoops(master_writer, stmt);
+                    doLimitLoops(writer, stmt);
 
                     sb.setLength(0);
                 }
@@ -410,65 +348,6 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
             }
         }
 
-    }
-
-    private void justWhereIterations_String(BufferedWriter writer,
-            HashSet<String> string_array) throws IOException {
-        SQLStatementGenerator stmt = new SQLStatementGenerator();
-        stmt.setFields((string_array));
-        stmt.setTableList(string_array.toString());
-
-        Iterator<String> i = string_array.iterator();
-        while (i.hasNext()) {
-            String field = i.next();
-
-            for (int a = 0; a < FUNCTION_LIST.length; a++) {
-                if (FUNCTION_LIST[a].startsWith(STR_METHOD)) {
-                    for (int x = 0; x < STR_PARAMS.length; x++) {
-                        stmt.setWhere(format(x, a, field, STR_PARAMS,
-                                STR_METHOD));
-                        writeYamlBlock(writer, stmt.getSQL());
-                    }
-                }
-            }
-        }
-    }
-
-    private SQLStatementGenerator justLimitIterations(
-            SQLStatementGenerator stmt, int limit) {
-        if (stmt.getFields().isEmpty()) {
-            stmt.setFields((string_array));
-        }
-        stmt.setLimit(limit);
-        return stmt;
-    }
-
-    private void justSelectIterations(BufferedWriter writer,
-            HashSet<HashSet<String>> p_select_fields) throws IOException {
-        SQLStatementGenerator stmt = new SQLStatementGenerator();
-        Iterator<HashSet<String>> i = p_select_fields.iterator();
-        while (i.hasNext()) {
-            ArrayList<String> next = new ArrayList<String>(i.next());
-            for (int b = 0; b < next.size(); b++) {
-                ArrayList<String> select_fields = new ArrayList<String>(next);
-                Collections.swap(select_fields, 0, b);
-
-                stmt.setTableList(next.toString());
-                stmt.setFields((next));
-                writeYamlBlock(writer, stmt.getSQL());
-                doLimitLoops(writer, stmt);
-
-                stmt = modifySQLforSelectClause("distinct", stmt, select_fields);
-                writeYamlBlock(writer, stmt.getSQL());
-                doLimitLoops(writer, stmt);
-
-                stmt = modifySQLforSelectClause("all", stmt, select_fields);
-
-                writeYamlBlock(writer, stmt.getSQL());
-                doLimitLoops(writer, stmt);
-            }
-            writer.flush();
-        }
     }
 
     public SQLStatementGenerator modifySQLforSelectClause(String quan,
@@ -480,38 +359,14 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
         return stmt;
     }
 
-    //    private void finalizeFile(String modifier) {
-    //        // will drop the files in the same branch as where this code is running
-    //        // sql gets dropped in the root directory of branch
-    //
-    //        recordYamlToDisk(path, modifier);
-    //        System.out.println("Test count generated is " + counter);
-    //        counter = 0;
-    //    }
-
-    private void header() throws IOException {
-        master_writer
-                .append("# generated by com.akiban.sql.test.AllQueryComboCreator on "
-                        + new Date()
-                        + eol
-                        + "---"
-                        + eol
-                        + "- Include: all-caoi-schema.yaml" + eol);
+    private void header(StringBuilder writer) {
+        writer.append("# generated by com.akiban.sql.test.AllQueryComboCreator on "
+                + new Date()
+                + eol
+                + "---"
+                + eol
+                + "- Include: all-caoi-schema.yaml" + eol);
     }
-
-    //    private void recordYamlToDisk(String path, String modifier) {
-    //        try {
-    //            
-    //            yaml_file_contents.append("...");
-    //            save(path + "test-" + TARGET_AREA + "-" + modifier + ".yaml",
-    //                    yaml_file_contents);
-    //            System.out.println(eol + "contents saved to " + path + "test-"
-    //                    + TARGET_AREA + "-" + modifier + ".yaml");
-    //            yaml_file_contents = new StringBuilder(header());
-    //        } catch (IOException e) {
-    //            System.err.println("Error: " + e.getMessage());
-    //        }
-    //    }
 
     // all combinations of strings (not considering order)
     public HashSet<HashSet<String>> allCombos(HashSet<String> string_array) {
@@ -527,17 +382,6 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
         }
         return retVal;
     }
-
-    //    private ArrayList<String> getColumnsforTable(String table) {
-    //        ArrayList<String> retVal = new ArrayList<String>();
-    //        for (Iterator<String> i = string_array.iterator(); i.hasNext();) {
-    //            String element = i.next();
-    //            if (element.startsWith(table)) {
-    //                retVal.add(element);
-    //            }
-    //        }
-    //        return retVal;
-    //    }
 
     public void loadData() {
         ArrayList<String> insert_list = new ArrayList<String>();
@@ -702,93 +546,93 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
         insert_list
                 .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (6,'Birdsong','Sebastian Faulks','2000-01-01');");
         insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (7,'Captain Corelli''s Mandolin','Louis de Bernieres','2000-01-01');");
+                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (7,'Captain Corellis Mandolin','Louis de Bernieres','2000-01-01');");
         insert_list
                 .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (8,'Cloudstreet','Tim Winton','2000-01-01');");
         insert_list
                 .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (9,'Disgrace','JM Coetzee','2000-01-01');");
         insert_list
                 .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (10,'Enduring Love','Ian McEwan','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (11,'Faith Singer','Rosie Scott','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (12,'Fingersmith','Sarah Waters','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (13,'Fred and Edie','Jill Dawson ','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (14,'Fugitive Pieces','Anne Michaels','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (15,'Girl with a Pearl Earring','Tracy Chevalier','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (16,'Grace Notes','Bernard MacLaverty','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (17,'High Fidelity','Nick Hornby','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (18,'His Dark Materials Trilogy','Philip Pullman','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (19,'Hotel World','Ali Smith','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (20,'Middlesex','Jeffrey Eugenides','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (21,'Midnight''s Children','Salman Rushdie','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (22,'Misery','Stephen King','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (23,'Miss Smilla''s Feeling for Snow','Peter Hoeg','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (24,'Money','Martin Amis','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (25,'Music and Silence','Rose Tremain','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (26,'One Hundred Years of Solitude','Gabriel Garcia Marquez','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (27,'Oranges Are Not The Only Fruit','Jeanette Winterson','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (28,'Riders','Jilly Cooper','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (29,'Slaughterhouse-five','Kurt Vonnegut','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (30,'The Blind Assassin','Margaret Atwood','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (31,'The Corrections','Jonathan Franzen','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (32,'The Golden Notebook','Doris Lessing','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (33,'The Handmaid''s Tale','Margaret Atwood','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (34,'The House of Spirits','Isabelle Allende','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (35,'The Name of the Rose','Umberto Eco','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (36,'The Passion','Jeanette Winterson','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (37,'The Poisonwood Bible','Barbara Kingsolver','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (38,'The Rabbit test.books','John Updike','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (39,'The Regeneration Trilogy','Pat Barker','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (40,'The Secret History','Donna Tartt','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (41,'The Shipping News','E Annie Proulx','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (42,'The Tin Drum','Gunter Grass','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (43,'The Wind Up Bird Chronicle','Haruki Murakami','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (44,'The Women''s Room','Marilyn French','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (45,'Tracey Beaker','Jacqueline Wilson','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (46,'Trainspotting','Irvine Welsh','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (47,'Unless','Carol Shields','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (48,'What a Carve Up!','Jonathan Coe','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (49,'What I Loved','Siri Hustvedt','2000-01-01');");
-        insert_list
-                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (50,'White Teeth','Zadie Smith','2000-01-01')");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (11,'Faith Singer','Rosie Scott','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (12,'Fingersmith','Sarah Waters','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (13,'Fred and Edie','Jill Dawson ','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (14,'Fugitive Pieces','Anne Michaels','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (15,'Girl with a Pearl Earring','Tracy Chevalier','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (16,'Grace Notes','Bernard MacLaverty','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (17,'High Fidelity','Nick Hornby','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (18,'His Dark Materials Trilogy','Philip Pullman','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (19,'Hotel World','Ali Smith','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (20,'Middlesex','Jeffrey Eugenides','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (21,'Midnights Children','Salman Rushdie','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (22,'Misery','Stephen King','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (23,'Miss Smillas Feeling for Snow','Peter Hoeg','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (24,'Money','Martin Amis','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (25,'Music and Silence','Rose Tremain','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (26,'One Hundred Years of Solitude','Gabriel Garcia Marquez','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (27,'Oranges Are Not The Only Fruit','Jeanette Winterson','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (28,'Riders','Jilly Cooper','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (29,'Slaughterhouse-five','Kurt Vonnegut','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (30,'The Blind Assassin','Margaret Atwood','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (31,'The Corrections','Jonathan Franzen','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (32,'The Golden Notebook','Doris Lessing','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (33,'The Handmaids Tale','Margaret Atwood','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (34,'The House of Spirits','Isabelle Allende','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (35,'The Name of the Rose','Umberto Eco','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (36,'The Passion','Jeanette Winterson','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (37,'The Poisonwood Bible','Barbara Kingsolver','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (38,'The Rabbit test.books','John Updike','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (39,'The Regeneration Trilogy','Pat Barker','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (40,'The Secret History','Donna Tartt','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (41,'The Shipping News','E Annie Proulx','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (42,'The Tin Drum','Gunter Grass','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (43,'The Wind Up Bird Chronicle','Haruki Murakami','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (44,'The Womens Room','Marilyn French','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (45,'Tracey Beaker','Jacqueline Wilson','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (46,'Trainspotting','Irvine Welsh','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (47,'Unless','Carol Shields','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (48,'What a Carve Up!','Jonathan Coe','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (49,'What I Loved','Siri Hustvedt','2000-01-01');");
+        //        insert_list
+        //                .add("Insert into test.books (book_id, book_name , author_name, copyright_year) values (50,'White Teeth','Zadie Smith','2000-01-01')");
         insert_list
                 .add("Insert into test.customers (customer_id, customer_title, customer_name, comment) values (1,'Mr.','Bob Jones','No Comment');");
         insert_list
@@ -798,11 +642,23 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
         insert_list
                 .add("Insert into test.customers (customer_id, customer_title, customer_name, comment) values (4,'Mrs.','Wendy Wendelton','2 small Comments')");
         insert_list
+        .add("Insert into test.customers (customer_id, customer_title, customer_name, comment) values (5,'Mrs.','Wendy Wendelton','2 small Comments')");
+        insert_list
+        .add("Insert into test.customers (customer_id, customer_title, customer_name, comment) values (6,'Mrs.','Wendy Wendelton','2 small Comments')");
+        insert_list
+        .add("Insert into test.customers (customer_id, customer_title, customer_name, comment) values (7,'Mrs.','Wendy Wendelton','2 small Comments')");
+        insert_list
+        .add("Insert into test.customers (customer_id, customer_title, customer_name, comment) values (8,'Mrs.','Wendy Wendelton','2 small Comments')");
+        insert_list
+        .add("Insert into test.customers (customer_id, customer_title, customer_name, comment) values (9,'Mrs.','Wendy Wendelton','2 small Comments')");
+        insert_list
                 .add("Insert into test.addresses (customer_id, state, zip_code, phone) values (1, 'MA', 12345, '781-555-1212'), (2, 'RI', 12335, '781-515-1212'), (3, 'NY', 02345, '315-555-1212')");
         insert_list
-                .add("Insert into test.addresses (customer_id, state, zip_code, phone) values (4, 'MA', 12745, '781-151-1212') ");
+                .add("Insert into test.addresses (customer_id, state, zip_code, phone) values (4, 'MA', 12745, '781-151-1212'), (5, 'CT', 12745, '781-151-1212'), (6, 'WY', 12745, '781-151-1212') ");
         insert_list
-                .add("Insert into test.orders (order_id, customer_id, order_date, ship_date, ship_priority , ship_method , ship_parts, instructions) values (1,1,'2011-01-02','2011-01-15','A','B',1,'Big instructions')");
+        .add("Insert into test.addresses (customer_id, state, zip_code, phone) values (7, 'MA', 12745, '781-151-1212'), (8, 'CT', 12745, '781-151-1212'), (9, 'WY', 12745, '781-151-1212') ");
+        insert_list
+                .add("Insert into test.orders (order_id, customer_id, order_date, ship_date, ship_priority , ship_method , ship_parts, instructions) values (1,1,'2011-01-02','2011-01-02','A','B',1,'Big instructions')");
         insert_list
                 .add("Insert into test.items (order_id, book_id, quantity, unit_price, discount , tax , shipment_part, color) values (1,1,1,1.50,.21,.05,1,'Blue');");
         insert_list
@@ -811,13 +667,13 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
                 .add("Insert into test.items (order_id, book_id, quantity, unit_price, discount , tax , shipment_part, color) values (1,3,1,1.50,.21,.05,1,'Blue');");
 
         insert_list
-                .add("Insert into test.orders (order_id, customer_id, order_date, ship_date, ship_priority , ship_method , ship_parts, instructions) values (2,4,'2011-01-05','2011-01-18','A','B',1,'Big instructions')");
+                .add("Insert into test.orders (order_id, customer_id, order_date, ship_date, ship_priority , ship_method , ship_parts, instructions) values (2,4,'2011-01-02','2011-01-02','A','B',1,'Big instructions')");
         insert_list
                 .add("Insert into test.items (order_id, book_id, quantity, unit_price, discount , tax , shipment_part, color) values (2,10,1,1.50,.21,.05,1,'Blue');");
         insert_list
                 .add("Insert into test.items (order_id, book_id, quantity, unit_price, discount , tax , shipment_part, color) values (2,1,1,1.50,.21,.05,1,'Red');");
         insert_list
-                .add("Insert into test.orders (order_id, customer_id, order_date, ship_date, ship_priority , ship_method , ship_parts, instructions) values (3,4,'2011-01-22','2011-02-15','A','B',1,'Big instructions')");
+                .add("Insert into test.orders (order_id, customer_id, order_date, ship_date, ship_priority , ship_method , ship_parts, instructions) values (3,4,'2011-01-02','2011-01-02','A','B',1,'Big instructions')");
         insert_list
                 .add("Insert into test.items (order_id, book_id, quantity, unit_price, discount , tax , shipment_part, color) values (3,10,1,1.50,.21,.05,1,'Blue');");
         insert_list
@@ -895,6 +751,7 @@ public class AllQueryComboCreator extends GenericCreator implements Runnable {
         b.cleanup();
         b.setup();
         b.run();
+        b.close();
     }
 
 }
