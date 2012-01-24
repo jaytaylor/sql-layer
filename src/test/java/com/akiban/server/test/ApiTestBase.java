@@ -272,7 +272,7 @@ public class ApiTestBase {
         }
 
         // try to clean up space if needed. If you can't, request a services reboot
-        if (runningOutOfSpace()) {
+        if (FileUtils.sizeOfDirectory(TestConfigService.TESTDIR) > 256 * 1024 * 1024) {
             sm.getTreeService().flushAll();
             needServicesRestart |= runningOutOfSpace();
         }
