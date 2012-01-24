@@ -14,10 +14,12 @@
  */
 package com.akiban.server.error;
 
-import com.akiban.sql.parser.QueryTreeNode;
+import com.akiban.sql.parser.SQLParserException;
 
-public class AmbiguousColumNameException extends BaseSQLException {
-    public AmbiguousColumNameException (String columnName, QueryTreeNode referenceNode) {
-        super(ErrorCode.AMBIGUOUS_COLUMN_NAME, columnName, referenceNode);
+public final class SQLParseException extends BaseSQLException
+{
+    public SQLParseException(SQLParserException cause) {
+        super(ErrorCode.SQL_PARSE_EXCEPTION, cause.getMessage(), cause.getErrorPosition());
+        initCause(cause);
     }
 }
