@@ -12,12 +12,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package com.akiban.server.error;
 
-import com.akiban.sql.parser.QueryTreeNode;
+package com.akiban.util.tap;
 
-public class AmbiguousColumNameException extends BaseSQLException {
-    public AmbiguousColumNameException (String columnName, QueryTreeNode referenceNode) {
-        super(ErrorCode.AMBIGUOUS_COLUMN_NAME, columnName, referenceNode);
+public class PointTap
+{
+
+    public void hit() {
+        internal.in();
+        internal.out();
     }
+
+    PointTap(Tap internal) {
+        this.internal = internal;
+    }
+
+    private final Tap internal;
 }

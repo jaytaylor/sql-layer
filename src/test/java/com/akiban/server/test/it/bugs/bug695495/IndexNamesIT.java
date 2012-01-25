@@ -17,7 +17,7 @@ package com.akiban.server.test.it.bugs.bug695495;
 
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.ParseException;
+import com.akiban.server.error.SchemaDefParseException;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.Strings;
 import org.junit.After;
@@ -176,7 +176,7 @@ public final class IndexNamesIT extends ITBase {
         assertIndexColumns(userTable, "charlie", "c2");
     }
 
-    @Test(expected=ParseException.class)
+    @Test(expected=SchemaDefParseException.class)
     public void fkUsingExplicitKeyConflicting() throws InvalidOperationException {
         try {
             createTableWithFK("my_constraint", "my_key", "key my_constraint(c1)");

@@ -21,6 +21,7 @@ import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
 import org.slf4j.Logger;
@@ -167,7 +168,7 @@ class Product_NestedLoops extends Operator
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(BranchLookup_Nested.class);
-    private static final Tap.PointTap PRODUCT_NL_COUNT = Tap.createCount("operator: product_nested_loops", true);
+    private static final PointTap PRODUCT_NL_COUNT = Tap.createCount("operator: product_nested_loops", true);
 
     // Object state
 

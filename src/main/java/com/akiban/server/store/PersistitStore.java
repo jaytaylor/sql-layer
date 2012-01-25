@@ -42,6 +42,8 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.PointTap;
 import com.persistit.exception.PersistitInterruptedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -86,20 +88,20 @@ public class PersistitStore implements Store {
     private static final Logger LOG = LoggerFactory
             .getLogger(PersistitStore.class.getName());
 
-    private static final Tap.InOutTap WRITE_ROW_TAP = Tap.createTimer("write: write_row");
+    private static final InOutTap WRITE_ROW_TAP = Tap.createTimer("write: write_row");
 
-    private static final Tap.InOutTap UPDATE_ROW_TAP = Tap.createTimer("write: update_row");
+    private static final InOutTap UPDATE_ROW_TAP = Tap.createTimer("write: update_row");
 
-    private static final Tap.InOutTap DELETE_ROW_TAP = Tap.createTimer("write: delete_row");
+    private static final InOutTap DELETE_ROW_TAP = Tap.createTimer("write: delete_row");
 
-    private static final Tap.InOutTap TABLE_INDEX_MAINTENANCE_TAP = Tap.createTimer("index: maintain_table");
+    private static final InOutTap TABLE_INDEX_MAINTENANCE_TAP = Tap.createTimer("index: maintain_table");
 
-    private static final Tap.InOutTap NEW_COLLECTOR_TAP = Tap.createTimer("read: new_collector");
+    private static final InOutTap NEW_COLLECTOR_TAP = Tap.createTimer("read: new_collector");
 
     // an InOutTap would be nice, but pre-propagateDownGroup optimization, propagateDownGroup was called recursively
     // (via writeRow). PointTap handles this correctly, InOutTap does not, currently.
-    private static final Tap.PointTap PROPAGATE_HKEY_CHANGE_TAP = Tap.createCount("write: propagate_hkey_change");
-    private static final Tap.PointTap PROPAGATE_HKEY_CHANGE_ROW_REPLACE_TAP = Tap.createCount("write: propagate_hkey_change_row_replace");
+    private static final PointTap PROPAGATE_HKEY_CHANGE_TAP = Tap.createCount("write: propagate_hkey_change");
+    private static final PointTap PROPAGATE_HKEY_CHANGE_ROW_REPLACE_TAP = Tap.createCount("write: propagate_hkey_change_row_replace");
 
     // TODO: Temporary
     public static final boolean PDG_OPTIMIZATION = System.getProperty("pdgOptimization", "true").equals("true");

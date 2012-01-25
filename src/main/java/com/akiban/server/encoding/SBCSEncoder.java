@@ -12,12 +12,25 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package com.akiban.server.error;
 
-import com.akiban.sql.parser.QueryTreeNode;
+package com.akiban.server.encoding;
 
-public class AmbiguousColumNameException extends BaseSQLException {
-    public AmbiguousColumNameException (String columnName, QueryTreeNode referenceNode) {
-        super(ErrorCode.AMBIGUOUS_COLUMN_NAME, columnName, referenceNode);
+import com.akiban.server.rowdata.FieldDef;
+
+/** Single byte encoding. */
+public class SBCSEncoder extends VariableWidthEncoding {
+
+    public static final Encoding INSTANCE = new SBCSEncoder();
+
+    private SBCSEncoder() {
+    }
+
+    @Override
+    public int widthFromObject(final FieldDef fieldDef, final Object value) {
+        int prefixWidth = fieldDef.getPrefixSize();
+        if (value == null)
+            return prefixWidth;
+        else
+            return value.toString().length() + prefixWidth;
     }
 }

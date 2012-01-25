@@ -24,6 +24,7 @@ import com.akiban.sql.server.ServerTransaction;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.SQLParser;
+import com.akiban.sql.parser.SQLParserException;
 import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.qp.loadableplan.LoadablePlan;
@@ -32,6 +33,7 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.*;
 import com.akiban.server.service.EventTypes;
 
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
 import org.slf4j.Logger;
@@ -50,8 +52,8 @@ public class PostgresServerConnection extends ServerSessionBase
                                       implements PostgresServerSession, Runnable
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresServerConnection.class);
-    private static final Tap.InOutTap READ_MESSAGE = Tap.createTimer("PostgresServerConnection: read message");
-    private static final Tap.InOutTap PROCESS_MESSAGE = Tap.createTimer("PostgresServerConnection: process message");
+    private static final InOutTap READ_MESSAGE = Tap.createTimer("PostgresServerConnection: read message");
+    private static final InOutTap PROCESS_MESSAGE = Tap.createTimer("PostgresServerConnection: process message");
 
     private final PostgresServer server;
     private boolean running = false, ignoreUntilSync = false;
@@ -231,6 +233,13 @@ public class PostgresServerConnection extends ServerSessionBase
             messenger.writeString(errorCode.getFormattedValue());
             messenger.write('M');
             messenger.writeString(message);
+            if (exception instanceof BaseSQLException) {
+                int pos = ((BaseSQLException)exception).getErrorPosition();
+                if (pos > 0) {
+                    messenger.write('P');
+                    messenger.writeString(Integer.toString(pos));
+                }
+            }
             messenger.write(0);
             messenger.sendMessage(true);
         }
@@ -374,8 +383,12 @@ public class PostgresServerConnection extends ServerSessionBase
             try {
                 sessionTracer.beginEvent(EventTypes.PARSE);
                 stmts = parser.parseStatements(sql);
-            } catch (StandardException ex) {
-                throw new ParseException ("", ex.getMessage(), sql);
+            } 
+            catch (SQLParserException ex) {
+                throw new SQLParseException(ex);
+            }
+            catch (StandardException ex) {
+                throw new SQLParserInternalException(ex);
             }
             finally {
                 sessionTracer.endEvent();
@@ -416,8 +429,12 @@ public class PostgresServerConnection extends ServerSessionBase
                 sessionTracer.beginEvent(EventTypes.PARSE);
                 stmt = parser.parseStatement(sql);
                 params = parser.getParameterList();
-            } catch (StandardException ex) {
-                throw new ParseException ("", ex.getMessage(), sql);
+            } 
+            catch (SQLParserException ex) {
+                throw new SQLParseException(ex);
+            }
+            catch (StandardException ex) {
+                throw new SQLParserInternalException(ex);
             }
             finally {
                 sessionTracer.endEvent();

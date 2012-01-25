@@ -20,6 +20,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
 /**
@@ -97,7 +98,7 @@ class GroupScan_Default extends Operator
     
     // Class state
     
-    private static final Tap.PointTap GROUP_SCAN_COUNT = Tap.createCount("operator: group_scan", true);
+    private static final PointTap GROUP_SCAN_COUNT = Tap.createCount("operator: group_scan", true);
 
     // Object state
 

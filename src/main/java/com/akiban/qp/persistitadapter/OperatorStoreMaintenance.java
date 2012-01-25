@@ -37,6 +37,8 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDataValueSource;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.conversion.Converters;
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
 import java.util.*;
@@ -153,7 +155,7 @@ final class OperatorStoreMaintenance {
     }
 
     private void doAction(OperatorStoreGIHandler.Action action, OperatorStoreGIHandler handler, Row row) {
-        Tap.InOutTap actionTap = actionTap(action);
+        InOutTap actionTap = actionTap(action);
         actionTap.in();
         handler.handleRow(groupIndex, row, action);
         actionTap.out();
@@ -171,7 +173,7 @@ final class OperatorStoreMaintenance {
         return storePlan.rootOperator;
     }
 
-    private Tap.InOutTap actionTap(OperatorStoreGIHandler.Action action) {
+    private InOutTap actionTap(OperatorStoreGIHandler.Action action) {
         if (action == null)
             return OTHER_TAP;
         switch (action) {
@@ -181,7 +183,7 @@ final class OperatorStoreMaintenance {
         }
     }
 
-    private Tap.PointTap extraTap(OperatorStoreGIHandler.Action action) {
+    private PointTap extraTap(OperatorStoreGIHandler.Action action) {
         if (action == null)
             return EXTRA_OTHER_ROW_TAP;
         switch (action) {
@@ -353,16 +355,16 @@ final class OperatorStoreMaintenance {
     // package consts
 
     private static final int HKEY_BINDING_POSITION = 0;
-    private static final Tap.InOutTap ALL_TAP = Tap.createTimer("GI maintenance: all");
-    private static final Tap.InOutTap RUN_TAP = Tap.createTimer("GI maintenance: run");
-    private static final Tap.InOutTap STORE_TAP = Tap.createTimer("GI maintenance: STORE");
-    private static final Tap.InOutTap DELETE_TAP = Tap.createTimer("GI maintenance: DELETE");
-    private static final Tap.InOutTap OTHER_TAP = Tap.createTimer("GI maintenance: OTHER");
-    private static final Tap.InOutTap SIBLING_ALL_TAP = Tap.createTimer("GI maintenance: sibling all");
-    private static final Tap.PointTap SIBLING_ROW_TAP = Tap.createCount("GI maintenance: sibling row");
-    private static final Tap.PointTap EXTRA_STORE_ROW_TAP = Tap.createCount("GI maintenance: extra store");
-    private static final Tap.PointTap EXTRA_DELETE_ROW_TAP = Tap.createCount("GI maintenance: extra delete");
-    private static final Tap.PointTap EXTRA_OTHER_ROW_TAP = Tap.createCount("GI maintenance: extra other");
+    private static final InOutTap ALL_TAP = Tap.createTimer("GI maintenance: all");
+    private static final InOutTap RUN_TAP = Tap.createTimer("GI maintenance: run");
+    private static final InOutTap STORE_TAP = Tap.createTimer("GI maintenance: STORE");
+    private static final InOutTap DELETE_TAP = Tap.createTimer("GI maintenance: DELETE");
+    private static final InOutTap OTHER_TAP = Tap.createTimer("GI maintenance: OTHER");
+    private static final InOutTap SIBLING_ALL_TAP = Tap.createTimer("GI maintenance: sibling all");
+    private static final PointTap SIBLING_ROW_TAP = Tap.createCount("GI maintenance: sibling row");
+    private static final PointTap EXTRA_STORE_ROW_TAP = Tap.createCount("GI maintenance: extra store");
+    private static final PointTap EXTRA_DELETE_ROW_TAP = Tap.createCount("GI maintenance: extra delete");
+    private static final PointTap EXTRA_OTHER_ROW_TAP = Tap.createCount("GI maintenance: extra other");
 
     // nested classes
 
