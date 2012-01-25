@@ -73,7 +73,7 @@ public class PostgresServerConnection extends ServerSessionBase
     
     private boolean instrumentationEnabled = false;
     private String sql;
-
+    
     public PostgresServerConnection(PostgresServer server, Socket socket, 
                                     int pid, int secret,
                                     ServerServiceRequirements reqs) {
@@ -269,21 +269,15 @@ public class PostgresServerConnection extends ServerSessionBase
             logger.debug("Version {}.{}", (version >> 16), (version & 0xFFFF));
         }
 
-        properties = new Properties();
+        Properties clientProperties = new Properties(server.getProperties());
         while (true) {
             String param = messenger.readString();
             if (param.length() == 0) break;
             String value = messenger.readString();
-            properties.put(param, value);
+            clientProperties.put(param, value);
         }
-        logger.debug("Properties: {}", properties);
-        String enc = properties.getProperty("client_encoding");
-        if (enc != null) {
-            if ("UNICODE".equals(enc))
-                messenger.setEncoding("UTF-8");
-            else
-                messenger.setEncoding(enc);
-        }
+        logger.debug("Properties: {}", clientProperties);
+        setProperties(clientProperties);
 
         // Get initial version of AIS.
         session = reqs.sessionService().createSession();
@@ -697,14 +691,15 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     @Override
-    public void setProperty(String key, String value) {
+    protected boolean propertySet(String key, String value) {
         if ("client_encoding".equals(key)) {
             if ("UNICODE".equals(value))
                 messenger.setEncoding("UTF-8");
             else
                 messenger.setEncoding(value);
+            return true;
         }
-        super.setProperty(key, value);
+        return super.propertySet(key, value);
     }
 
     /* MBean-related access */

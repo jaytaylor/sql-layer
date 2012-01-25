@@ -99,11 +99,11 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
             cursor.open(bindings);
             List<?> row;
             if (useCopy) {
-                outputter = copier = new PostgresDirectObjectCopier(messenger, this);
+                outputter = copier = new PostgresDirectObjectCopier(server, this);
                 copier.respond();
             }
             else
-                outputter = new PostgresDirectObjectOutputter(messenger, this);
+                outputter = new PostgresDirectObjectOutputter(server, this);
             while ((row = cursor.next()) != null) {
                 if (row.isEmpty()) {
                     messenger.flush();
