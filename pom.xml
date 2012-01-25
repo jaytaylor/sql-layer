@@ -411,6 +411,7 @@
                     <exclude>bin/akserver</exclude>
                     <exclude>bin/akloader</exclude>
                     <exclude>conf/config/jvm.options</exclude>
+                    <exclude>packages-common/jvm.options</exclude>
                     <exclude>doc/release_notes.txt</exclude>
                     <!-- Files requiring a specific format (packaging control, test output, etc) -->
                     <exclude>debian/*</exclude>
