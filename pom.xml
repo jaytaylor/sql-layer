@@ -31,18 +31,6 @@
             <id>thimbleware.repo</id>
             <url>http://thimbleware.com/maven</url>
         </repository>
-        <!-- maven-license-plugin -->
-        <repository>
-            <id>mc-release</id>
-            <name>Local Maven repository of releases</name>
-            <url>http://mc-repo.googlecode.com/svn/maven2/releases</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </repository>
         <!-- sql-parser -->
         <repository>
             <id>akiban-releases</id>
@@ -384,7 +372,7 @@
         <plugin>
             <groupId>com.mycila.maven-license-plugin</groupId>
             <artifactId>maven-license-plugin</artifactId>
-            <version>1.9.0</version>
+            <version>1.10.b1</version>
             <configuration>
                 <header>src/etc/header.txt</header>
                 <strictCheck>true</strictCheck>
