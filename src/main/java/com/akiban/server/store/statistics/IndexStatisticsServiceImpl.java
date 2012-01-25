@@ -237,6 +237,11 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         new IndexStatisticsYamlLoader(ais, schema).dump(toDump, file);
     }
 
+    @Override
+    public void clearCache() {
+        cache.clear();
+    }
+
     /* JmxManageable */
 
     @Override

@@ -129,7 +129,7 @@ public class PersistitStoreIndexStatistics
         long sampledCount = rowData.getIntegerValue((int)sampledCountLocation,
                                                     (int)(sampledCountLocation >>> 32));
         IndexStatistics result = new IndexStatistics(index);
-        result.setAnalysisTimestamp(analysisTimestamp);
+        result.setAnalysisTimestamp(analysisTimestamp * 1000);
         result.setRowCount(rowCount);
         result.setSampledCount(sampledCount);
         return result;
@@ -215,7 +215,7 @@ public class PersistitStoreIndexStatistics
                 rowData.createRow(indexStatisticsRowDef, new Object[] {
                                       indexDef.getRowDef().getRowDefId(),
                                       index.getIndexId(),
-                                      indexStatistics.getAnalysisTimestamp(),
+                                      indexStatistics.getAnalysisTimestamp() / 1000,
                                       indexStatistics.getRowCount(),
                                       indexStatistics.getSampledCount()
                                   });
