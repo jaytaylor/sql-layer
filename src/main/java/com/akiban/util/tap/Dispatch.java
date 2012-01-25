@@ -19,57 +19,74 @@ package com.akiban.util.tap;
  * A {@link com.akiban.util.tap.Tap} Implementation that simply dispatches to another Tap
  * instance. Used to hold the "switch" that determines whether a Null,
  * TimeAndCount or other kind of Tap is invoked.
- * <p />
+ * <p/>
  * Reason for this dispatch mechanism is that HotSpot seems to be able to
  * optimize out a dispatch to an instance of Null. Therefore code can invoke
  * the methods of a Dispatch object set to Null with low or no performance
  * penalty.
  */
-class Dispatch extends Tap {
+class Dispatch extends Tap
+{
+    // Tap interface
 
-    protected Tap currentTap;
+    public void in()
+    {
+        currentTap.in();
+    }
 
-    protected Tap enabledTap;
+    public void out()
+    {
+        currentTap.out();
+    }
 
-    public Dispatch(final String name, final Tap tap) {
+    public long getDuration()
+    {
+        return currentTap.getDuration();
+    }
+
+    public void reset()
+    {
+        currentTap.reset();
+    }
+
+    public void appendReport(final StringBuilder sb)
+    {
+        currentTap.appendReport(sb);
+    }
+
+    public TapReport getReport()
+    {
+        return currentTap.getReport();
+    }
+
+    public String toString()
+    {
+        return currentTap.toString();
+    }
+    
+    // Dispatch interface
+
+    public Dispatch(String name, Tap tap)
+    {
         super(name);
         this.currentTap = new Null(name);
         this.enabledTap = tap;
     }
 
-    public final void setEnabled(final boolean on) {
+    public void setEnabled(boolean on)
+    {
         currentTap = on ? enabledTap : new Null(name);
     }
-
-    public void in() {
-        currentTap.in();
+    
+    // For use by this package
+    
+    void setEnabledTap(Tap tap)
+    {
+        enabledTap = tap;
     }
+    
+    // Object state
 
-    public void out() {
-        currentTap.out();
-    }
-
-    public long getDuration() {
-        return currentTap.getDuration();
-    }
-
-    public void reset() {
-        currentTap.reset();
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public void appendReport(final StringBuilder sb) {
-        currentTap.appendReport(sb);
-    }
-
-    public TapReport getReport() {
-        return currentTap.getReport();
-    }
-
-    public String toString() {
-        return currentTap.toString();
-    }
+    private Tap currentTap;
+    private Tap enabledTap;
 }

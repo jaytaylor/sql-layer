@@ -20,44 +20,57 @@ package com.akiban.util.tap;
  * Generally this is faster than {@link TimeAndCount} because the system
  * clock is not read.
  */
-class Count extends Tap {
+class Count extends Tap
+{
+    // Object interface
 
-    public Count(final String name) {
-        super(name);
+    public String toString()
+    {
+        return String.format("%s inCount=%,d outCount=%,d", name, inCount, outCount);
     }
 
-    volatile long inCount = 0;
+    // Tap interface
 
-    volatile long outCount = 0;
-
-    public void in() {
+    public void in()
+    {
         inCount++;
     }
 
-    public void out() {
+    public void out()
+    {
         outCount++;
     }
 
-    public long getDuration() {
+    public long getDuration()
+    {
         return 0;
     }
 
-    public void reset() {
+    public void reset()
+    {
         inCount = 0;
         outCount = 0;
     }
 
-    public void appendReport(final StringBuilder sb) {
-        sb.append(String.format("%20s inCount=%,10d outCount=%,10d", name,
-                inCount, outCount));
+    public void appendReport(StringBuilder sb)
+    {
+        sb.append(String.format("%20s inCount=%,10d outCount=%,10d", name, inCount, outCount));
     }
 
-    public String toString() {
-        return String.format("%s inCount=%,d outCount=%,d", name, inCount,
-                outCount);
+    public TapReport getReport()
+    {
+        return new TapReport(name, inCount, outCount, 0);
     }
 
-    public TapReport getReport() {
-        return new TapReport(getName(), inCount, outCount, 0);
+    // Count interface
+
+    public Count(String name)
+    {
+        super(name);
     }
+
+    // Object state
+
+    private volatile long inCount = 0;
+    private volatile long outCount = 0;
 }
