@@ -17,50 +17,64 @@ package com.akiban.util.tap;
 
 public class InOutTap
 {
+    // InOutTap interface
 
-    public void in() {
+    public void in()
+    {
         internal.in();
     }
 
-    public void out() {
+    public void out()
+    {
         internal.out();
     }
 
     /**
      * Reset the tap.
+     *
      * @deprecated using this method indicates an improper separation of concerns between defining events (which
-     * is what this class does) and reporting on them.
+     *             is what this class does) and reporting on them.
      */
     @Deprecated
-    public void reset() {
+    public void reset()
+    {
         internal.reset();
     }
 
     /**
      * Gets the duration of the tap's in-to-out timer.
-     * @deprecated using this method indicates an improper separation of concerns between defining events (which
-     * is what this class does) and reporting on them.
+     *
      * @return the tap's duration
+     * @deprecated using this method indicates an improper separation of concerns between defining events (which
+     *             is what this class does) and reporting on them.
      */
     @Deprecated
-    public long getDuration() {
+    public long getDuration()
+    {
         return internal.getDuration();
     }
 
     /**
      * Gets the tap's report
-     * @deprecated using this method indicates an improper separation of concerns between defining events (which
-     * is what this class does) and reporting on them.
+     *
      * @return the underlying tap's report
+     * @deprecated using this method indicates an improper separation of concerns between defining events (which
+     *             is what this class does) and reporting on them.
      */
     @Deprecated
-    public TapReport getReport() {
+    public TapReport getReport()
+    {
         return internal.getReport();
     }
 
-    InOutTap(Tap internal) {
+    // For use by this package
+
+    InOutTap(Tap internal)
+    {
         this.internal = internal;
     }
+
+    // Object state
 
     private final Tap internal;
 }
