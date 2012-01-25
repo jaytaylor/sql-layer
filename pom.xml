@@ -31,18 +31,6 @@
             <id>thimbleware.repo</id>
             <url>http://thimbleware.com/maven</url>
         </repository>
-        <!-- maven-license-plugin -->
-        <repository>
-            <id>mc-release</id>
-            <name>Local Maven repository of releases</name>
-            <url>http://mc-repo.googlecode.com/svn/maven2/releases</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </repository>
         <!-- sql-parser -->
         <repository>
             <id>akiban-releases</id>
@@ -384,9 +372,17 @@
         <plugin>
             <groupId>com.mycila.maven-license-plugin</groupId>
             <artifactId>maven-license-plugin</artifactId>
-            <version>1.9.0</version>
+            <version>1.10.b1</version>
             <configuration>
                 <header>src/etc/header.txt</header>
+                <headerSections>
+                    <headerSection>
+                        <key>__YEAR_SECTION__</key>
+                        <defaultValue>2012</defaultValue>
+                        <ensureMatch>2011|2012|2011-2012</ensureMatch>
+                    </headerSection>
+                </headerSections>
+                <strictCheck>true</strictCheck>
                 <failIfMissing>true</failIfMissing>
                 <excludes>
                     <!-- General files that can't have or don't need header -->
@@ -410,6 +406,7 @@
                     <exclude>bin/akserver</exclude>
                     <exclude>bin/akloader</exclude>
                     <exclude>conf/config/jvm.options</exclude>
+                    <exclude>packages-common/jvm.options</exclude>
                     <exclude>doc/release_notes.txt</exclude>
                     <!-- Files requiring a specific format (packaging control, test output, etc) -->
                     <exclude>debian/*</exclude>
@@ -419,14 +416,12 @@
                     <exclude>src/test/resources/com/akiban/ais/model/staticgrouping/*</exclude>
                     <exclude>src/main/resources/com/akiban/server/service/functions/functionpath.txt</exclude>
                     <exclude>src/test/resources/com/akiban/server/service/functions/testfunctionpath.txt</exclude>
+                    <exclude>src/test/resources/com/akiban/server/service/servicemanager/configuration/yaml/test-composite.yaml.1</exclude>
                 </excludes>
                 <mapping>
                     <g>JAVADOC_STYLE</g>
                     <yml>SCRIPT_STYLE</yml>
                 </mapping>
-                <properties>
-                    <year>2011</year>
-                </properties>
             </configuration>
             <executions>
                 <execution>
