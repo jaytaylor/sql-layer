@@ -244,7 +244,11 @@ public abstract class KeyUpdateBase extends ITBase {
                 // Check indexes
                 CollectingIndexKeyVisitor indexVisitor;
                 if (checkChildPKs()) {
-                    // TODO: This is no longer true: Customer PK index - skip. This index is hkey equivalent, and we've already checked the full records.
+                    // Customer PK index
+                    indexVisitor = new CollectingIndexKeyVisitor();
+                    testStore.traverse(session(), customerRowDef.getPKIndex(), indexVisitor);
+                    assertEquals(customerPKIndex(testVisitor.records()), indexVisitor.records());
+                    assertEquals("customer PKs", countRows(customerRowDef), indexVisitor.records().size());
                     // Order PK index
                     indexVisitor = new CollectingIndexKeyVisitor();
                     testStore.traverse(session(), orderRowDef.getPKIndex(), indexVisitor);
@@ -460,6 +464,7 @@ public abstract class KeyUpdateBase extends ITBase {
     abstract protected boolean checkChildPKs();
     abstract protected HKey hKey(TestRow row);
     abstract protected HKey hKey(TestRow row, TestRow newParent);
+    abstract protected List<List<Object>> customerPKIndex(List<TreeRecord> records);
     abstract protected List<List<Object>> orderPKIndex(List<TreeRecord> records);
     abstract protected List<List<Object>> itemPKIndex(List<TreeRecord> records);
     abstract protected List<List<Object>> orderPriorityIndex(List<TreeRecord> records);

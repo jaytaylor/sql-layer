@@ -84,9 +84,13 @@ public class RowDefCache {
     public int maxOrdinal()
     {
         if (maxOrdinal == -1) {
-            for (RowDef rowDef : cacheMap.values()) {
-                if (rowDef.getOrdinal() > maxOrdinal) {
-                    maxOrdinal = rowDef.getOrdinal();
+            synchronized (this) {
+                if (maxOrdinal == -1) {
+                    for (RowDef rowDef : cacheMap.values()) {
+                        if (rowDef.getOrdinal() > maxOrdinal) {
+                            maxOrdinal = rowDef.getOrdinal();
+                        }
+                    }
                 }
             }
         }

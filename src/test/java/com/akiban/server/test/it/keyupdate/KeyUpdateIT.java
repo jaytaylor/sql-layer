@@ -327,6 +327,12 @@ public class KeyUpdateIT extends KeyUpdateBase
     }
 
     @Override
+    protected List<List<Object>> customerPKIndex(List<TreeRecord> records)
+    {
+        return indexFromRecords(records, customerRowDef, c_cid);
+    }
+
+    @Override
     protected List<List<Object>> orderPKIndex(List<TreeRecord> records)
     {
         return indexFromRecords(records, orderRowDef, o_oid, o_cid);

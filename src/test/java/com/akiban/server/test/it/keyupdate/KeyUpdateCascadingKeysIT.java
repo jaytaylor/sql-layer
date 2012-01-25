@@ -321,6 +321,12 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
     }
 
     @Override
+    protected List<List<Object>> customerPKIndex(List<TreeRecord> records)
+    {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     protected List<List<Object>> orderPKIndex(List<TreeRecord> records)
     {
         throw new UnsupportedOperationException();
