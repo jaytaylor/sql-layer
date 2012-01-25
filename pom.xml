@@ -377,7 +377,7 @@
                 <header>src/etc/header.txt</header>
                 <headerSections>
                     <headerSection>
-                        <key>YEAR_SECTION</key>
+                        <key>__YEAR_SECTION__</key>
                         <defaultValue>2012</defaultValue>
                         <ensureMatch>2011|2012|2011-2012</ensureMatch>
                     </headerSection>
