@@ -37,7 +37,7 @@ public class IndexStatisticsLifecycleIT extends PostgresServerFilesITBase
 {
     public static final File RESOURCE_DIR = 
         new File("src/test/resources/"
-                 + PersistitStoreIndexStatisticsIT.class.getPackage().getName().replace('.', '/'));
+                 + IndexStatisticsLifecycleIT.class.getPackage().getName().replace('.', '/'));
 
     @Before
     public void loadDatabase() throws Exception {
