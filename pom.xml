@@ -387,6 +387,7 @@
             <version>1.9.0</version>
             <configuration>
                 <header>src/etc/header.txt</header>
+                <strictCheck>true</strictCheck>
                 <failIfMissing>true</failIfMissing>
                 <excludes>
                     <!-- General files that can't have or don't need header -->
