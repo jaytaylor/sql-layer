@@ -88,7 +88,7 @@ public class PersistitAdapter extends StoreAdapter
                        API.SortOption sortOption)
     {
         try {
-            return new Sorter(this, context, input, rowType, ordering, sortOption).sort();
+            return new Sorter(context, input, rowType, ordering, sortOption).sort();
         } catch (PersistitException e) {
             handlePersistitException(e);
             throw new AssertionError();

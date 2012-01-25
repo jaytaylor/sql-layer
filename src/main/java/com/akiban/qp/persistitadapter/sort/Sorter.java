@@ -46,16 +46,15 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class Sorter
 {
-    public Sorter(PersistitAdapter adapter, 
-                  QueryContext context,
+    public Sorter(QueryContext context,
                   Cursor input, 
                   RowType rowType, 
                   API.Ordering ordering,
                   API.SortOption sortOption)
         throws PersistitException
     {
-        this.adapter = adapter;
         this.context = context;
+        this.adapter = (PersistitAdapter)context.getStore();
         this.input = input;
         this.queryStartTimeMsec = context.getStartTime();
         this.rowType = rowType;

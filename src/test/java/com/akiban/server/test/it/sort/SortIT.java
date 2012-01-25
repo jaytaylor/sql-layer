@@ -48,8 +48,7 @@ public final class SortIT extends ITBase {
         inputCursor.open();
         API.Ordering ordering = new API.Ordering();
         ordering.append(new FieldExpression(inputOperator.rowType(), 0), true);
-        Sorter sorter = new Sorter(adapter,
-                                   context,
+        Sorter sorter = new Sorter(context,
                                    inputCursor,
                                    inputOperator.rowType(),
                                    ordering,
