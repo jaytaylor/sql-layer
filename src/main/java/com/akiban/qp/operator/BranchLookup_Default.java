@@ -24,6 +24,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
 import org.slf4j.Logger;
@@ -265,7 +266,7 @@ public class BranchLookup_Default extends Operator
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(BranchLookup_Default.class);
-    private static final Tap.PointTap BRANCH_LOOKUP_COUNT = Tap.createCount("operator: branch_lookup", true);
+    private static final PointTap BRANCH_LOOKUP_COUNT = Tap.createCount("operator: branch_lookup", true);
 
     // Object state
 

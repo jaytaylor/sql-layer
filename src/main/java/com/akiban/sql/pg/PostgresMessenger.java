@@ -15,6 +15,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
 import java.io.*;
@@ -39,9 +40,9 @@ public class PostgresMessenger implements DataInput, DataOutput
     public static final int AUTHENTICATION_SSPI = 9;
     public static final int AUTHENTICATION_GSS_CONTINUE = 8;
 
-    private final static Tap.InOutTap waitTap = Tap.createTimer("sql: msg: wait");
-    private final static Tap.InOutTap recvTap = Tap.createTimer("sql: msg: recv");
-    private final static Tap.InOutTap xmitTap = Tap.createTimer("sql: msg: xmit");
+    private final static InOutTap waitTap = Tap.createTimer("sql: msg: wait");
+    private final static InOutTap recvTap = Tap.createTimer("sql: msg: recv");
+    private final static InOutTap xmitTap = Tap.createTimer("sql: msg: xmit");
 
     private InputStream inputStream;
     private OutputStream outputStream;

@@ -24,6 +24,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
 import org.slf4j.Logger;
@@ -202,7 +203,7 @@ class AncestorLookup_Default extends Operator
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(AncestorLookup_Default.class);
-    private static final Tap.PointTap ANC_LOOKUP_COUNT = Tap.createCount("operator: ancestor_lookup", true);
+    private static final PointTap ANC_LOOKUP_COUNT = Tap.createCount("operator: ancestor_lookup", true);
 
     // Object state
 

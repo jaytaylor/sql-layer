@@ -17,6 +17,7 @@ package com.akiban.qp.operator;
 import java.util.Collections;
 import java.util.List;
 
+import com.akiban.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -124,7 +125,7 @@ class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
     }
 
     private final Operator inputOperator;
-    private static final Tap.InOutTap INSERT_TAP = Tap.createTimer("operator: insert");
+    private static final InOutTap INSERT_TAP = Tap.createTimer("operator: insert");
     private static final Logger LOG = LoggerFactory.getLogger(Insert_Default.class);
 
 }

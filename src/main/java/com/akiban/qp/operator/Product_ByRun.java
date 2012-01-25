@@ -22,6 +22,7 @@ import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
 import java.util.ArrayList;
@@ -88,7 +89,7 @@ class Product_ByRun extends Operator
     
     // Class state
     
-    private static final Tap.PointTap PRODUCT_BY_RUN_COUNT = Tap.createCount("operator: product_by_run", true);
+    private static final PointTap PRODUCT_BY_RUN_COUNT = Tap.createCount("operator: product_by_run", true);
 
     // Object state
 

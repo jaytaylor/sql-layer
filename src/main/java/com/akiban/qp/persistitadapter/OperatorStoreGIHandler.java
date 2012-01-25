@@ -26,6 +26,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -178,7 +179,7 @@ class OperatorStoreGIHandler {
     
     // class state
     private static volatile GIHandlerHook giHandlerHook;
-    private static final Tap.PointTap UNNEEDED_DELETE_TAP = Tap.createCount("superfluous_delete");
+    private static final PointTap UNNEEDED_DELETE_TAP = Tap.createCount("superfluous_delete");
 
     // nested classes
 
