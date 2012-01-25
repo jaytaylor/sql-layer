@@ -21,8 +21,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.operator.UndefBindings;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -89,7 +88,7 @@ public class GIUpdateProfilePT extends PTBase
         itemIidIndexRowType = indexType(item, "iid");
         customerCidIndexRowType = indexType(customer, "cid");
         addressAddressIndexRowType = indexType(address, "address");
-        adapter = persistitAdapter(schema);
+        queryContext = queryContext(persistitAdapter(schema));
     }
 
     @Test
@@ -104,8 +103,8 @@ public class GIUpdateProfilePT extends PTBase
         target.expectType(AkType.VARCHAR);
         Tap.setEnabled(".*", true);
         for (int s = 0; s < 100000000 ; s++) {
-            Cursor cursor = cursor(scan, adapter);
-            cursor.open(UndefBindings.only());
+            Cursor cursor = cursor(scan, queryContext);
+            cursor.open();
             Row row;
             RowDef customerRowDef = (RowDef) customerRowType.userTable().rowDef();
             while ((row = cursor.next()) != null) {
@@ -186,5 +185,5 @@ public class GIUpdateProfilePT extends PTBase
     private IndexRowType itemIidIndexRowType;
     private IndexRowType customerCidIndexRowType;
     private IndexRowType addressAddressIndexRowType;
-    private StoreAdapter adapter;
+    private QueryContext queryContext;
 }
