@@ -145,7 +145,7 @@ public class Sorter
     private Cursor cursor()
     {
         exchange.clear();
-        SortCursor cursor = SortCursor.create(adapter, context, null, ordering, new SorterIterationHelper());
+        SortCursor cursor = SortCursor.create(context, null, ordering, new SorterIterationHelper());
         cursor.open();
         return cursor;
     }

@@ -87,13 +87,12 @@ class SortCursorMixedOrderBounded extends SortCursorMixedOrder
 
     // SortCursorMixedOrderBounded interface
 
-    public SortCursorMixedOrderBounded(PersistitAdapter adapter,
-                                       QueryContext context,
+    public SortCursorMixedOrderBounded(QueryContext context,
                                        IterationHelper iterationHelper,
                                        IndexKeyRange keyRange,
                                        API.Ordering ordering)
     {
-        super(adapter, context, iterationHelper, keyRange, ordering);
+        super(context, iterationHelper, keyRange, ordering);
     }
 
     // For use by this class

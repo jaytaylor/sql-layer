@@ -35,7 +35,7 @@ class PersistitIndexCursor implements Cursor
     {
         assert exchange == null;
         exchange = adapter.takeExchange(indexRowType.index());
-        sortCursor = SortCursor.create(adapter, context, keyRange, ordering, new IndexScanIterationHelper());
+        sortCursor = SortCursor.create(context, keyRange, ordering, new IndexScanIterationHelper());
         sortCursor.open();
     }
 
@@ -91,8 +91,7 @@ class PersistitIndexCursor implements Cursor
 
     // For use by this package
 
-    PersistitIndexCursor(PersistitAdapter adapter,
-                         QueryContext context,
+    PersistitIndexCursor(QueryContext context,
                          IndexRowType indexRowType,
                          IndexKeyRange keyRange,
                          API.Ordering ordering,
@@ -100,8 +99,8 @@ class PersistitIndexCursor implements Cursor
         throws PersistitException
     {
         this.keyRange = keyRange;
+        this.adapter = (PersistitAdapter)context.getStore();
         this.ordering = ordering;
-        this.adapter = adapter;
         this.context = context;
         this.indexRowType = indexRowType;
         this.row = new ShareHolder<PersistitIndexRow>(adapter.newIndexRow(indexRowType));
@@ -126,8 +125,8 @@ class PersistitIndexCursor implements Cursor
 
     // Object state
 
-    private final PersistitAdapter adapter;
     private final QueryContext context;
+    private final PersistitAdapter adapter;
     private final IndexRowType indexRowType;
     private final ShareHolder<PersistitIndexRow> row;
     private final IndexKeyRange keyRange;
