@@ -375,6 +375,13 @@
             <version>1.10.b1</version>
             <configuration>
                 <header>src/etc/header.txt</header>
+                <headerSections>
+                    <headerSection>
+                        <key>YEAR_SECTION</key>
+                        <defaultValue>2012</defaultValue>
+                        <ensureMatch>2011|2012|2011-2012</ensureMatch>
+                    </headerSection>
+                </headerSections>
                 <strictCheck>true</strictCheck>
                 <failIfMissing>true</failIfMissing>
                 <excludes>
@@ -414,9 +421,6 @@
                     <g>JAVADOC_STYLE</g>
                     <yml>SCRIPT_STYLE</yml>
                 </mapping>
-                <properties>
-                    <year>2011</year>
-                </properties>
             </configuration>
             <executions>
                 <execution>
