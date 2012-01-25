@@ -12,10 +12,7 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package com.akiban.server.expression.std;
 
 import com.akiban.server.error.WrongExpressionArityException;
@@ -29,30 +26,35 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.sql.StandardException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class LogExpression extends AbstractCompositeExpression
-{   
-    protected static interface LogComposer 
+{
+    private static enum Base
     {
-        public String toString();
+        LOG2(2),
+        LOG10(10),
+        LN(Math.E);
+
+        protected final Expression base;
+        private Base (double base)
+        {
+            this.base = new LiteralExpression(AkType.DOUBLE, base);
+        }
     }
     
     @Scalar("log2")
-    public static final ExpressionComposer LOG2 = new InnerComposer (2, "LOG2");
+    public static final ExpressionComposer LOG2 = new InnerComposer (Base.LOG2);
     
     @Scalar("log10")
-    public static final ExpressionComposer LOG10 = new InnerComposer(10, "LOG10");
+    public static final ExpressionComposer LOG10 = new InnerComposer(Base.LOG10);
     
     @Scalar("ln")
-    public static final ExpressionComposer LN = new InnerComposer(Math.E, "LN");
+    public static final ExpressionComposer LN = new InnerComposer(Base.LN);
     
     @Scalar("log")
-    public static final ExpressionComposer LOG = new CompositeComposer();
-      
-    private static class CompositeComposer implements LogComposer, ExpressionComposer
+    public static final ExpressionComposer LOG = new  ExpressionComposer ()
     {
         @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
@@ -73,30 +75,28 @@ public class LogExpression extends AbstractCompositeExpression
             if (size != 1 && size != 2)
                 throw new WrongExpressionArityException(2, size);
  
-            return new LogExpression(arguments, new CompositeEvaluation(arguments), "LOG");
+            return new LogExpression(arguments, "LOG");
         }
         
         @Override
         public String toString ()
         {
             return "LOG";
-        }
-        
-    }
-    private static class InnerComposer extends UnaryComposer implements LogComposer
+        }        
+    };
+    
+    private static class InnerComposer extends UnaryComposer
     {
-        private double base;
-        private String name;
-        public InnerComposer (double base, String name)
+        private final Base base;
+        public InnerComposer (Base base)
         {
             this.base = base;
-            this.name = name;
         }
         
         @Override
         protected Expression compose(Expression argument)
         {
-            return new LogExpression(Arrays.asList(argument), new UnaryEvaluation(argument, base), name);
+            return new LogExpression(Arrays.asList(base.base, argument), base.name());
         }
 
         @Override
@@ -111,23 +111,15 @@ public class LogExpression extends AbstractCompositeExpression
         @Override
         public String toString ()
         {
-            return name;
+            return base.name();
         }
     }
 
     private static class CompositeEvaluation extends AbstractCompositeExpressionEvaluation
-    {
-        protected static List<ExpressionEvaluation> getChildrenEvals (List<? extends Expression> args)
+    {   
+        public CompositeEvaluation (List<? extends ExpressionEvaluation> childrenEvals)
         {
-            List<ExpressionEvaluation> rst = new ArrayList(args.size());
-            for (Expression arg : args)
-                rst.add(arg.evaluation());
-            return rst;
-        }
-        
-        public CompositeEvaluation (List<? extends Expression> childrenEvals)
-        {
-            super(getChildrenEvals(childrenEvals));
+            super(childrenEvals);
         }
 
         @Override
@@ -142,7 +134,8 @@ public class LogExpression extends AbstractCompositeExpression
             {            
                 double num2; 
                 ValueSource arg2 = children().get(1).eval();
-                if (arg2.isNull() || num1 == 1 || (num2 = arg2.getDouble()) <= 0) 
+                if (arg2.isNull() || num1 == 1 || Double.isInfinite(num1) ||
+                        Double.isNaN(num1) || (num2 = arg2.getDouble()) <= 0)
                     return NullValueSource.only();
                 
                 valueHolder().putDouble(Math.log(num2) / Math.log(num1));
@@ -151,47 +144,16 @@ public class LogExpression extends AbstractCompositeExpression
                 valueHolder().putDouble(Math.log(num1));
             
             return valueHolder();
-        } 
-        
-        @Override
-        public String toString()
-        {
-            return "LOG";
-        }
-    }
-
-    private static class UnaryEvaluation extends AbstractUnaryExpressionEvaluation
-    {
-        private double base;
-        public UnaryEvaluation (Expression ex, double base)
-        {
-            super(ex.evaluation());
-            this.base = base;
-        }
-        
-        @Override
-        public ValueSource eval()
-        {
-            ValueSource arg = operand();
-            double num;
-            
-            if (arg.isNull() || (num = arg.getDouble()) <= 0)
-                return NullValueSource.only();
-            
-            valueHolder().putDouble(Math.log(num) / Math.log(base));
-            return valueHolder();
-        } 
+        }         
     }
     
-    private ExpressionEvaluation eval;
-    private String name;
-    protected LogExpression (List<? extends Expression> children, ExpressionEvaluation eval, String name)
+    private final String name;
+
+    protected LogExpression (List<? extends Expression> children, String name)
     {
         super(AkType.DOUBLE, children);
-        this.eval = eval;
         this.name = name;
     }
-    
     @Override
     protected boolean nullIsContaminating()
     {
@@ -207,6 +169,6 @@ public class LogExpression extends AbstractCompositeExpression
     @Override
     public ExpressionEvaluation evaluation()
     {
-        return eval;
+        return new CompositeEvaluation(childrenEvaluations());
     }
 }
