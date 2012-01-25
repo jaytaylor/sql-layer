@@ -13,21 +13,13 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.encoding;
+package com.akiban.server.error;
 
-import com.akiban.server.rowdata.FieldDef;
+import com.akiban.sql.StandardException;
 
-public class StringEncoder extends VariableWidthEncoding {
-
-    public static final Encoding INSTANCE = new StringEncoder();
-
-    private StringEncoder() {
-    }
-
-    @Override
-    public int widthFromObject(final FieldDef fieldDef, final Object value) {
-        int prefixWidth = fieldDef.getPrefixSize();
-        final String s = value == null ? "" : value.toString();
-        return EncodingUtils.stringByteLength(s) + prefixWidth;
+public final class SQLParserInternalException extends InvalidOperationException {
+    public SQLParserInternalException(StandardException cause) {
+        super(ErrorCode.SQL_PARSER_INTERNAL_EXCEPTION, cause.getMessage());
+        initCause(cause);
     }
 }
