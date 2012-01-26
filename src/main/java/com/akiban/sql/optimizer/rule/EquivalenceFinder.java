@@ -21,10 +21,9 @@ import com.google.common.collect.Multimap;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Set;
 
 public class EquivalenceFinder<T> {
-    
+
     public void markEquivalent(T one, T two) {
         ArgumentValidation.notNull("first arg", one);
         ArgumentValidation.notNull("second arg", two);
@@ -46,14 +45,15 @@ public class EquivalenceFinder<T> {
     }
 
     public boolean areEquivalent(T one, T two) {
-        return areEquivalent(one, two, maxTraversals, freshHashSet());
+        initSeenItems();
+        return areEquivalent(one, two, maxTraversals);
     }
 
     // for testing
     void tooMuchTraversing() {
     }
     
-    private boolean areEquivalent(T one, T two, int remainingTraversals, Set<T> seenItems) {
+    private boolean areEquivalent(T one, T two, int remainingTraversals) {
         if (one.equals(two))
             return true;
         if (--remainingTraversals < 0) {
@@ -66,33 +66,35 @@ public class EquivalenceFinder<T> {
         int hashOne = one.hashCode();
         int hashTwo = two.hashCode();
         if (hashOne < hashTwo) {
-            return findEquivalence(one, two, remainingTraversals, seenItems);
+            return findEquivalence(one, two, remainingTraversals);
         }
         else if (hashOne > hashTwo) {
-            return findEquivalence(two, one, remainingTraversals, seenItems);
+            return findEquivalence(two, one, remainingTraversals);
         }
         else {
             return one.equals(two)
-                    || findEquivalence(one, two, remainingTraversals, seenItems)
-                    || findEquivalence(two, one, remainingTraversals, seenItems);
+                    || findEquivalence(one, two, remainingTraversals)
+                    || findEquivalence(two, one, remainingTraversals);
         }
     }
     
-    private boolean findEquivalence(T one, T two, int remainingTraversals, Set<T> seenItems) {
+    private boolean findEquivalence(T one, T two, int remainingTraversals) {
         assert one.hashCode() <= two.hashCode();
         Collection<T> oneEquivalents = equivalences.get(one);
         if (oneEquivalents.contains(two)) // special case, since the collection is a set so this can be very speedy
             return true;
         for (T equivalent : oneEquivalents) {
-            if (areEquivalent(equivalent, two, remainingTraversals, seenItems))
+            if (areEquivalent(equivalent, two, remainingTraversals))
                 return true;
         }
         return false;
     }
 
-    private HashSet<T> freshHashSet() {
-        // TODO cache this and return a cleared copy. not thread safe, but doesn't need to be, and saves on alloc
-        return new HashSet<T>();
+    private void initSeenItems() {
+        if (seenItems == null)
+            seenItems = new HashSet<T>();
+        else
+            seenItems.clear();
     }
 
     EquivalenceFinder() {
@@ -110,4 +112,5 @@ public class EquivalenceFinder<T> {
      */
     Multimap<T,T> equivalences = HashMultimap.create();
     private int maxTraversals;
+    private HashSet<T> seenItems;
 }
