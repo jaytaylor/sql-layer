@@ -25,18 +25,14 @@ import java.io.IOException;
  */
 public interface PostgresStatement extends ServerStatement
 {
-    /** Get the bound version of this statement with the given parameters. */
-    public PostgresStatement getBoundStatement(Object[] parameters,
-                                               boolean[] columnBinary, 
-                                               boolean defaultColumnBinary);
+    /** Get the types of any parameters. */
+    public PostgresType[] getParameterTypes();
 
     /** Send a description message. If <code>always</code>, do so even
      * if no result set. */
-    public void sendDescription(PostgresServerSession server, boolean always) 
-            throws IOException;
+    public void sendDescription(PostgresQueryContext context, boolean always) throws IOException;
 
     /** Execute statement and output results. Return number of rows processed. */
-    public int execute(PostgresServerSession server, int maxrows)
-            throws IOException;
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException;
 
 }

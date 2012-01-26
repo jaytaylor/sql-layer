@@ -71,8 +71,8 @@ public class ValuesScan_Default extends Operator
     }
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter) {
-        return new Execution(adapter, rows);
+    protected Cursor cursor(QueryContext context) {
+        return new Execution(context, rows);
     }
     
     @Override
@@ -93,32 +93,28 @@ public class ValuesScan_Default extends Operator
     {
         private final Collection<? extends BindableRow> rows;
         private Iterator<? extends BindableRow> iter;
-        private Bindings bindings;
 
-        public Execution (StoreAdapter adapter, Collection<? extends BindableRow> rows) {
-            super(adapter);
+        public Execution (QueryContext context, Collection<? extends BindableRow> rows) {
+            super(context);
             this.rows = rows;
         }
 
         @Override
         public void close() {
             iter = null;
-            bindings = null;
         }
 
         @Override
         public Row next() {
             if (iter != null && iter.hasNext()) {
-                return iter.next().bind(bindings, adapter);
+                return iter.next().bind(context);
             } else {
                 return null;
             }
         }
 
         @Override
-        public void open(Bindings bindings) {
-            ArgumentValidation.notNull("bindings", bindings);
-            this.bindings = bindings;
+        public void open() {
             iter = rows.iterator();
         }
     }

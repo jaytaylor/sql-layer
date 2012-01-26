@@ -26,7 +26,6 @@ import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
-import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
@@ -60,6 +59,8 @@ import java.util.*;
 
 import static com.akiban.qp.operator.API.ancestorLookup_Default;
 import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.akiban.qp.operator.API.limit_Default;
+import static com.akiban.qp.operator.API.update_Default;
 
 public class OperatorStore extends DelegatingStore<PersistitStore> {
 
@@ -102,29 +103,30 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
             // MVCC will render this useless, but for now, a limit of 1 ensures we won't see the row we just updated,
             // and therefore scan through two rows -- once to update old -> new, then to update new -> copy of new
-            scanOp = API.limit_Default(scanOp, 1);
+            scanOp = limit_Default(scanOp, 1);
 
-            UpdatePlannable updateOp = API.update_Default(scanOp, updateFunction);
+            UpdatePlannable updateOp = update_Default(scanOp, updateFunction);
 
+            QueryContext context = new SimpleQueryContext(adapter);
             UPDATE_MAINTENANCE.in();
             try {
                 maintainGroupIndexes(session,
-                                         ais,
-                                         adapter,
-                                         oldRowData,
-                                         changedColumnPositions,
-                                         OperatorStoreGIHandler.forTable(adapter, userTable),
-                                         OperatorStoreGIHandler.Action.DELETE);
+                                     ais,
+                                     adapter,
+                                     oldRowData,
+                                     changedColumnPositions,
+                                     OperatorStoreGIHandler.forTable(adapter, userTable),
+                                     OperatorStoreGIHandler.Action.DELETE);
 
-                runCursor(oldRowData, rowDef, updateOp, adapter);
+                runCursor(oldRowData, rowDef, updateOp, context);
 
                 maintainGroupIndexes(session,
-                                         ais,
-                                         adapter,
-                                         newRowData,
-                                         changedColumnPositions,
-                                         OperatorStoreGIHandler.forTable(adapter, userTable),
-                                         OperatorStoreGIHandler.Action.STORE);
+                                     ais,
+                                     adapter,
+                                     newRowData,
+                                     changedColumnPositions,
+                                     OperatorStoreGIHandler.forTable(adapter, userTable),
+                                     OperatorStoreGIHandler.Action.STORE);
             } finally {
                 UPDATE_MAINTENANCE.out();
             }
@@ -214,13 +216,13 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                                  treeService,
                                  session,
                                  config);
+        QueryContext context = new SimpleQueryContext(adapter);
         for(GroupIndex groupIndex : groupIndexes) {
             Operator plan = OperatorStoreMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex);
             runMaintenancePlan(
-                    adapter,
+                    context,
                     groupIndex,
                     plan,
-                    UndefBindings.only(),
                     OperatorStoreGIHandler.forBuilding(adapter),
                     OperatorStoreGIHandler.Action.STORE
             );
@@ -295,16 +297,15 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
 
     private void runMaintenancePlan(
-            PersistitAdapter adapter,
+            QueryContext context,
             GroupIndex groupIndex,
             Operator rootOperator,
-            Bindings bindings,
             OperatorStoreGIHandler handler,
             OperatorStoreGIHandler.Action action
     )
     {
-        Cursor cursor = API.cursor(rootOperator, adapter);
-        cursor.open(bindings);
+        Cursor cursor = API.cursor(rootOperator, context);
+        cursor.open();
         try {
             Row row;
             while ((row = cursor.next()) != null) {
@@ -325,9 +326,9 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // private static methods
 
-    private static void runCursor(RowData oldRowData, RowDef rowDef, UpdatePlannable plannable, PersistitAdapter adapter)
+    private static void runCursor(RowData oldRowData, RowDef rowDef, UpdatePlannable plannable, QueryContext context)
     {
-        final UpdateResult result  = plannable.run(UndefBindings.only(), adapter);
+        final UpdateResult result  = plannable.run(context);
         if (result.rowsModified() == 0 || result.rowsTouched() == 0) {
             throw new NoRowsUpdatedException (oldRowData, rowDef);
         }
@@ -407,7 +408,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
 
         @Override
-        public Row evaluate(Row original, Bindings bindings) {
+        public Row evaluate(Row original, QueryContext context) {
             // TODO
             // ideally we'd like to use an OverlayingRow, but ModifiablePersistitGroupCursor requires
             // a PersistitGroupRow if an hkey changes

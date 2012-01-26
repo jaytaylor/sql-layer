@@ -16,9 +16,10 @@
 package com.akiban.sql.pg;
 
 import com.akiban.qp.loadableplan.LoadableOperator;
-import com.akiban.qp.operator.Bindings;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
+
+import java.io.IOException;
 
 public class PostgresLoadableOperator extends PostgresOperatorStatement
 {
@@ -33,7 +34,6 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
               null,
               loadableOperator.columnNames(),
               loadableOperator.columnTypes(),
-              null, 
               null);
         this.args = args;
     }
@@ -51,7 +51,10 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
     }
 
     @Override
-    public Bindings getBindings() {
-        return PostgresLoadablePlan.getBindings(args);
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+        // Overwrite the query parameters with the call parameters.
+        PostgresLoadablePlan.setParameters(context, args);
+        return super.execute(context, maxrows);
     }
+
 }

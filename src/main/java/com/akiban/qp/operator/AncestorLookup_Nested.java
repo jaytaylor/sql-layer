@@ -48,9 +48,9 @@ class AncestorLookup_Nested extends Operator
     }
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter)
+    protected Cursor cursor(QueryContext context)
     {
-        return new Execution(adapter);
+        return new Execution(context);
     }
 
     @Override
@@ -132,10 +132,10 @@ class AncestorLookup_Nested extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
             ANC_LOOKUP_COUNT.hit();
-            Row rowFromBindings = (Row) bindings.get(inputBindingPosition);
+            Row rowFromBindings = context.getRow(inputBindingPosition);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("AncestorLookup_Nested: open using {}", rowFromBindings);
             }
@@ -167,12 +167,12 @@ class AncestorLookup_Nested extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter)
+        Execution(QueryContext context)
         {
-            super(adapter);
+            super(context);
             this.pending = new PendingRows(ancestorTypeDepth.length);
-            this.ancestorCursor = adapter.newGroupCursor(groupTable);
-            this.hKey = adapter.newHKey(rowType);
+            this.ancestorCursor = adapter().newGroupCursor(groupTable);
+            this.hKey = adapter().newHKey(rowType);
         }
 
         // For use by this class
@@ -197,7 +197,7 @@ class AncestorLookup_Nested extends Operator
             Row row;
             ancestorCursor.close();
             ancestorCursor.rebind(hKey, false);
-            ancestorCursor.open(UndefBindings.only());
+            ancestorCursor.open();
             row = ancestorCursor.next();
             // Retrieved row might not actually be what we were looking for -- not all ancestors are present,
             // (there are orphan rows).

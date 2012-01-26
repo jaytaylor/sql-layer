@@ -19,6 +19,7 @@ import java.rmi.RemoteException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -65,6 +66,8 @@ import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.RowDataCorruptionException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.statistics.IndexStatistics;
+import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.util.tap.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -119,17 +122,17 @@ public class PersistitStore implements Store {
 
     RowDefCache rowDefCache;
 
-    final ConfigurationService config;
+    private final ConfigurationService config;
 
-    final TreeService treeService;
+    private final TreeService treeService;
 
-    TableStatusCache tableStatusCache;
+    private TableStatusCache tableStatusCache;
 
-    boolean forceToDisk = false; // default to "group commit"
+    private boolean forceToDisk = false; // default to "group commit"
 
     private DisplayFilter originalDisplayFilter;
 
-    private PersistitStoreIndexManager indexManager;
+    private volatile IndexStatisticsService indexStatistics;
 
     private final Map<Tree, SortedSet<KeyState>> deferredIndexKeys = new HashMap<Tree, SortedSet<KeyState>>();
 
@@ -141,9 +144,9 @@ public class PersistitStore implements Store {
         this.config = config;
     }
 
+    @Override
     public synchronized void start() {
         tableStatusCache = treeService.getTableStatusCache();
-        indexManager = new PersistitStoreIndexManager(this, treeService);
         rowDefCache = new RowDefCache(tableStatusCache);
         try {
             getDb().getCoderManager().registerValueCoder(RowData.class, new RowDataValueCoder(this));
@@ -155,13 +158,13 @@ public class PersistitStore implements Store {
         }
     }
 
+    @Override
     public synchronized void stop() {
         try {
             getDb().getManagement().setDisplayFilter(originalDisplayFilter);
         } catch (RemoteException e) {
             throw new DisplayFilterSetException (e.getMessage());
         }
-        indexManager = null;
         rowDefCache = null;
     }
 
@@ -742,6 +745,15 @@ public class PersistitStore implements Store {
         }
     }
 
+    // This is to avoid circular dependencies in Guicer.  
+    // TODO: There is still a functional circularity: store needs
+    // stats to clear them when deleting a group; stats need store to
+    // persist the stats. It would be better to separate out the
+    // higher level store functions from what other services require.
+    public void setIndexStatistics(IndexStatisticsService indexStatistics) {
+        this.indexStatistics = indexStatistics;
+    }
+
     protected final void removeIndexTree(Session session, Index index) {
         if (!index.isHKeyEquivalent()) {
             Exchange iEx = getExchange(session, index);
@@ -755,14 +767,8 @@ public class PersistitStore implements Store {
             releaseExchange(session, iEx);
         }
 
-        // index analysis only exists on table indexes for now; if/when we analyze GIs, the if should be removed
-        if (index.isTableIndex()) {
-            try {
-                indexManager.deleteIndexAnalysis(session, index);
-            } catch (PersistitException e) {
-                throw new PersistitAdapterException(e);
-            }
-        }
+        // Delete any statistics associated with index.
+        indexStatistics.deleteIndexStatistics(session, Collections.singletonList(index));
     }
 
     @Override
@@ -945,24 +951,58 @@ public class PersistitStore implements Store {
             // TODO - get correct values
             ts.setMeanRecordLength(100);
             ts.setBlockSize(8192);
-
-            indexManager.populateTableStatistics(session, ts);
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
+        }
+        for (Index index : rowDef.getIndexes()) {
+            TableStatistics.Histogram histogram = indexStatisticsToHistogram(session, 
+                                                                             index);
+            if (histogram != null)
+                ts.addHistogram(histogram);
         }
         return ts;
     }
 
-    @Override
-    public void analyzeTable(final Session session, final int tableId) {
-        final RowDef rowDef = rowDefCache.getRowDef(tableId);
-        indexManager.analyzeTable(session, rowDef);
-    }
-
-    @Override
-    public void analyzeTable(Session session, int tableId, int sampleSize) {
-        final RowDef rowDef = rowDefCache.getRowDef(tableId);
-        indexManager.analyzeTable(session, rowDef, sampleSize);
+    /** Convert from new-format histogram to old for adapter. */
+    protected TableStatistics.Histogram indexStatisticsToHistogram(Session session,
+                                                                   Index index) {
+        IndexStatistics stats = indexStatistics.getIndexStatistics(session, index);
+        if (stats == null) return null;
+        IndexStatistics.Histogram fromHistogram = stats.getHistogram(index.getColumns().size());
+        if (fromHistogram == null) return null;
+        IndexDef indexDef = (IndexDef)index.indexDef();
+        RowDef indexRowDef = indexDef.getRowDef();
+        TableStatistics.Histogram toHistogram = new TableStatistics.Histogram(index.getIndexId());
+        Key key = new Key((Persistit)null);
+        RowData indexRowData = new RowData(new byte[4096]);
+        Object[] indexValues = new Object[indexRowDef.getFieldCount()];
+        long count = 0;
+        for (IndexStatistics.HistogramEntry entry : fromHistogram.getEntries()) {
+            // Decode the key.
+            int keylen = entry.getKeyBytes().length;
+            System.arraycopy(entry.getKeyBytes(), 0, key.getEncodedBytes(), 0, keylen);
+            key.setEncodedSize(keylen);
+            key.indexTo(0);
+            int depth = key.getDepth();
+            // Copy key fields to index row.
+            for (int field : indexDef.getFields()) {
+                if (--depth >= 0)
+                    indexValues[field] = key.decode();
+                else
+                    indexValues[field] = null;
+            }
+            indexRowData.createRow(indexRowDef, indexValues);
+            // Partial counts to running total.
+            count += entry.getLessCount() + entry.getEqualCount();
+            toHistogram.addSample(new TableStatistics.HistogramSample(indexRowData.copy(),
+                                                                      count));
+        }
+        // Add final entry with all nulls.
+        Arrays.fill(indexValues, null);
+        indexRowData.createRow(indexRowDef, indexValues);
+        toHistogram.addSample(new TableStatistics.HistogramSample(indexRowData.copy(),
+                                                                  count));
+        return toHistogram;
     }
 
     boolean hasNullIndexSegments(final RowData rowData, final Index index) {
@@ -1252,6 +1292,8 @@ public class PersistitStore implements Store {
                 releaseExchange(session, iEx);
             }
         }
+
+        indexStatistics.deleteIndexStatistics(session, indexes);
     }
 
     public void flushIndexes(final Session session) {
@@ -1277,6 +1319,7 @@ public class PersistitStore implements Store {
                 throw new PersistitAdapterException(e);
             }
         }
+        indexStatistics.deleteIndexStatistics(session, indexes);
     }
 
     private void buildIndexAddKeys(final SortedSet<KeyState> keys,

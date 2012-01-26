@@ -21,14 +21,14 @@ public abstract class ChainedCursor extends OperatorExecutionBase implements Cur
 {
     protected final Cursor input;
 
-    protected ChainedCursor(StoreAdapter adapter, Cursor input) {
-        super(adapter);
+    protected ChainedCursor(QueryContext context, Cursor input) {
+        super(context);
         this.input = input;
     }
 
     @Override
-    public void open(Bindings bindings) {
-        input.open(bindings);
+    public void open() {
+        input.open();
     }
 
     @Override

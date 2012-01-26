@@ -15,8 +15,7 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -73,13 +72,8 @@ public final class BoundFieldExpression implements Expression {
         }
 
         @Override
-        public void of(Bindings bindings) {
-            fieldExpressionEvaluation.of((Row)bindings.get(rowBindingPosition));
-        }
-
-        @Override
-        public void of(StoreAdapter adapter) {
-            fieldExpressionEvaluation.of(adapter);
+        public void of(QueryContext context) {
+            fieldExpressionEvaluation.of(context.getRow(rowBindingPosition));
         }
 
         @Override

@@ -18,8 +18,6 @@ package com.akiban.server.service.functions;
 import com.akiban.server.aggregation.Aggregator;
 import com.akiban.server.aggregation.AggregatorFactory;
 import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.expression.EnvironmentExpressionFactory;
-import com.akiban.server.expression.EnvironmentExpressionSetting;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionType;
@@ -56,14 +54,6 @@ public final class FunctionsRegistryImplTest {
         assertEquals(expectedExpressionFactories(), registry.getAllComposers());
         assertEquals("foo", GOOD_EXPRESSION_COMPOSER, registry.composer("foo"));
         assertEquals("FOO", GOOD_EXPRESSION_COMPOSER, registry.composer("FOO"));
-    }
-
-    @Test
-    public void findEnvironmentFactory() {
-        FunctionsRegistryImpl registry = registry(Good.class);
-        assertEquals(expectedEnvironmentFactories(), registry.getAllEnvironments());
-        assertEquals("efoo", ENVIRONMENT_FACTORY, registry.environment("efoo"));
-        assertEquals("EFOO", ENVIRONMENT_FACTORY, registry.environment("EFOO"));
     }
 
     @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
@@ -116,26 +106,6 @@ public final class FunctionsRegistryImplTest {
         registry(AggThrowsException.class);
     }
 
-    @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
-    public void environmentWrongType() {
-        registry(EnvironmentWrongType.class);
-    }
-
-    @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
-    public void environmentNotPublic() {
-        registry(EnvironmentNotPublic.class);
-    }
-
-    @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
-    public void environmentNotFinal() {
-        registry(EnvironmentNotFinal.class);
-    }
-
-    @Test(expected = FunctionsRegistryImpl.FunctionsRegistryException.class)
-    public void environmentNotStatic() {
-        registry(EnvironmentNotStatic.class);
-    }
-
     // use in this class
 
     private static FunctionsRegistryImpl registry(Class<?>... classes) {
@@ -172,10 +142,6 @@ public final class FunctionsRegistryImplTest {
         return Collections.singletonMap("foo", GOOD_EXPRESSION_COMPOSER);
     }
 
-    static Map<String,EnvironmentExpressionFactory> expectedEnvironmentFactories() {
-        return Collections.singletonMap("efoo", ENVIRONMENT_FACTORY);
-    }
-
     // class state
 
     private static final AggregatorFactory AGGREGATOR_FACTORY = new AggregatorFactory() {
@@ -186,23 +152,6 @@ public final class FunctionsRegistryImplTest {
         @Override
         public AkType outputType() {
             return AkType.NULL;
-        }
-    };
-
-    private static final EnvironmentExpressionFactory ENVIRONMENT_FACTORY = new EnvironmentExpressionFactory() {
-        @Override
-        public EnvironmentExpressionSetting environmentSetting() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public Expression get(int bindingPosition) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public ExpressionType getType() {
-            return ExpressionTypes.NULL;
         }
     };
 
@@ -231,9 +180,6 @@ public final class FunctionsRegistryImplTest {
 
         @Scalar("FOO") @SuppressWarnings("unused") // note, should be converted to lowercase
         public static final ExpressionComposer COMPOSER = GOOD_EXPRESSION_COMPOSER;
-
-        @EnvironmentValue("EFOO") @SuppressWarnings("unused") // note, should be converted to lowercase
-        public static final EnvironmentExpressionFactory ENVIRONMENT = ENVIRONMENT_FACTORY;
     }
 
     // bad scalars
@@ -304,28 +250,6 @@ public final class FunctionsRegistryImplTest {
         public static AggregatorFactory get(String name, AkType type) {
             throw new UnsupportedOperationException();
         }
-    }
-
-    // bad enviroments
-
-    public static class EnvironmentWrongType {
-        @EnvironmentValue("blah") @SuppressWarnings("unused")
-        public static final Boolean WRONG = false;
-    }
-
-    public static class EnvironmentNotPublic {
-        @EnvironmentValue("blah") @SuppressWarnings("unused")
-        static final EnvironmentExpressionFactory COMPOSER = ENVIRONMENT_FACTORY;
-    }
-
-    public static class EnvironmentNotFinal {
-        @EnvironmentValue("blah") @SuppressWarnings("unused")
-        public static EnvironmentExpressionFactory COMPOSER = ENVIRONMENT_FACTORY;
-    }
-
-    public static class EnvironmentNotStatic {
-        @EnvironmentValue("blah") @SuppressWarnings("unused")
-        public final EnvironmentExpressionFactory COMPOSER = ENVIRONMENT_FACTORY;
     }
 
 }

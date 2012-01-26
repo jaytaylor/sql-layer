@@ -154,14 +154,14 @@ final class Aggregate_Partial extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter) {
+    protected Cursor cursor(QueryContext context) {
         List<Aggregator> aggregators = new ArrayList<Aggregator>();
         for (AggregatorFactory factory : aggregatorFactories) {
             aggregators.add(factory.get());
         }
         return new AggregateCursor(
-                adapter,
-                inputOperator.cursor(adapter),
+                context,
+                inputOperator.cursor(context),
                 inputRowType,
                 aggregatorFactories,
                 aggregators,
@@ -256,10 +256,10 @@ final class Aggregate_Partial extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings) {
+        public void open() {
             if (cursorState != CursorState.CLOSED)
                 throw new IllegalStateException("can't open cursor: already open");
-            inputCursor.open(bindings);
+            inputCursor.open();
             cursorState = CursorState.OPENING;
             AGGREGATION_COUNT.hit();
         }
@@ -407,14 +407,14 @@ final class Aggregate_Partial extends Operator
 
         // AggregateCursor interface
 
-        private AggregateCursor(StoreAdapter adapter,
+        private AggregateCursor(QueryContext context,
                                 Cursor inputCursor,
                                 RowType inputRowType,
                                 List<AggregatorFactory> aggregatorFactories,
                                 List<Aggregator> aggregators,
                                 int inputsIndex,
                                 AggregatedRowType outputRowType) {
-            super(adapter);
+            super(context);
             this.inputCursor = inputCursor;
             this.inputRowType = inputRowType;
             this.aggregatorFactories = aggregatorFactories;

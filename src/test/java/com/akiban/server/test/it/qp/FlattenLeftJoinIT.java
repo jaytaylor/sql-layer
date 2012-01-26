@@ -109,6 +109,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
             createNewRow(parent, 42L, 4L, "p42"),
         };
         adapter = persistitAdapter(schema);
+        queryContext = queryContext(adapter);
         use(db);
     }
 
@@ -134,7 +135,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
             row(pcRowType, 11L, 1L, "p1", null, null, null),
             row(afterChildRowType, 111L, 11L, "a1"),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -158,7 +159,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
             row(pcRowType, 22L, 2L, "p2", null, null, null),
             row(afterChildRowType, 222L, 22L, "a2"),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -182,7 +183,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
             row(beforeChildRowType, 333L, 33L, "b3"),
             row(pcRowType, 33L, 3L, "p3", null, null, null),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -207,7 +208,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
             row(parentRowType, 42L, 4L, "p42"),
             row(pcRowType, 42L, 4L, "p42", null, null, null),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -241,7 +242,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
             row(pcRowType, 11L, 1L, "p1", null, null, null),
             row(afterChildRowType, 111L, 11L, "a1"),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -275,7 +276,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
             row(pcRowType, 22L, 2L, "p2", null, null, null),
             row(afterChildRowType, 222L, 22L, "a2"),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -308,7 +309,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
             row(pbRowType, 33L, 3L, "p3", 333L, 33L, "b3"),
             row(pcRowType, 33L, 3L, "p3", null, null, null),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -344,7 +345,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
             row(pbRowType, 42L, 4L, "p42", null, null, null),
             row(pcRowType, 42L, 4L, "p42", null, null, null),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -378,7 +379,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
             row(pcRowType, 11L, 1L, "p1", null, null, null),
             row(paRowType, 11L, 1L, "p1", 111L, 11L, "a1"),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -411,7 +412,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
             row(pcRowType, 22L, 2L, "p2", null, null, null),
             row(paRowType, 22L, 2L, "p2", 222L, 22L, "a2"),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -445,7 +446,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
             row(pcRowType, 33L, 3L, "p3", null, null, null),
             row(paRowType, 33L, 3L, "p3", null, null, null),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -481,7 +482,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
             row(pcRowType, 42L, 4L, "p42", null, null, null),
             row(paRowType, 42L, 4L, "p42", null, null, null),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     // After the original fix to bug 837706 was committed, the XXX1 query, using a large data set, produced failures.
@@ -522,7 +523,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
             row(pcRowType, 11L, 1L, "p1", null, null, null),
             row(afterChildRowType, 111L, 11L, "a1"),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     // For use by this class

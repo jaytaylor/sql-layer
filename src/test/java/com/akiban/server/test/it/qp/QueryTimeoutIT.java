@@ -42,7 +42,7 @@ public class QueryTimeoutIT extends OperatorITBase
     public void noExitWithDefaultTimeout() throws InterruptedException
     {
         final Operator plan = new DoNothingForever();
-        final Cursor cursor = cursor(plan, adapter);
+        final Cursor cursor = cursor(plan, queryContext);
         final AtomicBoolean exited = new AtomicBoolean(false);
         Thread queryThread = new Thread(
             new Runnable()
@@ -72,7 +72,7 @@ public class QueryTimeoutIT extends OperatorITBase
         int timeoutSec = 3;
         configService().queryTimeoutSec(timeoutSec);
         final Operator plan = new DoNothingForever();
-        final Cursor cursor = cursor(plan, adapter);
+        final Cursor cursor = cursor(plan, queryContext);
         final AtomicBoolean exited = new AtomicBoolean(false);
         Thread queryThread = new Thread(
             new Runnable()
@@ -106,7 +106,7 @@ public class QueryTimeoutIT extends OperatorITBase
         AkServer akServer = (AkServer) akServer();
         configService().queryTimeoutSec(INITIAL_TIMEOUT_SEC);
         final Operator plan = new DoNothingForever();
-        final Cursor cursor = cursor(plan, adapter);
+        final Cursor cursor = cursor(plan, queryContext);
         final AtomicBoolean exited = new AtomicBoolean(false);
         Thread queryThread = new Thread(
             new Runnable()
@@ -143,7 +143,7 @@ public class QueryTimeoutIT extends OperatorITBase
         AkServer akServer = (AkServer) akServer();
         configService().queryTimeoutSec(INITIAL_TIMEOUT_SEC);
         final Operator plan = new DoNothingForever();
-        final Cursor cursor = cursor(plan, adapter);
+        final Cursor cursor = cursor(plan, queryContext);
         final AtomicBoolean exited = new AtomicBoolean(false);
         Thread queryThread = new Thread(
             new Runnable()
@@ -180,9 +180,9 @@ public class QueryTimeoutIT extends OperatorITBase
         // Operator interface
 
         @Override
-        protected Cursor cursor(StoreAdapter adapter)
+        protected Cursor cursor(QueryContext context)
         {
-            return new Execution(adapter);
+            return new Execution(context);
         }
 
         private class Execution extends OperatorExecutionBase implements Cursor
@@ -190,7 +190,7 @@ public class QueryTimeoutIT extends OperatorITBase
             // Cursor interface
 
             @Override
-            public void open(Bindings bindings)
+            public void open()
             {
             }
 
@@ -213,9 +213,9 @@ public class QueryTimeoutIT extends OperatorITBase
 
             // Execution interface
 
-            Execution(StoreAdapter adapter)
+            Execution(QueryContext context)
             {
-                super(adapter);
+                super(context);
             }
         }
     }

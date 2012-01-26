@@ -93,19 +93,19 @@ class Delete_Default extends OperatorExecutionBase implements UpdatePlannable {
     }
 
     @Override
-    public UpdateResult run(Bindings bindings, StoreAdapter adapter) {
-        adapter(adapter);
+    public UpdateResult run(QueryContext context) {
+        context(context);
         int seen = 0, modified = 0;
         Cursor inputCursor = null;
         DELETE_TAP.in();
         try {
-            inputCursor = inputOperator.cursor(adapter);
-            inputCursor.open(bindings);
+            inputCursor = inputOperator.cursor(context);
+            inputCursor.open();
             Row oldRow;
             while ((oldRow = inputCursor.next()) != null) {
                 checkQueryCancelation();
                 ++seen;
-                adapter.deleteRow(oldRow, bindings);
+                adapter().deleteRow(oldRow);
                 ++modified;
             }
         } finally {

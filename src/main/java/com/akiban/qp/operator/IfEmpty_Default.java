@@ -55,9 +55,9 @@ class IfEmpty_Default extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter)
+    protected Cursor cursor(QueryContext context)
     {
-        return new Execution(adapter);
+        return new Execution(context);
     }
 
     @Override
@@ -117,10 +117,9 @@ class IfEmpty_Default extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
-            this.bindings = bindings;
-            this.input.open(bindings);
+            this.input.open();
             this.closed = false;
             this.inputState = InputState.UNKNOWN;
         }
@@ -167,17 +166,16 @@ class IfEmpty_Default extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter)
+        Execution(QueryContext context)
         {
-            super(adapter);
-            this.input = inputOperator.cursor(adapter);
+            super(context);
+            this.input = inputOperator.cursor(context);
             if (expressions == null) {
                 this.evaluations = null;
             } else {
                 this.evaluations = new ArrayList<ExpressionEvaluation>();
                 for (Expression outerJoinRowExpression : expressions) {
                     ExpressionEvaluation eval = outerJoinRowExpression.evaluation();
-                    eval.of(adapter);
                     evaluations.add(eval);
                 }
             }
@@ -191,7 +189,7 @@ class IfEmpty_Default extends Operator
             int nFields = rowType.nFields();
             for (int i = 0; i < nFields; i++) {
                 ExpressionEvaluation outerJoinRowColumnEvaluation = evaluations.get(i);
-                outerJoinRowColumnEvaluation.of(bindings);
+                outerJoinRowColumnEvaluation.of(context);
                 valuesHolderRow.holderAt(i).copyFrom(outerJoinRowColumnEvaluation.eval());
             }
             return valuesHolderRow;
@@ -211,7 +209,6 @@ class IfEmpty_Default extends Operator
         private final Cursor input;
         private final List<ExpressionEvaluation> evaluations;
         private final ShareHolder<ValuesHolderRow> emptySubstitute = new ShareHolder<ValuesHolderRow>();
-        private Bindings bindings;
         private boolean closed;
         private InputState inputState;
     }
