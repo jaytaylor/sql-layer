@@ -92,7 +92,7 @@ public abstract class EquivalenceFinderTestBase<T> {
 
     @Test
     public void traverseBarelyWorks() {
-        EquivalenceFinder<T> finder = create(5);
+        EquivalenceFinder<T> finder = create(6);
         finder.markEquivalent(one(), two());
         finder.markEquivalent(two(), three());
         finder.markEquivalent(three(), four());

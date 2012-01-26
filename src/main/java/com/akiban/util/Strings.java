@@ -15,6 +15,7 @@
 
 package com.akiban.util;
 
+import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +33,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Formatter;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.jar.JarEntry;
@@ -220,6 +222,22 @@ public abstract class Strings {
             if (entry.getName().startsWith(base))
                 result.add(entry.getName().substring(base.length()));
         }
+    }
+    
+    public static <T> String toString(Multimap<T,?> map) {
+        StringBuilder sb = new StringBuilder();
+        for (Iterator<T> keysIter = map.keySet().iterator(); keysIter.hasNext(); ) {
+            T key = keysIter.next();
+            sb.append(key).append(" => ");
+            for (Iterator<?> valsIter = map.get(key).iterator(); valsIter.hasNext(); ) {
+                sb.append(valsIter.next());
+                if (valsIter.hasNext())
+                    sb.append(", ");
+            }
+            if (keysIter.hasNext())
+                sb.append(nl());
+        }
+        return sb.toString();
     }
 
     private static final Logger LOG = LoggerFactory.getLogger(Strings.class);
