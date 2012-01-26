@@ -21,6 +21,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.types.AkType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
 import java.util.Collections;
@@ -82,7 +83,7 @@ class Count_Default extends Operator
     
     // Class state
     
-    private static final Tap.PointTap COUNT_COUNT = Tap.createCount("operator: count", true);
+    private static final PointTap COUNT_COUNT = Tap.createCount("operator: count", true);
 
     // Object state
 

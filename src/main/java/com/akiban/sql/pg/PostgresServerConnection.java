@@ -34,6 +34,7 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.*;
 import com.akiban.server.service.EventTypes;
 
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
 import org.slf4j.Logger;
@@ -52,8 +53,8 @@ public class PostgresServerConnection extends ServerSessionBase
                                       implements PostgresServerSession, Runnable
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresServerConnection.class);
-    private static final Tap.InOutTap READ_MESSAGE = Tap.createTimer("PostgresServerConnection: read message");
-    private static final Tap.InOutTap PROCESS_MESSAGE = Tap.createTimer("PostgresServerConnection: process message");
+    private static final InOutTap READ_MESSAGE = Tap.createTimer("PostgresServerConnection: read message");
+    private static final InOutTap PROCESS_MESSAGE = Tap.createTimer("PostgresServerConnection: process message");
 
     private final PostgresServer server;
     private boolean running = false, ignoreUntilSync = false;
@@ -690,7 +691,7 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     @Override
-    public void notifyClient(QueryContext.NOTIFICATION_LEVEL level, ErrorCode errorCode, String message) 
+    public void notifyClient(QueryContext.NotificationLevel level, ErrorCode errorCode, String message) 
             throws IOException {
         if (level.ordinal() <= maxNotificationLevel.ordinal()) {
             Object state = messenger.suspendMessage();

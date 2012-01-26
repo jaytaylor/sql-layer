@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.List;
 
 import com.akiban.server.service.session.SessionService;
+import com.akiban.util.tap.InOutTap;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.buffer.ChannelBuffers;
 import org.jboss.netty.channel.Channel;
@@ -61,7 +62,7 @@ import static com.thimbleware.jmemcached.protocol.text.MemcachedPipelineFactory.
 final class AkibanCommandHandler extends SimpleChannelUpstreamHandler {
     private static final String VERSION_STRING = getVersionString();
     private static final Session.Key<ByteArrayOutputStream> OUTPUTSTREAM_CACHE = Session.Key.named("OUTPUTSTREAM_CACHE");
-    private final static Tap.InOutTap HAPI_GETS_TAP = Tap.createTimer("hapi: get_string");
+    private final static InOutTap HAPI_GETS_TAP = Tap.createTimer("hapi: get_string");
 
     private static class UnsupportedMemcachedException extends
             UnsupportedOperationException {

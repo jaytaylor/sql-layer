@@ -18,6 +18,7 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
 import java.util.Collections;
@@ -83,7 +84,7 @@ class Sort_Tree extends Operator
     }
     
     // Class state
-    private static final Tap.PointTap SORT_TREE_COUNT = Tap.createCount("operator: sort_tree", true);
+    private static final PointTap SORT_TREE_COUNT = Tap.createCount("operator: sort_tree", true);
 
     // Object state
 

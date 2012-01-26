@@ -133,7 +133,7 @@ public interface QueryContext
     /**
      * Possible notification levels for {@link #notifyClient}.
      */
-    public enum NOTIFICATION_LEVEL {
+    public enum NotificationLevel {
         WARNING, INFO, DEBUG
     }
 
@@ -143,7 +143,7 @@ public interface QueryContext
      * perhaps immediately or perhaps at its completion, depending on
      * the implementation.
      */
-    public void notifyClient(NOTIFICATION_LEVEL level, ErrorCode errorCode, String message);
+    public void notifyClient(NotificationLevel level, ErrorCode errorCode, String message);
 
     /**
      * Send a warning notification to the remote client from the given exception.

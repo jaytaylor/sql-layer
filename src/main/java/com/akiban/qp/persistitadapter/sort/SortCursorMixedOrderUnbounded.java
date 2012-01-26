@@ -38,12 +38,11 @@ class SortCursorMixedOrderUnbounded extends SortCursorMixedOrder
 
     // SortCursorMixedOrderUnbounded interface
 
-    public SortCursorMixedOrderUnbounded(PersistitAdapter adapter,
-                                         QueryContext context,
+    public SortCursorMixedOrderUnbounded(QueryContext context,
                                          IterationHelper iterationHelper,
                                          IndexKeyRange keyRange,
                                          API.Ordering ordering)
     {
-        super(adapter, context, iterationHelper, keyRange, ordering);
+        super(context, iterationHelper, keyRange, ordering);
     }
 }

@@ -69,8 +69,7 @@ abstract class SortCursorMixedOrder extends SortCursor
 
     // SortCursorMixedOrder interface
 
-    public static SortCursorMixedOrder create(PersistitAdapter adapter,
-                                              QueryContext context,
+    public static SortCursorMixedOrder create(QueryContext context,
                                               IterationHelper iterationHelper,
                                               IndexKeyRange keyRange,
                                               API.Ordering ordering)
@@ -79,21 +78,20 @@ abstract class SortCursorMixedOrder extends SortCursor
             // keyRange == null occurs when Sorter is used, (to sort an arbitrary input stream). There is no
             // IndexRowType in that case, so an IndexKeyRange can't be created.
             keyRange == null || keyRange.unbounded()
-            ? new SortCursorMixedOrderUnbounded(adapter, context, iterationHelper, keyRange, ordering)
-            : new SortCursorMixedOrderBounded(adapter, context, iterationHelper, keyRange, ordering);
+            ? new SortCursorMixedOrderUnbounded(context, iterationHelper, keyRange, ordering)
+            : new SortCursorMixedOrderBounded(context, iterationHelper, keyRange, ordering);
     }
 
     public abstract void initializeScanStates() throws PersistitException;
 
     // For use by subclasses
 
-    protected SortCursorMixedOrder(PersistitAdapter adapter,
-                                   QueryContext context,
+    protected SortCursorMixedOrder(QueryContext context,
                                    IterationHelper iterationHelper,
                                    IndexKeyRange keyRange,
                                    API.Ordering ordering)
     {
-        super(adapter, context, iterationHelper);
+        super(context, iterationHelper);
         this.keyRange = keyRange;
         this.ordering = ordering;
         keyColumns =

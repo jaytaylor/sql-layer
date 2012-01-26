@@ -19,6 +19,7 @@ import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectCursor;
 import com.akiban.server.service.session.Session;
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
 import java.util.List;
@@ -26,8 +27,8 @@ import java.io.IOException;
 
 public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
 {
-    private static final Tap.InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: execute shared");
-    private static final Tap.InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: acquire shared lock");
+    private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: execute shared");
+    private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: acquire shared lock");
 
     private Object[] args;
     private DirectObjectPlan plan;
@@ -46,13 +47,13 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
     }
     
     @Override
-    protected Tap.InOutTap executeTap()
+    protected InOutTap executeTap()
     {
         return EXECUTE_TAP;
     }
 
     @Override
-    protected Tap.InOutTap acquireLockTap()
+    protected InOutTap acquireLockTap()
     {
         return ACQUIRE_LOCK_TAP;
     }

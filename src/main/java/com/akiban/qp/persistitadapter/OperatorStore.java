@@ -48,6 +48,8 @@ import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 import com.google.inject.Inject;
 import com.persistit.Exchange;
@@ -365,13 +367,13 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     // consts
 
     private static final int MAX_RETRIES = 10;
-    private static final Tap.InOutTap INSERT_TOTAL = Tap.createTimer("write: write_total");
-    private static final Tap.InOutTap UPDATE_TOTAL = Tap.createTimer("write: update_total");
-    private static final Tap.InOutTap DELETE_TOTAL = Tap.createTimer("write: delete_total");
-    private static final Tap.InOutTap INSERT_MAINTENANCE = Tap.createTimer("write: write_maintenance");
-    private static final Tap.InOutTap UPDATE_MAINTENANCE = Tap.createTimer("write: update_maintenance");
-    private static final Tap.InOutTap DELETE_MAINTENANCE = Tap.createTimer("write: delete_maintenance");
-    private static final Tap.PointTap SKIP_MAINTENANCE = Tap.createCount("write: skip_maintenance");
+    private static final InOutTap INSERT_TOTAL = Tap.createTimer("write: write_total");
+    private static final InOutTap UPDATE_TOTAL = Tap.createTimer("write: update_total");
+    private static final InOutTap DELETE_TOTAL = Tap.createTimer("write: delete_total");
+    private static final InOutTap INSERT_MAINTENANCE = Tap.createTimer("write: write_maintenance");
+    private static final InOutTap UPDATE_MAINTENANCE = Tap.createTimer("write: update_maintenance");
+    private static final InOutTap DELETE_MAINTENANCE = Tap.createTimer("write: delete_maintenance");
+    private static final PointTap SKIP_MAINTENANCE = Tap.createCount("write: skip_maintenance");
 
 
     // nested classes

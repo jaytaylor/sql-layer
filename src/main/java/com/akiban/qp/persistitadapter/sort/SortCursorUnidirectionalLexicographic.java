@@ -28,24 +28,22 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
 {
     // SortCursorUnidirectional interface
 
-    public static SortCursorUnidirectionalLexicographic create(PersistitAdapter adapter,
-                                                               QueryContext context,
+    public static SortCursorUnidirectionalLexicographic create(QueryContext context,
                                                                IterationHelper iterationHelper,
                                                                IndexKeyRange keyRange,
                                                                API.Ordering ordering)
     {
-        return new SortCursorUnidirectionalLexicographic(adapter, context, iterationHelper, keyRange, ordering);
+        return new SortCursorUnidirectionalLexicographic(context, iterationHelper, keyRange, ordering);
     }
 
     // For use by this class
 
-    private SortCursorUnidirectionalLexicographic(PersistitAdapter adapter,
-                                                  QueryContext context,
+    private SortCursorUnidirectionalLexicographic(QueryContext context,
                                                   IterationHelper iterationHelper,
                                                   IndexKeyRange keyRange,
                                                   API.Ordering ordering)
     {
-        super(adapter, context, iterationHelper, keyRange, ordering);
+        super(context, iterationHelper, keyRange, ordering);
     }
 
     protected void evaluateBoundaries(QueryContext context)

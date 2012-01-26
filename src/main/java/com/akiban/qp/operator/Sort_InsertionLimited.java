@@ -24,6 +24,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
 import java.util.*;
@@ -97,7 +98,7 @@ class Sort_InsertionLimited extends Operator
     private final API.Ordering ordering;
     private final boolean preserveDuplicates;
     private final int limit;
-    private static final Tap.PointTap SORT_INSERTION_COUNT = Tap.createCount("operator: sort_insertion", true);
+    private static final PointTap SORT_INSERTION_COUNT = Tap.createCount("operator: sort_insertion", true);
 
     // Inner classes
 

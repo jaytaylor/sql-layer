@@ -16,14 +16,15 @@
 package com.akiban.sql.pg;
 
 import com.akiban.qp.loadableplan.LoadableOperator;
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
 import java.io.IOException;
 
 public class PostgresLoadableOperator extends PostgresOperatorStatement
 {
-    private static final Tap.InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadableOperator: execute shared");
-    private static final Tap.InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadableOperator: acquire shared lock");
+    private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadableOperator: execute shared");
+    private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadableOperator: acquire shared lock");
 
     private Object[] args;
 
@@ -38,13 +39,13 @@ public class PostgresLoadableOperator extends PostgresOperatorStatement
     }
     
     @Override
-    protected Tap.InOutTap executeTap()
+    protected InOutTap executeTap()
     {
         return EXECUTE_TAP;
     }
 
     @Override
-    protected Tap.InOutTap acquireLockTap()
+    protected InOutTap acquireLockTap()
     {
         return ACQUIRE_LOCK_TAP;
     }

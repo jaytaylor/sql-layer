@@ -48,11 +48,15 @@ public class PersistitStoreIndexStatistics
 
     private final PersistitStore store;
     private final TreeService treeService;
+    private final IndexStatisticsService indexStatsService;
 
     /** Initialize index statistics manager for the given store. */
-    public PersistitStoreIndexStatistics(PersistitStore store, TreeService treeService) {
+    public PersistitStoreIndexStatistics(PersistitStore store, TreeService treeService,
+                                         IndexStatisticsService indexStatsService)
+    {
         this.store = store;
         this.treeService = treeService;
+        this.indexStatsService = indexStatsService;
     }
 
     /** Load previously stored statistics from database. */
@@ -125,7 +129,7 @@ public class PersistitStoreIndexStatistics
         long sampledCount = rowData.getIntegerValue((int)sampledCountLocation,
                                                     (int)(sampledCountLocation >>> 32));
         IndexStatistics result = new IndexStatistics(index);
-        result.setAnalysisTimestamp(analysisTimestamp);
+        result.setAnalysisTimestamp(analysisTimestamp * 1000);
         result.setRowCount(rowCount);
         result.setSampledCount(sampledCount);
         return result;
@@ -202,8 +206,7 @@ public class PersistitStoreIndexStatistics
                                   });
                 store.constructHKey(session, exchange, 
                                     indexStatisticsRowDef, rowData, false);
-                exchange.cut();
-                exchange.remove(Key.GT);
+                exchange.remove(Key.GTEQ);
                 // TODO: Need to get a count back from
                 // exchange.remove() in order to tell the row count in
                 // treeService.getTableStatusCache() what changed.
@@ -212,7 +215,7 @@ public class PersistitStoreIndexStatistics
                 rowData.createRow(indexStatisticsRowDef, new Object[] {
                                       indexDef.getRowDef().getRowDefId(),
                                       index.getIndexId(),
-                                      indexStatistics.getAnalysisTimestamp(),
+                                      indexStatistics.getAnalysisTimestamp() / 1000,
                                       indexStatistics.getRowCount(),
                                       indexStatistics.getSampledCount()
                                   });
@@ -280,8 +283,7 @@ public class PersistitStoreIndexStatistics
                                   });
                 store.constructHKey(session, exchange, 
                                     indexStatisticsRowDef, rowData, false);
-                exchange.cut();
-                exchange.remove(Key.GT);
+                exchange.remove(Key.GTEQ);
                 // TODO: See exchange.remove() above.
                 transaction.commit(forceToDisk);
                 break;
@@ -300,8 +302,9 @@ public class PersistitStoreIndexStatistics
     /** Sample index values and build statistics histograms. */
     public IndexStatistics computeIndexStatistics(Session session, Index index)
             throws PersistitException {
+        long indexRowCount = indexStatsService.countEntries(session, index);
         PersistitIndexStatisticsVisitor visitor = 
-            new PersistitIndexStatisticsVisitor(index);
+            new PersistitIndexStatisticsVisitor(index, indexRowCount);
         visitor.init();
         store.traverse(session, index, visitor);
         visitor.finish();

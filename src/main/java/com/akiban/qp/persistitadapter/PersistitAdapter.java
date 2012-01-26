@@ -42,6 +42,7 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -72,7 +73,7 @@ public class PersistitAdapter extends StoreAdapter
     {
         Cursor cursor;
         try {
-            cursor = new PersistitIndexCursor(this, context, schema.indexRowType(index), keyRange, ordering, selector);
+            cursor = new PersistitIndexCursor(context, schema.indexRowType(index), keyRange, ordering, selector);
         } catch (PersistitException e) {
             handlePersistitException(e);
             throw new AssertionError();
@@ -88,7 +89,7 @@ public class PersistitAdapter extends StoreAdapter
                        API.SortOption sortOption)
     {
         try {
-            return new Sorter(this, context, input, rowType, ordering, sortOption).sort();
+            return new Sorter(context, input, rowType, ordering, sortOption).sort();
         } catch (PersistitException e) {
             handlePersistitException(e);
             throw new AssertionError();
@@ -279,7 +280,7 @@ public class PersistitAdapter extends StoreAdapter
     
     // Class state
     
-    public static final Tap.InOutTap CURSOR_FIRST_ROW_TAP = Tap.createTimer("cursor first row");
+    public static final InOutTap CURSOR_FIRST_ROW_TAP = Tap.createTimer("cursor first row");
 
     // Object state
 

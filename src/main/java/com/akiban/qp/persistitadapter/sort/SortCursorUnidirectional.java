@@ -96,27 +96,25 @@ class SortCursorUnidirectional extends SortCursor
 
     // SortCursorUnidirectional interface
 
-    public static SortCursorUnidirectional create(PersistitAdapter adapter,
-                                                  QueryContext context,
+    public static SortCursorUnidirectional create(QueryContext context,
                                                   IterationHelper iterationHelper,
                                                   IndexKeyRange keyRange,
                                                   API.Ordering ordering)
     {
         return
             keyRange == null || keyRange.unbounded()
-            ? new SortCursorUnidirectional(adapter, context, iterationHelper, ordering)
-            : new SortCursorUnidirectional(adapter, context, iterationHelper, keyRange, ordering);
+            ? new SortCursorUnidirectional(context, iterationHelper, ordering)
+            : new SortCursorUnidirectional(context, iterationHelper, keyRange, ordering);
     }
 
     // For use by this subclasses
 
-    protected SortCursorUnidirectional(PersistitAdapter adapter,
-                                       QueryContext context,
+    protected SortCursorUnidirectional(QueryContext context,
                                        IterationHelper iterationHelper,
                                        IndexKeyRange keyRange,
                                        API.Ordering ordering)
     {
-        super(adapter, context, iterationHelper);
+        super(context, iterationHelper);
         this.bounded = true;
         this.lo = keyRange.lo();
         this.hi = keyRange.hi();
@@ -307,12 +305,11 @@ class SortCursorUnidirectional extends SortCursor
 
     // For use by this class
 
-    private SortCursorUnidirectional(PersistitAdapter adapter,
-                                     QueryContext context,
+    private SortCursorUnidirectional(QueryContext context,
                                      IterationHelper iterationHelper,
                                      API.Ordering ordering)
     {
-        super(adapter, context, iterationHelper);
+        super(context, iterationHelper);
         this.bounded = false;
         if (ordering.allAscending()) {
             this.startBoundary = Key.BEFORE;

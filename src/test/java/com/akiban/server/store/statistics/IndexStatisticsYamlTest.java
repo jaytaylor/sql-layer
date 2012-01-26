@@ -49,7 +49,7 @@ public class IndexStatisticsYamlTest
     public void testLoadDump() throws Exception {
         IndexStatisticsYamlLoader loader = new IndexStatisticsYamlLoader(ais, "user");
         Map<Index,IndexStatistics> stats = loader.load(YAML_FILE);
-        File tempFile = File.createTempFile("stats", "yaml");
+        File tempFile = File.createTempFile("stats", ".yaml");
         List<IndexStatistics> ordered = new ArrayList<IndexStatistics>(stats.values());
         Collections.sort(ordered, new Comparator<IndexStatistics>() {
                              @Override

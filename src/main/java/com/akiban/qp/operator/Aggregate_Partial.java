@@ -25,6 +25,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
 import java.util.ArrayList;
@@ -237,7 +238,7 @@ final class Aggregate_Partial extends Operator
     }
     
     // class state
-    private static final Tap.PointTap AGGREGATION_COUNT = Tap.createCount("operator: aggregation", true);
+    private static final PointTap AGGREGATION_COUNT = Tap.createCount("operator: aggregation", true);
 
     // object state
 

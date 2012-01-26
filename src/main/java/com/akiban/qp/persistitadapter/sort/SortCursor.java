@@ -21,6 +21,7 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
@@ -37,8 +38,7 @@ public abstract class SortCursor implements Cursor
 
     // SortCursor interface
 
-    public static SortCursor create(PersistitAdapter adapter,
-                                    QueryContext context,
+    public static SortCursor create(QueryContext context,
                                     IndexKeyRange keyRange,
                                     API.Ordering ordering,
                                     IterationHelper iterationHelper)
@@ -46,17 +46,17 @@ public abstract class SortCursor implements Cursor
         return
             ordering.allAscending() || ordering.allDescending()
             ? (keyRange != null && keyRange.lexicographic()
-               ? SortCursorUnidirectionalLexicographic.create(adapter, context, iterationHelper, keyRange, ordering)
-               : SortCursorUnidirectional.create(adapter, context, iterationHelper, keyRange, ordering))
-            : SortCursorMixedOrder.create(adapter, context, iterationHelper, keyRange, ordering);
+               ? SortCursorUnidirectionalLexicographic.create(context, iterationHelper, keyRange, ordering)
+               : SortCursorUnidirectional.create(context, iterationHelper, keyRange, ordering))
+            : SortCursorMixedOrder.create(context, iterationHelper, keyRange, ordering);
     }
 
     // For use by subclasses
 
-    protected SortCursor(PersistitAdapter adapter, QueryContext context, IterationHelper iterationHelper)
+    protected SortCursor(QueryContext context, IterationHelper iterationHelper)
     {
-        this.adapter = adapter;
         this.context = context;
+        this.adapter = (PersistitAdapter)context.getStore();
         this.iterationHelper = iterationHelper;
         this.exchange = iterationHelper.exchange();
     }
@@ -68,10 +68,10 @@ public abstract class SortCursor implements Cursor
 
     // Object state
 
-    protected final PersistitAdapter adapter;
     protected final QueryContext context;
+    protected final PersistitAdapter adapter;
     protected final Exchange exchange;
     protected final IterationHelper iterationHelper;
     
-    static final Tap.PointTap SORT_TRAVERSE = Tap.createCount("traverse_sort");
+    static final PointTap SORT_TRAVERSE = Tap.createCount("traverse_sort");
 }

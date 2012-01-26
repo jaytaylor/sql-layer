@@ -46,16 +46,15 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class Sorter
 {
-    public Sorter(PersistitAdapter adapter, 
-                  QueryContext context,
+    public Sorter(QueryContext context,
                   Cursor input, 
                   RowType rowType, 
                   API.Ordering ordering,
                   API.SortOption sortOption)
         throws PersistitException
     {
-        this.adapter = adapter;
         this.context = context;
+        this.adapter = (PersistitAdapter)context.getStore();
         this.input = input;
         this.queryStartTimeMsec = context.getStartTime();
         this.rowType = rowType;
@@ -145,7 +144,7 @@ public class Sorter
     private Cursor cursor()
     {
         exchange.clear();
-        SortCursor cursor = SortCursor.create(adapter, context, null, ordering, new SorterIterationHelper());
+        SortCursor cursor = SortCursor.create(context, null, ordering, new SorterIterationHelper());
         cursor.open();
         return cursor;
     }
