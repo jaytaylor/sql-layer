@@ -29,7 +29,7 @@ public class PersistitStoreIndexStatisticsIT extends PostgresServerFilesITBase
 {
     public static final File RESOURCE_DIR = 
         new File("src/test/resources/"
-                 + IndexStatisticsYamlTest.class.getPackage().getName().replace('.', '/'));
+                 + PersistitStoreIndexStatisticsIT.class.getPackage().getName().replace('.', '/'));
     public static final File YAML_FILE = new File(RESOURCE_DIR, "stats.yaml");
     
     private IndexStatisticsService service;
