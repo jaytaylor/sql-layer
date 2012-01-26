@@ -19,26 +19,26 @@ package com.akiban.util.tap;
  * A Tap subclass that counts and times the intervals between calls to
  * {@link #in()} and {@link #out()}.
  */
-class TimeAndCount extends Tap {
+class TimeAndCount extends Tap
+{
+    // Object interface
 
-    public TimeAndCount(final String name) {
-        super(name);
+    public String toString()
+    {
+        return String.format("%s inCount=%,d outCount=%,d time=%,dms",
+                             name, inCount, outCount, cumulativeNanos / 1000000);
     }
 
-    volatile long cumulativeNanos = 0;
-    volatile long inCount = 0;
-    volatile long outCount = 0;
-    volatile long inNanos = Long.MIN_VALUE;
-    volatile long startNanos = System.nanoTime();
-    volatile long endNanos = System.nanoTime();
-    volatile long lastDuration = Long.MIN_VALUE;
+    // Tap interface
 
-    public void in() {
+    public void in()
+    {
         inCount++;
         inNanos = System.nanoTime();
     }
 
-    public void out() {
+    public void out()
+    {
         if (inNanos != Long.MIN_VALUE) {
             long now = System.nanoTime();
             endNanos = now;
@@ -49,35 +49,48 @@ class TimeAndCount extends Tap {
         }
     }
 
-    public long getDuration() {
+    public long getDuration()
+    {
         return lastDuration;
     }
 
-    public void reset() {
+    public void reset()
+    {
         inCount = 0;
         outCount = 0;
         cumulativeNanos = 0;
         inNanos = Long.MIN_VALUE;
     }
 
-    public void appendReport(final StringBuilder sb) {
-        sb.append(String.format(
-                "%20s inCount=%,10d outCount=%,10d time=%,12dms", name,
-                inCount, outCount, cumulativeNanos / 1000000));
+    public void appendReport(StringBuilder sb)
+    {
+        sb.append(String.format("%20s inCount=%,10d outCount=%,10d time=%,12dms",
+                                name, inCount, outCount, cumulativeNanos / 1000000));
         if (outCount > 0) {
             sb.append(String.format("  per=%,12dns  interval=%,12dns",
-                    cumulativeNanos / outCount, (endNanos - startNanos)
-                            / outCount));
+                                    cumulativeNanos / outCount, (endNanos - startNanos) / outCount));
         }
     }
 
-    public String toString() {
-        return String.format("%s inCount=%,d outCount=%,d time=%,dms",
-                name, inCount, outCount, cumulativeNanos / 1000000);
-    }
-
-    public TapReport getReport() {
+    public TapReport getReport()
+    {
         return new TapReport(getName(), inCount, outCount, cumulativeNanos);
     }
 
+    // TimeAndCount interface
+
+    public TimeAndCount(final String name)
+    {
+        super(name);
+    }
+
+    // Object state
+
+    private volatile long cumulativeNanos = 0;
+    private volatile long inCount = 0;
+    private volatile long outCount = 0;
+    private volatile long inNanos = Long.MIN_VALUE;
+    private volatile long startNanos = System.nanoTime();
+    private volatile long endNanos = System.nanoTime();
+    private volatile long lastDuration = Long.MIN_VALUE;
 }
