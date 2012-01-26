@@ -16,6 +16,7 @@
 package com.akiban.sql.server;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoTransactionInProgressException;
@@ -51,6 +52,7 @@ public abstract class ServerSessionBase implements ServerSession
     protected ServerSessionTracer sessionTracer;
 
     protected ServerValueEncoder.ZeroDateTimeBehavior zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.NONE;
+    protected QueryContext.NotificationLevel maxNotificationLevel = QueryContext.NotificationLevel.INFO;
 
     public ServerSessionBase(ServerServiceRequirements reqs) {
         this.reqs = reqs;
@@ -89,6 +91,10 @@ public abstract class ServerSessionBase implements ServerSession
     protected boolean propertySet(String key, String value) {
         if ("zeroDateTimeBehavior".equals(key)) {
             zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.fromProperty(value);
+            return true;
+        }
+        if ("maxNotificationLevel".equals(key)) {
+            maxNotificationLevel = QueryContext.NotificationLevel.valueOf(value);
             return true;
         }
         return false;

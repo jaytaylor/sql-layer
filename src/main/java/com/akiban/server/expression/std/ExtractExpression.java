@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.error.WrongExpressionArityException;
@@ -429,12 +430,19 @@ public class ExtractExpression extends AbstractUnaryExpression
     private static final class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
         private final TargetExtractType type;
+        private QueryContext context;
         public InnerEvaluation (ExpressionEvaluation ev, TargetExtractType type)
         {
             super(ev);
             this.type = type;
         }
         
+        @Override
+        public void of(QueryContext context) {
+            super.of(context);
+            this.context = context;
+        }
+
         private static final EnumSet<AkType> DATES = EnumSet.of( AkType.DATE, AkType.DATETIME, AkType.TIMESTAMP, AkType.YEAR);
         private static final EnumSet<AkType> TIMES = EnumSet.of(AkType.TIME, AkType.TIMESTAMP, AkType.DATETIME);
 
@@ -497,6 +505,8 @@ public class ExtractExpression extends AbstractUnaryExpression
             }
             catch (InvalidDateFormatException ex)
             {
+                if (context != null)
+                    context.warnClient(ex);
                 return NullValueSource.only();
             }
         }
@@ -531,10 +541,14 @@ public class ExtractExpression extends AbstractUnaryExpression
             }
             catch (InconvertibleTypesException ex)
             {
+                if (context != null)
+                    context.warnClient(ex);
                 return null;
             }
             catch (InvalidDateFormatException ex)
             {
+                if (context != null)
+                    context.warnClient(ex);
                 return null;
             }
         }
