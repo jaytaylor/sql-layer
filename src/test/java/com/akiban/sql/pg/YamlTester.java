@@ -35,6 +35,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.SQLWarning;
 import java.sql.Statement;
 import java.sql.Types;
 import java.text.DateFormat;
@@ -116,6 +117,8 @@ import org.yaml.snakeyaml.nodes.Tag;
      - output_types: [<column type>, ...]
      - explain: <explain plan>
      - error: [<error code>, <error message>]
+     - warnings_count: <count>
+     - warnings: [[<warning code>, <warning message], ...]
    - If the statement text is missing or null, the command will be ignored
    - Attributes are optional and can appear at most once
    - If the value of any attribute is missing or null, then the attribute and
@@ -134,10 +137,13 @@ import org.yaml.snakeyaml.nodes.Tag;
    - YAML null for null value
    - !dc dc for don't care value in output
    - !re regular-expression for regular expression patterns that should match
-     output
+     output, error codes, error messages, warnings, or explain output
    - The statement text should not create a table -- use the CreateTable
      command for that purpose
-   - output_ordered: does a sort on the expected and actual during comparison  
+   - output_ordered: does a sort on the expected and actual during comparison
+   - Warnings include statement warnings followed by result set warnings for
+     each output row
+   - The warning message is optional
 */
 class YamlTester {
 
@@ -169,6 +175,14 @@ class YamlTester {
     private static final String ALL_ENGINE = "all";
     /** Matches the IT engine. */
     private static final String IT_ENGINE = "it";
+
+    /** Compare toString values of arguments, ignoring case. */
+    private static final Comparator<? super Object> COMPARE_IGNORE_CASE =
+        new Comparator<Object>() {
+            public int compare(Object x, Object y) {
+                return String.valueOf(x).compareToIgnoreCase(String.valueOf(y));
+            }
+        };
 
     private final String filename;
     private final Reader in;
@@ -306,8 +320,8 @@ class YamlTester {
     private abstract class AbstractStatementCommand {
 	final String statement;
 	boolean errorSpecified;
-	String errorCode;
-	String errorMessage;
+	Object errorCode;
+	Object errorMessage;
 	boolean sorted;
 
 	/** Handle a statement with the specified statement text. */
@@ -325,10 +339,10 @@ class YamlTester {
 	    errorSpecified = true;
 	    List<Object> errorInfo = nonEmptyScalarSequence(value,
 		    "error value");
-	    errorCode = scalar(errorInfo.get(0), "error code").toString();
+	    errorCode = scalar(errorInfo.get(0), "error code");
 	    if (errorInfo.size() > 1) {
-		errorMessage = string(errorInfo.get(1), "error message").trim();
-		assertTrue("The error attribute can have at most two"
+		errorMessage = scalar(errorInfo.get(1), "error message");
+                assertTrue("The error attribute can have at most two"
 			+ " elements", errorInfo.size() < 3);
 	    }
 	}
@@ -348,19 +362,21 @@ class YamlTester {
 			"Unexpected statement execution failure: "
 				+ sqlException, sqlException);
 	    }
-	    if (!errorCode.equals(sqlException.getSQLState())) {
-		throw new ContextAssertionError("Unexpected error code:"
-			+ "\nExpected: " + errorCode + "\n     got: "
-			+ sqlException.getSQLState(), sqlException);
-	    }
+            checkExpected("error code", errorCode, sqlException.getSQLState());
 	    if (errorMessage != null) {
-		if (!errorMessage.equals(sqlException.getMessage().trim())) {
-		    throw new ContextAssertionError(
-			    "Unexpected exception message:" + "\nExpected: '"
-				    + errorMessage + "'", sqlException);
-		}
+                checkExpected("error message", errorMessage,
+                              sqlException.getMessage());
 	    }
 	}
+    }
+
+    private static class Warning {
+        final Object code;
+        final Object message;
+        Warning(Object code, Object message) {
+            this.code = code;
+            this.message = message;
+        }
     }
 
     private void createTableCommand(Object value, List<Object> sequence)
@@ -454,7 +470,9 @@ class YamlTester {
 	private List<List<Object>> output;
 	private int rowCount = -1;
 	private List<String> outputTypes;
-	private String explain;
+	private Object explain;
+        private Object warningsCount;
+        private List<Warning> warnings;
 
 	/**
 	 * The 1-based index of the row of parameters being used for the
@@ -499,6 +517,10 @@ class YamlTester {
 		    parseError(attributeValue);
 		} else if ("explain".equals(attribute)) {
 		    parseExplain(attributeValue);
+                } else if ("warnings_count".equals(attribute)) {
+                    parseWarningsCount(attributeValue);
+                } else if ("warnings".equals(attribute)) {
+                    parseWarnings(attributeValue);
 		} else {
 		    fail("The '" + attribute + "' attribute name was not"
 			    + " recognized");
@@ -540,6 +562,14 @@ class YamlTester {
 	    if (errorSpecified && rowCount != -1) {
 		fail("Cannot specify both error and row_count attributes");
 	    }
+            if (warnings != null &&
+                warningsCount != null &&
+                !expected(warningsCount, warnings.size()))
+            {
+                fail("Warnings count " + warningsCount +
+                     " does not match " + warnings.size() +
+                     ", which is the number of warnings");
+            }
 	}
 
 	private void parseParams(Object value) {
@@ -596,7 +626,7 @@ class YamlTester {
 	    }
 	    assertNull(
 		    "The output_types attribute must not appear more than once",
-		    paramTypes);
+		    outputTypes);
 	    outputTypes = nonEmptyStringSequence(value, "output_types value");
 	    for (String typeName : outputTypes) {
 		assertNotNull("Unknown type name in output_types: " + typeName,
@@ -610,8 +640,43 @@ class YamlTester {
 	    }
 	    assertNull("The explain attribute must not appear more than once",
 		    explain);
-	    explain = string(value, "explain value").trim();
+	    explain = scalar(value, "explain value");
 	}
+
+        /** Parse a warnings_count attribute with the specified value. */
+        void parseWarningsCount(Object value) {
+            if (value == null) {
+                return;
+            }
+            assertNull(
+                "The warnings_count attribute must not appear more than once",
+                warningsCount);
+            warningsCount = scalar(value, "warningsCount");
+        }
+
+        /** Parse a warnings attribute with the specified value. */
+        void parseWarnings(Object value) {
+            if (value == null) {
+                return;
+            }
+            assertNull("The warnings attribute must not appear more than once",
+                       warnings);
+            List<Object> list = nonEmptySequence(value, "warnings");
+            warnings = new ArrayList<Warning>();
+            for (int i = 0; i < list.size(); i++) {
+                List<Object> element = nonEmptyScalarSequence(
+                    list.get(i), "warnings element " + i);
+                assertFalse("Warnings element " + i + " is empty",
+                            element.isEmpty());
+                assertFalse(
+                    "Warnings element " + i + " has more than two elements",
+                    element.size() > 2);
+                warnings.add(
+                    new Warning(
+                        element.get(0),
+                        element.size() > 1 ? element.get(1) : null));
+            }
+        }
 
 	void execute() throws SQLException {
 	    if (explain != null) {
@@ -688,7 +753,7 @@ class YamlTester {
 		    sb.append('\n');
 		}
 		String got = sb.toString().trim();
-		assertEquals("Explain results do not match:", explain, got);
+                checkExpected("explain output", explain, got);
 	    } finally {
 		stmt.close();
 	    }
@@ -710,12 +775,49 @@ class YamlTester {
 		    outputRow += updateCount;
 		    checkRowCount(rowCount, false);
 		}
+                List<String> warningMessages = new ArrayList<String>();
+                collectWarnings(stmt.getWarnings(), warningMessages);
+                checkWarnings(warningMessages);
 	    } else {
 		checkResults(rs, sorted);
 		assertFalse("Multiple result sets not supported",
 			stmt.getMoreResults());
 	    }
 	}
+
+        /**
+         * Add the warning message from the specified warning, as well as any
+         * additional warnings linked via the getNextWarning method, to the
+         * list of messages.
+         */
+        private void collectWarnings(SQLWarning warning, List<String> messages) {
+            while (warning != null) {
+                messages.add(warning.getMessage());
+                warning = warning.getNextWarning();
+            }
+        }
+
+        private void checkWarnings(List<String> reportedWarnings) {
+            if (warningsCount != null) {
+                checkExpected(
+                    "warnings count", warningsCount, reportedWarnings.size());
+            }
+            if (warnings == null) {
+                return;
+            }
+            if (reportedWarnings.isEmpty()) {
+                if (!warnings.isEmpty()) {
+                    fail("No warnings were reported, but expected warnings: " +
+                         warnings);
+                }
+            } else {
+                if (warnings.isEmpty()) {
+                    fail("Warnings were reported but none were expected: " +
+                         warnings);
+                }
+                checkExpectedList("Warnings", warnings, reportedWarnings);
+            }
+        }
 
 	/**
 	 * Check if the number of rows of output seen, as measured by the
@@ -752,104 +854,70 @@ class YamlTester {
 		ResultSetMetaData metaData = rs.getMetaData();
 		int numColumns = metaData.getColumnCount();
 		boolean resultsEmpty = false;
-		if (sorted) {
-		    List<List<Object>> resultsList = new ArrayList<List<Object>>();
-
-		    for (; true; outputRow++) {
-			if (!rs.next()) {
-			    resultsEmpty = true;
-			    break;
-			} else if (outputRow >= output.size()) {
-			    break;
-			}
-			List<Object> row = output.get(outputRow);
-			if (outputRow == 0) {
-			    assertEquals(
-				    "Unexpected number of columns in output:",
-				    row.size(), numColumns);
-			}
-			List<Object> resultsRow = new ArrayList<Object>(
-				row.size());
-			for (int i = 1; i <= numColumns; i++) {
-			    resultsRow.add(rs.getObject(i));
-			}
-			resultsList.add(resultsRow);
-			if (DEBUG) {
-			    System.err.println(arrayString(resultsRow));
-			}
-		    }
-		    if (sorted) {
-			Comparator<? super Object> compare = new Comparator<Object>() {
-
-			    public int compare(Object o1, Object o2) {
-				int retVal = 0;
-
-				retVal = String
-					.valueOf(o1)
-					.compareToIgnoreCase(String.valueOf(o2));
-
-				return retVal;
-			    }
-			};
-			Collections.sort(output, compare);
-			Collections.sort(resultsList, compare);
-		    }
-		    for (outputRow = 0; outputRow < output.size(); outputRow++) {
-			List<Object> row = output.get(outputRow);
-			List<Object> resultsRow = null;
-			if (outputRow <= resultsList.size()) {
-			    resultsRow = resultsList.get(outputRow);
-			}
-			if (!rowsEqual(row, resultsRow)) {
-			    throw new ContextAssertionError(
-				    "Unexpected output in row "
-					    + (outputRow + 1) + ":"
-					    + "\nExpected: " + arrayString(row)
-					    + "\n     got: "
-					    + arrayString(resultsRow));
-			}
-
-		    }
-		    checkRowCount(output.size(), !resultsEmpty);
-		} else {
-		    for (; true; outputRow++) {
-			if (!rs.next()) {
-			    resultsEmpty = true;
-			    break;
-			} else if (outputRow >= output.size()) {
-			    break;
-			}
-			List<Object> row = output.get(outputRow);
-			if (outputRow == 0) {
-			    assertEquals(
-				    "Unexpected number of columns in output:",
-				    row.size(), numColumns);
-			}
-			List<Object> resultsRow = new ArrayList<Object>(
-				row.size());
-			for (int i = 1; i <= numColumns; i++) {
-			    resultsRow.add(rs.getObject(i));
-			}
-			if (DEBUG) {
-			    System.err.println(arrayString(resultsRow));
-			}
-			if (!rowsEqual(row, resultsRow)) {
-			    throw new ContextAssertionError(
-				    "Unexpected output in row "
-					    + (outputRow + 1) + ":"
-					    + "\nExpected: " + arrayString(row)
-					    + "\n     got: "
-					    + arrayString(resultsRow));
-			}
-		    }
-		    checkRowCount(output.size(), !resultsEmpty);
-		}
+                List<List<Object>> resultsList = new ArrayList<List<Object>>();
+                List<String> warningMessages = new ArrayList<String>();
+                Statement stmt = rs.getStatement();
+                assert stmt != null;
+                collectWarnings(stmt.getWarnings(), warningMessages);
+                for (int i = 0; true; i++) {
+                    if (!rs.next()) {
+                        resultsEmpty = true;
+                        break;
+                    } else if (i >= output.size()) {
+                        break;
+                    }
+                    List<Object> row = output.get(i);
+                    if (i == 0) {
+                        assertEquals("Unexpected number of columns in output:",
+                                     row.size(), numColumns);
+                    }
+                    List<Object> resultsRow = new ArrayList<Object>(row.size());
+                    for (int j = 1; j <= numColumns; j++) {
+                        resultsRow.add(rs.getObject(j));
+                    }
+                    resultsList.add(resultsRow);
+                    collectWarnings(rs.getWarnings(), warningMessages);
+                    if (DEBUG) {
+                        System.err.println(arrayString(resultsRow));
+                    }
+                }
+                if (sorted) {
+                    Collections.sort(output, COMPARE_IGNORE_CASE);
+                    Collections.sort(resultsList, COMPARE_IGNORE_CASE);
+                }
+                int i = 0;
+                for ( ; true; outputRow++, i++) {
+                    if (outputRow >= output.size()) {
+                        if (i < resultsList.size()) {
+                            resultsEmpty = false;
+                        }
+                        break;
+                    } else if (i >= resultsList.size()) {
+                        break;
+                    }
+                    List<Object> row = output.get(outputRow);
+                    List<Object> resultsRow = resultsList.get(i);
+                    if (i >= resultsList.size()) {
+                        break;
+                    } else if (!rowsEqual(row, resultsRow)) {
+                        throw new ContextAssertionError(
+                            "Unexpected output in row " + (outputRow + 1) + ":"
+                            + "\nExpected: " + arrayString(row)
+                            + "\n     got: "
+                            + arrayString(resultsRow));
+                    }
+                }
+                checkRowCount(output.size(), !resultsEmpty);
 	    } else {
 		ResultSetMetaData metaData = rs.getMetaData();
 		int numColumns = metaData.getColumnCount();
 		List<Object> resultsRow = DEBUG ? new ArrayList<Object>(
 			numColumns) : null;
-		while (rs.next()) {
+                List<String> warningMessages = new ArrayList<String>();
+                Statement stmt = rs.getStatement();
+                assert stmt != null;
+                collectWarnings(stmt.getWarnings(), warningMessages);
+                while (rs.next()) {
 		    outputRow++;
 		    for (int i = 1; i <= numColumns; i++) {
 			Object result = rs.getObject(i);
@@ -861,10 +929,12 @@ class YamlTester {
 			System.err.println(arrayString(resultsRow));
 			resultsRow.clear();
 		    }
+                    collectWarnings(rs.getWarnings(), warningMessages);
 		}
 		if (rowCount != -1) {
 		    checkRowCount(rowCount, false);
 		}
+                checkWarnings(warningMessages);
 	    }
 	}
 
@@ -895,16 +965,8 @@ class YamlTester {
 	    for (int i = 0; i < size; i++) {
 		Object patternElem = pattern.get(i);
 		Object rowElem = row.get(i);
-		if (patternElem instanceof OutputComparator) {
-		    return ((OutputComparator) patternElem)
-			    .compareOutput(rowElem);
-		} else if (patternElem == null) {
-		    if (rowElem != null) {
-			return false;
-		    }
-		} else if (!arrayElementString(patternElem).equals(
-			arrayElementString(rowElem))) {
-		    return false;
+                if (!expected(patternElem, rowElem)) {
+                    return false;
 		}
 	    }
 	    return true;
@@ -934,6 +996,51 @@ class YamlTester {
 	}
     }
 
+    static void checkExpectedList(String description, List<?> expected,
+                                  List<?> actual)
+    {
+        int expectedSize = expected.size();
+        int actualSize = actual.size();
+        if (expectedSize != actualSize) {
+            fail(description + " should have " + expectedSize +
+                 " elements, but has " + actualSize + ":" +
+                 "\nExpected: " + expected +
+                 "\n     got: " + actual);
+        }
+        for (int i = 0; i < expectedSize; i++) {
+            Object expectedElement = expected.get(i);
+            Object actualElement = actual.get(i);
+            if (!expected(expectedElement, actualElement)) {
+                fail("Incorrect value for element " + i + " of " +
+                     description + ":" +
+                     "\nExpected: " + expected +
+                     "\n     got: " + actual);
+            }
+        }
+    }
+
+    static void checkExpected(String description, Object expected,
+                              Object actual)
+    {
+        if (!expected(expected, actual)) {
+            fail("Incorrect " + description + ":" +
+                 "\nExpected: " + expected +
+                 "\n     got: " + actual);
+        }
+    }
+
+    static boolean expected(Object expected, Object actual) {
+        if (expected instanceof CompareExpected) {
+            return ((CompareExpected) expected).compareExpected(actual);
+        } else if (expected == null) {
+            return actual == null;
+        } else {
+            String expectedString = objectToString(expected).trim();
+            String actualString = objectToString(actual).trim();
+            return expectedString.equals(actualString);
+        }
+    }
+
     static String arrayString(List<Object> array) {
 	if (array == null) {
 	    return "null";
@@ -945,38 +1052,38 @@ class YamlTester {
             if (i != 0) {
 		sb.append(", ");
 	    }
-	    sb.append(arrayElementString(elem));
+	    sb.append(objectToString(elem));
 	}
 	sb.append(']');
 	return sb.toString();
     }
 
-    static String arrayElementString(Object elem) {
-	if (elem == null) {
+    static String objectToString(Object object) {
+	if (object == null) {
 	    return "null";
 	} else {
-	    Class elemClass = elem.getClass();
-	    if (!elemClass.isArray()) {
-		return elem.toString();
-	    } else if (elemClass == byte[].class) {
-		return Arrays.toString((byte[]) elem);
-	    } else if (elemClass == short[].class) {
-		return Arrays.toString((short[]) elem);
-	    } else if (elemClass == int[].class) {
-		return Arrays.toString((int[]) elem);
-	    } else if (elemClass == long[].class) {
-		return Arrays.toString((long[]) elem);
-	    } else if (elemClass == char[].class) {
-		return Arrays.toString((char[]) elem);
-	    } else if (elemClass == float[].class) {
-		return Arrays.toString((float[]) elem);
-	    } else if (elemClass == double[].class) {
-		return Arrays.toString((double[]) elem);
-	    } else if (elemClass == boolean[].class) {
-		return Arrays.toString((boolean[]) elem);
+	    Class objectClass = object.getClass();
+	    if (!objectClass.isArray()) {
+		return object.toString();
+	    } else if (objectClass == byte[].class) {
+		return Arrays.toString((byte[]) object);
+	    } else if (objectClass == short[].class) {
+		return Arrays.toString((short[]) object);
+	    } else if (objectClass == int[].class) {
+		return Arrays.toString((int[]) object);
+	    } else if (objectClass == long[].class) {
+		return Arrays.toString((long[]) object);
+	    } else if (objectClass == char[].class) {
+		return Arrays.toString((char[]) object);
+	    } else if (objectClass == float[].class) {
+		return Arrays.toString((float[]) object);
+	    } else if (objectClass == double[].class) {
+		return Arrays.toString((double[]) object);
+	    } else if (objectClass == boolean[].class) {
+		return Arrays.toString((boolean[]) object);
 	    } else {
 		/* Another type of array -- shouldn't happen */
-		return elem.toString();
+		return object.toString();
 	    }
 	}
     }
@@ -1094,30 +1201,30 @@ class YamlTester {
 	return rows;
     }
 
-    /** Support comparing this object to expected output. */
-    interface OutputComparator {
+    /** Support comparing an expected value to an actual value. */
+    interface CompareExpected {
 	/**
-	 * Compares the specified output with this object, which represents the
-	 * expected output.
+	 * Compares an actual value with the expected value represented by this
+	 * object.
 	 *
-	 * @param output the output
-	 * @return whether the output matches the expected output
+	 * @param actual the actual value
+	 * @return whether the actual value matches the expected value
 	 */
-	boolean compareOutput(Object output);
+	boolean compareExpected(Object actual);
     }
 
     /**
-     * An object that represents a don't care value specified in the expected
-     * output.
+     * An object that represents a don't care value specified as an expected
+     * value.
      */
-    static class DontCare implements OutputComparator {
+    static class DontCare implements CompareExpected {
 	static final DontCare INSTANCE = new DontCare();
 
 	private DontCare() {
 	}
 
 	@Override
-	public boolean compareOutput(Object output) {
+	public boolean compareExpected(Object actual) {
 	    return true;
 	}
 
@@ -1128,10 +1235,10 @@ class YamlTester {
     }
 
     /**
-     * A class that represents a regular expression specified in the expected
-     * output.
+     * A class that represents a regular expression specified as an expected
+     * value.
      */
-    static class Regexp implements OutputComparator {
+    static class Regexp implements CompareExpected {
 	private final Pattern pattern;
 
 	Regexp(String pattern) {
@@ -1143,11 +1250,11 @@ class YamlTester {
 	}
 
 	@Override
-	public boolean compareOutput(Object object) {
-	    boolean result = pattern.matcher(String.valueOf(object)).matches();
+	public boolean compareExpected(Object actual) {
+	    boolean result = pattern.matcher(String.valueOf(actual)).matches();
 	    if (DEBUG) {
-		System.err.println("Regexp.compareOutput pattern='" + pattern
-			+ "', object='" + object + "' => '" + result + "'");
+		System.err.println("Regexp.compareExpected pattern='" + pattern
+			+ "', actual='" + actual + "' => '" + result + "'");
 	    }
 	    return result;
 	}
@@ -1279,14 +1386,14 @@ class YamlTester {
     /**
      * A class that compares a time value allowing a 1 minute window 
      */
-    static class TimeChecker implements OutputComparator {
+    static class TimeChecker implements CompareExpected {
 
 	private static final int MINUTES_IN_SECONDS = 60;
 	private static final int HOURS_IN_MINUTES = 60;
 
 	@Override
-	public boolean compareOutput(Object object) {
-	    String[] timeAsString = String.valueOf(object).split(":");
+	public boolean compareExpected(Object actual) {
+	    String[] timeAsString = String.valueOf(actual).split(":");
 	    Calendar localCalendar = Calendar.getInstance();
             localCalendar.setTimeInMillis(System.currentTimeMillis());
 
@@ -1309,18 +1416,18 @@ class YamlTester {
     /**
      *  A class that compares a datetime value allowing a 1 minute window
      */
-    static class DateTimeChecker implements OutputComparator {
+    static class DateTimeChecker implements CompareExpected {
 
 	private static final int MINUTES_IN_SECONDS = 60;
 	private static final int SECONDS_IN_MILLISECONDS = 1000;
 
 	@Override
-	public boolean compareOutput(Object object) {
+	public boolean compareExpected(Object actual) {
             Date now = new Date();
             Date date;
 	    try {
                 date = DEFAULT_DATETIME_FORMAT.parse(
-                    String.valueOf(object) + " UTC");
+                    String.valueOf(actual) + " UTC");
 	    } catch (ParseException e) {
 		fail(e.getMessage());
                 throw new AssertionError();

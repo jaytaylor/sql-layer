@@ -190,6 +190,11 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     }
 
     @Test
+    public void testIncludeRegexp() throws Exception {
+        testYamlFail("- Include: !re foo.yaml");
+    }
+
+    @Test
     public void testIncludeSimple() throws Exception {
 	File include = File.createTempFile("include", null);
 	include.deleteOnExit();
@@ -322,6 +327,12 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     }
 
     @Test
+    public void testPropertiesValueRegexp() {
+        testYamlFail("---\n" +
+                     "- Properties: !re all\n");
+    }
+
+    @Test
     public void testPropertiesValueAttributesNotSequenceOfMaps() {
 	testYamlFail("---\n" +
 		     "- Properties: all\n" +
@@ -409,6 +420,13 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	testYamlFail(
 	    "- CreateTable: a b c\n" +
 	    "- error: []");
+    }
+
+    @Test
+    public void testCreateTableErrorRepeated() {
+        testYamlFail("- CreateTable: a (i int\n" +
+                     "- error: [42000]\n" +
+                     "- error: [42000]\n");
     }
 
     @Test
@@ -559,6 +577,16 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     }
 
     @Test
+    public void testStatementParamsRepeated() {
+        testYamlFail("---\n" +
+                     "- CreateTable: t (i int)\n" +
+                     "---\n" +
+                     "- Statement: SELECT * FROM t WHERE i = ?\n" +
+                     "- params: [[1]]\n" +
+                     "- params: [[2]]\n");
+    }
+
+    @Test
     public void testStatementParamsNotSequence() {
 	testYamlFail("- Statement: a b c\n" +
 		     "- params: 3");
@@ -649,6 +677,17 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     }
 
     @Test
+    public void testStatementParamsTypesRepeated() {
+        testYamlFail("---\n" +
+                     "- CreateTable: t (i int)\n" +
+                     "---\n" +
+                     "- Statement: SELECT * FROM t WHERE i = ?\n" +
+                     "- params: [[1]]\n" +
+                     "- param_types: [INTEGER]\n" +
+                     "- param_types: [INTEGER]\n");
+    }
+
+    @Test
     public void testStatementParamsTypesTooMany() {
 	testYamlFail("- Statement: a b c\n" +
 		     "- param_types: [CHAR, INTEGER, BOOLEAN]\n" +
@@ -699,6 +738,18 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 		 "---\n" +
 		 "- Statement: SELECT * FROM t\n" +
 		 "- output:");
+    }
+
+    @Test
+    public void testStatementOutputRepeated() {
+	testYamlFail("---\n" +
+                     "- CreateTable: t (id int)\n" +
+                     "---\n" +
+                     "- Statement: INSERT INTO t VALUES (1)\n" +
+                     "---\n" +
+                     "- Statement: SELECT * FROM t\n" +
+                     "- output: [[1]]\n" +
+                     "- output: [[1]]\n");
     }
 
     @Test
@@ -1048,6 +1099,14 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     }
 
     @Test
+    public void testStatementRowCountRepeated() {
+        testYamlFail("---\n" +
+                     "- Statement: a b c\n" +
+                     "- row_count: 1\n" +
+                     "- row_count: 1\n");
+    }
+
+    @Test
     public void testStatementRowCountWrongValue() {
 	testYamlFail(
 	    "---\n" +
@@ -1099,6 +1158,18 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "---\n" +
 	    "- Statement: SELECT * FROM t\n" +
 	    "- output_types:");
+    }
+
+    @Test
+    public void testStatementOutputTypesRepeated() {
+	testYamlFail("---\n" +
+                     "- CreateTable: t (i int)\n" +
+                     "---\n" +
+                     "- Statement: INSERT INTO t VALUES (1)\n" +
+                     "---\n" +
+                     "- Statement: SELECT * FROM t\n" +
+                     "- output_types: [INTEGER]\n" +
+                     "- output_types: [INTEGER]\n");
     }
 
     @Test
@@ -1205,6 +1276,16 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     }
 
     @Test
+    public void testStatementExplainRepeated() {
+	testYamlFail("---\n" +
+                     "- CreateTable: t (i int)\n" +
+                     "---\n" +
+                     "- Statement: SELECT * FROM t\n" +
+                     "- explain: foo\n" +
+                     "- explain: bar\n");
+    }
+
+    @Test
     public void testStatementExplainNullValue() {
 	testYaml(
 	    "---\n" +
@@ -1271,6 +1352,40 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "---\n" +
 	    "- Statement: SELECT * FROM t\n" +
 	    "- error:");
+    }
+
+    @Test
+    public void testStatementErrorRepeated() {
+	testYamlFail("---\n" +
+                     "- CreateTable: t (int_field int)\n" +
+                     "---\n" +
+                     "- Statement: WHAT IS THIS\n" +
+                     "- error: [42000]\n" +
+                     "- error: [42000]\n");
+    }
+
+    @Test
+    public void testStatementErrorAndOutput() {
+	testYamlFail("---\n" +
+                     "- CreateTable: t (int_field int)\n" +
+                     "---\n" +
+                     "- Statement: INSERT INTO t VALUES (1)\n" +
+                     "---\n" +
+                     "- Statement: SELECT * FROM t\n" +
+                     "- output: [[1]]\n" +
+                     "- error: [0]\n");
+    }
+
+    @Test
+    public void testStatementErrorAndRowCount() {
+	testYamlFail("---\n" +
+                     "- CreateTable: t (int_field int)\n" +
+                     "---\n" +
+                     "- Statement: INSERT INTO t VALUES (1)\n" +
+                     "---\n" +
+                     "- Statement: SELECT * FROM t\n" +
+                     "- row_count: 1\n" +
+                     "- error: [0]\n");
     }
 
     @Test
@@ -1389,6 +1504,8 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "- error: [!select-engine { it: 42000, all: 42 }]");
     }
     
+    /* Test Statement sorted_output */
+
     @Test
     public void testSortedOutput() throws Exception {
         testYamlFail(
@@ -1413,6 +1530,86 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                 "- output: [[3, 'Zoolander'],[1, 'Smith'],[2, 'Jones'],[4, 'Adams']]");
     }
 
+    /* Test Statement warnings_count */
+
+    @Test
+    public void testStatementWarningsCountNoValue() {
+        testYaml("---\n" +
+                 "- CreateTable: t (f int)\n" +
+                 "---\n" +
+                 "- Statement: SELECT * FROM t\n" +
+                 "- warnings_count:\n" +
+                 "- row_count: 0\n");
+    }
+
+    @Test
+    public void testStatementWarningsCountRepeated() {
+        testYamlFail("---\n" +
+                     "- CreateTable: t (f int)\n" +
+                     "---\n" +
+                     "- Statement: SELECT * FROM t\n" +
+                     "- warnings_count: 1\n" +
+                     "- warnings_count: 2\n");
+    }
+
+    @Test
+    public void testStatementWarningsCountNullValue() {
+        testYaml("---\n" +
+                 "- CreateTable: t (f int)\n" +
+                 "---\n" +
+                 "- Statement: SELECT * FROM t\n" +
+                 "- warnings_count: null\n" +
+                 "- row_count: 0\n");
+    }
+
+    @Test
+    public void testStatementWarningsCountString() {
+        testYamlFail("---\n" +
+                     "- CreateTable: t (f int)\n" +
+                     "---\n" +
+                     "- Statement: SELECT * FROM t\n" +
+                     "- warnings_count: 'abc'\n" +
+                     "- row_count: 0\n");
+    }
+
+    @Test
+    public void testStatementWarningsCountWrongValue() {
+        testYamlFail("---\n" +
+                     "- CreateTable: t (f int)\n" +
+                     "---\n" +
+                     "- Statement: SELECT * FROM t\n" +
+                     "- warnings_count: 1\n" +
+                     "- row_count: 0\n");
+    }
+
+    @Test
+    public void testStatementWarningsCountDifferentFromWarnings() {
+        testYamlFail("---\n" +
+                     "- CreateTable: t (f int)\n" +
+                     "---\n" +
+                     "- Statement: SELECT * FROM t\n" +
+                     "- warnings_count: 2\n" +
+                     "- warnings: [[ 'abc' ]]\n" +
+                     "- row_count: 0\n");
+    }
+
+    @Test
+    public void testStatementWarningsCountNonZeroNoWarnings() {
+        testYamlFail("---\n" +
+                     "- CreateTable: t (f int)\n" +
+                     "---\n" +
+                     "- Statement: SELECT * FROM t\n" +
+                     "- warnings_count: 1\n");
+    }
+
+    @Test
+    public void testStatementWarningsCountZero() {
+        testYaml("---\n" +
+                 "- CreateTable: t (f int)\n" +
+                 "---\n" +
+                 "- Statement: SELECT * FROM t\n" +
+                 "- warnings_count: 0\n");
+    }
 
     /* Other methods */
 
