@@ -22,7 +22,7 @@ import java.util.HashSet;
 import java.util.Hashtable;
 
 /*
- * Class setup to allow a systematic approach to creating valid sql statements 
+ * Class setup to allow a systematic approach to creating valid SQL statements 
  * */
 public class SQLStatementGenerator {
 

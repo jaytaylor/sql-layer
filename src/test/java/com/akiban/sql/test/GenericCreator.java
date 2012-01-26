@@ -36,43 +36,62 @@ public abstract class GenericCreator {
 
     public static final String eol = System.getProperty("line.separator");
     public static String targetArea = "query-combo";
-    public static final String STR_METHOD = "[s]=";
-    public static final String DT_METHOD = "[d]=";
-    public static final String INT_METHOD = "[i]=";
-    public static final String[] QUANTIFIERS = { "Distinct", "All", "" };
-    public static final String[] FUNCTION_LIST = {
-            "[s]=%1$s = '%2$s'",
-            "[d]=%1$s = %2$s", "[i]=%1$s = '%2$s'" };
-    public static final String[] AG_FUNCTION_LIST = { "[i]=SUM(%1$s)",
-            "[i]=AVG(%1$s)", "[i]=COUNT(%1$s)", "[i]=MIN(%1$s)",
-            "[i]= MAX(%1$s)", "[i]=COUNT(*)" };
     protected StringBuilder sb = new StringBuilder();
     protected Formatter formatter = new Formatter(sb, Locale.US);
     String path = System.getProperty("user.dir")
             + "/src/test/resources/com/akiban/sql/pg/yaml/functional/";
-    
-    // should be paramterized
-    protected String server = "localhost";
-    protected String username = "root";
-    protected String password = "";
-    
-    
+    int empty_counter = 0;
     int counter = 0;
+
+    // See 
+
+    // a way to determine if the function is a string, date or numeric type function
+    // current plan is to repeat functions that could be more then one
+    // for items in FUNCTION_LIST
+    public static final String STR_METHOD = "[s]=";
+    public static final String DT_METHOD = "[d]=";
+    public static final String INT_METHOD = "[i]=";
+    public static final String[] FUNCTION_LIST = { "[s]=%1$s = '%2$s'",
+            "[d]=%1$s = %2$s", "[i]=%1$s = '%2$s'" };
+
+    //"select " + quantifier + getFields() + from + getJoins() + getWhere() + getGroupby() + having + getOrderby() + getLimit();
+    //  SELECT [ <set quantifier> ] <select list> <table expression>
+    //    <table expression>    ::= 
+    //            <from clause>
+    //            [ <where clause> ]
+    //            [ <group by clause> ]
+    //            [ <having clause> ]
+    // order by
+    // limit 
+    public static final String[] QUANTIFIERS = { "Distinct", "All", "" };
+
     public static final String[] ORDER_BY_DIRECTION = { " ASC ", " DESC " };
+
+    // unique join syntax
     public static final String[] JOIN_OTHER = { " CROSS JOIN %3$s " };
+
+    // combinations of joins in order to build
     public static final String[] JOIN_NATURAL = { " NATURAL ", " " };
     public static final String[] JOIN_TYPE = { " INNER ", " LEFT ", " RIGHT ",
             " LEFT OUTER ", " RIGHT OUTER ", " " };
-    public static final String[] JOIN_SPEC = { " ON %1$s.%2$s = %3$s.%4$s " };
-            //" USING (%4$s) " };
+    public static final String[] JOIN_SPEC = { " ON %1$s.%2$s = %3$s.%4$s ",
+            " USING (%4$s) " };
     public static final String JOIN = " JOIN %3$s ";
-    int empty_counter = 0;
-    
+
+    // unused as of yet, but lists the aggregate functions that should be used to test group by
+    public static final String[] AG_FUNCTION_LIST = { "[i]=SUM(%1$s)",
+            "[i]=AVG(%1$s)", "[i]=COUNT(%1$s)", "[i]=MIN(%1$s)",
+            "[i]= MAX(%1$s)", "[i]=COUNT(*)" };
+
+    // should be parameterized
+    protected String server = "localhost";
+    protected String username = "root";
+    protected String password = "";
+
     protected void close() {
-        System.out.println("Empty Counter: "+empty_counter);
-        
+        System.out.println("Empty Counter: " + empty_counter);
     }
-    
+
     protected void save(String filename, StringBuilder data) throws IOException {
         BufferedWriter out = null;
         try {
@@ -117,8 +136,8 @@ public abstract class GenericCreator {
 
                 }
                 output_str = output.toString();
-                
-            } 
+
+            }
         } finally {
             stmt.close();
             conn.close();
@@ -138,7 +157,6 @@ public abstract class GenericCreator {
         return output_str;
     }
 
-    
     protected String format(int start_param_index, int function_index,
             String field, String[] source, String filter) {
         sb.setLength(0);
@@ -166,7 +184,7 @@ public abstract class GenericCreator {
     }
 
     protected StringBuilder getAppender(String modifier) {
-         
+
         return new StringBuilder();
     }
 
@@ -210,28 +228,36 @@ public abstract class GenericCreator {
             }
         } catch (Exception e) {
             System.out.println("");
-            System.out.println("MySQL: " + sql);
-            System.out.println("MySQL: " + retVal);
+            System.out.println("MySQL(sql): " + sql);
+            System.out.println("MySQL(returns): " + retVal);
             System.out.println("MySQL ERROR:  " + e.getMessage());
-            //System.exit(-1);
+            //System.exit(-1);  // when you want a hard break
             System.out.println("");
         }
         return retVal;
     }
 
+    /* Holds information about joins to determine what tables join in what fashion 
+     * 
+     * TODO: hook up alias feature for when same table is both parent and child  
+     * */
     public static class Relationship {
 
         public Relationship(String primaryTable, String secondaryTable,
                 String primaryKey, String secondaryKey) {
-            super();
-            this.primaryTable = primaryTable;
-            this.secondaryTable = secondaryTable;
-            this.primaryKey = primaryKey;
-            this.secondaryKey = secondaryKey;
+            super(); // expected to be passed as this order
+            this.primaryTable = primaryTable; // %1$s
+            this.secondaryTable = secondaryTable; // %2$s
+            this.primaryKey = primaryKey; // %3$s
+            this.secondaryKey = secondaryKey; // %4$s
+            //this.primaryTable_alias = ;
+            //this.secondaryTable_alias = ;
         }
 
         public String primaryTable;
+        //public String primaryTable_alias;
         public String secondaryTable;
+        //public String secondaryTable_alias;
         public String primaryKey;
         public String secondaryKey;
     }
