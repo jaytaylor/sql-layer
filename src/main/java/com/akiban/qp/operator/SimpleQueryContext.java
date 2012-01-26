@@ -16,15 +16,21 @@
 package com.akiban.qp.operator;
 
 import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.server.error.ErrorCode;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /** A {@link QueryContext} for use without a full server for internal plans / testing. */
 public class SimpleQueryContext extends QueryContextBase
 {
+    private static final Logger logger = LoggerFactory.getLogger(SimpleQueryContext.class);
+
     private StoreAdapter adapter;
 
     public SimpleQueryContext(StoreAdapter adapter) {
@@ -52,6 +58,21 @@ public class SimpleQueryContext extends QueryContextBase
     @Override
     public String getSessionUser() {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void notifyClient(NotificationLevel level, ErrorCode errorCode, String message) {
+        switch (level) {
+        case WARNING:
+            logger.warn("{} {}", errorCode, message);
+            break;
+        case INFO:
+            logger.info("{} {}", errorCode, message);
+            break;
+        case DEBUG:
+            logger.debug("{} {}", errorCode, message);
+            break;
+        }
     }
 
 }

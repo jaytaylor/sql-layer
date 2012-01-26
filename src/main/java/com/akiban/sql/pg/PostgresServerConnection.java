@@ -28,6 +28,7 @@ import com.akiban.sql.parser.SQLParserException;
 import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.qp.loadableplan.LoadablePlan;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.*;
@@ -687,6 +688,37 @@ public class PostgresServerConnection extends ServerSessionBase
             return override;
         else
             return super.currentTime();
+    }
+
+    @Override
+    public void notifyClient(QueryContext.NotificationLevel level, ErrorCode errorCode, String message) 
+            throws IOException {
+        if (level.ordinal() <= maxNotificationLevel.ordinal()) {
+            Object state = messenger.suspendMessage();
+            messenger.beginMessage(PostgresMessages.NOTICE_RESPONSE_TYPE.code());
+            messenger.write('S');
+            switch (level) {
+            case WARNING:
+                messenger.writeString("WARN");
+                break;
+            case INFO:
+                messenger.writeString("INFO");
+                break;
+            case DEBUG:
+                messenger.writeString("DEBUG");
+                break;
+            // Other possibilities are "NOTICE" and "LOG".
+            }
+            if (errorCode != null) {
+                messenger.write('C');
+                messenger.writeString(errorCode.getFormattedValue());
+            }
+            messenger.write('M');
+            messenger.writeString(message);
+            messenger.write(0);
+            messenger.sendMessage(true);
+            messenger.resumeMessage(state);
+        }
     }
 
     /* PostgresServerSession */

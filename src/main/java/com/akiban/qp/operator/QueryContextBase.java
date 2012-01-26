@@ -18,6 +18,7 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
@@ -124,4 +125,10 @@ public abstract class QueryContextBase implements QueryContext
     public long getStartTime() {
         return startTimeMsec;
     }
+
+    @Override
+    public void warnClient(InvalidOperationException exception) {
+        notifyClient(NotificationLevel.WARNING, exception.getCode(), exception.getShortMessage());
+    }
+
 }
