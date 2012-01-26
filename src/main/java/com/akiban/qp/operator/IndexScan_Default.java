@@ -20,6 +20,7 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -176,7 +177,7 @@ class IndexScan_Default extends Operator
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(IndexScan_Default.class);
-    private static final Tap.PointTap INDEX_SCAN_COUNT = Tap.createCount("operator: index_scan", true);
+    private static final PointTap INDEX_SCAN_COUNT = Tap.createCount("operator: index_scan", true);
 
     // Object state
 

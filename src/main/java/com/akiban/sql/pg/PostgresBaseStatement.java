@@ -22,7 +22,7 @@ import com.akiban.server.service.dxl.DXLFunctionsHook;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.server.ServerParameterDecoder;
-import com.akiban.util.tap.Tap;
+import com.akiban.util.tap.InOutTap;
 
 import java.io.IOException;
 import java.util.List;
@@ -131,8 +131,8 @@ public abstract class PostgresBaseStatement implements PostgresStatement
         }
     }
 
-    protected abstract Tap.InOutTap executeTap();
-    protected abstract Tap.InOutTap acquireLockTap();
+    protected abstract InOutTap executeTap();
+    protected abstract InOutTap acquireLockTap();
 
     protected void lock(Session session, DXLFunctionsHook.DXLFunction operationType)
     {

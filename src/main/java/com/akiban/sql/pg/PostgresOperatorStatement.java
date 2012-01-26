@@ -20,6 +20,7 @@ import com.akiban.qp.operator.*;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
 import com.akiban.server.expression.EnvironmentExpressionSetting;
@@ -38,8 +39,8 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     private Operator resultOperator;
     private RowType resultRowType;
 
-    private static final Tap.InOutTap EXECUTE_TAP = Tap.createTimer("PostgresOperatorStatement: execute shared");
-    private static final Tap.InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresOperatorStatement: acquire shared lock");
+    private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresOperatorStatement: execute shared");
+    private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresOperatorStatement: acquire shared lock");
 
     public PostgresOperatorStatement(Operator resultOperator,
                                      RowType resultRowType,
@@ -95,13 +96,13 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     }
 
     @Override
-    protected Tap.InOutTap executeTap()
+    protected InOutTap executeTap()
     {
         return EXECUTE_TAP;
     }
 
     @Override
-    protected Tap.InOutTap acquireLockTap()
+    protected InOutTap acquireLockTap()
     {
         return ACQUIRE_LOCK_TAP;
     }

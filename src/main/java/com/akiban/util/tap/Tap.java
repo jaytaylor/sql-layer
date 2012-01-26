@@ -20,12 +20,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 
 import javax.management.InstanceAlreadyExistsException;
@@ -62,8 +59,8 @@ import org.slf4j.LoggerFactory;
  * </pre>
  * <p />
  * The static {@link #add(Tap)} method creates an instance of an initially
- * disabled {@link Tap.Dispatch}. when enabled, this {@link Tap.Dispatch} will
- * invoke a {@link Tap.TimeAndCount} instance to count and time the invocations
+ * disabled {@link Dispatch}. when enabled, this {@link Dispatch} will
+ * invoke a {@link TimeAndCount} instance to count and time the invocations
  * of {@link #in()} and {@link #out()}. You may instantiate other Tap subclasses
  * with the {@link #add(Tap)} method, for example,
  * 
@@ -107,18 +104,18 @@ import org.slf4j.LoggerFactory;
  * <p />
  * Currently the following Tap subclasses are defined:
  * <dl>
- * <dt>{@link Tap.TimeAndCount}</dt>
+ * <dt>{@link TimeAndCount}</dt>
  * <dd>Count and measure the elapsed time between each pair of calls to the
  * {@link #in()} and {@link #out()} methods.</dd>
- * <dt>{@link Tap.Count}</dt>
+ * <dt>{@link Count}</dt>
  * <dd>Simply count the number of alls to {@link #in()} and {@link #out()}.
  * Faster because {@link System#nanoTime()} is not called</dd>
- * <dt>{@link Tap.PerThread}</dt>
+ * <dt>{@link PerThread}</dt>
  * <dd>Sub-dispatches each {@link #in()} and {@link #out()} call to a
  * subordinate {@link Tap} on private to the current Thread. Results are
  * reported by thread name.</dd>
  * </dl>
- * {@link Tap.PerThread} requires another Tap subclass to dispatch to, as shown
+ * {@link PerThread} requires another Tap subclass to dispatch to, as shown
  * here:
  * 
  * <pre>
@@ -136,7 +133,7 @@ import org.slf4j.LoggerFactory;
  *      // To see a formatted text report in the log.
  * </pre>
  * 
- * In this example, a {@link Tap.Count} instance will be created for each thread
+ * In this example, a {@link Count} instance will be created for each thread
  * that calls either {@link Tap#in()} or {@link Tap#out()}.
  * 
  * @author peter
@@ -144,76 +141,17 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class Tap {
 
-    public static class PointTap {
+    static final Logger LOG = LoggerFactory.getLogger(Tap.class.getName());
 
-        public void hit() {
-            internal.in();
-            internal.out();
-        }
-
-        private PointTap(Tap internal) {
-            this.internal = internal;
-        }
-
-        private final Tap internal;
-    }
-
-    public static class InOutTap {
-
-        public void in() {
-            internal.in();
-        }
-
-        public void out() {
-            internal.out();
-        }
-
-        /**
-         * Reset the tap.
-         * @deprecated using this method indicates an improper separation of concerns between defining events (which
-         * is what this class does) and reporting on them.
-         */
-        @Deprecated
-        public void reset() {
-            internal.reset();
-        }
-
-        /**
-         * Gets the duration of the tap's in-to-out timer.
-         * @deprecated using this method indicates an improper separation of concerns between defining events (which
-         * is what this class does) and reporting on them.
-         * @return the tap's duration
-         */
-        @Deprecated
-        public long getDuration() {
-            return internal.getDuration();
-        }
-
-        /**
-         * Gets the tap's report
-         * @deprecated using this method indicates an improper separation of concerns between defining events (which
-         * is what this class does) and reporting on them.
-         * @return the underlying tap's report
-         */
-        @Deprecated
-        public TapReport getReport() {
-            return internal.getReport();
-        }
-
-        private InOutTap(Tap internal) {
-            this.internal = internal;
-        }
-
-        private final Tap internal;
-    }
-    
-    private static final Logger LOG = LoggerFactory.getLogger(Tap.class.getName());
-
-    public final static String NEW_LINE = System.getProperty("line.separator");
+    static final String NEW_LINE = System.getProperty("line.separator");
 
     private static final Map<String, Dispatch> dispatches = new TreeMap<String, Dispatch>();
 
+    private static String DEFAULT_ON_PROPERTY = "taps_default_on";
+
     private static boolean registered;
+
+    protected final String name;
 
     public static PointTap createCount(String name) {
         return createCount(name, defaultOn());
@@ -260,7 +198,7 @@ public abstract class Tap {
     }
 
     /**
-     * Re-initialize counters and timers for selected {@link Tap.Dispatch}es.
+     * Re-initialize counters and timers for selected {@link Dispatch}es.
      * 
      * @param regExPattern
      *            regular expression for names of Dispatches to reset.
@@ -275,7 +213,7 @@ public abstract class Tap {
     }
 
     /**
-     * Re-initialize counters and timers for selected {@link Tap.Dispatch}es.
+     * Re-initialize counters and timers for selected {@link Dispatch}es.
      * 
      * @param regExPattern
      *            regular expression for names of Dispatches to reset.
@@ -313,7 +251,7 @@ public abstract class Tap {
 
     /**
      * Add a custom {@link Tap} subclass. Specify a regExPattern to select from
-     * previously installed {@link Tap.Dispatch} instances, plus a {@link Class}
+     * previously installed {@link Dispatch} instances, plus a {@link Class}
      * defining a custom Tap implementation.
      * 
      * @param regExPattern
@@ -366,7 +304,7 @@ public abstract class Tap {
         return result;
     }
 
-    private static Collection<Tap.Dispatch> dispatchesCopy()
+    private static Collection<Dispatch> dispatchesCopy()
     {
         synchronized (dispatches) {
             return new ArrayList<Dispatch>(dispatches.values());
@@ -413,14 +351,12 @@ public abstract class Tap {
         }
     }
 
-    protected final String name;
-
     /**
      * Base constructor. Every Tap requires a name.
      * 
      * @param name
      */
-    private Tap(final String name) {
+    Tap(final String name) {
         this.name = name;
     }
 
@@ -466,369 +402,6 @@ public abstract class Tap {
      * @return A Result object or <tt>null</tt>
      */
     public abstract TapReport getReport();
-    
-    private static String DEFAULT_ON_PROPERTY = "taps_default_on";
-
-    /**
-     * A {@link Tap} Implementation that simply dispatches to another Tap
-     * instance. Used to hold the "switch" that determines whether a Null,
-     * TimeAndCount or other kind of Tap is invoked.
-     * <p />
-     * Reason for this dispatch mechanism is that HotSpot seems to be able to
-     * optimize out a dispatch to an instance of Null. Therefore code can invoke
-     * the methods of a Dispatch object set to Null with low or no performance
-     * penalty.
-     */
-    private static class Dispatch extends Tap {
-
-        protected Tap currentTap;
-
-        protected Tap enabledTap;
-
-        public Dispatch(final String name, final Tap tap) {
-            super(name);
-            this.currentTap = new Null(name);
-            this.enabledTap = tap;
-        }
-
-        public final void setEnabled(final boolean on) {
-            currentTap = on ? enabledTap : new Null(name);
-        }
-
-        public void in() {
-            currentTap.in();
-        }
-
-        public void out() {
-            currentTap.out();
-        }
-        
-        public long getDuration() {
-            return currentTap.getDuration();
-        }
-
-        public void reset() {
-            currentTap.reset();
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void appendReport(final StringBuilder sb) {
-            currentTap.appendReport(sb);
-        }
-
-        public TapReport getReport() {
-            return currentTap.getReport();
-        }
-
-        public String toString() {
-            return currentTap.toString();
-        }
-    }
-
-    /**
-     * A {@link Tap} subclass that does nothing. This is the initial target of
-     * every added {@link Tap.Dispatch}.
-     * 
-     */
-    private static class Null extends Tap {
-
-        public Null(final String name) {
-            super(name);
-        }
-
-        public void in() {
-            // do nothing
-        }
-
-        public void out() {
-            // do nothing
-        }
-        
-        public long getDuration() {
-            return 0;
-        }
-
-        public void reset() {
-            // do nothing
-        }
-
-        public void appendReport(final StringBuilder sb) {
-            // do nothing;
-        }
-
-        public String toString() {
-            return "NullTap(" + name + ")";
-        }
-
-        public TapReport getReport() {
-            return null;
-        }
-    }
-
-    /**
-     * A Tap subclass that counts calls to {@link #in()} and {@link #out()}.
-     * Generally this is faster than {@link TimeAndCount} because the system
-     * clock is not read.
-     */
-    private static class Count extends Tap {
-
-        public Count(final String name) {
-            super(name);
-        }
-
-        volatile long inCount = 0;
-
-        volatile long outCount = 0;
-
-        public void in() {
-            inCount++;
-        }
-
-        public void out() {
-            outCount++;
-        }
-        
-        public long getDuration() {
-            return 0;
-        }
-
-        public void reset() {
-            inCount = 0;
-            outCount = 0;
-        }
-
-        public void appendReport(final StringBuilder sb) {
-            sb.append(String.format("%20s inCount=%,10d outCount=%,10d", name,
-                    inCount, outCount));
-        }
-
-        public String toString() {
-            return String.format("%s inCount=%,d outCount=%,d", name, inCount,
-                    outCount);
-        }
-
-        public TapReport getReport() {
-            return new TapReport(getName(), inCount, outCount, 0);
-        }
-    }
-
-    /**
-     * A Tap subclass that counts and times the intervals between calls to
-     * {@link #in()} and {@link #out()}.
-     */
-    private static class TimeAndCount extends Tap {
-
-        public TimeAndCount(final String name) {
-            super(name);
-        }
-
-        volatile long cumulativeNanos = 0;
-        volatile long inCount = 0;
-        volatile long outCount = 0;
-        volatile long inNanos = Long.MIN_VALUE;
-        volatile long startNanos = System.nanoTime();
-        volatile long endNanos = System.nanoTime();
-        volatile long lastDuration = Long.MIN_VALUE;
-
-        public void in() {
-            inCount++;
-            inNanos = System.nanoTime();
-        }
-
-        public void out() {
-            if (inNanos != Long.MIN_VALUE) {
-                long now = System.nanoTime();
-                endNanos = now;
-                lastDuration = now - inNanos;
-                cumulativeNanos += lastDuration;
-                outCount++;
-                inNanos = Long.MIN_VALUE;
-            }
-        }
-        
-        public long getDuration() {
-            return lastDuration;
-        }
-
-        public void reset() {
-            inCount = 0;
-            outCount = 0;
-            cumulativeNanos = 0;
-            inNanos = Long.MIN_VALUE;
-        }
-
-        public void appendReport(final StringBuilder sb) {
-            sb.append(String.format(
-                    "%20s inCount=%,10d outCount=%,10d time=%,12dms", name,
-                    inCount, outCount, cumulativeNanos / 1000000));
-            if (outCount > 0) {
-                sb.append(String.format("  per=%,12dns  interval=%,12dns",
-                        cumulativeNanos / outCount, (endNanos - startNanos)
-                                / outCount));
-            }
-        }
-
-        public String toString() {
-            return String.format("%s inCount=%,d outCount=%,d time=%,dms",
-                    name, inCount, outCount, cumulativeNanos / 1000000);
-        }
-
-        public TapReport getReport() {
-            return new TapReport(getName(), inCount, outCount, cumulativeNanos);
-        }
-
-    }
-
-    /**
-     * Tap implementation that aggregates information on a per-thread basis. An
-     * instance of this class maintains a collection of subordinate Taps, one
-     * per thread. These are created on demand as new threads invoke
-     * {@link #in()} or {@link #out()}.
-     * <p />
-     * By default each subordinate Tap is a {@link TimeAndCount}, but the
-     * two-argument constructor provides a way to override that default.
-     * 
-     */
-    static class PerThread extends Tap {
-
-        private static final Comparator<Thread> THREAD_COMPARATOR = new Comparator<Thread>() {
-            @Override
-            public int compare(Thread o1, Thread o2) {
-                return o1.getName().compareTo(o2.getName());
-            }
-        };
-        private final ThreadLocal<Tap> threadLocal = new ThreadLocal<Tap>() {
-            @Override
-            protected Tap initialValue() {
-                Tap tap;
-                try {
-                    tap = clazz.getConstructor(String.class).newInstance(name);
-                } catch (Exception e) {
-                    tap = new Null(name);
-                    LOG.warn("Unable to create tap of class " + clazz.getSimpleName(), e);
-                }
-                threadMap.put(Thread.currentThread(), tap);
-                return tap;
-            }
-        };
-
-        private final Map<Thread, Tap> threadMap = new ConcurrentHashMap<Thread, Tap>();
-
-        private final Class<? extends Tap> clazz;
-
-        /**
-         * {@link TapReport} subclass that contains map of subordinate TapReport
-         * instances, one per thread. The map key is threadName for simple
-         * correlation with
-         * 
-         * @author peter
-         * 
-         */
-        public static class PerThreadTapReport extends TapReport {
-
-            private final Map<String, TapReport> reportMap = new HashMap<String, TapReport>();
-
-            PerThreadTapReport(final String name, final long inCount,
-                    final long outCount, final long elapsedTime,
-                    Map<Thread, Tap> threadMap) {
-                super(name, inCount, outCount, elapsedTime);
-                for (final Map.Entry<Thread, Tap> entry : threadMap.entrySet()) {
-                    this.reportMap.put(
-                            entry.getKey().getName(),
-                            entry.getValue().getReport()
-                    );
-                }
-            }
-
-            public Map<String, TapReport> getTapReportMap() {
-                return new TreeMap<String, TapReport>(reportMap);
-            }
-        }
-
-        /**
-         * Create a PerThread instance the adds a new instance of the supplied
-         * subclass of {@link Tap} for each Thread. Note: the class
-         * {@link PerThread} may not itself be added.
-         * 
-         * @param name
-         *            Name of the Tap
-         * @param clazz
-         *            Class from which new Tap instances are created.
-         */
-        public PerThread(final String name, final Class<? extends Tap> clazz) {
-            super(name);
-            if (clazz == this.getClass()) {
-                throw new IllegalArgumentException("May not add a "
-                        + clazz.getName() + " to " + this);
-            }
-            this.clazz = clazz;
-        }
-
-        @Override
-        public void appendReport(StringBuilder sb) {
-            final Map<Thread, Tap> threadMap = new TreeMap<Thread, Tap>(THREAD_COMPARATOR);
-            threadMap.putAll(this.threadMap);
-            for (final Map.Entry<Thread, Tap> entry : threadMap.entrySet()) {
-                sb.append(NEW_LINE);
-                sb.append("==");
-                sb.append(entry.getKey().getName());
-                sb.append("==");
-                sb.append(NEW_LINE);
-                entry.getValue().appendReport(sb);
-            }
-        }
-
-        @Override
-        public TapReport getReport() {
-            long inCount = 0;
-            long outCount = 0;
-            long elapsedTime = 0;
-            for (final Tap tap : threadMap.values()) {
-                final TapReport threadTapReport = tap.getReport();
-                inCount += threadTapReport.getInCount();
-                outCount += threadTapReport.getOutCount();
-                elapsedTime += threadTapReport.getCumulativeTime();
-            }
-            return new PerThreadTapReport(name, inCount, outCount, elapsedTime, threadMap);
-        }
-
-        @Override
-        public void in() {
-            final Tap tap = getTap();
-            tap.in();
-        }
-
-        @Override
-        public void out() {
-            final Tap tap = getTap();
-            tap.out();
-        }
-        
-        @Override
-        public long getDuration() {
-            final Tap tap = getTap();
-            return tap.getDuration();
-        }
-
-        @Override
-        public void reset() {
-            for (final Tap tap : threadMap.values()) {
-                tap.reset();
-            }
-        }
-
-        @Override
-        public String toString() {
-            return "PerThread(" + clazz.getName() + ")";
-        }
-
-        private Tap getTap() {
-            return threadLocal.get();
-        }
-    }
 
     /**
      * A micro-benchmark to prove that a Dispatch to Null gets optimized away.

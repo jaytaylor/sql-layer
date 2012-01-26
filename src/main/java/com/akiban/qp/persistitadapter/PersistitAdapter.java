@@ -42,6 +42,7 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -279,7 +280,7 @@ public class PersistitAdapter extends StoreAdapter
     
     // Class state
     
-    public static final Tap.InOutTap CURSOR_FIRST_ROW_TAP = Tap.createTimer("cursor first row");
+    public static final InOutTap CURSOR_FIRST_ROW_TAP = Tap.createTimer("cursor first row");
 
     // Object state
 
