@@ -13,32 +13,42 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.operator;
+package com.akiban.sql.server;
 
-import com.akiban.qp.row.Row;
+import com.akiban.qp.operator.QueryContextBase;
+import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.server.service.session.Session;
 
-public abstract class ChainedCursor extends OperatorExecutionBase implements Cursor
+public class ServerQueryContext<T extends ServerSession> extends QueryContextBase
 {
-    protected final Cursor input;
+    private T server;
 
-    protected ChainedCursor(QueryContext context, Cursor input) {
-        super(context);
-        this.input = input;
+    public ServerQueryContext(T server) {
+        this.server = server;
+    }
+
+    public T getServer() {
+        return server;
     }
 
     @Override
-    public void open() {
-        input.open();
+    public StoreAdapter getStore() {
+        return server.getStore();
     }
 
     @Override
-    public Row next()
-    {
-        return input.next();
+    public Session getSession() {
+        return server.getSession();
     }
 
     @Override
-    public void close() {
-        input.close();
+    public String getCurrentUser() {
+        return server.getDefaultSchemaName();
     }
+
+    @Override
+    public String getSessionUser() {
+        return server.getProperty("user");
+    }
+
 }

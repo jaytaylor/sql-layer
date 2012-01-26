@@ -15,8 +15,6 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.qp.operator.ArrayBindings;
-import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
@@ -51,7 +49,7 @@ public class LimitIT extends OperatorITBase
     {
         Operator plan = limit_Default(groupScan_Default(coi),
                                               3);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(customerRowType, 2L, "foundation"),
@@ -65,7 +63,7 @@ public class LimitIT extends OperatorITBase
     {
         Operator plan = limit_Default(groupScan_Default(coi),
                                               2, false, Integer.MAX_VALUE, false);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 4L, "highland"),
             row(customerRowType, 5L, "matrix"),
@@ -80,7 +78,7 @@ public class LimitIT extends OperatorITBase
     {
         Operator plan = limit_Default(groupScan_Default(coi),
                                               2, false, 2, false);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 4L, "highland"),
             row(customerRowType, 5L, "matrix"),
@@ -93,7 +91,7 @@ public class LimitIT extends OperatorITBase
     {
         Operator plan = limit_Default(groupScan_Default(coi),
                                               10, false, 1, false);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
         };
         compareRows(expected, cursor);
@@ -104,14 +102,13 @@ public class LimitIT extends OperatorITBase
     {
         Operator plan = limit_Default(groupScan_Default(coi),
                                               0, false, 0, true);
-        Cursor cursor = cursor(plan, adapter);
-        Bindings bindings = new ArrayBindings(1);
-        bindings.set(0, 2);
+        Cursor cursor = cursor(plan, queryContext);
+        queryContext.setValue(0, 2L);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(customerRowType, 2L, "foundation"),
         };
-        compareRows(expected, cursor, bindings);
+        compareRows(expected, cursor);
     }
 
     @Test(expected = NegativeLimitException.class)
@@ -119,12 +116,11 @@ public class LimitIT extends OperatorITBase
     {
         Operator plan = limit_Default(groupScan_Default(coi),
                                               0, false, 0, true);
-        Cursor cursor = cursor(plan, adapter);
-        Bindings bindings = new ArrayBindings(1);
-        bindings.set(0, -1);
+        Cursor cursor = cursor(plan, queryContext);
+        queryContext.setValue(0, -1L);
         RowBase[] expected = new RowBase[]{
         };
-        compareRows(expected, cursor, bindings);
+        compareRows(expected, cursor);
     }
 
 }

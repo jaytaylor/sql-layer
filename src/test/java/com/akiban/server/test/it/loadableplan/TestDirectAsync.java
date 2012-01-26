@@ -18,12 +18,11 @@ package com.akiban.server.test.it.loadableplan;
 import com.akiban.qp.loadableplan.DirectObjectCursor;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
-import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.BindingNotSetException;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.QueryCanceledException;
-import com.akiban.server.service.session.Session;
 
 import java.sql.Types;
 
@@ -55,8 +54,8 @@ public class TestDirectAsync extends LoadableDirectObjectPlan
     {
         return new DirectObjectPlan() {
                 @Override
-                public DirectObjectCursor cursor(Session session) {
-                    return new TestDirectObjectCursor(session);
+                public DirectObjectCursor cursor(QueryContext context) {
+                    return new TestDirectObjectCursor(context);
                 }
 
                 @Override
@@ -67,26 +66,25 @@ public class TestDirectAsync extends LoadableDirectObjectPlan
     }
 
     public static class TestDirectObjectCursor extends DirectObjectCursor {
-        Session session;
+        QueryContext context;
         Process process;
         BlockingQueue<String> output;
 
-        public TestDirectObjectCursor(Session session) {
-            this.session = session;
+        public TestDirectObjectCursor(QueryContext context) {
+            this.context = context;
         }
 
         @Override
-        public void open(Bindings bindings) {
+        public void open() {
             List<String> command = new ArrayList<String>();
             for (int i = 0; i < 100; i++) {
                 String carg;
                 try {
-                    carg = (String)bindings.get(i);
+                    carg = context.getValue(i).getString();
                 }
                 catch (BindingNotSetException ex) {
                     break;
                 }
-                if (carg == null) break;
                 command.add(carg);
             }
             ProcessBuilder pb = new ProcessBuilder(command);
@@ -128,7 +126,7 @@ public class TestDirectAsync extends LoadableDirectObjectPlan
                 line = output.poll(TIMEOUT, TimeUnit.MILLISECONDS);
             }
             catch (InterruptedException ex) {
-                throw new QueryCanceledException(session);
+                throw new QueryCanceledException(context.getSession());
             }
             if (line == null)
                 return Collections.<String>emptyList();

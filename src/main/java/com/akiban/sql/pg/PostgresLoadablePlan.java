@@ -15,8 +15,6 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.qp.operator.ArrayBindings;
-import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.loadableplan.LoadableOperator;
 import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
@@ -36,14 +34,12 @@ public class PostgresLoadablePlan
         return null;
     }
     
-    public static Bindings getBindings(Object[] args) {
-        Bindings bindings = new ArrayBindings(args.length);
+    public static void setParameters(PostgresQueryContext context, Object[] args) {
         if (args != null) {
             for (int i = 0; i < args.length; i++) {
-                bindings.set(i, args[i]);
+                context.setValue(i, args[i]);
             }
         }
-        return bindings;
     }
 
     // All static methods.

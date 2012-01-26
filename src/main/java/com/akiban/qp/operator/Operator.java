@@ -50,7 +50,7 @@ public abstract class Operator implements Plannable
         return Collections.emptyList();
     }
 
-    protected abstract Cursor cursor(StoreAdapter adapter);
+    protected abstract Cursor cursor(QueryContext context);
 
     @Override
     public String describePlan()

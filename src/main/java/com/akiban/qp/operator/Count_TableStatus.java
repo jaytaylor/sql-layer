@@ -38,9 +38,9 @@ class Count_TableStatus extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter)
+    protected Cursor cursor(QueryContext context)
     {
-        return new Execution(adapter);
+        return new Execution(context);
     }
 
     @Override
@@ -78,7 +78,7 @@ class Count_TableStatus extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
             pending = true;
         }
@@ -88,7 +88,7 @@ class Count_TableStatus extends Operator
         {
             checkQueryCancelation();
             if (pending) {
-                long rowCount = adapter.rowCount(tableType);
+                long rowCount = adapter().rowCount(tableType);
                 close();
                 return new ValuesRow(resultType, new Object[] { rowCount });
             }
@@ -105,9 +105,9 @@ class Count_TableStatus extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter)
+        Execution(QueryContext context)
         {
-            super(adapter);
+            super(context);
         }
 
         // Object state

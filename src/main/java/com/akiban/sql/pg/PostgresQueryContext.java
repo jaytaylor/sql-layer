@@ -13,18 +13,18 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.expression;
+package com.akiban.sql.pg;
 
-public interface EnvironmentExpressionFactory {
-    /** Return the setting on which the value depends. */
-    EnvironmentExpressionSetting environmentSetting();
+import com.akiban.sql.server.ServerQueryContext;
 
-    /** Return an expression accessing the requested {@link EnvironmentExpressionSetting}
-     * at the given position in the {@link com.akiban.qp.operator.Bindings}.
-     */
-    Expression get(int bindingPosition);
-    
-    /** Return the full type of a expression.
-     */
-    ExpressionType getType();
+public class PostgresQueryContext extends ServerQueryContext<PostgresServerSession>
+{
+    public PostgresQueryContext(PostgresServerSession server) {
+        super(server);
+    }
+
+    public boolean isColumnBinary(int i) {
+        return false;
+    }
+
 }

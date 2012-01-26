@@ -62,8 +62,8 @@ public class RunIdPropagationIT extends OperatorITBase
     public void testIndexScan()
     {
         Operator plan = indexScan_Default(orderSalesmanIndexRowType, false);
-        Cursor cursor = cursor(plan, adapter);
-        cursor.open(NO_BINDINGS);
+        Cursor cursor = cursor(plan, queryContext);
+        cursor.open();
         int expectedRunId = 0;
         RowBase row;
         while ((row = cursor.next()) != null) {
@@ -82,8 +82,8 @@ public class RunIdPropagationIT extends OperatorITBase
                 itemIidIndexRowType,
                 Arrays.asList(customerRowType, orderRowType, itemRowType),
                 LookupOption.DISCARD_INPUT);
-        Cursor cursor = cursor(plan, adapter);
-        cursor.open(NO_BINDINGS);
+        Cursor cursor = cursor(plan, queryContext);
+        cursor.open();
         int expectedRunId = 0;
         RowBase row;
         while ((row = cursor.next()) != null) {
@@ -114,8 +114,8 @@ public class RunIdPropagationIT extends OperatorITBase
                 itemIidIndexRowType,
                 customerRowType,
                 LookupOption.DISCARD_INPUT);
-        Cursor cursor = cursor(plan, adapter);
-        cursor.open(NO_BINDINGS);
+        Cursor cursor = cursor(plan, queryContext);
+        cursor.open();
         int expectedRunId = 0;
         RowBase row;
         while ((row = cursor.next()) != null) {
@@ -152,8 +152,8 @@ public class RunIdPropagationIT extends OperatorITBase
                     customerRowType,
                     LookupOption.DISCARD_INPUT),
                 removeDescendentTypes(customerRowType));
-        Cursor cursor = cursor(plan, adapter);
-        cursor.open(NO_BINDINGS);
+        Cursor cursor = cursor(plan, queryContext);
+        cursor.open();
         int expectedRunId = 0;
         RowBase row;
         while ((row = cursor.next()) != null) {
@@ -175,8 +175,8 @@ public class RunIdPropagationIT extends OperatorITBase
                     customerRowType,
                     LookupOption.DISCARD_INPUT),
                 Arrays.asList(orderRowType, itemRowType));
-        Cursor cursor = cursor(plan, adapter);
-        cursor.open(NO_BINDINGS);
+        Cursor cursor = cursor(plan, queryContext);
+        cursor.open();
         int expectedRunId = 0;
         RowBase row;
         while ((row = cursor.next()) != null) {
@@ -217,8 +217,8 @@ public class RunIdPropagationIT extends OperatorITBase
                 orderRowType,
                 JoinType.LEFT_JOIN);
         RowType coRowType = plan.rowType();
-        Cursor cursor = cursor(plan, adapter);
-        cursor.open(NO_BINDINGS);
+        Cursor cursor = cursor(plan, queryContext);
+        cursor.open();
         int expectedRunId = 0;
         RowBase row;
         while ((row = cursor.next()) != null) {
@@ -252,8 +252,8 @@ public class RunIdPropagationIT extends OperatorITBase
                 customerRowType,
                 Arrays.asList(field(customerRowType, 1)));
         RowType customerNameRowType = plan.rowType();
-        Cursor cursor = cursor(plan, adapter);
-        cursor.open(NO_BINDINGS);
+        Cursor cursor = cursor(plan, queryContext);
+        cursor.open();
         int expectedRunId = 0;
         RowBase row;
         while ((row = cursor.next()) != null) {
@@ -275,8 +275,8 @@ public class RunIdPropagationIT extends OperatorITBase
     public void testGroupScan()
     {
         Operator plan = groupScan_Default(coi);
-        Cursor cursor = cursor(plan, adapter);
-        cursor.open(NO_BINDINGS);
+        Cursor cursor = cursor(plan, queryContext);
+        cursor.open();
         int count = 0;
         RowBase row;
         while ((row = cursor.next()) != null) {

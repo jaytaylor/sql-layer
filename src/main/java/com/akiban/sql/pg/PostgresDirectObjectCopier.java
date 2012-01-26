@@ -26,9 +26,9 @@ import java.io.IOException;
  */
 public class PostgresDirectObjectCopier extends PostgresOutputter<List<?>>
 {
-    public PostgresDirectObjectCopier(PostgresServerSession server, 
+    public PostgresDirectObjectCopier(PostgresQueryContext context,
                                       PostgresBaseStatement statement) {
-        super(server, statement);
+        super(context, statement);
     }
 
     @Override
@@ -52,7 +52,7 @@ public class PostgresDirectObjectCopier extends PostgresOutputter<List<?>>
         messenger.write(0);
         messenger.writeShort(ncols);
         for (int i = 0; i < ncols; i++) {
-            assert !statement.isColumnBinary(i);
+            assert !context.isColumnBinary(i);
             messenger.writeShort(0);
         }
         messenger.sendMessage();

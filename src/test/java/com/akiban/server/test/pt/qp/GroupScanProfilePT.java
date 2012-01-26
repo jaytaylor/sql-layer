@@ -16,10 +16,9 @@
 package com.akiban.server.test.pt.qp;
 
 import com.akiban.ais.model.GroupTable;
-import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.UndefBindings;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -72,6 +71,7 @@ public class GroupScanProfilePT extends QPProfilePTBase
         addressAddressIndexRowType = indexType(address, "address");
         coi = groupTable(customer);
         adapter = persistitAdapter(schema);
+        queryContext = queryContext(adapter);
     }
 
     protected void populateDB(int customers, int ordersPerCustomer, int itemsPerOrder)
@@ -104,8 +104,8 @@ public class GroupScanProfilePT extends QPProfilePTBase
         long start = System.nanoTime();
         Operator plan = groupScan_Default(coi);
         for (int s = 0; s < SCANS; s++) {
-            Cursor cursor = cursor(plan, adapter);
-            cursor.open(NO_BINDINGS);
+            Cursor cursor = cursor(plan, queryContext);
+            cursor.open();
             while (cursor.next() != null) {
             }
             cursor.close();
@@ -115,8 +115,6 @@ public class GroupScanProfilePT extends QPProfilePTBase
         System.out.println(String.format("scans: %s, db: %s/%s/%s, time: %s",
                                          SCANS, CUSTOMERS, ORDERS_PER_CUSTOMER, ITEMS_PER_ORDER, sec));
     }
-
-    private static final Bindings NO_BINDINGS = UndefBindings.only();
 
     protected int customer;
     protected int order;

@@ -16,11 +16,9 @@
 package com.akiban.server.expression.subquery;
 
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -29,13 +27,9 @@ import com.akiban.server.types.ValueSource;
 public abstract class SubqueryExpressionEvaluation implements ExpressionEvaluation {
 
     @Override
-    public void of(StoreAdapter adapter) {
-        this.cursor = API.cursor(subquery, adapter);
-    }
-
-    @Override
-    public void of(Bindings bindings) {
-        this.bindings = bindings;
+    public void of(QueryContext context) {
+        this.context = context;
+        this.cursor = API.cursor(subquery, context);
     }
 
     @Override
@@ -49,8 +43,8 @@ public abstract class SubqueryExpressionEvaluation implements ExpressionEvaluati
 
     @Override
     public final ValueSource eval() {
-        bindings.set(bindingPosition, outerRow);
-        cursor.open(bindings);
+        context.setRow(bindingPosition, outerRow);
+        cursor.open();
         try {
             return doEval();
         }
@@ -80,8 +74,8 @@ public abstract class SubqueryExpressionEvaluation implements ExpressionEvaluati
 
     protected abstract ValueSource doEval();
 
-    protected Bindings bindings() {
-        return bindings;
+    protected QueryContext queryContext() {
+        return context;
     }
 
     protected Row next() {
@@ -108,7 +102,7 @@ public abstract class SubqueryExpressionEvaluation implements ExpressionEvaluati
     private final RowType innerRowType;
     private final int bindingPosition;
     private Cursor cursor;
-    private Bindings bindings;
+    private QueryContext context;
     private Row outerRow;
 
 }

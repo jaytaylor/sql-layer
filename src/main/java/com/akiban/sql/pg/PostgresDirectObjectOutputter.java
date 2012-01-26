@@ -23,9 +23,9 @@ import java.io.IOException;
 
 public class PostgresDirectObjectOutputter extends PostgresOutputter<List<?>>
 {
-    public PostgresDirectObjectOutputter(PostgresServerSession server, 
+    public PostgresDirectObjectOutputter(PostgresQueryContext context,
                                          PostgresBaseStatement statement) {
-        super(server, statement);
+        super(context, statement);
     }
 
     @Override
@@ -35,7 +35,7 @@ public class PostgresDirectObjectOutputter extends PostgresOutputter<List<?>>
         for (int i = 0; i < ncols; i++) {
             Object field = row.get(i);
             PostgresType type = columnTypes.get(i);
-            boolean binary = statement.isColumnBinary(i);
+            boolean binary = context.isColumnBinary(i);
             ByteArrayOutputStream bytes = encoder.encodeObject(field, type, binary);
             if (field == null) {
                 messenger.writeInt(-1);
