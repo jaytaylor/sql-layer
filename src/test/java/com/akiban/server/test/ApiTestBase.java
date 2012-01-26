@@ -39,6 +39,8 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.AkServerInterface;
@@ -55,6 +57,7 @@ import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.types.extract.ConverterTestUtils;
 import com.akiban.server.util.GroupIndexCreator;
+import com.akiban.util.AssertUtils;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.TapReport;
 import com.akiban.util.Undef;
@@ -308,6 +311,10 @@ public class ApiTestBase {
 
     protected final PersistitAdapter persistitAdapter(Schema schema) {
         return new PersistitAdapter(schema, persistitStore(), treeService(), session(), configService());
+    }
+
+    protected final QueryContext queryContext(PersistitAdapter adapter) {
+        return new SimpleQueryContext(adapter);
     }
 
     protected final MemcacheService memcache() {
@@ -594,10 +601,8 @@ public class ApiTestBase {
         Assert.assertEquals("user tables", Collections.<TableName>emptySet(), uTables);
     }
 
-    protected static <T> void assertEqualLists(String message, List<T> expected, List<T> actual) {
-        if (!expected.equals(actual)) {
-            assertEquals(message, Strings.join(expected), Strings.join(actual));
-        }
+    protected static <T> void assertEqualLists(String message, List<? extends T> expected, List<? extends T> actual) {
+        AssertUtils.assertCollectionEquals(message, expected, actual);
     }
 
     protected static class TestException extends RuntimeException {
@@ -753,5 +758,15 @@ public class ApiTestBase {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+    
+    protected void transactionallyUnchecked(final Runnable runnable) {
+        transactionallyUnchecked(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                runnable.run();
+                return null;
+            }
+        });
     }
 }

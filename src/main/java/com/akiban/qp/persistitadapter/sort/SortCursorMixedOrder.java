@@ -17,7 +17,7 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
 import com.persistit.exception.PersistitException;
@@ -30,9 +30,8 @@ abstract class SortCursorMixedOrder extends SortCursor
     // Cursor interface
 
     @Override
-    public void open(Bindings bindings)
+    public void open()
     {
-        this.bindings = bindings;
         exchange.clear();
         scanStates.clear();
         try {
@@ -70,7 +69,7 @@ abstract class SortCursorMixedOrder extends SortCursor
 
     // SortCursorMixedOrder interface
 
-    public static SortCursorMixedOrder create(PersistitAdapter adapter,
+    public static SortCursorMixedOrder create(QueryContext context,
                                               IterationHelper iterationHelper,
                                               IndexKeyRange keyRange,
                                               API.Ordering ordering)
@@ -79,20 +78,20 @@ abstract class SortCursorMixedOrder extends SortCursor
             // keyRange == null occurs when Sorter is used, (to sort an arbitrary input stream). There is no
             // IndexRowType in that case, so an IndexKeyRange can't be created.
             keyRange == null || keyRange.unbounded()
-            ? new SortCursorMixedOrderUnbounded(adapter, iterationHelper, keyRange, ordering)
-            : new SortCursorMixedOrderBounded(adapter, iterationHelper, keyRange, ordering);
+            ? new SortCursorMixedOrderUnbounded(context, iterationHelper, keyRange, ordering)
+            : new SortCursorMixedOrderBounded(context, iterationHelper, keyRange, ordering);
     }
 
     public abstract void initializeScanStates() throws PersistitException;
 
     // For use by subclasses
 
-    protected SortCursorMixedOrder(PersistitAdapter adapter,
+    protected SortCursorMixedOrder(QueryContext context,
                                    IterationHelper iterationHelper,
                                    IndexKeyRange keyRange,
                                    API.Ordering ordering)
     {
-        super(adapter, iterationHelper);
+        super(context, iterationHelper);
         this.keyRange = keyRange;
         this.ordering = ordering;
         keyColumns =
@@ -162,7 +161,6 @@ abstract class SortCursorMixedOrder extends SortCursor
     protected final IndexKeyRange keyRange;
     protected final API.Ordering ordering;
     protected final List<MixedOrderScanState> scanStates = new ArrayList<MixedOrderScanState>();
-    protected Bindings bindings;
     private final int keyColumns; // Number of columns in the key. keyFields >= orderingColumns.
     private boolean more;
     private boolean justOpened;

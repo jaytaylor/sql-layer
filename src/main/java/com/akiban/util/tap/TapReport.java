@@ -17,37 +17,41 @@ package com.akiban.util.tap;
 
 import java.beans.ConstructorProperties;
 
-public class TapReport {
-
-    private final String name;
-
-    private final long inCount;
-    private final long outCount;
-
-    private final long cumulativeTime;
-
-    @ConstructorProperties( { "name", "inCount", "outCount", "cumulativeTime" })
-    public TapReport(final String name, final long inCount,
-            final long outCount, final long cumulativeTime) {
+public class TapReport
+{
+    @ConstructorProperties({"name", "inCount", "outCount", "cumulativeTime"})
+    public TapReport(String name, long inCount, long outCount, long cumulativeTime)
+    {
         this.name = name;
         this.inCount = inCount;
         this.outCount = outCount;
         this.cumulativeTime = cumulativeTime;
     }
 
-    public String getName() {
+    public String getName()
+    {
         return name;
     }
 
-    public long getInCount() {
+    public long getInCount()
+    {
         return inCount;
     }
 
-    public long getOutCount() {
+    public long getOutCount()
+    {
         return outCount;
     }
 
-    public long getCumulativeTime() {
+    public long getCumulativeTime()
+    {
         return cumulativeTime;
     }
+
+    // Object state
+
+    private final String name;
+    private final long inCount;
+    private final long outCount;
+    private final long cumulativeTime;
 }

@@ -26,7 +26,6 @@ import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
-import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
@@ -49,6 +48,8 @@ import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 import com.google.inject.Inject;
 import com.persistit.Exchange;
@@ -103,6 +104,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
         UpdatePlannable updateOp = com.akiban.qp.operator.API.update_Default(scanOp, updateFunction);
 
+        QueryContext context = new SimpleQueryContext(adapter);
+
         UPDATE_MAINTENANCE.in();
 
         maintainGroupIndexes(session,
@@ -113,7 +116,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                              OperatorStoreGIHandler.forTable(adapter, userTable),
                              OperatorStoreGIHandler.Action.DELETE);
 
-        runCursor(oldRowData, rowDef, updateOp, adapter);
+        runCursor(oldRowData, rowDef, updateOp, context);
 
         maintainGroupIndexes(session,
                              ais,
@@ -204,13 +207,13 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                                  treeService,
                                  session,
                                  config);
+        QueryContext context = new SimpleQueryContext(adapter);
         for(GroupIndex groupIndex : groupIndexes) {
             Operator plan = OperatorStoreMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex);
             runMaintenancePlan(
-                    adapter,
+                    context,
                     groupIndex,
                     plan,
-                    UndefBindings.only(),
                     OperatorStoreGIHandler.forBuilding(adapter),
                     OperatorStoreGIHandler.Action.STORE
             );
@@ -285,16 +288,15 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     }
 
     private void runMaintenancePlan(
-            PersistitAdapter adapter,
+            QueryContext context,
             GroupIndex groupIndex,
             Operator rootOperator,
-            Bindings bindings,
             OperatorStoreGIHandler handler,
             OperatorStoreGIHandler.Action action
     )
     {
-        Cursor cursor = API.cursor(rootOperator, adapter);
-        cursor.open(bindings);
+        Cursor cursor = API.cursor(rootOperator, context);
+        cursor.open();
         try {
             Row row;
             while ((row = cursor.next()) != null) {
@@ -315,9 +317,9 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // private static methods
 
-    private static void runCursor(RowData oldRowData, RowDef rowDef, UpdatePlannable plannable, PersistitAdapter adapter)
+    private static void runCursor(RowData oldRowData, RowDef rowDef, UpdatePlannable plannable, QueryContext context)
     {
-        final UpdateResult result  = plannable.run(UndefBindings.only(), adapter);
+        final UpdateResult result  = plannable.run(context);
         if (result.rowsModified() == 0 || result.rowsTouched() == 0) {
             throw new NoRowsUpdatedException (oldRowData, rowDef);
         }
@@ -365,13 +367,13 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
     // consts
 
     private static final int MAX_RETRIES = 10;
-    private static final Tap.InOutTap INSERT_TOTAL = Tap.createTimer("write: write_total");
-    private static final Tap.InOutTap UPDATE_TOTAL = Tap.createTimer("write: update_total");
-    private static final Tap.InOutTap DELETE_TOTAL = Tap.createTimer("write: delete_total");
-    private static final Tap.InOutTap INSERT_MAINTENANCE = Tap.createTimer("write: write_maintenance");
-    private static final Tap.InOutTap UPDATE_MAINTENANCE = Tap.createTimer("write: update_maintenance");
-    private static final Tap.InOutTap DELETE_MAINTENANCE = Tap.createTimer("write: delete_maintenance");
-    private static final Tap.PointTap SKIP_MAINTENANCE = Tap.createCount("write: skip_maintenance");
+    private static final InOutTap INSERT_TOTAL = Tap.createTimer("write: write_total");
+    private static final InOutTap UPDATE_TOTAL = Tap.createTimer("write: update_total");
+    private static final InOutTap DELETE_TOTAL = Tap.createTimer("write: delete_total");
+    private static final InOutTap INSERT_MAINTENANCE = Tap.createTimer("write: write_maintenance");
+    private static final InOutTap UPDATE_MAINTENANCE = Tap.createTimer("write: update_maintenance");
+    private static final InOutTap DELETE_MAINTENANCE = Tap.createTimer("write: delete_maintenance");
+    private static final PointTap SKIP_MAINTENANCE = Tap.createCount("write: skip_maintenance");
 
 
     // nested classes
@@ -397,7 +399,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
 
         @Override
-        public Row evaluate(Row original, Bindings bindings) {
+        public Row evaluate(Row original, QueryContext context) {
             // TODO
             // ideally we'd like to use an OverlayingRow, but ModifiablePersistitGroupCursor requires
             // a PersistitGroupRow if an hkey changes

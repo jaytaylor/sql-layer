@@ -17,9 +17,9 @@ package com.akiban.server.test.it.qp;
 
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
-import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
@@ -53,7 +53,7 @@ public class UpdateIT extends OperatorITBase
             }
 
             @Override
-            public Row evaluate(Row original, Bindings bindings) {
+            public Row evaluate(Row original, QueryContext context) {
                 ToObjectValueTarget target = new ToObjectValueTarget();
                 target.expectType(AkType.VARCHAR);
                 Object obj = Converters.convert(original.eval(1), target).lastConvertedValue();
@@ -66,11 +66,11 @@ public class UpdateIT extends OperatorITBase
 
         Operator groupScan = groupScan_Default(coi);
         UpdatePlannable updateOperator = update_Default(groupScan, updateFunction);
-        UpdateResult result = updateOperator.run(NO_BINDINGS, adapter);
+        UpdateResult result = updateOperator.run(queryContext);
         assertEquals("rows modified", 2, result.rowsModified());
         assertEquals("rows touched", db.length, result.rowsTouched());
 
-        Cursor executable = cursor(groupScan, adapter);
+        Cursor executable = cursor(groupScan, queryContext);
         RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "XYZXYZ"),
                                            row(orderRowType, 11L, 1L, "ori"),
                                            row(itemRowType, 111L, 11L),
@@ -109,7 +109,7 @@ public class UpdateIT extends OperatorITBase
                 }
 
                 @Override
-                public Row evaluate(Row original, Bindings bindings) {
+                public Row evaluate(Row original, QueryContext context) {
                     long id = original.eval(0).getInt();
                     // Make smaller to avoid Halloween (see next test).
                     return new OverlayingRow(original).overlay(0, id - 100);
@@ -117,11 +117,11 @@ public class UpdateIT extends OperatorITBase
             };
 
         UpdatePlannable updateOperator = update_Default(scan, updateFunction);
-        UpdateResult result = updateOperator.run(NO_BINDINGS, adapter);
+        UpdateResult result = updateOperator.run(queryContext);
         assertEquals("rows touched", 8, result.rowsTouched());
         assertEquals("rows modified", 8, result.rowsModified());
 
-        Cursor executable = cursor(scan, adapter);
+        Cursor executable = cursor(scan, queryContext);
         RowBase[] expected = new RowBase[] { 
             row(itemRowType, 11L, 11L),
             row(itemRowType, 12L, 11L),
@@ -158,20 +158,20 @@ public class UpdateIT extends OperatorITBase
                 }
 
                 @Override
-                public Row evaluate(Row original, Bindings bindings) {
+                public Row evaluate(Row original, QueryContext context) {
                     long id = original.eval(0).getInt();
                     return new OverlayingRow(original).overlay(0, 1000 + id);
                 }
             };
 
         UpdatePlannable updateOperator = update_Default(scan, updateFunction);
-        UpdateResult result = updateOperator.run(NO_BINDINGS, adapter);
+        UpdateResult result = updateOperator.run(queryContext);
         assertEquals("rows touched", 8, result.rowsTouched());
         assertEquals("rows modified", 8, result.rowsModified());
 
         transaction.incrementStep(); // Make changes visible.
 
-        Cursor executable = cursor(scan, adapter);
+        Cursor executable = cursor(scan, queryContext);
         RowBase[] expected = new RowBase[] { 
             row(itemRowType, 1111L, 11L),
             row(itemRowType, 1112L, 11L),

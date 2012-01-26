@@ -69,6 +69,7 @@ public class Sort_Tree_RandomIT extends OperatorITBase
         db = new NewRow[rows.size()];
         rows.toArray(db);
         adapter = persistitAdapter(schema);
+        queryContext = queryContext(adapter);
         use(db);
     }
 
@@ -86,7 +87,7 @@ public class Sort_Tree_RandomIT extends OperatorITBase
                     tRowType,
                     ordering(field(tRowType, 0), aAsc, field(tRowType, 1), bAsc, field(tRowType, 2), cAsc, field(tRowType, 3), dAsc),
                     SortOption.PRESERVE_DUPLICATES);
-            Cursor cursor = cursor(plan, adapter);
+            Cursor cursor = cursor(plan, queryContext);
             compareRows(expected(aAsc, bAsc, cAsc, dAsc), cursor);
         }
     }

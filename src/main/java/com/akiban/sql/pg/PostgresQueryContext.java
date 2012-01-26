@@ -13,15 +13,18 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.service.functions;
+package com.akiban.sql.pg;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import com.akiban.sql.server.ServerQueryContext;
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
-public @interface EnvironmentValue {
-    String [] value();
+public class PostgresQueryContext extends ServerQueryContext<PostgresServerSession>
+{
+    public PostgresQueryContext(PostgresServerSession server) {
+        super(server);
+    }
+
+    public boolean isColumnBinary(int i) {
+        return false;
+    }
+
 }

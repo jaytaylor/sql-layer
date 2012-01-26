@@ -18,8 +18,8 @@ package com.akiban.sql.pg;
 import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectCursor;
-import com.akiban.qp.operator.Bindings;
 import com.akiban.server.service.session.Session;
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
 import java.util.List;
@@ -27,8 +27,8 @@ import java.io.IOException;
 
 public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
 {
-    private static final Tap.InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: execute shared");
-    private static final Tap.InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: acquire shared lock");
+    private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: execute shared");
+    private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresLoadableDirectObjectPlan: acquire shared lock");
 
     private Object[] args;
     private DirectObjectPlan plan;
@@ -39,7 +39,6 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
     {
         super(loadablePlan.columnNames(),
               loadablePlan.columnTypes(),
-              null, 
               null);
         this.args = args;
 
@@ -48,27 +47,15 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
     }
     
     @Override
-    protected Tap.InOutTap executeTap()
+    protected InOutTap executeTap()
     {
         return EXECUTE_TAP;
     }
 
     @Override
-    protected Tap.InOutTap acquireLockTap()
+    protected InOutTap acquireLockTap()
     {
         return ACQUIRE_LOCK_TAP;
-    }
-
-    @Override
-    public Bindings getBindings() {
-        return PostgresLoadablePlan.getBindings(args);
-    }
-
-    @Override
-    public PostgresStatement getBoundStatement(Object[] parameters,
-                                               boolean[] columnBinary, 
-                                               boolean defaultColumnBinary) {
-        return this;
     }
 
     @Override
@@ -77,32 +64,33 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
     }
     
     @Override
-    public void sendDescription(PostgresServerSession server, boolean always)
+    public void sendDescription(PostgresQueryContext context, boolean always)
             throws IOException {
         // The copy case will be handled below.
         if (!useCopy)
-            super.sendDescription(server, always);
+            super.sendDescription(context, always);
     }
 
     @Override
-    public int execute(PostgresServerSession server, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+        PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
-        Bindings bindings = getBindings();
         Session session = server.getSession();
         int nrows = 0;
         DirectObjectCursor cursor = null;
         PostgresOutputter<List<?>> outputter = null;
         PostgresDirectObjectCopier copier = null;
+        PostgresLoadablePlan.setParameters(context, args);
         try {
-            cursor = plan.cursor(session);
-            cursor.open(bindings);
+            cursor = plan.cursor(context);
+            cursor.open();
             List<?> row;
             if (useCopy) {
-                outputter = copier = new PostgresDirectObjectCopier(server, this);
+                outputter = copier = new PostgresDirectObjectCopier(context, this);
                 copier.respond();
             }
             else
-                outputter = new PostgresDirectObjectOutputter(server, this);
+                outputter = new PostgresDirectObjectOutputter(context, this);
             while ((row = cursor.next()) != null) {
                 if (row.isEmpty()) {
                     messenger.flush();

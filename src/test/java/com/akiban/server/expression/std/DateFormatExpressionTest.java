@@ -15,7 +15,6 @@
 
 package com.akiban.server.expression.std;
 
-import org.joda.time.DateTimeZone;
 import java.util.TimeZone;
 import com.akiban.junit.Parameterization;
 import java.util.Collection;
@@ -25,6 +24,7 @@ import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.extract.ConverterTestUtils;
 import com.akiban.server.types.extract.Extractors;
 import java.util.Arrays;
 
@@ -92,11 +92,8 @@ public class DateFormatExpressionTest extends ComposedExpressionTestBase
     {
         // set time zone to UTC for testing
         // for the extractor
-        TimeZone defaultTimeZone = TimeZone.getDefault();
-        TimeZone.setDefault(TimeZone.getTimeZone("UTC"));
-        // for the date_format
-        DateTimeZone defaultTimezone = DateTimeZone.getDefault();
-        DateTimeZone.setDefault(DateTimeZone.forTimeZone(TimeZone.getTimeZone("UTC")));
+        String defaultTimeZone = TimeZone.getDefault().getID();
+        ConverterTestUtils.setGlobalTimezone("EST");     
 
         Expression date = getExp(argType);
         Expression formatExp;
@@ -109,10 +106,9 @@ public class DateFormatExpressionTest extends ComposedExpressionTestBase
         check(top, expected);
 
         alreadyExc = true;
-
-        // reset to default timezone
-        TimeZone.setDefault(defaultTimeZone);
-        DateTimeZone.setDefault(defaultTimezone);
+        
+        // reset timezone
+        ConverterTestUtils.setGlobalTimezone(defaultTimeZone);
     }
 
     private void check(Expression top, String expected)

@@ -13,31 +13,44 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.qp.operator;
+package com.akiban.util.tap;
 
-import com.akiban.util.Undef;
+/**
+ * A {@link com.akiban.util.tap.Tap} subclass that does nothing. This is the initial target of
+ * every added {@link com.akiban.util.tap.Dispatch}.
+ *
+ */
+class Null extends Tap {
 
-public final class UndefBindings extends Bindings {
-
-    private static final UndefBindings INSTANCE = new UndefBindings();
-
-    public static Bindings only() {
-        return INSTANCE;
+    public Null(final String name) {
+        super(name);
     }
 
-    @Override
-    public Object get(int index) {
-        return Undef.only();
+    public void in() {
+        // do nothing
     }
 
-    @Override
-    public void set(int index, Object value)
-    {
-        throw new UnsupportedOperationException();
+    public void out() {
+        // do nothing
     }
 
-    @Override
+    public long getDuration() {
+        return 0;
+    }
+
+    public void reset() {
+        // do nothing
+    }
+
+    public void appendReport(final StringBuilder sb) {
+        // do nothing;
+    }
+
     public String toString() {
-        return "UndefinedBindings";
+        return "NullTap(" + name + ")";
+    }
+
+    public TapReport getReport() {
+        return null;
     }
 }

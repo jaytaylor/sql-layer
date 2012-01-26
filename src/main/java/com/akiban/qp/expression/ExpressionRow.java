@@ -19,8 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.RowType;
@@ -36,7 +35,7 @@ public class ExpressionRow extends AbstractRow
     private List<? extends Expression> expressions;
     private List<ExpressionEvaluation> evaluations;
 
-    public ExpressionRow(RowType rowType, Bindings bindings, StoreAdapter adapter, List<? extends Expression> expressions) {
+    public ExpressionRow(RowType rowType, QueryContext context, List<? extends Expression> expressions) {
         this.rowType = rowType;
         this.expressions = expressions;
         this.evaluations = new ArrayList<ExpressionEvaluation>(expressions.size());
@@ -45,8 +44,7 @@ public class ExpressionRow extends AbstractRow
                 throw new AkibanInternalException("expression needed a row: " + expression + " in " + expressions);
             }
             ExpressionEvaluation evaluation = expression.evaluation();
-            evaluation.of(adapter);
-            evaluation.of(bindings);
+            evaluation.of(context);
             this.evaluations.add(evaluation);
         }
     }

@@ -40,10 +40,10 @@ public class CaseConvertExpression extends AbstractUnaryExpression
     
     private final ConversionType conversionType;
     
-    @Scalar ("lcase")
+    @Scalar ({"lcase", "lower"})
     public static final ExpressionComposer TOLOWER_COMPOSER = new InternalComposer(ConversionType.TOLOWER);
     
-    @Scalar ("upcase")
+    @Scalar ({"ucase", "upper"})
     public static final ExpressionComposer TOUPPER_COMPOSER = new InternalComposer(ConversionType.TOUPPER);
     
     private static final class InternalComposer extends UnaryComposer

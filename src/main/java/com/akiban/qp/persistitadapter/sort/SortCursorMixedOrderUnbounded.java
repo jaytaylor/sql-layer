@@ -17,6 +17,7 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.persistit.exception.PersistitException;
 
@@ -37,11 +38,11 @@ class SortCursorMixedOrderUnbounded extends SortCursorMixedOrder
 
     // SortCursorMixedOrderUnbounded interface
 
-    public SortCursorMixedOrderUnbounded(PersistitAdapter adapter,
+    public SortCursorMixedOrderUnbounded(QueryContext context,
                                          IterationHelper iterationHelper,
                                          IndexKeyRange keyRange,
                                          API.Ordering ordering)
     {
-        super(adapter, iterationHelper, keyRange, ordering);
+        super(context, iterationHelper, keyRange, ordering);
     }
 }

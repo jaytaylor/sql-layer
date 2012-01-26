@@ -109,6 +109,38 @@ public final class RowDataFormatTest {
                 "0x1700 0000 4142 0300 0100 0000 0601 0000 0042 4117 0000 00"
         );
 
+        // charset
+        builder.add(
+                "name varchar(32) UTF => abc",
+                new TableMaker() { public void make(NewUserTableBuilder b) { b.colString("name", 32, false, "UTF-8"); } },
+                fields("abc"),
+                "0x1C00 0000 4142 0200 0100 0000 0001 0000 0004 0361 6263 4241 1C00 0000"
+        );
+        builder.add(
+                "name varchar(32) latin-1 => abc",
+                new TableMaker() { public void make(NewUserTableBuilder b) { b.colString("name", 32, false, "ISO-8859-1"); } },
+                fields("abc"),
+                "0x1C00 0000 4142 0200 0100 0000 0001 0000 0004 0361 6263 4241 1C00 0000"
+        );
+        builder.add(
+                "name varchar(32) UTF => cliche",
+                new TableMaker() { public void make(NewUserTableBuilder b) { b.colString("name", 32, false, "UTF-8"); } },
+                fields("cliché"),
+                "0x2000 0000 4142 0200 0100 0000 0001 0000 0008 0763 6C69 6368 C3A9 4241 2000 0000"
+        );
+        builder.add(
+                "name varchar(32) latin-1 => cliche",
+                new TableMaker() { public void make(NewUserTableBuilder b) { b.colString("name", 32, false, "ISO-8859-1"); } },
+                fields("cliché"),
+                "0x1F00 0000 4142 0200 0100 0000 0001 0000 0007 0663 6C69 6368 E942 411F 0000 00"
+        );
+        builder.add(
+                "name varchar(32) UTF => snowman",
+                new TableMaker() { public void make(NewUserTableBuilder b) { b.colString("name", 32, false, "UTF-8"); } },
+                fields("☃"),
+                "0x1C00 0000 4142 0200 0100 0000 0001 0000 0004 03E2 9883 4241 1C00 0000"
+        );
+
         return builder.asList();
     }
 
