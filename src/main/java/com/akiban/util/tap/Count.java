@@ -33,12 +33,15 @@ class Count extends Tap
 
     public void in()
     {
+        checkNesting();
         inCount++;
     }
 
     public void out()
     {
         outCount++;
+        checkNesting();
+
     }
 
     public long getDuration()
@@ -68,9 +71,4 @@ class Count extends Tap
     {
         super(name);
     }
-
-    // Object state
-
-    private volatile long inCount = 0;
-    private volatile long outCount = 0;
 }

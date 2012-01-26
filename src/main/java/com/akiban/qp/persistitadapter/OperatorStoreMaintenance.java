@@ -48,30 +48,32 @@ final class OperatorStoreMaintenance {
     public void run(OperatorStoreGIHandler.Action action, PersistitHKey hKey, RowData forRow, StoreAdapter adapter, OperatorStoreGIHandler handler) {
         if (storePlan.noMaintenanceRequired())
             return;
+        Cursor cursor = null;
+        boolean runTapEntered = false;
         ALL_TAP.in();
-        Operator planOperator = rootOperator();
-        if (planOperator == null)
-            return;
-        Bindings bindings = new ArrayBindings(1);
-        final List<Column> lookupCols = rowType.userTable().getPrimaryKey().getColumns();
-
-        bindings.set(OperatorStoreMaintenance.HKEY_BINDING_POSITION, hKey);
-
-        // Copy the values into the array bindings
-        ToObjectValueTarget target = new ToObjectValueTarget();
-        RowDataValueSource source = new RowDataValueSource();
-        for (int i=0; i < lookupCols.size(); ++i) {
-            int bindingsIndex = i+1;
-            Column col = lookupCols.get(i);
-            source.bind((FieldDef)col.getFieldDef(), forRow);
-            target.expectType(col.getType().akType());
-            bindings.set(bindingsIndex, Converters.convert(source, target).lastConvertedValue());
-        }
-
-        Cursor cursor = API.cursor(planOperator, adapter);
-        RUN_TAP.in();
-        cursor.open(bindings);
         try {
+            Operator planOperator = rootOperator();
+            if (planOperator == null)
+                return;
+            Bindings bindings = new ArrayBindings(1);
+            final List<Column> lookupCols = rowType.userTable().getPrimaryKey().getColumns();
+
+            bindings.set(OperatorStoreMaintenance.HKEY_BINDING_POSITION, hKey);
+
+            // Copy the values into the array bindings
+            ToObjectValueTarget target = new ToObjectValueTarget();
+            RowDataValueSource source = new RowDataValueSource();
+            for (int i=0; i < lookupCols.size(); ++i) {
+                int bindingsIndex = i+1;
+                Column col = lookupCols.get(i);
+                source.bind((FieldDef)col.getFieldDef(), forRow);
+                target.expectType(col.getType().akType());
+                bindings.set(bindingsIndex, Converters.convert(source, target).lastConvertedValue());
+            }
+            cursor = API.cursor(planOperator, adapter);
+            RUN_TAP.in();
+            runTapEntered = true;
+            cursor.open(bindings);
             Row row;
             while ((row = cursor.next()) != null) {
                 boolean actioned = false;
@@ -114,10 +116,14 @@ final class OperatorStoreMaintenance {
                 }
             }
         } finally {
-            cursor.close();
-            RUN_TAP.out();
+            if (cursor != null) {
+                cursor.close();
+            }
+            if (runTapEntered) {
+                RUN_TAP.out();
+            }
+            ALL_TAP.out();
         }
-        ALL_TAP.out();
     }
 
     private boolean useInvertType(OperatorStoreGIHandler.Action action, Bindings bindings, StoreAdapter adapter) {
@@ -131,8 +137,8 @@ final class OperatorStoreMaintenance {
                     return false;
                 Cursor siblingsCounter = API.cursor(siblingsLookup, adapter);
                 SIBLING_ALL_TAP.in();
-                siblingsCounter.open(bindings);
                 try {
+                    siblingsCounter.open(bindings);
                     int siblings = 0;
                     while (siblingsCounter.next() != null) {
                         SIBLING_ROW_TAP.hit();
@@ -157,8 +163,11 @@ final class OperatorStoreMaintenance {
     private void doAction(OperatorStoreGIHandler.Action action, OperatorStoreGIHandler handler, Row row) {
         InOutTap actionTap = actionTap(action);
         actionTap.in();
-        handler.handleRow(groupIndex, row, action);
-        actionTap.out();
+        try {
+            handler.handleRow(groupIndex, row, action);
+        } finally {
+            actionTap.out();
+        }
     }
 
     private static OperatorStoreGIHandler.Action invert(OperatorStoreGIHandler.Action action) {

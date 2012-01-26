@@ -144,8 +144,12 @@ public class PostgresServerConnection extends ServerSessionBase
         try {
             while (running) {
                 READ_MESSAGE.in();
-                PostgresMessages type = messenger.readMessage(startupComplete);
-                READ_MESSAGE.out();
+                PostgresMessages type;
+                try {
+                    type = messenger.readMessage(startupComplete);
+                } finally {
+                    READ_MESSAGE.out();
+                }
                 PROCESS_MESSAGE.in();
                 if (ignoreUntilSync) {
                     if ((type != PostgresMessages.EOF_TYPE) && (type != PostgresMessages.SYNC_TYPE))

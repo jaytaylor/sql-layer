@@ -113,8 +113,8 @@ public class PostgresMessenger implements DataInput, DataOutput
             
         if (code < 0) 
             return PostgresMessages.EOF_TYPE;                            // EOF
+        recvTap.in();
         try {
-            recvTap.in();
             int len = dataInput.readInt();
             if ((len < 0) || (len > type.maxSize()))
                 throw new IOException(String.format("Implausible message length (%d) received.", len));

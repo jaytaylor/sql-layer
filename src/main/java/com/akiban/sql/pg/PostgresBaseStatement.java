@@ -138,8 +138,11 @@ public abstract class PostgresBaseStatement implements PostgresStatement
     {
         acquireLockTap().in();
         executeTap().in();
-        DXLReadWriteLockHook.only().hookFunctionIn(session, operationType);
-        acquireLockTap().out();
+        try {
+            DXLReadWriteLockHook.only().hookFunctionIn(session, operationType);
+        } finally {
+            acquireLockTap().out();
+        }
     }
 
     protected void unlock(Session session, DXLFunctionsHook.DXLFunction operationType)

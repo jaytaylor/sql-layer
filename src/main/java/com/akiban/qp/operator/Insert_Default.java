@@ -82,10 +82,11 @@ class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
     public UpdateResult run(Bindings bindings, StoreAdapter adapter) {
         adapter(adapter);
         int seen = 0, modified = 0;
+        Cursor inputCursor = null;
         INSERT_TAP.in();
-        Cursor inputCursor = inputOperator.cursor(adapter);
-        inputCursor.open(bindings);
         try {
+            inputCursor = inputOperator.cursor(adapter);
+            inputCursor.open(bindings);
             Row row;
             while ((row = inputCursor.next()) != null) {
                 checkQueryCancelation();
@@ -98,7 +99,9 @@ class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
 
             }
         } finally {
-            inputCursor.close();
+            if (inputCursor != null) {
+                inputCursor.close();
+            }
             INSERT_TAP.out();
         }
         return new StandardUpdateResult(seen, modified);
