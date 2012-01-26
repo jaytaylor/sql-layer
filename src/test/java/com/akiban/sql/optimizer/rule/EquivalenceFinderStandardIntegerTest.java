@@ -15,39 +15,39 @@
 
 package com.akiban.sql.optimizer.rule;
 
-public final class EquivalenceFinderTestNegativeInteger extends EquivalenceFinderTestBase<Integer> {
+public final class EquivalenceFinderStandardIntegerTest extends EquivalenceFinderTestBase<Integer> {
     @Override
     protected Integer one() {
-        return -1;
+        return 1;
     }
 
     @Override
     protected Integer two() {
-        return -2;
+        return 2;
     }
 
     @Override
     protected Integer three() {
-        return -3;
+        return 3;
     }
 
     @Override
     protected Integer four() {
-        return -4;
+        return 4;
     }
 
     @Override
     protected Integer five() {
-        return -5;
+        return 5;
     }
 
     @Override
     protected Integer six() {
-        return -6;
+        return 6;
     }
 
     @Override
     protected Integer seven() {
-        return -7;
+        return 7;
     }
 }

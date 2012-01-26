@@ -15,7 +15,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
-public final class EquivalenceFinderTestZeroHashInteger extends EquivalenceFinderTestBase<WeirdlyHashingInteger> {
+public final class EquivalenceFinderZeroHashIntegerTest extends EquivalenceFinderTestBase<WeirdlyHashingInteger> {
     @Override
     protected WeirdlyHashingInteger one() {
         return new ConstHashInteger(1);

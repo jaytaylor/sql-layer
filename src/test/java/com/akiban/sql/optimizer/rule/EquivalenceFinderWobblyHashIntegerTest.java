@@ -15,7 +15,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
-public final class EquivalenceFinderTestWobblyHashInteger extends EquivalenceFinderTestBase<WeirdlyHashingInteger> {
+public final class EquivalenceFinderWobblyHashIntegerTest extends EquivalenceFinderTestBase<WeirdlyHashingInteger> {
     @Override
     protected WeirdlyHashingInteger one() {
         return new WobblyHashInteger(1);
