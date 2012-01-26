@@ -768,15 +768,28 @@ public class IndexGoal implements Comparator<IndexScan>
                                                         index.isLowInclusive(),
                                                         index.getHighComparand(), 
                                                         index.isHighInclusive());
+
         if (!index.isCovering()) {
             CostEstimate flatten = costEstimator.costFlatten(index.getLeafMostTable(),
                                                              index.getRequiredTables());
             cost = cost.nest(flatten);
         }
+
+        Collection<ConditionExpression> unhandledConditions = 
+            new HashSet<ConditionExpression>(conditions);
+        if (index.getConditions() != null)
+            unhandledConditions.removeAll(index.getConditions());
+        if (!unhandledConditions.isEmpty()) {
+            CostEstimate select = costEstimator.costSelect(unhandledConditions,
+                                                           cost.getRowCount());
+            cost = cost.sequence(select);
+        }
+
         if (needSort(index)) {
             CostEstimate sort = costEstimator.costSort(cost.getRowCount());
             cost = cost.sequence(sort);
         }
+
         return cost;
     }
 

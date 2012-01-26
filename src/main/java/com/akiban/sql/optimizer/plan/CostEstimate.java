@@ -45,6 +45,11 @@ public class CostEstimate implements Comparable<CostEstimate>
         return new CostEstimate(next.rowCount, cost + next.cost);
     }
 
+    /** Cost of one operation combined with another. */
+    public CostEstimate union(CostEstimate other) {
+        return new CostEstimate(rowCount + other.rowCount, cost + other.cost);
+    }
+
     /** Cost of operation repeated. */
     public CostEstimate repeat(long count) {
         return new CostEstimate(rowCount * count, cost * count);

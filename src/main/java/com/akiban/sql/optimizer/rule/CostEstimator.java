@@ -56,9 +56,11 @@ public abstract class CostEstimator
     }
 
     // TODO: These need to be figured out for real.
-    public static final double RANDOM_ACCESS_COST = 5.0;
+    public static final double RANDOM_ACCESS_COST = 1.25;
     public static final double SEQUENTIAL_ACCESS_COST = 1.0;
-    public static final double SORT_COST = 1.0;
+    public static final double FIELD_ACCESS_COST = .01;
+    public static final double SORT_COST = 2.0;
+    public static final double SELECT_COST = .25;
 
     /** Estimate cost of scanning from this index. */
     public CostEstimate costIndexScan(Index index,
@@ -69,7 +71,7 @@ public abstract class CostEstimator
             if ((equalityComparands != null) &&
                 (equalityComparands.size() == index.getColumns().size())) {
                 // Exact match from unique index; probably one row.
-                return new CostEstimate(1, RANDOM_ACCESS_COST);
+                return indexAccessCost(1, index);
             }
         }
         long rowCount = getTableRowCount(index.leafMostTable());
@@ -88,16 +90,22 @@ public abstract class CostEstimator
             ((histogram = indexStats.getHistogram(columnCount)) == null)) {
             // No stats or just used for ordering.
             // TODO: Is this too conservative?
-            return new CostEstimate(rowCount, 
-                                    RANDOM_ACCESS_COST + (rowCount * SEQUENTIAL_ACCESS_COST));
+            return indexAccessCost(rowCount, index);
         }
+        boolean scaleCount = true;
         long nrows;
         if ((lowComparand == null) && (highComparand == null)) {
             // Equality lookup.
+
+            // If a histogram is almost unique, and in particular unique but
+            // not so declared, then the result size doesn't scale up from
+            // when it was analyzed.
+            long totalDistinct = histogram.totalDistinctCount();
+            scaleCount = totalDistinct * 9 < statsCount * 10; // < 90% distinct
             byte[] keyBytes = encodeKeyBytes(index, equalityComparands, null);
             if (keyBytes == null) {
                 // Variable.
-                nrows = indexStats.getRowCount() / histogram.totalDistinctCount();
+                nrows = (scaleCount) ? statsCount / totalDistinct : 1;
             }
             else {
                 nrows = rowsEqual(histogram, keyBytes);
@@ -114,10 +122,19 @@ public abstract class CostEstimator
                 nrows = rowsBetween(histogram, lowBytes, lowInclusive, highBytes, highInclusive);
             }
         }
-        if (true)               // TODO: Except equals when entry is almost unique.
-            nrows = (nrows * rowCount) / statsCount;
+        if (scaleCount)
+            nrows = simpleRound((nrows * rowCount), statsCount);
+        return indexAccessCost(nrows, index);
+    }
+
+    // Estimate cost of fetching nrows from index.
+    // One random access to get there, then nrows-1 sequential accesses following,
+    // Plus a surcharge for copying something as wide as the index.
+    private static CostEstimate indexAccessCost(long nrows, Index index) {
         return new CostEstimate(nrows, 
-                                RANDOM_ACCESS_COST + (nrows * SEQUENTIAL_ACCESS_COST));
+                                RANDOM_ACCESS_COST +
+                                ((nrows - 1) * SEQUENTIAL_ACCESS_COST) +
+                                nrows * FIELD_ACCESS_COST * index.getColumns().size());
     }
 
     protected long rowsEqual(Histogram histogram, byte[] keyBytes) {
@@ -375,8 +392,17 @@ public abstract class CostEstimator
         return total;
     }
 
+    /** Estimate the cost of testing some conditions. */
+    // TODO: Could estimate result cardinality based on (easily
+    // determinable) selectivities.
+    public CostEstimate costSelect(Collection<ConditionExpression> conditions,
+                                   long size) {
+        return new CostEstimate(size, conditions.size() * SELECT_COST);
+    }
+
     /** Estimate the cost of a sort of the given size. */
     public CostEstimate costSort(long size) {
         return new CostEstimate(size, size * Math.log(size) * SORT_COST);
     }
+
 }
