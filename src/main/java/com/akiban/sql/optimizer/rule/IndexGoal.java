@@ -18,6 +18,7 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.rule.range.ColumnRanges;
+import com.akiban.sql.optimizer.rule.range.RangeSegment;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
@@ -762,13 +763,29 @@ public class IndexGoal implements Comparator<IndexScan>
 
     protected CostEstimate estimateCost(IndexScan index) {
         if (!costEstimator.isEnabled()) return null;
-        CostEstimate cost = costEstimator.costIndexScan(index.getIndex(),
-                                                        index.getEqualityComparands(),
-                                                        index.getLowComparand(), 
-                                                        index.isLowInclusive(),
-                                                        index.getHighComparand(), 
-                                                        index.isHighInclusive());
-
+        CostEstimate cost = null;
+        if (index.getConditionRange() == null) {
+            cost = costEstimator.costIndexScan(index.getIndex(),
+                                               index.getEqualityComparands(),
+                                               index.getLowComparand(), 
+                                               index.isLowInclusive(),
+                                               index.getHighComparand(), 
+                                               index.isHighInclusive());
+        }
+        else {
+            for (RangeSegment segment : index.getConditionRange().getSegments()) {
+                CostEstimate acost = costEstimator.costIndexScan(index.getIndex(),
+                                                                 index.getEqualityComparands(),
+                                                                 segment.getStart().getValueExpression(),
+                                                                 segment.getStart().isInclusive(),
+                                                                 segment.getEnd().getValueExpression(),
+                                                                 segment.getEnd().isInclusive());
+                if (cost == null)
+                    cost = acost;
+                else
+                    cost = cost.union(acost);
+            }
+        }
         if (!index.isCovering()) {
             CostEstimate flatten = costEstimator.costFlatten(index.getLeafMostTable(),
                                                              index.getRequiredTables());
