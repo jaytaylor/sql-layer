@@ -42,9 +42,9 @@ class Map_NestedLoops extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter)
+    protected Cursor cursor(QueryContext context)
     {
-        return new Execution(adapter);
+        return new Execution(context);
     }
 
     @Override
@@ -101,11 +101,10 @@ class Map_NestedLoops extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
        	    MAP_NL_COUNT.hit();
-            this.bindings = bindings;
-            this.outerInput.open(bindings);
+            this.outerInput.open();
             this.closed = false;
         }
 
@@ -147,11 +146,11 @@ class Map_NestedLoops extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter)
+        Execution(QueryContext context)
         {
-            super(adapter);
-            this.outerInput = outerInputOperator.cursor(adapter);
-            this.innerInput = innerInputOperator.cursor(adapter);
+            super(context);
+            this.outerInput = outerInputOperator.cursor(context);
+            this.innerInput = innerInputOperator.cursor(context);
         }
 
         // For use by this class
@@ -179,8 +178,8 @@ class Map_NestedLoops extends Operator
         private void startNewInnerLoop(Row row)
         {
             innerInput.close();
-            bindings.set(inputBindingPosition, row);
-            innerInput.open(bindings);
+            context.setRow(inputBindingPosition, row);
+            innerInput.open();
         }
 
         // Object state
@@ -188,7 +187,6 @@ class Map_NestedLoops extends Operator
         private final Cursor outerInput;
         private final Cursor innerInput;
         private final ShareHolder<Row> outerRow = new ShareHolder<Row>();
-        private Bindings bindings;
         private boolean closed = false;
     }
 }

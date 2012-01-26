@@ -16,7 +16,6 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupTable;
-import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
@@ -57,7 +56,7 @@ class PersistitGroupCursor implements GroupCursor
     // Cursor interface
 
     @Override
-    public void open(Bindings bindings)
+    public void open()
     {
         assert exchange == null;
         try {

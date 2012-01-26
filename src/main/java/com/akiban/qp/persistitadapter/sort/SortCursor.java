@@ -18,6 +18,7 @@ package com.akiban.qp.persistitadapter.sort;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.util.tap.PointTap;
@@ -37,7 +38,7 @@ public abstract class SortCursor implements Cursor
 
     // SortCursor interface
 
-    public static SortCursor create(PersistitAdapter adapter,
+    public static SortCursor create(QueryContext context,
                                     IndexKeyRange keyRange,
                                     API.Ordering ordering,
                                     IterationHelper iterationHelper)
@@ -45,16 +46,17 @@ public abstract class SortCursor implements Cursor
         return
             ordering.allAscending() || ordering.allDescending()
             ? (keyRange != null && keyRange.lexicographic()
-               ? SortCursorUnidirectionalLexicographic.create(adapter, iterationHelper, keyRange, ordering)
-               : SortCursorUnidirectional.create(adapter, iterationHelper, keyRange, ordering))
-            : SortCursorMixedOrder.create(adapter, iterationHelper, keyRange, ordering);
+               ? SortCursorUnidirectionalLexicographic.create(context, iterationHelper, keyRange, ordering)
+               : SortCursorUnidirectional.create(context, iterationHelper, keyRange, ordering))
+            : SortCursorMixedOrder.create(context, iterationHelper, keyRange, ordering);
     }
 
     // For use by subclasses
 
-    protected SortCursor(PersistitAdapter adapter, IterationHelper iterationHelper)
+    protected SortCursor(QueryContext context, IterationHelper iterationHelper)
     {
-        this.adapter = adapter;
+        this.context = context;
+        this.adapter = (PersistitAdapter)context.getStore();
         this.iterationHelper = iterationHelper;
         this.exchange = iterationHelper.exchange();
     }
@@ -66,6 +68,7 @@ public abstract class SortCursor implements Cursor
 
     // Object state
 
+    protected final QueryContext context;
     protected final PersistitAdapter adapter;
     protected final Exchange exchange;
     protected final IterationHelper iterationHelper;

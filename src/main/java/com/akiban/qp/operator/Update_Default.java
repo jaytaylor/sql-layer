@@ -103,20 +103,20 @@ class Update_Default extends OperatorExecutionBase implements UpdatePlannable {
     // UpdatePlannable interface
 
     @Override
-    public UpdateResult run(Bindings bindings, StoreAdapter adapter) {
-        adapter(adapter);
+    public UpdateResult run(QueryContext context) {
+        context(context);
         int seen = 0, modified = 0;
         UPDATE_TAP.in();
-        Cursor inputCursor = inputOperator.cursor(adapter);
-        inputCursor.open(bindings);
+        Cursor inputCursor = inputOperator.cursor(context);
+        inputCursor.open();
         try {
             Row oldRow;
             while ((oldRow = inputCursor.next()) != null) {
                 checkQueryCancelation();
                 ++seen;
                 if (updateFunction.rowIsSelected(oldRow)) {
-                    Row newRow = updateFunction.evaluate(oldRow, bindings);
-                    adapter.updateRow(oldRow, newRow, bindings);
+                    Row newRow = updateFunction.evaluate(oldRow, context);
+                    adapter().updateRow(oldRow, newRow);
                     ++modified;
                 }
             }

@@ -23,10 +23,10 @@ class TopLevelWrappingCursor extends ChainedCursor {
     // Cursor interface
 
     @Override
-    public void open(Bindings bindings) {
+    public void open() {
         try {
             CURSOR_SETUP_TAP.in();
-            super.open(bindings);
+            super.open();
             CURSOR_SETUP_TAP.out();
             CURSOR_SCAN_TAP.in();
         } catch (RuntimeException e) {
@@ -46,8 +46,8 @@ class TopLevelWrappingCursor extends ChainedCursor {
 
     // WrappingCursor interface
 
-    TopLevelWrappingCursor(StoreAdapter adapter, Cursor input) {
-        super(adapter, input);
+    TopLevelWrappingCursor(QueryContext context, Cursor input) {
+        super(context, input);
     }
 
     // private methods

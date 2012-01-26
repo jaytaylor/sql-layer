@@ -56,9 +56,9 @@ public class BranchLookup_Nested extends Operator
     }
 
     @Override
-    public Cursor cursor(StoreAdapter adapter)
+    public Cursor cursor(QueryContext context)
     {
-        return new Execution(adapter);
+        return new Execution(context);
     }
 
     @Override
@@ -176,10 +176,10 @@ public class BranchLookup_Nested extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
             BRANCH_LOOKUP_COUNT.hit();
-            Row rowFromBindings = (Row) bindings.get(inputBindingPosition);
+            Row rowFromBindings = context.getRow(inputBindingPosition);
             if (LOG.isDebugEnabled()) {
                 LOG.debug("BranchLookup_Nested: open using {}", rowFromBindings);
             }
@@ -190,7 +190,7 @@ public class BranchLookup_Nested extends Operator
                 hKey.extendWithOrdinal(branchRootOrdinal);
             }
             cursor.rebind(hKey, true);
-            cursor.open(bindings);
+            cursor.open();
             inputRow.hold(rowFromBindings);
         }
 
@@ -227,11 +227,11 @@ public class BranchLookup_Nested extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter)
+        Execution(QueryContext context)
         {
-            super(adapter);
-            this.cursor = adapter.newGroupCursor(groupTable);
-            this.hKey = adapter.newHKey(outputRowType);
+            super(context);
+            this.cursor = adapter().newGroupCursor(groupTable);
+            this.hKey = adapter().newHKey(outputRowType);
         }
 
         // Object state

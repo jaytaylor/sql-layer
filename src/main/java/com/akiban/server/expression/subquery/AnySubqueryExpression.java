@@ -58,7 +58,7 @@ public final class AnySubqueryExpression extends SubqueryExpression {
     private static final class InnerEvaluation extends SubqueryExpressionEvaluation {
         @Override
         public ValueSource doEval() {
-            expressionEvaluation.of(bindings());
+            expressionEvaluation.of(queryContext());
             Boolean result = Boolean.FALSE;
             BooleanExtractor extractor = Extractors.getBooleanExtractor();
             while (true) {
