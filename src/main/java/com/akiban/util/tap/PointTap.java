@@ -15,23 +15,17 @@
 
 package com.akiban.util.tap;
 
-public interface TapMXBean
+public class PointTap
 {
-    public void enableAll();
 
-    public void disableAll();
+    public void hit() {
+        internal.in();
+        internal.out();
+    }
 
-    public void setEnabled(String regExPattern, boolean on);
+    PointTap(Tap internal) {
+        this.internal = internal;
+    }
 
-    public void setCustomTap(String regExPattern, String className)
-        throws Exception;
-
-    public void reset(String regExPattern);
-
-    public void resetAll();
-
-    public String getReport();
-
-    public TapReport[] getReports(String regExPattern);
-
+    private final Tap internal;
 }

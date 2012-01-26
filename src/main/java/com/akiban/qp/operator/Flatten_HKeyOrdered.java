@@ -24,6 +24,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
 import java.util.*;
@@ -237,7 +238,7 @@ class Flatten_HKeyOrdered extends Operator
     // Class state
 
     private static final int MAX_PENDING = 2;
-    private static final Tap.PointTap FLATTEN_COUNT = Tap.createCount("operator: flatten", true);
+    private static final PointTap FLATTEN_COUNT = Tap.createCount("operator: flatten", true);
 
     // Object state
 

@@ -20,6 +20,7 @@ import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Strings;
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
 import java.util.Collections;
@@ -148,6 +149,6 @@ class Update_Default extends OperatorExecutionBase implements UpdatePlannable {
 
     private final Operator inputOperator;
     private final UpdateFunction updateFunction;
-    private static final Tap.InOutTap UPDATE_TAP = Tap.createTimer("operator: update");
+    private static final InOutTap UPDATE_TAP = Tap.createTimer("operator: update");
     
 }

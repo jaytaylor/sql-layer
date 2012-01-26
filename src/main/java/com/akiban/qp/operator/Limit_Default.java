@@ -18,6 +18,7 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 import com.akiban.server.error.NegativeLimitException;
 import com.akiban.server.types.AkType;
@@ -151,7 +152,7 @@ final class Limit_Default extends Operator
     
     // Class state
     
-    private static final Tap.PointTap LIMIT_COUNT = Tap.createCount("operator: limit", true);
+    private static final PointTap LIMIT_COUNT = Tap.createCount("operator: limit", true);
 
     // Object state
 

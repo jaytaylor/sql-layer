@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.jmx.JmxRegistryService;
 import com.akiban.server.service.session.SessionService;
+import com.akiban.util.tap.PointTap;
 import com.google.inject.Inject;
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -61,9 +62,9 @@ public class MemcacheServiceImpl implements MemcacheService,
     private static final Logger LOG = LoggerFactory
             .getLogger(MemcacheServiceImpl.class);
 
-    private final static Tap.PointTap HAPI_CONNECTION_OPEN_TAP = Tap.createCount("hapi: connection open");
-    private final static Tap.PointTap HAPI_CONNECTION_CLOSE_TAP = Tap.createCount("hapi: connection close");
-    private final static Tap.PointTap HAPI_EXCEPTION_TAP = Tap.createCount("hapi: exception");
+    private final static PointTap HAPI_CONNECTION_OPEN_TAP = Tap.createCount("hapi: connection open");
+    private final static PointTap HAPI_CONNECTION_CLOSE_TAP = Tap.createCount("hapi: connection close");
+    private final static PointTap HAPI_EXCEPTION_TAP = Tap.createCount("hapi: exception");
     private MemcacheMXBean manageBean;
 
     private final AkibanCommandHandler.CommandCallback callback = new AkibanCommandHandler.CommandCallback() {
