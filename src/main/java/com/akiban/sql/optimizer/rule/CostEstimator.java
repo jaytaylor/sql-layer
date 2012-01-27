@@ -342,17 +342,20 @@ public abstract class CostEstimator
         // Account for database accesses.
         long rowCount = 1;
         double cost = 0.0;
+        long[] counts = new long[2];
         for (FlattenedTable ftable : new ArrayList<FlattenedTable>(ftables.values())) {
             // Multiple rows come in from branches and they all get producted together.
             if (ftable.branchPoint != null)
                 rowCount *= branchScale(getTableRowCount(ftable.table), 
                                         ftable.branchPoint, iftable);
             if (ftable.branch) {
-                cost += RANDOM_ACCESS_COST;
-                cost += SEQUENTIAL_ACCESS_COST * (branchRowCount(ftable, iftable) - 1);
+                branchRowCount(ftable, iftable, counts);
+                cost += RANDOM_ACCESS_COST +
+                    SEQUENTIAL_ACCESS_COST * (counts[0] - 1) +
+                    FIELD_ACCESS_COST * counts[1];
             }
             else if (ftable.ancestor) {
-                cost += RANDOM_ACCESS_COST;
+                cost += RANDOM_ACCESS_COST + FIELD_ACCESS_COST * ftable.table.getColumns().size();
             }
         }
         return new CostEstimate(rowCount, cost);
@@ -388,9 +391,15 @@ public abstract class CostEstimator
     // this table, including ones that aren't even known to the
     // optimizer / operator plan and will just get ignored. They still
     // stream through.
-    protected long branchRowCount(FlattenedTable ftable, FlattenedTable indexTable) {
-        long total = totalCardinalities(ftable.table);
-        return branchScale(total, ftable, indexTable);
+    protected void branchRowCount(FlattenedTable ftable, FlattenedTable indexTable,
+                                  long[] counts) {
+        for (int i = 0; i < counts.length; i++) {
+            counts[i] = 0;
+        }
+        totalCardinalities(ftable.table, counts);
+        for (int i = 0; i < counts.length; i++) {
+            counts[i] = branchScale(counts[i], ftable, indexTable);
+        }
     }
     
     // Branching from the index just has one branchpoint
@@ -405,12 +414,13 @@ public abstract class CostEstimator
                                             ftable.table.parentTable()));
     }
 
-    protected long totalCardinalities(UserTable table) {
+    protected void totalCardinalities(UserTable table, long[] counts) {
         long total = getTableRowCount(table);
+        counts[0] += total;
+        counts[1] += total * table.getColumns().size();
         for (Join childJoin : table.getChildJoins()) {
-            total += totalCardinalities(childJoin.getChild());
+            totalCardinalities(childJoin.getChild(), counts);
         }
-        return total;
     }
 
     /** Estimate the cost of testing some conditions. */
