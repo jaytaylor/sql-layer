@@ -370,12 +370,39 @@ class YamlTester {
 	}
     }
 
-    private static class Warning {
+    /** Represents an SQL warning. */
+    private static class Warning implements CompareExpected {
+        /** The SQL state -- warning code */
         final Object code;
+        /** The warning message */
         final Object message;
         Warning(Object code, Object message) {
             this.code = code;
             this.message = message;
+        }
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("[").append(code);
+            if (message != null) {
+                sb.append(", '").append(message).append("'");
+            }
+            sb.append("]");
+            return sb.toString();
+        }
+        public boolean compareExpected(Object actual) {
+            if (!(actual instanceof Warning)) {
+                return false;
+            }
+            Warning warning = (Warning) actual;
+            /* Require the codes to match */
+            if (!expected(code, warning.code)) {
+                return false;
+            }
+            /*
+             * Only require the message to match if the pattern -- this object
+             * -- specifies a message
+             */
+            return message == null || expected(message, warning.message);
         }
     }
 
@@ -775,9 +802,9 @@ class YamlTester {
 		    outputRow += updateCount;
 		    checkRowCount(rowCount, false);
 		}
-                List<String> warningMessages = new ArrayList<String>();
-                collectWarnings(stmt.getWarnings(), warningMessages);
-                checkWarnings(warningMessages);
+                List<Warning> reportedWarnings = new ArrayList<Warning>();
+                collectWarnings(stmt.getWarnings(), reportedWarnings);
+                checkWarnings(reportedWarnings);
 	    } else {
 		checkResults(rs, sorted);
 		assertFalse("Multiple result sets not supported",
@@ -790,14 +817,19 @@ class YamlTester {
          * additional warnings linked via the getNextWarning method, to the
          * list of messages.
          */
-        private void collectWarnings(SQLWarning warning, List<String> messages) {
+        private void collectWarnings(SQLWarning warning, List<Warning> messages)
+        {
             while (warning != null) {
-                messages.add(warning.getMessage());
+                messages.add(
+                    new Warning(warning.getSQLState(), warning.getMessage()));
                 warning = warning.getNextWarning();
             }
         }
 
-        private void checkWarnings(List<String> reportedWarnings) {
+        private void checkWarnings(List<Warning> reportedWarnings) {
+            if (DEBUG && !reportedWarnings.isEmpty()) {
+                System.err.println("Statement warnings: " + reportedWarnings);
+            }
             if (warningsCount != null) {
                 checkExpected(
                     "warnings count", warningsCount, reportedWarnings.size());
@@ -855,10 +887,10 @@ class YamlTester {
 		int numColumns = metaData.getColumnCount();
 		boolean resultsEmpty = false;
                 List<List<Object>> resultsList = new ArrayList<List<Object>>();
-                List<String> warningMessages = new ArrayList<String>();
+                List<Warning> reportedWarnings = new ArrayList<Warning>();
                 Statement stmt = rs.getStatement();
                 assert stmt != null;
-                collectWarnings(stmt.getWarnings(), warningMessages);
+                collectWarnings(stmt.getWarnings(), reportedWarnings);
                 for (int i = 0; true; i++) {
                     if (!rs.next()) {
                         resultsEmpty = true;
@@ -876,7 +908,7 @@ class YamlTester {
                         resultsRow.add(rs.getObject(j));
                     }
                     resultsList.add(resultsRow);
-                    collectWarnings(rs.getWarnings(), warningMessages);
+                    collectWarnings(rs.getWarnings(), reportedWarnings);
                     if (DEBUG) {
                         System.err.println(arrayString(resultsRow));
                     }
@@ -913,10 +945,10 @@ class YamlTester {
 		int numColumns = metaData.getColumnCount();
 		List<Object> resultsRow = DEBUG ? new ArrayList<Object>(
 			numColumns) : null;
-                List<String> warningMessages = new ArrayList<String>();
+                List<Warning> reportedWarnings = new ArrayList<Warning>();
                 Statement stmt = rs.getStatement();
                 assert stmt != null;
-                collectWarnings(stmt.getWarnings(), warningMessages);
+                collectWarnings(stmt.getWarnings(), reportedWarnings);
                 while (rs.next()) {
 		    outputRow++;
 		    for (int i = 1; i <= numColumns; i++) {
@@ -929,12 +961,12 @@ class YamlTester {
 			System.err.println(arrayString(resultsRow));
 			resultsRow.clear();
 		    }
-                    collectWarnings(rs.getWarnings(), warningMessages);
+                    collectWarnings(rs.getWarnings(), reportedWarnings);
 		}
 		if (rowCount != -1) {
 		    checkRowCount(rowCount, false);
 		}
-                checkWarnings(warningMessages);
+                checkWarnings(reportedWarnings);
 	    }
 	}
 

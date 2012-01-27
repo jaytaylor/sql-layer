@@ -1611,6 +1611,200 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "- warnings_count: 0\n");
     }
 
+    @Test
+    public void testStatementWarningsCountZeroWithWarnings() {
+        testYamlFail("---\n" +
+                     "- CreateTable: t (vc varchar(32))\n" +
+                     "---\n" +
+                     "- Statement: INSERT INTO t VALUES ('a')\n" +
+                     "---\n" +
+                     "- Statement: SELECT DATE(vc) FROM t\n" +
+                     "- warnings_count: 0\n");
+    }
+
+    @Test
+    public void testStatementWarningsCountWithWarnings() {
+        testYaml("---\n" +
+                 "- CreateTable: t (vc varchar(32))\n" +
+                 "---\n" +
+                 "- Statement: INSERT INTO t VALUES ('a')\n" +
+                 "---\n" +
+                 "- Statement: SELECT DATE(vc) FROM t\n" +
+                 "- warnings_count: 4\n");
+    }
+
+    @Test
+    public void testStatementWarningsCountRegexpWithWarnings() {
+        testYaml("---\n" +
+                 "- CreateTable: t (vc varchar(32))\n" +
+                 "---\n" +
+                 "- Statement: INSERT INTO t VALUES ('a')\n" +
+                 "---\n" +
+                 "- Statement: SELECT DATE(vc) FROM t\n" +
+                 "- warnings_count: !re '[1-9]'\n");
+    }
+
+    /* Test Statement warnings */
+
+    @Test
+    public void testStatementWarningsNoValue() {
+        testYaml("---\n" +
+                 "- CreateTable: t (f int)\n" +
+                 "---\n" +
+                 "- Statement: SELECT * FROM t\n" +
+                 "- warnings:\n" +
+                 "- row_count: 0\n");
+    }
+
+    @Test
+    public void testStatementWarningsRepeated() {
+        testYamlFail("---\n" +
+                     "- CreateTable: t (f int)\n" +
+                     "---\n" +
+                     "- Statement: SELECT * FROM t\n" +
+                     "- warnings: [[1]]\n" +
+                     "- warnings: [[2]]\n");
+    }
+
+    @Test
+    public void testStatementWarningsNullValue() {
+        testYaml("---\n" +
+                 "- CreateTable: t (f int)\n" +
+                 "---\n" +
+                 "- Statement: SELECT * FROM t\n" +
+                 "- warnings: null\n" +
+                 "- row_count: 0\n");
+    }
+
+    @Test
+    public void testStatementWarningsValueNotSequence() {
+	testYamlFail("- Statement: a b c\n" +
+		     "- warnings: 33");
+    }
+
+    @Test
+    public void testStatementWarningsValueNotSequenceOfSequences() {
+	testYamlFail("- Statement: a b c\n" +
+		     "- warnings: [33]");
+    }
+
+    @Test
+    public void testStatementWarningsValueNotSequenceOfSequencesOfScalars() {
+	testYamlFail("- Statement: a b c\n" +
+		     "- warnings: [[[33]]]");
+    }
+
+    @Test
+    public void testStatementWarningsEmpty() {
+	testYamlFail("- Statement: a b c\n" +
+		     "- warnings: []");
+    }
+
+    @Test
+    public void testStatementWarningsEmptyElement() {
+	testYamlFail("- Statement: a b c\n" +
+		     "- warnings: [[]]");
+    }
+
+    @Test
+    public void testStatementWarningsSequenceTooLong() {
+	testYamlFail(
+	    "---\n" +
+	    "- Statement: a b c\n" +
+	    "- warnings: [[1, a, b]]");
+    }
+
+    @Test
+    public void testStatementWarningsCodeNotScalar() {
+	testYamlFail(
+	    "---\n" +
+	    "- Statement: a b c\n" +
+	    "- warnings: [[[x, y]]]");
+    }
+
+    @Test
+    public void testStatementWarningsWrongCode() {
+        testYamlFail("---\n" +
+                     "- CreateTable: t (vc varchar(32))\n" +
+                     "---\n" +
+                     "- Statement: INSERT INTO t VALUES ('a')\n" +
+                     "---\n" +
+                     "- Statement: SELECT DATE(vc) FROM t\n" +
+                     "- warnings: [[1234], [1234], [1234], [1234]]\n");
+    }
+
+    @Test
+    public void testStatementWarningsWrongMessage() {
+        testYamlFail("---\n" +
+                     "- CreateTable: t (vc varchar(32))\n" +
+                     "---\n" +
+                     "- Statement: INSERT INTO t VALUES ('a')\n" +
+                     "---\n" +
+                     "- Statement: SELECT DATE(vc) FROM t\n" +
+                     "- warnings: [[22007, 'Foo'],\n" +
+                     "    [22007, 'Foo'],\n" +
+                     "    [22007, 'Foo'],\n" +
+                     "    [22007, 'Foo']]");
+    }
+
+    @Test
+    public void testStatementWarningsRightMessage() {
+        testYaml("---\n" +
+                 "- CreateTable: t (vc varchar(32))\n" +
+                 "---\n" +
+                 "- Statement: INSERT INTO t VALUES ('a')\n" +
+                 "---\n" +
+                 "- Statement: SELECT DATE(vc) FROM t\n" +
+                 "- warnings: [[22007, 'Invalid date format: a'],\n" +
+                 "    [22007, 'Invalid date format: a'],\n" +
+                 "    [22007, 'Invalid timestamp format: a'],\n" +
+                 "    [22007, 'Invalid year format: a']]");
+    }
+
+    @Test
+    public void testStatementWarningsDontMatchCount() {
+        testYamlFail("---\n" +
+                     "- CreateTable: t (vc varchar(32))\n" +
+                     "---\n" +
+                     "- Statement: INSERT INTO t VALUES ('a')\n" +
+                     "---\n" +
+                     "- Statement: SELECT DATE(vc) FROM t\n" +
+                     "- warnings_count: 3\n" +
+                     "- warnings: [[22007, 'Invalid date format: a'],\n" +
+                     "    [22007, 'Invalid date format: a'],\n" +
+                     "    [22007, 'Invalid timestamp format: a'],\n" +
+                     "    [22007, 'Invalid year format: a']]");
+    }
+
+    @Test
+    public void testStatementWarningsMatchCount() {
+        testYaml("---\n" +
+                 "- CreateTable: t (vc varchar(32))\n" +
+                 "---\n" +
+                 "- Statement: INSERT INTO t VALUES ('a')\n" +
+                 "---\n" +
+                 "- Statement: SELECT DATE(vc) FROM t\n" +
+                 "- warnings_count: 4\n" +
+                 "- warnings: [[22007, 'Invalid date format: a'],\n" +
+                 "    [22007, 'Invalid date format: a'],\n" +
+                 "    [22007, 'Invalid timestamp format: a'],\n" +
+                 "    [22007, 'Invalid year format: a']]");
+    }
+
+    @Test
+    public void testStatementWarningsRegexp() {
+        testYaml("---\n" +
+                 "- CreateTable: t (vc varchar(32))\n" +
+                 "---\n" +
+                 "- Statement: INSERT INTO t VALUES ('a')\n" +
+                 "---\n" +
+                 "- Statement: SELECT DATE(vc) FROM t\n" +
+                 "- warnings: [[!re '[0-9]+', !re 'Invalid .*'],\n" +
+                 "    [!re '[0-9]+', !re 'Invalid .*'],\n" +
+                 "    [!re '[0-9]+', !re 'Invalid .*'],\n" +
+                 "    [!re '[0-9]+', !re 'Invalid .*']]");
+    }
+
     /* Other methods */
 
     private void testYaml(String yaml) {
