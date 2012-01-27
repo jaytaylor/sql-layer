@@ -20,7 +20,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -241,4 +243,18 @@ public abstract class Strings {
     }
 
     private static final Logger LOG = LoggerFactory.getLogger(Strings.class);
+
+    public static List<String> dumpFile(File file) throws IOException {
+        List<String> results = new ArrayList<String>();
+        FileReader reader = new FileReader(file);
+        try {
+            BufferedReader buffered = new BufferedReader(reader);
+            for (String line; (line=buffered.readLine()) != null; ) {
+                results.add(line);
+            }
+        } finally {
+            reader.close();
+        }
+        return results;
+    }
 }

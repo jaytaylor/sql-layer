@@ -37,7 +37,7 @@ public class SchemaRulesContext extends RulesContext
     public SchemaRulesContext(AkibanInformationSchema ais,
                               FunctionsRegistry functionsRegistry,
                               IndexEstimator indexEstimator,
-                              List<BaseRule> rules,
+                              List<? extends BaseRule> rules,
                               Properties properties) {
         super(rules, properties);
         schema = SchemaCache.globalSchema(ais);

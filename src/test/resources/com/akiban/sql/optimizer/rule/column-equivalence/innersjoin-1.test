@@ -1,0 +1,3 @@
+SELECT * FROM a JOIN b ON a.a_col1 = b.b_col1
+    a.a_col1    b.b_col1
+    a.a_col2

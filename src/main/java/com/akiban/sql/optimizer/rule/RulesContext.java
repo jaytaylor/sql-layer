@@ -26,10 +26,10 @@ import java.util.Properties;
 public class RulesContext
 {
     // TODO: Need more much sophisticated invocation mechanism.
-    private List<BaseRule> rules;
+    private List<? extends BaseRule> rules;
     private Properties properties;
 
-    public RulesContext(List<BaseRule> rules, Properties properties) {
+    public RulesContext(List<? extends BaseRule> rules, Properties properties) {
         this.rules = rules;
         this.properties = properties;
     }
