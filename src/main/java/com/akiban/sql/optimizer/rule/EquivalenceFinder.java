@@ -20,6 +20,8 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 
 public class EquivalenceFinder<T> {
 
@@ -53,7 +55,7 @@ public class EquivalenceFinder<T> {
         }
 
         // we've seen this edge before, so don't need to traverse it again
-        if ( (!seenEdges.put(one, two)) || (!seenEdges.put(two, one)))
+        if (!seenNodes.add(one))
             return false;
 
         // recurse
@@ -71,10 +73,10 @@ public class EquivalenceFinder<T> {
     }
 
     private void initSeenItems() {
-        if (seenEdges == null)
-            seenEdges = HashMultimap.create();
+        if (seenNodes == null)
+            seenNodes = new HashSet<T>();
         else
-            seenEdges.clear();
+            seenNodes.clear();
     }
 
     EquivalenceFinder() {
@@ -92,5 +94,5 @@ public class EquivalenceFinder<T> {
      */
     private Multimap<T,T> equivalences = HashMultimap.create();
     private int maxTraversals;
-    private Multimap<T,T> seenEdges;
+    private Set<T> seenNodes;
 }
