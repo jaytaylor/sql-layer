@@ -40,17 +40,16 @@ class TimeAndCount extends Tap
 
     public void out()
     {
+        outCount++;
+        boolean nestingOK = checkNesting();
         long now = System.nanoTime();
         endNanos = now;
-        if (inNanos != Long.MIN_VALUE) {
+        if (nestingOK) {
             lastDuration = now - inNanos;
+            cumulativeNanos += lastDuration;
         }
-        // else: Usage of this tap is non-nested. checkNesting() will report on the problem. But skip
-        // maintenance of lastDuration to try and keep reported values approximately right.
-        cumulativeNanos += lastDuration;
-        inNanos = Long.MIN_VALUE;
-        outCount++;
-        checkNesting();
+        // else: Usage of this tap is non-nested. checkNesting() reported on the problem. But skip
+        // maintenance and use of lastDuration to try and keep reported values approximately right.
     }
 
     public long getDuration()
@@ -63,7 +62,6 @@ class TimeAndCount extends Tap
         inCount = 0;
         outCount = 0;
         cumulativeNanos = 0;
-        inNanos = Long.MIN_VALUE;
     }
 
     public void appendReport(StringBuilder sb)

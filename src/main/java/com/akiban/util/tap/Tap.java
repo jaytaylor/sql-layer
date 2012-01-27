@@ -358,15 +358,13 @@ public abstract class Tap
 
     // For use by subclasses
 
-    protected void checkNesting()
+    protected boolean checkNesting()
     {
-        // The only use of Count is in implementing a PointTap, which calls in() and then out(). So
-        // inCount and outCount should always be in sync. Except if we're calling out() on one thread while
-        // in() is being called on another. But in that case, each thread should have its own Count tap,
-        // organized by PerThread. So this could really be an assertion, but let's not get too medieval, this
-        // is instrumentation, not functionality.
         if (inCount != outCount) {
             Tap.badNestingHandler.handleBadNesting(this);
+            return false;
+        } else {
+            return true;
         }
     }
 
@@ -404,7 +402,7 @@ public abstract class Tap
     static final String NEW_LINE = System.getProperty("line.separator");
     private static final String DEFAULT_ON_PROPERTY = "taps_default_on";
     private static final Map<String, Dispatch> dispatches = new TreeMap<String, Dispatch>();
-    static BadNestingHandler badNestingHandler =
+    static volatile BadNestingHandler badNestingHandler =
         new BadNestingHandler()
         {
             @Override
