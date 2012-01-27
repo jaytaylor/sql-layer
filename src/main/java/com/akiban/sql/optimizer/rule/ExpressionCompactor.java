@@ -37,7 +37,7 @@ public class ExpressionCompactor extends BaseRule
 
     @Override
     public void apply(PlanContext plan) {
-        plan.getPlan().accept(this);
+        plan.accept(this);
     }
 
     @Override
