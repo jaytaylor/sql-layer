@@ -424,11 +424,11 @@ public class PersistitStore implements Store {
             }
         }
 
-        WRITE_ROW_TAP.in();
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
         checkNoGroupIndexes(rowDef.table());
         Exchange hEx;
         hEx = getExchange(session, rowDef);
+        WRITE_ROW_TAP.in();
         try {
             //
             // Does the heavy lifting of looking up the full hkey in
@@ -502,8 +502,8 @@ public class PersistitStore implements Store {
                 putAllDeferredIndexKeys(session);
             }
         } finally {
-            releaseExchange(session, hEx);
             WRITE_ROW_TAP.out();
+            releaseExchange(session, hEx);
         }
     }
 
@@ -541,12 +541,12 @@ public class PersistitStore implements Store {
 
     @Override
     public void deleteRow(final Session session, final RowData rowData) throws PersistitException {
-        DELETE_ROW_TAP.in();
         final int rowDefId = rowData.getRowDefId();
 
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
         checkNoGroupIndexes(rowDef.table());
         Exchange hEx = null;
+        DELETE_ROW_TAP.in();
         try {
             hEx = getExchange(session, rowDef);
 
@@ -594,8 +594,8 @@ public class PersistitStore implements Store {
             // of these rows need to be maintained.
             propagateDownGroup(session, hEx);
         } finally {
-            releaseExchange(session, hEx);
             DELETE_ROW_TAP.out();
+            releaseExchange(session, hEx);
         }
     }
 
@@ -608,10 +608,10 @@ public class PersistitStore implements Store {
             throw new IllegalArgumentException("RowData values have different rowDefId values: ("
                                                        + rowDefId + "," + newRowData.getRowDefId() + ")");
         }
-        UPDATE_ROW_TAP.in();
         final RowDef rowDef = rowDefCache.getRowDef(rowDefId);
         checkNoGroupIndexes(rowDef.table());
         Exchange hEx = null;
+        UPDATE_ROW_TAP.in();
         try {
             hEx = getExchange(session, rowDef);
             constructHKey(session, hEx, rowDef, oldRowData, false);
@@ -652,8 +652,8 @@ public class PersistitStore implements Store {
                 }
             }
         } finally {
-            releaseExchange(session, hEx);
             UPDATE_ROW_TAP.out();
+            releaseExchange(session, hEx);
         }
     }
 
@@ -891,26 +891,30 @@ public class PersistitStore implements Store {
                                         ScanLimit scanLimit)
     {
         NEW_COLLECTOR_TAP.in();
-        if(start != null && startColumns == null) {
-            startColumns = createNonNullFieldSelector(start);
+        RowCollector rc;
+        try {
+            if(start != null && startColumns == null) {
+                startColumns = createNonNullFieldSelector(start);
+            }
+            if(end != null && endColumns == null) {
+                endColumns = createNonNullFieldSelector(end);
+            }
+            RowDef rowDef = checkRequest(rowDefId, start, startColumns, end, endColumns);
+            rc = OperatorBasedRowCollector.newCollector(config,
+                                                        session,
+                                                        this,
+                                                        scanFlags,
+                                                        rowDef,
+                                                        indexId,
+                                                        columnBitMap,
+                                                        start,
+                                                        startColumns,
+                                                        end,
+                                                        endColumns,
+                                                        scanLimit);
+        } finally {
+            NEW_COLLECTOR_TAP.out();
         }
-        if(end != null && endColumns == null) {
-            endColumns = createNonNullFieldSelector(end);
-        }
-        RowDef rowDef = checkRequest(rowDefId, start, startColumns, end, endColumns);
-        RowCollector rc = OperatorBasedRowCollector.newCollector(config,
-                                                                 session,
-                                                                 this,
-                                                                 scanFlags,
-                                                                 rowDef,
-                                                                 indexId,
-                                                                 columnBitMap,
-                                                                 start,
-                                                                 startColumns,
-                                                                 end,
-                                                                 endColumns,
-                                                                 scanLimit);
-        NEW_COLLECTOR_TAP.out();
         return rc;
     }
 
