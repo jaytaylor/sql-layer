@@ -160,10 +160,6 @@ public abstract class CostEstimator
         return simpleRound(lastEntry.getLessCount(), d);
     }
     
-    protected static long simpleRound(long n, long d) {
-        return (n + d / 2) / d;
-    }
-
     protected long rowsBetween(Histogram histogram, 
                                byte[] lowBytes, boolean lowInclusive,
                                byte[] highBytes, boolean highInclusive) {
@@ -219,7 +215,7 @@ public abstract class CostEstimator
             lend = (lend << 8) + safeByte(end, idx);
             lmiddle = (lmiddle << 8) + safeByte(middle, idx);
         }
-        return ((lmiddle - lstart) * total) / (lend - lstart);
+        return simpleRound((lmiddle - lstart) * total, lend - lstart);
     }
 
     private static int safeByte(byte[] ba, int idx) {
@@ -227,6 +223,10 @@ public abstract class CostEstimator
             return ba[idx] & 0xFF;
         else
             return 0;
+    }
+
+    protected static long simpleRound(long n, long d) {
+        return (n + d / 2) / d;
     }
 
     /** Encode the given field expressions a comparable key byte array.

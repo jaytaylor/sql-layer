@@ -102,7 +102,7 @@ public class CostEstimatorTest
         Index index = index("customers", "name");
         CostEstimate costEstimate = costEstimator.costIndexScan(index, null,
                                                                 constant("M", AkType.VARCHAR), true, constant("N", AkType.VARCHAR), false); // LIKE 'M%'.
-        assertEquals(4, costEstimate.getRowCount());
+        assertEquals(5, costEstimate.getRowCount());
     }
 
     @Test
