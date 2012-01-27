@@ -20,6 +20,7 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -154,9 +155,9 @@ class IndexScan_Default extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter)
+    protected Cursor cursor(QueryContext context)
     {
-        return new Execution(adapter);
+        return new Execution(context);
     }
 
     // IndexScan_Default interface
@@ -176,7 +177,7 @@ class IndexScan_Default extends Operator
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(IndexScan_Default.class);
-    private static final Tap.PointTap INDEX_SCAN_COUNT = Tap.createCount("operator: index_scan", true);
+    private static final PointTap INDEX_SCAN_COUNT = Tap.createCount("operator: index_scan", true);
 
     // Object state
 
@@ -194,10 +195,10 @@ class IndexScan_Default extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
             INDEX_SCAN_COUNT.hit();
-            cursor.open(bindings);
+            cursor.open();
         }
 
         @Override
@@ -224,10 +225,10 @@ class IndexScan_Default extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter)
+        Execution(QueryContext context)
         {
-            super(adapter);
-            this.cursor = adapter.newIndexCursor(index, indexKeyRange, ordering, scanSelector);
+            super(context);
+            this.cursor = adapter().newIndexCursor(context, index, indexKeyRange, ordering, scanSelector);
         }
 
         // Object state

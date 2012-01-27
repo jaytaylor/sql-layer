@@ -16,11 +16,12 @@
 package com.akiban.sql.server;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoTransactionInProgressException;
 import com.akiban.server.error.TransactionInProgressException;
-import com.akiban.server.expression.EnvironmentExpressionSetting;
+import com.akiban.server.error.TransactionReadOnlyException;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.SessionTracer;
@@ -55,6 +56,9 @@ public abstract class ServerSessionBase implements ServerSession
     protected boolean transactionDefaultReadOnly = false;
     protected ServerSessionTracer sessionTracer;
 
+    protected ServerValueEncoder.ZeroDateTimeBehavior zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.NONE;
+    protected QueryContext.NotificationLevel maxNotificationLevel = QueryContext.NotificationLevel.INFO;
+
     public ServerSessionBase(ServerServiceRequirements reqs) {
         this.reqs = reqs;
     }
@@ -77,8 +81,31 @@ public abstract class ServerSessionBase implements ServerSession
     @Override
     public void setProperty(String key, String value) {
         properties.setProperty(key, value);
+        if (!propertySet(key, value))
+            sessionChanged();   // Give individual handlers a chance.
+    }
+
+    protected void setProperties(Properties properties) {
+        this.properties = properties;
+        for (String key : properties.stringPropertyNames()) {
+            propertySet(key, properties.getProperty(key));
+        }
         sessionChanged();
     }
+
+    protected boolean propertySet(String key, String value) {
+        if ("zeroDateTimeBehavior".equals(key)) {
+            zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.fromProperty(value);
+            return true;
+        }
+        if ("maxNotificationLevel".equals(key)) {
+            maxNotificationLevel = QueryContext.NotificationLevel.valueOf(value);
+            return true;
+        }
+        return false;
+    }
+
+    protected abstract void sessionChanged();
 
     @Override
     public Map<String,Object> getAttributes() {
@@ -95,8 +122,6 @@ public abstract class ServerSessionBase implements ServerSession
         attributes.put(key, attr);
         sessionChanged();
     }
-
-    protected abstract void sessionChanged();
 
     @Override
     public DXLService getDXL() {
@@ -203,20 +228,62 @@ public abstract class ServerSessionBase implements ServerSession
     }
 
     @Override
-    public Object getEnvironmentValue(EnvironmentExpressionSetting setting) {
-        switch (setting) {
-        case CURRENT_DATETIME:
-            return new DateTime((transaction != null) ? transaction.getTime(this)
-                                                      : currentTime());
-        case CURRENT_USER:
-            return defaultSchemaName;
-        case SESSION_USER:
-            return properties.getProperty("user");
-        case SYSTEM_USER:
-            return System.getProperty("user.name");
-        default:
-            throw new AkibanInternalException("Unknown environment value: " +
-                                              setting);
+    public ServerValueEncoder.ZeroDateTimeBehavior getZeroDateTimeBehavior() {
+        return zeroDateTimeBehavior;
+    }
+
+    /** Prepare to execute given statement.
+     * Uses current global transaction or makes a new local one.
+     * Returns any local transaction that should be committed / rolled back immediately.
+     */
+    protected ServerTransaction beforeExecute(ServerStatement stmt) {
+        ServerStatement.TransactionMode transactionMode = stmt.getTransactionMode();
+        ServerTransaction localTransaction = null;
+        if (transaction != null) {
+            // Use global transaction.
+            transaction.checkTransactionMode(transactionMode);
+        }
+        else {
+            switch (transactionMode) {
+            case REQUIRED:
+            case REQUIRED_WRITE:
+                throw new NoTransactionInProgressException();
+            case READ:
+            case NEW:
+                localTransaction = new ServerTransaction(this, true);
+                break;
+            case WRITE:
+            case NEW_WRITE:
+                if (transactionDefaultReadOnly)
+                    throw new TransactionReadOnlyException();
+                localTransaction = new ServerTransaction(this, false);
+                localTransaction.beforeUpdate();
+                break;
+            }
+        }
+        return localTransaction;
+    }
+
+    /** Complete execute given statement.
+     * @see #beforeExecute
+     */
+    protected void afterExecute(ServerStatement stmt, 
+                                ServerTransaction localTransaction,
+                                boolean success) {
+        if (localTransaction != null) {
+            if (success)
+                localTransaction.commit();
+            else
+                localTransaction.abort();
+        }
+        else {
+            // Make changes visible in open global transaction.
+            switch (stmt.getTransactionMode()) {
+            case REQUIRED_WRITE:
+            case WRITE:
+                transaction.afterUpdate();
+                break;
+            }
         }
     }
 

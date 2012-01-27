@@ -21,6 +21,7 @@ import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
 import org.slf4j.Logger;
@@ -108,9 +109,9 @@ class Product_NestedLoops extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter)
+    protected Cursor cursor(QueryContext context)
     {
-        return new Execution(adapter);
+        return new Execution(context);
     }
 
     @Override
@@ -167,7 +168,7 @@ class Product_NestedLoops extends Operator
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(BranchLookup_Nested.class);
-    private static final Tap.PointTap PRODUCT_NL_COUNT = Tap.createCount("operator: product_nested_loops", true);
+    private static final PointTap PRODUCT_NL_COUNT = Tap.createCount("operator: product_nested_loops", true);
 
     // Object state
 
@@ -186,11 +187,10 @@ class Product_NestedLoops extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
             PRODUCT_NL_COUNT.hit();
-            this.bindings = bindings;
-            this.outerInput.open(bindings);
+            this.outerInput.open();
             this.closed = false;
         }
 
@@ -243,11 +243,11 @@ class Product_NestedLoops extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter)
+        Execution(QueryContext context)
         {
-            super(adapter);
-            this.outerInput = outerInputOperator.cursor(adapter);
-            this.innerRows = new InnerRows(innerInputOperator.cursor(adapter));
+            super(context);
+            this.outerInput = outerInputOperator.cursor(context);
+            this.innerRows = new InnerRows(innerInputOperator.cursor(context));
         }
 
         // For use by this class
@@ -284,7 +284,6 @@ class Product_NestedLoops extends Operator
         private final ShareHolder<Row> outerRow = new ShareHolder<Row>();
         private final ShareHolder<Row> outerBranchRow = new ShareHolder<Row>();
         private final InnerRows innerRows;
-        private Bindings bindings;
         private boolean closed = false;
 
         // Inner classes
@@ -309,8 +308,8 @@ class Product_NestedLoops extends Operator
             public void newBranchRow(Row branchRow)
             {
                 close();
-                bindings.set(inputBindingPosition, branchRow);
-                innerInput.open(bindings);
+                context.setRow(inputBindingPosition, branchRow);
+                innerInput.open();
                 rows.clear();
                 Row row;
                 while ((row = innerInput.next()) != null) {

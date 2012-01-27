@@ -22,6 +22,7 @@ import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
 import java.util.ArrayList;
@@ -42,9 +43,9 @@ class Product_ByRun extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter)
+    protected Cursor cursor(QueryContext context)
     {
-        return new Execution(adapter, inputOperator.cursor(adapter));
+        return new Execution(context, inputOperator.cursor(context));
     }
 
     @Override
@@ -88,7 +89,7 @@ class Product_ByRun extends Operator
     
     // Class state
     
-    private static final Tap.PointTap PRODUCT_BY_RUN_COUNT = Tap.createCount("operator: product_by_run", true);
+    private static final PointTap PRODUCT_BY_RUN_COUNT = Tap.createCount("operator: product_by_run", true);
 
     // Object state
 
@@ -104,10 +105,10 @@ class Product_ByRun extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
             PRODUCT_BY_RUN_COUNT.hit();
-            input.open(bindings);
+            input.open();
         }
 
         @Override
@@ -164,9 +165,9 @@ class Product_ByRun extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, Cursor input)
+        Execution(QueryContext context, Cursor input)
         {
-            super(adapter);
+            super(context);
             this.input = input;
         }
 

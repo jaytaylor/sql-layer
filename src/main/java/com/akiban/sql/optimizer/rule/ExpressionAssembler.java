@@ -16,7 +16,6 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.EnvironmentExpressionFactory;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.optimizer.plan.*;
@@ -145,11 +144,6 @@ public class ExpressionAssembler
         else if (node instanceof AggregateFunctionExpression)
             throw new UnsupportedSQLException("Aggregate used as regular function", 
                                               node.getSQLsource());
-        else if (node instanceof EnvironmentFunctionExpression) {
-            EnvironmentFunctionExpression funcNode = (EnvironmentFunctionExpression)node;
-            EnvironmentExpressionFactory factory = functionsRegistry.environment(funcNode.getFunction());
-            return factory.get(columnContext.getExpressionBindingsOffset() + funcNode.getBindingPosition());
-        }
         else
             throw new UnsupportedSQLException("Unknown expression", node.getSQLsource());
     }

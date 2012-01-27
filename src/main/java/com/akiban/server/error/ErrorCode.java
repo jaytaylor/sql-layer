@@ -168,6 +168,7 @@ public enum ErrorCode {
     TABLE_DEFINITION_CHANGED("22", "501", Importance.DEBUG, TableDefinitionChangedException.class),
     NEGATIVE_LIMIT          ("22", "502", Importance.DEBUG, NegativeLimitException.class),
     INVALID_ARGUMENT_TYPE   ("22", "503", Importance.DEBUG, InvalidArgumentTypeException.class),
+    ZERO_DATE_TIME          ("22", "504", Importance.DEBUG, ZeroDateTimeException.class),
 
     // Class 23 - integrity constraint violation
     DUPLICATE_KEY           ("23", "501", Importance.DEBUG, DuplicateKeyException.class),

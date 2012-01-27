@@ -18,8 +18,12 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 import com.akiban.server.error.NegativeLimitException;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.extract.Extractors;
 
 import java.util.Collections;
 import java.util.List;
@@ -74,8 +78,8 @@ final class Limit_Default extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter) {
-        return new Execution(adapter, inputOperator.cursor(adapter));
+    protected Cursor cursor(QueryContext context) {
+        return new Execution(context, inputOperator.cursor(context));
     }
 
     // Plannable interface
@@ -148,7 +152,7 @@ final class Limit_Default extends Operator
     
     // Class state
     
-    private static final Tap.PointTap LIMIT_COUNT = Tap.createCount("operator: limit", true);
+    private static final PointTap LIMIT_COUNT = Tap.createCount("operator: limit", true);
 
     // Object state
 
@@ -163,13 +167,13 @@ final class Limit_Default extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings) {
+        public void open() {
             LIMIT_COUNT.hit();
-            super.open(bindings);
+            super.open();
             if (isSkipBinding()) {
-                Integer i = (Integer)bindings.get(skip());
-                if (i != null)
-                    this.skipLeft = i.intValue();
+                ValueSource value = context.getValue(skip());
+                if (!value.isNull())
+                    this.skipLeft = (int)Extractors.getLongExtractor(AkType.LONG).getLong(value);
             }
             else {
                 this.skipLeft = skip();
@@ -177,11 +181,11 @@ final class Limit_Default extends Operator
             if (skipLeft < 0)
                 throw new NegativeLimitException("OFFSET", skipLeft);
             if (isLimitBinding()) {
-                Integer i = (Integer)bindings.get(limit());
-                if (i == null)
+                ValueSource value = context.getValue(limit());
+                if (value.isNull())
                     this.limitLeft = Integer.MAX_VALUE;
                 else
-                    this.limitLeft = i.intValue();
+                    this.limitLeft = (int)Extractors.getLongExtractor(AkType.LONG).getLong(value);
             }
             else {
                 this.limitLeft = limit();
@@ -218,8 +222,8 @@ final class Limit_Default extends Operator
         }
 
         // Execution interface
-        Execution(StoreAdapter adapter, Cursor input) {
-            super(adapter, input);
+        Execution(QueryContext context, Cursor input) {
+            super(context, input);
         }
 
         // class state

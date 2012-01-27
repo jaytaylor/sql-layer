@@ -18,6 +18,7 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
 import java.util.Collections;
@@ -46,9 +47,9 @@ class Sort_Tree extends Operator
     }
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter)
+    protected Cursor cursor(QueryContext context)
     {
-        return new Execution(adapter, inputOperator.cursor(adapter));
+        return new Execution(context, inputOperator.cursor(context));
     }
 
     @Override
@@ -83,7 +84,7 @@ class Sort_Tree extends Operator
     }
     
     // Class state
-    private static final Tap.PointTap SORT_TREE_COUNT = Tap.createCount("operator: sort_tree", true);
+    private static final PointTap SORT_TREE_COUNT = Tap.createCount("operator: sort_tree", true);
 
     // Object state
 
@@ -99,11 +100,10 @@ class Sort_Tree extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
             assert closed;
-            input.open(bindings);
-            this.bindings = bindings;
+            input.open();
             closed = false;
         }
 
@@ -113,7 +113,7 @@ class Sort_Tree extends Operator
             checkQueryCancelation();
             if (output == null) {
                 SORT_TREE_COUNT.hit();
-                output = adapter.sort(input, sortType, ordering, sortOption, bindings);
+                output = adapter().sort(context, input, sortType, ordering, sortOption);
             }
             Row row = null;
             if (!closed) {
@@ -140,9 +140,9 @@ class Sort_Tree extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, Cursor input)
+        Execution(QueryContext context, Cursor input)
         {
-            super(adapter);
+            super(context);
             this.input = input;
         }
 
@@ -150,7 +150,6 @@ class Sort_Tree extends Operator
 
         private final Cursor input;
         private Cursor output;
-        private Bindings bindings;
         private boolean closed = true;
     }
 }

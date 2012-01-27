@@ -16,8 +16,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.ais.model.Column;
-import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -83,11 +82,7 @@ public final class ColumnExpression implements Expression {
         }
 
         @Override
-        public void of(Bindings bindings) {
-        }
-
-        @Override
-        public void of(StoreAdapter adapter) {
+        public void of(QueryContext context) {
         }
 
         @Override

@@ -21,10 +21,10 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.ArrayBindings;
-import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.row.FlattenedRow;
 import com.akiban.qp.row.Row;
@@ -35,8 +35,9 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDataValueSource;
-import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.conversion.Converters;
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
 import java.util.*;
@@ -50,25 +51,23 @@ final class OperatorStoreMaintenance {
         Operator planOperator = rootOperator();
         if (planOperator == null)
             return;
-        Bindings bindings = new ArrayBindings(1);
+        QueryContext context = new SimpleQueryContext(adapter);
         final List<Column> lookupCols = rowType.userTable().getPrimaryKey().getColumns();
 
-        bindings.set(OperatorStoreMaintenance.HKEY_BINDING_POSITION, hKey);
+        context.setHKey(OperatorStoreMaintenance.HKEY_BINDING_POSITION, hKey);
 
         // Copy the values into the array bindings
-        ToObjectValueTarget target = new ToObjectValueTarget();
         RowDataValueSource source = new RowDataValueSource();
         for (int i=0; i < lookupCols.size(); ++i) {
             int bindingsIndex = i+1;
             Column col = lookupCols.get(i);
             source.bind((FieldDef)col.getFieldDef(), forRow);
-            target.expectType(col.getType().akType());
-            bindings.set(bindingsIndex, Converters.convert(source, target).lastConvertedValue());
+            context.setValue(bindingsIndex, source);
         }
 
-        Cursor cursor = API.cursor(planOperator, adapter);
+        Cursor cursor = API.cursor(planOperator, context);
         RUN_TAP.in();
-        cursor.open(bindings);
+        cursor.open();
         try {
             Row row;
             while ((row = cursor.next()) != null) {
@@ -82,14 +81,14 @@ final class OperatorStoreMaintenance {
                     Index.JoinType giJoin = groupIndex.getJoinType();
                     switch (giJoin) {
                     case LEFT:
-                        if (row.rowType().equals(storePlan.leftHalf) && useInvertType(action, bindings, adapter)) {
+                        if (row.rowType().equals(storePlan.leftHalf) && useInvertType(action, context)) {
                             Row outerRow = new FlattenedRow(storePlan.topLevelFlattenType, row, null, row.hKey());
                             doAction(invert(action), handler, outerRow);
                             actioned = true;
                         }
                         break;
                     case RIGHT:
-                        if (row.rowType().equals(storePlan.rightHalf) && useInvertType(action, bindings, adapter)) {
+                        if (row.rowType().equals(storePlan.rightHalf) && useInvertType(action, context)) {
                             Row outerRow = new FlattenedRow(storePlan.topLevelFlattenType, null, row, row.hKey());
                             doAction(invert(action), handler, outerRow);
                             actioned = true;
@@ -118,7 +117,7 @@ final class OperatorStoreMaintenance {
         ALL_TAP.out();
     }
 
-    private boolean useInvertType(OperatorStoreGIHandler.Action action, Bindings bindings, StoreAdapter adapter) {
+    private boolean useInvertType(OperatorStoreGIHandler.Action action, QueryContext context) {
         switch (groupIndex.getJoinType()) {
         case LEFT:
             switch (action) {
@@ -127,9 +126,9 @@ final class OperatorStoreMaintenance {
             case DELETE:
                 if (siblingsLookup == null)
                     return false;
-                Cursor siblingsCounter = API.cursor(siblingsLookup, adapter);
+                Cursor siblingsCounter = API.cursor(siblingsLookup, context);
                 SIBLING_ALL_TAP.in();
-                siblingsCounter.open(bindings);
+                siblingsCounter.open();
                 try {
                     int siblings = 0;
                     while (siblingsCounter.next() != null) {
@@ -153,7 +152,7 @@ final class OperatorStoreMaintenance {
     }
 
     private void doAction(OperatorStoreGIHandler.Action action, OperatorStoreGIHandler handler, Row row) {
-        Tap.InOutTap actionTap = actionTap(action);
+        InOutTap actionTap = actionTap(action);
         actionTap.in();
         handler.handleRow(groupIndex, row, action);
         actionTap.out();
@@ -171,7 +170,7 @@ final class OperatorStoreMaintenance {
         return storePlan.rootOperator;
     }
 
-    private Tap.InOutTap actionTap(OperatorStoreGIHandler.Action action) {
+    private InOutTap actionTap(OperatorStoreGIHandler.Action action) {
         if (action == null)
             return OTHER_TAP;
         switch (action) {
@@ -181,7 +180,7 @@ final class OperatorStoreMaintenance {
         }
     }
 
-    private Tap.PointTap extraTap(OperatorStoreGIHandler.Action action) {
+    private PointTap extraTap(OperatorStoreGIHandler.Action action) {
         if (action == null)
             return EXTRA_OTHER_ROW_TAP;
         switch (action) {
@@ -353,16 +352,16 @@ final class OperatorStoreMaintenance {
     // package consts
 
     private static final int HKEY_BINDING_POSITION = 0;
-    private static final Tap.InOutTap ALL_TAP = Tap.createTimer("GI maintenance: all");
-    private static final Tap.InOutTap RUN_TAP = Tap.createTimer("GI maintenance: run");
-    private static final Tap.InOutTap STORE_TAP = Tap.createTimer("GI maintenance: STORE");
-    private static final Tap.InOutTap DELETE_TAP = Tap.createTimer("GI maintenance: DELETE");
-    private static final Tap.InOutTap OTHER_TAP = Tap.createTimer("GI maintenance: OTHER");
-    private static final Tap.InOutTap SIBLING_ALL_TAP = Tap.createTimer("GI maintenance: sibling all");
-    private static final Tap.PointTap SIBLING_ROW_TAP = Tap.createCount("GI maintenance: sibling row");
-    private static final Tap.PointTap EXTRA_STORE_ROW_TAP = Tap.createCount("GI maintenance: extra store");
-    private static final Tap.PointTap EXTRA_DELETE_ROW_TAP = Tap.createCount("GI maintenance: extra delete");
-    private static final Tap.PointTap EXTRA_OTHER_ROW_TAP = Tap.createCount("GI maintenance: extra other");
+    private static final InOutTap ALL_TAP = Tap.createTimer("GI maintenance: all");
+    private static final InOutTap RUN_TAP = Tap.createTimer("GI maintenance: run");
+    private static final InOutTap STORE_TAP = Tap.createTimer("GI maintenance: STORE");
+    private static final InOutTap DELETE_TAP = Tap.createTimer("GI maintenance: DELETE");
+    private static final InOutTap OTHER_TAP = Tap.createTimer("GI maintenance: OTHER");
+    private static final InOutTap SIBLING_ALL_TAP = Tap.createTimer("GI maintenance: sibling all");
+    private static final PointTap SIBLING_ROW_TAP = Tap.createCount("GI maintenance: sibling row");
+    private static final PointTap EXTRA_STORE_ROW_TAP = Tap.createCount("GI maintenance: extra store");
+    private static final PointTap EXTRA_DELETE_ROW_TAP = Tap.createCount("GI maintenance: extra delete");
+    private static final PointTap EXTRA_OTHER_ROW_TAP = Tap.createCount("GI maintenance: extra other");
 
     // nested classes
 

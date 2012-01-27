@@ -12,17 +12,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
-package com.akiban.qp.loadableplan;
 
-import com.akiban.sql.server.ServerServiceRequirements;
-/**
- * "Temporary" hack to allow PostgresServer to inject a ServerServiceRequirements
- * instance into a loadable plan.
- * 
- * @author peter
- */
+package com.akiban.server.error;
 
-public interface ServerServiceRequirementsReceiver {
-
-    void setServerServiceRequirements(ServerServiceRequirements reqs);
+public final class ZeroDateTimeException extends InvalidOperationException {
+    public ZeroDateTimeException() {
+        super(ErrorCode.ZERO_DATE_TIME);
+    }
 }

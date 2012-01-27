@@ -23,18 +23,22 @@ import java.io.IOException;
 public abstract class PostgresOutputter<T>
 {
     protected PostgresMessenger messenger;
+    protected PostgresQueryContext context;
     protected PostgresBaseStatement statement;
     protected List<PostgresType> columnTypes;
     protected int ncols;
     protected ServerValueEncoder encoder;
 
-    public PostgresOutputter(PostgresMessenger messenger, 
+    public PostgresOutputter(PostgresQueryContext context,
                              PostgresBaseStatement statement) {
-        this.messenger = messenger;
+        this.context = context;
         this.statement = statement;
+        PostgresServerSession server = context.getServer();
+        messenger = server.getMessenger();
         columnTypes = statement.getColumnTypes();
         ncols = columnTypes.size();
-        encoder = new ServerValueEncoder(messenger.getEncoding());
+        encoder = new ServerValueEncoder(messenger.getEncoding(), 
+                                         server.getZeroDateTimeBehavior());
     }
 
     public abstract void output(T row) throws IOException;

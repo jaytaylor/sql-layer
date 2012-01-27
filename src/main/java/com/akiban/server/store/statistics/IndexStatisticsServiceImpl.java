@@ -76,6 +76,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
 
     @Override
     public void start() {
+        store.setIndexStatistics(this);
         cache = Collections.synchronizedMap(new WeakHashMap<Index,IndexStatistics>());
         storeStats = new PersistitStoreIndexStatistics(store, treeService, this);
     }
@@ -234,6 +235,11 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                              }
                          });
         new IndexStatisticsYamlLoader(ais, schema).dump(toDump, file);
+    }
+
+    @Override
+    public void clearCache() {
+        cache.clear();
     }
 
     /* JmxManageable */

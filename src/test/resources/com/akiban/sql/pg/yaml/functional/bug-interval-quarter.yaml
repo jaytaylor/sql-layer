@@ -1,9 +1,0 @@
-# Adding QUARTER INTERVAL produces wrong value (bug 913800)
----
-- CreateTable: t (date_field date)
----
-- Statement: INSERT INTO t VALUES ('2000-01-01')
----
-- Statement: SELECT date_field + INTERVAL '1' QUARTER FROM t
-- output: [['2000-04-01']]
-...
