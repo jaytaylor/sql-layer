@@ -70,7 +70,14 @@ public class ServerTransaction
         case WRITE:
             if (readOnly)
                 throw new TransactionReadOnlyException();
+            beforeUpdate();
         }
+    }
+
+    public void beforeUpdate() {
+    }
+
+    public void afterUpdate() {
     }
 
     /** Commit transaction. */
@@ -88,7 +95,12 @@ public class ServerTransaction
 
     /** Rollback transaction. */
     public void rollback() {
-        transaction.rollback();
+        try {
+            transaction.rollback();
+        }
+        finally {
+            transaction.end();
+        }
     }
 
     /** Abort transaction that still exists on exit. */
