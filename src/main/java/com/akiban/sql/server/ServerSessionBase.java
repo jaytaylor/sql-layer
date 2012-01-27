@@ -21,6 +21,7 @@ import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoTransactionInProgressException;
 import com.akiban.server.error.TransactionInProgressException;
+import com.akiban.server.error.TransactionReadOnlyException;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.SessionTracer;
@@ -230,6 +231,61 @@ public abstract class ServerSessionBase implements ServerSession
     @Override
     public CostEstimator costEstimator() {
         return new ServerCostEstimator(this, reqs);
+    }
+
+    /** Prepare to execute given statement.
+     * Uses current global transaction or makes a new local one.
+     * Returns any local transaction that should be committed / rolled back immediately.
+     */
+    protected ServerTransaction beforeExecute(ServerStatement stmt) {
+        ServerStatement.TransactionMode transactionMode = stmt.getTransactionMode();
+        ServerTransaction localTransaction = null;
+        if (transaction != null) {
+            // Use global transaction.
+            transaction.checkTransactionMode(transactionMode);
+        }
+        else {
+            switch (transactionMode) {
+            case REQUIRED:
+            case REQUIRED_WRITE:
+                throw new NoTransactionInProgressException();
+            case READ:
+            case NEW:
+                localTransaction = new ServerTransaction(this, true);
+                break;
+            case WRITE:
+            case NEW_WRITE:
+                if (transactionDefaultReadOnly)
+                    throw new TransactionReadOnlyException();
+                localTransaction = new ServerTransaction(this, false);
+                localTransaction.beforeUpdate();
+                break;
+            }
+        }
+        return localTransaction;
+    }
+
+    /** Complete execute given statement.
+     * @see #beforeExecute
+     */
+    protected void afterExecute(ServerStatement stmt, 
+                                ServerTransaction localTransaction,
+                                boolean success) {
+        if (localTransaction != null) {
+            if (success)
+                localTransaction.commit();
+            else
+                localTransaction.abort();
+        }
+        else {
+            // Make changes visible in open global transaction.
+            switch (stmt.getTransactionMode()) {
+            case REQUIRED_WRITE:
+            case WRITE:
+                transaction.afterUpdate();
+                break;
+            }
+        }
     }
 
 }
