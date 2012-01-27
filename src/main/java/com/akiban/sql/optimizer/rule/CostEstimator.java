@@ -169,10 +169,13 @@ public abstract class CostEstimator
                                byte[] highBytes, boolean highInclusive) {
         boolean before = (lowBytes != null);
         long rowCount = 0;
+        byte[] entryStartBytes, entryEndBytes = null;
         for (HistogramEntry entry : histogram.getEntries()) {
+            entryStartBytes = entryEndBytes;
+            entryEndBytes = entry.getKeyBytes();
             long portionStart = 0;
             if (before) {
-                int compare = bytesComparator.compare(lowBytes, entry.getKeyBytes());
+                int compare = bytesComparator.compare(lowBytes, entryEndBytes);
                 if (compare > 0)
                     continue;
                 if (compare == 0) {
@@ -180,11 +183,12 @@ public abstract class CostEstimator
                         rowCount += entry.getEqualCount();
                     continue;
                 }
-                portionStart = entryPortion(entry, lowBytes, false);
+                portionStart = uniformPortion(entryStartBytes, entryEndBytes, lowBytes,
+                                              entry.getLessCount());
                 // Fall through to check high in same entry.
             }
             if (highBytes != null) {
-                int compare = bytesComparator.compare(highBytes, entry.getKeyBytes());
+                int compare = bytesComparator.compare(highBytes, entryEndBytes);
                 if (compare == 0) {
                     rowCount += entry.getLessCount() - portionStart;
                     if (highInclusive)
@@ -192,8 +196,8 @@ public abstract class CostEstimator
                     break;
                 }
                 if (compare < 0) {
-                    portionStart += entryPortion(entry, highBytes, true);
-                    rowCount += entry.getLessCount() - portionStart;
+                    rowCount += uniformPortion(entryStartBytes, entryEndBytes, highBytes,
+                                               entry.getLessCount()) - portionStart;
                     break;
                 }
             }
@@ -202,10 +206,27 @@ public abstract class CostEstimator
         return Math.max(rowCount, 1);
     }
     
-    protected long entryPortion(HistogramEntry entry, byte[] keyBytes, 
-                                boolean fromRight) {
-        // TODO: Compute fraction based on position within entry.
-        return 0;
+    /** Assuming that byte strings are uniformly distributed, what
+     * would be given position correspond to?
+     */
+    protected static long uniformPortion(byte[] start, byte[] end, byte[] middle,
+                                         long total) {
+        int idx = 0;
+        while (safeByte(start, idx) == safeByte(end, idx)) idx++; // First mismatch.
+        long lstart = 0, lend = 0, lmiddle = 0;
+        for (int i = 0; i < 4; i++) {
+            lstart = (lstart << 8) + safeByte(start, idx);
+            lend = (lend << 8) + safeByte(end, idx);
+            lmiddle = (lmiddle << 8) + safeByte(middle, idx);
+        }
+        return ((lmiddle - lstart) * total) / (lend - lstart);
+    }
+
+    private static int safeByte(byte[] ba, int idx) {
+        if ((ba != null) && (idx < ba.length))
+            return ba[idx] & 0xFF;
+        else
+            return 0;
     }
 
     /** Encode the given field expressions a comparable key byte array.

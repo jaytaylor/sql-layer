@@ -102,7 +102,7 @@ public class CostEstimatorTest
         Index index = index("customers", "name");
         CostEstimate costEstimate = costEstimator.costIndexScan(index, null,
                                                                 constant("M", AkType.VARCHAR), true, constant("N", AkType.VARCHAR), false); // LIKE 'M%'.
-        assertEquals(16, costEstimate.getRowCount());
+        assertEquals(4, costEstimate.getRowCount());
     }
 
     @Test
@@ -187,6 +187,27 @@ public class CostEstimatorTest
         // estimation.
         assertEquals(RANDOM_ACCESS_COST * (1 + 1) + SEQUENTIAL_ACCESS_COST * (10 + 200 - 1),
                      costEstimate.getCost());
+    }
+
+
+    @Test
+    public void testUniformPortion() {
+        assertEquals(8, CostEstimator.uniformPortion("A".getBytes(),
+                                                     "Z".getBytes(),
+                                                     "C".getBytes(),
+                                                     100));
+        assertEquals(48, CostEstimator.uniformPortion("A".getBytes(),
+                                                      "Z".getBytes(),
+                                                      "M".getBytes(),
+                                                      100));
+        assertEquals(76, CostEstimator.uniformPortion("A".getBytes(),
+                                                      "Z".getBytes(),
+                                                      "T".getBytes(),
+                                                      100));
+        assertEquals(50,  CostEstimator.uniformPortion(new byte[] { (byte)0x00 },
+                                                       new byte[] { (byte)0x00, (byte)0x00, (byte)0xFF, (byte)0xFF },
+                                                       new byte[] { (byte)0x00, (byte)0x00, (byte)0x80, (byte)0x00 },
+                                                       100));
     }
 
 }
