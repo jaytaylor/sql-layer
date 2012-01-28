@@ -23,17 +23,11 @@ import java.util.List;
  */
 public class IndexStatistics
 {
-    private Index index;
     private long analysisTimestamp, rowCount, sampledCount;
     private Histogram[] histograms; // Indexed by column count.
 
     protected IndexStatistics(Index index) {
-        this.index = index;
         this.histograms = new Histogram[index.getColumns().size()];
-    }
-
-    public Index getIndex() {
-        return index;
     }
 
     public long getAnalysisTimestamp() {
@@ -67,19 +61,14 @@ public class IndexStatistics
     }
     
     public static class Histogram {
-        private Index index;
         private int columnCount;
         private List<HistogramEntry> entries;
         
-        protected Histogram(Index index, int columnCount, List<HistogramEntry> entries) {
-            this.index = index;
+        protected Histogram(int columnCount, List<HistogramEntry> entries) {
             this.columnCount = columnCount;
             this.entries = entries;
         }
 
-        public Index getIndex() {
-            return index;
-        }
         public int getColumnCount() {
             return columnCount;
         }
@@ -89,13 +78,19 @@ public class IndexStatistics
 
         @Override
         public String toString() {
+            return toString(null);
+        }
+
+        public String toString(Index index) {
             StringBuilder str = new StringBuilder(getClass().getSimpleName());
-            str.append(" for ").append(index.getIndexName()).append("(");
-            for (int j = 0; j < columnCount; j++) {
-                if (j > 0) str.append(", ");
-                str.append(index.getColumns().get(j).getColumn().getName());
+            if (index != null) {
+                str.append(" for ").append(index.getIndexName()).append("(");
+                for (int j = 0; j < columnCount; j++) {
+                    if (j > 0) str.append(", ");
+                    str.append(index.getColumns().get(j).getColumn().getName());
+                }
+                str.append("):\n");
             }
-            str.append("):\n");
             str.append(entries);
             return str.toString();
         }
@@ -181,13 +176,18 @@ public class IndexStatistics
 
     @Override
     public String toString() {
+        return toString(null);
+    }
+
+    public String toString(Index index) {
         StringBuilder str = new StringBuilder(super.toString());
-        str.append(" for ").append(index);
+        if (index != null)
+            str.append(" for ").append(index);
         for (int i = 0; i < histograms.length; i++) {
             Histogram h = histograms[i];
             if (h == null) continue;
             str.append("\n");
-            str.append(h);
+            str.append(h.toString(index));
         }
         return str.toString();
     }
