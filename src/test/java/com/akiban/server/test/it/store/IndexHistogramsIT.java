@@ -365,7 +365,6 @@ public final class IndexHistogramsIT extends ITBase {
         IndexStatistics stats = statsService.getIndexStatistics(session(), index);
         IndexStatistics.Histogram histogram = stats.getHistogram(expectedColumns);
 
-        assertEquals("histogram index", index, histogram.getIndex());
         assertEquals("histogram column count", expectedColumns, histogram.getColumnCount());
         List<IndexStatistics.HistogramEntry> actualEntries = histogram.getEntries();
         List<HistogramEntryDescription> expectedList = Arrays.asList(entries);
