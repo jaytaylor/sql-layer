@@ -1,0 +1,4 @@
+SELECT * FROM a RIGHT JOIN b USING(col1)
+    a.a_col2
+    a.a_col1
+    b.b_col1

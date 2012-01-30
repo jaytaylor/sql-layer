@@ -1,2 +1,2 @@
-CREATE TABLE a (a_col1 INT KEY, a_col2 INT) engine=akibandb;
-CREATE TABLE b (b_col1 INT KEY) engine=akibandb;
+CREATE TABLE a (col1 INT KEY, col2 INT) engine=akibandb;
+CREATE TABLE b (col1 INT KEY, col2 INT) engine=akibandb;

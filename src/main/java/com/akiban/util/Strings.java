@@ -241,6 +241,14 @@ public abstract class Strings {
         }
         return sb.toString();
     }
+    
+    public static String stripl(String input, String suffix) {
+        if (input == null || suffix == null)
+            return input;
+        return input.endsWith(suffix)
+                ? input.substring(0, input.length() - suffix.length())
+                : input;
+    }
 
     private static final Logger LOG = LoggerFactory.getLogger(Strings.class);
 

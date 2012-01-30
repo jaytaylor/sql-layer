@@ -522,8 +522,10 @@ public class ASTStatementLoader extends BaseRule
                 throws StandardException {
             ExpressionNode left = toExpression(binop.getLeftOperand());
             ExpressionNode right = toExpression(binop.getRightOperand());
-            conditions.add(new ComparisonCondition(op, left, right,
-                                                   binop.getType(), binop));
+            ComparisonCondition comparison = new ComparisonCondition(op, left, right,
+                    binop.getType(), binop);
+            addColumnEquivalences(comparison);
+            conditions.add(comparison);
         }
 
         protected void addBetweenCondition(List<ConditionExpression> conditions,
@@ -885,15 +887,7 @@ public class ASTStatementLoader extends BaseRule
             case 1:
                 ConditionExpression conditionExpression =  conditions.get(0);
                 if (conditionExpression instanceof ComparisonCondition) {
-                    ComparisonCondition comparison = (ComparisonCondition) conditionExpression;
-                    if ( comparison.getOperation().equals(Comparison.EQ)
-                            && (comparison.getLeft() instanceof ColumnExpression)
-                            && (comparison.getRight() instanceof ColumnExpression)
-                    ) {
-                        ColumnExpression left = (ColumnExpression) comparison.getLeft();
-                        ColumnExpression right = (ColumnExpression) comparison.getRight();
-                        columnEquivalences.markEquivalent(left, right);
-                    }
+                    addColumnEquivalences((ComparisonCondition) conditionExpression);
 
                 }
                 return conditionExpression;
@@ -901,6 +895,17 @@ public class ASTStatementLoader extends BaseRule
                 // CASE WHEN x BETWEEN a AND b means multiple conditions from single one in AST.
                 return new LogicalFunctionCondition("and", conditions,
                                                     condition.getType(), condition);
+            }
+        }
+
+        private void addColumnEquivalences(ComparisonCondition comparison) {
+            if ( comparison.getOperation().equals(Comparison.EQ)
+                    && (comparison.getLeft() instanceof ColumnExpression)
+                    && (comparison.getRight() instanceof ColumnExpression)
+            ) {
+                ColumnExpression left = (ColumnExpression) comparison.getLeft();
+                ColumnExpression right = (ColumnExpression) comparison.getRight();
+                columnEquivalences.markEquivalent(left, right);
             }
         }
 
