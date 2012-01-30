@@ -72,7 +72,7 @@ public final class ColumnEquivalenceFinder extends BaseRule {
                     ColumnExpression left = (ColumnExpression) comparision.getLeft();
                     ColumnExpression right = (ColumnExpression) comparision.getRight();
                     if (!(left.getSQLtype().isNullable() || right.getSQLtype().isNullable())) {
-                        left.equivalentTo(right); // also implies right.equivalentTo(left)
+                        left.markEquivalentTo(right); // also implies right.equivalentTo(left)
                     }
                     return false; // already looked at this branch
                 }

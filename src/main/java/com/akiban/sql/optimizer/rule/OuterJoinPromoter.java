@@ -20,6 +20,7 @@ import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
+import com.akiban.sql.types.DataTypeDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,6 +94,7 @@ public class OuterJoinPromoter extends BaseRule
 
     static class RequiredSources implements ExpressionVisitor {
         private Set<ColumnSource> required = new HashSet<ColumnSource>();
+        private Set<ColumnExpression> seenColumns = new HashSet<ColumnExpression>();
         private Deque<ExpressionNode> stack = new ArrayDeque<ExpressionNode>();
         
         public RequiredSources() {
@@ -100,6 +102,10 @@ public class OuterJoinPromoter extends BaseRule
 
         public Set<ColumnSource> getRequired() {
             return required;
+        }
+
+        public Set<ColumnExpression> getColumns() {
+            return seenColumns;
         }
 
         public void intersect(RequiredSources other) {
@@ -121,6 +127,7 @@ public class OuterJoinPromoter extends BaseRule
         @Override
         public boolean visit(ExpressionNode n) {
             if (n instanceof ColumnExpression) {
+                seenColumns.add((ColumnExpression)n);
                 if (!insideDangerousFunction())
                     required.add(((ColumnExpression)n).getTable());
             }
@@ -182,6 +189,16 @@ public class OuterJoinPromoter extends BaseRule
         Set<ColumnSource> sources = required.getRequired();
         if (sources.isEmpty()) return;
         promoteOuterJoins((Joinable)select.getInput(), sources);
+        setNotNullable(required.getColumns(), sources);
+    }
+
+    private void setNotNullable(Set<ColumnExpression> columns, Set<ColumnSource> requiredSources) {
+        for (ColumnExpression column : columns) {
+            if (requiredSources.contains(column.getTable()) && column.getSQLtype().isNullable()) {
+                DataTypeDescriptor notNullable = column.getSQLtype().getNullabilityType(false);
+                column.setSQLtype(notNullable);
+            }
+        }
     }
 
     protected boolean promoteOuterJoins(Joinable joinable,

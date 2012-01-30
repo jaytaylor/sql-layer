@@ -129,5 +129,4 @@ public class ColumnExpression extends BaseExpression
         super.deepCopy(map);
         table = (ColumnSource)table.duplicate(map);
     }
-
 }
