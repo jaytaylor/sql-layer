@@ -1,5 +1,8 @@
 # Test MySQL zero date/time handling option.
 ---
+- Properties: all
+- suppressed: true
+---
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field, date_field, datetime_field) VALUES (1, '2000-01-01', '2000-01-01 01:05:06'),(-1, '0000-00-00', '0000-00-00 00:00:00')
@@ -21,4 +24,6 @@
 ---
 - Statement: SELECT date_field, datetime_field FROM all_types
 - output: [['2000-01-01' ,!re '2000-01-01 01:05:06([.]0)?'],['0001-01-01', !re '0001-01-01 00:00:00([.]0)?']]
+---
+#- Statement: SET zeroDateTimeBehavior TO ''
 ...
