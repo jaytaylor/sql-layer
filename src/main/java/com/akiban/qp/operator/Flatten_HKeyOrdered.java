@@ -24,6 +24,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
 import java.util.*;
@@ -171,9 +172,9 @@ class Flatten_HKeyOrdered extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter)
+    protected Cursor cursor(QueryContext context)
     {
-        return new Execution(adapter, inputOperator.cursor(adapter));
+        return new Execution(context, inputOperator.cursor(context));
     }
 
     @Override
@@ -237,7 +238,7 @@ class Flatten_HKeyOrdered extends Operator
     // Class state
 
     private static final int MAX_PENDING = 2;
-    private static final Tap.PointTap FLATTEN_COUNT = Tap.createCount("operator: flatten", true);
+    private static final PointTap FLATTEN_COUNT = Tap.createCount("operator: flatten", true);
 
     // Object state
 
@@ -261,10 +262,10 @@ class Flatten_HKeyOrdered extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
             FLATTEN_COUNT.hit();
-            input.open(bindings);
+            input.open();
         }
 
         @Override
@@ -326,11 +327,11 @@ class Flatten_HKeyOrdered extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, Cursor input)
+        Execution(QueryContext context, Cursor input)
         {
-            super(adapter);
+            super(context);
             this.input = input;
-            this.leftJoinHKey = adapter.newHKey(childType);
+            this.leftJoinHKey = adapter().newHKey(childType);
         }
 
         // For use by this class
@@ -353,7 +354,7 @@ class Flatten_HKeyOrdered extends Operator
                                       this, parent.hKey()));
                 }
                 // Copy leftJoinHKey to avoid aliasing problems. (leftJoinHKey changes on each parent row.)
-                HKey hKey = adapter.newHKey(childType);
+                HKey hKey = adapter().newHKey(childType);
                 leftJoinHKey.copyTo(hKey);
                 pending.add(new FlattenedRow(flattenType, parent, null, hKey));
                 // Prevent generation of another left join row for the same parent

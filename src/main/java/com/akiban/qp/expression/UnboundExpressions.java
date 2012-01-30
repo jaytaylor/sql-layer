@@ -15,9 +15,8 @@
 
 package com.akiban.qp.expression;
 
-import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.operator.QueryContext;
 
 public interface UnboundExpressions {
-    BoundExpressions get(Bindings bindings, StoreAdapter adapter);
+    BoundExpressions get(QueryContext context);
 }

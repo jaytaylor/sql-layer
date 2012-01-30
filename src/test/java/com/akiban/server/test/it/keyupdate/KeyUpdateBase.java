@@ -39,20 +39,7 @@ import java.util.NoSuchElementException;
 import java.util.TreeMap;
 import java.util.concurrent.Callable;
 
-import static com.akiban.server.test.it.keyupdate.Schema.c_cid;
-import static com.akiban.server.test.it.keyupdate.Schema.c_cx;
-import static com.akiban.server.test.it.keyupdate.Schema.customerRowDef;
-import static com.akiban.server.test.it.keyupdate.Schema.groupRowDef;
-import static com.akiban.server.test.it.keyupdate.Schema.i_iid;
-import static com.akiban.server.test.it.keyupdate.Schema.i_ix;
-import static com.akiban.server.test.it.keyupdate.Schema.i_oid;
-import static com.akiban.server.test.it.keyupdate.Schema.itemRowDef;
-import static com.akiban.server.test.it.keyupdate.Schema.o_cid;
-import static com.akiban.server.test.it.keyupdate.Schema.o_oid;
-import static com.akiban.server.test.it.keyupdate.Schema.o_ox;
-import static com.akiban.server.test.it.keyupdate.Schema.o_priority;
-import static com.akiban.server.test.it.keyupdate.Schema.o_when;
-import static com.akiban.server.test.it.keyupdate.Schema.orderRowDef;
+import static com.akiban.server.test.it.keyupdate.Schema.*;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
@@ -70,18 +57,21 @@ public abstract class KeyUpdateBase extends ITBase {
     }
 
     private void confirmColumns() {
-        confirmColumn(customerRowDef, c_cid, "cid");
-        confirmColumn(customerRowDef, c_cx, "cx");
+        confirmColumn(vendorRD, v_vid, "vid");
+        confirmColumn(vendorRD, v_vx, "vx");
 
-        confirmColumn(orderRowDef, o_oid, "oid");
-        confirmColumn(orderRowDef, o_cid, "cid");
-        confirmColumn(orderRowDef, o_ox, "ox");
-        confirmColumn(orderRowDef, o_priority, "priority");
-        confirmColumn(orderRowDef, o_when, "when");
+        confirmColumn(customerRD, c_cid, "cid");
+        confirmColumn(customerRD, c_cx, "cx");
 
-        confirmColumn(itemRowDef, i_iid, "iid");
-        confirmColumn(itemRowDef, i_oid, "oid");
-        confirmColumn(itemRowDef, i_ix, "ix");
+        confirmColumn(orderRD, o_oid, "oid");
+        confirmColumn(orderRD, o_cid, "cid");
+        confirmColumn(orderRD, o_ox, "ox");
+        confirmColumn(orderRD, o_priority, "priority");
+        confirmColumn(orderRD, o_when, "when");
+
+        confirmColumn(itemRD, i_iid, "iid");
+        confirmColumn(itemRD, i_oid, "oid");
+        confirmColumn(itemRD, i_ix, "ix");
     }
 
     private void confirmColumn(RowDef rowDef, Integer expectedId, String columnName) {
@@ -106,10 +96,11 @@ public abstract class KeyUpdateBase extends ITBase {
     @SuppressWarnings("unused") // JUnit will invoke this
     public void testOrderPriorityUpdate() throws Exception
     {
-        // Set customer.priority = 80 for order 33
-        TestRow oldOrderRow = testStore.find(new HKey(customerRowDef, 3L, orderRowDef, 33L));
+        // Set customer.priority = 80 for order 133
+        TestRow customerRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L));
+        TestRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
         TestRow newOrderRow = copyRow(oldOrderRow);
-        updateRow(newOrderRow, o_priority, 80L, null);
+        updateRow(newOrderRow, o_priority, 80L, customerRow);
         dbUpdate(oldOrderRow, newOrderRow);
         checkDB();
     }
@@ -118,10 +109,11 @@ public abstract class KeyUpdateBase extends ITBase {
     @SuppressWarnings("unused") // JUnit will invoke this
     public void testOrderPriorityUpdateCreatingDuplicate() throws Exception
     {
-        // Set customer.priority = 81 for order 33. Duplicates are fine.
-        TestRow oldOrderRow = testStore.find(new HKey(customerRowDef, 3L, orderRowDef, 33L));
+        // Set customer.priority = 81 for order 133. Duplicates are fine.
+        TestRow customerRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L));
+        TestRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
         TestRow newOrderRow = copyRow(oldOrderRow);
-        updateRow(newOrderRow, o_priority, 81L, null);
+        updateRow(newOrderRow, o_priority, 81L, customerRow);
         dbUpdate(oldOrderRow, newOrderRow);
         checkDB();
     }
@@ -131,10 +123,11 @@ public abstract class KeyUpdateBase extends ITBase {
     @SuppressWarnings("unused") // JUnit will invoke this
     public void testOrderWhenUpdate() throws Exception
     {
-        // Set customer.when = 9000 for order 33
-        TestRow oldOrderRow = testStore.find(new HKey(customerRowDef, 3L, orderRowDef, 33L));
+        // Set customer.when = 9000 for order 133
+        TestRow customerRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L));
+        TestRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
         TestRow newOrderRow = copyRow(oldOrderRow);
-        updateRow(newOrderRow, o_when, 9000L, null);
+        updateRow(newOrderRow, o_when, 9000L, customerRow);
         dbUpdate(oldOrderRow, newOrderRow);
         checkDB();
     }
@@ -143,8 +136,8 @@ public abstract class KeyUpdateBase extends ITBase {
     @SuppressWarnings("unused") // JUnit will invoke this
     public void testOrderWhenUpdateCreatingDuplicate() throws Exception
     {
-        // Set customer.when = 9000 for order 33
-        TestRow oldOrderRow = testStore.find(new HKey(customerRowDef, 3L, orderRowDef, 33L));
+        // Set customer.when = 9001 for order 133
+        TestRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
         TestRow newOrderRow = copyRow(oldOrderRow);
         Long oldWhen = (Long) newOrderRow.put(o_when, 9001L);
         assertEquals("old order.when", Long.valueOf(9009L), oldWhen);
@@ -152,7 +145,7 @@ public abstract class KeyUpdateBase extends ITBase {
             dbUpdate(oldOrderRow, newOrderRow);
 
             // Make sure such a row actually exists!
-            TestRow shouldHaveConflicted = testStore.find(new HKey(customerRowDef, 1L, orderRowDef, 11L));
+            TestRow shouldHaveConflicted = testStore.find(new HKey(vendorRD, 1L, customerRD, 11L, orderRD, 111L));
             assertNotNull("shouldHaveConflicted not found", shouldHaveConflicted);
             assertEquals(9001L, shouldHaveConflicted.getFields().get(o_when));
 
@@ -160,7 +153,7 @@ public abstract class KeyUpdateBase extends ITBase {
         } catch (InvalidOperationException e) {
             assertEquals(e.getCode(), ErrorCode.DUPLICATE_KEY);
         }
-        TestRow confirmOrderRow = testStore.find(new HKey(customerRowDef, 3L, orderRowDef, 33L));
+        TestRow confirmOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
         assertSameFields(oldOrderRow, confirmOrderRow);
         checkDB();
     }
@@ -170,7 +163,7 @@ public abstract class KeyUpdateBase extends ITBase {
     public void testOrderUpdateIsNoOp() throws Exception
     {
         // Update a row to its same values
-        TestRow oldOrderRow = testStore.find(new HKey(customerRowDef, 3L, orderRowDef, 33L));
+        TestRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
         TestRow newOrderRow = copyRow(oldOrderRow);
         dbUpdate(oldOrderRow, newOrderRow);
         checkDB();
@@ -238,38 +231,43 @@ public abstract class KeyUpdateBase extends ITBase {
                 // Records
                 RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
                 RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
-                testStore.traverse(session(), groupRowDef, testVisitor, realVisitor);
+                testStore.traverse(session(), groupRD, testVisitor, realVisitor);
                 assertEquals(testVisitor.records(), realVisitor.records());
                 assertEquals("records count", countAllRows(), testVisitor.records().size());
                 // Check indexes
                 CollectingIndexKeyVisitor indexVisitor;
                 if (checkChildPKs()) {
+                    // Vendor PK index
+                    indexVisitor = new CollectingIndexKeyVisitor();
+                    testStore.traverse(session(), vendorRD.getPKIndex(), indexVisitor);
+                    assertEquals(vendorPKIndex(testVisitor.records()), indexVisitor.records());
+                    assertEquals("vendor PKs", countRows(vendorRD), indexVisitor.records().size());
                     // Customer PK index
                     indexVisitor = new CollectingIndexKeyVisitor();
-                    testStore.traverse(session(), customerRowDef.getPKIndex(), indexVisitor);
+                    testStore.traverse(session(), customerRD.getPKIndex(), indexVisitor);
                     assertEquals(customerPKIndex(testVisitor.records()), indexVisitor.records());
-                    assertEquals("customer PKs", countRows(customerRowDef), indexVisitor.records().size());
+                    assertEquals("customer PKs", countRows(customerRD), indexVisitor.records().size());
                     // Order PK index
                     indexVisitor = new CollectingIndexKeyVisitor();
-                    testStore.traverse(session(), orderRowDef.getPKIndex(), indexVisitor);
+                    testStore.traverse(session(), orderRD.getPKIndex(), indexVisitor);
                     assertEquals(orderPKIndex(testVisitor.records()), indexVisitor.records());
-                    assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
+                    assertEquals("order PKs", countRows(orderRD), indexVisitor.records().size());
                     // Item PK index
                     indexVisitor = new CollectingIndexKeyVisitor();
-                    testStore.traverse(session(), itemRowDef.getPKIndex(), indexVisitor);
+                    testStore.traverse(session(), itemRD.getPKIndex(), indexVisitor);
                     assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
-                    assertEquals("order PKs", countRows(itemRowDef), indexVisitor.records().size());
+                    assertEquals("order PKs", countRows(itemRD), indexVisitor.records().size());
                 }
                 // Order priority index
                 indexVisitor = new CollectingIndexKeyVisitor();
-                testStore.traverse(session(), index(orderRowDef, "priority"), indexVisitor);
+                testStore.traverse(session(), index(orderRD, "priority"), indexVisitor);
                 assertEquals(orderPriorityIndex(testVisitor.records()), indexVisitor.records());
-                assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
+                assertEquals("order PKs", countRows(orderRD), indexVisitor.records().size());
                 // Order timestamp index
                 indexVisitor = new CollectingIndexKeyVisitor();
-                testStore.traverse(session(), index(orderRowDef, "when"), indexVisitor);
+                testStore.traverse(session(), index(orderRD, "when"), indexVisitor);
                 assertEquals(orderWhenIndex(testVisitor.records()), indexVisitor.records());
-                assertEquals("order PKs", countRows(orderRowDef), indexVisitor.records().size());
+                assertEquals("order PKs", countRows(orderRD), indexVisitor.records().size());
                 return null;
             }
         });
@@ -294,17 +292,19 @@ public abstract class KeyUpdateBase extends ITBase {
             public Void call() throws Exception {
                 RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
                 RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
-                testStore.traverse(session(), groupRowDef, testVisitor, realVisitor);
+                testStore.traverse(session(), groupRD, testVisitor, realVisitor);
                 Iterator<TreeRecord> expectedIterator = testVisitor.records().iterator();
                 Iterator<TreeRecord> actualIterator = realVisitor.records().iterator();
                 Map<Integer, Integer> expectedCounts = new HashMap<Integer, Integer>();
-                expectedCounts.put(customerRowDef.getRowDefId(), 0);
-                expectedCounts.put(orderRowDef.getRowDefId(), 0);
-                expectedCounts.put(itemRowDef.getRowDefId(), 0);
+                expectedCounts.put(vendorRD.getRowDefId(), 0);
+                expectedCounts.put(customerRD.getRowDefId(), 0);
+                expectedCounts.put(orderRD.getRowDefId(), 0);
+                expectedCounts.put(itemRD.getRowDefId(), 0);
                 Map<Integer, Integer> actualCounts = new HashMap<Integer, Integer>();
-                actualCounts.put(customerRowDef.getRowDefId(), 0);
-                actualCounts.put(orderRowDef.getRowDefId(), 0);
-                actualCounts.put(itemRowDef.getRowDefId(), 0);
+                actualCounts.put(customerRD.getRowDefId(), 0);
+                actualCounts.put(vendorRD.getRowDefId(), 0);
+                actualCounts.put(orderRD.getRowDefId(), 0);
+                actualCounts.put(itemRD.getRowDefId(), 0);
                 while (expectedIterator.hasNext() && actualIterator.hasNext()) {
                     TreeRecord expected = expectedIterator.next();
                     TreeRecord actual = actualIterator.next();
@@ -314,12 +314,14 @@ public abstract class KeyUpdateBase extends ITBase {
                     expectedCounts.put(expected.row().getTableId(), expectedCounts.get(expected.row().getTableId()) + 1);
                     actualCounts.put(actual.row().getTableId(), actualCounts.get(actual.row().getTableId()) + 1);
                 }
-                assertEquals(3, expectedCounts.get(customerRowDef.getRowDefId()).intValue());
-                assertEquals(9, expectedCounts.get(orderRowDef.getRowDefId()).intValue());
-                assertEquals(27, expectedCounts.get(itemRowDef.getRowDefId()).intValue());
-                assertEquals(3, actualCounts.get(customerRowDef.getRowDefId()).intValue());
-                assertEquals(9, actualCounts.get(orderRowDef.getRowDefId()).intValue());
-                assertEquals(27, actualCounts.get(itemRowDef.getRowDefId()).intValue());
+                assertEquals(2, expectedCounts.get(vendorRD.getRowDefId()).intValue());
+                assertEquals(6, expectedCounts.get(customerRD.getRowDefId()).intValue());
+                assertEquals(18, expectedCounts.get(orderRD.getRowDefId()).intValue());
+                assertEquals(54, expectedCounts.get(itemRD.getRowDefId()).intValue());
+                assertEquals(2, actualCounts.get(vendorRD.getRowDefId()).intValue());
+                assertEquals(6, actualCounts.get(customerRD.getRowDefId()).intValue());
+                assertEquals(18, actualCounts.get(orderRD.getRowDefId()).intValue());
+                assertEquals(54, actualCounts.get(itemRD.getRowDefId()).intValue());
                 assertTrue(!expectedIterator.hasNext() && !actualIterator.hasNext());
                 return null;
             }
@@ -329,12 +331,14 @@ public abstract class KeyUpdateBase extends ITBase {
     protected final void checkInitialState(NewRow row)
     {
         RowDef rowDef = row.getRowDef();
-        if (rowDef == customerRowDef) {
+        if (rowDef == vendorRD) {
+            assertEquals(row.get(v_vx), ((Long)row.get(v_vid)) * 100);
+        } else if (rowDef == customerRD) {
             assertEquals(row.get(c_cx), ((Long)row.get(c_cid)) * 100);
-        } else if (rowDef == orderRowDef) {
+        } else if (rowDef == orderRD) {
             assertEquals(row.get(o_cid), ((Long)row.get(o_oid)) / 10);
             assertEquals(row.get(o_ox), ((Long)row.get(o_oid)) * 100);
-        } else if (rowDef == itemRowDef) {
+        } else if (rowDef == itemRD) {
             assertEquals(row.get(i_oid), ((Long)row.get(i_iid)) / 10);
             assertEquals(row.get(i_ix), ((Long)row.get(i_iid)) * 100);
         } else {
@@ -405,7 +409,8 @@ public abstract class KeyUpdateBase extends ITBase {
     {
         row.put(column, newValue);
         row.parent(newParent);
-        row.hKey(hKey(row, newParent));
+        TestRow newGrandparent = newParent == null ? null : newParent.parent();
+        row.hKey(hKey(row, newParent, newGrandparent));
     }
 
     protected final TestRow row(RowDef table, Object... values)
@@ -457,13 +462,19 @@ public abstract class KeyUpdateBase extends ITBase {
         }
     }
 
+    protected HKey hKey(TestRow row, TestRow newParent)
+    {
+        return hKey(row, newParent, null);
+    }
+
     private static final String HKEY_PROPAGATION_TAP_PATTERN = ".*propagate_hkey_change.*";
 
     abstract protected void createSchema() throws Exception;
     abstract protected void populateTables() throws Exception;
     abstract protected boolean checkChildPKs();
     abstract protected HKey hKey(TestRow row);
-    abstract protected HKey hKey(TestRow row, TestRow newParent);
+    abstract protected HKey hKey(TestRow row, TestRow newParent, TestRow newGrandparent);
+    abstract protected List<List<Object>> vendorPKIndex(List<TreeRecord> records);
     abstract protected List<List<Object>> customerPKIndex(List<TreeRecord> records);
     abstract protected List<List<Object>> orderPKIndex(List<TreeRecord> records);
     abstract protected List<List<Object>> itemPKIndex(List<TreeRecord> records);

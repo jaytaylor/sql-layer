@@ -15,8 +15,6 @@
 
 package com.akiban.server.test.it;
 
-import com.akiban.qp.operator.ArrayBindings;
-import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -32,8 +30,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public abstract class ITBase extends ApiTestBase {
-    protected static final Bindings NO_BINDINGS = new ArrayBindings(0);
-
     public ITBase() {
         super("IT");
     }
@@ -44,14 +40,9 @@ public abstract class ITBase extends ApiTestBase {
 
     protected void compareRows(RowBase[] expected, Cursor cursor)
     {
-        compareRows(expected, cursor, NO_BINDINGS);
-    }
-
-    protected void compareRows(RowBase[] expected, Cursor cursor, Bindings bindings)
-    {
         List<ShareHolder<Row>> actualRows = new ArrayList<ShareHolder<Row>>(); // So that result is viewable in debugger
         try {
-            cursor.open(bindings);
+            cursor.open();
             RowBase actualRow;
             while ((actualRow = cursor.next()) != null) {
                 int count = actualRows.size();

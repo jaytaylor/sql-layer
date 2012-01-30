@@ -20,21 +20,28 @@ import com.akiban.server.rowdata.RowDef;
 public class Schema
 {
     // For all KeyUpdate*IT
+    static Integer vendorId;
+    static RowDef vendorRD;
     static Integer customerId;
-    static RowDef customerRowDef;
+    static RowDef customerRD;
     static Integer orderId;
-    static RowDef orderRowDef;
+    static RowDef orderRD;
     static Integer itemId;
-    static RowDef itemRowDef;
-    static RowDef groupRowDef;
+    static RowDef itemRD;
+    static RowDef groupRD;
     // For KeyUpdateIT and KeyUpdateCascadingKeysIT
+    static Integer v_vid;
+    static Integer v_vx;
     static Integer c_cid;
+    static Integer c_vid;
     static Integer c_cx;
     static Integer o_oid;
     static Integer o_cid;
+    static Integer o_vid;
     static Integer o_ox;
     static Integer o_priority;
     static Integer o_when;
+    static Integer i_vid;
     static Integer i_cid;
     static Integer i_oid;
     static Integer i_iid;

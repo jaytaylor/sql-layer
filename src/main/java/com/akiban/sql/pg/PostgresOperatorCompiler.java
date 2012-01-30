@@ -33,8 +33,6 @@ import com.akiban.server.error.SQLParseException;
 import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.service.EventTypes;
 
-import com.akiban.server.expression.EnvironmentExpressionSetting;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -130,13 +128,11 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
             }
         }
 
-        List<EnvironmentExpressionSetting> environmentSettings = result.getEnvironmentSettings();        
-
         if (result.isUpdate()) {
             PhysicalUpdate update = (PhysicalUpdate)result;
             return new PostgresModifyOperatorStatement(stmt.statementToString(),
                                                        update.getUpdatePlannable(),
-                                                       parameterTypes, environmentSettings);
+                                                       parameterTypes);
         }
         else {
             PhysicalSelect select = (PhysicalSelect)result;
@@ -151,7 +147,7 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
             return new PostgresOperatorStatement(select.getResultOperator(),
                                                  select.getResultRowType(),
                                                  columnNames, columnTypes,
-                                                 parameterTypes, environmentSettings);
+                                                 parameterTypes);
         }
     }
 

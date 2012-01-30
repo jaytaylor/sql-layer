@@ -20,7 +20,6 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.test.it.ITBase;
-import com.persistit.Transaction;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -51,7 +50,7 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
     public void testItemFKUpdate() throws Exception
     {
         // Set item.oid1 = 0, item.oid2 = 0 for item 222
-        TestRow oldRow = testStore.find(new HKey(customerRowDef, 2L, 2000L, orderRowDef, 22L, 22000L, itemRowDef, 222L, 222000L));
+        TestRow oldRow = testStore.find(new HKey(customerRD, 2L, 2000L, orderRD, 22L, 22000L, itemRD, 222L, 222000L));
         TestRow newRow = copyRow(oldRow);
         updateRow(newRow, i_oid1, 0L, null);
         updateRow(newRow, i_oid2, 0L, null);
@@ -67,9 +66,9 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
     public void testItemPKUpdate() throws Exception
     {
         // Set item.iid = 0 for item 222
-        TestRow oldRow = testStore.find(new HKey(customerRowDef, 2L, 2000L, orderRowDef, 22L, 22000L, itemRowDef, 222L, 222000L));
+        TestRow oldRow = testStore.find(new HKey(customerRD, 2L, 2000L, orderRD, 22L, 22000L, itemRD, 222L, 222000L));
         TestRow newRow = copyRow(oldRow);
-        TestRow parent = testStore.find(new HKey(customerRowDef, 2L, 2000L, orderRowDef, 22L, 22000L));
+        TestRow parent = testStore.find(new HKey(customerRD, 2L, 2000L, orderRD, 22L, 22000L));
         assertNotNull(parent);
         updateRow(newRow, i_iid1, 0L, parent);
         updateRow(newRow, i_iid2, 0L, parent);
@@ -85,9 +84,9 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
     public void testItemPKUpdateCreatingDuplicate() throws Exception
     {
         // Set item.iid = 223 for item 222
-        TestRow oldRow = testStore.find(new HKey(customerRowDef, 2L, 2000L, orderRowDef, 22L, 22000L, itemRowDef, 222L, 222000L));
+        TestRow oldRow = testStore.find(new HKey(customerRD, 2L, 2000L, orderRD, 22L, 22000L, itemRD, 222L, 222000L));
         TestRow newRow = copyRow(oldRow);
-        TestRow parent = testStore.find(new HKey(customerRowDef, 2L, 2000L, orderRowDef, 22L, 22000L));
+        TestRow parent = testStore.find(new HKey(customerRD, 2L, 2000L, orderRD, 22L, 22000L));
         assertNotNull(parent);
         updateRow(newRow, i_iid1, 223L, parent);
         updateRow(newRow, i_iid2, 223000L, parent);
@@ -105,13 +104,13 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
     public void testOrderFKUpdate() throws Exception
     {
         // Set order.cid = 0 for order 22
-        TestRow oldOrderRow = testStore.find(new HKey(customerRowDef, 2L, 2000L, orderRowDef, 22L, 22000L));
+        TestRow oldOrderRow = testStore.find(new HKey(customerRD, 2L, 2000L, orderRD, 22L, 22000L));
         TestRow newOrderRow = copyRow(oldOrderRow);
         updateRow(newOrderRow, o_cid1, 0L, null);
         updateRow(newOrderRow, o_cid2, 0L, null);
         // Propagate change to order 22's items
         for (long iid = 221; iid <= 223; iid++) {
-            TestRow oldItemRow = testStore.find(new HKey(customerRowDef, 2L, 2000L, orderRowDef, 22L, 22000L, itemRowDef, iid, iid * 1000));
+            TestRow oldItemRow = testStore.find(new HKey(customerRD, 2L, 2000L, orderRD, 22L, 22000L, itemRD, iid, iid * 1000));
             TestRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, newOrderRow));
             testStore.deleteTestRow(oldItemRow);
@@ -121,7 +120,7 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
         checkDB();
         // Revert change
         for (long iid = 221; iid <= 223; iid++) {
-            TestRow oldItemRow = testStore.find(new HKey(customerRowDef, 0L, 0L, orderRowDef, 22L, 22000L, itemRowDef, iid, iid * 1000));
+            TestRow oldItemRow = testStore.find(new HKey(customerRD, 0L, 0L, orderRD, 22L, 22000L, itemRD, iid, iid * 1000));
             TestRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, oldOrderRow));
             testStore.deleteTestRow(oldItemRow);
@@ -136,13 +135,13 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
     public void testOrderPKUpdate() throws Exception
     {
         // Set order.oid = 0 for order 22
-        TestRow oldOrderRow = testStore.find(new HKey(customerRowDef, 2L, 2000L, orderRowDef, 22L, 22000L));
+        TestRow oldOrderRow = testStore.find(new HKey(customerRD, 2L, 2000L, orderRD, 22L, 22000L));
         TestRow newOrderRow = copyRow(oldOrderRow);
         updateRow(newOrderRow, o_oid1, 0L, null);
         updateRow(newOrderRow, o_oid2, 0L, null);
         // Propagate change to order 22's items
         for (long iid = 221; iid <= 223; iid++) {
-            TestRow oldItemRow = testStore.find(new HKey(customerRowDef, 2L, 2000L, orderRowDef, 22L, 22000L, itemRowDef, iid, iid * 1000));
+            TestRow oldItemRow = testStore.find(new HKey(customerRD, 2L, 2000L, orderRD, 22L, 22000L, itemRD, iid, iid * 1000));
             TestRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, null));
             testStore.deleteTestRow(oldItemRow);
@@ -152,7 +151,7 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
         checkDB();
         // Revert change
         for (long iid = 221; iid <= 223; iid++) {
-            TestRow oldItemRow = testStore.find(new HKey(customerRowDef, null, null, orderRowDef, 22L, 22000L, itemRowDef, iid, iid * 1000));
+            TestRow oldItemRow = testStore.find(new HKey(customerRD, null, null, orderRD, 22L, 22000L, itemRD, iid, iid * 1000));
             TestRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, oldOrderRow));
             testStore.deleteTestRow(oldItemRow);
@@ -167,9 +166,9 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
     public void testOrderPKUpdateCreatingDuplicate() throws Exception
     {
         // Set order.oid = 21 for order 22
-        TestRow oldRow = testStore.find(new HKey(customerRowDef, 2L, 2000L, orderRowDef, 22L, 22000L));
+        TestRow oldRow = testStore.find(new HKey(customerRD, 2L, 2000L, orderRD, 22L, 22000L));
         TestRow newRow = copyRow(oldRow);
-        TestRow parent = testStore.find(new HKey(customerRowDef, 2L, 2000L));
+        TestRow parent = testStore.find(new HKey(customerRD, 2L, 2000L));
         assertNotNull(parent);
         updateRow(newRow, o_oid1, 21L, parent);
         updateRow(newRow, o_oid2, 21000L, parent);
@@ -186,7 +185,7 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
     public void testCustomerPKUpdate() throws Exception
     {
         // Set customer.cid = 0 for customer 2
-        TestRow oldCustomerRow = testStore.find(new HKey(customerRowDef, 2L, 2000L));
+        TestRow oldCustomerRow = testStore.find(new HKey(customerRD, 2L, 2000L));
         TestRow newCustomerRow = copyRow(oldCustomerRow);
         updateRow(newCustomerRow, c_cid1, 0L, null);
         updateRow(newCustomerRow, c_cid2, 0L, null);
@@ -202,7 +201,7 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
     public void testCustomerPKUpdateCreatingDuplicate() throws Exception
     {
         // Set customer.cid = 1 for customer 3
-        TestRow oldCustomerRow = testStore.find(new HKey(customerRowDef, 3L, 3000L));
+        TestRow oldCustomerRow = testStore.find(new HKey(customerRD, 3L, 3000L));
         TestRow newCustomerRow = copyRow(oldCustomerRow);
         updateRow(newCustomerRow, c_cid1, 1L, null);
         updateRow(newCustomerRow, c_cid2, 1000L, null);
@@ -218,7 +217,7 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
     @Test
     public void testItemDelete() throws Exception
     {
-        TestRow itemRow = testStore.find(new HKey(customerRowDef, 2L, 2000L, orderRowDef, 22L, 22000L, itemRowDef, 222L, 222000L));
+        TestRow itemRow = testStore.find(new HKey(customerRD, 2L, 2000L, orderRD, 22L, 22000L, itemRD, 222L, 222000L));
         dbDelete(itemRow);
         checkDB();
         // Revert change
@@ -230,10 +229,10 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
     @Test
     public void testOrderDelete() throws Exception
     {
-        TestRow orderRow = testStore.find(new HKey(customerRowDef, 2L, 2000L, orderRowDef, 22L, 22000L));
+        TestRow orderRow = testStore.find(new HKey(customerRD, 2L, 2000L, orderRD, 22L, 22000L));
         // Propagate change to order 22's items
         for (long iid = 221; iid <= 223; iid++) {
-            TestRow oldItemRow = testStore.find(new HKey(customerRowDef, 2L, 2000L, orderRowDef, 22L, 22000L, itemRowDef, iid, iid * 1000));
+            TestRow oldItemRow = testStore.find(new HKey(customerRD, 2L, 2000L, orderRD, 22L, 22000L, itemRD, iid, iid * 1000));
             TestRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, null));
             testStore.deleteTestRow(oldItemRow);
@@ -243,7 +242,7 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
         checkDB();
         // Revert change
         for (long iid = 221; iid <= 223; iid++) {
-            TestRow oldItemRow = testStore.find(new HKey(customerRowDef, null, null, orderRowDef, 22L, 22000L, itemRowDef, iid, iid * 1000));
+            TestRow oldItemRow = testStore.find(new HKey(customerRD, null, null, orderRD, 22L, 22000L, itemRD, iid, iid * 1000));
             TestRow newItemRow = copyRow(oldItemRow);
             newItemRow.hKey(hKey(newItemRow, orderRow));
             testStore.deleteTestRow(oldItemRow);
@@ -257,7 +256,7 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
     @Test
     public void testCustomerDelete() throws Exception
     {
-        TestRow customerRow = testStore.find(new HKey(customerRowDef, 2L, 2000L));
+        TestRow customerRow = testStore.find(new HKey(customerRD, 2L, 2000L));
         dbDelete(customerRow);
         checkDB();
         // Revert change
@@ -337,12 +336,12 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
         i_s4 = 6;
         i_oid2 = 7;
         i_s5 = 8;
-        orderRowDef = rowDefCache().getRowDef(orderId);
-        customerRowDef = rowDefCache().getRowDef(customerId);
-        itemRowDef = rowDefCache().getRowDef(itemId);
+        orderRD = rowDefCache().getRowDef(orderId);
+        customerRD = rowDefCache().getRowDef(customerId);
+        itemRD = rowDefCache().getRowDef(itemId);
         // group
-        int groupRowDefId = customerRowDef.getGroupRowDefId();
-        groupRowDef = store().getRowDefCache().getRowDef(groupRowDefId);
+        int groupRowDefId = customerRD.getGroupRowDefId();
+        groupRD = store().getRowDefCache().getRowDef(groupRowDefId);
     }
 
     private void updateRow(TestRow row, int column, Object newValue, TestRow newParent)
@@ -360,18 +359,18 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
                 // Records
                 RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
                 RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
-                testStore.traverse(session(), groupRowDef, testVisitor, realVisitor);
+                testStore.traverse(session(), groupRD, testVisitor, realVisitor);
                 assertEquals(testVisitor.records(), realVisitor.records());
                 // Check indexes
                 CollectingIndexKeyVisitor indexVisitor;
                 // Customer PK index - skip. This index is hkey equivalent, and we've already checked the full records.
                 // Order PK index
                 indexVisitor = new CollectingIndexKeyVisitor();
-                testStore.traverse(session(), orderRowDef.getPKIndex(), indexVisitor);
+                testStore.traverse(session(), orderRD.getPKIndex(), indexVisitor);
                 assertEquals(orderPKIndex(testVisitor.records()), indexVisitor.records());
                 // Item PK index
                 indexVisitor = new CollectingIndexKeyVisitor();
-                testStore.traverse(session(), itemRowDef.getPKIndex(), indexVisitor);
+                testStore.traverse(session(), itemRD.getPKIndex(), indexVisitor);
                 assertEquals(itemPKIndex(testVisitor.records()), indexVisitor.records());
                 return null;
             }
@@ -384,17 +383,17 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
             public Void call() throws Exception {
                 RecordCollectingTreeRecordVisistor testVisitor = new RecordCollectingTreeRecordVisistor();
                 RecordCollectingTreeRecordVisistor realVisitor = new RecordCollectingTreeRecordVisistor();
-                testStore.traverse(session(), groupRowDef, testVisitor, realVisitor);
+                testStore.traverse(session(), groupRD, testVisitor, realVisitor);
                 Iterator<TreeRecord> expectedIterator = testVisitor.records().iterator();
                 Iterator<TreeRecord> actualIterator = realVisitor.records().iterator();
                 Map<Integer, Integer> expectedCounts = new HashMap<Integer, Integer>();
-                expectedCounts.put(customerRowDef.getRowDefId(), 0);
-                expectedCounts.put(orderRowDef.getRowDefId(), 0);
-                expectedCounts.put(itemRowDef.getRowDefId(), 0);
+                expectedCounts.put(customerRD.getRowDefId(), 0);
+                expectedCounts.put(orderRD.getRowDefId(), 0);
+                expectedCounts.put(itemRD.getRowDefId(), 0);
                 Map<Integer, Integer> actualCounts = new HashMap<Integer, Integer>();
-                actualCounts.put(customerRowDef.getRowDefId(), 0);
-                actualCounts.put(orderRowDef.getRowDefId(), 0);
-                actualCounts.put(itemRowDef.getRowDefId(), 0);
+                actualCounts.put(customerRD.getRowDefId(), 0);
+                actualCounts.put(orderRD.getRowDefId(), 0);
+                actualCounts.put(itemRD.getRowDefId(), 0);
                 while (expectedIterator.hasNext() && actualIterator.hasNext()) {
                     TreeRecord expected = expectedIterator.next();
                     TreeRecord actual = actualIterator.next();
@@ -404,12 +403,12 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
                     expectedCounts.put(expected.row().getTableId(), expectedCounts.get(expected.row().getTableId()) + 1);
                     actualCounts.put(actual.row().getTableId(), actualCounts.get(actual.row().getTableId()) + 1);
                 }
-                assertEquals(3, expectedCounts.get(customerRowDef.getRowDefId()).intValue());
-                assertEquals(9, expectedCounts.get(orderRowDef.getRowDefId()).intValue());
-                assertEquals(27, expectedCounts.get(itemRowDef.getRowDefId()).intValue());
-                assertEquals(3, actualCounts.get(customerRowDef.getRowDefId()).intValue());
-                assertEquals(9, actualCounts.get(orderRowDef.getRowDefId()).intValue());
-                assertEquals(27, actualCounts.get(itemRowDef.getRowDefId()).intValue());
+                assertEquals(3, expectedCounts.get(customerRD.getRowDefId()).intValue());
+                assertEquals(9, expectedCounts.get(orderRD.getRowDefId()).intValue());
+                assertEquals(27, expectedCounts.get(itemRD.getRowDefId()).intValue());
+                assertEquals(3, actualCounts.get(customerRD.getRowDefId()).intValue());
+                assertEquals(9, actualCounts.get(orderRD.getRowDefId()).intValue());
+                assertEquals(27, actualCounts.get(itemRD.getRowDefId()).intValue());
                 assertTrue(!expectedIterator.hasNext() && !actualIterator.hasNext());
                 return null;
             }
@@ -419,7 +418,7 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
     private void checkInitialState(NewRow row)
     {
         RowDef rowDef = row.getRowDef();
-        if (rowDef == customerRowDef) {
+        if (rowDef == customerRD) {
             assertEquals(row.get(c_cid2), ((Long)row.get(c_cid1)) * 1000);
             assertEquals(F, row.get(c_s1));
             assertEquals(F, row.get(c_s2));
@@ -427,7 +426,7 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
             assertEquals(F, row.get(c_s4));
             assertEquals(F, row.get(c_s5));
             assertEquals(F, row.get(c_s6));
-        } else if (rowDef == orderRowDef) {
+        } else if (rowDef == orderRD) {
             assertEquals(row.get(o_oid2), (Long) row.get(o_oid1) * 1000);
             assertEquals(row.get(o_cid1), ((Long)row.get(o_oid1)) / 10);
             assertEquals(row.get(o_cid2), ((Long)row.get(o_cid1)) * 1000);
@@ -439,7 +438,7 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
             assertEquals(F, row.get(o_s6));
             assertEquals(F, row.get(o_s7));
             assertEquals(F, row.get(o_s8));
-        } else if (rowDef == itemRowDef) {
+        } else if (rowDef == itemRD) {
             assertEquals(row.get(i_iid2), (Long) row.get(i_iid1) * 1000);
             assertEquals(row.get(i_oid1), ((Long)row.get(i_iid1)) / 10);
             assertEquals(row.get(i_oid2), ((Long)row.get(i_oid1)) * 1000);
@@ -457,7 +456,7 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
     {
         List<List<Object>> indexEntries = new ArrayList<List<Object>>();
         for (TreeRecord record : records) {
-            if (record.row().getRowDef() == orderRowDef) {
+            if (record.row().getRowDef() == orderRD) {
                 List<Object> indexEntry =
                     Arrays.asList(record.row().get(o_oid1),
                                   record.row().get(o_oid2),
@@ -484,7 +483,7 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
     {
         List<List<Object>> indexEntries = new ArrayList<List<Object>>();
         for (TreeRecord record : records) {
-            if (record.row().getRowDef() == itemRowDef) {
+            if (record.row().getRowDef() == itemRD) {
                 List<Object> indexEntry =
                     Arrays.asList(record.row().get(i_iid1), // iid1
                                   record.row().get(i_iid2), // iid2
@@ -513,45 +512,45 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
     {
         TestRow order;
         // xid2 = xid1 * 1000
-        dbInsert(row(customerRowDef, F, F, 1, F, F, 1000, F, F));
-        dbInsert(order = row(orderRowDef, F, 11, F, F, 1, F, F, 1000, F, F, 11000, F));
-        dbInsert(row(order, itemRowDef, F, 111000, F, 111, F, 11, F, 11000, F));
-        dbInsert(row(order, itemRowDef, F, 112000, F, 112, F, 11, F, 11000, F));
-        dbInsert(row(order, itemRowDef, F, 113000, F, 113, F, 11, F, 11000, F));
-        dbInsert(order = row(orderRowDef, F, 12, F, F, 1, F, F, 1000, F, F, 12000, F));
-        dbInsert(row(order, itemRowDef, F, 121000, F, 121, F, 12, F, 12000, F));
-        dbInsert(row(order, itemRowDef, F, 122000, F, 122, F, 12, F, 12000, F));
-        dbInsert(row(order, itemRowDef, F, 123000, F, 123, F, 12, F, 12000, F));
-        dbInsert(order = row(orderRowDef, F, 13, F, F, 1, F, F, 1000, F, F, 13000, F));
-        dbInsert(row(order, itemRowDef, F, 131000, F, 131, F, 13, F, 13000, F));
-        dbInsert(row(order, itemRowDef, F, 132000, F, 132, F, 13, F, 13000, F));
-        dbInsert(row(order, itemRowDef, F, 133000, F, 133, F, 13, F, 13000, F));
-        dbInsert(row(customerRowDef, F, F, 2, F, F, 2000, F, F));
-        dbInsert(order = row(orderRowDef, F, 21, F, F, 2, F, F, 2000, F, F, 21000, F));
-        dbInsert(row(order, itemRowDef, F, 211000, F, 211, F, 21, F, 21000, F));
-        dbInsert(row(order, itemRowDef, F, 212000, F, 212, F, 21, F, 21000, F));
-        dbInsert(row(order, itemRowDef, F, 213000, F, 213, F, 21, F, 21000, F));
-        dbInsert(order = row(orderRowDef, F, 22, F, F, 2, F, F, 2000, F, F, 22000, F));
-        dbInsert(row(order, itemRowDef, F, 221000, F, 221, F, 22, F, 22000, F));
-        dbInsert(row(order, itemRowDef, F, 222000, F, 222, F, 22, F, 22000, F));
-        dbInsert(row(order, itemRowDef, F, 223000, F, 223, F, 22, F, 22000, F));
-        dbInsert(order = row(orderRowDef, F, 23, F, F, 2, F, F, 2000, F, F, 23000, F));
-        dbInsert(row(order, itemRowDef, F, 231000, F, 231, F, 23, F, 23000, F));
-        dbInsert(row(order, itemRowDef, F, 232000, F, 232, F, 23, F, 23000, F));
-        dbInsert(row(order, itemRowDef, F, 233000, F, 233, F, 23, F, 23000, F));
-        dbInsert(row(customerRowDef, F, F, 3, F, F, 3000, F, F));
-        dbInsert(order = row(orderRowDef, F, 31, F, F, 3, F, F, 3000, F, F, 31000, F));
-        dbInsert(row(order, itemRowDef, F, 311000, F, 311, F, 31, F, 31000, F));
-        dbInsert(row(order, itemRowDef, F, 312000, F, 312, F, 31, F, 31000, F));
-        dbInsert(row(order, itemRowDef, F, 313000, F, 313, F, 31, F, 31000, F));
-        dbInsert(order = row(orderRowDef, F, 32, F, F, 3, F, F, 3000, F, F, 32000, F));
-        dbInsert(row(order, itemRowDef, F, 321000, F, 321, F, 32, F, 32000, F));
-        dbInsert(row(order, itemRowDef, F, 322000, F, 322, F, 32, F, 32000, F));
-        dbInsert(row(order, itemRowDef, F, 323000, F, 323, F, 32, F, 32000, F));
-        dbInsert(order = row(orderRowDef, F, 33, F, F, 3, F, F, 3000, F, F, 33000, F));
-        dbInsert(row(order, itemRowDef, F, 331000, F, 331, F, 33, F, 33000, F));
-        dbInsert(row(order, itemRowDef, F, 332000, F, 332, F, 33, F, 33000, F));
-        dbInsert(row(order, itemRowDef, F, 333000, F, 333, F, 33, F, 33000, F));
+        dbInsert(row(customerRD, F, F, 1, F, F, 1000, F, F));
+        dbInsert(order = row(orderRD, F, 11, F, F, 1, F, F, 1000, F, F, 11000, F));
+        dbInsert(row(order, itemRD, F, 111000, F, 111, F, 11, F, 11000, F));
+        dbInsert(row(order, itemRD, F, 112000, F, 112, F, 11, F, 11000, F));
+        dbInsert(row(order, itemRD, F, 113000, F, 113, F, 11, F, 11000, F));
+        dbInsert(order = row(orderRD, F, 12, F, F, 1, F, F, 1000, F, F, 12000, F));
+        dbInsert(row(order, itemRD, F, 121000, F, 121, F, 12, F, 12000, F));
+        dbInsert(row(order, itemRD, F, 122000, F, 122, F, 12, F, 12000, F));
+        dbInsert(row(order, itemRD, F, 123000, F, 123, F, 12, F, 12000, F));
+        dbInsert(order = row(orderRD, F, 13, F, F, 1, F, F, 1000, F, F, 13000, F));
+        dbInsert(row(order, itemRD, F, 131000, F, 131, F, 13, F, 13000, F));
+        dbInsert(row(order, itemRD, F, 132000, F, 132, F, 13, F, 13000, F));
+        dbInsert(row(order, itemRD, F, 133000, F, 133, F, 13, F, 13000, F));
+        dbInsert(row(customerRD, F, F, 2, F, F, 2000, F, F));
+        dbInsert(order = row(orderRD, F, 21, F, F, 2, F, F, 2000, F, F, 21000, F));
+        dbInsert(row(order, itemRD, F, 211000, F, 211, F, 21, F, 21000, F));
+        dbInsert(row(order, itemRD, F, 212000, F, 212, F, 21, F, 21000, F));
+        dbInsert(row(order, itemRD, F, 213000, F, 213, F, 21, F, 21000, F));
+        dbInsert(order = row(orderRD, F, 22, F, F, 2, F, F, 2000, F, F, 22000, F));
+        dbInsert(row(order, itemRD, F, 221000, F, 221, F, 22, F, 22000, F));
+        dbInsert(row(order, itemRD, F, 222000, F, 222, F, 22, F, 22000, F));
+        dbInsert(row(order, itemRD, F, 223000, F, 223, F, 22, F, 22000, F));
+        dbInsert(order = row(orderRD, F, 23, F, F, 2, F, F, 2000, F, F, 23000, F));
+        dbInsert(row(order, itemRD, F, 231000, F, 231, F, 23, F, 23000, F));
+        dbInsert(row(order, itemRD, F, 232000, F, 232, F, 23, F, 23000, F));
+        dbInsert(row(order, itemRD, F, 233000, F, 233, F, 23, F, 23000, F));
+        dbInsert(row(customerRD, F, F, 3, F, F, 3000, F, F));
+        dbInsert(order = row(orderRD, F, 31, F, F, 3, F, F, 3000, F, F, 31000, F));
+        dbInsert(row(order, itemRD, F, 311000, F, 311, F, 31, F, 31000, F));
+        dbInsert(row(order, itemRD, F, 312000, F, 312, F, 31, F, 31000, F));
+        dbInsert(row(order, itemRD, F, 313000, F, 313, F, 31, F, 31000, F));
+        dbInsert(order = row(orderRD, F, 32, F, F, 3, F, F, 3000, F, F, 32000, F));
+        dbInsert(row(order, itemRD, F, 321000, F, 321, F, 32, F, 32000, F));
+        dbInsert(row(order, itemRD, F, 322000, F, 322, F, 32, F, 32000, F));
+        dbInsert(row(order, itemRD, F, 323000, F, 323, F, 32, F, 32000, F));
+        dbInsert(order = row(orderRD, F, 33, F, F, 3, F, F, 3000, F, F, 33000, F));
+        dbInsert(row(order, itemRD, F, 331000, F, 331, F, 33, F, 33000, F));
+        dbInsert(row(order, itemRD, F, 332000, F, 332, F, 33, F, 33000, F));
+        dbInsert(row(order, itemRD, F, 333000, F, 333, F, 33, F, 33000, F));
     }
 
     private TestRow row(RowDef table, Object... values)
@@ -616,16 +615,16 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
     {
         HKey hKey = null;
         RowDef rowDef = row.getRowDef();
-        if (rowDef == customerRowDef) {
-            hKey = new HKey(customerRowDef, row.get(c_cid1), row.get(c_cid2));
-        } else if (rowDef == orderRowDef) {
-            hKey = new HKey(customerRowDef, row.get(o_cid1), row.get(o_cid2),
-                            orderRowDef, row.get(o_oid1), row.get(o_oid2));
-        } else if (rowDef == itemRowDef) {
+        if (rowDef == customerRD) {
+            hKey = new HKey(customerRD, row.get(c_cid1), row.get(c_cid2));
+        } else if (rowDef == orderRD) {
+            hKey = new HKey(customerRD, row.get(o_cid1), row.get(o_cid2),
+                            orderRD, row.get(o_oid1), row.get(o_oid2));
+        } else if (rowDef == itemRD) {
             assertNotNull(row.parent());
-            hKey = new HKey(customerRowDef, row.parent().get(o_cid1), row.parent().get(o_cid2),
-                            orderRowDef, row.get(i_oid1), row.get(i_oid2),
-                            itemRowDef, row.get(i_iid1), row.get(i_iid2));
+            hKey = new HKey(customerRD, row.parent().get(o_cid1), row.parent().get(o_cid2),
+                            orderRD, row.get(i_oid1), row.get(i_oid2),
+                            itemRD, row.get(i_iid1), row.get(i_iid2));
         } else {
             fail();
         }
@@ -636,15 +635,15 @@ public class KeyUpdateWithMoreComplexSchemaIT extends ITBase
     {
         HKey hKey = null;
         RowDef rowDef = row.getRowDef();
-        if (rowDef == customerRowDef) {
-            hKey = new HKey(customerRowDef, row.get(c_cid1), row.get(c_cid2));
-        } else if (rowDef == orderRowDef) {
-            hKey = new HKey(customerRowDef, row.get(o_cid1), row.get(o_cid2),
-                            orderRowDef, row.get(o_oid1), row.get(o_oid2));
-        } else if (rowDef == itemRowDef) {
-            hKey = new HKey(customerRowDef, parent == null ? null : parent.get(o_cid1), parent == null ? null : parent.get(o_cid2),
-                            orderRowDef, row.get(i_oid1), row.get(i_oid2),
-                            itemRowDef, row.get(i_iid1), row.get(i_iid2));
+        if (rowDef == customerRD) {
+            hKey = new HKey(customerRD, row.get(c_cid1), row.get(c_cid2));
+        } else if (rowDef == orderRD) {
+            hKey = new HKey(customerRD, row.get(o_cid1), row.get(o_cid2),
+                            orderRD, row.get(o_oid1), row.get(o_oid2));
+        } else if (rowDef == itemRD) {
+            hKey = new HKey(customerRD, parent == null ? null : parent.get(o_cid1), parent == null ? null : parent.get(o_cid2),
+                            orderRD, row.get(i_oid1), row.get(i_oid2),
+                            itemRD, row.get(i_iid1), row.get(i_iid2));
         } else {
             fail();
         }

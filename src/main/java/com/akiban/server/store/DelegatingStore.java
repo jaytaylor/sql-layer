@@ -128,14 +128,6 @@ public abstract class DelegatingStore<S extends Store> implements Store {
         return delegate.getTableStatistics(session, tableId);
     }
 
-    public void analyzeTable(final Session session, final int tableId) {
-        delegate.analyzeTable(session, tableId);
-    }
-
-    public void analyzeTable(final Session session, final int tableId, final int sampleSize) {
-        delegate.analyzeTable(session, tableId, sampleSize);
-    }
-
     public void flushIndexes(final Session session) {
         delegate.flushIndexes(session);
     }

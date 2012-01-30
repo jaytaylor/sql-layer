@@ -134,17 +134,6 @@ public interface Store extends Service<Store> {
 
     void truncateTableStatus(Session session, int rowDefId) throws RollbackException, PersistitException;
 
-    /**
-     * Analyze statistical information about a table. Specifically, construct
-     * histograms for its indexes.
-     * 
-     * @param tableId
-     * @throws PersistitException 
-     * @throws Exception 
-     */
-    void analyzeTable(Session session, int tableId);
-    void analyzeTable(Session session, int tableId, int sampleSize);
-
     boolean isDeferIndexes();
     void setDeferIndexes(boolean b);
     void flushIndexes(Session session);

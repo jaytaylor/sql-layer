@@ -47,7 +47,7 @@ public class CountIT extends OperatorITBase
     {
         Operator plan = count_Default(groupScan_Default(coi),
                                               customerRowType);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowType resultRowType = plan.rowType();
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 11L, 1L, "ori"),
@@ -60,7 +60,7 @@ public class CountIT extends OperatorITBase
     public void testCustomers()
     {
         Operator plan = count_TableStatus(customerRowType);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowType resultRowType = plan.rowType();
         RowBase[] expected = new RowBase[]{
             row(resultRowType, 3L)

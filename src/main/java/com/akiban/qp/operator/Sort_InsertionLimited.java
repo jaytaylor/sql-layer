@@ -24,6 +24,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
 import java.util.*;
@@ -48,9 +49,9 @@ class Sort_InsertionLimited extends Operator
     }
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter)
+    protected Cursor cursor(QueryContext context)
     {
-        return new Execution(adapter, inputOperator.cursor(adapter));
+        return new Execution(context, inputOperator.cursor(context));
     }
 
     @Override
@@ -97,7 +98,7 @@ class Sort_InsertionLimited extends Operator
     private final API.Ordering ordering;
     private final boolean preserveDuplicates;
     private final int limit;
-    private static final Tap.PointTap SORT_INSERTION_COUNT = Tap.createCount("operator: sort_insertion", true);
+    private static final PointTap SORT_INSERTION_COUNT = Tap.createCount("operator: sort_insertion", true);
 
     // Inner classes
 
@@ -108,12 +109,12 @@ class Sort_InsertionLimited extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
-            input.open(bindings);
+            input.open();
             state = State.FILLING;
             for (ExpressionEvaluation eval : evaluations)
-                eval.of(bindings);
+                eval.of(context);
             sorted = new TreeSet<Holder>();
             SORT_INSERTION_COUNT.hit();
         }
@@ -195,15 +196,14 @@ class Sort_InsertionLimited extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, Cursor input)
+        Execution(QueryContext context, Cursor input)
         {
-            super(adapter);
+            super(context);
             this.input = input;
             int nsort = ordering.sortColumns();
             evaluations = new ArrayList<ExpressionEvaluation>(nsort);
             for (int i = 0; i < nsort; i++) {
                 ExpressionEvaluation evaluation = ordering.expression(i).evaluation();
-                evaluation.of(adapter);
                 evaluations.add(evaluation);
             }
         }
@@ -252,7 +252,7 @@ class Sort_InsertionLimited extends Operator
             return result;
         }
 
-        // Make sure the Row we save doesn't depend on Bindings that may change.
+        // Make sure the Row we save doesn't depend on bindings that may change.
         public void freeze() {
             Row arow = row.get();
             if (arow instanceof ProjectedRow)
