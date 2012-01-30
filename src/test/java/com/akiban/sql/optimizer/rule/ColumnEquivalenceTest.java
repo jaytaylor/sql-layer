@@ -101,10 +101,20 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
     @Before
     public void loadDDL() throws Exception {
         AkibanInformationSchema ais = loadSchema(schemaFile);
-        Properties properties = new Properties();
+        int columnEquivalenceRuleIndex = -1;
+        for (int i = 0, max = DefaultRules.DEFAULT_RULES.size(); i < max; i++) {
+            BaseRule rule = DefaultRules.DEFAULT_RULES.get(i);
+            if (rule instanceof ColumnEquivalenceFinder) {
+                columnEquivalenceRuleIndex = i;
+                break;
+            }
+        }
+        if (columnEquivalenceRuleIndex < 0)
+            throw new RuntimeException(ColumnEquivalenceFinder.class.getSimpleName() + " not found");
+        List<BaseRule> rulesSublist = DefaultRules.DEFAULT_RULES.subList(0, columnEquivalenceRuleIndex + 1);
         rules = new RulesTestContext(ais, DEFAULT_SCHEMA, null,
-                Collections.singletonList(new ASTStatementLoader()),
-                properties);
+                rulesSublist,
+                new Properties());
     }
 
     @Test

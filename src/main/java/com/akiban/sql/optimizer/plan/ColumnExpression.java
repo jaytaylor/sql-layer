@@ -28,11 +28,11 @@ public class ColumnExpression extends BaseExpression
     private ColumnSource table;
     private Column column;
     private int position;
-    private EquivalenceFinder<? super ColumnExpression> equivalenceFinder;
+    private EquivalenceFinder<ColumnExpression> equivalenceFinder;
 
     public ColumnExpression(TableSource table, Column column, 
                             DataTypeDescriptor sqlType, ValueNode sqlSource,
-                            EquivalenceFinder<? super ColumnExpression> equivalenceFinder) {
+                            EquivalenceFinder<ColumnExpression> equivalenceFinder) {
         super(sqlType, column.getType().akType(), sqlSource);
         this.table = table;
         assert (table.getTable().getTable() == column.getUserTable());
@@ -74,6 +74,10 @@ public class ColumnExpression extends BaseExpression
 
     public void setPosition(int position) {
         this.position = position;
+    }
+
+    public void markEquivalentTo(ColumnExpression other) {
+        equivalenceFinder.markEquivalent(this, other);
     }
 
     public boolean equivalentTo(ColumnExpression other) {
