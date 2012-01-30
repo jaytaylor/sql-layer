@@ -33,15 +33,25 @@ class Count extends Tap
 
     public void in()
     {
+        justEnabled = false;
         checkNesting();
         inCount++;
     }
 
     public void out()
     {
-        outCount++;
-        checkNesting();
+        if (justEnabled) {
+            justEnabled = false;
+        } else {
+            outCount++;
+            checkNesting();
+        }
+    }
 
+    @Override
+    void markEnabled()
+    {
+        justEnabled = true;
     }
 
     public long getDuration()
@@ -71,4 +81,8 @@ class Count extends Tap
     {
         super(name);
     }
+
+    // Object state
+
+    private volatile boolean justEnabled = false;
 }

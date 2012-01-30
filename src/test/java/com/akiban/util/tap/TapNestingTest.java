@@ -54,6 +54,8 @@ public class TapNestingTest
     public void testUnexpectedExit()
     {
         InOutTap tap = Tap.createTimer("test", true);
+        tap.in();
+        tap.out();
         tap.out();
     }
 
@@ -63,6 +65,25 @@ public class TapNestingTest
         InOutTap tap = Tap.createTimer("test", true);
         tap.in();
         tap.out();
+        tap.out();
+    }
+    
+    @Test
+    public void testInEnableOut()
+    {
+        InOutTap tap = Tap.createTimer("test", false);
+        tap.in();
+        Tap.setEnabled(".*test.*", true);
+        tap.out();
+    }
+
+    @Test
+    public void testEnableOutInOut()
+    {
+        InOutTap tap = Tap.createTimer("test", false);
+        Tap.setEnabled(".*test.*", true);
+        tap.out();
+        tap.in();
         tap.out();
     }
 

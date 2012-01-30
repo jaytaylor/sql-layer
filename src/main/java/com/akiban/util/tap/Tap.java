@@ -346,15 +346,11 @@ public abstract class Tap
 
     // For use by this package
 
-    /**
-     * Mark the beginning of a section of code to be timed.
-     */
     abstract void in();
 
-    /**
-     * Mark the end of a section of code to be timed.
-     */
     abstract void out();
+
+    abstract void markEnabled();
 
     // For use by subclasses
 
@@ -408,7 +404,8 @@ public abstract class Tap
             @Override
             public void handleBadNesting(Tap tap)
             {
-                LOG.warn("Bad nesting encountered for tap {}", tap.getName());
+                LOG.warn("Bad nesting encountered for tap {}, in: {}, out: {}",
+                         new Object[]{tap.getName(), tap.inCount, tap.outCount});
             }
         };
     private static boolean registered;
@@ -418,6 +415,7 @@ public abstract class Tap
     protected final String name;
     protected volatile long inCount = 0;
     protected volatile long outCount = 0;
+    protected volatile boolean justEnabled = false;
 
     // Inner classes
     
