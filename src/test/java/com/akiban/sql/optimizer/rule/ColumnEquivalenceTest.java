@@ -98,7 +98,6 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
         return results;
     }
 
-
     @Before
     public void loadDDL() throws Exception {
         AkibanInformationSchema ais = loadSchema(schemaFile);
