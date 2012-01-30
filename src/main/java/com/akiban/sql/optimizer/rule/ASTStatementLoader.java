@@ -524,7 +524,6 @@ public class ASTStatementLoader extends BaseRule
             ExpressionNode right = toExpression(binop.getRightOperand());
             ComparisonCondition comparison = new ComparisonCondition(op, left, right,
                     binop.getType(), binop);
-            addColumnEquivalences(comparison);
             conditions.add(comparison);
         }
 
@@ -885,27 +884,11 @@ public class ASTStatementLoader extends BaseRule
             case 0:
                 return new BooleanConstantExpression(Boolean.TRUE);
             case 1:
-                ConditionExpression conditionExpression =  conditions.get(0);
-                if (conditionExpression instanceof ComparisonCondition) {
-                    addColumnEquivalences((ComparisonCondition) conditionExpression);
-
-                }
-                return conditionExpression;
+                return conditions.get(0);
             default:
                 // CASE WHEN x BETWEEN a AND b means multiple conditions from single one in AST.
                 return new LogicalFunctionCondition("and", conditions,
                                                     condition.getType(), condition);
-            }
-        }
-
-        private void addColumnEquivalences(ComparisonCondition comparison) {
-            if ( comparison.getOperation().equals(Comparison.EQ)
-                    && (comparison.getLeft() instanceof ColumnExpression)
-                    && (comparison.getRight() instanceof ColumnExpression)
-            ) {
-                ColumnExpression left = (ColumnExpression) comparison.getLeft();
-                ColumnExpression right = (ColumnExpression) comparison.getRight();
-                columnEquivalences.markEquivalent(left, right);
             }
         }
 
