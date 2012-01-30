@@ -17,6 +17,9 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.sql.optimizer.rule.RulesContext;
 
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.SimpleQueryContext;
+
 import java.util.Map;
 import java.util.HashMap;
 
@@ -28,6 +31,10 @@ public class PlanContext
     private RulesContext rulesContext;
     private PlanNode plan;
 
+    public PlanContext(RulesContext rulesContext) {
+        this.rulesContext = rulesContext;
+    }
+                       
     public PlanContext(RulesContext rulesContext, PlanNode plan) {
         this.rulesContext = rulesContext;
         this.plan = plan;
@@ -44,6 +51,10 @@ public class PlanContext
         this.plan = plan;
     }
     
+    public void accept(PlanVisitor visitor) {
+        plan.accept(visitor);
+    }
+
     /** Type safe tag for storing objects on the context whiteboard. */
     public interface WhiteboardMarker<T> {
     }
@@ -64,5 +75,12 @@ public class PlanContext
     }
     public <T> void putWhiteboard(WhiteboardMarker<T> marker, T value) {
         whiteboard.put(marker, value);
+    }
+
+    /** Get a {@link QueryContext} for evaluations performed during
+     * compilation, issuing warnings, etc.
+     */
+    public QueryContext getQueryContext() {
+        return new SimpleQueryContext(null);
     }
 }
