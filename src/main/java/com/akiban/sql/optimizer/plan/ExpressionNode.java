@@ -22,7 +22,6 @@ import com.akiban.sql.parser.ValueNode;
 public interface ExpressionNode extends PlanElement
 {
     public DataTypeDescriptor getSQLtype();
-    public void setSQLtype(DataTypeDescriptor type);
     public AkType getAkType();
     public ValueNode getSQLsource();
 

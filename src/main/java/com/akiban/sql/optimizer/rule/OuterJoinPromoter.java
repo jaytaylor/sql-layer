@@ -189,16 +189,6 @@ public class OuterJoinPromoter extends BaseRule
         Set<ColumnSource> sources = required.getRequired();
         if (sources.isEmpty()) return;
         promoteOuterJoins((Joinable)select.getInput(), sources);
-        setNotNullable(required.getColumns(), sources);
-    }
-
-    private void setNotNullable(Set<ColumnExpression> columns, Set<ColumnSource> requiredSources) {
-        for (ColumnExpression column : columns) {
-            if (requiredSources.contains(column.getTable()) && column.getSQLtype().isNullable()) {
-                DataTypeDescriptor notNullable = column.getSQLtype().getNullabilityType(false);
-                column.setSQLtype(notNullable);
-            }
-        }
     }
 
     protected boolean promoteOuterJoins(Joinable joinable,

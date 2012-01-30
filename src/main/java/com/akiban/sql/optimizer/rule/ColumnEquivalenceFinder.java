@@ -17,14 +17,21 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.ColumnExpression;
+import com.akiban.sql.optimizer.plan.ColumnSource;
 import com.akiban.sql.optimizer.plan.ComparisonCondition;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.ExpressionVisitor;
+import com.akiban.sql.optimizer.plan.JoinNode;
 import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PlanNode;
 import com.akiban.sql.optimizer.plan.PlanVisitor;
+import com.akiban.sql.optimizer.plan.TableSource;
+import com.akiban.sql.types.DataTypeDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashSet;
+import java.util.Set;
 
 public final class ColumnEquivalenceFinder extends BaseRule {
     private static final Logger logger = LoggerFactory.getLogger(ColumnEquivalenceFinder.class);
@@ -35,6 +42,8 @@ public final class ColumnEquivalenceFinder extends BaseRule {
     }
     
     private static class ColumnEquivalenceVisitor implements PlanVisitor, ExpressionVisitor {
+
+        private Set<ColumnSource> innerSources = new HashSet<ColumnSource>();
 
         @Override
         public boolean visitEnter(PlanNode n) {
@@ -48,6 +57,17 @@ public final class ColumnEquivalenceFinder extends BaseRule {
 
         @Override
         public boolean visit(PlanNode n) {
+            if (n instanceof JoinNode) {
+                JoinNode joinNode = (JoinNode)n;
+                if (joinNode.isInnerJoin()) {
+                    if (joinNode.getLeft() instanceof ColumnSource) {
+                        innerSources.add((ColumnSource)joinNode.getLeft());
+                    }
+                    if (joinNode.getRight() instanceof ColumnSource) {
+                        innerSources.add((ColumnSource)joinNode.getRight());
+                    }
+                }
+            }
             return true;
         }
 
@@ -71,13 +91,24 @@ public final class ColumnEquivalenceFinder extends BaseRule {
                         ) {
                     ColumnExpression left = (ColumnExpression) comparision.getLeft();
                     ColumnExpression right = (ColumnExpression) comparision.getRight();
-                    if (!(left.getSQLtype().isNullable() || right.getSQLtype().isNullable())) {
+                    if (notNull(left) && notNull(right)) {
                         left.markEquivalentTo(right); // also implies right.equivalentTo(left)
                     }
                     return false; // already looked at this branch
                 }
             }
             return true;
+        }
+
+        private boolean notNull(ColumnExpression columnExpression) {
+            if (!columnExpression.getSQLtype().isNullable())
+                return true;
+            if (innerSources.contains(columnExpression.getTable())) {
+                DataTypeDescriptor notNullable = columnExpression.getSQLtype().getNullabilityType(false);
+                columnExpression.setSQLtype(notNullable);
+                return true;
+            }
+            return false;
         }
     }
 
