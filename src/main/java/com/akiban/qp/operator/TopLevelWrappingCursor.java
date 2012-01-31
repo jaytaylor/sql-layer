@@ -26,9 +26,13 @@ class TopLevelWrappingCursor extends ChainedCursor {
     public void open() {
         try {
             CURSOR_SETUP_TAP.in();
-            super.open();
-            CURSOR_SETUP_TAP.out();
+            try {
+                super.open();
+            } finally {
+                CURSOR_SETUP_TAP.out();
+            }
             CURSOR_SCAN_TAP.in();
+            closed = false;
         } catch (RuntimeException e) {
             throw launder(e);
         }
@@ -37,8 +41,14 @@ class TopLevelWrappingCursor extends ChainedCursor {
     @Override
     public void close() {
         try {
-            super.close();
-            CURSOR_SCAN_TAP.out();
+            // CURSOR_SCAN_TAP.in() was done in the open call. The operator implementation is supposed to guarantee
+            // at least one close per open, so we'll have to rely on that. But multiple closes per open are permitted,
+            // so be careful to leave the tap no more than once.
+            if (!closed) {
+                super.close();
+                CURSOR_SCAN_TAP.out();
+                closed = true;
+            }
         } catch (RuntimeException e) {
             throw launder(e);
         }
@@ -60,5 +70,9 @@ class TopLevelWrappingCursor extends ChainedCursor {
 
     private static final InOutTap CURSOR_SETUP_TAP = Tap.createTimer("cursor setup");
     private static final InOutTap CURSOR_SCAN_TAP = Tap.createTimer("cursor scan");
+
+    // Object state
+
+    private boolean closed;
 
 }

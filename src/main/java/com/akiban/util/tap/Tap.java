@@ -338,6 +338,11 @@ public abstract class Tap
             registered = false;
         }
     }
+    
+    public synchronized static void registerBadNestingHandler(BadNestingHandler badNestingHandler)
+    {
+        Tap.badNestingHandler = badNestingHandler;
+    }
 
     // For use by this package
 
@@ -352,6 +357,16 @@ public abstract class Tap
     abstract void out();
 
     // For use by subclasses
+
+    protected boolean checkNesting()
+    {
+        if (inCount != outCount) {
+            Tap.badNestingHandler.handleBadNesting(this);
+            return false;
+        } else {
+            return true;
+        }
+    }
 
     protected Tap(String name)
     {
@@ -387,9 +402,27 @@ public abstract class Tap
     static final String NEW_LINE = System.getProperty("line.separator");
     private static final String DEFAULT_ON_PROPERTY = "taps_default_on";
     private static final Map<String, Dispatch> dispatches = new TreeMap<String, Dispatch>();
+    static volatile BadNestingHandler badNestingHandler =
+        new BadNestingHandler()
+        {
+            @Override
+            public void handleBadNesting(Tap tap)
+            {
+                LOG.warn("Bad nesting encountered for tap {}", tap.getName());
+            }
+        };
     private static boolean registered;
 
     // Object state
 
     protected final String name;
+    protected volatile long inCount = 0;
+    protected volatile long outCount = 0;
+
+    // Inner classes
+    
+    public interface BadNestingHandler
+    {
+        void handleBadNesting(Tap tap);
+    }
 }

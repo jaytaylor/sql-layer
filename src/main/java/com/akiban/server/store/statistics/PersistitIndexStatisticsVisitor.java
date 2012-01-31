@@ -132,7 +132,7 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
                 );
                 entries.add(entry);
             }
-            Histogram histogram = new Histogram(index, colCountSegment+1, entries);
+            Histogram histogram = new Histogram(colCountSegment+1, entries);
             result.addHistogram(histogram);
         }
         return result;

@@ -75,14 +75,14 @@ public class PersistitStoreIndexStatistics
             .append((long)index.getIndexId());
         if (!exchange.fetch().getValue().isDefined())
             return null;
-        IndexStatistics result = decodeHeader(exchange, indexStatisticsRowDef, 
-                                              index);
+        IndexStatistics result = decodeHeader(exchange, indexStatisticsRowDef, index);
         while (exchange.traverse(Key.GT, true)) {
             if (exchange.getKey().getDepth() <= indexStatisticsRowDef.getHKeyDepth())
                 break;          // End of children.
-            decodeEntry(exchange, indexStatisticsEntryRowDef, result);
+            decodeEntry(exchange, indexStatisticsEntryRowDef, index, result);
         }
-        logger.debug("Loaded: " + result);
+        if (logger.isDebugEnabled())
+            logger.debug("Loaded: " + result.toString(index));
         return result;
     }
 
@@ -136,7 +136,7 @@ public class PersistitStoreIndexStatistics
     }
 
     protected void decodeEntry(Exchange exchange, RowDef indexStatisticsEntryRowDef,
-                               IndexStatistics indexStatistics)
+                               Index index, IndexStatistics indexStatistics)
             throws PersistitException {
         RowData rowData = new RowData(new byte[exchange.getValue().getEncodedSize() + RowData.ENVELOPE_SIZE]);
         store.expandRowData(exchange, rowData);
@@ -173,8 +173,7 @@ public class PersistitStoreIndexStatistics
                                                      (int)(distinctCountLocation >>> 32));
         Histogram histogram = indexStatistics.getHistogram(columnCount);
         if (histogram == null) {
-            histogram = new Histogram(indexStatistics.getIndex(), columnCount,
-                                      new ArrayList<HistogramEntry>());
+            histogram = new Histogram(columnCount, new ArrayList<HistogramEntry>());
             indexStatistics.addHistogram(histogram);
         }
         histogram.getEntries().add(new HistogramEntry(keyString, keyBytes,
@@ -182,9 +181,8 @@ public class PersistitStoreIndexStatistics
     }
 
     /** Store statistics into database. */
-    public void storeIndexStatistics(Session session, IndexStatistics indexStatistics)
+    public void storeIndexStatistics(Session session, Index index, IndexStatistics indexStatistics)
             throws PersistitException {
-        Index index = indexStatistics.getIndex();
         IndexDef indexDef = (IndexDef)index.indexDef();
         RowDef indexStatisticsRowDef = store.getRowDefCache()
             .getRowDef(INDEX_STATISTICS_TABLE_NAME);
@@ -309,7 +307,8 @@ public class PersistitStoreIndexStatistics
         store.traverse(session, index, visitor);
         visitor.finish();
         IndexStatistics result = visitor.getIndexStatistics();
-        logger.debug("Analyzed: " + result);
+        if (logger.isDebugEnabled())
+            logger.debug("Analyzed: " + result.toString(index));
         return result;
     }
     
@@ -319,8 +318,9 @@ public class PersistitStoreIndexStatistics
             try {
                 IndexStatistics indexStatistics = computeIndexStatistics(session, index);
                 if (indexStatistics != null) {
-                    logger.debug("Analyzed: " + indexStatistics);
-                    storeIndexStatistics(session, indexStatistics);
+                    if (logger.isDebugEnabled())
+                        logger.debug("Analyzed: " + indexStatistics.toString(index));
+                    storeIndexStatistics(session, index, indexStatistics);
                 }
             }
             catch (PersistitException ex) {

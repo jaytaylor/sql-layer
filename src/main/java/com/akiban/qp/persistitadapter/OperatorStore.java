@@ -59,6 +59,8 @@ import java.util.*;
 
 import static com.akiban.qp.operator.API.ancestorLookup_Default;
 import static com.akiban.qp.operator.API.indexScan_Default;
+import static com.akiban.qp.operator.API.limit_Default;
+import static com.akiban.qp.operator.API.update_Default;
 
 public class OperatorStore extends DelegatingStore<PersistitStore> {
 
@@ -69,116 +71,123 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         throws PersistitException
     {
         UPDATE_TOTAL.in();
-        PersistitStore persistitStore = getPersistitStore();
-        AkibanInformationSchema ais = persistitStore.getRowDefCache().ais();
+        try {
+            PersistitStore persistitStore = getPersistitStore();
+            AkibanInformationSchema ais = persistitStore.getRowDefCache().ais();
 
-        RowDef rowDef = persistitStore.getRowDefCache().rowDef(oldRowData.getRowDefId());
-        if ((columnSelector != null) && !rowDef.table().getGroupIndexes().isEmpty()) {
-            throw new RuntimeException("group index maintence won't work with partial rows");
+            RowDef rowDef = persistitStore.getRowDefCache().rowDef(oldRowData.getRowDefId());
+            if ((columnSelector != null) && !rowDef.table().getGroupIndexes().isEmpty()) {
+                throw new RuntimeException("group index maintence won't work with partial rows");
+            }
+            BitSet changedColumnPositions = changedColumnPositions(rowDef, oldRowData, newRowData);
+
+            PersistitAdapter adapter =
+                new PersistitAdapter(SchemaCache.globalSchema(ais), persistitStore, treeService, session, config);
+            Schema schema = adapter.schema();
+
+            UpdateFunction updateFunction = new InternalUpdateFunction(adapter, rowDef, newRowData, columnSelector);
+
+            UserTable userTable = ais.getUserTable(oldRowData.getRowDefId());
+            GroupTable groupTable = userTable.getGroup().getGroupTable();
+
+            TableIndex index = userTable.getPrimaryKeyIncludingInternal().getIndex();
+            assert index != null : userTable;
+            UserTableRowType tableType = schema.userTableRowType(userTable);
+            IndexRowType indexType = tableType.indexRowType(index);
+            IndexBound bound = new IndexBound(new NewRowBackedIndexRow(tableType, new LegacyRowWrapper(oldRowData, this), index),
+                                              ConstantColumnSelector.ALL_ON);
+            IndexKeyRange range = IndexKeyRange.bounded(indexType, bound, true, bound, true);
+
+            Operator indexScan = indexScan_Default(indexType, false, range);
+            Operator scanOp;
+            scanOp = ancestorLookup_Default(indexScan, groupTable, indexType, Collections.singletonList(tableType), API.LookupOption.DISCARD_INPUT);
+
+            // MVCC will render this useless, but for now, a limit of 1 ensures we won't see the row we just updated,
+            // and therefore scan through two rows -- once to update old -> new, then to update new -> copy of new
+            scanOp = limit_Default(scanOp, 1);
+
+            UpdatePlannable updateOp = update_Default(scanOp, updateFunction);
+
+            QueryContext context = new SimpleQueryContext(adapter);
+            UPDATE_MAINTENANCE.in();
+            try {
+                maintainGroupIndexes(session,
+                                     ais,
+                                     adapter,
+                                     oldRowData,
+                                     changedColumnPositions,
+                                     OperatorStoreGIHandler.forTable(adapter, userTable),
+                                     OperatorStoreGIHandler.Action.DELETE);
+
+                runCursor(oldRowData, rowDef, updateOp, context);
+
+                maintainGroupIndexes(session,
+                                     ais,
+                                     adapter,
+                                     newRowData,
+                                     changedColumnPositions,
+                                     OperatorStoreGIHandler.forTable(adapter, userTable),
+                                     OperatorStoreGIHandler.Action.STORE);
+            } finally {
+                UPDATE_MAINTENANCE.out();
+            }
+        } finally {
+            UPDATE_TOTAL.out();
         }
-        BitSet changedColumnPositions = changedColumnPositions(rowDef, oldRowData, newRowData);
-
-        PersistitAdapter adapter =
-            new PersistitAdapter(SchemaCache.globalSchema(ais), persistitStore, treeService, session, config);
-        Schema schema = adapter.schema();
-
-        UpdateFunction updateFunction = new InternalUpdateFunction(adapter, rowDef, newRowData, columnSelector);
-
-        UserTable userTable = ais.getUserTable(oldRowData.getRowDefId());
-        GroupTable groupTable = userTable.getGroup().getGroupTable();
-
-        TableIndex index = userTable.getPrimaryKeyIncludingInternal().getIndex();
-        assert index != null : userTable;
-        UserTableRowType tableType = schema.userTableRowType(userTable);
-        IndexRowType indexType = tableType.indexRowType(index);
-        IndexBound bound = new IndexBound(new NewRowBackedIndexRow(tableType, new LegacyRowWrapper(oldRowData, this), index),
-                                          ConstantColumnSelector.ALL_ON);
-        IndexKeyRange range = IndexKeyRange.bounded(indexType, bound, true, bound, true);
-
-        Operator indexScan = indexScan_Default(indexType, false, range);
-        Operator scanOp;
-        scanOp = ancestorLookup_Default(indexScan, groupTable, indexType, Collections.singletonList(tableType), API.LookupOption.DISCARD_INPUT);
-
-        // MVCC will render this useless, but for now, a limit of 1 ensures we won't see the row we just updated,
-        // and therefore scan through two rows -- once to update old -> new, then to update new -> copy of new
-        scanOp = com.akiban.qp.operator.API.limit_Default(scanOp, 1);
-
-        UpdatePlannable updateOp = com.akiban.qp.operator.API.update_Default(scanOp, updateFunction);
-
-        QueryContext context = new SimpleQueryContext(adapter);
-
-        UPDATE_MAINTENANCE.in();
-
-        maintainGroupIndexes(session,
-                             ais,
-                             adapter,
-                             oldRowData,
-                             changedColumnPositions,
-                             OperatorStoreGIHandler.forTable(adapter, userTable),
-                             OperatorStoreGIHandler.Action.DELETE);
-
-        runCursor(oldRowData, rowDef, updateOp, context);
-
-        maintainGroupIndexes(session,
-                             ais,
-                             adapter,
-                             newRowData,
-                             changedColumnPositions,
-                             OperatorStoreGIHandler.forTable(adapter, userTable),
-                             OperatorStoreGIHandler.Action.STORE);
-
-        UPDATE_MAINTENANCE.out();
-        UPDATE_TOTAL.out();
     }
 
     @Override
     public void writeRow(Session session, RowData rowData) throws PersistitException {
         INSERT_TOTAL.in();
         INSERT_MAINTENANCE.in();
-
-        AkibanInformationSchema ais = aisHolder.getAis();
-        PersistitAdapter adapter =
-            new PersistitAdapter(SchemaCache.globalSchema(ais),
-                                 getPersistitStore(),
-                                 treeService,
-                                 session,
-                                 config);
-        UserTable uTable = ais.getUserTable(rowData.getRowDefId());
-        super.writeRow(session, rowData);
-        maintainGroupIndexes(session,
-                             ais,
-                             adapter,
-                             rowData, null,
-                             OperatorStoreGIHandler.forTable(adapter, uTable),
-                             OperatorStoreGIHandler.Action.STORE);
-
-        INSERT_MAINTENANCE.out();
-        INSERT_TOTAL.out();
+        try {
+            AkibanInformationSchema ais = aisHolder.getAis();
+            PersistitAdapter adapter =
+                new PersistitAdapter(SchemaCache.globalSchema(ais),
+                                     getPersistitStore(),
+                                     treeService,
+                                     session,
+                                     config);
+            UserTable uTable = ais.getUserTable(rowData.getRowDefId());
+            super.writeRow(session, rowData);
+            maintainGroupIndexes(session,
+                                 ais,
+                                 adapter,
+                                 rowData, null,
+                                 OperatorStoreGIHandler.forTable(adapter, uTable),
+                                 OperatorStoreGIHandler.Action.STORE);
+        } finally {
+            INSERT_MAINTENANCE.out();
+            INSERT_TOTAL.out();
+        }
     }
 
     @Override
     public void deleteRow(Session session, RowData rowData) throws PersistitException {
         DELETE_TOTAL.in();
         DELETE_MAINTENANCE.in();
-        AkibanInformationSchema ais = aisHolder.getAis();
-        PersistitAdapter adapter =
-            new PersistitAdapter(SchemaCache.globalSchema(ais),
-                                 getPersistitStore(),
-                                 treeService,
-                                 session,
-                                 config);
-        UserTable uTable = ais.getUserTable(rowData.getRowDefId());
+        try {
+            AkibanInformationSchema ais = aisHolder.getAis();
+            PersistitAdapter adapter =
+                new PersistitAdapter(SchemaCache.globalSchema(ais),
+                                     getPersistitStore(),
+                                     treeService,
+                                     session,
+                                     config);
+            UserTable uTable = ais.getUserTable(rowData.getRowDefId());
 
-        maintainGroupIndexes(session,
-                             ais,
-                             adapter,
-                             rowData,
-                             null,
-                             OperatorStoreGIHandler.forTable(adapter, uTable),
-                             OperatorStoreGIHandler.Action.DELETE);
-        super.deleteRow(session, rowData);
-        DELETE_MAINTENANCE.out();
-        DELETE_TOTAL.out();
+            maintainGroupIndexes(session,
+                                 ais,
+                                 adapter,
+                                 rowData,
+                                 null,
+                                 OperatorStoreGIHandler.forTable(adapter, uTable),
+                                 OperatorStoreGIHandler.Action.DELETE);
+            super.deleteRow(session, rowData);
+        } finally {
+            DELETE_MAINTENANCE.out();
+            DELETE_TOTAL.out();
+        }
     }
 
     @Override

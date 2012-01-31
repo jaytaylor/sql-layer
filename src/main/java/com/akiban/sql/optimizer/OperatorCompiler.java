@@ -74,9 +74,13 @@ public class OperatorCompiler extends SchemaRulesContext
 
     /** Compile a statement into an operator tree. */
     public BasePlannable compile(DMLStatementNode stmt, List<ParameterNode> params) {
-        // Get into standard form.
-        stmt = bindAndTransform(stmt);
-        PlanContext plan = new PlanContext(this, new AST(stmt, params));
+        return compile(stmt, params, new PlanContext(this));
+    }
+
+    protected BasePlannable compile(DMLStatementNode stmt, List<ParameterNode> params,
+                                    PlanContext plan) {
+        stmt = bindAndTransform(stmt); // Get into standard form.
+        plan.setPlan(new AST(stmt, params));
         applyRules(plan);
         return (BasePlannable)plan.getPlan();
     }
