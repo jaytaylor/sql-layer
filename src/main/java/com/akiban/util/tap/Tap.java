@@ -350,8 +350,6 @@ public abstract class Tap
 
     abstract void out();
 
-    abstract void markEnabled();
-
     // For use by subclasses
 
     protected boolean checkNesting()
@@ -415,7 +413,6 @@ public abstract class Tap
     protected final String name;
     protected volatile long inCount = 0;
     protected volatile long outCount = 0;
-    protected volatile boolean justEnabled = false;
 
     // Inner classes
     

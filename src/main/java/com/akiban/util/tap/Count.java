@@ -48,12 +48,6 @@ class Count extends Tap
         }
     }
 
-    @Override
-    void markEnabled()
-    {
-        justEnabled = true;
-    }
-
     public long getDuration()
     {
         return 0;
@@ -63,6 +57,7 @@ class Count extends Tap
     {
         inCount = 0;
         outCount = 0;
+        justEnabled = true;
     }
 
     public void appendReport(StringBuilder sb)

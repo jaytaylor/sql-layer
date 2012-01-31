@@ -55,12 +55,6 @@ class PerThread extends Tap
     }
 
     @Override
-    void markEnabled()
-    {
-        threadLocal.get().markEnabled();
-    }
-
-    @Override
     public long getDuration()
     {
         return threadLocal.get().getDuration();
@@ -148,6 +142,7 @@ class PerThread extends Tap
             Tap tap;
             try {
                 tap = tapClass.getConstructor(String.class).newInstance(name);
+                tap.reset();
             } catch (Exception e) {
                 tap = new Null(name);
                 LOG.warn("Unable to create tap of class " + tapClass.getSimpleName(), e);

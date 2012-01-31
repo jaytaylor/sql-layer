@@ -39,11 +39,6 @@ class Dispatch extends Tap
         currentTap.out();
     }
     
-    public void markEnabled()
-    {
-        currentTap.markEnabled();
-    }
-    
     public long getDuration()
     {
         return currentTap.getDuration();
@@ -83,8 +78,12 @@ class Dispatch extends Tap
         // If a tap is enabled between in and out calls, then the nesting will appear to be off.
         // markEnabled causes the nesting check to be skipped the first time out is called after
         // enabling.
-        enabledTap.markEnabled();
-        currentTap = on ? enabledTap : new Null(name);
+        if (on) {
+            enabledTap.reset();
+            currentTap = enabledTap;
+        } else {
+            currentTap = new Null(name);
+        }
     }
     
     // For use by this package

@@ -37,12 +37,6 @@ class Null extends Tap
         // do nothing
     }
 
-    @Override
-    void markEnabled()
-    {
-        // do nothing
-    }
-
     public long getDuration()
     {
         return 0;

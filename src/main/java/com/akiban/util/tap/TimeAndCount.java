@@ -58,12 +58,6 @@ class TimeAndCount extends Tap
         }
     }
 
-    @Override
-    void markEnabled()
-    {
-        justEnabled = true;
-    }
-
     public long getDuration()
     {
         return lastDuration;
@@ -74,6 +68,7 @@ class TimeAndCount extends Tap
         inCount = 0;
         outCount = 0;
         cumulativeNanos = 0;
+        justEnabled = true;
     }
 
     public void appendReport(StringBuilder sb)
