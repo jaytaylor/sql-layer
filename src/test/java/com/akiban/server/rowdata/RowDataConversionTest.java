@@ -140,6 +140,13 @@ public final class RowDataConversionTest extends ConversionTestBase {
                 .add(TestCase.forTime(time.getLong("14:20:32"), b(142032, 3)))
                 .add(TestCase.forTime(time.getLong("-147:21:01"), b(-1472101, 3)))
                 
+                // Strings (character encoding)
+                .add(TestCase.forString("abc", 32, "UTF-8", parseHex("0x03616263")))
+                .add(TestCase.forString("abc", 32, "ISO-8859-1", parseHex("0x03616263")))
+                .add(TestCase.forString("cliché", 32, "UTF-8", parseHex("0x07636C696368C3A9")))
+                .add(TestCase.forString("cliché", 32, "ISO-8859-1", parseHex("0x06636C696368E9")))
+                .add(TestCase.forString("☃", 32, "UTF-8", parseHex("0x03E29883")))
+
                 .suite();
         return filter(params(suite), new Predicate() {
             @Override

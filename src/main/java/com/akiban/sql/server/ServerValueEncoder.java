@@ -17,6 +17,7 @@ package com.akiban.sql.server;
 
 import com.akiban.server.Quote;
 import com.akiban.server.error.UnsupportedCharsetException;
+import com.akiban.server.error.ZeroDateTimeException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
@@ -28,7 +29,33 @@ import java.io.*;
 
 public class ServerValueEncoder
 {
+    public static enum ZeroDateTimeBehavior {
+        NONE(null),
+        EXCEPTION("exception"),
+        ROUND("round"),
+        CONVERT_TO_NULL("convertToNull");
+
+        private String propertyName;
+
+        ZeroDateTimeBehavior(String propertyName) {
+            this.propertyName = propertyName;
+        }
+        
+        public static ZeroDateTimeBehavior fromProperty(String name) {
+            if (name == null) return NONE;
+            for (ZeroDateTimeBehavior zdtb : values()) {
+                if (name.equals(zdtb.propertyName))
+                    return zdtb;
+            }
+            throw new IllegalArgumentException(name);
+        }
+    }
+
+    public static final String ROUND_ZERO_DATETIME = "0001-01-01 00:00:00";
+    public static final String ROUND_ZERO_DATE = "0001-01-01";
+
     private String encoding;
+    private ZeroDateTimeBehavior zeroDateTimeBehavior;
     private ByteArrayOutputStream byteStream;
     private PrintWriter printWriter;
     private AkibanAppender appender;
@@ -52,6 +79,11 @@ public class ServerValueEncoder
             appender = AkibanAppender.of(printWriter);
     }
 
+    public ServerValueEncoder(String encoding, ZeroDateTimeBehavior zeroDateTimeBehavior) {
+        this(encoding);
+        this.zeroDateTimeBehavior = zeroDateTimeBehavior;
+    }
+
     public ByteArrayOutputStream getByteStream() {
         printWriter.flush();
         return byteStream;
@@ -68,6 +100,26 @@ public class ServerValueEncoder
                                              boolean binary) throws IOException {
         if (value.isNull())
             return null;
+        if ((zeroDateTimeBehavior != ZeroDateTimeBehavior.NONE) &&
+            (((type.getAkType() == AkType.DATE) &&
+              (value.getDate() == 0)) ||
+             ((type.getAkType() == AkType.DATETIME) &&
+              (value.getDateTime() == 0)))) {
+            switch (zeroDateTimeBehavior) {
+            case EXCEPTION:
+                throw new ZeroDateTimeException();
+            case ROUND:
+                if (objectSource == null)
+                    objectSource = new FromObjectValueSource();
+                objectSource.setExplicitly((type.getAkType() == AkType.DATETIME) ?
+                                           ROUND_ZERO_DATETIME : ROUND_ZERO_DATE,
+                                           AkType.VARCHAR);
+                value = objectSource;
+                break;
+            case CONVERT_TO_NULL:
+                return null;
+            }
+        }
         reset();
         appendValue(value, type, binary);
         return getByteStream();

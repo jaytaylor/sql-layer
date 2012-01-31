@@ -16,23 +16,15 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.*;
-import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.UpdateFunction;
-import com.akiban.qp.row.OverlayingRow;
-import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Comparison;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.conversion.Converters;
-import com.akiban.server.types.ToObjectValueTarget;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -53,56 +45,10 @@ public class OperatorIT extends OperatorITBase
     }
 
     @Test
-    public void basicUpdate() throws Exception {
-
-        UpdateFunction updateFunction = new UpdateFunction() {
-            @Override
-            public boolean rowIsSelected(Row row) {
-                return row.rowType().equals(customerRowType);
-            }
-
-            @Override
-            public Row evaluate(Row original, Bindings bindings) {
-                ToObjectValueTarget target = new ToObjectValueTarget();
-                target.expectType(AkType.VARCHAR);
-                Object obj = Converters.convert(original.eval(1), target).lastConvertedValue();
-                String name = (String) obj; // TODO eventually use Expression for this
-                name = name.toUpperCase();
-                name = name + name;
-                return new OverlayingRow(original).overlay(1, name);
-            }
-        };
-
-        Operator groupScan = groupScan_Default(coi);
-        UpdatePlannable updateOperator = update_Default(groupScan, updateFunction);
-        UpdateResult result = updateOperator.run(NO_BINDINGS, adapter);
-        assertEquals("rows modified", 2, result.rowsModified());
-        assertEquals("rows touched", db.length, result.rowsTouched());
-
-        Cursor executable = cursor(groupScan, adapter);
-        RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "XYZXYZ"),
-                                           row(orderRowType, 11L, 1L, "ori"),
-                                           row(itemRowType, 111L, 11L),
-                                           row(itemRowType, 112L, 11L),
-                                           row(orderRowType, 12L, 1L, "david"),
-                                           row(itemRowType, 121L, 12L),
-                                           row(itemRowType, 122L, 12L),
-                                           row(customerRowType, 2L, "ABCABC"),
-                                           row(orderRowType, 21L, 2L, "tom"),
-                                           row(itemRowType, 211L, 21L),
-                                           row(itemRowType, 212L, 21L),
-                                           row(orderRowType, 22L, 2L, "jack"),
-                                           row(itemRowType, 221L, 22L),
-                                           row(itemRowType, 222L, 22L)
-        };
-        compareRows(expected, executable);
-    }
-
-    @Test
     public void testGroupScan() throws Exception
     {
         Operator groupScan = groupScan_Default(coi);
-        Cursor executable = cursor(groupScan, adapter);
+        Cursor executable = cursor(groupScan, queryContext);
         RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
                                            row(orderRowType, 11L, 1L, "ori"),
                                            row(itemRowType, 111L, 11L),
@@ -134,7 +80,7 @@ public class OperatorIT extends OperatorITBase
                                            row(orderRowType, 22L, 2L, "jack"),
                                            row(itemRowType, 221L, 22L),
                                            row(itemRowType, 222L, 22L)};
-        compareRows(expected, cursor(select, adapter));
+        compareRows(expected, cursor(select, queryContext));
     }
 
     @Test
@@ -155,7 +101,7 @@ public class OperatorIT extends OperatorITBase
                                            row(flattenType, 2L, "abc", 22L, 2L, "jack"),
                                            row(itemRowType, 221L, 22L),
                                            row(itemRowType, 222L, 22L)};
-        compareRows(expected, cursor(flatten, adapter));
+        compareRows(expected, cursor(flatten, queryContext));
     }
 
     @Test
@@ -173,7 +119,7 @@ public class OperatorIT extends OperatorITBase
                                            row(flattenCOIType, 2L, "abc", 21L, 2L, "tom", 212L, 21L),
                                            row(flattenCOIType, 2L, "abc", 22L, 2L, "jack", 221L, 22L),
                                            row(flattenCOIType, 2L, "abc", 22L, 2L, "jack", 222L, 22L)};
-        compareRows(expected, cursor(flattenCOI, adapter));
+        compareRows(expected, cursor(flattenCOI, queryContext));
     }
 
     @Test
@@ -183,7 +129,7 @@ public class OperatorIT extends OperatorITBase
         // TODO: Can't compare rows, because we can't yet obtain fields from index rows. So compare hkeys instead
         String[] expected = new String[]{"{1,(long)2}",
                                          "{1,(long)1}"};
-        compareRenderedHKeys(expected, cursor(indexScan, adapter));
+        compareRenderedHKeys(expected, cursor(indexScan, queryContext));
     }
 
     @Test
@@ -195,7 +141,7 @@ public class OperatorIT extends OperatorITBase
                                          "{1,(long)2,2,(long)22}",
                                          "{1,(long)1,2,(long)11}",
                                          "{1,(long)2,2,(long)21}"};
-        compareRenderedHKeys(expected, cursor(indexScan, adapter));
+        compareRenderedHKeys(expected, cursor(indexScan, queryContext));
     }
 
     @Test
@@ -215,7 +161,7 @@ public class OperatorIT extends OperatorITBase
                                            row(orderRowType, 21L, 2L, "tom"),
                                            row(itemRowType, 211L, 21L),
                                            row(itemRowType, 212L, 21L)};
-        compareRows(expected, cursor(lookup, adapter));
+        compareRows(expected, cursor(lookup, queryContext));
     }
 
     @Test
@@ -244,7 +190,7 @@ public class OperatorIT extends OperatorITBase
                                            row(orderRowType, 21L, 2L, "tom"),
                                            row(itemRowType, 211L, 21L),
                                            row(itemRowType, 212L, 21L)};
-        compareRows(expected, cursor(ancestorLookup, adapter));
+        compareRows(expected, cursor(ancestorLookup, queryContext));
     }
 
     @Test
@@ -285,7 +231,7 @@ public class OperatorIT extends OperatorITBase
                                            row(customerRowType, 2L, "abc"),
                                            row(orderRowType, 22L, 2L, "jack"),
                                            row(itemRowType, 222L, 22L)};
-        compareRows(expected, cursor(ancestorLookup, adapter));
+        compareRows(expected, cursor(ancestorLookup, queryContext));
     }
 
     @Test
@@ -299,7 +245,7 @@ public class OperatorIT extends OperatorITBase
         // TODO: Can't compare rows, because we can't yet obtain fields from index rows. So compare hkeys instead
         String[] expected = new String[]{"{1,(long)2,2,(long)22}",
                                          "{1,(long)1,2,(long)11}"};
-        compareRenderedHKeys(expected, cursor(indexScan, adapter));
+        compareRenderedHKeys(expected, cursor(indexScan, queryContext));
     }
 
     @Test
@@ -317,7 +263,7 @@ public class OperatorIT extends OperatorITBase
         RowBase[] expected = new RowBase[]{row(orderRowType, 21L, 2L, "tom"),
                                            row(itemRowType, 211L, 21L),
                                            row(itemRowType, 212L, 21L)};
-        compareRows(expected, cursor(lookup, adapter));
+        compareRows(expected, cursor(lookup, queryContext));
 
     }
 
@@ -335,6 +281,6 @@ public class OperatorIT extends OperatorITBase
                                                                  Arrays.asList(customerRowType),
                                                                  LookupOption.DISCARD_INPUT);
         RowBase[] expected = new RowBase[]{row(customerRowType, 2L, "abc")};
-        compareRows(expected, cursor(ancestorLookup, adapter));
+        compareRows(expected, cursor(ancestorLookup, queryContext));
     }
 }

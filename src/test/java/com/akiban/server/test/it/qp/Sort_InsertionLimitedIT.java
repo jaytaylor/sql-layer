@@ -78,7 +78,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 ordering(field(customerRowType, 1), true),
                 SortOption.PRESERVE_DUPLICATES,
                 2);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 2L, "foundation"),
             row(customerRowType, 4L, "highland")
@@ -98,7 +98,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 ordering(field(orderRowType, 2), true, field(orderRowType, 1), false),
                 SortOption.PRESERVE_DUPLICATES,
                 4);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 31L, 3L, "david"),
             row(orderRowType, 21L, 2L, "david"),
@@ -120,7 +120,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 ordering(field(orderRowType, 2), true),
                 SortOption.PRESERVE_DUPLICATES,
                 4);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             // Order among equals in group.
             row(orderRowType, 12L, 1L, "david"),
@@ -143,7 +143,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 ordering(field(orderRowType, 2), true),
                 SortOption.PRESERVE_DUPLICATES,
                 2);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             // Kept earlier ones in group (fewer inserts).
             row(orderRowType, 12L, 1L, "david"),
@@ -174,7 +174,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 ordering(cidField, true, oidField, true, iidField, true),
                 SortOption.PRESERVE_DUPLICATES,
                 8);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(oiType, 11L, 1L, "ori", 111L, 11L),
             row(oiType, 11L, 1L, "ori", 112L, 11L),
@@ -210,7 +210,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 ordering(cidField, true, oidField, true, iidField, false),
                 SortOption.PRESERVE_DUPLICATES,
                 8);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(oiType, 11L, 1L, "ori", 112L, 11L),
             row(oiType, 11L, 1L, "ori", 111L, 11L),
@@ -246,7 +246,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 ordering(cidField, true, oidField, false, iidField, true),
                 SortOption.PRESERVE_DUPLICATES,
                 8);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(oiType, 12L, 1L, "david", 121L, 12L),
             row(oiType, 12L, 1L, "david", 122L, 12L),
@@ -282,7 +282,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 ordering(cidField, true, oidField, false, iidField, false),
                 SortOption.PRESERVE_DUPLICATES,
                 8);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(oiType, 12L, 1L, "david", 122L, 12L),
             row(oiType, 12L, 1L, "david", 121L, 12L),
@@ -318,7 +318,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 ordering(cidField, false, oidField, true, iidField, true),
                 SortOption.PRESERVE_DUPLICATES,
                 8);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(oiType, 21L, 2L, "david", 211L, 21L),
             row(oiType, 21L, 2L, "david", 212L, 21L),
@@ -354,7 +354,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 ordering(cidField, false, oidField, true, iidField, false),
                 SortOption.PRESERVE_DUPLICATES,
                 8);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(oiType, 21L, 2L, "david", 212L, 21L),
             row(oiType, 21L, 2L, "david", 211L, 21L),
@@ -390,7 +390,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 ordering(cidField, false, oidField, false, iidField, true),
                 SortOption.PRESERVE_DUPLICATES,
                 8);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(oiType, 22L, 2L, "jack", 221L, 22L),
             row(oiType, 22L, 2L, "jack", 222L, 22L),
@@ -426,7 +426,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
                 ordering(cidField, false, oidField, false, iidField, false),
                 SortOption.PRESERVE_DUPLICATES,
                 8);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(oiType, 22L, 2L, "jack", 222L, 22L),
             row(oiType, 22L, 2L, "jack", 221L, 22L),
@@ -466,7 +466,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             row(projectType, 2L),
             row(projectType, 3L),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -494,7 +494,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             row(projectType, 3L),
             row(projectType, 5L),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test 
@@ -524,7 +524,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             row(projectType, "matrix"),
             row(projectType, "northbridge"),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     private Ordering ordering(Object... objects)

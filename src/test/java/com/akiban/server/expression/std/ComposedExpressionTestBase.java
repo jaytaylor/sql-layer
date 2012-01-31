@@ -16,9 +16,8 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.junit.OnlyIfNot;
-import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.operator.UndefBindings;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -90,7 +89,7 @@ public abstract class ComposedExpressionTestBase {
     @Test
     public void childrenNeedRowAndBindings_HasOnlyBindings() {
         ExpressionEvaluation evaluation = evaluation(NEEDS_BINDINGS, NEEDS_ROW);
-        evaluation.of(UndefBindings.only());
+        evaluation.of(dummyBindings());
         expectEvalError(evaluation);
     }
 
@@ -107,7 +106,7 @@ public abstract class ComposedExpressionTestBase {
     public void childrenNeedRowAndBindings_HasBoth() {
         ExpressionEvaluation evaluation = evaluation(NEEDS_BINDINGS, NEEDS_ROW);
         evaluation.of(dummyRow());
-        evaluation.of(UndefBindings.only());
+        evaluation.of(dummyBindings());
         expectEvalSuccess(evaluation);
     }
 
@@ -122,7 +121,7 @@ public abstract class ComposedExpressionTestBase {
     @Test
     public void childrenNeedBindings_AndHave() {
         ExpressionEvaluation evaluation = evaluation(NEEDS_BINDINGS);
-        evaluation.of(UndefBindings.only());
+        evaluation.of(dummyBindings());
         expectEvalSuccess(evaluation);
     }
 
@@ -247,6 +246,10 @@ public abstract class ComposedExpressionTestBase {
         return new NullsRow(null);
     }
     
+    private QueryContext dummyBindings() {
+        return new SimpleQueryContext(null);
+    }
+
     private static Set<ExpressionAttribute> attributesSet(ExpressionAttribute[] attributes) {
         Set<ExpressionAttribute> result = EnumSet.noneOf(ExpressionAttribute.class);
         Collections.addAll(result, attributes);
@@ -310,12 +313,8 @@ public abstract class ComposedExpressionTestBase {
         }
 
         @Override
-        public void of(Bindings bindings) {
+        public void of(QueryContext context) {
             missingRequirements.remove(ExpressionAttribute.NEEDS_BINDINGS);
-        }
-
-        @Override
-        public void of(StoreAdapter adapter) {
         }
 
         @Override

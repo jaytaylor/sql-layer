@@ -76,6 +76,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
 
     @Override
     public void start() {
+        store.setIndexStatistics(this);
         cache = Collections.synchronizedMap(new WeakHashMap<Index,IndexStatistics>());
         storeStats = new PersistitStoreIndexStatistics(store, treeService, this);
     }
@@ -157,7 +158,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 IndexStatistics indexStatistics = 
                     storeStats.computeIndexStatistics(session, index);
                 if (indexStatistics != null) {
-                    storeStats.storeIndexStatistics(session, indexStatistics);
+                    storeStats.storeIndexStatistics(session, index, indexStatistics);
                     updates.put(index, indexStatistics);
                 }
             }
@@ -183,6 +184,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             catch (PersistitException ex) {
                 throw new PersistitAdapterException(ex);
             }
+            cache.remove(index);
         }
     }
 
@@ -196,7 +198,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             Index index = entry.getKey();
             IndexStatistics indexStatistics = entry.getValue();
             try {
-                storeStats.storeIndexStatistics(session, indexStatistics);
+                storeStats.storeIndexStatistics(session, index, indexStatistics);
             }
             catch (PersistitException ex) {
                 throw new PersistitAdapterException(ex);
@@ -219,21 +221,19 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             }
         }
         // Get all the stats already computed for an index on this schema.
-        List<IndexStatistics> toDump = new ArrayList<IndexStatistics>();
+        Map<Index,IndexStatistics> toDump = new TreeMap<Index,IndexStatistics>(IndexStatisticsYamlLoader.INDEX_NAME_COMPARATOR);
         for (Index index : indexes) {
             IndexStatistics stats = getIndexStatistics(session, index);
             if (stats != null) {
-                toDump.add(stats);
+                toDump.put(index, stats);
             }
         }
-        Collections.sort(toDump, new Comparator<IndexStatistics>() {
-                             @Override
-                             public int compare(IndexStatistics i1, IndexStatistics i2) {
-                                 return i1.getIndex().getIndexName().toString()
-                                     .compareTo(i2.getIndex().getIndexName().toString());
-                             }
-                         });
         new IndexStatisticsYamlLoader(ais, schema).dump(toDump, file);
+    }
+
+    @Override
+    public void clearCache() {
+        cache.clear();
     }
 
     /* JmxManageable */

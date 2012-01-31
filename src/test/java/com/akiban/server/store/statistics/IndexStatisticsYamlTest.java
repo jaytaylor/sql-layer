@@ -49,15 +49,8 @@ public class IndexStatisticsYamlTest
     public void testLoadDump() throws Exception {
         IndexStatisticsYamlLoader loader = new IndexStatisticsYamlLoader(ais, "user");
         Map<Index,IndexStatistics> stats = loader.load(YAML_FILE);
-        File tempFile = File.createTempFile("stats", "yaml");
-        List<IndexStatistics> ordered = new ArrayList<IndexStatistics>(stats.values());
-        Collections.sort(ordered, new Comparator<IndexStatistics>() {
-                             @Override
-                             public int compare(IndexStatistics i1, IndexStatistics i2) {
-                                 return i1.getIndex().getIndexName().toString().compareTo(i2.getIndex().getIndexName().toString());
-                             }
-                         });
-        loader.dump(ordered, tempFile);
+        File tempFile = File.createTempFile("stats", ".yaml");
+        loader.dump(stats, tempFile);
         assertEquals("dump matches load", 
                      fileContents(YAML_FILE).replace("\r", ""),
                      fileContents(tempFile).replace("\r", ""));

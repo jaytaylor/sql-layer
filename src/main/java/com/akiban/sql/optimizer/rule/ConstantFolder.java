@@ -45,13 +45,13 @@ public class ConstantFolder extends BaseRule
 
     @Override
     public void apply(PlanContext planContext) {
-        PlanNode plan = planContext.getPlan();
-        Folder folder = new Folder(planContext.getRulesContext());
-        while (folder.foldConstants(plan));
-        folder.finishAggregates(plan);
+        Folder folder = new Folder(planContext);
+        while (folder.foldConstants());
+        folder.finishAggregates();
     }
 
     static class Folder implements PlanVisitor, ExpressionRewriteVisitor {
+        private final PlanContext planContext;
         private final ExpressionAssembler expressionAssembler;
         private Set<ColumnSource> eliminatedSources = new HashSet<ColumnSource>();
         private Set<AggregateSource> changedAggregates = null;
@@ -61,18 +61,19 @@ public class ConstantFolder extends BaseRule
         private Map<ConditionExpression,Boolean> topLevelConditions = 
             new IdentityHashMap<ConditionExpression,Boolean>();
 
-        public Folder(RulesContext rulesContext) {
-            this.expressionAssembler = new ExpressionAssembler(rulesContext);
+        public Folder(PlanContext planContext) {
+            this.planContext = planContext;
+            this.expressionAssembler = new ExpressionAssembler(planContext.getRulesContext());
         }
 
         /** Return <code>true</code> if substantial enough changes were made that
          * need to be run again.
          */
-        public boolean foldConstants(PlanNode plan) {
+        public boolean foldConstants() {
             state = State.FOLDING;
             changed = false;
             topLevelConditions.clear();
-            plan.accept(this);
+            planContext.accept(this);
             return changed;
         }
 
@@ -723,10 +724,10 @@ public class ConstantFolder extends BaseRule
             return null;
         }
 
-        public void finishAggregates(PlanNode plan) {
+        public void finishAggregates() {
             if (changedAggregates == null) return;
             state = State.AGGREGATES;
-            plan.accept(this);
+            planContext.accept(this);
             // Now that all the indexes are fixed, we can finally
             // remove the precomputed aggregate results.
             for (AggregateSource asource : changedAggregates) {
@@ -781,7 +782,7 @@ public class ConstantFolder extends BaseRule
 
         protected ExpressionNode evalNow(ExpressionNode node) {
             try {
-              return expressionAssembler.evalNow(node);
+                return expressionAssembler.evalNow(planContext, node);
             }
             catch (Exception ex) {
             }

@@ -38,7 +38,7 @@ import com.akiban.ais.model.UserTable;
 
 import com.akiban.server.error.InsertWrongCountException;
 import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.ParseException;
+import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.error.OrderGroupByNonIntegerConstant;
 import com.akiban.server.error.OrderGroupByIntegerOutOfRange;
@@ -77,8 +77,7 @@ public class ASTStatementLoader extends BaseRule
             plan.setPlan(new Loader().toStatement(stmt));
         }
         catch (StandardException ex) {
-            // TODO: Separate out Parser subsystem error from true parse error.
-            throw new ParseException("", ex.getMessage(), "");
+            throw new SQLParserInternalException(ex);
         }
     }
 

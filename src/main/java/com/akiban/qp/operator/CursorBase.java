@@ -19,9 +19,8 @@ public interface CursorBase<T>
 {
     /**
      * Starts the cursor.
-     * @param bindings Values of variables referenced in the underlying query.
      */
-    void open(Bindings bindings);
+    void open();
 
     /**
      * Advances to and returns the next object.

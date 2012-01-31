@@ -80,7 +80,7 @@ public class FilterIT extends OperatorITBase
     public void testCutBelowCustomer()
     {
         Operator plan = filter_Default(groupScan_Default(coi), removeDescendentTypes(customerRowType));
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(customerRowType, 2L, "foundation")
@@ -92,7 +92,7 @@ public class FilterIT extends OperatorITBase
     public void testCutBelowOrder()
     {
         Operator plan = filter_Default(groupScan_Default(coi), removeDescendentTypes(orderRowType));
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
@@ -112,7 +112,7 @@ public class FilterIT extends OperatorITBase
     public void testCutBelowItem()
     {
         Operator plan = filter_Default(groupScan_Default(coi), removeDescendentTypes(itemRowType));
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
@@ -140,7 +140,7 @@ public class FilterIT extends OperatorITBase
     public void testCutBelowAddress()
     {
         Operator plan = filter_Default(groupScan_Default(coi), removeDescendentTypes(addressRowType));
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
@@ -170,7 +170,7 @@ public class FilterIT extends OperatorITBase
     public void testExtractRoot()
     {
         Operator plan = filter_Default(groupScan_Default(coi), typeAndDescendents(customerRowType));
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
@@ -198,7 +198,7 @@ public class FilterIT extends OperatorITBase
     public void testExtractLeaf()
     {
         Operator plan = filter_Default(groupScan_Default(coi), typeAndDescendents(itemRowType));
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(itemRowType, 111L, 11L),
             row(itemRowType, 112L, 11L),
@@ -219,7 +219,7 @@ public class FilterIT extends OperatorITBase
         keepTypes.addAll(typeAndDescendents(addressRowType));
         keepTypes.addAll(typeAndDescendents(orderRowType));
         Operator plan = filter_Default(groupScan_Default(coi), keepTypes);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L),
