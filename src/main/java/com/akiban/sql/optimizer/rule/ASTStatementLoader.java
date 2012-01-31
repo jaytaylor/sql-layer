@@ -521,9 +521,8 @@ public class ASTStatementLoader extends BaseRule
                 throws StandardException {
             ExpressionNode left = toExpression(binop.getLeftOperand());
             ExpressionNode right = toExpression(binop.getRightOperand());
-            ComparisonCondition comparison = new ComparisonCondition(op, left, right,
-                    binop.getType(), binop);
-            conditions.add(comparison);
+            conditions.add(new ComparisonCondition(op, left, right,
+                                                   binop.getType(), binop));
         }
 
         protected void addBetweenCondition(List<ConditionExpression> conditions,
