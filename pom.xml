@@ -394,6 +394,7 @@
                     <exclude>**/*.dat</exclude>
                     <exclude>**/*.fail</exclude>
                     <exclude>**/*.params</exclude>
+                    <exclude>**/*.test</exclude>
                     <exclude>**/*.yaml</exclude>
                     <exclude>**/*.yml</exclude>
                     <exclude>**/group.idx</exclude>
