@@ -124,11 +124,6 @@ public class TapNestingTest
                 }
             }
         }
-        tap.in();
-        disable();
-        tap.out();
-        enable();
-        tap.in();
     }
 
     private void disable()
