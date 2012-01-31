@@ -526,4 +526,27 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
     protected boolean checkChildPKs() {
         return false;
     }
+
+    protected void confirmColumns()
+    {
+        confirmColumn(vendorRD, v_vid, "vid");
+        confirmColumn(vendorRD, v_vx, "vx");
+
+        confirmColumn(customerRD, c_vid, "vid");
+        confirmColumn(customerRD, c_cid, "cid");
+        confirmColumn(customerRD, c_cx, "cx");
+
+        confirmColumn(orderRD, o_vid, "vid");
+        confirmColumn(orderRD, o_cid, "cid");
+        confirmColumn(orderRD, o_oid, "oid");
+        confirmColumn(orderRD, o_ox, "ox");
+        confirmColumn(orderRD, o_priority, "priority");
+        confirmColumn(orderRD, o_when, "when");
+
+        confirmColumn(itemRD, i_vid, "vid");
+        confirmColumn(itemRD, i_cid, "cid");
+        confirmColumn(itemRD, i_oid, "oid");
+        confirmColumn(itemRD, i_iid, "iid");
+        confirmColumn(itemRD, i_ix, "ix");
+    }
 }

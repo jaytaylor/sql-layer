@@ -56,25 +56,9 @@ public abstract class KeyUpdateBase extends ITBase {
         populateTables();
     }
 
-    private void confirmColumns() {
-        confirmColumn(vendorRD, v_vid, "vid");
-        confirmColumn(vendorRD, v_vx, "vx");
+    protected abstract void confirmColumns();
 
-        confirmColumn(customerRD, c_cid, "cid");
-        confirmColumn(customerRD, c_cx, "cx");
-
-        confirmColumn(orderRD, o_oid, "oid");
-        confirmColumn(orderRD, o_cid, "cid");
-        confirmColumn(orderRD, o_ox, "ox");
-        confirmColumn(orderRD, o_priority, "priority");
-        confirmColumn(orderRD, o_when, "when");
-
-        confirmColumn(itemRD, i_iid, "iid");
-        confirmColumn(itemRD, i_oid, "oid");
-        confirmColumn(itemRD, i_ix, "ix");
-    }
-
-    private void confirmColumn(RowDef rowDef, Integer expectedId, String columnName) {
+    protected void confirmColumn(RowDef rowDef, Integer expectedId, String columnName) {
         assert columnName != null;
         assert rowDef != null;
         assertNotNull("column ID for " + columnName, expectedId);
@@ -92,84 +76,7 @@ public abstract class KeyUpdateBase extends ITBase {
         checkInitialState();
     }
 
-    @Test
-    @SuppressWarnings("unused") // JUnit will invoke this
-    public void testOrderPriorityUpdate() throws Exception
-    {
-        // Set customer.priority = 80 for order 133
-        TestRow customerRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L));
-        TestRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
-        TestRow newOrderRow = copyRow(oldOrderRow);
-        updateRow(newOrderRow, o_priority, 80L, customerRow);
-        dbUpdate(oldOrderRow, newOrderRow);
-        checkDB();
-    }
-
-    @Test
-    @SuppressWarnings("unused") // JUnit will invoke this
-    public void testOrderPriorityUpdateCreatingDuplicate() throws Exception
-    {
-        // Set customer.priority = 81 for order 133. Duplicates are fine.
-        TestRow customerRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L));
-        TestRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
-        TestRow newOrderRow = copyRow(oldOrderRow);
-        updateRow(newOrderRow, o_priority, 81L, customerRow);
-        dbUpdate(oldOrderRow, newOrderRow);
-        checkDB();
-    }
-
-
-    @Test
-    @SuppressWarnings("unused") // JUnit will invoke this
-    public void testOrderWhenUpdate() throws Exception
-    {
-        // Set customer.when = 9000 for order 133
-        TestRow customerRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L));
-        TestRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
-        TestRow newOrderRow = copyRow(oldOrderRow);
-        updateRow(newOrderRow, o_when, 9000L, customerRow);
-        dbUpdate(oldOrderRow, newOrderRow);
-        checkDB();
-    }
-
-    @Test
-    @SuppressWarnings("unused") // JUnit will invoke this
-    public void testOrderWhenUpdateCreatingDuplicate() throws Exception
-    {
-        // Set customer.when = 9001 for order 133
-        TestRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
-        TestRow newOrderRow = copyRow(oldOrderRow);
-        Long oldWhen = (Long) newOrderRow.put(o_when, 9001L);
-        assertEquals("old order.when", Long.valueOf(9009L), oldWhen);
-        try {
-            dbUpdate(oldOrderRow, newOrderRow);
-
-            // Make sure such a row actually exists!
-            TestRow shouldHaveConflicted = testStore.find(new HKey(vendorRD, 1L, customerRD, 11L, orderRD, 111L));
-            assertNotNull("shouldHaveConflicted not found", shouldHaveConflicted);
-            assertEquals(9001L, shouldHaveConflicted.getFields().get(o_when));
-
-            fail("update should have failed with duplicate key");
-        } catch (InvalidOperationException e) {
-            assertEquals(e.getCode(), ErrorCode.DUPLICATE_KEY);
-        }
-        TestRow confirmOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
-        assertSameFields(oldOrderRow, confirmOrderRow);
-        checkDB();
-    }
-
-    @Test
-    @SuppressWarnings("unused") // JUnit will invoke this
-    public void testOrderUpdateIsNoOp() throws Exception
-    {
-        // Update a row to its same values
-        TestRow oldOrderRow = testStore.find(new HKey(vendorRD, 1L, customerRD, 13L, orderRD, 133L));
-        TestRow newOrderRow = copyRow(oldOrderRow);
-        dbUpdate(oldOrderRow, newOrderRow);
-        checkDB();
-    }
-
-    private void assertSameFields(TestRow expected, TestRow actual) {
+    protected void assertSameFields(TestRow expected, TestRow actual) {
         Map<Integer,Object> expectedFields = expected.getFields();
         Map<Integer,Object> actualFields = actual.getFields();
         if (!expectedFields.equals(actualFields)) {
@@ -328,7 +235,7 @@ public abstract class KeyUpdateBase extends ITBase {
         });
     }
 
-    protected final void checkInitialState(NewRow row)
+    protected void checkInitialState(NewRow row)
     {
         RowDef rowDef = row.getRowDef();
         if (rowDef == vendorRD) {
@@ -424,6 +331,34 @@ public abstract class KeyUpdateBase extends ITBase {
             row.put(column++, value);
         }
         row.hKey(hKey(row));
+        return row;
+    }
+
+    protected TestRow row(TestRow parent, RowDef table, Object... values)
+    {
+        TestRow row = new TestRow(table.getRowDefId(), store());
+        int column = 0;
+        for (Object value : values) {
+            if (value instanceof Integer) {
+                value = ((Integer) value).longValue();
+            }
+            row.put(column++, value);
+        }
+        row.hKey(hKey(row, parent, null));
+        return row;
+    }
+
+    protected TestRow row(TestRow parent, TestRow grandparent, RowDef table, Object... values)
+    {
+        TestRow row = new TestRow(table.getRowDefId(), store());
+        int column = 0;
+        for (Object value : values) {
+            if (value instanceof Integer) {
+                value = ((Integer) value).longValue();
+            }
+            row.put(column++, value);
+        }
+        row.hKey(hKey(row, parent, grandparent));
         return row;
     }
 

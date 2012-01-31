@@ -34,7 +34,7 @@ public class KeyUpdateIT extends KeyUpdateBase
     @Test
     public void testItemFKUpdate() throws Exception
     {
-        // Set item.oid = o for item 1222
+        // Set item.oid = 0 for item 1222
         TestRow originalItem = testStore.find(new HKey(vendorRD, 1L, customerRD, 12L, orderRD, 122L, itemRD, 1222L));
         TestRow updatedItem = copyRow(originalItem);
         updateRow(updatedItem, i_oid, 0L, null);
@@ -630,34 +630,6 @@ public class KeyUpdateIT extends KeyUpdateBase
         dbInsert(             row(order, customer, itemRD,    2333, 233,           233300));
     }
 
-    private TestRow row(TestRow parent, RowDef table, Object... values)
-    {
-        TestRow row = new TestRow(table.getRowDefId(), store());
-        int column = 0;
-        for (Object value : values) {
-            if (value instanceof Integer) {
-                value = ((Integer) value).longValue();
-            }
-            row.put(column++, value);
-        }
-        row.hKey(hKey(row, parent, null));
-        return row;
-    }
-
-    private TestRow row(TestRow parent, TestRow grandparent, RowDef table, Object... values)
-    {
-        TestRow row = new TestRow(table.getRowDefId(), store());
-        int column = 0;
-        for (Object value : values) {
-            if (value instanceof Integer) {
-                value = ((Integer) value).longValue();
-            }
-            row.put(column++, value);
-        }
-        row.hKey(hKey(row, parent, grandparent));
-        return row;
-    }
-
     @Override
     protected HKey hKey(TestRow row)
     {
@@ -715,5 +687,25 @@ public class KeyUpdateIT extends KeyUpdateBase
         }
         row.parent(parent);
         return hKey;
+    }
+
+    protected void confirmColumns()
+    {
+        confirmColumn(vendorRD, v_vid, "vid");
+        confirmColumn(vendorRD, v_vx, "vx");
+
+        confirmColumn(customerRD, c_cid, "cid");
+        confirmColumn(customerRD, c_vid, "vid");
+        confirmColumn(customerRD, c_cx, "cx");
+
+        confirmColumn(orderRD, o_oid, "oid");
+        confirmColumn(orderRD, o_cid, "cid");
+        confirmColumn(orderRD, o_ox, "ox");
+        confirmColumn(orderRD, o_priority, "priority");
+        confirmColumn(orderRD, o_when, "when");
+
+        confirmColumn(itemRD, i_iid, "iid");
+        confirmColumn(itemRD, i_oid, "oid");
+        confirmColumn(itemRD, i_ix, "ix");
     }
 }
