@@ -242,7 +242,7 @@ public abstract class Strings {
         return sb.toString();
     }
     
-    public static String stripl(String input, String suffix) {
+    public static String stripr(String input, String suffix) {
         if (input == null || suffix == null)
             return input;
         return input.endsWith(suffix)

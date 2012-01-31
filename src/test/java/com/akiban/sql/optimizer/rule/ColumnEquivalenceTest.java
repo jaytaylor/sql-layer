@@ -48,7 +48,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.akiban.util.Strings.stripl;
+import static com.akiban.util.Strings.stripr;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -80,7 +80,7 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
                 Collections.addAll(columnEquivalences, readEquivalences(columnEquivalenceLine));
                 columnEquivalenceSets.add(columnEquivalences);
             }
-            pb.add(stripl(testFile.getName(), ".test"), schema, sql,  columnEquivalenceSets);
+            pb.add(stripr(testFile.getName(), ".test"), schema, sql,  columnEquivalenceSets);
         }
         
         return pb.asList();
