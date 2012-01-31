@@ -46,17 +46,23 @@ public class Schema
     static Integer i_oid;
     static Integer i_iid;
     static Integer i_ix;
-    // For MultiColumnKeyUpdateIT
+    // For MultiColumnKeyUpdateIT and MultiColumnKeyUpdateCascadingKeysIT
     static Integer v_vid1;
     static Integer v_vid2;
     static Integer c_vid1;
     static Integer c_vid2;
     static Integer c_cid1;
     static Integer c_cid2;
+    static Integer o_vid1;
+    static Integer o_vid2;
     static Integer o_cid1;
     static Integer o_cid2;
     static Integer o_oid1;
     static Integer o_oid2;
+    static Integer i_vid1;
+    static Integer i_vid2;
+    static Integer i_cid1;
+    static Integer i_cid2;
     static Integer i_oid1;
     static Integer i_oid2;
     static Integer i_iid1;

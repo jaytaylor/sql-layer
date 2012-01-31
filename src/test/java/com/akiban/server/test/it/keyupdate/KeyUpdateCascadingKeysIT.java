@@ -353,12 +353,6 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
         groupRD = store().getRowDefCache().getRowDef(groupRowDefId);
     }
 
-    private void updateRow(TestRow row, int column, Object newValue)
-    {
-        row.put(column, newValue);
-        row.hKey(hKey(row));
-    }
-
     @Override
     protected List<List<Object>> customerPKIndex(List<TreeRecord> records)
     {

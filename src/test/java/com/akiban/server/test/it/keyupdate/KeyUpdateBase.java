@@ -312,6 +312,12 @@ public abstract class KeyUpdateBase extends ITBase {
         return copy;
     }
 
+    protected void updateRow(TestRow row, int column, Object newValue)
+    {
+        row.put(column, newValue);
+        row.hKey(hKey(row));
+    }
+
     protected void updateRow(TestRow row, int column, Object newValue, TestRow newParent)
     {
         row.put(column, newValue);
