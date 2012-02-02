@@ -60,19 +60,26 @@ public class IndexStatisticsYamlLoader
     public static final String HISTOGRAM_LESS_COUNT_KEY = "lt";
     public static final String HISTOGRAM_DISTINCT_COUNT_KEY = "distinct";
     
+    public static final Comparator<Index> INDEX_NAME_COMPARATOR = 
+        new Comparator<Index>() {
+            @Override
+            public int compare(Index i1, Index i2) {
+                return i1.getIndexName().toString().compareTo(i2.getIndexName().toString());
+        }
+    };
+
     public IndexStatisticsYamlLoader(AkibanInformationSchema ais, String defaultSchema) {
         this.ais = ais;
         this.defaultSchema = defaultSchema;
     }
     
     public Map<Index,IndexStatistics> load(File file) throws IOException {
-        Map<Index,IndexStatistics> result = new HashMap<Index,IndexStatistics>();
+        Map<Index,IndexStatistics> result = new TreeMap<Index,IndexStatistics>(INDEX_NAME_COMPARATOR);
         Yaml yaml = new Yaml();
         FileInputStream istr = new FileInputStream(file);
         try {
             for (Object doc : yaml.loadAll(istr)) {
-                IndexStatistics indexStatistics = parseStatistics(doc);
-                result.put(indexStatistics.getIndex(), indexStatistics);
+                parseStatistics(doc, result);
             }
         }
         finally {
@@ -81,7 +88,7 @@ public class IndexStatisticsYamlLoader
         return result;
     }
 
-    protected IndexStatistics parseStatistics(Object obj) {
+    protected void parseStatistics(Object obj, Map<Index,IndexStatistics> result) {
         if (!(obj instanceof Map))
             throw new AkibanInternalException("Document not in expected format");
         Map<?,?> map = (Map<?,?>)obj;
@@ -97,15 +104,15 @@ public class IndexStatisticsYamlLoader
             if (index == null)
                 throw new NoSuchIndexException(indexName);
         }
-        IndexStatistics result = new IndexStatistics(index);
+        IndexStatistics stats = new IndexStatistics(index);
         for (Object e : (Iterable)map.get(STATISTICS_COLLECTION_KEY)) {
             Map<?,?> em = (Map<?,?>)e;
             int columnCount = (Integer)em.get(STATISTICS_COLUMN_COUNT_KEY);
             Histogram h = parseHistogram(em.get(STATISTICS_HISTOGRAM_COLLECTION_KEY), 
                                          index, columnCount);
-            result.addHistogram(h);
+            stats.addHistogram(h);
         }
-        return result;
+        result.put(index, stats);
     }
 
     protected Histogram parseHistogram(Object obj, Index index, int columnCount) {
@@ -127,7 +134,7 @@ public class IndexStatisticsYamlLoader
             entries.add(new HistogramEntry(keyString, keyBytes,
                                            eqCount, ltCount, distinctCount));
         }
-        return new Histogram(index, columnCount, entries);
+        return new Histogram(columnCount, entries);
     }
 
     protected Key encodeKey(Index index, int columnCount, List<?> values) {
@@ -144,10 +151,10 @@ public class IndexStatisticsYamlLoader
         return key;
     }
 
-    public void dump(Collection<IndexStatistics> stats, File file) throws IOException {
+    public void dump(Map<Index,IndexStatistics> stats, File file) throws IOException {
         List<Object> docs = new ArrayList<Object>(stats.size());
-        for (IndexStatistics stat : stats) {
-            docs.add(buildStatistics(stat));
+        for (Map.Entry<Index,IndexStatistics> stat : stats.entrySet()) {
+            docs.add(buildStatistics(stat.getKey(), stat.getValue()));
         }
         Yaml yaml = new Yaml();
         FileWriter ostr = new FileWriter(file);
@@ -159,24 +166,22 @@ public class IndexStatisticsYamlLoader
         }
     }
 
-    protected Object buildStatistics(IndexStatistics indexStatistics) {
+    protected Object buildStatistics(Index index, IndexStatistics indexStatistics) {
         Map map = new TreeMap();
-        Index index = indexStatistics.getIndex();
         map.put(INDEX_NAME_KEY, index.getIndexName().getName());
         map.put(TABLE_NAME_KEY, index.getIndexName().getTableName());
         List<Object> stats = new ArrayList<Object>();
         for (int i = 0; i < index.getColumns().size(); i++) {
             Histogram histogram = indexStatistics.getHistogram(i + 1);
             if (histogram == null) continue;
-            stats.add(buildHistogram(histogram));
+            stats.add(buildHistogram(index, histogram));
         }
         map.put(STATISTICS_COLLECTION_KEY, stats);
         return map;
     }
 
-    protected Object buildHistogram(Histogram histogram) {
+    protected Object buildHistogram(Index index, Histogram histogram) {
         Map map = new TreeMap();
-        Index index = histogram.getIndex();
         int columnCount = histogram.getColumnCount();
         map.put(STATISTICS_COLUMN_COUNT_KEY, columnCount);
         List<Object> entries = new ArrayList<Object>();
