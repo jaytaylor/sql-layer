@@ -15,7 +15,9 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.InconvertibleTypesException;
+import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -131,10 +133,19 @@ public class BinaryBitExpression extends AbstractBinaryExpression
     {
         private final BitOperator op;                
         private static final BigInteger n64 = new BigInteger("FFFFFFFFFFFFFFFF", 16);
+        private QueryContext context;
+        
         public InnerEvaluation (List<? extends ExpressionEvaluation> children, BitOperator op)
         {
             super(children);
             this.op = op;
+        }
+        
+        @Override
+        public void of(QueryContext context) 
+        {
+            super.of(context);
+            this.context = context;
         }
  
         @Override
@@ -148,11 +159,13 @@ public class BinaryBitExpression extends AbstractBinaryExpression
             catch (InconvertibleTypesException ex) // acceptable error where the result will simply be 0
             {
                 // if invalid types are supplied, 0 is assumed to be input
-               LoggerFactory.getLogger(BinaryBitExpression.class).debug(ex.getShortMessage() + " - assume 0 as input");
+               if (context != null)
+                   context.warnClient(ex);
             }   
             catch (NumberFormatException exc ) // acceptable error where the result will simply be 0
             {
-                LoggerFactory.getLogger(BinaryBitExpression.class).debug(exc.getMessage() + " - assume 0 as input"); 
+                if (context != null)
+                   context.warnClient(new InvalidCharToNumException(exc.getMessage()));
             }
             valueHolder().putUBigInt(rst.and(n64));
             return valueHolder();

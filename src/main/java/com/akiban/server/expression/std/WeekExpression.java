@@ -15,8 +15,10 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
+import com.akiban.server.error.ZeroDateTimeException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -172,11 +174,20 @@ public class WeekExpression extends AbstractCompositeExpression
             else return (dayOfYear - firstD) / 7 +1;
         }
 
+        private QueryContext context;
+        
         public InnerEvaluation (List<? extends ExpressionEvaluation> evals)
         {
             super(evals);
         }
 
+        @Override
+        public void of(QueryContext context)
+        {
+            super.of(context);
+            this.context = context;
+        }
+        
         @Override
         public ValueSource eval()
         {
@@ -186,7 +197,12 @@ public class WeekExpression extends AbstractCompositeExpression
 
             long rawLong = Extractors.getLongExtractor(fOp.getConversionType()).getLong(fOp);
             long ymd[] = Extractors.getLongExtractor(fOp.getConversionType()).getYearMonthDayHourMinuteSecond(rawLong);
-            if (ymd[0] * ymd[1] * ymd[2] == 0) throw new InvalidParameterValueException();
+            if (ymd[0] * ymd[1] * ymd[2] == 0)
+            {
+                if (context != null)
+                    context.warnClient(new ZeroDateTimeException());
+                return NullValueSource.only();
+            }
 
             // second operand
             int mode = 0;
@@ -199,7 +215,11 @@ public class WeekExpression extends AbstractCompositeExpression
             }
             
             if (mode < 0 || mode > 7)
-                throw new InvalidParameterValueException();
+            {
+                if (context != null)
+                    context.warnClient(new InvalidParameterValueException("MODE out of range [0, 7]: " + mode));
+                return NullValueSource.only();
+            }
             else
             {
                 valueHolder().putRaw(AkType.INT, modes[(int) mode].getWeek(new MutableDateTime(DateTimeZone.getDefault()),

@@ -15,8 +15,10 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
+import com.akiban.server.error.ZeroDateTimeException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -141,10 +143,19 @@ public class YearWeekExpression extends AbstractCompositeExpression
             if (dayOfYear < firstD) return modes[lowestVal].getYearWeek(cal, yr - 1, 12, 31);
             else return yr * 100 + (dayOfYear - firstD) / 7 +1;
         }
+        
+        private QueryContext context;
 
         public InnerEvaluation (List<? extends ExpressionEvaluation> evals)
         {
             super(evals);
+        }
+        
+        @Override
+        public void of(QueryContext context)
+        {
+            super.of(context);
+            this.context = context;
         }
 
         @Override
@@ -156,7 +167,12 @@ public class YearWeekExpression extends AbstractCompositeExpression
 
             long rawLong = Extractors.getLongExtractor(fOp.getConversionType()).getLong(fOp);
             long ymd[] = Extractors.getLongExtractor(fOp.getConversionType()).getYearMonthDayHourMinuteSecond(rawLong);                        
-            if (ymd[0] * ymd[1] * ymd[2] == 0) throw new InvalidParameterValueException();
+            if (ymd[0] * ymd[1] * ymd[2] == 0)
+            {
+                if (context != null)
+                    context.warnClient(new ZeroDateTimeException());
+                return NullValueSource.only();
+            }
 
             // second operand
             int mode = 0;
@@ -167,7 +183,12 @@ public class YearWeekExpression extends AbstractCompositeExpression
 
                 mode = (int)Extractors.getLongExtractor(AkType.INT).getLong(sOp);
             }
-            if (mode < 0 || mode > 7) throw new InvalidParameterValueException();
+            if (mode < 0 || mode > 7)
+            {
+                if (context != null)
+                    context.warnClient(new InvalidParameterValueException("MODE out of range [0, 7]: " + mode));
+                return NullValueSource.only();
+            }
             return new ValueHolder(AkType.INT, modes[(int)mode].getYearWeek(
                     new MutableDateTime(DateTimeZone.getDefault()),(int)ymd[0], (int)ymd[1], (int)ymd[2]));
         }

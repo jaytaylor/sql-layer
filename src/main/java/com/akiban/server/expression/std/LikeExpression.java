@@ -15,6 +15,8 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -81,13 +83,21 @@ public class LikeExpression extends AbstractCompositeExpression
         private char esca = '\\';
         private boolean noWildcardU = false;
         private boolean noWildcardP = false;
-
+        private QueryContext context;
+        
         public InnerEvaluation (List<? extends ExpressionEvaluation> childrenEval, boolean mode)
         {
             super(childrenEval);
             this.case_insens = mode;
         }
 
+        @Override
+        public void of(QueryContext context)
+        {
+            super.of(context);
+            this.context = context;
+        }
+        
         @Override
         public ValueSource eval()
         {
@@ -107,11 +117,10 @@ public class LikeExpression extends AbstractCompositeExpression
             noWildcardU = esca == '_';
             noWildcardP = esca == '%';
 
-
             return BoolValueSource.of(compareS(left,right, case_insens));
         }
 
-        private  boolean compareS(String left, String right, boolean case_insensitive)
+        private  Boolean compareS(String left, String right, boolean case_insensitive)
         {
             int l = 0, r = 0;
             int lLimit = left.length(), rLimit = right.length();
@@ -139,7 +148,12 @@ public class LikeExpression extends AbstractCompositeExpression
                             afterP = right.charAt(++r);
                             esc = true;
                         }
-                        else throw new UnsupportedOperationException("invalid escape sequence");
+                        else
+                        {
+                            if (context != null)
+                                context.warnClient(new InvalidParameterValueException("invalid escape sequence"));
+                            return null;
+                        }
 
                     while (l < lLimit) // loop1: attempt to find a matching sequence in left that starts with afterP
                     {
@@ -163,7 +177,12 @@ public class LikeExpression extends AbstractCompositeExpression
                                         rchar = right.charAt(++r);
                                         esc = true;
                                     }
-                                     else throw new UnsupportedOperationException ("invalid escape sequence");
+                                    else
+                                    {
+                                        if (context != null)
+                                            context.warnClient(new InvalidParameterValueException("invalid escape sequence"));
+                                        return null;
+                                    }
                                 }
 
                                 if (rchar == '%' && !esc) continue Loop2;
@@ -201,7 +220,12 @@ public class LikeExpression extends AbstractCompositeExpression
                 else if (rchar == esca)
                 {
                     if ( r + 1 < rLimit && (right.charAt(r+1) == '_' || right.charAt(r+1) == '%' || right.charAt(r+1) == esca)) rchar = right.charAt(++r);
-                    else throw new UnsupportedOperationException("invalid escape sequence"); // TODO: replaced with invalid parameter value
+                    else 
+                    {
+                        if (context != null)
+                                context.warnClient(new InvalidParameterValueException("invalid escape sequence"));
+                            return null;
+                    }
 
                     if (lchar == rchar || Character.toUpperCase(lchar) == Character.toUpperCase(rchar) && case_insensitive )
                     {
@@ -228,7 +252,12 @@ public class LikeExpression extends AbstractCompositeExpression
                     {
                         if (right.charAt(r) != '%') return false; // and r-1 != escape
                         else if (r + 1 < rLimit && (right.charAt(r+1) == '%'  || right.charAt(r+1) == '_')&& noWildcardP) return false; // % is  escaped
-                        else if (noWildcardP) throw new UnsupportedOperationException("invalid escape sequence"); // % is by itself (invalide escape sequence)
+                        else if (noWildcardP) // % is by itself (invalide escape sequence)
+                        {
+                            if (context != null)
+                                context.warnClient(new InvalidParameterValueException("invalid escape sequence"));
+                            return null;
+                        } 
                         ++r;
                     }
                     return true;
