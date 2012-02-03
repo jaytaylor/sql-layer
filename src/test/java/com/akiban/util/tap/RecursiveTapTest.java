@@ -15,20 +15,31 @@
 
 package com.akiban.util.tap;
 
-public interface TapMXBean
+import org.junit.Test;
+
+public class RecursiveTapTest
 {
-    public void enableAll();
-
-    public void disableAll();
-
-    public void setEnabled(String regExPattern, boolean on);
-
-    public void reset(String regExPattern);
-
-    public void resetAll();
-
-    public String getReport();
-
-    public TapReport[] getReports(String regExPattern);
-
+    @Test
+    public void test() throws InterruptedException
+    {
+        InOutTap a = Tap.createRecursiveTimer("a");
+        InOutTap b = a.createSubsidiaryTap("b", a);
+        Tap.setEnabled(ALL_TAPS, true);
+        a.in();
+        Thread.sleep(100);
+        b.in();
+        Thread.sleep(100);
+        a.in();
+        Thread.sleep(100);
+        a.out();
+        Thread.sleep(100);
+        b.out();
+        Thread.sleep(100);
+        a.out();
+        for (TapReport report : Tap.getReport(ALL_TAPS)) {
+            System.out.println(report);
+        }
+    }
+    
+    private static final String ALL_TAPS = ".*";
 }

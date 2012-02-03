@@ -60,14 +60,14 @@ class Count extends Tap
         justEnabled = true;
     }
 
-    public void appendReport(StringBuilder sb)
+    public void appendReport(StringBuilder buffer)
     {
-        sb.append(String.format("%20s inCount=%,10d outCount=%,10d", name, inCount, outCount));
+        buffer.append(String.format("%20s inCount=%,10d outCount=%,10d", name, inCount, outCount));
     }
 
-    public TapReport getReport()
+    public TapReport[] getReports()
     {
-        return new TapReport(name, inCount, outCount, 0);
+        return new TapReport[]{new TapReport(name, inCount, outCount, 0)};
     }
 
     // Count interface

@@ -291,7 +291,7 @@ public class KeyUpdateIT extends KeyUpdateBase
         dbUpdate(oldRow, newRow);
         checkHKeyPropagation(2, 9);
 /*
-        TapReport[] tapReports = Tap.getReport(".*propagate_hkey_change$");
+        TapReport[] tapReports = Tap.getReports(".*propagate_hkey_change$");
         assertEquals(1, tapReports.length);
         TapReport propagateTap = tapReports[0];
         // There should be two propagations, one for deletion of the old row, and one for insertion of the new row
