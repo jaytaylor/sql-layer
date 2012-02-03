@@ -16,11 +16,13 @@
 package com.akiban.sql.pg;
 
 import com.akiban.sql.server.ServerOperatorCompiler;
+import com.akiban.sql.server.ServerPlanContext;
 
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PhysicalSelect;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.PhysicalUpdate;
+import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 
 import com.akiban.sql.StandardException;
@@ -104,11 +106,12 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
         if (stmt instanceof CallStatementNode || !(stmt instanceof DMLStatementNode))
             return null;
         DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
+        PlanContext planContext = new ServerPlanContext(this, new PostgresQueryContext(session));
         BasePlannable result = null;
         tracer = session.getSessionTracer(); // Don't think this ever changes.
         try {
             tracer.beginEvent(EventTypes.COMPILE);
-            result = compile(dmlStmt, params);
+            result = compile(dmlStmt, params, planContext);
         } 
         finally {
             session.getSessionTracer().endEvent();

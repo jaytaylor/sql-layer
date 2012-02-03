@@ -145,8 +145,12 @@ public class PostgresServerConnection extends ServerSessionBase
         try {
             while (running) {
                 READ_MESSAGE.in();
-                PostgresMessages type = messenger.readMessage(startupComplete);
-                READ_MESSAGE.out();
+                PostgresMessages type;
+                try {
+                    type = messenger.readMessage(startupComplete);
+                } finally {
+                    READ_MESSAGE.out();
+                }
                 PROCESS_MESSAGE.in();
                 if (ignoreUntilSync) {
                     if ((type != PostgresMessages.EOF_TYPE) && (type != PostgresMessages.SYNC_TYPE))
@@ -634,28 +638,7 @@ public class PostgresServerConnection extends ServerSessionBase
 
     protected int executeStatement(PostgresStatement pstmt, PostgresQueryContext context, int maxrows) 
             throws IOException {
-        PostgresStatement.TransactionMode transactionMode = pstmt.getTransactionMode();
-        ServerTransaction localTransaction = null;
-        if (transaction != null) {
-            transaction.checkTransactionMode(transactionMode);
-        }
-        else {
-            switch (transactionMode) {
-            case REQUIRED:
-            case REQUIRED_WRITE:
-                throw new NoTransactionInProgressException();
-            case READ:
-            case NEW:
-                localTransaction = new ServerTransaction(this, true);
-                break;
-            case WRITE:
-            case NEW_WRITE:
-                if (transactionDefaultReadOnly)
-                    throw new TransactionReadOnlyException();
-                localTransaction = new ServerTransaction(this, false);
-                break;
-            }
-        }
+        ServerTransaction localTransaction = beforeExecute(pstmt);
         int rowsProcessed = 0;
         boolean success = false;
         try {
@@ -664,12 +647,7 @@ public class PostgresServerConnection extends ServerSessionBase
             success = true;
         }
         finally {
-            if (localTransaction != null) {
-                if (success)
-                    localTransaction.commit();
-                else
-                    localTransaction.abort();
-            }
+            afterExecute(pstmt, localTransaction, success);
             sessionTracer.endEvent();
         }
         return rowsProcessed;
@@ -736,7 +714,7 @@ public class PostgresServerConnection extends ServerSessionBase
     @Override
     protected boolean propertySet(String key, String value) {
         if ("client_encoding".equals(key)) {
-            if ("UNICODE".equals(value))
+            if ("UNICODE".equals(value) || (value == null))
                 messenger.setEncoding("UTF-8");
             else
                 messenger.setEncoding(value);

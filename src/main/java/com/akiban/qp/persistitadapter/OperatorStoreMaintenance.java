@@ -47,28 +47,30 @@ final class OperatorStoreMaintenance {
     public void run(OperatorStoreGIHandler.Action action, PersistitHKey hKey, RowData forRow, StoreAdapter adapter, OperatorStoreGIHandler handler) {
         if (storePlan.noMaintenanceRequired())
             return;
+        Cursor cursor = null;
+        boolean runTapEntered = false;
         ALL_TAP.in();
-        Operator planOperator = rootOperator();
-        if (planOperator == null)
-            return;
-        QueryContext context = new SimpleQueryContext(adapter);
-        final List<Column> lookupCols = rowType.userTable().getPrimaryKey().getColumns();
-
-        context.setHKey(OperatorStoreMaintenance.HKEY_BINDING_POSITION, hKey);
-
-        // Copy the values into the array bindings
-        RowDataValueSource source = new RowDataValueSource();
-        for (int i=0; i < lookupCols.size(); ++i) {
-            int bindingsIndex = i+1;
-            Column col = lookupCols.get(i);
-            source.bind((FieldDef)col.getFieldDef(), forRow);
-            context.setValue(bindingsIndex, source);
-        }
-
-        Cursor cursor = API.cursor(planOperator, context);
-        RUN_TAP.in();
-        cursor.open();
         try {
+            Operator planOperator = rootOperator();
+            if (planOperator == null)
+                return;
+            QueryContext context = new SimpleQueryContext(adapter);
+            List<Column> lookupCols = rowType.userTable().getPrimaryKey().getColumns();
+
+            context.setHKey(OperatorStoreMaintenance.HKEY_BINDING_POSITION, hKey);
+
+            // Copy the values into the array bindings
+            RowDataValueSource source = new RowDataValueSource();
+            for (int i=0; i < lookupCols.size(); ++i) {
+                int bindingsIndex = i+1;
+                Column col = lookupCols.get(i);
+                source.bind((FieldDef)col.getFieldDef(), forRow);
+                context.setValue(bindingsIndex, source);
+            }
+            cursor = API.cursor(planOperator, context);
+            RUN_TAP.in();
+            runTapEntered = true;
+            cursor.open();
             Row row;
             while ((row = cursor.next()) != null) {
                 boolean actioned = false;
@@ -111,10 +113,14 @@ final class OperatorStoreMaintenance {
                 }
             }
         } finally {
-            cursor.close();
-            RUN_TAP.out();
+            if (cursor != null) {
+                cursor.close();
+            }
+            if (runTapEntered) {
+                RUN_TAP.out();
+            }
+            ALL_TAP.out();
         }
-        ALL_TAP.out();
     }
 
     private boolean useInvertType(OperatorStoreGIHandler.Action action, QueryContext context) {
@@ -128,8 +134,8 @@ final class OperatorStoreMaintenance {
                     return false;
                 Cursor siblingsCounter = API.cursor(siblingsLookup, context);
                 SIBLING_ALL_TAP.in();
-                siblingsCounter.open();
                 try {
+                    siblingsCounter.open();
                     int siblings = 0;
                     while (siblingsCounter.next() != null) {
                         SIBLING_ROW_TAP.hit();
@@ -154,8 +160,11 @@ final class OperatorStoreMaintenance {
     private void doAction(OperatorStoreGIHandler.Action action, OperatorStoreGIHandler handler, Row row) {
         InOutTap actionTap = actionTap(action);
         actionTap.in();
-        handler.handleRow(groupIndex, row, action);
-        actionTap.out();
+        try {
+            handler.handleRow(groupIndex, row, action);
+        } finally {
+            actionTap.out();
+        }
     }
 
     private static OperatorStoreGIHandler.Action invert(OperatorStoreGIHandler.Action action) {
