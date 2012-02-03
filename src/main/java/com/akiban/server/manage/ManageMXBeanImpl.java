@@ -23,11 +23,13 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.AkServer;
 import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.jmx.JmxManageable;
+import com.akiban.server.service.jmx.JmxManageable.JmxObjectInfo;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.store.Store;
 
-public class ManageMXBeanImpl implements ManageMXBean {
+public class ManageMXBeanImpl implements ManageMXBean, JmxManageable {
     private final Store store;
     private final DXLService dxlService;
     private final SessionService sessionService;
@@ -38,6 +40,13 @@ public class ManageMXBeanImpl implements ManageMXBean {
         this.sessionService = sessionService;
     }
 
+    public ManageMXBeanImpl() {
+        this.store = null;
+        this.dxlService = null;
+        this.sessionService = null;
+    }
+
+    
     @Override
     public void ping() {
         return;
@@ -144,4 +153,10 @@ public class ManageMXBeanImpl implements ManageMXBean {
         }
         return indexes;
     }
-}
+
+    @Override
+    public JmxObjectInfo getJmxObjectInfo() {
+        return new JmxObjectInfo("ManageMXBean", 
+                                 new ManageMXBeanImpl(), 
+                                 ManageMXBean.class);
+    }}

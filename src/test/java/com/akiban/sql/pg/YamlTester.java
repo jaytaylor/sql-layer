@@ -64,6 +64,9 @@ import org.yaml.snakeyaml.nodes.NodeTuple;
 import org.yaml.snakeyaml.nodes.ScalarNode;
 import org.yaml.snakeyaml.nodes.Tag;
 
+import com.akiban.server.manage.ManageMXBean;
+import com.akiban.server.store.statistics.IndexStatisticsMXBean;
+
 /**
  * A utility for testing SQL access over a Postgres server connection based on
  * the contents of a YAML file.
@@ -138,6 +141,14 @@ import org.yaml.snakeyaml.nodes.Tag;
    - The statement text should not create a table -- use the CreateTable
      command for that purpose
    - output_ordered: does a sort on the expected and actual during comparison  
+   
+   BulkLoad is not supported in IT level tests
+   if used, please suppress the IT level calls or place tests in AAS directly
+   
+   - JMX: <objectName>   (i.e com.akiban:type=IndexStatistics)
+   - params: [<parameter value>, ...]
+   - output: [<output value>, ...]
+
 */
 class YamlTester {
 
@@ -224,6 +235,10 @@ class YamlTester {
 		    dropTableCommand(value);
 		} else if ("Statement".equals(commandName)) {
 		    statementCommand(value, sequence);
+		} else if ("Bulkload".equals(commandName)) {
+                    bulkloadCommand(value, sequence); 
+                } else if ("JMX".equals(commandName)) {
+                    JMXCommand(value, sequence);
 		} else {
 		    fail("Unknown command: " + commandName);
 		}
@@ -241,6 +256,10 @@ class YamlTester {
 	    /* Add context */
 	    throw new ContextAssertionError(e.toString(), e);
 	}
+    }
+
+    private void bulkloadCommand(Object value, List<Object> sequence) {
+        // ignore this command.  Not meant for ITs, only system testing
     }
 
     private void includeCommand(Object value, List<Object> sequence) {
@@ -361,6 +380,30 @@ class YamlTester {
 		}
 	    }
 	}
+
+    protected boolean rowsEqual(List<Object> pattern, List<Object> row) {
+    
+        int size = pattern.size();
+        if (size != row.size()) {
+    	return false;
+        }
+        for (int i = 0; i < size; i++) {
+    	Object patternElem = pattern.get(i);
+    	Object rowElem = row.get(i);
+    	if (patternElem instanceof OutputComparator) {
+    	    return ((OutputComparator) patternElem)
+    		    .compareOutput(rowElem);
+    	} else if (patternElem == null) {
+    	    if (rowElem != null) {
+    		return false;
+    	    }
+    	} else if (!arrayElementString(patternElem).equals(
+    		arrayElementString(rowElem))) {
+    	    return false;
+    	}
+        }
+        return true;
+    }
     }
 
     private void createTableCommand(Object value, List<Object> sequence)
@@ -886,30 +929,6 @@ class YamlTester {
 	    }
 	}
 
-	private boolean rowsEqual(List<Object> pattern, List<Object> row) {
-
-	    int size = pattern.size();
-	    if (size != row.size()) {
-		return false;
-	    }
-	    for (int i = 0; i < size; i++) {
-		Object patternElem = pattern.get(i);
-		Object rowElem = row.get(i);
-		if (patternElem instanceof OutputComparator) {
-		    return ((OutputComparator) patternElem)
-			    .compareOutput(rowElem);
-		} else if (patternElem == null) {
-		    if (rowElem != null) {
-			return false;
-		    }
-		} else if (!arrayElementString(patternElem).equals(
-			arrayElementString(rowElem))) {
-		    return false;
-		}
-	    }
-	    return true;
-	}
-
 	private void debugPrintResults(ResultSet rs) throws SQLException {
 	    System.err.println(context() + "Result output:");
 	    ResultSetMetaData md = rs.getMetaData();
@@ -1383,5 +1402,112 @@ class YamlTester {
 	    context.append(": ");
 	}
 	return context.toString();
+    }
+    
+    private void JMXCommand(Object value, List<Object> sequence)
+            throws SQLException {
+        if (value != null) {
+            new JMXCommand(value, sequence).execute();
+        }
+    }
+    
+    private class JMXCommand extends AbstractStatementCommand {
+
+        ArrayList<Object> output = null;
+        String objectName = null;
+        ArrayList<String> params = null;
+        String method = null;
+
+        public JMXCommand(Object value, List<Object> sequence) {
+            super(string(value, "JMX value"));
+            if (value != null & String.valueOf(value).trim().length() > 1) {
+                objectName = String.valueOf(value).trim();
+            } else {
+                fail("Must provide an Object name");
+            }
+
+            for (int i = 1; i < sequence.size(); i++) {
+                Entry<Object, Object> map = onlyEntry(sequence.get(i),
+                        "JMX attribute");
+                String attribute = string(map.getKey(), "JMX attribute name");
+                Object attributeValue = map.getValue();
+                if ("params".equals(attribute)) {
+                    parseParams(attributeValue);
+                } else if ("method".equals(attribute)) {
+                    method = String.valueOf(attributeValue).trim();
+                } else if ("output".equals(attribute)) {
+                    parseOutput(attributeValue);
+                } else {
+                    fail("The '" + attribute + "' attribute name was not"
+                            + " recognized");
+                }
+            }
+
+        }
+
+        private void parseParams(Object value) {
+            if (value == null) {
+                return;
+            }
+            assertNull("The params attribute must not appear more than once",
+                    params);
+            params = new ArrayList<String>(
+                    stringSequence(value, "params value"));
+        }
+
+        private void parseOutput(Object value) {
+            if (value == null) {
+                return;
+            }
+            assertNull("The output attribute must not appear more than once",
+                    output);
+            List<Object> row = rows(value, "output value").get(0);
+            output = (ArrayList<Object>) row;
+        }
+
+        public void execute() {
+            JMXInterpreter conn = new JMXInterpreter();
+            conn.openConnection("localhost", "8082");
+            if (objectName.equalsIgnoreCase("com.akiban:type=IndexStatistics")) {
+                IndexStatisticsMXBean bean = conn.getIndexStatisticsMXBean(conn
+                        .getConnector());
+                assertNotNull(bean);
+                if (method.equalsIgnoreCase("dumpIndexStatistics")) {
+                    try {
+                        bean.dumpIndexStatistics(params.get(0), params.get(1));
+                    } catch (IOException e) {
+                        System.out.println("Error: " + e.getMessage());
+                        fail("Error: " + e.getMessage());
+                    }
+                } else {
+                    fail("Method not supported");
+                }
+            } else if (objectName.equalsIgnoreCase("com.akiban:type=AKSERVER")) {
+                try {
+                    ManageMXBean bean = conn.getManageMXBean(conn
+                            .getConnector());
+                    assertNotNull("bean is null", bean);
+                    if (method.equalsIgnoreCase("getVersionString")) {
+                        if (output != null) {
+                            List<Object> row = new ArrayList<Object>();
+
+                            row.add(bean.getVersionString());
+                            if (!rowsEqual(output.subList(0, 1), row)) {
+                                fail("Version does not match");
+                            }
+                        } else {
+                              System.out.println(bean.getVersionString());
+                        }
+                    } else {
+                        fail("Method not supported");
+                    }
+                } catch (java.lang.reflect.UndeclaredThrowableException e) {
+                    fail("error: " + e.getCause());
+                }
+
+            } else {
+                fail("JMX call not supported currently");
+            }
+        }
     }
 }
