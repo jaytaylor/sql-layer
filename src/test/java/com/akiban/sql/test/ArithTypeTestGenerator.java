@@ -55,7 +55,7 @@ public class ArithTypeTestGenerator
         writeTestCases(output);
         output.append("..." + System.getProperty("line.separator"));
         output.insert(0, "## Tests generated: " + count + " cases\n" +
-                         "## Tests enabled: " + (stmNumber - 3) + "\n");
+                         "## Tests enabled: " + (stmNumber - 2) + "\n");
 
         String path = System.getProperty("user.dir")
                     + "/src/test/resources/com/akiban/sql/pg/yaml/functional"
