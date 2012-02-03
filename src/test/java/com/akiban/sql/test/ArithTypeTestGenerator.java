@@ -60,7 +60,7 @@ public class ArithTypeTestGenerator
         String path = System.getProperty("user.dir")
                     + "/src/test/resources/com/akiban/sql/pg/yaml/functional"
                     + "/test-arith-typing.yaml";
-       //saveFile(output, path);
+        saveFile(output, path);
         System.out.println(output);
     }
 
