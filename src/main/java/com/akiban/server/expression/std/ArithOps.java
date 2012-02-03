@@ -247,13 +247,14 @@ public class ArithOps
         /**
          * 
          * @param args
-         * @param index of the arg whose type is DATE/TIMES
+         * @param index of the arg whose type is DATE/TIMES/NUMERIC (in short, anything but a VARCHAR or an UNSUPPORTED)
          * @throws StandardException 
          * 
          * adjust the VARCHAR arg to DATE, DATETIME or DOUBLE depending on the 
          * arg at [index]
          */
         protected abstract void adjustVarchar (TypesList args, int index) throws StandardException;
+        
         @Override
         protected Expression compose (Expression first, Expression second)
         {
