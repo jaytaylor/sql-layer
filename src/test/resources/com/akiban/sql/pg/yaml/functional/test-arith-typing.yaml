@@ -5,298 +5,298 @@
 ---
 - Include: all-types-schema.yaml
 ---
-- Statement: INSERT INTO all_types(numeric, double_field, bigint_field, integer_field, date_field, time_field, timestamp_field, varchar_field) VALUES ('1','1','1','1','2012-01-20', '04:30:10', '2012-01-20 04:30:10', '1');
+- Statement: INSERT INTO all_types(numeric_field, double_field, bigint_field, integer_field, date_field, time_field, timestamp_field, varchar_field) VALUES ('1','1','1','1','2012-01-20', '04:30:10', '2012-01-20 04:30:10', '1');
 ---
 #command number: 3
-- Statement: SELECT numeric + numeric FROM all_types;
+- Statement: SELECT numeric_field + numeric_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 4
-- Statement: SELECT numeric + double_field FROM all_types;
+- Statement: SELECT numeric_field + double_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 5
-- Statement: SELECT numeric + bigint_field FROM all_types;
+- Statement: SELECT numeric_field + bigint_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 6
-- Statement: SELECT numeric + integer_field FROM all_types;
+- Statement: SELECT numeric_field + integer_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 7
-- Statement: SELECT numeric + varchar_field FROM all_types;
+- Statement: SELECT numeric_field + varchar_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 8
-- Statement: SELECT varchar_field + numeric FROM all_types;
+- Statement: SELECT varchar_field + numeric_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 9
-- Statement: SELECT numeric - numeric FROM all_types;
+- Statement: SELECT numeric_field - numeric_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 10
-- Statement: SELECT numeric - double_field FROM all_types;
+- Statement: SELECT numeric_field - double_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 11
-- Statement: SELECT numeric - bigint_field FROM all_types;
+- Statement: SELECT numeric_field - bigint_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 12
-- Statement: SELECT numeric - integer_field FROM all_types;
+- Statement: SELECT numeric_field - integer_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 13
-- Statement: SELECT numeric - varchar_field FROM all_types;
+- Statement: SELECT numeric_field - varchar_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 14
-- Statement: SELECT varchar_field - numeric FROM all_types;
+- Statement: SELECT varchar_field - numeric_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 15
-- Statement: SELECT numeric / numeric FROM all_types;
+- Statement: SELECT numeric_field / numeric_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 16
-- Statement: SELECT numeric / double_field FROM all_types;
+- Statement: SELECT numeric_field / double_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 17
-- Statement: SELECT numeric / bigint_field FROM all_types;
+- Statement: SELECT numeric_field / bigint_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 18
-- Statement: SELECT numeric / integer_field FROM all_types;
+- Statement: SELECT numeric_field / integer_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 19
-- Statement: SELECT numeric / varchar_field FROM all_types;
+- Statement: SELECT numeric_field / varchar_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 20
-- Statement: SELECT varchar_field / numeric FROM all_types;
+- Statement: SELECT varchar_field / numeric_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 21
-- Statement: SELECT numeric * numeric FROM all_types;
+- Statement: SELECT numeric_field * numeric_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 22
-- Statement: SELECT numeric * double_field FROM all_types;
+- Statement: SELECT numeric_field * double_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 23
-- Statement: SELECT numeric * bigint_field FROM all_types;
+- Statement: SELECT numeric_field * bigint_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 24
-- Statement: SELECT numeric * integer_field FROM all_types;
+- Statement: SELECT numeric_field * integer_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 25
-- Statement: SELECT numeric * varchar_field FROM all_types;
+- Statement: SELECT numeric_field * varchar_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 26
-- Statement: SELECT varchar_field * numeric FROM all_types;
+- Statement: SELECT varchar_field * numeric_field FROM all_types;
 - output_types: [NUMERIC]
 #---
-#- Statement: SELECT numeric + INTERVAL 1 YEAR FROM all_types;
+#- Statement: SELECT numeric_field + INTERVAL 1 YEAR FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 YEAR + numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 YEAR + numeric_field FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT numeric - INTERVAL 1 YEAR FROM all_types;
+#- Statement: SELECT numeric_field - INTERVAL 1 YEAR FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 YEAR - numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 YEAR - numeric_field FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT numeric * INTERVAL 1 YEAR FROM all_types;
+#- Statement: SELECT numeric_field * INTERVAL 1 YEAR FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT INTERVAL 1 YEAR * numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 YEAR * numeric_field FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT numeric / INTERVAL 1 YEAR FROM all_types;
+#- Statement: SELECT numeric_field / INTERVAL 1 YEAR FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 YEAR / numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 YEAR / numeric_field FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT numeric + INTERVAL 1 MONTH FROM all_types;
+#- Statement: SELECT numeric_field + INTERVAL 1 MONTH FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 MONTH + numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 MONTH + numeric_field FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT numeric - INTERVAL 1 MONTH FROM all_types;
+#- Statement: SELECT numeric_field - INTERVAL 1 MONTH FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 MONTH - numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 MONTH - numeric_field FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT numeric * INTERVAL 1 MONTH FROM all_types;
+#- Statement: SELECT numeric_field * INTERVAL 1 MONTH FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT INTERVAL 1 MONTH * numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 MONTH * numeric_field FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT numeric / INTERVAL 1 MONTH FROM all_types;
+#- Statement: SELECT numeric_field / INTERVAL 1 MONTH FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 MONTH / numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 MONTH / numeric_field FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT numeric + INTERVAL 1 QUARTER FROM all_types;
+#- Statement: SELECT numeric_field + INTERVAL 1 QUARTER FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 QUARTER + numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 QUARTER + numeric_field FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT numeric - INTERVAL 1 QUARTER FROM all_types;
+#- Statement: SELECT numeric_field - INTERVAL 1 QUARTER FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 QUARTER - numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 QUARTER - numeric_field FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT numeric * INTERVAL 1 QUARTER FROM all_types;
+#- Statement: SELECT numeric_field * INTERVAL 1 QUARTER FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT INTERVAL 1 QUARTER * numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 QUARTER * numeric_field FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT numeric / INTERVAL 1 QUARTER FROM all_types;
+#- Statement: SELECT numeric_field / INTERVAL 1 QUARTER FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 QUARTER / numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 QUARTER / numeric_field FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT numeric + INTERVAL 1 WEEK FROM all_types;
+#- Statement: SELECT numeric_field + INTERVAL 1 WEEK FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 WEEK + numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 WEEK + numeric_field FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT numeric - INTERVAL 1 WEEK FROM all_types;
+#- Statement: SELECT numeric_field - INTERVAL 1 WEEK FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 WEEK - numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 WEEK - numeric_field FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT numeric * INTERVAL 1 WEEK FROM all_types;
+#- Statement: SELECT numeric_field * INTERVAL 1 WEEK FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT INTERVAL 1 WEEK * numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 WEEK * numeric_field FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT numeric / INTERVAL 1 WEEK FROM all_types;
+#- Statement: SELECT numeric_field / INTERVAL 1 WEEK FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 WEEK / numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 WEEK / numeric_field FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT numeric + INTERVAL 1 DAY FROM all_types;
+#- Statement: SELECT numeric_field + INTERVAL 1 DAY FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 DAY + numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 DAY + numeric_field FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT numeric - INTERVAL 1 DAY FROM all_types;
+#- Statement: SELECT numeric_field - INTERVAL 1 DAY FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 DAY - numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 DAY - numeric_field FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT numeric * INTERVAL 1 DAY FROM all_types;
+#- Statement: SELECT numeric_field * INTERVAL 1 DAY FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT INTERVAL 1 DAY * numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 DAY * numeric_field FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT numeric / INTERVAL 1 DAY FROM all_types;
+#- Statement: SELECT numeric_field / INTERVAL 1 DAY FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 DAY / numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 DAY / numeric_field FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT numeric + INTERVAL 1 HOUR FROM all_types;
+#- Statement: SELECT numeric_field + INTERVAL 1 HOUR FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 HOUR + numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 HOUR + numeric_field FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT numeric - INTERVAL 1 HOUR FROM all_types;
+#- Statement: SELECT numeric_field - INTERVAL 1 HOUR FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 HOUR - numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 HOUR - numeric_field FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT numeric * INTERVAL 1 HOUR FROM all_types;
+#- Statement: SELECT numeric_field * INTERVAL 1 HOUR FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT INTERVAL 1 HOUR * numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 HOUR * numeric_field FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT numeric / INTERVAL 1 HOUR FROM all_types;
+#- Statement: SELECT numeric_field / INTERVAL 1 HOUR FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 HOUR / numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 HOUR / numeric_field FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT numeric + INTERVAL 1 MINUTE FROM all_types;
+#- Statement: SELECT numeric_field + INTERVAL 1 MINUTE FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 MINUTE + numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 MINUTE + numeric_field FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT numeric - INTERVAL 1 MINUTE FROM all_types;
+#- Statement: SELECT numeric_field - INTERVAL 1 MINUTE FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 MINUTE - numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 MINUTE - numeric_field FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT numeric * INTERVAL 1 MINUTE FROM all_types;
+#- Statement: SELECT numeric_field * INTERVAL 1 MINUTE FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT INTERVAL 1 MINUTE * numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 MINUTE * numeric_field FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT numeric / INTERVAL 1 MINUTE FROM all_types;
+#- Statement: SELECT numeric_field / INTERVAL 1 MINUTE FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 MINUTE / numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 MINUTE / numeric_field FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT numeric + INTERVAL 1 SECOND FROM all_types;
+#- Statement: SELECT numeric_field + INTERVAL 1 SECOND FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 SECOND + numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 SECOND + numeric_field FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT numeric - INTERVAL 1 SECOND FROM all_types;
+#- Statement: SELECT numeric_field - INTERVAL 1 SECOND FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 SECOND - numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 SECOND - numeric_field FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT numeric * INTERVAL 1 SECOND FROM all_types;
+#- Statement: SELECT numeric_field * INTERVAL 1 SECOND FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT INTERVAL 1 SECOND * numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 SECOND * numeric_field FROM all_types;
 #- output_types: [NUMERIC]
 #---
-#- Statement: SELECT numeric / INTERVAL 1 SECOND FROM all_types;
+#- Statement: SELECT numeric_field / INTERVAL 1 SECOND FROM all_types;
 #- error: [22503]
 #---
-#- Statement: SELECT INTERVAL 1 SECOND / numeric FROM all_types;
+#- Statement: SELECT INTERVAL 1 SECOND / numeric_field FROM all_types;
 #- output_types: [NUMERIC]
 ---
 #command number: 27
-- Statement: SELECT double_field + numeric FROM all_types;
+- Statement: SELECT double_field + numeric_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 28
@@ -320,7 +320,7 @@
 - output_types: [DOUBLE]
 ---
 #command number: 33
-- Statement: SELECT double_field - numeric FROM all_types;
+- Statement: SELECT double_field - numeric_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 34
@@ -344,7 +344,7 @@
 - output_types: [DOUBLE]
 ---
 #command number: 39
-- Statement: SELECT double_field / numeric FROM all_types;
+- Statement: SELECT double_field / numeric_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 40
@@ -368,7 +368,7 @@
 - output_types: [DOUBLE]
 ---
 #command number: 45
-- Statement: SELECT double_field * numeric FROM all_types;
+- Statement: SELECT double_field * numeric_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 46
@@ -584,7 +584,7 @@
 #- output_types: [DOUBLE]
 ---
 #command number: 51
-- Statement: SELECT bigint_field + numeric FROM all_types;
+- Statement: SELECT bigint_field + numeric_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 52
@@ -608,7 +608,7 @@
 - output_types: [BIGINT]
 ---
 #command number: 57
-- Statement: SELECT bigint_field - numeric FROM all_types;
+- Statement: SELECT bigint_field - numeric_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 58
@@ -632,7 +632,7 @@
 - output_types: [BIGINT]
 ---
 #command number: 63
-- Statement: SELECT bigint_field / numeric FROM all_types;
+- Statement: SELECT bigint_field / numeric_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 64
@@ -656,7 +656,7 @@
 - output_types: [BIGINT]
 ---
 #command number: 69
-- Statement: SELECT bigint_field * numeric FROM all_types;
+- Statement: SELECT bigint_field * numeric_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 70
@@ -872,7 +872,7 @@
 #- output_types: [BIGINT]
 ---
 #command number: 75
-- Statement: SELECT integer_field + numeric FROM all_types;
+- Statement: SELECT integer_field + numeric_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 76
@@ -896,7 +896,7 @@
 - output_types: [INTEGER]
 ---
 #command number: 81
-- Statement: SELECT integer_field - numeric FROM all_types;
+- Statement: SELECT integer_field - numeric_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 82
@@ -920,7 +920,7 @@
 - output_types: [INTEGER]
 ---
 #command number: 87
-- Statement: SELECT integer_field / numeric FROM all_types;
+- Statement: SELECT integer_field / numeric_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 88
@@ -944,7 +944,7 @@
 - output_types: [INTEGER]
 ---
 #command number: 93
-- Statement: SELECT integer_field * numeric FROM all_types;
+- Statement: SELECT integer_field * numeric_field FROM all_types;
 - output_types: [NUMERIC]
 ---
 #command number: 94
@@ -2184,99 +2184,99 @@
 - error: [22503]
 ---
 #command number: 355
-- Statement: SELECT numeric + date_field FROM all_types;
+- Statement: SELECT numeric_field + date_field FROM all_types;
 - error: [22503]
 ---
 #command number: 356
-- Statement: SELECT date_field + numeric FROM all_types;
+- Statement: SELECT date_field + numeric_field FROM all_types;
 - error: [22503]
 ---
 #command number: 357
-- Statement: SELECT numeric - date_field FROM all_types;
+- Statement: SELECT numeric_field - date_field FROM all_types;
 - error: [22503]
 ---
 #command number: 358
-- Statement: SELECT date_field - numeric FROM all_types;
+- Statement: SELECT date_field - numeric_field FROM all_types;
 - error: [22503]
 ---
 #command number: 359
-- Statement: SELECT numeric / date_field FROM all_types;
+- Statement: SELECT numeric_field / date_field FROM all_types;
 - error: [22503]
 ---
 #command number: 360
-- Statement: SELECT date_field / numeric FROM all_types;
+- Statement: SELECT date_field / numeric_field FROM all_types;
 - error: [22503]
 ---
 #command number: 361
-- Statement: SELECT numeric * date_field FROM all_types;
+- Statement: SELECT numeric_field * date_field FROM all_types;
 - error: [22503]
 ---
 #command number: 362
-- Statement: SELECT date_field * numeric FROM all_types;
+- Statement: SELECT date_field * numeric_field FROM all_types;
 - error: [22503]
 ---
 #command number: 363
-- Statement: SELECT numeric + time_field FROM all_types;
+- Statement: SELECT numeric_field + time_field FROM all_types;
 - error: [22503]
 ---
 #command number: 364
-- Statement: SELECT time_field + numeric FROM all_types;
+- Statement: SELECT time_field + numeric_field FROM all_types;
 - error: [22503]
 ---
 #command number: 365
-- Statement: SELECT numeric - time_field FROM all_types;
+- Statement: SELECT numeric_field - time_field FROM all_types;
 - error: [22503]
 ---
 #command number: 366
-- Statement: SELECT time_field - numeric FROM all_types;
+- Statement: SELECT time_field - numeric_field FROM all_types;
 - error: [22503]
 ---
 #command number: 367
-- Statement: SELECT numeric / time_field FROM all_types;
+- Statement: SELECT numeric_field / time_field FROM all_types;
 - error: [22503]
 ---
 #command number: 368
-- Statement: SELECT time_field / numeric FROM all_types;
+- Statement: SELECT time_field / numeric_field FROM all_types;
 - error: [22503]
 ---
 #command number: 369
-- Statement: SELECT numeric * time_field FROM all_types;
+- Statement: SELECT numeric_field * time_field FROM all_types;
 - error: [22503]
 ---
 #command number: 370
-- Statement: SELECT time_field * numeric FROM all_types;
+- Statement: SELECT time_field * numeric_field FROM all_types;
 - error: [22503]
 ---
 #command number: 371
-- Statement: SELECT numeric + timestamp_field FROM all_types;
+- Statement: SELECT numeric_field + timestamp_field FROM all_types;
 - error: [22503]
 ---
 #command number: 372
-- Statement: SELECT timestamp_field + numeric FROM all_types;
+- Statement: SELECT timestamp_field + numeric_field FROM all_types;
 - error: [22503]
 ---
 #command number: 373
-- Statement: SELECT numeric - timestamp_field FROM all_types;
+- Statement: SELECT numeric_field - timestamp_field FROM all_types;
 - error: [22503]
 ---
 #command number: 374
-- Statement: SELECT timestamp_field - numeric FROM all_types;
+- Statement: SELECT timestamp_field - numeric_field FROM all_types;
 - error: [22503]
 ---
 #command number: 375
-- Statement: SELECT numeric / timestamp_field FROM all_types;
+- Statement: SELECT numeric_field / timestamp_field FROM all_types;
 - error: [22503]
 ---
 #command number: 376
-- Statement: SELECT timestamp_field / numeric FROM all_types;
+- Statement: SELECT timestamp_field / numeric_field FROM all_types;
 - error: [22503]
 ---
 #command number: 377
-- Statement: SELECT numeric * timestamp_field FROM all_types;
+- Statement: SELECT numeric_field * timestamp_field FROM all_types;
 - error: [22503]
 ---
 #command number: 378
-- Statement: SELECT timestamp_field * numeric FROM all_types;
+- Statement: SELECT timestamp_field * numeric_field FROM all_types;
 - error: [22503]
 ---
 #command number: 379

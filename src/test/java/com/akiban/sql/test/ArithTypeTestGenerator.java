@@ -35,7 +35,7 @@ import java.util.Arrays;
 public class ArithTypeTestGenerator
 {
     static private final String ops [] = {"+", "-", "/", "*"};
-    static private final String numerics[] = {"numeric", "double_field",
+    static private final String numerics[] = {"numeric_field", "double_field",
           "bigint_field", "integer_field" };
     static private final String dates[] = {"date_field", "time_field", "timestamp_field"};
     static private final String intervals[] = {"INTERVAL 1 YEAR", "INTERVAL 1 MONTH",
@@ -45,7 +45,7 @@ public class ArithTypeTestGenerator
     static private final String bool = "boolean_field";
 
     static private int count = 0; // keep track of total number of tests generated
-    static private int stmNumber = 3; // keep track of enabled tests
+    static private int stmNumber = 3; // keep track number of SELECT statements(test cases)
     
     public static void main (String args[]) throws IOException
     {
