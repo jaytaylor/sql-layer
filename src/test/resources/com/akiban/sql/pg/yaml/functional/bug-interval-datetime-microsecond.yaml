@@ -1,9 +1,0 @@
-# Adding MICROSECOND INTERVAL produces wrong value (bug 913798)
----
-- CreateTable: t (datetime_field datetime)
----
-- Statement: INSERT INTO t VALUES ('2000-01-01 00:00:00')
----
-- Statement: SELECT datetime_field + INTERVAL '2000000' MICROSECOND FROM t
-- output: [[!re '2000-01-01 00:00:02([.]0)?']]
-...

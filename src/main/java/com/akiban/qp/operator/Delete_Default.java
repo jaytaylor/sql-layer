@@ -21,6 +21,7 @@ import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
 import com.akiban.util.Strings;
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
 /**
@@ -92,22 +93,25 @@ class Delete_Default extends OperatorExecutionBase implements UpdatePlannable {
     }
 
     @Override
-    public UpdateResult run(Bindings bindings, StoreAdapter adapter) {
-        adapter(adapter);
+    public UpdateResult run(QueryContext context) {
+        context(context);
         int seen = 0, modified = 0;
+        Cursor inputCursor = null;
         DELETE_TAP.in();
-        Cursor inputCursor = inputOperator.cursor(adapter);
-        inputCursor.open(bindings);
         try {
+            inputCursor = inputOperator.cursor(context);
+            inputCursor.open();
             Row oldRow;
             while ((oldRow = inputCursor.next()) != null) {
                 checkQueryCancelation();
                 ++seen;
-                adapter.deleteRow(oldRow, bindings);
+                adapter().deleteRow(oldRow);
                 ++modified;
             }
         } finally {
-            inputCursor.close();
+            if (inputCursor != null) {
+                inputCursor.close();
+            }
             DELETE_TAP.out();
         }
         return new StandardUpdateResult(seen, modified);
@@ -129,6 +133,6 @@ class Delete_Default extends OperatorExecutionBase implements UpdatePlannable {
     }
 
     private final Operator inputOperator;
-    private static final Tap.InOutTap DELETE_TAP = Tap.createTimer("operator: delete");
+    private static final InOutTap DELETE_TAP = Tap.createTimer("operator: delete");
 
 }

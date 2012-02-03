@@ -19,8 +19,6 @@ import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.exec.UpdatePlannable;
 
-import com.akiban.server.expression.EnvironmentExpressionSetting;
-
 import java.util.Arrays;
 import java.util.List;
 
@@ -28,9 +26,8 @@ import java.util.List;
 public class PhysicalUpdate extends BasePlannable
 {
     public PhysicalUpdate(UpdatePlannable updatePlannable,
-                          DataTypeDescriptor[] parameterTypes,
-                          List<EnvironmentExpressionSetting> environmentSettings) {
-        super(updatePlannable, parameterTypes, environmentSettings);
+                          DataTypeDescriptor[] parameterTypes) {
+        super(updatePlannable, parameterTypes);
     }
 
     public UpdatePlannable getUpdatePlannable() {
@@ -46,8 +43,6 @@ public class PhysicalUpdate extends BasePlannable
     protected String withIndentedExplain(StringBuilder str) {
         if (getParameterTypes() != null)
             str.append(Arrays.toString(getParameterTypes()));
-        if (getEnvironmentSettings() != null)
-            str.append(getEnvironmentSettings());
         return super.withIndentedExplain(str);
     }
 

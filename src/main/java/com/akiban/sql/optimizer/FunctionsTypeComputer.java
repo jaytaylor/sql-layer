@@ -21,7 +21,6 @@ import com.akiban.sql.StandardException;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
-import com.akiban.server.expression.EnvironmentExpressionFactory;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.TypesList;
@@ -154,12 +153,6 @@ public class FunctionsTypeComputer extends AISTypeComputer
                                               return null;
                                           }
                                       });
-        // Not a regular function, maybe an environment access function.
-        if (functionKind == FunctionsRegistry.FunctionKind.ENVIRONMENT) {
-            EnvironmentExpressionFactory environment = 
-                functionsRegistry.environment(functionName);
-            return fromExpressionType(environment.getType());
-        }
         return null;
     }
 

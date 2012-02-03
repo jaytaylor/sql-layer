@@ -19,7 +19,7 @@ import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerStatementCache;
 
 import com.akiban.qp.loadableplan.LoadablePlan;
-import com.akiban.qp.loadableplan.ServerServiceRequirementsReceiver;
+import com.akiban.server.error.InvalidPortException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +36,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -46,6 +47,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Also keeps global state for shutdown and inter-connection communication like cancel.
 */
 public class PostgresServer implements Runnable, PostgresMXBean {
+    public static final String SERVER_PROPERTIES_PREFIX = "akserver.postgres.";
+
+    private final Properties properties;
     private final int port;
     private final ServerServiceRequirements reqs;
     private ServerSocket socket = null;
@@ -66,11 +70,23 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     private static final Logger logger = LoggerFactory.getLogger(PostgresServer.class);
 
-    public PostgresServer(int port, int statementCacheCapacity, ServerServiceRequirements reqs) {
-        this.port = port;
+    public PostgresServer(ServerServiceRequirements reqs) {
+        this.reqs = reqs;
+        properties = reqs.config().deriveProperties(SERVER_PROPERTIES_PREFIX);
+
+        String portString = properties.getProperty("port");
+        port = Integer.parseInt(portString);
+        if (port <= 0)
+            throw new InvalidPortException(port);
+        
+        String capacityString = properties.getProperty("statementCacheCapacity");
+        int statementCacheCapacity = Integer.parseInt(capacityString);
         if (statementCacheCapacity > 0)
             statementCache = new ServerStatementCache<PostgresStatement>(statementCacheCapacity);
-        this.reqs = reqs;
+    }
+
+    public Properties getProperties() {
+        return properties;
     }
 
     public int getPort() {
@@ -321,15 +337,12 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     // (Re-)load any initial plans.
     private void loadInitialPlans() {
-        String plans = reqs.config().getProperty("akserver.postgres.loadablePlans");
+        String plans = properties.getProperty("loadablePlans");
         if (plans.length() > 0) {
             for (String className : plans.split(",")) {
                 try {
                     Class klass = Class.forName(className);
                     LoadablePlan<?> loadablePlan = (LoadablePlan)klass.newInstance();
-                    if (loadablePlan instanceof ServerServiceRequirementsReceiver) {
-                        ((ServerServiceRequirementsReceiver)loadablePlan).setServerServiceRequirements(reqs);
-                    }
                     LoadablePlan<?> prev = loadablePlans.put(loadablePlan.name(), loadablePlan);
                     assert (prev == null) : className;
                 }

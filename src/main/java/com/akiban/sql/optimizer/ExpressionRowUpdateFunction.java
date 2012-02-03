@@ -17,7 +17,7 @@ package com.akiban.sql.optimizer;
 
 import java.util.List;
 
-import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
@@ -44,7 +44,7 @@ public class ExpressionRowUpdateFunction implements UpdateFunction
     }
 
     @Override
-    public Row evaluate(Row original, Bindings bindings) {
+    public Row evaluate(Row original, QueryContext context) {
         OverlayingRow result = new OverlayingRow(original);
         int nfields = rowType.nFields();
         for (int i = 0; i < nfields; i++) {
@@ -52,7 +52,7 @@ public class ExpressionRowUpdateFunction implements UpdateFunction
             if (expression != null) {
                 ExpressionEvaluation evaluation = expression.evaluation();
                 evaluation.of(original);
-                evaluation.of(bindings);
+                evaluation.of(context);
                 result.overlay(i, evaluation.eval());
             }
         }

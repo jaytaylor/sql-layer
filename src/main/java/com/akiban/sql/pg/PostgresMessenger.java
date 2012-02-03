@@ -15,6 +15,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
 import java.io.*;
@@ -39,9 +40,9 @@ public class PostgresMessenger implements DataInput, DataOutput
     public static final int AUTHENTICATION_SSPI = 9;
     public static final int AUTHENTICATION_GSS_CONTINUE = 8;
 
-    private final static Tap.InOutTap waitTap = Tap.createTimer("sql: msg: wait");
-    private final static Tap.InOutTap recvTap = Tap.createTimer("sql: msg: recv");
-    private final static Tap.InOutTap xmitTap = Tap.createTimer("sql: msg: xmit");
+    private final static InOutTap waitTap = Tap.createTimer("sql: msg: wait");
+    private final static InOutTap recvTap = Tap.createTimer("sql: msg: recv");
+    private final static InOutTap xmitTap = Tap.createTimer("sql: msg: xmit");
 
     private InputStream inputStream;
     private OutputStream outputStream;
@@ -112,8 +113,8 @@ public class PostgresMessenger implements DataInput, DataOutput
             
         if (code < 0) 
             return PostgresMessages.EOF_TYPE;                            // EOF
+        recvTap.in();
         try {
-            recvTap.in();
             int len = dataInput.readInt();
             if ((len < 0) || (len > type.maxSize()))
                 throw new IOException(String.format("Implausible message length (%d) received.", len));
@@ -171,6 +172,19 @@ public class PostgresMessenger implements DataInput, DataOutput
         finally {
             xmitTap.out();
         }
+    }
+
+    /** Save whatever portion of the current message there is so that
+     * something asynchronous can be sent. */
+    protected Object suspendMessage() throws IOException {
+        messageOutput.flush();
+        return byteOutput;
+    }
+
+    /** Restore the state from {@link #suspendMessage}. */
+    protected void resumeMessage(Object state) throws IOException {
+        byteOutput = (ByteArrayOutputStream)state;
+        messageOutput = new DataOutputStream(byteOutput);
     }
 
     /** Read null-terminated string. */

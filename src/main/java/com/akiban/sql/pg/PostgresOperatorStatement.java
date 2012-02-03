@@ -17,12 +17,10 @@ package com.akiban.sql.pg;
 
 import com.akiban.server.service.session.Session;
 import com.akiban.qp.operator.*;
-import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
-
-import com.akiban.server.expression.EnvironmentExpressionSetting;
 
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
 
@@ -38,16 +36,15 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     private Operator resultOperator;
     private RowType resultRowType;
 
-    private static final Tap.InOutTap EXECUTE_TAP = Tap.createTimer("PostgresOperatorStatement: execute shared");
-    private static final Tap.InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresOperatorStatement: acquire shared lock");
+    private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresOperatorStatement: execute shared");
+    private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresOperatorStatement: acquire shared lock");
 
     public PostgresOperatorStatement(Operator resultOperator,
                                      RowType resultRowType,
                                      List<String> columnNames,
                                      List<PostgresType> columnTypes,
-                                     PostgresType[] parameterTypes,
-                                     List<EnvironmentExpressionSetting> environmentSettings) {
-        super(columnNames, columnTypes, parameterTypes, environmentSettings);
+                                     PostgresType[] parameterTypes) {
+        super(columnNames, columnTypes, parameterTypes);
         this.resultOperator = resultOperator;
         this.resultRowType = resultRowType;
     }
@@ -58,19 +55,16 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     }
 
     @Override
-    public int execute(PostgresServerSession server, int maxrows)
-        throws IOException {
-        PostgresMessenger messenger = server.getMessenger();
-        Bindings bindings = getBindings();
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+        PostgresServerSession server = context.getServer();
         Session session = server.getSession();
         int nrows = 0;
         Cursor cursor = null;
         try {
             lock(session, UNSPECIFIED_DML_READ);
-            setEnvironmentBindings(server, bindings);
-            cursor = API.cursor(resultOperator, server.getStore());
-            cursor.open(bindings);
-            PostgresRowOutputter outputter = new PostgresRowOutputter(messenger, this);
+            cursor = API.cursor(resultOperator, context);
+            cursor.open();
+            PostgresRowOutputter outputter = new PostgresRowOutputter(context, this);
             Row row;
             while ((row = cursor.next()) != null) {
                 assert resultRowType == null || (row.rowType() == resultRowType) : row;
@@ -87,6 +81,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             unlock(session, UNSPECIFIED_DML_READ);
         }
         {        
+            PostgresMessenger messenger = server.getMessenger();
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
             messenger.writeString("SELECT " + nrows);
             messenger.sendMessage();
@@ -95,79 +90,15 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     }
 
     @Override
-    protected Tap.InOutTap executeTap()
+    protected InOutTap executeTap()
     {
         return EXECUTE_TAP;
     }
 
     @Override
-    protected Tap.InOutTap acquireLockTap()
+    protected InOutTap acquireLockTap()
     {
         return ACQUIRE_LOCK_TAP;
     }
 
-    /** Only needed in the case where a statement has parameters or the client
-     * specifies that some results should be in binary. */
-    static class BoundStatement extends PostgresOperatorStatement {
-        private Bindings bindings;
-        private int nparams;
-        private boolean[] columnBinary; // Is this column binary format?
-        private boolean defaultColumnBinary;
-
-        public BoundStatement(Operator resultOperator,
-                              RowType resultRowType,
-                              List<String> columnNames,
-                              List<PostgresType> columnTypes,
-                              Bindings bindings, int nparams,
-                              boolean[] columnBinary, boolean defaultColumnBinary,
-                              List<EnvironmentExpressionSetting> environmentSettings) {
-            super(resultOperator, resultRowType, columnNames, columnTypes, 
-                  null, environmentSettings);
-            this.bindings = bindings;
-            this.nparams = nparams;
-            this.columnBinary = columnBinary;
-            this.defaultColumnBinary = defaultColumnBinary;
-        }
-
-        @Override
-        public Bindings getBindings() {
-            return bindings;
-        }
-
-        @Override
-        protected int getNParameters() {
-            return nparams;
-        }
-
-        @Override
-        public boolean isColumnBinary(int i) {
-            if ((columnBinary != null) && (i < columnBinary.length))
-                return columnBinary[i];
-            else
-                return defaultColumnBinary;
-        }
-    }
-
-    /** Get a bound version of a predicate by applying given parameters
-     * and requested result formats. */
-    @Override
-    public PostgresStatement getBoundStatement(Object[] parameters,
-                                               boolean[] columnBinary, 
-                                               boolean defaultColumnBinary)  {
-        if ((parameters == null) && 
-            (columnBinary == null) && (defaultColumnBinary == false))
-            return this;        // Can be reused.
-
-        Bindings bindings = getBindings();
-        int nparams = getNParameters();
-        if (parameters != null) {
-            bindings = getParameterBindings(parameters);
-            nparams = parameters.length;
-        }
-        return new BoundStatement(resultOperator, resultRowType,
-                                  getColumnNames(), getColumnTypes(),
-                                  bindings, nparams,
-                                  columnBinary, defaultColumnBinary,
-                                  getEnvironmentSettings());
-    }
 }
