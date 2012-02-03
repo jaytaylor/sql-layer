@@ -295,7 +295,14 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         } catch(InvalidOperationException e) {
             // Try and roll back all changes
             try {
-                store().deleteIndexes(session, newIndexes);
+                /*
+                 * Call to deleteIndexes removed "temporarily" to fix
+                 * a problem with MVCC pruning.  Theory: records
+                 * added to any indexes will be removed anyway by
+                 * rollback.  Any new Tree instances created above by
+                 * buildIndexes will be left behind, but empty. -- Peter
+                 */
+//                store().deleteIndexes(session, newIndexes);
                 schemaManager().dropIndexes(session, newIndexes);
             } catch(Exception e2) {
                 logger.error("Exception while rolling back failed createIndex: " + newIndexes, e2);

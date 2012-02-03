@@ -76,8 +76,11 @@ public abstract class ServerSessionBase implements ServerSession
 
     @Override
     public void setProperty(String key, String value) {
-        properties.setProperty(key, value);
-        if (!propertySet(key, value))
+        if (value == null)
+            properties.remove(key);
+        else
+            properties.setProperty(key, value);
+        if (!propertySet(key, properties.getProperty(key)))
             sessionChanged();   // Give individual handlers a chance.
     }
 
@@ -95,7 +98,9 @@ public abstract class ServerSessionBase implements ServerSession
             return true;
         }
         if ("maxNotificationLevel".equals(key)) {
-            maxNotificationLevel = QueryContext.NotificationLevel.valueOf(value);
+            maxNotificationLevel = (value == null) ? 
+                QueryContext.NotificationLevel.INFO :
+                QueryContext.NotificationLevel.valueOf(value);
             return true;
         }
         return false;

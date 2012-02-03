@@ -145,8 +145,12 @@ public class PostgresServerConnection extends ServerSessionBase
         try {
             while (running) {
                 READ_MESSAGE.in();
-                PostgresMessages type = messenger.readMessage(startupComplete);
-                READ_MESSAGE.out();
+                PostgresMessages type;
+                try {
+                    type = messenger.readMessage(startupComplete);
+                } finally {
+                    READ_MESSAGE.out();
+                }
                 PROCESS_MESSAGE.in();
                 if (ignoreUntilSync) {
                     if ((type != PostgresMessages.EOF_TYPE) && (type != PostgresMessages.SYNC_TYPE))
@@ -706,7 +710,7 @@ public class PostgresServerConnection extends ServerSessionBase
     @Override
     protected boolean propertySet(String key, String value) {
         if ("client_encoding".equals(key)) {
-            if ("UNICODE".equals(value))
+            if ("UNICODE".equals(value) || (value == null))
                 messenger.setEncoding("UTF-8");
             else
                 messenger.setEncoding(value);

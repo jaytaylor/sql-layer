@@ -269,25 +269,29 @@ final class AkibanCommandHandler extends SimpleChannelUpstreamHandler {
             CommandMessage<CacheElement> command, Channel channel)
             throws HapiRequestException {
         HAPI_GETS_TAP.in();
-        if (LOG.isTraceEnabled()) {
-            StringBuilder msg = new StringBuilder();
-            msg.append(command.cmd);
-            if (command.element != null) {
-                msg.append(" ").append(command.element.getKeystring());
-            } else {
-                msg.append(" null_command_element");
+        ResponseMessage<CacheElement> resp;
+        try {
+            if (LOG.isTraceEnabled()) {
+                StringBuilder msg = new StringBuilder();
+                msg.append(command.cmd);
+                if (command.element != null) {
+                    msg.append(" ").append(command.element.getKeystring());
+                } else {
+                    msg.append(" null_command_element");
+                }
+                for (int i = 0; i < command.keys.size(); ++i) {
+                    msg.append(" ").append(command.keys.get(i));
+                }
+                LOG.trace(msg.toString());
             }
-            for (int i = 0; i < command.keys.size(); ++i) {
-                msg.append(" ").append(command.keys.get(i));
-            }
-            LOG.trace(msg.toString());
-        }
 
-        final CacheElement[] results = handleGetKeys(command.keys, session
-                .get(), hapiProcessor, formatGetter.getFormat());
-        ResponseMessage<CacheElement> resp = new ResponseMessage<CacheElement>(
-                command).withElements(results);
-        HAPI_GETS_TAP.out();
+            final CacheElement[] results = handleGetKeys(command.keys, session
+                    .get(), hapiProcessor, formatGetter.getFormat());
+            resp = new ResponseMessage<CacheElement>(
+                    command).withElements(results);
+        } finally {
+            HAPI_GETS_TAP.out();
+        }
         Channels.fireMessageReceived(context, resp, channel.getRemoteAddress());
         callback.requestProcessed();
     }
