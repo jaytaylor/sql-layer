@@ -270,21 +270,21 @@ public class ArithOps
             // adjust some *ambiguous types* (VARCHAR and/or UNSUPPORTED (coming from params))
             if (first.getType() != second.getType())
             {
-                int arg;
+                int index; // index of the unambiguous argument
                 if (    first.getType() == AkType.VARCHAR && 
-                            ArithExpression.isDateTime(arguments.get(arg = 1).getType()) ||
+                            ArithExpression.isDateTime(arguments.get(index = 1).getType()) ||
                         second.getType() == AkType.VARCHAR && 
-                            !ArithExpression.isNumeric(arguments.get(arg = 0).getType()))
+                            !ArithExpression.isNumeric(arguments.get(index = 0).getType()))
                     // if one of the operands is VARCHAR and the other date/time/interval
                     // adjust the varchar to appropriate type
-                    adjustVarchar(arguments, arg);
+                    adjustVarchar(arguments, index);
                 else if (   first.getType() == AkType.UNSUPPORTED &&
-                                ArithExpression.isNumeric(arguments.get(arg = 1).getType()) ||
+                                ArithExpression.isNumeric(arguments.get(index = 1).getType()) ||
                             second.getType() == AkType.UNSUPPORTED && 
-                                ArithExpression.isNumeric(arguments.get(arg = 0).getType()))
+                                ArithExpression.isNumeric(arguments.get(index = 0).getType()))
                     // if one of the operands is param and the other numeric
                     // expect the parameter argument to have the same type as the other
-                    arguments.setType(1- arg, arguments.get(arg).getType());
+                    arguments.setType(1- index, arguments.get(index).getType());
                 
                 // update first, second
                 first = arguments.get(0);
