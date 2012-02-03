@@ -152,7 +152,7 @@ public class ArithOps
         @Override
         protected void adjustVarchar(TypesList args, int index) throws StandardException
         {
-            // does nothing, ad MOD operation does not support any DATE/TIME
+            // does nothing, as MOD operation does not support any DATE/TIME
         }
     };
 
