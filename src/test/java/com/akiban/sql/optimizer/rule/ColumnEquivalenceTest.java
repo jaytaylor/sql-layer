@@ -42,11 +42,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeMap;
 
 import static com.akiban.util.Strings.stripr;
 import static org.junit.Assert.assertEquals;
@@ -73,11 +76,13 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
             List<String> testLines = Strings.dumpFile(testFile);
             Iterator<String> testLinesIter = testLines.iterator();
             String sql = testLinesIter.next();
-            Set<Set<String>> columnEquivalenceSets = new HashSet<Set<String>>();
+            Set<Map<String,Boolean>> columnEquivalenceSets = new HashSet<Map<String, Boolean>>();
             while (testLinesIter.hasNext()) {
                 String columnEquivalenceLine = testLinesIter.next();
-                Set<String> columnEquivalences = new HashSet<String>();
-                Collections.addAll(columnEquivalences, readEquivalences(columnEquivalenceLine));
+                Map<String,Boolean> columnEquivalences = new HashMap<String, Boolean>();
+                String[] columnNames = readEquivalences(columnEquivalenceLine);
+                for (String columnName : columnNames)
+                    columnEquivalences.put(columnName, columnNames.length == 1);
                 columnEquivalenceSets.add(columnEquivalences);
             }
             pb.add(stripr(testFile.getName(), ".test"), schema, sql,  columnEquivalenceSets);
@@ -118,12 +123,12 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
     }
 
     @Test
-    public void test() throws Exception {
-        Set<Set<String>> actualEquivalentColumns = getActualEquivalentColumns();
+    public void equivalences() throws Exception {
+        Set<Map<String,Boolean>> actualEquivalentColumns = getActualEquivalentColumns();
         AssertUtils.assertCollectionEquals("for [ " + sql + " ]: ", equivalences, actualEquivalentColumns);
     }
 
-    private Set<Set<String>> getActualEquivalentColumns() throws Exception {
+    private Set<Map<String,Boolean>> getActualEquivalentColumns() throws Exception {
         StatementNode stmt = parser.parseStatement(sql);
         binder.bind(stmt);
         stmt = booleanNormalizer.normalize(stmt);
@@ -162,26 +167,26 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
             }
             belongsToSet.add(columnExpression);
         }
-        
-        Set<Set<String>> stringSets = new HashSet<Set<String>>();
+
+        Set<Map<String,Boolean>> byName = new HashSet<Map<String, Boolean>>();
         for (Set<ColumnExpression> equivalenceSet : set) {
-            Set<String> stringSet = new HashSet<String>();
+            Map<String,Boolean> nameAndNullability = new TreeMap<String, Boolean>();
             for (ColumnExpression columnExpression : equivalenceSet) {
-                stringSet.add(String.valueOf(columnExpression));
+                nameAndNullability.put(String.valueOf(columnExpression), columnExpression.getSQLtype().isNullable());
             }
-            stringSets.add(stringSet);
+            byName.add(nameAndNullability);
         }
-        return stringSets;
+        return byName;
     }
 
-    public ColumnEquivalenceTest(File schemaFile, String sql, Set<Set<String>> equivalences) {
+    public ColumnEquivalenceTest(File schemaFile, String sql, Set<Map<String,Boolean>> equivalences) {
         super(sql, sql, null, null);
         this.equivalences = equivalences;
         this.schemaFile = schemaFile;
     }
     
     private File schemaFile;
-    private Set<Set<String>> equivalences;
+    private Set<Map<String,Boolean>> equivalences;
     private RulesContext rules;
     
     private static class ColumnFinder implements PlanVisitor, ExpressionVisitor {
