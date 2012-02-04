@@ -19,18 +19,21 @@ import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.ColumnExpression;
 import com.akiban.sql.optimizer.plan.ColumnSource;
 import com.akiban.sql.optimizer.plan.ComparisonCondition;
+import com.akiban.sql.optimizer.plan.ConditionExpression;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.ExpressionVisitor;
 import com.akiban.sql.optimizer.plan.JoinNode;
 import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PlanNode;
 import com.akiban.sql.optimizer.plan.PlanVisitor;
+import com.akiban.sql.optimizer.plan.Select;
 import com.akiban.sql.optimizer.plan.TableSource;
 import com.akiban.sql.types.DataTypeDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public final class ColumnEquivalenceFinder extends BaseRule {
@@ -44,6 +47,7 @@ public final class ColumnEquivalenceFinder extends BaseRule {
     private static class ColumnEquivalenceVisitor implements PlanVisitor, ExpressionVisitor {
 
         private Set<ColumnSource> innerSources = new HashSet<ColumnSource>();
+        private boolean firstSelect = true;
 
         @Override
         public boolean visitEnter(PlanNode n) {
@@ -66,9 +70,23 @@ public final class ColumnEquivalenceFinder extends BaseRule {
                     if (joinNode.getRight() instanceof ColumnSource) {
                         innerSources.add((ColumnSource)joinNode.getRight());
                     }
+                    equivalenceConditions(joinNode.getJoinConditions());
                 }
             }
+            else if (firstSelect && (n instanceof Select)) {
+                Select select = (Select) n;
+                equivalenceConditions(select.getConditions());
+                firstSelect = false;
+                
+            }
             return true;
+        }
+
+        private void equivalenceConditions(List<ConditionExpression> conditions) {
+            if (conditions != null) {
+                for (ConditionExpression condition : conditions)
+                    equivalenceCondition(condition);
+            }
         }
 
         @Override
@@ -83,21 +101,23 @@ public final class ColumnEquivalenceFinder extends BaseRule {
 
         @Override
         public boolean visit(ExpressionNode n) {
-            if (n instanceof ComparisonCondition) {
-                ComparisonCondition comparision = (ComparisonCondition) n;
-                if (comparision.getOperation().equals(Comparison.EQ)
-                        && (comparision.getLeft() instanceof ColumnExpression)
-                        && (comparision.getRight() instanceof ColumnExpression)
+            return true;
+        }
+
+        private void equivalenceCondition(ConditionExpression condition) {
+            if (condition instanceof ComparisonCondition) {
+                ComparisonCondition comparison = (ComparisonCondition) condition;
+                if (comparison.getOperation().equals(Comparison.EQ)
+                        && (comparison.getLeft() instanceof ColumnExpression)
+                        && (comparison.getRight() instanceof ColumnExpression)
                         ) {
-                    ColumnExpression left = (ColumnExpression) comparision.getLeft();
-                    ColumnExpression right = (ColumnExpression) comparision.getRight();
+                    ColumnExpression left = (ColumnExpression) comparison.getLeft();
+                    ColumnExpression right = (ColumnExpression) comparison.getRight();
                     if (notNull(left) && notNull(right)) {
                         left.markEquivalentTo(right); // also implies right.equivalentTo(left)
                     }
-                    return false; // already looked at this branch
                 }
             }
-            return true;
         }
 
         private boolean notNull(ColumnExpression columnExpression) {
