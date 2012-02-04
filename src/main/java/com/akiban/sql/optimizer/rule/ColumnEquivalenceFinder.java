@@ -17,7 +17,6 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.ColumnExpression;
-import com.akiban.sql.optimizer.plan.ColumnSource;
 import com.akiban.sql.optimizer.plan.ComparisonCondition;
 import com.akiban.sql.optimizer.plan.ConditionExpression;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
@@ -27,14 +26,11 @@ import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PlanNode;
 import com.akiban.sql.optimizer.plan.PlanVisitor;
 import com.akiban.sql.optimizer.plan.Select;
-import com.akiban.sql.optimizer.plan.TableSource;
 import com.akiban.sql.types.DataTypeDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 public final class ColumnEquivalenceFinder extends BaseRule {
     private static final Logger logger = LoggerFactory.getLogger(ColumnEquivalenceFinder.class);
@@ -45,8 +41,6 @@ public final class ColumnEquivalenceFinder extends BaseRule {
     }
     
     private static class ColumnEquivalenceVisitor implements PlanVisitor, ExpressionVisitor {
-
-        private Set<ColumnSource> innerSources = new HashSet<ColumnSource>();
         private boolean firstSelect = true;
 
         @Override
@@ -63,21 +57,13 @@ public final class ColumnEquivalenceFinder extends BaseRule {
         public boolean visit(PlanNode n) {
             if (n instanceof JoinNode) {
                 JoinNode joinNode = (JoinNode)n;
-                if (joinNode.isInnerJoin()) {
-                    if (joinNode.getLeft() instanceof ColumnSource) {
-                        innerSources.add((ColumnSource)joinNode.getLeft());
-                    }
-                    if (joinNode.getRight() instanceof ColumnSource) {
-                        innerSources.add((ColumnSource)joinNode.getRight());
-                    }
+                if (joinNode.isInnerJoin())
                     equivalenceConditions(joinNode.getJoinConditions());
-                }
             }
             else if (firstSelect && (n instanceof Select)) {
                 Select select = (Select) n;
                 equivalenceConditions(select.getConditions());
                 firstSelect = false;
-                
             }
             return true;
         }
@@ -113,22 +99,21 @@ public final class ColumnEquivalenceFinder extends BaseRule {
                         ) {
                     ColumnExpression left = (ColumnExpression) comparison.getLeft();
                     ColumnExpression right = (ColumnExpression) comparison.getRight();
-                    if (notNull(left) && notNull(right)) {
+                    if (!left.equals(right)) {
+                        markNotNull(left);
+                        markNotNull(right);
                         left.markEquivalentTo(right); // also implies right.equivalentTo(left)
                     }
                 }
             }
         }
+    }
 
-        private boolean notNull(ColumnExpression columnExpression) {
-            if (!columnExpression.getSQLtype().isNullable())
-                return true;
-            if (innerSources.contains(columnExpression.getTable())) {
-                DataTypeDescriptor notNullable = columnExpression.getSQLtype().getNullabilityType(false);
-                columnExpression.setSQLtype(notNullable);
-                return true;
-            }
-            return false;
+    private static void markNotNull(ColumnExpression columnExpression) {
+        DataTypeDescriptor sqLtype = columnExpression.getSQLtype();
+        if (sqLtype.isNullable()) {
+            DataTypeDescriptor notNullable = sqLtype.getNullabilityType(false);
+            columnExpression.setSQLtype(notNullable);
         }
     }
 
