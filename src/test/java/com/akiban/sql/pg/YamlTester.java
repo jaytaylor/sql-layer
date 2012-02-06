@@ -64,7 +64,9 @@ import org.yaml.snakeyaml.nodes.NodeTuple;
 import org.yaml.snakeyaml.nodes.ScalarNode;
 import org.yaml.snakeyaml.nodes.Tag;
 
+import com.akiban.server.AkServer;
 import com.akiban.server.manage.ManageMXBean;
+import com.akiban.server.manage.ManageMXBeanImpl;
 import com.akiban.server.store.statistics.IndexStatisticsMXBean;
 
 /**
@@ -238,7 +240,7 @@ class YamlTester {
 		} else if ("Bulkload".equals(commandName)) {
                     bulkloadCommand(value, sequence); 
                 } else if ("JMX".equals(commandName)) {
-                    JMXCommand(value, sequence);
+                    jmxCommand(value, sequence);
 		} else {
 		    fail("Unknown command: " + commandName);
 		}
@@ -1404,7 +1406,7 @@ class YamlTester {
 	return context.toString();
     }
     
-    private void JMXCommand(Object value, List<Object> sequence)
+    private void jmxCommand(Object value, List<Object> sequence)
             throws SQLException {
         if (value != null) {
             new JMXCommand(value, sequence).execute();
@@ -1484,7 +1486,7 @@ class YamlTester {
                 }
             } else if (objectName.equalsIgnoreCase("com.akiban:type=AKSERVER")) {
                 try {
-                    ManageMXBean bean = conn.getManageMXBean(conn
+                    ManageMXBean bean = conn.getAkServer(conn
                             .getConnector());
                     assertNotNull("bean is null", bean);
                     if (method.equalsIgnoreCase("getVersionString")) {

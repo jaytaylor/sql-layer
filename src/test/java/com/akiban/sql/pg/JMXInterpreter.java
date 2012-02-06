@@ -38,6 +38,7 @@ import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
 
+import com.akiban.server.AkServer;
 import com.akiban.server.manage.ManageMXBean;
 import com.akiban.server.manage.ManageMXBeanImpl;
 import com.akiban.server.store.statistics.IndexStatisticsMXBean;
@@ -124,6 +125,7 @@ public class JMXInterpreter {
         this.connector = connector;
     }
 
+    /* Used for generating documentation for the wiki */
     public void getInfo(MBeanServerConnection mbsc) {
         echo("\nDomains:");
         String domains[] = null;
@@ -169,6 +171,7 @@ public class JMXInterpreter {
 
     }
 
+    /* Used for generating documentation for the wiki */
     private void printMBeanInfo(MBeanServerConnection mbs,
             ObjectName mbeanObjectName) {
         MBeanInfo info = null;
@@ -239,13 +242,13 @@ public class JMXInterpreter {
      * Actual Bean inplementations 
      */
 
-    public ManageMXBean getManageMXBean(JMXConnector connector) {
+    public ManageMXBean getAkServer(JMXConnector connector) {
         MBeanServerConnection mbsc = setup(connector);
         ManageMXBean mxbeanProxy = null;
 
         ObjectName mxbeanName = null;
         try {
-            mxbeanName = new ObjectName("com.akiban:type=AKSERVER");
+            mxbeanName = new ObjectName(ManageMXBeanImpl.BEAN_NAME);
         } catch (MalformedObjectNameException e) {
             System.out.println(e.getMessage());
         } catch (NullPointerException e) {

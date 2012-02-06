@@ -29,21 +29,16 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.store.Store;
 
-public class ManageMXBeanImpl implements ManageMXBean, JmxManageable {
+public class ManageMXBeanImpl implements ManageMXBean {
     private final Store store;
     private final DXLService dxlService;
     private final SessionService sessionService;
+    public static final String BEAN_NAME = "com.akiban:type=AKSERVER";
 
     public ManageMXBeanImpl(Store store, DXLService dxlService, SessionService sessionService) {
         this.store = store;
         this.dxlService = dxlService;
         this.sessionService = sessionService;
-    }
-
-    public ManageMXBeanImpl() {
-        this.store = null;
-        this.dxlService = null;
-        this.sessionService = null;
     }
 
     
@@ -154,9 +149,4 @@ public class ManageMXBeanImpl implements ManageMXBean, JmxManageable {
         return indexes;
     }
 
-    @Override
-    public JmxObjectInfo getJmxObjectInfo() {
-        return new JmxObjectInfo("ManageMXBean", 
-                                 new ManageMXBeanImpl(), 
-                                 ManageMXBean.class);
-    }}
+}

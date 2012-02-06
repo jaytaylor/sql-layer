@@ -9,7 +9,8 @@
     <properties>
         <!-- this is the default version number, hudson job sets this to the official number -->
         <BZR_REVISION></BZR_REVISION>
-        <akiban.test.extraJvmArgs>-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=8082 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false</akiban.test.extraJvmArgs>
+        <akiban.test.extraJvmArgs></akiban.test.extraJvmArgs>
+        <akiban.test.JmxJvmArgs>-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=8082 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false</akiban.test.JmxJvmArgs>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
@@ -323,7 +324,7 @@
                     <akserver.port>${akserver.port}</akserver.port>
                     <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
                 </systemPropertyVariables>
-                <argLine>-Xmx512m -Xms128m ${akiban.test.extraJvmArgs}</argLine>
+                <argLine>-Xmx512m -Xms128m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
                 <includes>
                     <include>**/*Test.java</include>
                     <include>**/*Test?.java</include>
@@ -342,7 +343,7 @@
                     <akserver.port>${akserver.port}</akserver.port>
                     <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
                 </systemPropertyVariables>
-                <argLine>${akiban.test.extraJvmArgs}</argLine>
+                <argLine>${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
             </configuration>
             <executions>
                 <execution>

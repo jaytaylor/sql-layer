@@ -149,6 +149,7 @@ public class AkServer implements Service<AkServerInterface>, JmxManageable, AkSe
         ServiceManager serviceManager = new GuicedServiceManager(bindingsConfigurationProvider);
 
         final ShutdownMXBeanImpl shutdownBean = new ShutdownMXBeanImpl(serviceManager);
+        
 
         // JVM shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
@@ -168,6 +169,7 @@ public class AkServer implements Service<AkServerInterface>, JmxManageable, AkSe
         } catch(Exception e) {
             LOG.error("Exception registering shutdown bean", e);
         }
+        
         
         // services started successfully, now create pidfile and write pid to it
         if (pidFileName != null) {

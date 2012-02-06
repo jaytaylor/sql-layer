@@ -38,18 +38,16 @@ public class JMXInterpreterTest {
     }
 
     @Test
-    public void testCallToManageMXbean() {
+    public void testCallToAkServer() {
         JMXInterpreter conn = new JMXInterpreter();
         conn.openConnection(SERVER_ADDRESS, SERVER_JMX_PORT);
-        Assert.assertNotNull(conn.getManageMXBean(conn.getConnector()));
-        System.out.println(conn.getManageMXBean(conn.getConnector())
-                .getVersionString());
-
+        Assert.assertNotNull(conn.getAkServer(conn.getConnector()));
+        Assert.assertNotNull(conn.getAkServer(conn.getConnector()).getVersionString());
         conn.close();
     }
 
     @Test
-    public void testCalltoIndexStatisticsMXBean() {
+    public void testCalltoIndexStatisticsMXBean() throws IOException {
         JMXInterpreter conn = new JMXInterpreter();
         conn.openConnection(SERVER_ADDRESS, SERVER_JMX_PORT);
         IndexStatisticsMXBean bean = conn.getIndexStatisticsMXBean(conn
@@ -57,12 +55,9 @@ public class JMXInterpreterTest {
         Assert.assertNotNull(bean);
         try {
             bean.dumpIndexStatistics("test", "/tmp/test.dmp");
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-            Assert.fail(e.getMessage());
+        } finally {
+            conn.close();
         }
-
-        conn.close();
     }
 
 }
