@@ -18,6 +18,7 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
@@ -84,7 +85,10 @@ class Sort_Tree extends Operator
     }
     
     // Class state
-    private static final PointTap SORT_TREE_COUNT = Tap.createCount("operator: sort_tree", true);
+
+    private static final InOutTap SORT_TREE_OPEN_TAP = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_Tree open");
+    private static final InOutTap SORT_TREE_NEXT_TAP = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_Tree next");
+    private static final InOutTap SORT_TREE_LOAD_TAP = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_Tree load");
 
     // Object state
 
@@ -102,9 +106,14 @@ class Sort_Tree extends Operator
         @Override
         public void open()
         {
-            assert closed;
-            input.open();
-            closed = false;
+            SORT_TREE_OPEN_TAP.in();
+            try {
+                assert closed;
+                input.open();
+                closed = false;
+            } catch (Exception e) {
+                SORT_TREE_OPEN_TAP.out();
+            }
         }
 
         @Override
@@ -112,12 +121,16 @@ class Sort_Tree extends Operator
         {
             checkQueryCancelation();
             if (output == null) {
-                SORT_TREE_COUNT.hit();
-                output = adapter().sort(context, input, sortType, ordering, sortOption);
+                output = adapter().sort(context, input, sortType, ordering, sortOption, SORT_TREE_LOAD_TAP);
             }
             Row row = null;
             if (!closed) {
-                row = output.next();
+                SORT_TREE_NEXT_TAP.in();
+                try {
+                    row = output.next();
+                } finally {
+                    SORT_TREE_NEXT_TAP.out();
+                }
                 if (row == null) {
                     close();
                 }
