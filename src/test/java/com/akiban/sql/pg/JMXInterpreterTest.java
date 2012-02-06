@@ -17,10 +17,13 @@ package com.akiban.sql.pg;
 
 import java.io.IOException;
 
+import javax.management.remote.JMXConnector;
+
 import junit.framework.Assert;
 
 import org.junit.Test;
 
+import com.akiban.server.manage.ManageMXBean;
 import com.akiban.server.store.statistics.IndexStatisticsMXBean;
 
 /* test class for JMXIterpreter, which provides a JMX interface to the server in the test framework  */
@@ -40,20 +43,27 @@ public class JMXInterpreterTest {
     @Test
     public void testCallToAkServer() {
         JMXInterpreter conn = new JMXInterpreter();
-        conn.openConnection(SERVER_ADDRESS, SERVER_JMX_PORT);
-        Assert.assertNotNull(conn.getAkServer(conn.getConnector()));
-        Assert.assertNotNull(conn.getAkServer(conn.getConnector()).getVersionString());
-        conn.close();
+        try {
+            conn.openConnection(SERVER_ADDRESS, SERVER_JMX_PORT);
+            Assert.assertNotNull(conn);
+            JMXConnector connector = conn.getConnector();
+            Assert.assertNotNull(connector);
+            ManageMXBean bean = conn.getAkServer(connector);
+            Assert.assertNotNull(bean);
+            Assert.assertNotNull(bean.getVersionString());
+        } finally {
+            conn.close();
+        }
     }
 
     @Test
     public void testCalltoIndexStatisticsMXBean() throws IOException {
         JMXInterpreter conn = new JMXInterpreter();
-        conn.openConnection(SERVER_ADDRESS, SERVER_JMX_PORT);
-        IndexStatisticsMXBean bean = conn.getIndexStatisticsMXBean(conn
-                .getConnector());
-        Assert.assertNotNull(bean);
         try {
+            conn.openConnection(SERVER_ADDRESS, SERVER_JMX_PORT);
+            IndexStatisticsMXBean bean = conn.getIndexStatisticsMXBean(conn
+                    .getConnector());
+            Assert.assertNotNull(bean);
             bean.dumpIndexStatistics("test", "/tmp/test.dmp");
         } finally {
             conn.close();

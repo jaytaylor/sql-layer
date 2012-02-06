@@ -64,9 +64,7 @@ import org.yaml.snakeyaml.nodes.NodeTuple;
 import org.yaml.snakeyaml.nodes.ScalarNode;
 import org.yaml.snakeyaml.nodes.Tag;
 
-import com.akiban.server.AkServer;
 import com.akiban.server.manage.ManageMXBean;
-import com.akiban.server.manage.ManageMXBeanImpl;
 import com.akiban.server.store.statistics.IndexStatisticsMXBean;
 
 /**

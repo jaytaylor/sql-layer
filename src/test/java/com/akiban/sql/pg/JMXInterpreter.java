@@ -198,7 +198,7 @@ public class JMXInterpreter {
             }
         }
 
-        MBeanConstructorInfo[] ctors = info.getConstructors();
+        //MBeanConstructorInfo[] ctors = info.getConstructors();
         MBeanNotificationInfo[] nots = info.getNotifications();
         MBeanOperationInfo[] opInfo = info.getOperations();
 
@@ -239,7 +239,7 @@ public class JMXInterpreter {
     }
 
     /*
-     * Actual Bean inplementations 
+     * Actual Bean implementations 
      */
 
     public ManageMXBean getAkServer(JMXConnector connector) {
