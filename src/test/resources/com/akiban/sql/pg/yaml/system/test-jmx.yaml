@@ -9,5 +9,5 @@
 ---
 - JMX: com.akiban:type=AKSERVER
 - method: getVersionString
-- output: [[!re '.*SNAPSHOT\.$']]
+- output: [[!re '.*SNAPSHOT\.']]
 ...
