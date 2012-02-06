@@ -111,6 +111,9 @@ abstract class PerThread extends Tap
                 cumulativeReport.cumulativeTime += tapReport.getCumulativeTime();
             }
         }
+        if (cumulativeReports.isEmpty()) {
+            cumulativeReports.put(name, new TapReport(name));
+        }
         TapReport[] reports = new TapReport[cumulativeReports.size()];
         cumulativeReports.values().toArray(reports);
         return reports;
