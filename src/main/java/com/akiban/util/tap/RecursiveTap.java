@@ -106,11 +106,6 @@ abstract class RecursiveTap extends Tap
         return new Subsidiary(name, (Outermost) this);
     }
 
-    public static RecursiveTap createRecursiveTap(String name)
-    {
-        return new Outermost(name);
-    }
-
     // For use by subclasses
 
     // tapStack() returns the current stack of taps, which may be null. The callers (RecursiveTap.in/out)
