@@ -30,18 +30,20 @@ abstract class RecursiveTap extends Tap
     }
 
     // Tap interface
-
+    
     public final void in()
     {
-        long now = System.nanoTime();
         Stack<RecursiveTap> tapStack = tapStack();
         if (tapStack != null) {
+            // print("in %s", this);
+            long now = System.nanoTime();
             inCount++;
             inNanos = now;
             if (!tapStack.empty()) {
                 RecursiveTap current = tapStack.peek();
                 current.lastDuration = now - current.inNanos;
                 current.cumulativeNanos += current.lastDuration;
+                // print("    added %s to %s", current.lastDuration / MILLION, current);
             }
             tapStack.push(this);
         }
@@ -50,16 +52,23 @@ abstract class RecursiveTap extends Tap
 
     public final void out()
     {
-        long now = System.nanoTime();
-        outCount++;
-        endNanos = now;
-        lastDuration = now - inNanos;
-        cumulativeNanos += lastDuration;
         Stack<RecursiveTap> tapStack = tapStack();
         if (tapStack != null) {
+            // print("out %s", this);
             if (!tapStack.empty()) {
-                RecursiveTap newCurrent = tapStack.pop();
-                newCurrent.inNanos = now;
+                long now = System.nanoTime();
+                outCount++;
+                endNanos = now;
+                lastDuration = now - inNanos;
+                cumulativeNanos += lastDuration;
+                // print("    added %s to %s", lastDuration / MILLION, this);
+                RecursiveTap current = tapStack.pop();
+                if (current == this) {
+                    if (!tapStack.empty()) {
+                        RecursiveTap newCurrent = tapStack.peek();
+                        newCurrent.inNanos = now;
+                    }
+                }
             }
         }
         // else: outermost tap has just been disabled
@@ -112,6 +121,13 @@ abstract class RecursiveTap extends Tap
     {
         super(name);
     }
+    
+    // For use by this class
+    
+    private void print(String template, Object ... args)
+    {
+        System.out.println(String.format(template, args));
+    }
 
     // Class state
 
@@ -134,6 +150,9 @@ abstract class RecursiveTap extends Tap
         {
             super.reset();
             tapStack = new Stack<RecursiveTap>();
+            for (Subsidiary subsidiaryTap : subsidiaryTaps) {
+                subsidiaryTap.reset();
+            }
         }
 
         @Override

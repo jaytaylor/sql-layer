@@ -379,7 +379,7 @@ public abstract class Tap
             return x.getName().compareTo(y.getName());
         }
     };
-    private static final Map<String, Dispatch> DISPATCHES = new TreeMap<String, Dispatch>();
+    static final Map<String, Dispatch> DISPATCHES = new TreeMap<String, Dispatch>();
     static volatile BadNestingHandler badNestingHandler =
         new BadNestingHandler()
         {

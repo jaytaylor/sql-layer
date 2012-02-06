@@ -64,6 +64,16 @@ abstract class PerThread extends Tap
         for (Tap tap : threadMap.values()) {
             tap.reset();
         }
+        enabled = true;
+    }
+
+    @Override
+    public void disable()
+    {
+        for (Tap tap : threadMap.values()) {
+            tap.disable();
+        }
+        enabled = false;
     }
 
     @Override
@@ -153,6 +163,7 @@ abstract class PerThread extends Tap
     // Object state
 
     final Map<Thread, Tap> threadMap = new ConcurrentHashMap<Thread, Tap>();
+    boolean enabled = false;
 
     // Inner classes
     
@@ -183,6 +194,9 @@ abstract class PerThread extends Tap
                 try {
                     tap = tapClass.getConstructor(String.class).newInstance(name);
                     tap.reset();
+                    if (!enabled) {
+                        tap.disable();
+                    }
                     threadMap.put(Thread.currentThread(), tap);
                 } catch (Exception e) {
                     tap = new Null(name);
