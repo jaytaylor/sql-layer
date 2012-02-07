@@ -99,7 +99,7 @@ public class SimpleJoinPT extends QPProfilePTBase
     @Test
     public void profileGroupScan()
     {
-        final int SCANS = 1;
+        final int SCANS = 100;
         final int CUSTOMERS = 1000;
         final int ORDERS_PER_CUSTOMER = 5;
         final int ITEMS_PER_ORDER = 2;
