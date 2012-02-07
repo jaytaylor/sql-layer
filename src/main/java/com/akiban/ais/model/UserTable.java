@@ -53,7 +53,7 @@ public class UserTable extends Table
             primaryKey = new PrimaryKey(index);
         }
     }
-
+    
     /**
     * Returns the columns in this table that are constrained to match the given column, e.g.
      * customer.cid and order.cid. These will be ordered by the table they appear on, root to leaf.
@@ -374,7 +374,7 @@ public class UserTable extends Table
 
     public boolean containsOwnHKey()
     {
-        hKey(); // Force computation of hKey and containsOwnHKey
+        hKey(); // Ensure hKey and containsOwnHKey are computed
         return containsOwnHKey;
     }
 
@@ -384,6 +384,33 @@ public class UserTable extends Table
         return join == null ? null : join.getParent();
     }
 
+    // Descendent tables whose hkeys are affected by a change to this table's PK or FK.
+    public List<UserTable> hKeyDependentTables()
+    {
+        if (hKeyDependentTables == null) {
+            synchronized (lazyEvaluationLock) {
+                if (hKeyDependentTables == null) {
+                    hKeyDependentTables = new ArrayList<UserTable>();
+                    for (Join join : getChildJoins()) {
+                        UserTable child = join.getChild();
+                        if (!child.containsOwnHKey()) {
+                            addTableAndDescendents(child, hKeyDependentTables);
+                        }
+                    }
+                }
+            }
+        }
+        return hKeyDependentTables;
+    }
+    
+    private void addTableAndDescendents(UserTable table, List<UserTable> accumulator)
+    {
+        accumulator.add(table);
+        for (Join join : table.getChildJoins()) {
+            addTableAndDescendents(join.getChild(), accumulator);
+        }
+    }
+    
     @SuppressWarnings("unused")
     private UserTable()
     {
@@ -479,6 +506,8 @@ public class UserTable extends Table
     private transient HKey branchHKey;
     private transient List<Column> allHKeyColumns;
     private transient Integer depth = null;
+    private final Object lazyEvaluationLock = new Object();
+    private transient volatile List<UserTable> hKeyDependentTables;
 
     // consts
 
