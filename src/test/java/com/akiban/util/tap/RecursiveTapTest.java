@@ -117,13 +117,13 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(2, 300, 1, 200);
+        expect(2, 3, 1, 2);
         enableTaps();
         aba();
     }
 
     @Test
-    public void testEnable_12() throws InterruptedException
+    public void testEnableDisable_12() throws InterruptedException
     {
         /* 1 */ disableTaps();
         a.in();
@@ -143,7 +143,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(1, 100, 1, 200);
+        expect(1, 1, 1, 2);
         enableTaps();
         aba();
     }
@@ -169,7 +169,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(1, 100, 0, 0);
+        expect(1, 1, 0, 0);
         enableTaps();
         aba();
     }
@@ -299,7 +299,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(1, 100, 1, 200);
+        expect(1, 1, 1, 2);
         enableTaps();
         aba();
     }
@@ -325,7 +325,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(1, 100, 0, 0);
+        expect(1, 1, 0, 0);
         enableTaps();
         aba();
     }
@@ -455,7 +455,7 @@ public class RecursiveTapTest
         sleep();
         a.out();
         /* 7 */
-        expect(1, 100, 0, 0);
+        expect(1, 1, 0, 0);
         enableTaps();
         aba();
     }
@@ -835,7 +835,7 @@ public class RecursiveTapTest
         b.out();
         sleep();
         a.out();
-        expect(2, 300, 1, 200);
+        expect(2, 3, 1, 2);
     }
 
     private void createTaps()
@@ -845,7 +845,7 @@ public class RecursiveTapTest
         enableTaps();
     }
 
-    private void expect(int aCount, long aTime, int bCount, long bTime)
+    private void expect(int aCount, int aTicks, int bCount, int bTicks)
     {
         TapReport[] tapReports = Tap.getReport(ROOT_TAP);
         assertEquals(2, tapReports.length);
@@ -859,7 +859,7 @@ public class RecursiveTapTest
                     String.format("aCount = %s, aTime = %s",
                                   report.getInCount(),
                                   report.getCumulativeTime() / MILLION),
-                    abs(report.getCumulativeTime() / MILLION - aTime) < CLOCK_IMPRECISION_MSEC);
+                    checkTicks(report, aTicks));
             } else if (report.getName().equals("b")) {
                 assertEquals(
                     String.format("bCount = %s", report.getInCount()),
@@ -869,7 +869,7 @@ public class RecursiveTapTest
                     String.format("bCount = %s, bTime = %s",
                                   report.getInCount(),
                                   report.getCumulativeTime() / MILLION),
-                    abs(report.getCumulativeTime() / MILLION - bTime) < CLOCK_IMPRECISION_MSEC);
+                    checkTicks(report, bTicks));
             } else {
                 fail();
             }
@@ -894,13 +894,19 @@ public class RecursiveTapTest
 
     private void sleep() throws InterruptedException
     {
-        Thread.sleep(100);
+        Thread.sleep(TICK_LENGTH_MSEC);
+    }
+
+    private boolean checkTicks(TapReport tapReport, int ticks)
+    {
+        return abs(tapReport.getCumulativeTime() / MILLION - ticks * TICK_LENGTH_MSEC) < CLOCK_IMPRECISION_MSEC;
     }
 
     private static final String ROOT_TAP = "a";
     private static final String SUBSIDIARY_TAP = "b";
     private static final int MILLION = 1000000;
-    private static final int CLOCK_IMPRECISION_MSEC = 20;
+    private static final int TICK_LENGTH_MSEC = 10;
+    private static final int CLOCK_IMPRECISION_MSEC = 3;
 
     private InOutTap a;
     private InOutTap b;

@@ -95,10 +95,10 @@ class TimeAndCount extends Tap
 
     // Object state
 
-    private volatile long cumulativeNanos = 0;
-    private volatile long inNanos = Long.MIN_VALUE;
+    private volatile long cumulativeNanos;
+    private volatile long inNanos;
     private volatile long startNanos = System.nanoTime();
-    private volatile long endNanos = System.nanoTime();
+    private volatile long endNanos;
     private volatile long lastDuration = Long.MIN_VALUE;
     private volatile boolean justEnabled = false;
 }

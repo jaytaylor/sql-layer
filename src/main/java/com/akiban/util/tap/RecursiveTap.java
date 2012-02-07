@@ -130,11 +130,11 @@ abstract class RecursiveTap extends Tap
 
     // Object state
 
-    protected volatile long cumulativeNanos = 0;
-    protected volatile long inNanos = Long.MIN_VALUE;
+    protected volatile long cumulativeNanos;
+    protected volatile long inNanos;
     protected volatile long startNanos = System.nanoTime();
-    protected volatile long endNanos = System.nanoTime();
-    protected volatile long lastDuration = Long.MIN_VALUE;
+    protected volatile long endNanos;
+    protected long lastDuration;
 
     static class Outermost extends RecursiveTap
     {
@@ -143,11 +143,12 @@ abstract class RecursiveTap extends Tap
         @Override
         public void reset()
         {
+            tapStack = null;
             super.reset();
-            tapStack = new Stack<RecursiveTap>();
             for (Subsidiary subsidiaryTap : subsidiaryTaps) {
                 subsidiaryTap.reset();
             }
+            tapStack = new Stack<RecursiveTap>();
         }
 
         @Override
