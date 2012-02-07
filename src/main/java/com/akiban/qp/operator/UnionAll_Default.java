@@ -26,10 +26,49 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.Strings;
+import com.akiban.util.tap.InOutTap;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+/**
+ <h1>Overview</h1>
+
+
+ Sort_Tree generates an output stream containing all the rows of the input stream, sorted according to an
+ ordering specification. The "Tree" in the name refers to the implementation, in which the rows are inserted
+ into a B-tree (presumably on-disk) and then read out in order.
+
+ <h1>Arguments</h1>
+
+ <li><b>Operator input1:</b> Source of first input stream. 
+ <li><b>RowType input1Type:</b> Type of rows in first input stream. 
+ <li><b>Operator input2:</b> Source of second input stream. 
+ <li><b>RowType input2Type:</b> Type of rows in second input stream. 
+
+ <h1>Behavior</h1>
+
+ The output from UnionAll_Default is formed by concatenating the first and second input streams.
+
+ <h1>Output</h1>
+
+ Rows of the first input stream followed by rows of the second input stream.
+
+ <h1>Assumptions</h1>
+
+ input1Type and input2Type are union-compatible. This means input1Type == input2Type or they have the same
+ number of fields, and that corresponding field types match.
+
+ <h1>Performance</h1>
+
+ This operator does no IO.
+
+ <h1>Memory Requirements</h1>
+
+ None.
+
+ */
 
 final class UnionAll_Default extends Operator {
     @Override
@@ -104,6 +143,13 @@ final class UnionAll_Default extends Operator {
         }
         return Arrays.toString(result);
     }
+    
+    // Class state
+    
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: UnionAll_Default open"); 
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: UnionAll_Default next"); 
+    
+    // Object state
 
     private final List<? extends Operator> inputs;
     private final List<? extends RowType> inputTypes;
@@ -114,26 +160,33 @@ final class UnionAll_Default extends Operator {
 
         @Override
         public void open() {
+            TAP_OPEN.in();
+            TAP_OPEN.out();
         }
 
         @Override
         public Row next() {
-            Row outputRow;
-            if (currentCursor == null) {
-                outputRow = nextCursorFirstRow();
-            }
-            else {
-                outputRow = currentCursor.next();
-                if (outputRow == null) {
-                    currentCursor.close();
+            TAP_NEXT.in();
+            try {
+                Row outputRow;
+                if (currentCursor == null) {
                     outputRow = nextCursorFirstRow();
                 }
+                else {
+                    outputRow = currentCursor.next();
+                    if (outputRow == null) {
+                        currentCursor.close();
+                        outputRow = nextCursorFirstRow();
+                    }
+                }
+                if (outputRow == null) {
+                    close();
+                    return null;
+                }
+                return wrapped(outputRow);
+            } finally {
+                TAP_NEXT.out();
             }
-            if (outputRow == null) {
-                close();
-                return null;
-            }
-            return wrapped(outputRow);
         }
 
         @Override

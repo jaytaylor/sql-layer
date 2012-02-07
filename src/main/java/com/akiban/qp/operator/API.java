@@ -335,16 +335,6 @@ public class API
 
     // Product
 
-    /**
-     * @deprecated Use product_NestedLoops instead.
-     */
-    public static Operator product_ByRun(Operator input,
-                                                 RowType leftType,
-                                                 RowType rightType)
-    {
-        return new Product_ByRun(input, leftType, rightType);
-    }
-
     public static Operator product_NestedLoops(Operator outerInput,
                                                        Operator innerInput,
                                                        RowType outerType,

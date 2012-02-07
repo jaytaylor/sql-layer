@@ -19,12 +19,53 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+
+/**
+ <h1>Overview</h1>
+
+ Sort_Tree generates an output stream containing all the rows of the input stream, sorted according to an
+ ordering specification. The "Tree" in the name refers to the implementation, in which the rows are inserted
+ into a B-tree (presumably on-disk) and then read out in order.
+
+ <h1>Arguments</h1>
+
+ <li><b>Operator inputOperator:</b> Operator providing the input stream.
+ <li><b>RowType sortType:</b> Type of rows to be sorted.
+ <li><b>API.Ordering ordering:</b> Specification of ordering, comprising a list of expressions and ascending/descending
+ specifications.
+ <li><b>API.SortOption sortOption:</b> Specifies whether duplicates should be kept (PRESERVE_DUPLICATES) or eliminated
+ (SUPPRESS_DUPLICATES)
+
+ <h1>Behavior</h1>
+
+ The rows of the input stream are written into a B-tree that orders rows according to the ordering specification.
+ Once the input stream has been consumed, the B-tree is traversed from beginning to end to provide rows of the output
+ stream.
+
+ <h1>Output</h1>
+
+ The rows of the input stream, sorted according to the ordering specification. Duplicates are eliminated if
+ and only if the sortOption is SUPPRESS_DUPLICATES.
+
+ <h1>Assumptions</h1>
+
+ None.
+
+ <h1>Performance</h1>
+
+ Sort_Tree generates IO dependent on the size of the input stream. This occurs mostly during the loading phase,
+ (when the input stream is being read). There will be some IO when the loaded B-tree is scanned, but this is
+ expected to be more efficient, as each page will be read completely before moving on to the next one.
+
+ <h1>Memory Requirements</h1>
+
+ Memory requirements (and disk requirements) depend on the underlying B-tree.
+
+ */
 
 class Sort_Tree extends Operator
 {
@@ -86,9 +127,9 @@ class Sort_Tree extends Operator
     
     // Class state
 
-    private static final InOutTap SORT_TREE_OPEN_TAP = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_Tree open");
-    private static final InOutTap SORT_TREE_NEXT_TAP = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_Tree next");
-    private static final InOutTap SORT_TREE_LOAD_TAP = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_Tree load");
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_Tree open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_Tree next");
+    private static final InOutTap TAP_LOAD = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_Tree load");
 
     // Object state
 
@@ -106,13 +147,13 @@ class Sort_Tree extends Operator
         @Override
         public void open()
         {
-            SORT_TREE_OPEN_TAP.in();
+            assert closed;
+            TAP_OPEN.in();
             try {
-                assert closed;
                 input.open();
                 closed = false;
             } catch (Exception e) {
-                SORT_TREE_OPEN_TAP.out();
+                TAP_OPEN.out();
             }
         }
 
@@ -121,15 +162,15 @@ class Sort_Tree extends Operator
         {
             checkQueryCancelation();
             if (output == null) {
-                output = adapter().sort(context, input, sortType, ordering, sortOption, SORT_TREE_LOAD_TAP);
+                output = adapter().sort(context, input, sortType, ordering, sortOption, TAP_LOAD);
             }
             Row row = null;
             if (!closed) {
-                SORT_TREE_NEXT_TAP.in();
+                TAP_NEXT.in();
                 try {
                     row = output.next();
                 } finally {
-                    SORT_TREE_NEXT_TAP.out();
+                    TAP_NEXT.out();
                 }
                 if (row == null) {
                     close();

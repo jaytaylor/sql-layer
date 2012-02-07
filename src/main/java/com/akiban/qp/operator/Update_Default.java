@@ -152,6 +152,6 @@ class Update_Default extends OperatorExecutionBase implements UpdatePlannable {
 
     private final Operator inputOperator;
     private final UpdateFunction updateFunction;
-    private static final InOutTap UPDATE_TAP = Tap.createTimer("operator: update");
+    private static final InOutTap UPDATE_TAP = Tap.createTimer("operator: Update_Default");
     
 }

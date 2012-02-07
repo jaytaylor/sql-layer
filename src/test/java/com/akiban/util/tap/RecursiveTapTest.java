@@ -895,13 +895,13 @@ public class RecursiveTapTest
     {
         a.in();
         sleep();
-        b.in();
-        sleep();
-        a.in();
-        sleep();
-        a.out();
-        sleep();
-        b.out();
+            b.in();
+            sleep();
+                a.in();
+                sleep();
+                a.out();
+            sleep();
+            b.out();
         sleep();
         a.out();
         expect(2, 300, 1, 200);
