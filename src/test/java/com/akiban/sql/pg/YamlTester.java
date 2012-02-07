@@ -250,6 +250,7 @@ class YamlTester {
 
     private void bulkloadCommand(Object value, List<Object> sequence) {
         // ignore this command.  Not meant for ITs, only system testing
+        throw new ContextAssertionError("Bulk Load command is not supported in ITs");
     }
 
     private void includeCommand(Object value, List<Object> sequence) {
