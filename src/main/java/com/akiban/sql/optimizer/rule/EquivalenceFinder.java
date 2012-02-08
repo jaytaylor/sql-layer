@@ -39,6 +39,12 @@ public class EquivalenceFinder<T> {
         initSeenItems();
         return areEquivalent(one, two, maxTraversals);
     }
+    
+    public Set<T> findEquivalents(T node) {
+        Set<T> accumulator = new HashSet<T>();
+        buildEquivalents(node, accumulator);
+        return accumulator;
+    }
 
     // for testing
     void tooMuchTraversing() {
@@ -70,6 +76,14 @@ public class EquivalenceFinder<T> {
                 return true;
         }
         return false;
+    }
+
+    private void buildEquivalents(T node, Set<T> accumulator) {
+        for (T equivalence : equivalences.get(node)) {
+            if (accumulator.add(equivalence)) {
+                buildEquivalents(equivalence, accumulator);
+            }
+        }
     }
 
     private void initSeenItems() {
