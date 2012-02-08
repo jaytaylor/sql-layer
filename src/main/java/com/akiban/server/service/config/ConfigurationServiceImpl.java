@@ -131,7 +131,10 @@ public class ConfigurationServiceImpl implements ConfigurationService,
                 }
                 properties = Collections.unmodifiableMap(newMap);
             }
-            Tap.setInitiallyEnabled(properties.get(INITIALLY_ENABLED_TAPS).getValue());
+            Property initiallyEnabledTaps = properties.get(INITIALLY_ENABLED_TAPS);
+            if (initiallyEnabledTaps != null) {
+                Tap.setInitiallyEnabled(initiallyEnabledTaps.getValue());
+            }
         }
     }
 
