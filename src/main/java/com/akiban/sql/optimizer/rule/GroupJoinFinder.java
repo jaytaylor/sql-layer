@@ -27,6 +27,7 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.UserTable;
 
+import com.sun.xml.internal.bind.v2.TODO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -354,8 +355,8 @@ public class GroupJoinFinder extends BaseRule
                                 if (rightTable.getTable() == parentNode) {
                                     for (int i = 0; i < ncols; i++) {
                                         JoinColumn joinColumn = joinColumns.get(i);
-                                        if ((joinColumn.getChild() == lcol.getColumn()) &&
-                                            (joinColumn.getParent() == rcol.getColumn())) {
+                                        if ((joinColumn.getChild() == lcol.getColumn()) && TODO map Set<ColumnExpression> to Set<Column>, then use contains
+                                                (joinColumn.getParent() == rcol.getColumn())) {
                                             List<ComparisonCondition> entry = 
                                                 parentTables.get(rightTable);
                                             if (entry == null) {
