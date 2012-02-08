@@ -151,25 +151,15 @@ public abstract class Tap
 
     public static PointTap createCount(String name)
     {
-        return createCount(name, defaultOn());
-    }
-
-    public static PointTap createCount(String name, boolean enabled)
-    {
         PointTap tap = new PointTap(add(PerThread.createPerThread(name, Count.class)));
-        Tap.setEnabled(name, enabled);
+        Tap.setEnabled(name, defaultOn(name));
         return tap;
     }
 
     public static InOutTap createTimer(String name)
     {
-        return createTimer(name, defaultOn());
-    }
-
-    public static InOutTap createTimer(String name, boolean enabled)
-    {
         InOutTap tap = new InOutTap(add(PerThread.createPerThread(name, TimeAndCount.class)));
-        Tap.setEnabled(name, enabled);
+        Tap.setEnabled(name, defaultOn(name));
         return tap;
     }
     
@@ -195,6 +185,24 @@ public abstract class Tap
         for (Dispatch tap : dispatchesCopy()) {
             if (pattern.matcher(tap.getName()).matches()) {
                 tap.setEnabled(enabled);
+            }
+        }
+    }
+
+    public static void enableInitial()
+    {
+        for (Dispatch dispatch : DISPATCHES.values()) {
+            dispatch.setEnabled(initiallyEnabledPattern.matcher(dispatch.getName()).find());
+        }
+    }
+    
+    public static void setInitiallyEnabled(String initiallyEnabledRegex)
+    {
+        initiallyEnabledPattern = Pattern.compile(initiallyEnabledRegex);
+        // Enable any taps already created
+        for (Dispatch dispatch : DISPATCHES.values()) {
+            if (initiallyEnabledPattern.matcher(dispatch.getName()).find()) {
+                dispatch.setEnabled(true);
             }
         }
     }
@@ -356,9 +364,10 @@ public abstract class Tap
         return dispatch;
     }
 
-    private static boolean defaultOn()
+    private static boolean defaultOn(String name)
     {
-        return Boolean.getBoolean(DEFAULT_ON_PROPERTY);
+        return Boolean.getBoolean(DEFAULT_ON_PROPERTY) ||
+               initiallyEnabledPattern != null && initiallyEnabledPattern.matcher(name).find();
     }
 
     private static Collection<Dispatch> dispatchesCopy()
@@ -400,6 +409,7 @@ public abstract class Tap
             private final AtomicLong count = new AtomicLong(0);
         };
     private static boolean registered;
+    private static Pattern initiallyEnabledPattern;
 
     // Object state
 
