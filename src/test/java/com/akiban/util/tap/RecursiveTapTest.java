@@ -121,22 +121,22 @@ public class RecursiveTapTest
         for (TapReport report : tapReports) {
             if (report.getName().equals("r")) {
                 assertEquals(1, report.getInCount());
-                assertTrue(abs(report.getCumulativeTime() / MILLION - 200) < CLOCK_IMPRECISION_MSEC);
+                assertTrue(checkTicks(report, 2));
             } else if (report.getName().equals("i")) {
                 assertEquals(1, report.getInCount());
-                assertTrue(abs(report.getCumulativeTime() / MILLION - 300) < CLOCK_IMPRECISION_MSEC);
+                assertTrue(checkTicks(report, 3));
             } else if (report.getName().equals("j")) {
                 assertEquals(1, report.getInCount());
-                assertTrue(abs(report.getCumulativeTime() / MILLION - 300) < CLOCK_IMPRECISION_MSEC);
+                assertTrue(checkTicks(report, 3));
             } else if (report.getName().equals("k")) {
                 assertEquals(1, report.getInCount());
-                assertTrue(abs(report.getCumulativeTime() / MILLION - 100) < CLOCK_IMPRECISION_MSEC);
+                assertTrue(checkTicks(report, 1));
             } else if (report.getName().equals("x")) {
                 assertEquals(1, report.getInCount());
-                assertTrue(abs(report.getCumulativeTime() / MILLION - 100) < CLOCK_IMPRECISION_MSEC);
+                assertTrue(checkTicks(report, 1));
             } else if (report.getName().equals("y")) {
                 assertEquals(1, report.getInCount());
-                assertTrue(abs(report.getCumulativeTime() / MILLION - 100) < CLOCK_IMPRECISION_MSEC);
+                assertTrue(checkTicks(report, 1));
             } else {
                 fail();
             }
@@ -974,8 +974,8 @@ public class RecursiveTapTest
     private static final String ROOT_TAP = "a";
     private static final String SUBSIDIARY_TAP = "b";
     private static final int MILLION = 1000000;
-    private static final int TICK_LENGTH_MSEC = 10;
-    private static final int CLOCK_IMPRECISION_MSEC = 3;
+    private static final int TICK_LENGTH_MSEC = 20;
+    private static final int CLOCK_IMPRECISION_MSEC = 5;
 
     private InOutTap a;
     private InOutTap b;
