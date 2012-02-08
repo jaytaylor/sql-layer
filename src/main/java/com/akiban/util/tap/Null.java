@@ -47,7 +47,7 @@ class Null extends Tap
         // do nothing
     }
 
-    public void appendReport(final StringBuilder sb)
+    public void appendReport(final StringBuilder buffer)
     {
         // do nothing;
     }
@@ -57,7 +57,7 @@ class Null extends Tap
         return "NullTap(" + name + ")";
     }
 
-    public TapReport getReport()
+    public TapReport[] getReports()
     {
         return null;
     }

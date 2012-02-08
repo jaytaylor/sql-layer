@@ -55,21 +55,6 @@ public class TapMXBeanImpl implements TapMXBean
         Tap.setEnabled(regExPattern, on);
     }
 
-    @SuppressWarnings("unchecked")
-    @Override
-    public void setCustomTap(final String regExPattern, final String className)
-        throws Exception
-    {
-        final Class<?> clazz = (Class.forName(className));
-        if (Tap.class.isAssignableFrom(clazz)) {
-            Class<? extends Tap> c = (Class<? extends Tap>) clazz;
-            Tap.setCustomTap(regExPattern, c);
-        } else {
-            throw new ClassCastException(className + " is not a "
-                                         + Tap.class.getName());
-        }
-    }
-
     @Override
     public TapReport[] getReports(final String regExPattern)
     {
