@@ -32,17 +32,17 @@ public class SchemaRulesContext extends RulesContext
 {
     private Schema schema;
     private FunctionsRegistry functionsRegistry;
-    private IndexEstimator indexEstimator;
+    private CostEstimator costEstimator;
 
     public SchemaRulesContext(AkibanInformationSchema ais,
                               FunctionsRegistry functionsRegistry,
-                              IndexEstimator indexEstimator,
+                              CostEstimator costEstimator,
                               List<BaseRule> rules,
                               Properties properties) {
         super(rules, properties);
         schema = SchemaCache.globalSchema(ais);
         this.functionsRegistry = functionsRegistry;
-        this.indexEstimator = indexEstimator;
+        this.costEstimator = costEstimator;
     }
 
     public Schema getSchema() {
@@ -57,8 +57,8 @@ public class SchemaRulesContext extends RulesContext
         return functionsRegistry;
     }
       
-    public IndexEstimator getIndexEstimator() {
-        return indexEstimator;
+    public CostEstimator getCostEstimator() {
+        return costEstimator;
     }
 
 }
