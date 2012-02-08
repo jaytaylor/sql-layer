@@ -28,7 +28,7 @@ import java.util.*;
  * SEMI, ...) reordering constraints. DP happens by considering larger
  * sets made up from pairs of connected (based on edges) subsets.
  */
-public class DPhyp
+public abstract class DPhyp
 {
     // The leaves of the join tree: tables, derived tables, and
     // possibly joins handled atomically wrt this phase.
@@ -39,6 +39,144 @@ public class DPhyp
     // to go through in order pairing with adjacent (complement bit 1).
     private long[] edges;
     
+    // The "plan class" is the set of retained plans for the given tables.
+    private List<Joinable>[] planClasses;
+    
+    private List<Joinable> getPlans(long s) {
+        return planClasses[(int)s];
+    }
+    private void setPlans(long s, List<Joinable> plans) {
+        planClasses[(int)s] = plans;
+    }
+
+    /** Return minimal set of neighbors of <code>s</code> not in the exclusion set. */
+    // TODO: Need to eliminate subsumed hypernodes.
+    public long neighborhood(long s, long exclude) {
+        exclude = JoinableBitSet.union(s, exclude);
+        long result = 0;
+        for (int e = 0; e < edges.length; e++) {
+            if (JoinableBitSet.isSubset(edges[e], s) &&
+                !JoinableBitSet.overlaps(edges[e^1], exclude)) {
+                result |= JoinableBitSet.minSubset(edges[e^1]);
+            }
+        }
+        return result;
+    }
+
+    /** Run dynamic programming and return best overall plan(s). */
+    public List<Joinable> solve() {
+        int ntables = tables.size();
+        planClasses = (List<Joinable>[])new List<?>[1 << ntables];
+        // Start with single tables.
+        for (int i = 0; i < ntables; i++) {
+            setPlans(JoinableBitSet.of(i), Collections.singletonList(tables.get(i)));
+        }
+        for (int i = ntables - 1; i >= 0; i--) {
+            long ts = JoinableBitSet.of(i);
+            emitCsg(ts);
+            enumerateCsgRec(ts, JoinableBitSet.through(i));
+        }
+        return getPlans(planClasses.length-1); // One(s) that do all the joins together.
+    }
+
+    /** Recursively extend the given connected subgraph. */
+    public void enumerateCsgRec(long s1, long exclude) {
+        long neighborhood = neighborhood(s1, exclude);
+        if (neighborhood == 0) return;
+        long subset = 0;
+        do {
+            subset = JoinableBitSet.nextSubset(subset, neighborhood);
+            long next = JoinableBitSet.union(s1, subset);
+            if (getPlans(next) != null)
+                emitCsg(next);
+        } while (!JoinableBitSet.equals(subset, neighborhood));
+        subset = 0;             // Start over.
+        exclude = JoinableBitSet.union(exclude, neighborhood);
+        do {
+            subset = JoinableBitSet.nextSubset(subset, neighborhood);
+            long next = JoinableBitSet.union(s1, subset);
+            enumerateCsgRec(next, exclude);
+        } while (!JoinableBitSet.equals(subset, neighborhood));
+    }
+
+    /** Generate seeds for connected complements of the given connected subgraph. */
+    public void emitCsg(long s1) {
+        long exclude = JoinableBitSet.union(s1, JoinableBitSet.through(JoinableBitSet.min(s1)));
+        long neighborhood = neighborhood(s1, exclude);
+        if (neighborhood == 0) return;
+        for (int i = tables.size() - 1; i >= 0; i--) {
+            long s2 = JoinableBitSet.of(i);
+            if (JoinableBitSet.overlaps(neighborhood, s2)) {
+                boolean connected = false;
+                for (int e = 0; e < edges.length; e++) {
+                    if (JoinableBitSet.isSubset(edges[e], s1) &&
+                        JoinableBitSet.isSubset(edges[e^1], s2)) {
+                        connected = true;
+                        break;
+                    }
+                }
+                if (connected)
+                    emitCsgCmp(s1, s2);
+                enumerateCmpRec(s1, s2, exclude);
+            }
+        }        
+    }
+
+    /** Extend complement <code>s2</code> until a csg-cmp pair is
+     * reached, excluding the given tables to avoid duplicate
+     * enumeration, */
+    public void enumerateCmpRec(long s1, long s2, long exclude) {
+        long neighborhood = neighborhood(s2, exclude);
+        if (neighborhood == 0) return;
+        long subset = 0;
+        do {
+            subset = JoinableBitSet.nextSubset(subset, neighborhood);
+            long next = JoinableBitSet.union(s2, subset);
+            if (getPlans(next) != null) {
+                boolean connected = false;
+                for (int e = 0; e < edges.length; e++) {
+                    if (JoinableBitSet.isSubset(edges[e], s1) &&
+                        JoinableBitSet.isSubset(edges[e^1], next)) {
+                        connected = true;
+                        break;
+                    }
+                }
+                if (connected)
+                    emitCsgCmp(s1, next);
+            }
+        } while (!JoinableBitSet.equals(subset, neighborhood));
+        subset = 0;             // Start over.
+        exclude = JoinableBitSet.union(exclude, neighborhood);
+        do {
+            subset = JoinableBitSet.nextSubset(subset, neighborhood);
+            long next = JoinableBitSet.union(s2, subset);
+            enumerateCmpRec(s1, next, exclude);
+        } while (!JoinableBitSet.equals(subset, neighborhood));
+    }
+
+    /** Emit the connected subgraph / complement pair.
+     * That is, build and cost a plan that joins them and maybe
+     * register it as the new best such plan for the pair.
+     */
+    public void emitCsgCmp(long s1, long s2) {
+        List<Joinable> p1 = getPlans(s1);
+        List<Joinable> p2 = getPlans(s2);
+        long s = JoinableBitSet.union(s1, s2);
+        JoinNode operator = null;
+        for (int e = 0; e < edges.length; e++) {
+            if (JoinableBitSet.isSubset(edges[e], s1) &&
+                JoinableBitSet.isSubset(edges[e^1], s2)) {
+                assert (operator == null);
+                operator = joins.get(e/2); // The one that produced this edge.
+            }
+        }
+        assert (operator != null);
+        setPlans(s, evaluateJoin(p1, p2, getPlans(s), operator));
+    }
+
+    public abstract List<Joinable> evaluateJoin(List<Joinable> p1, List<Joinable> p2,
+                                                List<Joinable> existing, JoinNode join);
+
     // TODO: Maybe move these into members of the plan nodes?
     private Map<Joinable,Long> ses;
     private Map<JoinNode,Long> pes, tes;
