@@ -28,7 +28,7 @@ import java.util.*;
  * SEMI, ...) reordering constraints. DP happens by considering larger
  * sets made up from pairs of connected (based on edges) subsets.
  */
-public abstract class DPhyp
+public abstract class DPhyp<P>
 {
     // The leaves of the join tree: tables, derived tables, and
     // possibly joins handled atomically wrt this phase.
@@ -40,12 +40,12 @@ public abstract class DPhyp
     private long[] edges;
     
     // The "plan class" is the set of retained plans for the given tables.
-    private List<Joinable>[] planClasses;
+    private Object[] planClasses;
     
-    private List<Joinable> getPlans(long s) {
-        return planClasses[(int)s];
+    private P getPlans(long s) {
+        return (P)planClasses[(int)s];
     }
-    private void setPlans(long s, List<Joinable> plans) {
+    private void setPlans(long s, P plans) {
         planClasses[(int)s] = plans;
     }
 
@@ -64,12 +64,12 @@ public abstract class DPhyp
     }
 
     /** Run dynamic programming and return best overall plan(s). */
-    public List<Joinable> solve() {
+    public P solve() {
         int ntables = tables.size();
-        planClasses = (List<Joinable>[])new List<?>[1 << ntables];
+        planClasses = new Object[1 << ntables];
         // Start with single tables.
         for (int i = 0; i < ntables; i++) {
-            setPlans(JoinableBitSet.of(i), Collections.singletonList(tables.get(i)));
+            setPlans(JoinableBitSet.of(i), evaluateTable(tables.get(i)));
         }
         for (int i = ntables - 1; i >= 0; i--) {
             long ts = JoinableBitSet.of(i);
@@ -159,8 +159,8 @@ public abstract class DPhyp
      * register it as the new best such plan for the pair.
      */
     public void emitCsgCmp(long s1, long s2) {
-        List<Joinable> p1 = getPlans(s1);
-        List<Joinable> p2 = getPlans(s2);
+        P p1 = getPlans(s1);
+        P p2 = getPlans(s2);
         long s = JoinableBitSet.union(s1, s2);
         JoinNode operator = null;
         for (int e = 0; e < edges.length; e++) {
@@ -174,8 +174,8 @@ public abstract class DPhyp
         setPlans(s, evaluateJoin(p1, p2, getPlans(s), operator));
     }
 
-    public abstract List<Joinable> evaluateJoin(List<Joinable> p1, List<Joinable> p2,
-                                                List<Joinable> existing, JoinNode join);
+    public abstract P evaluateTable(Joinable table);
+    public abstract P evaluateJoin(P p1, P p2, P existing, JoinNode join);
 
     // TODO: Maybe move these into members of the plan nodes?
     private Map<Joinable,Long> ses;
