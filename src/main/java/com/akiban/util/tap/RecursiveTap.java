@@ -15,9 +15,10 @@
 
 package com.akiban.util.tap;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
-import java.util.Stack;
 
 abstract class RecursiveTap extends Tap
 {
@@ -33,13 +34,13 @@ abstract class RecursiveTap extends Tap
     
     public final void in()
     {
-        Stack<RecursiveTap> tapStack = tapStack();
+        Deque<RecursiveTap> tapStack = tapStack();
         if (tapStack != null) {
             // print("in %s", this);
             long now = System.nanoTime();
             inCount++;
             inNanos = now;
-            if (!tapStack.empty()) {
+            if (!tapStack.isEmpty()) {
                 RecursiveTap current = tapStack.peek();
                 current.lastDuration = now - current.inNanos;
                 current.cumulativeNanos += current.lastDuration;
@@ -52,10 +53,10 @@ abstract class RecursiveTap extends Tap
 
     public final void out()
     {
-        Stack<RecursiveTap> tapStack = tapStack();
+        Deque<RecursiveTap> tapStack = tapStack();
         if (tapStack != null) {
             // print("out %s", this);
-            if (!tapStack.empty()) {
+            if (!tapStack.isEmpty()) {
                 long now = System.nanoTime();
                 outCount++;
                 endNanos = now;
@@ -64,7 +65,7 @@ abstract class RecursiveTap extends Tap
                 // print("    added %s to %s", lastDuration / MILLION, this);
                 RecursiveTap current = tapStack.pop();
                 if (current == this) {
-                    if (!tapStack.empty()) {
+                    if (!tapStack.isEmpty()) {
                         RecursiveTap newCurrent = tapStack.peek();
                         newCurrent.inNanos = now;
                     }
@@ -110,7 +111,7 @@ abstract class RecursiveTap extends Tap
 
     // tapStack() returns the current stack of taps, which may be null. The callers (RecursiveTap.in/out)
     // should call tapStack() exactly once. This insulates in/out processing from a stack "disappearing".
-    protected abstract Stack<RecursiveTap> tapStack();
+    protected abstract Deque<RecursiveTap> tapStack();
 
     protected RecursiveTap(String name)
     {
@@ -130,11 +131,11 @@ abstract class RecursiveTap extends Tap
 
     // Object state
 
-    protected volatile long cumulativeNanos = 0;
-    protected volatile long inNanos = Long.MIN_VALUE;
+    protected volatile long cumulativeNanos;
+    protected volatile long inNanos;
     protected volatile long startNanos = System.nanoTime();
-    protected volatile long endNanos = System.nanoTime();
-    protected volatile long lastDuration = Long.MIN_VALUE;
+    protected volatile long endNanos;
+    protected long lastDuration;
 
     static class Outermost extends RecursiveTap
     {
@@ -143,11 +144,12 @@ abstract class RecursiveTap extends Tap
         @Override
         public void reset()
         {
+            tapStack = null;
             super.reset();
-            tapStack = new Stack<RecursiveTap>();
             for (Subsidiary subsidiaryTap : subsidiaryTaps) {
                 subsidiaryTap.reset();
             }
+            tapStack = new ArrayDeque<RecursiveTap>();
         }
 
         @Override
@@ -171,7 +173,7 @@ abstract class RecursiveTap extends Tap
         // RecursiveTap interface
 
         @Override
-        protected Stack<RecursiveTap> tapStack()
+        protected Deque<RecursiveTap> tapStack()
         {
             return tapStack;
         }
@@ -181,7 +183,7 @@ abstract class RecursiveTap extends Tap
             super(name);
         }
 
-        private volatile Stack<RecursiveTap> tapStack;
+        private volatile Deque<RecursiveTap> tapStack;
         private final List<Subsidiary> subsidiaryTaps = new ArrayList<Subsidiary>();
     }
 
@@ -194,7 +196,7 @@ abstract class RecursiveTap extends Tap
         }
 
         @Override
-        protected Stack<RecursiveTap> tapStack()
+        protected Deque<RecursiveTap> tapStack()
         {
             return outermostTap.tapStack();
         }

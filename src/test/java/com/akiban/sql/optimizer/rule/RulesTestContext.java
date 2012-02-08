@@ -30,7 +30,7 @@ public class RulesTestContext extends SchemaRulesContext
             throws IOException {
         super(ais, 
               new FunctionsRegistryImpl(), 
-              new TestIndexEstimator(ais, defaultSchema, statsFile),
+              new TestCostEstimator(ais, defaultSchema, statsFile),
               rules, properties);
         RulesTestHelper.ensureRowDefs(ais);
     }
