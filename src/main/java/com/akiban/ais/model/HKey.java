@@ -37,6 +37,11 @@ public class HKey
         buffer.append(")");
         return buffer.toString();
     }
+    
+    public UserTable userTable()
+    {
+        return (UserTable) table;
+    }
 
     public synchronized List<HKeySegment> segments()
     {

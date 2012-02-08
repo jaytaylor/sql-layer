@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.subquery;
 
+import com.akiban.server.error.SubqueryTooManyRowsException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.service.functions.FunctionsRegistry;
@@ -42,6 +43,41 @@ public class ScalarSubqueryExpressionTest {
 
     @Test
     public void testScalar() {
+        Schema schema = OperatorTestHelper.schema();
+        Operator outer = new TestOperator(new RowsBuilder(schema, AkType.LONG)
+                .row(1L)
+                .row(2L)
+                .row((Long)null)
+                                          
+        );
+        Operator inner = new TestOperator(new RowsBuilder(schema, AkType.LONG)
+                .row(1L)
+                .row(2L)
+        );
+
+        Expression equals = compare(boundField(outer.rowType(), 1, 0),
+                                    Comparison.NE,
+                                    field(inner.rowType(), 0));
+        Operator innerPlan = select_HKeyOrdered(inner, inner.rowType(), equals);
+        Expression expression = functionsRegistry
+            .composer("plus")
+            .compose(Arrays.asList(boundField(outer.rowType(), 1, 0),
+                                   field(inner.rowType(), 0)));
+        Expression scalar = new ScalarSubqueryExpression(innerPlan, expression,
+                                                         outer.rowType(), inner.rowType(), 1);
+        Expression outerN = field(outer.rowType(), 0);
+        Operator outerPlan = project_Default(outer, outer.rowType(),
+                                             Arrays.asList(outerN, scalar));
+        Deque<Row> expected = new RowsBuilder(AkType.LONG, AkType.LONG)
+            .row(1, 3)
+            .row(2, 3)
+            .row((Long)null, (Long)null)
+            .rows();
+        OperatorTestHelper.check(outerPlan, expected);
+    }
+
+    @Test(expected = SubqueryTooManyRowsException.class)
+    public void testTooManyRows() {
         Schema schema = OperatorTestHelper.schema();
         Operator outer = new TestOperator(new RowsBuilder(schema, AkType.LONG)
                 .row(1L)

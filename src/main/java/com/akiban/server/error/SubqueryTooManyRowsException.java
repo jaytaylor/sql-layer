@@ -12,16 +12,10 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
+package com.akiban.server.error;
 
-package com.akiban.sql.optimizer.rule;
-
-import com.akiban.server.store.statistics.IndexStatistics;
-
-import com.akiban.ais.model.Index;
-
-public abstract class IndexEstimator
-{
-    public abstract IndexStatistics getIndexStatistics(Index index);
-
-    // TODO: More non-abstract to come.
+public class SubqueryTooManyRowsException extends InvalidOperationException {
+    public SubqueryTooManyRowsException () {
+        super(ErrorCode.SUBQUERY_TOO_MANY_ROWS);
+    }
 }
