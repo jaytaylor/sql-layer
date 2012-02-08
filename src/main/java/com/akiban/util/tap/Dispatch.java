@@ -38,7 +38,7 @@ class Dispatch extends Tap
     {
         currentTap.out();
     }
-
+    
     public long getDuration()
     {
         return currentTap.getDuration();
@@ -49,14 +49,14 @@ class Dispatch extends Tap
         currentTap.reset();
     }
 
-    public void appendReport(final StringBuilder sb)
+    public void appendReport(StringBuilder buffer)
     {
-        currentTap.appendReport(sb);
+        currentTap.appendReport(buffer);
     }
 
-    public TapReport getReport()
+    public TapReport[] getReports()
     {
-        return currentTap.getReport();
+        return currentTap.getReports();
     }
 
     public String toString()
@@ -65,6 +65,25 @@ class Dispatch extends Tap
     }
     
     // Dispatch interface
+    
+    public Tap enabledTap()
+    {
+        return enabledTap;
+    }
+
+    public void setEnabled(boolean on)
+    {
+        // If a tap is enabled between in and out calls, then the nesting will appear to be off.
+        // markEnabled causes the nesting check to be skipped the first time out is called after
+        // enabling.
+        if (on) {
+            enabledTap.reset();
+            currentTap = enabledTap;
+        } else {
+            enabledTap.disable();
+            currentTap = new Null(name);
+        }
+    }
 
     public Dispatch(String name, Tap tap)
     {
@@ -73,18 +92,6 @@ class Dispatch extends Tap
         this.enabledTap = tap;
     }
 
-    public void setEnabled(boolean on)
-    {
-        currentTap = on ? enabledTap : new Null(name);
-    }
-    
-    // For use by this package
-    
-    void setEnabledTap(Tap tap)
-    {
-        enabledTap = tap;
-    }
-    
     // Object state
 
     private Tap currentTap;
