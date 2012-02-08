@@ -43,6 +43,8 @@ public class EquivalenceFinder<T> {
     public Set<T> findEquivalents(T node) {
         Set<T> accumulator = new HashSet<T>();
         buildEquivalents(node, accumulator);
+        boolean removedFirst = accumulator.remove(node);
+        assert removedFirst : "didn't remove " + node + " from " + accumulator;
         return accumulator;
     }
 
@@ -79,10 +81,10 @@ public class EquivalenceFinder<T> {
     }
 
     private void buildEquivalents(T node, Set<T> accumulator) {
+        if (!accumulator.add(node))
+            return;
         for (T equivalence : equivalences.get(node)) {
-            if (accumulator.add(equivalence)) {
-                buildEquivalents(equivalence, accumulator);
-            }
+            buildEquivalents(equivalence, accumulator);
         }
     }
 

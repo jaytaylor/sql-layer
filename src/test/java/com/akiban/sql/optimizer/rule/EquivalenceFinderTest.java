@@ -141,7 +141,12 @@ public class EquivalenceFinderTest {
         checkEquivalents(1, finder, 2, 3);
     }
     
-    protected static void checkEquivalents(int from, EquivalenceFinder<? super Integer> finder, Integer... expected) {
+    @Test(expected = IllegalArgumentException.class)
+    public void nullEquivalence() {
+        create().markEquivalent(1, null);
+    }
+    
+    protected static void checkEquivalents(Integer from, EquivalenceFinder<? super Integer> finder, Integer... expected) {
         Set<Integer> expectedSet = new HashSet<Integer>();
         Collections.addAll(expectedSet, expected);
         AssertUtils.assertCollectionEquals("equivalents for " + from, expectedSet, finder.findEquivalents(from));
