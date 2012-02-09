@@ -104,8 +104,24 @@ public class DPhypEnumerateTest extends OptimizerTestBase
                                            new AST((DMLStatementNode)stmt,
                                                    parser.getParameterList()));
         rules.applyRules(plan);
-        Joinable joins = findRootJoinable(plan.getPlan());
-        String result = Strings.join(new DPhypEnumerate().run(joins));
+        PlanNode node = plan.getPlan();
+        Joinable joins = null;
+        ConditionList whereConditions = null;
+        while (true) {
+            if (node instanceof Joinable) {
+                joins = ((Joinable)node);
+                break;
+            }
+            if (node instanceof Select)
+                whereConditions = ((Select)node).getConditions();
+            if (node instanceof BasePlanWithInput)
+                node = ((BasePlanWithInput)node).getInput();
+            else
+                break;
+        }
+        if (joins == null)
+            return null;
+        String result = Strings.join(new DPhypEnumerate().run(joins, whereConditions));
         result = result.replace("\r", "");
         result = result.replace(DEFAULT_SCHEMA + ".", "");
         return result;
@@ -114,17 +130,6 @@ public class DPhypEnumerateTest extends OptimizerTestBase
     @Override
     public void checkResult(String result) throws IOException {
         assertEquals(caseName, expected, result);
-    }
-
-    static Joinable findRootJoinable(PlanNode node) {
-        while (true) {
-            if (node instanceof Joinable)
-                return ((Joinable)node);
-            if (node instanceof BasePlanWithInput)
-                node = ((BasePlanWithInput)node).getInput();
-            else
-                return null;
-        }
     }
 
     static class DPhypEnumerate extends DPhyp<List<String>> {

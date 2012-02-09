@@ -36,11 +36,12 @@ public abstract class DPhyp<P>
     // The leaves of the join tree: tables, derived tables, and
     // possibly joins handled atomically wrt this phase.
     private List<Joinable> tables;
-    // The join operators.
-    private List<JoinNode> joins;
+    // The join operators, from JOINs and WHERE clause.
+    private List<JoinOperator> operators;
     // The hypergraph: since these are unordered, traversal pattern is
     // to go through in order pairing with adjacent (complement bit 1).
     private long[] edges;
+    private int noperators, nedges;
     
     // The "plan class" is the set of retained plans for the given tables.
     private Object[] plans;
@@ -54,8 +55,8 @@ public abstract class DPhyp<P>
         plans[(int)s] = plan;
     }
 
-    public P run(Joinable root) {
-        init(root);
+    public P run(Joinable root, ConditionList whereConditions) {
+        init(root, whereConditions);
         return solve();
     }
 
@@ -64,7 +65,7 @@ public abstract class DPhyp<P>
     public long neighborhood(long s, long exclude) {
         exclude = JoinableBitSet.union(s, exclude);
         long result = 0;
-        for (int e = 0; e < edges.length; e++) {
+        for (int e = 0; e < nedges; e++) {
             if (JoinableBitSet.isSubset(edges[e], s) &&
                 !JoinableBitSet.overlaps(edges[e^1], exclude)) {
                 result |= JoinableBitSet.minSubset(edges[e^1]);
@@ -118,7 +119,7 @@ public abstract class DPhyp<P>
             long s2 = JoinableBitSet.of(i);
             if (JoinableBitSet.overlaps(neighborhood, s2)) {
                 boolean connected = false;
-                for (int e = 0; e < edges.length; e++) {
+                for (int e = 0; e < nedges; e++) {
                     if (JoinableBitSet.isSubset(edges[e], s1) &&
                         JoinableBitSet.isSubset(edges[e^1], s2)) {
                         connected = true;
@@ -144,7 +145,7 @@ public abstract class DPhyp<P>
             long next = JoinableBitSet.union(s2, subset);
             if (getPlan(next) != null) {
                 boolean connected = false;
-                for (int e = 0; e < edges.length; e++) {
+                for (int e = 0; e < nedges; e++) {
                     if (JoinableBitSet.isSubset(edges[e], s1) &&
                         JoinableBitSet.isSubset(edges[e^1], next)) {
                         connected = true;
@@ -172,22 +173,22 @@ public abstract class DPhyp<P>
         P p1 = getPlan(s1);
         P p2 = getPlan(s2);
         long s = JoinableBitSet.union(s1, s2);
-        JoinNode operator = null;
-        for (int e = 0; e < edges.length; e++) {
+        JoinOperator operator = null;
+        for (int e = 0; e < nedges; e++) {
             if (JoinableBitSet.isSubset(edges[e], s1) &&
                 JoinableBitSet.isSubset(edges[e^1], s2)) {
                 // TODO: When can more than one apply?
                 assert (operator == null);
-                operator = joins.get(e/2); // The one that produced this edge.
+                operator = operators.get(e/2); // The one that produced this edge.
             }
         }
         assert (operator != null);
         P plan = getPlan(s);
         plan = evaluateJoin(p1, p2, plan, 
-                            operator.getJoinType(), operator.getJoinConditions());
+                            operator.getJoinType(), operator.joinConditions);
         if (isCommutative(operator.getJoinType()))
             plan = evaluateJoin(p2, p1, plan, 
-                                operator.getJoinType(), operator.getJoinConditions());
+                                operator.getJoinType(), operator.joinConditions);
         setPlan(s, plan);
     }
 
@@ -195,49 +196,26 @@ public abstract class DPhyp<P>
     public abstract P evaluateJoin(P p1, P p2, P existing, 
                                    JoinType joinType, ConditionList joinConditions);
 
-    // TODO: Maybe move these into members of the plan nodes?
-    private Map<Joinable,Long> ses;
-    private Map<JoinNode,Long> pes, tes;
-
-    private long getTables(Joinable n) {
-        return ses.get(n);
-    }
-    private void setTables(Joinable n, long t) {
-        ses.put(n, t);
-    }
-    private long getPredicateTables(JoinNode n) {
-        return pes.get(n);
-    }
-    private void setPredicateTables(JoinNode n, long t) {
-        pes.put(n, t);
-    }
-    private long getTES(JoinNode n) {
-        return tes.get(n);
-    }
-    private void setTES(JoinNode n, long t) {
-        tes.put(n, t);
-    }
-
     /** Initialize state from the given join tree. */
-    public void init(Joinable root) {
+    public void init(Joinable root, ConditionList whereConditions) {
         tables = new ArrayList<Joinable>();
         addTables(root);
-        ses = new HashMap<Joinable,Long>();
-        pes = new HashMap<JoinNode,Long>();
-        tes = new HashMap<JoinNode,Long>();
-        initSES(root);
-        int njoins = tes.keySet().size();
-        joins = new ArrayList<JoinNode>(njoins);
-        edges = new long[njoins * 2];
-        calcTES(root);
+        ExpressionTables visitor = new ExpressionTables(tables);
+        noperators = 0;
+        JoinOperator rootOp = initSES(root, visitor);
+        noperators += whereConditions.size(); // Maximum possible.
+        operators = new ArrayList<JoinOperator>(noperators);
+        nedges = noperators * 2;
+        edges = new long[nedges];
+        calcTES(rootOp);
+        noperators = operators.size();
+        nedges = noperators * 2;
         if (false) {
-            for (int e = 0; e < njoins; e++) {
-                System.out.println(JoinableBitSet.toString(edges[e*2], tables) + " <-> " +
-                                   JoinableBitSet.toString(edges[e*2+1], tables));
+            for (int e = 0; e < nedges; e += 2) {
+                System.out.println(JoinableBitSet.toString(edges[e], tables) + " <-> " +
+                                   JoinableBitSet.toString(edges[e^1], tables));
             }
         }
-        ses = null;
-        pes = tes = null;
     }
 
     protected void addTables(Joinable n) {
@@ -251,38 +229,78 @@ public abstract class DPhyp<P>
         }
     }
 
+    static class JoinOperator {
+        JoinNode join;          // If from an actual join.
+        ConditionList joinConditions;
+        JoinOperator left, right, parent;
+        long leftTables, rightTables, predicateTables, tes;
+        
+        public JoinOperator(JoinNode join) {
+            this.join = join;
+            joinConditions = join.getJoinConditions();
+        }
+
+        public JoinOperator(ConditionExpression condition) {
+            joinConditions = new ConditionList(1);
+            joinConditions.add(condition);
+        }
+
+        public long getTables() {
+            return JoinableBitSet.union(leftTables, rightTables);
+        }
+
+        public JoinType getJoinType() {
+            if (join != null)
+                return join.getJoinType();
+            else
+                return JoinType.INNER;
+        }
+    }
+
     /** Starting state of the TES is just those tables used syntactically. */
-    protected long initSES(Joinable n) {
-        long t;
+    protected JoinOperator initSES(Joinable n, ExpressionTables visitor) {
         if (n instanceof JoinNode) {
             JoinNode join = (JoinNode)n;
-            t = JoinableBitSet.union(initSES(join.getLeft()),
-                                     initSES(join.getRight()));
-            long p = predicateTables(join.getJoinConditions());
-            pes.put(join, p);
-            tes.put(join, JoinableBitSet.intersection(t, p));
+            JoinOperator op = new JoinOperator(join);
+            Joinable left = join.getLeft();
+            JoinOperator leftOp = initSES(left, visitor);
+            if (leftOp != null) {
+                leftOp.parent = op;
+                op.left = leftOp;
+                op.leftTables = leftOp.getTables();
+            }
+            else {
+                op.leftTables = JoinableBitSet.of(tables.indexOf(left));
+            }
+            Joinable right = join.getRight();
+            JoinOperator rightOp = initSES(right, visitor);
+            if (rightOp != null) {
+                rightOp.parent = op;
+                op.right = rightOp;
+                op.rightTables = rightOp.getTables();
+            }
+            else {
+                op.rightTables = JoinableBitSet.of(tables.indexOf(right));
+            }
+            op.predicateTables = visitor.getTables(op.joinConditions);
+            op.tes = JoinableBitSet.intersection(op.getTables(), op.predicateTables);
+            noperators++;
+            return op;
         }
-        else {
-            t = JoinableBitSet.of(tables.indexOf(n));
-        }
-        ses.put(n, t);
-        return t;
+        return null;
     }
 
     /** Extend TES for join operators based on reordering conflicts. */
-    public void calcTES(Joinable n) {
-        if (n instanceof JoinNode) {
-            JoinNode join = (JoinNode)n;
-            calcTES(join.getLeft());
-            calcTES(join.getRight());
-            addConflicts(join, join.getLeft(), true);
-            addConflicts(join, join.getRight(), false);
-            long t = getTES(join);
-            long s = getTables(join.getRight());
-            long r = JoinableBitSet.intersection(t, s);
-            long l = JoinableBitSet.difference(t, r);
-            int o = joins.size();
-            joins.add(join);    // Remember operator for join type and predicate.
+    public void calcTES(JoinOperator op) {
+        if (op != null) {
+            calcTES(op.left);
+            calcTES(op.right);
+            addConflicts(op, op.left, true);
+            addConflicts(op, op.right, false);
+            long r = JoinableBitSet.intersection(op.tes, op.rightTables);
+            long l = JoinableBitSet.difference(op.tes, r);
+            int o = operators.size();
+            operators.add(op);
             // Add an edge for the TES of this join operator.
             edges[o*2] = l;
             edges[o*2+1] = r;
@@ -290,26 +308,25 @@ public abstract class DPhyp<P>
     }
 
     /** Add conflicts to <code>o1</code> from descendant <code>j</code>. */
-    protected void addConflicts(JoinNode o1, Joinable j, boolean left) {
-        if (j instanceof JoinNode) {
-            JoinNode o2 = (JoinNode)j;
+    protected void addConflicts(JoinOperator o1, JoinOperator o2, boolean left) {
+        if (o2 != null) {
             if (left ? leftConflict(o2, o1) : rightConflict(o1, o2)) {
-                setTES(o1, JoinableBitSet.union(getTES(o1), getTES(o2)));
+                o1.tes = JoinableBitSet.union(o1.tes, o2.tes);
             }
-            addConflicts(o1, o2.getLeft(), left);
-            addConflicts(o1, o2.getRight(), left);
+            addConflicts(o1, o2.left, left);
+            addConflicts(o1, o2.right, left);
         }
     }
 
     /** Is there a left ordering conflict? */
-    protected boolean leftConflict(JoinNode o2, JoinNode o1) {
-        return JoinableBitSet.overlaps(getPredicateTables(o1), rightTables(o1, o2)) &&
+    protected boolean leftConflict(JoinOperator o2, JoinOperator o1) {
+        return JoinableBitSet.overlaps(o1.predicateTables, rightTables(o1, o2)) &&
             operatorConflict(o2.getJoinType(), o1.getJoinType());
     }
 
     /** Is there a right ordering conflict? */
-    protected boolean rightConflict(JoinNode o1, JoinNode o2) {
-        return JoinableBitSet.overlaps(getPredicateTables(o1), leftTables(o1, o2)) &&
+    protected boolean rightConflict(JoinOperator o1, JoinOperator o2) {
+        return JoinableBitSet.overlaps(o1.predicateTables, leftTables(o1, o2)) &&
             operatorConflict(o1.getJoinType(), o2.getJoinType());
     }
 
@@ -329,23 +346,23 @@ public abstract class DPhyp<P>
 
     /** All the left tables on the path from <code>o2</code> (inclusive) 
      * to <code>o1</code> (exclusive). */
-    protected long leftTables(JoinNode o1, JoinNode o2) {
+    protected long leftTables(JoinOperator o1, JoinOperator o2) {
         long result = JoinableBitSet.empty();
-        for (JoinNode o3 = o2; o3 != o1; o3 = (JoinNode)o3.getOutput())
-            result = JoinableBitSet.union(result, getTables(o3.getLeft()));
+        for (JoinOperator o3 = o2; o3 != o1; o3 = o3.parent)
+            result = JoinableBitSet.union(result, o3.leftTables);
         if (isCommutative(o2.getJoinType()))
-            result = JoinableBitSet.union(result, getTables(o2.getRight()));
+            result = JoinableBitSet.union(result, o2.rightTables);
         return result;
     }
 
     /** All the right tables on the path from <code>o2</code> (inclusive) 
      * to <code>o1</code> (exclusive). */
-    protected long rightTables(JoinNode o1, JoinNode o2) {
+    protected long rightTables(JoinOperator o1, JoinOperator o2) {
         long result = JoinableBitSet.empty();
-        for (JoinNode o3 = o2; o3 != o1; o3 = (JoinNode)o3.getOutput())
-            result = JoinableBitSet.union(result, getTables(o3.getRight()));
+        for (JoinOperator o3 = o2; o3 != o1; o3 = o3.parent)
+            result = JoinableBitSet.union(result, o3.rightTables);
         if (isCommutative(o2.getJoinType()))
-            result = JoinableBitSet.union(result, getTables(o2.getLeft()));
+            result = JoinableBitSet.union(result, o2.leftTables);
         return result;
     }
 
@@ -374,10 +391,24 @@ public abstract class DPhyp<P>
 
     static class ExpressionTables implements ExpressionVisitor, PlanVisitor {
         List<Joinable> tables;
-        long result = JoinableBitSet.empty();
+        long result;
 
         public ExpressionTables(List<Joinable> tables) {
             this.tables = tables;
+        }
+
+        public long getTables(ConditionList l) {
+            result = JoinableBitSet.empty();
+            for (ConditionExpression cond : l) {
+                cond.accept(this);
+            }
+            return result;
+        }
+
+        public long getTables(ConditionExpression n) {
+            result = JoinableBitSet.empty();
+            n.accept(this);
+            return result;
         }
 
         @Override
