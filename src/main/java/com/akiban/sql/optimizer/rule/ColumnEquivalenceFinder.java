@@ -41,7 +41,6 @@ public final class ColumnEquivalenceFinder extends BaseRule {
     }
     
     private static class ColumnEquivalenceVisitor implements PlanVisitor, ExpressionVisitor {
-        private boolean firstSelect = true;
 
         @Override
         public boolean visitEnter(PlanNode n) {
@@ -60,10 +59,9 @@ public final class ColumnEquivalenceFinder extends BaseRule {
                 if (joinNode.isInnerJoin())
                     equivalenceConditions(joinNode.getJoinConditions());
             }
-            else if (firstSelect && (n instanceof Select)) {
+            else if (n instanceof Select) {
                 Select select = (Select) n;
                 equivalenceConditions(select.getConditions());
-                firstSelect = false;
             }
             return true;
         }
