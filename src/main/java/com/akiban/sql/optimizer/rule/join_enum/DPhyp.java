@@ -208,6 +208,7 @@ public abstract class DPhyp<P>
         nedges = noperators * 2;
         edges = new long[nedges];
         calcTES(rootOp);
+        addWhereConditions(whereConditions, visitor);
         noperators = operators.size();
         nedges = noperators * 2;
         if (false) {
@@ -377,18 +378,56 @@ public abstract class DPhyp<P>
         }
     }
 
-    /** Compute tables used in join predicate. */
-    // TODO: Also need to record whether null-tolerant and prevent more ordering if so.
-    protected long predicateTables(ConditionList conditions) {
-        ExpressionTables visitor = new ExpressionTables(tables);
-        if (conditions != null) {
-            for (ConditionExpression condition : conditions) {
-                condition.accept(visitor);
+    protected void addWhereConditions(ConditionList whereConditions, 
+                                      ExpressionTables visitor) {
+        for (ConditionExpression condition : whereConditions) {
+            // TODO: When optimizer supports more predicates
+            // interestingly, can recognize them, including
+            // generalized hypergraph triples.
+            if (condition instanceof ComparisonCondition) {
+                ComparisonCondition comp = (ComparisonCondition)condition;
+                long columnTables = columnReferenceTable(comp.getLeft());
+                if (!JoinableBitSet.isEmpty(columnTables)) {
+                    addWhereCondition(condition, columnTables,
+                                      visitor.getTables(comp.getRight()));
+                    continue;
+                }
+                columnTables = columnReferenceTable(comp.getRight());
+                if (!JoinableBitSet.isEmpty(columnTables)) {
+                    addWhereCondition(condition, columnTables,
+                                      visitor.getTables(comp.getLeft()));
+                    continue;
+                }
             }
         }
-        return visitor.result;
     }
 
+    protected long columnReferenceTable(ExpressionNode node) {
+        if (node instanceof ColumnExpression) {
+            int idx = tables.indexOf(((ColumnExpression)node).getTable());
+            if (idx >= 0) {
+                return JoinableBitSet.of(idx);
+            }
+        }
+        return 0;
+    }
+
+    protected void addWhereCondition(ConditionExpression condition,
+                                     long columnTables, long comparisonTables) {
+        if (!JoinableBitSet.isEmpty(comparisonTables) &&
+            !JoinableBitSet.overlaps(columnTables, comparisonTables)) {
+            JoinOperator op = new JoinOperator(condition);
+            op.leftTables = columnTables;
+            op.rightTables = comparisonTables;
+            int o = operators.size();
+            operators.add(op);
+            edges[o*2] = columnTables;
+            edges[o*2+1] = comparisonTables;
+        }
+    }
+
+    /** Compute tables used in join predicate. */
+    // TODO: Also need to record whether null-tolerant and prevent more ordering if so.
     static class ExpressionTables implements ExpressionVisitor, PlanVisitor {
         List<Joinable> tables;
         long result;
@@ -397,17 +436,19 @@ public abstract class DPhyp<P>
             this.tables = tables;
         }
 
-        public long getTables(ConditionList l) {
+        public long getTables(ConditionList conditions) {
             result = JoinableBitSet.empty();
-            for (ConditionExpression cond : l) {
-                cond.accept(this);
+            if (conditions != null) {
+                for (ConditionExpression cond : conditions) {
+                    cond.accept(this);
+                }
             }
             return result;
         }
 
-        public long getTables(ConditionExpression n) {
+        public long getTables(ExpressionNode node) {
             result = JoinableBitSet.empty();
-            n.accept(this);
+            node.accept(this);
             return result;
         }
 

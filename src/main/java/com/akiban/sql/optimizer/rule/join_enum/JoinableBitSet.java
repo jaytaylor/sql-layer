@@ -31,6 +31,10 @@ public class JoinableBitSet
         return 0;
     }
 
+    public static boolean isEmpty(long s) {
+        return (s != 0);
+    }
+
     /** A set containing a single element with the given index. */
     public static long of(int i) {
         return (1L << i);
