@@ -1530,16 +1530,13 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                 "- output: [[3, 'Zoolander'],[1, 'Smith'],[2, 'Jones'],[4, 'Adams']]");
     }
 
-<<<<<<< TREE
     @Test
     public void testIgnoreBulkloadCommand() {
         testYaml("---\n- Bulkload: /home/akiba/fts_basis.properties\n"+
         "- properties: {'dataset.coi.address.ratio': 3, 'dataset.coi.order.ratio': 2, 'dataset.coi.customer.count': 200, 'dataset.coi.item.ratio': 2}\n...");
     }
     
-=======
     /* Test Statement warnings_count */
-
     @Test
     public void testStatementWarningsCountNoValue() {
         testYaml("---\n" +
@@ -1812,7 +1809,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "    [!re '[0-9]+', !re 'Invalid .*'],\n" +
                  "    [!re '[0-9]+', !re 'Invalid .*']]");
     }
->>>>>>> MERGE-SOURCE
+
 
     /* Other methods */
 

@@ -140,17 +140,15 @@ import org.yaml.snakeyaml.nodes.Tag;
      output, error codes, error messages, warnings, or explain output
    - The statement text should not create a table -- use the CreateTable
      command for that purpose
-<<<<<<< TREE
    - output_ordered: does a sort on the expected and actual during comparison  
-   
-   BulkLoad is not supported in IT level tests
-   if used, please suppress the IT level calls or place tests in AAS directly
-=======
    - output_ordered: does a sort on the expected and actual during comparison
    - Warnings include statement warnings followed by result set warnings for
      each output row
    - The warning message is optional
->>>>>>> MERGE-SOURCE
+   
+   BulkLoad is not supported in IT level tests
+   if used, please suppress the IT level calls or place tests in AAS directly
+
 */
 class YamlTester {
 
