@@ -132,21 +132,21 @@ public class YamlTesterDateTimeTest {
     }
 
     private static void test(String output) {
-        boolean result = new TimeChecker().compareOutput(output);
+        boolean result = new TimeChecker().compareExpected(output);
         if (!result) {
             fail("Time check failed with " + output);
         }
     }
 
     private static void testFail(String output) {
-        boolean result = new TimeChecker().compareOutput(output);
+        boolean result = new TimeChecker().compareExpected(output);
         if (result) {
             fail("Time check failed with " + output);
         }
     }
 
     private static void testdt(String output) {
-        boolean result = new DateTimeChecker().compareOutput(output);
+        boolean result = new DateTimeChecker().compareExpected(output);
         if (!result) {
             fail("Time check failed with " + output);
         } else {
@@ -155,7 +155,7 @@ public class YamlTesterDateTimeTest {
     }
 
     private static void testdtFail(String output) {
-        boolean result = new DateTimeChecker().compareOutput(output);
+        boolean result = new DateTimeChecker().compareExpected(output);
         if (result) {
             fail("Time check failed with " + output);
         } else {

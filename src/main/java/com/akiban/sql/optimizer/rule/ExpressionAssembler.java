@@ -16,7 +16,9 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.service.functions.FunctionsRegistry;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.types.DataTypeDescriptor;
@@ -223,20 +225,23 @@ public class ExpressionAssembler
         return result;
     }
 
-    public ConstantExpression evalNow(ExpressionNode node) {
+    public ConstantExpression evalNow(PlanContext planContext, ExpressionNode node) {
         if (node instanceof ConstantExpression)
             return (ConstantExpression)node;
         Expression expr = assembleExpression(node, null, null);
         if (!expr.isConstant())
             throw new AkibanInternalException("required constant expression: " + expr);
+        ExpressionEvaluation eval = expr.evaluation();
+        eval.of(planContext.getQueryContext());
+        ValueSource valueSource = eval.eval();
         if (node instanceof ConditionExpression) {
-            boolean value = Extractors.getBooleanExtractor().getBoolean(expr.evaluation().eval(), false);
+            boolean value = Extractors.getBooleanExtractor().getBoolean(valueSource, false);
             return new BooleanConstantExpression(value,
                                                  node.getSQLtype(), 
                                                  node.getSQLsource());
         }
         else {
-            return new ConstantExpression(expr.evaluation().eval(),
+            return new ConstantExpression(valueSource,
                                           node.getSQLtype(), 
                                           node.getSQLsource());
         }

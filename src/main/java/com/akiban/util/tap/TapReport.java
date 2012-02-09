@@ -19,6 +19,12 @@ import java.beans.ConstructorProperties;
 
 public class TapReport
 {
+    @Override
+    public String toString()
+    {
+        return String.format("%s: in = %s, out = %s, msec = %s", name, inCount, outCount, cumulativeTime / MILLION);
+    }
+
     @ConstructorProperties({"name", "inCount", "outCount", "cumulativeTime"})
     public TapReport(String name, long inCount, long outCount, long cumulativeTime)
     {
@@ -26,6 +32,14 @@ public class TapReport
         this.inCount = inCount;
         this.outCount = outCount;
         this.cumulativeTime = cumulativeTime;
+    }
+    
+    public TapReport(String name)
+    {
+        this.name = name;
+        this.inCount = 0;
+        this.outCount = 0;
+        this.cumulativeTime = 0;
     }
 
     public String getName()
@@ -48,10 +62,14 @@ public class TapReport
         return cumulativeTime;
     }
 
+    // Class state
+    
+    private static final int MILLION = 1000000;
+    
     // Object state
 
-    private final String name;
-    private final long inCount;
-    private final long outCount;
-    private final long cumulativeTime;
+    String name;
+    long inCount;
+    long outCount;
+    long cumulativeTime;
 }

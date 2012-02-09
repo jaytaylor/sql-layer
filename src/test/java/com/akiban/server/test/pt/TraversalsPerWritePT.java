@@ -59,7 +59,7 @@ public final class TraversalsPerWritePT extends PTBase {
     }
 
     @Override
-    protected void relevantTaps(TapsRegexes tapsRegexes) {
+    protected void registerTaps() {
         tapsRegexes.add("travers.*");
     }
 

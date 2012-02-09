@@ -20,9 +20,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.management.*;
 import java.lang.management.ManagementFactory;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Pattern;
 
 /**
@@ -66,7 +65,7 @@ import java.util.regex.Pattern;
  * The results are available in String or object form. Call {@link #report()} to
  * get a printable string representation of the results. Note that for
  * convenience when using jconsole, the {@link #report()} method also dumps the
- * report string to the log at INFO level. Use MY_TAP.getReport() to get a
+ * report string to the log at INFO level. Use MY_TAP.getReports() to get a
  * {@link TapReport} object.
  * <p/>
  * Note that the TimeAndCount subclass of {@link Tap} uses
@@ -81,14 +80,6 @@ import java.util.regex.Pattern;
  * sometimes or always throws an Exception, those instances will not be timed.
  * You can detect this issue in the most of the Tap subclasses by comparing the
  * reported <tt>inCount</tt> and <tt>outCount</tt> values.
- * <p/>
- * You may implement a custom subclass of {@link Tap} to provide extended
- * behavior. To enable it, call {@link #setCustomTap(String, Class)} as follows:
- * <p/>
- * <pre>
- * Tap.setCustomTap(&quot;myTap&quot;, MyTapSubclass.class);
- * </pre>
- * <p/>
  * <p/>
  * Currently the following Tap subclasses are defined:
  * <dl>
@@ -148,19 +139,15 @@ public abstract class Tap
      */
     public abstract void reset();
 
-    /**
-     * Append text to the supplied {@link StringBuilder} containing the current
-     * accumulated statistics for this Tap. The Null Tap should do nothing.
-     * @param sb
-     */
-    public abstract void appendReport(StringBuilder sb);
+    public void disable()
+    {}
 
-    /**
-     * Return a {@link TapReport} object containing the accumulated statistics
-     * for this Tap. The Null Tap should return null.
-     * @return A Result object or <tt>null</tt>
-     */
-    public abstract TapReport getReport();
+    public InOutTap createSubsidiaryTap(String name, InOutTap outermostRecursiveTapWrapper)
+    {
+        Dispatch outermostPerDispatch = (Dispatch) outermostRecursiveTapWrapper.internal();
+        PerThread outermostPerThread = (PerThread) outermostPerDispatch.enabledTap();
+        return new InOutTap(PerThread.createRecursivePerThread(name, outermostPerThread));
+    }
 
     public static PointTap createCount(String name)
     {
@@ -169,9 +156,9 @@ public abstract class Tap
 
     public static PointTap createCount(String name, boolean enabled)
     {
-        PointTap ret = new PointTap(add(new PerThread(name, Count.class)));
+        PointTap tap = new PointTap(add(PerThread.createPerThread(name, Count.class)));
         Tap.setEnabled(name, enabled);
-        return ret;
+        return tap;
     }
 
     public static InOutTap createTimer(String name)
@@ -181,9 +168,14 @@ public abstract class Tap
 
     public static InOutTap createTimer(String name, boolean enabled)
     {
-        InOutTap ret = new InOutTap(add(new PerThread(name, TimeAndCount.class)));
+        InOutTap tap = new InOutTap(add(PerThread.createPerThread(name, TimeAndCount.class)));
         Tap.setEnabled(name, enabled);
-        return ret;
+        return tap;
+    }
+    
+    public static InOutTap createRecursiveTimer(String name)
+    {
+        return new InOutTap(add(PerThread.createPerThread(name, RecursiveTap.Outermost.class)));
     }
 
     public static void defaultToOn(boolean defaultIsOn)
@@ -235,44 +227,15 @@ public abstract class Tap
         Pattern pattern = Pattern.compile(regExPattern);
         for (Dispatch tap : dispatchesCopy()) {
             if (pattern.matcher(tap.getName()).matches()) {
-                TapReport report = tap.getReport();
-                if (report != null) {
-                    reports.add(report);
+                if (tap.getReports() != null) {
+                    for (TapReport tapReport : tap.getReports()) {
+                        reports.add(tapReport);
+                    }
                 }
             }
         }
+        Collections.sort(reports, TAPS_BY_NAME_COMPARATOR);
         return reports.toArray(new TapReport[reports.size()]);
-    }
-
-    /**
-     * Add a custom {@link Tap} subclass. Specify a regExPattern to select from
-     * previously installed {@link Dispatch} instances, plus a {@link Class}
-     * defining a custom Tap implementation.
-     *
-     * @param regExPattern regular expression to select names
-     * @param clazz        Subclass of {@link Tap} to enable
-     * @throws SecurityException
-     * @throws NoSuchMethodException
-     * @throws IllegalArgumentException
-     * @throws InstantiationException
-     * @throws IllegalAccessException
-     * @throws InvocationTargetException
-     */
-    public static void setCustomTap(String regExPattern, Class<? extends Tap> clazz)
-        throws SecurityException,
-               NoSuchMethodException,
-               IllegalArgumentException,
-               InstantiationException,
-               IllegalAccessException,
-               InvocationTargetException
-    {
-        Pattern pattern = Pattern.compile(regExPattern);
-        Constructor<? extends Tap> constructor = clazz.getConstructor(new Class[]{String.class});
-        for (Dispatch dispatch : dispatchesCopy()) {
-            if (pattern.matcher(dispatch.getName()).matches()) {
-                dispatch.setEnabledTap(constructor.newInstance(dispatch.getName()));
-            }
-        }
     }
 
     /**
@@ -309,7 +272,12 @@ public abstract class Tap
      * @throws InstanceAlreadyExistsException
      * @throws Exception
      */
-    public synchronized static void registerMXBean() throws MalformedObjectNameException, NullPointerException, InstanceAlreadyExistsException, MBeanRegistrationException, NotCompliantMBeanException
+    public synchronized static void registerMXBean()
+        throws MalformedObjectNameException,
+               NullPointerException,
+               InstanceAlreadyExistsException,
+               MBeanRegistrationException,
+               NotCompliantMBeanException
     {
         if (!registered) {
             ObjectName mxbeanName = new ObjectName("com.akiban:type=Tap");
@@ -329,7 +297,11 @@ public abstract class Tap
      * @throws MBeanRegistrationException
      * @throws Exception
      */
-    public synchronized static void unregisterMXBean() throws MalformedObjectNameException, NullPointerException, MBeanRegistrationException, InstanceNotFoundException
+    public synchronized static void unregisterMXBean()
+        throws MalformedObjectNameException,
+               NullPointerException,
+               MBeanRegistrationException,
+               InstanceNotFoundException
     {
         if (registered) {
             ObjectName mxbeanName = new ObjectName("com.akiban:type=Tap");
@@ -338,20 +310,33 @@ public abstract class Tap
             registered = false;
         }
     }
+    
+    public synchronized static void registerBadNestingHandler(BadNestingHandler badNestingHandler)
+    {
+        Tap.badNestingHandler = badNestingHandler;
+    }
 
     // For use by this package
 
-    /**
-     * Mark the beginning of a section of code to be timed.
-     */
     abstract void in();
 
-    /**
-     * Mark the end of a section of code to be timed.
-     */
     abstract void out();
 
+    abstract void appendReport(StringBuilder buffer);
+
+    abstract TapReport[] getReports();
+
     // For use by subclasses
+
+    protected boolean checkNesting()
+    {
+        if (inCount != outCount) {
+            Tap.badNestingHandler.handleBadNesting(this);
+            return false;
+        } else {
+            return true;
+        }
+    }
 
     protected Tap(String name)
     {
@@ -363,8 +348,10 @@ public abstract class Tap
     private static Dispatch add(Tap tap)
     {
         Dispatch dispatch = new Dispatch(tap.getName(), tap);
-        synchronized (dispatches) {
-            dispatches.put(tap.getName(), dispatch);
+        synchronized (DISPATCHES) {
+            Dispatch previous = DISPATCHES.put(tap.getName(), dispatch);
+            // TODO: Someday - breaks tests (e.g. PostgresServerSessionIT)
+            // assert previous == null;
         }
         return dispatch;
     }
@@ -376,8 +363,8 @@ public abstract class Tap
 
     private static Collection<Dispatch> dispatchesCopy()
     {
-        synchronized (dispatches) {
-            return new ArrayList<Dispatch>(dispatches.values());
+        synchronized (DISPATCHES) {
+            return new ArrayList<Dispatch>(DISPATCHES.values());
         }
     }
 
@@ -386,10 +373,44 @@ public abstract class Tap
     static final Logger LOG = LoggerFactory.getLogger(Tap.class.getName());
     static final String NEW_LINE = System.getProperty("line.separator");
     private static final String DEFAULT_ON_PROPERTY = "taps_default_on";
-    private static final Map<String, Dispatch> dispatches = new TreeMap<String, Dispatch>();
+    private static final Comparator<TapReport> TAPS_BY_NAME_COMPARATOR = new Comparator<TapReport>()
+    {
+        @Override
+        public int compare(TapReport x, TapReport y)
+        {
+            return x.getName().compareTo(y.getName());
+        }
+    };
+    static final Map<String, Dispatch> DISPATCHES = new TreeMap<String, Dispatch>();
+    static volatile BadNestingHandler badNestingHandler =
+        new BadNestingHandler()
+        {
+            @Override
+            public void handleBadNesting(Tap tap)
+            {
+/* TODO: Re-enable warnings
+                if ((count.getAndIncrement() % 1000) == 0) {
+                    LOG.warn("Bad nesting encountered for tap {}, in: {}, out: {}",
+                             new Object[]{tap.getName(), tap.inCount, tap.outCount});
+                    LOG.warn("you are here", new Exception());
+                }
+*/
+            }
+            
+            private final AtomicLong count = new AtomicLong(0);
+        };
     private static boolean registered;
 
     // Object state
 
     protected final String name;
+    protected volatile long inCount = 0;
+    protected volatile long outCount = 0;
+
+    // Inner classes
+    
+    public interface BadNestingHandler
+    {
+        void handleBadNesting(Tap tap);
+    }
 }

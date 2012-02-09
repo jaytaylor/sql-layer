@@ -19,7 +19,7 @@ import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.sql.optimizer.plan.AST;
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PlanContext;
-import com.akiban.sql.optimizer.rule.IndexEstimator;
+import com.akiban.sql.optimizer.rule.CostEstimator;
 import com.akiban.sql.optimizer.rule.SchemaRulesContext;
 import static com.akiban.sql.optimizer.rule.DefaultRules.*;
 
@@ -56,8 +56,8 @@ public class OperatorCompiler extends SchemaRulesContext
     public OperatorCompiler(SQLParser parser, Properties properties,
                             AkibanInformationSchema ais, String defaultSchemaName,
                             FunctionsRegistry functionsRegistry,
-                            IndexEstimator indexEstimator) {
-        super(ais, functionsRegistry, indexEstimator, DEFAULT_RULES, properties);
+                            CostEstimator costEstimator) {
+        super(ais, functionsRegistry, costEstimator, DEFAULT_RULES, properties);
         parserContext = parser;
         nodeFactory = parserContext.getNodeFactory();
         binder = new AISBinder(ais, defaultSchemaName);
@@ -74,9 +74,13 @@ public class OperatorCompiler extends SchemaRulesContext
 
     /** Compile a statement into an operator tree. */
     public BasePlannable compile(DMLStatementNode stmt, List<ParameterNode> params) {
-        // Get into standard form.
-        stmt = bindAndTransform(stmt);
-        PlanContext plan = new PlanContext(this, new AST(stmt, params));
+        return compile(stmt, params, new PlanContext(this));
+    }
+
+    protected BasePlannable compile(DMLStatementNode stmt, List<ParameterNode> params,
+                                    PlanContext plan) {
+        stmt = bindAndTransform(stmt); // Get into standard form.
+        plan.setPlan(new AST(stmt, params));
         applyRules(plan);
         return (BasePlannable)plan.getPlan();
     }

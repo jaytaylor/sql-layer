@@ -42,19 +42,19 @@ public class IndexPicker extends BaseRule
         BaseQuery query = (BaseQuery)planContext.getPlan();
         List<Picker> pickers = 
           new JoinsFinder(((SchemaRulesContext)planContext.getRulesContext())
-                          .getIndexEstimator()).find(query);
+                          .getCostEstimator()).find(query);
         for (Picker picker : pickers)
             picker.pickIndexes();
     }
 
     static class Picker {
-        IndexEstimator indexEstimator;
+        CostEstimator costEstimator;
         Joinable joinable;
         BaseQuery query;
         Set<ColumnSource> boundTables;
 
-        public Picker(IndexEstimator indexEstimator, Joinable joinable) {
-            this.indexEstimator = indexEstimator;
+        public Picker(CostEstimator costEstimator, Joinable joinable) {
+            this.costEstimator = costEstimator;
             this.joinable = joinable;
         }
 
@@ -174,7 +174,7 @@ public class IndexPicker extends BaseRule
             }
             return new IndexGoal(query, boundTables,
                                  conditionSources, grouping, ordering, projectDistinct,
-                                 tables, indexEstimator);
+                                 tables, costEstimator);
         }
 
         protected IndexScan pickBestIndex(TableJoins tableJoins, IndexGoal goal) {
@@ -373,10 +373,10 @@ public class IndexPicker extends BaseRule
     static class JoinsFinder implements PlanVisitor, ExpressionVisitor {
         List<Picker> result = new ArrayList<Picker>();
         Deque<SubqueryState> subqueries = new ArrayDeque<SubqueryState>();
-        IndexEstimator indexEstimator;
+        CostEstimator costEstimator;
 
-        public JoinsFinder(IndexEstimator indexEstimator) {
-            this.indexEstimator = indexEstimator;
+        public JoinsFinder(CostEstimator costEstimator) {
+            this.costEstimator = costEstimator;
         }
 
         public List<Picker> find(BaseQuery query) {
@@ -421,7 +421,7 @@ public class IndexPicker extends BaseRule
                         // Already have another set of joins to same root join.
                         return true;
                 }
-                Picker entry = new Picker(indexEstimator, j);
+                Picker entry = new Picker(costEstimator, j);
                 if (!subqueries.isEmpty()) {
                     entry.query = subqueries.peek().subquery;
                 }

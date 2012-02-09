@@ -76,7 +76,7 @@ public class YamlTesterRegexpTest {
     }
 
     private static void test(String pattern, Object output, boolean match) {
-	boolean result = new Regexp(pattern).compareOutput(output);
+	boolean result = new Regexp(pattern).compareExpected(output);
 	if (result != match) {
 	    fail("Expected pattern '" + pattern + "' and output '" + output +
 		 "' to " + (match ? "" : "not ") + "match");
