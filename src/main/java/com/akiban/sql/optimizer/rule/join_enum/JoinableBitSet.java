@@ -32,7 +32,7 @@ public class JoinableBitSet
     }
 
     public static boolean isEmpty(long s) {
-        return (s != 0);
+        return (s == 0);
     }
 
     /** A set containing a single element with the given index. */
