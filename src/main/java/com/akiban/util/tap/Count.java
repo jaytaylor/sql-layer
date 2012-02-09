@@ -33,15 +33,19 @@ class Count extends Tap
 
     public void in()
     {
+        justEnabled = false;
         checkNesting();
         inCount++;
     }
 
     public void out()
     {
-        outCount++;
-        checkNesting();
-
+        if (justEnabled) {
+            justEnabled = false;
+        } else {
+            outCount++;
+            checkNesting();
+        }
     }
 
     public long getDuration()
@@ -53,16 +57,17 @@ class Count extends Tap
     {
         inCount = 0;
         outCount = 0;
+        justEnabled = true;
     }
 
-    public void appendReport(StringBuilder sb)
+    public void appendReport(StringBuilder buffer)
     {
-        sb.append(String.format("%20s inCount=%,10d outCount=%,10d", name, inCount, outCount));
+        buffer.append(String.format("%20s inCount=%,10d outCount=%,10d", name, inCount, outCount));
     }
 
-    public TapReport getReport()
+    public TapReport[] getReports()
     {
-        return new TapReport(name, inCount, outCount, 0);
+        return new TapReport[]{new TapReport(name, inCount, outCount, 0)};
     }
 
     // Count interface
@@ -71,4 +76,8 @@ class Count extends Tap
     {
         super(name);
     }
+
+    // Object state
+
+    private volatile boolean justEnabled = false;
 }

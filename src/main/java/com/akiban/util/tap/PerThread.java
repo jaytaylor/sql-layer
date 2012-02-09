@@ -15,10 +15,7 @@
 
 package com.akiban.util.tap;
 
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -26,145 +23,224 @@ import java.util.concurrent.ConcurrentHashMap;
  * instance of this class maintains a collection of subordinate Taps, one
  * per thread. These are created on demand as new threads invoke
  * {@link #in()} or {@link #out()}.
- * <p />
+ * <p/>
  * By default each subordinate Tap is a {@link TimeAndCount}, but the
  * two-argument constructor provides a way to override that default.
- *
  */
-class PerThread extends Tap {
 
-    private static final Comparator<Thread> THREAD_COMPARATOR = new Comparator<Thread>() {
-        @Override
-        public int compare(Thread o1, Thread o2) {
-            return o1.getName().compareTo(o2.getName());
+abstract class PerThread extends Tap
+{
+    // Object interface
+
+    @Override
+    public String toString()
+    {
+        return "PerThread(" + name + ")";
+    }
+
+    // Tap interface
+
+    @Override
+    public void in()
+    {
+        threadTap().in();
+    }
+
+    @Override
+    public void out()
+    {
+        threadTap().out();
+    }
+
+    @Override
+    public long getDuration()
+    {
+        return threadTap().getDuration();
+    }
+
+    @Override
+    public void reset()
+    {
+        for (Tap tap : threadMap.values()) {
+            tap.reset();
         }
-    };
-    private final ThreadLocal<Tap> threadLocal = new ThreadLocal<Tap>() {
-        @Override
-        protected Tap initialValue() {
-            Tap tap;
-            try {
-                tap = clazz.getConstructor(String.class).newInstance(name);
-            } catch (Exception e) {
-                tap = new Null(name);
-                LOG.warn("Unable to create tap of class " + clazz.getSimpleName(), e);
-            }
-            threadMap.put(Thread.currentThread(), tap);
-            return tap;
+        enabled = true;
+    }
+
+    @Override
+    public void disable()
+    {
+        for (Tap tap : threadMap.values()) {
+            tap.disable();
         }
-    };
+        enabled = false;
+    }
 
-    private final Map<Thread, Tap> threadMap = new ConcurrentHashMap<Thread, Tap>();
-
-    private final Class<? extends Tap> clazz;
-
-    /**
-     * {@link com.akiban.util.tap.TapReport} subclass that contains map of subordinate TapReport
-     * instances, one per thread. The map key is threadName for simple
-     * correlation with
-     *
-     * @author peter
-     *
-     */
-    public static class PerThreadTapReport extends TapReport {
-
-        private final Map<String, TapReport> reportMap = new HashMap<String, TapReport>();
-
-        PerThreadTapReport(final String name, final long inCount,
-                final long outCount, final long elapsedTime,
-                Map<Thread, Tap> threadMap) {
-            super(name, inCount, outCount, elapsedTime);
-            for (final Map.Entry<Thread, Tap> entry : threadMap.entrySet()) {
-                this.reportMap.put(
-                        entry.getKey().getName(),
-                        entry.getValue().getReport()
-                );
-            }
-        }
-
-        public Map<String, TapReport> getTapReportMap() {
-            return new TreeMap<String, TapReport>(reportMap);
+    @Override
+    public void appendReport(StringBuilder buffer)
+    {
+        Map<Thread, Tap> threadMap = new TreeMap<Thread, Tap>(THREAD_COMPARATOR);
+        threadMap.putAll(this.threadMap);
+        // TODO - fix this: thread names not necessarily unique. putAll could lose threads!
+        assert this.threadMap.size() == threadMap.size();
+        for (Map.Entry<Thread, Tap> entry : threadMap.entrySet()) {
+            buffer.append(NEW_LINE);
+            buffer.append("==");
+            buffer.append(entry.getKey().getName());
+            buffer.append("==");
+            buffer.append(NEW_LINE);
+            entry.getValue().appendReport(buffer);
         }
     }
+
+    @Override
+    public TapReport[] getReports()
+    {
+        Map<String, TapReport> cumulativeReports = new HashMap<String, TapReport>();
+        for (Tap tap : threadMap.values()) {
+            assert tap.getReports() != null; // because tap is not a Dispatch or Null.
+            for (TapReport tapReport : tap.getReports()) {
+                String tapName = tapReport.getName();
+                TapReport cumulativeReport = cumulativeReports.get(tapName);
+                if (cumulativeReport == null) {
+                    cumulativeReport = new TapReport(tapName);
+                    cumulativeReports.put(tapName, cumulativeReport);
+                }
+                cumulativeReport.inCount += tapReport.getInCount();
+                cumulativeReport.outCount += tapReport.getOutCount();
+                cumulativeReport.cumulativeTime += tapReport.getCumulativeTime();
+            }
+        }
+        if (cumulativeReports.isEmpty()) {
+            cumulativeReports.put(name, new TapReport(name));
+        }
+        TapReport[] reports = new TapReport[cumulativeReports.size()];
+        cumulativeReports.values().toArray(reports);
+        return reports;
+    }
+    
+    // PerThread interface
+
+    abstract Tap threadTap();
 
     /**
      * Create a PerThread instance the adds a new instance of the supplied
-     * subclass of {@link com.akiban.util.tap.Tap} for each Thread. Note: the class
-     * {@link com.akiban.util.tap.PerThread} may not itself be added.
+     * subclass of {@link com.akiban.util.tap.Tap} for each Thread. Note: the classes
+     * {@link com.akiban.util.tap.PerThread} (including subclasses)
+     * may not be added.
      *
-     * @param name
-     *            Name of the Tap
-     * @param clazz
-     *            Class from which new Tap instances are created.
+     * @param name  Name of the Tap
+     * @param tapClass Class from which new Tap instances are created.
      */
-    public PerThread(final String name, final Class<? extends Tap> clazz) {
+    public static PerThread createPerThread(String name, Class<? extends Tap> tapClass)
+    {
+        if (PerThread.class.isAssignableFrom(tapClass)) {
+            throw new IllegalArgumentException();
+        }
+        return new Ordinary(name, tapClass);
+    }
+    
+    public static PerThread createRecursivePerThread(String name, PerThread outermostRecursivePerThread)
+    {
+        return new Recursive(name, outermostRecursivePerThread);
+    }
+
+    // For use by subclasses
+
+    protected PerThread(String name)
+    {
         super(name);
-        if (clazz == this.getClass()) {
-            throw new IllegalArgumentException("May not add a "
-                    + clazz.getName() + " to " + this);
+    }
+
+    // Class state
+
+    private static final Comparator<Thread> THREAD_COMPARATOR = new Comparator<Thread>()
+    {
+        @Override
+        public int compare(Thread x, Thread y)
+        {
+            return x.getName().compareTo(y.getName());
         }
-        this.clazz = clazz;
-    }
+    };
+    
+    // Object state
 
-    @Override
-    public void appendReport(StringBuilder sb) {
-        final Map<Thread, Tap> threadMap = new TreeMap<Thread, Tap>(THREAD_COMPARATOR);
-        threadMap.putAll(this.threadMap);
-        for (final Map.Entry<Thread, Tap> entry : threadMap.entrySet()) {
-            sb.append(NEW_LINE);
-            sb.append("==");
-            sb.append(entry.getKey().getName());
-            sb.append("==");
-            sb.append(NEW_LINE);
-            entry.getValue().appendReport(sb);
+    final Map<Thread, Tap> threadMap = new ConcurrentHashMap<Thread, Tap>();
+    boolean enabled = false;
+
+    // Inner classes
+    
+    private static class Ordinary extends PerThread
+    {
+        // PerThread interface
+
+        Tap threadTap()
+        {
+            return threadLocal.get();
         }
-    }
 
-    @Override
-    public TapReport getReport() {
-        long inCount = 0;
-        long outCount = 0;
-        long elapsedTime = 0;
-        for (final Tap tap : threadMap.values()) {
-            final TapReport threadTapReport = tap.getReport();
-            inCount += threadTapReport.getInCount();
-            outCount += threadTapReport.getOutCount();
-            elapsedTime += threadTapReport.getCumulativeTime();
+        // Ordinary interface
+        
+        Ordinary(String name, Class<? extends Tap> tapClass)
+        {
+            super(name);
+            this.tapClass = tapClass;
         }
-        return new PerThreadTapReport(name, inCount, outCount, elapsedTime, threadMap);
-    }
 
-    @Override
-    public void in() {
-        final Tap tap = getTap();
-        tap.in();
+        private final Class<? extends Tap> tapClass;
+        private final ThreadLocal<Tap> threadLocal = new ThreadLocal<Tap>()
+        {
+            @Override
+            protected Tap initialValue()
+            {
+                Tap tap;
+                try {
+                    tap = tapClass.getConstructor(String.class).newInstance(name);
+                    tap.reset();
+                    if (!enabled) {
+                        tap.disable();
+                    }
+                    threadMap.put(Thread.currentThread(), tap);
+                } catch (Exception e) {
+                    tap = new Null(name);
+                    LOG.warn("Unable to create tap of class " + tapClass.getSimpleName(), e);
+                }
+                return tap;
+            }
+        };
     }
+    
+    private static class Recursive extends PerThread
+    {
+        // PerThread interface
 
-    @Override
-    public void out() {
-        final Tap tap = getTap();
-        tap.out();
-    }
-
-    @Override
-    public long getDuration() {
-        final Tap tap = getTap();
-        return tap.getDuration();
-    }
-
-    @Override
-    public void reset() {
-        for (final Tap tap : threadMap.values()) {
-            tap.reset();
+        Tap threadTap()
+        {
+            return threadLocal.get();
         }
-    }
+        
+        // Recursive interface
+        
+        Recursive(String name, PerThread outermostRecursivePerThread)
+        {
+            super(name);
+            this.outermostRecursivePerThread = outermostRecursivePerThread;
+        }
 
-    @Override
-    public String toString() {
-        return "PerThread(" + clazz.getName() + ")";
-    }
-
-    private Tap getTap() {
-        return threadLocal.get();
+        private final PerThread outermostRecursivePerThread;
+        private final ThreadLocal<Tap> threadLocal = new ThreadLocal<Tap>()
+        {
+            @Override
+            protected Tap initialValue()
+            {
+                Tap x = outermostRecursivePerThread.threadTap();
+                RecursiveTap.Outermost outermost =
+                    (RecursiveTap.Outermost) x;
+                RecursiveTap tap = outermost.createSubsidiaryTimer(name);
+                tap.reset();
+                threadMap.put(Thread.currentThread(), tap);
+                return tap;
+            }
+        };
     }
 }

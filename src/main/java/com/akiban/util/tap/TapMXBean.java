@@ -23,9 +23,6 @@ public interface TapMXBean
 
     public void setEnabled(String regExPattern, boolean on);
 
-    public void setCustomTap(String regExPattern, String className)
-        throws Exception;
-
     public void reset(String regExPattern);
 
     public void resetAll();

@@ -710,7 +710,7 @@ public class PostgresServerConnection extends ServerSessionBase
     @Override
     protected boolean propertySet(String key, String value) {
         if ("client_encoding".equals(key)) {
-            if ("UNICODE".equals(value))
+            if ("UNICODE".equals(value) || (value == null))
                 messenger.setEncoding("UTF-8");
             else
                 messenger.setEncoding(value);
