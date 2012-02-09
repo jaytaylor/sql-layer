@@ -30,7 +30,7 @@ import com.akiban.server.store.statistics.IndexStatisticsMXBean;
 public class JMXInterpreterTest {
 
     private static final String SERVER_JMX_PORT = "8082";
-    private static final String SERVER_ADDRESS = "localhost";
+    private static final String SERVER_ADDRESS = "172.16.211.141";
 
     @Test
     public void testForBasicConstructor() {
@@ -49,6 +49,7 @@ public class JMXInterpreterTest {
             JMXConnector connector = conn.getConnector();
             Assert.assertNotNull(connector);
             ManageMXBean bean = conn.getAkServer(connector);
+            
             Assert.assertNotNull(bean);
             Assert.assertNotNull(bean.getVersionString());
         } finally {

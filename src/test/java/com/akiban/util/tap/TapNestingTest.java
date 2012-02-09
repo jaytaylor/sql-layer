@@ -25,6 +25,7 @@ public class TapNestingTest
     @Before
     public void before()
     {
+        Tap.DISPATCHES.clear();
         Tap.registerBadNestingHandler(
             new Tap.BadNestingHandler()
             {

@@ -159,11 +159,34 @@ public class TrigExpressionTest extends ComposedExpressionTestBase
                 : getArgList(ExprUtil.lit(input1))), name);
     }
     
+    @OnlyIfNot("alreadyExc()")
+    @Test
+    public void testAtanx()
+    {
+        Expression arg1 = new LiteralExpression(AkType.DOUBLE, 1.0);
+        Expression arg2 = new LiteralExpression(AkType.DOUBLE, 1.0);
+        
+        Expression atan = TrigExpression.ATAN_COMPOSER.compose(Arrays.asList(arg1, arg2));
+        double rst = atan.evaluation().eval().getDouble();
+        assertEquals(Math.atan2(1,1), rst, 0.0001);
+        
+        atan = TrigExpression.ATAN_COMPOSER.compose(Arrays.asList(arg1));
+        rst = atan.evaluation().eval().getDouble();
+        assertEquals(Math.atan2(1,1), rst, 0.0001);
+        
+        atan = TrigExpression.ATAN2_COMPOSER.compose(Arrays.asList(arg1));
+        rst = atan.evaluation().eval().getDouble();
+        assertEquals(Math.atan2(1,1), rst, 0.0001);
+        
+        atan = TrigExpression.ATAN2_COMPOSER.compose(Arrays.asList(arg1, arg2));
+        rst = atan.evaluation().eval().getDouble();
+        assertEquals(Math.atan2(1,1), rst, 0.0001);        
+    }
     
     @Override
     protected CompositionTestInfo getTestInfo()
     {        
-        return new CompositionTestInfo(name.equals(TrigExpression.TrigName.ATAN2) ? 2 : 1, AkType.DOUBLE, true);
+        return new CompositionTestInfo(1, AkType.DOUBLE, true);
     }
 
     @Override

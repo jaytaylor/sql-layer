@@ -17,7 +17,7 @@ package com.akiban.sql.server;
 
 import com.akiban.sql.parser.SQLParser;
 
-import com.akiban.sql.optimizer.rule.IndexEstimator;
+import com.akiban.sql.optimizer.rule.CostEstimator;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.qp.loadableplan.LoadablePlan;
@@ -120,6 +120,6 @@ public interface ServerSession
     /** Send a warning message to the client. */
     public void notifyClient(QueryContext.NotificationLevel level, ErrorCode errorCode, String message) throws IOException;
 
-    /** Get the index estimator. */
-    public IndexEstimator indexEstimator();
+    /** Get the index cost estimator. */
+    public CostEstimator costEstimator();
 }

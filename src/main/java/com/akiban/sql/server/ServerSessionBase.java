@@ -27,12 +27,8 @@ import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.sql.optimizer.rule.CostEstimator;
 import com.akiban.sql.parser.SQLParser;
-
-import com.akiban.sql.optimizer.rule.IndexEstimator;
-import com.akiban.ais.model.Index;
-import com.akiban.server.store.statistics.IndexStatistics;
-import com.akiban.server.store.statistics.IndexStatisticsService;
 
 import org.joda.time.DateTime;
 
@@ -237,6 +233,11 @@ public abstract class ServerSessionBase implements ServerSession
         return zeroDateTimeBehavior;
     }
 
+    @Override
+    public CostEstimator costEstimator() {
+        return new ServerCostEstimator(this, reqs);
+    }
+
     /** Prepare to execute given statement.
      * Uses current global transaction or makes a new local one.
      * Returns any local transaction that should be committed / rolled back immediately.
@@ -290,29 +291,6 @@ public abstract class ServerSessionBase implements ServerSession
                 break;
             }
         }
-    }
-
-    // TODO: Maybe move this someplace else. Right now this is where things meet.
-    public static class ServiceIndexEstimator extends IndexEstimator
-    {
-        private IndexStatisticsService indexStatistics;
-        private Session session;
-
-        public ServiceIndexEstimator(IndexStatisticsService indexStatistics,
-                                     Session session) {
-            this.indexStatistics = indexStatistics;
-            this.session = session;
-        }
-
-        @Override
-        public IndexStatistics getIndexStatistics(Index index) {
-            return indexStatistics.getIndexStatistics(session, index);
-        }
-    }
-
-    @Override
-    public IndexEstimator indexEstimator() {
-        return new ServiceIndexEstimator(reqs.indexStatistics(), session);
     }
 
 }

@@ -103,7 +103,7 @@ public class JMXInterpreter {
         return serviceURL;
     }
 
-    //service:jmx:rmi:///jndi/rmi://172.16.211.10:8082/jmxrmi
+    //service:jmx:rmi:///jndi/rmi://localhost:8082/jmxrmi
     public void setServiceURL(String host, String port)
             throws MalformedURLException {
         this.serviceURL = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://"

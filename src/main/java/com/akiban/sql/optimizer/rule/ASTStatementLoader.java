@@ -592,11 +592,11 @@ public class ASTStatementLoader extends BaseRule
                 comp = Comparison.NE;
                 needOperand = true;
                 break;
-            case NOT_IN: 
             case NE_ANY: 
                 comp = Comparison.NE;
                 needOperand = true;
                 break;
+            case NOT_IN: 
             case NE_ALL: 
                 negate = true;
                 comp = Comparison.EQ;
