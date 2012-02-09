@@ -355,7 +355,7 @@ public class GroupJoinFinder extends BaseRule
                                 if (rightTable.getTable() == parentNode) {
                                     for (int i = 0; i < ncols; i++) {
                                         JoinColumn joinColumn = joinColumns.get(i);
-                                        if ((joinColumn.getChild() == lcol.getColumn()) && TODO map Set<ColumnExpression> to Set<Column>, then use contains
+                                        if ((joinColumn.getChild() == lcol.getColumn()) &&// TODO map Set<ColumnExpression> to Set<Column>, then use contains
                                                 (joinColumn.getParent() == rcol.getColumn())) {
                                             List<ComparisonCondition> entry = 
                                                 parentTables.get(rightTable);
