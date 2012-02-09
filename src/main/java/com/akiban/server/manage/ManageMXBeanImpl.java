@@ -40,13 +40,6 @@ public class ManageMXBeanImpl implements ManageMXBean {
         this.dxlService = dxlService;
         this.sessionService = sessionService;
     }
-
-    public ManageMXBeanImpl() {
-        this.store = null;
-        this.dxlService = null;
-        this.sessionService = null;
-    }
-
     
     @Override
     public void ping() {

@@ -25,20 +25,16 @@ import java.util.TreeSet;
 
 import javax.management.JMX;
 import javax.management.MBeanAttributeInfo;
-import javax.management.MBeanConstructorInfo;
 import javax.management.MBeanInfo;
 import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
-import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
-
-import com.akiban.server.AkServer;
 import com.akiban.server.manage.ManageMXBean;
 import com.akiban.server.manage.ManageMXBeanImpl;
 import com.akiban.server.store.statistics.IndexStatisticsMXBean;
@@ -53,8 +49,6 @@ public class JMXInterpreter {
         try {
             connector = JMXConnectorFactory.connect(serviceURL);
         } catch (IOException e) {
-            System.out.println(e.getMessage());
-        } catch (NullPointerException e) {
             System.out.println(e.getMessage());
         }
     }
@@ -78,9 +72,12 @@ public class JMXInterpreter {
                         ManagementFactory.RUNTIME_MXBEAN_NAME,
                         RuntimeMXBean.class);
 
-        return "Target VM is: " + remoteRuntime.getName() + "Started since: "
-                + remoteRuntime.getUptime() + "With Classpath: "
-                + remoteRuntime.getClassPath() + "And args: "
+        return "Target VM is: " + remoteRuntime.getName()
+                + System.getProperty("line.separator") + "Started since: "
+                + remoteRuntime.getUptime()
+                + System.getProperty("line.separator") + "With Classpath: "
+                + remoteRuntime.getClassPath()
+                + System.getProperty("line.separator") + "And args: "
                 + remoteRuntime.getInputArguments();
     }
 
@@ -127,47 +124,34 @@ public class JMXInterpreter {
 
     /* Used for generating documentation for the wiki */
     public void getInfo(MBeanServerConnection mbsc) {
-        echo("\nDomains:");
+        echo("Domains:");
         String domains[] = null;
         try {
             domains = mbsc.getDomains();
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        Arrays.sort(domains);
-        for (String domain : domains) {
-            echo("\tDomain = " + domain);
-        }
-        try {
-            echo("\nMBeanServer default domain = " + mbsc.getDefaultDomain());
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
 
-        try {
-            echo("\nMBean count = " + mbsc.getMBeanCount());
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        echo("\nQuery MBeanServer MBeans:");
-        Set<ObjectName> names = null;
-        try {
+            Arrays.sort(domains);
+            for (String domain : domains) {
+                echo("\tDomain = " + domain);
+            }
+
+            echo("MBeanServer default domain = " + mbsc.getDefaultDomain());
+
+            echo("MBean count = " + mbsc.getMBeanCount());
+            echo("Query MBeanServer MBeans:");
+            Set<ObjectName> names = null;
             names = new TreeSet<ObjectName>(mbsc.queryNames(null, null));
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        for (ObjectName name : names) {
-            echo("\n----------------------------\n*ObjectName = " + name + "*");
-            printMBeanInfo(mbsc, name);
+            for (ObjectName name : names) {
+                echo("----------------------------");
+                echo("* ObjectName = " + name + " * ");
+                printMBeanInfo(mbsc, name);
+            }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
         }
     }
 
     public void echo(String string) {
-        System.out.println(string);
+        System.out.println(System.getProperty("line.separator") + string);
 
     }
 
@@ -209,7 +193,7 @@ public class JMXInterpreter {
             }
         }
 
-        System.out.println("*Operations: *");
+        System.out.println("* Operations: *");
         for (int o = 0; o < opInfo.length; o++) {
             MBeanOperationInfo op = opInfo[o];
 
@@ -241,7 +225,6 @@ public class JMXInterpreter {
     /*
      * Actual Bean implementations 
      */
-
     public ManageMXBean getAkServer(JMXConnector connector) {
         MBeanServerConnection mbsc = setup(connector);
         ManageMXBean mxbeanProxy = null;
@@ -254,7 +237,8 @@ public class JMXInterpreter {
         } catch (NullPointerException e) {
             System.out.println(e.getMessage());
         }
-        mxbeanProxy = (ManageMXBean) JMX.newMXBeanProxy(mbsc, mxbeanName, ManageMXBean.class);
+        mxbeanProxy = (ManageMXBean) JMX.newMXBeanProxy(mbsc, mxbeanName,
+                ManageMXBean.class);
 
         return mxbeanProxy;
     }
