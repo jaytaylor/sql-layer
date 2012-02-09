@@ -21,6 +21,10 @@ import java.util.Map;
 public abstract class Memoizer<I,O> {
     protected abstract O compute(I input);
     
+    public O set(I input, O value) {
+        return results.put(input, value);
+    }
+    
     public O get(I input) {
         if (results.containsKey(input))
             return results.get(input);

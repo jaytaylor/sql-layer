@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 public final class MemoizerTest {
     @Test
@@ -32,7 +33,7 @@ public final class MemoizerTest {
                 return (long) input * 2;
             }
         };
-        assertEquals("doubled 4", Long.valueOf(8), intToLong.compute(4));
+        assertEquals("doubled 4", Long.valueOf(8), intToLong.get(4));
         assertEquals("doubler messages", Collections.singletonList(4), intToLong.messages);
     }
     
@@ -44,7 +45,7 @@ public final class MemoizerTest {
                 return 8L;
             }
         };
-        assertEquals("doubled 4", Long.valueOf(8), intToLong.compute(null));
+        assertEquals("doubled 4", Long.valueOf(8), intToLong.get(null));
         assertEquals("doubler messages", Collections.singletonList(null), intToLong.messages);
     }
 
@@ -56,7 +57,31 @@ public final class MemoizerTest {
                 return null;
             }
         };
-        assertEquals("doubled 4", null, intToLong.compute(3));
+        assertEquals("doubled 4", null, intToLong.get(3));
+        assertEquals("doubler messages", Collections.singletonList(3), intToLong.messages);
+    }
+    
+    @Test
+    public void resultSet() {
+        IntToLong intToLong = new IntToLong() {
+            @Override
+            protected Long doCompute(Integer input) {
+                throw new UnsupportedComputationException();
+            }
+        };
+
+        // the value for 4 is manually set, so it should be available without having to compute
+        intToLong.set(4, 8L);
+        assertEquals("doubled 4", Long.valueOf(8), intToLong.get(4));
+        assertEquals("doubler messages", Collections.emptyList(), intToLong.messages);
+
+        // the value for 3 hasn't been set, so it should be computed -- resulting in an exception
+        try {
+            intToLong.get(3);
+            fail("expected " + UnsupportedComputationException.class.getSimpleName());
+        } catch (UnsupportedComputationException e) {
+            // expected
+        }
         assertEquals("doubler messages", Collections.singletonList(3), intToLong.messages);
     }
 
@@ -71,4 +96,6 @@ public final class MemoizerTest {
 
         private List<Integer> messages = new ArrayList<Integer>(1);
     }
+    
+    private static class UnsupportedComputationException extends UnsupportedOperationException {}
 }

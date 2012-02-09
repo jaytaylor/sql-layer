@@ -146,14 +146,14 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
             Set<ColumnExpression> belongsToSet = null;
             for (Set<ColumnExpression> equivalentExpressions : set) {
                 Iterator<ColumnExpression> equivalentIters = equivalentExpressions.iterator();
-                boolean isInSet = equivalentIters.next().equivalentTo(columnExpression);
+                boolean isInSet = areEquivalent(equivalentIters.next(), columnExpression);
                 // as a sanity check, ensure that this is consistent for the rest of them
                 while (equivalentIters.hasNext()) {
                     ColumnExpression next = equivalentIters.next();
                     assertEquals(
                             "equivalence for " + columnExpression + " against " + next + " in " + equivalentExpressions,
                             isInSet,
-                            next.equivalentTo(columnExpression) && columnExpression.equivalentTo(next)
+                            areEquivalent(next, columnExpression) && areEquivalent(columnExpression, next)
                     );
                 }
                 if (isInSet) {
@@ -177,6 +177,10 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
             byName.add(nameAndNullability);
         }
         return byName;
+    }
+
+    private static boolean areEquivalent(ColumnExpression one, ColumnExpression two) {
+        return one.getEquivalenceFinder().areEquivalent(one, two) && two.getEquivalenceFinder().areEquivalent(two, one);
     }
 
     public ColumnEquivalenceTest(File schemaFile, String sql, Set<Map<String,Boolean>> equivalences) {

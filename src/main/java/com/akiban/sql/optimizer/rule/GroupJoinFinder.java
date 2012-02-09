@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.ais.model.Column;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.sql.optimizer.plan.*;
@@ -27,6 +28,7 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.UserTable;
 
+import com.akiban.util.Memoizer;
 import com.sun.xml.internal.bind.v2.TODO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,6 +40,22 @@ import java.util.*;
 public class GroupJoinFinder extends BaseRule
 {
     private static final Logger logger = LoggerFactory.getLogger(GroupJoinFinder.class);
+    
+    private static final Memoizer<ColumnExpression,Set<Column>> colExprsToEquivalentCols
+            = new Memoizer<ColumnExpression, Set<Column>>() {
+        @Override
+        protected Set<Column> compute(ColumnExpression input) {
+            Set<ColumnExpression> equivalents = input.getEquivalenceFinder().findEquivalents(input);
+            Set<Column> result = new HashSet<Column>(equivalents.size() + 1);
+            result.add(input.getColumn());
+            for (ColumnExpression equivalent : equivalents) {
+                Set<Column> old = set(equivalent, result);
+                assert old == null : old;
+                result.add(equivalent.getColumn());
+            }
+            return result;
+        }
+    };
 
     @Override
     protected Logger getLogger() {
@@ -355,8 +373,8 @@ public class GroupJoinFinder extends BaseRule
                                 if (rightTable.getTable() == parentNode) {
                                     for (int i = 0; i < ncols; i++) {
                                         JoinColumn joinColumn = joinColumns.get(i);
-                                        if ((joinColumn.getChild() == lcol.getColumn()) &&// TODO map Set<ColumnExpression> to Set<Column>, then use contains
-                                                (joinColumn.getParent() == rcol.getColumn())) {
+                                        if (areEquivalent(lcol, joinColumn.getChild()) &&
+                                                (areEquivalent(rcol, joinColumn.getParent()))) {
                                             List<ComparisonCondition> entry = 
                                                 parentTables.get(rightTable);
                                             if (entry == null) {
@@ -426,6 +444,10 @@ public class GroupJoinFinder extends BaseRule
         }
         return new TableGroupJoin(group, parentTable, childTable, 
                                   groupJoinConditions, groupJoin);
+    }
+
+    private boolean areEquivalent(ColumnExpression columnExpression, Column column) {
+        return colExprsToEquivalentCols.get(columnExpression).contains(column);
     }
 
     protected void findSingleGroups(Joinable joinable) {

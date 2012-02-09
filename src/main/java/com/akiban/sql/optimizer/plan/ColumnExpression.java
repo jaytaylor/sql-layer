@@ -85,8 +85,10 @@ public class ColumnExpression extends BaseExpression
         equivalenceFinder.markEquivalent(this, other);
     }
 
-    public boolean equivalentTo(ColumnExpression other) {
-        return equivalenceFinder != null && equivalenceFinder.areEquivalent(this, other);
+    public EquivalenceFinder<ColumnExpression> getEquivalenceFinder() {
+        if (equivalenceFinder == null)
+            throw new IllegalStateException("no equivalence finder");
+        return equivalenceFinder;
     }
 
     @Override
