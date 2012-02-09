@@ -29,7 +29,6 @@ import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.UserTable;
 
 import com.akiban.util.Memoizer;
-import com.sun.xml.internal.bind.v2.TODO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
