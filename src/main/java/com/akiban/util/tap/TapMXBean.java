@@ -21,10 +21,9 @@ public interface TapMXBean
 
     public void disableAll();
 
-    public void setEnabled(String regExPattern, boolean on);
+    public void enableInitial();
 
-    public void setCustomTap(String regExPattern, String className)
-        throws Exception;
+    public void setEnabled(String regExPattern, boolean on);
 
     public void reset(String regExPattern);
 
@@ -33,5 +32,4 @@ public interface TapMXBean
     public String getReport();
 
     public TapReport[] getReports(String regExPattern);
-
 }

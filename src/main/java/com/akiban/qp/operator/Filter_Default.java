@@ -18,10 +18,44 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
+import com.akiban.util.tap.InOutTap;
 
 import java.util.*;
+
+/**
+
+ <h1>Overview</h1>
+
+ Extract_Default filters the input stream, keeping rows that match or are descendents of a given type, and discarding others.
+
+ <h1>Arguments</h1>
+
+ <ul>
+ <li><b>Collection<RowType> extractTypes:</b> Specifies types of rows to be passed on to the output stream. 
+</ul>
+ 
+ <h1>Behavior</h1>
+
+ A row is kept if its type matches one of the extractTypes, or is a descendent of one of these types. Other rows are discarded.
+
+ <h1>Output</h1>
+
+ Nothing else to say.
+
+ <h1>Assumptions</h1>
+
+ None.
+
+ <h1>Performance</h1>
+
+ Extract_Default does no IO. For each input row, the type is checked and the row is either kept (written to the output stream) or discarded.
+
+ <h1>Memory Requirements</h1>
+
+ None.
+
+ 
+ */
 
 class Filter_Default extends Operator
 {
@@ -73,7 +107,9 @@ class Filter_Default extends Operator
     }
     
     // Class state
-    private static final PointTap FILTER_COUNT = Tap.createCount("operator: filter", true);
+    
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Filter_Default open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Filter_Default next");
 
     // Object state
 
@@ -89,25 +125,34 @@ class Filter_Default extends Operator
         @Override
         public void open()
         {
-            input.open();
-            closed = false;
-            FILTER_COUNT.hit();
+            TAP_OPEN.in();
+            try {
+                input.open();
+                closed = false;
+            } finally {
+                TAP_OPEN.out();
+            }
         }
 
         @Override
         public Row next()
         {
-            checkQueryCancelation();
-            Row row;
-            do {
-                row = input.next();
-                if (row == null) {
-                    close();
-                } else if (!keepTypes.contains(row.rowType())) {
-                    row = null;
-                }
-            } while (row == null && !closed);
-            return row;
+            TAP_NEXT.in();
+            try {
+                checkQueryCancelation();
+                Row row;
+                do {
+                    row = input.next();
+                    if (row == null) {
+                        close();
+                    } else if (!keepTypes.contains(row.rowType())) {
+                        row = null;
+                    }
+                } while (row == null && !closed);
+                return row;
+            } finally {
+                TAP_NEXT.out();
+            }
         }
 
         @Override

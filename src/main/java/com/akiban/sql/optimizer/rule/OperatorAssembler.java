@@ -72,10 +72,10 @@ import java.util.*;
 public class OperatorAssembler extends BaseRule
 {
     private static final Logger logger = LoggerFactory.getLogger(OperatorAssembler.class);
-    private static final PointTap SELECT_COUNT = Tap.createCount("sql: select", true);
-    private static final PointTap INSERT_COUNT = Tap.createCount("sql: insert", true);
-    private static final PointTap UPDATE_COUNT = Tap.createCount("sql: update", true);
-    private static final PointTap DELETE_COUNT = Tap.createCount("sql: delete", true);
+    private static final PointTap SELECT_COUNT = Tap.createCount("sql: select");
+    private static final PointTap INSERT_COUNT = Tap.createCount("sql: insert");
+    private static final PointTap UPDATE_COUNT = Tap.createCount("sql: update");
+    private static final PointTap DELETE_COUNT = Tap.createCount("sql: delete");
 
 
     @Override

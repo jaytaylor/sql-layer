@@ -21,6 +21,7 @@ import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
@@ -167,8 +168,9 @@ class Product_NestedLoops extends Operator
 
     // Class state
 
+    private static InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Product_NestedLoops open");
+    private static InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Product_NestedLoops next");
     private static final Logger LOG = LoggerFactory.getLogger(BranchLookup_Nested.class);
-    private static final PointTap PRODUCT_NL_COUNT = Tap.createCount("operator: product_nested_loops", true);
 
     // Object state
 
@@ -189,47 +191,56 @@ class Product_NestedLoops extends Operator
         @Override
         public void open()
         {
-            PRODUCT_NL_COUNT.hit();
-            this.outerInput.open();
-            this.closed = false;
+            TAP_OPEN.in();
+            try {
+                this.outerInput.open();
+                this.closed = false;
+            } finally {
+                TAP_OPEN.out();
+            }
         }
 
         @Override
         public Row next()
         {
-            checkQueryCancelation();
-            Row outputRow = null;
-            while (!closed && outputRow == null) {
-                outputRow = nextProductRow();
-                if (outputRow == null) {
-                    Row row = outerInput.next();
-                    if (row == null) {
-                        close();
-                    } else {
-                        RowType rowType = row.rowType();
-                        if (rowType == outerType) {
-                            Row branchRow = row.subRow(branchType);
-                            assert branchRow != null : row;
-                            if (outerBranchRow.isEmpty() || !branchRow.hKey().equals(outerBranchRow.get().hKey())) {
-                                if (LOG.isDebugEnabled()) {
-                                    LOG.debug("Product_NestedLoops: branch row {}", row);
+            TAP_NEXT.in();
+            try {
+                checkQueryCancelation();
+                Row outputRow = null;
+                while (!closed && outputRow == null) {
+                    outputRow = nextProductRow();
+                    if (outputRow == null) {
+                        Row row = outerInput.next();
+                        if (row == null) {
+                            close();
+                        } else {
+                            RowType rowType = row.rowType();
+                            if (rowType == outerType) {
+                                Row branchRow = row.subRow(branchType);
+                                assert branchRow != null : row;
+                                if (outerBranchRow.isEmpty() || !branchRow.hKey().equals(outerBranchRow.get().hKey())) {
+                                    if (LOG.isDebugEnabled()) {
+                                        LOG.debug("Product_NestedLoops: branch row {}", row);
+                                    }
+                                    outerBranchRow.hold(branchRow);
+                                    innerRows.newBranchRow(branchRow);
                                 }
-                                outerBranchRow.hold(branchRow);
-                                innerRows.newBranchRow(branchRow);
+                                outerRow.hold(row);
+                                if (LOG.isDebugEnabled()) {
+                                    LOG.debug("Product_NestedLoops: restart inner loop using current branch row");
+                                }
+                                innerRows.resetForCurrentBranchRow();
                             }
-                            outerRow.hold(row);
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug("Product_NestedLoops: restart inner loop using current branch row");
-                            }
-                            innerRows.resetForCurrentBranchRow();
                         }
                     }
                 }
+                if(LOG.isDebugEnabled()) {
+                    LOG.debug("Product_NestedLoops: yield {}", outputRow);
+                }
+                return outputRow;
+            } finally {
+                TAP_NEXT.out();
             }
-            if(LOG.isDebugEnabled()) {
-                LOG.debug("Product_NestedLoops: yield {}", outputRow);
-            }
-            return outputRow;
         }
 
         @Override

@@ -71,34 +71,34 @@ class TimeAndCount extends Tap
         justEnabled = true;
     }
 
-    public void appendReport(StringBuilder sb)
+    public void appendReport(StringBuilder buffer)
     {
-        sb.append(String.format("%20s inCount=%,10d outCount=%,10d time=%,12dms",
+        buffer.append(String.format("%20s inCount=%,10d outCount=%,10d time=%,12dms",
                                 name, inCount, outCount, cumulativeNanos / 1000000));
         if (outCount > 0) {
-            sb.append(String.format("  per=%,12dns  interval=%,12dns",
+            buffer.append(String.format("  per=%,12dns  interval=%,12dns",
                                     cumulativeNanos / outCount, (endNanos - startNanos) / outCount));
         }
     }
 
-    public TapReport getReport()
+    public TapReport[] getReports()
     {
-        return new TapReport(getName(), inCount, outCount, cumulativeNanos);
+        return new TapReport[]{new TapReport(getName(), inCount, outCount, cumulativeNanos)};
     }
 
     // TimeAndCount interface
 
-    public TimeAndCount(final String name)
+    public TimeAndCount(String name)
     {
         super(name);
     }
 
     // Object state
 
-    private volatile long cumulativeNanos = 0;
-    private volatile long inNanos = Long.MIN_VALUE;
+    private volatile long cumulativeNanos;
+    private volatile long inNanos;
     private volatile long startNanos = System.nanoTime();
-    private volatile long endNanos = System.nanoTime();
+    private volatile long endNanos;
     private volatile long lastDuration = Long.MIN_VALUE;
     private volatile boolean justEnabled = false;
 }

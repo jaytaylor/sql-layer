@@ -1,0 +1,4 @@
+SELECT * FROM a RIGHT JOIN b ON a.col1 = b.col1 WHERE a.col1 > 1
+    a.col1    b.col1
+    a.col2
+    b.col2

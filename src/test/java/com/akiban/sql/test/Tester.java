@@ -33,7 +33,7 @@ import static com.akiban.sql.optimizer.rule.DefaultRules.*;
 import com.akiban.sql.optimizer.rule.RulesContext;
 import com.akiban.sql.optimizer.rule.RulesTestContext;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
-import com.akiban.sql.optimizer.rule.TestIndexEstimator;
+import com.akiban.sql.optimizer.rule.TestCostEstimator;
 import com.akiban.sql.parser.CursorNode;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.DeleteNode;
@@ -194,7 +194,7 @@ public class Tester
         if (actions.contains(Action.BIND))
             binder = new AISBinder(ais, DEFAULT_SCHEMA);
         if (actions.contains(Action.OPERATORS))
-            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, compilerProperties, ais, DEFAULT_SCHEMA, new FunctionsRegistryImpl(), new TestIndexEstimator(ais, DEFAULT_SCHEMA, statsFile));
+            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, compilerProperties, ais, DEFAULT_SCHEMA, new FunctionsRegistryImpl(), new TestCostEstimator(ais, DEFAULT_SCHEMA, statsFile));
         if (actions.contains(Action.PLAN))
             rulesContext = new RulesTestContext(ais, DEFAULT_SCHEMA, 
                                                 statsFile, planRules,

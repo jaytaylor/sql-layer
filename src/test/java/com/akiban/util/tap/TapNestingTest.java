@@ -25,6 +25,7 @@ public class TapNestingTest
     @Before
     public void before()
     {
+        Tap.DISPATCHES.clear();
         Tap.registerBadNestingHandler(
             new Tap.BadNestingHandler()
             {
@@ -39,7 +40,8 @@ public class TapNestingTest
     @Test
     public void testOK()
     {
-        InOutTap tap = Tap.createTimer("test", true);
+        InOutTap tap = Tap.createTimer("test");
+        enable();
         tap.in();
         tap.out();
     }
@@ -47,7 +49,8 @@ public class TapNestingTest
     @Test(expected = BadNestingException.class)
     public void testReenter()
     {
-        InOutTap tap = Tap.createTimer("test", true);
+        InOutTap tap = Tap.createTimer("test");
+        enable();
         tap.in();
         tap.in();
     }
@@ -55,7 +58,8 @@ public class TapNestingTest
     @Test(expected = BadNestingException.class)
     public void testUnexpectedExit()
     {
-        InOutTap tap = Tap.createTimer("test", true);
+        InOutTap tap = Tap.createTimer("test");
+        enable();
         tap.in();
         tap.out();
         tap.out();
@@ -64,7 +68,8 @@ public class TapNestingTest
     @Test(expected = BadNestingException.class)
     public void testUnexpectedExitSomeMore()
     {
-        InOutTap tap = Tap.createTimer("test", true);
+        InOutTap tap = Tap.createTimer("test");
+        enable();
         tap.in();
         tap.out();
         tap.out();
@@ -73,7 +78,8 @@ public class TapNestingTest
     @Test
     public void testInEnableOut()
     {
-        InOutTap tap = Tap.createTimer("test", false);
+        InOutTap tap = Tap.createTimer("test");
+        disable();
         tap.in();
         enable();
         tap.out();
@@ -82,7 +88,8 @@ public class TapNestingTest
     @Test
     public void testEnableOutInOut()
     {
-        InOutTap tap = Tap.createTimer("test", false);
+        InOutTap tap = Tap.createTimer("test");
+        disable();
         enable();
         tap.out();
         tap.in();
@@ -92,7 +99,8 @@ public class TapNestingTest
     @Test
     public void testTemporaryDisable()
     {
-        InOutTap tap = Tap.createTimer("test", true);
+        InOutTap tap = Tap.createTimer("test");
+        enable();
         tap.in();
         disable();
         tap.out();
@@ -106,7 +114,8 @@ public class TapNestingTest
         final int N = 100000;
         Random random = new Random();
         random.setSeed(419);
-        InOutTap tap = Tap.createTimer("test", true);
+        InOutTap tap = Tap.createTimer("test");
+        enable();
         boolean enabled = true;
         for (int i = 0; i < N; i++) {
             if ((i % 2) == 0) {

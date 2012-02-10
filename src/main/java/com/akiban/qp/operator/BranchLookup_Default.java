@@ -24,6 +24,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
@@ -59,9 +60,9 @@ import static java.lang.Math.min;
  <li><b>RowType outputRowType:</b> Type at the root of the branch to be
  retrieved.
 
- <li><b>boolean keepInput:</b> Indicates whether rows of type
- inputRowType will be preserved in the output stream (keepInput =
- true), or discarded (keepIn put = false).
+ <li><b>API.LookupOption flag:</b> Indicates whether rows of type rowType
+ will be preserved in the output stream (flag = KEEP_INPUT), or
+ discarded (flag = DISCARD_INPUT).
 
  <li><b>Limit limit (DEPRECATED):</b> A limit on the number of rows to
  be returned. The limit is specific to one UserTable. Deprecated
@@ -266,7 +267,8 @@ public class BranchLookup_Default extends Operator
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(BranchLookup_Default.class);
-    private static final PointTap BRANCH_LOOKUP_COUNT = Tap.createCount("operator: branch_lookup", true);
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: BranchLookup_Default open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: BranchLookup_Default next");
 
     // Object state
 
@@ -288,45 +290,54 @@ public class BranchLookup_Default extends Operator
         @Override
         public void open()
         {
-            BRANCH_LOOKUP_COUNT.hit();
-            inputCursor.open();
-            advanceInput();
+            TAP_OPEN.in();
+            try {
+                inputCursor.open();
+                advanceInput();
+            } finally {
+                TAP_OPEN.out();
+            }
         }
 
         @Override
         public Row next()
         {
-            checkQueryCancelation();
-            Row nextRow = null;
-            while (nextRow == null && inputRow.isHolding()) {
-                switch (lookupState) {
-                    case BEFORE:
-                        if (keepInput && inputPrecedesBranch) {
-                            nextRow = inputRow.get();
-                        }
-                        lookupState = LookupState.SCANNING;
-                        break;
-                    case SCANNING:
-                        advanceLookup();
-                        if (lookupRow.isHolding()) {
-                            nextRow = lookupRow.get();
-                        }
-                        break;
-                    case AFTER:
-                        if (keepInput && !inputPrecedesBranch) {
-                            nextRow = inputRow.get();
-                        }
-                        advanceInput();
-                        break;
+            TAP_NEXT.in();
+            try {
+                checkQueryCancelation();
+                Row nextRow = null;
+                while (nextRow == null && inputRow.isHolding()) {
+                    switch (lookupState) {
+                        case BEFORE:
+                            if (keepInput && inputPrecedesBranch) {
+                                nextRow = inputRow.get();
+                            }
+                            lookupState = LookupState.SCANNING;
+                            break;
+                        case SCANNING:
+                            advanceLookup();
+                            if (lookupRow.isHolding()) {
+                                nextRow = lookupRow.get();
+                            }
+                            break;
+                        case AFTER:
+                            if (keepInput && !inputPrecedesBranch) {
+                                nextRow = inputRow.get();
+                            }
+                            advanceInput();
+                            break;
+                    }
                 }
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("BranchLookup_Default: {}", lookupRow.get());
+                }
+                if (nextRow == null) {
+                    close();
+                }
+                return nextRow;
+            } finally {
+                TAP_NEXT.out();
             }
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("BranchLookup_Default: {}", lookupRow.get());
-            }
-            if (nextRow == null) {
-                close();
-            }
-            return nextRow;
         }
 
         @Override

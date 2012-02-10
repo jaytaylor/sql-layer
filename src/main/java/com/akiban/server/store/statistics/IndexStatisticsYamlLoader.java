@@ -52,6 +52,9 @@ public class IndexStatisticsYamlLoader
     
     public static final String TABLE_NAME_KEY = "Table";
     public static final String INDEX_NAME_KEY = "Index";
+    public static final String TIMESTAMP_KEY = "Timestamp";
+    public static final String ROW_COUNT_KEY = "RowCount";
+    public static final String SAMPLED_COUNT_KEY = "SampledCount";
     public static final String STATISTICS_COLLECTION_KEY = "Statistics";
     public static final String STATISTICS_COLUMN_COUNT_KEY = "Columns";
     public static final String STATISTICS_HISTOGRAM_COLLECTION_KEY = "Histogram";
@@ -105,6 +108,15 @@ public class IndexStatisticsYamlLoader
                 throw new NoSuchIndexException(indexName);
         }
         IndexStatistics stats = new IndexStatistics(index);
+        Date timestamp = (Date)map.get(TIMESTAMP_KEY);
+        if (timestamp != null)
+            stats.setAnalysisTimestamp(timestamp.getTime());
+        Integer rowCount = (Integer)map.get(ROW_COUNT_KEY);
+        if (rowCount != null)
+            stats.setRowCount(rowCount.longValue());
+        Integer sampledCount = (Integer)map.get(SAMPLED_COUNT_KEY);
+        if (sampledCount != null)
+            stats.setSampledCount(sampledCount.longValue());
         for (Object e : (Iterable)map.get(STATISTICS_COLLECTION_KEY)) {
             Map<?,?> em = (Map<?,?>)e;
             int columnCount = (Integer)em.get(STATISTICS_COLUMN_COUNT_KEY);
@@ -170,6 +182,9 @@ public class IndexStatisticsYamlLoader
         Map map = new TreeMap();
         map.put(INDEX_NAME_KEY, index.getIndexName().getName());
         map.put(TABLE_NAME_KEY, index.getIndexName().getTableName());
+        map.put(TIMESTAMP_KEY, new Date(indexStatistics.getAnalysisTimestamp()));
+        map.put(ROW_COUNT_KEY, indexStatistics.getRowCount());
+        map.put(SAMPLED_COUNT_KEY, indexStatistics.getSampledCount());
         List<Object> stats = new ArrayList<Object>();
         for (int i = 0; i < index.getColumns().size(); i++) {
             Histogram histogram = indexStatistics.getHistogram(i + 1);
