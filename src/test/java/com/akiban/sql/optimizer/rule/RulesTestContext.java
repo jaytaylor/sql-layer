@@ -26,11 +26,11 @@ import java.io.IOException;
 public class RulesTestContext extends SchemaRulesContext
 {
     public RulesTestContext(AkibanInformationSchema ais, String defaultSchema, 
-                            File statsFile, List<BaseRule> rules, Properties properties)
+                            File statsFile, List<? extends BaseRule> rules, Properties properties)
             throws IOException {
         super(ais, 
               new FunctionsRegistryImpl(), 
-              new TestIndexEstimator(ais, defaultSchema, statsFile),
+              new TestCostEstimator(ais, defaultSchema, statsFile),
               rules, properties);
         RulesTestHelper.ensureRowDefs(ais);
     }

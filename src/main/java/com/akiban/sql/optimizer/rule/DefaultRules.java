@@ -27,6 +27,7 @@ public class DefaultRules
         new AggregateMapper(),
         new ConstantFolder(),
         new OuterJoinPromoter(),
+        new ColumnEquivalenceFinder(),
         new GroupJoinFinder(),
         new InConditionReverser(),
         new IndexPicker(),

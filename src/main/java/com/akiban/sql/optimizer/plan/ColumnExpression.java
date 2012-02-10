@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.server.types.AkType;
+import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
@@ -27,14 +28,17 @@ public class ColumnExpression extends BaseExpression
     private ColumnSource table;
     private Column column;
     private int position;
+    private EquivalenceFinder<ColumnExpression> equivalenceFinder;
 
     public ColumnExpression(TableSource table, Column column, 
-                            DataTypeDescriptor sqlType, ValueNode sqlSource) {
+                            DataTypeDescriptor sqlType, ValueNode sqlSource,
+                            EquivalenceFinder<ColumnExpression> equivalenceFinder) {
         super(sqlType, column.getType().akType(), sqlSource);
         this.table = table;
         assert (table.getTable().getTable() == column.getUserTable());
         this.column = column;
         this.position = column.getPosition();
+        this.equivalenceFinder = equivalenceFinder;
     }
 
     public ColumnExpression(ColumnSource table, int position,
@@ -51,9 +55,14 @@ public class ColumnExpression extends BaseExpression
         this.position = position;
     }
 
+    @Override
+    public void setSQLtype(DataTypeDescriptor type) {
+        super.setSQLtype(type);
+    }
+
     // Generated column references without an original SQL source.
     public ColumnExpression(TableSource table, Column column) {
-        this(table, column, null, null);
+        this(table, column, null, null, null);
     }
 
     public ColumnSource getTable() {
@@ -70,6 +79,14 @@ public class ColumnExpression extends BaseExpression
 
     public void setPosition(int position) {
         this.position = position;
+    }
+
+    public void markEquivalentTo(ColumnExpression other) {
+        equivalenceFinder.markEquivalent(this, other);
+    }
+
+    public boolean equivalentTo(ColumnExpression other) {
+        return equivalenceFinder != null && equivalenceFinder.areEquivalent(this, other);
     }
 
     @Override
@@ -117,5 +134,4 @@ public class ColumnExpression extends BaseExpression
         super.deepCopy(map);
         table = (ColumnSource)table.duplicate(map);
     }
-
 }

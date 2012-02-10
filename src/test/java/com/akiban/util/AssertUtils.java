@@ -18,10 +18,15 @@ package com.akiban.util;
 import org.junit.Assert;
 
 import java.util.Collection;
+import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 public final class AssertUtils {
     public static void assertCollectionEquals(String message, Collection<?> expected, Collection<?> actual) {
-        Assert.assertEquals(message, Strings.join(expected), Strings.join(actual));
+        String expectedString = Strings.join(Strings.stringAndSort(expected));
+        String actualString = Strings.join(Strings.stringAndSort(actual));
+        Assert.assertEquals(message, expectedString, actualString);
         Assert.assertEquals(message, expected, actual);
     }
 

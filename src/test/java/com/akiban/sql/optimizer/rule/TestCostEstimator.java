@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Table;
 
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsYamlLoader;
@@ -26,12 +27,12 @@ import java.util.Collections;
 import java.io.File;
 import java.io.IOException;
 
-public class TestIndexEstimator extends IndexEstimator
+public class TestCostEstimator extends CostEstimator
 {
     private final Map<Index,IndexStatistics> stats;
 
-    public TestIndexEstimator(AkibanInformationSchema ais, String defaultSchema,
-                              File statsFile) 
+    public TestCostEstimator(AkibanInformationSchema ais, String defaultSchema,
+                             File statsFile) 
             throws IOException {
         if (statsFile == null)
             stats = Collections.<Index,IndexStatistics>emptyMap();
@@ -42,5 +43,15 @@ public class TestIndexEstimator extends IndexEstimator
     @Override
     public IndexStatistics getIndexStatistics(Index index) {
         return stats.get(index);
+    }
+
+    @Override
+    public long getTableRowCount(Table table) {
+        for (Index index : table.getIndexes()) {
+            IndexStatistics istats = stats.get(index);
+            if (istats != null)
+                return istats.getRowCount();
+        }
+        return 1;
     }
 }

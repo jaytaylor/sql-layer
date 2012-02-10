@@ -49,14 +49,14 @@ class Dispatch extends Tap
         currentTap.reset();
     }
 
-    public void appendReport(final StringBuilder sb)
+    public void appendReport(StringBuilder buffer)
     {
-        currentTap.appendReport(sb);
+        currentTap.appendReport(buffer);
     }
 
-    public TapReport getReport()
+    public TapReport[] getReports()
     {
-        return currentTap.getReport();
+        return currentTap.getReports();
     }
 
     public String toString()
@@ -65,12 +65,10 @@ class Dispatch extends Tap
     }
     
     // Dispatch interface
-
-    public Dispatch(String name, Tap tap)
+    
+    public Tap enabledTap()
     {
-        super(name);
-        this.currentTap = new Null(name);
-        this.enabledTap = tap;
+        return enabledTap;
     }
 
     public void setEnabled(boolean on)
@@ -82,17 +80,18 @@ class Dispatch extends Tap
             enabledTap.reset();
             currentTap = enabledTap;
         } else {
+            enabledTap.disable();
             currentTap = new Null(name);
         }
     }
-    
-    // For use by this package
-    
-    void setEnabledTap(Tap tap)
+
+    public Dispatch(String name, Tap tap)
     {
-        enabledTap = tap;
+        super(name);
+        this.currentTap = new Null(name);
+        this.enabledTap = tap;
     }
-    
+
     // Object state
 
     private Tap currentTap;

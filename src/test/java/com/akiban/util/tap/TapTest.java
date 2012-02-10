@@ -43,13 +43,15 @@ public class TapTest {
             }, "thread_" + i);
             threads[i] = thread;
         }
-        for (int i = 0; i < threads.length; i++) {
-            threads[i].start();
+        for (Thread thread : threads) {
+            thread.start();
         }
-        for (int i = 0; i < threads.length; i++) {
-            threads[i].join();
+        for (Thread thread : threads) {
+            thread.join();
         }
-        final TapReport report = tap.getReport();
+        TapReport[] reports = tap.getReports();
+        assertEquals(1, reports.length);
+        TapReport report = reports[0];
         assertEquals(THREADS * CYCLES, report.getInCount());
         assertEquals(THREADS * CYCLES, report.getOutCount());
     }

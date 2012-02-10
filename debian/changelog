@@ -1,8 +1,14 @@
+akiban-server (1.0.3) oneiric; urgency=low
+
+  * Development Release.
+
+ -- Akiban Build User <build@akiban.com>  Tue, 07 Feb 2012 13:24:16 -0500
+
 akiban-server (1.0.2) oneiric; urgency=low
 
   * Development Release.
 
- -- Akiban Build User <build@akiban.com>  Tue, 24 Jan 2012 20:45:46 -0500
+ -- Akiban Build User <build@akiban.com>  Tue, 07 Feb 2012 13:24:16 -0500
 
 akiban-server (1.0.1) oneiric; urgency=low
 
