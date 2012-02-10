@@ -1,0 +1,5 @@
+SELECT * from a LEFT JOIN b USING (col1) WHERE b.col1 > 5 OR b.col1 IS NULL
+    a.col1
+    b.col1
+    a.col2
+    b.col2
