@@ -394,7 +394,7 @@ public abstract class DPhyp<P>
 
     /** Is this operator and everything below it inner joined?
      * In that case a null-tolerant predicate doesn't interfere with
-     * reordering.
+     * reordering since none of the nulls are induced by joins.
      */
     protected boolean allInnerJoins(JoinOperator op) {
         return ((op.getJoinType() == JoinType.INNER) &&
