@@ -15,14 +15,21 @@
 
 package com.akiban.util.tap;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class TapTest {
     private static final int THREADS = 20;
     private static final int CYCLES = 10000;
+    
+    @Before
+    public void before() {
+        Tap.DISPATCHES.clear();
+    }
 
     @Test
     public void testPerThreadTap() throws Exception {
@@ -91,5 +98,99 @@ public class TapTest {
         for (boolean b : ok) {
             assertTrue(b);
         }
+    }
+
+    @Test
+    public void testInitiallyEnabled()
+    {
+        Tap.setInitiallyEnabled("^c|d$");
+        InOutTap a = Tap.createTimer("a");
+        PointTap b = Tap.createCount("b");
+        InOutTap c = Tap.createTimer("c");
+        PointTap d = Tap.createCount("d");
+        TapReport[] reports = Tap.getReport(".*");
+        assertEquals(2, reports.length);
+        int mask = 0;
+        for (TapReport report : reports) {
+            if (report.getName().equals("c")) {
+                mask |= 0x1;
+            } else if (report.getName().equals("d")) {
+                mask |= 0x2;
+            } else {
+                fail();
+            }
+        }
+        assertEquals(0x3, mask);
+    }
+
+    @Test
+    public void testDisableAll()
+    {
+        Tap.setInitiallyEnabled("^c|d$");
+        InOutTap a = Tap.createTimer("a");
+        PointTap b = Tap.createCount("b");
+        InOutTap c = Tap.createTimer("c");
+        PointTap d = Tap.createCount("d");
+        Tap.setEnabled(".*", false);
+        TapReport[] reports = Tap.getReport(".*");
+        assertEquals(0, reports.length);
+    }
+
+    @Test
+    public void testEnableAll()
+    {
+        Tap.setInitiallyEnabled("^c|d$");
+        InOutTap a = Tap.createTimer("a");
+        PointTap b = Tap.createCount("b");
+        InOutTap c = Tap.createTimer("c");
+        PointTap d = Tap.createCount("d");
+        Tap.setEnabled(".*", false);
+        TapReport[] reports = Tap.getReport(".*");
+        assertEquals(0, reports.length);
+        Tap.setEnabled(".*", true);
+        reports = Tap.getReport(".*");
+        assertEquals(4, reports.length);
+        int mask = 0;
+        for (TapReport report : reports) {
+            if (report.getName().equals("a")) {
+                mask |= 0x1;
+            } else if (report.getName().equals("b")) {
+                mask |= 0x2;
+            } else if (report.getName().equals("c")) {
+                mask |= 0x4;
+            } else if (report.getName().equals("d")) {
+                mask |= 0x8;
+            } else {
+                fail();
+            }
+        }
+        assertEquals(0xf, mask);
+    }
+
+    @Test
+    public void testEnableInitial()
+    {
+        Tap.setInitiallyEnabled("^c|d$");
+        InOutTap a = Tap.createTimer("a");
+        PointTap b = Tap.createCount("b");
+        InOutTap c = Tap.createTimer("c");
+        PointTap d = Tap.createCount("d");
+        Tap.setEnabled(".*", false);
+        TapReport[] reports = Tap.getReport(".*");
+        assertEquals(0, reports.length);
+        Tap.enableInitial();
+        reports = Tap.getReport(".*");
+        assertEquals(2, reports.length);
+        int mask = 0;
+        for (TapReport report : reports) {
+            if (report.getName().equals("c")) {
+                mask |= 0x1;
+            } else if (report.getName().equals("d")) {
+                mask |= 0x2;
+            } else {
+                fail();
+            }
+        }
+        assertEquals(0x3, mask);
     }
 }
