@@ -90,8 +90,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     private final Scanner scanner;
     private static final int SCAN_RETRY_COUNT = 0;
 
-    private static PointTap SCAN_RETRY_COUNT_TAP = Tap.createCount("BasicDMLFunctions: scan retries", true);
-    private static PointTap SCAN_RETRY_ABANDON_TAP = Tap.createCount("BasicDMLFunctions: scan abandons", true);
+    private static PointTap SCAN_RETRY_ABANDON_TAP = Tap.createCount("BasicDMLFunctions: scan abandons");
 
     @Inject
     BasicDMLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService, DDLFunctions ddlFunctions) {

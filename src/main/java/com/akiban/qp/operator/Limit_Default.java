@@ -18,6 +18,7 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 import com.akiban.server.error.NegativeLimitException;
@@ -152,8 +153,9 @@ final class Limit_Default extends Operator
     
     // Class state
     
-    private static final PointTap LIMIT_COUNT = Tap.createCount("operator: limit", true);
-
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Limit_Default open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Limit_Default next");
+    
     // Object state
 
     private final int skip, limit;
@@ -168,57 +170,66 @@ final class Limit_Default extends Operator
 
         @Override
         public void open() {
-            LIMIT_COUNT.hit();
-            super.open();
-            if (isSkipBinding()) {
-                ValueSource value = context.getValue(skip());
-                if (!value.isNull())
-                    this.skipLeft = (int)Extractors.getLongExtractor(AkType.LONG).getLong(value);
+            TAP_OPEN.in();
+            try {
+                super.open();
+                if (isSkipBinding()) {
+                    ValueSource value = context.getValue(skip());
+                    if (!value.isNull())
+                        this.skipLeft = (int)Extractors.getLongExtractor(AkType.LONG).getLong(value);
+                }
+                else {
+                    this.skipLeft = skip();
+                }
+                if (skipLeft < 0)
+                    throw new NegativeLimitException("OFFSET", skipLeft);
+                if (isLimitBinding()) {
+                    ValueSource value = context.getValue(limit());
+                    if (value.isNull())
+                        this.limitLeft = Integer.MAX_VALUE;
+                    else
+                        this.limitLeft = (int)Extractors.getLongExtractor(AkType.LONG).getLong(value);
+                }
+                else {
+                    this.limitLeft = limit();
+                }
+                if (limitLeft < 0)
+                    throw new NegativeLimitException("LIMIT", limitLeft);
+            } finally {
+                TAP_OPEN.out();
             }
-            else {
-                this.skipLeft = skip();
-            }
-            if (skipLeft < 0)
-                throw new NegativeLimitException("OFFSET", skipLeft);
-            if (isLimitBinding()) {
-                ValueSource value = context.getValue(limit());
-                if (value.isNull())
-                    this.limitLeft = Integer.MAX_VALUE;
-                else
-                    this.limitLeft = (int)Extractors.getLongExtractor(AkType.LONG).getLong(value);
-            }
-            else {
-                this.limitLeft = limit();
-            }
-            if (limitLeft < 0)
-                throw new NegativeLimitException("LIMIT", limitLeft);
         }
 
         @Override
         public Row next() {
-            checkQueryCancelation();
-            Row row;
-            while (skipLeft > 0) {
+            TAP_NEXT.in();
+            try {
+                checkQueryCancelation();
+                Row row;
+                while (skipLeft > 0) {
+                    if ((row = input.next()) == null) {
+                        skipLeft = 0;
+                        limitLeft = -1;
+                        return null;
+                    }
+                    skipLeft--;
+                }
+                if (limitLeft < 0) {
+                    return null;
+                }
+                if (limitLeft == 0) {
+                    input.close();
+                    return null;
+                }
                 if ((row = input.next()) == null) {
-                    skipLeft = 0;
                     limitLeft = -1;
                     return null;
                 }
-                skipLeft--;
+                --limitLeft;
+                return row;
+            } finally {
+                TAP_NEXT.out();
             }
-            if (limitLeft < 0) {
-                return null;
-            }
-            if (limitLeft == 0) {
-                input.close();
-                return null;
-            }
-            if ((row = input.next()) == null) {
-                limitLeft = -1;
-                return null;
-            }
-            --limitLeft;
-            return row;
         }
 
         // Execution interface

@@ -50,6 +50,12 @@ public class TapMXBeanImpl implements TapMXBean
     }
 
     @Override
+    public void enableInitial()
+    {
+        Tap.enableInitial();
+    }
+
+    @Override
     public void setEnabled(final String regExPattern, final boolean on)
     {
         Tap.setEnabled(regExPattern, on);

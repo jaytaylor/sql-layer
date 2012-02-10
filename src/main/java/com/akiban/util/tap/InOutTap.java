@@ -37,9 +37,9 @@ public class InOutTap
         internal.reset();
     }
     
-    public InOutTap createSubsidiaryTap(String name, InOutTap outermostRecursiveTap)
+    public InOutTap createSubsidiaryTap(String name)
     {
-        return internal.createSubsidiaryTap(name, outermostRecursiveTap);
+        return internal.createSubsidiaryTap(name, this);
     }
 
     /**

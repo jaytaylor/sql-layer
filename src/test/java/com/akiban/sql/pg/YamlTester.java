@@ -140,10 +140,15 @@ import org.yaml.snakeyaml.nodes.Tag;
      output, error codes, error messages, warnings, or explain output
    - The statement text should not create a table -- use the CreateTable
      command for that purpose
+   - output_ordered: does a sort on the expected and actual during comparison  
    - output_ordered: does a sort on the expected and actual during comparison
    - Warnings include statement warnings followed by result set warnings for
      each output row
    - The warning message is optional
+   
+   BulkLoad is not supported in IT level tests
+   if used, please suppress the IT level calls or place tests in AAS directly
+
 */
 class YamlTester {
 
@@ -238,6 +243,8 @@ class YamlTester {
 		    dropTableCommand(value);
 		} else if ("Statement".equals(commandName)) {
 		    statementCommand(value, sequence);
+		} else if ("Bulkload".equals(commandName)) {
+                    bulkloadCommand(value, sequence);
 		} else {
 		    fail("Unknown command: " + commandName);
 		}
@@ -255,6 +262,11 @@ class YamlTester {
 	    /* Add context */
 	    throw new ContextAssertionError(e.toString(), e);
 	}
+    }
+
+    private void bulkloadCommand(Object value, List<Object> sequence) {
+        // ignore this command.  Not meant for ITs, only system testing
+        throw new ContextAssertionError("Bulk Load command is not supported in ITs");
     }
 
     private void includeCommand(Object value, List<Object> sequence) {
