@@ -31,8 +31,6 @@ import com.akiban.sql.StandardException;
 import com.akiban.server.expression.TypesList;
 import org.joda.time.MutableDateTime;
 import org.joda.time.IllegalFieldValueException;
-import org.slf4j.LoggerFactory;
-
 
 public class WeekDayNameExpression extends AbstractUnaryExpression
 {
@@ -109,20 +107,12 @@ public class WeekDayNameExpression extends AbstractUnaryExpression
     }
     private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
-        private final Field field;
-        private QueryContext context;
+        private final Field field;        
         
         public InnerEvaluation(ExpressionEvaluation ev, Field field)
         {
             super(ev);
             this.field = field;
-        }
-        
-        @Override
-        public void of(QueryContext context)
-        {
-            super.of(context);
-            this.context = context;
         }
 
         @Override
@@ -138,6 +128,7 @@ public class WeekDayNameExpression extends AbstractUnaryExpression
             }
             catch (IllegalFieldValueException ex)
             {
+                QueryContext context = queryContext();
                 if (context != null)
                     context.warnClient(new InvalidParameterValueException(ex.getLocalizedMessage()));
                 return NullValueSource.only();

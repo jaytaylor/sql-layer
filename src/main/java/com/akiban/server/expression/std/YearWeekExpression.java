@@ -142,20 +142,11 @@ public class YearWeekExpression extends AbstractCompositeExpression
 
             if (dayOfYear < firstD) return modes[lowestVal].getYearWeek(cal, yr - 1, 12, 31);
             else return yr * 100 + (dayOfYear - firstD) / 7 +1;
-        }
-        
-        private QueryContext context;
+        }                
 
         public InnerEvaluation (List<? extends ExpressionEvaluation> evals)
         {
             super(evals);
-        }
-        
-        @Override
-        public void of(QueryContext context)
-        {
-            super.of(context);
-            this.context = context;
         }
 
         @Override
@@ -169,6 +160,7 @@ public class YearWeekExpression extends AbstractCompositeExpression
             long ymd[] = Extractors.getLongExtractor(fOp.getConversionType()).getYearMonthDayHourMinuteSecond(rawLong);                        
             if (ymd[0] * ymd[1] * ymd[2] == 0)
             {
+                QueryContext context = queryContext();
                 if (context != null)
                     context.warnClient(new ZeroDateTimeException());
                 return NullValueSource.only();
@@ -185,6 +177,7 @@ public class YearWeekExpression extends AbstractCompositeExpression
             }
             if (mode < 0 || mode > 7)
             {
+                QueryContext context = queryContext();
                 if (context != null)
                     context.warnClient(new InvalidParameterValueException("MODE out of range [0, 7]: " + mode));
                 return NullValueSource.only();

@@ -132,8 +132,7 @@ public class BinaryBitExpression extends AbstractBinaryExpression
     protected static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
         private final BitOperator op;                
-        private static final BigInteger n64 = new BigInteger("FFFFFFFFFFFFFFFF", 16);
-        private QueryContext context;
+        private static final BigInteger n64 = new BigInteger("FFFFFFFFFFFFFFFF", 16);        
         
         public InnerEvaluation (List<? extends ExpressionEvaluation> children, BitOperator op)
         {
@@ -141,13 +140,6 @@ public class BinaryBitExpression extends AbstractBinaryExpression
             this.op = op;
         }
         
-        @Override
-        public void of(QueryContext context) 
-        {
-            super.of(context);
-            this.context = context;
-        }
- 
         @Override
         public ValueSource eval() 
         {
@@ -159,11 +151,13 @@ public class BinaryBitExpression extends AbstractBinaryExpression
             catch (InconvertibleTypesException ex) // acceptable error where the result will simply be 0
             {
                 // if invalid types are supplied, 0 is assumed to be input
-               if (context != null)
+               QueryContext context = queryContext();
+               if (context == null)
                    context.warnClient(ex);
             }   
             catch (NumberFormatException exc ) // acceptable error where the result will simply be 0
             {
+                QueryContext context = queryContext();
                 if (context != null)
                    context.warnClient(new InvalidCharToNumException(exc.getMessage()));
             }

@@ -82,7 +82,7 @@ public class LikeExpression extends AbstractCompositeExpression
         private final boolean case_insens;
         private char esca = '\\';
         private boolean noWildcardU = false;
-        private boolean noWildcardP = false;
+        private boolean noWildcardP = false;       
         private QueryContext context;
         
         public InnerEvaluation (List<? extends ExpressionEvaluation> childrenEval, boolean mode)
@@ -92,13 +92,6 @@ public class LikeExpression extends AbstractCompositeExpression
         }
 
         @Override
-        public void of(QueryContext context)
-        {
-            super.of(context);
-            this.context = context;
-        }
-        
-        @Override
         public ValueSource eval()
         {
             ValueSource l = this.children().get(0).eval();
@@ -107,7 +100,7 @@ public class LikeExpression extends AbstractCompositeExpression
 
             String left = Extractors.getStringExtractor().getObject(l);
             String right = Extractors.getStringExtractor().getObject(r);
-
+            
             if (children().size() == 3)
             {
                 ValueSource escapSource = children().get(2).eval();
@@ -117,6 +110,7 @@ public class LikeExpression extends AbstractCompositeExpression
             noWildcardU = esca == '_';
             noWildcardP = esca == '%';
 
+            context = queryContext();
             return BoolValueSource.of(compareS(left,right, case_insens));
         }
 

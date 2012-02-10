@@ -111,20 +111,12 @@ public class UnaryBitExpression extends AbstractUnaryExpression
     {
         private final UnaryBitOperator op;
         private static final org.slf4j.Logger log = LoggerFactory.getLogger(UnaryBitExpression.class);
-        private QueryContext context;
         
         public InnerEvaluation (ExpressionEvaluation ev, UnaryBitOperator op)
         {
             super(ev);
             this.op = op;
-        }
-        
-        @Override
-        public void of(QueryContext context)
-        {
-            super.of(context);
-            this.context = context;
-        }
+        }       
 
         @Override
         public ValueSource eval() 
@@ -136,13 +128,14 @@ public class UnaryBitExpression extends AbstractUnaryExpression
             }
             catch (InconvertibleTypesException ex) 
             {
+                QueryContext context = queryContext();
                 if (context != null)
                     context.warnClient(ex);
                 return op.errorCase(valueHolder());
             } 
             catch (NumberFormatException ex)
             {
-                
+                QueryContext context = queryContext();
                 if (context != null)
                     context.warnClient(new InvalidCharToNumException(ex.getLocalizedMessage()));
                 return op.errorCase(valueHolder());

@@ -65,20 +65,12 @@ public class StrToDateExpression extends AbstractBinaryExpression
     {
         private  int topType;
         private EnumMap<DateTimeField, Long> valuesMap = new EnumMap<DateTimeField,Long>(DateTimeField.class);
-        private boolean has24Hr;
-        private QueryContext context;
+        private boolean has24Hr;       
         
         public InnerEvaluation (AkType type, List<? extends ExpressionEvaluation> childrenEval)
         {
             super(childrenEval);
-        }
-        
-        @Override
-        public void of(QueryContext context)
-        {
-            super.of(context);
-            this.context = context;
-        }
+        }        
 
         @Override
         public ValueSource eval()
@@ -162,24 +154,28 @@ public class StrToDateExpression extends AbstractBinaryExpression
             }
             catch (IllegalStateException iexc) // str and format do not match
             {
+                QueryContext context = queryContext();
                 if (context != null)
                     context.warnClient(new InvalidParameterValueException("Date String and Format do not match"));
                 return false;
             }
             catch (IllegalArgumentException nex) // format specifier not found, or str contains bad input (NumberFormatException)
             {
+                QueryContext context = queryContext();
                 if (context != null)
                     context.warnClient(new InvalidParameterValueException("Invalid Input value " + nex.getLocalizedMessage()));
                 return false;
             }
             catch (ArrayIndexOutOfBoundsException oexc) // str does not contains enough info specified by format
             {
+                QueryContext context = queryContext();
                 if (context != null)
                     context.warnClient(new InvalidParameterValueException("Date String and Format do not match"));
                 return false;
             }
             catch (ArithmeticException aexc) // trying to put 0hr to a 12hr format
             {
+                QueryContext context = queryContext();
                  if (context != null)
                     context.warnClient(new InvalidParameterValueException("Cannot specified 0 hour in a 12h-format string"));
                 return false;

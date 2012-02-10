@@ -54,18 +54,10 @@ public class InetatonExpression extends AbstractUnaryExpression
 
     private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
-        private static final long FACTORS[] = {16777216L,  65536, 256};
-        private QueryContext context;
+        private static final long FACTORS[] = {16777216L,  65536, 256};        
         public InnerEvaluation (ExpressionEvaluation ev)
         {
             super(ev);
-        }
-        
-        @Override
-        public void of(QueryContext context)
-        {
-            super.of(context);
-            this.context = context;
         }
 
         @Override
@@ -90,6 +82,7 @@ public class InetatonExpression extends AbstractUnaryExpression
             }
             catch (NumberFormatException e)
             {
+                QueryContext context = queryContext();
                 if (context != null) 
                     context.warnClient(new InvalidCharToNumException(e.getMessage()));
                 return NullValueSource.only();
