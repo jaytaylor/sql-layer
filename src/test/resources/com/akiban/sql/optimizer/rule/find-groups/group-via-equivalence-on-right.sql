@@ -1,0 +1,1 @@
+SELECT * from orders RIGHT JOIN items ON (orders.oid = items.quan) WHERE items.quan = items.oid
