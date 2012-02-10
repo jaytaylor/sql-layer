@@ -1,0 +1,5 @@
+SELECT * FROM a RIGHT JOIN b ON a.col1 = b.col1 WHERE b.col2 = b.col2
+    a.col1
+    b.col1
+    a.col2
+    b.col2
