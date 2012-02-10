@@ -152,7 +152,7 @@ public class BinaryBitExpression extends AbstractBinaryExpression
             {
                 // if invalid types are supplied, 0 is assumed to be input
                QueryContext context = queryContext();
-               if (context == null)
+               if (context != null)
                    context.warnClient(ex);
             }   
             catch (NumberFormatException exc ) // acceptable error where the result will simply be 0
