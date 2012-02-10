@@ -284,7 +284,10 @@ public abstract class DPhyp<P>
                 op.rightTables = JoinableBitSet.of(tables.indexOf(right));
             }
             op.predicateTables = visitor.getTables(op.joinConditions);
-            op.tes = JoinableBitSet.intersection(op.getTables(), op.predicateTables);
+            if (visitor.wasNullTolerant() && !allInnerJoins(op))
+                op.tes = op.getTables();
+            else
+                op.tes = JoinableBitSet.intersection(op.getTables(), op.predicateTables);
             noperators++;
             return op;
         }
@@ -308,7 +311,7 @@ public abstract class DPhyp<P>
         }
     }
 
-    /** Add conflicts to <code>o1</code> from descendant <code>j</code>. */
+    /** Add conflicts to <code>o1</code> from descendant <code>o2</code>. */
     protected void addConflicts(JoinOperator o1, JoinOperator o2, boolean left) {
         if (o2 != null) {
             if (left ? leftConflict(o2, o1) : rightConflict(o1, o2)) {
@@ -378,6 +381,16 @@ public abstract class DPhyp<P>
         }
     }
 
+    /** Is this operator and everything below it inner joined?
+     * In that case a null-tolerant predicate doesn't interfere with
+     * reordering.
+     */
+    protected boolean allInnerJoins(JoinOperator op) {
+        return ((op.getJoinType() == JoinType.INNER) &&
+                ((op.left == null) || allInnerJoins(op.left)) &&
+                ((op.right == null) || allInnerJoins(op.right)));
+    }
+
     protected void addWhereConditions(ConditionList whereConditions, 
                                       ExpressionTables visitor) {
         for (ConditionExpression condition : whereConditions) {
@@ -388,14 +401,16 @@ public abstract class DPhyp<P>
                 ComparisonCondition comp = (ComparisonCondition)condition;
                 long columnTables = columnReferenceTable(comp.getLeft());
                 if (!JoinableBitSet.isEmpty(columnTables)) {
-                    addWhereCondition(condition, columnTables,
-                                      visitor.getTables(comp.getRight()));
+                    long rhs = visitor.getTables(comp.getRight());
+                    if (visitor.wasNullTolerant()) continue;
+                    addWhereCondition(condition, columnTables, rhs);
                     continue;
                 }
                 columnTables = columnReferenceTable(comp.getRight());
                 if (!JoinableBitSet.isEmpty(columnTables)) {
-                    addWhereCondition(condition, columnTables,
-                                      visitor.getTables(comp.getLeft()));
+                    long lhs = visitor.getTables(comp.getLeft());
+                    if (visitor.wasNullTolerant()) continue;
+                    addWhereCondition(condition, columnTables, lhs);
                     continue;
                 }
             }
@@ -431,6 +446,7 @@ public abstract class DPhyp<P>
     static class ExpressionTables implements ExpressionVisitor, PlanVisitor {
         List<Joinable> tables;
         long result;
+        boolean nullTolerant;
 
         public ExpressionTables(List<Joinable> tables) {
             this.tables = tables;
@@ -438,6 +454,7 @@ public abstract class DPhyp<P>
 
         public long getTables(ConditionList conditions) {
             result = JoinableBitSet.empty();
+            nullTolerant = false;
             if (conditions != null) {
                 for (ConditionExpression cond : conditions) {
                     cond.accept(this);
@@ -448,8 +465,13 @@ public abstract class DPhyp<P>
 
         public long getTables(ExpressionNode node) {
             result = JoinableBitSet.empty();
+            nullTolerant = false;
             node.accept(this);
             return result;
+        }
+
+        public boolean wasNullTolerant() {
+            return nullTolerant;
         }
 
         @Override
@@ -469,6 +491,13 @@ public abstract class DPhyp<P>
                 if (idx >= 0) {
                     result = JoinableBitSet.union(result, JoinableBitSet.of(idx));
                 }
+            }
+            else if (!nullTolerant && (n instanceof FunctionExpression)) {
+                String fname = ((FunctionExpression)n).getFunction();
+                if ("isNull".equals(fname) || "isUnknown".equals(fname) ||
+                    "isTrue".equals(fname) || "isFalse".equals(fname) ||
+                    "COALESCE".equals(fname) || "ifnull".equals(fname))
+                    nullTolerant = true;
             }
             return true;
         }
