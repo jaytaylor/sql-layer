@@ -22,10 +22,48 @@ import com.akiban.qp.rowtype.ProjectedUserTableRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.tap.InOutTap;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+/**
+ <h1>Overview</h1>
+
+ Project_Default computes fields from input rows.  It only operates on rows of one specified type. Rows of other 
+ types are passed through without modification.  A common usage is to keep some columns from rows of the specified 
+ type and to discard others, but the projection is on expressions, not columns.
+
+ <h1>Arguments</h1>
+
+ <li><b>RowType rowType:</b> Type of rows to be projected. Must be non-null.
+ <li><b>List<Expression> projections:</b> Expressions computing fields of output rows. Must be non-null and non-empty.
+
+ <h1>Behavior</h1>
+
+  A row of the specified rowType is projected. Each expression is evaluted using the row as input. The 
+ (scalar) outputs from these expressions form a row which is passed to the output stream.
+
+ Rows of other types are passed through from the input stream to the output stream.
+
+ <h1>Output</h1>
+
+  A projected row has a null hkey.
+
+  <h1>Assumptions</h1>
+
+  None.
+
+  <h1>Performance</h1>
+
+  Project_Default does no IO. For each input row, the type is checked and each output field is computed.
+
+  <h1>Memory Requirements</h1>
+
+    None.
+ */
+
 
 class Project_Default extends Operator
 {
@@ -107,6 +145,11 @@ class Project_Default extends Operator
     }
 
 
+    // Class state
+    
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Project_Default open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Project_Default next");
+    
     // Object state
 
     protected final Operator inputOperator;
@@ -123,22 +166,32 @@ class Project_Default extends Operator
         @Override
         public void open()
         {
-            input.open();
+            TAP_OPEN.in();
+            try {
+                input.open();
+            } finally {
+                TAP_OPEN.out();
+            }
         }
 
         @Override
         public Row next()
         {
-            checkQueryCancelation();
-            Row projectedRow = null;
-            Row inputRow;
-            if ((inputRow = input.next()) != null) {
-                projectedRow =
-                    inputRow.rowType() == rowType
-                    ? new ProjectedRow(projectType, inputRow, context, projections)
-                    : inputRow;
+            TAP_NEXT.in();
+            try {
+                checkQueryCancelation();
+                Row projectedRow = null;
+                Row inputRow;
+                if ((inputRow = input.next()) != null) {
+                    projectedRow =
+                        inputRow.rowType() == rowType
+                        ? new ProjectedRow(projectType, inputRow, context, projections)
+                        : inputRow;
+                }
+                return projectedRow;
+            } finally {
+                TAP_NEXT.out();
             }
-            return projectedRow;
         }
 
         @Override

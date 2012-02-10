@@ -133,6 +133,5 @@ class Delete_Default extends OperatorExecutionBase implements UpdatePlannable {
     }
 
     private final Operator inputOperator;
-    private static final InOutTap DELETE_TAP = Tap.createTimer("operator: delete");
-
+    private static final InOutTap DELETE_TAP = Tap.createTimer("operator: Delete_Default");
 }

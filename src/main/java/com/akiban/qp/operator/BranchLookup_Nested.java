@@ -24,6 +24,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
@@ -33,6 +34,105 @@ import org.slf4j.LoggerFactory;
 import java.util.Set;
 
 import static java.lang.Math.min;
+
+/**
+
+ <h1>Overview</h1>
+
+ Given an index row or group row, BranchLookup_Default locates a
+ related branch, i.e., a related row and all of its descendents.
+ Branches are located 
+ using the hkey in a row of the current query's QueryContext.
+
+ Unlike AncestorLookup, BranchLookup always retrieves a subtree under a
+ targeted row.
+
+ <h1>Arguments</h1>
+
+ <ul>
+
+ <li><b>GroupTable groupTable:</b> The group table containing the
+ ancestors of interest.
+
+ <li><b>RowType inputRowType:</b> Branches will be located for input
+ rows of this type.
+
+ <li><b>RowType outputRowType:</b> Type at the root of the branch to be
+ retrieved.
+
+ <li><b>API.LookupOption flag:</b> Indicates whether rows of type rowType
+ will be preserved in the output stream (flag = KEEP_INPUT), or
+ discarded (flag = DISCARD_INPUT).
+
+ <li><b>int inputBindingPosition:</b> Indicates input row's position in the query context. The hkey
+ of this row will be used to locate ancestors.
+
+ </ul>
+
+ inputRowType may be an index row type or a group row type. For a group
+ row type, inputRowType must not match outputRowType. For an index row
+ type, rowType may match outputRowType, and keepInput must be false
+ (this may be relaxed in the future).
+
+ The groupTable, inputRowType, and outputRowType must belong to the
+ same group.
+
+ If inputRowType is a table type, then inputRowType and outputRowType
+ must be related in one of the following ways:
+
+ <ul>
+
+ <li>outputRowType is an ancestor of inputRowType.
+
+ <li>outputRowType and inputRowType have a common ancestor, and
+ outputRowType is a child of that common ancestor.
+
+ </ul>
+
+ If inputRowType is an index type, the above rules apply to the index's
+ table's type.
+
+ <h1>Behavior</h1>
+
+ When this operator's cursor is opened, the row at position inputBindingPosition in the
+ query context is accessed. The hkey from this row is obtained. The hkey is transformed to
+ yield an hkey that will locate the corresponding row of the output row
+ type. Then the entire subtree under that hkey is retrieved. Orphan
+ rows will be retrieved, even if there is no row of the outputRowType.
+
+ All the retrieved records are written to the output stream in hkey
+ order (ancestors before descendents), as is the input row if KEEP_INPUT
+ behavior is specified.
+
+ If KEEP_INPUT is specified, then the input row appears either before all the
+ rows of the branch or after all the rows of the branch. If
+ outputRowType is an ancestor of inputRowType, then the input row is
+ emitted after all the rows of the branch. Otherwise: inputRowType and
+ outputRowType have some common ancestor, and outputRowType is the
+ common ancestor's child. inputRowType has an ancestor, A, that is a
+ different child of the common ancestor. The ordering is determined by
+ comparing the ordinals of A and outputRowType.
+
+ <h1>Output</h1>
+
+ Nothing else to say.
+
+ <h1>Assumptions</h1>
+
+ None.
+
+ <h1>Performance</h1>
+
+ For each input row, BranchLookup_Nested does one random access, and
+ as many sequential accesses as are needed to retrieve the entire
+ branch.
+
+ <h1>Memory Requirements</h1>
+
+ BranchLookup_Nested stores one row in memory.
+
+
+ */
 
 public class BranchLookup_Nested extends Operator
 {
@@ -155,7 +255,8 @@ public class BranchLookup_Nested extends Operator
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(BranchLookup_Nested.class);
-    private static final PointTap BRANCH_LOOKUP_COUNT = Tap.createCount("operator: branch_lookup_nested", true);
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: BranchLookup_Nested open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: BranchLookup_Nested next");
 
     // Object state
 
@@ -178,45 +279,54 @@ public class BranchLookup_Nested extends Operator
         @Override
         public void open()
         {
-            BRANCH_LOOKUP_COUNT.hit();
-            Row rowFromBindings = context.getRow(inputBindingPosition);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("BranchLookup_Nested: open using {}", rowFromBindings);
+            TAP_OPEN.in();
+            try {
+                Row rowFromBindings = context.getRow(inputBindingPosition);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("BranchLookup_Nested: open using {}", rowFromBindings);
+                }
+                assert rowFromBindings.rowType() == inputRowType : rowFromBindings;
+                rowFromBindings.hKey().copyTo(hKey);
+                hKey.useSegments(commonSegments);
+                if (branchRootOrdinal != -1) {
+                    hKey.extendWithOrdinal(branchRootOrdinal);
+                }
+                cursor.rebind(hKey, true);
+                cursor.open();
+                inputRow.hold(rowFromBindings);
+            } finally {
+                TAP_OPEN.out();
             }
-            assert rowFromBindings.rowType() == inputRowType : rowFromBindings;
-            rowFromBindings.hKey().copyTo(hKey);
-            hKey.useSegments(commonSegments);
-            if (branchRootOrdinal != -1) {
-                hKey.extendWithOrdinal(branchRootOrdinal);
-            }
-            cursor.rebind(hKey, true);
-            cursor.open();
-            inputRow.hold(rowFromBindings);
         }
 
         @Override
         public Row next()
         {
-            checkQueryCancelation();
-            Row row;
-            if (keepInput && inputPrecedesBranch && inputRow.isHolding()) {
-                row = inputRow.get();
-                inputRow.release();
-            } else {
-                row = cursor.next();
-                if (row == null) {
-                    if (keepInput && !inputPrecedesBranch) {
-                        assert inputRow.isHolding();
-                        row = inputRow.get();
-                        inputRow.release();
+            TAP_NEXT.in();
+            try {
+                checkQueryCancelation();
+                Row row;
+                if (keepInput && inputPrecedesBranch && inputRow.isHolding()) {
+                    row = inputRow.get();
+                    inputRow.release();
+                } else {
+                    row = cursor.next();
+                    if (row == null) {
+                        if (keepInput && !inputPrecedesBranch) {
+                            assert inputRow.isHolding();
+                            row = inputRow.get();
+                            inputRow.release();
+                        }
+                        close();
                     }
-                    close();
                 }
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("BranchLookup_Nested: yield {}", row);
+                }
+                return row;
+            } finally {
+                TAP_NEXT.out();
             }
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("BranchLookup_Nested: yield {}", row);
-            }
-            return row;
         }
 
         @Override

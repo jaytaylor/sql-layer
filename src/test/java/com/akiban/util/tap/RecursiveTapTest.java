@@ -75,6 +75,75 @@ public class RecursiveTapTest
         expectNoReports();
     }
     
+    @Test
+    public void testSiblings() throws InterruptedException
+    {
+        Tap.DISPATCHES.clear(); // Different set of taps from other tests
+        // Tap structure:
+        // r
+        //    i
+        //    j
+        //        x
+        //        y
+        //    k
+        InOutTap r = Tap.createRecursiveTimer("r");
+        InOutTap i = r.createSubsidiaryTap("i");
+        InOutTap j = r.createSubsidiaryTap("j");
+        InOutTap k = r.createSubsidiaryTap("k");
+        InOutTap x = r.createSubsidiaryTap("x");
+        InOutTap y = r.createSubsidiaryTap("y");
+        Tap.setEnabled("r", true);
+        r.in();
+        sleep();
+            i.in();
+            sleep();
+                j.in();
+                sleep();
+                    x.in();
+                    sleep();
+                    x.out();
+                sleep();
+                    y.in();
+                    sleep();
+                    y.out();
+                sleep();
+                j.out();
+            sleep();
+                k.in();
+                sleep();
+                k.out();
+            sleep();
+            i.out();
+        sleep();
+        r.out();
+        TapReport[] tapReports = Tap.getReport("r");
+        assertEquals(6, tapReports.length);
+        for (TapReport report : tapReports) {
+            if (report.getName().equals("r")) {
+                assertEquals(1, report.getInCount());
+                assertTrue(checkTicks(report, 2));
+            } else if (report.getName().equals("i")) {
+                assertEquals(1, report.getInCount());
+                assertTrue(checkTicks(report, 3));
+            } else if (report.getName().equals("j")) {
+                assertEquals(1, report.getInCount());
+                assertTrue(checkTicks(report, 3));
+            } else if (report.getName().equals("k")) {
+                assertEquals(1, report.getInCount());
+                assertTrue(checkTicks(report, 1));
+            } else if (report.getName().equals("x")) {
+                assertEquals(1, report.getInCount());
+                assertTrue(checkTicks(report, 1));
+            } else if (report.getName().equals("y")) {
+                assertEquals(1, report.getInCount());
+                assertTrue(checkTicks(report, 1));
+            } else {
+                fail();
+            }
+            assertEquals(report.getOutCount(), report.getInCount());
+        }
+    }
+    
     // The following tests enable/disable taps at all combinations of points with respect to the ABA 
     // tap pattern:
     //
@@ -826,13 +895,13 @@ public class RecursiveTapTest
     {
         a.in();
         sleep();
-        b.in();
-        sleep();
-        a.in();
-        sleep();
-        a.out();
-        sleep();
-        b.out();
+            b.in();
+            sleep();
+                a.in();
+                sleep();
+                a.out();
+            sleep();
+            b.out();
         sleep();
         a.out();
         expect(2, 3, 1, 2);
@@ -841,7 +910,7 @@ public class RecursiveTapTest
     private void createTaps()
     {
         a = Tap.createRecursiveTimer("a");
-        b = a.createSubsidiaryTap("b", a);
+        b = a.createSubsidiaryTap("b");
         enableTaps();
     }
 
@@ -905,8 +974,8 @@ public class RecursiveTapTest
     private static final String ROOT_TAP = "a";
     private static final String SUBSIDIARY_TAP = "b";
     private static final int MILLION = 1000000;
-    private static final int TICK_LENGTH_MSEC = 10;
-    private static final int CLOCK_IMPRECISION_MSEC = 3;
+    private static final int TICK_LENGTH_MSEC = 20;
+    private static final int CLOCK_IMPRECISION_MSEC = 5;
 
     private InOutTap a;
     private InOutTap b;

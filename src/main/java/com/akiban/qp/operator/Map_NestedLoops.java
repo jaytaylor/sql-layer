@@ -19,6 +19,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
@@ -28,6 +29,54 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+/**
+
+ <h1>Overview</h1>
+
+ Map_NestedLoops implements a mapping using a nested-loop algorithm. The left input operator (outer loop)
+ provides a stream of input rows. The right input operator (inner loop) binds this row, and 
+ its output, combined across all input rows, forms the Map_NestedLoops output stream. 
+ 
+ <h1>Arguments</h1>
+
+ <ul>
+
+ <li><b>Operator outerInputOperator:</b> Provides stream of input.
+
+ <li><b>Operator innerInputOperator:</b> Provides Map_NestedLoops output.
+
+ <li><b>int inputBindingPosition:</b> Position of inner loop row in query context.
+
+ </ul>
+
+ <h1>Behavior</h1>
+
+ The outer input operator provides a stream of rows. Each is bound in turn to the query context, in the 
+ position specified by inputBindingPosition. For each input row, the inner operator binds the row and executes,
+ yielding a stream of output rows. The concatenation of these streams comprises the output from Map_NestedLoops.
+ 
+ The inner operator is used multiple times, once for each input row. On each iteration, the input row is bound
+ to the query context, the inner cursor is opened, and then the inner cursor is consumed.
+
+ <h1>Output</h1>
+
+ The concatenation of streams from the inner operator.
+
+ <h1>Assumptions</h1>
+
+ None.
+
+ <h1>Performance</h1>
+
+ Product_NestedLoops does no IO.
+
+ <h1>Memory Requirements</h1>
+
+ A single row from the outer loops is stored at all times.
+ 
+ */
+
 
 class Map_NestedLoops extends Operator
 {
@@ -85,8 +134,9 @@ class Map_NestedLoops extends Operator
 
     // Class state
 
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Map_NestedLoops open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Map_NestedLoops next");
     private static final Logger LOG = LoggerFactory.getLogger(BranchLookup_Nested.class);
-    private static final PointTap MAP_NL_COUNT = Tap.createCount("operator: map_nested_loops", true);
 
     // Object state
 
@@ -103,35 +153,44 @@ class Map_NestedLoops extends Operator
         @Override
         public void open()
         {
-       	    MAP_NL_COUNT.hit();
-            this.outerInput.open();
-            this.closed = false;
+            TAP_OPEN.in();
+            try {
+                this.outerInput.open();
+                this.closed = false;
+            } finally {
+                TAP_OPEN.out();
+            }
         }
 
         @Override
         public Row next()
         {
-            checkQueryCancelation();
-            Row outputRow = null;
-            while (!closed && outputRow == null) {
-                outputRow = nextOutputRow();
-                if (outputRow == null) {
-                    Row row = outerInput.next();
-                    if (row == null) {
-                        close();
-                    } else {
-                        outerRow.hold(row);
-                        if (LOG.isDebugEnabled()) {
-                            LOG.debug("Map_NestedLoops: restart inner loop using current branch row");
+            TAP_NEXT.in();
+            try {
+                checkQueryCancelation();
+                Row outputRow = null;
+                while (!closed && outputRow == null) {
+                    outputRow = nextOutputRow();
+                    if (outputRow == null) {
+                        Row row = outerInput.next();
+                        if (row == null) {
+                            close();
+                        } else {
+                            outerRow.hold(row);
+                            if (LOG.isDebugEnabled()) {
+                                LOG.debug("Map_NestedLoops: restart inner loop using current branch row");
+                            }
+                            startNewInnerLoop(row);
                         }
-                        startNewInnerLoop(row);
                     }
                 }
+                if(LOG.isDebugEnabled()) {
+                    LOG.debug("Map_NestedLoops: yield {}", outputRow);
+                }
+                return outputRow;
+            } finally {
+                TAP_NEXT.out();
             }
-            if(LOG.isDebugEnabled()) {
-                LOG.debug("Map_NestedLoops: yield {}", outputRow);
-            }
-            return outputRow;
         }
 
         @Override
