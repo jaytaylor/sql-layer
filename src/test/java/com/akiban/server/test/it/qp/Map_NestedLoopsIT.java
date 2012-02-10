@@ -21,7 +21,6 @@ import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.UndefBindings;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -138,7 +137,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
             row(itemRowType, 4010L, 401L),
             row(itemRowType, 4011L, 401L),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -175,7 +174,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
             row(projectRowType, 4L, 400L),
             row(projectRowType, 4L, 401L),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -215,7 +214,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
             row(projectRowType, 5L, null),
             row(projectRowType, 6L, null),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
@@ -253,13 +252,12 @@ public class Map_NestedLoopsIT extends OperatorITBase
             row(customerRowType, 4L, "atlas"),
             row(customerRowType, 5L, "highland"),
         };
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     private Row intRow(RowType rowType, int x)
     {
-        return new ExpressionRow(rowType,
-                                 UndefBindings.only(), null,
+        return new ExpressionRow(rowType, queryContext,
                                  Arrays.asList((Expression) new LiteralExpression(AkType.INT, x)));
     }
 

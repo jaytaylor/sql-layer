@@ -48,20 +48,16 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         this.query = query;
     }
 
-    @Override
-    public PostgresStatement getBoundStatement(Object[] parameters,
-                                               boolean[] columnBinary, 
-                                               boolean defaultColumnBinary)  {
-        if (parameters != null)
-            throw new UnsupportedParametersException();
-        return this;
-    }
-
     static final PostgresType OID_PG_TYPE = 
         new PostgresType(PostgresType.OID_TYPE_OID, (short)4, -1, AkType.LONG);
 
     @Override
-    public void sendDescription(PostgresServerSession server, boolean always) 
+    public PostgresType[] getParameterTypes() {
+        return null;
+    }
+
+    @Override
+    public void sendDescription(PostgresQueryContext context, boolean always) 
             throws IOException {
         int ncols;
         String[] names;
@@ -76,6 +72,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             return;
         }
 
+        PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         messenger.beginMessage(PostgresMessages.ROW_DESCRIPTION_TYPE.code());
         messenger.writeShort(ncols);
@@ -98,8 +95,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     }
 
     @Override
-    public int execute(PostgresServerSession server, int maxrows)
-        throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+        PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;
         switch (query) {

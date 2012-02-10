@@ -18,7 +18,7 @@ package com.akiban.qp.persistitadapter.sort;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Bindings;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.types.conversion.Converters;
 
@@ -28,30 +28,30 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
 {
     // SortCursorUnidirectional interface
 
-    public static SortCursorUnidirectionalLexicographic create(PersistitAdapter adapter,
+    public static SortCursorUnidirectionalLexicographic create(QueryContext context,
                                                                IterationHelper iterationHelper,
                                                                IndexKeyRange keyRange,
                                                                API.Ordering ordering)
     {
-        return new SortCursorUnidirectionalLexicographic(adapter, iterationHelper, keyRange, ordering);
+        return new SortCursorUnidirectionalLexicographic(context, iterationHelper, keyRange, ordering);
     }
 
     // For use by this class
 
-    private SortCursorUnidirectionalLexicographic(PersistitAdapter adapter,
+    private SortCursorUnidirectionalLexicographic(QueryContext context,
                                                   IterationHelper iterationHelper,
                                                   IndexKeyRange keyRange,
                                                   API.Ordering ordering)
     {
-        super(adapter, iterationHelper, keyRange, ordering);
+        super(context, iterationHelper, keyRange, ordering);
     }
 
-    protected void evaluateBoundaries(Bindings bindings)
+    protected void evaluateBoundaries(QueryContext context)
     {
         if (start == null) {
             startKey = null;
         } else {
-            BoundExpressions startExpressions = start.boundExpressions(bindings, adapter);
+            BoundExpressions startExpressions = start.boundExpressions(context);
             startKey.clear();
             startKeyTarget.attach(startKey);
             for (int f = 0; f < boundColumns; f++) {
@@ -62,7 +62,7 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
         if (end == null) {
             endKey = null;
         } else {
-            BoundExpressions endExpressions = end.boundExpressions(bindings, adapter);
+            BoundExpressions endExpressions = end.boundExpressions(context);
             endKey.clear();
             endKeyTarget.attach(endKey);
             for (int f = 0; f < boundColumns; f++) {

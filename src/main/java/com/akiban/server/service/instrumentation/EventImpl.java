@@ -15,6 +15,7 @@
 
 package com.akiban.server.service.instrumentation;
 
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
 public class EventImpl implements Event {
@@ -91,7 +92,7 @@ public class EventImpl implements Event {
     private int sessionId;
     private String tapName;
     private boolean enabled;
-    private final Tap.InOutTap eventTap;
+    private final InOutTap eventTap;
     private long lastDuration;
     private long totalTime;
     

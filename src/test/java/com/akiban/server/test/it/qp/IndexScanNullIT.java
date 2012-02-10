@@ -66,6 +66,7 @@ public class IndexScanNullIT extends OperatorITBase
             createNewRow(t, 1003L, 5L, 8L),
         };
         adapter = persistitAdapter(schema);
+        queryContext = queryContext(adapter);
         use(db);
     }
 
@@ -198,7 +199,7 @@ public class IndexScanNullIT extends OperatorITBase
             int id = expectedIds[i];
             expected[i] = dbRow(id);
         }
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     private void dump(IndexKeyRange keyRange, API.Ordering ordering, int ... expectedIds)

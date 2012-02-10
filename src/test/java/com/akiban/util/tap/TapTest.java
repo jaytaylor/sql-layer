@@ -17,8 +17,6 @@ package com.akiban.util.tap;
 
 import org.junit.Test;
 
-import java.util.Map;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -28,7 +26,7 @@ public class TapTest {
 
     @Test
     public void testPerThreadTap() throws Exception {
-        final Tap.InOutTap tap = Tap.createTimer("tap");
+        final InOutTap tap = Tap.createTimer("tap");
         Tap.setEnabled(".*", true);
         final Thread[] threads = new Thread[THREADS];
         for (int i = 0; i < THREADS; i++) {
@@ -45,13 +43,15 @@ public class TapTest {
             }, "thread_" + i);
             threads[i] = thread;
         }
-        for (int i = 0; i < threads.length; i++) {
-            threads[i].start();
+        for (Thread thread : threads) {
+            thread.start();
         }
-        for (int i = 0; i < threads.length; i++) {
-            threads[i].join();
+        for (Thread thread : threads) {
+            thread.join();
         }
-        final TapReport report = tap.getReport();
+        TapReport[] reports = tap.getReports();
+        assertEquals(1, reports.length);
+        TapReport report = reports[0];
         assertEquals(THREADS * CYCLES, report.getInCount());
         assertEquals(THREADS * CYCLES, report.getOutCount());
     }

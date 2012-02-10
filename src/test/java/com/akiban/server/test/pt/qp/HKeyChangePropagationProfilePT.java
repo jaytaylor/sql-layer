@@ -17,9 +17,8 @@ package com.akiban.server.test.pt.qp;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.UndefBindings;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
@@ -39,7 +38,8 @@ import static com.akiban.qp.operator.API.*;
 public class HKeyChangePropagationProfilePT extends QPProfilePTBase
 {
     @Before
-    public void before() throws InvalidOperationException
+    @Override
+    public void setUpProfiling() throws Exception
     {
         // Changes to parent.gid propagate to children hkeys.
         grandparent = createTable(
@@ -75,6 +75,12 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
         child2RowType = schema.userTableRowType(userTable(child2));
         group = groupTable(grandparent);
         adapter = persistitAdapter(schema);
+        queryContext = queryContext(adapter);
+        // The following is adapter from super.setUpProfiling. Leave taps disabled, they'll be enabled after loading
+        // and warmup
+        beforeProfiling();
+        tapsRegexes.clear();
+        registerTaps();
     }
 
     private int        grandparent;
@@ -119,13 +125,13 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
     }
 
     @Override
-    protected void relevantTaps(TapsRegexes tapsRegexes)
+    protected void registerTaps()
     {
         tapsRegexes.add(".*propagate.*");
     }
 
     @Test
-    public void profileHKeyChangePropagation() throws Exception
+    public void profileHKeyChangePropagationFromParent() throws Exception
     {
         final int WARMUP_SCANS = 10; // Number of times to update each parent.gid during warmup
         final int SCANS = 100; // Number of times to update each parent.gid
@@ -142,7 +148,7 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                            new UpdateFunction()
                            {
                                @Override
-                               public Row evaluate(Row original, Bindings bindings)
+                               public Row evaluate(Row original, QueryContext context)
                                {
                                    OverlayingRow updatedRow = new OverlayingRow(original);
                                    updatedRow.overlay(1, original.eval(1).getInt() - 1000000);
@@ -169,13 +175,13 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                             Tap.setEnabled(".*propagate.*", true);
                             start = System.nanoTime();
                         }
-                        updatePlan.run(NO_BINDINGS, adapter);
+                        updatePlan.run(queryContext);
                         return start;
                     }
                 });
             if (mightBeStartTime != -1L) {
                 start = mightBeStartTime;
-            } 
+            }
         }
         long end = System.nanoTime();
         assert start != Long.MIN_VALUE;
@@ -185,5 +191,85 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
                                          SCANS, GRANDPARENTS, PARENTS_PER_GRANDPARENT, CHILDREN_PER_PARENT, sec));
     }
 
-    private static final Bindings NO_BINDINGS = UndefBindings.only();
+    @Test
+    public void profileHKeyChangePropagationFromGrandparent() throws Exception
+    {
+        final int WARMUP_SCANS = 10; // Number of times to update each parent.gid during warmup
+        final int SCANS = 100; // Number of times to update each parent.gid
+        final int GRANDPARENTS = 1;
+        final int PARENTS_PER_GRANDPARENT = 10;
+        final int CHILDREN_PER_PARENT = 100;
+        populateDB(GRANDPARENTS, PARENTS_PER_GRANDPARENT, CHILDREN_PER_PARENT);
+        Operator scanPlan =
+            limit_Default(
+                filter_Default(
+                    groupScan_Default(group),
+                    Collections.singleton(grandparentRowType)),
+                1);
+        final UpdatePlannable updatePlan =
+            update_Default(scanPlan,
+                           new UpdateFunction()
+                           {
+                               @Override
+                               public Row evaluate(Row original, QueryContext context)
+                               {
+                                   OverlayingRow updatedRow = new OverlayingRow(original);
+                                   updatedRow.overlay(0, original.eval(0).getInt() - 1000000);
+                                   return updatedRow;
+                               }
+
+                               @Override
+                               public boolean rowIsSelected(Row row)
+                               {
+                                   return true;
+                               }
+                           });
+        final UpdatePlannable revertPlan =
+            update_Default(scanPlan,
+                           new UpdateFunction()
+                           {
+                               @Override
+                               public Row evaluate(Row original, QueryContext context)
+                               {
+                                   OverlayingRow updatedRow = new OverlayingRow(original);
+                                   updatedRow.overlay(0, original.eval(0).getInt() + 1000000);
+                                   return updatedRow;
+                               }
+
+                               @Override
+                               public boolean rowIsSelected(Row row)
+                               {
+                                   return true;
+                               }
+                           });
+        long start = Long.MIN_VALUE;
+        for (int s = 0; s < WARMUP_SCANS + SCANS; s++) {
+            final int sFinal = s;
+            long mightBeStartTime = transactionally(
+                new Callable<Long>()
+                {
+                    @Override
+                    public Long call() throws Exception
+                    {
+                        long start = -1L;
+                        if (sFinal == WARMUP_SCANS) {
+                            Tap.setEnabled(".*propagate.*", true);
+                            start = System.nanoTime();
+                        }
+                        updatePlan.run(queryContext);
+                        revertPlan.run(queryContext);
+                        return start;
+                    }
+                });
+            if (mightBeStartTime != -1L) {
+                start = mightBeStartTime;
+            }
+        }
+        long end = System.nanoTime();
+        assert start != Long.MIN_VALUE;
+        double sec = (end - start) / (1000.0 * 1000 * 1000);
+        System.out.println(String.format("PDG optimization: %s", PersistitStore.PDG_OPTIMIZATION));
+        System.out.println(String.format("scans: %s, db: %s/%s/%s, time: %s",
+                                         SCANS, GRANDPARENTS, PARENTS_PER_GRANDPARENT, CHILDREN_PER_PARENT, sec));
+    }
 }

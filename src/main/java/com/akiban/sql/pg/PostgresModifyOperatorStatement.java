@@ -18,19 +18,14 @@ package com.akiban.sql.pg;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 
-import com.akiban.qp.operator.Bindings;
-
 import java.util.List;
 import java.io.IOException;
 
-import com.akiban.qp.operator.UndefBindings;
-import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.akiban.server.expression.EnvironmentExpressionSetting;
 
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
 
@@ -43,15 +38,14 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
     private String statementType;
     private UpdatePlannable resultOperator;
 
-    private static final Tap.InOutTap EXECUTE_TAP = Tap.createTimer("PostgresBaseStatement: execute exclusive");
-    private static final Tap.InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresBaseStatement: acquire exclusive lock");
+    private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresBaseStatement: execute exclusive");
+    private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresBaseStatement: acquire exclusive lock");
     private static final Logger LOG = LoggerFactory.getLogger(PostgresModifyOperatorStatement.class);
         
     public PostgresModifyOperatorStatement(String statementType,
                                            UpdatePlannable resultOperator,
-                                           PostgresType[] parameterTypes,
-                                           List<EnvironmentExpressionSetting> environmentSetting) {
-        super(parameterTypes, environmentSetting);
+                                           PostgresType[] parameterTypes) {
+        super(parameterTypes);
         this.statementType = statementType;
         this.resultOperator = resultOperator;
     }
@@ -61,17 +55,14 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         return TransactionMode.WRITE;
     }
 
-    public int execute(PostgresServerSession server, int maxrows)
-        throws IOException {
-
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+        PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
-        Bindings bindings = getBindings();
         Session session = server.getSession();
         final UpdateResult updateResult;
         try {
             lock(session, UNSPECIFIED_DML_WRITE);
-            setEnvironmentBindings(server, bindings);
-            updateResult = resultOperator.run(bindings, server.getStore());
+            updateResult = resultOperator.run(context);
         } finally {
             unlock(session, UNSPECIFIED_DML_WRITE);
         }
@@ -90,52 +81,14 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
     }
 
     @Override
-    protected Tap.InOutTap executeTap()
+    protected InOutTap executeTap()
     {
         return EXECUTE_TAP;
     }
 
     @Override
-    protected Tap.InOutTap acquireLockTap()
+    protected InOutTap acquireLockTap()
     {
         return ACQUIRE_LOCK_TAP;
-    }
-
-    /** Only needed in the case where a statement has parameters. */
-    static class BoundStatement extends PostgresModifyOperatorStatement {
-        private Bindings bindings;
-        private int nparams;
-
-        public BoundStatement(String statementType,
-                              UpdatePlannable resultOperator,
-                              Bindings bindings, int nparams,
-                              List<EnvironmentExpressionSetting> environmentSetting) {
-            super(statementType, resultOperator, null, environmentSetting);
-            this.bindings = bindings;
-            this.nparams = nparams;
-        }
-
-        @Override
-        public Bindings getBindings() {
-            return bindings;
-        }
-
-        @Override
-        protected int getNParameters() {
-            return nparams;
-        }
-    }
-
-    /** Get a bound version of a predicate by applying given parameters. */
-    @Override
-    public PostgresStatement getBoundStatement(Object[] parameters,
-                                               boolean[] columnBinary, 
-                                               boolean defaultColumnBinary) {
-        if (parameters == null)
-            return this;        // Can be reused.
-
-        return new BoundStatement(statementType, resultOperator, 
-                                  getParameterBindings(parameters), parameters.length,
-                                  getEnvironmentSettings());
     }
 }

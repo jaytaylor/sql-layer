@@ -16,22 +16,19 @@
 package com.akiban.sql.server;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoTransactionInProgressException;
 import com.akiban.server.error.TransactionInProgressException;
-import com.akiban.server.expression.EnvironmentExpressionSetting;
+import com.akiban.server.error.TransactionReadOnlyException;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.sql.optimizer.rule.CostEstimator;
 import com.akiban.sql.parser.SQLParser;
-
-import com.akiban.sql.optimizer.rule.IndexEstimator;
-import com.akiban.ais.model.Index;
-import com.akiban.server.store.statistics.IndexStatistics;
-import com.akiban.server.store.statistics.IndexStatisticsService;
 
 import org.joda.time.DateTime;
 
@@ -55,6 +52,9 @@ public abstract class ServerSessionBase implements ServerSession
     protected boolean transactionDefaultReadOnly = false;
     protected ServerSessionTracer sessionTracer;
 
+    protected ServerValueEncoder.ZeroDateTimeBehavior zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.NONE;
+    protected QueryContext.NotificationLevel maxNotificationLevel = QueryContext.NotificationLevel.INFO;
+
     public ServerSessionBase(ServerServiceRequirements reqs) {
         this.reqs = reqs;
     }
@@ -76,9 +76,37 @@ public abstract class ServerSessionBase implements ServerSession
 
     @Override
     public void setProperty(String key, String value) {
-        properties.setProperty(key, value);
+        if (value == null)
+            properties.remove(key);
+        else
+            properties.setProperty(key, value);
+        if (!propertySet(key, properties.getProperty(key)))
+            sessionChanged();   // Give individual handlers a chance.
+    }
+
+    protected void setProperties(Properties properties) {
+        this.properties = properties;
+        for (String key : properties.stringPropertyNames()) {
+            propertySet(key, properties.getProperty(key));
+        }
         sessionChanged();
     }
+
+    protected boolean propertySet(String key, String value) {
+        if ("zeroDateTimeBehavior".equals(key)) {
+            zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.fromProperty(value);
+            return true;
+        }
+        if ("maxNotificationLevel".equals(key)) {
+            maxNotificationLevel = (value == null) ? 
+                QueryContext.NotificationLevel.INFO :
+                QueryContext.NotificationLevel.valueOf(value);
+            return true;
+        }
+        return false;
+    }
+
+    protected abstract void sessionChanged();
 
     @Override
     public Map<String,Object> getAttributes() {
@@ -95,8 +123,6 @@ public abstract class ServerSessionBase implements ServerSession
         attributes.put(key, attr);
         sessionChanged();
     }
-
-    protected abstract void sessionChanged();
 
     @Override
     public DXLService getDXL() {
@@ -203,44 +229,68 @@ public abstract class ServerSessionBase implements ServerSession
     }
 
     @Override
-    public Object getEnvironmentValue(EnvironmentExpressionSetting setting) {
-        switch (setting) {
-        case CURRENT_DATETIME:
-            return new DateTime((transaction != null) ? transaction.getTime(this)
-                                                      : currentTime());
-        case CURRENT_USER:
-            return defaultSchemaName;
-        case SESSION_USER:
-            return properties.getProperty("user");
-        case SYSTEM_USER:
-            return System.getProperty("user.name");
-        default:
-            throw new AkibanInternalException("Unknown environment value: " +
-                                              setting);
-        }
-    }
-
-    // TODO: Maybe move this someplace else. Right now this is where things meet.
-    public static class ServiceIndexEstimator extends IndexEstimator
-    {
-        private IndexStatisticsService indexStatistics;
-        private Session session;
-
-        public ServiceIndexEstimator(IndexStatisticsService indexStatistics,
-                                     Session session) {
-            this.indexStatistics = indexStatistics;
-            this.session = session;
-        }
-
-        @Override
-        public IndexStatistics getIndexStatistics(Index index) {
-            return indexStatistics.getIndexStatistics(session, index);
-        }
+    public ServerValueEncoder.ZeroDateTimeBehavior getZeroDateTimeBehavior() {
+        return zeroDateTimeBehavior;
     }
 
     @Override
-    public IndexEstimator indexEstimator() {
-        return new ServiceIndexEstimator(reqs.indexStatistics(), session);
+    public CostEstimator costEstimator() {
+        return new ServerCostEstimator(this, reqs);
+    }
+
+    /** Prepare to execute given statement.
+     * Uses current global transaction or makes a new local one.
+     * Returns any local transaction that should be committed / rolled back immediately.
+     */
+    protected ServerTransaction beforeExecute(ServerStatement stmt) {
+        ServerStatement.TransactionMode transactionMode = stmt.getTransactionMode();
+        ServerTransaction localTransaction = null;
+        if (transaction != null) {
+            // Use global transaction.
+            transaction.checkTransactionMode(transactionMode);
+        }
+        else {
+            switch (transactionMode) {
+            case REQUIRED:
+            case REQUIRED_WRITE:
+                throw new NoTransactionInProgressException();
+            case READ:
+            case NEW:
+                localTransaction = new ServerTransaction(this, true);
+                break;
+            case WRITE:
+            case NEW_WRITE:
+                if (transactionDefaultReadOnly)
+                    throw new TransactionReadOnlyException();
+                localTransaction = new ServerTransaction(this, false);
+                localTransaction.beforeUpdate();
+                break;
+            }
+        }
+        return localTransaction;
+    }
+
+    /** Complete execute given statement.
+     * @see #beforeExecute
+     */
+    protected void afterExecute(ServerStatement stmt, 
+                                ServerTransaction localTransaction,
+                                boolean success) {
+        if (localTransaction != null) {
+            if (success)
+                localTransaction.commit();
+            else
+                localTransaction.abort();
+        }
+        else {
+            // Make changes visible in open global transaction.
+            switch (stmt.getTransactionMode()) {
+            case REQUIRED_WRITE:
+            case WRITE:
+                transaction.afterUpdate();
+                break;
+            }
+        }
     }
 
 }

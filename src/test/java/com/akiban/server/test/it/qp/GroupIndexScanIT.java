@@ -19,7 +19,7 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
-import com.akiban.qp.operator.Operator;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
@@ -90,6 +90,7 @@ public final class GroupIndexScanIT extends ITBase {
 
         schema = new Schema(ddl().getAIS(session()));
         adapter = persistitAdapter(schema);
+        queryContext = queryContext(adapter);
         giRowType = schema.indexRowType(gi);
 
         writeRows(
@@ -126,8 +127,8 @@ public final class GroupIndexScanIT extends ITBase {
 
     private List<List<?>> planToList(Operator plan) {
         List<List<?>> actualResults = new ArrayList<List<?>>();
-        Cursor cursor =  API.cursor(plan, adapter);
-        cursor.open(UndefBindings.only());
+        Cursor cursor =  API.cursor(plan, queryContext);
+        cursor.open();
         try {
             ToObjectValueTarget target = new ToObjectValueTarget();
             for (Row row = cursor.next(); row != null; row = cursor.next()) {
@@ -159,7 +160,8 @@ public final class GroupIndexScanIT extends ITBase {
 
     private Integer c, o, i, h;
     private Schema schema;
-    private StoreAdapter adapter;
+    private PersistitAdapter adapter;
+    private QueryContext queryContext;
     private IndexRowType giRowType;
 
     private final static String SCHEMA = "schema";

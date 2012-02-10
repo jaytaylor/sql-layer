@@ -15,29 +15,14 @@
 
 package com.akiban.util.tap;
 
-import java.lang.management.ManagementFactory;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.regex.Pattern;
-
-import javax.management.InstanceAlreadyExistsException;
-import javax.management.InstanceNotFoundException;
-import javax.management.MBeanRegistrationException;
-import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.ObjectName;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.management.*;
+import java.lang.management.ManagementFactory;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.regex.Pattern;
 
 /**
  * Loosely inspired by SystemTap, this class implements a generic mechanism for
@@ -46,9 +31,9 @@ import org.slf4j.LoggerFactory;
  * points. However, HotSpot appears to optimize disabled instances of these
  * method calls away, so there is little or no cost in the added calls other
  * than noise in the source code.
- * <p />
+ * <p/>
  * Application code should do something like the following:
- * 
+ * <p/>
  * <pre>
  *   // As a static initializer
  *   private final static Tap MY_TAP = Tap.add("myTap");
@@ -60,35 +45,34 @@ import org.slf4j.LoggerFactory;
  *   	...
  *   	MY_TAP.out();
  * </pre>
- * <p />
- * The static {@link #add(Tap)} method creates an instance of an initially
- * disabled {@link Tap.Dispatch}. when enabled, this {@link Tap.Dispatch} will
- * invoke a {@link Tap.TimeAndCount} instance to count and time the invocations
+ * <p/>* The static {@link #add(Tap)} method creates an instance of an initially
+ * disabled {@link Dispatch}. when enabled, this {@link Dispatch} will
+ * invoke a {@link TimeAndCount} instance to count and time the invocations
  * of {@link #in()} and {@link #out()}. You may instantiate other Tap subclasses
  * with the {@link #add(Tap)} method, for example,
- * 
+ * <p/>
  * <pre>
  * private final static Tap COUNT_ONLY_TAP = Tap.add(new Tap.Count(&quot;counter&quot;));
  * </pre>
- * 
- * <p />
+ * <p/>
+ * <p/>
  * When needed, call {@link #setEnabled(String, boolean)} to turn on/off
  * performance monitoring for one or more Dispatch objects by name. The String
  * argument is a regular expression to be applied to the name; for example
  * <code>Tap.setEnabled("my.*", true)</code> will enable monitoring of the code
  * section in the example above.
- * <p />
+ * <p/>
  * The results are available in String or object form. Call {@link #report()} to
  * get a printable string representation of the results. Note that for
  * convenience when using jconsole, the {@link #report()} method also dumps the
- * report string to the log at INFO level. Use MY_TAP.getReport() to get a
+ * report string to the log at INFO level. Use MY_TAP.getReports() to get a
  * {@link TapReport} object.
- * <p />
+ * <p/>
  * Note that the TimeAndCount subclass of {@link Tap} uses
  * {@link System#nanoTime()} to measure elapsed time. The System#nanoTime() call
  * itself takes several hundred nanoseconds, so don't attempt to use this class
  * to measure very short code segments.
- * <p />
+ * <p/>
  * The {@link #in()} and {@link #out()} methods are meant to be paired, but it
  * is not necessary to implement a try/finally block to guarantee that
  * <tt>out</tt> is called after <tt>in</tt>. Generally this makes the tool
@@ -96,34 +80,26 @@ import org.slf4j.LoggerFactory;
  * sometimes or always throws an Exception, those instances will not be timed.
  * You can detect this issue in the most of the Tap subclasses by comparing the
  * reported <tt>inCount</tt> and <tt>outCount</tt> values.
- * <p />
- * You may implement a custom subclass of {@link Tap} to provide extended
- * behavior. To enable it, call {@link #setCustomTap(String, Class)} as follows:
- * 
- * <pre>
- * Tap.setCustomTap(&quot;myTap&quot;, MyTapSubclass.class);
- * </pre>
- * 
- * <p />
+ * <p/>
  * Currently the following Tap subclasses are defined:
  * <dl>
- * <dt>{@link Tap.TimeAndCount}</dt>
+ * <dt>{@link TimeAndCount}</dt>
  * <dd>Count and measure the elapsed time between each pair of calls to the
  * {@link #in()} and {@link #out()} methods.</dd>
- * <dt>{@link Tap.Count}</dt>
+ * <dt>{@link Count}</dt>
  * <dd>Simply count the number of alls to {@link #in()} and {@link #out()}.
  * Faster because {@link System#nanoTime()} is not called</dd>
- * <dt>{@link Tap.PerThread}</dt>
+ * <dt>{@link PerThread}</dt>
  * <dd>Sub-dispatches each {@link #in()} and {@link #out()} call to a
  * subordinate {@link Tap} on private to the current Thread. Results are
  * reported by thread name.</dd>
  * </dl>
- * {@link Tap.PerThread} requires another Tap subclass to dispatch to, as shown
+ * {@link PerThread} requires another Tap subclass to dispatch to, as shown
  * here:
- * 
+ * <p/>
  * <pre>
  *   // As a static initializer
- *   private final static Tap ANOTHER_TAP = 
+ *   private final static Tap ANOTHER_TAP =
  *   	Tap.add(new PerThread("anotherTap",  Tap.TimeStampLog.class));
  *   ...
  *      // Within a multi-threaded code body
@@ -135,154 +111,103 @@ import org.slf4j.LoggerFactory;
  *      ...
  *      // To see a formatted text report in the log.
  * </pre>
- * 
- * In this example, a {@link Tap.Count} instance will be created for each thread
+ * <p/>
+ * In this example, a {@link Count} instance will be created for each thread
  * that calls either {@link Tap#in()} or {@link Tap#out()}.
- * 
+ *
  * @author peter
- * 
  */
-public abstract class Tap {
+public abstract class Tap
+{
+    // Tap interface
 
-    public static class PointTap {
-
-        public void hit() {
-            internal.in();
-            internal.out();
-        }
-
-        private PointTap(Tap internal) {
-            this.internal = internal;
-        }
-
-        private final Tap internal;
+    /**
+     * @return the name of the Tap
+     */
+    public final String getName()
+    {
+        return name;
     }
 
-    public static class InOutTap {
+    /**
+     * @return duration of time spent in section of code to be timed
+     */
+    public abstract long getDuration();
 
-        public void in() {
-            internal.in();
-        }
+    /**
+     * Reset any accumulated statistics to zero.
+     */
+    public abstract void reset();
 
-        public void out() {
-            internal.out();
-        }
+    public void disable()
+    {}
 
-        /**
-         * Reset the tap.
-         * @deprecated using this method indicates an improper separation of concerns between defining events (which
-         * is what this class does) and reporting on them.
-         */
-        @Deprecated
-        public void reset() {
-            internal.reset();
-        }
-
-        /**
-         * Gets the duration of the tap's in-to-out timer.
-         * @deprecated using this method indicates an improper separation of concerns between defining events (which
-         * is what this class does) and reporting on them.
-         * @return the tap's duration
-         */
-        @Deprecated
-        public long getDuration() {
-            return internal.getDuration();
-        }
-
-        /**
-         * Gets the tap's report
-         * @deprecated using this method indicates an improper separation of concerns between defining events (which
-         * is what this class does) and reporting on them.
-         * @return the underlying tap's report
-         */
-        @Deprecated
-        public TapReport getReport() {
-            return internal.getReport();
-        }
-
-        private InOutTap(Tap internal) {
-            this.internal = internal;
-        }
-
-        private final Tap internal;
+    public InOutTap createSubsidiaryTap(String name, InOutTap outermostRecursiveTapWrapper)
+    {
+        Dispatch outermostPerDispatch = (Dispatch) outermostRecursiveTapWrapper.internal();
+        PerThread outermostPerThread = (PerThread) outermostPerDispatch.enabledTap();
+        return new InOutTap(PerThread.createRecursivePerThread(name, outermostPerThread));
     }
-    
-    private static final Logger LOG = LoggerFactory.getLogger(Tap.class.getName());
 
-    public final static String NEW_LINE = System.getProperty("line.separator");
-
-    private static final Map<String, Dispatch> dispatches = new TreeMap<String, Dispatch>();
-
-    private static boolean registered;
-
-    public static PointTap createCount(String name) {
+    public static PointTap createCount(String name)
+    {
         return createCount(name, defaultOn());
     }
-    
-    public static PointTap createCount(String name, boolean enabled) {
-        PointTap ret =  new PointTap(add(new PerThread(name, Count.class)));
+
+    public static PointTap createCount(String name, boolean enabled)
+    {
+        PointTap tap = new PointTap(add(PerThread.createPerThread(name, Count.class)));
         Tap.setEnabled(name, enabled);
-        return ret;
+        return tap;
     }
 
-    public static InOutTap createTimer(String name) {
+    public static InOutTap createTimer(String name)
+    {
         return createTimer(name, defaultOn());
     }
 
-    public static InOutTap createTimer(String name, boolean enabled) {
-        InOutTap ret = new InOutTap(add(new PerThread(name, TimeAndCount.class)));
+    public static InOutTap createTimer(String name, boolean enabled)
+    {
+        InOutTap tap = new InOutTap(add(PerThread.createPerThread(name, TimeAndCount.class)));
         Tap.setEnabled(name, enabled);
-        return ret;
+        return tap;
+    }
+    
+    public static InOutTap createRecursiveTimer(String name)
+    {
+        return new InOutTap(add(PerThread.createPerThread(name, RecursiveTap.Outermost.class)));
     }
 
-    public static void defaultToOn(boolean defaultIsOn) {
+    public static void defaultToOn(boolean defaultIsOn)
+    {
         System.getProperties().setProperty(DEFAULT_ON_PROPERTY, Boolean.toString(defaultIsOn));
     }
 
     /**
-     * Add or replace a new Dispatch declaration. Generally called by static
-     * initializers of classes to be measured.
-     * 
-     * @param tap
-     *            The Tap to call when enabled.
-     * @return The Dispatch instance.
+     * Re-initialize counters and timers for selected {@link Dispatch}es.
+     *
+     * @param regExPattern regular expression for names of Dispatches to reset.
+     * @param enabled      desired state of the Dispatches.
      */
-    private static Dispatch add(final Tap tap) {
-        final Dispatch dispatch = new Dispatch(tap.getName(), tap);
-        synchronized (dispatches) {
-            dispatches.put(tap.getName(), dispatch);
-        }
-        return dispatch;
-    }
-    
-    private static boolean defaultOn() {
-        return Boolean.getBoolean(DEFAULT_ON_PROPERTY);
-    }
-
-    /**
-     * Re-initialize counters and timers for selected {@link Tap.Dispatch}es.
-     * 
-     * @param regExPattern
-     *            regular expression for names of Dispatches to reset.
-     */
-    public static void setEnabled(final String regExPattern, final boolean on) {
-        final Pattern pattern = Pattern.compile(regExPattern);
-        for (final Dispatch tap : dispatchesCopy()) {
+    public static void setEnabled(String regExPattern, boolean enabled)
+    {
+        Pattern pattern = Pattern.compile(regExPattern);
+        for (Dispatch tap : dispatchesCopy()) {
             if (pattern.matcher(tap.getName()).matches()) {
-                tap.setEnabled(on);
+                tap.setEnabled(enabled);
             }
         }
     }
 
     /**
-     * Re-initialize counters and timers for selected {@link Tap.Dispatch}es.
-     * 
-     * @param regExPattern
-     *            regular expression for names of Dispatches to reset.
+     * Re-initialize counters and timers for selected {@link Dispatch}es.
+     *
+     * @param regExPattern regular expression for names of Dispatches to reset.
      */
-    public static void reset(final String regExPattern) {
-        final Pattern pattern = Pattern.compile(regExPattern);
-        for (final Dispatch tap : dispatchesCopy()) {
+    public static void reset(String regExPattern)
+    {
+        Pattern pattern = Pattern.compile(regExPattern);
+        for (Dispatch tap : dispatchesCopy()) {
             if (pattern.matcher(tap.getName()).matches()) {
                 tap.reset();
             }
@@ -292,100 +217,68 @@ public abstract class Tap {
     /**
      * Fetch an array of current report statuses of {@link Tap} selected by
      * name.
-     * 
-     * @param regExPattern
-     *            regular expression for names of Dispatches to report
+     *
+     * @param regExPattern regular expression for names of Dispatches to report
      * @return array of TapReport objects.
      */
-    public static TapReport[] getReport(final String regExPattern) {
-        final List<TapReport> reports = new ArrayList<TapReport>();
-        final Pattern pattern = Pattern.compile(regExPattern);
-        for (final Dispatch tap : dispatchesCopy()) {
+    public static TapReport[] getReport(String regExPattern)
+    {
+        List<TapReport> reports = new ArrayList<TapReport>();
+        Pattern pattern = Pattern.compile(regExPattern);
+        for (Dispatch tap : dispatchesCopy()) {
             if (pattern.matcher(tap.getName()).matches()) {
-                final TapReport report = tap.getReport();
-                if (report != null) {
-                    reports.add(report);
+                if (tap.getReports() != null) {
+                    for (TapReport tapReport : tap.getReports()) {
+                        reports.add(tapReport);
+                    }
                 }
             }
         }
+        Collections.sort(reports, TAPS_BY_NAME_COMPARATOR);
         return reports.toArray(new TapReport[reports.size()]);
-    }
-
-    /**
-     * Add a custom {@link Tap} subclass. Specify a regExPattern to select from
-     * previously installed {@link Tap.Dispatch} instances, plus a {@link Class}
-     * defining a custom Tap implementation.
-     * 
-     * @param regExPattern
-     *            regular expression to select names
-     * @param clazz
-     *            Subclass of {@link Tap} to enable
-     * @throws SecurityException
-     * @throws NoSuchMethodException
-     * @throws IllegalArgumentException
-     * @throws InstantiationException
-     * @throws IllegalAccessException
-     * @throws InvocationTargetException
-     */
-    public static void setCustomTap(final String regExPattern,
-            final Class<? extends Tap> clazz) throws SecurityException,
-            NoSuchMethodException, IllegalArgumentException,
-            InstantiationException, IllegalAccessException,
-            InvocationTargetException {
-        final Pattern pattern = Pattern.compile(regExPattern);
-
-        final Constructor<? extends Tap> constructor = clazz
-                .getConstructor(new Class[] { String.class });
-        for (final Dispatch dispatch : dispatchesCopy()) {
-            if (pattern.matcher(dispatch.getName()).matches()) {
-                final Tap tap = (Tap) constructor
-                        .newInstance(new Object[] { dispatch.getName() });
-                dispatch.enabledTap = tap;
-            }
-        }
     }
 
     /**
      * Return a String containing a formatted report generated by traversing and
      * appending results from all registered Taps. This method also logs the
      * report in a human-readable format at INFO level.
-     * 
+     *
      * @return Formated report
      */
-    public static String report() {
-        final StringBuilder sb = new StringBuilder();
-        for (final Tap tap : dispatchesCopy()) {
+    public static String report()
+    {
+        StringBuilder sb = new StringBuilder();
+        for (Tap tap : dispatchesCopy()) {
             int length = sb.length();
             tap.appendReport(sb);
             if (sb.length() > length) {
                 sb.append(NEW_LINE);
             }
         }
-        final String result = sb.toString();
+        String result = sb.toString();
         LOG.info("Tap Report" + NEW_LINE + NEW_LINE + result + NEW_LINE);
         return result;
-    }
-
-    private static Collection<Tap.Dispatch> dispatchesCopy()
-    {
-        synchronized (dispatches) {
-            return new ArrayList<Dispatch>(dispatches.values());
-        }
     }
 
     /**
      * Register an MXBean to make methods of this class available remotely from
      * JConsole or other JMX client. Does nothing if there already is a
      * registered MXBean.
-     * @throws NullPointerException 
-     * @throws MalformedObjectNameException 
-     * @throws NotCompliantMBeanException 
-     * @throws MBeanRegistrationException 
-     * @throws InstanceAlreadyExistsException 
-     * 
+     *
+     * @throws NullPointerException
+     * @throws MalformedObjectNameException
+     * @throws NotCompliantMBeanException
+     * @throws MBeanRegistrationException
+     * @throws InstanceAlreadyExistsException
      * @throws Exception
      */
-    public synchronized static void registerMXBean() throws MalformedObjectNameException, NullPointerException, InstanceAlreadyExistsException, MBeanRegistrationException, NotCompliantMBeanException {
+    public synchronized static void registerMXBean()
+        throws MalformedObjectNameException,
+               NullPointerException,
+               InstanceAlreadyExistsException,
+               MBeanRegistrationException,
+               NotCompliantMBeanException
+    {
         if (!registered) {
             ObjectName mxbeanName = new ObjectName("com.akiban:type=Tap");
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
@@ -397,14 +290,19 @@ public abstract class Tap {
     /**
      * Unregister the MXBean created by {@link #registerMXBean()}. Does nothing
      * if there is no registered MXBean.
-     * @throws NullPointerException 
-     * @throws MalformedObjectNameException 
-     * @throws InstanceNotFoundException 
-     * @throws MBeanRegistrationException 
-     * 
+     *
+     * @throws NullPointerException
+     * @throws MalformedObjectNameException
+     * @throws InstanceNotFoundException
+     * @throws MBeanRegistrationException
      * @throws Exception
      */
-    public synchronized static void unregisterMXBean() throws MalformedObjectNameException, NullPointerException, MBeanRegistrationException, InstanceNotFoundException {
+    public synchronized static void unregisterMXBean()
+        throws MalformedObjectNameException,
+               NullPointerException,
+               MBeanRegistrationException,
+               InstanceNotFoundException
+    {
         if (registered) {
             ObjectName mxbeanName = new ObjectName("com.akiban:type=Tap");
             MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
@@ -412,502 +310,107 @@ public abstract class Tap {
             registered = false;
         }
     }
+    
+    public synchronized static void registerBadNestingHandler(BadNestingHandler badNestingHandler)
+    {
+        Tap.badNestingHandler = badNestingHandler;
+    }
 
-    protected final String name;
+    // For use by this package
 
-    /**
-     * Base constructor. Every Tap requires a name.
-     * 
-     * @param name
-     */
-    private Tap(final String name) {
+    abstract void in();
+
+    abstract void out();
+
+    abstract void appendReport(StringBuilder buffer);
+
+    abstract TapReport[] getReports();
+
+    // For use by subclasses
+
+    protected boolean checkNesting()
+    {
+        if (inCount != outCount) {
+            Tap.badNestingHandler.handleBadNesting(this);
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    protected Tap(String name)
+    {
         this.name = name;
     }
 
-    /**
-     * @return the name of the Tap
-     */
-    public String getName() {
-        return name;
+    // For use by this class
+
+    private static Dispatch add(Tap tap)
+    {
+        Dispatch dispatch = new Dispatch(tap.getName(), tap);
+        synchronized (DISPATCHES) {
+            Dispatch previous = DISPATCHES.put(tap.getName(), dispatch);
+            // TODO: Someday - breaks tests (e.g. PostgresServerSessionIT)
+            // assert previous == null;
+        }
+        return dispatch;
     }
 
-    /**
-     * Mark the beginning of a section of code to be timed. Package-private; should be invoked by PointTap or InOutTap.
-     */
-    abstract void in();
+    private static boolean defaultOn()
+    {
+        return Boolean.getBoolean(DEFAULT_ON_PROPERTY);
+    }
 
-    /**
-     * Mark the end of a section of code to be timed. Package-private; should be invoked by PointTap or InOutTap.
-     */
-    abstract void out();
-    
-    /**
-     * @return duration of time spent in section of code to be timed
-     */
-    public abstract long getDuration();
-
-    /**
-     * Reset any accumulated statistics to zero.
-     */
-    public abstract void reset();
-
-    /**
-     * Append text to the supplied {@link StringBuilder} containing the current
-     * accumulated statistics for this Tap. The Null Tap should do nothing.
-     * 
-     * @param sb
-     */
-    public abstract void appendReport(final StringBuilder sb);
-
-    /**
-     * Return a {@link TapReport} object containing the accumulated statistics
-     * for this Tap. The Null Tap should return null.
-     * 
-     * @return A Result object or <tt>null</tt>
-     */
-    public abstract TapReport getReport();
-    
-    private static String DEFAULT_ON_PROPERTY = "taps_default_on";
-
-    /**
-     * A {@link Tap} Implementation that simply dispatches to another Tap
-     * instance. Used to hold the "switch" that determines whether a Null,
-     * TimeAndCount or other kind of Tap is invoked.
-     * <p />
-     * Reason for this dispatch mechanism is that HotSpot seems to be able to
-     * optimize out a dispatch to an instance of Null. Therefore code can invoke
-     * the methods of a Dispatch object set to Null with low or no performance
-     * penalty.
-     */
-    private static class Dispatch extends Tap {
-
-        protected Tap currentTap;
-
-        protected Tap enabledTap;
-
-        public Dispatch(final String name, final Tap tap) {
-            super(name);
-            this.currentTap = new Null(name);
-            this.enabledTap = tap;
-        }
-
-        public final void setEnabled(final boolean on) {
-            currentTap = on ? enabledTap : new Null(name);
-        }
-
-        public void in() {
-            currentTap.in();
-        }
-
-        public void out() {
-            currentTap.out();
-        }
-        
-        public long getDuration() {
-            return currentTap.getDuration();
-        }
-
-        public void reset() {
-            currentTap.reset();
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void appendReport(final StringBuilder sb) {
-            currentTap.appendReport(sb);
-        }
-
-        public TapReport getReport() {
-            return currentTap.getReport();
-        }
-
-        public String toString() {
-            return currentTap.toString();
+    private static Collection<Dispatch> dispatchesCopy()
+    {
+        synchronized (DISPATCHES) {
+            return new ArrayList<Dispatch>(DISPATCHES.values());
         }
     }
 
-    /**
-     * A {@link Tap} subclass that does nothing. This is the initial target of
-     * every added {@link Tap.Dispatch}.
-     * 
-     */
-    private static class Null extends Tap {
+    // Class state
 
-        public Null(final String name) {
-            super(name);
+    static final Logger LOG = LoggerFactory.getLogger(Tap.class.getName());
+    static final String NEW_LINE = System.getProperty("line.separator");
+    private static final String DEFAULT_ON_PROPERTY = "taps_default_on";
+    private static final Comparator<TapReport> TAPS_BY_NAME_COMPARATOR = new Comparator<TapReport>()
+    {
+        @Override
+        public int compare(TapReport x, TapReport y)
+        {
+            return x.getName().compareTo(y.getName());
         }
-
-        public void in() {
-            // do nothing
-        }
-
-        public void out() {
-            // do nothing
-        }
-        
-        public long getDuration() {
-            return 0;
-        }
-
-        public void reset() {
-            // do nothing
-        }
-
-        public void appendReport(final StringBuilder sb) {
-            // do nothing;
-        }
-
-        public String toString() {
-            return "NullTap(" + name + ")";
-        }
-
-        public TapReport getReport() {
-            return null;
-        }
-    }
-
-    /**
-     * A Tap subclass that counts calls to {@link #in()} and {@link #out()}.
-     * Generally this is faster than {@link TimeAndCount} because the system
-     * clock is not read.
-     */
-    private static class Count extends Tap {
-
-        public Count(final String name) {
-            super(name);
-        }
-
-        volatile long inCount = 0;
-
-        volatile long outCount = 0;
-
-        public void in() {
-            inCount++;
-        }
-
-        public void out() {
-            outCount++;
-        }
-        
-        public long getDuration() {
-            return 0;
-        }
-
-        public void reset() {
-            inCount = 0;
-            outCount = 0;
-        }
-
-        public void appendReport(final StringBuilder sb) {
-            sb.append(String.format("%20s inCount=%,10d outCount=%,10d", name,
-                    inCount, outCount));
-        }
-
-        public String toString() {
-            return String.format("%s inCount=%,d outCount=%,d", name, inCount,
-                    outCount);
-        }
-
-        public TapReport getReport() {
-            return new TapReport(getName(), inCount, outCount, 0);
-        }
-    }
-
-    /**
-     * A Tap subclass that counts and times the intervals between calls to
-     * {@link #in()} and {@link #out()}.
-     */
-    private static class TimeAndCount extends Tap {
-
-        public TimeAndCount(final String name) {
-            super(name);
-        }
-
-        volatile long cumulativeNanos = 0;
-        volatile long inCount = 0;
-        volatile long outCount = 0;
-        volatile long inNanos = Long.MIN_VALUE;
-        volatile long startNanos = System.nanoTime();
-        volatile long endNanos = System.nanoTime();
-        volatile long lastDuration = Long.MIN_VALUE;
-
-        public void in() {
-            inCount++;
-            inNanos = System.nanoTime();
-        }
-
-        public void out() {
-            if (inNanos != Long.MIN_VALUE) {
-                long now = System.nanoTime();
-                endNanos = now;
-                lastDuration = now - inNanos;
-                cumulativeNanos += lastDuration;
-                outCount++;
-                inNanos = Long.MIN_VALUE;
-            }
-        }
-        
-        public long getDuration() {
-            return lastDuration;
-        }
-
-        public void reset() {
-            inCount = 0;
-            outCount = 0;
-            cumulativeNanos = 0;
-            inNanos = Long.MIN_VALUE;
-        }
-
-        public void appendReport(final StringBuilder sb) {
-            sb.append(String.format(
-                    "%20s inCount=%,10d outCount=%,10d time=%,12dms", name,
-                    inCount, outCount, cumulativeNanos / 1000000));
-            if (outCount > 0) {
-                sb.append(String.format("  per=%,12dns  interval=%,12dns",
-                        cumulativeNanos / outCount, (endNanos - startNanos)
-                                / outCount));
-            }
-        }
-
-        public String toString() {
-            return String.format("%s inCount=%,d outCount=%,d time=%,dms",
-                    name, inCount, outCount, cumulativeNanos / 1000000);
-        }
-
-        public TapReport getReport() {
-            return new TapReport(getName(), inCount, outCount, cumulativeNanos);
-        }
-
-    }
-
-    /**
-     * Tap implementation that aggregates information on a per-thread basis. An
-     * instance of this class maintains a collection of subordinate Taps, one
-     * per thread. These are created on demand as new threads invoke
-     * {@link #in()} or {@link #out()}.
-     * <p />
-     * By default each subordinate Tap is a {@link TimeAndCount}, but the
-     * two-argument constructor provides a way to override that default.
-     * 
-     */
-    static class PerThread extends Tap {
-
-        private static final Comparator<Thread> THREAD_COMPARATOR = new Comparator<Thread>() {
+    };
+    static final Map<String, Dispatch> DISPATCHES = new TreeMap<String, Dispatch>();
+    static volatile BadNestingHandler badNestingHandler =
+        new BadNestingHandler()
+        {
             @Override
-            public int compare(Thread o1, Thread o2) {
-                return o1.getName().compareTo(o2.getName());
+            public void handleBadNesting(Tap tap)
+            {
+/* TODO: Re-enable warnings
+                if ((count.getAndIncrement() % 1000) == 0) {
+                    LOG.warn("Bad nesting encountered for tap {}, in: {}, out: {}",
+                             new Object[]{tap.getName(), tap.inCount, tap.outCount});
+                    LOG.warn("you are here", new Exception());
+                }
+*/
             }
+            
+            private final AtomicLong count = new AtomicLong(0);
         };
-        private final ThreadLocal<Tap> threadLocal = new ThreadLocal<Tap>() {
-            @Override
-            protected Tap initialValue() {
-                Tap tap;
-                try {
-                    tap = clazz.getConstructor(String.class).newInstance(name);
-                } catch (Exception e) {
-                    tap = new Null(name);
-                    LOG.warn("Unable to create tap of class " + clazz.getSimpleName(), e);
-                }
-                threadMap.put(Thread.currentThread(), tap);
-                return tap;
-            }
-        };
+    private static boolean registered;
 
-        private final Map<Thread, Tap> threadMap = new ConcurrentHashMap<Thread, Tap>();
+    // Object state
 
-        private final Class<? extends Tap> clazz;
+    protected final String name;
+    protected volatile long inCount = 0;
+    protected volatile long outCount = 0;
 
-        /**
-         * {@link TapReport} subclass that contains map of subordinate TapReport
-         * instances, one per thread. The map key is threadName for simple
-         * correlation with
-         * 
-         * @author peter
-         * 
-         */
-        public static class PerThreadTapReport extends TapReport {
-
-            private final Map<String, TapReport> reportMap = new HashMap<String, TapReport>();
-
-            PerThreadTapReport(final String name, final long inCount,
-                    final long outCount, final long elapsedTime,
-                    Map<Thread, Tap> threadMap) {
-                super(name, inCount, outCount, elapsedTime);
-                for (final Map.Entry<Thread, Tap> entry : threadMap.entrySet()) {
-                    this.reportMap.put(
-                            entry.getKey().getName(),
-                            entry.getValue().getReport()
-                    );
-                }
-            }
-
-            public Map<String, TapReport> getTapReportMap() {
-                return new TreeMap<String, TapReport>(reportMap);
-            }
-        }
-
-        /**
-         * Create a PerThread instance the adds a new instance of the supplied
-         * subclass of {@link Tap} for each Thread. Note: the class
-         * {@link PerThread} may not itself be added.
-         * 
-         * @param name
-         *            Name of the Tap
-         * @param clazz
-         *            Class from which new Tap instances are created.
-         */
-        public PerThread(final String name, final Class<? extends Tap> clazz) {
-            super(name);
-            if (clazz == this.getClass()) {
-                throw new IllegalArgumentException("May not add a "
-                        + clazz.getName() + " to " + this);
-            }
-            this.clazz = clazz;
-        }
-
-        @Override
-        public void appendReport(StringBuilder sb) {
-            final Map<Thread, Tap> threadMap = new TreeMap<Thread, Tap>(THREAD_COMPARATOR);
-            threadMap.putAll(this.threadMap);
-            for (final Map.Entry<Thread, Tap> entry : threadMap.entrySet()) {
-                sb.append(NEW_LINE);
-                sb.append("==");
-                sb.append(entry.getKey().getName());
-                sb.append("==");
-                sb.append(NEW_LINE);
-                entry.getValue().appendReport(sb);
-            }
-        }
-
-        @Override
-        public TapReport getReport() {
-            long inCount = 0;
-            long outCount = 0;
-            long elapsedTime = 0;
-            for (final Tap tap : threadMap.values()) {
-                final TapReport threadTapReport = tap.getReport();
-                inCount += threadTapReport.getInCount();
-                outCount += threadTapReport.getOutCount();
-                elapsedTime += threadTapReport.getCumulativeTime();
-            }
-            return new PerThreadTapReport(name, inCount, outCount, elapsedTime, threadMap);
-        }
-
-        @Override
-        public void in() {
-            final Tap tap = getTap();
-            tap.in();
-        }
-
-        @Override
-        public void out() {
-            final Tap tap = getTap();
-            tap.out();
-        }
-        
-        @Override
-        public long getDuration() {
-            final Tap tap = getTap();
-            return tap.getDuration();
-        }
-
-        @Override
-        public void reset() {
-            for (final Tap tap : threadMap.values()) {
-                tap.reset();
-            }
-        }
-
-        @Override
-        public String toString() {
-            return "PerThread(" + clazz.getName() + ")";
-        }
-
-        private Tap getTap() {
-            return threadLocal.get();
-        }
-    }
-
-    /**
-     * A micro-benchmark to prove that a Dispatch to Null gets optimized away.
-     * Actually, the results are strange: the loop containing the added in/out
-     * calls seems to run a bit faster than the loop without those calls. We
-     * think this is an artifact of micro-benchmarking.
-     * 
-     * @param args
-     */
-    public static void main(final String[] args) {
-        final Dispatch t1 = add(new TimeAndCount("t1"));
-        final Dispatch t2 = add(new TimeAndCount("t2"));
-        t1.setEnabled(true);
-
-        long z = 0;
-
-        long count = 1000 * 1000 * 1000;
-
-        {
-            System.out.print("Loop " + count + " times, Null Tap invoked: ");
-            t1.in();
-            long t = 0;
-            for (long i = 0; i < count; i++) {
-                t2.in();
-                t = t + i;
-                if (t > count) {
-                    t = t / 2;
-                }
-                t2.out();
-            }
-            t1.out();
-            System.out.println("  " + t1.toString());
-            t1.reset();
-            z += t;
-        }
-
-        {
-            System.out.print("Loop " + count + " times, no Tap");
-            t1.in();
-            long t = 0;
-            for (long i = 0; i < count; i++) {
-                t = t + i;
-                if (t > count) {
-                    t = t / 2;
-                }
-            }
-            t1.out();
-            System.out.println("  " + t1.toString());
-            t1.reset();
-            z += t;
-        }
-
-        count = count / 100;
-
-        {
-            System.out.print("Loop " + count
-                    + " times, TimeAndCount Tap invoked: ");
-            t2.setEnabled(true);
-            t1.in();
-            long t = 0;
-            for (long i = 0; i < count; i++) {
-                t2.in();
-                t = t + i;
-                if (t > count) {
-                    t = t / 2;
-                }
-                t2.out();
-            }
-            t1.out();
-            System.out.println("  " + t1.toString());
-            t1.reset();
-            z += t;
-        }
-
-        System.out.println("Report:");
-        System.out.println(report());
-
-        System.out.println("Printing a computed result to make sure "
-                + "HotSpot doesn't optimize the whole computation away: " + z);
-
+    // Inner classes
+    
+    public interface BadNestingHandler
+    {
+        void handleBadNesting(Tap tap);
     }
 }

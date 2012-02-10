@@ -15,6 +15,7 @@
 
 package com.akiban.ais.model;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -43,7 +44,7 @@ public class HKeyColumn
     public List<Column> equivalentColumns()
     {
         if (equivalentColumns == null) {
-            assert column.getTable().isGroupTable() : "null equivalentColumns on non-group-table column: "  + column;
+            assert column.getTable().isGroupTable() : "null equivalentColumns on non-group-table column: " + column;
             throw new UnsupportedOperationException("group tables have no equivalent columns");
         }
         return equivalentColumns;
@@ -62,6 +63,24 @@ public class HKeyColumn
         if (column.getTable().isUserTable()) {
             UserTable userTable = (UserTable) column.getTable();
             this.equivalentColumns = Collections.unmodifiableList(userTable.matchingColumns(column));
+        }
+    }
+
+    // For use by this class
+    
+    private void findDependentTables(Column column, UserTable table, List<UserTable> dependentTables)
+    {
+        boolean dependent = false;
+        for (HKeySegment segment : table.hKey().segments()) {
+            for (HKeyColumn hKeyColumn : segment.columns()) {
+                dependent = dependent || hKeyColumn.column() == column;
+            }
+        }
+        if (dependent) {
+            dependentTables.add(table);
+        }
+        for (Join join : table.getChildJoins()) {
+            findDependentTables(column, join.getChild(), dependentTables);
         }
     }
 

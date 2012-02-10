@@ -27,6 +27,7 @@ public class DefaultRules
         new AggregateMapper(),
         new ConstantFolder(),
         new OuterJoinPromoter(),
+        new ColumnEquivalenceFinder(),
         new GroupJoinFinder(),
         new InConditionReverser(),
         new IndexPicker(),
@@ -37,7 +38,6 @@ public class DefaultRules
         new SortSplitter(),
         new MapFolder(),
         new ExpressionCompactor(),
-        new EnvironmentFunctionFinder(),
         new OperatorAssembler()
      );
 

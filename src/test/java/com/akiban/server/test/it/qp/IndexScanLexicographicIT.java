@@ -70,6 +70,7 @@ public class IndexScanLexicographicIT extends OperatorITBase
             createNewRow(t, 1007L, 5L, 55L, 555L),
         };
         adapter = persistitAdapter(schema);
+        queryContext = queryContext(adapter);
         use(db);
     }
 
@@ -185,7 +186,7 @@ public class IndexScanLexicographicIT extends OperatorITBase
             int id = expectedIds[i];
             expected[i] = dbRow(id);
         }
-        compareRows(expected, cursor(plan, adapter));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     private void dump(IndexKeyRange keyRange, API.Ordering ordering, int ... expectedIds)

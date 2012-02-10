@@ -41,6 +41,7 @@ public class HKeySegment
 
     public HKeySegment(HKey hKey, UserTable table)
     {
+        this.hKey = hKey;
         this.table = table;
         if (hKey.segments().isEmpty()) {
             this.positionInHKey = 0;
@@ -51,6 +52,11 @@ public class HKeySegment
                 ? lastSegment.positionInHKey() + 1
                 : lastSegment.columns().get(lastSegment.columns().size() - 1).positionInHKey() + 1;
         }
+    }
+    
+    public HKey hKey()
+    {
+        return hKey;
     }
 
     public UserTable table()
@@ -79,6 +85,7 @@ public class HKeySegment
     public HKeySegment()
     {}
 
+    private HKey hKey;
     private UserTable table;
     private List<HKeyColumn> columns = new ArrayList<HKeyColumn>();
     private int positionInHKey;

@@ -16,7 +16,7 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.ParseException;
+import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.error.UnsupportedParametersException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.dxl.DXLFunctionsHook;
@@ -57,18 +57,15 @@ public class PostgresDDLStatement implements PostgresStatement
     }
 
     @Override
-    public PostgresStatement getBoundStatement(Object[] parameters,
-                                               boolean[] columnBinary, 
-                                               boolean defaultColumnBinary){
-        if (parameters != null)
-            throw new UnsupportedParametersException ();
-        return this;
+    public PostgresType[] getParameterTypes() {
+        return null;
     }
 
     @Override
-    public void sendDescription(PostgresServerSession server, boolean always) 
+    public void sendDescription(PostgresQueryContext context, boolean always) 
             throws IOException {
         if (always) {
+            PostgresServerSession server = context.getServer();
             PostgresMessenger messenger = server.getMessenger();
             messenger.beginMessage(PostgresMessages.NO_DATA_TYPE.code());
             messenger.sendMessage();
@@ -81,8 +78,8 @@ public class PostgresDDLStatement implements PostgresStatement
     }
 
     @Override
-    public int execute(PostgresServerSession server, int maxrows)
-            throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+        PostgresServerSession server = context.getServer();
         AkibanInformationSchema ais = server.getAIS();
         String schema = server.getDefaultSchemaName();
         DDLFunctions ddlFunctions = server.getDXL().ddlFunctions();
@@ -106,8 +103,9 @@ public class PostgresDDLStatement implements PostgresStatement
                 // TODO: Need to store persistently in AIS (or its extension).
                 try {
                     ((AISBinder)server.getAttribute("aisBinder")).addView(new ViewDefinition(ddl, server.getParser()));
-                } catch (StandardException ex) {
-                    throw new ParseException ("", ex.getMessage(), ddl.toString());
+                } 
+                catch (StandardException ex) {
+                    throw new SQLParserInternalException(ex);
                 }
                 break;
             case NodeTypes.DROP_VIEW_NODE:

@@ -26,7 +26,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
-import com.akiban.server.error.ParseException;
+import com.akiban.server.error.SchemaDefParseException;
 import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.session.Session;
@@ -37,7 +37,7 @@ public interface DDLFunctions {
      * @param session the Session to run under.
      * @param schema may be null; if it is, and the schema must be provided in the DDL text
      * @param ddlText the DDL text: <tt>CREATE TABLE....</tt>
-     * @throws ParseException if the given schema is <tt>null</tt> and no schema is provided in the DDL;
+     * @throws SchemaDefParseException if the given schema is <tt>null</tt> and no schema is provided in the DDL;
      *  or if there is some other parse error
      * exists
      */
