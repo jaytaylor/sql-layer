@@ -1,4 +1,6 @@
 Index: names
+RowCount: 1600
+SampledCount: 100
 Statistics:
 - Columns: 1
   Histogram:
@@ -21,8 +23,11 @@ Statistics:
     key: [MMM, zzz]
     lt: 900
 Table: parent
+Timestamp: 2010-01-01T00:00:00Z
 ---
 Index: name
+RowCount: 1600
+SampledCount: 100
 Statistics:
 - Columns: 1
   Histogram:
@@ -35,3 +40,4 @@ Statistics:
     key: [MMM]
     lt: 900
 Table: parent
+Timestamp: 2010-01-01T00:00:00Z

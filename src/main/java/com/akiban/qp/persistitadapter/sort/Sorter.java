@@ -15,10 +15,7 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.OperatorExecutionBase;
-import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.*;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
@@ -26,7 +23,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.PersistitValueValueSource;
 import com.akiban.server.PersistitValueValueTarget;
-import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.std.LiteralExpression;
@@ -35,6 +31,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.util.tap.InOutTap;
 import com.persistit.*;
 import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
@@ -50,7 +47,8 @@ public class Sorter
                   Cursor input, 
                   RowType rowType, 
                   API.Ordering ordering,
-                  API.SortOption sortOption)
+                  API.SortOption sortOption,
+                  InOutTap loadTap)
         throws PersistitException
     {
         this.context = context;
@@ -91,6 +89,7 @@ public class Sorter
             evaluation.of(context);
             evaluations.add(evaluation);
         }
+        this.loadTap = loadTap;
     }
 
     public Cursor sort() throws PersistitException
@@ -127,12 +126,20 @@ public class Sorter
     private void loadTree() throws PersistitException
     {
         try {
-            Row row;
-            while ((row = input.next()) != null) {
-                adapter.checkQueryCancelation(queryStartTimeMsec);
-                createKey(row);
-                createValue(row);
-                exchange.store();
+            loadTap.in();
+            try {
+                Row row = input.next();
+                while (row != null) {
+                    adapter.checkQueryCancelation(queryStartTimeMsec);
+                    createKey(row);
+                    createValue(row);
+                    exchange.store();
+                    loadTap.out();
+                    loadTap.in();
+                    row = input.next();
+                }
+            } finally {
+                loadTap.out();
             }
         } catch (PersistitException e) {
             LOG.error("Caught exception while loading tree for sort", e);
@@ -223,6 +230,7 @@ public class Sorter
     Exchange exchange;
     long rowCount = 0;
     long queryStartTimeMsec;
+    private final InOutTap loadTap;
 
     // Inner classes
 
@@ -285,11 +293,6 @@ public class Sorter
         {
             sortsInProgress--;
             assert sortsInProgress >= 0;
-            return sortsInProgress;
-        }
-
-        public int sortsInProgress()
-        {
             return sortsInProgress;
         }
 

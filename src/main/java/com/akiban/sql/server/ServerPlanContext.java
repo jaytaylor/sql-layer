@@ -13,15 +13,24 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.akiban.sql.server;
 
-import com.akiban.server.store.statistics.IndexStatistics;
+import com.akiban.sql.optimizer.plan.PlanContext;
 
-import com.akiban.ais.model.Index;
+import com.akiban.qp.operator.QueryContext;
 
-public abstract class IndexEstimator
+public class ServerPlanContext extends PlanContext
 {
-    public abstract IndexStatistics getIndexStatistics(Index index);
+    private ServerQueryContext<?> queryContext;
 
-    // TODO: More non-abstract to come.
+    public ServerPlanContext(ServerOperatorCompiler rulesContext, ServerQueryContext<?> queryContext) {
+        super(rulesContext);
+        this.queryContext = queryContext;
+    }
+
+    @Override
+    public QueryContext getQueryContext() {
+        return queryContext;
+    }
+
 }

@@ -22,6 +22,7 @@ import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.tap.InOutTap;
 
 /**
 
@@ -86,6 +87,13 @@ public class ValuesScan_Default extends Operator
         this.rowType = rowType;
     }
 
+    // Class state
+    
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: ValuesScan_Default open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: ValuesScan_Default next");
+    
+    // Object state
+    
     private final Collection<? extends BindableRow> rows;
     private final RowType rowType;
     
@@ -106,16 +114,26 @@ public class ValuesScan_Default extends Operator
 
         @Override
         public Row next() {
-            if (iter != null && iter.hasNext()) {
-                return iter.next().bind(context);
-            } else {
-                return null;
+            TAP_NEXT.in();
+            try {
+                if (iter != null && iter.hasNext()) {
+                    return iter.next().bind(context);
+                } else {
+                    return null;
+                }
+            } finally {
+                TAP_NEXT.out();
             }
         }
 
         @Override
         public void open() {
-            iter = rows.iterator();
+            TAP_OPEN.in();
+            try {
+                iter = rows.iterator();
+            } finally {
+                TAP_OPEN.out();
+            }
         }
     }
 }

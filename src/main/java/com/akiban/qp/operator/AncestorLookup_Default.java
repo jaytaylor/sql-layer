@@ -24,6 +24,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
@@ -63,9 +64,9 @@ import java.util.*;
 
  <li><b>List<RowType> ancestorTypes:</b> Ancestor types to be located.
 
- <li><b>boolean keepInput:</b> Indicates whether rows of type rowType
- will be preserved in the output stream (keepInput = true), or
- discarded (keepInput = false).
+ <li><b>API.LookupOption flag:</b> Indicates whether rows of type rowType
+ will be preserved in the output stream (flag = KEEP_INPUT), or
+ discarded (flag = DISCARD_INPUT).
 
  </ul>
 
@@ -203,7 +204,8 @@ class AncestorLookup_Default extends Operator
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(AncestorLookup_Default.class);
-    private static final PointTap ANC_LOOKUP_COUNT = Tap.createCount("operator: ancestor_lookup", true);
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: AncestorLookup_Default open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: AncestorLookup_Default next");
 
     // Object state
 
@@ -223,23 +225,32 @@ class AncestorLookup_Default extends Operator
         @Override
         public void open()
         {
-            input.open();
-            advance();
-            ANC_LOOKUP_COUNT.hit();
+            TAP_OPEN.in();
+            try {
+                input.open();
+                advance();
+            } finally {
+                TAP_OPEN.out();
+            }
         }
 
         @Override
         public Row next()
         {
-            checkQueryCancelation();
-            while (pending.isEmpty() && inputRow.isHolding()) {
-                advance();
+            TAP_NEXT.in();
+            try {
+                checkQueryCancelation();
+                while (pending.isEmpty() && inputRow.isHolding()) {
+                    advance();
+                }
+                Row row = pending.take();
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("AncestorLookup: {}", row == null ? null : row);
+                }
+                return row;
+            } finally {
+                TAP_NEXT.out();
             }
-            Row row = pending.take();
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("AncestorLookup: {}", row == null ? null : row);
-            }
-            return row;
         }
 
         @Override

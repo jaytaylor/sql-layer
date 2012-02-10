@@ -101,6 +101,7 @@ public enum ErrorCode {
     // Class 0Z - diagnostics exceptions
     
     // Class 21 - cardinality violation
+    SUBQUERY_TOO_MANY_ROWS  ("21", "000", Importance.DEBUG, SubqueryTooManyRowsException.class),
     // Class 22 - data exception
         // SubClass 001 - string data, right truncation
         // SubClass 002 - null value, no indicator parameter 

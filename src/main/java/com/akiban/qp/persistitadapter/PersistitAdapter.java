@@ -87,10 +87,11 @@ public class PersistitAdapter extends StoreAdapter
                        Cursor input,
                        RowType rowType,
                        API.Ordering ordering,
-                       API.SortOption sortOption)
+                       API.SortOption sortOption,
+                       InOutTap loadTap)
     {
         try {
-            return new Sorter(context, input, rowType, ordering, sortOption).sort();
+            return new Sorter(context, input, rowType, ordering, sortOption, loadTap).sort();
         } catch (PersistitException e) {
             handlePersistitException(e);
             throw new AssertionError();

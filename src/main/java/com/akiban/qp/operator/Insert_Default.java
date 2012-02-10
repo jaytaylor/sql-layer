@@ -82,10 +82,11 @@ class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
     public UpdateResult run(QueryContext context) {
         context(context);
         int seen = 0, modified = 0;
+        Cursor inputCursor = null;
         INSERT_TAP.in();
-        Cursor inputCursor = inputOperator.cursor(context);
-        inputCursor.open();
         try {
+            inputCursor = inputOperator.cursor(context);
+            inputCursor.open();
             Row row;
             while ((row = inputCursor.next()) != null) {
                 checkQueryCancelation();
@@ -98,7 +99,9 @@ class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
 
             }
         } finally {
-            inputCursor.close();
+            if (inputCursor != null) {
+                inputCursor.close();
+            }
             INSERT_TAP.out();
         }
         return new StandardUpdateResult(seen, modified);
@@ -125,7 +128,7 @@ class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
     }
 
     private final Operator inputOperator;
-    private static final InOutTap INSERT_TAP = Tap.createTimer("operator: insert");
+    private static final InOutTap INSERT_TAP = Tap.createTimer("operator: Insert_Default");
     private static final Logger LOG = LoggerFactory.getLogger(Insert_Default.class);
 
 }

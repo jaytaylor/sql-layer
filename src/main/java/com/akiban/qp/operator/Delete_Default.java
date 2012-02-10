@@ -96,10 +96,11 @@ class Delete_Default extends OperatorExecutionBase implements UpdatePlannable {
     public UpdateResult run(QueryContext context) {
         context(context);
         int seen = 0, modified = 0;
+        Cursor inputCursor = null;
         DELETE_TAP.in();
-        Cursor inputCursor = inputOperator.cursor(context);
-        inputCursor.open();
         try {
+            inputCursor = inputOperator.cursor(context);
+            inputCursor.open();
             Row oldRow;
             while ((oldRow = inputCursor.next()) != null) {
                 checkQueryCancelation();
@@ -108,7 +109,9 @@ class Delete_Default extends OperatorExecutionBase implements UpdatePlannable {
                 ++modified;
             }
         } finally {
-            inputCursor.close();
+            if (inputCursor != null) {
+                inputCursor.close();
+            }
             DELETE_TAP.out();
         }
         return new StandardUpdateResult(seen, modified);
@@ -130,6 +133,5 @@ class Delete_Default extends OperatorExecutionBase implements UpdatePlannable {
     }
 
     private final Operator inputOperator;
-    private static final InOutTap DELETE_TAP = Tap.createTimer("operator: delete");
-
+    private static final InOutTap DELETE_TAP = Tap.createTimer("operator: Delete_Default");
 }

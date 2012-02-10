@@ -31,24 +31,22 @@ public class InOutTap
 
     /**
      * Reset the tap.
-     *
-     * @deprecated using this method indicates an improper separation of concerns between defining events (which
-     *             is what this class does) and reporting on them.
      */
-    @Deprecated
     public void reset()
     {
         internal.reset();
+    }
+    
+    public InOutTap createSubsidiaryTap(String name)
+    {
+        return internal.createSubsidiaryTap(name, this);
     }
 
     /**
      * Gets the duration of the tap's in-to-out timer.
      *
      * @return the tap's duration
-     * @deprecated using this method indicates an improper separation of concerns between defining events (which
-     *             is what this class does) and reporting on them.
      */
-    @Deprecated
     public long getDuration()
     {
         return internal.getDuration();
@@ -58,16 +56,18 @@ public class InOutTap
      * Gets the tap's report
      *
      * @return the underlying tap's report
-     * @deprecated using this method indicates an improper separation of concerns between defining events (which
-     *             is what this class does) and reporting on them.
      */
-    @Deprecated
-    public TapReport getReport()
+    public TapReport[] getReports()
     {
-        return internal.getReport();
+        return internal.getReports();
     }
 
     // For use by this package
+    
+    Tap internal()
+    {
+        return internal;
+    }
 
     InOutTap(Tap internal)
     {
