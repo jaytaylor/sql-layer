@@ -20,8 +20,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.util.ArgumentValidation;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
+import com.akiban.util.tap.InOutTap;
 
 /**
 
@@ -97,8 +96,9 @@ class GroupScan_Default extends Operator
     }
     
     // Class state
-    
-    private static final PointTap GROUP_SCAN_COUNT = Tap.createCount("operator: group_scan", true);
+
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: GroupScan_Default open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: GroupScan_Default next");
 
     // Object state
 
@@ -114,20 +114,29 @@ class GroupScan_Default extends Operator
         @Override
         public void open()
         {
-            GROUP_SCAN_COUNT.hit();
-            cursor.open();
+            TAP_OPEN.in();
+            try {
+                cursor.open();
+            } finally {
+                TAP_OPEN.out();
+            }
         }
 
         @Override
         public Row next()
         {
-            checkQueryCancelation();
-            Row row;
-            if ((row = cursor.next()) == null) {
-                close();
-                row = null;
+            TAP_NEXT.in();
+            try {
+                checkQueryCancelation();
+                Row row;
+                if ((row = cursor.next()) == null) {
+                    close();
+                    row = null;
+                }
+                return row;
+            } finally {
+                TAP_NEXT.out();
             }
-            return row;
         }
 
         @Override
@@ -314,15 +323,6 @@ class GroupScan_Default extends Operator
             this.deep = deep;
             this.atTable = hKeyType;
             this.stopSearchTable = shortenUntil;
-        }
-
-        private int[] hKeyDepths(UserTable hKeyType, UserTable shortenUntil) {
-            int[] result = new int[shortenUntil.getDepth() - hKeyType.getDepth() + 1];
-            int i = 0;
-            for(UserTable curr = hKeyType; curr != null && curr != shortenUntil.parentTable(); curr = curr.parentTable()) {
-                result[i] = curr.getDepth() + 1;
-            }
-            return result;
         }
 
         private HKey getHKeyFromBindings() {

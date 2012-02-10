@@ -22,13 +22,87 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
-
+import com.akiban.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+
+/**
+
+ <h1>Overview</h1>
+
+ AncestorLookup_Nested locates ancestors of both group rows and index rows. Ancestors are located 
+ using the hkey in a row of the current query's QueryContext.
+
+ One expected usage is to locate the group row corresponding to an
+ index row. For example, an index on customer.name yields index rows
+ which AncestorLookup_Default can then use to locate customer
+ rows. (The ancestor relationship is reflexive, e.g. customer is
+ considered to be an ancestor of customer.)
+
+ Another expected usage is to locate ancestors higher in the group. For
+ example, given either an item row or an item index row,
+ AncestorLookup_Default can be used to find the corresponding order and
+ customer.
+
+ AncestorLookup_Nested always locates 0-1 row per ancestor type.
+
+ <h1>Arguments</h1>
+
+ <ul>
+
+ <li><b>GroupTable groupTable:</b> The group table containing the
+ ancestors of interest.
+
+ <li><b>RowType rowType:</b> Ancestors will be located for input rows
+ of this type.
+
+ <li><b>List<RowType> ancestorTypes:</b> Ancestor types to be located.
+
+ <li><b>int inputBindingPosition:</b> Indicates input row's position in the query context. The hkey
+ of this row will be used to locate ancestors.
+
+ </ul>
+
+ rowType may be an index row type or a group row type. For a group row
+ type, rowType must not be one of the ancestorTypes. For an index row
+ type, rowType may be one of the ancestorTypes.
+
+ The groupTable, rowType, and all ancestorTypes must belong to the same
+ group.
+
+ Each ancestorType must be an ancestor of the rowType (or, if rowType
+ is an index type, then an ancestor of the index's table's type).
+
+ <h1>Behavior</h1>
+ 
+ When this operator's cursor is opened, the row at position inputBindingPosition in the
+ query context is accessed. The hkey from this row is obtained. For each ancestor type, the
+ hkey is shortened if necessary, and the groupTable is then searched for
+ a record with that exact hkey. All the retrieved records are written
+ to the output stream in hkey order (ancestors before descendents), as
+ is the input row if keepInput is true.
+
+ <h1>Output</h1>
+
+ Nothing else to say.
+
+ <h1>Assumptions</h1>
+
+ None.
+
+ <h1>Performance</h1>
+
+ For each input row, AncestorLookup_Default does one random access for
+ each ancestor type.
+
+ <h1>Memory Requirements</h1>
+
+ AncestorLookup_Default stores in memory up to (ancestorTypes.size() +
+ 1) rows.
+
+ */
 
 class AncestorLookup_Nested extends Operator
 {
@@ -115,7 +189,8 @@ class AncestorLookup_Nested extends Operator
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(AncestorLookup_Nested.class);
-    private static final PointTap ANC_LOOKUP_COUNT = Tap.createCount("operator: ancestor_lookup_nested", true);
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: AncestorLookup_Nested open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: AncestorLookup_Nested next");
 
     // Object state
 
@@ -134,28 +209,37 @@ class AncestorLookup_Nested extends Operator
         @Override
         public void open()
         {
-            ANC_LOOKUP_COUNT.hit();
-            Row rowFromBindings = context.getRow(inputBindingPosition);
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("AncestorLookup_Nested: open using {}", rowFromBindings);
+            TAP_OPEN.in();
+            try {
+                Row rowFromBindings = context.getRow(inputBindingPosition);
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("AncestorLookup_Nested: open using {}", rowFromBindings);
+                }
+                assert rowFromBindings.rowType() == rowType : rowFromBindings;
+                rowFromBindings.hKey().copyTo(hKey);
+                findAncestors();
+            } finally {
+                TAP_OPEN.out();
             }
-            assert rowFromBindings.rowType() == rowType : rowFromBindings;
-            rowFromBindings.hKey().copyTo(hKey);
-            findAncestors();
         }
 
         @Override
         public Row next()
         {
-            checkQueryCancelation();
-            Row row = pending.take();
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("AncestorLookup: {}", row == null ? null : row);
+            TAP_NEXT.in();
+            try {
+                checkQueryCancelation();
+                Row row = pending.take();
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("AncestorLookup: {}", row == null ? null : row);
+                }
+                if (row == null) {
+                    close();
+                }
+                return row;
+            } finally {
+                TAP_NEXT.out();
             }
-            if (row == null) {
-                close();
-            }
-            return row;
         }
 
         @Override

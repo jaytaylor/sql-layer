@@ -31,12 +31,14 @@ import com.akiban.server.error.ServiceNotStartedException;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.jmx.JmxManageable;
+import com.akiban.util.tap.Tap;
 
 public class ConfigurationServiceImpl implements ConfigurationService,
         ConfigurationServiceMXBean, JmxManageable,
         Service<ConfigurationService> {
     private final static String CONFIG_DEFAULTS_RESOURCE = "configuration-defaults.properties";
     private final static String AKIBAN_ADMIN = "akiban.admin";
+    private static final String INITIALLY_ENABLED_TAPS = "taps.initiallyenabled";
     /** Chunkserver properties. Format specified by chunkserver. */
 
     public static final String CONFIG_CHUNKSERVER = "/config/server.properties";
@@ -119,8 +121,7 @@ public class ConfigurationServiceImpl implements ConfigurationService,
             if (properties == null) {
                 properties = null;
                 Map<String, Property> newMap = internalLoadProperties();
-                for (Map.Entry<String, Property> entry : newMap
-                        .entrySet()) {
+                for (Map.Entry<String, Property> entry : newMap.entrySet()) {
                     if (!entry.getKey().equals(entry.getValue().getKey())) {
                         throw new ServiceStartupException(
                                 String.format(
@@ -129,7 +130,10 @@ public class ConfigurationServiceImpl implements ConfigurationService,
                     }
                 }
                 properties = Collections.unmodifiableMap(newMap);
-
+            }
+            Property initiallyEnabledTaps = properties.get(INITIALLY_ENABLED_TAPS);
+            if (initiallyEnabledTaps != null) {
+                Tap.setInitiallyEnabled(initiallyEnabledTaps.getValue());
             }
         }
     }

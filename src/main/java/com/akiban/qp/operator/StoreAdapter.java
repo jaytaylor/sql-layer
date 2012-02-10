@@ -22,6 +22,7 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.util.tap.InOutTap;
 
 public abstract class StoreAdapter
 {
@@ -50,7 +51,8 @@ public abstract class StoreAdapter
                                 Cursor input,
                                 RowType rowType,
                                 API.Ordering ordering,
-                                API.SortOption sortOption);
+                                API.SortOption sortOption,
+                                InOutTap loadTap);
 
     public abstract void checkQueryCancelation(long queryStartMsec);
 
