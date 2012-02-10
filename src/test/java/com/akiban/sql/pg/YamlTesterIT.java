@@ -1532,7 +1532,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 
     @Test
     public void testIgnoreBulkloadCommand() {
-        testYaml("---\n- Bulkload: /home/akiba/fts_basis.properties\n"+
+        testYamlFail("---\n- Bulkload: /home/akiba/fts_basis.properties\n"+
         "- properties: {'dataset.coi.address.ratio': 3, 'dataset.coi.order.ratio': 2, 'dataset.coi.customer.count': 200, 'dataset.coi.item.ratio': 2}\n...");
     }
     
@@ -1809,7 +1809,6 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "    [!re '[0-9]+', !re 'Invalid .*'],\n" +
                  "    [!re '[0-9]+', !re 'Invalid .*']]");
     }
-
 
     /* Other methods */
 

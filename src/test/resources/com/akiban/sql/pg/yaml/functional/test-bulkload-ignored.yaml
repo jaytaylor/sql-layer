@@ -1,8 +1,0 @@
----
-- Properties: sys-aksql
-- suppressed: true
---- 
-- Bulkload: $fts_basis.properties
-- properties: {'dataset.coi.address.ratio': 3, 'dataset.coi.order.ratio': 2, 'dataset.coi.customer.count': 200, 'dataset.coi.item.ratio': 2}
-...
-
