@@ -203,11 +203,20 @@ public abstract class DPhyp<P>
         setPlan(s, plan);
     }
 
+    /** Return the best plan for the one-table initial state. */
     public abstract P evaluateTable(Joinable table);
+
+    /** Adjust best plan <code>existing</code> for the join of
+     * <code>p1</code> and <code>p2</code> of the given type with the
+     * given conditions.
+     */
     public abstract P evaluateJoin(P p1, P p2, P existing, 
                                    JoinType joinType, ConditionList joinConditions);
 
     /** Initialize state from the given join tree. */
+    // TODO: Need to do something about disconnected overall. The
+    // cross-product isn't going to do very well no matter what. Maybe
+    // just break up the graph _before_ calling all this?
     public void init(Joinable root, ConditionList whereConditions) {
         tables = new ArrayList<Joinable>();
         addTables(root);
@@ -462,7 +471,6 @@ public abstract class DPhyp<P>
     }
 
     /** Compute tables used in join predicate. */
-    // TODO: Also need to record whether null-tolerant and prevent more ordering if so.
     static class ExpressionTables implements ExpressionVisitor, PlanVisitor {
         List<Joinable> tables;
         long result;
