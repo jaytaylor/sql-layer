@@ -33,6 +33,8 @@ import java.util.*;
  */
 public abstract class DPhyp<P>
 {
+    private static final boolean TRACE = false;
+
     // The leaves of the join tree: tables, derived tables, and
     // possibly joins handled atomically wrt this phase.
     private List<Joinable> tables;
@@ -50,7 +52,7 @@ public abstract class DPhyp<P>
         return (P)plans[(int)s];
     }
     private void setPlan(long s, P plan) {
-        if (false)
+        if (TRACE)
             System.out.println(JoinableBitSet.toString(s, tables) + ": " + plan);
         plans[(int)s] = plan;
     }
@@ -173,22 +175,31 @@ public abstract class DPhyp<P>
         P p1 = getPlan(s1);
         P p2 = getPlan(s2);
         long s = JoinableBitSet.union(s1, s2);
-        JoinOperator operator = null;
+        JoinType joinType = JoinType.INNER;
+        ConditionList joinConditions = null;
+        boolean newConditions = false;
         for (int e = 0; e < nedges; e++) {
             if (JoinableBitSet.isSubset(edges[e], s1) &&
                 JoinableBitSet.isSubset(edges[e^1], s2)) {
-                // TODO: When can more than one apply?
-                assert (operator == null);
-                operator = operators.get(e/2); // The one that produced this edge.
+                // The one that produced this edge.
+                JoinOperator operator = operators.get(e/2);
+                joinType = operator.getJoinType();
+                if (joinConditions == null) {
+                    joinConditions = operator.joinConditions;
+                }
+                else {
+                    if (!newConditions) {
+                        joinConditions = new ConditionList(joinConditions);
+                        newConditions = true;
+                    }
+                    joinConditions.addAll(operator.joinConditions);
+                }
             }
         }
-        assert (operator != null);
         P plan = getPlan(s);
-        plan = evaluateJoin(p1, p2, plan, 
-                            operator.getJoinType(), operator.joinConditions);
-        if (isCommutative(operator.getJoinType()))
-            plan = evaluateJoin(p2, p1, plan, 
-                                operator.getJoinType(), operator.joinConditions);
+        plan = evaluateJoin(p1, p2, plan, joinType, joinConditions);
+        if (isCommutative(joinType))
+            plan = evaluateJoin(p2, p1, plan, joinType, joinConditions);
         setPlan(s, plan);
     }
 
@@ -211,7 +222,7 @@ public abstract class DPhyp<P>
         addWhereConditions(whereConditions, visitor);
         noperators = operators.size();
         nedges = noperators * 2;
-        if (false) {
+        if (TRACE) {
             for (int e = 0; e < nedges; e += 2) {
                 System.out.println(JoinableBitSet.toString(edges[e], tables) + " <-> " +
                                    JoinableBitSet.toString(edges[e^1], tables));
@@ -391,6 +402,7 @@ public abstract class DPhyp<P>
                 ((op.right == null) || allInnerJoins(op.right)));
     }
 
+    /** Get join conditions from top-level WHERE predicates. */
     protected void addWhereConditions(ConditionList whereConditions, 
                                       ExpressionTables visitor) {
         for (ConditionExpression condition : whereConditions) {
@@ -417,6 +429,7 @@ public abstract class DPhyp<P>
         }
     }
 
+    /** Is this a single column in a known table? */
     protected long columnReferenceTable(ExpressionNode node) {
         if (node instanceof ColumnExpression) {
             int idx = tables.indexOf(((ColumnExpression)node).getTable());
@@ -424,9 +437,15 @@ public abstract class DPhyp<P>
                 return JoinableBitSet.of(idx);
             }
         }
-        return 0;
+        return JoinableBitSet.empty();
     }
 
+    /** Add an edge for the tables in this simple condition. 
+     * There are no extra reordering constraints, since this is just a
+     * WHERE condition. Furthermore, its tables ought to be in INNER
+     * joins, since such a null-intolerent condition implies that they
+     * aren't missing.
+     */
     protected void addWhereCondition(ConditionExpression condition,
                                      long columnTables, long comparisonTables) {
         if (!JoinableBitSet.isEmpty(comparisonTables) &&
@@ -434,6 +453,7 @@ public abstract class DPhyp<P>
             JoinOperator op = new JoinOperator(condition);
             op.leftTables = columnTables;
             op.rightTables = comparisonTables;
+            op.predicateTables = op.getTables();
             int o = operators.size();
             operators.add(op);
             edges[o*2] = columnTables;

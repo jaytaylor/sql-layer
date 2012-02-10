@@ -1,3 +1,5 @@
+clique-3: 3-way conditions with WHERE
+
 inner-2: two tables
 
 inner-3: three tables
