@@ -53,7 +53,16 @@ public class ArithOps
        public BigInteger evaluate (BigInteger one, BigInteger two)
        {
            return one.multiply(two);
-       } 
+       }
+       
+        @Override
+        protected void adjustVarchar(TypesList args, int index) throws StandardException
+        {
+            AkType type2 = args.get(index).getType();
+
+            if (type2 == AkType.INTERVAL_MILLIS || type2 == AkType.INTERVAL_MONTH)
+                args.setType(1 - index, AkType.DOUBLE);
+        }
     };
     
     @Scalar("minus")
@@ -82,6 +91,27 @@ public class ArithOps
        {
            return one.subtract(two);
        }        
+    
+        @Override
+        protected void adjustVarchar(TypesList args, int index) throws StandardException
+        {
+            AkType type2 = args.get(index).getType();
+            switch (type2)
+            {
+                case DATE:
+                case TIME:
+                case DATETIME:
+                case TIMESTAMP:
+                case YEAR:
+                    args.setType(1 - index, type2);
+                    break;
+                case INTERVAL_MILLIS:
+                case INTERVAL_MONTH:
+                    if (index == 0)
+                        return; // INTERVAL can only be the rhs in substraction
+                    args.setType(1 - index, args.get(1 - index).getPrecision() > 10 ? AkType.DATETIME : AkType.DATE);
+            }
+        }
     };
 
     @Scalar("mod")
@@ -118,6 +148,12 @@ public class ArithOps
                 throw new DivisionByZeroException();
             return one.remainder(two);
         }
+
+        @Override
+        protected void adjustVarchar(TypesList args, int index) throws StandardException
+        {
+            // does nothing, as MOD operation does not support any DATE/TIME
+        }
     };
 
     @Scalar("divide")
@@ -153,7 +189,18 @@ public class ArithOps
            if (two.equals(BigInteger.ZERO))
                 throw new DivisionByZeroException();
            return one.divide(two);
-       }  
+       } 
+       
+        @Override
+        protected void adjustVarchar(TypesList args, int index) throws StandardException
+        {
+            if (index == 0)
+                return; // INTERVAL can only be the rhs in a division
+            AkType type = args.get(index).getType();
+
+            if (type == AkType.INTERVAL_MILLIS || type == AkType.INTERVAL_MONTH)
+                args.setType(1 - index, AkType.DOUBLE);
+        }
     };
     
     @Scalar("plus")
@@ -183,10 +230,30 @@ public class ArithOps
        {
            return one.add(two);                                       
        }  
+    
+        @Override
+        protected void adjustVarchar(TypesList args, int index) throws StandardException
+        {
+            AkType type2 = args.get(index).getType();
+            index = 1 - index;
+
+            if (type2 == AkType.INTERVAL_MILLIS || type2 == AkType.INTERVAL_MONTH)
+                args.setType(index, args.get(index).getPrecision() > 10 ? AkType.DATETIME : AkType.DATE);
+        }
     };
             
     static abstract class ArithOpComposer extends BinaryComposer implements ArithOp
     {
+        /**
+         * 
+         * @param args
+         * @param index of the arg whose type is DATE/TIMES/NUMERIC (in short, anything but a VARCHAR or an UNSUPPORTED)
+         * @throws StandardException 
+         * 
+         * adjust the VARCHAR arg to DATE, DATETIME or DOUBLE depending on the 
+         * arg at [index]
+         */
+        protected abstract void adjustVarchar (TypesList args, int index) throws StandardException;
         
         @Override
         protected Expression compose (Expression first, Expression second)
@@ -199,6 +266,31 @@ public class ArithOps
         {
             if(arguments.size() != 2) throw new WrongExpressionArityException(2, arguments.size());
             ExpressionType first = arguments.get(0), second = arguments.get(1);
+            
+            // adjust some *ambiguous types* (VARCHAR and/or UNSUPPORTED (coming from params))
+            if (first.getType() != second.getType())
+            {
+                int index; // index of the unambiguous argument
+                if (    first.getType() == AkType.VARCHAR && 
+                            ArithExpression.isDateTime(arguments.get(index = 1).getType()) ||
+                        second.getType() == AkType.VARCHAR && 
+                            !ArithExpression.isNumeric(arguments.get(index = 0).getType()))
+                    // if one of the operands is VARCHAR and the other date/time/interval
+                    // adjust the varchar to appropriate type
+                    adjustVarchar(arguments, index);
+                else if (   first.getType() == AkType.UNSUPPORTED &&
+                                ArithExpression.isNumeric(arguments.get(index = 1).getType()) ||
+                            second.getType() == AkType.UNSUPPORTED && 
+                                ArithExpression.isNumeric(arguments.get(index = 0).getType()))
+                    // if one of the operands is param and the other numeric
+                    // expect the parameter argument to have the same type as the other
+                    arguments.setType(1- index, arguments.get(index).getType());
+                
+                // update first, second
+                first = arguments.get(0);
+                second = arguments.get(1);
+            }
+            
             AkType top = ArithExpression.getTopType(first.getType(), second.getType(), this);
             int scale = first.getScale() + second.getScale();
             int pre = first.getPrecision() + second.getPrecision();
