@@ -97,12 +97,6 @@ public class PersistitStore implements Store {
     private static final PointTap PROPAGATE_HKEY_CHANGE_TAP = Tap.createCount("write: propagate_hkey_change");
     private static final PointTap PROPAGATE_HKEY_CHANGE_ROW_REPLACE_TAP = Tap.createCount("write: propagate_hkey_change_row_replace");
 
-    // TODO: Temporary
-    // 0: no optimization
-    // 1: avoid pdg recursion, check whether descendent row contains own hkey
-    // 2: avoid pdg recursion, avoid descendent maintenance based on HKeyColumn.dependentTables
-    public static final int PDG_OPTIMIZATION = Integer.parseInt(System.getProperty("pdgOptimization", "2"));
-
     private final static int MEGA = 1024 * 1024;
 
     private final static int MAX_ROW_SIZE = 5000000;
@@ -747,10 +741,7 @@ public class PersistitStore implements Store {
             int descendentRowDefId = descendentRowData.getRowDefId();
             RowDef descendentRowDef = rowDefCache.getRowDef(descendentRowDefId);
             int descendentOrdinal = descendentRowDef.getOrdinal();
-            if (PDG_OPTIMIZATION == 0 ||
-                PDG_OPTIMIZATION == 1 && !descendentRowDef.userTable().containsOwnHKey() ||
-                PDG_OPTIMIZATION == 2 && (tablesRequiringHKeyMaintenance == null ||
-                                          tablesRequiringHKeyMaintenance.get(descendentOrdinal))) {
+            if ((tablesRequiringHKeyMaintenance == null || tablesRequiringHKeyMaintenance.get(descendentOrdinal))) {
                 PROPAGATE_HKEY_CHANGE_ROW_REPLACE_TAP.hit();
                 // Delete the current row from the tree. Don't call deleteRow, because we don't need to recompute
                 // the hkey.
@@ -762,7 +753,7 @@ public class PersistitStore implements Store {
                     }
                 }
                 // Reinsert it, recomputing the hkey and maintaining indexes
-                writeRow(session, descendentRowData, tablesRequiringHKeyMaintenance, PDG_OPTIMIZATION == 0);
+                writeRow(session, descendentRowData, tablesRequiringHKeyMaintenance, false);
             }
         }
     }
