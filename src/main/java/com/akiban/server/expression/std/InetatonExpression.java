@@ -15,6 +15,8 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -52,7 +54,7 @@ public class InetatonExpression extends AbstractUnaryExpression
 
     private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
-        private static final long FACTORS[] = {16777216L,  65536, 256};
+        private static final long FACTORS[] = {16777216L,  65536, 256};        
         public InnerEvaluation (ExpressionEvaluation ev)
         {
             super(ev);
@@ -80,6 +82,9 @@ public class InetatonExpression extends AbstractUnaryExpression
             }
             catch (NumberFormatException e)
             {
+                QueryContext context = queryContext();
+                if (context != null) 
+                    context.warnClient(new InvalidCharToNumException(e.getMessage()));
                 return NullValueSource.only();
             }
         }

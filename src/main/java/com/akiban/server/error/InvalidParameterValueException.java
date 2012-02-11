@@ -23,4 +23,8 @@ public class InvalidParameterValueException extends InvalidOperationException
         super(ErrorCode.INVALID_PARAMETER_VALUE);
     }
     
+    public InvalidParameterValueException (String msg)
+    {
+        super(ErrorCode.INVALID_PARAMETER_VALUE, msg);
+    }
 }
