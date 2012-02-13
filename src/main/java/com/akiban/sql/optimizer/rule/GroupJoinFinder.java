@@ -188,8 +188,8 @@ public class GroupJoinFinder extends BaseRule
                 UserTable leftOriginalTable = left.getColumn().getUserTable();
                 UserTable rightOriginalTable = right.getColumn().getUserTable();
                 
-                Set<ColumnExpression> leftColumns = left.getEquivalents(true);
-                Set<ColumnExpression> rightColumns = right.getEquivalents(true);
+                Set<ColumnExpression> leftColumns = left.getEquivalentsPlusSelf();
+                Set<ColumnExpression> rightColumns = right.getEquivalentsPlusSelf();
 
                 boolean conditionOnDifferentTables = ! leftOriginalTable.equals(rightOriginalTable);
                 
