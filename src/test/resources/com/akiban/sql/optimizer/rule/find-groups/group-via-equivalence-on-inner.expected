@@ -1,8 +1,8 @@
-SelectQuery@6d7e4dee
-  ResultSet@7f2e7c6a[oid, cid, order_date, iid, oid, sku, quan, price]
-    Project@44ea5461[user.orders.oid, user.orders.cid, user.orders.order_date, user.items.iid, user.items.oid, user.items.sku, user.items.quan, user.items.price]
-      Select@7449cf9f[user.items.quan == user.items.oid]
-        TableJoins@19de0b5e(TableGroup@40bc5596(customers))
-          JoinNode@c970c0e(INNER/GROUP[user.items.quan == user.orders.oid] - TableGroupJoin@10987197(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
-            TableSource@7cc792d4(user.orders - TableGroup@40bc5596(customers))
-            TableSource@5e2c17f7(user.items - TableGroupJoin@10987197(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+SelectQuery@10987197
+  ResultSet@8497904[oid, cid, order_date, iid, oid, sku, quan, price]
+    Project@fa7f9dc[user.orders.oid, user.orders.cid, user.orders.order_date, user.items.iid, user.items.oid, user.items.sku, user.items.quan, user.items.price]
+      Select@5d04e28b[user.items.quan == user.items.oid]
+        TableJoins@6bb54362(TableGroup@495b0e2c(customers))
+          JoinNode@78ff9053(INNER/GROUP[user.items.oid == user.orders.oid] - TableGroupJoin@525c7734(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+            TableSource@57d840cd(user.orders - TableGroup@495b0e2c(customers))
+            TableSource@26789869(user.items - TableGroupJoin@525c7734(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))

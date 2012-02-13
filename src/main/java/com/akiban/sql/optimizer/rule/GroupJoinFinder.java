@@ -172,16 +172,17 @@ public class GroupJoinFinder extends BaseRule
                         ccond.reverse();
                     }
                     int initialSize = newExpressions.size();
-                    normalizeGroupJoinCondition(ccond, newExpressions);
-                    if (initialSize != newExpressions.size())
-                        iterator.remove(); // this expression has been replaced
+                    boolean conditionIsObsolete = normalizeGroupJoinCondition(ccond, newExpressions);
+                    if (conditionIsObsolete)
+                        iterator.remove();
                 }
             }
         }
         conditions.addAll(newExpressions);
     }
 
-    private void normalizeGroupJoinCondition(ComparisonCondition ccond, List<? super ConditionExpression> out) {
+    private boolean normalizeGroupJoinCondition(ComparisonCondition ccond, List<? super ConditionExpression> out) {
+        boolean conditionIsObsolete = false;
         if (ccond.getOperation().equals(Comparison.EQ)) {
             ExpressionNode leftRaw = ccond.getLeft();
             ExpressionNode rightRaw = ccond.getRight();
@@ -189,9 +190,14 @@ public class GroupJoinFinder extends BaseRule
                 ColumnExpression left = (ColumnExpression) leftRaw;
                 ColumnExpression right = (ColumnExpression) rightRaw;
 
+                UserTable leftOriginalTable = left.getColumn().getUserTable();
+                UserTable rightOriginalTable = right.getColumn().getUserTable();
+                
                 Set<ColumnExpression> leftColumns = left.getEquivalents();
                 Set<ColumnExpression> rightColumns = right.getEquivalents();
 
+                boolean conditionOnDifferentTables = ! leftOriginalTable.equals(rightOriginalTable);
+                
                 for (ColumnExpression leftColExpr : leftColumns) {
                     for (ColumnExpression rightColExpr : rightColumns) {
                         Column leftColumn = leftColExpr.getColumn();
@@ -212,7 +218,7 @@ public class GroupJoinFinder extends BaseRule
                                         // the expression was canonical to begin with. We'll add it to the out list,
                                         // which will mean shuffling it from the original list, to out, and then back.
                                         // this is pretty cheap and simplifies the bookkeeping
-                                        out.add(ccond);
+//                                        out.add(ccond); // TODO REMOVE
                                     }
                                     else {
                                         // create a new comparison condition that's in canonical form
@@ -224,6 +230,7 @@ public class GroupJoinFinder extends BaseRule
                                                 ccond.getSQLsource()
                                         );
                                         out.add(canonical);
+                                        conditionIsObsolete |= conditionOnDifferentTables;
                                         logger.debug("rewriting {} as {}", ccond, canonical);
                                     }
                                 }
@@ -233,6 +240,7 @@ public class GroupJoinFinder extends BaseRule
                 }
             }
         }
+        return conditionIsObsolete;
     }
 
     // Normalize join's conditions and any below it.
