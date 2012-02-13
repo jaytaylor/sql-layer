@@ -22,17 +22,24 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.TypesList;
 import com.akiban.server.expression.std.ArithOps.ArithOpComposer;
+import com.akiban.server.expression.std.NumericToIntervalMillis.TargetType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.StandardException;
 
 public class DateTimeArithExpression extends ArithExpression
 {
-    @Scalar({"adddate", "date_add", "addtime"})
-    public static final ExpressionComposer ADD_DATE_COMPOSER = new AddSubComposer(ArithOps.ADD);    
+    @Scalar({"adddate", "date_add"})
+    public static final ExpressionComposer ADD_DATE_COMPOSER = new AddSubComposer(ArithOps.ADD, TargetType.DAY);    
     
-    @Scalar({"subdate", "date_sub", "subtime"})
-    public static final ExpressionComposer SUB_DATE_COMPOSER = new AddSubComposer(ArithOps.MINUS);
+    @Scalar({"addtime"})
+    public static final ExpressionComposer ADD_TIME_COMPOSER = new AddSubComposer(ArithOps.ADD, TargetType.SECOND);  
+    
+    @Scalar({"subdate", "date_sub"})
+    public static final ExpressionComposer SUB_DATE_COMPOSER = new AddSubComposer(ArithOps.MINUS,  TargetType.DAY);
+    
+    @Scalar("subtime")
+    public static final ExpressionComposer SUB_TIME_COMPOSER = new AddSubComposer(ArithOps.MINUS,  TargetType.SECOND);
     
     @Scalar("timediff")
     public static final ExpressionComposer TIMEDIFF_COMPOSER = new DiffComposer(AkType.TIME)
@@ -59,6 +66,7 @@ public class DateTimeArithExpression extends ArithExpression
                 case TIMESTAMP: break;
                 case VARCHAR:   argumentTypes.setType(index, dateType.getPrecision() > 10 ?
                                                      AkType.DATETIME: AkType.TIME);
+                                break;
                 default:        argumentTypes.setType(index, AkType.TIME);
             }
         }
@@ -82,15 +90,18 @@ public class DateTimeArithExpression extends ArithExpression
     private static class AddSubComposer extends BinaryComposer
     {
         private final ArithOpComposer composer;
-        protected AddSubComposer (ArithOpComposer composer)
+        private final TargetType type;
+        protected AddSubComposer (ArithOpComposer composer, TargetType type)
         {
             this.composer = composer;
+            this.type = type;
         }
         @Override
         protected Expression compose(Expression first, Expression second)
         {
             if (ArithExpression.isNumeric(second.valueType()))
-                second = new NumericToIntervalDay(second);
+                second = new NumericToIntervalMillis(second, type);
+
             return composer.compose(first, second);
         }
 
@@ -104,7 +115,7 @@ public class DateTimeArithExpression extends ArithExpression
 
             if (firstArg == AkType.VARCHAR)            
                 firstArg = argumentTypes.get(0).getPrecision() > 10 ?
-                           AkType.DATETIME : AkType.DATE;            
+                           AkType.DATETIME : type.operandType;            
 
             if (firstArg == AkType.DATE
                     && (secondArg == AkType.INTERVAL_MILLIS || !isIntegral(secondArg)))
