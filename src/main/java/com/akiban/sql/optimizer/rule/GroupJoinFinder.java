@@ -28,10 +28,6 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.UserTable;
 
-import com.akiban.sql.optimizer.plan.PlanContext.DefaultWhiteboardMarker;
-import com.akiban.sql.optimizer.plan.PlanContext.WhiteboardMarker;
-import com.akiban.util.Memoizer;
-import com.google.common.base.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -426,8 +422,8 @@ public class GroupJoinFinder extends BaseRule
                                 if (rightTable.getTable() == parentNode) {
                                     for (int i = 0; i < ncols; i++) {
                                         JoinColumn joinColumn = joinColumns.get(i);
-                                        if (areEquivalent(lcol, joinColumn.getChild()) &&
-                                                (areEquivalent(rcol, joinColumn.getParent()))) {
+                                        if ((joinColumn.getChild() == lcol.getColumn()) &&
+                                            (joinColumn.getParent() == rcol.getColumn())) {
                                             List<ComparisonCondition> entry = 
                                                 parentTables.get(rightTable);
                                             if (entry == null) {
@@ -497,31 +493,6 @@ public class GroupJoinFinder extends BaseRule
         }
         return new TableGroupJoin(group, parentTable, childTable, 
                                   groupJoinConditions, groupJoin);
-    }
-
-    private boolean areEquivalent(ColumnExpression columnExpression, Column column) {
-        return colExprsToEquivalentCols().apply(columnExpression).contains(column);
-    }
-
-
-    private static final Function<ColumnExpression,Set<Column>> COL_EXPRS_TO_EQUIVALENT_COLS
-            = new Function<ColumnExpression, Set<Column>>() {
-        @Override
-        public Set<Column> apply(ColumnExpression input) {
-            Set<ColumnExpression> equivalents = input.getEquivalenceFinder().findEquivalents(input);
-            Set<Column> result = new HashSet<Column>(equivalents.size() + 1);
-            result.add(input.getColumn());
-            for (ColumnExpression equivalent : equivalents) {
-//                Set<Column> old = set(equivalent, result); // TODO uncomment when used in memoizer
-//                assert old == null : old;
-                result.add(equivalent.getColumn());
-            }
-            return result;
-        }
-    };
-    
-    private Function<ColumnExpression,Set<Column>> colExprsToEquivalentCols() {
-        return COL_EXPRS_TO_EQUIVALENT_COLS; // TODO use memoizer here
     }
 
     protected void findSingleGroups(Joinable joinable) {
