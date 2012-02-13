@@ -28,7 +28,10 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.UserTable;
 
+import com.akiban.sql.optimizer.plan.PlanContext.DefaultWhiteboardMarker;
+import com.akiban.sql.optimizer.plan.PlanContext.WhiteboardMarker;
 import com.akiban.util.Memoizer;
+import com.google.common.base.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,22 +42,6 @@ import java.util.*;
 public class GroupJoinFinder extends BaseRule
 {
     private static final Logger logger = LoggerFactory.getLogger(GroupJoinFinder.class);
-    
-    private static final Memoizer<ColumnExpression,Set<Column>> colExprsToEquivalentCols
-            = new Memoizer<ColumnExpression, Set<Column>>() {
-        @Override
-        protected Set<Column> compute(ColumnExpression input) {
-            Set<ColumnExpression> equivalents = input.getEquivalenceFinder().findEquivalents(input);
-            Set<Column> result = new HashSet<Column>(equivalents.size() + 1);
-            result.add(input.getColumn());
-            for (ColumnExpression equivalent : equivalents) {
-                Set<Column> old = set(equivalent, result);
-                assert old == null : old;
-                result.add(equivalent.getColumn());
-            }
-            return result;
-        }
-    };
 
     @Override
     protected Logger getLogger() {
@@ -167,21 +154,81 @@ public class GroupJoinFinder extends BaseRule
     // group join.
     protected void normalizeColumnComparisons(ConditionList conditions) {
         if (conditions == null) return;
-        for (ConditionExpression cond : conditions) {
+        List<ConditionExpression> newExpressions = new ArrayList<ConditionExpression>();
+        for (Iterator<ConditionExpression> iterator = conditions.iterator(); iterator.hasNext(); ) {
+            ConditionExpression cond = iterator.next();
             if (cond instanceof ComparisonCondition) {
-                ComparisonCondition ccond = (ComparisonCondition)cond;
+                ComparisonCondition ccond = (ComparisonCondition) cond;
                 ExpressionNode left = ccond.getLeft();
                 ExpressionNode right = ccond.getRight();
                 if (right.isColumn()) {
-                    ColumnSource rightTable = ((ColumnExpression)right).getTable();
+                    ColumnSource rightTable = ((ColumnExpression) right).getTable();
                     if (left.isColumn()) {
-                        ColumnSource leftTable = ((ColumnExpression)left).getTable();
+                        ColumnSource leftTable = ((ColumnExpression) left).getTable();
                         if (compareColumnSources(leftTable, rightTable) < 0) {
                             ccond.reverse();
                         }
-                    }
-                    else {
+                    } else {
                         ccond.reverse();
+                    }
+                    int initialSize = newExpressions.size();
+                    normalizeGroupJoinCondition(ccond, newExpressions);
+                    if (initialSize != newExpressions.size())
+                        iterator.remove(); // this expression has been replaced
+                }
+            }
+        }
+        conditions.addAll(newExpressions);
+    }
+
+    private void normalizeGroupJoinCondition(ComparisonCondition ccond, List<? super ConditionExpression> out) {
+        if (ccond.getOperation().equals(Comparison.EQ)) {
+            ExpressionNode leftRaw = ccond.getLeft();
+            ExpressionNode rightRaw = ccond.getRight();
+            if (leftRaw instanceof ColumnExpression && rightRaw instanceof ColumnExpression) {
+                ColumnExpression left = (ColumnExpression) leftRaw;
+                ColumnExpression right = (ColumnExpression) rightRaw;
+
+                Set<ColumnExpression> leftColumns = left.getEquivalents();
+                Set<ColumnExpression> rightColumns = right.getEquivalents();
+
+                for (ColumnExpression leftColExpr : leftColumns) {
+                    for (ColumnExpression rightColExpr : rightColumns) {
+                        Column leftColumn = leftColExpr.getColumn();
+                        Column rightColumn = rightColExpr.getColumn();
+                        UserTable leftTable = leftColumn.getUserTable();
+                        UserTable rightTable = rightColumn.getUserTable();
+                        Join parentJoin = leftTable.getParentJoin();
+                        if (parentJoin != null && parentJoin.getParent() != null
+                                && parentJoin.getParent().equals(rightTable))
+                        {
+                            // found a parent-child relationship
+                            for (JoinColumn joinColumn : parentJoin.getJoinColumns()) {
+                                Column parentCol = joinColumn.getParent();
+                                Column childCol = joinColumn.getChild();
+                                if (leftColumn.equals(childCol) && rightColumn.equals(parentCol)) {
+                                    // this is a group join!
+                                    if (leftColumn.equals(left.getColumn()) && rightColumn.equals(right.getColumn())) {
+                                        // the expression was canonical to begin with. We'll add it to the out list,
+                                        // which will mean shuffling it from the original list, to out, and then back.
+                                        // this is pretty cheap and simplifies the bookkeeping
+                                        out.add(ccond);
+                                    }
+                                    else {
+                                        // create a new comparison condition that's in canonical form
+                                        ComparisonCondition canonical = new ComparisonCondition(
+                                                Comparison.EQ,
+                                                leftColExpr,
+                                                rightColExpr,
+                                                ccond.getSQLtype(),
+                                                ccond.getSQLsource()
+                                        );
+                                        out.add(canonical);
+                                        logger.debug("rewriting {} as {}", ccond, canonical);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -446,7 +493,28 @@ public class GroupJoinFinder extends BaseRule
     }
 
     private boolean areEquivalent(ColumnExpression columnExpression, Column column) {
-        return colExprsToEquivalentCols.get(columnExpression).contains(column);
+        return colExprsToEquivalentCols().apply(columnExpression).contains(column);
+    }
+
+
+    private static final Function<ColumnExpression,Set<Column>> COL_EXPRS_TO_EQUIVALENT_COLS
+            = new Function<ColumnExpression, Set<Column>>() {
+        @Override
+        public Set<Column> apply(ColumnExpression input) {
+            Set<ColumnExpression> equivalents = input.getEquivalenceFinder().findEquivalents(input);
+            Set<Column> result = new HashSet<Column>(equivalents.size() + 1);
+            result.add(input.getColumn());
+            for (ColumnExpression equivalent : equivalents) {
+//                Set<Column> old = set(equivalent, result); // TODO uncomment when used in memoizer
+//                assert old == null : old;
+                result.add(equivalent.getColumn());
+            }
+            return result;
+        }
+    };
+    
+    private Function<ColumnExpression,Set<Column>> colExprsToEquivalentCols() {
+        return COL_EXPRS_TO_EQUIVALENT_COLS; // TODO use memoizer here
     }
 
     protected void findSingleGroups(Joinable joinable) {

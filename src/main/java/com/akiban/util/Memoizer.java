@@ -15,16 +15,24 @@
 
 package com.akiban.util;
 
+import com.google.common.base.Function;
+
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
-public abstract class Memoizer<I,O> {
+public abstract class Memoizer<I,O> implements Function<I,O> {
     protected abstract O compute(I input);
     
     public O set(I input, O value) {
         return results.put(input, value);
     }
-    
+
+    @Override
+    public O apply(@Nullable I input) {
+        return get(input);
+    }
+
     public O get(I input) {
         if (results.containsKey(input))
             return results.get(input);
