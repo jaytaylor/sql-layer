@@ -171,7 +171,6 @@ public class GroupJoinFinder extends BaseRule
                     } else {
                         ccond.reverse();
                     }
-                    int initialSize = newExpressions.size();
                     boolean conditionIsObsolete = normalizeGroupJoinCondition(ccond, newExpressions);
                     if (conditionIsObsolete)
                         iterator.remove();
@@ -193,8 +192,8 @@ public class GroupJoinFinder extends BaseRule
                 UserTable leftOriginalTable = left.getColumn().getUserTable();
                 UserTable rightOriginalTable = right.getColumn().getUserTable();
                 
-                Set<ColumnExpression> leftColumns = left.getEquivalents();
-                Set<ColumnExpression> rightColumns = right.getEquivalents();
+                Set<ColumnExpression> leftColumns = left.getEquivalents(true);
+                Set<ColumnExpression> rightColumns = right.getEquivalents(true);
 
                 boolean conditionOnDifferentTables = ! leftOriginalTable.equals(rightOriginalTable);
                 

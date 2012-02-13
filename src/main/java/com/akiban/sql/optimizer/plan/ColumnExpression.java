@@ -93,8 +93,11 @@ public class ColumnExpression extends BaseExpression
         return equivalenceFinder;
     }
 
-    public Set<ColumnExpression> getEquivalents() {
-        return getEquivalenceFinder().findEquivalents(this);
+    public Set<ColumnExpression> getEquivalents(boolean includeSelf) {
+        Set<ColumnExpression> equivalents = getEquivalenceFinder().findEquivalents(this);
+        if (includeSelf)
+            equivalents.add(this);
+        return equivalents;
     }
 
     @Override
