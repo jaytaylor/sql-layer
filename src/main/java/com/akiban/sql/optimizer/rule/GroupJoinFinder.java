@@ -208,27 +208,21 @@ public class GroupJoinFinder extends BaseRule
                             for (JoinColumn joinColumn : parentJoin.getJoinColumns()) {
                                 Column parentCol = joinColumn.getParent();
                                 Column childCol = joinColumn.getChild();
-                                if (leftColumn.equals(childCol) && rightColumn.equals(parentCol)) {
-                                    // this is a group join!
-                                    if (leftColumn.equals(left.getColumn()) && rightColumn.equals(right.getColumn())) {
-                                        // the expression was canonical to begin with. We'll add it to the out list,
-                                        // which will mean shuffling it from the original list, to out, and then back.
-                                        // this is pretty cheap and simplifies the bookkeeping
-//                                        out.add(ccond); // TODO REMOVE
-                                    }
-                                    else {
-                                        // create a new comparison condition that's in canonical form
-                                        ComparisonCondition canonical = new ComparisonCondition(
-                                                Comparison.EQ,
-                                                leftColExpr,
-                                                rightColExpr,
-                                                ccond.getSQLtype(),
-                                                ccond.getSQLsource()
-                                        );
-                                        out.add(canonical);
-                                        conditionIsObsolete |= conditionOnDifferentTables;
-                                        logger.debug("rewriting {} as {}", ccond, canonical);
-                                    }
+                                // look for a group join condition that isn't the original one
+                                if (leftColumn.equals(childCol) && rightColumn.equals(parentCol)
+                                    && leftColumn != left.getColumn() && rightColumn != right.getColumn())
+                                {
+                                    // create a new comparison condition that's in canonical form
+                                    ComparisonCondition canonical = new ComparisonCondition(
+                                            Comparison.EQ,
+                                            leftColExpr,
+                                            rightColExpr,
+                                            ccond.getSQLtype(),
+                                            ccond.getSQLsource()
+                                    );
+                                    out.add(canonical);
+                                    conditionIsObsolete |= conditionOnDifferentTables;
+                                    logger.debug("rewriting {} as {}", ccond, canonical);
                                 }
                             }
                         }
