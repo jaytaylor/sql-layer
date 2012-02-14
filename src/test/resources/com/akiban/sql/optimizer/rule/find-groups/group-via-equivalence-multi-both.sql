@@ -1,0 +1,1 @@
+SELECT * FROM blogs b, comments c WHERE bcol1 = ccol1 AND bcol2 = ccol2 AND bcol1 = b.bid1 AND bcol2 = b.bid2 AND ccol1 = c.bid1 AND c.bid2 = ccol2
