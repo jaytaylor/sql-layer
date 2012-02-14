@@ -150,7 +150,7 @@ public class GroupJoinFinder extends BaseRule
     // group join.
     protected void normalizeColumnComparisons(ConditionList conditions) {
         if (conditions == null) return;
-        Collection<ConditionExpression> newExpressions = new ArrayList<ConditionExpression>();
+        Collection<ConditionExpression> newExpressions = new HashSet<ConditionExpression>();
         for (Iterator<ConditionExpression> iterator = conditions.iterator(); iterator.hasNext(); ) {
             ConditionExpression cond = iterator.next();
             if (cond instanceof ComparisonCondition) {
