@@ -49,17 +49,17 @@ CREATE TABLE blogs
   PRIMARY KEY(bid1, bid2),
   title varchar(56),
   bcol1 int,
-  bcol2 int,
+  bcol2 int
 ) engine=akibandb;
 
 CREATE TABLE comments
 (
   cid int NOT NULL auto_increment,
   PRIMARY KEY(cid),
-  bid1 int NOT NULL,
-  bid2 int NOT NULL,
+  bfk1 int NOT NULL,
+  bfk2 int NOT NULL,
   content varchar(56),
   ccol1 int,
   ccol2 int,
-  CONSTRAINT `__akiban_fk_3` FOREIGN KEY `__akiban_fk_3` (bid1, bid2) REFERENCES blogs(bid1, bid2)
+  CONSTRAINT `__akiban_fk_3` FOREIGN KEY `__akiban_fk_3` (bfk1, bfk2) REFERENCES blogs(bid1, bid2)
 ) engine=akibandb;

@@ -1,8 +1,8 @@
-SelectQuery@4f682a53
-  ResultSet@3fb2d7df[bid1, bid2, title, bcol1, bcol2, cid, bid1, bid2, content, ccol1, ccol2]
-    Project@767a9224[user.blogs.bid1, user.blogs.bid2, user.blogs.title, user.blogs.bcol1, user.blogs.bcol2, user.comments.cid, user.comments.bid1, user.comments.bid2, user.comments.content, user.comments.ccol1, user.comments.ccol2]
-      Select@6910b640[user.blogs.bcol1 == user.blogs.bid1, user.blogs.bcol2 == user.blogs.bid2, user.comments.ccol1 == user.comments.bid1, user.comments.bid2 == user.comments.ccol2]
-        TableJoins@482d59a3(TableGroup@1958015a(blogs))
-          JoinNode@60c0c8b5(INNER/GROUP[user.comments.bid1 == user.blogs.bid1, user.comments.bid2 == user.blogs.bid2] - TableGroupJoin@10b914b3(Join(user/blogs/bid1_bid2/user/user.comments/bid1_bid2: user.comments -> user.blogs, group(blogs))))
-            TableSource@600dac21(user.blogs - TableGroup@1958015a(blogs))
-            TableSource@219fdbcb(user.comments - TableGroupJoin@10b914b3(Join(user/blogs/bid1_bid2/user/user.comments/bid1_bid2: user.comments -> user.blogs, group(blogs))))
+SelectQuery@56f449b8
+  ResultSet@4013fba1[bid1, bid2, title, bcol1, bcol2, cid, bfk1, bfk2, content, ccol1, ccol2]
+    Project@5fed27e4[user.blogs.bid1, user.blogs.bid2, user.blogs.title, user.blogs.bcol1, user.blogs.bcol2, user.comments.cid, user.comments.bfk1, user.comments.bfk2, user.comments.content, user.comments.ccol1, user.comments.ccol2]
+      Select@4ad61aef[user.blogs.bcol1 == user.blogs.bid1, user.blogs.bcol2 == user.blogs.bid2, user.comments.ccol1 == user.comments.bfk1, user.comments.ccol2 == user.comments.bfk2]
+        TableJoins@2e82674b(TableGroup@734b84c7(blogs))
+          JoinNode@62fa5ff3(INNER/GROUP[user.comments.bfk1 == user.blogs.bid1, user.comments.bfk2 == user.blogs.bid2] - TableGroupJoin@23b17d49(Join(user/blogs/bid1_bid2/user/user.comments/bfk1_bfk2: user.comments -> user.blogs, group(blogs))))
+            TableSource@2cc22a3b(user.blogs - TableGroup@734b84c7(blogs))
+            TableSource@7f629e71(user.comments - TableGroupJoin@23b17d49(Join(user/blogs/bid1_bid2/user/user.comments/bfk1_bfk2: user.comments -> user.blogs, group(blogs))))
