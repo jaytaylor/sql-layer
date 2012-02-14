@@ -183,19 +183,14 @@ public class GroupJoinFinder extends BaseRule
             ExpressionNode leftRaw = ccond.getLeft();
             ExpressionNode rightRaw = ccond.getRight();
             if (leftRaw instanceof ColumnExpression && rightRaw instanceof ColumnExpression) {
-                ColumnExpression left = (ColumnExpression) leftRaw;
-                ColumnExpression right = (ColumnExpression) rightRaw;
+                ColumnExpression ccondLeft = (ColumnExpression) leftRaw;
+                ColumnExpression ccondRight = (ColumnExpression) rightRaw;
 
-                UserTable leftOriginalTable = left.getColumn().getUserTable();
-                UserTable rightOriginalTable = right.getColumn().getUserTable();
+                boolean conditionOnDifferentTables =
+                        ccondLeft.getColumn().getUserTable() != ccondRight.getColumn().getUserTable();
                 
-                Set<ColumnExpression> leftColumns = left.getEquivalentsPlusSelf();
-                Set<ColumnExpression> rightColumns = right.getEquivalentsPlusSelf();
-
-                boolean conditionOnDifferentTables = ! leftOriginalTable.equals(rightOriginalTable);
-                
-                for (ColumnExpression leftColExpr : leftColumns) {
-                    for (ColumnExpression rightColExpr : rightColumns) {
+                for (ColumnExpression leftColExpr : ccondLeft.getEquivalentsPlusSelf()) {
+                    for (ColumnExpression rightColExpr : ccondRight.getEquivalentsPlusSelf()) {
                         Column leftColumn = leftColExpr.getColumn();
                         Column rightColumn = rightColExpr.getColumn();
                         UserTable leftTable = leftColumn.getUserTable();
@@ -210,7 +205,7 @@ public class GroupJoinFinder extends BaseRule
                                 Column childCol = joinColumn.getChild();
                                 // look for a group join condition that isn't the original one
                                 if (leftColumn.equals(childCol) && rightColumn.equals(parentCol)
-                                    && leftColumn != left.getColumn() && rightColumn != right.getColumn())
+                                    && leftColumn != ccondLeft.getColumn() && rightColumn != ccondRight.getColumn())
                                 {
                                     // create a new comparison condition that's in canonical form
                                     ComparisonCondition canonical = new ComparisonCondition(
