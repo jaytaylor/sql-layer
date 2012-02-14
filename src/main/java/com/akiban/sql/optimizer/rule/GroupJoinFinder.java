@@ -206,7 +206,7 @@ public class GroupJoinFinder extends BaseRule
                                 Column childCol = joinColumn.getChild();
                                 // look for a group join condition that isn't the original one
                                 if (leftColumn.equals(childCol) && rightColumn.equals(parentCol)
-                                    && !(leftColumn == ccondLeft.getColumn() && rightColumn == ccondRight.getColumn()))
+                                    && (leftColumn != ccondLeft.getColumn() || rightColumn != ccondRight.getColumn()))
                                 {
                                     // create a new comparison condition that's in canonical form
                                     ComparisonCondition canonical = new ComparisonCondition(
