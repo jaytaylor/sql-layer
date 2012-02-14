@@ -154,17 +154,18 @@ public class GroupJoinFinder extends BaseRule
         for (Iterator<ConditionExpression> iterator = conditions.iterator(); iterator.hasNext(); ) {
             ConditionExpression cond = iterator.next();
             if (cond instanceof ComparisonCondition) {
-                ComparisonCondition ccond = (ComparisonCondition) cond;
+                ComparisonCondition ccond = (ComparisonCondition)cond;
                 ExpressionNode left = ccond.getLeft();
                 ExpressionNode right = ccond.getRight();
                 if (right.isColumn()) {
-                    ColumnSource rightTable = ((ColumnExpression) right).getTable();
+                    ColumnSource rightTable = ((ColumnExpression)right).getTable();
                     if (left.isColumn()) {
-                        ColumnSource leftTable = ((ColumnExpression) left).getTable();
+                        ColumnSource leftTable = ((ColumnExpression)left).getTable();
                         if (compareColumnSources(leftTable, rightTable) < 0) {
                             ccond.reverse();
                         }
-                    } else {
+                    }
+                    else {
                         ccond.reverse();
                     }
                     boolean conditionIsObsolete = normalizeGroupJoinCondition(ccond, newExpressions);
