@@ -150,7 +150,7 @@ public class GroupJoinFinder extends BaseRule
     // group join.
     protected void normalizeColumnComparisons(ConditionList conditions) {
         if (conditions == null) return;
-        List<ConditionExpression> newExpressions = new ArrayList<ConditionExpression>();
+        Collection<ConditionExpression> newExpressions = new ArrayList<ConditionExpression>();
         for (Iterator<ConditionExpression> iterator = conditions.iterator(); iterator.hasNext(); ) {
             ConditionExpression cond = iterator.next();
             if (cond instanceof ComparisonCondition) {
@@ -177,7 +177,8 @@ public class GroupJoinFinder extends BaseRule
         conditions.addAll(newExpressions);
     }
 
-    private boolean normalizeGroupJoinCondition(ComparisonCondition ccond, List<? super ConditionExpression> out) {
+    private boolean normalizeGroupJoinCondition(ComparisonCondition ccond, Collection<? super ConditionExpression> out)
+    {
         boolean conditionIsObsolete = false;
         if (ccond.getOperation().equals(Comparison.EQ)) {
             ExpressionNode leftRaw = ccond.getLeft();
@@ -205,7 +206,7 @@ public class GroupJoinFinder extends BaseRule
                                 Column childCol = joinColumn.getChild();
                                 // look for a group join condition that isn't the original one
                                 if (leftColumn.equals(childCol) && rightColumn.equals(parentCol)
-                                    && leftColumn != ccondLeft.getColumn() && rightColumn != ccondRight.getColumn())
+                                    && !(leftColumn == ccondLeft.getColumn() && rightColumn == ccondRight.getColumn()))
                                 {
                                     // create a new comparison condition that's in canonical form
                                     ComparisonCondition canonical = new ComparisonCondition(
