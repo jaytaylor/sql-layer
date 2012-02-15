@@ -18,6 +18,8 @@ package com.akiban.sql.optimizer.rule.join_enum;
 import com.akiban.sql.optimizer.plan.*;
 import static com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
+import com.akiban.server.error.UnsupportedSQLException;
+
 import java.util.*;
 
 /** 
@@ -48,6 +50,7 @@ public abstract class DPhyp<P>
     // The "plan class" is the set of retained plans for the given tables.
     private Object[] plans;
     
+    @SuppressWarnings("unchecked")
     private P getPlan(long s) {
         return (P)plans[(int)s];
     }
@@ -79,6 +82,7 @@ public abstract class DPhyp<P>
     /** Run dynamic programming and return best overall plan(s). */
     public P solve() {
         int ntables = tables.size();
+        assert (ntables < 31);
         plans = new Object[1 << ntables];
         // Start with single tables.
         for (int i = 0; i < ntables; i++) {
@@ -220,6 +224,9 @@ public abstract class DPhyp<P>
     public void init(Joinable root, ConditionList whereConditions) {
         tables = new ArrayList<Joinable>();
         addTables(root);
+        if (tables.size() > 30)
+            // TODO: Need to select some simpler algorithm that scales better.
+            throw new UnsupportedSQLException("Too many tables in query.", null);
         ExpressionTables visitor = new ExpressionTables(tables);
         noperators = 0;
         JoinOperator rootOp = initSES(root, visitor);
