@@ -1,8 +1,8 @@
 # tests that currently fail ther FTS run
 ---
-- Properties: sys-aksql
-- suppressed: true  
----
+#- Properties: sys-aksql
+#- suppressed: true  
+#---
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
@@ -11,7 +11,7 @@
 #- error: [22007] or [70001]
 #--- # bug 902169
 #- Statement: select WEEK(999999) from all_types;
-#- error: [70001]
+#- output: [['1']]
 #---  # bug 902243
 #- Statement: select week('2008-02-20', 0), week('2008-02-20 22:03:44', 1) from all_types;
 #- output: [[7,8]]

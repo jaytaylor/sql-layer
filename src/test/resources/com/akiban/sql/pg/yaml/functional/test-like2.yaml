@@ -1,7 +1,4 @@
 # tests that currently fail the FTS run
----
-- Properties: all
-- suppressed: true
 ---   
 - Include: all-types-schema.yaml
 ---
@@ -13,9 +10,13 @@
     ('abc'), ('bbc'), ('cbb'),
     ('abcd'), ('xbcd')
 ---
+- Statement: SELECT varchar_field from all_types where varchar_field is not null
+- row_count: 12
+---
 - Statement: SELECT varchar_field, varchar_field LIKE ? FROM all_types where varchar_field is not null
 - params: [['ab%']]
-- output: [['a', 'false'],
+- output: [['', 'false'],
+           ['a', 'false'],
            ['b', 'false'],
            ['ab', 'true'],
            ['ac', 'false'],
@@ -31,7 +32,7 @@
 - Statement: SELECT varchar_field, varchar_field LIKE ? FROM all_types 
 - params: [['ab%']]
 - output: [['null', 'null'],
-           ['null', false],
+           ['', false],
            [a, false],
            [b, false],
            [ab, true],
