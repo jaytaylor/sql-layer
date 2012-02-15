@@ -109,7 +109,7 @@
 - output: [[!re '2000-01-06 01:00:00([.]0)?']]
 ---
 - Statement: SELECT date_field + interval '1' WEEK FROM t WHERE ind = 1
-- output: [[!re '2000-01-08 00:00:00([.]0)?']]
+- output: [['2000-01-08']]
 ---
 - Statement: SELECT datetime_field + interval '1' WEEK FROM t
     WHERE ind = 1
@@ -133,7 +133,6 @@
 ---
 - Statement: SELECT time_field + INTERVAL null MINUTE FROM t
 - output: [[null], [null]]
-
 # Case insensitivity
 ---
 - Statement: SELECT time_field + INTERVAL '1' MiNuTe FROM t WHERE ind = 1

@@ -15,11 +15,15 @@
 
 package com.akiban.util;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -30,10 +34,15 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Formatter;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 import java.util.jar.JarEntry;
 
 /**
@@ -78,7 +87,7 @@ public abstract class Strings {
      * not have the delimiter appended. If the list is empty, this returns an empty string.
      * @param strings a list of strings. May not be null.
      * @param delimiter the delimiter between strings; this will be inserted <tt>(strings.size() - 1)</tt> times.
-     * May not be null.
+     * May not be null.  
      * @return the joined string
      */
     public static String join(Collection<?> strings, String delimiter) {
@@ -91,6 +100,56 @@ public abstract class Strings {
         }
         builder.setLength(builder.length() - delimiter.length());
         return builder.toString();
+    }
+
+    public static List<String> stringAndSort(Collection<?> inputs) {
+        List<String> results = new ArrayList<String>(inputs.size());
+        
+        for (Object item : inputs) {
+            String asString = stringAndSort(item);
+            results.add(asString);
+        }
+        
+        Collections.sort(results);
+        return results;
+    }
+
+    public static List<String> stringAndSort(Map<?,?> inputs) {
+        // step 1: get the key-value pairs into a multimap. We need a multimap because multiple keys may have the
+        // same toString. For instance, { 1 : "int", 1L : "long" } would become a multimap { "1" : ["int", "long"] }
+        Multimap<String,String> multiMap = ArrayListMultimap.create();
+        for (Map.Entry<?,?> inputEntry : inputs.entrySet()) {
+            String keyString = stringAndSort(inputEntry.getKey());
+            String valueString = stringAndSort(inputEntry.getValue());
+            multiMap.put(keyString, valueString);
+        }
+        // step 2: Flatten the multimap into a Map<String,String>, sorting by keys as you go.
+        Map<String,String> sortedAndFlattened = new TreeMap<String,String>();
+        for (Entry<String,Collection<String>> multiMapEntry : multiMap.asMap().entrySet()) {
+            String keyString = multiMapEntry.getKey();
+            String valueString = stringAndSort(multiMapEntry.getValue()).toString();
+            String duplicate = sortedAndFlattened.put(keyString, valueString);
+            assert duplicate == null : duplicate;
+        }
+
+        // step 3: Flatten the map into a List<String>
+        List<String> results = new ArrayList<String>(inputs.size());
+        for (Entry<String,String> entry : sortedAndFlattened.entrySet()) {
+            results.add(entry.toString());
+        }
+        return results;
+    }
+
+    private static String stringAndSort(Object item) {
+        if (item instanceof Collection) {
+            return stringAndSort((Collection<?>)item).toString();
+        }
+        else if (item instanceof Map) {
+            return stringAndSort((Map<?,?>)item).toString();
+        }
+        else {
+            return String.valueOf(item);
+        }
     }
 
     /**
@@ -221,6 +280,44 @@ public abstract class Strings {
                 result.add(entry.getName().substring(base.length()));
         }
     }
+    
+    public static <T> String toString(Multimap<T,?> map) {
+        StringBuilder sb = new StringBuilder();
+        for (Iterator<T> keysIter = map.keySet().iterator(); keysIter.hasNext(); ) {
+            T key = keysIter.next();
+            sb.append(key).append(" => ");
+            for (Iterator<?> valsIter = map.get(key).iterator(); valsIter.hasNext(); ) {
+                sb.append(valsIter.next());
+                if (valsIter.hasNext())
+                    sb.append(", ");
+            }
+            if (keysIter.hasNext())
+                sb.append(nl());
+        }
+        return sb.toString();
+    }
+    
+    public static String stripr(String input, String suffix) {
+        if (input == null || suffix == null)
+            return input;
+        return input.endsWith(suffix)
+                ? input.substring(0, input.length() - suffix.length())
+                : input;
+    }
 
     private static final Logger LOG = LoggerFactory.getLogger(Strings.class);
+
+    public static List<String> dumpFile(File file) throws IOException {
+        List<String> results = new ArrayList<String>();
+        FileReader reader = new FileReader(file);
+        try {
+            BufferedReader buffered = new BufferedReader(reader);
+            for (String line; (line=buffered.readLine()) != null; ) {
+                results.add(line);
+            }
+        } finally {
+            reader.close();
+        }
+        return results;
+    }
 }

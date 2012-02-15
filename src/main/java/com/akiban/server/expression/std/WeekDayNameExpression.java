@@ -15,6 +15,8 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -29,8 +31,6 @@ import com.akiban.sql.StandardException;
 import com.akiban.server.expression.TypesList;
 import org.joda.time.MutableDateTime;
 import org.joda.time.IllegalFieldValueException;
-import org.slf4j.LoggerFactory;
-
 
 public class WeekDayNameExpression extends AbstractUnaryExpression
 {
@@ -107,7 +107,8 @@ public class WeekDayNameExpression extends AbstractUnaryExpression
     }
     private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
-        private final Field field;
+        private final Field field;        
+        
         public InnerEvaluation(ExpressionEvaluation ev, Field field)
         {
             super(ev);
@@ -127,7 +128,9 @@ public class WeekDayNameExpression extends AbstractUnaryExpression
             }
             catch (IllegalFieldValueException ex)
             {
-                LoggerFactory.getLogger(WeekDayNameExpression.class).debug(ex.getMessage());
+                QueryContext context = queryContext();
+                if (context != null)
+                    context.warnClient(new InvalidParameterValueException(ex.getLocalizedMessage()));
                 return NullValueSource.only();
             }
 

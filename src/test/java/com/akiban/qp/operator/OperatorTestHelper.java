@@ -26,6 +26,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.Strings;
+import com.akiban.util.tap.InOutTap;
 import org.junit.Assert;
 
 import java.util.ArrayList;
@@ -175,7 +176,8 @@ public final class OperatorTestHelper {
                            Cursor input,
                            RowType rowType,
                            API.Ordering ordering,
-                           API.SortOption sortOption)
+                           API.SortOption sortOption,
+                           InOutTap loadTap)
         {
             throw new UnsupportedOperationException();
         }

@@ -129,7 +129,7 @@
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-sql-parser</artifactId>
-            <version>1.0.2-SNAPSHOT</version>
+            <version>1.0.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
@@ -175,7 +175,7 @@
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-sql-parser</artifactId>
-            <version>1.0.2-SNAPSHOT</version>
+            <version>1.0.3-SNAPSHOT</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -395,6 +395,7 @@
                     <exclude>**/*.dat</exclude>
                     <exclude>**/*.fail</exclude>
                     <exclude>**/*.params</exclude>
+                    <exclude>**/*.test</exclude>
                     <exclude>**/*.yaml</exclude>
                     <exclude>**/*.yml</exclude>
                     <exclude>**/group.idx</exclude>

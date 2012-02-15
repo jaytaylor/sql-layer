@@ -15,6 +15,7 @@
 
 package com.akiban.server;
 
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.session.SessionService;
@@ -50,7 +51,7 @@ public class AkServer implements Service<AkServerInterface>, JmxManageable, AkSe
 
     private static final Logger LOG = LoggerFactory.getLogger(AkServer.class.getName());
     private static final String AKSERVER_NAME = System.getProperty("akserver.name");
-    private static final String pidFileName = System.getProperty("akserver.pidfile");
+    private static final String PID_FILE_NAME = System.getProperty("akserver.pidfile");
 
     private final JmxObjectInfo jmxObjectInfo;
 
@@ -172,8 +173,8 @@ public class AkServer implements Service<AkServerInterface>, JmxManageable, AkSe
         
         
         // services started successfully, now create pidfile and write pid to it
-        if (pidFileName != null) {
-            File pidFile = new File(pidFileName);
+        if (PID_FILE_NAME != null) {
+            File pidFile = new File(PID_FILE_NAME);
             pidFile.deleteOnExit();
             FileWriter out = new FileWriter(pidFile);
             out.write(OsUtils.getProcessID());

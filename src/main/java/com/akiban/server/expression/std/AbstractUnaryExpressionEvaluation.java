@@ -30,6 +30,7 @@ public abstract class AbstractUnaryExpressionEvaluation implements ExpressionEva
     @Override
     public void of(QueryContext context) {
         operandEvaluation.of(context);
+        this.context = context;
     }
 
     @Override
@@ -64,7 +65,12 @@ public abstract class AbstractUnaryExpressionEvaluation implements ExpressionEva
         return valueHolder == null ? valueHolder = new ValueHolder() : valueHolder;
     }
     
+    protected QueryContext queryContext() {
+        return context;
+    }
+    
     // object state
     private final ExpressionEvaluation operandEvaluation;
     private ValueHolder valueHolder;
+    private QueryContext context;
 }

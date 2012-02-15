@@ -24,12 +24,14 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
+import com.akiban.util.tap.InOutTap;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
-import static com.akiban.qp.operator.API.FlattenOption.*;
+import static com.akiban.qp.operator.API.FlattenOption.KEEP_CHILD;
+import static com.akiban.qp.operator.API.FlattenOption.KEEP_PARENT;
 
 /**
 
@@ -216,8 +218,6 @@ class Flatten_HKeyOrdered extends Operator
         ArgumentValidation.notNull("childType", childType);
         ArgumentValidation.notNull("flattenType", joinType);
         ArgumentValidation.isTrue("parentType really is parent of childType", parentType.parentOf(childType));
-        assert parentType != null;
-        assert childType != null;
         this.inputOperator = inputOperator;
         this.parentType = parentType;
         this.childType = childType;
@@ -238,7 +238,8 @@ class Flatten_HKeyOrdered extends Operator
     // Class state
 
     private static final int MAX_PENDING = 2;
-    private static final PointTap FLATTEN_COUNT = Tap.createCount("operator: flatten", true);
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Flatten_HKeyOrdered open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Flatten_HKeyOrdered next");
 
     // Object state
 
@@ -264,57 +265,66 @@ class Flatten_HKeyOrdered extends Operator
         @Override
         public void open()
         {
-            FLATTEN_COUNT.hit();
-            input.open();
+            TAP_OPEN.in();
+            try {
+                input.open();
+            } finally {
+                TAP_OPEN.out();
+            }
         }
 
         @Override
         public Row next()
         {
-            checkQueryCancelation();
-            Row outputRow = pending.take();
-            Row inputRow;
-            while (outputRow == null && (((inputRow = input.next()) != null) || parent.isHolding())) {
-                if (readyForLeftJoinRow(inputRow)) {
-                    // child rows are processed immediately. parent rows are not,
-                    // because when seen, we don't know if the next row will be another
-                    // parent, a child, a row of child type that is not actually a child,
-                    // a row of type other than parent or child, or end of stream. If inputRow is
-                    // null, then input is exhausted, and the only possibly remaining row would
-                    // be due to a childless parent waiting to be processed.
-                    generateLeftJoinRow(parent.get());
-                }
-                if (inputRow == null) {
-                    // With inputRow == null, we needed parent to create a left join row if required. That's
-                    // been done. set parent to null so that the loop exits.
-                    setParent(null);
-                } else {
-                    RowType inputRowType = inputRow.rowType();
-                    if (inputRowType == parentType) {
-                        if (keepParent) {
-                            addToPending(inputRow);
-                        }
-                        setParent(inputRow);
-                    } else if (inputRowType == childType) {
-                        if (keepChild) {
-                            addToPending(inputRow);
-                        }
-                        if (parent.isHolding() && parent.get().ancestorOf(inputRow)) {
-                            // child is not an orphan
-                            generateInnerJoinRow(parent.get(), inputRow);
-                            childlessParent = false;
-                        } else {
-                            // child is an orphan
-                            setParent(null);
-                            generateRightJoinRow(inputRow);
-                        }
-                    } else {
-                        addToPending(inputRow);
+            TAP_NEXT.in();
+            try {
+                checkQueryCancelation();
+                Row outputRow = pending.take();
+                Row inputRow;
+                while (outputRow == null && (((inputRow = input.next()) != null) || parent.isHolding())) {
+                    if (readyForLeftJoinRow(inputRow)) {
+                        // child rows are processed immediately. parent rows are not,
+                        // because when seen, we don't know if the next row will be another
+                        // parent, a child, a row of child type that is not actually a child,
+                        // a row of type other than parent or child, or end of stream. If inputRow is
+                        // null, then input is exhausted, and the only possibly remaining row would
+                        // be due to a childless parent waiting to be processed.
+                        generateLeftJoinRow(parent.get());
                     }
+                    if (inputRow == null) {
+                        // With inputRow == null, we needed parent to create a left join row if required. That's
+                        // been done. set parent to null so that the loop exits.
+                        setParent(null);
+                    } else {
+                        RowType inputRowType = inputRow.rowType();
+                        if (inputRowType == parentType) {
+                            if (keepParent) {
+                                addToPending(inputRow);
+                            }
+                            setParent(inputRow);
+                        } else if (inputRowType == childType) {
+                            if (keepChild) {
+                                addToPending(inputRow);
+                            }
+                            if (parent.isHolding() && parent.get().ancestorOf(inputRow)) {
+                                // child is not an orphan
+                                generateInnerJoinRow(parent.get(), inputRow);
+                                childlessParent = false;
+                            } else {
+                                // child is an orphan
+                                setParent(null);
+                                generateRightJoinRow(inputRow);
+                            }
+                        } else {
+                            addToPending(inputRow);
+                        }
+                    }
+                    outputRow = pending.take();
                 }
-                outputRow = pending.take();
+                return outputRow;
+            } finally {
+                TAP_NEXT.out();
             }
-            return outputRow;
         }
 
         @Override

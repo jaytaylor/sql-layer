@@ -71,6 +71,12 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case NodeTypes.TIMESTAMP_ADD_FN_NODE:
         case NodeTypes.TIMESTAMP_DIFF_FN_NODE:
             return ternaryOperatorFunction((TernaryOperatorNode)node);
+        case NodeTypes.BINARY_DIVIDE_OPERATOR_NODE:
+        case NodeTypes.BINARY_MINUS_OPERATOR_NODE:
+        case NodeTypes.BINARY_PLUS_OPERATOR_NODE:
+        case NodeTypes.BINARY_TIMES_OPERATOR_NODE:
+        case NodeTypes.MOD_OPERATOR_NODE:
+            return binaryOperatorFunction((BinaryOperatorNode)node);
         default:
             return super.computeType(node);
         }
@@ -87,7 +93,8 @@ public class FunctionsTypeComputer extends AISTypeComputer
 
     // Compute type from function's composer with arguments' types.
     protected DataTypeDescriptor expressionComposer(String functionName,
-                                                    ArgumentsAccess args)
+                                                    ArgumentsAccess args,
+                                                    boolean isNullable)
             throws StandardException {
         ExpressionComposer composer;
         try {
@@ -109,7 +116,15 @@ public class FunctionsTypeComputer extends AISTypeComputer
 
         if (resultType == null)
             return null;
-        return fromExpressionType(resultType);
+        return fromExpressionType(resultType, isNullable);
+    }
+
+
+        // Compute type from function's composer with arguments' types.
+    protected DataTypeDescriptor expressionComposer(String functionName,
+                                                    ArgumentsAccess args )
+            throws StandardException {
+        return expressionComposer(functionName, args, true);
     }
 
     protected DataTypeDescriptor noArgFunction(String functionName) 
@@ -148,7 +163,20 @@ public class FunctionsTypeComputer extends AISTypeComputer
 
     protected DataTypeDescriptor binaryOperatorFunction(BinaryOperatorNode node) 
             throws StandardException {
-        return expressionComposer(node.getMethodName(), new BinaryValuesAccess(node));
+        ValueNode leftOperand = node.getLeftOperand();
+        ValueNode rightOperand = node.getRightOperand();
+        DataTypeDescriptor leftType = leftOperand.getType();
+        DataTypeDescriptor rightType = rightOperand.getType();
+        if (isParameterOrUntypedNull(leftOperand) && (rightType != null))
+            leftType = rightType.getNullabilityType(true);
+        else if (isParameterOrUntypedNull(rightOperand) && (leftType != null)) 
+            rightType = leftType.getNullabilityType(true);
+        
+        if ((leftType == null) || (rightType == null))
+            return null;
+
+        boolean nullable = leftType.isNullable() || rightType.isNullable();
+        return expressionComposer(node.getMethodName(), new BinaryValuesAccess(node), nullable);
     }
 
     protected DataTypeDescriptor ternaryOperatorFunction(TernaryOperatorNode node) 
@@ -530,62 +558,67 @@ public class FunctionsTypeComputer extends AISTypeComputer
         }
     }
 
-    protected DataTypeDescriptor fromExpressionType(ExpressionType resultType) {
+    protected DataTypeDescriptor fromExpressionType(ExpressionType resultType)
+    {
+        return fromExpressionType (resultType, true);
+    }
+
+    protected DataTypeDescriptor fromExpressionType(ExpressionType resultType, boolean isNullable) {
         switch (resultType.getType()) {
         case BOOL:
-            return new DataTypeDescriptor(TypeId.BOOLEAN_ID, true);
+            return new DataTypeDescriptor(TypeId.BOOLEAN_ID, isNullable);
         case INT:
-            return new DataTypeDescriptor(TypeId.INTEGER_ID, true);
+            return new DataTypeDescriptor(TypeId.INTEGER_ID, isNullable);
         case LONG:
-            return new DataTypeDescriptor(TypeId.BIGINT_ID, true);
+            return new DataTypeDescriptor(TypeId.BIGINT_ID, isNullable);
         case DOUBLE:
-            return new DataTypeDescriptor(TypeId.DOUBLE_ID, true);
+            return new DataTypeDescriptor(TypeId.DOUBLE_ID, isNullable);
         case FLOAT:
-            return new DataTypeDescriptor(TypeId.REAL_ID, true);
+            return new DataTypeDescriptor(TypeId.REAL_ID, isNullable);
         case U_INT:
-            return new DataTypeDescriptor(TypeId.INTEGER_UNSIGNED_ID, true);
+            return new DataTypeDescriptor(TypeId.INTEGER_UNSIGNED_ID, isNullable);
         case U_BIGINT:
-            return new DataTypeDescriptor(TypeId.BIGINT_UNSIGNED_ID, true);
+            return new DataTypeDescriptor(TypeId.BIGINT_UNSIGNED_ID, isNullable);
         case U_FLOAT:
-            return new DataTypeDescriptor(TypeId.REAL_UNSIGNED_ID, true);
+            return new DataTypeDescriptor(TypeId.REAL_UNSIGNED_ID, isNullable);
         case U_DOUBLE:
-            return new DataTypeDescriptor(TypeId.DOUBLE_UNSIGNED_ID, true);
+            return new DataTypeDescriptor(TypeId.DOUBLE_UNSIGNED_ID, isNullable);
         case DATE:
-            return new DataTypeDescriptor(TypeId.DATE_ID, true);
+            return new DataTypeDescriptor(TypeId.DATE_ID, isNullable);
         case TIME:
-            return new DataTypeDescriptor(TypeId.TIME_ID, true);
+            return new DataTypeDescriptor(TypeId.TIME_ID, isNullable);
         case TIMESTAMP:
-            return new DataTypeDescriptor(TypeId.TIMESTAMP_ID, true);
+            return new DataTypeDescriptor(TypeId.TIMESTAMP_ID, isNullable);
         case VARCHAR:
-            return new DataTypeDescriptor(TypeId.VARCHAR_ID, true, 
+            return new DataTypeDescriptor(TypeId.VARCHAR_ID, isNullable,
                                           resultType.getPrecision());
         case DECIMAL:
             {
                 int precision = resultType.getPrecision();
                 int scale = resultType.getScale();
-                return new DataTypeDescriptor(TypeId.DECIMAL_ID, precision, scale, true,
+                return new DataTypeDescriptor(TypeId.DECIMAL_ID, precision, scale, isNullable,
                                               DataTypeDescriptor.computeMaxWidth(precision, scale));
             }
         case TEXT:
-            return new DataTypeDescriptor(TypeId.LONGVARCHAR_ID, true);
+            return new DataTypeDescriptor(TypeId.LONGVARCHAR_ID, isNullable);
         case VARBINARY:
-            return new DataTypeDescriptor(TypeId.LONGVARBIT_ID, true);
+            return new DataTypeDescriptor(TypeId.LONGVARBIT_ID, isNullable);
         case NULL:
             return null;
         case DATETIME:
-            return new DataTypeDescriptor(TypeId.DATETIME_ID, true);
+            return new DataTypeDescriptor(TypeId.DATETIME_ID, isNullable);
         case YEAR:
-            return new DataTypeDescriptor(TypeId.YEAR_ID, true);
+            return new DataTypeDescriptor(TypeId.YEAR_ID, isNullable);
         case INTERVAL_MILLIS:
-            return new DataTypeDescriptor(TypeId.INTERVAL_SECOND_ID, true);
+            return new DataTypeDescriptor(TypeId.INTERVAL_SECOND_ID, isNullable);
         case INTERVAL_MONTH:
-            return new DataTypeDescriptor(TypeId.INTERVAL_MONTH_ID, true);
+            return new DataTypeDescriptor(TypeId.INTERVAL_MONTH_ID, isNullable);
         default:
             try {
                 return new DataTypeDescriptor(TypeId.getUserDefinedTypeId(null,
                                                                           resultType.getType().name(),
                                                                           null),
-                                              true);
+                                              isNullable);
             }
             catch (StandardException ex) {
                 throw new AkibanInternalException("Cannot make type for " + resultType,

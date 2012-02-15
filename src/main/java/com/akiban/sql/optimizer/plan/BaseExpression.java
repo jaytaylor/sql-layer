@@ -53,6 +53,10 @@ public abstract class BaseExpression extends BasePlanElement implements Expressi
         return sqlSource;
     }
 
+    protected void setSQLtype(DataTypeDescriptor type) {
+        this.sqlType = type;
+    }
+
     @Override
     public boolean isColumn() {
         return false;
