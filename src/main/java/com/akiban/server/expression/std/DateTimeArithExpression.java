@@ -49,13 +49,27 @@ public class DateTimeArithExpression extends ArithExpression
         {
             if (argumentTypes.size() != 2)
                 throw new WrongExpressionArityException(2, argumentTypes.size());
-            adjustVarchar(argumentTypes, 0);
-            adjustVarchar(argumentTypes, 1);
+            
+            // if both arguments have UNSUPPORTED type, there's not much
+            // that the type-inferring function can do other than
+            // expecting them to be AkType.TIME 
+            // since that's the type TIMEDIFF would "naturally" expect
+            if (argumentTypes.get(0).getType() == AkType.UNSUPPORTED &&
+                    argumentTypes.get(1).getType() == AkType.UNSUPPORTED)
+            {
+                argumentTypes.setType(0, AkType.TIME);
+                argumentTypes.setType(1, AkType.TIME);
+            }
+            else
+            {
+                adjustType(argumentTypes, 0);
+                adjustType(argumentTypes, 1);
+            }
 
             return composeType(argumentTypes.get(0), argumentTypes.get(1));
         }
 
-        private void adjustVarchar (TypesList argumentTypes, int index) throws StandardException
+        private void adjustType (TypesList argumentTypes, int index) throws StandardException
         {
             ExpressionType dateType = argumentTypes.get(index);
             switch (dateType.getType())
@@ -67,6 +81,12 @@ public class DateTimeArithExpression extends ArithExpression
                 case VARCHAR:   argumentTypes.setType(index, dateType.getPrecision() > 10 ?
                                                      AkType.DATETIME: AkType.TIME);
                                 break;
+                                  // if the arg at this index is UNKNOWN (from params)
+                                  // cast its type to the same type as the other's,
+                                  // since the expression would expect two args to have
+                                  // the same type
+                case UNSUPPORTED: argumentTypes.setType(index, argumentTypes.get(1 - index).getType());
+                                  break;                        
                 default:        argumentTypes.setType(index, AkType.TIME);
             }
         }
