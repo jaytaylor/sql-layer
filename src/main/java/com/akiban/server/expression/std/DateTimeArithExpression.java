@@ -66,7 +66,7 @@ public class DateTimeArithExpression extends ArithExpression
                 adjustType(argumentTypes, 1);
             }
 
-            return composeType(argumentTypes.get(0), argumentTypes.get(1));
+            return ExpressionTypes.TIME;
         }
 
         private void adjustType (TypesList argumentTypes, int index) throws StandardException
@@ -103,7 +103,7 @@ public class DateTimeArithExpression extends ArithExpression
             for (int n = 0; n < 2; ++n)
                 argumentTypes.setType(n, AkType.DATE);
 
-            return composeType(argumentTypes.get(0), argumentTypes.get(1));
+            return ExpressionTypes.LONG;
         }
     };
 
@@ -181,11 +181,6 @@ public class DateTimeArithExpression extends ArithExpression
         {
             return new DateTimeArithExpression(first, second, topT);
         }
-
-        protected ExpressionType composeType(ExpressionType first, ExpressionType second)
-        {
-            return ExpressionTypes.newType(topT, 0, 0);
-        }
     }
 
     protected static final class Calculator
@@ -256,20 +251,21 @@ public class DateTimeArithExpression extends ArithExpression
     }
 
     /**
-     *  topT
-     *  means INTERVAL_MILLIS expressed in this type
-     *  For example, time minus time => interval
-     *  if topT is set to TIME => result is INTERVAL in HOURS, SECONDS, MINUTES
+     * 
+     * @param left
+     * @param right
+     * @param topT expected top type
+     * 
+     * topT is explicitly set. 
+     * This type will take precedence over ArithExpression's getTopType()'s decision
      */
-    private final AkType topT;
     protected DateTimeArithExpression (Expression left, Expression right, AkType topT)
     {
-        super(left, ArithOps.MINUS, right);
-        this.topT = topT;
+        super(left, ArithOps.MINUS, right, topT);        
     }
 
     @Override
-    protected InnerValueSource getValueSource (ArithOp op, AkType topT)
+    protected InnerValueSource getValueSource (ArithOp op)
     {
         return new InnerValueSource(op, topT);
     }
@@ -277,7 +273,6 @@ public class DateTimeArithExpression extends ArithExpression
     @Override
     public ExpressionEvaluation evaluation ()
     {
-        return new InnerEvaluation(op, topT, this, childrenEvaluations());
-    }
-    
+        return new InnerEvaluation(op, this, childrenEvaluations());
+    }    
 }

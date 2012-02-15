@@ -76,6 +76,21 @@ public class ArithExpression extends AbstractBinaryExpression
         topT = super.valueType();
     }
 
+    /**
+     * This ctor is strictly to be used by DateTimeArithExpression where the
+     * top type is set by the sub class because it doesn't follow *regular* rules
+     * 
+     * @param lhs
+     * @param op
+     * @param rhs
+     * @param top 
+     */
+    protected ArithExpression (Expression lhs, ArithOp op, Expression rhs, AkType top)
+    {
+        super(top, lhs, rhs);
+        this.op = op;
+        topT = top;
+    }
     @Override
     protected void describe(StringBuilder sb)
     {
@@ -85,7 +100,7 @@ public class ArithExpression extends AbstractBinaryExpression
     @Override
     public ExpressionEvaluation evaluation()
     {
-        return new InnerEvaluation(op, topT, this,childrenEvaluations());
+        return new InnerEvaluation(op, this,childrenEvaluations());
     }
 
     /**
@@ -211,7 +226,7 @@ public class ArithExpression extends AbstractBinaryExpression
      * @param topT
      * @return
      */
-    protected InnerValueSource getValueSource (ArithOp op, AkType topT)
+    protected InnerValueSource getValueSource (ArithOp op)
     {
         return new InnerValueSource(op, topT);
     }
@@ -225,11 +240,11 @@ public class ArithExpression extends AbstractBinaryExpression
             return valueSource;
         }
         
-        protected InnerEvaluation (ArithOp op, AkType topT,ArithExpression ex,
+        protected InnerEvaluation (ArithOp op, ArithExpression ex,
                 List<? extends ExpressionEvaluation> children)
         {
             super(children);
-            valueSource = ex.getValueSource(op, topT);
+            valueSource = ex.getValueSource(op);
         }
         
         protected final InnerValueSource valueSource;
@@ -350,7 +365,7 @@ public class ArithExpression extends AbstractBinaryExpression
             else
             {
                 interval = right.getInterval_Month();
-                ymd_hms = ymd_hms = extract.getYearMonthDayHourMinuteSecond(extract.getLong(left));
+                ymd_hms = extract.getYearMonthDayHourMinuteSecond(extract.getLong(left));
             }
 
             if (!vallidDayMonth(ymd_hms[0], ymd_hms[1], ymd_hms[2]))
