@@ -88,6 +88,8 @@ public class ArithExpression extends AbstractBinaryExpression
     protected ArithExpression (Expression lhs, ArithOp op, Expression rhs, AkType top)
     {
         super(top, lhs, rhs);
+        getTopType(lhs.valueType(), rhs.valueType(), op); // this is to issue an exception, if any.
+                                                          // the output is not used         
         this.op = op;
         topT = top;
     }
