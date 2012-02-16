@@ -28,6 +28,7 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.UserTable;
 
+import com.akiban.util.ListUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -150,7 +151,7 @@ public class GroupJoinFinder extends BaseRule
     // group join.
     protected void normalizeColumnComparisons(ConditionList conditions) {
         if (conditions == null) return;
-        Collection<ConditionExpression> newExpressions = new HashSet<ConditionExpression>();
+        Collection<ConditionExpression> newExpressions = new ArrayList<ConditionExpression>();
         for (Iterator<ConditionExpression> iterator = conditions.iterator(); iterator.hasNext(); ) {
             ConditionExpression cond = iterator.next();
             if (cond instanceof ComparisonCondition) {
@@ -175,6 +176,7 @@ public class GroupJoinFinder extends BaseRule
             }
         }
         conditions.addAll(newExpressions);
+        ListUtils.removeDuplicates(conditions);
     }
 
     private boolean normalizeGroupJoinCondition(ComparisonCondition ccond, Collection<? super ConditionExpression> out)
