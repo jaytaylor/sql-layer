@@ -5,19 +5,20 @@
 - Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
 ---
 # bug 903278
-#- Statement: select DAYOFWEEK('2007-02-03'),DAYOFWEEK('1999-12-03'),DAYOFWEEK('1864-08-03'),DAYOFWEEK('0300-02-13'),DAYOFWEEK('2500-04-22'),DAYOFWEEK('2004-05-13') from all_types;
-#- output: [['7','6','4','3','5','5']]
-#---
-#- Statement: select DAYOFWEEK('15:12:33') from all_types;
-#- output: [[null]]
-#---
+- Statement: select DAYOFWEEK('2007-02-03'),DAYOFWEEK('1999-12-03'),DAYOFWEEK('1864-08-03'),DAYOFWEEK('0300-02-13'),DAYOFWEEK('2500-04-22'),DAYOFWEEK('2004-05-13') from all_types;
+- output: [['7','6','4','3','5','5']]
+---
 - Statement: select DAYOFWEEK('2006-05-23 15:12:33') from all_types;
 - output: [[3]]
-#---  
-#- Statement: select DAYOFWEEK('2006-05-35 15:12:33') from all_types;
+---  
+- Statement: select DAYOFWEEK('2006-05-35 15:12:33') from all_types;
+- output: [[null]]
+#---      
+#- Include: all-datetime-schema.yaml
+#---
+# will be working after some changing in ExtractorForTime.
+#- Statement: select DAYOFWEEK('15:12:33') from all_types;
 #- output: [[null]]
----      
-- Include: all-datetime-schema.yaml
 #---
 #- Statement: select id,DAYOFWEEK(time_field) from datetime_matrix where DAYOFWEEK(time_field) is not null;
 #- row_count: 0
