@@ -32,7 +32,7 @@ public class JMXInterpreterTest {
     private static final String SERVER_JMX_PORT = "8082";
     private static final String SERVER_ADDRESS = "localhost";
 
-    @Test
+    
     public void testForBasicConstructor() {
         JMXInterpreter conn = new JMXInterpreter();
         conn.openConnection(SERVER_ADDRESS, SERVER_JMX_PORT);

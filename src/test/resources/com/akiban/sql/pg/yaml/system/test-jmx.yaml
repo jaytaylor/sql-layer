@@ -1,4 +1,7 @@
 ---
+- Properties: all
+- suppressed: true
+---
 - CreateTable: t1 (c1 int);
 ---
 - Statement: insert into t1 values (1),(2),(3),(77),(88),(99)
