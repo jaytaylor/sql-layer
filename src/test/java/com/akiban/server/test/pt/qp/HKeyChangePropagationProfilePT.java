@@ -186,7 +186,6 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
         long end = System.nanoTime();
         assert start != Long.MIN_VALUE;
         double sec = (end - start) / (1000.0 * 1000 * 1000);
-        System.out.println(String.format("PDG optimization: %s", PersistitStore.PDG_OPTIMIZATION));
         System.out.println(String.format("scans: %s, db: %s/%s/%s, time: %s",
                                          SCANS, GRANDPARENTS, PARENTS_PER_GRANDPARENT, CHILDREN_PER_PARENT, sec));
     }
@@ -268,7 +267,6 @@ public class HKeyChangePropagationProfilePT extends QPProfilePTBase
         long end = System.nanoTime();
         assert start != Long.MIN_VALUE;
         double sec = (end - start) / (1000.0 * 1000 * 1000);
-        System.out.println(String.format("PDG optimization: %s", PersistitStore.PDG_OPTIMIZATION));
         System.out.println(String.format("scans: %s, db: %s/%s/%s, time: %s",
                                          SCANS, GRANDPARENTS, PARENTS_PER_GRANDPARENT, CHILDREN_PER_PARENT, sec));
     }

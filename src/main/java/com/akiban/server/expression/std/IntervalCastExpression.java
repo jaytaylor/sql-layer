@@ -92,9 +92,9 @@ public class IntervalCastExpression extends AbstractUnaryExpression
             if (source.isNull()) return NullValueSource.only();
 
             String interval = null;
-            Long result = null;
+            Double result = null;
             AkType sourceType = source.getConversionType();
-            int sign = 1;
+            double sign = 1;
 
             try
             {
@@ -112,42 +112,42 @@ public class IntervalCastExpression extends AbstractUnaryExpression
                 else if (!Converters.isConversionAllowed(sourceType, AkType.LONG))
                     throw new InconvertibleTypesException(sourceType, endPoint.type);
                 else
-                    result = Extractors.getLongExtractor(AkType.LONG).getLong(source);
+                    result = Extractors.getDoubleExtractor().getDouble(source);
 
                 switch(endPoint)
                 {
                     case YEAR:
                         if (result == null)
-                            result = Long.parseLong(interval);
+                            result = Double.parseDouble(interval);
                         result *= 12L * sign;
                         break;
                     case MONTH: 
                         if (result == null)
-                            result = sign * Long.parseLong(interval);
+                            result = sign * Double.parseDouble(interval);
                         break;
                     case YEAR_MONTH: 
                         String yr_mth[] = interval.split("-");
                         if (yr_mth.length != 2) 
                             throw new InvalidIntervalFormatException (endPoint.name(), interval);
-                        result = sign * (Long.parseLong(yr_mth[0]) * 12 + Long.parseLong(yr_mth[1]));
+                        result =  sign * (Long.parseLong(yr_mth[0]) * 12 + Long.parseLong(yr_mth[1]));
                         break;
                     case DAY:
                         if (result == null)
-                            result = Long.parseLong(interval);
+                            result = Double.parseDouble(interval);
                         result *= MULS[0] * sign;
                         break;
                     case HOUR:
                         if (result == null)
-                            result = Long.parseLong(interval); 
+                            result = Double.parseDouble(interval); 
                         result *= MULS[1]* sign;
                         break;
                     case MINUTE:
                         if (result == null)
-                            result = Long.parseLong(interval);
+                            result = Double.parseDouble(interval);
                         result *=  MULS[2] * sign;
                         break;
                     case SECOND:
-                        result = Math.round(Extractors.getDoubleExtractor().getDouble(source) * 1000);
+                        result = Extractors.getDoubleExtractor().getDouble(source) * 1000;
                         break;
                     case DAY_HOUR:
                         result = sign * getResult(0, interval, "\\s+", 2, false);
