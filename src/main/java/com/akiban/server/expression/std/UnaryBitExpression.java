@@ -16,7 +16,9 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.InconvertibleTypesException;
+import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -114,7 +116,7 @@ public class UnaryBitExpression extends AbstractUnaryExpression
         {
             super(ev);
             this.op = op;
-        }
+        }       
 
         @Override
         public ValueSource eval() 
@@ -126,12 +128,16 @@ public class UnaryBitExpression extends AbstractUnaryExpression
             }
             catch (InconvertibleTypesException ex) 
             {
-                log.debug("assume 0 as input ", ex);
+                QueryContext context = queryContext();
+                if (context != null)
+                    context.warnClient(ex);
                 return op.errorCase(valueHolder());
             } 
             catch (NumberFormatException ex)
             {
-                log.debug("assume 0 as input ", ex);
+                QueryContext context = queryContext();
+                if (context != null)
+                    context.warnClient(new InvalidCharToNumException(ex.getLocalizedMessage()));
                 return op.errorCase(valueHolder());
             }           
             return op.exc(arg, valueHolder());
