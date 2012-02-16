@@ -151,13 +151,10 @@ import com.akiban.server.store.statistics.IndexStatisticsMXBean;
    
    BulkLoad is not supported in IT level tests
    if used, please suppress the IT level calls or place tests in AAS directly
-<<<<<<< TREE
    
    - JMX: <objectName>   (i.e com.akiban:type=IndexStatistics)
    - params: [<parameter value>, ...]
    - output: [<output value>, ...]
-=======
->>>>>>> MERGE-SOURCE
 
 */
 class YamlTester {
