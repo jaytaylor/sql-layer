@@ -390,29 +390,7 @@ class YamlTester {
 	    }
 	}
 
-    protected boolean rowsEqual(List<Object> pattern, List<Object> row) {
     
-        int size = pattern.size();
-        if (size != row.size()) {
-    	return false;
-        }
-        for (int i = 0; i < size; i++) {
-    	Object patternElem = pattern.get(i);
-    	Object rowElem = row.get(i);
-    	if (patternElem instanceof OutputComparator) {
-    	    return ((OutputComparator) patternElem)
-    		    .compareOutput(rowElem);
-    	} else if (patternElem == null) {
-    	    if (rowElem != null) {
-    		return false;
-    	    }
-    	} else if (!objectToString(patternElem).equals(
-    	    objectToString(rowElem))) {
-    	    return false;
-    	}
-        }
-        return true;
-    }
     }
 
     /** Represents an SQL warning. */
@@ -1013,6 +991,21 @@ class YamlTester {
 		}
                 checkWarnings(reportedWarnings);
 	    }
+	}
+	
+	private boolean rowsEqual(List<Object> pattern, List<Object> row) {
+	    int size = pattern.size();
+	    if (size != row.size()) {
+	        return false;
+	    }
+	    for (int i = 0; i < size; i++) {
+	        Object patternElem = pattern.get(i);
+	        Object rowElem = row.get(i);
+	        if (!expected(patternElem, rowElem)) {
+	            return false;
+	        }
+	    }
+	    return true;
 	}
 
 	private void checkOutputTypes(ResultSet rs) throws SQLException {
@@ -1626,6 +1619,30 @@ class YamlTester {
             output = (ArrayList<Object>) row;
         }
 
+        protected boolean rowsEqual(List<Object> pattern, List<Object> row) {
+            
+            int size = pattern.size();
+            if (size != row.size()) {
+            return false;
+            }
+            for (int i = 0; i < size; i++) {
+            Object patternElem = pattern.get(i);
+            Object rowElem = row.get(i);
+            if (patternElem instanceof OutputComparator) {
+                return ((OutputComparator) patternElem)
+                        .compareOutput(rowElem);
+            } else if (patternElem == null) {
+                if (rowElem != null) {
+                    return false;
+                }
+            } else if (!objectToString(patternElem).equals(
+                objectToString(rowElem))) {
+                return false;
+            }
+            }
+            return true;
+        }
+        
         public void execute() {
             JMXInterpreter conn = new JMXInterpreter();
             conn.openConnection("localhost", "8082");
