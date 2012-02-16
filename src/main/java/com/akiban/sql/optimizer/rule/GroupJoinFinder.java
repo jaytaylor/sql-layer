@@ -408,11 +408,11 @@ public class GroupJoinFinder extends BaseRule
                     if (left.isColumn() && right.isColumn()) {
                         ColumnExpression lcol = (ColumnExpression)left;
                         ColumnExpression rcol = (ColumnExpression)right;
-                        if (lcol.getTable() == childTable) {
+                        if (tablesMatch(lcol.getTable(), childTable.getTable())) {
                             ColumnSource rightSource = rcol.getTable();
                             if (rightSource instanceof TableSource) {
                                 TableSource rightTable = (TableSource)rightSource;
-                                if (rightTable.getTable() == parentNode) {
+                                if (tablesMatch(rightTable, parentNode)) {
                                     for (int i = 0; i < ncols; i++) {
                                         JoinColumn joinColumn = joinColumns.get(i);
                                         if ((joinColumn.getChild() == lcol.getColumn()) &&
@@ -486,6 +486,14 @@ public class GroupJoinFinder extends BaseRule
         }
         return new TableGroupJoin(group, parentTable, childTable, 
                                   groupJoinConditions, groupJoin);
+    }
+
+    private boolean tablesMatch(ColumnSource columnSource, TableNode target) {
+        if (columnSource instanceof TableSource) {
+            TableSource tableSource = (TableSource) columnSource;
+            return tableSource.getTable().getTable().equals(target.getTable());
+        }
+        return false;
     }
 
     protected void findSingleGroups(Joinable joinable) {
