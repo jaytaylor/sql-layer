@@ -95,7 +95,7 @@ public class QueryTimeoutIT extends OperatorITBase
         long stop = System.currentTimeMillis();
         assertTrue(exited.get());
         long elapsedSec = (stop - start) / 1000;
-        assertTrue(elapsedSec >= timeoutSec && elapsedSec < timeoutSec * 1.25);
+        assertTrue(closeEnough(timeoutSec, elapsedSec));
     }
 
     @Test
@@ -132,7 +132,7 @@ public class QueryTimeoutIT extends OperatorITBase
         long stop = System.currentTimeMillis();
         assertTrue(exited.get());
         long elapsedSec = (stop - start) / 1000;
-        assertTrue(elapsedSec >= MODIFIED_TIMEOUT_SEC && elapsedSec < MODIFIED_TIMEOUT_SEC * 1.25);
+        assertTrue(closeEnough(MODIFIED_TIMEOUT_SEC, elapsedSec));
     }
 
     @Test
@@ -172,8 +172,20 @@ public class QueryTimeoutIT extends OperatorITBase
         assertTrue(exited.get());
         long elapsedSec = (stop - start) / 1000;
         long expectedSec = INITIAL_TIMEOUT_SEC + 1;
-        assertTrue(elapsedSec >= expectedSec && elapsedSec < expectedSec * 1.25);
+        assertTrue(closeEnough(expectedSec, elapsedSec));
     }
+
+    private boolean closeEnough(long expectedSec, long actualSec)
+    {
+        // A lower fudge factor is needed because the timeout starts from the time the QueryContext is created,
+        // which is in the @Before method, slightly before the test's timer starts.
+        return
+            actualSec <= expectedSec * (1 + UPPER_FUDGE_FACTOR) &&
+            actualSec >= expectedSec * (1 - LOWER_FUDGE_FACTOR);
+    }
+    
+    private static final double UPPER_FUDGE_FACTOR = 1.0; // 100%
+    private static final double LOWER_FUDGE_FACTOR = 0.2; // 20%
 
     private static class DoNothingForever extends Operator
     {
