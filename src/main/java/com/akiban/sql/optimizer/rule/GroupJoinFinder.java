@@ -408,7 +408,7 @@ public class GroupJoinFinder extends BaseRule
                     if (left.isColumn() && right.isColumn()) {
                         ColumnExpression lcol = (ColumnExpression)left;
                         ColumnExpression rcol = (ColumnExpression)right;
-                        if (tablesMatch(lcol.getTable(), childTable.getTable())) {
+                        if (lcol.getTable() == childTable) {
                             ColumnSource rightSource = rcol.getTable();
                             if (rightSource instanceof TableSource) {
                                 TableSource rightTable = (TableSource)rightSource;
