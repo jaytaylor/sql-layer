@@ -5,9 +5,10 @@
 - Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
 ---
 # 903221
-#- Statement: select dayname('1999-12-15') from all_types;
-#- output: [['Wednesday']]
-#---
+- Statement: select dayname('1999-12-15') from all_types;
+- output: [['Wednesday']]
+---
+# will be working after some change in ExtractorForTime
 #- Statement: select dayname('15:02:33') from all_types;
 #- output: [[null]]
 #---
@@ -19,12 +20,12 @@
 ---
 - Statement: select dayname('1996-02-29 15:15:15') from all_types;
 - output: [['Thursday']]
-#---
-#- Statement: select dayname('1996-02-30 15:15:15') from all_types;
-#- output: [[null]]
-#---
-#- Statement: select dayname('1997-02-29 15:15:15') from all_types;
-#- output: [[null]]
+---
+- Statement: select dayname('1996-02-30 15:15:15') from all_types;
+- output: [[null]]
+---
+- Statement: select dayname('1997-02-29 15:15:15') from all_types;
+- output: [[null]]
 #---  
 #- Include: all-datetime-schema.yaml
 #---

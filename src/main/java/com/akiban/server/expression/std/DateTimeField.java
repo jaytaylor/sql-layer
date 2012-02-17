@@ -193,6 +193,7 @@ public enum DateTimeField
 
     /**
      * same as d: day in numeric
+     * [0, ..., 59]
      */
     e
     {
@@ -614,7 +615,7 @@ public enum DateTimeField
             int m = datetime.getMinuteOfHour();
             int s = datetime.getSecondOfMinute();
             String halfDay = datetime.get(DateTimeFieldType.halfdayOfDay())  == 0 ? "AM" : "PM";
-
+            
             return String.format("%02d:%02d:%02d %s" ,
                     h,m,s, halfDay);
         }
@@ -634,6 +635,7 @@ public enum DateTimeField
 
     /**
      * second, same as s
+     *  [00, ..., 59]
      */
     S
     {
@@ -646,7 +648,7 @@ public enum DateTimeField
         @Override
         public String get(MutableDateTime datetime)
         {
-            return datetime.getSecondOfMinute() + "";
+            return String.format("%02d", datetime.getSecondOfMinute());
         }
 
         @Override
@@ -663,7 +665,8 @@ public enum DateTimeField
     },
 
     /**
-     * second,
+     * second
+     * [00, ..., 59]
      */
     s
     {
@@ -676,7 +679,7 @@ public enum DateTimeField
         @Override
         public String get(MutableDateTime datetime)
         {
-            return datetime.getSecondOfMinute() + "";
+            return String.format("%02d", datetime.getSecondOfMinute());
         }
 
         @Override

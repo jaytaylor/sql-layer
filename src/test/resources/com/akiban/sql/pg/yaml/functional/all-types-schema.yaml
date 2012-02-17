@@ -1,6 +1,7 @@
 # Create a table with all supported data types
 ---
 - CreateTable: all_types (
+      year_field year,
       bigint_field bigint,
       bigint_unsigned_field bigint unsigned,
       blob_field blob,

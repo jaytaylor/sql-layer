@@ -36,12 +36,12 @@
 - Statement: SELECT LEFTSHIFT(4,62) from all_types;
 - output: [[0]] 
 ---
-#- Statement: SELECT LEFTSHIFT(-4,1) from all_types;
-#- output: [[18446744073709551608]] 
-#---
-#- Statement: SELECT LEFTSHIFT(-4,61) from all_types;
-#- output: [[-9223372036854775808]] 
-#---
+- Statement: SELECT LEFTSHIFT(-4,1) from all_types;
+- output: [[18446744073709551608]] 
+---
+- Statement: SELECT LEFTSHIFT(-4,61) from all_types;
+- output: [[9223372036854775808]] 
+---
 - Statement: SELECT LEFTSHIFT(-4,62) from all_types;
 - output: [[0]]
 ---

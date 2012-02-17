@@ -28,18 +28,31 @@ import com.akiban.server.types.extract.Extractors;
  * the actual value (ie., 100 of LONG ====> 100 of INTERVAL_MILLIS)
  * 
  * This expression, however, turns a number into an INTERVAL_MILLIS assuming that
- * the number represents the number of days.
+ * the number represents the number of days or seconds.
  * This is odd and is only used in DATE_ADD, DATE_SUB
  */
-class NumericToIntervalDay extends AbstractUnaryExpression
+class NumericToIntervalMillis extends AbstractUnaryExpression
 {
+    static enum TargetType
+    {
+        DAY(86400000L, AkType.DATE),
+        SECOND(1000L, AkType.TIME);
+        
+        final long multiplier;
+        final AkType operandType;
+        TargetType (long val, AkType type)
+        {
+            multiplier = val;
+            operandType = type;
+        }
+    }
     private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
-        private static final long M_SECS_OF_DAY = 86400000L;
-
-        public InnerEvaluation (ExpressionEvaluation eval)
+        private final TargetType  targetType;
+        public InnerEvaluation (ExpressionEvaluation eval, TargetType target)
         {
             super(eval);
+            targetType = target;
         }
 
         @Override
@@ -47,16 +60,18 @@ class NumericToIntervalDay extends AbstractUnaryExpression
         {
             ValueSource source = operand();
             if (source.isNull()) return NullValueSource.only();
-            valueHolder().putInterval_Millis((long)(M_SECS_OF_DAY *
+            valueHolder().putInterval_Millis((long)(targetType.multiplier *
                     Extractors.getDoubleExtractor().getDouble(source)));
             return valueHolder();
         }
 
     }
 
-    protected NumericToIntervalDay (Expression arg)
+    private final TargetType target;
+    protected NumericToIntervalMillis (Expression arg, TargetType targetType)
     {
         super(AkType.INTERVAL_MILLIS, arg);
+        target = targetType;
     }
 
     @Override
@@ -68,6 +83,6 @@ class NumericToIntervalDay extends AbstractUnaryExpression
     @Override
     public ExpressionEvaluation evaluation()
     {
-        return new InnerEvaluation(operandEvaluation());
+        return new InnerEvaluation(operandEvaluation(), target);
     }
 }
