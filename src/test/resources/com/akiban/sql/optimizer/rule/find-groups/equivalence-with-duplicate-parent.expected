@@ -1,11 +1,11 @@
-SelectQuery@85b670
-  ResultSet@8ca8ac[cid, name, oid, cid, order_date, oid, cid, order_date]
-    Project@95c5ec[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date, user.orders.oid, user.orders.cid, user.orders.order_date]
-      Select@f52a14[user.orders.cid == user.customers.cid, user.orders.cid == user.orders.cid]
-        JoinNode@19d9c0d(INNER)
-          TableJoins@7056d5(TableGroup@1f88fbd(customers))
-            JoinNode@154c054(INNER/GROUP[user.orders.cid == user.customers.cid] - TableGroupJoin@11edceb(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-              TableSource@1e2481b(user.customers - TableGroup@1f88fbd(customers))
-              TableSource@10eeb26(user.orders - TableGroupJoin@11edceb(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-          TableJoins@139d115(TableGroup@1a4eb56(customers))
-            TableSource@704cf5(user.orders - TableGroup@1a4eb56(customers))
+SelectQuery@10d78ec
+  ResultSet@17df472[cid, name, oid, cid, order_date, oid, cid, order_date]
+    Project@3b9a5f[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date, user.orders.oid, user.orders.cid, user.orders.order_date]
+      Select@113dd59[user.orders.cid == user.orders.cid, user.orders.cid == user.customers.cid]
+        JoinNode@12929b2(INNER)
+          TableJoins@1706ad7(TableGroup@67a232(customers))
+            JoinNode@17667bd(INNER/GROUP[user.orders.cid == user.customers.cid] - TableGroupJoin@94d313(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+              TableSource@422510(user.customers - TableGroup@67a232(customers))
+              TableSource@8f5944(user.orders - TableGroupJoin@94d313(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+          TableJoins@ad9f5d(TableGroup@1c98c1b(customers))
+            TableSource@12d9844(user.orders - TableGroup@1c98c1b(customers))
