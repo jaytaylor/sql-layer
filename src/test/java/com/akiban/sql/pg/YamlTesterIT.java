@@ -1752,19 +1752,16 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                      "    [22007, 'Foo']]");
     }
 
-//    @Test
-//    public void testStatementWarningsRightMessage() {
-//        testYaml("---\n" +
-//                 "- CreateTable: t (vc varchar(32))\n" +
-//                 "---\n" +
-//                 "- Statement: INSERT INTO t VALUES ('a')\n" +
-//                 "---\n" +
-//                 "- Statement: SELECT DATE(vc) FROM t\n" +
-//                 "- warnings: [[22007, 'Invalid date format: a'],\n" +
-//                 "    [22007, 'Invalid date format: a'],\n" +
-//                 "    [22007, 'Invalid timestamp format: a'],\n" +
-//                 "    [22007, 'Invalid year format: a']]");
-//    }
+    @Test
+    public void testStatementWarningsRightMessage() {
+        testYaml("---\n" +
+                 "- CreateTable: t (vc varchar(32))\n" +
+                 "---\n" +
+                 "- Statement: INSERT INTO t VALUES ('a')\n" +
+                 "---\n" +
+                 "- Statement: SELECT DATE(vc) FROM t\n" +
+                 "- warnings: [[55003, \"Can't convert source type 'VARCHAR' to target 'DATETIME'\"]]");
+    }
 
     @Test
     public void testStatementWarningsDontMatchCount() {
@@ -1781,34 +1778,28 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                      "    [22007, 'Invalid year format: a']]");
     }
 
-//    @Test
-//    public void testStatementWarningsMatchCount() {
-//        testYaml("---\n" +
-//                 "- CreateTable: t (vc varchar(32))\n" +
-//                 "---\n" +
-//                 "- Statement: INSERT INTO t VALUES ('a')\n" +
-//                 "---\n" +
-//                 "- Statement: SELECT DATE(vc) FROM t\n" +
-//                 "- warnings_count: 4\n" +
-//                 "- warnings: [[22007, 'Invalid date format: a'],\n" +
-//                 "    [22007, 'Invalid date format: a'],\n" +
-//                 "    [22007, 'Invalid timestamp format: a'],\n" +
-//                 "    [22007, 'Invalid year format: a']]");
-//    }
+    @Test
+    public void testStatementWarningsMatchCount() {
+        testYaml("---\n" +
+                 "- CreateTable: t (vc varchar(32))\n" +
+                 "---\n" +
+                 "- Statement: INSERT INTO t VALUES ('a')\n" +
+                 "---\n" +
+                 "- Statement: SELECT DATE(vc) FROM t\n" +
+                 "- warnings_count: 1\n" +
+                 "- warnings: [[55003, \"Can't convert source type 'VARCHAR' to target 'DATETIME'\"]]");
+    }
 
-//    @Test
-//    public void testStatementWarningsRegexp() {
-//        testYaml("---\n" +
-//                 "- CreateTable: t (vc varchar(32))\n" +
-//                 "---\n" +
-//                 "- Statement: INSERT INTO t VALUES ('a')\n" +
-//                 "---\n" +
-//                 "- Statement: SELECT DATE(vc) FROM t\n" +
-//                 "- warnings: [[!re '[0-9]+', !re 'Invalid .*'],\n" +
-//                 "    [!re '[0-9]+', !re 'Invalid .*'],\n" +
-//                 "    [!re '[0-9]+', !re 'Invalid .*'],\n" +
-//                 "    [!re '[0-9]+', !re 'Invalid .*']]");
-//    }
+    @Test
+    public void testStatementWarningsRegexp() {
+        testYaml("---\n" +
+                 "- CreateTable: t (vc varchar(32))\n" +
+                 "---\n" +
+                 "- Statement: INSERT INTO t VALUES ('a')\n" +
+                 "---\n" +
+                 "- Statement: SELECT DATE(vc) FROM t\n" +
+                 "- warnings: [[!re '[0-9]+', !re \"Can't convert .*\"]]");
+    }
 
     /* Other methods */
 
