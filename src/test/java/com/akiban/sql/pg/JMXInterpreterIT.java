@@ -27,17 +27,23 @@ import com.akiban.server.manage.ManageMXBean;
 import com.akiban.server.store.statistics.IndexStatisticsMXBean;
 
 /* test class for JMXIterpreter, which provides a JMX interface to the server in the test framework  */
-public class JMXInterpreterTest {
+public class JMXInterpreterIT extends PostgresServerYamlITBase {
 
     private static final String SERVER_JMX_PORT = "8082";
     private static final String SERVER_ADDRESS = "localhost";
 
-    
+    @Test
     public void testForBasicConstructor() {
-        JMXInterpreter conn = new JMXInterpreter();
-        conn.openConnection(SERVER_ADDRESS, SERVER_JMX_PORT);
-        conn.getInfo(conn.setup(conn.getConnector()));
-        conn.close();
+        JMXInterpreter conn = null;
+        try {
+            conn = new JMXInterpreter();
+            conn.openConnection(SERVER_ADDRESS, SERVER_JMX_PORT);
+            Assert.assertNotNull(conn);
+        } finally {
+            if (conn != null) {
+                conn.close();
+            }
+        }
     }
 
     @Test
@@ -49,7 +55,7 @@ public class JMXInterpreterTest {
             JMXConnector connector = conn.getConnector();
             Assert.assertNotNull(connector);
             ManageMXBean bean = conn.getAkServer(connector);
-            
+
             Assert.assertNotNull(bean);
             Assert.assertNotNull(bean.getVersionString());
         } finally {
