@@ -141,9 +141,6 @@ class Intersect_Ordered extends Operator
                 rightInput.open();
                 nextLeftRow();
                 nextRightRow();
-                if (leftRow.isEmpty() && rightRow.isEmpty()) {
-                    close();
-                }
             } finally {
                 TAP_OPEN.out();
             }
@@ -156,16 +153,17 @@ class Intersect_Ordered extends Operator
             try {
                 Row next = null;
                 while (!closed && next == null) {
-                    long c = compareRows();
-                    if (c < 0) {
-                        nextLeftRow();
-                    } else if (c > 0) {
-                        nextRightRow();
-                    } else {
-                        next = combineRows();
-                    }
-                    if (leftRow.isEmpty() && rightRow.isEmpty()) {
+                    if (leftRow.isEmpty() || rightRow.isEmpty()) {
                         close();
+                    } else {
+                        long c = compareRows();
+                        if (c < 0) {
+                            nextLeftRow();
+                        } else if (c > 0) {
+                            nextRightRow();
+                        } else {
+                            next = combineRows();
+                        }
                     }
                 }
                 return next;
