@@ -1,97 +1,110 @@
+// Master akiban_information_schema protobuf description file
+// This file contains the master description set for the AIS protobuf 
+// messages  
+
 package akiban_schema.protobuf;
 option java_package = "com.akiban.ais.protobuf";
 option java_outer_classname = "AISProtobuf";
 
+// AIS Types. Sent to the Akiban Adapter for knowledge of the
+// fixedSize and maxSizeBytes to construct 
+// Not kept in the Persistit serialization
 message Type {
-   required string name = 1;
-   required int32  parameters = 2;
-   required bool  fixedSize = 3;
-   required int32 maxSizeBytes = 4;
+   optional string name         = 1;
+   optional int32  parameters   = 2;
+   optional bool   fixedSize    = 3;
+   optional int32  maxSizeBytes = 4;
 }
 
 message TableName {
-    required string schemaName = 1;
-    required string tableName = 2;
+    optional string schemaName = 1;
+    optional string tableName  = 2;
 }
 
+// One of the column pairs which define the Join.
 message JoinColumn {
-   required string parentColumn = 1;
-   required string childColumn = 2;
-   optional int32  position = 3;
+   optional string parentColumn = 1;
+   optional string childColumn  = 2;
+   optional int32  position     = 3;
 }
 
+// Joins are collected on the parent table, 
+// so the Join.childTable points to the child table
+// (even in another schema).  
+// Description is a copy of any comment supplied on the 
+// foreign key index when the join is created. 
 message Join {
-    required TableName parentTable = 1;
-    required TableName childTable  = 2;
-    required int32     position    = 3;
-
-    repeated JoinColumn columns    = 8;
-    
-    optional string    description = 16;
+    optional TableName  childTable  = 1;
+    repeated JoinColumn columns     = 2;
+    optional string     description = 3;
 }
 
 message IndexColumn {
-    required string        columnName = 1; 
-    required bool          ascending = 2;
-    optional int32         position = 3;
+    optional string  columnName = 1; 
+    optional bool    ascending  = 2;
+    optional int32   position   = 3;
 }
 
 message Index {
-    required string        indexName = 1;
-    required string	   treeName  = 2;
-    required int32         indexId   = 3;
-    required bool          isPK      = 4;
-    required bool          isUnique  = 5;
-    required bool          isFK      = 6;
-    optional bool 	   isAkFK    = 7;    
-    repeated IndexColumn   columns = 8;
-    
-    optional string        description = 16;
+    optional string        indexName = 1;
+    optional string	   treeName  = 2;
+    optional int32         indexId   = 3;
+    optional bool          isPK      = 4;
+    optional bool          isUnique  = 5;
+    optional bool          isFK      = 6;
+    optional bool 	   isAkFK    = 7;
+    repeated IndexColumn   columns   = 8;
+    optional string        description = 9;
 }
 
-
+// The Group.name is derived from the root table schema/table name
+// Therefore the name points to root table in the tables list
+// The list of indexes on the Group are the list of GroupIndexes
+// for this group.
 message Group {
-   required string name = 1;
-   repeated Join   joins = 2;
-   repeated Index  indexes = 3; 
-   optional string description = 16;
+   optional string name     = 1;
+   optional string treeName = 2;
+   repeated Index  indexes  = 3; 
 }
 
+// Column in a Table
 message Column {
-    required string        columnName = 1;
-    required string        typeName = 2;
-    required bool          isNullable = 3;
-    optional int32         position = 4; 
-    
-    optional int64         typeParam1 = 16;
-    optional int64         typeParam2 = 17;
-    optional int64         initAutoInc = 18;
-    optional string        characterSet = 19;
-    optional string        collation    = 20;    
-	
-    optional string        description = 32;
+    optional string  columnName   = 1;
+    optional string  typeName     = 2;
+    optional bool    isNullable   = 3;
+    optional int32   position     = 4; 
+    optional int64   typeParam1   = 5;
+    optional int64   typeParam2   = 6;
+    optional int64   initAutoInc  = 7;
+    optional string  characterSet = 8;
+    optional string  collation    = 9;    
+    optional string  description  = 10;
 }
 
+// UserTables. 
+// GroupTables are derived from the root table and the
+// list of joins (if any)
 message Table {
-    required string    name = 1;
-    required string    treeName = 2;
-    required int32     tableId =  3 [default = 0];
-    required bool      userTable = 4;
-    
-    repeated Column    columns = 8;
-    repeated Index     indexes = 9;
-    optional int32     ordinal = 10;    
-    
-    optional string    description = 16;
+    optional string  name         = 1;
+    optional int32   tableId      = 2 [default = 0];
+    repeated Column  columns      = 3;
+    optional int32   ordinal      = 4;    
+    optional string  characterSet = 5;
+    optional string  collation    = 6;    
+    repeated Index   indexes      = 7;
+    repeated Join    childTables  = 8;
+    optional string  description  = 9; 
 }
 
 message Schema {
-    required string name = 1;
-    repeated Table  tables = 8;
-    repeated Group  groups = 9;
+    optional string name   = 1;
+    optional Table  tables = 2;
+    repeated Group  groups = 3;
+    optional string characterSet = 4;
+    optional string collation    = 5;    
 }
 
 message AkibanInformationSchema {
-    repeated Type types = 1;
+    repeated Type   types   = 1;
     repeated Schema schemas = 2;
 }
