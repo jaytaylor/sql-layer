@@ -189,6 +189,10 @@ public class GroupJoinFinder extends BaseRule
                 ColumnExpression ccondLeft = (ColumnExpression) leftRaw;
                 ColumnExpression ccondRight = (ColumnExpression) rightRaw;
 
+                if (ccondLeft.getColumn() == null || ccondLeft.getColumn().getUserTable() == null
+                        || ccondRight.getColumn() == null || ccondRight.getColumn().getUserTable() == null)
+                    return false;
+
                 boolean conditionOnDifferentTables =
                         ccondLeft.getColumn().getUserTable() != ccondRight.getColumn().getUserTable();
                 
