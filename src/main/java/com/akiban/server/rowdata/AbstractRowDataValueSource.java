@@ -15,6 +15,7 @@
 
 package com.akiban.server.rowdata;
 
+import com.akiban.qp.operator.Cursor;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.Quote;
 import com.akiban.server.encoding.EncodingException;
@@ -168,6 +169,11 @@ abstract class AbstractRowDataValueSource implements ValueSource {
     public boolean getBool() {
         checkState(AkType.BOOL);
         return extractLong(Signage.SIGNED) != 0;
+    }
+
+    @Override
+    public Cursor getResultSet() {
+        throw new UnsupportedOperationException();
     }
 
     @Override

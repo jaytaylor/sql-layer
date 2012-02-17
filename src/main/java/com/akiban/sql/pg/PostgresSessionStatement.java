@@ -43,7 +43,8 @@ public class PostgresSessionStatement implements PostgresStatement
 
     public static final String[] ALLOWED_CONFIGURATION = new String[] {
       "client_encoding", "DateStyle", "geqo", "ksqo",
-      "zeroDateTimeBehavior", "maxNotificationLevel", "cbo"
+      "zeroDateTimeBehavior", "maxNotificationLevel", "OutputFormat",
+      "cbo"
     };
 
     private Operation operation;

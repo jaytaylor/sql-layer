@@ -15,6 +15,7 @@
 
 package com.akiban.server.types;
 
+import com.akiban.qp.operator.Cursor;
 import com.akiban.util.ByteSource;
 
 import java.math.BigDecimal;
@@ -42,5 +43,6 @@ public interface ValueTarget {
     void putVarBinary(ByteSource value);
     void putYear(long value);
     void putBool(boolean value);
+    void putResultSet(Cursor value);
     AkType getConversionType();
 }

@@ -38,6 +38,7 @@ import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.expression.std.LiteralExpression;
 import com.akiban.server.expression.subquery.AnySubqueryExpression;
 import com.akiban.server.expression.subquery.ExistsSubqueryExpression;
+import com.akiban.server.expression.subquery.ResultSetSubqueryExpression;
 import com.akiban.server.expression.subquery.ScalarSubqueryExpression;
 import com.akiban.server.types.AkType;
 
@@ -808,6 +809,9 @@ public class OperatorAssembler extends BaseRule
                 return new ScalarSubqueryExpression(operator, innerExpression,
                                                     outerRowType, innerRowType,
                                                     bindingPosition);
+            else if (sexpr instanceof SubqueryResultSetExpression)
+                return new ResultSetSubqueryExpression(operator, outerRowType, 
+                                                       innerRowType, bindingPosition);
             else
                 throw new UnsupportedSQLException("Unknown subquery", sexpr.getSQLsource());
         }
