@@ -3,7 +3,10 @@
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field, time_field, timestamp_field, varchar_field) VALUES (1, '01:05:06', '2012-01-01 12:31:00', '2012-03-04 18:22:15')
---- 
+---
+- Statement: select TIMEDIFF(time_field, '00:00:01') from all_types;
+- output_types: [TIME]
+---
 - Statement: select TIMEDIFF('12:31:15', '00:00:01') from all_types;
 - output: [['12:31:14']]
 ---
@@ -13,39 +16,41 @@
 - Statement: select TIMEDIFF(time_field, ?) from all_types;
 - params: [['00:00:01']]
 - output: [['01:05:05']]
-#--- bug 903498
+#--- #bug 903498
+# NOTE: Not valid. Two arguments of TIMEDIFF must have the same type
+# Or one is a DATE/TIME/DATETIME/TIMESTAMP and the other is a VARCHAR that is
+# convertible to the other's type
 #- Statement: select TIMEDIFF(timestamp_field, ?) from all_types;
 #- params: [['00:00:01']]
 #- output: [['12:30:59']]
 ---
 - Statement: select TIMEDIFF(varchar_field, ?) from all_types;
-- params: [['00:00:01']]
+- params: [['2012-03-04 00:00:01']]
 - output: [['18:22:14']]
-
 --- #params & fields in select
 - Statement: select TIMEDIFF(time_field, ?) from all_types;
 - params: [['00:00:01']]
 - output: [['01:05:05']]
-#--- # bug 921088
-#- Statement: select 1 from all_types WHERE TIMEDIFF(time_field, ?) != '01:01:23';
-#- params: [['00:00:01']]
-#- output: [['1']]
+--- 
+- Statement: select 1 from all_types WHERE TIMEDIFF(time_field, ?) != '01:01:23';
+- params: [['00:00:01']]
+- output: [['1']]
 --- #fields in select
 - Statement: select TIMEDIFF(time_field, '00:00:01') from all_types;
 - output: [['01:05:05']]
---- #bug 903498
+#--- #bug 903498 --> Not valid. Two types must be the same
 #- Statement: select TIMEDIFF(timestamp_field, '00:00:01') from all_types;
 #- output: [['01:05:05']]
 #---
-- Statement: select TIMEDIFF(varchar_field, '00:00:01') from all_types;
-- output: [['18:22:14']]
+#- Statement: select TIMEDIFF(varchar_field, '00:00:01') from all_types;
+#- output: [['18:22:14']]
 ---  #fields in where  # bug 921088
-#- Statement: select 1 from all_types where TIMEDIFF(time_field, '00:00:01') < '12:31:31';
-#- output: [['1']]
-#---
-#- Statement: select 1 from all_types WHERE TIMEDIFF(varchar_field, '00:00:01') > '00:01:01';
-#- output: [['1']]
-#---
+- Statement: select 1 from all_types where TIMEDIFF(time_field, '00:00:01') < '12:31:31';
+- output: [['1']]
+--- 
+- Statement: select 1 from all_types WHERE TIMEDIFF(varchar_field, '2006-11-07 00:00:01') > '00:01:01';
+- output: [['1']]
+---
 - Statement: select TIMEDIFF('12:34:55', '00:00:01') from all_types;
 - output: [['12:34:54']]
 #--- #bug 921095
@@ -81,19 +86,17 @@
 ---
 - Statement: select TIMEDIFF(5, 2) from all_types;
 - output: [['00:00:03']]
-#--- #921122
-#- Statement: select TIMEDIFF(5.324, 2.112) from all_types;
-#- output: [['00:00:03.212000']]
 ---
 - Statement: select TIMEDIFF('12:34:55', 17) from all_types;
 - output: [['12:34:38']]
-#--- 921127
-#- Statement: select TIMEDIFF('12:34:55', -17) from all_types;
-#- output: [['12:35:12']]
-#--- #921122
+--- #921127
+- Statement: select TIMEDIFF('12:34:55', -17) from all_types;
+- output: [['12:35:12']]
+#--- Bug : DECIMAL (DOUBLE/FLOAT) not convertible to TIME
 #- Statement: select TIMEDIFF('12:34:55', 17.495) from all_types;
-#- output: [['12:34:37.505000']]
-#--- # bug 921124
+#- output: [['12:34:37.505000']] #fractional seconds -> not supported yet
+#- output: [['12:34:37']]
+#--- # bug 921124 -> invalid.
 #- Statement: select TIMEDIFF('12:34:55', 'TIME TO GO') from all_types;
 #- output: [['12:34:55']]
 ...
