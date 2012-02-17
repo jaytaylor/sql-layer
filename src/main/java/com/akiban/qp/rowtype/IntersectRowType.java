@@ -39,24 +39,16 @@ public class IntersectRowType extends DerivedRowType
     @Override
     public int nFields()
     {
-/*
-        return leftType.nFields() + rightType.nFields() - branchType.nFields();
-*/
-        assert false;
-        return -1;
+        return leftType.nFields() + rightType.nFields();
     }
 
     @Override
     public AkType typeAt(int index)
     {
-/*
         if (index < leftType.nFields()) {
             return leftType.typeAt(index);
         }
-        return rightType.typeAt(index - leftType.nFields() + branchType.nFields());
-*/
-        assert false;
-        return null;
+        return rightType.typeAt(index - leftType.nFields());
     }
 
     // IntersectRowType interface
