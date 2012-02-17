@@ -975,7 +975,7 @@ public class RecursiveTapTest
     private static final String SUBSIDIARY_TAP = "b";
     private static final int MILLION = 1000000;
     private static final int TICK_LENGTH_MSEC = 20;
-    private static final int CLOCK_IMPRECISION_MSEC = 5;
+    private static final int CLOCK_IMPRECISION_MSEC = 10;
 
     private InOutTap a;
     private InOutTap b;
