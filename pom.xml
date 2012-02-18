@@ -406,6 +406,7 @@
                     <exclude>src/test/bin/*.sh</exclude>
                     <exclude>src/test/bin/*.cmd</exclude>
                     <exclude>.idea/**</exclude>
+                    <exclude>**/*.proto</exclude>
                     <exclude>.bzrignore</exclude>
                     <exclude>velocity.log</exclude>
                     <!-- No extension. Manually add header and ignore -->

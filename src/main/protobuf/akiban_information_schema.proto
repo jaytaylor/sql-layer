@@ -1,19 +1,19 @@
 // Master akiban_information_schema protobuf description file
-// This file contains the master description set for the AIS protobuf 
-// messages  
 
 package akiban_schema.protobuf;
 option java_package = "com.akiban.ais.protobuf";
 option java_outer_classname = "AISProtobuf";
 
-// AIS Types. Sent to the Akiban Adapter for knowledge of the
-// fixedSize and maxSizeBytes to construct 
-// Not kept in the Persistit serialization
+// The AIS Types are statically generated in akiban server in 
+// com.akiban.ais.model.Types. The AIS message needs to include the types
+// to send them to the Akiban Adapter, where they are used to create and 
+// parse Rows. 
 message Type {
-   optional string name         = 1;
-   optional int32  parameters   = 2;
-   optional bool   fixedSize    = 3;
-   optional int32  maxSizeBytes = 4;
+   optional string typeName     = 1;  // name of the type
+   optional int32  parameters   = 2;  // number of parameters used in the column
+   optional bool   fixedSize    = 3;  // Does the type of fixed size 
+                                      // (false for variable width types)
+   optional int32  maxSizeBytes = 4;  // maximum size of the type in bytes
 }
 
 message TableName {
@@ -28,80 +28,83 @@ message JoinColumn {
    optional int32  position     = 3;
 }
 
-// Joins are collected on the parent table, 
-// so the Join.childTable points to the child table
-// (even in another schema).  
-// Description is a copy of any comment supplied on the 
-// foreign key index when the join is created. 
 message Join {
-    optional TableName  childTable  = 1;
-    repeated JoinColumn columns     = 2;
-    optional string     description = 3;
+    optional TableName  childTable  = 1;  // Child table for this join. 
+                                          // Parent table is the list source
+    repeated JoinColumn columns     = 2;  // list of columns for this join
 }
 
 message IndexColumn {
-    optional string  columnName = 1; 
-    optional bool    ascending  = 2;
-    optional int32   position   = 3;
+    optional string  columnName = 1;  // links to Column.columnName 
+    optional bool    ascending  = 2;  // sort order of the column 
+                                      // true for ascending, false for descending
+    optional int32   position   = 3;  // order of the column in the index
+}
+
+// Type of the index
+enum IndexType {
+    TABLE = 0;  // user table index
+    GROUP = 1;  // group index
 }
 
 message Index {
-    optional string        indexName = 1;
-    optional string	   treeName  = 2;
-    optional int32         indexId   = 3;
-    optional bool          isPK      = 4;
-    optional bool          isUnique  = 5;
-    optional bool          isFK      = 6;
-    optional bool 	   isAkFK    = 7;
-    repeated IndexColumn   columns   = 8;
-    optional string        description = 9;
+    optional string   indexName = 1;
+    optional string   treeName  = 2;
+    optional int32    indexId   = 3;
+    optional bool     isPK      = 4;
+    optional bool     isUnique  = 5;
+    optional bool     isFK      = 6;
+    optional bool     isAkFK    = 7;
+    repeated IndexColumn columns     = 8;
+    optional string      description = 9;
+    optional IndexType indexType = 10;
 }
 
-// The Group.name is derived from the root table schema/table name
+// The groupName is derived from the root table schema/table name
 // Therefore the name points to root table in the tables list
 // The list of indexes on the Group are the list of GroupIndexes
 // for this group.
 message Group {
-   optional string name     = 1;
-   optional string treeName = 2;
-   repeated Index  indexes  = 3; 
+   optional string groupName = 1;
+   optional string treeName  = 2;
+   repeated Index  indexes   = 3; 
 }
 
 // Column in a Table
 message Column {
     optional string  columnName   = 1;
-    optional string  typeName     = 2;
+    optional string  typeName     = 2;  // links to Types.typeName
     optional bool    isNullable   = 3;
-    optional int32   position     = 4; 
-    optional int64   typeParam1   = 5;
+    optional int32   position     = 4;  // order of column in Table 
+    optional int64   typeParam1   = 5;  
     optional int64   typeParam2   = 6;
-    optional int64   initAutoInc  = 7;
+    optional int64   initAutoInc  = 7;  // initial auto increment value
     optional string  characterSet = 8;
     optional string  collation    = 9;    
     optional string  description  = 10;
 }
 
-// UserTables. 
+// UserTable.  
 // GroupTables are derived from the root table and the
 // list of joins (if any)
 message Table {
-    optional string  name         = 1;
-    optional int32   tableId      = 2 [default = 0];
-    repeated Column  columns      = 3;
-    optional int32   ordinal      = 4;    
+    optional string  tableName    = 1;
+    optional int32   tableId      = 2;  // globally unique id for table
+    optional int32   ordinal      = 3;  // id of table within the group
+    repeated Column  columns      = 4;
     optional string  characterSet = 5;
     optional string  collation    = 6;    
-    repeated Index   indexes      = 7;
-    repeated Join    childTables  = 8;
-    optional string  description  = 9; 
+    repeated Index   indexes      = 7;  // list of indexes on the table
+    repeated Join    childTables  = 8;  // list of joins to child tables
+    optional string  description  = 9;  // Table comment holder
 }
 
 message Schema {
-    optional string name   = 1;
-    optional Table  tables = 2;
-    repeated Group  groups = 3;
+    optional string schemaName   = 1;
+    optional Table  tables       = 2;  // list of user tables in the schema
+    repeated Group  groups       = 3;  // list of groups in the schema
     optional string characterSet = 4;
-    optional string collation    = 5;    
+    optional string collation    = 5;
 }
 
 message AkibanInformationSchema {
