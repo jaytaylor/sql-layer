@@ -26,37 +26,6 @@
             <url>http://akiban.artifactoryonline.com/akiban/libs-releases-local</url>
         </repository>
     </distributionManagement>
-    <repositories>
-        <!-- jmemcached-core -->
-        <repository>
-            <id>thimbleware.repo</id>
-            <url>http://thimbleware.com/maven</url>
-        </repository>
-        <!-- sql-parser -->
-        <repository>
-            <id>akiban-releases</id>
-            <name>akiban-releases</name>
-            <url>http://akiban.artifactoryonline.com/akiban/libs-releases-local</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </repository>
-        <!-- sql-parser -->
-        <repository>
-            <id>akiban-snapshots</id>
-            <name>akiban-snapshots</name>
-            <url>http://akiban.artifactoryonline.com/akiban/libs-snapshots-local</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </repository>
-    </repositories>
     <dependencies>
         <dependency>
             <groupId>org.apache.commons</groupId>
