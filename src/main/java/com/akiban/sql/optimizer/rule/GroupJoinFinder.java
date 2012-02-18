@@ -416,7 +416,7 @@ public class GroupJoinFinder extends BaseRule
                             ColumnSource rightSource = rcol.getTable();
                             if (rightSource instanceof TableSource) {
                                 TableSource rightTable = (TableSource)rightSource;
-                                if (tablesMatch(rightTable, parentNode)) {
+                                if (rightTable.getTable() == parentNode) {
                                     for (int i = 0; i < ncols; i++) {
                                         JoinColumn joinColumn = joinColumns.get(i);
                                         if ((joinColumn.getChild() == lcol.getColumn()) &&
@@ -490,14 +490,6 @@ public class GroupJoinFinder extends BaseRule
         }
         return new TableGroupJoin(group, parentTable, childTable, 
                                   groupJoinConditions, groupJoin);
-    }
-
-    private boolean tablesMatch(ColumnSource columnSource, TableNode target) {
-        if (columnSource instanceof TableSource) {
-            TableSource tableSource = (TableSource) columnSource;
-            return tableSource.getTable().getTable().equals(target.getTable());
-        }
-        return false;
     }
 
     protected void findSingleGroups(Joinable joinable) {
