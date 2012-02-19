@@ -15,6 +15,8 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -57,6 +59,7 @@ public class DateFormatExpression extends AbstractBinaryExpression
                 case TIMESTAMP: break;
                 case VARCHAR:   argumentTypes.setType(0, dateType.getPrecision() > 10 ?
                                                      AkType.DATETIME: AkType.DATE);
+                                break;
                 default:        argumentTypes.setType(0, AkType.DATE);
             }            
 
@@ -76,8 +79,18 @@ public class DateFormatExpression extends AbstractBinaryExpression
             ValueSource date = children().get(0).eval();
             ValueSource format = children().get(1).eval();
             if (date.isNull() || format.isNull() || format.getString().equals("")) return NullValueSource.only();
-            MutableDateTime datetime = ConversionUtil.getDateTimeConverter().get(date);
-
+            MutableDateTime datetime;
+            try
+            {
+                datetime = ConversionUtil.getDateTimeConverter().get(date);
+            }
+            catch (InvalidParameterValueException ex)
+            {
+                QueryContext context = queryContext();
+                if (context != null)
+                    context.warnClient(ex);
+                return NullValueSource.only();
+            }
             valueHolder().putString(DateTimeField.getFormatted(datetime, format.getString()));
             return valueHolder();
         }

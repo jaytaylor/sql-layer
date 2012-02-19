@@ -1,7 +1,4 @@
 # Test the WEEK() function
-# ---
-# - Properties: sys-aksql
-# - suppress: true
 ---
 - Include: all-types-schema.yaml
 ---

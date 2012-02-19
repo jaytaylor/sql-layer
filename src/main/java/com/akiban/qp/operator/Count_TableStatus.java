@@ -22,8 +22,46 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.types.AkType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.tap.InOutTap;
 
 import java.util.Set;
+
+/**
+
+ <h1>Overview</h1>
+
+ Count_TableStatus returns the row count for a given RowType.
+
+ <h1>Arguments</h1>
+
+ <ul>
+
+ <li><b>RowType tableType:</b> RowType of the table whose count is to be returned.
+
+ </ul>
+
+
+ <h1>Behavior</h1>
+
+ The count of rows of the specified table is read out of the table's TableStatus.
+
+ <h1>Output</h1>
+
+ A single row containing the row count (type long).
+
+ <h1>Assumptions</h1>
+
+ None.
+
+ <h1>Performance</h1>
+
+ This operator does no IO.
+
+ <h1>Memory Requirements</h1>
+
+ This operator keeps no rows in memory.
+
+ */
 
 class Count_TableStatus extends Operator
 {
@@ -66,6 +104,11 @@ class Count_TableStatus extends Operator
         this.resultType = tableType.schema().newValuesType(AkType.LONG);
     }
 
+    // Class state
+    
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Count_TableStatus open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Count_TableStatus next");
+    
     // Object state
 
     private final RowType tableType;
@@ -80,20 +123,27 @@ class Count_TableStatus extends Operator
         @Override
         public void open()
         {
+            TAP_OPEN.in();
             pending = true;
+            TAP_OPEN.out();
         }
 
         @Override
         public Row next()
         {
-            checkQueryCancelation();
-            if (pending) {
-                long rowCount = adapter().rowCount(tableType);
-                close();
-                return new ValuesRow(resultType, new Object[] { rowCount });
-            }
-            else {
-                return null;
+            TAP_NEXT.in();
+            try {
+                checkQueryCancelation();
+                if (pending) {
+                    long rowCount = adapter().rowCount(tableType);
+                    close();
+                    return new ValuesRow(resultType, new Object[] { rowCount });
+                }
+                else {
+                    return null;
+                }
+            } finally {
+                TAP_NEXT.out();
             }
         }
 

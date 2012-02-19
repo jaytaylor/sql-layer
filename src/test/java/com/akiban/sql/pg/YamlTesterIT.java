@@ -1530,8 +1530,13 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                 "- output: [[3, 'Zoolander'],[1, 'Smith'],[2, 'Jones'],[4, 'Adams']]");
     }
 
+    @Test
+    public void testIgnoreBulkloadCommand() {
+        testYamlFail("---\n- Bulkload: /home/akiba/fts_basis.properties\n"+
+        "- properties: {'dataset.coi.address.ratio': 3, 'dataset.coi.order.ratio': 2, 'dataset.coi.customer.count': 200, 'dataset.coi.item.ratio': 2}\n...");
+    }
+    
     /* Test Statement warnings_count */
-
     @Test
     public void testStatementWarningsCountNoValue() {
         testYaml("---\n" +
@@ -1630,7 +1635,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "- Statement: INSERT INTO t VALUES ('a')\n" +
                  "---\n" +
                  "- Statement: SELECT DATE(vc) FROM t\n" +
-                 "- warnings_count: 4\n");
+                 "- warnings_count: 1\n");
     }
 
     @Test
@@ -1755,10 +1760,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "- Statement: INSERT INTO t VALUES ('a')\n" +
                  "---\n" +
                  "- Statement: SELECT DATE(vc) FROM t\n" +
-                 "- warnings: [[22007, 'Invalid date format: a'],\n" +
-                 "    [22007, 'Invalid date format: a'],\n" +
-                 "    [22007, 'Invalid timestamp format: a'],\n" +
-                 "    [22007, 'Invalid year format: a']]");
+                 "- warnings: [[55003, \"Can't convert source type `VARCHAR` to target `DATETIME`\"]]");
     }
 
     @Test
@@ -1784,11 +1786,8 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "- Statement: INSERT INTO t VALUES ('a')\n" +
                  "---\n" +
                  "- Statement: SELECT DATE(vc) FROM t\n" +
-                 "- warnings_count: 4\n" +
-                 "- warnings: [[22007, 'Invalid date format: a'],\n" +
-                 "    [22007, 'Invalid date format: a'],\n" +
-                 "    [22007, 'Invalid timestamp format: a'],\n" +
-                 "    [22007, 'Invalid year format: a']]");
+                 "- warnings_count: 1\n" +
+                 "- warnings: [[55003, \"Can\'t convert source type `VARCHAR` to target `DATETIME`\"]]");
     }
 
     @Test
@@ -1799,10 +1798,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "- Statement: INSERT INTO t VALUES ('a')\n" +
                  "---\n" +
                  "- Statement: SELECT DATE(vc) FROM t\n" +
-                 "- warnings: [[!re '[0-9]+', !re 'Invalid .*'],\n" +
-                 "    [!re '[0-9]+', !re 'Invalid .*'],\n" +
-                 "    [!re '[0-9]+', !re 'Invalid .*'],\n" +
-                 "    [!re '[0-9]+', !re 'Invalid .*']]");
+                 "- warnings: [[!re '[0-9]+', !re \"Can't convert .*\"]]");
     }
 
     /* Other methods */
@@ -1869,6 +1865,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    out.close();
 	}
     }
+    
     
     
 }

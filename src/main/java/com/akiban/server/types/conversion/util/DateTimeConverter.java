@@ -45,10 +45,7 @@ class DateTimeConverter implements AbstractConverter<MutableDateTime>
                                 getYearMonthDayHourMinuteSecond(source.getTime()); break;
             case VARCHAR:   return get(source.getString());
             case TEXT:      return get(source.getText());
-            case YEAR:      ymd_hms =   Extractors.getLongExtractor(AkType.YEAR).
-                                getYearMonthDayHourMinuteSecond(source.getYear());
-                            checkArgs(ymd_hms);
-                            break;
+            case YEAR:      throw new InvalidParameterValueException("Invalid Date Value");
             default:        throw new InconvertibleTypesException(source.getConversionType(), 
                                                                     AkType.DATETIME);
         }

@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.types.ValueSourceIsNullException;
 import com.akiban.junit.OnlyIf;
 import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.NamedParameterizedRunner;
@@ -179,7 +180,7 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
     }
 
     @OnlyIf("expectExc()")
-    @Test(expected = UnsupportedOperationException.class)
+    @Test(expected = ValueSourceIsNullException.class)
     public void testWithExc()
     {
         test();

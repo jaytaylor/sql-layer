@@ -19,6 +19,8 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.Tap;
 
 import java.util.Collections;
 import java.util.List;
@@ -78,4 +80,5 @@ public abstract class Operator implements Plannable
     // Class state
 
     protected static final String NL = System.getProperty("line.separator");
+    public static final InOutTap OPERATOR_TAP = Tap.createRecursiveTimer("operator: root");
 }

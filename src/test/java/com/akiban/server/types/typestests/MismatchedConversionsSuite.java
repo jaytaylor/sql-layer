@@ -125,7 +125,7 @@ public final class MismatchedConversionsSuite {
     private static final String ALL = "ALL";
     private static final String DEFAULT_PERMUTATIONS = "ALL";
     private static final Object NO_STATE = "SWITCH";
-    private static final Set<AkType> invalidTypes = EnumSet.of(NULL, UNSUPPORTED);
+    private static final Set<AkType> invalidTypes = EnumSet.of(NULL, UNSUPPORTED, RESULT_SET);
     private static final Map<AkType,TestCase<?>> gettersAndPutters = createGettersAndPutters();
 
     static class Switcher {

@@ -20,7 +20,6 @@ import com.akiban.sql.parser.ValueNode;
 
 /** An expression evaluated by a subquery: first column of first row
  * or <code>NULL</code>.
- * TODO: Think about nested result sets.
  */
 public class SubqueryValueExpression extends SubqueryExpression 
 {

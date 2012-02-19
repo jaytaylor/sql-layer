@@ -15,6 +15,7 @@
 
 package com.akiban.server.types;
 
+import com.akiban.qp.operator.Cursor;
 import com.akiban.server.Quote;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.util.AkibanAppender;
@@ -132,6 +133,11 @@ public abstract class AbstractValueSource implements ValueSource {
     @Override
     public boolean getBool() {
         throw complain(AkType.BOOL);
+    }
+    
+    @Override
+    public Cursor getResultSet() {
+        throw complain(AkType.RESULT_SET);
     }
     
     // for use in this class

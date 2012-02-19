@@ -40,6 +40,7 @@ public abstract class AbstractCompositeExpressionEvaluation implements Expressio
         for (ExpressionEvaluation child : children) {
             child.of(context);
         }
+        this.context = context;
     }
 
     public AbstractCompositeExpressionEvaluation(List<? extends ExpressionEvaluation> children) {
@@ -83,8 +84,14 @@ public abstract class AbstractCompositeExpressionEvaluation implements Expressio
     protected ValueHolder valueHolder() {
         return valueHolder == null ? valueHolder = new ValueHolder() : valueHolder ;
     }
+    
+    protected QueryContext queryContext() {
+        return context;
+    }
+    
     // object state
 
     private final List<? extends ExpressionEvaluation> children;
     private ValueHolder valueHolder;
+    private QueryContext context;
 }

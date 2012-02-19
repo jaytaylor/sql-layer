@@ -151,7 +151,7 @@ final class StandardTestCases {
 
     private static void verifyAllTypesTested(Collection<? extends TestCase<?>> testCases) {
         Set<AkType> allTypes = EnumSet.allOf(AkType.class);
-        allTypes.removeAll(EnumSet.of(AkType.UNSUPPORTED, AkType.NULL));
+        allTypes.removeAll(EnumSet.of(AkType.UNSUPPORTED, AkType.NULL, AkType.RESULT_SET));
         for (TestCase<?> testCase : testCases) {
             allTypes.remove(testCase.type());
         }

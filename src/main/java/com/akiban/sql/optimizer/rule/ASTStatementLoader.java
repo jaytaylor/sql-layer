@@ -1121,12 +1121,20 @@ public class ASTStatementLoader extends BaseRule
             }
             else if (valueNode instanceof SubqueryNode) {
                 SubqueryNode subqueryNode = (SubqueryNode)valueNode;
-                PlanNode subquery = toQueryForSelect(subqueryNode.getResultSet(),
-                                                     subqueryNode.getOrderByList(),
-                                                     subqueryNode.getOffset(),
-                                                     subqueryNode.getFetchFirst());
-                return new SubqueryValueExpression(new Subquery(subquery),
-                                                   subqueryNode.getType(), subqueryNode);
+                PlanNode subquerySelect = toQueryForSelect(subqueryNode.getResultSet(),
+                                                           subqueryNode.getOrderByList(),
+                                                           subqueryNode.getOffset(),
+                                                           subqueryNode.getFetchFirst());
+                Subquery subquery = new Subquery(subquerySelect);
+                if ((subqueryNode.getType() != null) &&
+                    subqueryNode.getType().getTypeId().isRowMultiSet())
+                    return new SubqueryResultSetExpression(subquery,
+                                                           subqueryNode.getType(), 
+                                                           subqueryNode);
+                else
+                    return new SubqueryValueExpression(subquery, 
+                                                       subqueryNode.getType(), 
+                                                       subqueryNode);
             }
             else if (valueNode instanceof JavaToSQLValueNode) {
                 return toExpression(((JavaToSQLValueNode)valueNode).getJavaValueNode(),

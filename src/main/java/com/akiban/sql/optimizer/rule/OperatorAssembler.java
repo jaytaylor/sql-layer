@@ -38,6 +38,7 @@ import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.expression.std.LiteralExpression;
 import com.akiban.server.expression.subquery.AnySubqueryExpression;
 import com.akiban.server.expression.subquery.ExistsSubqueryExpression;
+import com.akiban.server.expression.subquery.ResultSetSubqueryExpression;
 import com.akiban.server.expression.subquery.ScalarSubqueryExpression;
 import com.akiban.server.types.AkType;
 
@@ -71,10 +72,10 @@ import java.util.*;
 public class OperatorAssembler extends BaseRule
 {
     private static final Logger logger = LoggerFactory.getLogger(OperatorAssembler.class);
-    private static final PointTap SELECT_COUNT = Tap.createCount("sql: select", true);
-    private static final PointTap INSERT_COUNT = Tap.createCount("sql: insert", true);
-    private static final PointTap UPDATE_COUNT = Tap.createCount("sql: update", true);
-    private static final PointTap DELETE_COUNT = Tap.createCount("sql: delete", true);
+    private static final PointTap SELECT_COUNT = Tap.createCount("sql: select");
+    private static final PointTap INSERT_COUNT = Tap.createCount("sql: insert");
+    private static final PointTap UPDATE_COUNT = Tap.createCount("sql: update");
+    private static final PointTap DELETE_COUNT = Tap.createCount("sql: delete");
 
 
     @Override
@@ -808,6 +809,9 @@ public class OperatorAssembler extends BaseRule
                 return new ScalarSubqueryExpression(operator, innerExpression,
                                                     outerRowType, innerRowType,
                                                     bindingPosition);
+            else if (sexpr instanceof SubqueryResultSetExpression)
+                return new ResultSetSubqueryExpression(operator, outerRowType, 
+                                                       innerRowType, bindingPosition);
             else
                 throw new UnsupportedSQLException("Unknown subquery", sexpr.getSQLsource());
         }

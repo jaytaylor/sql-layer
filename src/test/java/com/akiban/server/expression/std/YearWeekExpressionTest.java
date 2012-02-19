@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.types.ValueSourceIsNullException;
 import java.util.EnumMap;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
@@ -121,25 +122,25 @@ public class YearWeekExpressionTest extends ComposedExpressionTestBase
                 new LiteralExpression(AkType.INT, 4)));
     }
 
-    @Test (expected = InvalidParameterValueException.class)
+    @Test (expected = ValueSourceIsNullException.class)
     public void testZeroYear()
     {
         test(AkType.DATETIME, "0000-12-2 12:10:15", 0, 0);
     }
 
-    @Test (expected = InvalidParameterValueException.class)
+    @Test (expected = ValueSourceIsNullException.class)
     public void testZeroMonth()
     {
         test(AkType.DATETIME, "0001-00-02 12:10:15", 0, 0);
     }
 
-    @Test (expected = InvalidParameterValueException.class)
+    @Test (expected = ValueSourceIsNullException.class)
     public void testZeroDay()
     {
         test(AkType.DATE, "0001-02-00", 0, 0);
     }
 
-    @Test (expected = InvalidParameterValueException.class)
+    @Test (expected = ValueSourceIsNullException.class)
     public void testInvalidMode()
     {
         test(AkType.DATE, "2009-12-2", 10, 0);

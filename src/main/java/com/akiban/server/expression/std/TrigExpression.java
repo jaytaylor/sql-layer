@@ -98,7 +98,7 @@ public class TrigExpression extends AbstractCompositeExpression
             switch(size)
             {
                 case 2:     if (name != TrigName.ATAN && name != TrigName.ATAN2)
-                                throw new WrongExpressionArityException(2, size); // fall thru
+                                throw new WrongExpressionArityException(1, size); // fall thru
                 case 1:     break;
                 default:    throw new WrongExpressionArityException(1, size);
             }
@@ -188,7 +188,7 @@ public class TrigExpression extends AbstractCompositeExpression
         switch(size)
         {
             case 2:     if (name != TrigName.ATAN && name != TrigName.ATAN2)
-                            throw new WrongExpressionArityException(2, size); // fall thru
+                            throw new WrongExpressionArityException(1, size); // fall thru
             case 1:     break;
             default:    throw new WrongExpressionArityException(1, size);
         }

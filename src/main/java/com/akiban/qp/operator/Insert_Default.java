@@ -128,7 +128,7 @@ class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
     }
 
     private final Operator inputOperator;
-    private static final InOutTap INSERT_TAP = Tap.createTimer("operator: insert");
+    private static final InOutTap INSERT_TAP = Tap.createTimer("operator: Insert_Default");
     private static final Logger LOG = LoggerFactory.getLogger(Insert_Default.class);
 
 }

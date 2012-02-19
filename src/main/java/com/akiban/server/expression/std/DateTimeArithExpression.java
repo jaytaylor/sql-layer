@@ -22,17 +22,24 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.TypesList;
 import com.akiban.server.expression.std.ArithOps.ArithOpComposer;
+import com.akiban.server.expression.std.NumericToIntervalMillis.TargetType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.StandardException;
 
 public class DateTimeArithExpression extends ArithExpression
 {
-    @Scalar({"adddate", "date_add", "addtime"})
-    public static final ExpressionComposer ADD_DATE_COMPOSER = new AddSubComposer(ArithOps.ADD);    
+    @Scalar({"adddate", "date_add"})
+    public static final ExpressionComposer ADD_DATE_COMPOSER = new AddSubComposer(ArithOps.ADD, TargetType.DAY);    
     
-    @Scalar({"subdate", "date_sub", "subtime"})
-    public static final ExpressionComposer SUB_DATE_COMPOSER = new AddSubComposer(ArithOps.MINUS);
+    @Scalar({"addtime"})
+    public static final ExpressionComposer ADD_TIME_COMPOSER = new AddSubComposer(ArithOps.ADD, TargetType.SECOND);  
+    
+    @Scalar({"subdate", "date_sub"})
+    public static final ExpressionComposer SUB_DATE_COMPOSER = new AddSubComposer(ArithOps.MINUS,  TargetType.DAY);
+    
+    @Scalar("subtime")
+    public static final ExpressionComposer SUB_TIME_COMPOSER = new AddSubComposer(ArithOps.MINUS,  TargetType.SECOND);
     
     @Scalar("timediff")
     public static final ExpressionComposer TIMEDIFF_COMPOSER = new DiffComposer(AkType.TIME)
@@ -42,13 +49,26 @@ public class DateTimeArithExpression extends ArithExpression
         {
             if (argumentTypes.size() != 2)
                 throw new WrongExpressionArityException(2, argumentTypes.size());
-            adjustVarchar(argumentTypes, 0);
-            adjustVarchar(argumentTypes, 1);
-
-            return composeType(argumentTypes.get(0), argumentTypes.get(1));
+            
+            // if both arguments have UNSUPPORTED type, there's not much
+            // that the type-inferring function can do other than
+            // expecting them to be AkType.TIME 
+            // since that's the type TIMEDIFF would "naturally" expect
+            if (argumentTypes.get(0).getType() == AkType.UNSUPPORTED &&
+                    argumentTypes.get(1).getType() == AkType.UNSUPPORTED)
+            {
+                argumentTypes.setType(0, AkType.TIME);
+                argumentTypes.setType(1, AkType.TIME);
+            }
+            else
+            {
+                adjustType(argumentTypes, 0);
+                adjustType(argumentTypes, 1);
+            }            
+            return ExpressionTypes.TIME;
         }
 
-        private void adjustVarchar (TypesList argumentTypes, int index) throws StandardException
+        private void adjustType (TypesList argumentTypes, int index) throws StandardException
         {
             ExpressionType dateType = argumentTypes.get(index);
             switch (dateType.getType())
@@ -59,6 +79,13 @@ public class DateTimeArithExpression extends ArithExpression
                 case TIMESTAMP: break;
                 case VARCHAR:   argumentTypes.setType(index, dateType.getPrecision() > 10 ?
                                                      AkType.DATETIME: AkType.TIME);
+                                break;
+                                  // if the arg at this index is UNKNOWN (from params)
+                                  // cast its type to the same type as the other's,
+                                  // since the expression would expect two args to have
+                                  // the same type
+                case UNSUPPORTED: argumentTypes.setType(index, argumentTypes.get(1 - index).getType());
+                                  break;                        
                 default:        argumentTypes.setType(index, AkType.TIME);
             }
         }
@@ -75,22 +102,25 @@ public class DateTimeArithExpression extends ArithExpression
             for (int n = 0; n < 2; ++n)
                 argumentTypes.setType(n, AkType.DATE);
 
-            return composeType(argumentTypes.get(0), argumentTypes.get(1));
+            return ExpressionTypes.LONG;
         }
     };
 
     private static class AddSubComposer extends BinaryComposer
     {
         private final ArithOpComposer composer;
-        protected AddSubComposer (ArithOpComposer composer)
+        private final TargetType type;
+        protected AddSubComposer (ArithOpComposer composer, TargetType type)
         {
             this.composer = composer;
+            this.type = type;
         }
         @Override
         protected Expression compose(Expression first, Expression second)
         {
             if (ArithExpression.isNumeric(second.valueType()))
-                second = new NumericToIntervalDay(second);
+                second = new NumericToIntervalMillis(second, type);
+
             return composer.compose(first, second);
         }
 
@@ -104,7 +134,7 @@ public class DateTimeArithExpression extends ArithExpression
 
             if (firstArg == AkType.VARCHAR)            
                 firstArg = argumentTypes.get(0).getPrecision() > 10 ?
-                           AkType.DATETIME : AkType.DATE;            
+                           AkType.DATETIME : type.operandType;            
 
             if (firstArg == AkType.DATE
                     && (secondArg == AkType.INTERVAL_MILLIS || !isIntegral(secondArg)))
@@ -149,11 +179,6 @@ public class DateTimeArithExpression extends ArithExpression
         protected Expression compose(Expression first, Expression second)
         {
             return new DateTimeArithExpression(first, second, topT);
-        }
-
-        protected ExpressionType composeType(ExpressionType first, ExpressionType second)
-        {
-            return ExpressionTypes.newType(topT, 0, 0);
         }
     }
 
@@ -225,20 +250,21 @@ public class DateTimeArithExpression extends ArithExpression
     }
 
     /**
-     *  topT
-     *  means INTERVAL_MILLIS expressed in this type
-     *  For example, time minus time => interval
-     *  if topT is set to TIME => result is INTERVAL in HOURS, SECONDS, MINUTES
+     * 
+     * @param left
+     * @param right
+     * @param topT expected top type
+     * 
+     * topT is explicitly set. 
+     * This type will take precedence over ArithExpression's getTopType()'s decision
      */
-    private final AkType topT;
     protected DateTimeArithExpression (Expression left, Expression right, AkType topT)
     {
-        super(left, ArithOps.MINUS, right);
-        this.topT = topT;
+        super(left, ArithOps.MINUS, right, topT);        
     }
 
     @Override
-    protected InnerValueSource getValueSource (ArithOp op, AkType topT)
+    protected InnerValueSource getValueSource (ArithOp op)
     {
         return new InnerValueSource(op, topT);
     }
@@ -246,7 +272,6 @@ public class DateTimeArithExpression extends ArithExpression
     @Override
     public ExpressionEvaluation evaluation ()
     {
-        return new InnerEvaluation(op, topT, this, childrenEvaluations());
-    }
-    
+        return new InnerEvaluation(op, this, childrenEvaluations());
+    }    
 }
