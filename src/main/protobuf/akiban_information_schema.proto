@@ -21,6 +21,12 @@ message TableName {
     optional string tableName  = 2;
 }
 
+enum JoinType {
+   LEFT_OUTER_JOIN = 0;
+   RIGHT_OUTER_JOIN = 1;
+   FULL_OUTER_JOIN = 2;
+}
+
 // One of the column pairs which define the Join.
 message JoinColumn {
    optional string parentColumn = 1;
@@ -31,7 +37,9 @@ message JoinColumn {
 message Join {
     optional TableName  childTable  = 1;  // Child table for this join. 
                                           // Parent table is the list source
-    repeated JoinColumn columns     = 2;  // list of columns for this join
+    optional JoinType   joinType    = 2;  // Type of join to child table
+    repeated JoinColumn columns     = 3;  // list of columns for this join
+
 }
 
 message IndexColumn {
@@ -41,23 +49,16 @@ message IndexColumn {
     optional int32   position   = 3;  // order of the column in the index
 }
 
-// Type of the index
-enum IndexType {
-    TABLE = 0;  // user table index
-    GROUP = 1;  // group index
-}
-
 message Index {
     optional string   indexName = 1;
-    optional string   treeName  = 2;
-    optional int32    indexId   = 3;
+    optional string   treeName  = 2;  // storage system tree name 
+    optional int32    indexId   = 3;  // id of index within table/group
     optional bool     isPK      = 4;
     optional bool     isUnique  = 5;
     optional bool     isFK      = 6;
     optional bool     isAkFK    = 7;
     repeated IndexColumn columns     = 8;
     optional string      description = 9;
-    optional IndexType indexType = 10;
 }
 
 // The groupName is derived from the root table schema/table name
@@ -65,9 +66,9 @@ message Index {
 // The list of indexes on the Group are the list of GroupIndexes
 // for this group.
 message Group {
-   optional string groupName = 1;
-   optional string treeName  = 2;
-   repeated Index  indexes   = 3; 
+   optional string rootTableName = 1;  // Root Table for this group
+   optional string treeName      = 2;  // storage system tree name  
+   repeated Index  indexes       = 3;  // list of Group indexes 
 }
 
 // Column in a Table
@@ -97,14 +98,15 @@ message Table {
     repeated Index   indexes      = 7;  // list of indexes on the table
     repeated Join    childTables  = 8;  // list of joins to child tables
     optional string  description  = 9;  // Table comment holder
+    optional bool    protected    = 10; // Table can not be altered or joined
 }
 
 message Schema {
     optional string schemaName   = 1;
     optional Table  tables       = 2;  // list of user tables in the schema
     repeated Group  groups       = 3;  // list of groups in the schema
-    optional string characterSet = 4;
-    optional string collation    = 5;
+    optional string characterSet = 4;  // schema default character set
+    optional string collation    = 5;  // schema default collation ordering
 }
 
 message AkibanInformationSchema {
