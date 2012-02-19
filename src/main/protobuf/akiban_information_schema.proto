@@ -22,9 +22,10 @@ message TableName {
 }
 
 enum JoinType {
-   LEFT_OUTER_JOIN = 0;
+   LEFT_OUTER_JOIN  = 0;
    RIGHT_OUTER_JOIN = 1;
-   FULL_OUTER_JOIN = 2;
+   FULL_OUTER_JOIN  = 2;
+   INNER_JOIN       = 3;
 }
 
 // One of the column pairs which define the Join.
@@ -59,6 +60,7 @@ message Index {
     optional bool     isAkFK    = 7;
     repeated IndexColumn columns     = 8;
     optional string      description = 9;
+    optional JoinType  joinType = 10; // Type of join used for GroupIndex
 }
 
 // The groupName is derived from the root table schema/table name
