@@ -135,14 +135,12 @@ public class UpdateIT extends OperatorITBase
         compareRows(expected, executable);
     }
 
-    @Test @Ignore
+    @Test
     // http://en.wikipedia.org/wiki/Halloween_Problem
     public void halloweenProblem() throws Exception {
         use(db);
-        /*
         Transaction transaction = adapter.transaction();
         transaction.incrementStep(); // Enter isolation mode.
-        */
 
         Operator scan = filter_Default(
             ancestorLookup_Default(
@@ -171,9 +169,7 @@ public class UpdateIT extends OperatorITBase
         assertEquals("rows touched", 8, result.rowsTouched());
         assertEquals("rows modified", 8, result.rowsModified());
 
-        /*
         transaction.incrementStep(); // Make changes visible.
-        */
 
         Cursor executable = cursor(scan, queryContext);
         RowBase[] expected = new RowBase[] { 
