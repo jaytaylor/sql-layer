@@ -19,7 +19,6 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.BoolValueSource;
 
@@ -44,6 +43,12 @@ public final class ExistsSubqueryExpression extends SubqueryExpression {
     public ExistsSubqueryExpression(Operator subquery, RowType outerRowType, 
                                     RowType innerRowType, int bindingPosition) {
         super(subquery, outerRowType, innerRowType, bindingPosition);
+    }
+
+    @Override
+    public String name()
+    {
+        return "EXISTS";
     }
                                  
     private static final class InnerEvaluation extends SubqueryExpressionEvaluation {

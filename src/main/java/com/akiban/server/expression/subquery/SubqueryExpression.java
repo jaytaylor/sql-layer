@@ -21,7 +21,9 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.sql.optimizer.explain.*;
 import com.akiban.util.ArgumentValidation;
+import java.math.BigDecimal;
 
 public abstract class SubqueryExpression implements Expression {
 
@@ -38,6 +40,18 @@ public abstract class SubqueryExpression implements Expression {
     @Override
     public boolean needsRow() {
         return true;
+    }
+    
+    @Override
+    public Explainer getExplainer () {
+        
+        Attributes states = new Attributes();
+        states.put(Label.NAME, PrimitiveExplainer.getInstance(name()));
+        states.put(Label.OUTER_TYPE, PrimitiveExplainer.getInstance(outerRowType.toString()));
+        states.put(Label.INNER_TYPE, PrimitiveExplainer.getInstance(innerRowType.toString()));
+        states.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(bindingPosition));
+        
+        return new OperationExplainer(Type.SUBQUERY, states);
     }
 
     // for use by subclasses
