@@ -1,0 +1,10 @@
+SelectQuery@2d4c8822
+  ResultSet@7b7d8769[cid, name]
+    Project@6e453dd5[user.customers.cid, user.customers.name]
+      Select@3dea382[ANY(Subquery@dc0adca)]
+        TableGroupJoinTree@64d1afd3(TableGroup@26e795b(customers), customers)
+          TableSource@4c84f665(user.customers - TableGroup@26e795b(customers))
+
+Subquery@dc0adca
+  Project@22e1469c[user.customers.name == VALUES[0]]
+    ExpressionsSource@73e2bda7([[Smith], [Jones], [Sanchez]])

@@ -1,0 +1,10 @@
+SelectQuery@28bd36fa
+  ResultSet@1e646bfb[id, name, state, id, pid, name, id, pid, name]
+    Project@52ed3b53[user.parent.id, user.parent.name, user.parent.state, user.child.id, user.child.pid, user.child.name, user.child.id, user.child.pid, user.child.name]
+      Select@54d1f0ad[user.child.pid == user.parent.id]
+        JoinNode@2310195c(INNER)
+          TableGroupJoinTree@75f0f8ff(TableGroup@c7f5bf9(parent), parent INNER child)
+            TableSource@7a315068(user.parent - TableGroup@c7f5bf9(parent))
+              TableSource@3b961a84(user.child - TableGroupJoin@1f6b69d7(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
+          TableGroupJoinTree@44f1b25e(TableGroup@7d6f3ed7(parent), child)
+            TableSource@7ba6eeab(user.child - TableGroup@7d6f3ed7(parent))

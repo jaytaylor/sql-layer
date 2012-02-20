@@ -113,6 +113,9 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
             join.setLeft(new TableGroupJoinTree(leftTree));
         if (rightTree != null)
             join.setRight(new TableGroupJoinTree(rightTree));
+        // Make arbitrary joins LEFT not RIGHT.
+        if (join.getJoinType() == JoinType.RIGHT)
+            join.reverse();
         return null;
     }
 
