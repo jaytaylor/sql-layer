@@ -350,12 +350,6 @@ public class StrToDateExpression extends AbstractBinaryExpression
     }
 
     @Override
-    protected void describe(StringBuilder sb)
-    {
-        sb.append("STR_TO_DATE");
-    }
-
-    @Override
     public ExpressionEvaluation evaluation()
     {
         if (valueType() == AkType.NULL) return LiteralExpression.forNull().evaluation();

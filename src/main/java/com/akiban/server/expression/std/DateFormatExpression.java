@@ -115,12 +115,6 @@ public class DateFormatExpression extends AbstractBinaryExpression
     }
 
     @Override
-    protected void describe(StringBuilder sb)
-    {
-        sb.append("DATE_FORMAT");
-    }
-
-    @Override
     public ExpressionEvaluation evaluation()
     {
         return new InnerEvaluation(childrenEvaluations());

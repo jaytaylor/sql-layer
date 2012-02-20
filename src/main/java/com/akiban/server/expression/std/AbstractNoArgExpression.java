@@ -20,14 +20,16 @@ import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
+import java.util.List;
 
 public abstract class AbstractNoArgExpression implements Expression {
 
     // Expression interface
     
+    @Override
     public Explainer getExplainer ()
     {
-        return new ExpressionExplainer(Type.FUNCTION, name(), null);
+        return new ExpressionExplainer(Type.FUNCTION, name(), (List)null);
     }
     
     @Override

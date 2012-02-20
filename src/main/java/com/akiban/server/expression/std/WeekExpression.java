@@ -62,7 +62,7 @@ public class WeekExpression extends AbstractCompositeExpression
     @Override
     public String name()
     {
-        return "WEEK"
+        return "WEEK";
     }
     
     private static final class InternalComposer implements ExpressionComposer
@@ -242,12 +242,6 @@ public class WeekExpression extends AbstractCompositeExpression
     protected boolean nullIsContaminating()
     {
         return true;
-    }
-
-    @Override
-    protected void describe(StringBuilder sb)
-    {
-        sb.append("WEEK(date,[mode])");
     }
 
     @Override

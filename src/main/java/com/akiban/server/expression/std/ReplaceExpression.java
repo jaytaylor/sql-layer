@@ -94,12 +94,6 @@ public class ReplaceExpression extends AbstractTernaryExpression
     }
 
     @Override
-    protected void describe(StringBuilder sb)
-    {
-        sb.append("REPLACE");
-    }
-
-    @Override
     public ExpressionEvaluation evaluation()
     {
         return new InnerEvaluation(childrenEvaluations());

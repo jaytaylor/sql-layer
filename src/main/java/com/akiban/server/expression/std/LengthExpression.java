@@ -78,7 +78,7 @@ public class LengthExpression  extends AbstractUnaryExpression
     @Override
     public String name() 
     {
-        return "LENGTH;
+        return "LENGTH";
     }
 
     @Override

@@ -136,12 +136,6 @@ public class SubStringExpression extends AbstractCompositeExpression
     }
 
     @Override
-    protected void describe(StringBuilder sb) 
-    {
-        sb.append("SUBSTRING");
-    }
-
-    @Override
     public ExpressionEvaluation evaluation() 
     {
         return new InnerEvaluation(this.childrenEvaluations());

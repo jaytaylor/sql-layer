@@ -29,6 +29,7 @@ import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 import com.akiban.util.ArgumentValidation;
+import java.util.List;
 
 public final class FieldExpression implements Expression {
 
@@ -85,7 +86,7 @@ public final class FieldExpression implements Expression {
     @Override
     public Explainer getExplainer()
     {
-        Explainer ex = new ExpressionExplainer(Type.FUNCTION, name(), null);
+        Explainer ex = new ExpressionExplainer(Type.FUNCTION, name(), (List)null);
         ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(fieldIndex));
         ex.addAttribute(Label.ROWTYPE, PrimitiveExplainer.getInstance(rowType.toString())); // TODO: Explainer for RowType?
         return ex;

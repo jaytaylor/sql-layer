@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.akiban.server.expression.std.ComposedExpressionTestBase.ExpressionAttribute.*;
+import com.akiban.sql.optimizer.explain.Explainer;
 import static org.junit.Assert.*;
 
 public abstract class ComposedExpressionTestBase {
@@ -304,6 +305,18 @@ public abstract class ComposedExpressionTestBase {
         private final Set<ExpressionAttribute> requirements;
         private final List<String> messages;
         private final AkType type;
+
+        @Override
+        public String name()
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public Explainer getExplainer()
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     }
 
     private static class DummyExpressionEvaluation implements ExpressionEvaluation {
