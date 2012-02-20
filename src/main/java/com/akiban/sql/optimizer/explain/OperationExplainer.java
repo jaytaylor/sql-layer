@@ -15,11 +15,7 @@
 
 package com.akiban.sql.optimizer.explain;
 
-import com.akiban.sql.optimizer.explain.Attributes;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Type;
-
-public  class OperationExplainer implements Explainer<Attributes>
+public  class OperationExplainer extends Explainer<Attributes>
 {     
     private final Type type; 
     private Attributes states;
@@ -43,7 +39,7 @@ public  class OperationExplainer implements Explainer<Attributes>
     }
        
     @Override
-    public final boolean hasChildren()
+    public final boolean hasAttributes()
     {
         return !(states == null || states.isEmpty());
     }  
@@ -51,10 +47,11 @@ public  class OperationExplainer implements Explainer<Attributes>
     // TODO:
     // could return a new OperationExplainer 
     // if we want to make OperationExplainer immutable.
-//    public final boolean addAttribute (Label label, Explainer ex)
-//    {
-//        if (states.containsKey(label)) return false;
-//        states.put(label, ex);
-//        return true;
-//    }    
+    @Override
+    public final boolean addAttribute (Label label, Explainer ex)
+    {
+        if (states.containsKey(label)) return false;
+        states.put(label, ex);
+        return true;
+    }    
 }

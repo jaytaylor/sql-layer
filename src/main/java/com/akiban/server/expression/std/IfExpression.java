@@ -101,6 +101,12 @@ public class IfExpression extends AbstractCompositeExpression
             return AkType.NULL;
     }
 
+    @Override
+    public String name()
+    {
+        return "IF";
+    }
+
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
 
@@ -125,12 +131,6 @@ public class IfExpression extends AbstractCompositeExpression
     protected boolean nullIsContaminating()
     {
         return false;
-    }
-
-    @Override
-    protected void describe(StringBuilder sb)
-    {
-        sb.append("IF()");
     }
 
     @Override

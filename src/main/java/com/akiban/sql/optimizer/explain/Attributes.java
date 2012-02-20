@@ -15,12 +15,72 @@
 
 package com.akiban.sql.optimizer.explain;
 
-import java.util.EnumMap;
+import java.util.*;
 
-public class Attributes extends EnumMap<Label, Explainer>
-{
+public class Attributes extends EnumMap<Label, Set<Explainer>>
+{       
     public Attributes()
     {
         super(Label.class);
-    }    
+    }            
+    
+    public boolean put (Label label, Explainer ex)
+    {
+        Set<Explainer> l = get(label);
+        if (l == null)
+        {
+            l = new HashSet<Explainer>();
+            put(label, l);
+        }
+        l.add(ex);
+        return true;
+    }
+        
+    public List<Entry<Label, Explainer>> valuePairs()
+    {
+        List<Entry<Label, Explainer>> pairs = new ArrayList<Entry<Label,Explainer>>();
+        
+        for (Entry<Label, Set<Explainer>> entry : entrySet())                
+            for (Explainer ex : entry.getValue())            
+                pairs.add(new ValuePair(entry.getKey(), ex, this));                            
+        return pairs;
+    }
+    
+    private static class ValuePair implements Entry<Label, Explainer>
+    {
+        private Label key;
+        private Explainer value;
+        private Attributes map;
+        
+        protected ValuePair (Label k, Explainer v, Attributes m)
+        {
+            key = k;
+            value = v;
+            map = m;
+        }
+        
+        @Override
+        public Label getKey()
+        {
+            return key;
+        }
+
+        @Override
+        public Explainer getValue()
+        {
+            return value;
+        }
+
+        @Override
+        public Explainer setValue(Explainer value)
+        {
+            Explainer old = this.value;            
+            Set<Explainer> s = map.get(key);
+            this.value = value;
+            s.remove(old);
+            s.add(value);      
+            return old;
+        }
+        
+    }
 }

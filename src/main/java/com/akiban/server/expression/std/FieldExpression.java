@@ -23,6 +23,11 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 import com.akiban.util.ArgumentValidation;
 
 public final class FieldExpression implements Expression {
@@ -70,6 +75,21 @@ public final class FieldExpression implements Expression {
 
     private final RowType rowType;
     private final int fieldIndex;
+
+    @Override
+    public String name()
+    {
+        return "FIELD";
+    }
+
+    @Override
+    public Explainer getExplainer()
+    {
+        Explainer ex = new ExpressionExplainer(Type.FUNCTION, name(), null);
+        ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(fieldIndex));
+        ex.addAttribute(Label.ROWTYPE, PrimitiveExplainer.getInstance(rowType.toString())); // TODO: Explainer for RowType?
+        return ex;
+    }
 
     // nested classes
 

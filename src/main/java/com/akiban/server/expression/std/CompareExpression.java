@@ -30,6 +30,9 @@ import com.akiban.server.types.extract.ObjectExtractor;
 import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 
 import java.util.EnumMap;
 import java.util.List;
@@ -46,10 +49,15 @@ public final class CompareExpression extends AbstractBinaryExpression {
 
     // AbstractTwoArgExpression interface
     @Override
-    protected void describe(StringBuilder sb) {
-        sb.append(comparison);
+    public String name () {
+        return comparison.name();
     }
 
+    @Override
+    public Explainer getExplainer () {
+        return new ExpressionExplainer(Type.BINARY_OPERATOR, name(), children());
+    }
+    
     @Override
     public ExpressionEvaluation evaluation() {
         return new InnerEvaluation(childrenEvaluations(), comparison, op);
@@ -69,14 +77,6 @@ public final class CompareExpression extends AbstractBinaryExpression {
         if (this.op == null)
             throw new AkibanInternalException("couldn't find internal comparator for " + type);
     }
-
-    // overriding protected methods
-
-    @Override
-    protected void buildToString(StringBuilder sb) {//Field(2) < Literal(8888)
-        sb.append(left()).append(' ').append(comparison).append(' ').append(right());
-    }
-
 
     // for use in this class
 

@@ -17,11 +17,19 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 
 public abstract class AbstractNoArgExpression implements Expression {
 
     // Expression interface
-
+    
+    public Explainer getExplainer ()
+    {
+        return new ExpressionExplainer(Type.FUNCTION, name(), null);
+    }
+    
     @Override
     public boolean isConstant() {
         return true;
@@ -43,8 +51,6 @@ public abstract class AbstractNoArgExpression implements Expression {
     }
 
     // for use by subclasses
-
-    protected abstract String name();
 
     protected AbstractNoArgExpression(AkType type) {
         this.type = type;

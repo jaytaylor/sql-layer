@@ -20,7 +20,7 @@ package com.akiban.sql.optimizer.explain;
  */
 public enum Label
 {
-    NAME(Category.IDENTIFIER),
+    NAME(Category.IDENTIFIER),    
     COST(Category.COST),
     INPUT_OPERATOR(Category.CHILD),
     OPERAND(Category.CHILD), // function operand
@@ -46,7 +46,7 @@ public enum Label
     ROWTYPE(Category.TYPE_DESCRIPTION),
     ANCESTOR_TYPE(Category.TYPE_DESCRIPTION),
     PROJECTIONS(Category.CHILD), // list of a expressions
-    EXTRA_TAG(Category.DESCRIPTION) // extra info
+    EXTRA_TAG(Category.DESCRIPTION), // extra info        
     ;
     
 
@@ -57,7 +57,7 @@ public enum Label
         OPTION,
         DESCRIPTION, //extra info (may not needed by the caller
         CHILD, // operand for expressions, or input operator for operator
-        TYPE_DESCRIPTION      
+        TYPE_DESCRIPTION,        
     }
     
     public Category getCategory ()

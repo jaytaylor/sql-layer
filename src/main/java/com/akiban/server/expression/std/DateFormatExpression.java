@@ -66,6 +66,13 @@ public class DateFormatExpression extends AbstractBinaryExpression
             return ExpressionTypes.varchar(argumentTypes.get(1).getPrecision() * 5);
         }
     };
+
+    @Override
+    public String name()
+    {
+        return "DATE_FORMAT";
+    }
+    
     private static final class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
         public InnerEvaluation (List<? extends ExpressionEvaluation> childrenEvals)

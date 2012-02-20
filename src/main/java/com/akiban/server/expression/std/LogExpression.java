@@ -161,9 +161,9 @@ public class LogExpression extends AbstractCompositeExpression
     }
 
     @Override
-    protected void describe(StringBuilder sb)
+    public String name ()
     {
-        sb.append(name);
+        return name;
     }
 
     @Override

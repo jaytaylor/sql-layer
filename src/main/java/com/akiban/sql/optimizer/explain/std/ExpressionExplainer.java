@@ -16,24 +16,29 @@
 package com.akiban.sql.optimizer.explain.std;
 
 import com.akiban.server.expression.Expression;
-import com.akiban.sql.optimizer.explain.Attributes;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.OperationExplainer;
-import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.*;
+import java.util.Arrays;
 import java.util.List;
 
 public class ExpressionExplainer extends OperationExplainer
-{
-    public ExpressionExplainer (Type type, List<? extends Expression> exs)
+{  
+    public ExpressionExplainer (Type type, String name, List<? extends Expression> exs)
     {
-        super(checkType(type), buildMap(exs));
+        super(checkType(type), buildMap(name, exs));
     }
-    
-    private static Attributes buildMap (List<? extends Expression> exs)
+     
+    public ExpressionExplainer (Type type, String name, Expression ... operand)
+    {
+        this(type, name, Arrays.asList(operand));
+    }
+        
+    private static Attributes buildMap (String name, List<? extends Expression> exs)
     {
         Attributes states = new Attributes();
-        for (Expression ex : exs)
-            states.put(Label.OPERAND, ex.getExplainer());
+        states.put(Label.NAME, PrimitiveExplainer.getInstance(name));
+        if (exs != null)
+            for (Expression ex : exs)
+                states.put(Label.OPERAND, ex.getExplainer());
         return states;
     }
     

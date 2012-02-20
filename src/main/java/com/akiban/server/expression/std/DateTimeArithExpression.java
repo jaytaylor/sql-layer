@@ -262,7 +262,7 @@ public class DateTimeArithExpression extends ArithExpression
     {
         super(left, ArithOps.MINUS, right, topT);        
     }
-
+    
     @Override
     protected InnerValueSource getValueSource (ArithOp op)
     {

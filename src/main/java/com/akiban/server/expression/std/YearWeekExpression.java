@@ -76,6 +76,12 @@ public class YearWeekExpression extends AbstractCompositeExpression
         }
     };
 
+    @Override
+    public String name()
+    {
+        return "YEARWEEK";
+    }
+
     private static final class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
         private static interface Modes

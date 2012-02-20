@@ -62,8 +62,8 @@ public class CoalesceExpression extends AbstractCompositeExpression {
     };
 
     @Override
-    protected void describe(StringBuilder sb) {
-        sb.append("COALESCE");
+    public String name () {
+        return "COALESCE";
     }
 
     @Override

@@ -132,7 +132,7 @@ public class TrimExpression extends AbstractUnaryExpression
     }
     
     @Override
-    protected String name() 
+    public String name() 
     {       
         return "TRIM " + (trimType == null ? "" : trimType.name());
     }

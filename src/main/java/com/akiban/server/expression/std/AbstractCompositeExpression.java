@@ -18,6 +18,9 @@ package com.akiban.server.expression.std;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +34,12 @@ public abstract class AbstractCompositeExpression implements Expression {
 
     // Expression interface
 
+    @Override
+    public Explainer getExplainer ()
+    {
+        return new ExpressionExplainer(Type.FUNCTION, name(), children);
+    }
+    
     @Override
     public boolean isConstant() {
         boolean hasNonConst = false;
@@ -78,20 +87,9 @@ public abstract class AbstractCompositeExpression implements Expression {
     @Override
     public final AkType valueType() {
         return type;
-    }
+    }    
 
-    // Object interface
-
-    @Override
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        buildToString(sb);
-        return sb.toString();
-    }
-
-    // for use by subclasses
-
-    protected abstract void describe(StringBuilder sb);
+    // for use by subclasses   
 
     protected final List<? extends Expression> children() {
         return children;
@@ -133,46 +131,10 @@ public abstract class AbstractCompositeExpression implements Expression {
 //            }
         }
         return type;
-    }
-
-    // for use in this class
-
-    /**
-     * Builds a description of this instance into the specified StringBuilder. The general format is:
-     * <tt>ClassName(description -&gt; arg0, arg1, ...)</tt>.
-     * @param sb the output
-     */
-    protected void buildToString(StringBuilder sb) {
-        String className = getClass().getSimpleName();
-        sb.append(className);
-        // chop off "-Expression" if it's there
-        if (className.endsWith(EXPRESSION_SUFFIX)) {
-            sb.setLength(sb.length() - EXPRESSION_SUFFIX.length());
-        }
-        sb.append('(');
-        describe(sb);
-        sb.append(" -> ");
-        for (Iterator<? extends Expression> iterator = children.iterator(); iterator.hasNext(); ) {
-            Expression child = iterator.next();
-            if (child instanceof AbstractCompositeExpression) {
-                AbstractCompositeExpression ace = (AbstractCompositeExpression) child;
-                ace.buildToString(sb);
-            } else {
-                sb.append(child);
-            }
-            if (iterator.hasNext()) {
-                sb.append(", ");
-            }
-        }
-        sb.append(" -> ").append(valueType()).append(')');
-    }
-
+    }   
+    
     // object state
 
     private final List<? extends Expression> children;
-    private final AkType type;
-
-    // const
-
-    private static final String EXPRESSION_SUFFIX = "Expression";
+    private final AkType type;    
 }

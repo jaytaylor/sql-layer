@@ -112,7 +112,7 @@ public class IsExpression extends AbstractUnaryExpression
     }
 
     @Override
-    protected String name()
+    public String name()
     {
         return "IS " + triVal;
     }

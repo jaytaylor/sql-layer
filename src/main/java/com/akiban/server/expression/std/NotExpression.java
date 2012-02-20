@@ -46,7 +46,7 @@ public final class NotExpression extends AbstractUnaryExpression {
     };
 
     @Override
-    protected String name() {
+    public String name() {
         return "NOT";
     }
 

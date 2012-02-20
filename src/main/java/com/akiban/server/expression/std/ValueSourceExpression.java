@@ -21,6 +21,12 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
+import java.math.BigDecimal;
 
 public final class ValueSourceExpression implements Expression
 {
@@ -72,6 +78,20 @@ public final class ValueSourceExpression implements Expression
     // object state
 
     private final ValueSource valueSource;
+
+    @Override
+    public String name()
+    {
+        return "VALUESOURCE";
+    }
+
+    @Override
+    public Explainer getExplainer()
+    {
+        Explainer ex = new ExpressionExplainer(Type.FUNCTION, name(), null);
+        ex.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(valueSource));
+        return ex;
+    }
 
 
     private class InnerEvaluation implements ExpressionEvaluation

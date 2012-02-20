@@ -15,8 +15,70 @@
 
 package com.akiban.sql.optimizer.explain;
 
-public class PrimitiveExplainer<T> implements Explainer
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types.extract.LongExtractor;
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
+public class PrimitiveExplainer<T> extends Explainer
 {
+    public static PrimitiveExplainer getInstance (String st)
+    {
+        return new PrimitiveExplainer<String>(Type.STRING, st);
+    }
+    
+    public static PrimitiveExplainer getInstance (double n)
+    {
+        return new PrimitiveExplainer<Double>(Type.FLOATING_POINT, n);
+    }
+    
+    public static PrimitiveExplainer getInstance (long n)
+    {
+        return new PrimitiveExplainer<Long>(Type.EXACT_NUMERIC, n);
+    }
+    
+    public static PrimitiveExplainer getInstance (boolean n)
+    {
+        return new PrimitiveExplainer<Boolean>(Type.EXACT_NUMERIC, n);
+    }
+    
+    public static PrimitiveExplainer getInstance(BigInteger num)
+    {
+        return PrimitiveExplainer.getInstance(num.longValue());
+    }
+    
+    public static PrimitiveExplainer getInstance(BigDecimal num)
+    {
+        return PrimitiveExplainer.getInstance(num.doubleValue());
+    }
+
+    public static PrimitiveExplainer getInstance(Object o)
+    {
+        if (o instanceof BigDecimal) return getInstance((BigDecimal)o);
+        else if (o instanceof BigInteger) return getInstance((BigInteger)o);
+        else if (o instanceof String) return getInstance((String)o);
+        else throw new UnsupportedOperationException("Explainer for type " + o.getClass() + " is not supported yet");
+    }
+
+    public static PrimitiveExplainer getInstance(ValueSource source)
+    {
+        AkType type = source.getConversionType();
+        switch(type.underlyingType())
+        {
+            case LONG_AKTYPE:    LongExtractor lExtractor = Extractors.getLongExtractor(type);
+                                 return getInstance(lExtractor.getLong(source));
+            case FLOAT_AKTYPE:
+            case DOUBLE_AKTYPE:  return getInstance(Extractors.getDoubleExtractor().getDouble(source));
+            case BOOLEAN_AKTYPE: return getInstance(source.getBool());
+            case OBJECT_AKTYPE:  return getInstance(Extractors.getObjectExtractor(type).getObject(source));
+            default:             throw new UnsupportedOperationException("Explainer for type " + type + " is not supported yet");                
+        }
+    }
+    
+    // TODO:  add more as needed
+       
     private final Type type;
     private final T o;
     
@@ -26,7 +88,7 @@ public class PrimitiveExplainer<T> implements Explainer
             throw new IllegalArgumentException("Type must be a SCALAR_VALUE");
         this.type = type;
         this.o = o;
-    }
+    }       
     
     @Override
     public Type getType()
@@ -41,8 +103,14 @@ public class PrimitiveExplainer<T> implements Explainer
     }
 
     @Override
-    public boolean hasChildren()
+    public boolean hasAttributes()
     {
         return false;
+    }
+
+    @Override
+    public boolean addAttribute(Label label, Explainer ex)
+    {
+        throw new UnsupportedOperationException("Primitive Explainer cannot have any attribute.");
     }
 }

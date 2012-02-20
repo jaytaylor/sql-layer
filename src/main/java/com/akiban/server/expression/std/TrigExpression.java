@@ -31,7 +31,13 @@ import com.akiban.server.expression.TypesList;
 import java.util.List;
 
 public class TrigExpression extends AbstractCompositeExpression
-{ 
+{
+    @Override
+    public String name()
+    {
+        return name.name();
+    }
+    
     public static enum TrigName
     {
         SIN, COS, TAN, COT, ASIN, ACOS, ATAN, ATAN2, COSH, SINH, TANH, COTH

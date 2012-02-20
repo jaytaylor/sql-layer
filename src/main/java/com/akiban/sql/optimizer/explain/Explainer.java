@@ -15,16 +15,35 @@
 
 package com.akiban.sql.optimizer.explain;
 
-public interface Explainer<T>
+public abstract class Explainer<T>
 {    
-    Type getType();
+    public abstract Type getType();
     
     /**
      * 
      * @return a map of this object's attributes if it's an OperationExplainer
      *         a primitive object (Integer, Double, etc ...), otherwise.
      */
-    T get();
-    boolean hasChildren();
-        
+    public abstract T get();
+    
+    public abstract boolean hasAttributes();
+ 
+    public abstract boolean addAttribute (Label label, Explainer ex);
+    
+    @Override
+    public final boolean equals (Object o)
+    {
+        if (o instanceof Explainer)
+        {
+            return ((Explainer)o).get() == get();
+        }
+        else
+            throw new ClassCastException();
+    }
+    
+    @Override
+    public final int hashCode ()
+    {
+        return get().hashCode();
+    }
 }

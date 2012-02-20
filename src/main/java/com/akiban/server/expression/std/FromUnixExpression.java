@@ -66,9 +66,9 @@ public class FromUnixExpression extends AbstractCompositeExpression
     }
 
     @Override
-    protected void describe(StringBuilder sb)
+    public String name()
     {
-        sb.append("FROM_UNIXTIME()");
+        return "FROM_UNIXTIME";
     }
 
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation

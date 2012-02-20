@@ -27,6 +27,9 @@ import com.akiban.server.types.extract.BooleanExtractor;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 
 import java.util.List;
 
@@ -35,10 +38,15 @@ public final class BoolLogicExpression extends AbstractBinaryExpression {
     // AbstractTwoArgExpression interface
 
     @Override
-    protected void describe(StringBuilder sb) {
-        sb.append(logic.name());
+    public String name () {
+        return logic.name();
     }
-
+    
+    @Override
+    public Explainer getExplainer () {
+        return new ExpressionExplainer (Type.BINARY_OPERATOR, name(), children());
+    }
+    
     @Override
     public ExpressionEvaluation evaluation() {
         return new InternalEvaluation(logic, childrenEvaluations());

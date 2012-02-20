@@ -18,11 +18,20 @@ package com.akiban.server.expression.std;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 
 public abstract class AbstractUnaryExpression implements Expression {
 
     // Expression interface
-
+    
+    @Override
+    public Explainer getExplainer ()
+    {
+        return new ExpressionExplainer(Type.FUNCTION, name(), operand);
+    }
+    
     @Override
     public boolean isConstant() {
         return operand.isConstant();
@@ -44,8 +53,6 @@ public abstract class AbstractUnaryExpression implements Expression {
     }
 
     // for use by subclasses
-
-    protected abstract String name();
 
     protected final Expression operand() {
         return operand;

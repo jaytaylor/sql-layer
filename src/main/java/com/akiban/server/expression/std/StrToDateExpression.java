@@ -61,6 +61,12 @@ public class StrToDateExpression extends AbstractBinaryExpression
         }
     };
 
+    @Override
+    public String name()
+    {
+        return "STR_TO_DATE";
+    }
+
     private static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
         private  int topType;

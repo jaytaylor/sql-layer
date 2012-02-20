@@ -22,6 +22,11 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 
 /**
  * This is similar to a FieldExpression, except that fields are specified by an AIS Column, rather than
@@ -69,6 +74,20 @@ public final class ColumnExpression implements Expression {
 
     private final Column column;
     private final int position;
+
+    @Override
+    public String name()
+    {
+        return "FIELD";
+    }
+
+    @Override
+    public Explainer getExplainer()
+    {
+        Explainer ex = new ExpressionExplainer(Type.FUNCTION, "FIELD", null);
+        ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(position));
+        return ex;
+    }
 
     // nested classes
 

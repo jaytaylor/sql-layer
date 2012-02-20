@@ -21,6 +21,11 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 
 public final class BoundFieldExpression implements Expression {
     @Override
@@ -65,6 +70,20 @@ public final class BoundFieldExpression implements Expression {
     // state
     private final int rowBindingPosition;
     private final FieldExpression fieldExpression;
+
+    @Override
+    public String name()
+    {
+        return "BOUND";
+    }
+
+    @Override
+    public Explainer getExplainer()
+    {
+        Explainer ex = new ExpressionExplainer (Type.FUNCTION, name(), fieldExpression);
+        ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(rowBindingPosition));
+        return ex;
+    }
 
     private static class InnerEvaluation implements ExpressionEvaluation {
         @Override

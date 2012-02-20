@@ -24,6 +24,8 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 
 public final class LiteralExpression implements Expression {
 
@@ -108,6 +110,18 @@ public final class LiteralExpression implements Expression {
     private static final Expression BOOL_TRUE = new LiteralExpression(new InternalEvaluation(BoolValueSource.OF_TRUE));
     private static final Expression BOOL_FALSE = new LiteralExpression(new InternalEvaluation(BoolValueSource.OF_FALSE));
     private static final Expression BOOL_NULL = new LiteralExpression(new InternalEvaluation(BoolValueSource.OF_NULL));
+
+    @Override
+    public String name()
+    {
+        return "LITERAL";
+    }
+
+    @Override
+    public Explainer getExplainer()
+    {
+        return PrimitiveExplainer.getInstance(evaluation.eval());
+    }
     
     // nested classes
     

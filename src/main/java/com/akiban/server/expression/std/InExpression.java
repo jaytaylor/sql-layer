@@ -50,12 +50,7 @@ public final class InExpression extends AbstractCompositeExpression {
                 argumentTypes.setType(i, firstArg);
             return ExpressionTypes.BOOL;
         }
-    };
-
-    @Override
-    protected void describe(StringBuilder sb) {
-        sb.append("IN");
-    }
+    };   
 
     @Override
     public ExpressionEvaluation evaluation() {
@@ -78,6 +73,12 @@ public final class InExpression extends AbstractCompositeExpression {
         list.add(head);
         list.addAll(tail);
         return list;
+    }
+
+    @Override
+    public String name()
+    {
+        return "IN";
     }
 
     private static final class InnerEvaluation extends AbstractCompositeExpressionEvaluation {

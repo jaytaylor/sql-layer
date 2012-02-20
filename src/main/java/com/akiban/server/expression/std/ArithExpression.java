@@ -25,6 +25,10 @@ import com.akiban.server.types.ValueSourceIsNullException;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.util.AbstractArithValueSource;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 import com.akiban.util.ArgumentValidation;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -92,11 +96,6 @@ public class ArithExpression extends AbstractBinaryExpression
                                                           // the output is not used         
         this.op = op;
         topT = top;
-    }
-    @Override
-    protected void describe(StringBuilder sb)
-    {
-        sb.append(op);
     }
 
     @Override
@@ -221,7 +220,18 @@ public class ArithExpression extends AbstractBinaryExpression
     {
         return true;
     }
-
+    
+    @Override
+    public String name()
+    {
+        return op.toString();
+    }
+    
+    public Explainer getExplainer ()
+    {
+        return new ExpressionExplainer(Type.BINARY_OPERATOR, name(), children());
+    }
+    
     /**
      * this is to be overridden by sub-classes to return a more appropriate ValueSource
      * @param op
