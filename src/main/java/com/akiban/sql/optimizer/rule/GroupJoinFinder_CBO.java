@@ -212,7 +212,7 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
 
     @Override
     protected Joinable getTableJoins(Joinable joins, TableGroup group) {
-        throw new UnsupportedOperationException("Should have make TableGroupJoinTree");
+        throw new UnsupportedOperationException("Should have made TableGroupJoinTree");
     }
 
 }
