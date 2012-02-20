@@ -17,8 +17,8 @@ message Type {
 }
 
 message TableName {
-    optional string schemaName = 1;
-    optional string tableName  = 2;
+    optional string schemaName = 1;  // link to Schema.schemaName
+    optional string tableName  = 2;  // link to Table.tableName
 }
 
 enum JoinType {
@@ -39,9 +39,7 @@ message Join {
     optional TableName  childTable  = 1;  // Child table for this join. 
                                           // Parent table is the list source
                                           // link to Table.tableName
-    optional JoinType   joinType    = 2;  // Type of join to child table
-    repeated JoinColumn columns     = 3;  // list of columns for this join
-
+    repeated JoinColumn columns     = 2;  // list of columns for this join
 }
 
 message IndexColumn {
@@ -55,10 +53,10 @@ message Index {
     optional string   indexName = 1;
     optional string   treeName  = 2;  // storage system tree name 
     optional int32    indexId   = 3;  // id of index within table/group
-    optional bool     isPK      = 4;
-    optional bool     isUnique  = 5;
-    optional bool     isFK      = 6;
-    optional bool     isAkFK    = 7;
+    optional bool     isPK      = 4;  // Is the primary key index
+    optional bool     isUnique  = 5;  // Is a unique index
+    optional bool     isFK      = 6;  // Is a non-grouping foreign key index
+    optional bool     isAkFK    = 7;  // Is a grouping foreign key index
     repeated IndexColumn columns     = 8;
     optional string      description = 9;
     optional JoinType  joinType = 10; // Type of join used for GroupIndex
@@ -75,7 +73,7 @@ message Group {
 message Column {
     optional string  columnName   = 1;
     optional string  typeName     = 2;  // link to Types.typeName
-    optional bool    isNullable   = 3;
+    optional bool    isNullable   = 3;  // Can column hold NULL values
     optional int32   position     = 4;  // order of column in Table 
     optional int64   typeParam1   = 5;  
     optional int64   typeParam2   = 6;
@@ -92,7 +90,7 @@ message Table {
     optional string  tableName    = 1;
     optional int32   tableId      = 2;  // globally unique id for table
     optional int32   ordinal      = 3;  // id of table within the group
-    repeated Column  columns      = 4;
+    repeated Column  columns      = 4;  // list of columns in the table
     optional string  characterSet = 5;
     optional string  collation    = 6;    
     repeated Index   indexes      = 7;  // list of indexes on the table
