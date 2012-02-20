@@ -104,6 +104,7 @@ public class TableGroupJoinTree extends BaseJoinable
     public String summaryString() {
         StringBuilder str = new StringBuilder(super.summaryString());
         str.append("(");
+        str.append(group);
         str.append(")");
         return str.toString();
     }

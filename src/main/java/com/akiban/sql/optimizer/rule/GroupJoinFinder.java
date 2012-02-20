@@ -519,8 +519,8 @@ public class GroupJoinFinder extends BaseRule
         return null;
     }
 
-    // Make a new TableGroup, recording what it contains.
-    protected TableJoins getTableJoins(Joinable joins, TableGroup group) {
+    // Make a TableJoins from tables in a single TableGroup.
+    protected Joinable getTableJoins(Joinable joins, TableGroup group) {
         TableJoins tableJoins = new TableJoins(joins, group);
         getTableJoinsTables(joins, tableJoins);
         return tableJoins;
