@@ -64,7 +64,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             lock(session, UNSPECIFIED_DML_READ);
             cursor = API.cursor(resultOperator, context);
             cursor.open();
-            PostgresRowOutputter outputter = new PostgresRowOutputter(context, this);
+            PostgresOutputter<Row> outputter = getRowOutputter(context);
             Row row;
             while ((row = cursor.next()) != null) {
                 assert resultRowType == null || (row.rowType() == resultRowType) : row;
@@ -87,6 +87,10 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             messenger.sendMessage();
         }
         return nrows;
+    }
+
+    protected PostgresOutputter<Row> getRowOutputter(PostgresQueryContext context) {
+        return new PostgresRowOutputter(context, this);
     }
 
     @Override

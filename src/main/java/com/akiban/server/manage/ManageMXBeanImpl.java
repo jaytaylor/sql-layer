@@ -23,6 +23,8 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.AkServer;
 import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.jmx.JmxManageable;
+import com.akiban.server.service.jmx.JmxManageable.JmxObjectInfo;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.store.Store;
@@ -31,13 +33,14 @@ public class ManageMXBeanImpl implements ManageMXBean {
     private final Store store;
     private final DXLService dxlService;
     private final SessionService sessionService;
+    public static final String BEAN_NAME = "com.akiban:type=AKSERVER";
 
     public ManageMXBeanImpl(Store store, DXLService dxlService, SessionService sessionService) {
         this.store = store;
         this.dxlService = dxlService;
         this.sessionService = sessionService;
     }
-
+    
     @Override
     public void ping() {
         return;
@@ -144,4 +147,5 @@ public class ManageMXBeanImpl implements ManageMXBean {
         }
         return indexes;
     }
+
 }

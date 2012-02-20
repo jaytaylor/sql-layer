@@ -16,6 +16,7 @@
 package com.akiban.server;
 
 import com.akiban.ais.model.Column;
+import com.akiban.qp.operator.Cursor;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSourceHelper;
 import com.akiban.server.types.ValueTarget;
@@ -187,6 +188,11 @@ public final class PersistitKeyValueTarget implements ValueTarget {
         checkState(AkType.BOOL);
         key.append(value);
         invalidate();
+    }
+
+    @Override
+    public void putResultSet(Cursor value) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

@@ -15,6 +15,7 @@
 
 package com.akiban.util;
 
+import com.akiban.qp.operator.Cursor;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueTarget;
 
@@ -273,6 +274,11 @@ public abstract class AkibanAppender {
 
         @Override
         public void putBool(boolean value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void putResultSet(Cursor value) {
             throw new UnsupportedOperationException();
         }
     }

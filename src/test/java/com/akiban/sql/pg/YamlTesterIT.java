@@ -1635,7 +1635,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "- Statement: INSERT INTO t VALUES ('a')\n" +
                  "---\n" +
                  "- Statement: SELECT DATE(vc) FROM t\n" +
-                 "- warnings_count: 4\n");
+                 "- warnings_count: 1\n");
     }
 
     @Test
@@ -1760,10 +1760,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "- Statement: INSERT INTO t VALUES ('a')\n" +
                  "---\n" +
                  "- Statement: SELECT DATE(vc) FROM t\n" +
-                 "- warnings: [[22007, 'Invalid date format: a'],\n" +
-                 "    [22007, 'Invalid date format: a'],\n" +
-                 "    [22007, 'Invalid timestamp format: a'],\n" +
-                 "    [22007, 'Invalid year format: a']]");
+                 "- warnings: [[55003, \"Can't convert source type `VARCHAR` to target `DATETIME`\"]]");
     }
 
     @Test
@@ -1789,11 +1786,8 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "- Statement: INSERT INTO t VALUES ('a')\n" +
                  "---\n" +
                  "- Statement: SELECT DATE(vc) FROM t\n" +
-                 "- warnings_count: 4\n" +
-                 "- warnings: [[22007, 'Invalid date format: a'],\n" +
-                 "    [22007, 'Invalid date format: a'],\n" +
-                 "    [22007, 'Invalid timestamp format: a'],\n" +
-                 "    [22007, 'Invalid year format: a']]");
+                 "- warnings_count: 1\n" +
+                 "- warnings: [[55003, \"Can\'t convert source type `VARCHAR` to target `DATETIME`\"]]");
     }
 
     @Test
@@ -1804,10 +1798,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "- Statement: INSERT INTO t VALUES ('a')\n" +
                  "---\n" +
                  "- Statement: SELECT DATE(vc) FROM t\n" +
-                 "- warnings: [[!re '[0-9]+', !re 'Invalid .*'],\n" +
-                 "    [!re '[0-9]+', !re 'Invalid .*'],\n" +
-                 "    [!re '[0-9]+', !re 'Invalid .*'],\n" +
-                 "    [!re '[0-9]+', !re 'Invalid .*']]");
+                 "- warnings: [[!re '[0-9]+', !re \"Can't convert .*\"]]");
     }
 
     /* Other methods */
