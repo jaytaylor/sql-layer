@@ -47,6 +47,11 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
     }
 
     @Override
+    protected boolean tableAllowedInGroup(TableGroup group, TableSource childTable) {
+        return true;
+    }
+
+    @Override
     protected void isolateGroups(List<JoinIsland> islands) {
         for (JoinIsland island : islands) {
             TableGroupJoinNode tree = isolateGroupJoins(island.root);

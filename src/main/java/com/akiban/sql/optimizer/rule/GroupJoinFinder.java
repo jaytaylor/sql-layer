@@ -415,16 +415,22 @@ public class GroupJoinFinder extends BaseRule
         else if (childTable.getGroup() != null) {
             group.merge(childTable.getGroup());
         }
+        if (!tableAllowedInGroup(group, childTable))
+            return null;
+        return new TableGroupJoin(group, parentTable, childTable, 
+                                  groupJoinConditions, groupJoin);
+    }
+
+    protected boolean tableAllowedInGroup(TableGroup group, TableSource childTable) {
         // TODO: Avoid duplicate group joins. Really, they should be
         // recognized but only one allowed to Flatten and the other
         // forced to use a nested loop, but still with BranchLookup.
         for (TableSource otherChild : group.getTables()) {
             if ((otherChild.getTable() == childTable.getTable()) &&
                 (otherChild != childTable))
-                return null;
+                return false;
         }
-        return new TableGroupJoin(group, parentTable, childTable, 
-                                  groupJoinConditions, groupJoin);
+        return true;
     }
 
     protected void findSingleGroups(Joinable joinable) {
