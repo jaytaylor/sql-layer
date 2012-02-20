@@ -15,6 +15,7 @@
 
 package com.akiban.server.types;
 
+import com.akiban.qp.operator.Cursor;
 import com.akiban.server.Quote;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
@@ -132,6 +133,11 @@ public final class NullValueSource implements ValueSource {
 
     @Override
     public boolean getBool() {
+        throw new ValueSourceIsNullException();
+    }
+
+    @Override
+    public Cursor getResultSet() {
         throw new ValueSourceIsNullException();
     }
 

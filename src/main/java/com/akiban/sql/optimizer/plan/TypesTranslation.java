@@ -71,6 +71,8 @@ public final class TypesTranslation {
             return AkType.INTERVAL_MONTH;
         case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
             return AkType.INTERVAL_MILLIS;
+        case TypeId.FormatIds.ROW_MULTISET_TYPE_ID_IMPL:
+            return AkType.RESULT_SET;
         }
 
         String name = descriptor.getFullSQLTypeName();

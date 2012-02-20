@@ -600,19 +600,23 @@ public class PostgresServerConnection extends ServerSessionBase
         parser = new SQLParser();
 
         defaultSchemaName = getProperty("database");
-        // Temporary until completely removed.
         // TODO: Any way / need to ask AIS if schema exists and report error?
 
-        PostgresStatementGenerator compiler;
-        {
-            PostgresOperatorCompiler c = new PostgresOperatorCompiler(this);
-            compiler = c;
-            adapter = new PersistitAdapter(c.getSchema(),
-                                           reqs.store().getPersistitStore(),
-                                           reqs.treeService(),
-                                           session,
-                                           reqs.config());
-        }
+        rebuildCompiler();
+    }
+
+    protected void rebuildCompiler() {
+        PostgresOperatorCompiler compiler;
+        String format = getProperty("OutputFormat", "table");
+        if (format.equals("json"))
+            compiler = new PostgresJsonCompiler(this); 
+        else
+            compiler = new PostgresOperatorCompiler(this);
+        adapter = new PersistitAdapter(compiler.getSchema(),
+                                       reqs.store().getPersistitStore(),
+                                       reqs.treeService(),
+                                       session,
+                                       reqs.config());
 
         statementCache = server.getStatementCache(aisTimestamp);
         unparsedGenerators = new PostgresStatementParser[] {
@@ -737,6 +741,11 @@ public class PostgresServerConnection extends ServerSessionBase
                 messenger.setEncoding("UTF-8");
             else
                 messenger.setEncoding(value);
+            return true;
+        }
+        if ("OutputFormat".equals(key)) {
+            if (parsedGenerators != null)
+                rebuildCompiler();
             return true;
         }
         return super.propertySet(key, value);
