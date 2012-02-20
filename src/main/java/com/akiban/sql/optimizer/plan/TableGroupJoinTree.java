@@ -59,13 +59,35 @@ public class TableGroupJoinTree extends BaseJoinable
         public JoinType getParentJoinType() {
             return parentJoinType;
         }
+
+        /** Find the given table in this tree. */
+        public TableGroupJoinNode findTable(TableSource table) {
+            TableGroupJoinNode node = this;
+            while (true) {
+                if (node.getTable() == table) {
+                    return node;
+                }
+                TableGroupJoinNode next = node.getFirstChild();
+                if (next != null)
+                    continue;
+                while (true) {
+                    next = node.getNextSibling();
+                    if (next != null)
+                        break;
+                    next = node.getParent();
+                    if (next == this)
+                        return null;
+                    node = next;
+                }
+            }
+        }
     }
 
     private TableGroup group;
     private TableGroupJoinNode root;
     
-    public TableGroupJoinTree(TableGroup group, TableGroupJoinNode root) {
-        this.group = group;
+    public TableGroupJoinTree(TableGroupJoinNode root) {
+        this.group = root.getTable().getGroup();
         this.root = root;
     }
 
