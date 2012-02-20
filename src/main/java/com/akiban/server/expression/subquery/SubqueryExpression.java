@@ -47,6 +47,7 @@ public abstract class SubqueryExpression implements Expression {
         
         Attributes states = new Attributes();
         states.put(Label.NAME, PrimitiveExplainer.getInstance(name()));
+        states.put(Label.OPERAND, subquery.getExplainer()); 
         states.put(Label.OUTER_TYPE, PrimitiveExplainer.getInstance(outerRowType.toString()));
         states.put(Label.INNER_TYPE, PrimitiveExplainer.getInstance(innerRowType.toString()));
         states.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(bindingPosition));
