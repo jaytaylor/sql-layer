@@ -98,9 +98,9 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
                 int leftDepth = leftTree.getTable().getTable().getDepth();
                 int rightDepth = rightTree.getTable().getTable().getDepth();
                 if (leftDepth < rightDepth)
-                    tree = spliceGroupJoins(leftTree, rightTree);
+                    tree = spliceGroupJoins(leftTree, rightTree, join.getJoinType());
                 else if (rightDepth < leftDepth)
-                    tree = spliceGroupJoins(rightTree, leftTree);
+                    tree = spliceGroupJoins(rightTree, leftTree, join.getJoinType());
                 else
                     tree = null;
                 if (tree != null) {
@@ -118,10 +118,13 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
 
     // Combine trees at the proper branch point.
     protected TableGroupJoinNode spliceGroupJoins(TableGroupJoinNode parent, 
-                                                  TableGroupJoinNode child) {
+                                                  TableGroupJoinNode child,
+                                                  JoinType joinType) {
         TableGroupJoinNode branch = parent.findTable(child.getTable().getParentTable());
         if (branch == null)
             return null;
+        child.setParent(branch);
+        child.setParentJoinType(joinType);
         TableGroupJoinNode prev = null;
         while (true) {
             TableGroupJoinNode next = (prev == null) ? branch.getFirstChild() : prev.getNextSibling();

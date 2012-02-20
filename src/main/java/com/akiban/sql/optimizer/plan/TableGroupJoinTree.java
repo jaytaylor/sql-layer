@@ -59,6 +59,9 @@ public class TableGroupJoinTree extends BaseJoinable
         public JoinType getParentJoinType() {
             return parentJoinType;
         }
+        public void setParentJoinType(JoinType parentJoinType) {
+            this.parentJoinType = parentJoinType;
+        }
 
         /** Find the given table in this tree. */
         public TableGroupJoinNode findTable(TableSource table) {
@@ -68,16 +71,19 @@ public class TableGroupJoinTree extends BaseJoinable
                     return node;
                 }
                 TableGroupJoinNode next = node.getFirstChild();
-                if (next != null)
+                if (next != null) {
+                    node = next;
                     continue;
+                }
                 while (true) {
                     next = node.getNextSibling();
-                    if (next != null)
+                    if (next != null) {
+                        node = next;
                         break;
-                    next = node.getParent();
-                    if (next == this)
+                    }
+                    node = node.getParent();
+                    if (node == this)
                         return null;
-                    node = next;
                 }
             }
         }
@@ -99,36 +105,69 @@ public class TableGroupJoinTree extends BaseJoinable
     }
     
     public boolean accept(PlanVisitor v) {
-        TableGroupJoinNode node = root;
-        while (true) {
-            if (v.visitEnter(node.getTable())) {
-                TableGroupJoinNode next = node.getFirstChild();
-                if (next != null) {
-                    node = next;
-                    continue;
-                }
-            }
+        if (v.visitEnter(this)) {
+            TableGroupJoinNode node = root;
+            top:
             while (true) {
-                if (v.visitLeave(node.getTable())) {
-                    TableGroupJoinNode next = node.getNextSibling();
+                if (v.visitEnter(node.getTable())) {
+                    TableGroupJoinNode next = node.getFirstChild();
                     if (next != null) {
                         node = next;
-                        break;
+                        continue;
                     }
                 }
-                node = node.getParent();
-                if (node == null)
-                    return true;
+                while (true) {
+                    if (v.visitLeave(node.getTable())) {
+                        TableGroupJoinNode next = node.getNextSibling();
+                        if (next != null) {
+                            node = next;
+                            break;
+                        }
+                    }
+                    if (node == root)
+                        break top;
+                    node = node.getParent();
+                }
             }
         }
+        return v.visitLeave(this);
     }
 
     public String summaryString() {
         StringBuilder str = new StringBuilder(super.summaryString());
         str.append("(");
         str.append(group);
+        str.append(", ");
+        summarizeJoins(str);
         str.append(")");
         return str.toString();
+    }
+
+    private void summarizeJoins(StringBuilder str) {
+        TableGroupJoinNode node = root;
+        while (true) {
+            if (node != root) {
+                str.append(" ");
+                str.append(node.getParentJoinType());
+                str.append(" ");
+            }
+            str.append(node.getTable().getTable().getTable().getName().getTableName());
+            TableGroupJoinNode next = node.getFirstChild();
+            if (next != null) {
+                node = next;
+                continue;
+            }
+            while (true) {
+                next = node.getNextSibling();
+                if (next != null) {
+                    node = next;
+                    break;
+                }
+                if (node == root)
+                    return;
+                node = node.getParent();
+            }
+        }
     }
 
 }
