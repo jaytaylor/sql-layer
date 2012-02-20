@@ -38,6 +38,7 @@ message JoinColumn {
 message Join {
     optional TableName  childTable  = 1;  // Child table for this join. 
                                           // Parent table is the list source
+                                          // link to Table.tableName
     optional JoinType   joinType    = 2;  // Type of join to child table
     repeated JoinColumn columns     = 3;  // list of columns for this join
 
@@ -63,12 +64,9 @@ message Index {
     optional JoinType  joinType = 10; // Type of join used for GroupIndex
 }
 
-// The groupName is derived from the root table schema/table name
-// Therefore the name points to root table in the tables list
-// The list of indexes on the Group are the list of GroupIndexes
-// for this group.
 message Group {
    optional string rootTableName = 1;  // Root Table for this group
+                                       // link to Table.tableName
    optional string treeName      = 2;  // storage system tree name  
    repeated Index  indexes       = 3;  // list of Group indexes 
 }
@@ -76,7 +74,7 @@ message Group {
 // Column in a Table
 message Column {
     optional string  columnName   = 1;
-    optional string  typeName     = 2;  // links to Types.typeName
+    optional string  typeName     = 2;  // link to Types.typeName
     optional bool    isNullable   = 3;
     optional int32   position     = 4;  // order of column in Table 
     optional int64   typeParam1   = 5;  
