@@ -8,6 +8,10 @@ inner-beneath-left: INNER join with conditions held away from WHERE
 
 not-equals: Conditions other than equals
 
+outer-join-condition-allowed: An extra outer join condition that can be done
+
+outer-join-condition-disallowed: An extra outer join condition that cannot be done
+
 right-as-left: RIGHT join expressed as LEFT
 
 right-as-right: RIGHT join expressed with RIGHT
