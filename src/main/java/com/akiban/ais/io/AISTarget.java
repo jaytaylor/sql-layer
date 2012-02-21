@@ -21,6 +21,7 @@ import com.akiban.ais.metamodel.MMColumn;
 import com.akiban.ais.metamodel.MMGroup;
 import com.akiban.ais.metamodel.MMIndex;
 import com.akiban.ais.metamodel.MMIndexColumn;
+import com.akiban.ais.metamodel.MMJoin;
 import com.akiban.ais.metamodel.MMType;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
@@ -111,7 +112,7 @@ public class AISTarget extends Target
             }
         }
         else if(typename == join) {
-            Join.create(ais, map);
+            MMJoin.create(ais, map);
         }
         else if(typename == joinColumn) {
             JoinColumn.create(ais, map);

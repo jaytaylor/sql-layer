@@ -21,6 +21,7 @@ import com.akiban.ais.metamodel.MMColumn;
 import com.akiban.ais.metamodel.MMGroup;
 import com.akiban.ais.metamodel.MMIndex;
 import com.akiban.ais.metamodel.MMIndexColumn;
+import com.akiban.ais.metamodel.MMJoin;
 import com.akiban.ais.metamodel.MMType;
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -117,7 +118,7 @@ public class Writer
     private void saveJoins(Collection<Join> joins)  {
         target.writeCount(joins.size());
         for (Join join : joins) {
-            target.writeJoin(join.map());
+            target.writeJoin(MMJoin.map(join));
             nJoinColumns += join.getJoinColumns().size();
         }
     }
