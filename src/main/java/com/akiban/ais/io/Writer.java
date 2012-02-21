@@ -37,7 +37,6 @@ import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Target;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
-import com.akiban.util.Command;
 
 public class Writer
 {

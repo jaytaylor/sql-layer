@@ -27,14 +27,8 @@ import com.akiban.ais.metamodel.MMTable;
 import com.akiban.ais.metamodel.MMType;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.Target;
-import com.akiban.ais.model.Type;
 
 public class AISTarget extends Target
 {
