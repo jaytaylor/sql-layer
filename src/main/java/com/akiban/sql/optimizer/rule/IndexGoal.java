@@ -420,13 +420,14 @@ public class IndexGoal implements Comparator<IndexScan>
     }
 
     /** Find the best index on the given table. 
-     * @param groupOnly If true, this table is the optional part of a
-     * LEFT join. Can still consider group indexes to it, but not
-     * single table indexes on it.
+     * @param groupOnly 
      */
-    public IndexScan pickBestIndex(TableSource table, boolean groupOnly) {
+    public IndexScan pickBestIndex(TableSource table, Set<TableSource> required) {
         IndexScan bestIndex = null;
-        if (!groupOnly) {
+        // If this table is the optional part of a LEFT join, can
+        // still consider group indexes to it, but not single table
+        // indexes on it.
+        if (required.contains(table)) {
             for (TableIndex index : table.getTable().getTable().getIndexes()) {
                 IndexScan candidate = new IndexScan(index, table);
                 bestIndex = betterIndex(bestIndex, candidate);
@@ -443,10 +444,7 @@ public class IndexGoal implements Comparator<IndexScan>
                 TableSource rootRequired = null, leafRequired = null;
                 if (index.getJoinType() == JoinType.LEFT) {
                     while (rootTable != null) {
-                        // TODO: These isRequired() predicates need to
-                        // be relative to the group to support outer
-                        // joins between groups.
-                        if (rootTable.isRequired()) {
+                        if (required.contains(rootTable)) {
                             rootRequired = rootTable;
                             if (leafRequired == null)
                                 leafRequired = rootTable;
@@ -524,7 +522,7 @@ public class IndexGoal implements Comparator<IndexScan>
                                    Set<TableSource> required) {
         IndexScan bestIndex = null;
         for (TableSource table : tables) {
-            IndexScan tableIndex = pickBestIndex(table, !required.contains(table));
+            IndexScan tableIndex = pickBestIndex(table, required);
             if ((tableIndex != null) &&
                 ((bestIndex == null) || (compare(tableIndex, bestIndex) > 0)))
                 bestIndex = tableIndex;
