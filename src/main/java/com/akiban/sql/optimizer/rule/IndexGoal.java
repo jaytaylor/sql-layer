@@ -125,7 +125,7 @@ public class IndexGoal implements Comparator<IndexScan>
                      AggregateSource grouping,
                      Sort ordering,
                      Project projectDistinct,
-                     Collection<TableSource> tables,
+                     Iterable<TableSource> tables,
                      CostEstimator costEstimator) {
         this.boundTables = boundTables;
         this.conditionSources = conditionSources;
