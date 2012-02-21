@@ -17,6 +17,7 @@ package com.akiban.ais.io;
 
 import java.util.Collection;
 
+import com.akiban.ais.metamodel.MMGroup;
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
@@ -75,7 +76,7 @@ public class Writer
     private void saveGroups(Collection<Group> groups) {
         target.writeCount(groups.size());
         for (Group group : groups) {
-            target.writeGroup(group.map());
+            target.writeGroup(new MMGroup(group).map());
             nIndexes += group.getIndexes().size();
         }
     }

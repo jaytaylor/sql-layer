@@ -15,9 +15,31 @@
 
 package com.akiban.ais.metamodel;
 
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.ModelNames;
+import com.akiban.ais.model.validation.AISInvariants;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MMGroup implements Serializable, ModelNames {
+    public MMGroup(Group group) {
+        name = group.getName();
+    }
+
+    public static Group create(AkibanInformationSchema ais, Map<String, Object> map)
+    {
+        return Group.create(ais, (String) map.get(group_name));
+    }
+
+    public Map<String, Object> map()
+    {
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put(group_name, name);
+        return map;
+    }
+
+    private String name;
 }

@@ -17,6 +17,7 @@ package com.akiban.ais.io;
 
 import java.util.Map;
 
+import com.akiban.ais.metamodel.MMGroup;
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
@@ -51,7 +52,7 @@ public class Reader
             @Override
             public void receive(Map<String, Object> map)
             {
-                Group.create(ais, map);
+                MMGroup.create(ais, map);
             }
         });
     }

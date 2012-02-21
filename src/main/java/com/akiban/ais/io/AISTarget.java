@@ -17,6 +17,7 @@ package com.akiban.ais.io;
 
 import java.util.Map;
 
+import com.akiban.ais.metamodel.MMGroup;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
@@ -84,7 +85,7 @@ public class AISTarget extends Target
             Type.create(ais, map);
         }
         else if(typename == group) {
-            Group.create(ais, map);
+            MMGroup.create(ais, map);
         }
         else if(typename == table) {
             Table.create(ais, map);
