@@ -20,6 +20,7 @@ import java.util.Map;
 import com.akiban.ais.metamodel.MMColumn;
 import com.akiban.ais.metamodel.MMGroup;
 import com.akiban.ais.metamodel.MMIndex;
+import com.akiban.ais.metamodel.MMIndexColumn;
 import com.akiban.ais.metamodel.MMType;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
@@ -119,7 +120,7 @@ public class AISTarget extends Target
             MMIndex.create(ais, map);
         }
         else if(typename == indexColumn) {
-            IndexColumn.create(ais, map);
+            MMIndexColumn.create(ais, map);
         }
         else {
             throw new IllegalArgumentException("Unexpected typename: " + typename);

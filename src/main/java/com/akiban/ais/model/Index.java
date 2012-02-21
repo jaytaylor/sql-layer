@@ -31,7 +31,7 @@ public abstract class Index implements Traversable
     protected abstract Column indexRowCompositionColumn(HKeyColumn hKeyColumn);
     public abstract Table leafMostTable();
     public abstract Table rootMostTable();
-
+    public abstract void checkMutability();
 
     protected Index(TableName tableName, String indexName, Integer indexId, Boolean isUnique, String constraint, JoinType joinType, boolean isValid)
     {

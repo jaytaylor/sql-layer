@@ -71,6 +71,11 @@ public class GroupIndex extends Index
     }
 
     @Override
+    public void checkMutability() {
+        group.getGroupTable().checkMutability();
+    }
+
+    @Override
     public void addColumn(IndexColumn indexColumn) {
         Table indexGenericTable = indexColumn.getColumn().getTable();
         if (!(indexGenericTable instanceof UserTable)) {

@@ -65,6 +65,11 @@ public class TableIndex extends Index
         return getTable();
     }
 
+    @Override
+    public void checkMutability() {
+        table.checkMutability();
+    }
+
     public Table getTable()
     {
         return table;

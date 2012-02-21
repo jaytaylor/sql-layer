@@ -20,6 +20,7 @@ import java.util.Map;
 import com.akiban.ais.metamodel.MMColumn;
 import com.akiban.ais.metamodel.MMGroup;
 import com.akiban.ais.metamodel.MMIndex;
+import com.akiban.ais.metamodel.MMIndexColumn;
 import com.akiban.ais.metamodel.MMType;
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -163,7 +164,7 @@ public class Reader
             @Override
             public void receive(Map<String, Object> map)
             {
-                IndexColumn indexColumn = IndexColumn.create(ais, map);
+                IndexColumn indexColumn = MMIndexColumn.create(ais, map);
                 if (indexColumn == null) {
                     throw new NoSuchTableException ((String)map.get(indexColumn_schemaName), (String)map.get(indexColumn_tableName));
                 }

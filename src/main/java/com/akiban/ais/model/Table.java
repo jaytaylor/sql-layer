@@ -358,11 +358,6 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         return engine;
     }
 
-    Map<String, Column> getColumnMap()
-    {
-        return columnMap;
-    }
-
     public void rowDef(Object rowDef)
     {
         assert rowDef.getClass().getName().equals("com.akiban.server.rowdata.RowDef") : rowDef.getClass();
