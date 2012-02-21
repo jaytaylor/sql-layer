@@ -52,12 +52,13 @@ public class Join implements Traversable, HasGroup
                 : "Join(" + joinName + ": " + child + " -> " + parent + ", group(" + getGroup().getName() + "))";
     }
 
-    public void addJoinColumn(Column parent, Column child)
+    public JoinColumn addJoinColumn(Column parent, Column child)
     {
         ais.checkMutability();
         JoinColumn joinColumn = new JoinColumn(this, parent, child);
         joinColumns.add(joinColumn);
         joinColumnsStale = true;
+        return joinColumn;
     }
 
     public String getDescription()
