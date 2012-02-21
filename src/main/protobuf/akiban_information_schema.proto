@@ -21,6 +21,11 @@ message TableName {
     optional string tableName  = 2;  // link to Table.tableName
 }
 
+message CharCollation {
+   optional string characterSetName = 1;
+   optional string collationOrderName = 2;
+}
+
 enum JoinType {
    LEFT_OUTER_JOIN  = 0;
    RIGHT_OUTER_JOIN = 1;
@@ -30,14 +35,14 @@ enum JoinType {
 
 // One of the column pairs which define the Join.
 message JoinColumn {
-   optional string parentColumn = 1;
-   optional string childColumn  = 2;
-   optional int32  position     = 3;
+   optional string parentColumn = 1; // link to Column.columnName
+   optional string childColumn  = 2; // link to Column.columnName
+   optional int32  position     = 3; // order of column list in join
 }
 
 message Join {
-    optional TableName  childTable  = 1;  // Child table for this join. 
-                                          // Parent table is the list source
+    optional TableName parentTable  = 1;  // Parent table for this join. 
+                                          // Child table is the source table.
                                           // link to Table.tableName
     repeated JoinColumn columns     = 2;  // list of columns for this join
 }
@@ -50,16 +55,15 @@ message IndexColumn {
 }
 
 message Index {
-    optional string   indexName = 1;
-    optional string   treeName  = 2;  // storage system tree name 
-    optional int32    indexId   = 3;  // id of index within table/group
-    optional bool     isPK      = 4;  // Is the primary key index
-    optional bool     isUnique  = 5;  // Is a unique index
-    optional bool     isFK      = 6;  // Is a non-grouping foreign key index
-    optional bool     isAkFK    = 7;  // Is a grouping foreign key index
-    repeated IndexColumn columns     = 8;
-    optional string      description = 9;
-    optional JoinType  joinType = 10; // Type of join used for GroupIndex
+    optional string   indexName   = 1;
+    optional string   treeName    = 2;  // storage system tree name 
+    optional int32    indexId     = 3;  // id of index within table/group
+    optional bool     isPK        = 4;  // Is the primary key index
+    optional bool     isUnique    = 5;  // Is a unique index
+    optional bool     isAkFK      = 6;  // Is a grouping foreign key index
+    repeated IndexColumn columns  = 7;  // list of columns for this index
+    optional string   description = 8;  // index comment holder 
+    optional JoinType joinType    = 9;  // Type of join used for GroupIndex
 }
 
 message Group {
@@ -77,10 +81,10 @@ message Column {
     optional int32   position     = 4;  // order of column in Table 
     optional int64   typeParam1   = 5;  
     optional int64   typeParam2   = 6;
-    optional int64   initAutoInc  = 7;  // initial auto increment value
-    optional string  characterSet = 8;
-    optional string  collation    = 9;    
-    optional string  description  = 10;
+    optional int64   initAutoInc  = 7;   // initial auto increment value
+    optional CharCollation charColl = 8; // column defined character set
+                                         // and collation
+    optional string  description  = 9;   // column comment holder
 }
 
 // UserTable.  
@@ -91,20 +95,19 @@ message Table {
     optional int32   tableId      = 2;  // globally unique id for table
     optional int32   ordinal      = 3;  // id of table within the group
     repeated Column  columns      = 4;  // list of columns in the table
-    optional string  characterSet = 5;
-    optional string  collation    = 6;    
-    repeated Index   indexes      = 7;  // list of indexes on the table
-    repeated Join    childTables  = 8;  // list of joins to child tables
-    optional string  description  = 9;  // Table comment holder
-    optional bool    protected    = 10; // Table can not be altered or joined
+    optional CharCollation charColl = 5; // table default character set & collation
+    repeated Index   indexes      = 6;  // list of indexes on the table
+    optional Join    parentTable  = 7;  // Join to parent table
+    optional string  description  = 8;  // Table comment holder
+    optional bool    protected    = 9;  // Table can not be altered or joined
+                                        // by user actions. For AIS tables.
 }
 
 message Schema {
     optional string schemaName   = 1;
-    optional Table  tables       = 2;  // list of user tables in the schema
+    repeated Table  tables       = 2;  // list of user tables in the schema
     repeated Group  groups       = 3;  // list of groups in the schema
-    optional string characterSet = 4;  // schema default character set
-    optional string collation    = 5;  // schema default collation ordering
+    optional CharCollation charColl = 4; // schema default character set & collation 
 }
 
 message AkibanInformationSchema {
