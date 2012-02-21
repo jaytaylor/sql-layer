@@ -19,6 +19,7 @@ import java.util.Collection;
 
 import com.akiban.ais.metamodel.MMColumn;
 import com.akiban.ais.metamodel.MMGroup;
+import com.akiban.ais.metamodel.MMIndex;
 import com.akiban.ais.metamodel.MMType;
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -134,19 +135,19 @@ public class Writer
         target.writeCount(nIndexes);
         for (Group group : groups) {
             for (Index index : group.getIndexes()) {
-                target.writeIndex(index.map());
+                target.writeIndex(MMIndex.map(index));
                 nIndexColumns += index.getColumns().size();
             }
         }
         for (UserTable userTable : userTables) {
             for (Index index : userTable.getIndexesIncludingInternal()) {
-                target.writeIndex(index.map());
+                target.writeIndex(MMIndex.map(index));
                 nIndexColumns += index.getColumns().size();
             }
         }
         for (GroupTable groupTable : groupTables) {
             for (Index index : groupTable.getIndexes()) {
-                target.writeIndex(index.map());
+                target.writeIndex(MMIndex.map(index));
                 nIndexColumns += index.getColumns().size();
             }
         }

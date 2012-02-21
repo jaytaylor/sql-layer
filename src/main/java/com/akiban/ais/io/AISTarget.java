@@ -19,6 +19,7 @@ import java.util.Map;
 
 import com.akiban.ais.metamodel.MMColumn;
 import com.akiban.ais.metamodel.MMGroup;
+import com.akiban.ais.metamodel.MMIndex;
 import com.akiban.ais.metamodel.MMType;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
@@ -115,7 +116,7 @@ public class AISTarget extends Target
             JoinColumn.create(ais, map);
         }
         else if(typename == index) {
-            Index.create(ais, map);
+            MMIndex.create(ais, map);
         }
         else if(typename == indexColumn) {
             IndexColumn.create(ais, map);

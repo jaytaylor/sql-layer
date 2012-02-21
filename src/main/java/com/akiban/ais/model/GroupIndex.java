@@ -22,7 +22,7 @@ import java.util.*;
 
 public class GroupIndex extends Index
 {
-    static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
+    public static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
                                     Boolean isUnique, String constraint)
     {
         ais.checkMutability();
