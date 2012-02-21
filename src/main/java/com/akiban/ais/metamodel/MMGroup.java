@@ -31,7 +31,8 @@ public class MMGroup implements Serializable, ModelNames {
 
     public static Group create(AkibanInformationSchema ais, Map<String, Object> map)
     {
-        return Group.create(ais, (String) map.get(group_name));
+        return Group.create(ais,
+                            (String) map.get(group_name));
     }
 
     public Map<String, Object> map()

@@ -18,6 +18,7 @@ package com.akiban.ais.io;
 import java.util.Collection;
 
 import com.akiban.ais.metamodel.MMGroup;
+import com.akiban.ais.metamodel.MMType;
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
@@ -69,7 +70,7 @@ public class Writer
     private void saveTypes(Collection<Type> types) {
         target.writeCount(types.size());
         for (Type type : types) {
-            target.writeType(type.map());
+            target.writeType(new MMType(type).map());
         }
     }
 
