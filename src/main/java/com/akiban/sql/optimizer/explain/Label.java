@@ -22,6 +22,7 @@ public enum Label
 {
     NAME(Category.IDENTIFIER),    
     COST(Category.COST),
+    AGGREGATORS(Category.CHILD),
     INPUT_OPERATOR(Category.CHILD),
     OPERAND(Category.CHILD), // function operand
     LOOK_UP_OPTION(Category.OPTION),
@@ -41,6 +42,7 @@ public enum Label
     INNER_TYPE(Category.TYPE_DESCRIPTION),
     OUTER_TYPE(Category.TYPE_DESCRIPTION),
     PRODUCT_TYPE(Category.TYPE_DESCRIPTION),
+    INPUT_TYPE(Category.TYPE_DESCRIPTION),
     OUTPUT_TYPE(Category.TYPE_DESCRIPTION),
     TABEL_TYPE(Category.TYPE_DESCRIPTION),
     ROWTYPE(Category.TYPE_DESCRIPTION),

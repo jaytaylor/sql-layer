@@ -19,6 +19,7 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
+import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 
@@ -103,6 +104,12 @@ class GroupScan_Default extends Operator
     // Object state
 
     private final GroupCursorCreator cursorCreator;
+
+    @Override
+    public Explainer getExplainer()
+    {
+        
+    }
 
     // Inner classes
 

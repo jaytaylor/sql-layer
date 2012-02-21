@@ -16,13 +16,34 @@
 package com.akiban.sql.optimizer.explain;
 
 /**
- * Reflect object's type/class
+ * <b>Type</b>
+ * Reflects object's type/class
+ * Can be useful for those formatters that want to format
+ * scan_xyz_operators' explainer differently from insert_operator's explainer, 
+ * or to format functions' differently from binary operators (such as +, -, LIKE, ILIKE, etc
+ * 
+ * <b>GeneralType</b>
+ * Refects each class of Explainers
+ * 
  */
 public enum Type
 {
     AGGREGATOR(GeneralType.AGGREGATOR),
     FUNCTION(GeneralType.EXPRESSION), 
     BINARY_OPERATOR(GeneralType.EXPRESSION),
+    SCAN_OPERATOR(GeneralType.OPERATOR),
+    LOOKUP_OPERATOR(GeneralType.OPERATOR),
+    COUNT_OPERATOR(GeneralType.OPERATOR),
+    DUI(GeneralType.OPERATOR), // delete/update/insert
+    DINSTINC_PARTIAL(GeneralType.OPERATOR),
+    FILTER_DEFAULT(GeneralType.OPERATOR),
+    PRODUCT_NESTED(GeneralType.OPERATOR),
+    IF_ELSE(GeneralType.OPERATOR),
+    UNION_ALL(GeneralType.OPERATOR),
+    SORT(GeneralType.OPERATOR),
+    FILTER(GeneralType.OPERATOR),
+    PROJECT(GeneralType.OPERATOR),
+    SELECT_HKEY(GeneralType.OPERATOR),
     PHYSICAL_OPERATOR(GeneralType.OPERATOR), // could be broken down to scan_operator, sort operator, etc?
     SUBQUERY(GeneralType.EXPRESSION),
     ROWTYPE (GeneralType.ROWTYPE),
