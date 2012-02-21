@@ -23,6 +23,7 @@ import com.akiban.ais.metamodel.MMIndex;
 import com.akiban.ais.metamodel.MMIndexColumn;
 import com.akiban.ais.metamodel.MMJoin;
 import com.akiban.ais.metamodel.MMJoinColumn;
+import com.akiban.ais.metamodel.MMTable;
 import com.akiban.ais.metamodel.MMType;
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -70,7 +71,7 @@ public class Reader
             @Override
             public void receive(Map<String, Object> map)
             {
-                Table.create(ais, map);
+                MMTable.create(ais, map);
             }
         });
     }

@@ -15,12 +15,11 @@
 
 package com.akiban.ais.model;
 
-import java.io.Serializable;
 import java.util.*;
 
 import com.akiban.ais.model.validation.AISInvariants;
 
-public abstract class Table implements Serializable, ModelNames, Traversable, HasGroup
+public abstract class Table implements Traversable, HasGroup
 {
     public abstract boolean isUserTable();
 
@@ -28,43 +27,6 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     public String toString()
     {
         return tableName.toString();
-    }
-
-    public static Table create(AkibanInformationSchema ais, Map<String, Object> map)
-    {
-        ais.checkMutability();
-        String tableType = (String) map.get(table_tableType);
-        String schemaName = (String) map.get(table_schemaName);
-        String tableName = (String) map.get(table_tableName);
-        Integer tableId = (Integer) map.get(table_tableId);
-        String groupName = (String) map.get(table_groupName);
-        Table table = null;
-        if (tableType.equals("USER")) {
-            table = UserTable.create(ais, schemaName, tableName, tableId);
-        } else if (tableType.equals("GROUP")) {
-            table = GroupTable.create(ais, schemaName, tableName, tableId);
-        }
-        if (table != null && groupName != null) {
-            Group group = ais.getGroup(groupName);
-            table.setGroup(group);
-        }
-        assert table != null;
-        table.migrationUsage = MigrationUsage.values()[(Integer) map.get(table_migrationUsage)];
-        table.treeName = (String) map.get(table_treeName);
-        return table;
-    }
-
-    public final Map<String, Object> map()
-    {
-        Map<String, Object> map = new HashMap<String, Object>();
-        map.put(table_tableType, isGroupTable() ? "GROUP" : "USER");
-        map.put(table_schemaName, getName().getSchemaName());
-        map.put(table_tableName, getName().getTableName());
-        map.put(table_tableId, getTableId());
-        map.put(table_groupName, getGroup() == null ? null : getGroup().getName());
-        map.put(table_migrationUsage, migrationUsage.ordinal());
-        map.put(table_treeName, getTreeName());
-        return map;
     }
 
     protected Table(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
@@ -183,6 +145,14 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         if (collation != null) {
             this.charsetAndCollation = CharsetAndCollation.intern(getCharsetAndCollation().charset(), collation);
         }
+    }
+
+    public MigrationUsage getMigrationUsage() {
+        return migrationUsage;
+    }
+
+    public void setMigrationUsage(MigrationUsage migrationUsage) {
+        this.migrationUsage = migrationUsage;
     }
 
     public boolean isAISTable()
@@ -307,7 +277,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     public void checkIntegrity(List<String> out)
     {
         if (tableName == null) {
-            out.add("table had null table name" + table);
+            out.add("table had null table name");
         }
         for (Map.Entry<String, Column> entry : columnMap.entrySet()) {
             String name = entry.getKey();

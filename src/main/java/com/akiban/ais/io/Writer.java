@@ -23,6 +23,7 @@ import com.akiban.ais.metamodel.MMIndex;
 import com.akiban.ais.metamodel.MMIndexColumn;
 import com.akiban.ais.metamodel.MMJoin;
 import com.akiban.ais.metamodel.MMJoinColumn;
+import com.akiban.ais.metamodel.MMTable;
 import com.akiban.ais.metamodel.MMType;
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -90,13 +91,13 @@ public class Writer
     private void saveTables(Collection<GroupTable> groupTables, Collection<UserTable> userTables) {
         target.writeCount(groupTables.size() + userTables.size());
         for (GroupTable groupTable : groupTables) {
-            target.writeTable(groupTable.map());
+            target.writeTable(MMTable.map(groupTable));
             assert groupTable.getRoot() != null : groupTable;
             nColumns += groupTable.getColumns().size();
             nIndexes += groupTable.getIndexes().size();
         }
         for (UserTable userTable : userTables) {
-            target.writeTable(userTable.map());
+            target.writeTable(MMTable.map(userTable));
             nColumns += userTable.getColumnsIncludingInternal().size();
             nIndexes += userTable.getIndexesIncludingInternal().size();
         }

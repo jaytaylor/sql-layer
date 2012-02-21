@@ -26,7 +26,6 @@ public class UserTable extends Table
                                    String tableName,
                                    Integer tableId)
     {
-        
         UserTable userTable = new UserTable(ais, schemaName, tableName, tableId);
         ais.addUserTable(userTable);
         return userTable;
@@ -35,7 +34,6 @@ public class UserTable extends Table
     public UserTable(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
     {
         super(ais, schemaName, tableName, tableId);
-        migrationUsage = MigrationUsage.AKIBAN_STANDARD;
     }
 
     @Override
