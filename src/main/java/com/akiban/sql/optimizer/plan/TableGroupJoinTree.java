@@ -17,15 +17,19 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
 /** Joins within a single {@link TableGroup} represented as a tree
  * whose structure mirrors that of the group.
  * This is an intermediate form between the original tree of joins based on the
  * original SQL syntax and the <code>Scan</code> and <code>Lookup</code> form
  * once an access path has been chosen.
  */
-public class TableGroupJoinTree extends BaseJoinable
+public class TableGroupJoinTree extends BaseJoinable 
+                                implements Iterable<TableGroupJoinTree.TableGroupJoinNode>
 {
-    public static class TableGroupJoinNode {
+    public static class TableGroupJoinNode implements Iterable<TableGroupJoinNode> {
         TableSource table;
         TableGroupJoinNode parent, nextSibling, firstChild;
         JoinType parentJoinType;
@@ -63,29 +67,66 @@ public class TableGroupJoinTree extends BaseJoinable
             this.parentJoinType = parentJoinType;
         }
 
-        /** Find the given table in this tree. */
+        /** Find the given table in this (sub-)tree. */
         public TableGroupJoinNode findTable(TableSource table) {
-            TableGroupJoinNode node = this;
-            while (true) {
+            for (TableGroupJoinNode node : this) {
                 if (node.getTable() == table) {
                     return node;
                 }
-                TableGroupJoinNode next = node.getFirstChild();
-                if (next != null) {
-                    node = next;
-                    continue;
-                }
-                while (true) {
-                    next = node.getNextSibling();
-                    if (next != null) {
-                        node = next;
-                        break;
-                    }
-                    node = node.getParent();
-                    if (node == this)
-                        return null;
-                }
             }
+            return null;
+        }
+
+        @Override
+        public Iterator<TableGroupJoinNode> iterator() {
+            return new TableGroupJoinIterator(this);
+        }
+    }
+
+    static class TableGroupJoinIterator implements Iterator<TableGroupJoinNode> {
+        TableGroupJoinNode root, next;
+        
+        TableGroupJoinIterator(TableGroupJoinNode root) {
+            this.root = this.next = root;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return (next != null);
+        }
+
+        @Override
+        public TableGroupJoinNode next() {
+            if (next == null)
+                throw new NoSuchElementException();
+            TableGroupJoinNode node = next;
+            advance();
+            return node;
+        }
+        
+        protected void advance() {
+            TableGroupJoinNode node = next.getFirstChild();
+            if (node != null) {
+                next = node;
+                return;
+            }
+            while (true) {
+                node = next.getNextSibling();
+                if (node != null) {
+                    next = node;
+                    return;
+                }
+                if (next == root) {
+                    next = null;
+                    return;
+                }
+                next = next.getParent();
+            }
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
         }
     }
 
@@ -104,29 +145,34 @@ public class TableGroupJoinTree extends BaseJoinable
         return root;
     }
     
+    @Override
+    public Iterator<TableGroupJoinNode> iterator() {
+        return new TableGroupJoinIterator(root);
+    }
+
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
-            TableGroupJoinNode node = root;
+            TableGroupJoinNode next = root;
             top:
             while (true) {
-                if (v.visitEnter(node.getTable())) {
-                    TableGroupJoinNode next = node.getFirstChild();
-                    if (next != null) {
-                        node = next;
+                if (v.visitEnter(next.getTable())) {
+                    TableGroupJoinNode node = next.getFirstChild();
+                    if (node != null) {
+                        next = node;
                         continue;
                     }
                 }
                 while (true) {
-                    if (v.visitLeave(node.getTable())) {
-                        TableGroupJoinNode next = node.getNextSibling();
-                        if (next != null) {
-                            node = next;
+                    if (v.visitLeave(next.getTable())) {
+                        TableGroupJoinNode node = next.getNextSibling();
+                        if (node != null) {
+                            next = node;
                             break;
                         }
                     }
-                    if (node == root)
+                    if (next == root)
                         break top;
-                    node = node.getParent();
+                    next = next.getParent();
                 }
             }
         }
@@ -144,29 +190,13 @@ public class TableGroupJoinTree extends BaseJoinable
     }
 
     private void summarizeJoins(StringBuilder str) {
-        TableGroupJoinNode node = root;
-        while (true) {
+        for (TableGroupJoinNode node : this) {
             if (node != root) {
                 str.append(" ");
                 str.append(node.getParentJoinType());
                 str.append(" ");
             }
             str.append(node.getTable().getTable().getTable().getName().getTableName());
-            TableGroupJoinNode next = node.getFirstChild();
-            if (next != null) {
-                node = next;
-                continue;
-            }
-            while (true) {
-                next = node.getNextSibling();
-                if (next != null) {
-                    node = next;
-                    break;
-                }
-                if (node == root)
-                    return;
-                node = node.getParent();
-            }
         }
     }
 
