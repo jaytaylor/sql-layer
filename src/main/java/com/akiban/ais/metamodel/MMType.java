@@ -25,15 +25,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MMType implements Serializable, ModelNames {
-    public MMType(Type type) {
-        name = type.name();
-        typeParameters = type.nTypeParameters();
-        fixedSize = type.fixedSize();
-        maxStorageSizeBytes = type.maxSizeBytes();
-        encoding = type.encoding();
-        akType = type.akType();
-    }
-
     public static Type create(AkibanInformationSchema ais, Map<String, Object> map)
     {
         return Type.create(ais,
@@ -45,21 +36,14 @@ public class MMType implements Serializable, ModelNames {
                            null);
     }
 
-    public Map<String, Object> map()
+    public static Map<String, Object> map(Type type)
     {
         Map<String, Object> map = new HashMap<String, Object>();
-        map.put(type_name, name);
-        map.put(type_parameters, typeParameters);
-        map.put(type_fixedSize, fixedSize);
-        map.put(type_maxSizeBytes, maxStorageSizeBytes);
-        map.put(type_encoding, encoding);
+        map.put(type_name, type.name());
+        map.put(type_parameters, type.nTypeParameters());
+        map.put(type_fixedSize, type.fixedSize());
+        map.put(type_maxSizeBytes, type.maxSizeBytes());
+        map.put(type_encoding, type.encoding());
         return map;
     }
-
-    private String name;
-    private Integer typeParameters;
-    private Boolean fixedSize;
-    private Long maxStorageSizeBytes;
-    private String encoding;
-    private AkType akType;
 }

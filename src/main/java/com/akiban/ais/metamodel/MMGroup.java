@@ -25,22 +25,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MMGroup implements Serializable, ModelNames {
-    public MMGroup(Group group) {
-        name = group.getName();
-    }
-
     public static Group create(AkibanInformationSchema ais, Map<String, Object> map)
     {
         return Group.create(ais,
                             (String) map.get(group_name));
     }
 
-    public Map<String, Object> map()
+    public static Map<String, Object> map(Group group)
     {
         Map<String, Object> map = new HashMap<String, Object>();
-        map.put(group_name, name);
+        map.put(group_name, group.getName());
         return map;
     }
-
-    private String name;
 }

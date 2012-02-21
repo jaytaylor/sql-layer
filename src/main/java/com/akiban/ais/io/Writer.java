@@ -70,14 +70,14 @@ public class Writer
     private void saveTypes(Collection<Type> types) {
         target.writeCount(types.size());
         for (Type type : types) {
-            target.writeType(new MMType(type).map());
+            target.writeType(MMType.map(type));
         }
     }
 
     private void saveGroups(Collection<Group> groups) {
         target.writeCount(groups.size());
         for (Group group : groups) {
-            target.writeGroup(new MMGroup(group).map());
+            target.writeGroup(MMGroup.map(group));
             nIndexes += group.getIndexes().size();
         }
     }
