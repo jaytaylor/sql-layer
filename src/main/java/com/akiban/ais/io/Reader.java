@@ -17,6 +17,7 @@ package com.akiban.ais.io;
 
 import java.util.Map;
 
+import com.akiban.ais.metamodel.MMColumn;
 import com.akiban.ais.metamodel.MMGroup;
 import com.akiban.ais.metamodel.MMType;
 import com.akiban.ais.metamodel.MetaModel;
@@ -77,7 +78,7 @@ public class Reader
             @Override
             public void receive(Map<String, Object> map)
             {
-                Column column = Column.create(ais, map);
+                Column column = MMColumn.create(ais, map);
                 if (column == null) {
                     throw new NoSuchTableException ((String)map.get(column_schemaName), (String)map.get(column_tableName));
                 }

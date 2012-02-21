@@ -15,93 +15,26 @@
 
 package com.akiban.ais.model;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.akiban.ais.model.validation.AISInvariants;
 
-public class Column implements Serializable, ModelNames
+public class Column
 {
-    public static Column create(AkibanInformationSchema ais, Map<String, Object> map)
+    public static Column create(Table table, String name, Integer position, Type type, Boolean nullable,
+                                Long typeParameter1, Long typeParameter2, Long initialAutoIncValue,
+                                CharsetAndCollation charsetAndCollation)
     {
-        
-        Column column = null;
-        String schemaName = (String) map.get(column_schemaName);
-        String tableName = (String) map.get(column_tableName);
-        Table table = ais.getTable(schemaName, tableName);
-        if (table != null) {
-            String typename = (String) map.get(column_typename);
-            String columnName = (String) map.get(column_columnName);
-            Integer position = (Integer) map.get(column_position);
-            Boolean nullable = (Boolean) map.get(column_nullable);
-            Type type = ais.getType(typename);
-            column = new Column(table, columnName, position, type);
-            column.setNullable(nullable);
-            Integer nParameters = type.nTypeParameters();
-            
-            if (nParameters >= 1) {
-                Long param = (Long) map.get(column_typeParam1);
-                if (param != null)
-                    column.setTypeParameter1(param);
-
-                if (nParameters >= 2) {
-                    param = (Long) map.get(column_typeParam2);
-                    if (param != null)
-                        column.setTypeParameter2(param);
-                }
-            }
-
-            column.setInitialAutoIncrementValue((Long) map.get(column_initialAutoIncrementValue));
-            /* Not clear how to do this in a GWT-safe way
-            if (map.get(column_maxStorageSize) != null &&
-                column.getMaxStorageSize().longValue() != (Long) map.get(column_maxStorageSize)) {
-                throw new InternalError(column.toString());
-            }
-            if (map.get(column_prefixSize) != null &&
-                column.getPrefixSize().intValue() != (Integer) map.get(column_prefixSize)) {
-                throw new InternalError(column.toString());
-            }
-            */
-            column.setCharsetAndCollation(CharsetAndCollation.intern((String) map.get(column_charset),
-                                                                     (String) map.get(column_collation)));
-        }
+        table.checkMutability();
+        AISInvariants.checkNullName(name, "column", "column name");
+        AISInvariants.checkDuplicateColumnsInTable(table, name);
+        AISInvariants.checkDuplicateColumnPositions(table, position);
+        Column column = new Column(table, name, position, type, nullable, typeParameter1, typeParameter2,
+                                   initialAutoIncValue, charsetAndCollation);
+        table.addColumn(column);
         return column;
     }
 
-    public static Column create(Table table, String columnName, Integer position, Type type)
-    {
-        return new Column(table, columnName, position, type);
-    }
-
-    public Map<String, Object> map()
-    {
-        Map<String, Object> map = new HashMap<String, Object>();
-        String groupSchemaName = null;
-        String groupTableName = null;
-        String groupColumnName = null;
-        if (groupColumn != null) {
-            groupSchemaName = groupColumn.getTable().getName().getSchemaName();
-            groupTableName = groupColumn.getTable().getName().getTableName();
-            groupColumnName = groupColumn.getName();
-        }
-        map.put(column_schemaName, getTable().getName().getSchemaName());
-        map.put(column_tableName, getTable().getName().getTableName());
-        map.put(column_columnName, columnName);
-        map.put(column_position, position);
-        map.put(column_typename, type.name());
-        map.put(column_typeParam1, type.nTypeParameters() >= 1 ? typeParameter1 : null);
-        map.put(column_typeParam2, type.nTypeParameters() >= 2 ? typeParameter2 : null);
-        map.put(column_nullable, nullable);
-        map.put(column_maxStorageSize, getMaxStorageSize());
-        map.put(column_prefixSize, getPrefixSize());
-        map.put(column_initialAutoIncrementValue, initialAutoIncrementValue);
-        map.put(column_groupSchemaName, groupSchemaName);
-        map.put(column_groupTableName, groupTableName);
-        map.put(column_groupColumnName, groupColumnName);
-        map.put(column_charset, getCharsetAndCollation().charset());
-        map.put(column_collation, getCharsetAndCollation().collation());
-        return map;
+    public static Column create(Table table, String name, Integer position, Type type) {
+        return create(table, name, position, type, null, null, null, null, null);
     }
 
     @Override
@@ -397,26 +330,27 @@ public class Column implements Serializable, ModelNames
         return fieldDef;
     }
 
-    private Column(Table table,
-                   String columnName,
-                   Integer position,
-                   Type type)
+    private Column(Table table, String name, Integer position, Type type, Boolean nullable, Long typeParameter1,
+                   Long typeParameter2, Long initialAutoIncValue, CharsetAndCollation charsetAndCollation)
     {
-        table.checkMutability();
-        AISInvariants.checkNullName(columnName, "column", "column name");
-        AISInvariants.checkDuplicateColumnsInTable(table, columnName);
-        AISInvariants.checkDuplicateColumnPositions(table, position);
-        
         this.table = table;
-        this.columnName = columnName;
+        this.columnName = name;
         this.position = position;
         this.type = type;
-        this.table.addColumn(this);
+        this.nullable = nullable;
+        this.typeParameter1 = typeParameter1;
+        this.typeParameter2 = typeParameter2;
+        this.initialAutoIncrementValue = initialAutoIncValue;
+        this.charsetAndCollation = charsetAndCollation;
 
         Long[] defaults = Types.defaultParams().get(type);
         if(defaults != null) {
-            this.typeParameter1 = defaults[0];
-            this.typeParameter2 = defaults[1];
+            if(this.typeParameter1 == null) {
+                this.typeParameter1 = defaults[0];
+            }
+            if(this.typeParameter2 == null) {
+                this.typeParameter2 = defaults[1];
+            }
         }
     }
 
@@ -440,16 +374,17 @@ public class Column implements Serializable, ModelNames
 
     public static final String AKIBAN_PK_NAME = "__akiban_pk";
 
+    private Table table;
     private String columnName;
     private Type type;
     private Boolean nullable;
-    private Table table;
     private Integer position;
     private Long typeParameter1;
     private Long typeParameter2;
-    private Column groupColumn; // Non-null iff this is a user table column
-    private Column userColumn; // Non-null iff this is a group table column
     private Long initialAutoIncrementValue;
     private CharsetAndCollation charsetAndCollation;
+
+    private Column groupColumn; // Non-null iff this is a user table column
+    private Column userColumn; // Non-null iff this is a group table column
     private transient /*FieldDef*/ Object fieldDef;
 }

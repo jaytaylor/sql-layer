@@ -17,6 +17,7 @@ package com.akiban.ais.io;
 
 import java.util.Map;
 
+import com.akiban.ais.metamodel.MMColumn;
 import com.akiban.ais.metamodel.MMGroup;
 import com.akiban.ais.metamodel.MMType;
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -92,7 +93,7 @@ public class AISTarget extends Target
             Table.create(ais, map);
         }
         else if(typename == column) {
-            Column userColumn = Column.create(ais, map);
+            Column userColumn = MMColumn.create(ais, map);
             // Hook the userColumn/groupColumn back up
             Table userTable = userColumn.getTable();
             String groupSchemaName = (String)map.get(column_groupSchemaName);

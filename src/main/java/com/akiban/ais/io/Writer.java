@@ -17,6 +17,7 @@ package com.akiban.ais.io;
 
 import java.util.Collection;
 
+import com.akiban.ais.metamodel.MMColumn;
 import com.akiban.ais.metamodel.MMGroup;
 import com.akiban.ais.metamodel.MMType;
 import com.akiban.ais.metamodel.MetaModel;
@@ -101,12 +102,12 @@ public class Writer
         target.writeCount(nColumns);
         for (GroupTable groupTable : groupTables) {
             for (Column column : groupTable.getColumns()) {
-                target.writeColumn(column.map());
+                target.writeColumn(MMColumn.map(column));
             }
         }
         for (UserTable userTable : userTables) {
             for (Column column : userTable.getColumnsIncludingInternal()) {
-                target.writeColumn(column.map());
+                target.writeColumn(MMColumn.map(column));
             }
         }
     }
