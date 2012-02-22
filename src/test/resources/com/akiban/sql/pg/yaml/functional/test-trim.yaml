@@ -1,0 +1,18 @@
+#test the LTRIM, RTRIM and TRIM functions
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(varchar_field) VALUES ('     ltrim') , ('rtrim     '), ('     trim   ');
+---
+- Statement: SELECT LTRIM(varchar_field) from all_types WHERE LENGTH(LTRIM(varchar_field)) = LENGTH(TRIM(varchar_field));
+- output: [['ltrim']]
+---
+- Statement: SELECT RTRIM(varchar_field) from all_types WHERE LENGTH(RTRIM(varchar_field)) = LENGTH(TRIM(varchar_field));
+- output: [['rtrim']]
+---
+- Statement: SELECT TRIM(varchar_field) from all_types WHERE LENGTH(TRIM(varchar_field))) > LENGTH(LTRIM(varchar_field)) and LENGTH(TRIM(varchar_field)) > LENGTH(RTRIM(varchar_field));
+- output: [['trim']]
+---
+- Statement: SELECT varchar_field from all_types WHERE LENGTH(TRIM(varchar_field)) = LENGTH(LTRIM(RTRIM(varchar_field)));
+- row_count: 3
+...

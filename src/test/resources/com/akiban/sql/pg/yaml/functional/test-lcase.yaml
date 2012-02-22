@@ -1,0 +1,31 @@
+#test the LCASE and LOWER functions
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types
+    (integer_field, varchar_field, double_field, date_field)
+    VALUES (1, 'one', 1.5, '2001-01-01'), (2, 'TWO', 2.5, '2002-02-02'), (3, 'THREE', '3.5, '2003-03-03');
+---
+- Statement: SELECT LCASE(varchar_field) from all_types;
+- output: [['one'], ['two'], ['three']]
+---
+- Statement: SELECT integer_field FROM all_types WHERE LCASE(varchar_field) = LOWER(varchar_field);
+- output: [[1], [2], [3]]
+---
+- Statement: SELECT LOWER(?) FROM all_types;
+- params: [['ABC']]
+- output: [['abc']]
+---
+- Statement: SELECT LCASE(double_field) from all_types;
+- output: [[1.5], [2.5], [3.5]]
+---
+- Statement: SELECT LCASE(null) FROM all_types;
+- output: [[null]]
+---
+- Statement: SELECT varchar_field from all_types WHERE LOWER(?) = LCASE(varchar_field);
+- params: [['two']]
+- output: [['TWO']]
+---
+- Statement: SELECT varchar_field from all_types WHERE LCASE(date_field) = LOWER(date_field);
+- row_count: 3
+...

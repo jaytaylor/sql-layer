@@ -1,0 +1,23 @@
+#test the UCASE and UPPER functions
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types
+    (varchar_field, double_field)
+    VALUES ('one', 1.5), ('TWO', 2.5), ('THREE', 3.5);
+---
+- Statement: SELECT UCASE(varchar_field) from all_types;
+- output: [['ONE'], ['TWO'], ['THREE']]
+---
+- Statement: SELECT double_field FROM all_types WHERE UCASE(varchar_field) = varchar_field;
+- output: [[2.5], [3.5]]
+---
+- Statement: SELECT UCASE(double_field) from all_types;
+- output: [[1.5], [2.5], [3.5]]
+---
+- Statement: SELECT UCASE(null) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT UPPER(varchar_field) from all_types WHERE UCASE(double_field) = UPPER(double_field);
+- row_count: [['ONE'], ['TWO'], ['THREE']]
+...

@@ -1,0 +1,18 @@
+#test the SUBSTR and SUBSTRING functions
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(varchar_field, integer_field, double_field) VALUES ('quadratically', 3, 5), ('Sakila', -3, -5.0);
+---
+- Statement: SELECT SUBSTRING(varchar_field, 5) from all_types;
+- output: [['ratically']]
+---
+- Statement: SELECT SUBSTR('quadratically', integer_field, double_field + 1) FROM all_types;
+- output: [['ratica']]
+---
+- Statement: SELECT SUBSTR(null, integer_field) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT double_field from all_types WHERE SUBSTR(varchar_field, integer_field) = 'ila';
+- output: [[-5.0]]
+...
