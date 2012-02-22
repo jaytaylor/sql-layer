@@ -19,6 +19,7 @@ import java.io.Serializable;
 import java.util.*;
 
 import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.server.rowdata.RowDef;
 
 public abstract class Table implements Serializable, ModelNames, Traversable, HasGroup
 {
@@ -340,7 +341,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
                 out.add("table's index.getTable() wasn't the table" + index + " <--> " + this);
             }
             if (index != null) {
-                for (IndexColumn indexColumn : index.getColumns()) {
+                for (IndexColumn indexColumn : index.getKeyColumns()) {
                     if (!index.equals(indexColumn.getIndex())) {
                         out.add("index's indexColumn.getIndex() wasn't index: " + indexColumn);
                     }
@@ -363,13 +364,13 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         return columnMap;
     }
 
-    public void rowDef(Object rowDef)
+    public void rowDef(RowDef rowDef)
     {
         assert rowDef.getClass().getName().equals("com.akiban.server.rowdata.RowDef") : rowDef.getClass();
         this.rowDef = rowDef;
     }
 
-    public Object rowDef()
+    public RowDef rowDef()
     {
         return rowDef;
     }
@@ -430,8 +431,5 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
 
     private final Collection<GroupIndex> groupIndexes;
     private final Collection<GroupIndex> unmodifiableGroupIndexes;
-
-    // It really is a RowDef, but declaring it that way creates trouble for AIS. We don't want to pull in
-    // all the RowDef stuff and have it visible to GWT.
-    private transient /*RowDef*/ Object rowDef;
+    private transient RowDef rowDef;
 }

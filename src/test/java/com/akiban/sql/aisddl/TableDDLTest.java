@@ -209,8 +209,8 @@ public class TableDDLTest {
             for (Index index : sourceTable.getIndexesIncludingInternal()) {
                 assertNotNull(checkTable.getIndexIncludingInternal(index.getIndexName().getName()));
                 Index checkIndex = checkTable.getIndexIncludingInternal(index.getIndexName().getName());
-                for (IndexColumn col : index.getColumns()) {
-                    checkIndex.getColumns().get(col.getPosition());
+                for (IndexColumn col : index.getKeyColumns()) {
+                    checkIndex.getKeyColumns().get(col.getPosition());
                 }
             }
         }

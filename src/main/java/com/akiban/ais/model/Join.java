@@ -148,11 +148,11 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
             throw new AISBuilder.UngroupableJoinException(this);
         }
         // FK and PK should match in size. hard to see how we get here if this isn't true, but check anyway.
-        if (parentPK.getColumns().size() != joinColumns.size()) {
+        if (parentPK.getKeyColumns().size() != joinColumns.size()) {
             throw new AISBuilder.UngroupableJoinException(this);
         }
         // Check that the join parent is actually the PK.
-        Iterator<Column> parentPKColumnScan = parentPK.getColumns().iterator();
+        Iterator<Column> parentPKColumnScan = parentPK.getKeyColumns().iterator();
         Iterator<JoinColumn> joinColumnScan = joinColumns.iterator();
         while (parentPKColumnScan.hasNext()) {
             Column parentPKColumn = parentPKColumnScan.next();

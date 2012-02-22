@@ -377,13 +377,13 @@ public class SchemaDefToAisTest {
         assertEquals(1, t4.getIndexes().size()); // single generated
         final Index t4index = t4.getIndexes().iterator().next();
         assertEquals("f2", t4index.getIndexName().getName()); // yes, it takes the second
-        assertEquals(1, t4index.getColumns().size());
+        assertEquals(1, t4index.getKeyColumns().size());
 
         final UserTable t5 = ais.getUserTable("test", "t5");
         assertEquals(1, t5.getIndexes().size()); // single generated
         final Index t5index = t5.getIndexes().iterator().next();
         assertEquals("f1", t5index.getIndexName().getName());
-        assertEquals(2, t5index.getColumns().size());
+        assertEquals(2, t5index.getKeyColumns().size());
     }
 
     @Test
@@ -397,11 +397,11 @@ public class SchemaDefToAisTest {
         // Unique keys get named as constraint if index name is unspecified
         final Index uniqueAkiban = table.getIndex("__akiban");
         assertNotNull("has index named `__akiban`", uniqueAkiban);
-        assertEquals("id", uniqueAkiban.getColumns().get(0).getColumn().getName());
+        assertEquals("id", uniqueAkiban.getKeyColumns().get(0).getColumn().getName());
         // Index name takes precedence over constraint name for unique keys
         final Index uniqueFoo = table.getIndex("foo");
         assertNotNull("has index named `foo`", uniqueFoo);
-        assertEquals("other", uniqueFoo.getColumns().get(0).getColumn().getName());
+        assertEquals("other", uniqueFoo.getKeyColumns().get(0).getColumn().getName());
     }
 
     @Test
@@ -422,15 +422,15 @@ public class SchemaDefToAisTest {
         // key a(a,b,c)
         final Index aIndex = table.getIndex("a");
         assertNotNull("has index named `a`", aIndex);
-        assertEquals(3, aIndex.getColumns().size());
+        assertEquals(3, aIndex.getKeyColumns().size());
         // key b(b,c)8
         final Index bIndex = table.getIndex("b");
         assertNotNull("has index named `b`", bIndex);
-        assertEquals(2, bIndex.getColumns().size());
+        assertEquals(2, bIndex.getKeyColumns().size());
         // key c(c)
         final Index cIndex = table.getIndex("c");
         assertNotNull("has index named `c`", cIndex);
-        assertEquals(1, cIndex.getColumns().size());
+        assertEquals(1, cIndex.getKeyColumns().size());
     }
 
     @Test

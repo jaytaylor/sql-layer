@@ -282,7 +282,7 @@ public class IndexScan extends BasePlanNode
             boolean anyReverse = false, allReverse = true;
             for (int i = 0; i < ordering.size(); i++) {
                 if (ordering.get(i).isAscending() != 
-                    index.getColumns().get(i).isAscending())
+                    index.getKeyColumns().get(i).isAscending())
                     anyReverse = true;
                 else
                     allReverse = false;

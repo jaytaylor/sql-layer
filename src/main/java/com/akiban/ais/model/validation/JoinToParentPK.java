@@ -33,17 +33,17 @@ class JoinToParentPK implements AISValidation {
             if (join.getParent().getPrimaryKey() == null) { continue; }
             TableIndex parentPK = join.getParent().getPrimaryKey().getIndex();
             
-            if (parentPK.getColumns().size() != join.getJoinColumns().size()) {
+            if (parentPK.getKeyColumns().size() != join.getJoinColumns().size()) {
                 output.reportFailure(new AISValidationFailure(
                         new JoinColumnMismatchException (join.getJoinColumns().size(),
                                 join.getChild().getName(),
                                 join.getParent().getName(), 
-                                parentPK.getColumns().size())));
+                                parentPK.getKeyColumns().size())));
                         
                 return;
             }
             Iterator<JoinColumn>  joinColumns = join.getJoinColumns().iterator();            
-            for (IndexColumn parentPKColumn : parentPK.getColumns()) {
+            for (IndexColumn parentPKColumn : parentPK.getKeyColumns()) {
                 JoinColumn joinColumn = joinColumns.next();
                 if (parentPKColumn.getColumn() != joinColumn.getParent()) {
                     output.reportFailure(new AISValidationFailure (
