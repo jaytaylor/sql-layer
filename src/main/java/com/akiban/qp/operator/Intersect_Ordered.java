@@ -51,7 +51,8 @@ import static java.lang.Math.min;
 <li><b>Operator right:</b> Operator providing right input stream.
 <li><b>IndexRowType leftRowType:</b> Type of rows from left input stream.
 <li><b>IndexRowType rightRowType:</b> Type of rows from right input stream.
-<li><b>int orderingFields:</b> Number of common fields, defining ordering and used for matching rows.
+<li><b>int leftOrderingFields:</b> Number of trailing fields of left input rows to be used for ordering and matching rows.
+<li><b>int rightOrderingFields:</b> Number of trailing fields of right input rows to be used for ordering and matching rows.
 <li><b>JoinType joinType:</b>
    <ul>
      <li>INNER_JOIN: An ordinary intersection is computed.
@@ -70,11 +71,20 @@ import static java.lang.Math.min;
 
  <h1>Output</h1>
 
- IntersectRows whose inputs match in the common fields.
+ IntersectRows whose inputs match in the common fields. The common
+ fields are the first <tt>min(leftOrderingFields,
+ rightOrderingFields)</tt> of each row's ordering fields. Example:
+ <ul>
+    <li>The left input is (x, pid, cid).
+    <li>leftOrderingFields is 2, (covering pid, cid).
+    <li>The right input is (a, b, pid).
+    <li>rightOrderingFields is 1 (covering pid).
+ </ul>
+ The common fields are (pid) from the left input, and (pid) from the right input.
 
  <h1>Assumptions</h1>
 
- Each input stream is ordered by the last <tt>orderingFields</tt> columns.
+ Each input stream is ordered by its ordering columns, as determined by <tt>leftOrderingFields</tt> and <tt>rightOrderingFields</tt>.
 
  <h1>Performance</h1>
 
