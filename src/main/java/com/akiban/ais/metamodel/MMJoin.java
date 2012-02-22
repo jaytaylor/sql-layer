@@ -21,11 +21,10 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MMJoin implements Serializable, ModelNames {
+public class MMJoin implements ModelNames {
     public static Join create(AkibanInformationSchema ais, Map<String, Object> map)
     {
         String parentSchemaName = (String) map.get(join_parentSchemaName);

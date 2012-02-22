@@ -21,11 +21,10 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MMTable implements Serializable, ModelNames {
+public class MMTable implements ModelNames {
     public static Table create(AkibanInformationSchema ais, Map<String, Object> map)
     {
         String tableType = (String) map.get(table_tableType);

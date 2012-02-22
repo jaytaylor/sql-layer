@@ -22,11 +22,10 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MMIndexColumn implements Serializable, ModelNames {
+public class MMIndexColumn implements ModelNames {
     public static IndexColumn create(AkibanInformationSchema ais, Map<String, Object> map)
     {
         IndexColumn indexColumn = null;

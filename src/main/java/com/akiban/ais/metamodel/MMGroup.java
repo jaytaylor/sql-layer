@@ -18,11 +18,10 @@ package com.akiban.ais.metamodel;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MMGroup implements Serializable, ModelNames {
+public class MMGroup implements ModelNames {
     public static Group create(AkibanInformationSchema ais, Map<String, Object> map)
     {
         return Group.create(ais,

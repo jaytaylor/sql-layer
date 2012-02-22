@@ -21,11 +21,10 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.UserTable;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MMJoinColumn implements Serializable, ModelNames {
+public class MMJoinColumn implements ModelNames {
     public static JoinColumn create(AkibanInformationSchema ais, Map<String, Object> map)
     {
         String parentSchemaName = (String) map.get(joinColumn_parentSchemaName);

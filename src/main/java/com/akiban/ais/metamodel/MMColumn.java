@@ -21,11 +21,10 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.Type;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MMColumn implements Serializable, ModelNames {
+public class MMColumn implements ModelNames {
     public static Column create(AkibanInformationSchema ais, Map<String, Object> map)
     {
 

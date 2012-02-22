@@ -18,11 +18,10 @@ package com.akiban.ais.metamodel;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Type;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MMType implements Serializable, ModelNames {
+public class MMType implements ModelNames {
     public static Type create(AkibanInformationSchema ais, Map<String, Object> map)
     {
         return Type.create(ais,

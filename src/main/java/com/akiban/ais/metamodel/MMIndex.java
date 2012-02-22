@@ -23,11 +23,10 @@ import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MMIndex implements Serializable, ModelNames {
+public class MMIndex implements ModelNames {
 
     public static Index create(AkibanInformationSchema ais, Map<String, Object> map)
     {
