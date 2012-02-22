@@ -548,9 +548,9 @@ public class AkibanInformationSchema implements Traversable
     private final Map<String, Type> types = new TreeMap<String, Type>();
     private final CharsetAndCollation charsetAndCollation;
 
-    private boolean isFrozen = false;
     private Map<Integer, UserTable> userTablesById = null;
     private Map<Integer, GroupTable> groupTablesById = null;
+    private boolean isFrozen = false;
 
     private static class AISFailureList extends AISValidationResults implements AISValidationOutput {
 

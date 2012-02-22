@@ -145,10 +145,12 @@ public class Column
             case 0:
                 break;
             case 1:
-                columnType.append("(" + typeParameter1 + ")");
+                String str1 = "(" + typeParameter1 + ")";
+                columnType.append(str1);
                 break;
             case 2:
-                columnType.append("(" + typeParameter1 + ", " + typeParameter2 + ")");
+                String str2 = "(" + typeParameter1 + ", " + typeParameter2 + ")";
+                columnType.append(str2);
                 break;
         }
         return columnType.toString();
@@ -321,11 +323,18 @@ public class Column
         return fieldDef;
     }
 
-    private Column(Table table, String name, Integer position, Type type, Boolean nullable, Long typeParameter1,
-                   Long typeParameter2, Long initialAutoIncValue, CharsetAndCollation charsetAndCollation)
+    private Column(Table table,
+                   String columnName,
+                   Integer position,
+                   Type type,
+                   Boolean nullable,
+                   Long typeParameter1,
+                   Long typeParameter2,
+                   Long initialAutoIncValue,
+                   CharsetAndCollation charsetAndCollation)
     {
         this.table = table;
-        this.columnName = name;
+        this.columnName = columnName;
         this.position = position;
         this.type = type;
         this.nullable = nullable;
@@ -365,9 +374,9 @@ public class Column
 
     public static final String AKIBAN_PK_NAME = "__akiban_pk";
 
-    private final Table table;
     private final String columnName;
     private final Type type;
+    private final Table table;
     private Boolean nullable;
     private Integer position;
     private Long typeParameter1;

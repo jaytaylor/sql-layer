@@ -247,7 +247,7 @@ public class GroupIndex extends Index
     
     private final Group group;
     private final NavigableMap<Integer,ParticipatingTable> tablesByDepth = new TreeMap<Integer, ParticipatingTable>();
-    private List <Column> columnsPerFlattenedField;
+    private List<Column> columnsPerFlattenedField;
 
     private static class ParticipatingTable
     {

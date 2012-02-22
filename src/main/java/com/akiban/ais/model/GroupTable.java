@@ -17,6 +17,7 @@ package com.akiban.ais.model;
 
 import java.util.Iterator;
 
+
 public class GroupTable extends Table
 {
     public static GroupTable create(AkibanInformationSchema ais,

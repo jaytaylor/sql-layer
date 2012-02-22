@@ -489,6 +489,10 @@ public class UserTable extends Table
 
     // State
 
+    private final List<Join> candidateParentJoins = new ArrayList<Join>();
+    private final List<Join> candidateChildJoins = new ArrayList<Join>();
+    private final Object lazyEvaluationLock = new Object();
+
     private int size;
     private PrimaryKey primaryKey;
     private HKey hKey;
@@ -497,9 +501,6 @@ public class UserTable extends Table
     private List<Column> allHKeyColumns;
     private Integer depth = null;
     private volatile List<UserTable> hKeyDependentTables;
-    private final List<Join> candidateParentJoins = new ArrayList<Join>();
-    private final List<Join> candidateChildJoins = new ArrayList<Join>();
-    private final Object lazyEvaluationLock = new Object();
 
     // consts
 

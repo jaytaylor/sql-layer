@@ -32,9 +32,9 @@ public class Join implements Traversable, HasGroup
     {
         ais.checkMutability();
         Join join = new Join(ais, joinName, parent, child);
-        ais.addJoin(join);
         join.parent.addCandidateChildJoin(join);
         join.child.addCandidateParentJoin(join);
+        ais.addJoin(join);
         return join;
     }
 
@@ -263,14 +263,14 @@ public class Join implements Traversable, HasGroup
 
     // State
 
-    private String joinName;
-    private Integer weight;
-    private Group group;
-    private boolean joinColumnsStale = true;
     private final AkibanInformationSchema ais;
     private final UserTable parent;
     private final UserTable child;
     private final List<JoinColumn> joinColumns;
+    private String joinName;
+    private Integer weight;
+    private Group group;
+    private boolean joinColumnsStale = true;
 
     private GroupingUsage groupingUsage = GroupingUsage.WHEN_OPTIMAL;
     private SerializableEnumSet<SourceType> sourceTypes = new SerializableEnumSet<SourceType>(SourceType.class);

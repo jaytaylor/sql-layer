@@ -371,16 +371,6 @@ public abstract class Table implements Traversable, HasGroup
     }
 
     // State
-
-    protected Group group;
-    protected TableName tableName;
-    private Integer tableId;
-    private volatile boolean columnsStale = true;
-    private CharsetAndCollation charsetAndCollation;
-    protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;
-    protected String engine;
-    protected String treeName;
-
     protected final AkibanInformationSchema ais;
     private final Object columnsStaleLock = new Object();
     private final List<Column> columns = new ArrayList<Column>();
@@ -390,6 +380,15 @@ public abstract class Table implements Traversable, HasGroup
     private final Map<String, Column> columnMap = new TreeMap<String, Column>();
     private final Collection<GroupIndex> groupIndexes;
     private final Collection<GroupIndex> unmodifiableGroupIndexes;
+
+    protected Group group;
+    protected TableName tableName;
+    private Integer tableId;
+    private volatile boolean columnsStale = true;
+    private CharsetAndCollation charsetAndCollation;
+    protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;
+    protected String engine;
+    protected String treeName;
 
     // It really is a RowDef, but declaring it that way creates trouble for AIS. We don't want to pull in
     // all the RowDef stuff and have it visible to GWT.

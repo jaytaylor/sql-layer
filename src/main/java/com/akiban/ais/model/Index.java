@@ -385,16 +385,16 @@ public abstract class Index implements Traversable
         this.treeName = treeName;
     }
 
-    private IndexName indexName;
-    private String treeName;
-    private boolean columnsStale = true;
-    private boolean columnsFrozen = false;
     private final Integer indexId;
     private final Boolean isUnique;
     private final String constraint;
     private final List<IndexColumn> columns;
     private final JoinType joinType;
     private final boolean isValid;
+    private IndexName indexName;
+    private boolean columnsStale = true;
+    private boolean columnsFrozen = false;
+    private String treeName;
 
     // It really is an IndexDef, but declaring it that way creates trouble for AIS. We don't want to pull in
     // all the RowDef stuff and have it visible to GWT.
