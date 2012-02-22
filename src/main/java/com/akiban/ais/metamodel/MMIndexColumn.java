@@ -20,7 +20,6 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.ModelNames;
 import com.akiban.ais.model.Table;
 
 import java.io.Serializable;

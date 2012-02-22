@@ -15,6 +15,8 @@
 
 package com.akiban.ais.model;
 
+import com.akiban.ais.metamodel.ModelNames;
+
 import java.util.Map;
 
 public abstract class Target implements ModelNames

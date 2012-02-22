@@ -20,7 +20,6 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexName;
-import com.akiban.ais.model.ModelNames;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 

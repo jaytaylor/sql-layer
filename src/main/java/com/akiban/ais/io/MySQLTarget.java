@@ -28,6 +28,8 @@ import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.model.Target;
 import com.akiban.server.error.AisSQLErrorException;
 
+import static com.akiban.ais.metamodel.ModelNames.*;
+
 public class MySQLTarget extends Target
 {
     // Target interface

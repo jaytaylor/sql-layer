@@ -17,8 +17,6 @@ package com.akiban.ais.metamodel;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
-import com.akiban.ais.model.ModelNames;
-import com.akiban.ais.model.validation.AISInvariants;
 
 import java.io.Serializable;
 import java.util.HashMap;

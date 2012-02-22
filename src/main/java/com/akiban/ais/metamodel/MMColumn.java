@@ -18,7 +18,6 @@ package com.akiban.ais.metamodel;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.ModelNames;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.Type;
 

@@ -15,11 +15,7 @@
 
 package com.akiban.ais.model;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-
-public class JoinColumn implements Serializable, ModelNames
+public class JoinColumn
 {
     public static JoinColumn create(Join join, Column parent, Column child)
     {
