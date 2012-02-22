@@ -156,7 +156,7 @@ public class IndexStatisticsYamlLoader
         key.clear();
         keyTarget.attach(key);
         for (int i = 0; i < columnCount; i++) {
-            keyTarget.expectingType(index.getColumns().get(i).getColumn().getType().akType());
+            keyTarget.expectingType(index.getKeyColumns().get(i).getColumn().getType().akType());
             valueSource.setReflectively(values.get(i));
             Converters.convert(valueSource, keyTarget);
         }
@@ -186,7 +186,7 @@ public class IndexStatisticsYamlLoader
         map.put(ROW_COUNT_KEY, indexStatistics.getRowCount());
         map.put(SAMPLED_COUNT_KEY, indexStatistics.getSampledCount());
         List<Object> stats = new ArrayList<Object>();
-        for (int i = 0; i < index.getColumns().size(); i++) {
+        for (int i = 0; i < index.getKeyColumns().size(); i++) {
             Histogram histogram = indexStatistics.getHistogram(i + 1);
             if (histogram == null) continue;
             stats.add(buildHistogram(index, histogram));
@@ -219,7 +219,7 @@ public class IndexStatisticsYamlLoader
         ToObjectValueTarget valueTarget = new ToObjectValueTarget();
         List<Object> result = new ArrayList<Object>(columnCount);
         for (int i = 0; i < columnCount; i++) {
-            keySource.attach(key, index.getColumns().get(i));
+            keySource.attach(key, index.getKeyColumns().get(i));
             // TODO: Special handling for date/time types to make them
             // more legible than internal long representation?
             result.add(valueTarget.convertFromSource(keySource));

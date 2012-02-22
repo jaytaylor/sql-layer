@@ -62,7 +62,7 @@ public class PersistitStoreIndexStatistics
     /** Load previously stored statistics from database. */
     public IndexStatistics loadIndexStatistics(Session session, Index index)
             throws PersistitException {
-        IndexDef indexDef = (IndexDef)index.indexDef();
+        IndexDef indexDef = index.indexDef();
         RowDef indexStatisticsRowDef = store.getRowDefCache()
             .getRowDef(INDEX_STATISTICS_TABLE_NAME);
         RowDef indexStatisticsEntryRowDef = store.getRowDefCache()
@@ -183,7 +183,7 @@ public class PersistitStoreIndexStatistics
     /** Store statistics into database. */
     public void storeIndexStatistics(Session session, Index index, IndexStatistics indexStatistics)
             throws PersistitException {
-        IndexDef indexDef = (IndexDef)index.indexDef();
+        IndexDef indexDef = index.indexDef();
         RowDef indexStatisticsRowDef = store.getRowDefCache()
             .getRowDef(INDEX_STATISTICS_TABLE_NAME);
         RowDef indexStatisticsEntryRowDef = store.getRowDefCache()
@@ -224,7 +224,7 @@ public class PersistitStoreIndexStatistics
                     throw new RollbackException(ex);
                 }
                 
-                for (int i = 0; i < index.getColumns().size(); i++) {
+                for (int i = 0; i < index.getKeyColumns().size(); i++) {
                     Histogram histogram = indexStatistics.getHistogram(i + 1);
                     int itemNumber = 0;
                     for (HistogramEntry entry : histogram.getEntries()) {
@@ -264,7 +264,7 @@ public class PersistitStoreIndexStatistics
     /** Delete any stored statistics for the given index. */
     public void deleteIndexStatistics(Session session, Index index)
             throws PersistitException {
-        IndexDef indexDef = (IndexDef)index.indexDef();
+        IndexDef indexDef = index.indexDef();
         RowDef indexStatisticsRowDef = store.getRowDefCache()
             .getRowDef(INDEX_STATISTICS_TABLE_NAME);
         Exchange exchange = store.getExchange(session, indexStatisticsRowDef);

@@ -83,7 +83,7 @@ public class TableIndex extends Index
                 // Find the user table corresponding to this index. Currently, the columns of a group table index all
                 // correspond to the same user table.
                 UserTable userTable = null;
-                for (IndexColumn indexColumn : getColumns()) {
+                for (IndexColumn indexColumn : getKeyColumns()) {
                     Column userColumn = indexColumn.getColumn().getUserColumn();
                     if (userTable == null) {
                         userTable = (UserTable) userColumn.getTable();

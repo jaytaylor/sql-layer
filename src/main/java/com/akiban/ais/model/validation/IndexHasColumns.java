@@ -25,7 +25,7 @@ class IndexHasColumns implements AISValidation {
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
         for (UserTable table : ais.getUserTables().values()) {
             for (TableIndex index : table.getIndexes()) {
-                if (index.getColumns().size() == 0) {
+                if (index.getKeyColumns().size() == 0) {
                     output.reportFailure(new AISValidationFailure (
                             new IndexLacksColumnsException(table.getName(), index.getIndexName().getName())));
                 }

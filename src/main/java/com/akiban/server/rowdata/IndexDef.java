@@ -35,8 +35,8 @@ public class IndexDef implements TreeLink {
         this.index = index;
         index.indexDef(this);
         this.rowDef = rowDef;
-        this.fields = new int[index.getColumns().size()];
-        for (IndexColumn indexColumn : index.getColumns()) {
+        this.fields = new int[index.getKeyColumns().size()];
+        for (IndexColumn indexColumn : index.getKeyColumns()) {
             int positionInRow = indexColumn.getColumn().getPosition();
             int positionInIndex = indexColumn.getPosition();
             this.fields[positionInIndex] = positionInRow;

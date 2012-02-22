@@ -91,9 +91,9 @@ public final class DefaultProcessedRequest extends BaseHapiProcessedGetRequest {
         if (userTable == null) {
             throw new IOException("no table with tableId=" + tableId);
         }
-        Object ret = userTable.rowDef();
+        RowDef rowDef = userTable.rowDef();
         try {
-            return (RowDef) ret;
+            return rowDef;
         } catch (ClassCastException e) {
             throw new IOException("while casting RowDef for tableId=" + tableId, e);
         }

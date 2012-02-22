@@ -22,7 +22,9 @@ package com.akiban.ais.model;
  * table where the HKey values can be found.
  */
 public class IndexToHKey {
-    public IndexToHKey(int[] ordinals, int[] indexRowPositions, int[] fieldPositions) {
+    public IndexToHKey(int[] ordinals,
+                       int[] indexRowPositions,
+                       int[] fieldPositions) {
         if(ordinals.length != indexRowPositions.length || ordinals.length != fieldPositions.length) {
             throw new IllegalArgumentException("All arrays must be of equal length: " +
                                                ordinals.length + ", " +
@@ -36,10 +38,6 @@ public class IndexToHKey {
 
     public boolean isOrdinal(int index) {
         return ordinals[index] >= 0;
-    }
-
-    public boolean isInIndexRow(int index) {
-        return indexRowPositions[index] >= 0;
     }
 
     public int getOrdinal(int index) {

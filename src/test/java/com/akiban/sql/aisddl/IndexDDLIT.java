@@ -45,10 +45,10 @@ public class IndexDDLIT extends PostgresServerITBase {
         assertNotNull (table);
         assertNotNull (table.getIndex("test1"));
         assertFalse (table.getIndex("test1").isUnique());
-        assertEquals (3, table.getIndex("test1").getColumns().size());
-        assertEquals ("c1", table.getIndex("test1").getColumns().get(0).getColumn().getName());
-        assertEquals ("c2", table.getIndex("test1").getColumns().get(1).getColumn().getName());
-        assertEquals ("c3", table.getIndex("test1").getColumns().get(2).getColumn().getName());
+        assertEquals (3, table.getIndex("test1").getKeyColumns().size());
+        assertEquals ("c1", table.getIndex("test1").getKeyColumns().get(0).getColumn().getName());
+        assertEquals ("c2", table.getIndex("test1").getKeyColumns().get(1).getColumn().getName());
+        assertEquals ("c3", table.getIndex("test1").getKeyColumns().get(2).getColumn().getName());
     }
     
     @Test
@@ -61,10 +61,10 @@ public class IndexDDLIT extends PostgresServerITBase {
         assertNotNull (table);
         assertNotNull (table.getIndex("test2"));
         assertTrue   (table.getIndex("test2").isUnique());
-        assertEquals (3, table.getIndex("test2").getColumns().size());
-        assertEquals ("c1", table.getIndex("test2").getColumns().get(0).getColumn().getName());
-        assertEquals ("c2", table.getIndex("test2").getColumns().get(1).getColumn().getName());
-        assertEquals ("c3", table.getIndex("test2").getColumns().get(2).getColumn().getName());
+        assertEquals (3, table.getIndex("test2").getKeyColumns().size());
+        assertEquals ("c1", table.getIndex("test2").getKeyColumns().get(0).getColumn().getName());
+        assertEquals ("c2", table.getIndex("test2").getKeyColumns().get(1).getColumn().getName());
+        assertEquals ("c3", table.getIndex("test2").getKeyColumns().get(2).getColumn().getName());
         
     }
     
@@ -90,9 +90,9 @@ public class IndexDDLIT extends PostgresServerITBase {
         assertNotNull (group.getIndex("test4"));
         assertFalse   (group.getIndex("test4").isUnique());
         assertEquals  (JoinType.LEFT, group.getIndex("test4").getJoinType());
-        assertEquals  (2, group.getIndex("test4").getColumns().size());
-        assertEquals  ("c1", group.getIndex("test4").getColumns().get(0).getColumn().getName());
-        assertEquals  ("c1", group.getIndex("test4").getColumns().get(0).getColumn().getName());
+        assertEquals  (2, group.getIndex("test4").getKeyColumns().size());
+        assertEquals  ("c1", group.getIndex("test4").getKeyColumns().get(0).getColumn().getName());
+        assertEquals  ("c1", group.getIndex("test4").getKeyColumns().get(0).getColumn().getName());
         
     }
     
@@ -118,9 +118,9 @@ public class IndexDDLIT extends PostgresServerITBase {
         assertNotNull (group.getIndex("test4"));
         assertEquals  (JoinType.RIGHT, group.getIndex("test4").getJoinType());
         assertFalse   (group.getIndex("test4").isUnique());
-        assertEquals  (2, group.getIndex("test4").getColumns().size());
-        assertEquals  ("c1", group.getIndex("test4").getColumns().get(0).getColumn().getName());
-        assertEquals  ("c1", group.getIndex("test4").getColumns().get(0).getColumn().getName());
+        assertEquals  (2, group.getIndex("test4").getKeyColumns().size());
+        assertEquals  ("c1", group.getIndex("test4").getKeyColumns().get(0).getColumn().getName());
+        assertEquals  ("c1", group.getIndex("test4").getKeyColumns().get(0).getColumn().getName());
         
     }
     
