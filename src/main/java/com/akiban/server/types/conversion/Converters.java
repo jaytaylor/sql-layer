@@ -87,6 +87,7 @@ public final class Converters {
         result.put(VARBINARY, ConverterForVarBinary.INSTANCE);
         result.put(YEAR, LongConverter.YEAR);
         result.put(BOOL, new ConverterForBool());
+        result.put(RESULT_SET, ConverterForResultSet.INSTANCE);
         return result;
     }
 

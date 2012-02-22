@@ -41,6 +41,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.*;
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
+
 import java.io.*;
 import java.util.*;
 
@@ -118,12 +121,7 @@ public class PostgresServerConnection extends ServerSessionBase
 
     public void run() {
         try {
-            // We flush() when we mean it. 
-            // So, turn off kernel delay, but wrap a buffer so every
-            // message isn't its own packet.
-            socket.setTcpNoDelay(true);
-            messenger = new PostgresMessenger(socket.getInputStream(),
-                                              new BufferedOutputStream(socket.getOutputStream()));
+            createMessenger();
             topLevel();
         }
         catch (Exception ex) {
@@ -137,6 +135,15 @@ public class PostgresServerConnection extends ServerSessionBase
             catch (IOException ex) {
             }
         }
+    }
+
+    protected void createMessenger() throws IOException {
+        // We flush() when we mean it. 
+        // So, turn off kernel delay, but wrap a buffer so every
+        // message isn't its own packet.
+        socket.setTcpNoDelay(true);
+        messenger = new PostgresMessenger(socket.getInputStream(),
+                                          new BufferedOutputStream(socket.getOutputStream()));
     }
 
     protected void topLevel() throws IOException, Exception {
@@ -315,8 +322,24 @@ public class PostgresServerConnection extends ServerSessionBase
 
     protected void processSSLMessage() throws IOException {
         OutputStream raw = messenger.getOutputStream();
-        raw.write('N');         // No SSL support.
-        raw.flush();
+        if (System.getProperty("javax.net.ssl.keyStore") == null) {
+            // JSSE doesn't have a keystore; TLSv1 handshake is gonna fail. Deny support.
+            raw.write('N');
+            raw.flush();
+        }
+        else {
+            // Someone seems to have configured for SSL. Wrap the
+            // socket and start server mode negotiation. Client should
+            // then use SSL socket to start regular server protocol.
+            raw.write('S');
+            raw.flush();
+            SSLSocketFactory sslFactory = (SSLSocketFactory)SSLSocketFactory.getDefault();
+            SSLSocket sslSocket = (SSLSocket)sslFactory.createSocket(socket, socket.getLocalAddress().toString(), socket.getLocalPort(), true);
+            socket = sslSocket;
+            createMessenger();
+            sslSocket.setUseClientMode(false);
+            sslSocket.startHandshake();
+        }
     }
 
     protected void processPasswordMessage() throws IOException {
@@ -577,19 +600,23 @@ public class PostgresServerConnection extends ServerSessionBase
         parser = new SQLParser();
 
         defaultSchemaName = getProperty("database");
-        // Temporary until completely removed.
         // TODO: Any way / need to ask AIS if schema exists and report error?
 
-        PostgresStatementGenerator compiler;
-        {
-            PostgresOperatorCompiler c = new PostgresOperatorCompiler(this);
-            compiler = c;
-            adapter = new PersistitAdapter(c.getSchema(),
-                                           reqs.store().getPersistitStore(),
-                                           reqs.treeService(),
-                                           session,
-                                           reqs.config());
-        }
+        rebuildCompiler();
+    }
+
+    protected void rebuildCompiler() {
+        PostgresOperatorCompiler compiler;
+        String format = getProperty("OutputFormat", "table");
+        if (format.equals("json"))
+            compiler = new PostgresJsonCompiler(this); 
+        else
+            compiler = new PostgresOperatorCompiler(this);
+        adapter = new PersistitAdapter(compiler.getSchema(),
+                                       reqs.store().getPersistitStore(),
+                                       reqs.treeService(),
+                                       session,
+                                       reqs.config());
 
         statementCache = server.getStatementCache(aisTimestamp);
         unparsedGenerators = new PostgresStatementParser[] {
@@ -714,6 +741,11 @@ public class PostgresServerConnection extends ServerSessionBase
                 messenger.setEncoding("UTF-8");
             else
                 messenger.setEncoding(value);
+            return true;
+        }
+        if ("OutputFormat".equals(key)) {
+            if (parsedGenerators != null)
+                rebuildCompiler();
             return true;
         }
         return super.propertySet(key, value);

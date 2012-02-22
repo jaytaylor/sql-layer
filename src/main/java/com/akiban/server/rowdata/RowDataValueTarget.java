@@ -15,6 +15,7 @@
 
 package com.akiban.server.rowdata;
 
+import com.akiban.qp.operator.Cursor;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSourceHelper;
@@ -185,6 +186,11 @@ public final class RowDataValueTarget implements ValueTarget {
     public void putBool(boolean value) {
         checkState(AkType.BOOL);
         recordEncoded(encodeLong(value ? 1 : 0));
+    }
+
+    @Override
+    public void putResultSet(Cursor value) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

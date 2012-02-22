@@ -46,6 +46,7 @@ import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
+import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
 
@@ -128,22 +129,30 @@ public class PersistitAdapter extends StoreAdapter
 
         RowData oldRowData = rowData(rowDef, oldRow);
         RowData newRowData = rowData(rowDef, newRow);
+        int oldStep = enterUpdateStep();
         try {
             persistit.updateRow(session, oldRowData, newRowData, null);
         } catch (PersistitException e) {
             handlePersistitException(e);
             assert false;
         }
+        finally {
+            leaveUpdateStep(oldStep);
+        }
     }
     @Override
     public void writeRow (Row newRow) {
         RowDef rowDef = newRow.rowType().userTable().rowDef();
         RowData newRowData = rowData (rowDef, newRow);
+        int oldStep = enterUpdateStep();
         try {
             persistit.writeRow(session, newRowData);
         } catch (PersistitException e) {
             handlePersistitException(e);
             assert false;
+        }
+        finally {
+            leaveUpdateStep(oldStep);
         }
     }
     
@@ -151,11 +160,15 @@ public class PersistitAdapter extends StoreAdapter
     public void deleteRow (Row oldRow) {
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
         RowData oldRowData = rowData(rowDef, oldRow);
+        int oldStep = enterUpdateStep();
         try {
             persistit.deleteRow(session, oldRowData);
         } catch (PersistitException e) {
             handlePersistitException(e);
             assert false;
+        }
+        finally {
+            leaveUpdateStep(oldStep);
         }
     }
 
@@ -266,6 +279,23 @@ public class PersistitAdapter extends StoreAdapter
         persistit.releaseExchange(session, exchange);
     }
     
+    public Transaction transaction() {
+        return treeService.getTransaction(session);
+    }
+
+    public int enterUpdateStep()
+    {
+        Transaction transaction = transaction();
+        int step = transaction.getCurrentStep();
+        if (step > 0)
+            transaction.incrementStep();
+        return step;
+    }
+
+    public void leaveUpdateStep(int step) {
+        transaction().setStep(step);
+    }
+
     public PersistitAdapter(Schema schema,
                             PersistitStore persistit,
                             TreeService treeService,

@@ -38,7 +38,7 @@ public class EventTest {
         assertEquals(true, first.isEnabled());
         first.start();
         first.stop();
-        assertTrue(first.getLastDuration() > 0);
+        assertTrue(first.getLastDuration() >= 0);
         first.reset();
         assertEquals(0, first.getLastDuration());
         /* construct event that is enabled by default */
@@ -61,7 +61,7 @@ public class EventTest {
         Event first = new EventImpl(null, 1, true);
         first.start();
         first.stop();
-        assertTrue(first.getTotalTime() > 0);
+        assertTrue(first.getTotalTime() >= 0);
     }
 
 }

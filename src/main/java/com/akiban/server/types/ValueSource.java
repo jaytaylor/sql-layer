@@ -15,6 +15,7 @@
 
 package com.akiban.server.types;
 
+import com.akiban.qp.operator.Cursor;
 import com.akiban.server.Quote;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
@@ -44,6 +45,7 @@ public interface ValueSource {
     String getString();
     String getText();
     boolean getBool();
+    Cursor getResultSet();
     void appendAsString(AkibanAppender appender, Quote quote);
     AkType getConversionType();
 }

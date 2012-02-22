@@ -15,6 +15,7 @@
 
 package com.akiban.server;
 
+import com.akiban.qp.operator.Cursor;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueSourceHelper;
@@ -171,6 +172,12 @@ public final class PersistitValueValueSource implements ValueSource
     public boolean getBool()
     {
         return as(Boolean.class, AkType.BOOL);
+    }
+
+    @Override
+    public Cursor getResultSet()
+    {
+        throw new UnsupportedOperationException();
     }
 
     @Override

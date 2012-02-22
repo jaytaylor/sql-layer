@@ -20,6 +20,7 @@ import com.akiban.junit.OnlyIf;
 import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
+import com.akiban.qp.operator.Cursor;
 import com.akiban.server.Quote;
 import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.types.AkType;
@@ -215,6 +216,12 @@ public final class AllowedConversionsTest {
             return false;
         }
 
+        @Override
+        public Cursor getResultSet() {
+            checkType(AkType.RESULT_SET);
+            return null;
+        }
+        
         private AlwaysWorkingSource(AkType akType, AkType targetType) {
             this.akType = akType;
             switch (targetType) {
@@ -347,6 +354,10 @@ public final class AllowedConversionsTest {
 
         @Override
         public void putBool(boolean value) {
+        }
+
+        @Override
+        public void putResultSet(Cursor value) {
         }
 
         @Override

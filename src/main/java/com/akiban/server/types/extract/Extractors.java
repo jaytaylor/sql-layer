@@ -15,6 +15,7 @@
 
 package com.akiban.server.types.extract;
 
+import com.akiban.qp.operator.Cursor;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types.AkType;
 import com.akiban.util.ByteSource;
@@ -54,12 +55,17 @@ public final class Extractors {
         return VARBINARY_EXTRACTOR;
     }
 
+    public static ObjectExtractor<Cursor> getCursorExtractor() {
+        return RESULT_SET_EXTRACTOR;
+    }
+
     public static ObjectExtractor<?> getObjectExtractor(AkType type) {
         switch (type) {
         case VARBINARY: return VARBINARY_EXTRACTOR;
         case VARCHAR:   return STRING_EXTRACTOR;
         case DECIMAL:   return DECIMAL_EXTRACTOR;
         case U_BIGINT:  return UBIGINT_EXTRACTOR;
+        case RESULT_SET:  return RESULT_SET_EXTRACTOR;
         default: throw new AkibanInternalException("not an ObjectExtractor type: " + type);
         }
     }
@@ -99,6 +105,7 @@ public final class Extractors {
     private static final ExtractorForBigInteger UBIGINT_EXTRACTOR = new ExtractorForBigInteger();
     private static final ExtractorForBigDecimal DECIMAL_EXTRACTOR = new ExtractorForBigDecimal();
     private static final ExtractorForVarBinary VARBINARY_EXTRACTOR = new ExtractorForVarBinary();
+    private static final ExtractorForResultSet RESULT_SET_EXTRACTOR = new ExtractorForResultSet();
     
     private static final Map<AkType,? extends LongExtractor> readOnlyExtractorsMap = createLongExtractorsMap();
 }

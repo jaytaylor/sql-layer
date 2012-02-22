@@ -131,27 +131,35 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
             }
         }
 
-        if (result.isUpdate()) {
-            PhysicalUpdate update = (PhysicalUpdate)result;
-            return new PostgresModifyOperatorStatement(stmt.statementToString(),
-                                                       update.getUpdatePlannable(),
-                                                       parameterTypes);
+        if (result.isUpdate())
+            return generateUpdate((PhysicalUpdate)result, stmt.statementToString(),
+                                  parameterTypes);
+        else
+            return generateSelect((PhysicalSelect)result,
+                                  parameterTypes);
+    }
+
+    protected PostgresStatement generateUpdate(PhysicalUpdate update, String statementType,
+                                               PostgresType[] parameterTypes) {
+        return new PostgresModifyOperatorStatement(statementType,
+                                                   update.getUpdatePlannable(),
+                                                   parameterTypes);
+    }
+
+    protected PostgresStatement generateSelect(PhysicalSelect select,
+                                               PostgresType[] parameterTypes) {
+        int ncols = select.getResultColumns().size();
+        List<String> columnNames = new ArrayList<String>(ncols);
+        List<PostgresType> columnTypes = new ArrayList<PostgresType>(ncols);
+        for (PhysicalResultColumn physColumn : select.getResultColumns()) {
+            PostgresResultColumn resultColumn = (PostgresResultColumn)physColumn;
+            columnNames.add(resultColumn.getName());
+            columnTypes.add(resultColumn.getType());
         }
-        else {
-            PhysicalSelect select = (PhysicalSelect)result;
-            int ncols = select.getResultColumns().size();
-            List<String> columnNames = new ArrayList<String>(ncols);
-            List<PostgresType> columnTypes = new ArrayList<PostgresType>(ncols);
-            for (PhysicalResultColumn physColumn : select.getResultColumns()) {
-                PostgresResultColumn resultColumn = (PostgresResultColumn)physColumn;
-                columnNames.add(resultColumn.getName());
-                columnTypes.add(resultColumn.getType());
-            }
-            return new PostgresOperatorStatement(select.getResultOperator(),
-                                                 select.getResultRowType(),
-                                                 columnNames, columnTypes,
-                                                 parameterTypes);
-        }
+        return new PostgresOperatorStatement(select.getResultOperator(),
+                                             select.getResultRowType(),
+                                             columnNames, columnTypes,
+                                             parameterTypes);
     }
 
 }

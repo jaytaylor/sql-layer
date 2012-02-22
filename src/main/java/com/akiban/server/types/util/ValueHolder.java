@@ -15,6 +15,7 @@
 
 package com.akiban.server.types.util;
 
+import com.akiban.qp.operator.Cursor;
 import com.akiban.server.Quote;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types.AkType;
@@ -177,6 +178,11 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     }
 
     @Override
+    public Cursor getResultSet() {
+        return rawObject(AkType.RESULT_SET, Cursor.class);
+    }
+
+    @Override
     public void appendAsString(AkibanAppender appender, Quote quote) {
         // TODO use extractors instead
         ToObjectValueTarget target = new ToObjectValueTarget();
@@ -310,6 +316,11 @@ public final class ValueHolder implements ValueSource, ValueTarget {
     @Override
     public void putBool(boolean value) {
         putRaw(AkType.BOOL, value ? 1L : 0L);
+    }
+
+    @Override
+    public void putResultSet(Cursor value) {
+        putRaw(AkType.RESULT_SET, value);
     }
 
     // Object interface
@@ -580,7 +591,7 @@ public final class ValueHolder implements ValueSource, ValueTarget {
         LONG_VAL (AkType.DATE, AkType.DATETIME, AkType.INT, AkType.LONG, AkType.TIME, AkType.TIMESTAMP, AkType.INTERVAL_MILLIS, AkType.INTERVAL_MONTH, AkType.U_INT, AkType.YEAR),
         DOUBLE_VAL(AkType.DOUBLE, AkType.U_DOUBLE),
         FLOAT_VAL(AkType.FLOAT, AkType.U_FLOAT),
-        OBJECT_VAL(AkType.DECIMAL, AkType.VARCHAR, AkType.TEXT, AkType.U_BIGINT, AkType.VARBINARY),
+        OBJECT_VAL(AkType.DECIMAL, AkType.VARCHAR, AkType.TEXT, AkType.U_BIGINT, AkType.VARBINARY, AkType.RESULT_SET),
         BOOL_VAL(AkType.BOOL),
         NULL_VAL(AkType.NULL),
         UNDEF_VAL()
@@ -601,6 +612,7 @@ public final class ValueHolder implements ValueSource, ValueTarget {
                     || checkObjectClass(AkType.TEXT, type, String.class, value)
                     || checkObjectClass(AkType.U_BIGINT, type, BigInteger.class, value)
                     || checkObjectClass(AkType.VARBINARY, type, ByteSource.class, value)
+                    || checkObjectClass(AkType.RESULT_SET, type, Cursor.class, value)
                     ;
             if (!oneCheckedOut) {
                 throw new IllegalRawPutException(this, type);

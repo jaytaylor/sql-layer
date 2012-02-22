@@ -60,8 +60,8 @@ public class IfExpressionTest
         // condition is all types in Aktype
         for (AkType t : AkType.values())
         {
-           // skip NULL, UNSUPPORTED AND VARBINARY
-            if (t == AkType.NULL  || t == AkType.UNSUPPORTED || t == AkType.VARBINARY) continue;
+           // skip NULL, UNSUPPORTED, VARBINARY and RESULT_SET
+            if (t == AkType.NULL  || t == AkType.UNSUPPORTED || t == AkType.VARBINARY || t == AkType.RESULT_SET) continue;
 
             param(pb, t, AkType.LONG, AkType.LONG, true, new ValueHolder(AkType.LONG, 1L));
             param(pb, t, AkType.LONG, AkType.VARCHAR, true, new ValueHolder(AkType.VARCHAR, "1"));
