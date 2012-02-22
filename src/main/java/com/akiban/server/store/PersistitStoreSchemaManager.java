@@ -36,12 +36,12 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.akiban.ais.io.AISTarget;
-import com.akiban.ais.io.MessageSource;
-import com.akiban.ais.io.MessageTarget;
-import com.akiban.ais.io.Reader;
-import com.akiban.ais.io.TableSubsetWriter;
-import com.akiban.ais.io.Writer;
+import com.akiban.ais.metamodel.io.AISTarget;
+import com.akiban.ais.metamodel.io.MessageSource;
+import com.akiban.ais.metamodel.io.MessageTarget;
+import com.akiban.ais.metamodel.io.Reader;
+import com.akiban.ais.metamodel.io.TableSubsetWriter;
+import com.akiban.ais.metamodel.io.Writer;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AISMerge;
 import com.akiban.ais.model.AISTableNameChanger;

@@ -17,8 +17,8 @@ package com.akiban.ais.model;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.ais.io.AISTarget;
-import com.akiban.ais.io.Writer;
+import com.akiban.ais.metamodel.io.AISTarget;
+import com.akiban.ais.metamodel.io.Writer;
 import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.server.error.JoinToMultipleParentsException;
 import com.akiban.server.error.JoinToUnknownTableException;

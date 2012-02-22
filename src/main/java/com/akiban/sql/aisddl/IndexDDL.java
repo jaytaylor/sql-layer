@@ -42,8 +42,8 @@ import com.akiban.sql.parser.DropIndexNode;
 import com.akiban.sql.parser.IndexColumn;
 import com.akiban.sql.parser.RenameNode;
 
-import com.akiban.ais.io.AISTarget;
-import com.akiban.ais.io.TableSubsetWriter;
+import com.akiban.ais.metamodel.io.AISTarget;
+import com.akiban.ais.metamodel.io.TableSubsetWriter;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;

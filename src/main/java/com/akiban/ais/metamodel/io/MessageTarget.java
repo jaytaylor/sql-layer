@@ -13,56 +13,53 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.ais.io;
+package com.akiban.ais.metamodel.io;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintWriter;
+import java.nio.ByteBuffer;
 import java.util.Map;
 
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.metamodel.Target;
-import com.akiban.ais.model.AkibanInformationSchema;
 
-public class CSVTarget extends Target
+public class MessageTarget extends Target
 {
     // Target interface
 
     @Override
-    public void deleteAll()
+    public void deleteAll() 
     {
     }
 
     @Override
     public void writeCount(int count)
     {
+        writeInt(count);
     }
 
     @Override
     public void close()
     {
-        output.close();
     }
 
     // PersistitTarget interface
 
-    public CSVTarget(PrintWriter output)
+    public MessageTarget(ByteBuffer payload)
     {
-        this.output = output;
+        this.payload = payload;
     }
 
     // For use by this class
-    @Override
+
+    @Override 
     public void writeVersion(int modelVersion)
     {
-        output.print(modelVersion);
-        output.println();
+        writeInt(modelVersion);
     }
 
     @Override
     protected final void write(String typename, Map<String, Object> map)
     {
-        output.print(quote(typename));
         ModelObject modelObject = MetaModel.only().definition(typename);
         for (ModelObject.Attribute attribute : modelObject.attributes()) {
             switch (attribute.type()) {
@@ -70,7 +67,7 @@ public class CSVTarget extends Target
                     writeIntOrNull((Integer) map.get(attribute.name()));
                     break;
                 case LONG:
-                    writeLongOrNull((Long) map.get(attribute.name()));
+                    writeLongOrNull((Long) map.get(attribute.name())    );
                     break;
                 case STRING:
                     writeStringOrNull((String) map.get(attribute.name()));
@@ -80,58 +77,60 @@ public class CSVTarget extends Target
                     break;
             }
         }
-        output.println();
     }
 
     private void writeStringOrNull(String s)
     {
-        if((s != null) && s.contains(",")) {
-            throw new IllegalArgumentException("No commas allowed: " + s);
-        }
-        output.print(", ");
-        if (s != null) {
-            output.print(quote(s));
+        if (s == null) {
+            payload.putInt(NULL_STRING);
+        } else {
+            byte[] bytes;
+            try {
+                bytes = s.getBytes("UTF-8");
+            }
+            catch (java.io.UnsupportedEncodingException ex) {
+                throw new RuntimeException(ex);
+            }
+            payload.putInt(bytes.length);
+            payload.put(bytes);
         }
     }
 
     private void writeIntOrNull(Integer i)
     {
-        output.print(", ");
-        if (i != null) {
-            output.print(i);
+        if (i == null) {
+            payload.put(IS_NULL);
+        } else {
+            payload.put(IS_NOT_NULL);
+            payload.putInt(i);
         }
+    }
+
+    private void writeInt(Integer i)
+    {
+        payload.putInt(i);
     }
 
     private void writeLongOrNull(Long l)
     {
-        output.print(", ");
-        if (l != null) {
-            output.print(l);
+        if (l == null) {
+            payload.put(IS_NULL);
+        } else {
+            payload.put(IS_NOT_NULL);
+            payload.putLong(l);
         }
     }
 
     private void writeBooleanOrNull(Boolean b)
     {
-        output.print(", ");
-        output.print(b == null ? "-1" : b ? "1" : "0");
-    }
-
-    private String quote(String s)
-    {
-        return '"' + s + '"';
+        payload.put(b == null ? (byte) -1 : b ? (byte) 1 : (byte) 0);
     }
 
     // State
 
-    private PrintWriter output;
+    private static int NULL_STRING = -1;
+    private static byte IS_NULL = (byte) 1;
+    private static byte IS_NOT_NULL = (byte) 0;
 
-    public static String toString(AkibanInformationSchema ais) throws Exception
-    {
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-        PrintWriter writer = new PrintWriter(stream);
-        new Writer(new CSVTarget(writer)).save(ais);
-        writer.close();
-        stream.flush();
-        return stream.toString();
-    }
+    private ByteBuffer payload;
 }
