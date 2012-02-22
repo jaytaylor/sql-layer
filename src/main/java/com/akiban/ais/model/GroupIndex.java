@@ -245,13 +245,9 @@ public class GroupIndex extends Index
         return leafMostTable().hKey();
     }
     
-    @SuppressWarnings("unused")
-    private GroupIndex()
-    {}
-
-    private Group group;
+    private final Group group;
     private final NavigableMap<Integer,ParticipatingTable> tablesByDepth = new TreeMap<Integer, ParticipatingTable>();
-    private List<Column> columnsPerFlattenedField;
+    private List <Column> columnsPerFlattenedField;
 
     private static class ParticipatingTable
     {

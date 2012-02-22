@@ -104,12 +104,6 @@ public class TableIndex extends Index
         return hKey;
     }
 
-    @SuppressWarnings("unused")
-    private TableIndex()
-    {
-        // GWT
-    }
-
-    private Table table;
-    private transient HKey hKey;
+    private final Table table;
+    private HKey hKey;
 }

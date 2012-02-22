@@ -871,26 +871,14 @@ public class
     }
 
     public static class NoSuchObjectException extends RuntimeException {
-        @SuppressWarnings("unused")
-        // GWT
-        private NoSuchObjectException() {
-        }
-
         public NoSuchObjectException(String action, String needed, String name) {
-            // XXX: GWT issue - was using String.format
             super("While " + action + ", could not find " + needed + " " + name);
         }
     }
 
     public static class GroupStructureException extends RuntimeException {
-        @SuppressWarnings("unused")
-        // GWT
-        private GroupStructureException() {
-        }
-
         public GroupStructureException(Group group, Group existingGroup,
                 String name) {
-            // XXX: GWT issue - was using String.format
             super(name + " already belongs to group " + existingGroup.getName()
                     + " so it cannot be associated with group "
                     + group.getName());
@@ -902,11 +890,6 @@ public class
     }
 
     public static class GroupNotEmptyException extends RuntimeException {
-        @SuppressWarnings("unused")
-        // GWT
-        private GroupNotEmptyException() {
-        }
-
         public GroupNotEmptyException(Group group) {
             super(
                     "Group "
@@ -916,11 +899,6 @@ public class
     }
 
     public class NotInGroupException extends RuntimeException {
-        @SuppressWarnings("unused")
-        // GWT
-        private NotInGroupException() {
-        }
-
         public NotInGroupException(Group group, HasGroup object, String action,
                 String objectDescription) {
             super("While " + action + ", found " + objectDescription

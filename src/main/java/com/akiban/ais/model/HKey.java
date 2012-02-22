@@ -91,9 +91,6 @@ public class HKey
         return keyDepth;
     }
 
-    public HKey()
-    {}
-
     // For use by this class
 
     private void computeKeyDepth()
@@ -111,9 +108,9 @@ public class HKey
 
     // State
 
-    private Table table;
-    private List<HKeySegment> segments = new ArrayList<HKeySegment>();
+    private final Table table;
+    private final List<HKeySegment> segments = new ArrayList<HKeySegment>();
     // keyDepth[n] is the number of key segments (ordinals + key values) comprising an hkey of n parts.
     // E.g. keyDepth[1] for the hkey of the root segment.
-    private transient int[] keyDepth;
+    private int[] keyDepth;
 }

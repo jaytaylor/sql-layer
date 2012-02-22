@@ -15,7 +15,6 @@
 
 package com.akiban.ais.model;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,7 +29,7 @@ import com.akiban.ais.model.validation.AISValidationFailure;
 import com.akiban.ais.model.validation.AISValidationOutput;
 import com.akiban.ais.model.validation.AISValidationResults;
 
-public class AkibanInformationSchema implements Serializable, Traversable
+public class AkibanInformationSchema implements Traversable
 {
     public AkibanInformationSchema()
     {
@@ -542,16 +541,16 @@ public class AkibanInformationSchema implements Serializable, Traversable
     public static final String DEFAULT_CHARSET = "latin1";
     public static final String DEFAULT_COLLATION = "latin1_swedish_ci";
 
-    private Map<String, Group> groups = new TreeMap<String, Group>();
-    private Map<TableName, UserTable> userTables = new TreeMap<TableName, UserTable>();
-    private Map<Integer, UserTable> userTablesById = null;
-    private Map<Integer, GroupTable> groupTablesById = null;
-    private Map<TableName, GroupTable> groupTables = new TreeMap<TableName, GroupTable>();
-    private Map<String, Join> joins = new TreeMap<String, Join>();
-    private Map<String, Type> types = new TreeMap<String, Type>();
-    private CharsetAndCollation charsetAndCollation;
+    private final Map<String, Group> groups = new TreeMap<String, Group>();
+    private final Map<TableName, UserTable> userTables = new TreeMap<TableName, UserTable>();
+    private final Map<TableName, GroupTable> groupTables = new TreeMap<TableName, GroupTable>();
+    private final Map<String, Join> joins = new TreeMap<String, Join>();
+    private final Map<String, Type> types = new TreeMap<String, Type>();
+    private final CharsetAndCollation charsetAndCollation;
 
     private boolean isFrozen = false;
+    private Map<Integer, UserTable> userTablesById = null;
+    private Map<Integer, GroupTable> groupTablesById = null;
 
     private static class AISFailureList extends AISValidationResults implements AISValidationOutput {
 

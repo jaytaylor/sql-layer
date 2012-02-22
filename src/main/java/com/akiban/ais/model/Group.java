@@ -147,7 +147,7 @@ public class Group implements Traversable
 
     // State
 
-    private String name;
+    private final String name;
     private GroupTable groupTable;
     private final Map<String, GroupIndex> indexMap;
 }

@@ -15,10 +15,6 @@
 
 package com.akiban.ais.model;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.akiban.ais.model.validation.AISInvariants;
 
 public class IndexColumn
@@ -56,12 +52,6 @@ public class IndexColumn
         return ascending;
     }
 
-    @SuppressWarnings("unused")
-    private IndexColumn()
-    {
-        // GWT requires empty constructor
-    }
-    
     public static IndexColumn create(Index index, Column column, Integer position, Boolean ascending, Integer indexedLength) {
         index.checkMutability();
         AISInvariants.checkDuplicateColumnsInIndex(index, column.getName());
@@ -81,9 +71,9 @@ public class IndexColumn
     
     // State
 
-    private Index index;
-    private Column column;
-    private Integer position;
-    private Boolean ascending;
-    private Integer indexedLength;
+    private final Index index;
+    private final Column column;
+    private final Integer position;
+    private final Boolean ascending;
+    private final Integer indexedLength;
 }

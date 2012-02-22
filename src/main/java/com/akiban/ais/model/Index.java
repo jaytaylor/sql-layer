@@ -74,11 +74,6 @@ public abstract class Index implements Traversable
         return isTableIndex() || isValid;
     }
 
-    protected Index()
-    {
-        // GWT
-    }
-
     @Override
     public String toString()
     {
@@ -391,22 +386,22 @@ public abstract class Index implements Traversable
     }
 
     private IndexName indexName;
-    private Integer indexId;
-    private Boolean isUnique;
-    private String constraint;
-    private boolean columnsStale = true;
-    private List<IndexColumn> columns;
-    private boolean columnsFrozen = false;
     private String treeName;
-    private transient JoinType joinType;
-    private transient boolean isValid;
+    private boolean columnsStale = true;
+    private boolean columnsFrozen = false;
+    private final Integer indexId;
+    private final Boolean isUnique;
+    private final String constraint;
+    private final List<IndexColumn> columns;
+    private final JoinType joinType;
+    private final boolean isValid;
 
     // It really is an IndexDef, but declaring it that way creates trouble for AIS. We don't want to pull in
     // all the RowDef stuff and have it visible to GWT.
-    private transient /* IndexDef */ Object indexDef;
-    private transient IndexRowComposition indexRowComposition;
-    private transient IndexToHKey indexToHKey;
-    private transient boolean isHKeyEquivalent;
+    private /* IndexDef */ Object indexDef;
+    private IndexRowComposition indexRowComposition;
+    private IndexToHKey indexToHKey;
+    private boolean isHKeyEquivalent;
 
     public enum JoinType {
         LEFT, RIGHT

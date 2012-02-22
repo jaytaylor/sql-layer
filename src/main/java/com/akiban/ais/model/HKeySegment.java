@@ -82,11 +82,8 @@ public class HKeySegment
         return hKeyColumn;
     }
 
-    public HKeySegment()
-    {}
-
-    private HKey hKey;
-    private UserTable table;
-    private List<HKeyColumn> columns = new ArrayList<HKeyColumn>();
-    private int positionInHKey;
+    private final HKey hKey;
+    private final UserTable table;
+    private final List<HKeyColumn> columns = new ArrayList<HKeyColumn>();
+    private final int positionInHKey;
 }

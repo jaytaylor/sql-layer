@@ -38,11 +38,6 @@ public class Join implements Traversable, HasGroup
         return join;
     }
 
-    private Join()
-    {
-        // GWT requires empty constructor
-    }
-
     @Override
     public String toString()
     {
@@ -268,14 +263,14 @@ public class Join implements Traversable, HasGroup
 
     // State
 
-    private AkibanInformationSchema ais;
     private String joinName;
     private Integer weight;
-    private UserTable parent;
-    private UserTable child;
     private Group group;
     private boolean joinColumnsStale = true;
-    private List<JoinColumn> joinColumns;
+    private final AkibanInformationSchema ais;
+    private final UserTable parent;
+    private final UserTable child;
+    private final List<JoinColumn> joinColumns;
 
     private GroupingUsage groupingUsage = GroupingUsage.WHEN_OPTIMAL;
     private SerializableEnumSet<SourceType> sourceTypes = new SerializableEnumSet<SourceType>(SourceType.class);

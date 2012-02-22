@@ -17,7 +17,6 @@ package com.akiban.ais.model;
 
 import java.util.Iterator;
 
-
 public class GroupTable extends Table
 {
     public static GroupTable create(AkibanInformationSchema ais,
@@ -107,12 +106,5 @@ public class GroupTable extends Table
             }
         }
         super.dropColumns();
-    }
-
-    @SuppressWarnings("unused")
-    private GroupTable()
-    {
-        super();
-        // GWT requires empty constructor
     }
 }

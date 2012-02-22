@@ -17,10 +17,6 @@ package com.akiban.ais.model;
 
 import com.akiban.server.types.AkType;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-
 public class Type
 {
     @Override
@@ -88,12 +84,6 @@ public class Type
         return result;
     }
     
-    @SuppressWarnings("unused")
-    private Type()
-    {
-        // GWT requires empty constructor
-    }
-
     public Type(String name, Integer typeParameters, Boolean fixedSize, Long maxStorageSizeBytes, String encoding, AkType akType)
     {
         this.name = name;
@@ -111,10 +101,10 @@ public class Type
         return type;
     }
 
-    private String name;
-    private Integer typeParameters;
-    private Boolean fixedSize;
-    private Long maxStorageSizeBytes;
-    private String encoding;
-    private AkType akType;
+    private final String name;
+    private final Integer typeParameters;
+    private final Boolean fixedSize;
+    private final Long maxStorageSizeBytes;
+    private final String encoding;
+    private final AkType akType;
 }

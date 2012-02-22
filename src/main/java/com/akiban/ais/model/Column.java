@@ -69,11 +69,6 @@ public class Column
          ***/
     }
 
-    private Column()
-    {
-        // XXX: GWT requires empty constructor
-    }
-
     public void setNullable(Boolean nullable)
     {
         this.nullable = nullable;
@@ -150,14 +145,10 @@ public class Column
             case 0:
                 break;
             case 1:
-                // XXX: GWT issue - was using String.format
-                String str1 = "(" + typeParameter1 + ")";
-                columnType.append(str1);
+                columnType.append("(" + typeParameter1 + ")");
                 break;
             case 2:
-                // XXX: GWT issue - was using String.format
-                String str2 = "(" + typeParameter1 + ", " + typeParameter2 + ")";
-                columnType.append(str2);
+                columnType.append("(" + typeParameter1 + ", " + typeParameter2 + ")");
                 break;
         }
         return columnType.toString();
@@ -374,9 +365,9 @@ public class Column
 
     public static final String AKIBAN_PK_NAME = "__akiban_pk";
 
-    private Table table;
-    private String columnName;
-    private Type type;
+    private final Table table;
+    private final String columnName;
+    private final Type type;
     private Boolean nullable;
     private Integer position;
     private Long typeParameter1;
@@ -386,5 +377,5 @@ public class Column
 
     private Column groupColumn; // Non-null iff this is a user table column
     private Column userColumn; // Non-null iff this is a group table column
-    private transient /*FieldDef*/ Object fieldDef;
+    private /*FieldDef*/ Object fieldDef;
 }

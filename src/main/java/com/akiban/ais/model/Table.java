@@ -31,7 +31,6 @@ public abstract class Table implements Traversable, HasGroup
 
     protected Table(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
     {
-        this();
         ais.checkMutability();
         AISInvariants.checkNullName(schemaName, "Table", "schema name");
         AISInvariants.checkNullName(tableName, "Table", "table name");
@@ -40,6 +39,11 @@ public abstract class Table implements Traversable, HasGroup
         this.ais = ais;
         this.tableName = new TableName(schemaName, tableName);
         this.tableId = tableId;
+
+        this.groupIndexes = new HashSet<GroupIndex>();
+        this.unmodifiableGroupIndexes = Collections.unmodifiableCollection(groupIndexes);
+        this.indexMap = new TreeMap<String, TableIndex>();
+        this.unmodifiableIndexMap = Collections.unmodifiableMap(indexMap);
     }
 
     public AkibanInformationSchema getAIS()
@@ -187,15 +191,6 @@ public abstract class Table implements Traversable, HasGroup
     {
         columnMap.clear();
         columnsStale = true;
-    }
-
-    protected Table()
-    {
-        // XXX: GWT requires empty constructor
-        this.groupIndexes = new HashSet<GroupIndex>();
-        this.unmodifiableGroupIndexes = Collections.unmodifiableCollection(groupIndexes);
-        this.indexMap = new TreeMap<String, TableIndex>();
-        this.unmodifiableIndexMap = Collections.unmodifiableMap(indexMap);
     }
 
     // For use by this package
@@ -377,26 +372,26 @@ public abstract class Table implements Traversable, HasGroup
 
     // State
 
-    protected AkibanInformationSchema ais;
     protected Group group;
     protected TableName tableName;
     private Integer tableId;
     private volatile boolean columnsStale = true;
-    private final Object columnsStaleLock = new Object();
-    private List<Column> columns = new ArrayList<Column>();
-    private List<Column> columnsWithoutInternal = new ArrayList<Column>();
-    private final Map<String, TableIndex> indexMap;
-    private final Map<String, TableIndex> unmodifiableIndexMap;
-    private Map<String, Column> columnMap = new TreeMap<String, Column>();
     private CharsetAndCollation charsetAndCollation;
     protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;
     protected String engine;
     protected String treeName;
 
+    protected final AkibanInformationSchema ais;
+    private final Object columnsStaleLock = new Object();
+    private final List<Column> columns = new ArrayList<Column>();
+    private final List<Column> columnsWithoutInternal = new ArrayList<Column>();
+    private final Map<String, TableIndex> indexMap;
+    private final Map<String, TableIndex> unmodifiableIndexMap;
+    private final Map<String, Column> columnMap = new TreeMap<String, Column>();
     private final Collection<GroupIndex> groupIndexes;
     private final Collection<GroupIndex> unmodifiableGroupIndexes;
 
     // It really is a RowDef, but declaring it that way creates trouble for AIS. We don't want to pull in
     // all the RowDef stuff and have it visible to GWT.
-    private transient /*RowDef*/ Object rowDef;
+    private /*RowDef*/ Object rowDef;
 }

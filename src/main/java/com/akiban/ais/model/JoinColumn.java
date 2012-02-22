@@ -22,12 +22,6 @@ public class JoinColumn
         return join.addJoinColumn(parent, child);
     }
 
-    @SuppressWarnings("unused")
-    private JoinColumn()
-    {
-        // GWT requires empty constructor
-    }
-
     @Override
     public String toString()
     {
@@ -56,7 +50,7 @@ public class JoinColumn
         return child;
     }
 
-    private Join join;
-    private Column parent;
-    private Column child;
+    private final Join join;
+    private final Column parent;
+    private final Column child;
 }
