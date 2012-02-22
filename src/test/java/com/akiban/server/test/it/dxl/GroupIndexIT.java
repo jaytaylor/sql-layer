@@ -69,9 +69,9 @@ public class GroupIndexIT extends ITBase {
         assertEquals("group index count", 1, group.getIndexes().size());
         final GroupIndex index = group.getIndex("name_date");
         assertNotNull("name_date index exists", index);
-        assertEquals("index column count", 2, index.getColumns().size());
-        assertEquals("name is first", "name", index.getColumns().get(0).getColumn().getName());
-        assertEquals("odate is second", "odate", index.getColumns().get(1).getColumn().getName());
+        assertEquals("index column count", 2, index.getKeyColumns().size());
+        assertEquals("name is first", "name", index.getKeyColumns().get(0).getColumn().getName());
+        assertEquals("odate is second", "odate", index.getKeyColumns().get(1).getColumn().getName());
 
         checkGroupIndexes(getUserTable("test", "c"), index);
         checkGroupIndexes(getUserTable("test", "o"), index);
@@ -218,7 +218,7 @@ public class GroupIndexIT extends ITBase {
         final Iterator<Object[]> keyIt = Arrays.asList(keys).iterator();
         final List<List<?>> extraKeys = new ArrayList<List<?>>();
 
-        final int declaredColumns = groupIndex.getColumns().size();
+        final int declaredColumns = groupIndex.getKeyColumns().size();
         for(Object[] key : keys) {
             assertEquals("Expected key doesn't have declared column count", declaredColumns, key.length);
         }

@@ -70,9 +70,11 @@ public class IntersectRowType extends DerivedRowType
         assert rightType.schema() == schema : rightType;
         this.leftType = leftType;
         this.rightType = rightType;
+/*
         List<UserTable> tables = new ArrayList<UserTable>(leftType.typeComposition().tables());
         tables.addAll(rightType.typeComposition().tables());
         typeComposition(new TypeComposition(this, tables));
+*/
     }
 
     // Object state

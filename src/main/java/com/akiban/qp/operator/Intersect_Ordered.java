@@ -34,6 +34,51 @@ import java.util.Set;
 
 import static com.akiban.qp.operator.API.JoinType;
 
+/**
+ <h1>Overview</h1>
+
+ Intersect_Ordered finds pairs of rows from two input streams whose projection onto a set of common fields matches.
+ Each input stream must be ordered by these common fields.
+ For each pair, an output row of IntersectRowType, comprising both input rows, is generated.
+ <p>Example: Suppose the left input is an index on (x, pid, cid) and the right input is an index on (a, b, pid, cid).
+ The left index scan has restricted the value of x, and the right index scan has restricted the values of a and b.
+ Both streams are therefore ordered by (pid, cid).
+
+ <h1>Arguments</h1>
+
+<li><b>Operator left:</b> Operator providing left input stream.
+<li><b>Operator right:</b> Operator providing right input stream.
+<li><b>IndexRowType leftRowType:</b> Type of rows from left input stream.
+<li><b>IndexRowType rightRowType:</b> Type of rows from right input stream.
+<li><b>int orderingFields:</b> Number of common fields, defining ordering and used for matching rows.
+<li><b>JoinType joinType:</b> INNER_JOIN means that an ordinary intersection is computed.
+ (Nothing else is supported currently).
+<li><b>int leftRowPosition:</b> Position in bindings to be used for storing a row from the left stream.
+<li><b>int rightRowPosition:</b> Position in bindings to be used for storing a row from the right stream.
+
+ <h1>Behavior</h1>
+
+ The two streams are merged, looking for pairs of rows, one from each input stream, which match in the common
+ fields. When such a match is found, an IntersectRow is created, encapuslating the matching input rows.
+
+ <h1>Output</h1>
+
+ IntersectRows whose inputs match in the common fields.
+
+ <h1>Assumptions</h1>
+
+ Each input stream is ordered by the last <tt>orderingFields</tt> columns.
+
+ <h1>Performance</h1>
+
+ This operator does no IO.
+
+ <h1>Memory Requirements</h1>
+
+ Two input rows, one from each stream.
+
+ */
+
 class Intersect_Ordered extends Operator
 {
     // Operator interface
@@ -42,6 +87,12 @@ class Intersect_Ordered extends Operator
     protected Cursor cursor(QueryContext context)
     {
         return new Execution(context);
+    }
+
+    @Override
+    public IntersectRowType rowType()
+    {
+        return outputRowType;
     }
 
     @Override
@@ -83,6 +134,9 @@ class Intersect_Ordered extends Operator
         ArgumentValidation.notNull("leftRowType", leftRowType);
         ArgumentValidation.notNull("rightRowType", rightRowType);
         ArgumentValidation.notNull("joinType", joinType);
+        ArgumentValidation.isGT("orderingFields", orderingFields, 0);
+        ArgumentValidation.isLTE("orderingFields", orderingFields, leftRowType.nFields());
+        ArgumentValidation.isLTE("orderingFields", orderingFields, rightRowType.nFields());
         // TODO: Drop this requirement
         ArgumentValidation.isEQ("joinType", joinType, "JoinType.INNER_JOIN", JoinType.INNER_JOIN);
         this.left = left;
@@ -163,6 +217,8 @@ class Intersect_Ordered extends Operator
                             nextRightRow();
                         } else {
                             next = combineRows();
+                            nextLeftRow();
+                            nextRightRow();
                         }
                     }
                 }
@@ -194,7 +250,6 @@ class Intersect_Ordered extends Operator
             fieldRankingEvaluations = new ExpressionEvaluation[fieldRankingExpressions.length];
             for (int f = 0; f < fieldRankingEvaluations.length; f++) {
                 fieldRankingEvaluations[f] = fieldRankingExpressions[f].evaluation();
-                fieldRankingEvaluations[f].of(context);
             }
         }
         
@@ -225,6 +280,7 @@ class Intersect_Ordered extends Operator
                 c = -1;
             } else {
                 for (ExpressionEvaluation fieldRankingEvaluation : fieldRankingEvaluations) {
+                    fieldRankingEvaluation.of(context);
                     c = fieldRankingEvaluation.eval().getInt();
                     if (c != 0) {
                         break;

@@ -269,7 +269,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             // the "false" at the end of constructHKey toggles whether the RowData should be modified to increment
             // the hidden PK field, if there is one. For PK-less rows, this field have already been incremented by now,
             // so we don't want to increment it again
-            getPersistitStore().constructHKey(session, hEx, (RowDef) userTable.rowDef(), rowData, false);
+            getPersistitStore().constructHKey(session, hEx, userTable.rowDef(), rowData, false);
             PersistitHKey persistitHKey = new PersistitHKey(adapter, userTable.hKey());
             persistitHKey.copyFrom(hEx.getKey());
 

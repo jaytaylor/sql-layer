@@ -110,7 +110,7 @@ public class Group implements Serializable, ModelNames, Traversable
                 out.add("group's index.getGroup() wasn't the group" + index + " <--> " + this);
             }
             if (index != null) {
-                for (IndexColumn indexColumn : index.getColumns()) {
+                for (IndexColumn indexColumn : index.getKeyColumns()) {
                     if (!index.equals(indexColumn.getIndex())) {
                         out.add("index's indexColumn.getIndex() wasn't index: " + indexColumn);
                     }

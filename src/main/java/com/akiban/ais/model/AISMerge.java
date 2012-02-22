@@ -162,7 +162,7 @@ public class AISMerge {
                     indexName.getName(), 
                     index.isUnique(), 
                     index.getConstraint());
-            for (IndexColumn col : index.getColumns()) {
+            for (IndexColumn col : index.getKeyColumns()) {
                     builder.indexColumn(schemaName, tableName, index.getIndexName().getName(),
                         col.getColumn().getName(), 
                         col.getPosition(), 

@@ -29,13 +29,10 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.test.it.ITBase;
 import com.akiban.server.test.it.qp.TestRow;
 import com.akiban.server.test.pt.PTBase;
 import com.akiban.server.types.ToObjectValueTarget;
-import org.junit.Before;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -63,7 +60,7 @@ public class QPProfilePTBase extends PTBase
         UserTable userTable = userTable(userTableId);
         for (Index index : userTable.getIndexesIncludingInternal()) {
             List<String> indexColumnNames = new ArrayList<String>();
-            for (IndexColumn indexColumn : index.getColumns()) {
+            for (IndexColumn indexColumn : index.getKeyColumns()) {
                 indexColumnNames.add(indexColumn.getColumn().getName());
             }
             List<String> searchIndexColumnNames = Arrays.asList(searchIndexColumnNamesArray);
@@ -81,7 +78,7 @@ public class QPProfilePTBase extends PTBase
             @Override
             public boolean includesColumn(int columnPosition)
             {
-                for (IndexColumn indexColumn : index.getColumns()) {
+                for (IndexColumn indexColumn : index.getKeyColumns()) {
                     Column column = indexColumn.getColumn();
                     if (column.getPosition() == columnPosition) {
                         return true;

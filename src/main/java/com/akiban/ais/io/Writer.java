@@ -29,7 +29,6 @@ import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Target;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
-import com.akiban.util.Command;
 
 public class Writer
 {
@@ -132,19 +131,19 @@ public class Writer
         for (Group group : groups) {
             for (Index index : group.getIndexes()) {
                 target.writeIndex(index.map());
-                nIndexColumns += index.getColumns().size();
+                nIndexColumns += index.getKeyColumns().size();
             }
         }
         for (UserTable userTable : userTables) {
             for (Index index : userTable.getIndexesIncludingInternal()) {
                 target.writeIndex(index.map());
-                nIndexColumns += index.getColumns().size();
+                nIndexColumns += index.getKeyColumns().size();
             }
         }
         for (GroupTable groupTable : groupTables) {
             for (Index index : groupTable.getIndexes()) {
                 target.writeIndex(index.map());
-                nIndexColumns += index.getColumns().size();
+                nIndexColumns += index.getKeyColumns().size();
             }
         }
     }
@@ -154,21 +153,21 @@ public class Writer
         target.writeCount(nIndexColumns);
         for (Group group : groups) {
             for (Index index : group.getIndexes()) {
-                for (IndexColumn indexColumn : index.getColumns()) {
+                for (IndexColumn indexColumn : index.getKeyColumns()) {
                     target.writeIndexColumn(indexColumn.map());
                 }
             }
         }
         for (UserTable userTable : userTables) {
             for (Index index : userTable.getIndexesIncludingInternal()) {
-                for (IndexColumn indexColumn : index.getColumns()) {
+                for (IndexColumn indexColumn : index.getKeyColumns()) {
                     target.writeIndexColumn(indexColumn.map());
                 }
             }
         }
         for (GroupTable groupTable : groupTables) {
             for (Index index : groupTable.getIndexes()) {
-                for (IndexColumn indexColumn : index.getColumns()) {
+                for (IndexColumn indexColumn : index.getKeyColumns()) {
                     target.writeIndexColumn(indexColumn.map());
                 }
             }

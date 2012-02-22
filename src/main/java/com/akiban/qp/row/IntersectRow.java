@@ -16,6 +16,7 @@
 package com.akiban.qp.row;
 
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.IntersectRowType;
 import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;

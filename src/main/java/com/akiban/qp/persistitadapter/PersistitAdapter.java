@@ -120,8 +120,8 @@ public class PersistitAdapter extends StoreAdapter
 
     @Override
     public void updateRow(Row oldRow, Row newRow) {
-        RowDef rowDef = (RowDef) oldRow.rowType().userTable().rowDef();
-        Object rowDefNewRow = newRow.rowType().userTable().rowDef();
+        RowDef rowDef = oldRow.rowType().userTable().rowDef();
+        RowDef rowDefNewRow = newRow.rowType().userTable().rowDef();
         if (rowDef != rowDefNewRow) {
             throw new IllegalArgumentException(String.format("%s != %s", rowDef, rowDefNewRow));
         }
@@ -137,7 +137,7 @@ public class PersistitAdapter extends StoreAdapter
     }
     @Override
     public void writeRow (Row newRow) {
-        RowDef rowDef = (RowDef)newRow.rowType().userTable().rowDef();
+        RowDef rowDef = newRow.rowType().userTable().rowDef();
         RowData newRowData = rowData (rowDef, newRow);
         try {
             persistit.writeRow(session, newRowData);
@@ -149,7 +149,7 @@ public class PersistitAdapter extends StoreAdapter
     
     @Override
     public void deleteRow (Row oldRow) {
-        RowDef rowDef = (RowDef)oldRow.rowType().userTable().rowDef();
+        RowDef rowDef = oldRow.rowType().userTable().rowDef();
         RowData oldRowData = rowData(rowDef, oldRow);
         try {
             persistit.deleteRow(session, oldRowData);
@@ -161,7 +161,7 @@ public class PersistitAdapter extends StoreAdapter
 
     @Override
     public long rowCount(RowType tableType) {
-        RowDef rowDef = (RowDef)tableType.userTable().rowDef();
+        RowDef rowDef = tableType.userTable().rowDef();
         try {
             return rowDef.getTableStatus().getRowCount();
         } catch(PersistitInterruptedException e) {
@@ -226,7 +226,7 @@ public class PersistitAdapter extends StoreAdapter
 
     public Exchange takeExchange(GroupTable table) throws PersistitException
     {
-        return persistit.getExchange(session, (RowDef) table.rowDef());
+        return persistit.getExchange(session, table.rowDef());
     }
 
     public Exchange takeExchange(Index index)
