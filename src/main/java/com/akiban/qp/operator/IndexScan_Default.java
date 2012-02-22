@@ -19,10 +19,9 @@ import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -187,6 +186,12 @@ class IndexScan_Default extends Operator
     private final API.Ordering ordering;
     private final IndexKeyRange indexKeyRange;
     private final IndexScanSelector scanSelector;
+
+    @Override
+    public Explainer getExplainer()
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
     // Inner classes
 

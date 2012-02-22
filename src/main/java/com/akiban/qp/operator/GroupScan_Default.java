@@ -19,9 +19,15 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
+import com.akiban.sql.optimizer.explain.Attributes;
 import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.OperationExplainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
+import java.math.BigDecimal;
 
 /**
 
@@ -108,7 +114,13 @@ class GroupScan_Default extends Operator
     @Override
     public Explainer getExplainer()
     {
+        Attributes att = new Attributes();
         
+        att.put(Label.NAME, PrimitiveExplainer.getInstance("GROUP SCAN DEFAULT"));
+        att.put(Label.SCAN_OPTION, PrimitiveExplainer.getInstance(cursorCreator.describeRange().toUpperCase()));
+        att.put(Label.GROUP_TABLE, PrimitiveExplainer.getInstance(cursorCreator.groupTable().getName()));
+        
+        return new OperationExplainer(Type.SCAN_OPERATOR, att);
     }
 
     // Inner classes
@@ -170,6 +182,8 @@ class GroupScan_Default extends Operator
         Cursor cursor(QueryContext context);
 
         GroupTable groupTable();
+        
+        String describeRange();
     }
 
     private static abstract class AbstractGroupCursorCreator implements GroupCursorCreator
@@ -198,8 +212,6 @@ class GroupScan_Default extends Operator
         }
 
         // for overriding in subclasses
-
-        protected abstract String describeRange();
 
         private final GroupTable targetGroupTable;
     }

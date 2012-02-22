@@ -14,6 +14,7 @@
  */
 package com.akiban.qp.operator;
 
+import com.akiban.sql.optimizer.explain.Explainer;
 import java.util.Collections;
 import java.util.List;
 
@@ -24,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
+import com.akiban.sql.optimizer.explain.std.DUIOperatorExplainer;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.Tap;
 
@@ -130,5 +132,11 @@ class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
     private final Operator inputOperator;
     private static final InOutTap INSERT_TAP = Tap.createTimer("operator: Insert_Default");
     private static final Logger LOG = LoggerFactory.getLogger(Insert_Default.class);
+
+    @Override
+    public Explainer getExplainer()
+    {
+        return new DUIOperatorExplainer("INSERT", inputOperator);
+    }
 
 }

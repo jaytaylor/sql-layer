@@ -23,6 +23,10 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.OperationExplainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.std.LookUpOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -216,7 +220,10 @@ class AncestorLookup_Default extends Operator
     @Override
     public Explainer getExplainer()
     {
-        
+        OperationExplainer ex = new LookUpOperatorExplainer("Ancestor Lookup Default", groupTable, rowType, keepInput, inputOperator);
+        for (RowType row : ancestorTypes)
+            ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(row));
+        return ex;
     }
 
     // Inner classes

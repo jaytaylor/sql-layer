@@ -22,7 +22,9 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
 import com.akiban.sql.optimizer.explain.OperationExplainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.std.LookUpOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
@@ -206,7 +208,10 @@ class AncestorLookup_Nested extends Operator
     @Override
     public Explainer getExplainer()
     {
-       OperationExplainer ex = new LookUpOperatorExplainer("Ancestor Lookup Nested", groupTable, rowType, null, null);
+       OperationExplainer ex = new LookUpOperatorExplainer("Ancestor Lookup Nested", groupTable, rowType, (Boolean)null, null);
+       for (RowType row : ancestorTypes)
+           ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(row));
+       return ex;
     }
 
     // Inner classes

@@ -17,6 +17,8 @@ package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.std.FilterExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 
@@ -115,6 +117,12 @@ class Filter_Default extends Operator
 
     private final Operator inputOperator;
     private final Set<RowType> keepTypes;
+
+    @Override
+    public Explainer getExplainer()
+    {
+        return new FilterExplainer("FILTER DEFAULT", keepTypes, inputOperator);
+    }
 
     // Inner classes
 

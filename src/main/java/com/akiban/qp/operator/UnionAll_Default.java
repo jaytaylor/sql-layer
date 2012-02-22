@@ -23,11 +23,18 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.sql.optimizer.explain.Attributes;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.OperationExplainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.InOutTap;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -154,6 +161,23 @@ final class UnionAll_Default extends Operator {
     private final List<? extends Operator> inputs;
     private final List<? extends RowType> inputTypes;
     private final RowType outputRowType;
+
+    @Override
+    public Explainer getExplainer()
+    {
+        Attributes att = new Attributes();
+        
+        att.put(Label.NAME, PrimitiveExplainer.getInstance("UNION ALL"));
+        
+        for (Operator op : inputs)
+            att.put(Label.INPUT_OPERATOR, op.getExplainer());
+        for (RowType type : inputTypes)
+            att.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(inputTypes));
+       
+        att.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType));
+        
+        return new OperationExplainer(Type.UNION_ALL, att);
+    }
 
     private static final class Execution implements Cursor {
 

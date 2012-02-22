@@ -28,16 +28,26 @@ package com.akiban.sql.optimizer.explain;
  */
 public enum Type
 {
+    // AGGREGATOR
+    //--------------------------------------------------------------------------
     AGGREGATOR(GeneralType.AGGREGATOR),
+    
+    // EXPRESSION
+    //-------------------------------------------------------------------------- 
     FUNCTION(GeneralType.EXPRESSION), 
     BINARY_OPERATOR(GeneralType.EXPRESSION),
+    SUBQUERY(GeneralType.EXPRESSION),
+        
+    // OPERATORS
+    //--------------------------------------------------------------------------
     SCAN_OPERATOR(GeneralType.OPERATOR),
     LOOKUP_OPERATOR(GeneralType.OPERATOR),
     COUNT_OPERATOR(GeneralType.OPERATOR),
     DUI(GeneralType.OPERATOR), // delete/update/insert
-    DINSTINC_PARTIAL(GeneralType.OPERATOR),
-    FILTER_DEFAULT(GeneralType.OPERATOR),
-    PRODUCT_NESTED(GeneralType.OPERATOR),
+    DISTINCT(GeneralType.OPERATOR),
+    FLATTEN_OPERATOR(GeneralType.OPERATOR),
+    LIMIT_OPERATOR(GeneralType.OPERATOR),
+    NESTED_LOOPS(GeneralType.OPERATOR),
     IF_ELSE(GeneralType.OPERATOR),
     UNION_ALL(GeneralType.OPERATOR),
     SORT(GeneralType.OPERATOR),
@@ -45,8 +55,13 @@ public enum Type
     PROJECT(GeneralType.OPERATOR),
     SELECT_HKEY(GeneralType.OPERATOR),
     PHYSICAL_OPERATOR(GeneralType.OPERATOR), // could be broken down to scan_operator, sort operator, etc?
-    SUBQUERY(GeneralType.EXPRESSION),
+    
+    // ROWTYPE    
+    //--------------------------------------------------------------------------
     ROWTYPE (GeneralType.ROWTYPE),
+    
+    // SCALAR 
+    //--------------------------------------------------------------------------
     FLOATING_POINT(GeneralType.SCALAR_VALUE),
     EXACT_NUMERIC(GeneralType.SCALAR_VALUE),
     STRING(GeneralType.SCALAR_VALUE)
@@ -69,6 +84,6 @@ public enum Type
         EXPRESSION,
         OPERATOR,
         SCALAR_VALUE,
-        ROWTYPE
+        ROWTYPE // may not be needed?
     }
 }

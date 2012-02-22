@@ -20,6 +20,8 @@ import java.util.List;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.std.DUIOperatorExplainer;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
@@ -90,6 +92,12 @@ class Delete_Default extends OperatorExecutionBase implements UpdatePlannable {
     @Override
     public String toString() {
         return String.format("%s(%s)", getClass().getSimpleName(), inputOperator);
+    }
+    
+    @Override
+    public Explainer getExplainer()
+    {
+        return new DUIOperatorExplainer("DELETE", inputOperator);
     }
 
     @Override

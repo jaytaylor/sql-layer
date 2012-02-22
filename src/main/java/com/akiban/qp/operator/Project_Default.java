@@ -21,9 +21,16 @@ import com.akiban.qp.rowtype.ProjectedRowType;
 import com.akiban.qp.rowtype.ProjectedUserTableRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
+import com.akiban.sql.optimizer.explain.Attributes;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.OperationExplainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -156,6 +163,20 @@ class Project_Default extends Operator
     protected final RowType rowType;
     protected final List<Expression> projections;
     protected ProjectedRowType projectType;
+
+    @Override
+    public Explainer getExplainer()
+    {
+        Attributes att = new Attributes();
+        
+        att.put(Label.NAME, PrimitiveExplainer.getInstance("PROJECT DEFAULT"));
+        if (projectType.hasUserTable())
+            att.put(Label.PROJECT_OPTION, PrimitiveExplainer.getInstance("Has User Table: " + projectType.userTable()));
+        att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer());
+        for (Expression ex : projections)
+            att.put(Label.PROJECTION, ex.getExplainer());
+        return new OperationExplainer(Type.PROJECT, att);
+    }
 
     // Inner classes
 

@@ -32,8 +32,6 @@ import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -275,17 +273,16 @@ final class Aggregate_Partial extends Operator
         Attributes atts = new Attributes();
         atts.put(Label.NAME, PrimitiveExplainer.getInstance("AGGREGATE_PARTIAL"));
         
-        Set<Explainer> aggSet = new HashSet<Explainer>();
+ 
         for (AggregatorFactory agg : aggregatorFactories)
-            aggSet.add(PrimitiveExplainer.getInstance(agg.toString()));
-        atts.put(Label.AGGREGATORS, aggSet);
+            atts.put(Label.AGGREGATORS, PrimitiveExplainer.getInstance(agg.toString()));
         
+        atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance("GROUP BY " + inputsIndex + "FIELD(s)"));
         atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer());
         atts.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(inputRowType.toString()));
         atts.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputType.toString()));
         
         return new OperationExplainer(Type.PHYSICAL_OPERATOR, atts);
-        
     }
 
     // nested classes

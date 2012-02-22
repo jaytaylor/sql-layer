@@ -17,7 +17,7 @@ package com.akiban.sql.optimizer.explain;
 
 import java.util.*;
 
-public class Attributes extends EnumMap<Label, Set<Explainer>>
+public class Attributes extends EnumMap<Label, List<Explainer>>
 {       
     public Attributes()
     {
@@ -26,10 +26,10 @@ public class Attributes extends EnumMap<Label, Set<Explainer>>
     
     public boolean put (Label label, Explainer ex)
     {
-        Set<Explainer> l = get(label);
+        List<Explainer> l = get(label);
         if (l == null)
         {
-            l = new HashSet<Explainer>();
+            l = new ArrayList<Explainer>();
             put(label, l);
         }
         l.add(ex);
@@ -40,7 +40,7 @@ public class Attributes extends EnumMap<Label, Set<Explainer>>
     {
         List<Entry<Label, Explainer>> pairs = new ArrayList<Entry<Label,Explainer>>();
         
-        for (Entry<Label, Set<Explainer>> entry : entrySet())                
+        for (Entry<Label, List<Explainer>> entry : entrySet())                
             for (Explainer ex : entry.getValue())            
                 pairs.add(new ValuePair(entry.getKey(), ex, this));                            
         return pairs;
@@ -75,7 +75,7 @@ public class Attributes extends EnumMap<Label, Set<Explainer>>
         public Explainer setValue(Explainer value)
         {
             Explainer old = this.value;            
-            Set<Explainer> s = map.get(key);
+            List<Explainer> s = map.get(key);
             this.value = value;
             s.remove(old);
             s.add(value);      

@@ -24,8 +24,12 @@ public enum Label
    //--------------------------------------------------------------------------
     AGGREGATORS(Category.CHILD),
     INPUT_OPERATOR(Category.CHILD),
-    OPERAND(Category.CHILD), // function operand
-    PROJECTIONS(Category.CHILD), // list of a expressions
+    INNER_OPERATOR(Category.CHILD),
+    OUTER_OPERATOR(Category.CHILD),
+    OPERAND(Category.CHILD), // function operand, operands in general
+    PROJECTION(Category.CHILD), // list of a expressions
+    PREDICATE(Category.CHILD),
+    
     
     // COST
     //--------------------------------------------------------------------------
@@ -47,7 +51,7 @@ public enum Label
     //--------------------------------------------------------------------------
     LOOK_UP_OPTION(Category.OPTION),
     GROUPING_OPTION(Category.OPTION),
-    FLATTEN_OPTION(Category.OPTION),
+    FLATTEN_OPTION(Category.OPTION), // keep parent, etc 
     SORT_OPTION(Category.OPTION),
     PRESERVE_DUPLICAT(Category.OPTION),
     SCAN_OPTION(Category.OPTION), // full/deep.shallow, etc
@@ -59,13 +63,18 @@ public enum Label
     // TYPE DESCRIPTION
     //--------------------------------------------------------------------------
     INNER_TYPE(Category.TYPE_DESCRIPTION),
+    PARENT_TYPE(Category.TYPE_DESCRIPTION),
+    CHILD_TYPE(Category.TYPE_DESCRIPTION),
+    KEEP_TYPE(Category.TYPE_DESCRIPTION),
     OUTER_TYPE(Category.TYPE_DESCRIPTION),
     PRODUCT_TYPE(Category.TYPE_DESCRIPTION),
     INPUT_TYPE(Category.TYPE_DESCRIPTION),
     OUTPUT_TYPE(Category.TYPE_DESCRIPTION),
-    TABEL_TYPE(Category.TYPE_DESCRIPTION),
+    TABLE_TYPE(Category.TYPE_DESCRIPTION),
     ROWTYPE(Category.TYPE_DESCRIPTION),
+    DINSTINCT_TYPE(Category.TYPE_DESCRIPTION),
     ANCESTOR_TYPE(Category.TYPE_DESCRIPTION),
+    PREDICATE_ROWTYPE(Category.TYPE_DESCRIPTION),
     ;
 
 

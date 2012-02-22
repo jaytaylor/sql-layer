@@ -18,12 +18,8 @@ package com.akiban.server.expression.subquery;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
 import com.akiban.sql.optimizer.explain.*;
 import com.akiban.util.ArgumentValidation;
-import java.math.BigDecimal;
 
 public abstract class SubqueryExpression implements Expression {
 
@@ -47,7 +43,7 @@ public abstract class SubqueryExpression implements Expression {
         
         Attributes states = new Attributes();
         states.put(Label.NAME, PrimitiveExplainer.getInstance(name()));
-        // TODO: states.put(Label.OPERAND, subquery.getExplainer()); 
+        states.put(Label.OPERAND, subquery.getExplainer()); 
         states.put(Label.OUTER_TYPE, PrimitiveExplainer.getInstance(outerRowType.toString()));
         states.put(Label.INNER_TYPE, PrimitiveExplainer.getInstance(innerRowType.toString()));
         states.put(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(bindingPosition));
