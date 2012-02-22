@@ -20,25 +20,44 @@ package com.akiban.sql.optimizer.explain;
  */
 public enum Label
 {
-    NAME(Category.IDENTIFIER),    
-    COST(Category.COST),
+    // CHILD(REN) OPERATION(S)
+   //--------------------------------------------------------------------------
     AGGREGATORS(Category.CHILD),
     INPUT_OPERATOR(Category.CHILD),
     OPERAND(Category.CHILD), // function operand
+    PROJECTIONS(Category.CHILD), // list of a expressions
+    
+    // COST
+    //--------------------------------------------------------------------------
+    COST(Category.COST),
+    
+    // DESCRIPTION (may or may not needed)
+    //--------------------------------------------------------------------------
+    BINDING_POSITION(Category.DESCRIPTION),
+    EXTRA_TAG(Category.DESCRIPTION), // extra info
+    
+    // IDENTIFIER
+    //--------------------------------------------------------------------------
+    NAME(Category.IDENTIFIER),
+    START_TABLE(Category.IDENTIFIER),
+    STOP_TABLE(Category.IDENTIFIER),
+    GROUP_TABLE(Category.IDENTIFIER),
+    
+    // OPTION
+    //--------------------------------------------------------------------------
     LOOK_UP_OPTION(Category.OPTION),
     GROUPING_OPTION(Category.OPTION),
     FLATTEN_OPTION(Category.OPTION),
     SORT_OPTION(Category.OPTION),
     PRESERVE_DUPLICAT(Category.OPTION),
     SCAN_OPTION(Category.OPTION), // full/deep.shallow, etc
-    BINDING_POSITION(Category.DESCRIPTION),
     LIMIT(Category.OPTION),
-    START_TABLE(Category.IDENTIFIER),
-    STOP_TABLE(Category.IDENTIFIER),
-    GROUP_TABLE(Category.IDENTIFIER),
     PROJECT_OPTION(Category.OPTION), // has a table or not
     JOIN_OPTION(Category.OPTION), // INNER, LEFT, etc
     ORDERING(Category.OPTION), // ASC or DESC
+    
+    // TYPE DESCRIPTION
+    //--------------------------------------------------------------------------
     INNER_TYPE(Category.TYPE_DESCRIPTION),
     OUTER_TYPE(Category.TYPE_DESCRIPTION),
     PRODUCT_TYPE(Category.TYPE_DESCRIPTION),
@@ -47,30 +66,28 @@ public enum Label
     TABEL_TYPE(Category.TYPE_DESCRIPTION),
     ROWTYPE(Category.TYPE_DESCRIPTION),
     ANCESTOR_TYPE(Category.TYPE_DESCRIPTION),
-    PROJECTIONS(Category.CHILD), // list of a expressions
-    EXTRA_TAG(Category.DESCRIPTION), // extra info        
     ;
-    
+
 
     public enum Category
     {
-        IDENTIFIER,
-        COST,
-        OPTION,
-        DESCRIPTION, //extra info (may not needed by the caller
         CHILD, // operand for expressions, or input operator for operator
-        TYPE_DESCRIPTION,        
+        COST,
+        DESCRIPTION, //extra info (may not needed by the caller        
+        IDENTIFIER,        
+        OPTION,        
+        TYPE_DESCRIPTION,
     }
-    
+
     public Category getCategory ()
     {
         return category;
     }
-    
+
     private Label (Category g)
     {
         this.category = g;
     }
-    
+
     private final Category category;
 }

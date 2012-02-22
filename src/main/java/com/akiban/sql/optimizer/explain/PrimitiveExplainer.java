@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer.explain;
 
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
@@ -54,6 +55,11 @@ public class PrimitiveExplainer<T> extends Explainer
         return PrimitiveExplainer.getInstance(num.doubleValue());
     }
 
+    public static PrimitiveExplainer getInstance(RowType type)
+    {
+        return PrimitiveExplainer.getInstance(type.toString());
+    }
+    
     public static PrimitiveExplainer getInstance(Object o)
     {
         if (o instanceof BigDecimal) return getInstance((BigDecimal)o);

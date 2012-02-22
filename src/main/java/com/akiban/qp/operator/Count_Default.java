@@ -20,10 +20,10 @@ import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.types.AkType;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.std.CountOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
 
 import java.util.Collections;
 import java.util.List;
@@ -129,6 +129,12 @@ class Count_Default extends Operator
     private final Operator inputOperator;
     private final RowType countType;
     private final ValuesRowType resultType;
+
+    @Override
+    public Explainer getExplainer()
+    {
+        return new CountOperatorExplainer("Count_TableStatus", countType, resultType, null);
+    }
 
     // Inner classes
 

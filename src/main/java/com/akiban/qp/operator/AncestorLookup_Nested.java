@@ -21,6 +21,9 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.OperationExplainer;
+import com.akiban.sql.optimizer.explain.std.LookUpOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 import org.slf4j.Logger;
@@ -199,6 +202,12 @@ class AncestorLookup_Nested extends Operator
     private final List<RowType> ancestorTypes;
     private final int[] ancestorTypeDepth;
     private final int inputBindingPosition;
+
+    @Override
+    public Explainer getExplainer()
+    {
+       OperationExplainer ex = new LookUpOperatorExplainer("Ancestor Lookup Nested", groupTable, rowType, null, null);
+    }
 
     // Inner classes
 
