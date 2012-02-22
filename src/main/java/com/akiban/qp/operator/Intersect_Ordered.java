@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Set;
 
 import static com.akiban.qp.operator.API.JoinType;
+import static java.lang.Math.min;
 
 /**
  <h1>Overview</h1>
@@ -51,7 +52,13 @@ import static com.akiban.qp.operator.API.JoinType;
 <li><b>IndexRowType leftRowType:</b> Type of rows from left input stream.
 <li><b>IndexRowType rightRowType:</b> Type of rows from right input stream.
 <li><b>int orderingFields:</b> Number of common fields, defining ordering and used for matching rows.
-<li><b>JoinType joinType:</b> INNER_JOIN means that an ordinary intersection is computed.
+<li><b>JoinType joinType:</b>
+   <ul>
+     <li>INNER_JOIN: An ordinary intersection is computed.
+     <li>LEFT_JOIN: Keep an unmatched row from the left input stream, filling out the row with nulls
+     <li>RIGHT_JOIN: Keep an unmatched row from the right input stream, filling out the row with nulls
+     <li>FULL_JOIN: Keep an unmatched row from either input stream, filling out the row with nulls
+   </ul>
  (Nothing else is supported currently).
 <li><b>int leftRowPosition:</b> Position in bindings to be used for storing a row from the left stream.
 <li><b>int rightRowPosition:</b> Position in bindings to be used for storing a row from the right stream.
@@ -123,7 +130,8 @@ class Intersect_Ordered extends Operator
                              Operator right,
                              IndexRowType leftRowType,
                              IndexRowType rightRowType,
-                             int orderingFields, // Assumed to be a suffix of leftRowType rows and rightRowType rows
+                             int leftOrderingFields,
+                             int rightOrderingFields,
                              JoinType joinType,
                              // TODO: Might want to get these positions in some other way. But QueryContext is too late.
                              int leftRowPosition, 
@@ -134,25 +142,28 @@ class Intersect_Ordered extends Operator
         ArgumentValidation.notNull("leftRowType", leftRowType);
         ArgumentValidation.notNull("rightRowType", rightRowType);
         ArgumentValidation.notNull("joinType", joinType);
-        ArgumentValidation.isGT("orderingFields", orderingFields, 0);
-        ArgumentValidation.isLTE("orderingFields", orderingFields, leftRowType.nFields());
-        ArgumentValidation.isLTE("orderingFields", orderingFields, rightRowType.nFields());
-        // TODO: Drop this requirement
-        ArgumentValidation.isEQ("joinType", joinType, "JoinType.INNER_JOIN", JoinType.INNER_JOIN);
+        ArgumentValidation.isGT("leftOrderingFields", leftOrderingFields, 0);
+        ArgumentValidation.isLTE("leftOrderingFields", leftOrderingFields, leftRowType.nFields());
+        ArgumentValidation.isGT("rightOrderingFields", rightOrderingFields, 0);
+        ArgumentValidation.isLTE("rightOrderingFields", rightOrderingFields, rightRowType.nFields());
         this.left = left;
         this.right = right;
         this.leftRowType = leftRowType;
         this.rightRowType = rightRowType;
-        this.orderingFields = orderingFields;
+        this.leftOrderingFields = leftOrderingFields;
+        this.rightOrderingFields = rightOrderingFields;
         this.joinType = joinType;
         this.leftRowPosition = leftRowPosition;
         this.rightRowPosition = rightRowPosition;
         this.outputRowType = leftRowType.schema().newIntersectType(leftRowType, rightRowType);
         // Setup for row comparisons
-        fieldRankingExpressions = new RankExpression[orderingFields];
-        int leftField = leftRowType.nFields() - orderingFields;
-        int rightField = rightRowType.nFields() - orderingFields;
-        for (int f = 0; f < orderingFields; f++) {
+        advanceLeftOnMatch = leftOrderingFields >= rightOrderingFields;
+        advanceRightOnMatch = rightOrderingFields >= leftOrderingFields;
+        int commonFields = min(leftOrderingFields, rightOrderingFields);
+        fieldRankingExpressions = new RankExpression[commonFields];
+        int leftField = leftRowType.nFields() - leftOrderingFields;
+        int rightField = rightRowType.nFields() - rightOrderingFields;
+        for (int f = 0; f < commonFields; f++) {
             fieldRankingExpressions[f] =
                 new RankExpression(
                     new BoundFieldExpression(leftRowPosition, new FieldExpression(leftRowType, leftField)),
@@ -160,6 +171,9 @@ class Intersect_Ordered extends Operator
             leftField++;
             rightField++;
         }
+        // outerjoins
+        keepUnmatchedLeft = joinType == JoinType.LEFT_JOIN || joinType == JoinType.FULL_JOIN;
+        keepUnmatchedRight = joinType == JoinType.RIGHT_JOIN || joinType == JoinType.FULL_JOIN;
     }
 
     // Class state
@@ -174,12 +188,18 @@ class Intersect_Ordered extends Operator
     private final Operator right;
     private final IndexRowType leftRowType;
     private final IndexRowType rightRowType;
-    private final int orderingFields;
+    private final int leftOrderingFields;
+    private final int rightOrderingFields;
     private final IntersectRowType outputRowType;
     private final JoinType joinType;
     private final int leftRowPosition;
     private final int rightRowPosition;
     private final RankExpression[] fieldRankingExpressions;
+    private final boolean advanceLeftOnMatch;
+    private final boolean advanceRightOnMatch;
+    private final boolean keepUnmatchedLeft;
+    private final boolean keepUnmatchedRight;
+
     // Inner classes
 
     private class Execution extends OperatorExecutionBase implements Cursor
@@ -195,6 +215,7 @@ class Intersect_Ordered extends Operator
                 rightInput.open();
                 nextLeftRow();
                 nextRightRow();
+                closed = leftRow.isEmpty() && rightRow.isEmpty();
             } finally {
                 TAP_OPEN.out();
             }
@@ -207,19 +228,33 @@ class Intersect_Ordered extends Operator
             try {
                 Row next = null;
                 while (!closed && next == null) {
-                    if (leftRow.isEmpty() || rightRow.isEmpty()) {
-                        close();
+                    assert !(leftRow.isEmpty() && rightRow.isEmpty());
+                    long c = compareRows();
+                    if (c < 0) {
+                        if (keepUnmatchedLeft) {
+                            next = leftOnlyRow();
+                        }
+                        nextLeftRow();
+                    } else if (c > 0) {
+                        if (keepUnmatchedRight) {
+                            next = rightOnlyRow();
+                        }
+                        nextRightRow();
                     } else {
-                        long c = compareRows();
-                        if (c < 0) {
+                        next = combineRows();
+                        if (advanceLeftOnMatch) {
                             nextLeftRow();
-                        } else if (c > 0) {
-                            nextRightRow();
-                        } else {
-                            next = combineRows();
-                            nextLeftRow();
+                        }
+                        if (advanceRightOnMatch) {
                             nextRightRow();
                         }
+                    }
+                    boolean leftEmpty = leftRow.isEmpty();
+                    boolean rightEmpty = rightRow.isEmpty();
+                    if (leftEmpty && rightEmpty ||
+                        leftEmpty && !keepUnmatchedRight ||
+                        rightEmpty && !keepUnmatchedLeft) {
+                        close();
                     }
                 }
                 return next;
@@ -290,6 +325,16 @@ class Intersect_Ordered extends Operator
             return c;
         }
         
+        private Row leftOnlyRow()
+        {
+            return new IntersectRow(outputRowType, leftRow.get(), null);
+        }
+        
+        private Row rightOnlyRow()
+        {
+            return new IntersectRow(outputRowType, null, rightRow.get());
+        }
+
         private Row combineRows()
         {
             return new IntersectRow(outputRowType, leftRow.get(), rightRow.get());
