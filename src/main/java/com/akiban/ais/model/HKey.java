@@ -48,11 +48,17 @@ public class HKey
         return segments;
     }
 
-    public synchronized int nColumns()
+    public int nColumns()
     {
-        int nColumns = 0;
-        for (HKeySegment segment : segments) {
-            nColumns += segment.columns().size();
+        if (nColumns == -1) {
+            synchronized (this) {
+                if (nColumns == -1) {
+                    nColumns = 0;
+                    for (HKeySegment segment : segments) {
+                        nColumns += segment.columns().size();
+                    }
+                }
+            }
         }
         return nColumns;
     }
@@ -116,4 +122,5 @@ public class HKey
     // keyDepth[n] is the number of key segments (ordinals + key values) comprising an hkey of n parts.
     // E.g. keyDepth[1] for the hkey of the root segment.
     private transient int[] keyDepth;
+    private transient int nColumns = -1;
 }

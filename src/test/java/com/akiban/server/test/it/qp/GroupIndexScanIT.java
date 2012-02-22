@@ -22,6 +22,7 @@ import com.akiban.qp.operator.*;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.test.it.ITBase;
@@ -132,7 +133,12 @@ public final class GroupIndexScanIT extends ITBase {
         try {
             ToObjectValueTarget target = new ToObjectValueTarget();
             for (Row row = cursor.next(); row != null; row = cursor.next()) {
-                Object[] rowArray = new Object[row.rowType().nFields()];
+                RowType rowType = row.rowType();
+                int fields =
+                    rowType instanceof IndexRowType
+                    ? ((IndexRowType)rowType).declaredFields()
+                    : rowType.nFields();
+                Object[] rowArray = new Object[fields];
                 for (int i=0; i < rowArray.length; ++i) {
                     ValueSource source = row.eval(i);
                     rowArray[i] = target.convertFromSource(source);

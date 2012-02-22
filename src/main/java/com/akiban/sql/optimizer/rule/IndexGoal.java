@@ -27,7 +27,6 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.expression.std.Comparison;
-import com.akiban.server.store.statistics.IndexStatistics;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -158,7 +157,7 @@ public class IndexGoal implements Comparator<IndexScan>
      * @return <code>false</code> if the index is useless.
      */
     public boolean usable(IndexScan index) {
-        List<IndexColumn> indexColumns = index.getIndex().getColumns();
+        List<IndexColumn> indexColumns = index.getIndex().getKeyColumns();
         int ncols = indexColumns.size();
         List<ExpressionNode> indexExpressions = new ArrayList<ExpressionNode>(ncols);
         List<OrderByExpression> orderBy = new ArrayList<OrderByExpression>(ncols);
@@ -573,9 +572,9 @@ public class IndexGoal implements Comparator<IndexScan>
             if (n1 != n2) 
                 return (n1 > n2) ? +1 : -1;
         }
-        if (i1.getIndex().getColumns().size() != i2.getIndex().getColumns().size())
-            return (i1.getIndex().getColumns().size() < 
-                    i2.getIndex().getColumns().size()) 
+        if (i1.getIndex().getKeyColumns().size() != i2.getIndex().getKeyColumns().size())
+            return (i1.getIndex().getKeyColumns().size() <
+                    i2.getIndex().getKeyColumns().size())
                 // Fewer columns indexed better than more.
                 ? +1 : -1;
         // Deeper better than shallower.

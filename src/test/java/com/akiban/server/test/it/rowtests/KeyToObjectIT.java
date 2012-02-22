@@ -20,7 +20,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.server.PersistitKeyValueSource;
-import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.UnsupportedIndexDataTypeException;
 import com.akiban.server.store.IndexVisitor;
@@ -59,7 +58,6 @@ public class KeyToObjectIT extends ITBase {
         final List<NewRow> allRows = scanAll(scanAllRequest(tableId));
         assertEquals("rows scanned", expectedRowCount, allRows.size());
 
-        final RowDef rowDef = (RowDef)table.rowDef();
         final Iterator<NewRow> rowIt = allRows.iterator();
 
         persistitStore().traverse(session(), index, new IndexVisitor() {
@@ -77,7 +75,7 @@ public class KeyToObjectIT extends ITBase {
                 PersistitKeyValueSource valueSource = new PersistitKeyValueSource();
                 ToObjectValueTarget valueTarget = new ToObjectValueTarget();
                 
-                for(IndexColumn indexColumn : index.getColumns()) {
+                for(IndexColumn indexColumn : index.getKeyColumns()) {
                     Column column = indexColumn.getColumn();
                     int colPos = column.getPosition();
                     Object objFromRow = row.get(colPos);

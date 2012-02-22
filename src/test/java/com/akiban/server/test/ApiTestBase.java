@@ -58,7 +58,6 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.types.extract.ConverterTestUtils;
 import com.akiban.server.util.GroupIndexCreator;
 import com.akiban.util.AssertUtils;
-import com.akiban.util.Strings;
 import com.akiban.util.tap.TapReport;
 import com.akiban.util.Undef;
 import com.persistit.Transaction;
@@ -437,7 +436,7 @@ public class ApiTestBase {
 
     protected final List<NewRow> scanAllIndex(TableIndex index)  throws InvalidOperationException {
         final Set<Integer> columns = new HashSet<Integer>();
-        for(IndexColumn icol : index.getColumns()) {
+        for(IndexColumn icol : index.getKeyColumns()) {
             columns.add(icol.getColumn().getPosition());
         }
         return scanAll(new ScanAllRequest(index.getTable().getTableId(), columns, index.getIndexId(), null));
@@ -702,7 +701,7 @@ public class ApiTestBase {
         Index index = table.getIndex(indexName);
         assertNotNull(indexName + " was null", index);
         List<String> actualColumns = new ArrayList<String>();
-        for (IndexColumn indexColumn : index.getColumns()) {
+        for (IndexColumn indexColumn : index.getKeyColumns()) {
             actualColumns.add(indexColumn.getColumn().getName());
         }
         assertEquals(indexName + " columns", actualColumns, expectedColumnsList);

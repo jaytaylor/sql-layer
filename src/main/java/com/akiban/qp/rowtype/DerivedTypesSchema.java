@@ -61,6 +61,11 @@ public class DerivedTypesSchema {
         return new ValuesRowType(this, nextTypeId(), fields);
     }
 
+    public IntersectRowType newIntersectType(RowType leftType, RowType rightType)
+    {
+        return new IntersectRowType(this, nextTypeId(), leftType, rightType);
+    }
+
     synchronized final int nextTypeId()
     {
         return ++typeIdCounter;

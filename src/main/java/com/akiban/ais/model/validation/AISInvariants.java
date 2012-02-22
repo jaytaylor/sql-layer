@@ -56,7 +56,7 @@ public class AISInvariants {
     
     public static void checkDuplicateColumnsInIndex(Index index, String columnName)
     {
-        if (index.getColumns().contains(columnName)) {
+        if (index.getKeyColumns().contains(columnName)) {
             throw new DuplicateIndexColumnException (index, columnName);
         }
     }
@@ -74,7 +74,7 @@ public class AISInvariants {
     }
  
     public static void checkDuplicateIndexColumnPosition (Index index, Integer position) {
-        if (position < index.getColumns().size()) {
+        if (position < index.getKeyColumns().size()) {
             // TODO: Index uses position for a relative ordering, not an absolute position. 
         }
     }

@@ -406,11 +406,25 @@ public class API
 
     // Union
 
-    public static Operator unionAll(
-            Operator input1, RowType input1RowType,
-            Operator input2, RowType input2RowType
-    ) {
+    public static Operator unionAll(Operator input1, RowType input1RowType, Operator input2, RowType input2RowType) 
+    {
         return new UnionAll_Default(input1, input1RowType, input2, input2RowType);
+    }
+    
+    // Intersect
+    
+    public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
+                                            IndexRowType leftRowType, IndexRowType rightRowType,
+                                            int orderingFields,
+                                            JoinType joinType,
+                                            int leftRowPosition,
+                                            int rightRowPosition)
+    {
+        return new Intersect_Ordered(leftInput, rightInput,
+                                     leftRowType, rightRowType,
+                                     orderingFields,
+                                     joinType,
+                                     leftRowPosition, rightRowPosition);
     }
 
     // Insert

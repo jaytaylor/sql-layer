@@ -138,18 +138,22 @@ public class DPhypEnumerateTest extends OptimizerTestBase
         }
 
         public List<String> evaluateJoin(List<String> p1, List<String> p2, List<String> existing, 
-                                         JoinType joinType, ConditionList joinConditions) {
+                                         JoinType joinType, Collection<JoinOperator> joins) {
             if (existing == null)
                 existing = new ArrayList<String>();
-            String jstr = " " + joinType.toString() + " JOIN ";
+            String jstr = " " + joinType + " JOIN ";
             StringBuilder cstr = new StringBuilder(" ON ");
             boolean first = true;
-            for (ConditionExpression condition : joinConditions) {
-                if (first)
-                    first = false;
-                else
-                    cstr.append(" AND ");
-                cstr.append(condition);
+            for (JoinOperator join : joins) {
+                if (join.getJoinConditions() != null) {
+                    for (ConditionExpression condition : join.getJoinConditions()) {
+                        if (first)
+                            first = false;
+                        else
+                            cstr.append(" AND ");
+                        cstr.append(condition);
+                    }
+                }
             }
             for (String left : p1) {
                 if (left.indexOf(' ') > 0)

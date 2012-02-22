@@ -34,7 +34,6 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.util.tap.Tap;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -106,7 +105,7 @@ public class GIUpdateProfilePT extends PTBase
             Cursor cursor = cursor(scan, queryContext);
             cursor.open();
             Row row;
-            RowDef customerRowDef = (RowDef) customerRowType.userTable().rowDef();
+            RowDef customerRowDef = customerRowType.userTable().rowDef();
             while ((row = cursor.next()) != null) {
                 NiceRow oldRow = new NiceRow(customer, customerRowDef);
                 NiceRow newRow  = new NiceRow(customer, customerRowDef);
@@ -158,7 +157,7 @@ public class GIUpdateProfilePT extends PTBase
         UserTable userTable = userTable(userTableId);
         for (Index index : userTable.getIndexesIncludingInternal()) {
             List<String> indexColumnNames = new ArrayList<String>();
-            for (IndexColumn indexColumn : index.getColumns()) {
+            for (IndexColumn indexColumn : index.getKeyColumns()) {
                 indexColumnNames.add(indexColumn.getColumn().getName());
             }
             List<String> searchIndexColumnNames = Arrays.asList(searchIndexColumnNamesArray);

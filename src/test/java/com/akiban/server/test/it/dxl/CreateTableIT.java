@@ -159,7 +159,7 @@ public final class CreateTableIT extends ITBase {
         assertEquals(table.getIndexes().size(), 1);
         final Index index = table.getIndex("PRIMARY");
         assertNotNull(index);
-        assertEquals(1, index.getColumns().size());
+        assertEquals(1, index.getKeyColumns().size());
 
         dropAllTables();
 

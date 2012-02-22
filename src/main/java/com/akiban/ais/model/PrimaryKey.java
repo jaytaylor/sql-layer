@@ -25,7 +25,7 @@ public class PrimaryKey implements Serializable
     {
         if (columns == null) {
             columns = new ArrayList<Column>();
-            for (IndexColumn indexColumn : index.getColumns()) {
+            for (IndexColumn indexColumn : index.getKeyColumns()) {
                 columns.add(indexColumn.getColumn());
             }
         }

@@ -229,7 +229,7 @@ class Flatten_HKeyOrdered extends Operator
         this.keepChild = options.contains(KEEP_CHILD);
         List<HKeySegment> childHKeySegments = childType.hKey().segments();
         HKeySegment lastChildHKeySegment = childHKeySegments.get(childHKeySegments.size() - 1);
-        RowDef childRowDef = (RowDef) lastChildHKeySegment.table().rowDef();
+        RowDef childRowDef = lastChildHKeySegment.table().rowDef();
         this.childOrdinal = childRowDef.getOrdinal();
         this.nChildHKeySegmentFields = lastChildHKeySegment.columns().size();
         this.parentHKeySegments = parentType.hKey().segments().size();
