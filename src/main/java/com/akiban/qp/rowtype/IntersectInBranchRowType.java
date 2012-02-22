@@ -15,15 +15,9 @@
 
 package com.akiban.qp.rowtype;
 
-import com.akiban.ais.model.UserTable;
 import com.akiban.server.types.AkType;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-public class IntersectRowType extends DerivedRowType
+public class IntersectInBranchRowType extends DerivedRowType
 {
     // Object interface
 
@@ -51,7 +45,7 @@ public class IntersectRowType extends DerivedRowType
         return rightType.typeAt(index - leftType.nFields());
     }
 
-    // IntersectRowType interface
+    // IntersectInBranchRowType interface
 
     public RowType leftType()
     {
@@ -63,18 +57,13 @@ public class IntersectRowType extends DerivedRowType
         return rightType;
     }
 
-    public IntersectRowType(DerivedTypesSchema schema, int typeId, RowType leftType, RowType rightType)
+    public IntersectInBranchRowType(DerivedTypesSchema schema, int typeId, RowType leftType, RowType rightType)
     {
         super(schema, typeId);
         assert leftType.schema() == schema : leftType;
         assert rightType.schema() == schema : rightType;
         this.leftType = leftType;
         this.rightType = rightType;
-/*
-        List<UserTable> tables = new ArrayList<UserTable>(leftType.typeComposition().tables());
-        tables.addAll(rightType.typeComposition().tables());
-        typeComposition(new TypeComposition(this, tables));
-*/
     }
 
     // Object state

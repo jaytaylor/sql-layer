@@ -18,15 +18,15 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.IntersectRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.IntersectRowType;
+import com.akiban.qp.rowtype.IntersectInBranchRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.expression.std.*;
+import com.akiban.server.expression.std.BoundFieldExpression;
+import com.akiban.server.expression.std.FieldExpression;
+import com.akiban.server.expression.std.RankExpression;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,9 +38,9 @@ import static java.lang.Math.min;
 /**
  <h1>Overview</h1>
 
- Intersect_Ordered finds pairs of rows from two input streams whose projection onto a set of common fields matches.
+ IntersectInBranch_Ordered finds pairs of rows from two input streams whose projection onto a set of common fields matches.
  Each input stream must be ordered by these common fields.
- For each pair, an output row of IntersectRowType, comprising both input rows, is generated.
+ For each pair, an output row of IntersectInBranchRowType, comprising both input rows, is generated.
  <p>Example: Suppose the left input is an index on (x, pid, cid) and the right input is an index on (a, b, pid, cid).
  The left index scan has restricted the value of x, and the right index scan has restricted the values of a and b.
  Both streams are therefore ordered by (pid, cid).
@@ -86,7 +86,7 @@ import static java.lang.Math.min;
 
  */
 
-class Intersect_Ordered extends Operator
+class IntersectCrossBranch_Ordered extends Operator
 {
     // Operator interface
 
@@ -97,9 +97,9 @@ class Intersect_Ordered extends Operator
     }
 
     @Override
-    public IntersectRowType rowType()
+    public IntersectInBranchRowType rowType()
     {
-        return outputRowType;
+        return intersectRowType;
     }
 
     @Override
@@ -126,16 +126,16 @@ class Intersect_Ordered extends Operator
 
     // Project_Default interface
 
-    public Intersect_Ordered(Operator left,
-                             Operator right,
-                             IndexRowType leftRowType,
-                             IndexRowType rightRowType,
-                             int leftOrderingFields,
-                             int rightOrderingFields,
-                             JoinType joinType,
-                             // TODO: Might want to get these positions in some other way. But QueryContext is too late.
-                             int leftRowPosition, 
-                             int rightRowPosition)
+    public IntersectCrossBranch_Ordered(Operator left,
+                                        Operator right,
+                                        IndexRowType leftRowType,
+                                        IndexRowType rightRowType,
+                                        int leftOrderingFields,
+                                        int rightOrderingFields,
+                                        JoinType joinType,
+                                        // TODO: Might want to get these positions in some other way. But QueryContext is too late.
+                                        int leftRowPosition,
+                                        int rightRowPosition)
     {
         ArgumentValidation.notNull("left", left);
         ArgumentValidation.notNull("right", right);
@@ -148,14 +148,9 @@ class Intersect_Ordered extends Operator
         ArgumentValidation.isLTE("rightOrderingFields", rightOrderingFields, rightRowType.nFields());
         this.left = left;
         this.right = right;
-        this.leftRowType = leftRowType;
-        this.rightRowType = rightRowType;
-        this.leftOrderingFields = leftOrderingFields;
-        this.rightOrderingFields = rightOrderingFields;
-        this.joinType = joinType;
         this.leftRowPosition = leftRowPosition;
         this.rightRowPosition = rightRowPosition;
-        this.outputRowType = leftRowType.schema().newIntersectType(leftRowType, rightRowType);
+        this.intersectRowType = leftRowType.schema().newIntersectCrossBranchType(leftRowType, rightRowType);
         // Setup for row comparisons
         advanceLeftOnMatch = leftOrderingFields >= rightOrderingFields;
         advanceRightOnMatch = rightOrderingFields >= leftOrderingFields;
@@ -178,20 +173,14 @@ class Intersect_Ordered extends Operator
 
     // Class state
 
-    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Intersect_Ordered open");
-    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Intersect_Ordered next");
-    private static final Logger LOG = LoggerFactory.getLogger(Intersect_Ordered.class);
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: IntersectInBranch_Ordered open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: IntersectInBranch_Ordered next");
 
     // Object state
 
     private final Operator left;
     private final Operator right;
-    private final IndexRowType leftRowType;
-    private final IndexRowType rightRowType;
-    private final int leftOrderingFields;
-    private final int rightOrderingFields;
-    private final IntersectRowType outputRowType;
-    private final JoinType joinType;
+    private final IntersectInBranchRowType intersectRowType;
     private final int leftRowPosition;
     private final int rightRowPosition;
     private final RankExpression[] fieldRankingExpressions;
@@ -327,17 +316,17 @@ class Intersect_Ordered extends Operator
         
         private Row leftOnlyRow()
         {
-            return new IntersectRow(outputRowType, leftRow.get(), null);
+            return new IntersectRow(intersectRowType, leftRow.get(), null);
         }
         
         private Row rightOnlyRow()
         {
-            return new IntersectRow(outputRowType, null, rightRow.get());
+            return new IntersectRow(intersectRowType, null, rightRow.get());
         }
 
         private Row combineRows()
         {
-            return new IntersectRow(outputRowType, leftRow.get(), rightRow.get());
+            return new IntersectRow(intersectRowType, leftRow.get(), rightRow.get());
         }
 
         // Object state

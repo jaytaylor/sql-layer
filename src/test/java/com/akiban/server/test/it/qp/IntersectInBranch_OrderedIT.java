@@ -32,7 +32,7 @@ import org.junit.Test;
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.server.expression.std.Expressions.field;
 
-public class Intersect_OrderedIT extends OperatorITBase
+public class IntersectInBranch_OrderedIT extends OperatorITBase
 {
     @Before
     public void before()

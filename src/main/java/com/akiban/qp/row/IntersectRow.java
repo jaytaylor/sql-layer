@@ -16,9 +16,7 @@
 package com.akiban.qp.row;
 
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.IntersectRowType;
-import com.akiban.qp.rowtype.ProductRowType;
+import com.akiban.qp.rowtype.IntersectInBranchRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
@@ -99,7 +97,7 @@ public class IntersectRow extends AbstractRow
 
     // ProductRow interface
 
-    public IntersectRow(IntersectRowType rowType, Row left, Row right)
+    public IntersectRow(IntersectInBranchRowType rowType, Row left, Row right)
     {
         this.rowType = rowType;
         this.left.hold(left);
@@ -109,7 +107,7 @@ public class IntersectRow extends AbstractRow
 
     // Object state
 
-    private final IntersectRowType rowType;
+    private final IntersectInBranchRowType rowType;
     private final ShareHolder<Row> left = new ShareHolder<Row>();
     private final ShareHolder<Row> right = new ShareHolder<Row>();
     private final int nLeftFields;

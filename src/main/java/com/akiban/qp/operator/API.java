@@ -421,7 +421,7 @@ public class API
                                             int leftRowPosition,
                                             int rightRowPosition)
     {
-        return new Intersect_Ordered(leftInput, rightInput,
+        return new IntersectInBranch_Ordered(leftInput, rightInput,
                                      leftRowType, rightRowType,
                                      leftOrderingFields,
                                      rightOrderingFields,
