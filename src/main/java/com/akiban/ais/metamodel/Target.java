@@ -13,9 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.ais.model;
-
-import com.akiban.ais.metamodel.ModelNames;
+package com.akiban.ais.metamodel;
 
 import java.util.Map;
 

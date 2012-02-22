@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.akiban.ais.model.Source;
+import com.akiban.ais.metamodel.Source;
 
 public class ArraySource extends Source
 {

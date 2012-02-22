@@ -21,8 +21,8 @@ import java.util.Map;
 
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
+import com.akiban.ais.metamodel.Target;
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Target;
 
 public class CSVTarget extends Target
 {

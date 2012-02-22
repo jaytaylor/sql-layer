@@ -31,7 +31,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Source;
+import com.akiban.ais.metamodel.Source;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.MetaModelVersionMismatchException;
 import com.akiban.server.error.NoSuchTableException;

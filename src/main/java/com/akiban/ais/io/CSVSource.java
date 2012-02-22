@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
-import com.akiban.ais.model.Source;
+import com.akiban.ais.metamodel.Source;
 import com.akiban.server.error.AisCSVErrorException;
 
 public class CSVSource extends Source

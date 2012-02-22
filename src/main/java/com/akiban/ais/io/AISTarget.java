@@ -25,10 +25,10 @@ import com.akiban.ais.metamodel.MMJoin;
 import com.akiban.ais.metamodel.MMJoinColumn;
 import com.akiban.ais.metamodel.MMTable;
 import com.akiban.ais.metamodel.MMType;
+import com.akiban.ais.metamodel.Target;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Table;
-import com.akiban.ais.model.Target;
 
 public class AISTarget extends Target
 {
