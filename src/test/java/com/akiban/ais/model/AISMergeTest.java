@@ -121,7 +121,7 @@ public class AISMergeTest {
         assertEquals (1,targetTable.getIndexes().size());
         assertEquals (targetTable.getIndexes().size(), sourceTable.getIndexes().size());
         assertNotNull (targetTable.getIndex("c1"));
-        checkIndexColumns (targetTable.getIndex("c1").getColumns(), "c1");
+        checkIndexColumns (targetTable.getIndex("c1").getKeyColumns(), "c1");
         assertNotNull(t.getGroup(TABLE));
         assertNotNull(t.getGroup(TABLE).getGroupTable().getIndex("t1$c1"));
         assertNull (targetTable.getPrimaryKey());

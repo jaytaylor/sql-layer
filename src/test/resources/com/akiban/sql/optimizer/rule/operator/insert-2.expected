@@ -2,6 +2,6 @@ PhysicalUpdate@55a7b0bf
   Insert_Default(project to table user.child ([Literal(NULL), Field(0), Field(1)]))
     project to table user.child ([Literal(NULL), Field(0), Field(1)])
       AncestorLookup_Default(Index(user.parent.name[IndexColumn(name)]) -> [user.parent])
-        com.akiban.qp.operator.UnionAll_Default@7444f787
+        UnionAll_Default
           IndexScan_Default(Index(user.parent.name[IndexColumn(name)]) (>UnboundExpressions[Literal(NULL)],<UnboundExpressions[Literal(IGNORE)]))
           IndexScan_Default(Index(user.parent.name[IndexColumn(name)]) (>UnboundExpressions[Literal(IGNORE)],<UnboundExpressions[Literal(NULL)]))

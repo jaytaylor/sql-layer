@@ -254,7 +254,7 @@ class DXLMXBeanImpl implements DXLMXBean {
                 if (!schemaName.equals(usingSchema))
                     escapeName(sb, schemaName).append('.');
                 escapeName(sb, gi.leafMostTable().getName().getTableName()).append(" ( ");
-                for (Iterator<IndexColumn> colsIter = gi.getColumns().iterator(); colsIter.hasNext(); ) {
+                for (Iterator<IndexColumn> colsIter = gi.getKeyColumns().iterator(); colsIter.hasNext(); ) {
                     Column column = colsIter.next().getColumn();
                     if (!column.getTable().getName().getSchemaName().equals(schemaName))
                         throw new UnsupportedOperationException("mixed-schema GIs are not supported");

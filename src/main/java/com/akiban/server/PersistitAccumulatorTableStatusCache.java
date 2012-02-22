@@ -116,7 +116,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     }
     
     private Tree getTreeForRowDef(RowDef rowDef) {
-        IndexDef indexDef = (IndexDef) rowDef.getPKIndex().indexDef();
+        IndexDef indexDef = rowDef.getPKIndex().indexDef();
         assert indexDef != null : rowDef;
         try {
             treeService.populateTreeCache(indexDef);

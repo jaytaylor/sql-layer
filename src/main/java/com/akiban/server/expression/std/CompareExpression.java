@@ -35,7 +35,7 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 
-public final class CompareExpression extends AbstractBinaryExpression {
+public class CompareExpression extends AbstractBinaryExpression {
 
     @Scalar("equals") public static final ExpressionComposer EQ_COMPOSER = new InnerComposer(Comparison.EQ);
     @Scalar("greaterOrEquals") public static final ExpressionComposer GE_COMPOSER = new InnerComposer(Comparison.GE);
@@ -61,15 +61,14 @@ public final class CompareExpression extends AbstractBinaryExpression {
     }
 
     public CompareExpression(Expression lhs, Comparison comparison, Expression rhs) {
-        super(AkType.BOOL, lhs, rhs);
-        this.comparison = comparison;
-        AkType type = childrenType(children());
-        assert type != null;
-        this.op = readOnlyCompareOps.get(type);
-        if (this.op == null)
-            throw new AkibanInternalException("couldn't find internal comparator for " + type);
+        this(AkType.BOOL, lhs, comparison, rhs);
     }
-
+    
+    // For use by RankExpression
+    protected CompareExpression(Expression lhs, Expression rhs) {
+        this(AkType.INT, lhs, null, rhs);
+    }
+    
     // overriding protected methods
 
     @Override
@@ -79,6 +78,17 @@ public final class CompareExpression extends AbstractBinaryExpression {
 
 
     // for use in this class
+
+    private CompareExpression(AkType outputType, Expression lhs, Comparison comparison, Expression rhs)
+    {
+        super(outputType, lhs, rhs);
+        this.comparison = comparison;
+        AkType childType = childrenType(children());
+        assert childType != null;
+        this.op = readOnlyCompareOps.get(childType);
+        if (this.op == null)
+            throw new AkibanInternalException("couldn't find internal comparator for " + childType);
+    }
 
     private static Map<AkType,CompareOp> createCompareOpsMap() {
         Map<AkType,CompareOp> map = new EnumMap<AkType, CompareOp>(AkType.class);
@@ -194,14 +204,14 @@ public final class CompareExpression extends AbstractBinaryExpression {
     // object state
 
     private final Comparison comparison;
-    private final CompareOp op;
+    protected final CompareOp op;
 
     // consts
 
     private static final Map<AkType, CompareOp> readOnlyCompareOps = createCompareOpsMap();
 
     // nested classes
-    private interface CompareOp {
+    protected interface CompareOp {
         abstract int compare(ValueSource a, ValueSource b);
     }
 

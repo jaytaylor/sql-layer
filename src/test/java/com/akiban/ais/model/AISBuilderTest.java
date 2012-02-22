@@ -934,8 +934,8 @@ public class AISBuilderTest
         builder.basicSchemaIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         UserTable table = ais.getUserTable("schema", "customer");
-        Assert.assertNull(table.getIndex("idx_customer_name").getColumns().get(0).getIndexedLength());
-        Assert.assertEquals(5, table.getIndex("idx_customer_name_partial").getColumns().get(0).getIndexedLength().intValue());
+        Assert.assertNull(table.getIndex("idx_customer_name").getKeyColumns().get(0).getIndexedLength());
+        Assert.assertEquals(5, table.getIndex("idx_customer_name_partial").getKeyColumns().get(0).getIndexedLength().intValue());
     }
 
     @Test
@@ -1086,7 +1086,7 @@ public class AISBuilderTest
         Assert.assertEquals(1, group.getIndexes().size());
         final Index index = group.getIndex("name_date");
         Assert.assertNotNull(index);
-        Assert.assertEquals(2, index.getColumns().size());
+        Assert.assertEquals(2, index.getKeyColumns().size());
 
         GroupIndex groupIndex = (GroupIndex) index;
         Assert.assertEquals("group indexes for c", 1, ais.getUserTable("test", "c").getGroupIndexes().size());
@@ -1150,7 +1150,7 @@ public class AISBuilderTest
         Assert.assertEquals(1, group.getIndexes().size());
         final Index index = group.getIndex("name_sku");
         Assert.assertNotNull(index);
-        Assert.assertEquals(2, index.getColumns().size());
+        Assert.assertEquals(2, index.getKeyColumns().size());
 
         GroupIndex groupIndex = (GroupIndex) index;
         Assert.assertEquals("group indexes for c", 1, ais.getUserTable("test", "c").getGroupIndexes().size());
@@ -1221,7 +1221,7 @@ public class AISBuilderTest
         Assert.assertEquals(1, group.getIndexes().size());
         final Index index = group.getIndex("name_date_sku");
         Assert.assertNotNull(index);
-        Assert.assertEquals(3, index.getColumns().size());
+        Assert.assertEquals(3, index.getKeyColumns().size());
 
         GroupIndex groupIndex = (GroupIndex) index;
         Assert.assertEquals("group indexes for c", 1, ais.getUserTable("test", "c").getGroupIndexes().size());

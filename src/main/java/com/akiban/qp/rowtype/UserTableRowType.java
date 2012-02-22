@@ -101,7 +101,7 @@ public class UserTableRowType extends AisRowType
     {
         super(schema, table.getTableId());
         this.table = table;
-        typeComposition(new TypeComposition(this, table));
+        typeComposition(new SingleBranchTypeComposition(this, table));
         List<Column> columns = table.getColumns();
         akTypes = new AkType[columns.size()];
         for (int i = 0; i < columns.size(); i++) {

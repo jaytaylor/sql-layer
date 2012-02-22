@@ -173,7 +173,7 @@ public class SqlTextTarget extends Target {
 					writer.print(index.getIndexName().getName());
 					writer.print("` (");
 					boolean first = true;
-					for (final IndexColumn column : index.getColumns()) {
+					for (final IndexColumn column : index.getKeyColumns()) {
 						if (!first) {
 							writer.print(", ");
 						}
@@ -248,7 +248,7 @@ public class SqlTextTarget extends Target {
                 sb.append(index.getIndexName().getName());
                 sb.append("` (");
                 boolean first = true;
-                for (final IndexColumn column : index.getColumns()) {
+                for (final IndexColumn column : index.getKeyColumns()) {
                     if (!first) {
                         sb.append(", ");
                     }

@@ -21,7 +21,6 @@ import com.akiban.sql.StandardException;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Table;
 
 import java.util.*;
 
@@ -154,7 +153,7 @@ public class DistinctEliminator
             Set<FromTable> joinTables = null;
             Set<FromTable> columnJoinTables = new HashSet<FromTable>();
             boolean handled = true, joined = false;
-            for (IndexColumn indexColumn : index.getColumns()) {
+            for (IndexColumn indexColumn : index.getKeyColumns()) {
                 Column column = indexColumn.getColumn();
                 // A table's contribution is distinct if every column
                 // in some unique index is not nullable and appears in

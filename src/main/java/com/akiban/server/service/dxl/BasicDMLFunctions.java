@@ -649,7 +649,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                 IndexDef indexDef = rc.getIndexDef();
                 if (indexDef == null) {
                     Index index = ddlFunctions.getRowDef(rc.getTableId()).getPKIndex();
-                    indexDef = index != null ? (IndexDef)index.indexDef() : null;
+                    indexDef = index != null ? index.indexDef() : null;
                 }
                 if (indexDef != null) {
                     assert indexDef.getIndex().isTableIndex();
@@ -739,7 +739,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         // Store.deleteRow() requires all index columns to be in the passed RowData to properly clean everything up
         Set<Integer> keyColumns = new HashSet<Integer>();
         for(Index index : utable.getIndexesIncludingInternal()) {
-            for(IndexColumn col : index.getColumns()) {
+            for(IndexColumn col : index.getKeyColumns()) {
                 int pos = col.getColumn().getPosition();
                 keyColumns.add(pos);
             }
