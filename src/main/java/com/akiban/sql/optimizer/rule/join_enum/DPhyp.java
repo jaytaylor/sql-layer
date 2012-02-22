@@ -41,7 +41,7 @@ public abstract class DPhyp<P>
     // possibly joins handled atomically wrt this phase.
     private List<Joinable> tables;
     // The join operators, from JOINs and WHERE clause.
-    private List<JoinOperator> operators;
+    private List<JoinOperator> operators, evaluateOperators;
     // The hypergraph: since these are unordered, traversal pattern is
     // to go through in order pairing with adjacent (complement bit 1).
     private long[] edges;
@@ -180,30 +180,20 @@ public abstract class DPhyp<P>
         P p2 = getPlan(s2);
         long s = JoinableBitSet.union(s1, s2);
         JoinType joinType = JoinType.INNER;
-        ConditionList joinConditions = null;
-        boolean newConditions = false;
+        evaluateOperators.clear();
         for (int e = 0; e < nedges; e++) {
             if (JoinableBitSet.isSubset(edges[e], s1) &&
                 JoinableBitSet.isSubset(edges[e^1], s2)) {
                 // The one that produced this edge.
                 JoinOperator operator = operators.get(e/2);
                 joinType = operator.getJoinType();
-                if (joinConditions == null) {
-                    joinConditions = operator.joinConditions;
-                }
-                else {
-                    if (!newConditions) {
-                        joinConditions = new ConditionList(joinConditions);
-                        newConditions = true;
-                    }
-                    joinConditions.addAll(operator.joinConditions);
-                }
+                evaluateOperators.add(operator);
             }
         }
         P plan = getPlan(s);
-        plan = evaluateJoin(p1, p2, plan, joinType, joinConditions);
+        plan = evaluateJoin(p1, p2, plan, joinType, evaluateOperators);
         if (isCommutative(joinType))
-            plan = evaluateJoin(p2, p1, plan, joinType, joinConditions);
+            plan = evaluateJoin(p2, p1, plan, joinType, evaluateOperators);
         setPlan(s, plan);
     }
 
@@ -211,11 +201,11 @@ public abstract class DPhyp<P>
     public abstract P evaluateTable(Joinable table);
 
     /** Adjust best plan <code>existing</code> for the join of
-     * <code>p1</code> and <code>p2</code> of the given type with the
-     * given conditions.
+     * <code>p1</code> and <code>p2</code> with given type and
+     * conditions taken from the given joins.
      */
-    public abstract P evaluateJoin(P p1, P p2, P existing, 
-                                   JoinType joinType, ConditionList joinConditions);
+    public abstract P evaluateJoin(P p1, P p2, P existing,
+                                   JoinType joinType, Collection<JoinOperator> joins);
 
     /** Initialize state from the given join tree. */
     // TODO: Need to do something about disconnected overall. The
@@ -244,6 +234,7 @@ public abstract class DPhyp<P>
                                    JoinableBitSet.toString(edges[e^1], tables));
             }
         }
+        evaluateOperators = new ArrayList<JoinOperator>(noperators);
     }
 
     protected void addTables(Joinable n) {
@@ -257,7 +248,7 @@ public abstract class DPhyp<P>
         }
     }
 
-    static class JoinOperator {
+    public static class JoinOperator {
         JoinNode join;          // If from an actual join.
         ConditionList joinConditions;
         JoinOperator left, right, parent;
@@ -275,6 +266,13 @@ public abstract class DPhyp<P>
 
         public long getTables() {
             return JoinableBitSet.union(leftTables, rightTables);
+        }
+
+        public JoinNode getJoin() {
+            return join;
+        }
+        public ConditionList getJoinConditions() {
+            return joinConditions;
         }
 
         public JoinType getJoinType() {
