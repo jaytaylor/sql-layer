@@ -9,7 +9,24 @@
 ---
 - Statement: SELECT integer_field FROM all_types;
 - row_count: 5
----
+--- # test LENGTH in WHERE clause
 - Statement: SELECT integer_field FROM all_types WHERE LENGTH(varchar_field) = integer_field;
 - row_count: 5
+--- # test LENGTH in SELECT clause
+- Statement: SELECT LENGTH(varchar_field) from all_types;
+- output: [[3], [4], [0], [8], [null]]
+--- # test with params in WHERE
+- Statement: SELECT varchar_field from all_types WHERE LENGTH(?) = integer_field;
+- params: [['one']]
+- output: [['one']]
+--- # test with params in SELECT
+- Statement: SELECT LENGTH(?) from all_types;
+- params: [['1']]
+- output: [[1]]
+--- # test wrong arity: empty llist
+- Statement: SELECT LENGTH() from all_types;
+- error: [42000]
+--- # test wrong arity: extraneous arg
+- Statement: SELECT LENGTH('abc', 'def') from all_types;
+- error: [42000]
 ...
