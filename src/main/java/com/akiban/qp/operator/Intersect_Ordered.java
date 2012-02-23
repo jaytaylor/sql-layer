@@ -16,7 +16,6 @@
 package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.std.AbstractTwoArgExpressionEvaluation;
 import com.akiban.server.expression.std.FieldExpression;
@@ -36,12 +35,9 @@ import static java.lang.Math.min;
 /**
  <h1>Overview</h1>
 
- Intersect_Ordered finds pairs of rows from two input streams whose projection onto a set of common fields matches.
- Each input stream must be ordered by these common fields.
- For each pair, an output row of IntersectRowType, comprising both input rows, is generated.
- <p>Example: Suppose the left input is an index on (x, pid, cid) and the right input is an index on (a, b, pid, cid).
- The left index scan has restricted the value of x, and the right index scan has restricted the values of a and b.
- Both streams are therefore ordered by (pid, cid).
+ Intersect_Ordered finds rows from one of two input streams whose projection onto a set of common fields matches
+ a row in the other stream. Each input stream must be ordered by at least these common fields.
+ For each matching pair of rows, output from the selected input stream is emitted as output.
 
  <h1>Arguments</h1>
 
@@ -51,34 +47,26 @@ import static java.lang.Math.min;
 <li><b>IndexRowType rightRowType:</b> Type of rows from right input stream.
 <li><b>int leftOrderingFields:</b> Number of trailing fields of left input rows to be used for ordering and matching rows.
 <li><b>int rightOrderingFields:</b> Number of trailing fields of right input rows to be used for ordering and matching rows.
+<li><b>int comparisonFields:</b> Number of ordering fields to be compared.
 <li><b>JoinType joinType:</b>
    <ul>
      <li>INNER_JOIN: An ordinary intersection is computed.
      <li>LEFT_JOIN: Keep an unmatched row from the left input stream, filling out the row with nulls
      <li>RIGHT_JOIN: Keep an unmatched row from the right input stream, filling out the row with nulls
-     <li>FULL_JOIN: Keep an unmatched row from either input stream, filling out the row with nulls
+     <li>FULL_JOIN: Not supported
    </ul>
  (Nothing else is supported currently).
-<li><b>int leftRowPosition:</b> Position in bindings to be used for storing a row from the left stream.
-<li><b>int rightRowPosition:</b> Position in bindings to be used for storing a row from the right stream.
+<li><b>IntersectOutputOption intersectOutput:</b> OUTPUT_LEFT or OUTPUT_RIGHT, depending on which streams rows
+ should be emitted as output.
 
  <h1>Behavior</h1>
 
  The two streams are merged, looking for pairs of rows, one from each input stream, which match in the common
- fields. When such a match is found, an IntersectRow is created, encapuslating the matching input rows.
+ fields. When such a match is found, a row from the stream selected by <tt>intersectOutput</tt> is emitted.
 
  <h1>Output</h1>
 
- IntersectRows whose inputs match in the common fields. The common
- fields are the first <tt>min(leftOrderingFields,
- rightOrderingFields)</tt> of each row's ordering fields. Example:
- <ul>
-    <li>The left input is (x, pid, cid).
-    <li>leftOrderingFields is 2, (covering pid, cid).
-    <li>The right input is (a, b, pid).
-    <li>rightOrderingFields is 1 (covering pid).
- </ul>
- The common fields are (pid) from the left input, and (pid) from the right input.
+ Rows that match at least one row in the other input stream.
 
  <h1>Assumptions</h1>
 
