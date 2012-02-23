@@ -15,8 +15,8 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.sql.optimizer.rule.nocost.*;
 import com.akiban.sql.optimizer.plan.*;
-
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
@@ -41,20 +41,17 @@ public class IndexPicker extends BaseRule
     public void apply(PlanContext planContext) {
         BaseQuery query = (BaseQuery)planContext.getPlan();
         List<Picker> pickers = 
-          new JoinsFinder(((SchemaRulesContext)planContext.getRulesContext())
-                          .getCostEstimator()).find(query);
+          new JoinsFinder().find(query);
         for (Picker picker : pickers)
             picker.pickIndexes();
     }
 
     static class Picker {
-        CostEstimator costEstimator;
         Joinable joinable;
         BaseQuery query;
         Set<ColumnSource> boundTables;
 
-        public Picker(CostEstimator costEstimator, Joinable joinable) {
-            this.costEstimator = costEstimator;
+        public Picker(Joinable joinable) {
             this.joinable = joinable;
         }
 
@@ -174,7 +171,7 @@ public class IndexPicker extends BaseRule
             }
             return new IndexGoal(query, boundTables,
                                  conditionSources, grouping, ordering, projectDistinct,
-                                 tables, costEstimator);
+                                 tables);
         }
 
         protected IndexScan pickBestIndex(TableJoins tableJoins, IndexGoal goal) {
@@ -369,10 +366,8 @@ public class IndexPicker extends BaseRule
     static class JoinsFinder implements PlanVisitor, ExpressionVisitor {
         List<Picker> result = new ArrayList<Picker>();
         Deque<SubqueryState> subqueries = new ArrayDeque<SubqueryState>();
-        CostEstimator costEstimator;
 
-        public JoinsFinder(CostEstimator costEstimator) {
-            this.costEstimator = costEstimator;
+        public JoinsFinder() {
         }
 
         public List<Picker> find(BaseQuery query) {
@@ -417,7 +412,7 @@ public class IndexPicker extends BaseRule
                         // Already have another set of joins to same root join.
                         return true;
                 }
-                Picker entry = new Picker(costEstimator, j);
+                Picker entry = new Picker(j);
                 if (!subqueries.isEmpty()) {
                     entry.query = subqueries.peek().subquery;
                 }

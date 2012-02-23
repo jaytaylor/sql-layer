@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.akiban.sql.optimizer.rule.nocost;
 
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
@@ -116,22 +116,18 @@ public class IndexGoal implements Comparator<IndexScan>
     // All the columns besides those in conditions that will be needed.
     private RequiredColumns requiredColumns;
 
-    private CostEstimator costEstimator;
-
     public IndexGoal(BaseQuery query,
                      Set<ColumnSource> boundTables, 
                      List<ConditionList> conditionSources,
                      AggregateSource grouping,
                      Sort ordering,
                      Project projectDistinct,
-                     Iterable<TableSource> tables,
-                     CostEstimator costEstimator) {
+                     Iterable<TableSource> tables) {
         this.boundTables = boundTables;
         this.conditionSources = conditionSources;
         this.grouping = grouping;
         this.ordering = ordering;
         this.projectDistinct = projectDistinct;
-        this.costEstimator = costEstimator;
         
         if (conditionSources.size() == 1)
             conditions = conditionSources.get(0);
@@ -246,7 +242,6 @@ public class IndexGoal implements Comparator<IndexScan>
             !index.hasConditions() &&
             !index.isCovering())
             return false;
-        index.setCostEstimate(estimateCost(index));
         return true;
     }
 
@@ -530,9 +525,6 @@ public class IndexGoal implements Comparator<IndexScan>
     }
 
     public int compare(IndexScan i1, IndexScan i2) {
-        if (costEstimator.isEnabled()) {
-            return i2.getCostEstimate().compareTo(i1.getCostEstimate());
-        }
         // TODO: This is a pretty poor substitute for evidence-based comparison.
         if (i1.getOrderEffectiveness() != i2.getOrderEffectiveness())
             // These are ordered worst to best.
@@ -756,55 +748,6 @@ public class IndexGoal implements Comparator<IndexScan>
             }
         }
         return requiredAfter.isEmpty();
-    }
-
-    protected CostEstimate estimateCost(IndexScan index) {
-        if (!costEstimator.isEnabled()) return null;
-        CostEstimate cost = null;
-        if (index.getConditionRange() == null) {
-            cost = costEstimator.costIndexScan(index.getIndex(),
-                                               index.getEqualityComparands(),
-                                               index.getLowComparand(), 
-                                               index.isLowInclusive(),
-                                               index.getHighComparand(), 
-                                               index.isHighInclusive());
-        }
-        else {
-            for (RangeSegment segment : index.getConditionRange().getSegments()) {
-                CostEstimate acost = costEstimator.costIndexScan(index.getIndex(),
-                                                                 index.getEqualityComparands(),
-                                                                 segment.getStart().getValueExpression(),
-                                                                 segment.getStart().isInclusive(),
-                                                                 segment.getEnd().getValueExpression(),
-                                                                 segment.getEnd().isInclusive());
-                if (cost == null)
-                    cost = acost;
-                else
-                    cost = cost.union(acost);
-            }
-        }
-        if (!index.isCovering()) {
-            CostEstimate flatten = costEstimator.costFlatten(index.getLeafMostTable(),
-                                                             index.getRequiredTables());
-            cost = cost.nest(flatten);
-        }
-
-        Collection<ConditionExpression> unhandledConditions = 
-            new HashSet<ConditionExpression>(conditions);
-        if (index.getConditions() != null)
-            unhandledConditions.removeAll(index.getConditions());
-        if (!unhandledConditions.isEmpty()) {
-            CostEstimate select = costEstimator.costSelect(unhandledConditions,
-                                                           cost.getRowCount());
-            cost = cost.sequence(select);
-        }
-
-        if (needSort(index)) {
-            CostEstimate sort = costEstimator.costSort(cost.getRowCount());
-            cost = cost.sequence(sort);
-        }
-
-        return cost;
     }
 
     /** Change WHERE, GROUP BY, and ORDER BY upstream of
