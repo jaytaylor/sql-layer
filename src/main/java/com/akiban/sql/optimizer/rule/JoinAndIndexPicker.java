@@ -78,8 +78,10 @@ public class JoinAndIndexPicker extends BaseRule
                 pickJoinsAndIndexes((JoinNode)joinable);
             }
             else if (joinable instanceof SubquerySource) {
-                // Single subquery // view.
-                subpicker(((SubquerySource)joinable).getSubquery()).apply();
+                // Single subquery // view. Just do its insides.
+                for (Picker subpicker : subpickers(((SubquerySource)joinable).getSubquery())) {
+                    subpicker.apply();
+                }
             }
             // TODO: Any other degenerate cases?
         }
@@ -142,7 +144,7 @@ public class JoinAndIndexPicker extends BaseRule
         protected void pickIndex(TableGroupJoinTree tables) {
             GroupIndexGoal groupGoal = new GroupIndexGoal(queryGoal, tables);
             groupGoal.updateRequiredColumns(); // No more joins / bound tables.
-            IndexScan index = groupGoal.pickBestIndex(tables, tables.getRequired());
+            IndexScan index = groupGoal.pickBestIndex();
         }
 
         // General joins: run enumerator.
@@ -151,13 +153,19 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         // Get the handler for the given subquery so that it can be done in context.
-        public Picker subpicker(Subquery subquery) {
+        public List<Picker> subpickers(Subquery subquery) {
             return subpickers.get(subquery);
         }
 
     }
 
     static class JoinEnumerator extends DPhyp<Object> {
+        private Picker picker;
+
+        public JoinEnumerator(Picker picker) {
+            this.picker = picker;
+        }
+
         @Override
         public Object evaluateTable(Joinable table) {
             return null;

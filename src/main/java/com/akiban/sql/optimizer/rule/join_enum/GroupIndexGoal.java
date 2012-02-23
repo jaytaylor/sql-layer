@@ -23,6 +23,7 @@ import com.akiban.sql.optimizer.rule.range.RangeSegment;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.IndexScan.OrderEffectiveness;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
+import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
@@ -44,6 +45,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
     // The overall goal.
     private QueryIndexGoal queryGoal;
+    // The grouped tables.
+    private TableGroupJoinTree tables;
     
     // All the conditions that might be indexable.
     private List<ConditionExpression> conditions;
@@ -59,9 +62,9 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     // Mapping of Range-expressible conditions, by their column. lazy loaded.
     private Map<ColumnExpression,ColumnRanges> columnsToRanges;
 
-    public GroupIndexGoal(QueryIndexGoal queryGoal,
-                          Iterable<TableSource> tables) {
+    public GroupIndexGoal(QueryIndexGoal queryGoal, TableGroupJoinTree tables) {
         this.queryGoal = queryGoal;
+        this.tables = tables;
 
         conditionSources = new ArrayList<ConditionList>();
         if (queryGoal.getWhereConditions() != null) {
@@ -378,6 +381,19 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return null;
     }
 
+    /** Find the best index among the branches. */
+    public IndexScan pickBestIndex() {
+        Set<TableSource> required = tables.getRequired();
+        IndexScan bestIndex = null;
+        for (TableGroupJoinNode table : tables) {
+            IndexScan tableIndex = pickBestIndex(table.getTable(), required);
+            if ((tableIndex != null) &&
+                ((bestIndex == null) || (compare(tableIndex, bestIndex) > 0)))
+                bestIndex = tableIndex;
+        }
+        return bestIndex;
+    }
+
     /** Find the best index on the given table. 
      * @param groupOnly 
      */
@@ -472,19 +488,6 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             else {
                 logger.debug("Rejecting {}", candidate);
             }
-        }
-        return bestIndex;
-    }
-
-    /** Find the best index among the given tables. */
-    public IndexScan pickBestIndex(Collection<TableSource> tables,
-                                   Set<TableSource> required) {
-        IndexScan bestIndex = null;
-        for (TableSource table : tables) {
-            IndexScan tableIndex = pickBestIndex(table, required);
-            if ((tableIndex != null) &&
-                ((bestIndex == null) || (compare(tableIndex, bestIndex) > 0)))
-                bestIndex = tableIndex;
         }
         return bestIndex;
     }
@@ -646,10 +649,10 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     static class RequiredColumns {
         private Map<TableSource,Set<ColumnExpression>> map;
         
-        public RequiredColumns(Iterable<TableSource> tables) {
+        public RequiredColumns(TableGroupJoinTree tables) {
             map = new HashMap<TableSource,Set<ColumnExpression>>();
-            for (TableSource table : tables) {
-                map.put(table, new HashSet<ColumnExpression>());
+            for (TableGroupJoinNode table : tables) {
+                map.put(table.getTable(), new HashSet<ColumnExpression>());
             }
         }
 

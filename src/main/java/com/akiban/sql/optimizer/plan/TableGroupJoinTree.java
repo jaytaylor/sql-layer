@@ -19,6 +19,7 @@ import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 /** Joins within a single {@link TableGroup} represented as a tree
  * whose structure mirrors that of the group.
@@ -132,6 +133,7 @@ public class TableGroupJoinTree extends BaseJoinable
 
     private TableGroup group;
     private TableGroupJoinNode root;
+    private Set<TableSource> required;
     
     public TableGroupJoinTree(TableGroupJoinNode root) {
         this.group = root.getTable().getGroup();
@@ -143,6 +145,13 @@ public class TableGroupJoinTree extends BaseJoinable
     }
     public TableGroupJoinNode getRoot() {
         return root;
+    }
+
+    public Set<TableSource> getRequired() {
+        return required;
+    }
+    public void setRequired(Set<TableSource> required) {
+        this.required = required;
     }
     
     @Override

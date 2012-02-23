@@ -56,7 +56,7 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
         for (JoinIsland island : islands) {
             TableGroupJoinNode tree = isolateGroupJoins(island.root);
             if (tree != null) {
-                Joinable nroot = new TableGroupJoinTree(tree);
+                Joinable nroot = groupJoinTree(tree, island.root);
                 island.output.replaceInput(island.root, nroot);
                 island.root = nroot;
             }
@@ -122,6 +122,28 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
         if (join.getJoinType() == JoinType.RIGHT)
             join.reverse();
         return null;
+    }
+
+    protected TableGroupJoinTree groupJoinTree(TableGroupJoinNode root, Joinable joins) {
+        TableGroupJoinTree tree = new TableGroupJoinTree(root);
+        Set<TableSource> required = new HashSet<TableSource>();
+        getRequiredTables(joins, required);
+        tree.setRequired(required);
+        return tree;
+    }
+
+    // Get all the tables reachable via inner joins from here.
+    protected void getRequiredTables(Joinable joinable, Set<TableSource> required) {
+        if (joinable instanceof TableSource) {
+            required.add((TableSource)joinable);
+        }
+        else if (joinable instanceof JoinNode) {
+            JoinNode join = (JoinNode)joinable;
+            if (join.getJoinType() != JoinType.RIGHT)
+                getRequiredTables(join.getLeft(), required);
+            if (join.getJoinType() != JoinType.LEFT)
+                getRequiredTables(join.getRight(), required);
+        }
     }
 
     // Combine trees at the proper branch point.
