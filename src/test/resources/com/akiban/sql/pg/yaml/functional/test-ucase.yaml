@@ -4,20 +4,36 @@
 ---
 - Statement: INSERT INTO all_types
     (varchar_field, double_field)
-    VALUES ('one', 1.5), ('TWO', 2.5), ('THREE', 3.5);
+    VALUES ('one', 1.5), ('TWO', 2.5), ('THREE', 3.5), ('', 0.0), (null, null), ('a', 4.0);
 ---
 - Statement: SELECT UCASE(varchar_field) from all_types;
 - output: [['ONE'], ['TWO'], ['THREE']]
----
+--- #test UCASE() in WHERE clause
 - Statement: SELECT double_field FROM all_types WHERE UCASE(varchar_field) = varchar_field;
 - output: [[2.5], [3.5]]
----
+--- #test UCASE in SELECT clause
 - Statement: SELECT UCASE(double_field) from all_types;
 - output: [[1.5], [2.5], [3.5]]
----
-- Statement: SELECT UCASE(null) from all_types;
+--- #test UPPER in SELECT clause, test literal null
+- Statement: SELECT UPPER(null) from all_types;
 - output: [[null]]
----
+--- #test UCASE (null)
+- Statement: SELECT UCASE(varchar_field) from all_types WHERE double_field = null;
+- output: [[null]]
+--- # test empty string
+- Statement: SELECT UPPER(varchar_field) from all_types WHERE double_field = 0.0;
+- output: [['']]
+--- # test param of one char
+- Statement: SELECT UCASE(?) from all_types;
+- params: [['a']]
+- output: [['A']]
+--- # test wrong arity
+- Statement: SELECT UCASE('foo', 'bar') from all_types;
+- error: [42000]
+--- # test UCASE(date)
+- Statement: SELECT UCASE(date('2012-02-21')) from all_types;
+- output: [['2012-02-21']]
+--- # test UPPER/UCASE in both SELECT and WHERE, test UCASE on double_field
 - Statement: SELECT UPPER(varchar_field) from all_types WHERE UCASE(double_field) = UPPER(double_field);
 - row_count: [['ONE'], ['TWO'], ['THREE']]
 ...
