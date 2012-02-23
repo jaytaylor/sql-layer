@@ -67,48 +67,19 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         public void apply() {
-            IndexGoal_CBO goal = determineIndexGoal(joinable);
-
-            pickIndexes(joinable);
+            QueryIndexGoal queryGoal = determineQueryIndexGoal(joinable);
         }
 
-        protected void pickIndexes(Joinable joinable) {
-        }
-
-        protected void pickIndex(TableJoins tableJoins) {
-            // Goal is to get all the tables joined right here. Others
-            // in the group may come via XxxLookup in a nested
-            // loop. Can only consider table indexes on the inner
-            // joined tables and group indexes corresponding to outer
-            // joins.
-            IndexGoal goal = determineIndexGoal(tableJoins);
-            IndexScan index = pickBestIndex(tableJoins, goal);
-        }
-
-        protected IndexGoal determineIndexGoal(TableJoins tableJoins) {
-            return determineIndexGoal(tableJoins, tableJoins.getTables());
-        }
-
-        protected IndexGoal determineIndexGoal(PlanNode input, 
-                                               Iterable<TableSource> tables) {
-            List<ConditionList> conditionSources = new ArrayList<ConditionList>();
+        protected QueryIndexGoal determineQueryIndexGoal(PlanNode input) {
+            ConditionList whereConditions = null;
             Sort ordering = null;
             AggregateSource grouping = null;
             Project projectDistinct = null;
-            while (true) {
-                input = input.getOutput();
-                if (!(input instanceof Joinable))
-                    break;
-                if (input instanceof JoinNode) {
-                    ConditionList conds = ((JoinNode)input).getJoinConditions();
-                    if ((conds != null) && !conds.isEmpty())
-                        conditionSources.add(conds);
-                }
-            }
+            input = input.getOutput();
             if (input instanceof Select) {
                 ConditionList conds = ((Select)input).getConditions();
                 if (!conds.isEmpty()) {
-                    conditionSources.add(conds);
+                    whereConditions = conds;
                 }
             }
             input = input.getOutput();
@@ -147,37 +118,10 @@ public class JoinAndIndexPicker extends BaseRule
                 else if (input instanceof Sort)
                     ordering = (Sort)input;
             }
-            return new IndexGoal(query, boundTables,
-                                 conditionSources, grouping, ordering, projectDistinct,
-                                 tables, costEstimator);
+            return new QueryIndexGoal(query, whereConditions, 
+                                      grouping, ordering, projectDistinct);
         }
 
-        protected IndexScan pickBestIndex(TableJoins tableJoins, IndexGoal goal) {
-            if (goal == null)
-                return null;
-            Collection<TableSource> tables = new ArrayList<TableSource>();
-            Set<TableSource> required = new HashSet<TableSource>();
-            getRequiredTables(tableJoins.getJoins(), tables, required, true);
-            return goal.pickBestIndex(tables, required);
-        }
-
-        protected void getRequiredTables(Joinable joinable,
-                                         Collection<TableSource> tables,
-                                         Set<TableSource> required,
-                                         boolean allInner) {
-            if (joinable instanceof JoinNode) {
-                JoinNode join = (JoinNode)joinable;
-                getRequiredTables(join.getLeft(), tables, required,
-                                  allInner && (join.getJoinType() != JoinType.RIGHT));
-                getRequiredTables(join.getRight(), tables, required,
-                                  allInner && (join.getJoinType() != JoinType.LEFT));
-            }
-            else if (joinable instanceof TableSource) {
-                TableSource table = (TableSource)joinable;
-                tables.add(table);
-                if (allInner) required.add(table);
-            }
-        }
     }
 
     // Purpose is twofold: 
@@ -238,10 +182,10 @@ public class JoinAndIndexPicker extends BaseRule
                         break;
                     }
                 }
-                List<Picker> entry = entries.get(picker.query);
+                List<Picker> entry = entries.get(query);
                 if (entry == null) {
                     entry = new ArrayList<Picker>();
-                    entries.put(picker.query, entry);
+                    entries.put(query, entry);
                 }
                 for (Picker picker : entry) {
                     if (picker.joinable == j)
