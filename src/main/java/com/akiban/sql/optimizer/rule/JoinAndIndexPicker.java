@@ -56,6 +56,7 @@ public class JoinAndIndexPicker extends BaseRule
         CostEstimator costEstimator;
         Joinable joinable;
         BaseQuery query;
+        QueryIndexGoal queryGoal;
 
         public Picker(Map<BaseQuery,List<Picker>> subpickers, 
                       CostEstimator costEstimator, 
@@ -67,7 +68,20 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         public void apply() {
-            QueryIndexGoal queryGoal = determineQueryIndexGoal(joinable);
+            queryGoal = determineQueryIndexGoal(joinable);
+            if (joinable instanceof TableGroupJoinTree) {
+                // Single group.
+                pickIndex((TableGroupJoinTree)joinable);
+            }
+            else if (joinable instanceof JoinNode) {
+                // General joins.
+                pickJoinsAndIndexes((JoinNode)joinable);
+            }
+            else if (joinable instanceof SubquerySource) {
+                // Single subquery // view.
+                subpicker(((SubquerySource)joinable).getSubquery()).apply();
+            }
+            // TODO: Any other degenerate cases?
         }
 
         protected QueryIndexGoal determineQueryIndexGoal(PlanNode input) {
@@ -122,8 +136,40 @@ public class JoinAndIndexPicker extends BaseRule
                                       grouping, ordering, projectDistinct);
         }
 
+        // Only a single group of tables. Don't need to run general
+        // join algorithm and can shortcut some of the setup for this
+        // group.
+        protected void pickIndex(TableGroupJoinTree tables) {
+            GroupIndexGoal groupGoal = new GroupIndexGoal(queryGoal, tables);
+            groupGoal.updateRequiredColumns(); // No more joins / bound tables.
+            IndexScan index = groupGoal.pickBestIndex(tables, tables.getRequired());
+        }
+
+        // General joins: run enumerator.
+        protected void pickJoinsAndIndexes(JoinNode joins) {
+            new JoinEnumerator(this).run(joins, queryGoal.getWhereConditions());
+        }
+
+        // Get the handler for the given subquery so that it can be done in context.
+        public Picker subpicker(Subquery subquery) {
+            return subpickers.get(subquery);
+        }
+
     }
 
+    static class JoinEnumerator extends DPhyp<Object> {
+        @Override
+        public Object evaluateTable(Joinable table) {
+            return null;
+        }
+
+        @Override
+        public Object evaluateJoin(Object p1, Object p2, Object existing,
+                                   JoinType joinType, Collection<JoinOperator> joins) {
+            return null;
+        }
+    }
+    
     // Purpose is twofold: 
     // Find top-level joins and note what query they come from; 
     // Annotate subqueries with their outer table references.
