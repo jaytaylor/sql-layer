@@ -15,8 +15,9 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.optimizer.rule.join_enum.*;
 
+import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
