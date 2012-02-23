@@ -67,9 +67,9 @@ public final class RankExpression extends CompareExpression {
             if (!leftNull && !rightNull) {
                 comparison = op.compare(left, right);
             } else if (!leftNull) {
-                comparison = -1;
-            } else if (!rightNull) {
                 comparison = 1;
+            } else if (!rightNull) {
+                comparison = -1;
             } else {
                 comparison = 0;
             }
