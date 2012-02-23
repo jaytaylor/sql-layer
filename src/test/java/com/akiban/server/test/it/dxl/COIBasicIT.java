@@ -70,7 +70,7 @@ public final class COIBasicIT extends ITBase {
             List<Column> expectedPkCols = Arrays.asList( cTable.getColumn("cid") );
             assertEquals("pk cols", expectedPkCols, pk.getColumns());
             assertSame("pk index", cTable.getIndex("PRIMARY"), pk.getIndex());
-            assertEquals("pk index cols size", 1, pk.getIndex().getColumns().size());
+            assertEquals("pk index cols size", 1, pk.getIndex().getKeyColumns().size());
 
             assertEquals("parent join", null, cTable.getParentJoin());
             assertEquals("child joins.size", 1, cTable.getChildJoins().size());
@@ -83,7 +83,7 @@ public final class COIBasicIT extends ITBase {
             List<Column> expectedPkCols = Arrays.asList( oTable.getColumn("oid") );
             assertEquals("pk cols", expectedPkCols, pk.getColumns());
             assertSame("pk index", oTable.getIndex("PRIMARY"), pk.getIndex());
-            assertEquals("pk index cols size", 1, pk.getIndex().getColumns().size());
+            assertEquals("pk index cols size", 1, pk.getIndex().getKeyColumns().size());
 
             assertNotNull("parent join is null", oTable.getParentJoin());
             assertSame("parent join", cTable.getChildJoins().get(0), oTable.getParentJoin());
@@ -97,7 +97,7 @@ public final class COIBasicIT extends ITBase {
             List<Column> expectedPkCols = Arrays.asList( iTable.getColumn("iid") );
             assertEquals("pk cols", expectedPkCols, pk.getColumns());
             assertSame("pk index", iTable.getIndex("PRIMARY"), pk.getIndex());
-            assertEquals("pk index cols size", 1, pk.getIndex().getColumns().size());
+            assertEquals("pk index cols size", 1, pk.getIndex().getKeyColumns().size());
 
             assertNotNull("parent join is null", iTable.getParentJoin());
             assertSame("parent join", oTable.getChildJoins().get(0), iTable.getParentJoin());

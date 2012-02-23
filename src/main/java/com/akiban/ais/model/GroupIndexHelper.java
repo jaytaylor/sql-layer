@@ -29,7 +29,7 @@ final class GroupIndexHelper {
     }
 
     static void actOnGroupIndexTables(GroupIndex index, IndexAction action) {
-        for (IndexColumn indexColumn : index.getColumns()) {
+        for (IndexColumn indexColumn : index.getKeyColumns()) {
             actOnGroupIndexTables(index, indexColumn, action);
         }
     }

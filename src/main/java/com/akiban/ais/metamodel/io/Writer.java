@@ -139,19 +139,19 @@ public class Writer
         for (Group group : groups) {
             for (Index index : group.getIndexes()) {
                 target.writeIndex(MMIndex.map(index));
-                nIndexColumns += index.getColumns().size();
+                nIndexColumns += index.getKeyColumns().size();
             }
         }
         for (UserTable userTable : userTables) {
             for (Index index : userTable.getIndexesIncludingInternal()) {
                 target.writeIndex(MMIndex.map(index));
-                nIndexColumns += index.getColumns().size();
+                nIndexColumns += index.getKeyColumns().size();
             }
         }
         for (GroupTable groupTable : groupTables) {
             for (Index index : groupTable.getIndexes()) {
                 target.writeIndex(MMIndex.map(index));
-                nIndexColumns += index.getColumns().size();
+                nIndexColumns += index.getKeyColumns().size();
             }
         }
     }
@@ -161,21 +161,21 @@ public class Writer
         target.writeCount(nIndexColumns);
         for (Group group : groups) {
             for (Index index : group.getIndexes()) {
-                for (IndexColumn indexColumn : index.getColumns()) {
+                for (IndexColumn indexColumn : index.getKeyColumns()) {
                     target.writeIndexColumn(MMIndexColumn.map(indexColumn));
                 }
             }
         }
         for (UserTable userTable : userTables) {
             for (Index index : userTable.getIndexesIncludingInternal()) {
-                for (IndexColumn indexColumn : index.getColumns()) {
+                for (IndexColumn indexColumn : index.getKeyColumns()) {
                     target.writeIndexColumn(MMIndexColumn.map(indexColumn));
                 }
             }
         }
         for (GroupTable groupTable : groupTables) {
             for (Index index : groupTable.getIndexes()) {
-                for (IndexColumn indexColumn : index.getColumns()) {
+                for (IndexColumn indexColumn : index.getKeyColumns()) {
                     target.writeIndexColumn(MMIndexColumn.map(indexColumn));
                 }
             }

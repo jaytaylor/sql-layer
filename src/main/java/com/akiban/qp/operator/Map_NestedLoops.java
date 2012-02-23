@@ -80,14 +80,6 @@ import java.util.Set;
 
 class Map_NestedLoops extends Operator
 {
-    // Object interface
-
-    @Override
-    public String toString()
-    {
-        return getClass().getSimpleName();
-    }
-
     // Operator interface
 
     @Override
@@ -136,7 +128,7 @@ class Map_NestedLoops extends Operator
 
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Map_NestedLoops open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Map_NestedLoops next");
-    private static final Logger LOG = LoggerFactory.getLogger(BranchLookup_Nested.class);
+    private static final Logger LOG = LoggerFactory.getLogger(Map_NestedLoops.class);
 
     // Object state
 

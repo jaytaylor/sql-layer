@@ -596,7 +596,7 @@ public class
             groupIndex.setTreeName(userIndex.getTreeName());
 
             int position = 0;
-            for (IndexColumn userIndexColumn : userIndex.getColumns()) {
+            for (IndexColumn userIndexColumn : userIndex.getKeyColumns()) {
                 this.checkFound(userIndexColumn, "building group indexes", "userIndexColumn", "NONE");
                 this.checkFound(userIndexColumn.getColumn().getGroupColumn(), "building group indexes",
                                 "group column", userIndexColumn.getColumn().getName());

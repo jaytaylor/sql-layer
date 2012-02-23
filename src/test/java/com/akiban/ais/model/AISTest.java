@@ -68,7 +68,7 @@ public class AISTest
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         UserTable table = ais.getUserTable("s", "t");
         Index index = table.getIndex("i");
-        Iterator<IndexColumn> indexColumnScan = index.getColumns().iterator();
+        Iterator<IndexColumn> indexColumnScan = index.getKeyColumns().iterator();
         IndexColumn indexColumn = indexColumnScan.next();
         assertEquals(5, indexColumn.getColumn().getPosition().intValue());
         assertEquals(0, indexColumn.getPosition().intValue());
@@ -506,7 +506,7 @@ public class AISTest
         assertTrue(table.getIndexes().isEmpty());
         assertEquals(1, table.getIndexesIncludingInternal().size());
         Index index = table.getIndexesIncludingInternal().iterator().next();
-        assertEquals(Column.AKIBAN_PK_NAME, index.getColumns().get(0).getColumn().getName());
+        assertEquals(Column.AKIBAN_PK_NAME, index.getKeyColumns().get(0).getColumn().getName());
         // check PK
         assertNull(table.getPrimaryKey());
         assertSame(table.getIndexesIncludingInternal().iterator().next(), table.getPrimaryKeyIncludingInternal().getIndex());

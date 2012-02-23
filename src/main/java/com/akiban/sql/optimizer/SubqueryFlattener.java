@@ -44,7 +44,6 @@ import com.akiban.sql.StandardException;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Table;
 
 import java.util.*;
 
@@ -320,7 +319,7 @@ public class SubqueryFlattener
             for (Index index : binding.getTable().getIndexes()) {
                 if (!index.isUnique()) continue;
                 boolean allColumns = true, allStronger = true;
-                for (IndexColumn indexColumn : index.getColumns()) {
+                for (IndexColumn indexColumn : index.getKeyColumns()) {
                     Column column = indexColumn.getColumn();
                     ColumnEquality constraint = 
                         getColumnEquality(fromTable, column, 

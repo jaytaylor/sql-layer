@@ -18,6 +18,7 @@ package com.akiban.ais.model;
 import java.util.*;
 
 import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.server.rowdata.RowDef;
 
 public abstract class Table implements Traversable, HasGroup
 {
@@ -305,7 +306,7 @@ public abstract class Table implements Traversable, HasGroup
                 out.add("table's index.getTable() wasn't the table" + index + " <--> " + this);
             }
             if (index != null) {
-                for (IndexColumn indexColumn : index.getColumns()) {
+                for (IndexColumn indexColumn : index.getKeyColumns()) {
                     if (!index.equals(indexColumn.getIndex())) {
                         out.add("index's indexColumn.getIndex() wasn't index: " + indexColumn);
                     }
@@ -323,13 +324,12 @@ public abstract class Table implements Traversable, HasGroup
         return engine;
     }
 
-    public void rowDef(Object rowDef)
+    public void rowDef(RowDef rowDef)
     {
-        assert rowDef.getClass().getName().equals("com.akiban.server.rowdata.RowDef") : rowDef.getClass();
         this.rowDef = rowDef;
     }
 
-    public Object rowDef()
+    public RowDef rowDef()
     {
         return rowDef;
     }
@@ -389,8 +389,5 @@ public abstract class Table implements Traversable, HasGroup
     protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;
     protected String engine;
     protected String treeName;
-
-    // It really is a RowDef, but declaring it that way creates trouble for AIS. We don't want to pull in
-    // all the RowDef stuff and have it visible to GWT.
-    private /*RowDef*/ Object rowDef;
+    private RowDef rowDef;
 }

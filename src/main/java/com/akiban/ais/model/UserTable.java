@@ -258,7 +258,7 @@ public class UserTable extends Table
     {
         PrimaryKey declaredPrimaryKey = primaryKey;
         if (declaredPrimaryKey != null) {
-            List<IndexColumn> pkColumns = primaryKey.getIndex().getColumns();
+            List<IndexColumn> pkColumns = primaryKey.getIndex().getKeyColumns();
             if (pkColumns.size() == 1 && pkColumns.get(0).getColumn().isAkibanPKColumn()) {
                 declaredPrimaryKey = null;
             }
@@ -479,7 +479,7 @@ public class UserTable extends Table
         Collection<TableIndex> declaredIndexes = new ArrayList<TableIndex>(indexes);
         for (Iterator<TableIndex> iterator = declaredIndexes.iterator(); iterator.hasNext();) {
             TableIndex index = iterator.next();
-            List<IndexColumn> indexColumns = index.getColumns();
+            List<IndexColumn> indexColumns = index.getKeyColumns();
             if (indexColumns.size() == 1 && indexColumns.get(0).getColumn().isAkibanPKColumn()) {
                 iterator.remove();
             }

@@ -21,7 +21,6 @@ import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.expression.Expression;
@@ -34,8 +33,6 @@ import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
 import java.util.List;
-
-import static com.akiban.qp.persistitadapter.sort.SortCursor.SORT_TRAVERSE;
 
 class SortCursorUnidirectional extends SortCursor
 {
@@ -143,7 +140,7 @@ class SortCursorUnidirectional extends SortCursor
         this.endKey = adapter.newKey();
         this.boundColumns = keyRange.boundColumns();
         this.types = new AkType[boundColumns];
-        List<IndexColumn> indexColumns = keyRange.indexRowType().index().getColumns();
+        List<IndexColumn> indexColumns = keyRange.indexRowType().index().getKeyColumns();
         for (int f = 0; f < boundColumns; f++) {
             this.types[f] = indexColumns.get(f).getColumn().getType().akType();
         }

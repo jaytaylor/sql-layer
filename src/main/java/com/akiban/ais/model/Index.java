@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.server.rowdata.IndexDef;
 
 public abstract class Index implements Traversable
 {
@@ -46,7 +47,7 @@ public abstract class Index implements Traversable
         this.treeName = this.indexName.toString();
         this.joinType = joinType;
         this.isValid = isValid;
-        columns = new ArrayList<IndexColumn>();
+        keyColumns = new ArrayList<IndexColumn>();
     }
 
     protected Index(TableName tableName, String indexName, Integer idAndFlags, Boolean isUnique, String constraint) {
@@ -77,7 +78,7 @@ public abstract class Index implements Traversable
     @Override
     public String toString()
     {
-        return "Index(" + indexName + columns + ")";
+        return "Index(" + indexName + keyColumns + ")";
     }
 
     public void addColumn(IndexColumn indexColumn)
@@ -85,7 +86,7 @@ public abstract class Index implements Traversable
         if (columnsFrozen) {
             throw new IllegalStateException("can't add column because columns list is frozen");
         }
-        columns.add(indexColumn);
+        keyColumns.add(indexColumn);
         columnsStale = true;
     }
 
@@ -121,15 +122,20 @@ public abstract class Index implements Traversable
         indexName = name;
     }
 
-    public List<IndexColumn> getColumns()
+    public List<IndexColumn> getKeyColumns()
     {
         sortColumnsIfNeeded();
-        return columns;
+        return keyColumns;
+    }
+
+    public List<IndexColumn> getValueColumns()
+    {
+        return valueColumns;
     }
 
     private void sortColumnsIfNeeded() {
         if (columnsStale) {
-            Collections.sort(columns,
+            Collections.sort(keyColumns,
                     new Comparator<IndexColumn>() {
                         @Override
                         public int compare(IndexColumn x, IndexColumn y) {
@@ -148,7 +154,7 @@ public abstract class Index implements Traversable
     @Override
     public void traversePreOrder(Visitor visitor)
     {
-        for (IndexColumn indexColumn : getColumns()) {
+        for (IndexColumn indexColumn : getKeyColumns()) {
             visitor.visitIndexColumn(indexColumn);
         }
     }
@@ -159,12 +165,12 @@ public abstract class Index implements Traversable
         traversePreOrder(visitor);
     }
 
-    public Object indexDef()
+    public IndexDef indexDef()
     {
         return indexDef;
     }
 
-    public void indexDef(Object indexDef)
+    public void indexDef(IndexDef indexDef)
     {
         assert indexDef.getClass().getName().equals("com.akiban.server.rowdata.IndexDef") : indexDef.getClass();
         this.indexDef = indexDef;
@@ -255,13 +261,14 @@ public abstract class Index implements Traversable
         List<Column> indexColumns = new ArrayList<Column>();
 
         // Add index key fields
-        for (IndexColumn iColumn : getColumns()) {
+        for (IndexColumn iColumn : getKeyColumns()) {
             Column column = iColumn.getColumn();
             indexColumns.add(column);
             rowCompBuilder.rowCompEntry(columnPosition(flattenedRowOffsets, column), -1);
         }
 
         // Add hkey fields not already included
+        valueColumns = new ArrayList<IndexColumn>();
         HKey hKey = hKey();
         for (HKeySegment hKeySegment : hKey.segments()) {
             Integer ordinal = ordinalMap.get(hKeySegment.table());
@@ -283,6 +290,7 @@ public abstract class Index implements Traversable
                         rowCompBuilder.rowCompEntry(-1, hKeyColumn.positionInHKey());
                     }
                     indexColumns.add(column);
+                    valueColumns.add(new IndexColumn(this, column, keyColumns.size() + valueColumns.size(), true, 0));
                 }
 
                 int indexRowPos = indexColumns.indexOf(column);
@@ -306,7 +314,7 @@ public abstract class Index implements Traversable
         }
         // Scan hkey columns and index columns and see if they match
         Iterator<HKeyColumn> hKeyColumnScan = hKeyColumns.iterator();
-        Iterator<IndexColumn> indexColumnScan = index.getColumns().iterator();
+        Iterator<IndexColumn> indexColumnScan = index.getKeyColumns().iterator();
         while (hkeyEquivalent && hKeyColumnScan.hasNext() && indexColumnScan.hasNext()) {
             Column hKeyColumn = hKeyColumnScan.next().column();
             Column indexColumn = indexColumnScan.next().getColumn();
@@ -388,20 +396,18 @@ public abstract class Index implements Traversable
     private final Integer indexId;
     private final Boolean isUnique;
     private final String constraint;
-    private final List<IndexColumn> columns;
     private final JoinType joinType;
     private final boolean isValid;
     private IndexName indexName;
     private boolean columnsStale = true;
     private boolean columnsFrozen = false;
     private String treeName;
-
-    // It really is an IndexDef, but declaring it that way creates trouble for AIS. We don't want to pull in
-    // all the RowDef stuff and have it visible to GWT.
-    private /* IndexDef */ Object indexDef;
+    private IndexDef indexDef;
     private IndexRowComposition indexRowComposition;
     private IndexToHKey indexToHKey;
     private boolean isHKeyEquivalent;
+    private List<IndexColumn> keyColumns;
+    private List<IndexColumn> valueColumns;
 
     public enum JoinType {
         LEFT, RIGHT
