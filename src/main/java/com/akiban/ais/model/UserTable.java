@@ -26,7 +26,6 @@ public class UserTable extends Table
                                    String tableName,
                                    Integer tableId)
     {
-        
         UserTable userTable = new UserTable(ais, schemaName, tableName, tableId);
         ais.addUserTable(userTable);
         return userTable;
@@ -35,7 +34,6 @@ public class UserTable extends Table
     public UserTable(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
     {
         super(ais, schemaName, tableName, tableId);
-        migrationUsage = MigrationUsage.AKIBAN_STANDARD;
     }
 
     @Override
@@ -411,12 +409,6 @@ public class UserTable extends Table
         }
     }
     
-    @SuppressWarnings("unused")
-    private UserTable()
-    {
-        // XXX: GWT requires empty constructor
-    }
-
     private void computeHKey()
     {
         hKey = new HKey(this);
@@ -497,17 +489,18 @@ public class UserTable extends Table
 
     // State
 
-    private int size;
-    private List<Join> candidateParentJoins = new ArrayList<Join>();
-    private List<Join> candidateChildJoins = new ArrayList<Join>();
-    private PrimaryKey primaryKey;
-    private transient HKey hKey;
-    private transient boolean containsOwnHKey;
-    private transient HKey branchHKey;
-    private transient List<Column> allHKeyColumns;
-    private transient Integer depth = null;
+    private final List<Join> candidateParentJoins = new ArrayList<Join>();
+    private final List<Join> candidateChildJoins = new ArrayList<Join>();
     private final Object lazyEvaluationLock = new Object();
-    private transient volatile List<UserTable> hKeyDependentTables;
+
+    private int size;
+    private PrimaryKey primaryKey;
+    private HKey hKey;
+    private boolean containsOwnHKey;
+    private HKey branchHKey;
+    private List<Column> allHKeyColumns;
+    private Integer depth = null;
+    private volatile List<UserTable> hKeyDependentTables;
 
     // consts
 

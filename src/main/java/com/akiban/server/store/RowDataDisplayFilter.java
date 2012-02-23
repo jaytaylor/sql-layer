@@ -17,9 +17,9 @@ package com.akiban.server.store;
 
 import java.nio.ByteBuffer;
 
-import com.akiban.ais.io.CSVTarget;
-import com.akiban.ais.io.MessageSource;
-import com.akiban.ais.io.Reader;
+import com.akiban.ais.metamodel.io.CSVTarget;
+import com.akiban.ais.metamodel.io.MessageSource;
+import com.akiban.ais.metamodel.io.Reader;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.service.tree.TreeService;
 import com.persistit.Exchange;

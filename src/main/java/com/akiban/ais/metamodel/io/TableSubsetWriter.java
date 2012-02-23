@@ -13,14 +13,14 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.ais.io;
+package com.akiban.ais.metamodel.io;
 
+import com.akiban.ais.metamodel.Target;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
-import com.akiban.ais.model.Target;
 import com.akiban.ais.model.UserTable;
 
 import java.util.ArrayList;
