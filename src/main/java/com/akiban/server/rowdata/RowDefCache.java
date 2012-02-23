@@ -283,7 +283,7 @@ public class RowDefCache {
         // Secondary indexes
         List<Index> indexList = new ArrayList<Index>();
         for (TableIndex index : table.getIndexesIncludingInternal()) {
-            List<IndexColumn> indexColumns = index.getColumns();
+            List<IndexColumn> indexColumns = index.getKeyColumns();
             if(!indexColumns.isEmpty()) {
                 new IndexDef(rowDef, index);
                 if (index.isPrimaryKey()) {
@@ -327,7 +327,7 @@ public class RowDefCache {
         // Secondary indexes
         final List<Index> indexList = new ArrayList<Index>();
         for (TableIndex index : table.getIndexes()) {
-            List<IndexColumn> indexColumns = index.getColumns();
+            List<IndexColumn> indexColumns = index.getKeyColumns();
             if(!indexColumns.isEmpty()) {
                 new IndexDef(rowDef, index);
                 indexList.add(index);

@@ -155,7 +155,7 @@ public final class JsonOutputter implements HapiOutputter
                 // Generate output for row
                 output.write('{');
                 int rowTableId = rowTable.getTableId(); // Save this before going to the next row
-                row.toJSONString((RowDef) rowTable.rowDef(), appender);
+                row.toJSONString(rowTable.rowDef(), appender);
                 advanceInput();
                 // We're now at a new row. If the new row is a child of the previous one, then
                 // generateChildOutput then takes care of the children, (including children present

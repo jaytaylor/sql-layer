@@ -15,20 +15,12 @@
 
 package com.akiban.ais.model;
 
-import java.io.Serializable;
-
-public class TableName implements Serializable, Comparable<TableName>
+public class TableName implements Comparable<TableName>
 {
     public final static String AKIBAN_INFORMATION_SCHEMA = "akiban_information_schema";
 
-    private volatile String schemaName;
-    private volatile String tableName;
-
-    @SuppressWarnings("unused")
-    private TableName()
-    {
-        // GWT requires empty constructor
-    }
+    private final String schemaName;
+    private final String tableName;
 
     public TableName(String schemaName, String tableName)
     {

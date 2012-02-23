@@ -15,12 +15,12 @@
 
 package com.akiban.ais.model;
 
-import java.io.Serializable;
 import java.util.*;
 
 import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.server.rowdata.RowDef;
 
-public abstract class Table implements Serializable, ModelNames, Traversable, HasGroup
+public abstract class Table implements Traversable, HasGroup
 {
     public abstract boolean isUserTable();
 
@@ -30,46 +30,8 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         return tableName.toString();
     }
 
-    public static Table create(AkibanInformationSchema ais, Map<String, Object> map)
-    {
-        ais.checkMutability();
-        String tableType = (String) map.get(table_tableType);
-        String schemaName = (String) map.get(table_schemaName);
-        String tableName = (String) map.get(table_tableName);
-        Integer tableId = (Integer) map.get(table_tableId);
-        String groupName = (String) map.get(table_groupName);
-        Table table = null;
-        if (tableType.equals("USER")) {
-            table = UserTable.create(ais, schemaName, tableName, tableId);
-        } else if (tableType.equals("GROUP")) {
-            table = GroupTable.create(ais, schemaName, tableName, tableId);
-        }
-        if (table != null && groupName != null) {
-            Group group = ais.getGroup(groupName);
-            table.setGroup(group);
-        }
-        assert table != null;
-        table.migrationUsage = MigrationUsage.values()[(Integer) map.get(table_migrationUsage)];
-        table.treeName = (String) map.get(table_treeName);
-        return table;
-    }
-
-    public final Map<String, Object> map()
-    {
-        Map<String, Object> map = new HashMap<String, Object>();
-        map.put(table_tableType, isGroupTable() ? "GROUP" : "USER");
-        map.put(table_schemaName, getName().getSchemaName());
-        map.put(table_tableName, getName().getTableName());
-        map.put(table_tableId, getTableId());
-        map.put(table_groupName, getGroup() == null ? null : getGroup().getName());
-        map.put(table_migrationUsage, migrationUsage.ordinal());
-        map.put(table_treeName, getTreeName());
-        return map;
-    }
-
     protected Table(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
     {
-        this();
         ais.checkMutability();
         AISInvariants.checkNullName(schemaName, "Table", "schema name");
         AISInvariants.checkNullName(tableName, "Table", "table name");
@@ -78,6 +40,11 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         this.ais = ais;
         this.tableName = new TableName(schemaName, tableName);
         this.tableId = tableId;
+
+        this.groupIndexes = new HashSet<GroupIndex>();
+        this.unmodifiableGroupIndexes = Collections.unmodifiableCollection(groupIndexes);
+        this.indexMap = new TreeMap<String, TableIndex>();
+        this.unmodifiableIndexMap = Collections.unmodifiableMap(indexMap);
     }
 
     public AkibanInformationSchema getAIS()
@@ -185,6 +152,14 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         }
     }
 
+    public MigrationUsage getMigrationUsage() {
+        return migrationUsage;
+    }
+
+    public void setMigrationUsage(MigrationUsage migrationUsage) {
+        this.migrationUsage = migrationUsage;
+    }
+
     public boolean isAISTable()
     {
         return tableName.getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA);
@@ -217,15 +192,6 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     {
         columnMap.clear();
         columnsStale = true;
-    }
-
-    protected Table()
-    {
-        // XXX: GWT requires empty constructor
-        this.groupIndexes = new HashSet<GroupIndex>();
-        this.unmodifiableGroupIndexes = Collections.unmodifiableCollection(groupIndexes);
-        this.indexMap = new TreeMap<String, TableIndex>();
-        this.unmodifiableIndexMap = Collections.unmodifiableMap(indexMap);
     }
 
     // For use by this package
@@ -307,7 +273,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     public void checkIntegrity(List<String> out)
     {
         if (tableName == null) {
-            out.add("table had null table name" + table);
+            out.add("table had null table name");
         }
         for (Map.Entry<String, Column> entry : columnMap.entrySet()) {
             String name = entry.getKey();
@@ -340,7 +306,7 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
                 out.add("table's index.getTable() wasn't the table" + index + " <--> " + this);
             }
             if (index != null) {
-                for (IndexColumn indexColumn : index.getColumns()) {
+                for (IndexColumn indexColumn : index.getKeyColumns()) {
                     if (!index.equals(indexColumn.getIndex())) {
                         out.add("index's indexColumn.getIndex() wasn't index: " + indexColumn);
                     }
@@ -358,18 +324,12 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
         return engine;
     }
 
-    Map<String, Column> getColumnMap()
+    public void rowDef(RowDef rowDef)
     {
-        return columnMap;
-    }
-
-    public void rowDef(Object rowDef)
-    {
-        assert rowDef.getClass().getName().equals("com.akiban.server.rowdata.RowDef") : rowDef.getClass();
         this.rowDef = rowDef;
     }
 
-    public Object rowDef()
+    public RowDef rowDef()
     {
         return rowDef;
     }
@@ -411,27 +371,23 @@ public abstract class Table implements Serializable, ModelNames, Traversable, Ha
     }
 
     // State
+    protected final AkibanInformationSchema ais;
+    private final Object columnsStaleLock = new Object();
+    private final List<Column> columns = new ArrayList<Column>();
+    private final List<Column> columnsWithoutInternal = new ArrayList<Column>();
+    private final Map<String, TableIndex> indexMap;
+    private final Map<String, TableIndex> unmodifiableIndexMap;
+    private final Map<String, Column> columnMap = new TreeMap<String, Column>();
+    private final Collection<GroupIndex> groupIndexes;
+    private final Collection<GroupIndex> unmodifiableGroupIndexes;
 
-    protected AkibanInformationSchema ais;
     protected Group group;
     protected TableName tableName;
     private Integer tableId;
     private volatile boolean columnsStale = true;
-    private final Object columnsStaleLock = new Object();
-    private List<Column> columns = new ArrayList<Column>();
-    private List<Column> columnsWithoutInternal = new ArrayList<Column>();
-    private final Map<String, TableIndex> indexMap;
-    private final Map<String, TableIndex> unmodifiableIndexMap;
-    private Map<String, Column> columnMap = new TreeMap<String, Column>();
     private CharsetAndCollation charsetAndCollation;
     protected MigrationUsage migrationUsage = MigrationUsage.AKIBAN_STANDARD;
     protected String engine;
     protected String treeName;
-
-    private final Collection<GroupIndex> groupIndexes;
-    private final Collection<GroupIndex> unmodifiableGroupIndexes;
-
-    // It really is a RowDef, but declaring it that way creates trouble for AIS. We don't want to pull in
-    // all the RowDef stuff and have it visible to GWT.
-    private transient /*RowDef*/ Object rowDef;
+    private RowDef rowDef;
 }

@@ -13,11 +13,20 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.ais.io;
+package com.akiban.ais.metamodel.io;
 
 import java.util.Collection;
 
+import com.akiban.ais.metamodel.MMColumn;
+import com.akiban.ais.metamodel.MMGroup;
+import com.akiban.ais.metamodel.MMIndex;
+import com.akiban.ais.metamodel.MMIndexColumn;
+import com.akiban.ais.metamodel.MMJoin;
+import com.akiban.ais.metamodel.MMJoinColumn;
+import com.akiban.ais.metamodel.MMTable;
+import com.akiban.ais.metamodel.MMType;
 import com.akiban.ais.metamodel.MetaModel;
+import com.akiban.ais.metamodel.Target;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
@@ -26,10 +35,8 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.Target;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
-import com.akiban.util.Command;
 
 public class Writer
 {
@@ -68,14 +75,14 @@ public class Writer
     private void saveTypes(Collection<Type> types) {
         target.writeCount(types.size());
         for (Type type : types) {
-            target.writeType(type.map());
+            target.writeType(MMType.map(type));
         }
     }
 
     private void saveGroups(Collection<Group> groups) {
         target.writeCount(groups.size());
         for (Group group : groups) {
-            target.writeGroup(group.map());
+            target.writeGroup(MMGroup.map(group));
             nIndexes += group.getIndexes().size();
         }
     }
@@ -83,13 +90,13 @@ public class Writer
     private void saveTables(Collection<GroupTable> groupTables, Collection<UserTable> userTables) {
         target.writeCount(groupTables.size() + userTables.size());
         for (GroupTable groupTable : groupTables) {
-            target.writeTable(groupTable.map());
+            target.writeTable(MMTable.map(groupTable));
             assert groupTable.getRoot() != null : groupTable;
             nColumns += groupTable.getColumns().size();
             nIndexes += groupTable.getIndexes().size();
         }
         for (UserTable userTable : userTables) {
-            target.writeTable(userTable.map());
+            target.writeTable(MMTable.map(userTable));
             nColumns += userTable.getColumnsIncludingInternal().size();
             nIndexes += userTable.getIndexesIncludingInternal().size();
         }
@@ -99,12 +106,12 @@ public class Writer
         target.writeCount(nColumns);
         for (GroupTable groupTable : groupTables) {
             for (Column column : groupTable.getColumns()) {
-                target.writeColumn(column.map());
+                target.writeColumn(MMColumn.map(column));
             }
         }
         for (UserTable userTable : userTables) {
             for (Column column : userTable.getColumnsIncludingInternal()) {
-                target.writeColumn(column.map());
+                target.writeColumn(MMColumn.map(column));
             }
         }
     }
@@ -112,7 +119,7 @@ public class Writer
     private void saveJoins(Collection<Join> joins)  {
         target.writeCount(joins.size());
         for (Join join : joins) {
-            target.writeJoin(join.map());
+            target.writeJoin(MMJoin.map(join));
             nJoinColumns += join.getJoinColumns().size();
         }
     }
@@ -121,7 +128,7 @@ public class Writer
         target.writeCount(nJoinColumns);
         for (Join join : joins) {
             for (JoinColumn joinColumn : join.getJoinColumns()) {
-                target.writeJoinColumn(joinColumn.map());
+                target.writeJoinColumn(MMJoinColumn.map(joinColumn));
             }
         }
     }
@@ -131,20 +138,20 @@ public class Writer
         target.writeCount(nIndexes);
         for (Group group : groups) {
             for (Index index : group.getIndexes()) {
-                target.writeIndex(index.map());
-                nIndexColumns += index.getColumns().size();
+                target.writeIndex(MMIndex.map(index));
+                nIndexColumns += index.getKeyColumns().size();
             }
         }
         for (UserTable userTable : userTables) {
             for (Index index : userTable.getIndexesIncludingInternal()) {
-                target.writeIndex(index.map());
-                nIndexColumns += index.getColumns().size();
+                target.writeIndex(MMIndex.map(index));
+                nIndexColumns += index.getKeyColumns().size();
             }
         }
         for (GroupTable groupTable : groupTables) {
             for (Index index : groupTable.getIndexes()) {
-                target.writeIndex(index.map());
-                nIndexColumns += index.getColumns().size();
+                target.writeIndex(MMIndex.map(index));
+                nIndexColumns += index.getKeyColumns().size();
             }
         }
     }
@@ -154,22 +161,22 @@ public class Writer
         target.writeCount(nIndexColumns);
         for (Group group : groups) {
             for (Index index : group.getIndexes()) {
-                for (IndexColumn indexColumn : index.getColumns()) {
-                    target.writeIndexColumn(indexColumn.map());
+                for (IndexColumn indexColumn : index.getKeyColumns()) {
+                    target.writeIndexColumn(MMIndexColumn.map(indexColumn));
                 }
             }
         }
         for (UserTable userTable : userTables) {
             for (Index index : userTable.getIndexesIncludingInternal()) {
-                for (IndexColumn indexColumn : index.getColumns()) {
-                    target.writeIndexColumn(indexColumn.map());
+                for (IndexColumn indexColumn : index.getKeyColumns()) {
+                    target.writeIndexColumn(MMIndexColumn.map(indexColumn));
                 }
             }
         }
         for (GroupTable groupTable : groupTables) {
             for (Index index : groupTable.getIndexes()) {
-                for (IndexColumn indexColumn : index.getColumns()) {
-                    target.writeIndexColumn(indexColumn.map());
+                for (IndexColumn indexColumn : index.getKeyColumns()) {
+                    target.writeIndexColumn(MMIndexColumn.map(indexColumn));
                 }
             }
         }

@@ -15,7 +15,6 @@
 
 package com.akiban.ais.model;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -63,6 +62,8 @@ public class HKeyColumn
         if (column.getTable().isUserTable()) {
             UserTable userTable = (UserTable) column.getTable();
             this.equivalentColumns = Collections.unmodifiableList(userTable.matchingColumns(column));
+        } else {
+            this.equivalentColumns = null;
         }
     }
 
@@ -86,11 +87,11 @@ public class HKeyColumn
 
     // State
 
-    private HKeySegment segment;
-    private Column column;
-    private int positionInHKey;
+    private final HKeySegment segment;
+    private final Column column;
+    private final int positionInHKey;
     // If column is a group table column, then we need to know all columns in the group table that are constrained
     // to have matching values, e.g. customer$cid and order$cid. For a user table, equivalentColumns contains just
     // column.
-    private List<Column> equivalentColumns;
+    private final List<Column> equivalentColumns;
 }

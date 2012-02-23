@@ -89,7 +89,7 @@ public class Scanrows implements HapiProcessor {
             int tableId = this.index.getTable().getTableId();
             final RowDef rowDef;
             try {
-                rowDef = (RowDef) getTable(ais, tableId).rowDef();
+                rowDef = getTable(ais, tableId).rowDef();
             } catch (NoSuchTableException e) {
                 throw new HapiRequestException("internal error; tableId" + tableId, INTERNAL_ERROR);
             }
@@ -428,7 +428,7 @@ public class Scanrows implements HapiProcessor {
                         public int sortToBuckets(Index index, List<String> columns) {
                             int matched = 0;
                             Iterator<String> colsIter = columns.iterator();
-                            for (IndexColumn iCol : index.getColumns()) {
+                            for (IndexColumn iCol : index.getKeyColumns()) {
                                 String iColName = iCol.getColumn().getName();
                                 if (colsIter.hasNext() && iColName.equals(colsIter.next())) {
                                     ++matched;
@@ -477,7 +477,7 @@ public class Scanrows implements HapiProcessor {
                     new IndexBucketSorter() {
                         @Override
                         public int sortToBuckets(Index index, List<String> columns) {
-                            return index.getColumns().size();
+                            return index.getKeyColumns().size();
                         }
                     }
             );
@@ -622,8 +622,8 @@ public class Scanrows implements HapiProcessor {
     }
 
     private static List<String> indexColumns(Index index) {
-        List<String> indexColumns = new ArrayList<String>(index.getColumns().size());
-        for (IndexColumn indexColumn : index.getColumns()) {
+        List<String> indexColumns = new ArrayList<String>(index.getKeyColumns().size());
+        for (IndexColumn indexColumn : index.getKeyColumns()) {
             indexColumns.add(indexColumn.getColumn().getName());
         }
         return indexColumns;

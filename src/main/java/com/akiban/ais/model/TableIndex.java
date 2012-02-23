@@ -65,6 +65,11 @@ public class TableIndex extends Index
         return getTable();
     }
 
+    @Override
+    public void checkMutability() {
+        table.checkMutability();
+    }
+
     public Table getTable()
     {
         return table;
@@ -83,7 +88,7 @@ public class TableIndex extends Index
                 // Find the user table corresponding to this index. Currently, the columns of a group table index all
                 // correspond to the same user table.
                 UserTable userTable = null;
-                for (IndexColumn indexColumn : getColumns()) {
+                for (IndexColumn indexColumn : getKeyColumns()) {
                     Column userColumn = indexColumn.getColumn().getUserColumn();
                     if (userTable == null) {
                         userTable = (UserTable) userColumn.getTable();
@@ -99,12 +104,6 @@ public class TableIndex extends Index
         return hKey;
     }
 
-    @SuppressWarnings("unused")
-    private TableIndex()
-    {
-        // GWT
-    }
-
-    private Table table;
-    private transient HKey hKey;
+    private final Table table;
+    private HKey hKey;
 }

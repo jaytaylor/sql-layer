@@ -36,12 +36,12 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.akiban.ais.io.AISTarget;
-import com.akiban.ais.io.MessageSource;
-import com.akiban.ais.io.MessageTarget;
-import com.akiban.ais.io.Reader;
-import com.akiban.ais.io.TableSubsetWriter;
-import com.akiban.ais.io.Writer;
+import com.akiban.ais.metamodel.io.AISTarget;
+import com.akiban.ais.metamodel.io.MessageSource;
+import com.akiban.ais.metamodel.io.MessageTarget;
+import com.akiban.ais.metamodel.io.Reader;
+import com.akiban.ais.metamodel.io.TableSubsetWriter;
+import com.akiban.ais.metamodel.io.Writer;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AISMerge;
 import com.akiban.ais.model.AISTableNameChanger;
@@ -182,8 +182,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      */
     private static void syncIndexTreeNames(GroupTable groupTable) {
         for(TableIndex index : groupTable.getIndexes()) {
-            if(!index.getColumns().isEmpty()) {
-                Column groupColumn = index.getColumns().get(0).getColumn();
+            if(!index.getKeyColumns().isEmpty()) {
+                Column groupColumn = index.getKeyColumns().get(0).getColumn();
                 Column userColumn = groupColumn.getUserColumn();
                 assert userColumn != null : groupColumn;
                 boolean found = false;
@@ -403,7 +403,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             if(curIndex != null) {
                 throw new DuplicateIndexException(indexName);
             }
-            if(index.getColumns().isEmpty()) {
+            if(index.getKeyColumns().isEmpty()) {
                 throw new IndexLacksColumnsException (
                         new TableName(index.getIndexName().getSchemaName(), index.getIndexName().getTableName()),
                         index.getIndexName().getName());
@@ -412,7 +412,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             volumeToSchema.put(getVolumeForSchemaTree(schemaName), schemaName);
 
             UserTable lastTable = null;
-            for(IndexColumn indexCol : index.getColumns()) {
+            for(IndexColumn indexCol : index.getKeyColumns()) {
                 final TableName refTableName = indexCol.getColumn().getTable().getName();
                 final UserTable newRefTable = newAIS.getUserTable(refTableName);
                 if(newRefTable == null) {
@@ -954,7 +954,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         // equivalent index will a) get an index tree and b) have column(s) contributing additional size
         for(Index index : table.getIndexesIncludingInternal()) {
             long fullKeySize = hkeySize;
-            for(IndexColumn iColumn : index.getColumns()) {
+            for(IndexColumn iColumn : index.getKeyColumns()) {
                 final Column column = iColumn.getColumn();
                 // Only indexed columns not in hkey contribute new information
                 if(!hkey.containsColumn(column)) {

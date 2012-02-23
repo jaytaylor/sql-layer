@@ -97,7 +97,7 @@ public class FlattenedRowType extends DerivedRowType
         this.nFields = parent.nFields() + child.nFields();
         List<UserTable> parentAndChildTables = new ArrayList<UserTable>(parent.typeComposition().tables());
         parentAndChildTables.addAll(child.typeComposition().tables());
-        typeComposition(new TypeComposition(this, parentAndChildTables));
+        typeComposition(new SingleBranchTypeComposition(this, parentAndChildTables));
     }
 
     // Object state

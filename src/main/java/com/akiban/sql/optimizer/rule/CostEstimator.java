@@ -69,7 +69,7 @@ public abstract class CostEstimator
                                       ExpressionNode highComparand, boolean highInclusive) {
         if (index.isUnique()) {
             if ((equalityComparands != null) &&
-                (equalityComparands.size() == index.getColumns().size())) {
+                (equalityComparands.size() == index.getKeyColumns().size())) {
                 // Exact match from unique index; probably one row.
                 return indexAccessCost(1, index);
             }
@@ -134,7 +134,7 @@ public abstract class CostEstimator
         return new CostEstimate(nrows, 
                                 RANDOM_ACCESS_COST +
                                 ((nrows - 1) * SEQUENTIAL_ACCESS_COST) +
-                                nrows * FIELD_ACCESS_COST * index.getColumns().size());
+                                nrows * FIELD_ACCESS_COST * index.getKeyColumns().size());
     }
 
     protected long rowsEqual(Histogram histogram, byte[] keyBytes) {
@@ -267,7 +267,7 @@ public abstract class CostEstimator
         if (expr == null)
             return false;
         ValueSource valueSource = expr.evaluation().eval();
-        keyTarget.expectingType(index.getColumns().get(column).getColumn().getType().akType());
+        keyTarget.expectingType(index.getKeyColumns().get(column).getColumn().getType().akType());
         Converters.convert(valueSource, keyTarget);
         return true;
     }

@@ -15,48 +15,16 @@
 
 package com.akiban.ais.model;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import com.akiban.ais.gwtutils.SerializableEnumSet;
 
-public class Join implements Serializable, ModelNames, Traversable, HasGroup
+public class Join implements Traversable, HasGroup
 {
-    public static Join create(AkibanInformationSchema ais, Map<String, Object> map)
-    {
-        String parentSchemaName = (String) map.get(join_parentSchemaName);
-        String parentTableName = (String) map.get(join_parentTableName);
-        String childSchemaName = (String) map.get(join_childSchemaName);
-        String childTableName = (String) map.get(join_childTableName);
-        String joinName = (String) map.get(join_joinName);
-        Integer joinWeight = (Integer) map.get(join_joinWeight);
-        String groupName = (String) map.get(join_groupName);
-        
-        UserTable parent = ais.getUserTable(parentSchemaName, parentTableName);
-        UserTable child = ais.getUserTable(childSchemaName, childTableName);
-        Join join = create(ais, joinName, parent, child);
-        join.setWeight(joinWeight);
-        if (groupName != null) {
-            Group group = ais.getGroup(groupName);
-            parent.setGroup(group);
-            child.setGroup(group);
-            join.setGroup(group);
-        }
-        int groupingUsageInt = (Integer) map.get(join_groupingUsage);
-        join.setGroupingUsage(GroupingUsage.values()[groupingUsageInt]);
-        int sourceTypesInt = (Integer) map.get(join_sourceTypes);
-        SerializableEnumSet<SourceType> sourceTypes = new SerializableEnumSet<SourceType>(SourceType.class);
-        sourceTypes.loadInt(sourceTypesInt);
-        join.setSourceTypes(sourceTypes);
-        return join;
-    }
-
     public static Join create(AkibanInformationSchema ais,
                               String joinName,
                               UserTable parent,
@@ -64,28 +32,10 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
     {
         ais.checkMutability();
         Join join = new Join(ais, joinName, parent, child);
+        join.parent.addCandidateChildJoin(join);
+        join.child.addCandidateParentJoin(join);
         ais.addJoin(join);
         return join;
-    }
-
-    public Map<String, Object> map()
-    {
-        Map<String, Object> map = new HashMap<String, Object>();
-        map.put(join_joinName, joinName);
-        map.put(join_parentSchemaName, parent.getName().getSchemaName());
-        map.put(join_parentTableName, parent.getName().getTableName());
-        map.put(join_childSchemaName, child.getName().getSchemaName());
-        map.put(join_childTableName, child.getName().getTableName());
-        map.put(join_groupName, group == null ? null : group.getName());
-        map.put(join_joinWeight, weight);
-        map.put(join_groupingUsage, groupingUsage.ordinal());
-        map.put(join_sourceTypes, sourceTypes.toInt());
-        return map;
-    }
-
-    private Join()
-    {
-        // GWT requires empty constructor
     }
 
     @Override
@@ -97,12 +47,13 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
                 : "Join(" + joinName + ": " + child + " -> " + parent + ", group(" + getGroup().getName() + "))";
     }
 
-    public void addJoinColumn(Column parent, Column child)
+    public JoinColumn addJoinColumn(Column parent, Column child)
     {
         ais.checkMutability();
         JoinColumn joinColumn = new JoinColumn(this, parent, child);
         joinColumns.add(joinColumn);
         joinColumnsStale = true;
+        return joinColumn;
     }
 
     public String getDescription()
@@ -148,11 +99,11 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
             throw new AISBuilder.UngroupableJoinException(this);
         }
         // FK and PK should match in size. hard to see how we get here if this isn't true, but check anyway.
-        if (parentPK.getColumns().size() != joinColumns.size()) {
+        if (parentPK.getKeyColumns().size() != joinColumns.size()) {
             throw new AISBuilder.UngroupableJoinException(this);
         }
         // Check that the join parent is actually the PK.
-        Iterator<Column> parentPKColumnScan = parentPK.getColumns().iterator();
+        Iterator<Column> parentPKColumnScan = parentPK.getKeyColumns().iterator();
         Iterator<JoinColumn> joinColumnScan = joinColumns.iterator();
         while (parentPKColumnScan.hasNext()) {
             Column parentPKColumn = parentPKColumnScan.next();
@@ -213,6 +164,10 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
     {
         return sourceTypes;
     }
+    
+    public int getSourceTypesInt() {
+        return sourceTypes.toInt();
+    }
 
     public void setSourceTypes(SerializableEnumSet<SourceType> sourceTypes)
     {
@@ -251,15 +206,11 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
 
     private Join(AkibanInformationSchema ais, String joinName, UserTable parent, UserTable child)
     {
-        ais.checkMutability();
-        
         this.ais = ais;
         this.joinName = joinName;
         this.parent = parent;
         this.child = child;
         joinColumns = new LinkedList<JoinColumn>();
-        this.parent.addCandidateChildJoin(this);
-        this.child.addCandidateParentJoin(this);
     }
 
     public enum GroupingUsage
@@ -312,14 +263,14 @@ public class Join implements Serializable, ModelNames, Traversable, HasGroup
 
     // State
 
-    private AkibanInformationSchema ais;
+    private final AkibanInformationSchema ais;
+    private final UserTable parent;
+    private final UserTable child;
+    private final List<JoinColumn> joinColumns;
     private String joinName;
     private Integer weight;
-    private UserTable parent;
-    private UserTable child;
     private Group group;
     private boolean joinColumnsStale = true;
-    private List<JoinColumn> joinColumns;
 
     private GroupingUsage groupingUsage = GroupingUsage.WHEN_OPTIMAL;
     private SerializableEnumSet<SourceType> sourceTypes = new SerializableEnumSet<SourceType>(SourceType.class);

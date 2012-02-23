@@ -23,66 +23,19 @@ import java.util.*;
 
 public class TypeComposition
 {
-    /**
-     * Indicates whether this is an ancestor of that: this is identical to that, or:
-     * - the tables comprising this and that are disjoint, and
-     * - the rootmost table of that has an ancestor among the tables of this.
-     * @param that
-     * @return true if this is an ancestor of that, false otherwise.
-     */
     public boolean isAncestorOf(TypeComposition that)
     {
-        Boolean ancestor;
-        if (this == that) {
-            ancestor = Boolean.TRUE;
-        } else {
-            ancestor = ancestorOf.get(that.rowType);
-            if (ancestor == null) {
-                // Check for tables in common
-                ancestor = Boolean.TRUE;
-                for (UserTable table : that.tables) {
-                    if (this.tables.contains(table)) {
-                        ancestor = Boolean.FALSE;
-                    }
-                }
-                if (ancestor) {
-                    ancestor = levelsApart(that) > 0;
-                }
-                ancestorOf.put(that.rowType, ancestor);
-            }
-        }
-        return ancestor;
+        throw new UnsupportedOperationException();
     }
 
-    /**
-     * Indicates whether this is a parentof that: this is not identical to that, and:
-     * - the tables comprising this and that are disjoint, and
-     * - the rootmost table's parent is among the tables of this.
-     * @param that
-     * @return true if this is an ancestor of that, false otherwise.
-     */
     public boolean isParentOf(TypeComposition that)
     {
-        boolean ancestor;
-        if (this == that) {
-            ancestor = false;
-        } else {
-            ancestor = isAncestorOf(that);
-            if (ancestor) {
-                ancestor = levelsApart(that) > 0;
-            }
-        }
-        return ancestor;
+        throw new UnsupportedOperationException();
     }
 
-    public Set<UserTable> tables()
+    public final Set<UserTable> tables()
     {
         return tables;
-    }
-
-    public TypeComposition(RowType rowType, UserTable table)
-    {
-        this(rowType, Arrays.asList(table));
     }
 
     public TypeComposition(RowType rowType, Collection<UserTable> tables)
@@ -93,33 +46,8 @@ public class TypeComposition
         this.tables = Collections.unmodifiableSet(new HashSet<UserTable>(tables));
     }
 
-    // For use by this class
-
-    // If this is an ancestor of that, then the return value is the number of generations separating the two.
-    // (parent = 1). If this is not an ancestor of that, return -1.
-    public int levelsApart(TypeComposition that)
-    {
-        // Find rootmost table in that
-        UserTable thatRoot = that.tables.iterator().next();
-        while (thatRoot.parentTable() != null && that.tables.contains(thatRoot.parentTable())) {
-            thatRoot = thatRoot.parentTable();
-        }
-        // this is an ancestor of that if that's rootmost table has an ancestor in this.
-        int generationsApart = 0;
-        UserTable thatAncestor = thatRoot;
-        boolean ancestor = false;
-        while (thatAncestor != null && !ancestor) {
-            thatAncestor = thatAncestor.parentTable();
-            ancestor = this.tables.contains(thatAncestor);
-            generationsApart++;
-        }
-        return ancestor ? generationsApart : -1;
-    }
-
     // Object state
 
-    private final RowType rowType;
-    private final Set<UserTable> tables;
-    private final Map<RowType, Boolean> ancestorOf = new HashMap<RowType, Boolean>();
-    private UserTable rootmost;
+    protected final RowType rowType;
+    protected final Set<UserTable> tables;
 }

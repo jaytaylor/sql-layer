@@ -27,7 +27,7 @@ public class IndexStatistics
     private Histogram[] histograms; // Indexed by column count.
 
     protected IndexStatistics(Index index) {
-        this.histograms = new Histogram[index.getColumns().size()];
+        this.histograms = new Histogram[index.getKeyColumns().size()];
     }
 
     public long getAnalysisTimestamp() {
@@ -97,7 +97,7 @@ public class IndexStatistics
                 str.append(" for ").append(index.getIndexName()).append("(");
                 for (int j = 0; j < columnCount; j++) {
                     if (j > 0) str.append(", ");
-                    str.append(index.getColumns().get(j).getColumn().getName());
+                    str.append(index.getKeyColumns().get(j).getColumn().getName());
                 }
                 str.append("):\n");
             }

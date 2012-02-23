@@ -168,7 +168,7 @@ public class DDLGenerator
     private String declaration(TableIndex index)
     {
         List<String> columnDecls = new ArrayList<String>();
-        for (IndexColumn indexColumn : index.getColumns()) {
+        for (IndexColumn indexColumn : index.getKeyColumns()) {
             columnDecls.add(declaration(indexColumn));
         }
         
