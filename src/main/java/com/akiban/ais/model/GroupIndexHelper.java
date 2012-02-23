@@ -34,10 +34,6 @@ final class GroupIndexHelper {
         }
     }
 
-    // private methods
-
-    private GroupIndexHelper() {}
-
     // nested classes
     private static interface IndexAction {
         void act(GroupIndex groupIndex, Table onTable);
