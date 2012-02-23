@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
+ * Copyright (C) 2012 Akiban Technologies Inc.
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License, version 3,
  * as published by the Free Software Foundation.
@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer.rule.join_enum;
 
 import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.optimizer.plan.IndexScan.OrderEffectiveness;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 
 import java.util.*;
@@ -23,6 +24,7 @@ import java.util.*;
 /** The overall goal of a query: WHERE conditions, ORDER BY, etc. */
 public class QueryIndexGoal
 {
+    private BaseQuery query;
     private ConditionList whereConditions;
 
     // If both grouping and ordering are present, they must be
@@ -45,6 +47,7 @@ public class QueryIndexGoal
                           AggregateSource grouping,
                           Sort ordering,
                           Project projectDistinct) {
+        this.query = query;
         this.whereConditions = whereConditions;
         this.grouping = grouping;
         this.ordering = ordering;
@@ -53,6 +56,66 @@ public class QueryIndexGoal
         if ((query instanceof UpdateStatement) ||
             (query instanceof DeleteStatement))
           updateTarget = ((BaseUpdateStatement)query).getTargetTable();
+    }
+
+    public BaseQuery getQuery() {
+        return query;
+    }
+    public ConditionList getWhereConditions() {
+        return whereConditions;
+    }
+    public AggregateSource getGrouping() {
+        return grouping;
+    }
+    public Sort getOrdering() {
+        return ordering;
+    }
+    public Project getProjectDistinct() {
+        return projectDistinct;
+    }
+    public TableNode getUpdateTarget() {
+        return updateTarget;
+    }
+
+    /** Change GROUP BY, and ORDER BY upstream of <code>node</code> as
+     * a consequence of <code>orderEffectiveness</code> being used.
+     */
+    public void installOrderEffectiveness(OrderEffectiveness orderEffectiveness) {
+        if (grouping != null) {
+            AggregateSource.Implementation implementation;
+            switch (orderEffectiveness) {
+            case SORTED:
+            case GROUPED:
+                implementation = AggregateSource.Implementation.PRESORTED;
+                break;
+            case PARTIAL_GROUPED:
+                implementation = AggregateSource.Implementation.PREAGGREGATE_RESORT;
+                break;
+            default:
+                implementation = AggregateSource.Implementation.SORT;
+                break;
+            }
+            grouping.setImplementation(implementation);
+        }
+        if (ordering != null) {
+            if (orderEffectiveness == IndexScan.OrderEffectiveness.SORTED) {
+                // Sort not needed: splice it out.
+                ordering.getOutput().replaceInput(ordering, ordering.getInput());
+            }
+        }
+        if (projectDistinct != null) {
+            Distinct distinct = (Distinct)projectDistinct.getOutput();
+            Distinct.Implementation implementation;
+            switch (orderEffectiveness) {
+            case SORTED:
+                implementation = Distinct.Implementation.PRESORTED;
+                break;
+            default:
+                implementation = Distinct.Implementation.SORT;
+                break;
+            }
+            distinct.setImplementation(implementation);
+        }
     }
 
 }
