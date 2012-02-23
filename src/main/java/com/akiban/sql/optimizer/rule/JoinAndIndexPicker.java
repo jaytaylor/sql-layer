@@ -118,7 +118,7 @@ public class JoinAndIndexPicker extends BaseRule
                 else if (input instanceof Sort)
                     ordering = (Sort)input;
             }
-            return new QueryIndexGoal(query, whereConditions, 
+            return new QueryIndexGoal(query, costEstimator, whereConditions, 
                                       grouping, ordering, projectDistinct);
         }
 

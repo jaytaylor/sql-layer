@@ -44,9 +44,4 @@ public class ServerCostEstimator extends CostEstimator
         return table.rowDef().getTableStatus().getApproximateRowCount();
     }
 
-    @Override
-    public boolean isEnabled() {
-        return "true".equals(session.getProperty("cbo"));
-    }
-
 }

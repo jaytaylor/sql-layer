@@ -15,6 +15,8 @@
 
 package com.akiban.sql.optimizer.rule.join_enum;
 
+import com.akiban.sql.optimizer.rule.CostEstimator;
+
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.IndexScan.OrderEffectiveness;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
@@ -25,6 +27,7 @@ import java.util.*;
 public class QueryIndexGoal
 {
     private BaseQuery query;
+    private CostEstimator costEstimator;
     private ConditionList whereConditions;
 
     // If both grouping and ordering are present, they must be
@@ -43,11 +46,13 @@ public class QueryIndexGoal
     private TableNode updateTarget;
 
     public QueryIndexGoal(BaseQuery query,
+                          CostEstimator costEstimator,
                           ConditionList whereConditions,
                           AggregateSource grouping,
                           Sort ordering,
                           Project projectDistinct) {
         this.query = query;
+        this.costEstimator = costEstimator;
         this.whereConditions = whereConditions;
         this.grouping = grouping;
         this.ordering = ordering;
@@ -60,6 +65,9 @@ public class QueryIndexGoal
 
     public BaseQuery getQuery() {
         return query;
+    }
+    public CostEstimator getCostEstimator() {
+        return costEstimator;
     }
     public ConditionList getWhereConditions() {
         return whereConditions;
@@ -75,6 +83,16 @@ public class QueryIndexGoal
     }
     public TableNode getUpdateTarget() {
         return updateTarget;
+    }
+
+    public boolean needSort(OrderEffectiveness orderEffectiveness) {
+        if ((ordering != null) ||
+            (projectDistinct != null))
+            return (orderEffectiveness != IndexScan.OrderEffectiveness.SORTED);
+        if (grouping != null)
+            return ((orderEffectiveness != IndexScan.OrderEffectiveness.SORTED) &&
+                    (orderEffectiveness != IndexScan.OrderEffectiveness.GROUPED));
+        return false;
     }
 
     /** Change GROUP BY, and ORDER BY upstream of <code>node</code> as

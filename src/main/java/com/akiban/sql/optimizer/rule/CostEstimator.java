@@ -50,11 +50,6 @@ public abstract class CostEstimator
     public abstract long getTableRowCount(Table table);
     public abstract IndexStatistics getIndexStatistics(Index index);
 
-    // TODO: Temporary until fully installed.
-    public boolean isEnabled() {
-        return false;
-    }
-
     // TODO: These need to be figured out for real.
     public static final double RANDOM_ACCESS_COST = 1.25;
     public static final double SEQUENTIAL_ACCESS_COST = 1.0;
