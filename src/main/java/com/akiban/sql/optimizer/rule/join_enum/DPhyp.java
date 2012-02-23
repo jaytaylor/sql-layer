@@ -47,9 +47,6 @@ public abstract class DPhyp<P>
     private long[] edges;
     private int noperators, nedges;
     
-    // Indexes for leaves and their constituent tables.
-    private Map<Joinable,Long> tableBitSets;
-
     // The "plan class" is the set of retained plans for the given tables.
     private Object[] plans;
     
@@ -217,28 +214,10 @@ public abstract class DPhyp<P>
     public void init(Joinable root, ConditionList whereConditions) {
         tables = new ArrayList<Joinable>();
         addTables(root);
-        int ntables = tables.size();
-        if (ntables > 30)
+        if (tables.size() > 30)
             // TODO: Need to select some simpler algorithm that scales better.
-            throw new UnsupportedSQLException("Too many tables in query: " + ntables, 
-                                              null);
-        tableBitSets = new HashMap<Joinable,Long>(ntables);
-        for (int i = 0; i < ntables; i++) {
-            Joinable table = tables.get(i);
-            Long bitset = JoinableBitSet.of(i);
-            tableBitSets.put(table, bitset);
-            if (table instanceof TableJoins) {
-                for (TableSource joinedTable : ((TableJoins)table).getTables()) {
-                    tableBitSets.put(joinedTable, bitset);
-                }
-            }
-            else if (table instanceof TableGroupJoinTree) {
-                for (TableGroupJoinTree.TableGroupJoinNode node : (TableGroupJoinTree)table) {
-                    tableBitSets.put(node.getTable(), bitset);
-                }
-            }
-        }
-        ExpressionTables visitor = new ExpressionTables(tableBitSets);
+            throw new UnsupportedSQLException("Too many tables in query.", null);
+        ExpressionTables visitor = new ExpressionTables(tables);
         noperators = 0;
         JoinOperator rootOp = initSES(root, visitor);
         noperators += whereConditions.size(); // Maximum possible.
@@ -317,7 +296,7 @@ public abstract class DPhyp<P>
                 op.leftTables = leftOp.getTables();
             }
             else {
-                op.leftTables = tableBitSets.get(left);
+                op.leftTables = JoinableBitSet.of(tables.indexOf(left));
             }
             Joinable right = join.getRight();
             JoinOperator rightOp = initSES(right, visitor);
@@ -327,7 +306,7 @@ public abstract class DPhyp<P>
                 op.rightTables = rightOp.getTables();
             }
             else {
-                op.rightTables = tableBitSets.get(right);
+                op.rightTables = JoinableBitSet.of(tables.indexOf(right));
             }
             op.predicateTables = visitor.getTables(op.joinConditions);
             if (visitor.wasNullTolerant() && !allInnerJoins(op))
@@ -467,9 +446,9 @@ public abstract class DPhyp<P>
     /** Is this a single column in a known table? */
     protected long columnReferenceTable(ExpressionNode node) {
         if (node instanceof ColumnExpression) {
-            Long bitset = tableBitSets.get(((ColumnExpression)node).getTable());
-            if (bitset != null) {
-                return bitset;
+            int idx = tables.indexOf(((ColumnExpression)node).getTable());
+            if (idx >= 0) {
+                return JoinableBitSet.of(idx);
             }
         }
         return JoinableBitSet.empty();
@@ -498,12 +477,12 @@ public abstract class DPhyp<P>
 
     /** Compute tables used in join predicate. */
     static class ExpressionTables implements ExpressionVisitor, PlanVisitor {
-        Map<Joinable,Long> tableBitSets;
+        List<Joinable> tables;
         long result;
         boolean nullTolerant;
 
-        public ExpressionTables(Map<Joinable,Long> tableBitSets) {
-            this.tableBitSets = tableBitSets;
+        public ExpressionTables(List<Joinable> tables) {
+            this.tables = tables;
         }
 
         public long getTables(ConditionList conditions) {
@@ -541,9 +520,9 @@ public abstract class DPhyp<P>
         @Override
         public boolean visit(ExpressionNode n) {
             if (n instanceof ColumnExpression) {
-                Long bitset = tableBitSets.get(((ColumnExpression)n).getTable());
-                if (bitset != null) {
-                    result = JoinableBitSet.union(result, bitset);
+                int idx = tables.indexOf(((ColumnExpression)n).getTable());
+                if (idx >= 0) {
+                    result = JoinableBitSet.union(result, JoinableBitSet.of(idx));
                 }
             }
             else if (!nullTolerant && (n instanceof FunctionExpression)) {
