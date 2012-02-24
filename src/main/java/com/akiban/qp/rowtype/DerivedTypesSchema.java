@@ -15,6 +15,7 @@
 
 package com.akiban.qp.rowtype;
 
+import com.akiban.ais.model.HKey;
 import com.akiban.server.aggregation.AggregatorFactory;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
@@ -64,6 +65,11 @@ public class DerivedTypesSchema {
     public IntersectRowType newIntersectType(RowType leftType, RowType rightType)
     {
         return new IntersectRowType(this, nextTypeId(), leftType, rightType);
+    }
+
+    public HKeyRowType newHKeyRowType(HKey hKey)
+    {
+        return new HKeyRowType(this, hKey);
     }
 
     synchronized final int nextTypeId()

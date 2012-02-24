@@ -22,7 +22,7 @@ import java.util.List;
 
 public abstract class AbstractTwoArgExpressionEvaluation extends AbstractCompositeExpressionEvaluation {
 
-    protected ExpressionEvaluation leftEvaluation() {
+    public ExpressionEvaluation leftEvaluation() {
         return children().get(0);
     }
 
@@ -30,7 +30,7 @@ public abstract class AbstractTwoArgExpressionEvaluation extends AbstractComposi
         return leftEvaluation().eval();
     }
 
-    protected ExpressionEvaluation rightEvaluation() {
+    public ExpressionEvaluation rightEvaluation() {
         return children().get(1);
     }
 
