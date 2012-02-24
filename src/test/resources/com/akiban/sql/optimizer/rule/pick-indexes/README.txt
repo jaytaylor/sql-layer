@@ -12,6 +12,8 @@ group-sort: group index for ordering and condition
 
 no-index: no conditions or ordering
 
+inequality-join: join only done by indexable inequality (note lack of any index)
+
 order-covering: covering from ordering index
 
 order-only: index for ordering with another condition
