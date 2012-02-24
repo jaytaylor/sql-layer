@@ -65,7 +65,7 @@ class PersistitHKey implements HKey
         // setDepth shortens the key's encoded size if necessary but doesn't lengthen it.
         // So setEncodedSize back to the original key length, permitting setDepth to work in all cases.
         // (setEncodedSize is cheap.)
-        hKey.setEncodedSize(hKeySize);
+        hKey.setEncodedSize(originalHKeySize);
         hKey.setDepth(keyDepth[segments]);
     }
 
@@ -73,10 +73,12 @@ class PersistitHKey implements HKey
     public boolean prefixOf(HKey hKey)
     {
         PersistitHKey that = (PersistitHKey) hKey;
-        if (this.hKeySize <= that.hKeySize) {
+        int thisHKeySize = this.hKey.getEncodedSize();
+        int thatHKeySize = that.hKey.getEncodedSize();
+        if (thisHKeySize <= thatHKeySize) {
             byte[] thisBytes = this.hKey.getEncodedBytes();
             byte[] thatBytes = that.hKey.getEncodedBytes();
-            for (int i = 0; i < this.hKeySize; i++) {
+            for (int i = 0; i < thisHKeySize; i++) {
                 if (thisBytes[i] != thatBytes[i]) {
                     return false;
                 }
@@ -112,7 +114,7 @@ class PersistitHKey implements HKey
     public void copyFrom(Key source)
     {
         source.copyTo(hKey);
-        hKeySize = hKey.getEncodedSize();
+        originalHKeySize = hKey.getEncodedSize();
     }
 
     public void copyTo(Key target)
@@ -138,7 +140,7 @@ class PersistitHKey implements HKey
 
     private final Key hKey;
     private final int hKeySegments;
-    private int hKeySize;
+    private int originalHKeySize;
     // Identifies the persistit key depth for the ith hkey segment, 1 <= i <= #hkey segments.
     private final int[] keyDepth;
 }
