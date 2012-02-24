@@ -421,7 +421,6 @@ public class API
                                             JoinType joinType,
                                             IntersectOutputOption intersectOutput)
     {
-/*
         return new Intersect_Ordered(leftInput, rightInput,
                                      leftRowType, rightRowType,
                                      leftOrderingFields,
@@ -429,9 +428,6 @@ public class API
                                      comparisonFields,
                                      joinType,
                                      intersectOutput);
-*/
-        assert false;
-        return null;
     }
     
     // HKeyUnion

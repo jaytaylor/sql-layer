@@ -15,35 +15,29 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.row.IntersectRow;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.IntersectRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.expression.std.*;
+import com.akiban.server.expression.std.AbstractTwoArgExpressionEvaluation;
+import com.akiban.server.expression.std.FieldExpression;
+import com.akiban.server.expression.std.RankExpression;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
+import static com.akiban.qp.operator.API.IntersectOutputOption;
 import static com.akiban.qp.operator.API.JoinType;
 import static java.lang.Math.min;
 
 /**
  <h1>Overview</h1>
 
- HKeyUnion_Ordered finds pairs of rows from two input streams whose projection onto a set of common fields matches.
- Each input stream must be ordered by these common fields.
- For each pair, an output row of IntersectRowType, comprising both input rows, is generated.
- <p>Example: Suppose the left input is an index on (x, pid, cid) and the right input is an index on (a, b, pid, cid).
- The left index scan has restricted the value of x, and the right index scan has restricted the values of a and b.
- Both streams are therefore ordered by (pid, cid).
+ Intersect_Ordered finds rows from one of two input streams whose projection onto a set of common fields matches
+ a row in the other stream. Each input stream must be ordered by at least these common fields.
+ For each matching pair of rows, output from the selected input stream is emitted as output.
 
  <h1>Arguments</h1>
 
@@ -53,38 +47,31 @@ import static java.lang.Math.min;
 <li><b>IndexRowType rightRowType:</b> Type of rows from right input stream.
 <li><b>int leftOrderingFields:</b> Number of trailing fields of left input rows to be used for ordering and matching rows.
 <li><b>int rightOrderingFields:</b> Number of trailing fields of right input rows to be used for ordering and matching rows.
+<li><b>int comparisonFields:</b> Number of ordering fields to be compared.
 <li><b>JoinType joinType:</b>
    <ul>
      <li>INNER_JOIN: An ordinary intersection is computed.
      <li>LEFT_JOIN: Keep an unmatched row from the left input stream, filling out the row with nulls
      <li>RIGHT_JOIN: Keep an unmatched row from the right input stream, filling out the row with nulls
-     <li>FULL_JOIN: Keep an unmatched row from either input stream, filling out the row with nulls
+     <li>FULL_JOIN: Not supported
    </ul>
  (Nothing else is supported currently).
-<li><b>int leftRowPosition:</b> Position in bindings to be used for storing a row from the left stream.
-<li><b>int rightRowPosition:</b> Position in bindings to be used for storing a row from the right stream.
+<li><b>IntersectOutputOption intersectOutput:</b> OUTPUT_LEFT or OUTPUT_RIGHT, depending on which streams rows
+ should be emitted as output.
 
  <h1>Behavior</h1>
 
  The two streams are merged, looking for pairs of rows, one from each input stream, which match in the common
- fields. When such a match is found, an IntersectRow is created, encapuslating the matching input rows.
+ fields. When such a match is found, a row from the stream selected by <tt>intersectOutput</tt> is emitted.
 
  <h1>Output</h1>
 
- IntersectRows whose inputs match in the common fields. The common
- fields are the first <tt>min(leftOrderingFields,
- rightOrderingFields)</tt> of each row's ordering fields. Example:
- <ul>
-    <li>The left input is (x, pid, cid).
-    <li>leftOrderingFields is 2, (covering pid, cid).
-    <li>The right input is (a, b, pid).
-    <li>rightOrderingFields is 1 (covering pid).
- </ul>
- The common fields are (pid) from the left input, and (pid) from the right input.
+ Rows that match at least one row in the other input stream.
 
  <h1>Assumptions</h1>
 
- Each input stream is ordered by its ordering columns, as determined by <tt>leftOrderingFields</tt> and <tt>rightOrderingFields</tt>.
+ Each input stream is ordered by its ordering columns, as determined by <tt>leftOrderingFields</tt>
+ and <tt>rightOrderingFields</tt>.
 
  <h1>Performance</h1>
 
@@ -104,12 +91,6 @@ class Intersect_Ordered extends Operator
     protected Cursor cursor(QueryContext context)
     {
         return new Execution(context);
-    }
-
-    @Override
-    public IntersectRowType rowType()
-    {
-        return outputRowType;
     }
 
     @Override
@@ -138,77 +119,67 @@ class Intersect_Ordered extends Operator
 
     public Intersect_Ordered(Operator left,
                              Operator right,
-                             IndexRowType leftRowType,
-                             IndexRowType rightRowType,
+                             RowType leftRowType,
+                             RowType rightRowType,
                              int leftOrderingFields,
                              int rightOrderingFields,
+                             int comparisonFields,
                              JoinType joinType,
-                             // TODO: Might want to get these positions in some other way. But QueryContext is too late.
-                             int leftRowPosition, 
-                             int rightRowPosition)
+                             IntersectOutputOption intersectOutput)
     {
         ArgumentValidation.notNull("left", left);
         ArgumentValidation.notNull("right", right);
         ArgumentValidation.notNull("leftRowType", leftRowType);
         ArgumentValidation.notNull("rightRowType", rightRowType);
         ArgumentValidation.notNull("joinType", joinType);
-        ArgumentValidation.isGT("leftOrderingFields", leftOrderingFields, 0);
+        ArgumentValidation.isGTE("leftOrderingFields", leftOrderingFields, 0);
         ArgumentValidation.isLTE("leftOrderingFields", leftOrderingFields, leftRowType.nFields());
-        ArgumentValidation.isGT("rightOrderingFields", rightOrderingFields, 0);
+        ArgumentValidation.isGTE("rightOrderingFields", rightOrderingFields, 0);
         ArgumentValidation.isLTE("rightOrderingFields", rightOrderingFields, rightRowType.nFields());
+        ArgumentValidation.isGTE("comparisonFields", comparisonFields, 0);
+        ArgumentValidation.isLTE("comparisonFields", comparisonFields, min(leftOrderingFields, rightOrderingFields));
+        ArgumentValidation.isNotSame("joinType", joinType, "JoinType.FULL_JOIN", JoinType.FULL_JOIN);
+        ArgumentValidation.isTrue("joinType consistent with intersectOutput",
+                                  joinType == JoinType.INNER_JOIN ||
+                                  joinType == JoinType.LEFT_JOIN && intersectOutput == IntersectOutputOption.OUTPUT_LEFT ||
+                                  joinType == JoinType.RIGHT_JOIN && intersectOutput == IntersectOutputOption.OUTPUT_RIGHT);
         this.left = left;
         this.right = right;
-        this.leftRowType = leftRowType;
-        this.rightRowType = rightRowType;
-        this.leftOrderingFields = leftOrderingFields;
-        this.rightOrderingFields = rightOrderingFields;
-        this.joinType = joinType;
-        this.leftRowPosition = leftRowPosition;
-        this.rightRowPosition = rightRowPosition;
-        this.outputRowType = leftRowType.schema().newIntersectType(leftRowType, rightRowType);
-        // Setup for row comparisons
-        advanceLeftOnMatch = leftOrderingFields >= rightOrderingFields;
-        advanceRightOnMatch = rightOrderingFields >= leftOrderingFields;
-        int commonFields = min(leftOrderingFields, rightOrderingFields);
-        fieldRankingExpressions = new RankExpression[commonFields];
+        this.advanceLeftOnMatch = leftOrderingFields >= rightOrderingFields;
+        this.advanceRightOnMatch = rightOrderingFields >= leftOrderingFields;
+        // outerjoins
+        this.keepUnmatchedLeft = joinType == JoinType.LEFT_JOIN;
+        this.keepUnmatchedRight = joinType == JoinType.RIGHT_JOIN;
+        // output
+        this.outputLeft = intersectOutput == IntersectOutputOption.OUTPUT_LEFT;
+            // Setup for row comparisons
+        this.fieldRankingExpressions = new RankExpression[comparisonFields];
         int leftField = leftRowType.nFields() - leftOrderingFields;
         int rightField = rightRowType.nFields() - rightOrderingFields;
-        for (int f = 0; f < commonFields; f++) {
-            fieldRankingExpressions[f] =
-                new RankExpression(
-                    new BoundFieldExpression(leftRowPosition, new FieldExpression(leftRowType, leftField)),
-                    new BoundFieldExpression(rightRowPosition, new FieldExpression(rightRowType, rightField)));
+        for (int f = 0; f < comparisonFields; f++) {
+            this.fieldRankingExpressions[f] =
+                new RankExpression(new FieldExpression(leftRowType, leftField),
+                                   new FieldExpression(rightRowType, rightField));
             leftField++;
             rightField++;
         }
-        // outerjoins
-        keepUnmatchedLeft = joinType == JoinType.LEFT_JOIN || joinType == JoinType.FULL_JOIN;
-        keepUnmatchedRight = joinType == JoinType.RIGHT_JOIN || joinType == JoinType.FULL_JOIN;
     }
 
     // Class state
 
-    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: HKeyUnion_Ordered open");
-    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: HKeyUnion_Ordered next");
-    private static final Logger LOG = LoggerFactory.getLogger(HKeyUnion_Ordered.class);
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Intersect_Ordered open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Intersect_Ordered next");
 
     // Object state
 
     private final Operator left;
     private final Operator right;
-    private final IndexRowType leftRowType;
-    private final IndexRowType rightRowType;
-    private final int leftOrderingFields;
-    private final int rightOrderingFields;
-    private final IntersectRowType outputRowType;
-    private final JoinType joinType;
-    private final int leftRowPosition;
-    private final int rightRowPosition;
     private final RankExpression[] fieldRankingExpressions;
     private final boolean advanceLeftOnMatch;
     private final boolean advanceRightOnMatch;
     private final boolean keepUnmatchedLeft;
     private final boolean keepUnmatchedRight;
+    private final boolean outputLeft;
 
     // Inner classes
 
@@ -242,16 +213,18 @@ class Intersect_Ordered extends Operator
                     long c = compareRows();
                     if (c < 0) {
                         if (keepUnmatchedLeft) {
-                            next = leftOnlyRow();
+                            assert outputLeft;
+                            next = leftRow.get();
                         }
                         nextLeftRow();
                     } else if (c > 0) {
                         if (keepUnmatchedRight) {
-                            next = rightOnlyRow();
+                            assert !outputLeft;
+                            next = rightRow.get();
                         }
                         nextRightRow();
                     } else {
-                        next = combineRows();
+                        next = (outputLeft ? leftRow : rightRow).get();
                         if (advanceLeftOnMatch) {
                             nextLeftRow();
                         }
@@ -292,9 +265,10 @@ class Intersect_Ordered extends Operator
             super(context);
             leftInput = left.cursor(context);
             rightInput = right.cursor(context);
-            fieldRankingEvaluations = new ExpressionEvaluation[fieldRankingExpressions.length];
+            fieldRankingEvaluations = new AbstractTwoArgExpressionEvaluation[fieldRankingExpressions.length];
             for (int f = 0; f < fieldRankingEvaluations.length; f++) {
-                fieldRankingEvaluations[f] = fieldRankingExpressions[f].evaluation();
+                fieldRankingEvaluations[f] = 
+                    (AbstractTwoArgExpressionEvaluation) fieldRankingExpressions[f].evaluation();
             }
         }
         
@@ -304,14 +278,12 @@ class Intersect_Ordered extends Operator
         {
             Row row = leftInput.next();
             leftRow.hold(row);
-            context.setRow(leftRowPosition, row);
         }
         
         private void nextRightRow()
         {
             Row row = rightInput.next();
             rightRow.hold(row);
-            context.setRow(rightRowPosition, row);
         }
         
         private long compareRows()
@@ -324,8 +296,9 @@ class Intersect_Ordered extends Operator
             } else if (rightRow.isEmpty()) {
                 c = -1;
             } else {
-                for (ExpressionEvaluation fieldRankingEvaluation : fieldRankingEvaluations) {
-                    fieldRankingEvaluation.of(context);
+                for (AbstractTwoArgExpressionEvaluation fieldRankingEvaluation : fieldRankingEvaluations) {
+                    fieldRankingEvaluation.leftEvaluation().of(leftRow.get());
+                    fieldRankingEvaluation.rightEvaluation().of(rightRow.get());
                     c = fieldRankingEvaluation.eval().getInt();
                     if (c != 0) {
                         break;
@@ -335,21 +308,6 @@ class Intersect_Ordered extends Operator
             return c;
         }
         
-        private Row leftOnlyRow()
-        {
-            return new IntersectRow(outputRowType, leftRow.get(), null);
-        }
-        
-        private Row rightOnlyRow()
-        {
-            return new IntersectRow(outputRowType, null, rightRow.get());
-        }
-
-        private Row combineRows()
-        {
-            return new IntersectRow(outputRowType, leftRow.get(), rightRow.get());
-        }
-
         // Object state
         
         // Rows from each input stream are bound to the QueryContext. However, QueryContext doesn't use
@@ -360,6 +318,6 @@ class Intersect_Ordered extends Operator
         private final Cursor rightInput;
         private final ShareHolder<Row> leftRow = new ShareHolder<Row>();
         private final ShareHolder<Row> rightRow = new ShareHolder<Row>();
-        private final ExpressionEvaluation[] fieldRankingEvaluations;
+        private final AbstractTwoArgExpressionEvaluation[] fieldRankingEvaluations;
     }
 }

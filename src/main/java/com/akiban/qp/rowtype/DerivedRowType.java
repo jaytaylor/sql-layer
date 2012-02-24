@@ -18,7 +18,8 @@ package com.akiban.qp.rowtype;
 public abstract class DerivedRowType extends RowType
 {
     @Override
-    public final DerivedTypesSchema schema() {
+    public final DerivedTypesSchema schema()
+    {
         return schema;
     }
 

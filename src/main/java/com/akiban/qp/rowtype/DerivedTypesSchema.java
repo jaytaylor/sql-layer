@@ -62,11 +62,6 @@ public class DerivedTypesSchema {
         return new ValuesRowType(this, nextTypeId(), fields);
     }
 
-    public IntersectRowType newIntersectType(RowType leftType, RowType rightType)
-    {
-        return new IntersectRowType(this, nextTypeId(), leftType, rightType);
-    }
-
     public HKeyRowType newHKeyRowType(HKey hKey)
     {
         return new HKeyRowType(this, hKey);
