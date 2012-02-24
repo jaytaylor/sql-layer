@@ -4,7 +4,7 @@
 ---
 - Statement: INSERT INTO all_types
     (integer_field, varchar_field, double_field, date_field)
-    VALUES (1, 'one', 1.5, '2001-01-01'), (2, 'TWO', 2.5, '2002-02-02'), (3, 'THREE', '3.5, '2003-03-03');
+    VALUES (1, 'one', 1.5, '2001-01-01'), (2, 'TWO', 2.5, '2002-02-02'), (3, 'THREE', 3.5, '2003-03-03');
 --- #test LCASE on field
 - Statement: SELECT LCASE(varchar_field) from all_types;
 - output: [['one'], ['two'], ['three']]
@@ -14,20 +14,20 @@
 --- # test with params
 - Statement: SELECT LOWER(?) FROM all_types;
 - params: [['ABC']]
-- output: [['abc']]
+- output: [['abc'], ['abc'], ['abc']]
 --- # test LCASE on double field
 - Statement: SELECT LCASE(double_field) from all_types;
 - output: [[1.5], [2.5], [3.5]]
 --- # test with literal null
 - Statement: SELECT LCASE(null) FROM all_types;
-- output: [[null]]
+- output: [[null], [null], [null]]
 --- # test with param in WHERE clause
 - Statement: SELECT varchar_field from all_types WHERE LOWER(?) = LCASE(varchar_field);
 - params: [['two']]
 - output: [['TWO']]
 --- # test empty string
 - Statement: SELECT UCASE('') from all_types;
-- output: [['']]
+- output: [[''], [''], ['']]
 --- # test wrong arity: empty list
 - Statement: SELECT LCASE() from all_types;
 - error: [42000]
