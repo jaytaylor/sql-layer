@@ -33,7 +33,7 @@ public class HKeyRowType extends DerivedRowType
     @Override
     public int nFields()
     {
-        throw new UnsupportedOperationException();
+        return 0;
     }
 
     @Override

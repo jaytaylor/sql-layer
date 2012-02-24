@@ -138,6 +138,7 @@ class HKeyUnion_Ordered extends Operator
         ArgumentValidation.isLTE("rightOrderingFields", rightOrderingFields, rightRowType.nFields());
         ArgumentValidation.isGTE("comparisonFields", comparisonFields, 0);
         ArgumentValidation.isLTE("comparisonFields", comparisonFields, min(leftOrderingFields, rightOrderingFields));
+        ArgumentValidation.notNull("outputHKeyTableRowType", outputHKeyTableRowType);
         this.left = left;
         this.right = right;
         this.advanceLeftOnMatch = leftOrderingFields >= rightOrderingFields;
@@ -223,15 +224,19 @@ class HKeyUnion_Ordered extends Operator
                     if (leftRow.isEmpty() && rightRow.isEmpty()) {
                         close();
                     }
+                    if (nextRow == null) {
+                        close();
+                    } else {
+                        if (previousHKey == null || !previousHKey.prefixOf(nextRow.hKey())) {
+                            HKey nextHKey = outputHKey(nextRow);
+                            nextRow = new HKeyRow(outputHKeyRowType, nextHKey);
+                            previousHKey = nextHKey;
+                        } else {
+                            nextRow = null;
+                        }
+                    }
                 }
-                HKey nextHKey = null;
-                if (nextRow == null) {
-                    close();
-                } else {
-                    nextHKey = outputHKey(nextRow);
-                    previousHKey = nextHKey;
-                }
-                return new HKeyRow(outputHKeyRowType, nextHKey);
+                return nextRow;
             } finally {
                 TAP_NEXT.out();
             }
@@ -270,7 +275,7 @@ class HKeyUnion_Ordered extends Operator
             Row row;
             do {
                 row = leftInput.next();
-            } while (row != null && (previousHKey == null || previousHKey.prefixOf(row.hKey())));
+            } while (row != null && previousHKey != null && previousHKey.prefixOf(row.hKey()));
             leftRow.hold(row);
         }
         
@@ -279,7 +284,7 @@ class HKeyUnion_Ordered extends Operator
             Row row;
             do {
                 row = rightInput.next();
-            } while (row != null && (previousHKey == null || previousHKey.prefixOf(row.hKey())));
+            } while (row != null && previousHKey != null && previousHKey.prefixOf(row.hKey()));
             rightRow.hold(row);
         }
         

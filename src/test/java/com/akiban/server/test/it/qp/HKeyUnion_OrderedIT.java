@@ -275,7 +275,7 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
     @Test
     public void test0x()
     {
-        Operator plan = intersectPxPy(0);
+        Operator plan = unionPxPy(0);
         RowBase[] expected = new RowBase[]{
         };
         compareRows(expected, cursor(plan, queryContext));
@@ -284,9 +284,11 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
     @Test
     public void test1x()
     {
-        Operator plan = intersectPxPy(12);
+        Operator plan = unionPxPy(12);
         RowBase[] expected = new RowBase[]{
             row(pKey(1000L), hKeyRowType),
+            row(pKey(1001L), hKeyRowType),
+            row(pKey(1002L), hKeyRowType),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -294,8 +296,11 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
     @Test
     public void test2x()
     {
-        Operator plan = intersectPxPy(22);
+        Operator plan = unionPxPy(22);
         RowBase[] expected = new RowBase[]{
+            row(pKey(2000L), hKeyRowType),
+            row(pKey(2001L), hKeyRowType),
+            row(pKey(2002L), hKeyRowType),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -303,21 +308,31 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
     @Test
     public void test3x()
     {
-        Operator plan = intersectPxPy(31);
+        Operator plan = unionPxPy(31);
         RowBase[] expected = new RowBase[]{
+            row(pKey(3000L), hKeyRowType),
+            row(pKey(3001L), hKeyRowType),
+            row(pKey(3002L), hKeyRowType),
         };
         compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPxPy(32);
+        plan = unionPxPy(32);
+        expected = new RowBase[]{
+            row(pKey(3003L), hKeyRowType),
+            row(pKey(3004L), hKeyRowType),
+            row(pKey(3005L), hKeyRowType),
+        };
         compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
     public void test4x()
     {
-        Operator plan = intersectPxPy(44);
+        Operator plan = unionPxPy(44);
         RowBase[] expected = new RowBase[]{
-            row(parentXIndexRowType, 44L, 4001L),
-            row(parentXIndexRowType, 44L, 4002L),
+            row(pKey(4000L), hKeyRowType),
+            row(pKey(4001L), hKeyRowType),
+            row(pKey(4002L), hKeyRowType),
+            row(pKey(4003L), hKeyRowType),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -325,10 +340,12 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
     @Test
     public void test5x()
     {
-        Operator plan = intersectPxPy(55);
+        Operator plan = unionPxPy(55);
         RowBase[] expected = new RowBase[]{
-            row(parentXIndexRowType, 55L, 5001L),
-            row(parentXIndexRowType, 55L, 5002L),
+            row(pKey(5000L), hKeyRowType),
+            row(pKey(5001L), hKeyRowType),
+            row(pKey(5002L), hKeyRowType),
+            row(pKey(5003L), hKeyRowType),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -336,10 +353,14 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
     @Test
     public void test6x()
     {
-        Operator plan = intersectPxPy(66);
+        Operator plan = unionPxPy(66);
         RowBase[] expected = new RowBase[]{
-            row(parentXIndexRowType, 66L, 6002L),
-            row(parentXIndexRowType, 66L, 6003L),
+            row(pKey(6000L), hKeyRowType),
+            row(pKey(6001L), hKeyRowType),
+            row(pKey(6002L), hKeyRowType),
+            row(pKey(6003L), hKeyRowType),
+            row(pKey(6004L), hKeyRowType),
+            row(pKey(6005L), hKeyRowType),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -347,8 +368,9 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
     @Test
     public void test7x()
     {
-        Operator plan = intersectPxCz(70);
+        Operator plan = unionPxCz(70);
         RowBase[] expected = new RowBase[]{
+            row(pKey(7000L), hKeyRowType),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -356,14 +378,11 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
     @Test
     public void test8x()
     {
-        Operator plan = intersectPxCz(88);
+        Operator plan = unionPxCz(88);
         RowBase[] expected = new RowBase[]{
-            row(childRowType, 88L, 8000L, 800000L),
-            row(childRowType, 88L, 8001L, 800100L),
-            row(childRowType, 88L, 8001L, 800101L),
-            row(childRowType, 88L, 8002L, 800200L),
-            row(childRowType, 88L, 8002L, 800201L),
-            row(childRowType, 88L, 8002L, 800202L),
+            row(pKey(8000L), hKeyRowType),
+            row(pKey(8001L), hKeyRowType),
+            row(pKey(8002L), hKeyRowType),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -371,8 +390,9 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
     @Test
     public void test9x()
     {
-        Operator plan = intersectPxCz(99);
+        Operator plan = unionPxCz(99);
         RowBase[] expected = new RowBase[]{
+            row(pKey(9000L), hKeyRowType),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -380,9 +400,9 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
     @Test
     public void test12x()
     {
-        Operator plan = intersectPxCz(12, JoinType.RIGHT_JOIN);
+        Operator plan = unionPxCz(12);
         RowBase[] expected = new RowBase[]{
-            row(childRowType, 12L, null, 1200000L),
+            row(pKey(null), hKeyRowType),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -479,7 +499,7 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
         compareRows(expected, cursor(plan, queryContext));
     }
 
-    private Operator intersectPxPy(int key)
+    private Operator unionPxPy(int key)
     {
         Operator plan =
             hKeyUnion_Ordered(
@@ -500,12 +520,7 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
         return plan;
     }
 
-    private Operator intersectPxCz(int key)
-    {
-        return intersectPxCz(key, JoinType.INNER_JOIN);
-    }
-    
-    private Operator intersectPxCz(int key, JoinType joinType)
+    private Operator unionPxCz(int key)
     {
         Operator plan =
             hKeyUnion_Ordered(
@@ -526,7 +541,7 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
                     parentRowType);
         return plan;
     }
-
+    
     private IndexKeyRange parentXEq(long x)
     {
         IndexBound xBound = new IndexBound(row(parentXIndexRowType, x), new SetColumnSelector(0));
@@ -559,7 +574,7 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
 
     private String pKey(Long pid)
     {
-        return String.format("{%d,%s}", customer, hKeyValue(pid));
+        return String.format("{%d,%s}", parent, hKeyValue(pid));
     }
 
     private int parent;
