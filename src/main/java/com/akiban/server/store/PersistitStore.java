@@ -1047,10 +1047,11 @@ public class PersistitStore implements Store {
                     indexValues[field] = null;
             }
             indexRowData.createRow(indexRowDef, indexValues);
-            // Partial counts to running total.
-            count += entry.getLessCount() + entry.getEqualCount();
+            // Partial counts to running total less than key.
+            count += entry.getLessCount();
             toHistogram.addSample(new TableStatistics.HistogramSample(indexRowData.copy(),
                                                                       count));
+            count += entry.getEqualCount();
         }
         // Add final entry with all nulls.
         Arrays.fill(indexValues, null);
