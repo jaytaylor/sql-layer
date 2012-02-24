@@ -52,15 +52,15 @@ public class JoinAndIndexPicker extends BaseRule
     }
 
     static class Picker {
-        Map<BaseQuery,List<Picker>> subpickers;
+        Map<SubquerySource,Picker> subpickers;
         CostEstimator costEstimator;
         Joinable joinable;
         BaseQuery query;
         QueryIndexGoal queryGoal;
 
-        public Picker(Map<BaseQuery,List<Picker>> subpickers, 
+        public Picker(Joinable joinable, BaseQuery query,
                       CostEstimator costEstimator, 
-                      Joinable joinable, BaseQuery query) {
+                      Map<SubquerySource,Picker> subpickers) {
             this.subpickers = subpickers;
             this.costEstimator = costEstimator;
             this.joinable = joinable;
@@ -79,9 +79,7 @@ public class JoinAndIndexPicker extends BaseRule
             }
             else if (joinable instanceof SubquerySource) {
                 // Single subquery // view. Just do its insides.
-                for (Picker subpicker : subpickers(((SubquerySource)joinable).getSubquery())) {
-                    subpicker.apply();
-                }
+                subpicker((SubquerySource)joinable).apply();
             }
             // TODO: Any other degenerate cases?
         }
@@ -153,7 +151,7 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         // Get the handler for the given subquery so that it can be done in context.
-        public List<Picker> subpickers(Subquery subquery) {
+        public Picker subpicker(SubquerySource subquery) {
             return subpickers.get(subquery);
         }
 
@@ -181,8 +179,14 @@ public class JoinAndIndexPicker extends BaseRule
     // Purpose is twofold: 
     // Find top-level joins and note what query they come from; 
     // Annotate subqueries with their outer table references.
+    // Top-level queries and those used in expressions are returned directly.
+    // Derived tables are deferred, since they need to be planned in
+    // the context of various join orders to allow for join predicated
+    // to be pushed "inside." So they are stored in a Map accessible
+    // to other Pickers.
     static class JoinsFinder implements PlanVisitor, ExpressionVisitor {
-        Map<BaseQuery,List<Picker>> entries;
+        List<Picker> result;
+        Map<SubquerySource,Picker> subpickers;
         BaseQuery rootQuery;
         Deque<SubqueryState> subqueries = new ArrayDeque<SubqueryState>();
         CostEstimator costEstimator;
@@ -192,10 +196,12 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         public List<Picker> find(BaseQuery query) {
-            entries = new HashMap<BaseQuery,List<Picker>>();
+            result = new ArrayList<Picker>();
+            subpickers = new HashMap<SubquerySource,Picker>();
             rootQuery = query;
             query.accept(this);
-            return entries.get(query);
+            result.removeAll(subpickers.values());
+            return result;
         }
 
         @Override
@@ -228,26 +234,21 @@ public class JoinAndIndexPicker extends BaseRule
                 while (j.getOutput() instanceof Joinable)
                     j = (Joinable)j.getOutput();
                 BaseQuery query = rootQuery;
-                // Derived tables (SubquerySource) have their own entry.
-                // Subquery expressions belong to the enclosing query.
-                for (SubqueryState subquery : subqueries) {
-                    if (subquery.subquery.getOutput() instanceof SubquerySource) {
-                        query = subquery.subquery;
-                        break;
-                    }
+                SubquerySource subquerySource = null;
+                if (!subqueries.isEmpty()) {
+                    query = subqueries.peek().subquery;
+                    if (query.getOutput() instanceof SubquerySource)
+                        subquerySource = (SubquerySource)query.getOutput();
                 }
-                List<Picker> entry = entries.get(query);
-                if (entry == null) {
-                    entry = new ArrayList<Picker>();
-                    entries.put(query, entry);
-                }
-                for (Picker picker : entry) {
+                for (Picker picker : result) {
                     if (picker.joinable == j)
                         // Already have another set of joins to same root join.
                         return true;
                 }
-                Picker picker = new Picker(entries, costEstimator, j, query);
-                entry.add(picker);
+                Picker picker = new Picker(j, query, costEstimator, subpickers);
+                result.add(picker);
+                if (subquerySource != null)
+                    subpickers.put(subquerySource, picker);
             }
             return true;
         }
