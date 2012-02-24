@@ -40,13 +40,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
-import java.io.FileReader;
 import java.io.IOException;
-import java.io.Reader;
 
 @RunWith(NamedParameterizedRunner.class)
 public class RulesTest extends OptimizerTestBase 
@@ -74,10 +71,13 @@ public class RulesTest extends OptimizerTestBase
                 File statsFile = new File(subdir, "stats.yaml");
                 if (!statsFile.exists())
                     statsFile = null;
-                File propertiesFile = new File(subdir, "compiler.properties");
-                if (!propertiesFile.exists())
-                    propertiesFile = null;
+                File compilerPropertiesFile = new File(subdir, "compiler.properties");
+                if (!compilerPropertiesFile.exists())
+                    compilerPropertiesFile = null;
                 for (Object[] args : sqlAndExpected(subdir)) {
+                    File propertiesFile = new File(subdir, args[0] + ".properties");
+                    if (!propertiesFile.exists())
+                        propertiesFile = compilerPropertiesFile;
                     Object[] nargs = new Object[args.length+5];
                     nargs[0] = subdir.getName() + "/" + args[0];
                     nargs[1] = rulesFile;
@@ -133,8 +133,6 @@ public class RulesTest extends OptimizerTestBase
 
     @Override
     public String generateResult() throws Exception {
-        String result = null;
-        Exception errorResult = null;
         StatementNode stmt = parser.parseStatement(sql);
         binder.bind(stmt);
         stmt = booleanNormalizer.normalize(stmt);
