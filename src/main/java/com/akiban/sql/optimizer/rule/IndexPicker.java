@@ -115,7 +115,7 @@ public class IndexPicker extends BaseRule
         }
 
         protected IndexGoal determineIndexGoal(PlanNode input, 
-                                               Collection<TableSource> tables) {
+                                               Iterable<TableSource> tables) {
             List<ConditionList> conditionSources = new ArrayList<ConditionList>();
             Sort ordering = null;
             AggregateSource grouping = null;

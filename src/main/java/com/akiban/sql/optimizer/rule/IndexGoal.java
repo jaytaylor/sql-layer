@@ -41,8 +41,8 @@ public class IndexGoal implements Comparator<IndexScan>
     public static class RequiredColumns {
         private Map<TableSource,Set<ColumnExpression>> map;
         
-        public RequiredColumns(Collection<TableSource> tables) {
-            map = new HashMap<TableSource,Set<ColumnExpression>>(tables.size());
+        public RequiredColumns(Iterable<TableSource> tables) {
+            map = new HashMap<TableSource,Set<ColumnExpression>>();
             for (TableSource table : tables) {
                 map.put(table, new HashSet<ColumnExpression>());
             }
@@ -124,7 +124,7 @@ public class IndexGoal implements Comparator<IndexScan>
                      AggregateSource grouping,
                      Sort ordering,
                      Project projectDistinct,
-                     Collection<TableSource> tables,
+                     Iterable<TableSource> tables,
                      CostEstimator costEstimator) {
         this.boundTables = boundTables;
         this.conditionSources = conditionSources;

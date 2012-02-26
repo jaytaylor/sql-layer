@@ -1,0 +1,6 @@
+SelectQuery@699238ad
+  ResultSet@7ec71c00[cid, name]
+    Project@41ff8506[user.customers.cid, user.customers.name]
+      Select@6e766ec3[user.customers.name == Smith]
+        TableGroupJoinTree@2161fcdd(TableGroup@2820224a(customers), customers)
+          TableSource@4eabaf8c(user.customers - TableGroup@2820224a(customers))
