@@ -1,4 +1,8 @@
-#test the LTRIM, RTRIM and TRIM functions
+# test the LTRIM, RTRIM and TRIM functions
+# bug 940687: trim, rtrim, ltrim not syntactically supported
+---
+- Properties: all
+- suppressed: true
 ---
 - Include: all-types-schema.yaml
 ---

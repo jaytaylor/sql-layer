@@ -17,21 +17,16 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.error.WrongExpressionArityException;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.*;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.extract.ObjectExtractor;
 import com.akiban.sql.StandardException;
-import com.akiban.server.expression.TypesList;
 import java.util.List;
-import com.akiban.server.types.extract.LongExtractor;
-import com.akiban.server.types.util.ValueHolder;
 
 public class SubStringExpression extends AbstractCompositeExpression
 {
@@ -40,20 +35,20 @@ public class SubStringExpression extends AbstractCompositeExpression
     {
 
         @Override
-        public Expression compose(List<? extends Expression> arguments) {
+        public Expression compose(List<? extends Expression> arguments) {           
             return new SubStringExpression(arguments);
         }
 
         @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
-        {
-            int size = argumentTypes.size();
+        {            
+            int size = argumentTypes.size();            
             if (size != 3 && size != 2)
                 throw new WrongExpressionArityException(3, size);
             argumentTypes.setType(0, AkType.VARCHAR);
             for (int i = 1; i < size; ++i)
-                argumentTypes.setType(i, AkType.LONG);
-            return argumentTypes.get(0);
+                argumentTypes.setType(i, AkType.LONG);            
+            return  argumentTypes.get(0);
         }
     };
     
@@ -70,15 +65,19 @@ public class SubStringExpression extends AbstractCompositeExpression
         @Override
         public ValueSource eval() 
         {     
-            //String operand
+            //String operand            
             ValueSource stringSource = this.children().get(0).eval();
             if (stringSource.isNull())
                 return NullValueSource.only();
             
             ObjectExtractor<String> sExtractor = Extractors.getStringExtractor();
             String st = sExtractor.getObject(stringSource);            
-            if (st.equals("")) return new ValueHolder(AkType.VARCHAR, "");            
-            
+            if (st.equals(""))
+            {
+                valueHolder().putString("");
+                return valueHolder();
+            }            
+                       
             // FROM operand
             int from = 0;
           
@@ -92,14 +91,22 @@ public class SubStringExpression extends AbstractCompositeExpression
                 
             }
             
-            from = (from == 0 ? -1 : from);
-            
+            if (from == 0)
+            {
+                valueHolder().putString("");
+                return valueHolder();
+            }
+                       
             // if from is negative or zero, start from the end, and adjust
                 // index by 1 since index in sql starts at 1 NOT 0
             from += (from < 0?  st.length()  : -1);
           
-            // if from is still neg, set from = 0
-            from = from < 0 ? 0 : from;
+            // if from is still neg, return empty string
+            if (from < 0)
+            {
+                valueHolder().putString("");
+                return valueHolder();
+            } 
             
             // TO operand
             int to = st.length() -1;
@@ -114,17 +121,22 @@ public class SubStringExpression extends AbstractCompositeExpression
             }
             
             // if to <= fr => return empty
-            if (to < from || from >= st.length() ) return new ValueHolder(AkType.VARCHAR, "");            
+            if (to < from || from >= st.length())
+            {
+                valueHolder().putString("");
+                return valueHolder();
+            }            
+            
             to = (to > st.length() -1 ? st.length() -1 : to);
-
-            valueHolder().putString(st.substring(from,to +1 ));
+            
+            valueHolder().putString(st.substring(from,to +1 ));          
             return valueHolder();
         }  
     }
     
     SubStringExpression (List <? extends Expression> children)
     {
-        super(AkType.VARCHAR, children);
+        super(AkType.VARCHAR, children);       
         if (children.size() > 3 || children.size() < 2)
             throw new WrongExpressionArityException(3, children.size());        
     }
@@ -137,7 +149,7 @@ public class SubStringExpression extends AbstractCompositeExpression
 
     @Override
     public ExpressionEvaluation evaluation() 
-    {
+    {       
         return new InnerEvaluation(this.childrenEvaluations());
     }
 
