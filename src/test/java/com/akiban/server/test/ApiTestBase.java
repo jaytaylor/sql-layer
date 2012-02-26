@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
+import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
@@ -378,14 +379,37 @@ public class ApiTestBase {
         unifiedDef.setLength(unifiedDef.length() - 1);
         return createTable(schema, table, unifiedDef.toString());
     }
-    
-    protected final TableIndex createIndex(String schema, String table, String indexName, String... indexCols) {
+
+    private AkibanInformationSchema createIndexInternal(String schema, String table, String indexName, String... indexCols) {
         String ddl = String.format("CREATE INDEX \"%s\" ON \"%s\".\"%s\"(%s)", indexName, schema, table,
                                    Strings.join(Arrays.asList(indexCols), ","));
-        SchemaFactory schemaFactory = new SchemaFactory(schema);
-        AkibanInformationSchema tempAIS = createFromDDL(schema, ddl);
+        return createFromDDL(schema, ddl);
+    }
+
+    protected final TableIndex createIndex(String schema, String table, String indexName, String... indexCols) {
+        AkibanInformationSchema tempAIS = createIndexInternal(schema, table, indexName, indexCols);
         Index tempIndex = tempAIS.getUserTable(schema, table).getIndex(indexName);
         ddl().createIndexes(session(), Collections.singleton(tempIndex));
+        updateAISGeneration();
+        return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
+    }
+
+    /**
+     * Add an Index to the given table that is marked as FOREIGN KEY. Intended
+     * to be used by tests that need to simulate a table as created by the
+     * adapter.
+     */
+    protected final TableIndex createGroupingFKIndex(String schema, String table, String indexName, String... indexCols) {
+        assertTrue("grouping fk index must start with __akiban", indexName.startsWith("__akiban"));
+        AkibanInformationSchema tempAIS = createIndexInternal(schema, table, indexName, indexCols);
+        UserTable userTable = tempAIS.getUserTable(schema, table);
+        TableIndex tempIndex = userTable.getIndex(indexName);
+        userTable.removeIndexes(Collections.singleton(tempIndex));
+        TableIndex fkIndex = TableIndex.create(tempAIS, userTable, indexName, 0, false, "FOREIGN KEY");
+        for(IndexColumn col : tempIndex.getKeyColumns()) {
+            fkIndex.addColumn(col);
+        }
+        ddl().createIndexes(session(), Collections.singleton(fkIndex));
         updateAISGeneration();
         return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
     }
