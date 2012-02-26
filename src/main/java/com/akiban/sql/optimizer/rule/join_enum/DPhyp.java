@@ -208,6 +208,11 @@ public abstract class DPhyp<P>
     public abstract P evaluateJoin(long bitset1, P p1, long bitset2, P p2, long bitsetJoined, P existing,
                                    JoinType joinType, Collection<JoinOperator> joins);
 
+    /** Return a leaf of the tree. */
+    public Joinable getTable(int index) {
+        return tables.get(index);
+    }
+
     /** Initialize state from the given join tree. */
     // TODO: Need to do something about disconnected overall. The
     // cross-product isn't going to do very well no matter what. Maybe

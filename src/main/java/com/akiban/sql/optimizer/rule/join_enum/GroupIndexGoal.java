@@ -80,6 +80,10 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         boundTables = queryGoal.getQuery().getOuterTables();
     }
 
+    public void setBoundTables(Set<ColumnSource> boundTables) {
+        this.boundTables = boundTables;
+    }
+    
     public void setJoinConditions(Collection<JoinOperator> joins) {
         conditionSources.clear();
         if (queryGoal.getWhereConditions() != null)
@@ -112,10 +116,6 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                                                               orderings, conditions));
     }
 
-    public void setBoundTables(Set<ColumnSource> boundTables) {
-        this.boundTables = boundTables;
-    }
-    
     /** Populate given index usage according to goal.
      * @return <code>false</code> if the index is useless.
      */

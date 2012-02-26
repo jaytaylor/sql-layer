@@ -16,11 +16,13 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.rule.join_enum.*;
+import com.akiban.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
 
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import org.slf4j.Logger;
@@ -147,7 +149,7 @@ public class JoinAndIndexPicker extends BaseRule
 
         // General joins: run enumerator.
         protected void pickJoinsAndIndexes(JoinNode joins) {
-            new JoinEnumerator(this).run(joins, queryGoal.getWhereConditions());
+            Plan rootPlan = new JoinEnumerator(this).run(joins, queryGoal.getWhereConditions()).bestPlan();
         }
 
         // Get the handler for the given subquery so that it can be done in context.
@@ -155,24 +157,328 @@ public class JoinAndIndexPicker extends BaseRule
             return subpickers.get(subquery);
         }
 
+        // Similar, but as part of a larger plan tree. Just return best plan.
+        public Plan subqueryPlan(Set<ColumnSource> subqueryBoundTables,
+                                 Collection<JoinOperator> subqueryJoins) {
+            if (queryGoal == null)
+                queryGoal = determineQueryIndexGoal(joinable);
+            if (joinable instanceof TableGroupJoinTree) {
+                GroupIndexGoal groupGoal = new GroupIndexGoal(queryGoal, (TableGroupJoinTree)joinable);
+                groupGoal.setBoundTables(subqueryBoundTables);
+                groupGoal.setJoinConditions(subqueryJoins);
+                groupGoal.updateRequiredColumns();
+                IndexScan index = groupGoal.pickBestIndex();
+                // TODO: What about group scan?
+                return new GroupPlan(JoinableBitSet.of(0), 
+                                     index, index.getCostEstimate());
+            }
+            if (joinable instanceof JoinNode) {
+                return new JoinEnumerator(this, subqueryBoundTables, subqueryJoins).run((JoinNode)joinable, queryGoal.getWhereConditions()).bestPlan();
+            }
+            if (joinable instanceof SubquerySource) {
+                return subpicker((SubquerySource)joinable).subqueryPlan(subqueryBoundTables, subqueryJoins);
+            }
+            throw new AkibanInternalException("Unknown join element: " + joinable);
+        }
+
     }
 
-    static class JoinEnumerator extends DPhyp<Object> {
+    static class Plan implements Comparable<Plan> {
+        CostEstimate costEstimate;
+
+        protected Plan(CostEstimate costEstimate) {
+            this.costEstimate = costEstimate;
+        }
+
+        public int compareTo(Plan other) {
+            return costEstimate.compareTo(other.costEstimate);
+        }
+
+        // TODO: Something about installing.
+    }
+
+    static abstract class PlanClass {
+        JoinEnumerator enumerator;        
+        long bitset;
+
+        protected PlanClass(JoinEnumerator enumerator, long bitset) {
+            this.enumerator = enumerator;
+            this.bitset = bitset;
+        }
+
+        public abstract Plan bestPlan();
+
+        public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins) {
+            return bestPlan();  // By default, it doesn't matter.
+        }
+    }
+    
+    static class GroupPlan extends Plan {
+        long outerTables;
+        IndexScan index;
+
+        public GroupPlan(long outerTables, IndexScan index, CostEstimate costEstimate) {
+            super(costEstimate);
+            this.outerTables = outerTables;
+            this.index = index;
+        }
+
+        @Override
+        public String toString() {
+            if (index != null)
+                return index.toString();
+            else
+                return "GroupScan";
+        }
+    }
+
+    static class GroupPlanClass extends PlanClass {
+        GroupIndexGoal groupGoal;
+        Collection<GroupPlan> bestPlans = new ArrayList<GroupPlan>();
+
+        public GroupPlanClass(JoinEnumerator enumerator, long bitset, 
+                              GroupIndexGoal groupGoal) {
+            super(enumerator, bitset);
+            this.groupGoal = groupGoal;
+        }
+
+        @Override
+        public Plan bestPlan() {
+            return bestPlan(JoinableBitSet.empty(), Collections.<JoinOperator>emptyList());
+        }
+
+        @Override
+        public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins) {
+            return bestPlan(outerPlan.bitset, joins);
+        }
+
+        protected GroupPlan bestPlan(long outerTables, Collection<JoinOperator> joins) {
+            for (GroupPlan groupPlan : bestPlans) {
+                if (groupPlan.outerTables == outerTables) {
+                    return groupPlan;
+                }
+            }
+            groupGoal.setBoundTables(enumerator.boundTables(outerTables));
+            groupGoal.setJoinConditions(joins);
+            groupGoal.updateRequiredColumns();
+            IndexScan index = groupGoal.pickBestIndex();
+            // TODO: What about group scan?
+            GroupPlan groupPlan = new GroupPlan(outerTables, index, index.getCostEstimate());
+            bestPlans.add(groupPlan);
+            return groupPlan;
+        }
+    }
+
+    static class SubqueryPlan extends Plan {
+        long outerTables;
+        Plan rootPlan;
+
+        public SubqueryPlan(long outerTables, Plan rootPlan, CostEstimate costEstimate) {
+            super(costEstimate);
+            this.outerTables = outerTables;
+            this.rootPlan = rootPlan;
+        }
+
+        @Override
+        public String toString() {
+            return rootPlan.toString();
+        }
+    }
+
+    static class SubqueryPlanClass extends PlanClass {
+        Picker picker;
+        Collection<SubqueryPlan> bestPlans = new ArrayList<SubqueryPlan>();
+
+        public SubqueryPlanClass(JoinEnumerator enumerator, long bitset, 
+                                 Picker picker) {
+            super(enumerator, bitset);
+            this.picker = picker;
+        }
+
+        @Override
+        public Plan bestPlan() {
+            return bestPlan(JoinableBitSet.empty(), Collections.<JoinOperator>emptyList());
+        }
+
+        @Override
+        public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins) {
+            return bestPlan(outerPlan.bitset, joins);
+        }
+
+        protected SubqueryPlan bestPlan(long outerTables, Collection<JoinOperator> joins) {
+            for (SubqueryPlan subqueryPlan : bestPlans) {
+                if (subqueryPlan.outerTables == outerTables) {
+                    return subqueryPlan;
+                }
+            }
+            Plan rootPlan = picker.subqueryPlan(enumerator.boundTables(outerTables), joins);
+            CostEstimate costEstimate = rootPlan.costEstimate;
+            SubqueryPlan subqueryPlan = new SubqueryPlan(outerTables, rootPlan, costEstimate);
+            bestPlans.add(subqueryPlan);
+            return subqueryPlan;
+        }
+    }
+
+    static class ValuesPlan extends Plan {
+        ExpressionsSource values;
+        
+        public ValuesPlan(ExpressionsSource values, CostEstimate costEstimate) {
+            super(costEstimate);
+            this.values = values;
+        }
+    }
+
+    static class ValuesPlanClass extends PlanClass {
+        ValuesPlan plan;
+
+        public ValuesPlanClass(JoinEnumerator enumerator, long bitset, 
+                               ExpressionsSource values) {
+            super(enumerator, bitset);
+            this.plan = new ValuesPlan(values, new CostEstimate(values.getExpressions().size(), 0));
+        }
+
+        @Override
+        public Plan bestPlan() {
+            return plan;
+        }
+    }
+
+    static class JoinPlan extends Plan {
+        Plan left, right;
+        JoinType joinType;
+        JoinNode.Implementation joinImplementation;
+        Collection<JoinOperator> joins;
+        
+        public JoinPlan(Plan left, Plan right, 
+                        JoinType joinType, JoinNode.Implementation joinImplementation,
+                        Collection<JoinOperator> joins, CostEstimate costEstimate) {
+            super(costEstimate);
+            this.left = left;
+            this.right = right;
+            this.joinImplementation = joinImplementation;
+            this.joinType = joinType;
+            this.joins = joins;
+        }
+
+        @Override
+        public String toString() {
+            return "(" + left + ") " +
+                joinType + "/" + joinImplementation +
+                " (" + right + ")";
+        }
+    }
+
+    static class JoinPlanClass extends PlanClass {
+        JoinPlan bestPlan;      // TODO: Later have separate sorted, etc.
+
+        public JoinPlanClass(JoinEnumerator enumerator, long bitset) {
+            super(enumerator, bitset);
+        }
+
+        @Override
+        public Plan bestPlan() {
+            return bestPlan;
+        }
+    }
+
+    static class JoinEnumerator extends DPhyp<PlanClass> {
         private Picker picker;
+        private Set<ColumnSource> subqueryBoundTables;
+        private Collection<JoinOperator> subqueryJoins;
 
         public JoinEnumerator(Picker picker) {
             this.picker = picker;
         }
 
-        @Override
-        public Object evaluateTable(long s, Joinable table) {
-            return null;
+        public JoinEnumerator(Picker picker, Set<ColumnSource> subqueryBoundTables, Collection<JoinOperator> subqueryJoins) {
+            this.picker = picker;
+            this.subqueryBoundTables = subqueryBoundTables;
+            this.subqueryJoins = subqueryJoins;
         }
 
         @Override
-        public Object evaluateJoin(long s1, Object p1, long s2, Object p2, long s, Object existing,
-                                   JoinType joinType, Collection<JoinOperator> joins) {
-            return null;
+        public PlanClass evaluateTable(long s, Joinable joinable) {
+            // Seed with the right plan class to hold state / alternatives.
+            if (joinable instanceof TableGroupJoinTree) {
+                GroupIndexGoal groupGoal = new GroupIndexGoal(picker.queryGoal, 
+                                                              (TableGroupJoinTree)joinable);
+                return new GroupPlanClass(this, s, groupGoal);
+            }
+            if (joinable instanceof SubquerySource) {
+                Picker subpicker = picker.subpicker((SubquerySource)joinable);
+                return new SubqueryPlanClass(this, s, subpicker);
+            }
+            if (joinable instanceof ExpressionsSource) {
+                return new ValuesPlanClass(this, s, (ExpressionsSource)joinable);
+            }
+            throw new AkibanInternalException("Unknown join element: " + joinable);
+        }
+
+        @Override
+        public PlanClass evaluateJoin(long leftBitset, PlanClass left, 
+                                      long rightBitset, PlanClass right, 
+                                      long bitset, PlanClass existing,
+                                      JoinType joinType, Collection<JoinOperator> joins) {
+            JoinPlanClass planClass = (JoinPlanClass)existing;
+            if (planClass == null)
+                planClass = new JoinPlanClass(this, bitset);
+            if (subqueryJoins != null) {
+                // "Push down" joins into the subquery. Since these
+                // are joins to the dervived table, they still need to
+                // be recognized to match an indexable column.
+                Collection<JoinOperator> allJoins = new ArrayList<JoinOperator>(subqueryJoins);
+                allJoins.addAll(joins);
+                joins = allJoins;
+            }
+            // TODO: Divvy up sorting. Consider group joins. Consider merge joins.
+            Plan leftPlan = left.bestPlan();
+            Plan rightPlan = right.bestNestedPlan(left, joins);
+            CostEstimate costEstimate = leftPlan.costEstimate.nest(rightPlan.costEstimate);
+            JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
+                                             joinType, JoinNode.Implementation.NESTED_LOOPS,
+                                             joins, costEstimate);
+            if (planClass.bestPlan == null) {
+                logger.debug("Selecting {}, {}", joinPlan, costEstimate);
+                planClass.bestPlan = joinPlan;
+            }
+            else if (planClass.bestPlan.compareTo(joinPlan) > 0) {
+                logger.debug("Preferring {}, {}", joinPlan, costEstimate);
+                planClass.bestPlan = joinPlan;
+            }
+            else {
+                logger.debug("Rejecting {}, {}", joinPlan, costEstimate);
+            }
+            return planClass;
+        }
+
+        /** Get the tables that correspond to the given bitset, plus
+         * any that are bound outside the subquery, either
+         * syntactically or via joins to it.
+         */
+        public Set<ColumnSource> boundTables(long tables) {
+            if (JoinableBitSet.isEmpty(tables) &&
+                (subqueryBoundTables == null))
+                return picker.queryGoal.getQuery().getOuterTables();
+            Set<ColumnSource> boundTables = new HashSet<ColumnSource>();
+            boundTables.addAll(picker.queryGoal.getQuery().getOuterTables());
+            if (subqueryBoundTables != null)
+                boundTables.addAll(subqueryBoundTables);
+            if (!JoinableBitSet.isEmpty(tables)) {
+                for (int i = 0; i < 64; i++) {
+                    if (JoinableBitSet.overlaps(tables, JoinableBitSet.of(i))) {
+                        Joinable table = getTable(i);
+                        if (table instanceof TableGroupJoinTree) {
+                            for (TableGroupJoinTree.TableGroupJoinNode gtable : (TableGroupJoinTree)table) {
+                                boundTables.add(gtable.getTable());
+                            }
+                        }
+                        else {
+                            boundTables.add((ColumnSource)table);
+                        }
+                    }
+                }
+            }
+            return boundTables;
         }
     }
     
