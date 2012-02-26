@@ -77,7 +77,7 @@ resultSet:
 				com.akiban.sql.parser.ColumnReference@7402d5a
 				columnName: t
 				tableName: null
-				type: TIMESTAMP
+				type: DATETIME
 				userData: t1.t from com.akiban.sql.parser.FromBaseTable@26659db7
 		[4]:		
 		com.akiban.sql.parser.ResultColumn@661736e
@@ -96,7 +96,7 @@ resultSet:
 				com.akiban.sql.parser.ColumnReference@74af72d8
 				columnName: t
 				tableName: null
-				type: TIMESTAMP
+				type: DATETIME
 				userData: t1.t from com.akiban.sql.parser.FromBaseTable@26659db7
 		[5]:		
 		com.akiban.sql.parser.ResultColumn@2a9cfec1
@@ -115,7 +115,7 @@ resultSet:
 				com.akiban.sql.parser.ColumnReference@3a747fa2
 				columnName: t
 				tableName: null
-				type: TIMESTAMP
+				type: DATETIME
 				userData: t1.t from com.akiban.sql.parser.FromBaseTable@26659db7
 		[6]:		
 		com.akiban.sql.parser.ResultColumn@366782a9
