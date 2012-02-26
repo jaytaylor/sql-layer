@@ -106,22 +106,28 @@ public class AISBBasedBuilder
 
         @Override
         public NewUserTableBuilder colLong(String name) {
-            return colLong(name, false, NULLABLE_DEFAULT);
+            return colLong(name, false, NULLABLE_DEFAULT, null);
         }
 
         @Override
         public NewUserTableBuilder colLong(String name, boolean nullable) {
-            return colLong(name, nullable, false);
+            return colLong(name, nullable, false, null);
         }
 
         @Override
-        public NewUserTableBuilder autoIncLong(String name) {
-            return colLong(name, false, true);
+        public NewUserTableBuilder autoIncLong(String name, int initialValue) {
+            return colLong(name, false, true, initialValue);
         }
 
-        private NewUserTableBuilder colLong(String name, boolean nullable, boolean autoIncrement) {
+        private NewUserTableBuilder colLong(String name, boolean nullable, boolean autoIncrement, Integer initialAutoInc) {
             checkUsable();
             aisb.column(schema, userTable, name, uTableColumnPos++, "INT", 10L, null, nullable, autoIncrement, null, null);
+            if (initialAutoInc != null) {
+                aisb.akibanInformationSchema().
+                     getUserTable(schema, userTable).
+                     getColumn(name).
+                     setInitialAutoIncrementValue(initialAutoInc.longValue());
+            }
             return this;
         }
 

@@ -60,7 +60,7 @@ public interface NewUserTableBuilder extends NewAISBuilder {
      * @param name the column's name
      * @return this
      */
-    NewUserTableBuilder autoIncLong(String name);
+    NewUserTableBuilder autoIncLong(String name, int initialValue);
 
     /**
      * Adds a non-nullable varchar with UTF-8 encoding
@@ -100,7 +100,7 @@ public interface NewUserTableBuilder extends NewAISBuilder {
 
     NewUserTableBuilder colBinary(String name, int length);
     NewUserTableBuilder colBinary(String name, int length, boolean nullable);
-
+    
     /**
      * Adds a PK
      * @param columns the columns that are in the PK
