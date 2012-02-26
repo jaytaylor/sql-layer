@@ -81,8 +81,11 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
                 String columnEquivalenceLine = testLinesIter.next();
                 Map<String,Boolean> columnEquivalences = new HashMap<String, Boolean>();
                 String[] columnNames = readEquivalences(columnEquivalenceLine);
-                for (String columnName : columnNames)
+                for (String columnName : columnNames) {
+                    if ("id".equals(columnName))
+                        continue;
                     columnEquivalences.put(columnName, columnNames.length == 1);
+                }
                 columnEquivalenceSets.add(columnEquivalences);
             }
             pb.add(stripr(testFile.getName(), ".test"), schema, sql,  columnEquivalenceSets);
@@ -143,6 +146,8 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
         Set<Set<ColumnExpression>> set = new HashSet<Set<ColumnExpression>>();
         List<ColumnExpression> columnExpressions = new ColumnFinder().find(plan.getPlan());
         for (ColumnExpression columnExpression : columnExpressions) {
+            if ("id".equals(columnExpression.getColumn().getName()))
+                continue;
             Set<ColumnExpression> belongsToSet = null;
             for (Set<ColumnExpression> equivalentExpressions : set) {
                 Iterator<ColumnExpression> equivalentIters = equivalentExpressions.iterator();

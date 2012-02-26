@@ -1,3 +1,4 @@
-CREATE TABLE a (col1 INT KEY, col2 INT);
-CREATE TABLE b (col1 INT KEY, col2 INT);
-CREATE TABLE c (col1 INT KEY, col2 INT);
+-- ID columns explicitly ignored in ColumnEquivalenceTest
+CREATE TABLE a (id int not null primary key, col1 INT , col2 INT);
+CREATE TABLE b (id int not null primary key, col1 INT , col2 INT);
+CREATE TABLE c (id int not null primary key, col1 INT , col2 INT);
