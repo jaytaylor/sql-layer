@@ -299,27 +299,28 @@ public final class AddDropTableMT extends HapiMTBase {
         }
 
         private int addTable(Session session, DDLFunctions ddl, SaisTable table) throws InvalidOperationException {
-            String ddlText = DDLUtils.buildDDL(table);
-            ddl.createTable(session, SCHEMA, ddlText);
-            int tableId = ddl.getTableId(session, new TableName(SCHEMA, table.getName()));
+            throw new UnsupportedOperationException("Reimplement");
+            //String ddlText = DDLUtils.buildDDL(table);
+            //ddl.createTable(session, SCHEMA, ddlText);
+            //int tableId = ddl.getTableId(session, new TableName(SCHEMA, table.getName()));
 
-            tablesMap.put(table, 0);
-            if (!tablesList.contains(table)) { // list is pre-seeded with root
-                tablesList.add(table);
-            }
-            SaisFK parentFK = table.getParentFK();
-            if (parentFK != null) {
-                SaisTable parent = parentFK.getParent();
-                tablesMap.put(parent, tablesMap.get(parent) + 1);
-                tablesList.remove(parent);
-            }
-            for (SaisFK childFK : table.getChildren()) {
-                SaisTable child = childFK.getChild();
-                tablesMap.put(child, -1);
-                tablesList.add(child);
-            }
+            //tablesMap.put(table, 0);
+            //if (!tablesList.contains(table)) { // list is pre-seeded with root
+            //    tablesList.add(table);
+            //}
+            //SaisFK parentFK = table.getParentFK();
+            //if (parentFK != null) {
+            //    SaisTable parent = parentFK.getParent();
+            //    tablesMap.put(parent, tablesMap.get(parent) + 1);
+            //    tablesList.remove(parent);
+            //}
+            //for (SaisFK childFK : table.getChildren()) {
+            //    SaisTable child = childFK.getChild();
+            //    tablesMap.put(child, -1);
+            //    tablesList.add(child);
+            //}
 
-            return tableId;
+            //return tableId;
         }
 
         protected abstract void writeTableRows(Session session, DMLFunctions dml, int tableId, SaisTable table)

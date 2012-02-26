@@ -70,8 +70,9 @@ public final class SchemaManagerIT extends ITBase {
     private void createTableDef(final String schema, final String ddl) throws Exception {
         transactionally(new Callable<Void>() {
             public Void call() throws Exception {
-                schemaManager.createTableDefinition(session(), schema, ddl);
-                return null;
+                throw new UnsupportedOperationException("Reimplement");
+                //schemaManager.createTableDefinition(session(), schema, ddl);
+                //return null;
             }
         });
     }
@@ -469,15 +470,16 @@ public final class SchemaManagerIT extends ITBase {
         };
 
         for(TableName pair[] : testNames) {
-            ddl().createTable(session(), pair[0].getSchemaName(),
-                              "create table `" + pair[0].getTableName() + "`(id int key)");
-            ddl().createTable(session(), pair[1].getSchemaName(),
-                              "create table `" + pair[1].getTableName() + "`(id int key)");
+            throw new UnsupportedOperationException("Reimplement");
+            //ddl().createTable(session(), pair[0].getSchemaName(),
+            //                  "create table `" + pair[0].getTableName() + "`(id int key)");
+            //ddl().createTable(session(), pair[1].getSchemaName(),
+            //                  "create table `" + pair[1].getTableName() + "`(id int key)");
 
-            String treeName1 = ddl().getAIS(session()).getUserTable(pair[0]).getTreeName();
-            String treeName2 = ddl().getAIS(session()).getUserTable(pair[1]).getTreeName();
+            //String treeName1 = ddl().getAIS(session()).getUserTable(pair[0]).getTreeName();
+            //String treeName2 = ddl().getAIS(session()).getUserTable(pair[1]).getTreeName();
 
-            assertFalse("Non unique tree name: " + treeName1, treeName1.equals(treeName2));
+            //assertFalse("Non unique tree name: " + treeName1, treeName1.equals(treeName2));
         }
     }
 

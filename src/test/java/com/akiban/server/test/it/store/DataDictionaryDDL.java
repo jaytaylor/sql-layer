@@ -17,6 +17,7 @@ package com.akiban.server.test.it.store;
 
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.server.service.session.Session;
 
 public class DataDictionaryDDL {
@@ -81,10 +82,13 @@ public class DataDictionaryDDL {
     }
 
     public static void createTables(Session session, DDLFunctions ddl, String schema) throws InvalidOperationException {
+        throw new UnsupportedOperationException("Reimplement");
+        /*
         ddl.createTable(session, schema, CUSTOMER_DDL);
         ddl.createTable(session, schema, ADDRESS_DDL);
         ddl.createTable(session, schema, ORDER_DDL);
         ddl.createTable(session, schema, ITEM_DDL);
         ddl.createTable(session, schema, COMPONENT_DDL);
+        */
     }
 }

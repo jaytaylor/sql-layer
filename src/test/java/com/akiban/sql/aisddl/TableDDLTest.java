@@ -241,8 +241,6 @@ public class TableDDLTest {
                 Collection<? extends Index> indexesToAdd) {}
 
         @Override
-        public void createTable(Session session, String schema, String ddlText) {}
-        @Override
         public void dropGroup(Session session, String groupName) {}
 
         @Override

@@ -70,7 +70,8 @@ public abstract class ITSuiteBase {
         DDLFunctions ddl = serviceManager.getDXL().ddlFunctions();
         for (String statement : new MySqlStatementSplitter(reader)) {
             if (statement.startsWith("create")) {
-                ddl.createTable(session, schema, statement);
+                throw new UnsupportedOperationException("Reimplement");
+                //ddl.createTable(session, schema, statement);
             }
         }
     }

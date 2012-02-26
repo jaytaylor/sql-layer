@@ -615,7 +615,7 @@ public final class CBasicIT extends ITBase {
 
     @Test
     public void testAutoIncrement() throws InvalidOperationException {
-        ddl().createTable(session(), "sc1", "CREATE TABLE t1(c1 TINYINT AUTO_INCREMENT NULL KEY) AUTO_INCREMENT=10");
+        createTable("sc1", "CREATE TABLE t1(c1 TINYINT AUTO_INCREMENT NULL KEY) AUTO_INCREMENT=10");
         final int tid = tableId("sc1", "t1");
         final TableStatistics tableStats = dml().getTableStatistics(session(), tid, false);
         assertEquals("autoinc value", 9L, tableStats.getAutoIncrementValue());

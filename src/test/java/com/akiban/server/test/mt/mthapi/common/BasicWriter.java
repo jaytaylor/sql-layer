@@ -188,11 +188,12 @@ public class BasicWriter implements WriteThread {
     protected final void createTable(SaisTable table, DDLFunctions ddl, Session session, StringBuilder scratch)
             throws InvalidOperationException
     {
-        String ddlText = DDLUtils.buildDDL(table, scratch);
-        ddl.createTable(session, schema(), ddlText);
-        int id = ddl.getTableId(session, new TableName(schema(), table.getName()));
-        TableInfo info = new TableInfo(table, statesCount, id);
-        tablesHolder.addTable(info);
+        throw new UnsupportedOperationException("Reimplement");
+        //String ddlText = DDLUtils.buildDDL(table, scratch);
+        //ddl.createTable(session, schema(), ddlText);
+        //int id = ddl.getTableId(session, new TableName(schema(), table.getName()));
+        //TableInfo info = new TableInfo(table, statesCount, id);
+        //tablesHolder.addTable(info);
     }
 
 }

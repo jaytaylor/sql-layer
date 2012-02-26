@@ -486,7 +486,8 @@ public final class JsonHapiIT extends ITBase {
     @Before
     public void setUp() throws InvalidOperationException, JSONException {
         for(String ddl : setupInfo.ddls) {
-            ddl().createTable(session(), setupInfo.schema, ddl);
+            throw new UnsupportedOperationException("Reimplement");
+            //ddl().createTable(session(), setupInfo.schema, ddl);
         }
         if (runInfo.writeRows) {
             for(Map.Entry<String,JSONArray> entry : setupInfo.writeRows.entrySet()) {

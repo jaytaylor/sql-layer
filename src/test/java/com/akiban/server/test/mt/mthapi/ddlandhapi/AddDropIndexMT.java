@@ -98,25 +98,26 @@ public final class AddDropIndexMT extends HapiMTBase {
             public void setupWrites(DDLFunctions ddl, DMLFunctions dml, Session session)
                     throws InvalidOperationException
             {
-                ddl.createTable(session, SCHEMA,
-                        "create table p(id int key, aString varchar(32), anInt int)");
-                ddl.createTable(session, SCHEMA,
-                        "create table c1(id int key, pid int, "
-                        + "CONSTRAINT __akiban_c1 FOREIGN KEY __akiban_c1 (pid) REFERENCES p(id) )"
-                        );
-                int pId = ddl.getTableId(session, new TableName(SCHEMA, "p"));
-                int cId = ddl.getTableId(session, new TableName(SCHEMA, "c1"));
+                throw new UnsupportedOperationException("Reimplement");
+                //ddl.createTable(session, SCHEMA,
+                //        "create table p(id int key, aString varchar(32), anInt int)");
+                //ddl.createTable(session, SCHEMA,
+                //        "create table c1(id int key, pid int, "
+                //        + "CONSTRAINT __akiban_c1 FOREIGN KEY __akiban_c1 (pid) REFERENCES p(id) )"
+                //        );
+                //int pId = ddl.getTableId(session, new TableName(SCHEMA, "p"));
+                //int cId = ddl.getTableId(session, new TableName(SCHEMA, "c1"));
 
-                int childId = 1;
-                for (int parentId = 1; parentId <= 100; ++parentId) {
-                    int age = parentId * 2 - 1;
-                    NewRow parentRow = createNewRow(pId, parentId, Integer.toString(age), -age);
-                    dml.writeRow(session, parentRow);
-                    for (int childCount = 0; childCount < 5; ++childCount) {
-                        NewRow childRow = createNewRow(cId, childId++, parentId);
-                        dml.writeRow(session, childRow);
-                    }
-                }
+                //int childId = 1;
+                //for (int parentId = 1; parentId <= 100; ++parentId) {
+                //    int age = parentId * 2 - 1;
+                //    NewRow parentRow = createNewRow(pId, parentId, Integer.toString(age), -age);
+                //    dml.writeRow(session, parentRow);
+                //    for (int childCount = 0; childCount < 5; ++childCount) {
+                //        NewRow childRow = createNewRow(cId, childId++, parentId);
+                //        dml.writeRow(session, childRow);
+                //    }
+                //}
             }
 
             private boolean shouldCreate;

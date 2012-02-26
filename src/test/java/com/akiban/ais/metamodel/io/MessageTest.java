@@ -15,8 +15,6 @@
 
 package com.akiban.ais.metamodel.io;
 
-import com.akiban.ais.ddl.SchemaDef;
-import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
@@ -24,9 +22,9 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.server.rowdata.SchemaFactory;
 import org.junit.Test;
 
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 
 import static org.junit.Assert.assertEquals;
@@ -35,13 +33,12 @@ import static org.junit.Assert.assertSame;
 
 public final class MessageTest {
     private static AkibanInformationSchema coiSchema() throws Exception {
-        SchemaDef schemaDef = new SchemaDef();
-        schemaDef.parseCreateTable("create table test.c(id int key, name varchar(32)) engine=akibandb;");
-        schemaDef.parseCreateTable("create table test.o(id int key, cid int, foo int, "+
-                                   "constraint __akiban foreign key(cid) references c(id)) engine=akibandb;");
-        schemaDef.parseCreateTable("create table test.i(id int key, oid int, "+
-                                   "constraint __akiban foreign key(oid) references o(id)) engine=akibandb;");
-        return new SchemaDefToAis(schemaDef, true).getAis();
+        SchemaFactory schemaFactory = new SchemaFactory("test");
+        return schemaFactory.ais("create table test.c(id int key, name varchar(32)) engine=akibandb;",
+                                 "create table test.o(id int key, cid int, foo int, "+
+                                 "constraint __akiban foreign key(cid) references c(id)) engine=akibandb;",
+                                 "create table test.i(id int key, oid int, "+
+                                 "constraint __akiban foreign key(oid) references o(id)) engine=akibandb;");
     }
 
     private static void serializeAndCompare(AkibanInformationSchema ais) throws Exception {

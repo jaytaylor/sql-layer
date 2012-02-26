@@ -45,6 +45,7 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.api.dml.scan.ScanFlag;
+import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.rowdata.RowData;
@@ -354,9 +355,10 @@ public class ApiTestBase {
     }
 
     protected final int createTable(String schema, String table, String definition) throws InvalidOperationException {
-        ddl().createTable(session(), schema, String.format("CREATE TABLE %s (%s)", table, definition));
-        updateAISGeneration();
-        return ddl().getTableId(session(), new TableName(schema, table));
+        throw new UnsupportedOperationException("Reimplement this");
+        //ddl().createTable(session(), schema, String.format("CREATE TABLE %s (%s)", table, definition));
+        //updateAISGeneration();
+        //return ddl().getTableId(session(), new TableName(schema, table));
     }
 
     protected final int createTable(String schema, String table, String... definitions) throws InvalidOperationException {
