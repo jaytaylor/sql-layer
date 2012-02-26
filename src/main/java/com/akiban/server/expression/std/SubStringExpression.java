@@ -35,19 +35,19 @@ public class SubStringExpression extends AbstractCompositeExpression
     {
 
         @Override
-        public Expression compose(List<? extends Expression> arguments) {           
+        public Expression compose(List<? extends Expression> arguments) {
             return new SubStringExpression(arguments);
         }
 
         @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
-        {            
-            int size = argumentTypes.size();            
+        {
+            int size = argumentTypes.size();
             if (size != 3 && size != 2)
                 throw new WrongExpressionArityException(3, size);
             argumentTypes.setType(0, AkType.VARCHAR);
             for (int i = 1; i < size; ++i)
-                argumentTypes.setType(i, AkType.LONG);            
+                argumentTypes.setType(i, AkType.LONG);
             return  argumentTypes.get(0);
         }
     };
@@ -65,7 +65,7 @@ public class SubStringExpression extends AbstractCompositeExpression
         @Override
         public ValueSource eval() 
         {     
-            //String operand            
+            //String operand
             ValueSource stringSource = this.children().get(0).eval();
             if (stringSource.isNull())
                 return NullValueSource.only();
@@ -129,7 +129,7 @@ public class SubStringExpression extends AbstractCompositeExpression
             
             to = (to > st.length() -1 ? st.length() -1 : to);
             
-            valueHolder().putString(st.substring(from,to +1 ));          
+            valueHolder().putString(st.substring(from,to +1 ));
             return valueHolder();
         }  
     }
