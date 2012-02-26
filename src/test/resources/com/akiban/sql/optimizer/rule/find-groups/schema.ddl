@@ -3,7 +3,7 @@ CREATE TABLE child(id INT NOT NULL, PRIMARY KEY(id), pid INT, GROUPING FOREIGN K
 
 CREATE TABLE customers
 (
-  cid int NOT NULL , 
+  cid int NOT NULL, 
   PRIMARY KEY(cid),
   name varchar(32) NOT NULL
 );
@@ -11,7 +11,7 @@ CREATE INDEX name ON customers(name);
 
 CREATE TABLE orders
 (
-  oid int NOT NULL , 
+  oid int NOT NULL, 
   PRIMARY KEY(oid),
   cid int NOT NULL,
   order_date date NOT NULL,
@@ -21,7 +21,7 @@ CREATE INDEX order_date ON orders(order_date);
 
 CREATE TABLE items
 (
-  iid int NOT NULL , 
+  iid int NOT NULL, 
   PRIMARY KEY(iid),
   oid int NOT NULL,
   sku varchar(32) NOT NULL,
@@ -33,7 +33,7 @@ CREATE INDEX sku ON items(sku);
 
 CREATE TABLE addresses
 (
-  aid int NOT NULL , 
+  aid int NOT NULL, 
   PRIMARY KEY(aid),
   cid int NOT NULL,
   state CHAR(2),
