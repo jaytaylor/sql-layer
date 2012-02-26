@@ -369,6 +369,8 @@ public abstract class DPhyp<P>
             return (o2 != JoinType.LEFT);
         case FULL_OUTER:
             return (o2 == JoinType.INNER);
+        case RIGHT:
+            assert false;       // Should not see right join at this point.
         default:
             return true;
         }
