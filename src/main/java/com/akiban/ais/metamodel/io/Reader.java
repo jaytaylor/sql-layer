@@ -13,22 +13,25 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.ais.io;
+package com.akiban.ais.metamodel.io;
 
 import java.util.Map;
 
+import com.akiban.ais.metamodel.MMColumn;
+import com.akiban.ais.metamodel.MMGroup;
+import com.akiban.ais.metamodel.MMIndex;
+import com.akiban.ais.metamodel.MMIndexColumn;
+import com.akiban.ais.metamodel.MMJoin;
+import com.akiban.ais.metamodel.MMJoinColumn;
+import com.akiban.ais.metamodel.MMTable;
+import com.akiban.ais.metamodel.MMType;
 import com.akiban.ais.metamodel.MetaModel;
+import com.akiban.ais.metamodel.Source;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.Source;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.MetaModelVersionMismatchException;
 import com.akiban.server.error.NoSuchTableException;
@@ -51,7 +54,7 @@ public class Reader
             @Override
             public void receive(Map<String, Object> map)
             {
-                Group.create(ais, map);
+                MMGroup.create(ais, map);
             }
         });
     }
@@ -63,7 +66,7 @@ public class Reader
             @Override
             public void receive(Map<String, Object> map)
             {
-                Table.create(ais, map);
+                MMTable.create(ais, map);
             }
         });
     }
@@ -75,7 +78,7 @@ public class Reader
             @Override
             public void receive(Map<String, Object> map)
             {
-                Column column = Column.create(ais, map);
+                Column column = MMColumn.create(ais, map);
                 if (column == null) {
                     throw new NoSuchTableException ((String)map.get(column_schemaName), (String)map.get(column_tableName));
                 }
@@ -119,7 +122,7 @@ public class Reader
             @Override
             public void receive(Map<String, Object> map)
             {
-                Join.create(ais, map);
+                MMJoin.create(ais, map);
             }
         });
     }
@@ -131,7 +134,7 @@ public class Reader
             @Override
             public void receive(Map<String, Object> map)
             {
-                JoinColumn.create(ais, map);
+                MMJoinColumn.create(ais, map);
             }
         });
     }
@@ -143,7 +146,7 @@ public class Reader
             @Override
             public void receive(Map<String, Object> map)
             {
-                Index index = Index.create(ais, map);
+                Index index = MMIndex.create(ais, map);
                 if (index == null) {
                     throw new NoSuchTableException ((String)map.get(index_schemaName), 
                                                 (String)map.get(index_tableName));
@@ -159,7 +162,7 @@ public class Reader
             @Override
             public void receive(Map<String, Object> map)
             {
-                IndexColumn indexColumn = IndexColumn.create(ais, map);
+                IndexColumn indexColumn = MMIndexColumn.create(ais, map);
                 if (indexColumn == null) {
                     throw new NoSuchTableException ((String)map.get(indexColumn_schemaName), (String)map.get(indexColumn_tableName));
                 }
@@ -174,7 +177,7 @@ public class Reader
             @Override
             public void receive(Map<String, Object> map)
             {
-                Type.create(ais, map);
+                MMType.create(ais, map);
             }
         });
     }

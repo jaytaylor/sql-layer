@@ -104,7 +104,7 @@ public class IntersectRow extends AbstractRow
         this.rowType = rowType;
         this.left.hold(left);
         this.right.hold(right);
-        this.nLeftFields = left.rowType().nFields();
+        this.nLeftFields = rowType.leftType().nFields();
     }
 
     // Object state

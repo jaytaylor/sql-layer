@@ -30,8 +30,8 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
 
-import com.akiban.ais.io.MessageTarget;
-import com.akiban.ais.io.Writer;
+import com.akiban.ais.metamodel.io.MessageTarget;
+import com.akiban.ais.metamodel.io.Writer;
 
 
 /**

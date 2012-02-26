@@ -415,14 +415,16 @@ public class API
     
     public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
                                             IndexRowType leftRowType, IndexRowType rightRowType,
-                                            int orderingFields,
+                                            int leftOrderingFields,
+                                            int rightOrderingFields,
                                             JoinType joinType,
                                             int leftRowPosition,
                                             int rightRowPosition)
     {
         return new Intersect_Ordered(leftInput, rightInput,
                                      leftRowType, rightRowType,
-                                     orderingFields,
+                                     leftOrderingFields,
+                                     rightOrderingFields,
                                      joinType,
                                      leftRowPosition, rightRowPosition);
     }

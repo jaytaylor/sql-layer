@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.ais.io;
+package com.akiban.ais.metamodel.io;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintWriter;
@@ -21,8 +21,8 @@ import java.util.Map;
 
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
+import com.akiban.ais.metamodel.Target;
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Target;
 
 public class CSVTarget extends Target
 {

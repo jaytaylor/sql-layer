@@ -15,6 +15,7 @@
 
 package com.akiban.server.test.it.bugs.bug704443;
 
+import com.akiban.ais.metamodel.MMColumn;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -121,7 +122,7 @@ public final class DecimalsWithoutParamsIT extends ITBase {
 
         for (Column column : uTable.getColumns()) {
             Set<String> keysChecked = new TreeSet<String>();
-            Map<String,Object> map = Collections.unmodifiableMap(new TreeMap<String,Object>(column.map()));
+            Map<String,Object> map = Collections.unmodifiableMap(new TreeMap<String,Object>(MMColumn.map(column)));
 
             checkKey(keysChecked, map, "charset", column.getCharsetAndCollation().charset());
             checkKey(keysChecked, map, "collation", column.getCharsetAndCollation().collation());

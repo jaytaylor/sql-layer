@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.ais.io;
+package com.akiban.ais.metamodel.io;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -21,7 +21,7 @@ import java.util.Map;
 
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
-import com.akiban.ais.model.Source;
+import com.akiban.ais.metamodel.Source;
 
 public class MessageSource extends Source
 {

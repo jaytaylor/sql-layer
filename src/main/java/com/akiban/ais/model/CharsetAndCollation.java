@@ -15,16 +15,11 @@
 
 package com.akiban.ais.model;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class CharsetAndCollation implements Serializable
+public class CharsetAndCollation
 {
-    // Required by GWT
-    public CharsetAndCollation()
-    {}
-    
     public static CharsetAndCollation intern(String charset, String collation)
     {
         String key = key(charset, collation);
@@ -60,6 +55,6 @@ public class CharsetAndCollation implements Serializable
     // charset/collation -> CharsetAndCollation
     private static final Map<String, CharsetAndCollation> extent = new HashMap<String, CharsetAndCollation>();
 
-    private String charset;
-    private String collation;
+    private final String charset;
+    private final String collation;
 }
