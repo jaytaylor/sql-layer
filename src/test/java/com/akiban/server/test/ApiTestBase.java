@@ -355,10 +355,14 @@ public class ApiTestBase {
         return Collections.emptyList();
     }
 
+    protected AkibanInformationSchema createFromDDL(String schema, String ddl) {
+        SchemaFactory schemaFactory = new SchemaFactory(schema);
+        return schemaFactory.ais(ddl().getAIS(session()), ddl);
+    }
+    
     protected final int createTable(String schema, String table, String definition) throws InvalidOperationException {
         String ddl = String.format("CREATE TABLE %s (%s)", table, definition);
-        SchemaFactory schemaFactory = new SchemaFactory(schema);
-        AkibanInformationSchema tempAIS = schemaFactory.ais(ddl().getAIS(session()), ddl);
+        AkibanInformationSchema tempAIS = createFromDDL(schema, ddl);
         UserTable tempTable = tempAIS.getUserTable(schema, table);
         ddl().createTable(session(), tempTable);
         updateAISGeneration();
@@ -379,7 +383,7 @@ public class ApiTestBase {
         String ddl = String.format("CREATE INDEX \"%s\" ON \"%s\".\"%s\"(%s)", indexName, schema, table,
                                    Strings.join(Arrays.asList(indexCols), ","));
         SchemaFactory schemaFactory = new SchemaFactory(schema);
-        AkibanInformationSchema tempAIS = schemaFactory.ais(ddl().getAIS(session()), ddl);
+        AkibanInformationSchema tempAIS = createFromDDL(schema, ddl);
         Index tempIndex = tempAIS.getUserTable(schema, table).getIndex(indexName);
         ddl().createIndexes(session(), Collections.singleton(tempIndex));
         updateAISGeneration();
