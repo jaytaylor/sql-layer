@@ -32,13 +32,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 
 public final class MessageTest {
-    private static AkibanInformationSchema coiSchema() throws Exception {
+    private static AkibanInformationSchema coiSchema(boolean withGroupIndex) throws Exception {
         SchemaFactory schemaFactory = new SchemaFactory("test");
-        return schemaFactory.ais("create table test.c(id int key, name varchar(32)) engine=akibandb;",
-                                 "create table test.o(id int key, cid int, foo int, "+
-                                 "constraint __akiban foreign key(cid) references c(id)) engine=akibandb;",
-                                 "create table test.i(id int key, oid int, "+
-                                 "constraint __akiban foreign key(oid) references o(id)) engine=akibandb;");
+        return schemaFactory.ais("create table test.c(id int not null primary key, name varchar(32));",
+                                 "create table test.o(id int not null primary key, cid int, foo int, ",
+                                 "grouping foreign key(cid) references c(id));",
+                                 "create table test.i(id int not null primary key, oid int, ",
+                                 "grouping foreign key(oid) references o(id));",
+                                 withGroupIndex ? "create index foo on o(c.name, o.foo) using left join;" : "");
     }
 
     private static void serializeAndCompare(AkibanInformationSchema ais) throws Exception {
@@ -62,22 +63,19 @@ public final class MessageTest {
 
     @Test
     public void coiAIS() throws Exception {
-        AkibanInformationSchema ais = coiSchema();
+        AkibanInformationSchema ais = coiSchema(false);
         serializeAndCompare(ais);
     }
 
     @Test
     public void coiAISWithGroupIndex() throws Exception {
-        final AkibanInformationSchema ais = coiSchema();
+        final AkibanInformationSchema ais = coiSchema(true);
         final Table cTable = ais.getTable("test", "c");
         assertNotNull("c table not null", cTable);
         final Table oTable = ais.getTable("test", "o");
         assertNotNull("o table not null", oTable);
         final Group group = cTable.getGroup();
         assertSame("customer and order group", group, oTable.getGroup());
-        final GroupIndex fooIndex = GroupIndex.create(ais, group, "foo", 100, false, "KEY", null);
-        fooIndex.addColumn(new IndexColumn(fooIndex, cTable.getColumn("name"), 0, true, null));
-        fooIndex.addColumn(new IndexColumn(fooIndex, oTable.getColumn("foo"), 1, true, null));
         ais.checkIntegrity();
         serializeAndCompare(ais);
     }
