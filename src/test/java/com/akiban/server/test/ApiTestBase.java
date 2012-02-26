@@ -59,6 +59,7 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.types.extract.ConverterTestUtils;
 import com.akiban.server.util.GroupIndexCreator;
 import com.akiban.util.AssertUtils;
+import com.akiban.util.Strings;
 import com.akiban.util.tap.TapReport;
 import com.akiban.util.Undef;
 import com.persistit.Transaction;
@@ -355,10 +356,13 @@ public class ApiTestBase {
     }
 
     protected final int createTable(String schema, String table, String definition) throws InvalidOperationException {
-        throw new UnsupportedOperationException("Reimplement this");
-        //ddl().createTable(session(), schema, String.format("CREATE TABLE %s (%s)", table, definition));
-        //updateAISGeneration();
-        //return ddl().getTableId(session(), new TableName(schema, table));
+        String ddl = String.format("CREATE TABLE %s (%s)", table, definition);
+        SchemaFactory schemaFactory = new SchemaFactory(schema);
+        AkibanInformationSchema tempAIS = schemaFactory.ais(ddl().getAIS(session()), ddl);
+        UserTable tempTable = tempAIS.getUserTable(schema, table);
+        ddl().createTable(session(), tempTable);
+        updateAISGeneration();
+        return ddl().getTableId(session(), new TableName(schema, table));
     }
 
     protected final int createTable(String schema, String table, String... definitions) throws InvalidOperationException {
@@ -369,6 +373,17 @@ public class ApiTestBase {
         }
         unifiedDef.setLength(unifiedDef.length() - 1);
         return createTable(schema, table, unifiedDef.toString());
+    }
+    
+    protected final TableIndex createIndex(String schema, String table, String indexName, String... indexCols) {
+        String ddl = String.format("CREATE INDEX \"%s\" ON \"%s\".\"%s\"(%s)", indexName, schema, table,
+                                   Strings.join(Arrays.asList(indexCols), ","));
+        SchemaFactory schemaFactory = new SchemaFactory(schema);
+        AkibanInformationSchema tempAIS = schemaFactory.ais(ddl().getAIS(session()), ddl);
+        Index tempIndex = tempAIS.getUserTable(schema, table).getIndex(indexName);
+        ddl().createIndexes(session(), Collections.singleton(tempIndex));
+        updateAISGeneration();
+        return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
     }
 
     protected final TableIndex createTableIndex(int tableId, String indexName, boolean unique, String... columns) {

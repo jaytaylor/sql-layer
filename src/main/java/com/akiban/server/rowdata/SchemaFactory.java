@@ -31,6 +31,7 @@ import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStoreSchemaManager;
+import com.akiban.sql.StandardException;
 import com.akiban.sql.aisddl.IndexDDL;
 import com.akiban.sql.aisddl.TableDDL;
 import com.akiban.sql.parser.CreateIndexNode;
@@ -62,7 +63,11 @@ public class SchemaFactory {
         return rowDefCache(ais);
     }
 
-    public AkibanInformationSchema ais(String... ddl) throws Exception {
+    public AkibanInformationSchema ais(String... ddl) {
+        return ais(null, ddl);
+    }
+
+    public AkibanInformationSchema ais(AkibanInformationSchema baseAIS, String... ddl) {
         StringBuilder buffer = new StringBuilder();
         for (String line : ddl) {
             buffer.append(line);
@@ -80,22 +85,22 @@ public class SchemaFactory {
         fullDDL = fullDDL.replaceAll("(?i)not null not null", "not null");
         fullDDL = fullDDL.trim();
         */
-        CreateOnlyDDLMock ddlFunctions = new CreateOnlyDDLMock();
+        CreateOnlyDDLMock ddlFunctions = new CreateOnlyDDLMock(baseAIS);
         SQLParser parser = new SQLParser();
         List<StatementNode> nodes;
         try {
             nodes = parser.parseStatements(fullDDL);
-            for(StatementNode stmt : nodes) {
-                if (stmt instanceof CreateTableNode) {
-                    TableDDL.createTable(ddlFunctions , null, defaultSchema, (CreateTableNode) stmt);
-                } else if (stmt instanceof CreateIndexNode) {
-                    IndexDDL.createIndex(ddlFunctions, null, defaultSchema, (CreateIndexNode) stmt);
-                } else {
-                    throw new IllegalStateException("Unsupported StatementNode type: " + stmt);
-                }
+        } catch(StandardException e) {
+            throw new RuntimeException(e);
+        }
+        for(StatementNode stmt : nodes) {
+            if (stmt instanceof CreateTableNode) {
+                TableDDL.createTable(ddlFunctions , null, defaultSchema, (CreateTableNode) stmt);
+            } else if (stmt instanceof CreateIndexNode) {
+                IndexDDL.createIndex(ddlFunctions, null, defaultSchema, (CreateIndexNode) stmt);
+            } else {
+                throw new IllegalStateException("Unsupported StatementNode type: " + stmt);
             }
-        } catch(Exception e) {
-            throw e;
         }
         return ddlFunctions.getAIS(null);
     }
@@ -136,6 +141,14 @@ public class SchemaFactory {
 
     private static class CreateOnlyDDLMock implements DDLFunctions {
         AkibanInformationSchema ais = new AkibanInformationSchema();
+
+        public CreateOnlyDDLMock() {
+            this(new AkibanInformationSchema());
+        }
+
+        public CreateOnlyDDLMock(AkibanInformationSchema ais) {
+            this.ais = ais;
+        }
 
         @Override
         public void createTable(Session session, UserTable newTable) {
