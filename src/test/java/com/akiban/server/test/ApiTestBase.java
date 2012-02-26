@@ -301,8 +301,8 @@ public class ApiTestBase {
 
     protected String akibanFK(String childCol, String parentTable, String parentCol) {
         ++akibanFKCount;
-        return String.format("CONSTRAINT __akiban_fk_%d FOREIGN KEY __akiban_fk_%d (%s) REFERENCES %s (%s)",
-                akibanFKCount, akibanFKCount, childCol, parentTable, parentCol
+        return String.format("GROUPING FOREIGN KEY (%s) REFERENCES %s (%s)",
+                             childCol, parentTable, parentCol
         );
     }
 
@@ -361,7 +361,7 @@ public class ApiTestBase {
     }
     
     protected final int createTable(String schema, String table, String definition) throws InvalidOperationException {
-        String ddl = String.format("CREATE TABLE %s (%s)", table, definition);
+        String ddl = String.format("CREATE TABLE \"%s\" (%s)", table, definition);
         AkibanInformationSchema tempAIS = createFromDDL(schema, ddl);
         UserTable tempTable = tempAIS.getUserTable(schema, table);
         ddl().createTable(session(), tempTable);
