@@ -34,13 +34,13 @@ public final class DuplicateKeyValueMessageIT extends ITBase {
     @Before
     public void setUp() throws InvalidOperationException {
         tableId = createTable("sa", "ta",
-                "c0 INT KEY",
+                "c0 INT NOT NULL PRIMARY KEY",
                 "c1 int",
                 "c2 int",
                 "c3 int",
                 "name varchar(32)",
                 "UNIQUE (c1, c2)",
-                "UNIQUE my_key(c3)"
+                "CONSTRAINT my_key UNIQUE(c3)"
         );
         writeRows(
                 createNewRow(tableId, 10, 11, 12, 13, "from setup"),
