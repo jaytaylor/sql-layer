@@ -13,14 +13,14 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.ais.io;
+package com.akiban.ais.metamodel.io;
 
 import java.nio.ByteBuffer;
 import java.util.Map;
 
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
-import com.akiban.ais.model.Target;
+import com.akiban.ais.metamodel.Target;
 
 public class MessageTarget extends Target
 {

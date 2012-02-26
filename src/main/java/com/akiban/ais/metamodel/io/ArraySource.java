@@ -13,13 +13,13 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.ais.io;
+package com.akiban.ais.metamodel.io;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import com.akiban.ais.model.Source;
+import com.akiban.ais.metamodel.Source;
 
 public class ArraySource extends Source
 {

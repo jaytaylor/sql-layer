@@ -15,7 +15,6 @@
 
 package com.akiban.ais.model;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -24,13 +23,8 @@ import java.util.Map;
 
 import com.akiban.ais.model.validation.AISInvariants;
 
-public class Group implements Serializable, ModelNames, Traversable
+public class Group implements Traversable
 {
-    public static Group create(AkibanInformationSchema ais, Map<String, Object> map)
-    {
-        return create(ais, (String) map.get(group_name));
-    }
-
     public static Group create(AkibanInformationSchema ais, String groupName)
     {
         ais.checkMutability();
@@ -38,20 +32,6 @@ public class Group implements Serializable, ModelNames, Traversable
         Group group = new Group(groupName);
         ais.addGroup(group);
         return group;
-    }
-
-    public Map<String, Object> map()
-    {
-        Map<String, Object> map = new HashMap<String, Object>();
-        map.put(group_name, name);
-        return map;
-    }
-
-    @SuppressWarnings("unused")
-    private Group()
-    {
-        // GWT requires empty constructor
-        this.indexMap = new HashMap<String, GroupIndex>();
     }
 
     public Group(final String name)
@@ -167,7 +147,7 @@ public class Group implements Serializable, ModelNames, Traversable
 
     // State
 
-    private String name;
+    private final String name;
     private GroupTable groupTable;
     private final Map<String, GroupIndex> indexMap;
 }
