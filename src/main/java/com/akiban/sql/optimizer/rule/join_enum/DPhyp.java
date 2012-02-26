@@ -86,7 +86,8 @@ public abstract class DPhyp<P>
         plans = new Object[1 << ntables];
         // Start with single tables.
         for (int i = 0; i < ntables; i++) {
-            setPlan(JoinableBitSet.of(i), evaluateTable(tables.get(i)));
+            long bitset = JoinableBitSet.of(i);
+            setPlan(bitset, evaluateTable(bitset, tables.get(i)));
         }
         for (int i = ntables - 1; i >= 0; i--) {
             long ts = JoinableBitSet.of(i);
@@ -191,20 +192,20 @@ public abstract class DPhyp<P>
             }
         }
         P plan = getPlan(s);
-        plan = evaluateJoin(p1, p2, plan, joinType, evaluateOperators);
+        plan = evaluateJoin(s1, p1, s2, p2, s, plan, joinType, evaluateOperators);
         if (isCommutative(joinType))
-            plan = evaluateJoin(p2, p1, plan, joinType, evaluateOperators);
+            plan = evaluateJoin(s2, p2, s1, p1, s, plan, joinType, evaluateOperators);
         setPlan(s, plan);
     }
 
     /** Return the best plan for the one-table initial state. */
-    public abstract P evaluateTable(Joinable table);
+    public abstract P evaluateTable(long bitset, Joinable table);
 
     /** Adjust best plan <code>existing</code> for the join of
      * <code>p1</code> and <code>p2</code> with given type and
      * conditions taken from the given joins.
      */
-    public abstract P evaluateJoin(P p1, P p2, P existing,
+    public abstract P evaluateJoin(long bitset1, P p1, long bitset2, P p2, long bitsetJoined, P existing,
                                    JoinType joinType, Collection<JoinOperator> joins);
 
     /** Initialize state from the given join tree. */

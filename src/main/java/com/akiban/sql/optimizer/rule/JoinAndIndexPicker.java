@@ -165,12 +165,12 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Object evaluateTable(Joinable table) {
+        public Object evaluateTable(long s, Joinable table) {
             return null;
         }
 
         @Override
-        public Object evaluateJoin(Object p1, Object p2, Object existing,
+        public Object evaluateJoin(long s1, Object p1, long s2, Object p2, long s, Object existing,
                                    JoinType joinType, Collection<JoinOperator> joins) {
             return null;
         }
