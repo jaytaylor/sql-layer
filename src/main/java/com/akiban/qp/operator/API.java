@@ -414,19 +414,20 @@ public class API
     // Intersect
     
     public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
-                                            IndexRowType leftRowType, IndexRowType rightRowType,
+                                            RowType leftRowType, RowType rightRowType,
                                             int leftOrderingFields,
                                             int rightOrderingFields,
+                                            int comparisonFields,
                                             JoinType joinType,
-                                            int leftRowPosition,
-                                            int rightRowPosition)
+                                            IntersectOutputOption intersectOutput)
     {
         return new Intersect_Ordered(leftInput, rightInput,
                                      leftRowType, rightRowType,
                                      leftOrderingFields,
                                      rightOrderingFields,
+                                     comparisonFields,
                                      joinType,
-                                     leftRowPosition, rightRowPosition);
+                                     intersectOutput);
     }
 
     // Insert
@@ -489,6 +490,13 @@ public class API
     public static enum SortOption {
         PRESERVE_DUPLICATES,
         SUPPRESS_DUPLICATES
+    }
+
+    // Intersect output flags
+
+    public static enum IntersectOutputOption {
+        OUTPUT_LEFT,
+        OUTPUT_RIGHT
     }
 
     // Ordering specification
