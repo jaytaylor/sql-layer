@@ -149,7 +149,7 @@ public class SubStringExpression extends AbstractCompositeExpression
 
     @Override
     public ExpressionEvaluation evaluation() 
-    {       
+    {
         return new InnerEvaluation(this.childrenEvaluations());
     }
 
