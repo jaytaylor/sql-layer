@@ -49,6 +49,8 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableIndex;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.DuplicateIndexException;
@@ -91,6 +93,8 @@ import com.persistit.exception.PersistitException;
 
 public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         SchemaManager {
+
+    final static int AIS_BASE_TABLE_ID = 1000000000;
 
     static final String BY_AIS = "byAIS";
 
@@ -506,6 +510,15 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return aish.getAis();
     }
 
+    private void setGroupTableIds(AkibanInformationSchema newAIS) {
+        // Old behavior, reassign group table IDs
+        for(GroupTable groupTable: newAIS.getGroupTables().values()) {
+            final UserTable root = groupTable.getRoot();
+            assert root != null : "Group with no root table: " + groupTable;
+            groupTable.setTableId(TreeService.MAX_TABLES_PER_VOLUME - root.getTableId());
+        }
+    }
+
     /**
      * Construct a new AIS instance containing a copy of the currently known data, see @{link #ais},
      * minus the given list of TableNames.
@@ -628,6 +641,57 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         stop();
     }
 
+    private static AkibanInformationSchema createPrimordialAIS() {
+        NewAISBuilder builder = AISBBasedBuilder.create("akiban_information_schema");
+        /*
+        create table akiban_information_schema.zindex_statistics (
+                table_id            int not null,
+                index_id            int not null,
+                analysis_timestamp  timestamp,
+                row_count           bigint,
+                sampled_count       bigint,
+                primary key(table_id, index_id)
+        ) engine=akibandb;
+        */
+        builder.userTable("zindex_statistics").
+                colLong("table_id", false).
+                colLong("index_id", false).
+                colTimestamp("analysis_timestamp", true).
+                colBigInt("row_count", true).
+                colBigInt("sampled_count", true).
+                pk("table_id", "index_id");
+
+        /*
+        create table akiban_information_schema.zindex_statistics_entry (
+                table_id            int not null,
+                index_id            int not null,
+                column_count        int not null,
+                item_number         int not null,
+                key_string          varchar(2048),
+                key_bytes           varbinary(4096),
+                eq_count            bigint,
+                lt_count            bigint,
+                distinct_count      bigint,
+                primary key(table_id, index_id, column_count, item_number),
+                CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (table_id, index_id) REFERENCES akiban_information_schema.zindex_statistics(table_id, index_id)
+        ) engine=akibandb;
+        */
+        builder.userTable("zindex_statistics_entry").
+                colLong("table_id", false).
+                colLong("index_id", false).
+                colLong("column_count", false).
+                colLong("item_number", false).
+                colString("key_string", 2048, true, "latin1").
+                colBinary("key_bytes", 4096, true).
+                colBigInt("eq_count", true).
+                colBigInt("lt_count", true).
+                colBigInt("distinct_count", true).
+                pk("table_id", "index_id", "column_count", "item_number").
+                joinTo("zindex_statistics").on("table_id", "table_id").and("index_id", "index_id");
+        
+        return builder.ais(false);
+    }
+
     /**
      * Load the AIS tables from file and then load the serialized AIS from each
      * {@link TreeService#SCHEMA_TREE_NAME} in each volume. This must be done
@@ -642,20 +706,15 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         final Transaction transaction = treeService.getTransaction(session);
         transaction.begin();
         try {
-            // Create AIS tables
-            // TODO: Primordial AIS from builder
-            /*
-            aisFileStream = AkServer.class.getClassLoader().getResourceAsStream(AIS_DDL_NAME);
-            SchemaDef schemaDef = SchemaDef.parseSchemaFromStream(aisFileStream);
-            final AkibanInformationSchema newAIS = new SchemaDefToAis(schemaDef, true).getAis();
-            int curId = AIS_BASE_TABLE_ID;
+            final AkibanInformationSchema newAIS = createPrimordialAIS();
+            // Offset so index stats tables get same IDs
+            int curId = AIS_BASE_TABLE_ID + 9;
             for(UserTable table : newAIS.getUserTables().values()) {
                 table.setTableId(curId++);
                 setTreeNames(table);
             }
             setGroupTableIds(newAIS);
-            */
-            final AkibanInformationSchema newAIS = new AkibanInformationSchema();
+
             // Load stored AIS data from each schema tree
             treeService.visitStorage(session, new TreeVisitor() {
                                          @Override

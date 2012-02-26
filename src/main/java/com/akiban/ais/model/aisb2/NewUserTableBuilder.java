@@ -91,6 +91,15 @@ public interface NewUserTableBuilder extends NewAISBuilder {
 
     NewUserTableBuilder colDouble(String name);
     NewUserTableBuilder colDouble(String name, boolean nullable);
+    
+    NewUserTableBuilder colTimestamp(String name);
+    NewUserTableBuilder colTimestamp(String name, boolean nullable);
+
+    NewUserTableBuilder colBigInt(String name);
+    NewUserTableBuilder colBigInt(String name, boolean nullable);
+
+    NewUserTableBuilder colBinary(String name, int length);
+    NewUserTableBuilder colBinary(String name, int length, boolean nullable);
 
     /**
      * Adds a PK
