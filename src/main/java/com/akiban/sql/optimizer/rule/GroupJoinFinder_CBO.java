@@ -173,7 +173,7 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
     }
 
     // See whether any expression in the join condition other than the
-    // grouping join references the a table under the given tree.
+    // grouping join references a table under the given tree.
     protected boolean hasJoinedReferences(ConditionList joinConditions,
                                           TableGroupJoinNode fromTree) {
         JoinedReferenceFinder finder = null;

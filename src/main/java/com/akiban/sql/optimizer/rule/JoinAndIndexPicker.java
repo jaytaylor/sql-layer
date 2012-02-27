@@ -546,8 +546,6 @@ public class JoinAndIndexPicker extends BaseRule
                 SubquerySource subquerySource = null;
                 if (!subqueries.isEmpty()) {
                     query = subqueries.peek().subquery;
-                    System.out.println("??? " + query);
-                    System.out.println("??? " + query.getOutput());
                     if (query.getOutput() instanceof SubquerySource)
                         subquerySource = (SubquerySource)query.getOutput();
                 }

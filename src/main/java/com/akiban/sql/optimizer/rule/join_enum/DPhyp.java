@@ -256,12 +256,14 @@ public abstract class DPhyp<P>
         ExpressionTables visitor = new ExpressionTables(tableBitSets);
         noperators = 0;
         JoinOperator rootOp = initSES(root, visitor);
-        noperators += whereConditions.size(); // Maximum possible.
+        if (whereConditions != null)
+            noperators += whereConditions.size(); // Maximum possible addition.
         operators = new ArrayList<JoinOperator>(noperators);
         nedges = noperators * 2;
         edges = new long[nedges];
         calcTES(rootOp);
-        addWhereConditions(whereConditions, visitor);
+        if (whereConditions != null)
+            addWhereConditions(whereConditions, visitor);
         noperators = operators.size();
         nedges = noperators * 2;
         if (TRACE) {

@@ -90,6 +90,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             conditionSources.add(queryGoal.getWhereConditions());
         if (!joins.isEmpty()) {
             conditions = new ArrayList<ConditionExpression>();
+            if (queryGoal.getWhereConditions() != null)
+                conditions.addAll(queryGoal.getWhereConditions());
             for (JoinOperator join : joins) {
                 ConditionList joinConditions = join.getJoinConditions();
                 if (joinConditions != null) {
@@ -143,10 +145,10 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                     ComparisonCondition ccond = (ComparisonCondition)condition;
                     ExpressionNode comparand = null;
                     if (ccond.getOperation() == Comparison.EQ) {
-                        if (indexExpression.equals(ccond.getLeft())) {
+                        if (indexExpressionMatches(indexExpression, ccond.getLeft())) {
                             comparand = ccond.getRight();
                         }
-                        else if (indexExpression.equals(ccond.getRight())) {
+                        else if (indexExpressionMatches(indexExpression, ccond.getRight())) {
                             comparand = ccond.getLeft();
                         }
                     }
@@ -182,10 +184,10 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                         if (ccond.getOperation().equals(Comparison.NE))
                             continue; // ranges are better suited for !=
                         ExpressionNode otherComparand = null;
-                        if (indexExpression.equals(ccond.getLeft())) {
+                        if (indexExpressionMatches(indexExpression, ccond.getLeft())) {
                             otherComparand = ccond.getRight();
                         }
-                        else if (indexExpression.equals(ccond.getRight())) {
+                        else if (indexExpressionMatches(indexExpression, ccond.getRight())) {
                             otherComparand = ccond.getLeft();
                         }
                         if ((otherComparand != null) && constantOrBound(otherComparand)) {
@@ -379,6 +381,33 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             }
         }
         return null;
+    }
+
+    /** Is the comparison operand what the index indexes? */
+    protected boolean indexExpressionMatches(ExpressionNode indexExpression,
+                                             ExpressionNode comparisonOperand) {
+        if (indexExpression.equals(comparisonOperand))
+            return true;
+        if (!(comparisonOperand instanceof ColumnExpression))
+            return false;
+        // See if comparing against a result column of the subquery,
+        // that is, a join to the subquery that we can push down.
+        // TODO: Should check column equivalences here, too.
+        ColumnExpression comparisonColumn = (ColumnExpression)comparisonOperand;
+        ColumnSource comparisonTable = comparisonColumn.getTable();
+        if (!(comparisonTable instanceof SubquerySource))
+            return false;
+        Subquery subquery = ((SubquerySource)comparisonTable).getSubquery();
+        if (subquery != queryGoal.getQuery())
+            return false;
+        if (!(subquery.getQuery() instanceof ResultSet))
+            return false;
+        ResultSet results = (ResultSet)subquery.getQuery();
+        if (!(results.getInput() instanceof Project))
+            return false;
+        Project project = (Project)results.getInput();
+        ExpressionNode insideExpression = project.getFields().get(comparisonColumn.getPosition());
+        return indexExpressionMatches(indexExpression, insideExpression);
     }
 
     /** Find the best index among the branches. */
