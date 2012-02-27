@@ -41,16 +41,16 @@ public final class ScanBufferTooSmallIT extends ITBase {
     @Before
     public void createTables() throws InvalidOperationException {
         int cid = createTable("ts", "c",
-                "cid int key",
+                "cid int not null primary key",
                 "name varchar(255)");
         int oid = createTable("ts", "o",
-                "oid int key",
+                "oid int not null primary key",
                 "cid int",
-                "CONSTRAINT __akiban_fk_c FOREIGN KEY __akiban_fk_c (cid) REFERENCES c(cid)");
+                "GROUPING FOREIGN KEY (cid) REFERENCES c(cid)");
         int iid = createTable("ts", "i",
-                "iid int key",
+                "iid int not null primary key",
                 "oid int",
-                "CONSTRAINT __akiban_fk_o FOREIGN KEY __akiban_fk_o (oid) REFERENCES o(oid)");
+                "GROUPING FOREIGN KEY (oid) REFERENCES o(oid)");
 
         writeRows(
                 createNewRow(cid, 1, "short name"),

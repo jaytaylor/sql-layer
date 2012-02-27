@@ -261,24 +261,24 @@ public final class DDLInvalidatesScansIT extends ITBase {
     public void setUpTables() throws InvalidOperationException{
         createTable(
                 SCHEMA, CUSTOMERS,
-                "id int key",
+                "id int not null primary key",
                 "name varchar(32)",
                 "position char(1)",
-                "has_played_for_bruins char(1)",
-                "key (name)",
-                "key (position)"
+                "has_played_for_bruins char(1)"
         );
+        createIndex(SCHEMA, CUSTOMERS, "name", "name");
+        createIndex(SCHEMA, CUSTOMERS, "position", "position");
         int orders = createTable(
                 SCHEMA, ORDERS,
-                "id int key",
+                "id int not null primary key",
                 "cid int",
                 "date varchar(32)",
-                "key (date)",
-                "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o (cid) REFERENCES " + CUSTOMERS + " (id)"
+                "GROUPING FOREIGN KEY (cid) REFERENCES " + CUSTOMERS + " (id)"
         );
+        createIndex(SCHEMA, ORDERS, "date", "date");
         int snowmen = createTable(
                 SCHEMA, SNOWMEN,
-                "id int key",
+                "id int not null primary key",
                 "melt_at int"
         );
 
@@ -307,23 +307,24 @@ public final class DDLInvalidatesScansIT extends ITBase {
     }
 
     private int createItems() throws InvalidOperationException {
-        return createTable(
+        int tid = createTable(
                 SCHEMA, "items",
-                "id int key",
+                "id int not null primary key",
                 "oid int",
                 "sku int",
-                "key (sku)",
-                "CONSTRAINT __akiban_i FOREIGN KEY __akiban_i (oid) REFERENCES " + ORDERS + " (id)"
+                "GROUPING FOREIGN KEY (oid) REFERENCES " + ORDERS + " (id)"
         );
+        createIndex(SCHEMA, "items", "sku", "sku");
+        return tid;
     }
 
     private int createAddresses() throws InvalidOperationException {
         return createTable(
                 SCHEMA, "addresses",
-                "id int key",
+                "id int not null primary key",
                 "cid int",
                 "street varchar(32)",
-                "CONSTRAINT __akiban_a FOREIGN KEY __akiban_a (cid) REFERENCES " + CUSTOMERS + " (id)"
+                "GROUPING FOREIGN KEY (cid) REFERENCES " + CUSTOMERS + " (id)"
         );
     }
 }

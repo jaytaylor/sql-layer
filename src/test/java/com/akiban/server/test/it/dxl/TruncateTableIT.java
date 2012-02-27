@@ -31,7 +31,7 @@ import static org.junit.Assert.*;
 public final class TruncateTableIT extends ITBase {
     @Test
     public void basic() throws InvalidOperationException {
-        int tableId = createTable("test", "t", "id int key");
+        int tableId = createTable("test", "t", "id int not null primary key");
 
         final int rowCount = 5;
         for(int i = 1; i <= rowCount; ++i) {
@@ -58,7 +58,7 @@ public final class TruncateTableIT extends ITBase {
     public void bug687225() throws InvalidOperationException {
         int tableId = createTable("test",
                                   "t",
-                                  "id int NOT NULL, pid int NOT NULL, PRIMARY KEY(id), UNIQUE KEY pid(pid)");
+                                  "id int NOT NULL, pid int NOT NULL, PRIMARY KEY(id), UNIQUE(pid)");
 
         writeRows(createNewRow(tableId, 1, 1),
                   createNewRow(tableId, 2, 2));
@@ -78,7 +78,8 @@ public final class TruncateTableIT extends ITBase {
     public void multipleIndex() throws InvalidOperationException {
         int tableId = createTable("test",
                                   "t",
-                                  "id int key, tag int, value decimal(10,2), other char(1), name varchar(32), key value(value), unique key name(name)");
+                                  "id int not null primary key, tag int, value decimal(10,2), other char(1), name varchar(32), unique(name)");
+        createIndex("test", "t", "value", "value");
 
         writeRows(createNewRow(tableId, 1, 1234, "10.50", 'a', "foo"),
                   createNewRow(tableId, 2, -421, "14.99", 'b', "bar"),
@@ -119,10 +120,10 @@ public final class TruncateTableIT extends ITBase {
     public void truncateParentNoChildRows() throws InvalidOperationException {
         int parentId = createTable("test",
                                    "parent",
-                                   "id int key");
+                                   "id int not null primary key");
         int childId = createTable("test",
                                    "child",
-                                   "id int key, pid int, constraint __akiban_fk_0 foreign key __akiban_fk_0(pid) references parent(id)");
+                                   "id int not null primary key, pid int, grouping foreign key (pid) references parent(id)");
 
         dml().writeRow(session(), createNewRow(parentId, 1));
         expectRowCount(parentId, 1);
@@ -138,10 +139,10 @@ public final class TruncateTableIT extends ITBase {
     public void truncateParentWithChildRows() throws InvalidOperationException {
         int parentId = createTable("test",
                                    "parent",
-                                   "id int key");
+                                   "id int not null primary key");
         int childId = createTable("test",
                                    "child",
-                                   "id int key, pid int, constraint __akiban_fk_0 foreign key __akiban_fk_0(pid) references parent(id)");
+                                   "id int not null primary key, pid int, grouping foreign key (pid) references parent(id)");
 
         dml().writeRow(session(), createNewRow(parentId, 1));
         expectRowCount(parentId, 1);

@@ -47,36 +47,36 @@ public final class DropSchemaIT extends ITBase {
 
     @Test
     public void unknownSchemaIsNoOp() throws InvalidOperationException {
-        createTable("one", "t", "id int key");
+        createTable("one", "t", "id int not null primary key");
         ddl().dropSchema(session(), "not_a_real_schema");
         expectTables("one", "t");
     }
 
     @Test
     public void singleTable() throws InvalidOperationException {
-        createTable("one", "t", "id int key");
+        createTable("one", "t", "id int not null primary key");
         ddl().dropSchema(session(), "one");
         expectNotTables("one", "t");
     }
 
     @Test
     public void singleTableCheckData() throws InvalidOperationException {
-        final int tid1 = createTable("one", "t", "id int key");
+        final int tid1 = createTable("one", "t", "id int not null primary key");
         writeRows(createNewRow(tid1, 1L), createNewRow(tid1, 2L));
         ddl().dropSchema(session(), "one");
         expectNotTables("one", "t");
         // Check for lingering data
-        final int tid2 = createTable("one", "t", "id int key");
+        final int tid2 = createTable("one", "t", "id int not null primary key");
         expectRowCount(tid2, 0);
         assertEquals("scanned rows", 0, scanFull(scanAllRequest(tid2)).size());
     }
 
     @Test
     public void multipleTables() throws InvalidOperationException {
-        createTable("one", "a", "id int key");
-        createTable("one", "b", "id int key");
-        createTable("two", "a", "id int key");
-        createTable("two", "b", "id int key");
+        createTable("one", "a", "id int not null primary key");
+        createTable("one", "b", "id int not null primary key");
+        createTable("two", "a", "id int not null primary key");
+        createTable("two", "b", "id int not null primary key");
         ddl().dropSchema(session(), "one");
         expectNotTables("one", "a", "b");
         expectTables("two", "a", "b");
@@ -84,11 +84,11 @@ public final class DropSchemaIT extends ITBase {
 
     @Test
     public void groupedTables() throws InvalidOperationException {
-        createTable("one", "c", "id int key");
-        createTable("one", "o", "id int key, cid int, constraint __akiban foreign key(cid) references c(id)");
-        createTable("one", "i", "id int key, oid int, constraint __akiban foreign key(oid) references o(id)");
-        createTable("one", "t", "id int key");
-        createTable("two", "c", "id int key");
+        createTable("one", "c", "id int not null primary key");
+        createTable("one", "o", "id int not null primary key, cid int, constraint __akiban foreign key(cid) references c(id)");
+        createTable("one", "i", "id int not null primary key, oid int, constraint __akiban foreign key(oid) references o(id)");
+        createTable("one", "t", "id int not null primary key");
+        createTable("two", "c", "id int not null primary key");
         ddl().dropSchema(session(), "one");
         expectNotTables("one", "c", "o", "i", "t");
         expectTables("two", "c");
@@ -96,9 +96,9 @@ public final class DropSchemaIT extends ITBase {
 
     @Test
     public void crossSchemaGroupInvalid() throws InvalidOperationException {
-        createTable("one", "c", "id int key");
-        createTable("one", "o", "id int key, cid int, constraint __akiban foreign key(cid) references c(id)");
-        createTable("two", "i", "id int key, oid int, constraint __akiban foreign key(oid) references one.o(id)");
+        createTable("one", "c", "id int not null primary key");
+        createTable("one", "o", "id int not null primary key, cid int, constraint __akiban foreign key(cid) references c(id)");
+        createTable("two", "i", "id int not null primary key, oid int, constraint __akiban foreign key(oid) references one.o(id)");
         try {
             ddl().dropSchema(session(), "one");
             Assert.fail("ForeignConstraintDDLException expected");
@@ -111,9 +111,9 @@ public final class DropSchemaIT extends ITBase {
 
     @Test
     public void crossSchemaGroupValid() throws InvalidOperationException {
-        createTable("one", "c", "id int key");
-        createTable("one", "o", "id int key, cid int, constraint __akiban foreign key(cid) references c(id)");
-        createTable("two", "i", "id int key, oid int, constraint __akiban foreign key(oid) references one.o(id)");
+        createTable("one", "c", "id int not null primary key");
+        createTable("one", "o", "id int not null primary key, cid int, constraint __akiban foreign key(cid) references c(id)");
+        createTable("two", "i", "id int not null primary key, oid int, constraint __akiban foreign key(oid) references one.o(id)");
         ddl().dropSchema(session(), "two");
         expectTables("one", "c", "o");
         expectNotTables("two", "i");
