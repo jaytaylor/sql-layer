@@ -144,7 +144,7 @@ public class JoinAndIndexPicker extends BaseRule
         protected void pickIndex(TableGroupJoinTree tables) {
             GroupIndexGoal groupGoal = new GroupIndexGoal(queryGoal, tables);
             groupGoal.updateRequiredColumns(); // No more joins / bound tables.
-            IndexScan index = groupGoal.pickBestIndex();
+            PlanNode scan = groupGoal.pickBestScan();
         }
 
         // General joins: run enumerator.
@@ -167,10 +167,9 @@ public class JoinAndIndexPicker extends BaseRule
                 groupGoal.setBoundTables(subqueryBoundTables);
                 groupGoal.setJoinConditions(subqueryJoins);
                 groupGoal.updateRequiredColumns();
-                IndexScan index = groupGoal.pickBestIndex();
-                // TODO: What about group scan?
-                return new GroupPlan(JoinableBitSet.of(0), 
-                                     index, index.getCostEstimate());
+                PlanNode scan = groupGoal.pickBestScan();
+                CostEstimate costEstimate = groupGoal.costEstimateScan(scan);
+                return new GroupPlan(JoinableBitSet.of(0), scan, costEstimate);
             }
             if (joinable instanceof JoinNode) {
                 return new JoinEnumerator(this, subqueryBoundTables, subqueryJoins).run((JoinNode)joinable, queryGoal.getWhereConditions()).bestPlan();
@@ -215,20 +214,17 @@ public class JoinAndIndexPicker extends BaseRule
     
     static class GroupPlan extends Plan {
         long outerTables;
-        IndexScan index;
+        PlanNode scan;
 
-        public GroupPlan(long outerTables, IndexScan index, CostEstimate costEstimate) {
+        public GroupPlan(long outerTables, PlanNode scan, CostEstimate costEstimate) {
             super(costEstimate);
             this.outerTables = outerTables;
-            this.index = index;
+            this.scan = scan;
         }
 
         @Override
         public String toString() {
-            if (index != null)
-                return index.toString();
-            else
-                return "GroupScan";
+            return scan.toString();
         }
     }
 
@@ -261,9 +257,9 @@ public class JoinAndIndexPicker extends BaseRule
             groupGoal.setBoundTables(enumerator.boundTables(outerTables));
             groupGoal.setJoinConditions(joins);
             groupGoal.updateRequiredColumns();
-            IndexScan index = groupGoal.pickBestIndex();
-            // TODO: What about group scan?
-            GroupPlan groupPlan = new GroupPlan(outerTables, index, index.getCostEstimate());
+            PlanNode scan = groupGoal.pickBestScan();
+            CostEstimate costEstimate = groupGoal.costEstimateScan(scan);
+            GroupPlan groupPlan = new GroupPlan(outerTables, scan, costEstimate);
             bestPlans.add(groupPlan);
             return groupPlan;
         }

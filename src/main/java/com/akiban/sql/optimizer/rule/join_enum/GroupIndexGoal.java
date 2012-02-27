@@ -382,7 +382,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     }
 
     /** Find the best index among the branches. */
-    public IndexScan pickBestIndex() {
+    public PlanNode pickBestScan() {
         Set<TableSource> required = tables.getRequired();
         IndexScan bestIndex = null;
         for (TableGroupJoinNode table : tables) {
@@ -391,7 +391,23 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 ((bestIndex == null) || (compare(tableIndex, bestIndex) > 0)))
                 bestIndex = tableIndex;
         }
-        return bestIndex;
+        if (bestIndex == null)
+            return new GroupScan(tables.getGroup());
+        else
+            return bestIndex;
+    }
+
+    public CostEstimate costEstimateScan(PlanNode scan) {
+        // TODO: Until more nodes have this stored in them.
+        if (scan instanceof IndexScan) {
+            return ((IndexScan)scan).getCostEstimate();
+        }
+        else if (scan instanceof GroupScan) {
+            return queryGoal.getCostEstimator().costGroupScan(((GroupScan)scan).getGroup().getGroup());
+        }
+        else {
+            return null;
+        }
     }
 
     /** Find the best index on the given table. 

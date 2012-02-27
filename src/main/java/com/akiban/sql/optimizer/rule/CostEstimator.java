@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.plan.*;
 
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
@@ -429,6 +430,21 @@ public abstract class CostEstimator
     /** Estimate the cost of a sort of the given size. */
     public CostEstimate costSort(long size) {
         return new CostEstimate(size, size * Math.log(size) * SORT_COST);
+    }
+
+    /** Estimate cost of scanning the whole group. */
+    // TODO: Need to account for tables actually wanted?
+    public CostEstimate costGroupScan(Group group) {
+        long nrows = 0;
+        double cost = RANDOM_ACCESS_COST;
+        for (UserTable table : group.getGroupTable().getAIS().getUserTables().values()) {
+            if (table.getGroup() == group) {
+                long rowCount = getTableRowCount(table);
+                nrows += rowCount;
+                cost += rowCount * (SEQUENTIAL_ACCESS_COST + FIELD_ACCESS_COST * table.getColumns().size());
+            }
+        }
+        return new CostEstimate(nrows, cost);
     }
 
 }
