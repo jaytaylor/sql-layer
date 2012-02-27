@@ -42,10 +42,8 @@ import java.util.List;
 /**
  <h1>Overview</h1>
 
-
- Sort_Tree generates an output stream containing all the rows of the input stream, sorted according to an
- ordering specification. The "Tree" in the name refers to the implementation, in which the rows are inserted
- into a B-tree (presumably on-disk) and then read out in order.
+ UnionAll_Default generates an output stream containing all the rows of both input streams. There are no
+ guarantees on output order, and duplicates are not eliminated.
 
  <h1>Arguments</h1>
 

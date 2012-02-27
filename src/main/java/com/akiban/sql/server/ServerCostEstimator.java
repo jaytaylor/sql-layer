@@ -41,7 +41,7 @@ public class ServerCostEstimator extends CostEstimator
 
     @Override
     public long getTableRowCount(Table table) {
-        return ((RowDef)table.rowDef()).getTableStatus().getApproximateRowCount();
+        return table.rowDef().getTableStatus().getApproximateRowCount();
     }
 
     @Override

@@ -22,7 +22,6 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.row.Row;
@@ -100,6 +99,7 @@ public class OperatorITBase extends ITBase
             "aid int not null key",
             "cid int",
             "address varchar(100)",
+            "index(cid)",
             "constraint __akiban_ac foreign key __akiban_ac(cid) references customer(cid)",
             "index(address)");
         schema = new Schema(rowDefCache().ais());
@@ -114,6 +114,7 @@ public class OperatorITBase extends ITBase
         itemOidIidIndexRowType = indexType(item, "oid", "iid");
         itemIidIndexRowType = indexType(item, "iid");
         customerCidIndexRowType = indexType(customer, "cid");
+        addressCidIndexRowType = indexType(address, "cid");
         addressAddressIndexRowType = indexType(address, "address");
         coi = groupTable(customer);
         db = new NewRow[]{createNewRow(customer, 1L, "xyz"),
@@ -156,7 +157,7 @@ public class OperatorITBase extends ITBase
         UserTable userTable = userTable(userTableId);
         for (Index index : userTable.getIndexesIncludingInternal()) {
             List<String> indexColumnNames = new ArrayList<String>();
-            for (IndexColumn indexColumn : index.getColumns()) {
+            for (IndexColumn indexColumn : index.getKeyColumns()) {
                 indexColumnNames.add(indexColumn.getColumn().getName());
             }
             List<String> searchIndexColumnNames = Arrays.asList(searchIndexColumnNamesArray);
@@ -169,7 +170,7 @@ public class OperatorITBase extends ITBase
 
     protected ColumnSelector columnSelector(final Index index)
     {
-        final int columnCount = index.getColumns().size();
+        final int columnCount = index.getKeyColumns().size();
         return new ColumnSelector() {
             @Override
             public boolean includesColumn(int columnPosition) {
@@ -290,8 +291,7 @@ public class OperatorITBase extends ITBase
 
     protected int ordinal(RowType rowType)
     {
-        RowDef rowDef = (RowDef) rowType.userTable().rowDef();
-        return rowDef.getOrdinal();
+        return rowType.userTable().rowDef().getOrdinal();
     }
 
     protected int customer;
@@ -309,6 +309,7 @@ public class OperatorITBase extends ITBase
     protected IndexRowType itemOidIndexRowType;
     protected IndexRowType itemOidIidIndexRowType;
     protected IndexRowType itemIidIndexRowType;
+    protected IndexRowType addressCidIndexRowType;
     protected IndexRowType addressAddressIndexRowType;
     protected GroupTable coi;
     protected Schema schema;

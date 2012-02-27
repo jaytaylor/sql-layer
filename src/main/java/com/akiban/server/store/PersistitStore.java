@@ -190,7 +190,7 @@ public class PersistitStore implements Store {
     }
 
     public Exchange getExchange(final Session session, final Index index) {
-        return treeService.getExchange(session, (IndexDef)index.indexDef());
+        return treeService.getExchange(session, index.indexDef());
     }
 
     public Key getKey(Session session) throws PersistitException
@@ -325,7 +325,7 @@ public class PersistitStore implements Store {
         for(int indexPos = 0; indexPos < indexRowComp.getLength(); ++indexPos) {
             if(indexRowComp.isInRowData(indexPos)) {
                 int fieldPos = indexRowComp.getFieldPosition(indexPos);
-                RowDef rowDef = ((IndexDef)index.indexDef()).getRowDef();
+                RowDef rowDef = index.indexDef().getRowDef();
                 iKeyAppender.append(rowDef.getFieldDef(fieldPos), rowData);
             }
             else if(indexRowComp.isInHKey(indexPos)) {
@@ -674,7 +674,7 @@ public class PersistitStore implements Store {
         int fields = rowDef.getFieldCount();
         // Find the PK and FK fields
         BitSet keyField = new BitSet(fields);
-        for (int pkFieldPosition : ((IndexDef) rowDef.getPKIndex().indexDef()).getFields()) {
+        for (int pkFieldPosition : rowDef.getPKIndex().indexDef().getFields()) {
             keyField.set(pkFieldPosition, true);
         }
         for (int fkFieldPosition : rowDef.getParentJoinFields()) {
@@ -707,7 +707,7 @@ public class PersistitStore implements Store {
         UserTable table = rowDef.userTable();
         BitSet ordinals = new BitSet(rowDefCache.maxOrdinal() + 1);
         for (UserTable hKeyDependentTable : table.hKeyDependentTables()) {
-            int ordinal = ((RowDef) hKeyDependentTable.rowDef()).getOrdinal();
+            int ordinal = hKeyDependentTable.rowDef().getOrdinal();
             ordinals.set(ordinal, true);
         }
         return ordinals;
@@ -1023,9 +1023,9 @@ public class PersistitStore implements Store {
                                                                    Index index) {
         IndexStatistics stats = indexStatistics.getIndexStatistics(session, index);
         if (stats == null) return null;
-        IndexStatistics.Histogram fromHistogram = stats.getHistogram(index.getColumns().size());
+        IndexStatistics.Histogram fromHistogram = stats.getHistogram(index.getKeyColumns().size());
         if (fromHistogram == null) return null;
-        IndexDef indexDef = (IndexDef)index.indexDef();
+        IndexDef indexDef = index.indexDef();
         RowDef indexRowDef = indexDef.getRowDef();
         TableStatistics.Histogram toHistogram = new TableStatistics.Histogram(index.getIndexId());
         Key key = new Key((Persistit)null);
@@ -1047,10 +1047,11 @@ public class PersistitStore implements Store {
                     indexValues[field] = null;
             }
             indexRowData.createRow(indexRowDef, indexValues);
-            // Partial counts to running total.
-            count += entry.getLessCount() + entry.getEqualCount();
+            // Partial counts to running total less than key.
+            count += entry.getLessCount();
             toHistogram.addSample(new TableStatistics.HistogramSample(indexRowData.copy(),
                                                                       count));
+            count += entry.getEqualCount();
         }
         // Add final entry with all nulls.
         Arrays.fill(indexValues, null);
@@ -1061,7 +1062,7 @@ public class PersistitStore implements Store {
     }
 
     boolean hasNullIndexSegments(final RowData rowData, final Index index) {
-        IndexDef indexDef = (IndexDef)index.indexDef();
+        IndexDef indexDef = index.indexDef();
         assert indexDef.getRowDef().getRowDefId() == rowData.getRowDefId();
         for (int i : indexDef.getFields()) {
             if (rowData.isNull(i)) {
@@ -1113,7 +1114,7 @@ public class PersistitStore implements Store {
         if (index.isUnique() && !hasNullIndexSegments(rowData, index)) {
             final Key key = iEx.getKey();
             KeyState ks = new KeyState(key);
-            key.setDepth(((IndexDef) index.indexDef()).getIndexKeySegmentCount());
+            key.setDepth(index.indexDef().getIndexKeySegmentCount());
             try {
                 if (iEx.hasChildren()) {
                     ks.copyTo(key);
@@ -1148,7 +1149,7 @@ public class PersistitStore implements Store {
             throws PersistitException
     {
         checkNotGroupIndex(index);
-        IndexDef indexDef = (IndexDef)index.indexDef();
+        IndexDef indexDef = index.indexDef();
         if (!fieldsEqual(rowDef, oldRowData, newRowData, indexDef.getFields())) {
             TABLE_INDEX_MAINTENANCE_TAP.in();
             try {
@@ -1267,7 +1268,7 @@ public class PersistitStore implements Store {
         final Set<Index> indexesToBuild = new HashSet<Index>();
 
         for(Index index : indexes) {
-            IndexDef indexDef = (IndexDef)index.indexDef();
+            IndexDef indexDef = index.indexDef();
             if(indexDef == null) {
                 throw new IllegalArgumentException("indexDef was null for index: " + index);
             }
@@ -1334,7 +1335,7 @@ public class PersistitStore implements Store {
         indexes.addAll(table.getGroupIndexes());
 
         try {
-            hEx = getExchange(session, (RowDef)table.rowDef());
+            hEx = getExchange(session, table.rowDef());
             for(Index index : indexes) {
                 if(!index.isHKeyEquivalent()) {
                     iEx = getExchange(session, index);
@@ -1369,7 +1370,7 @@ public class PersistitStore implements Store {
 
     public void deleteIndexes(final Session session, final Collection<? extends Index> indexes) {
         for(Index index : indexes) {
-            final IndexDef indexDef = (IndexDef) index.indexDef();
+            final IndexDef indexDef = index.indexDef();
             if(indexDef == null) {
                 throw new IllegalArgumentException("indexDef is null for index: " + index);
             }

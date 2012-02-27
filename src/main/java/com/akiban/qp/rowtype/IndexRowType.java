@@ -15,13 +15,10 @@
 
 package com.akiban.qp.rowtype;
 
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.HKey;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.*;
 import com.akiban.server.types.AkType;
 
-import java.util.List;
+import java.util.*;
 
 public class IndexRowType extends AisRowType
 {
@@ -38,7 +35,7 @@ public class IndexRowType extends AisRowType
     @Override
     public int nFields()
     {
-        return index.getColumns().size();
+        return akTypes.length;
     }
 
     @Override
@@ -54,6 +51,11 @@ public class IndexRowType extends AisRowType
     }
 
     // IndexRowType interface
+    
+    public int declaredFields()
+    {
+        return index().getKeyColumns().size();
+    }
 
     public UserTableRowType tableType()
     {
@@ -74,11 +76,25 @@ public class IndexRowType extends AisRowType
         }
         this.tableType = tableType;
         this.index = index;
-        List<IndexColumn> indexColumns = index.getColumns();
-        akTypes = new AkType[indexColumns.size()];
+        // Types of declared columns
+        List<AkType> akTypeList = new ArrayList<AkType>();
+        List<IndexColumn> indexColumns = index.getKeyColumns();
+        IdentityHashMap<Column, Column> indexColumnMap = new IdentityHashMap<Column, Column>();
         for (int i = 0; i < indexColumns.size(); i++) {
-            akTypes[i] = indexColumns.get(i).getColumn().getType().akType();
+            Column column = indexColumns.get(i).getColumn();
+            akTypeList.add(column.getType().akType());
+            indexColumnMap.put(column, column);
         }
+        // Types of undeclared hkey columns
+        for (HKeySegment segment : tableType.hKey().segments()) {
+            for (HKeyColumn hKeyColumn : segment.columns()) {
+                Column column = hKeyColumn.column();
+                if (!indexColumnMap.containsKey(column)) {
+                    akTypeList.add(column.getType().akType());
+                }
+            }
+        }
+        akTypes = akTypeList.toArray(new AkType[akTypeList.size()]);
     }
 
     // Object state

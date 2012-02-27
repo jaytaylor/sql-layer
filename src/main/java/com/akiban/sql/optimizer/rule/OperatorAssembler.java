@@ -875,7 +875,7 @@ public class OperatorAssembler extends BaseRule
                     (lowComparand == null) && (highComparand == null))
                 return IndexKeyRange.unbounded(indexRowType);
 
-            int nkeys = index.getIndex().getColumns().size();
+            int nkeys = index.getIndex().getKeyColumns().size();
             Expression[] keys = new Expression[nkeys];
             Arrays.fill(keys, LiteralExpression.forNull());
 
@@ -989,7 +989,7 @@ public class OperatorAssembler extends BaseRule
          * of a row of the index's user table. */
         protected ColumnSelector getIndexColumnSelector(final Index index, 
                                                         final int nkeys) {
-            assert nkeys <= index.getColumns().size() : index + " " + nkeys;
+            assert nkeys <= index.getKeyColumns().size() : index + " " + nkeys;
                 return new ColumnSelector() {
                         public boolean includesColumn(int columnPosition) {
                             return columnPosition < nkeys;

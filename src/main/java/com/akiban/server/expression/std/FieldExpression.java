@@ -17,6 +17,7 @@ package com.akiban.server.expression.std;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.expression.Expression;
@@ -69,7 +70,7 @@ public final class FieldExpression implements Expression {
     public FieldExpression(RowType rowType, int fieldIndex) {
         this.rowType = rowType;
         this.fieldIndex = fieldIndex;
-        if (this.fieldIndex < 0 || this.fieldIndex >= this.rowType.nFields()) {
+        if (this.fieldIndex < 0 || this.fieldIndex >= rowType.nFields()) {
             throw new IllegalArgumentException("fieldIndex out of range: " + this.fieldIndex + " for " + this.rowType);
         }
     }

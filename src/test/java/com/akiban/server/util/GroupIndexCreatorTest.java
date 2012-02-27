@@ -54,8 +54,8 @@ public class GroupIndexCreatorTest {
         final UserTable cTable = ais.getUserTable("test", "c");
         assertEquals("group same", cGroup, index.getGroup());
         assertEquals("index name", "c_name", index.getIndexName().getName());
-        assertEquals("column count", 1, index.getColumns().size());
-        assertEquals("col1 is c.name", cTable.getColumn("name"), index.getColumns().get(0).getColumn());
+        assertEquals("column count", 1, index.getKeyColumns().size());
+        assertEquals("col1 is c.name", cTable.getColumn("name"), index.getKeyColumns().get(0).getColumn());
         assertEquals("join type", Index.JoinType.LEFT, index.getJoinType());
         assertTrue("join not valid", index.isValid());
     }
@@ -67,8 +67,8 @@ public class GroupIndexCreatorTest {
         final UserTable cTable = ais.getUserTable("test", "c");
         assertEquals("group same", cGroup, index.getGroup());
         assertEquals("index name", "c_name", index.getIndexName().getName());
-        assertEquals("column count", 1, index.getColumns().size());
-        assertEquals("col1 is c.name", cTable.getColumn("name"), index.getColumns().get(0).getColumn());
+        assertEquals("column count", 1, index.getKeyColumns().size());
+        assertEquals("col1 is c.name", cTable.getColumn("name"), index.getKeyColumns().get(0).getColumn());
         assertEquals("join type", Index.JoinType.RIGHT, index.getJoinType());
         assertTrue("join not valid", index.isValid());
     }
@@ -81,9 +81,9 @@ public class GroupIndexCreatorTest {
         final UserTable oTable = ais.getUserTable("test", "o");
         assertEquals("group same", cGroup, index.getGroup());
         assertEquals("right name", "name_date", index.getIndexName().getName());
-        assertEquals("column count", 2, index.getColumns().size());
-        assertEquals("col1 is c.name", cTable.getColumn("name"), index.getColumns().get(0).getColumn());
-        assertEquals("col2 is o.date", oTable.getColumn("date"), index.getColumns().get(1).getColumn());
+        assertEquals("column count", 2, index.getKeyColumns().size());
+        assertEquals("col1 is c.name", cTable.getColumn("name"), index.getKeyColumns().get(0).getColumn());
+        assertEquals("col2 is o.date", oTable.getColumn("date"), index.getKeyColumns().get(1).getColumn());
         assertEquals("join type", Index.JoinType.LEFT, index.getJoinType());
         assertTrue("join not valid", index.isValid());
     }

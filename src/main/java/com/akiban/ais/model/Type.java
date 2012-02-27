@@ -17,11 +17,7 @@ package com.akiban.ais.model;
 
 import com.akiban.server.types.AkType;
 
-import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
-
-public class Type implements Serializable, ModelNames
+public class Type
 {
     @Override
     public String toString()
@@ -88,12 +84,6 @@ public class Type implements Serializable, ModelNames
         return result;
     }
     
-    @SuppressWarnings("unused")
-    private Type()
-    {
-        // GWT requires empty constructor
-    }
-
     public Type(String name, Integer typeParameters, Boolean fixedSize, Long maxStorageSizeBytes, String encoding, AkType akType)
     {
         this.name = name;
@@ -104,32 +94,17 @@ public class Type implements Serializable, ModelNames
         this.akType = akType;
     }
 
-    public static void create(AkibanInformationSchema ais, Map<String, Object> map)
-    {
-        String name = (String) map.get(type_name);
-        Integer typeParameters = (Integer) map.get(type_parameters);
-        Boolean fixedSize = (Boolean) map.get(type_fixedSize);
-        Long maxSizeBytes = (Long) map.get(type_maxSizeBytes);
-        String encoding = (String) map.get(type_encoding);
-        Type type = new Type(name, typeParameters, fixedSize, maxSizeBytes, encoding, null);
+    public static Type create(AkibanInformationSchema ais, String name, Integer typeParameters, Boolean fixedSize, 
+                              Long maxStorageSizeBytes, String encoding, AkType akType) {
+        Type type = new Type(name, typeParameters, fixedSize, maxStorageSizeBytes, encoding, akType);
         ais.addType(type);
-    }
-    
-    public Map<String, Object> map()
-    {
-        Map<String, Object> map = new HashMap<String, Object>();
-        map.put(type_name, name);
-        map.put(type_parameters, typeParameters);
-        map.put(type_fixedSize, fixedSize);
-        map.put(type_maxSizeBytes, maxStorageSizeBytes);
-        map.put(type_encoding, encoding);
-        return map;
+        return type;
     }
 
-    private String name;
-    private Integer typeParameters;
-    private Boolean fixedSize;
-    private Long maxStorageSizeBytes;
-    private String encoding;
-    private AkType akType;
+    private final String name;
+    private final Integer typeParameters;
+    private final Boolean fixedSize;
+    private final Long maxStorageSizeBytes;
+    private final String encoding;
+    private final AkType akType;
 }

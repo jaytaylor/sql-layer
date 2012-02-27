@@ -115,7 +115,7 @@ public class IndexPicker extends BaseRule
         }
 
         protected IndexGoal determineIndexGoal(PlanNode input, 
-                                               Collection<TableSource> tables) {
+                                               Iterable<TableSource> tables) {
             List<ConditionList> conditionSources = new ArrayList<ConditionList>();
             Sort ordering = null;
             AggregateSource grouping = null;
@@ -218,26 +218,24 @@ public class IndexPicker extends BaseRule
             Joinable right = join.getRight();
 
             boolean tryReverse = false, twoTablesInner = false;
-            if (join.getReverseHook() == null) {
-                switch (join.getJoinType()) {
-                case INNER:
-                    twoTablesInner = ((left instanceof TableJoins) && 
-                                      (right instanceof TableJoins));
-                    tryReverse = twoTablesInner;
-                    break;
-                case RIGHT:
-                    join.reverse();
-                }
+            switch (join.getJoinType()) {
+            case INNER:
+                twoTablesInner = ((left instanceof TableJoins) && 
+                                  (right instanceof TableJoins));
+                tryReverse = twoTablesInner;
+                break;
+            case RIGHT:
+                join.reverse();
+                break;
+            case SEMI:
+                InConditionReverser.didNotReverseSemiJoin(join);
+                left = join.getLeft();
+                right = join.getRight();
+                break;
+            case SEMI_INNER_ALREADY_DISTINCT:
+            case SEMI_INNER_IF_DISTINCT:
+                tryReverse = true;
             }
-            else {
-                tryReverse = join.getReverseHook().canReverse(join);
-                if (!tryReverse) {
-                    join.getReverseHook().didNotReverse(join);
-                    left = join.getLeft();
-                    right = join.getRight();
-                }
-            }
-
             if (tryReverse) {
                 if (twoTablesInner) {
                     if (pickIndexesTablesInner(join))
@@ -281,9 +279,6 @@ public class IndexPicker extends BaseRule
                 lgoal = rgoal;
                 lindex = rindex;
             }
-            else if (join.getReverseHook() != null) {
-                join.getReverseHook().didNotReverse(join);
-            }
             // Commit to the left choice and redo the right with it bound.
             pickedIndex(left, lgoal, lindex);
             pickIndexes(right);
@@ -301,8 +296,10 @@ public class IndexPicker extends BaseRule
             IndexScan lindex = pickBestIndex(left, lgoal);
             boundTables.remove(right);
             
-            if ((lindex == null) || !lindex.hasConditions())
+            if ((lindex == null) || !lindex.hasConditions()) {
+                InConditionReverser.didNotReverseSemiJoin(join);
                 return false;
+            }
 
             boolean found = false;
             for (ConditionExpression joinCondition : join.getJoinConditions()) {
@@ -311,13 +308,12 @@ public class IndexPicker extends BaseRule
                 }
             }
             if (!found) {
-                if (join.getReverseHook() != null) {
-                    join.getReverseHook().didNotReverse(join);
-                }
+                InConditionReverser.didNotReverseSemiJoin(join);
                 return false;
             }
             
             // Put the VALUES outside and commit to that in the simple case.
+            InConditionReverser.beforeReverseSemiJoin(join);
             join.reverse();
             if (left != join.getRight())
                 return false;

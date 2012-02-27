@@ -22,16 +22,16 @@ import java.util.List;
 
 public abstract class AbstractTwoArgExpressionEvaluation extends AbstractCompositeExpressionEvaluation {
 
-    protected ExpressionEvaluation leftEvaluation() {
+    public ExpressionEvaluation leftEvaluation() {
         return children().get(0);
+    }
+
+    public ExpressionEvaluation rightEvaluation() {
+        return children().get(1);
     }
 
     protected final ValueSource left() {
         return leftEvaluation().eval();
-    }
-
-    protected ExpressionEvaluation rightEvaluation() {
-        return children().get(1);
     }
 
     protected final ValueSource right() {

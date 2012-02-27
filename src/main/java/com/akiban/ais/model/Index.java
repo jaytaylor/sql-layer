@@ -15,17 +15,16 @@
 
 package com.akiban.ais.model;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.server.rowdata.IndexDef;
 
-public abstract class Index implements Serializable, ModelNames, Traversable
+public abstract class Index implements Traversable
 {
     public abstract HKey hKey();
     public abstract boolean isTableIndex();
@@ -33,33 +32,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     protected abstract Column indexRowCompositionColumn(HKeyColumn hKeyColumn);
     public abstract Table leafMostTable();
     public abstract Table rootMostTable();
-    
-    public static Index create(AkibanInformationSchema ais, Map<String, Object> map)
-    {
-        ais.checkMutability();
-        Index index = null;
-        String schemaName = (String) map.get(index_schemaName);
-        String tableName = (String) map.get(index_tableName);
-        String indexType = (String) map.get(index_indexType);
-        String indexName = (String) map.get(index_indexName);
-        Integer indexId = (Integer) map.get(index_indexId);
-        Boolean unique = (Boolean) map.get(index_unique);
-        String constraint = (String) map.get(index_constraint);
-        if(IndexType.TABLE.toString().equals(indexType)) {
-            Table table = ais.getTable(schemaName, tableName);
-            if (table != null) {
-                index = TableIndex.create(ais, table, indexName, indexId, unique, constraint);
-            }
-        }
-        else if(IndexType.GROUP.toString().equals(indexType)) {
-            Group group = ais.getGroup(tableName);
-            if (group != null) {
-                index = GroupIndex.create(ais, group, indexName, indexId, unique, constraint);
-            }
-        }
-        index.treeName = (String) map.get(index_treeName);
-        return index;
-    }
+    public abstract void checkMutability();
 
     protected Index(TableName tableName, String indexName, Integer indexId, Boolean isUnique, String constraint, JoinType joinType, boolean isValid)
     {
@@ -74,7 +47,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         this.treeName = this.indexName.toString();
         this.joinType = joinType;
         this.isValid = isValid;
-        columns = new ArrayList<IndexColumn>();
+        keyColumns = new ArrayList<IndexColumn>();
     }
 
     protected Index(TableName tableName, String indexName, Integer idAndFlags, Boolean isUnique, String constraint) {
@@ -102,34 +75,10 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         return isTableIndex() || isValid;
     }
 
-    protected Index()
-    {
-        // GWT
-    }
-
     @Override
     public String toString()
     {
-        return "Index(" + indexName + columns + ")";
-    }
-
-    public Map<String, Object> map()
-    {
-        Map<String, Object> map = new HashMap<String, Object>();
-        map.put(index_schemaName, indexName.getSchemaName());
-        map.put(index_tableName, indexName.getTableName());
-        map.put(index_indexType, getIndexType().toString());
-        map.put(index_indexName, indexName.getName());
-        Integer indexId = this.indexId;
-        if (isValid)
-            indexId |= IS_VALID_FLAG;
-        if (joinType == JoinType.RIGHT)
-            indexId |= IS_RIGHT_JOIN_FLAG;
-        map.put(index_indexId, indexId);
-        map.put(index_unique, isUnique);
-        map.put(index_constraint, constraint);
-        map.put(index_treeName, treeName);
-        return map;
+        return "Index(" + indexName + keyColumns + ")";
     }
 
     public void addColumn(IndexColumn indexColumn)
@@ -137,7 +86,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         if (columnsFrozen) {
             throw new IllegalStateException("can't add column because columns list is frozen");
         }
-        columns.add(indexColumn);
+        keyColumns.add(indexColumn);
         columnsStale = true;
     }
 
@@ -173,15 +122,20 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         indexName = name;
     }
 
-    public List<IndexColumn> getColumns()
+    public List<IndexColumn> getKeyColumns()
     {
         sortColumnsIfNeeded();
-        return columns;
+        return keyColumns;
+    }
+
+    public List<IndexColumn> getValueColumns()
+    {
+        return valueColumns;
     }
 
     private void sortColumnsIfNeeded() {
         if (columnsStale) {
-            Collections.sort(columns,
+            Collections.sort(keyColumns,
                     new Comparator<IndexColumn>() {
                         @Override
                         public int compare(IndexColumn x, IndexColumn y) {
@@ -200,7 +154,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
     @Override
     public void traversePreOrder(Visitor visitor)
     {
-        for (IndexColumn indexColumn : getColumns()) {
+        for (IndexColumn indexColumn : getKeyColumns()) {
             visitor.visitIndexColumn(indexColumn);
         }
     }
@@ -211,12 +165,12 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         traversePreOrder(visitor);
     }
 
-    public Object indexDef()
+    public IndexDef indexDef()
     {
         return indexDef;
     }
 
-    public void indexDef(Object indexDef)
+    public void indexDef(IndexDef indexDef)
     {
         assert indexDef.getClass().getName().equals("com.akiban.server.rowdata.IndexDef") : indexDef.getClass();
         this.indexDef = indexDef;
@@ -307,13 +261,14 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         List<Column> indexColumns = new ArrayList<Column>();
 
         // Add index key fields
-        for (IndexColumn iColumn : getColumns()) {
+        for (IndexColumn iColumn : getKeyColumns()) {
             Column column = iColumn.getColumn();
             indexColumns.add(column);
             rowCompBuilder.rowCompEntry(columnPosition(flattenedRowOffsets, column), -1);
         }
 
         // Add hkey fields not already included
+        valueColumns = new ArrayList<IndexColumn>();
         HKey hKey = hKey();
         for (HKeySegment hKeySegment : hKey.segments()) {
             Integer ordinal = ordinalMap.get(hKeySegment.table());
@@ -335,6 +290,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
                         rowCompBuilder.rowCompEntry(-1, hKeyColumn.positionInHKey());
                     }
                     indexColumns.add(column);
+                    valueColumns.add(new IndexColumn(this, column, keyColumns.size() + valueColumns.size(), true, 0));
                 }
 
                 int indexRowPos = indexColumns.indexOf(column);
@@ -358,7 +314,7 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         }
         // Scan hkey columns and index columns and see if they match
         Iterator<HKeyColumn> hKeyColumnScan = hKeyColumns.iterator();
-        Iterator<IndexColumn> indexColumnScan = index.getColumns().iterator();
+        Iterator<IndexColumn> indexColumnScan = index.getKeyColumns().iterator();
         while (hkeyEquivalent && hKeyColumnScan.hasNext() && indexColumnScan.hasNext()) {
             Column hKeyColumn = hKeyColumnScan.next().column();
             Column indexColumn = indexColumnScan.next().getColumn();
@@ -388,6 +344,20 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         return idAndFlags & INDEX_ID_BITS;
     }
 
+    public Integer getIdAndFlags() {
+        if(indexId == null) {
+            return null;
+        }
+        int idAndFlags = indexId;
+        if(isValid) {
+            idAndFlags |= IS_VALID_FLAG;
+        }
+        if(joinType == JoinType.RIGHT) {
+            idAndFlags |= IS_RIGHT_JOIN_FLAG;
+        }
+        return idAndFlags;
+    }
+    
     public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
     public static final String UNIQUE_KEY_CONSTRAINT = "UNIQUE";
     public static final String KEY_CONSTRAINT = "KEY";
@@ -423,23 +393,21 @@ public abstract class Index implements Serializable, ModelNames, Traversable
         this.treeName = treeName;
     }
 
+    private final Integer indexId;
+    private final Boolean isUnique;
+    private final String constraint;
+    private final JoinType joinType;
+    private final boolean isValid;
     private IndexName indexName;
-    private Integer indexId;
-    private Boolean isUnique;
-    private String constraint;
     private boolean columnsStale = true;
-    private List<IndexColumn> columns;
     private boolean columnsFrozen = false;
     private String treeName;
-    private transient JoinType joinType;
-    private transient boolean isValid;
-
-    // It really is an IndexDef, but declaring it that way creates trouble for AIS. We don't want to pull in
-    // all the RowDef stuff and have it visible to GWT.
-    private transient /* IndexDef */ Object indexDef;
-    private transient IndexRowComposition indexRowComposition;
-    private transient IndexToHKey indexToHKey;
-    private transient boolean isHKeyEquivalent;
+    private IndexDef indexDef;
+    private IndexRowComposition indexRowComposition;
+    private IndexToHKey indexToHKey;
+    private boolean isHKeyEquivalent;
+    private List<IndexColumn> keyColumns;
+    private List<IndexColumn> valueColumns;
 
     public enum JoinType {
         LEFT, RIGHT
