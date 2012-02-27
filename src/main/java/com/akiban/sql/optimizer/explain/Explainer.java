@@ -33,12 +33,12 @@ public abstract class Explainer<T>
     @Override
     public final boolean equals (Object o)
     {
-        if (o instanceof Explainer)
+        if (o != null && o instanceof Explainer)
         {
             return ((Explainer)o).get() == get();
         }
         else
-            throw new ClassCastException();
+            return false;
     }
     
     @Override
