@@ -392,7 +392,9 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             return false;
         // See if comparing against a result column of the subquery,
         // that is, a join to the subquery that we can push down.
-        // TODO: Should check column equivalences here, too.
+        // TODO: Should check column equivalences here, too. If we
+        // added the below that earlier, could count such a join as a
+        // group join: p JOIN (SELECT fk) sq ON p.pk = sq.fk.
         ColumnExpression comparisonColumn = (ColumnExpression)comparisonOperand;
         ColumnSource comparisonTable = comparisonColumn.getTable();
         if (!(comparisonTable instanceof SubquerySource))

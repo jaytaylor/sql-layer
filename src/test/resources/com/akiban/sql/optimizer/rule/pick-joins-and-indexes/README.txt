@@ -4,6 +4,8 @@ in-index: IN that can use index
 
 in-subquery: IN SELECT to semi-join (not indexable).
 
+join-subquery: group join in subquery expression
+
 single-table: whole row from indexed table
 
 subquery: join to subquery
