@@ -27,7 +27,7 @@ import java.math.BigDecimal;
 
 import static org.junit.Assert.assertEquals;
 
-public class ObjectToKeyIT extends ITBase {
+public class ObjectToKeyIT extends OldTypeITBase {
 
     private void testObjectToKey(FieldDef field, Object... testValues) throws PersistitException {
         Key key = persistitStore().getKey(session());
@@ -48,7 +48,7 @@ public class ObjectToKeyIT extends ITBase {
 
     @Test
     public void decimalField() throws Exception {
-        final int tid = createTable("test", "t", "id int key", "c2 decimal(5,2)");
+        final int tid = createTableFromTypes(new TypeAndParams("decimal", 5L, 2L));
         final FieldDef fieldDef = (FieldDef)getUserTable(tid).getColumn("c2").getFieldDef();
         testObjectToKey(fieldDef,
                         null, BigDecimal.valueOf(-12345, 2), 578L, "999.99");
@@ -56,7 +56,8 @@ public class ObjectToKeyIT extends ITBase {
 
     @Test
     public void decimalUnsignedField() throws Exception {
-        final int tid = createTable("test", "t", "id int key", "c2 decimal(5,2) unsigned, key(c2)");
+        setCreateIndexes(true);
+        final int tid = createTableFromTypes(new TypeAndParams("decimal", 5L, 2L));
         final FieldDef fieldDef = (FieldDef)getUserTable(tid).getColumn("c2").getFieldDef();
         testObjectToKey(fieldDef,
                         null, BigDecimal.valueOf(0), BigDecimal.valueOf(4242, 2), 489L, "978.83");

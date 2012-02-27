@@ -29,7 +29,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
-public class UnsignedFieldsIT extends ITBase {
+public class UnsignedFieldsIT extends OldTypeITBase {
     private void writeRows(int tableId, Object... values) {
         long id = 0;
         for(Object o : values) {
@@ -76,35 +76,35 @@ public class UnsignedFieldsIT extends ITBase {
     
     @Test
     public void tinyIntUnsigned() {
-        int tid = createTable("test", "t", "id int key, c1 tinyint unsigned");
+        int tid = createTableFromTypes("tinyint unsigned");
         Object[] values = getTestValues(8);
         writeRowsAndCompareValues(tid, values);
     }
 
     @Test
     public void smallIntUnsigned() {
-        int tid = createTable("test", "t", "id int key, c1 smallint unsigned");
+        int tid = createTableFromTypes("smallint unsigned");
         Object[] values = getTestValues(16);
         writeRowsAndCompareValues(tid, values);
     }
 
     @Test
     public void mediumIntUnsigned() {
-        int tid = createTable("test", "t", "id int key, c1 mediumint unsigned");
+        int tid = createTableFromTypes("mediumint unsigned");
         Object[] values = getTestValues(24);
         writeRowsAndCompareValues(tid, values);
     }
 
     @Test
     public void intUnsigned() {
-        int tid = createTable("test", "t", "id int key, c1 int unsigned");
+        int tid = createTableFromTypes("int unsigned");
         Object[] values = getTestValues(32);
         writeRowsAndCompareValues(tid, values);
     }
 
     @Test
     public void bigIntUnsigned() {
-        int tid = createTable("test", "t", "id int key, c1 bigint unsigned");
+        int tid = createTableFromTypes("bigint unsigned");
         Object[] values = {new BigInteger("0"), new BigInteger("1"),
                            new BigInteger("9223372036854775805"), new BigInteger("9223372036854775806"),
                            new BigInteger("9223372036854775807"),
@@ -115,7 +115,7 @@ public class UnsignedFieldsIT extends ITBase {
 
     @Test
     public void decimal52Unsigned() {
-        int tid = createTable("test", "t", "id int key, c1 decimal(5,2) unsigned");
+        int tid = createTableFromTypes(new TypeAndParams("decimal unsigned", 5L, 2L));
         Object[] values = array(new BigDecimal("0.00"), new BigDecimal("1.00"),
                                 new BigDecimal("499.99"), new BigDecimal("500.00"), new BigDecimal("999.99"));
         writeRowsAndCompareValues(tid, values);
@@ -123,7 +123,7 @@ public class UnsignedFieldsIT extends ITBase {
 
     @Test
     public void decimal2010Unsigned() {
-        int tid = createTable("test", "t", "id int key, c1 decimal(20,10) unsigned");
+        int tid = createTableFromTypes(new TypeAndParams("decimal unsigned", 20L, 10L));
         Object[] values = array(new BigDecimal("0.0000000000"), new BigDecimal("1.0000000000"),
                                 new BigDecimal("4999999999.9999999999"), new BigDecimal("5000000000.0000000000"),
                                 new BigDecimal("9999999999.9999999999"));
@@ -132,14 +132,14 @@ public class UnsignedFieldsIT extends ITBase {
 
     @Test
     public void floatUnsigned() {
-        int tid = createTable("test", "t", "id int key, c1 float unsigned");
+        int tid = createTableFromTypes("float unsigned");
         Object[] values = array(0.0f, 1.0f, Float.MAX_VALUE);
         writeRowsAndCompareValues(tid, values);
     }
     
     @Test
     public void doubleUnsigned() {
-        int tid = createTable("test", "t", "id int key, c1 double unsigned");
+        int tid = createTableFromTypes("double unsigned");
         Object[] values = array(0.0d, 1.0d, Double.MAX_VALUE);
         writeRowsAndCompareValues(tid, values);
     }
