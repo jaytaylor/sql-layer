@@ -19,8 +19,10 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.HKeyRowType;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -151,25 +153,7 @@ class AncestorLookup_Default extends Operator
                                   Collection<? extends RowType> ancestorTypes,
                                   API.LookupOption flag)
     {
-        ArgumentValidation.notEmpty("ancestorTypes", ancestorTypes);
-        // Keeping index rows not currently supported
-        boolean inputFromIndex = rowType instanceof IndexRowType;
-        ArgumentValidation.isTrue("!inputFromIndex || flag == API.LookupOption.DISCARD_INPUT",
-                                  !inputFromIndex || flag == API.LookupOption.DISCARD_INPUT);
-        RowType tableRowType =
-            inputFromIndex
-            ? ((IndexRowType) rowType).tableType()
-            : rowType;
-        // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
-        // is from an index. I.e., this operator can be used for an index lookup.
-        for (RowType ancestorType : ancestorTypes) {
-            ArgumentValidation.isTrue("inputFromIndex || ancestorType != tableRowType",
-                                      inputFromIndex || ancestorType != tableRowType);
-            ArgumentValidation.isTrue("ancestorType.ancestorOf(tableRowType)",
-                                      ancestorType.ancestorOf(tableRowType));
-            ArgumentValidation.isTrue("ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup()",
-                                      ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup());
-        }
+        validateArguments(rowType, ancestorTypes, flag);
         this.inputOperator = inputOperator;
         this.groupTable = groupTable;
         this.rowType = rowType;
@@ -194,6 +178,43 @@ class AncestorLookup_Default extends Operator
         for (RowType ancestorType : this.ancestorTypes) {
             UserTable userTable = ancestorType.userTable();
             this.ancestorTypeDepth[a++] = userTable.getDepth() + 1;
+        }
+    }
+    
+    // For use by this class
+
+    private void validateArguments(RowType rowType, Collection<? extends RowType> ancestorTypes, API.LookupOption flag)
+    {
+        ArgumentValidation.notEmpty("ancestorTypes", ancestorTypes);
+        if (rowType instanceof IndexRowType) {
+            // Keeping index rows not supported
+            ArgumentValidation.isTrue("flag == API.LookupOption.DISCARD_INPUT",
+                                      flag == API.LookupOption.DISCARD_INPUT);
+            RowType tableRowType = ((IndexRowType) rowType).tableType();
+            // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
+            // is from an index. I.e., this operator can be used for an index lookup.
+            for (RowType ancestorType : ancestorTypes) {
+                ArgumentValidation.isTrue("ancestorType.ancestorOf(tableRowType)",
+                                          ancestorType.ancestorOf(tableRowType));
+                ArgumentValidation.isTrue("ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup()",
+                                          ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup());
+            }
+        } else if (rowType instanceof UserTableRowType) {
+            // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
+            // is from an index. I.e., this operator can be used for an index lookup.
+            for (RowType ancestorType : ancestorTypes) {
+                ArgumentValidation.isTrue("ancestorType != tableRowType",
+                                          ancestorType != rowType);
+                ArgumentValidation.isTrue("ancestorType.ancestorOf(tableRowType)",
+                                          ancestorType.ancestorOf(rowType));
+                ArgumentValidation.isTrue("ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup()",
+                                          ancestorType.userTable().getGroup() == rowType.userTable().getGroup());
+            }
+        } else if (rowType instanceof HKeyRowType) {
+            ArgumentValidation.isTrue("flag == API.LookupOption.DISCARD_INPUT",
+                                      flag == API.LookupOption.DISCARD_INPUT);
+        } else {
+            ArgumentValidation.isTrue("invalid rowType", false);
         }
     }
 

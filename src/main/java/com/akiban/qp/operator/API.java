@@ -136,20 +136,20 @@ public class API
     // BranchLookup
 
     public static Operator branchLookup_Default(Operator inputOperator,
-                                                        GroupTable groupTable,
-                                                        RowType inputRowType,
-                                                        RowType outputRowType,
-                                                        LookupOption flag)
+                                                GroupTable groupTable,
+                                                RowType inputRowType,
+                                                UserTableRowType outputRowType,
+                                                LookupOption flag)
     {
         return branchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, flag, NO_LIMIT);
     }
 
     public static Operator branchLookup_Default(Operator inputOperator,
-                                                        GroupTable groupTable,
-                                                        RowType inputRowType,
-                                                        RowType outputRowType,
-                                                        LookupOption flag,
-                                                        Limit limit)
+                                                GroupTable groupTable,
+                                                RowType inputRowType,
+                                                UserTableRowType outputRowType,
+                                                LookupOption flag,
+                                                Limit limit)
     {
         return new BranchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, flag, limit);
     }

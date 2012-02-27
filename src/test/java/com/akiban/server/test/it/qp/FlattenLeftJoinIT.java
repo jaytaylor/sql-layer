@@ -33,6 +33,7 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Comparison;
@@ -540,11 +541,11 @@ public class FlattenLeftJoinIT extends OperatorITBase
     private int beforeChild;
     private int child;
     private int afterChild;
-    private RowType ancestorRowType;
-    private RowType parentRowType;
-    private RowType beforeChildRowType;
-    private RowType childRowType;
-    private RowType afterChildRowType;
+    private UserTableRowType ancestorRowType;
+    private UserTableRowType parentRowType;
+    private UserTableRowType beforeChildRowType;
+    private UserTableRowType childRowType;
+    private UserTableRowType afterChildRowType;
     private IndexRowType parentPidIndexType;
     private GroupTable group;
 }
