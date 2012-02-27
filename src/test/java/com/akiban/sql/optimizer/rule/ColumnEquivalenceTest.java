@@ -52,6 +52,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.akiban.util.Strings.stripr;
 import static org.junit.Assert.assertEquals;
@@ -64,6 +66,10 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
     public static final File RESOURCE_BASE_DIR =
             new File(OptimizerTestBase.RESOURCE_DIR, "rule");
     public static final File TESTS_RESOURCE_DIR = new File(RESOURCE_BASE_DIR, "column-equivalence");
+    private static final Pattern SUBQUERY_DEPTH_PATTERN = Pattern.compile(
+            "--\\s*subquery\\s+at\\s+depth\\s+(\\d+):",
+            Pattern.CASE_INSENSITIVE
+    );
     
     @TestParameters
     public static Collection<Parameterization> params() throws IOException {
@@ -81,15 +87,23 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
             String sql = testLinesIter.next();
             Map<Set<Map<String,Boolean>>,Integer> tmp = new HashMap<Set<Map<String, Boolean>>, Integer>();
             Set<Map<String,Boolean>> columnEquivalenceSets = new HashSet<Map<String, Boolean>>();
+            int depth = 0;
             while (testLinesIter.hasNext()) {
-                String columnEquivalenceLine = testLinesIter.next();
+                String columnEquivalenceLine = testLinesIter.next().trim();
+                Matcher depthMatcher = SUBQUERY_DEPTH_PATTERN.matcher(columnEquivalenceLine);
+                if (depthMatcher.matches()) {
+                    tmp.put(columnEquivalenceSets, depth);
+                    depth = Integer.parseInt(depthMatcher.group(1));
+                    columnEquivalenceSets = new HashSet<Map<String, Boolean>>();
+                    continue;
+                }
                 Map<String,Boolean> columnEquivalences = new HashMap<String, Boolean>();
                 String[] columnNames = readEquivalences(columnEquivalenceLine);
                 for (String columnName : columnNames)
                     columnEquivalences.put(columnName, columnNames.length == 1);
                 columnEquivalenceSets.add(columnEquivalences);
             }
-            tmp.put(columnEquivalenceSets, 0); // TODO remove before checking in!
+            tmp.put(columnEquivalenceSets, depth);
             pb.add(stripr(testFile.getName(), ".test"), schema, sql,  tmp);
         }
         
@@ -97,7 +111,7 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
     }
 
     private static String[] readEquivalences(String columnEquivalenceLine) {
-        String[] results = columnEquivalenceLine.trim().split("\\s+");
+        String[] results = columnEquivalenceLine.split("\\s+");
         for (int i = 0; i < results.length; ++i) {
             String elem = results[i];
             if (elem.split("\\.").length == 2) {
