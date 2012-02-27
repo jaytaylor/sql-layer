@@ -26,11 +26,16 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.FieldExpression;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.Collections;
+
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.server.expression.std.Expressions.field;
+import static junit.framework.Assert.fail;
 
 public class Intersect_OrderedIT extends OperatorITBase
 {
@@ -54,6 +59,7 @@ public class Intersect_OrderedIT extends OperatorITBase
         schema = new Schema(rowDefCache().ais());
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));
+        parentPidIndexRowType = indexType(parent, "pid");
         parentXIndexRowType = indexType(parent, "x");
         parentYIndexRowType = indexType(parent, "y");
         childZIndexRowType = indexType(child, "z");
@@ -108,13 +114,8 @@ public class Intersect_OrderedIT extends OperatorITBase
             createNewRow(child, 800202L, 8002L, 88L),
             // 9x child with no parent
             createNewRow(child, 900000L, 9000L, 99L),
-            // 11x left join (parent on left)
-            createNewRow(parent, 11000L, 11L, 11L),
-            // 12x right join (parent on left)
+            // 12x right join (child on right)
             createNewRow(child, 1200000L, null, 12L),
-            // 13x full join
-            createNewRow(parent, 13000L, 13L, 13L),
-            createNewRow(child, 1300000L, 13999L, 13L),
         };
         use(db);
     }
@@ -123,122 +124,267 @@ public class Intersect_OrderedIT extends OperatorITBase
     private int child;
     private RowType parentRowType;
     private RowType childRowType;
+    private IndexRowType parentPidIndexRowType;
     private IndexRowType parentXIndexRowType;
     private IndexRowType parentYIndexRowType;
     private IndexRowType childZIndexRowType;
 
     // IllegalArumentException tests
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testLeftInputNull()
+    @Test
+    public void testInputNull()
     {
-        intersect_Ordered(null,
+        try {
+            intersect_Ordered(null,
+                              groupScan_Default(coi),
+                              parentXIndexRowType,
+                              parentYIndexRowType,
+                              1,
+                              1,
+                              1,
+                              JoinType.INNER_JOIN,
+                              IntersectOutputOption.OUTPUT_LEFT);
+        } catch (IllegalArgumentException e) {
+        }
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              null,
+                              parentXIndexRowType,
+                              parentYIndexRowType,
+                              1,
+                              1,
+                              1,
+                              JoinType.INNER_JOIN,
+                              IntersectOutputOption.OUTPUT_LEFT);
+            fail();
+        } catch (IllegalArgumentException e) {
+        }
+    }
+
+    @Test
+    public void testInputTypeNull()
+    {
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              groupScan_Default(coi),
+                              null,
+                              parentYIndexRowType,
+                              1,
+                              1,
+                              1,
+                              JoinType.INNER_JOIN,
+                              IntersectOutputOption.OUTPUT_LEFT);
+            fail();
+        } catch (IllegalArgumentException e) {
+        }
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              groupScan_Default(coi),
+                              parentXIndexRowType,
+                              null,
+                              1,
+                              1,
+                              1,
+                              JoinType.INNER_JOIN,
+                              IntersectOutputOption.OUTPUT_LEFT);
+            fail();
+        } catch (IllegalArgumentException e) {
+        }
+    }
+
+    @Test
+    public void testJoinType()
+    {
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              groupScan_Default(coi),
+                              parentXIndexRowType,
+                              parentYIndexRowType,
+                              1,
+                              1,
+                              1,
+                              null,
+                              IntersectOutputOption.OUTPUT_LEFT);
+        } catch (IllegalArgumentException e) {
+        }
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              groupScan_Default(coi),
+                              parentXIndexRowType,
+                              parentYIndexRowType,
+                              1,
+                              1,
+                              1,
+                              JoinType.FULL_JOIN,
+                              IntersectOutputOption.OUTPUT_LEFT);
+        } catch (IllegalArgumentException e) {
+        }
+    }
+
+    @Test
+    public void testOutputOptionNull()
+    {
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              groupScan_Default(coi),
+                              parentXIndexRowType,
+                              parentYIndexRowType,
+                              1,
+                              1,
+                              1,
+                              JoinType.INNER_JOIN,
+                              null);
+        } catch (IllegalArgumentException e) {
+        }
+    }
+
+    public void testJoinTypeAndOrderingConsistency()
+    {
+        intersect_Ordered(groupScan_Default(coi),
                           groupScan_Default(coi),
                           parentXIndexRowType,
                           parentYIndexRowType,
                           1,
                           1,
-                          JoinType.INNER_JOIN,
-                          0,
-                          1);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testRightInputNull()
-    {
-        intersect_Ordered(groupScan_Default(coi),
-                          null,
-                          parentXIndexRowType,
-                          parentYIndexRowType,
-                          1,
                           1,
                           JoinType.INNER_JOIN,
-                          0,
-                          1);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testLeftIndexRowTypeNull()
-    {
-        intersect_Ordered(groupScan_Default(coi),
-                          groupScan_Default(coi),
-                          null,
-                          parentYIndexRowType,
-                          1,
-                          1,
-                          JoinType.INNER_JOIN,
-                          0,
-                          1);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testRightIndexRowTypeNull()
-    {
-        intersect_Ordered(groupScan_Default(coi),
-                          groupScan_Default(coi),
-                          parentXIndexRowType,
-                          null,
-                          1,
-                          1,
-                          JoinType.INNER_JOIN,
-                          0,
-                          1);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testRightJoinTypeNull()
-    {
+                          IntersectOutputOption.OUTPUT_LEFT);
         intersect_Ordered(groupScan_Default(coi),
                           groupScan_Default(coi),
                           parentXIndexRowType,
                           parentYIndexRowType,
                           1,
                           1,
-                          null,
-                          0,
-                          1);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testNoOrderingColumns()
-    {
-        intersect_Ordered(groupScan_Default(coi),
-                          groupScan_Default(coi),
-                          parentXIndexRowType,
-                          parentYIndexRowType,
-                          0,
-                          0,
-                          JoinType.INNER_JOIN,
-                          0,
-                          1);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testEnoughLeftColumns()
-    {
-        intersect_Ordered(groupScan_Default(coi),
-                          groupScan_Default(coi),
-                          parentXIndexRowType,
-                          parentYIndexRowType,
-                          3,
                           1,
                           JoinType.INNER_JOIN,
-                          0,
-                          1);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testEnoughRightColumns()
-    {
+                          IntersectOutputOption.OUTPUT_RIGHT);
         intersect_Ordered(groupScan_Default(coi),
                           groupScan_Default(coi),
                           parentXIndexRowType,
                           parentYIndexRowType,
                           1,
-                          3,
-                          JoinType.INNER_JOIN,
-                          0,
-                          1);
+                          1,
+                          1,
+                          JoinType.LEFT_JOIN,
+                          IntersectOutputOption.OUTPUT_LEFT);
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              groupScan_Default(coi),
+                              parentXIndexRowType,
+                              parentYIndexRowType,
+                              1,
+                              1,
+                              1,
+                              JoinType.LEFT_JOIN,
+                              IntersectOutputOption.OUTPUT_RIGHT);
+            fail();
+        } catch (IllegalArgumentException e) {
+        }
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              groupScan_Default(coi),
+                              parentXIndexRowType,
+                              parentYIndexRowType,
+                              1,
+                              1,
+                              1,
+                              JoinType.RIGHT_JOIN,
+                              IntersectOutputOption.OUTPUT_LEFT);
+            fail();
+        } catch (IllegalArgumentException e) {
+        }
+        intersect_Ordered(groupScan_Default(coi),
+                          groupScan_Default(coi),
+                          parentXIndexRowType,
+                          parentYIndexRowType,
+                          1,
+                          1,
+                          1,
+                          JoinType.RIGHT_JOIN,
+                          IntersectOutputOption.OUTPUT_RIGHT);
+    }
+
+    @Test
+    public void testOrderingColumns()
+    {
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              groupScan_Default(coi),
+                              parentXIndexRowType,
+                              parentYIndexRowType,
+                              -1,
+                              1,
+                              1,
+                              JoinType.INNER_JOIN,
+                              IntersectOutputOption.OUTPUT_LEFT);
+            fail();
+        } catch (IllegalArgumentException e) {
+        }
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              groupScan_Default(coi),
+                              parentXIndexRowType,
+                              parentYIndexRowType,
+                              3,
+                              1,
+                              1,
+                              JoinType.INNER_JOIN,
+                              IntersectOutputOption.OUTPUT_LEFT);
+            fail();
+        } catch (IllegalArgumentException e) {
+        }
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              groupScan_Default(coi),
+                              parentXIndexRowType,
+                              parentYIndexRowType,
+                              1,
+                              -1,
+                              1,
+                              JoinType.INNER_JOIN,
+                              IntersectOutputOption.OUTPUT_LEFT);
+            fail();
+        } catch (IllegalArgumentException e) {
+        }
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              groupScan_Default(coi),
+                              parentXIndexRowType,
+                              parentYIndexRowType,
+                              1,
+                              3,
+                              1,
+                              JoinType.INNER_JOIN,
+                              IntersectOutputOption.OUTPUT_LEFT);
+            fail();
+        } catch (IllegalArgumentException e) {
+        }
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              groupScan_Default(coi),
+                              parentXIndexRowType,
+                              parentYIndexRowType,
+                              1,
+                              1,
+                              -1,
+                              JoinType.INNER_JOIN,
+                              IntersectOutputOption.OUTPUT_LEFT);
+            fail();
+        } catch (IllegalArgumentException e) {
+        }
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              groupScan_Default(coi),
+                              parentXIndexRowType,
+                              parentYIndexRowType,
+                              1,
+                              1,
+                              2,
+                              JoinType.INNER_JOIN,
+                              IntersectOutputOption.OUTPUT_LEFT);
+            fail();
+        } catch (IllegalArgumentException e) {
+        }
     }
 
     // Runtime tests
@@ -286,8 +432,8 @@ public class Intersect_OrderedIT extends OperatorITBase
     {
         Operator plan = intersectPxPy(44);
         RowBase[] expected = new RowBase[]{
-            row(intersectRowType, 44L, 4001L, 44L, 4001L),
-            row(intersectRowType, 44L, 4002L, 44L, 4002L),
+            row(parentXIndexRowType, 44L, 4001L),
+            row(parentXIndexRowType, 44L, 4002L),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -297,8 +443,8 @@ public class Intersect_OrderedIT extends OperatorITBase
     {
         Operator plan = intersectPxPy(55);
         RowBase[] expected = new RowBase[]{
-            row(intersectRowType, 55L, 5001L, 55L, 5001L),
-            row(intersectRowType, 55L, 5002L, 55L, 5002L),
+            row(parentXIndexRowType, 55L, 5001L),
+            row(parentXIndexRowType, 55L, 5002L),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -308,8 +454,8 @@ public class Intersect_OrderedIT extends OperatorITBase
     {
         Operator plan = intersectPxPy(66);
         RowBase[] expected = new RowBase[]{
-            row(intersectRowType, 66L, 6002L, 66L, 6002L),
-            row(intersectRowType, 66L, 6003L, 66L, 6003L),
+            row(parentXIndexRowType, 66L, 6002L),
+            row(parentXIndexRowType, 66L, 6003L),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -328,12 +474,12 @@ public class Intersect_OrderedIT extends OperatorITBase
     {
         Operator plan = intersectPxCz(88);
         RowBase[] expected = new RowBase[]{
-            row(intersectRowType, 88L, 8000L, 88L, 8000L, 800000L),
-            row(intersectRowType, 88L, 8001L, 88L, 8001L, 800100L),
-            row(intersectRowType, 88L, 8001L, 88L, 8001L, 800101L),
-            row(intersectRowType, 88L, 8002L, 88L, 8002L, 800200L),
-            row(intersectRowType, 88L, 8002L, 88L, 8002L, 800201L),
-            row(intersectRowType, 88L, 8002L, 88L, 8002L, 800202L),
+            row(childRowType, 88L, 8000L, 800000L),
+            row(childRowType, 88L, 8001L, 800100L),
+            row(childRowType, 88L, 8001L, 800101L),
+            row(childRowType, 88L, 8002L, 800200L),
+            row(childRowType, 88L, 8002L, 800201L),
+            row(childRowType, 88L, 8002L, 800202L),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -348,32 +494,105 @@ public class Intersect_OrderedIT extends OperatorITBase
     }
 
     @Test
-    public void test11x()
-    {
-        Operator plan = intersectPxCz(11, JoinType.LEFT_JOIN);
-        RowBase[] expected = new RowBase[]{
-            row(intersectRowType, 11L, 11000L, null, null, null),
-        };
-        compareRows(expected, cursor(plan, queryContext));
-    }
-
-    @Test
     public void test12x()
     {
         Operator plan = intersectPxCz(12, JoinType.RIGHT_JOIN);
         RowBase[] expected = new RowBase[]{
-            row(intersectRowType, null, null, 12L, null, 1200000L),
+            row(childRowType, 12L, null, 1200000L),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
-    public void test13x()
+    public void testAllOrderingFieldsNoComparisonFields()
     {
-        Operator plan = intersectPxCz(13, JoinType.FULL_JOIN);
+        Operator plan =
+            intersect_Ordered(
+                indexScan_Default(parentPidIndexRowType),
+                indexScan_Default(parentPidIndexRowType),
+                parentPidIndexRowType,
+                parentPidIndexRowType,
+                1,
+                1,
+                0,
+                JoinType.INNER_JOIN,
+                IntersectOutputOption.OUTPUT_LEFT);
         RowBase[] expected = new RowBase[]{
-            row(intersectRowType, 13L, 13000L, null, null, null),
-            row(intersectRowType, null, null, 13L, 13999L, 1300000L),
+            row(parentPidIndexRowType, 1000L),
+            row(parentPidIndexRowType, 1001L),
+            row(parentPidIndexRowType, 1002L),
+            row(parentPidIndexRowType, 2000L),
+            row(parentPidIndexRowType, 2001L),
+            row(parentPidIndexRowType, 2002L),
+            row(parentPidIndexRowType, 3000L),
+            row(parentPidIndexRowType, 3001L),
+            row(parentPidIndexRowType, 3002L),
+            row(parentPidIndexRowType, 3003L),
+            row(parentPidIndexRowType, 3004L),
+            row(parentPidIndexRowType, 3005L),
+            row(parentPidIndexRowType, 4000L),
+            row(parentPidIndexRowType, 4001L),
+            row(parentPidIndexRowType, 4002L),
+            row(parentPidIndexRowType, 4003L),
+            row(parentPidIndexRowType, 5000L),
+            row(parentPidIndexRowType, 5001L),
+            row(parentPidIndexRowType, 5002L),
+            row(parentPidIndexRowType, 5003L),
+            row(parentPidIndexRowType, 6000L),
+            row(parentPidIndexRowType, 6001L),
+            row(parentPidIndexRowType, 6002L),
+            row(parentPidIndexRowType, 6003L),
+            row(parentPidIndexRowType, 6004L),
+            row(parentPidIndexRowType, 6005L),
+            row(parentPidIndexRowType, 7000L),
+            row(parentPidIndexRowType, 8000L),
+            row(parentPidIndexRowType, 8001L),
+            row(parentPidIndexRowType, 8002L),
+        };
+        compareRows(expected, cursor(plan, queryContext));
+    }
+    
+    @Test
+    public void testRowIntersection()
+    {
+        Operator parentProject =
+            project_Default(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(parentRowType)),
+                parentRowType,
+                Arrays.asList((Expression) new FieldExpression(parentRowType, 1),
+                              (Expression) new FieldExpression(parentRowType, 2),
+                              (Expression) new FieldExpression(parentRowType, 0)));
+        Operator childProject =
+            project_Default(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(childRowType)),
+                childRowType,
+                Arrays.asList((Expression) new FieldExpression(childRowType, 2),
+                              (Expression) new FieldExpression(childRowType, 1),
+                              (Expression) new FieldExpression(childRowType, 0)));
+        Operator plan =
+            intersect_Ordered(
+                parentProject,
+                childProject,
+                parentProject.rowType(),
+                childProject.rowType(),
+                1,
+                2,
+                1,
+                JoinType.RIGHT_JOIN,
+                IntersectOutputOption.OUTPUT_RIGHT);
+        RowBase[] expected = new RowBase[]{
+            row(childRowType, 12L, null, 1200000L),
+            row(childRowType, 88L, 8000L, 800000L),
+            row(childRowType, 88L, 8001L, 800100L),
+            row(childRowType, 88L, 8001L, 800101L),
+            row(childRowType, 88L, 8002L, 800200L),
+            row(childRowType, 88L, 8002L, 800201L),
+            row(childRowType, 88L, 8002L, 800202L),
+            row(childRowType, 99L, 9000L, 900000L),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -394,10 +613,9 @@ public class Intersect_OrderedIT extends OperatorITBase
                 parentYIndexRowType,
                 1,
                 1,
+                1,
                 JoinType.INNER_JOIN,
-                0,
-                1);
-        intersectRowType = plan.rowType();
+                IntersectOutputOption.OUTPUT_LEFT);
         return plan;
     }
 
@@ -423,10 +641,9 @@ public class Intersect_OrderedIT extends OperatorITBase
                     childZIndexRowType,
                     1,
                     2,
+                    1,
                     joinType,
-                    0,
-                    1);
-        intersectRowType = plan.rowType();
+                    IntersectOutputOption.OUTPUT_RIGHT);
         return plan;
     }
 
@@ -459,6 +676,4 @@ public class Intersect_OrderedIT extends OperatorITBase
         }
         return ordering;
     }
-
-    private RowType intersectRowType;
 }

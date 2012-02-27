@@ -31,8 +31,11 @@ class PersistitHKey implements HKey
     @Override
     public boolean equals(Object that)
     {
-        return that == this
-                || (that != null && PersistitHKey.class.equals(that.getClass()) && this.hKey.equals(((PersistitHKey)that).hKey));
+        return
+            that == this ||
+            (that != null &&
+             PersistitHKey.class.equals(that.getClass()) &&
+             this.hKey.equals(((PersistitHKey)that).hKey));
     }
 
     @Override
