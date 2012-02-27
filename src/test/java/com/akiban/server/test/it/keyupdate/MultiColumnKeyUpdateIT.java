@@ -543,7 +543,7 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
                                  "cx int",
                                  "cid1 int not null",
                                  "primary key(cid1, cid2)",
-                                 "constraint __akiban_cv foreign key __akiban_cv(vid1, vid2) references vendor(vid1, vid2)");
+                                 "grouping foreign key (vid1, vid2) references vendor(vid1, vid2)");
         c_cid1 = 4;
         c_cid2 = 1;
         c_vid1 = 0;
@@ -559,9 +559,9 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
                               "priority int",
                               "when int",
                               "primary key(oid1, oid2)",
-                              "key(priority)",
                               "unique(when)",
-                              "constraint __akiban_oc foreign key __akiban_oc(cid1, cid2) references customer(cid1, cid2)");
+                              "grouping foreign key (cid1, cid2) references customer(cid1, cid2)");
+        createIndex("coi", "order", "priority", "priority");
         o_oid1 = 3;
         o_oid2 = 2;
         o_cid1 = 0;
@@ -577,7 +577,7 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
                              "iid1 int not null",
                              "iid2 int not null",
                              "primary key(iid1, iid2)",
-                             "constraint __akiban_io foreign key __akiban_io(oid1, oid2) references order(oid1, oid2)");
+                             "grouping foreign key (oid1, oid2) references \"order\"(oid1, oid2)");
         i_iid1 = 3;
         i_iid2 = 4;
         i_oid1 = 1;
