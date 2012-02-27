@@ -225,7 +225,7 @@ public class IndexGoal implements Comparator<IndexScan>
                         else if (indexExpression.equals(ccond.getRight())) {
                             otherComparand = ccond.getLeft();
                         }
-                        if (otherComparand != null) {
+                        if ((otherComparand != null) && constantOrBound(otherComparand)) {
                             index.addInequalityCondition(condition,
                                                          ccond.getOperation(),
                                                          otherComparand);
