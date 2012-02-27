@@ -85,8 +85,8 @@ public final class DropSchemaIT extends ITBase {
     @Test
     public void groupedTables() throws InvalidOperationException {
         createTable("one", "c", "id int not null primary key");
-        createTable("one", "o", "id int not null primary key, cid int, constraint __akiban foreign key(cid) references c(id)");
-        createTable("one", "i", "id int not null primary key, oid int, constraint __akiban foreign key(oid) references o(id)");
+        createTable("one", "o", "id int not null primary key, cid int, grouping foreign key(cid) references c(id)");
+        createTable("one", "i", "id int not null primary key, oid int, grouping foreign key(oid) references o(id)");
         createTable("one", "t", "id int not null primary key");
         createTable("two", "c", "id int not null primary key");
         ddl().dropSchema(session(), "one");
@@ -97,8 +97,8 @@ public final class DropSchemaIT extends ITBase {
     @Test
     public void crossSchemaGroupInvalid() throws InvalidOperationException {
         createTable("one", "c", "id int not null primary key");
-        createTable("one", "o", "id int not null primary key, cid int, constraint __akiban foreign key(cid) references c(id)");
-        createTable("two", "i", "id int not null primary key, oid int, constraint __akiban foreign key(oid) references one.o(id)");
+        createTable("one", "o", "id int not null primary key, cid int, grouping foreign key(cid) references c(id)");
+        createTable("two", "i", "id int not null primary key, oid int, grouping foreign key(oid) references one.o(id)");
         try {
             ddl().dropSchema(session(), "one");
             Assert.fail("ForeignConstraintDDLException expected");
@@ -112,8 +112,8 @@ public final class DropSchemaIT extends ITBase {
     @Test
     public void crossSchemaGroupValid() throws InvalidOperationException {
         createTable("one", "c", "id int not null primary key");
-        createTable("one", "o", "id int not null primary key, cid int, constraint __akiban foreign key(cid) references c(id)");
-        createTable("two", "i", "id int not null primary key, oid int, constraint __akiban foreign key(oid) references one.o(id)");
+        createTable("one", "o", "id int not null primary key, cid int, grouping foreign key(cid) references c(id)");
+        createTable("two", "i", "id int not null primary key, oid int, grouping foreign key(oid) references one.o(id)");
         ddl().dropSchema(session(), "two");
         expectTables("one", "c", "o");
         expectNotTables("two", "i");
