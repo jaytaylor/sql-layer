@@ -41,7 +41,6 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -76,6 +75,7 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
             List<String> testLines = Strings.dumpFile(testFile);
             Iterator<String> testLinesIter = testLines.iterator();
             String sql = testLinesIter.next();
+            Map<Set<Map<String,Boolean>>,Integer> tmp = new HashMap<Set<Map<String, Boolean>>, Integer>();
             Set<Map<String,Boolean>> columnEquivalenceSets = new HashSet<Map<String, Boolean>>();
             while (testLinesIter.hasNext()) {
                 String columnEquivalenceLine = testLinesIter.next();
@@ -85,7 +85,8 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
                     columnEquivalences.put(columnName, columnNames.length == 1);
                 columnEquivalenceSets.add(columnEquivalences);
             }
-            pb.add(stripr(testFile.getName(), ".test"), schema, sql,  columnEquivalenceSets);
+            tmp.put(columnEquivalenceSets, 0); // TODO remove before checking in!
+            pb.add(stripr(testFile.getName(), ".test"), schema, sql,  tmp);
         }
         
         return pb.asList();
@@ -124,11 +125,11 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
 
     @Test
     public void equivalences() throws Exception {
-        Set<Map<String,Boolean>> actualEquivalentColumns = getActualEquivalentColumns();
-        AssertUtils.assertCollectionEquals("for [ " + sql + " ]: ", equivalences, actualEquivalentColumns);
+        Map<Set<Map<String,Boolean>>,Integer> actualEquivalentColumns = getActualEquivalentColumns();
+        AssertUtils.assertMapEquals("for [ " + sql + " ]: ", equivalences, actualEquivalentColumns);
     }
 
-    private Set<Map<String,Boolean>> getActualEquivalentColumns() throws Exception {
+    private Map<Set<Map<String,Boolean>>,Integer> getActualEquivalentColumns() throws Exception {
         StatementNode stmt = parser.parseStatement(sql);
         binder.bind(stmt);
         stmt = booleanNormalizer.normalize(stmt);
@@ -140,8 +141,20 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
                         parser.getParameterList()));
         rules.applyRules(plan);
 
+        Map<Set<Map<String,Boolean>>,Integer> result = new HashMap<Set<Map<String, Boolean>>, Integer>();
+        Map<Collection<ColumnExpression>,Integer> columnExpressionsToDepth = new ColumnFinder().find(plan.getPlan());
+        for (Map.Entry<Collection<ColumnExpression>,Integer> entry : columnExpressionsToDepth.entrySet()) {
+            Collection<ColumnExpression> columnExpressions = entry.getKey();
+            Integer depth = entry.getValue();
+            Set<Map<String, Boolean>> byName = collectEquivalentColumns(columnExpressions);
+            Object old = result.put(byName, depth);
+            assertNull("bumped: " + old, old);
+        }
+        return result;
+    }
+
+    private Set<Map<String, Boolean>> collectEquivalentColumns(Collection<ColumnExpression> columnExpressions) {
         Set<Set<ColumnExpression>> set = new HashSet<Set<ColumnExpression>>();
-        List<ColumnExpression> columnExpressions = new ColumnFinder().find(plan.getPlan());
         for (ColumnExpression columnExpression : columnExpressions) {
             Set<ColumnExpression> belongsToSet = null;
             for (Set<ColumnExpression> equivalentExpressions : set) {
@@ -183,22 +196,24 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
         return one.getEquivalenceFinder().areEquivalent(one, two) && two.getEquivalenceFinder().areEquivalent(two, one);
     }
 
-    public ColumnEquivalenceTest(File schemaFile, String sql, Set<Map<String,Boolean>> equivalences) {
+    public ColumnEquivalenceTest(File schemaFile, String sql, Map<Set<Map<String,Boolean>>,Integer> equivalences) {
         super(sql, sql, null, null);
         this.equivalences = equivalences;
         this.schemaFile = schemaFile;
     }
     
     private File schemaFile;
-    private Set<Map<String,Boolean>> equivalences;
+    private Map<Set<Map<String,Boolean>>,Integer> equivalences;
     private RulesContext rules;
     
     private static class ColumnFinder implements PlanVisitor, ExpressionVisitor {
         List<ColumnExpression> result = new ArrayList<ColumnExpression>();
 
-        public List<ColumnExpression> find(PlanNode root) {
+        public Map<Collection<ColumnExpression>,Integer> find(PlanNode root) {
             root.accept(this);
-            return result;
+            Map<Collection<ColumnExpression>,Integer> tmp = new HashMap<Collection<ColumnExpression>, Integer>(); // TODO remove this before checkin!
+            tmp.put(result, 0);
+            return tmp;
         }
 
         @Override
