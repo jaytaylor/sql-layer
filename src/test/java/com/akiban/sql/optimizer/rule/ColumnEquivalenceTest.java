@@ -28,6 +28,7 @@ import com.akiban.sql.optimizer.plan.ExpressionVisitor;
 import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PlanNode;
 import com.akiban.sql.optimizer.plan.PlanVisitor;
+import com.akiban.sql.optimizer.plan.Subquery;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.util.AssertUtils;
@@ -39,8 +40,10 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -53,6 +56,7 @@ import java.util.TreeMap;
 import static com.akiban.util.Strings.stripr;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(NamedParameterizedRunner.class)
 public final class ColumnEquivalenceTest extends OptimizerTestBase {
@@ -207,21 +211,37 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
     private RulesContext rules;
     
     private static class ColumnFinder implements PlanVisitor, ExpressionVisitor {
-        List<ColumnExpression> result = new ArrayList<ColumnExpression>();
+        Deque<List<ColumnExpression>> columnExpressionsStack = new ArrayDeque<List<ColumnExpression>>();
+        Map<Collection<ColumnExpression>,Integer> results = new HashMap<Collection<ColumnExpression>, Integer>();
 
         public Map<Collection<ColumnExpression>,Integer> find(PlanNode root) {
+            pushCollector();
             root.accept(this);
-            Map<Collection<ColumnExpression>,Integer> tmp = new HashMap<Collection<ColumnExpression>, Integer>(); // TODO remove this before checkin!
-            tmp.put(result, 0);
-            return tmp;
+            installCollection();
+            assertTrue("stack isn't empty: " + columnExpressionsStack, columnExpressionsStack.isEmpty());
+            return results;
+        }
+
+        private void pushCollector() {
+            columnExpressionsStack.push(new ArrayList<ColumnExpression>());
+        }
+
+        private void installCollection() {
+            Collection<ColumnExpression> collected = columnExpressionsStack.pop();
+            int depth = columnExpressionsStack.size();
+            results.put(collected, depth);
         }
 
         @Override
         public boolean visitEnter(PlanNode n) {
+            if (n instanceof Subquery)
+                pushCollector();
             return visit(n);
         }
         @Override
         public boolean visitLeave(PlanNode n) {
+            if (n instanceof Subquery)
+                installCollection();
             return true;
         }
         @Override
@@ -240,7 +260,7 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
         @Override
         public boolean visit(ExpressionNode n) {
             if (n instanceof ColumnExpression)
-                result.add((ColumnExpression)n);
+                columnExpressionsStack.peek().add((ColumnExpression) n);
             return true;
         }
     }
