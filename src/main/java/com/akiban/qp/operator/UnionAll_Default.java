@@ -293,16 +293,6 @@ final class UnionAll_Default extends Operator {
         }
 
         @Override
-        public int runId() {
-            return delegate.runId();
-        }
-
-        @Override
-        public void runId(int runId) {
-            delegate.runId(runId);
-        }
-
-        @Override
         public Row subRow(RowType subRowType) {
             return delegate.subRow(subRowType);
         }

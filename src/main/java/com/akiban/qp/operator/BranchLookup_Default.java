@@ -25,9 +25,6 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -370,7 +367,6 @@ public class BranchLookup_Default extends Operator
                     lookupRow.release();
                     close();
                 } else {
-                    currentLookupRow.runId(inputRow.get().runId());
                     lookupRow.hold(currentLookupRow);
                 }
             } else {

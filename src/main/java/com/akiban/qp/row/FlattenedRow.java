@@ -95,7 +95,6 @@ public class FlattenedRow extends AbstractRow
         if (parent != null && !rowType.parentType().equals(parent.rowType())) {
             throw new IllegalArgumentException("mismatched type between " +rowType+ " and parent " + parent.rowType());
         }
-        super.runId(parent == null ? child.runId() : parent.runId());
     }
 
     // Object state

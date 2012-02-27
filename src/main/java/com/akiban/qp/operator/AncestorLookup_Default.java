@@ -285,7 +285,6 @@ class AncestorLookup_Default extends Operator
                 hKey.useSegments(depth);
                 readAncestorRow(hKey);
                 if (ancestorRow.isHolding()) {
-                    ancestorRow.get().runId(inputRow.runId());
                     pending.add(ancestorRow.get());
                 }
             }
