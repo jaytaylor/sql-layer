@@ -89,10 +89,10 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
                 joinOK = true;
                 break;
             case LEFT:
-                joinOK = !hasJoinedReferences(join.getJoinConditions(), leftTree);
+                joinOK = checkJoinConditions(join.getJoinConditions(), leftTree, rightTree);
                 break;
             case RIGHT:
-                joinOK = !hasJoinedReferences(join.getJoinConditions(), rightTree);
+                joinOK = checkJoinConditions(join.getJoinConditions(), rightTree, leftTree);
                 break;
             default:
                 joinOK = false;
@@ -170,6 +170,25 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
             prev = next;
         }
         return parent;
+    }
+
+    protected boolean checkJoinConditions(ConditionList joinConditions,
+                                          TableGroupJoinNode outer,
+                                          TableGroupJoinNode inner) {
+        if (hasJoinedReferences(joinConditions, outer))
+            return false;
+        if (joinConditions != null) {
+            Iterator<ConditionExpression> iter = joinConditions.iterator();
+            while (iter.hasNext()) {
+                ConditionExpression condition = iter.next();
+                if (condition.getImplementation() == ConditionExpression.Implementation.GROUP_JOIN)
+                    iter.remove();
+            }
+            if (joinConditions.isEmpty())
+                joinConditions = null;
+        }
+        inner.setJoinConditions(joinConditions);
+        return true;
     }
 
     // See whether any expression in the join condition other than the

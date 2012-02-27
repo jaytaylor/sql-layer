@@ -34,6 +34,7 @@ public class TableGroupJoinTree extends BaseJoinable
         TableSource table;
         TableGroupJoinNode parent, nextSibling, firstChild;
         JoinType parentJoinType;
+        ConditionList joinConditions;
 
         public TableGroupJoinNode(TableSource table) {
             this.table = table;
@@ -66,6 +67,13 @@ public class TableGroupJoinTree extends BaseJoinable
         }
         public void setParentJoinType(JoinType parentJoinType) {
             this.parentJoinType = parentJoinType;
+        }
+
+        public ConditionList getJoinConditions() {
+            return joinConditions;
+        }
+        public void setJoinConditions(ConditionList joinConditions) {
+            this.joinConditions = joinConditions;
         }
 
         /** Find the given table in this (sub-)tree. */
@@ -206,6 +214,17 @@ public class TableGroupJoinTree extends BaseJoinable
                 str.append(" ");
             }
             str.append(node.getTable().getTable().getTable().getName().getTableName());
+            if (node.getJoinConditions() != null) {
+                str.append(" ON ");
+                boolean first = true;
+                for (ConditionExpression joinCondition : node.getJoinConditions()) {
+                    if (first)
+                        first = false;
+                    else
+                        str.append(" AND ");
+                    str.append(joinCondition);
+                }
+            }
         }
     }
 
