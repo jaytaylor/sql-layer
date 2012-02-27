@@ -64,7 +64,7 @@ public class SchemaFactory {
     }
 
     public AkibanInformationSchema ais(String... ddl) {
-        return ais(null, ddl);
+        return ais(new AkibanInformationSchema(), ddl);
     }
 
     public AkibanInformationSchema ais(AkibanInformationSchema baseAIS, String... ddl) {
@@ -141,10 +141,6 @@ public class SchemaFactory {
 
     private static class CreateOnlyDDLMock implements DDLFunctions {
         AkibanInformationSchema ais = new AkibanInformationSchema();
-
-        public CreateOnlyDDLMock() {
-            this(new AkibanInformationSchema());
-        }
 
         public CreateOnlyDDLMock(AkibanInformationSchema ais) {
             this.ais = ais;

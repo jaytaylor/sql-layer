@@ -182,7 +182,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         
         final String schemaName = newTable.getName().getSchemaName();
         final UserTable finalTable = merge.getAIS().getUserTable(newTable.getName());
-        //validateIndexSizes(newTable);
         setTreeNames(finalTable);
         
         try {
