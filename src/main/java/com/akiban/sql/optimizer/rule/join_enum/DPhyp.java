@@ -183,21 +183,30 @@ public abstract class DPhyp<P>
         P p1 = getPlan(s1);
         P p2 = getPlan(s2);
         long s = JoinableBitSet.union(s1, s2);
-        JoinType joinType = JoinType.INNER;
+        JoinType join12 = JoinType.INNER, join21 = JoinType.INNER;
         evaluateOperators.clear();
         for (int e = 0; e < nedges; e++) {
             if (JoinableBitSet.isSubset(edges[e], s1) &&
                 JoinableBitSet.isSubset(edges[e^1], s2)) {
                 // The one that produced this edge.
                 JoinOperator operator = operators.get(e/2);
-                joinType = operator.getJoinType();
+                JoinType joinType = operator.getJoinType();
+                if (joinType != JoinType.INNER) {
+                    join12 = joinType;
+                    join21 = commuteJoinType(joinType);
+                    if ((e & 1) != 0) {
+                        join12 = join21;
+                        join21 = joinType;
+                    }
+                }
                 evaluateOperators.add(operator);
             }
         }
         P plan = getPlan(s);
-        plan = evaluateJoin(s1, p1, s2, p2, s, plan, joinType, evaluateOperators);
-        if (isCommutative(joinType))
-            plan = evaluateJoin(s2, p2, s1, p1, s, plan, joinType, evaluateOperators);
+        if (join12 != null)
+            plan = evaluateJoin(s1, p1, s2, p2, s, plan, join12, evaluateOperators);
+        if (join21 != null)
+            plan = evaluateJoin(s2, p2, s1, p1, s, plan, join21, evaluateOperators);
         setPlan(s, plan);
     }
 
@@ -426,12 +435,20 @@ public abstract class DPhyp<P>
 
     /** Does this operator commute? */
     protected boolean isCommutative(JoinType joinType) {
+        return (commuteJoinType(joinType) != null);
+    }
+
+    protected JoinType commuteJoinType(JoinType joinType) {
         switch (joinType) {
         case INNER:
         case FULL_OUTER:
-            return true;
+            return joinType;
+        case SEMI_INNER_ALREADY_DISTINCT:
+            return JoinType.INNER;
+        case SEMI_INNER_IF_DISTINCT:
+            return JoinType.INNER_NEED_DISTINCT;
         default:
-            return false;
+            return null;
         }
     }
 

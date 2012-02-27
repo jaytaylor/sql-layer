@@ -33,7 +33,8 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         // These are intermediate to represent when a semi-join can be
         // turned into a regular join.
         SEMI_INNER_ALREADY_DISTINCT,
-        SEMI_INNER_IF_DISTINCT
+        SEMI_INNER_IF_DISTINCT,
+        INNER_NEED_DISTINCT
     }
     public static enum Implementation {
         GROUP,

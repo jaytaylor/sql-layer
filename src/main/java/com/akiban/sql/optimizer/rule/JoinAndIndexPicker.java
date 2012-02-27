@@ -322,6 +322,11 @@ public class JoinAndIndexPicker extends BaseRule
             super(costEstimate);
             this.values = values;
         }
+
+        @Override
+        public String toString() {
+            return values.getName();
+        }
     }
 
     static class ValuesPlanClass extends PlanClass {
