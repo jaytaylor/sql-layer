@@ -535,7 +535,7 @@ public class JoinAndIndexPicker extends BaseRule
                 boolean added = subqueries.peek().tablesDefined.add((ColumnSource)n);
                 assert added : "Table defined more than once";
             }
-            if (n instanceof Joinable) {
+            if ((n instanceof Joinable) && !(n instanceof TableSource)) {
                 Joinable j = (Joinable)n;
                 while (j.getOutput() instanceof Joinable)
                     j = (Joinable)j.getOutput();
