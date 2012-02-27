@@ -302,7 +302,7 @@ public class ApiTestBase {
 
     protected String akibanFK(String childCol, String parentTable, String parentCol) {
         ++akibanFKCount;
-        return String.format("GROUPING FOREIGN KEY (%s) REFERENCES %s (%s)",
+        return String.format("GROUPING FOREIGN KEY (%s) REFERENCES \"%s\" (%s)",
                              childCol, parentTable, parentCol
         );
     }
@@ -360,7 +360,62 @@ public class ApiTestBase {
         SchemaFactory schemaFactory = new SchemaFactory(schema);
         return schemaFactory.ais(ddl().getAIS(session()), ddl);
     }
+
+    protected static final class SimpleColumn {
+        public final String columnName;
+        public final String typeName;
+        public final Long param1;
+        public final Long param2;
+
+        public SimpleColumn(String columnName, String typeName) {
+            this(columnName, typeName, null, null);
+        }
+
+        public SimpleColumn(String columnName, String typeName, Long param1, Long param2) {
+            this.columnName = columnName;
+            this.typeName = typeName;
+            this.param1 = param1;
+            this.param2 = param2;
+        }
+    }
+
+    protected final int createTableFromTypes(String schema, String table, boolean firstIsPk, boolean createIndexes,
+                                             SimpleColumn... columns) {
+        AISBuilder builder = new AISBuilder();
+        builder.userTable(schema, table);
+
+        int colPos = 0;
+        SimpleColumn pk = firstIsPk ? columns[0] : new SimpleColumn("id", "int");
+        builder.column(schema, table, pk.columnName, colPos++, pk.typeName, null, null, false, false, null, null);
+        builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, pk.columnName, 0, true, null);
+
+        for(int i = firstIsPk ? 1 : 0; i < columns.length; ++i) {
+            SimpleColumn sc = columns[i];
+            String name = sc.columnName == null ? "c" + (colPos + 1) : sc.columnName;
+            builder.column(schema, table, name, colPos++, sc.typeName, sc.param1, sc.param2, true, false, null, null);
+
+            if(createIndexes) {
+                builder.index(schema, table, name, false, Index.KEY_CONSTRAINT);
+                builder.indexColumn(schema, table, name, name, 0, true, null);
+            }
+        }
+
+        UserTable tempTable = builder.akibanInformationSchema().getUserTable(schema, table);
+        ddl().createTable(session(), tempTable);
+        updateAISGeneration();
+        return tableId(schema, table);
+    }
     
+    protected final int createTableFromTypes(String schema, String table, boolean firstIsPk, boolean createIndexes,
+                                             String... typeNames) {
+        SimpleColumn simpleColumns[] = new SimpleColumn[typeNames.length];
+        for(int i = 0; i < typeNames.length; ++i) {
+            simpleColumns[i] = new SimpleColumn(null, typeNames[i]);
+        }
+        return createTableFromTypes(schema, table, firstIsPk, createIndexes, simpleColumns);
+    }
+
     protected final int createTable(String schema, String table, String definition) throws InvalidOperationException {
         String ddl = String.format("CREATE TABLE \"%s\" (%s)", table, definition);
         AkibanInformationSchema tempAIS = createFromDDL(schema, ddl);

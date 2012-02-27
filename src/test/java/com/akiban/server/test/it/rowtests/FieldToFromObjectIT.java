@@ -15,8 +15,6 @@
 
 package com.akiban.server.test.it.rowtests;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
@@ -27,7 +25,11 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 
-public class FieldToFromObjectIT extends OldTypeITBase {
+public class FieldToFromObjectIT extends ITBase {
+    private final String SCHEMA = "test";
+    private final String TABLE = "t";
+    private final boolean IS_PK = false;
+    private final boolean INDEXES = false;
     private final RowData rowData = new RowData(new byte[4096]);
 
     private void testRow(final RowDef rowDef, Object ...values) {
@@ -43,7 +45,8 @@ public class FieldToFromObjectIT extends OldTypeITBase {
 
     @Test
     public void signedIntTypes() throws InvalidOperationException {
-        final int tid = createTableFromTypes("tinyint", "smallint", "mediumint", "int", "bigint");
+        final int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES,
+                                             "tinyint", "smallint", "mediumint", "int", "bigint");
         final RowDef def = rowDefCache().getRowDef(tid);
         testRow(def, 1, 0, 0, 0, 0, 0);                                              // zero
         testRow(def, 2, -128, -32768, -8388608, -2147483648, -9223372036854775808L); // min
@@ -53,7 +56,8 @@ public class FieldToFromObjectIT extends OldTypeITBase {
 
     @Test
     public void unsignedIntTypes() throws InvalidOperationException {
-        final int tid = createTableFromTypes("tinyint unsigned", "smallint unsigned", "mediumint unsigned", "int unsigned", "bigint unsigned");
+        final int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES,
+                                             "tinyint unsigned", "smallint unsigned", "mediumint unsigned", "int unsigned", "bigint unsigned");
         final RowDef def = rowDefCache().getRowDef(tid);
         testRow(def, 1, 0, 0, 0, 0, BigInteger.ZERO);                                               // zero/min
         testRow(def, 2, 255, 65535, 16777215, 4294967295L, new BigInteger("18446744073709551615")); // max
@@ -62,7 +66,7 @@ public class FieldToFromObjectIT extends OldTypeITBase {
 
     @Test
     public void signedRealTypes() throws InvalidOperationException {
-        final int tid = createTableFromTypes("float", "double");
+        final int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES, "float", "double");
         final RowDef def = rowDefCache().getRowDef(tid);
         testRow(def, 1, 0f, 0d);                            // zero
         testRow(def, 2, Float.MIN_VALUE, Double.MIN_VALUE); // min
@@ -75,7 +79,7 @@ public class FieldToFromObjectIT extends OldTypeITBase {
 
     @Test
     public void unsignedRealTypes() throws InvalidOperationException {
-        final int tid = createTableFromTypes("float unsigned","double unsigned");
+        final int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES, "float unsigned","double unsigned");
         final RowDef def = rowDefCache().getRowDef(tid);
         testRow(def, 1, 0f, 0d);                            // zero
         testRow(def, 2, Float.MAX_VALUE, Double.MAX_VALUE); // max
@@ -85,7 +89,8 @@ public class FieldToFromObjectIT extends OldTypeITBase {
 
     @Test
     public void decimalTypes() throws InvalidOperationException {
-        final int tid = createTableFromTypes(new TypeAndParams("decimal", 5L, 2L), new TypeAndParams("decimal unsigned", 5L, 2L));
+        final int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES,
+                                             new SimpleColumn("c1", "decimal", 5L, 2L), new SimpleColumn("c2", "decimal unsigned", 5L, 2L));
         final RowDef def = rowDefCache().getRowDef(tid);
         testRow(def, 1, BigDecimal.valueOf(0), BigDecimal.valueOf(0));                // zero
         testRow(def, 2, BigDecimal.valueOf(-99999L, 2), BigDecimal.valueOf(0));       // min
@@ -98,7 +103,8 @@ public class FieldToFromObjectIT extends OldTypeITBase {
 
     @Test
     public void charTypes() throws InvalidOperationException {
-        final int tid = createTableFromTypes(new TypeAndParams("char", 10L, null), new TypeAndParams("varchar", 26L, null));
+        final int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES,
+                                             new SimpleColumn("c1", "char", 10L, null), new SimpleColumn("c2", "varchar", 26L, null));
         final RowDef def = rowDefCache().getRowDef(tid);
         testRow(def, 1, "", "");                                     // empty
         testRow(def, 2, "0123456789", "abcdefghijklmnopqrstuvwxyz"); // full
@@ -107,7 +113,8 @@ public class FieldToFromObjectIT extends OldTypeITBase {
 
     @Test
     public void blobTypes() throws InvalidOperationException {
-        final int tid = createTableFromTypes("tinyblob", "blob", "mediumblob", "longblob");
+        final int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES,
+                                             "tinyblob", "blob", "mediumblob", "longblob");
         final RowDef def = rowDefCache().getRowDef(tid);
         testRow(def, 1, "", "", "", "");            // empty
         testRow(def, 2, "a", "bc", "def", "hijk");  // other
@@ -115,7 +122,8 @@ public class FieldToFromObjectIT extends OldTypeITBase {
 
     @Test
     public void textTypes() throws InvalidOperationException {
-        final int tid = createTableFromTypes("tinytext", "text", "mediumtext", "longtext");
+        final int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES,
+                                             "tinytext", "text", "mediumtext", "longtext");
         final RowDef def = rowDefCache().getRowDef(tid);
         testRow(def, 1, "", "", "", "");            // empty
         testRow(def, 2, "1", "23", "456", "7890");  // other
@@ -123,7 +131,8 @@ public class FieldToFromObjectIT extends OldTypeITBase {
 
     @Test
     public void binaryTypes() throws InvalidOperationException {
-        final int tid = createTableFromTypes(new TypeAndParams("binary", 10L, null), new TypeAndParams("varbinary", 26L, null));
+        final int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES,
+                                             new SimpleColumn("c1", "binary", 10L, null), new SimpleColumn("c2", "varbinary", 26L, null));
         final RowDef def = rowDefCache().getRowDef(tid);
         final byte[] emptyArr = {};
         final byte[] partialArr5 = {1, 2, 3, 4, 5};
@@ -138,7 +147,8 @@ public class FieldToFromObjectIT extends OldTypeITBase {
 
     @Test
     public void dateAndTimeTypes() throws InvalidOperationException {
-        final int tid = createTableFromTypes("date", "time", "datetime", "timestamp", "year");
+        final int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES,
+                                             "date", "time", "datetime", "timestamp", "year");
         final RowDef def = rowDefCache().getRowDef(tid);
         testRow(def, 1, "0000-00-00", "00:00:00", "0000-00-00 00:00:00", 0L, "0000");           // zero
         testRow(def, 2, "1000-01-01", "-838:59:59", "1000-01-01 00:00:00", 0L, "1901");         // min

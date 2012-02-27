@@ -16,7 +16,6 @@
 package com.akiban.server.test.it.rowtests;
 
 import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.error.UnsupportedDataTypeException;
 import com.akiban.server.test.it.ITBase;
 import junit.framework.Assert;
 import org.junit.Test;
@@ -29,7 +28,12 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
-public class UnsignedFieldsIT extends OldTypeITBase {
+public class UnsignedFieldsIT extends ITBase {
+    private final String SCHEMA = "test";
+    private final String TABLE = "t";
+    private final boolean IS_PK = false;
+    private final boolean INDEXES = false;
+    
     private void writeRows(int tableId, Object... values) {
         long id = 0;
         for(Object o : values) {
@@ -76,35 +80,35 @@ public class UnsignedFieldsIT extends OldTypeITBase {
     
     @Test
     public void tinyIntUnsigned() {
-        int tid = createTableFromTypes("tinyint unsigned");
+        int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES, "tinyint unsigned");
         Object[] values = getTestValues(8);
         writeRowsAndCompareValues(tid, values);
     }
 
     @Test
     public void smallIntUnsigned() {
-        int tid = createTableFromTypes("smallint unsigned");
+        int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES, "smallint unsigned");
         Object[] values = getTestValues(16);
         writeRowsAndCompareValues(tid, values);
     }
 
     @Test
     public void mediumIntUnsigned() {
-        int tid = createTableFromTypes("mediumint unsigned");
+        int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES, "mediumint unsigned");
         Object[] values = getTestValues(24);
         writeRowsAndCompareValues(tid, values);
     }
 
     @Test
     public void intUnsigned() {
-        int tid = createTableFromTypes("int unsigned");
+        int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES, "int unsigned");
         Object[] values = getTestValues(32);
         writeRowsAndCompareValues(tid, values);
     }
 
     @Test
     public void bigIntUnsigned() {
-        int tid = createTableFromTypes("bigint unsigned");
+        int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES, "bigint unsigned");
         Object[] values = {new BigInteger("0"), new BigInteger("1"),
                            new BigInteger("9223372036854775805"), new BigInteger("9223372036854775806"),
                            new BigInteger("9223372036854775807"),
@@ -115,7 +119,7 @@ public class UnsignedFieldsIT extends OldTypeITBase {
 
     @Test
     public void decimal52Unsigned() {
-        int tid = createTableFromTypes(new TypeAndParams("decimal unsigned", 5L, 2L));
+        int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES, new SimpleColumn("c1", "decimal unsigned", 5L, 2L));
         Object[] values = array(new BigDecimal("0.00"), new BigDecimal("1.00"),
                                 new BigDecimal("499.99"), new BigDecimal("500.00"), new BigDecimal("999.99"));
         writeRowsAndCompareValues(tid, values);
@@ -123,7 +127,7 @@ public class UnsignedFieldsIT extends OldTypeITBase {
 
     @Test
     public void decimal2010Unsigned() {
-        int tid = createTableFromTypes(new TypeAndParams("decimal unsigned", 20L, 10L));
+        int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES, new SimpleColumn("c1", "decimal unsigned", 20L, 10L));
         Object[] values = array(new BigDecimal("0.0000000000"), new BigDecimal("1.0000000000"),
                                 new BigDecimal("4999999999.9999999999"), new BigDecimal("5000000000.0000000000"),
                                 new BigDecimal("9999999999.9999999999"));
@@ -132,14 +136,14 @@ public class UnsignedFieldsIT extends OldTypeITBase {
 
     @Test
     public void floatUnsigned() {
-        int tid = createTableFromTypes("float unsigned");
+        int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES, "float unsigned");
         Object[] values = array(0.0f, 1.0f, Float.MAX_VALUE);
         writeRowsAndCompareValues(tid, values);
     }
     
     @Test
     public void doubleUnsigned() {
-        int tid = createTableFromTypes("double unsigned");
+        int tid = createTableFromTypes(SCHEMA, TABLE, IS_PK, INDEXES, "double unsigned");
         Object[] values = array(0.0d, 1.0d, Double.MAX_VALUE);
         writeRowsAndCompareValues(tid, values);
     }
