@@ -154,7 +154,9 @@ public class JoinAndIndexPicker extends BaseRule
 
         // Get the handler for the given subquery so that it can be done in context.
         public Picker subpicker(SubquerySource subquery) {
-            return subpickers.get(subquery);
+            Picker subpicker = subpickers.get(subquery);
+            assert (subpicker != null);
+            return subpicker;
         }
 
         // Similar, but as part of a larger plan tree. Just return best plan.
@@ -507,7 +509,7 @@ public class JoinAndIndexPicker extends BaseRule
             subpickers = new HashMap<SubquerySource,Picker>();
             rootQuery = query;
             query.accept(this);
-            result.removeAll(subpickers.values());
+            result.removeAll(subpickers.values()); // Do these in context.
             return result;
         }
 
@@ -544,6 +546,8 @@ public class JoinAndIndexPicker extends BaseRule
                 SubquerySource subquerySource = null;
                 if (!subqueries.isEmpty()) {
                     query = subqueries.peek().subquery;
+                    System.out.println("??? " + query);
+                    System.out.println("??? " + query.getOutput());
                     if (query.getOutput() instanceof SubquerySource)
                         subquerySource = (SubquerySource)query.getOutput();
                 }
