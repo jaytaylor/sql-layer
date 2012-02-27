@@ -115,9 +115,9 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
         }
         // Did not manage to coalesce. Put in any intermediate trees.
         if (leftTree != null)
-            join.setLeft(new TableGroupJoinTree(leftTree));
+            join.setLeft(groupJoinTree(leftTree, left));
         if (rightTree != null)
-            join.setRight(new TableGroupJoinTree(rightTree));
+            join.setRight(groupJoinTree(rightTree, right));
         // Make arbitrary joins LEFT not RIGHT.
         if (join.getJoinType() == JoinType.RIGHT)
             join.reverse();
