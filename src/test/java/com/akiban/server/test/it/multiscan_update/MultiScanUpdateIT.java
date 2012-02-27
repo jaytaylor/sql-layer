@@ -137,11 +137,11 @@ public class MultiScanUpdateIT extends ITBase {
     public void setUp() throws InvalidOperationException {
         tableId = createTable(
                 SCHEMA, TABLE,
-                "id int key",
+                "id int not null primary key",
                 "name varchar (255)",
-                "nickname varchar (255)",
-                "key (name)"
+                "nickname varchar (255)"
         );
+        createIndex(SCHEMA, TABLE, "name", "name");
 
         for (int i = 1; i <= MAX_ID; ++i) {
             writeRows(getRow(i));
