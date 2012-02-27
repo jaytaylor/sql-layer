@@ -974,7 +974,12 @@ public class ASTStatementLoader extends BaseRule
         }
     
         protected Map<Group,TableTree> groups = new HashMap<Group,TableTree>();
-        protected EquivalenceFinder<ColumnExpression> columnEquivalences = new EquivalenceFinder<ColumnExpression>();
+        protected EquivalenceFinder<ColumnExpression> columnEquivalences = new EquivalenceFinder<ColumnExpression>() {
+            @Override
+            protected String describeElement(ColumnExpression element) {
+                return element.getSQLsource().getTableName() + "." + element.getColumn().getName();
+            }
+        };
 
         protected TableNode getTableNode(UserTable table)
                 throws StandardException {

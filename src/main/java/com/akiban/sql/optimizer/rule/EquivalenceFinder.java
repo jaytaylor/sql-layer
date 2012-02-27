@@ -19,8 +19,13 @@ import com.akiban.util.ArgumentValidation;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
+import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 public class EquivalenceFinder<T> {
@@ -48,8 +53,57 @@ public class EquivalenceFinder<T> {
         return accumulator;
     }
 
+    @Override
+    public String toString() {
+        Collection<Entry<T, T>> entries = equivalences.entries();
+        
+        // create a map which contains a "normalized" view of the equivalencies; each reflected pair is shown
+        // only once. So rather than (u, v) and (v, u), it'll contain either (u, v) *or* (v, u) -- but not both.
+        Map<T,T> normalized = new HashMap<T, T>(entries.size() / 2);
+        for (Map.Entry<T,T> entry : entries) {
+            T key = entry.getKey();
+            T val = entry.getValue();
+            boolean sawReflection;
+            if (normalized.containsKey(val)) {
+                T otherKey = normalized.get(val);
+                if (otherKey == null)
+                    sawReflection = (key == null);
+                else
+                    sawReflection = otherKey.equals(key);
+            }
+            else {
+                sawReflection = false;
+            }
+            if (!sawReflection)
+                normalized.put(key, val);
+        }
+
+        StringBuilder sb = new StringBuilder(EquivalenceFinder.class.getSimpleName()).append('{');
+        for (Iterator<Entry<T, T>> iterator = normalized.entrySet().iterator(); iterator.hasNext(); ) {
+            Entry<T, T> entry = iterator.next();
+            String first = elementToString(entry.getKey());
+            String second = elementToString(entry.getValue());
+            sb.append('(').append(first).append(" = ").append(second).append(')');
+            if (iterator.hasNext())
+                sb.append(", ");
+        }
+        return sb.append('}').toString();
+    }
+    
+    protected String describeNull() {
+        return "null";
+    }
+
+    protected String describeElement(T element) {
+        return element.toString();
+    }
+
     // for testing
     void tooMuchTraversing() {
+    }
+    
+    private String elementToString(T element) {
+        return element == null ? describeNull() : describeElement(element);
     }
     
     private boolean areEquivalent(T one, T two, int remainingTraversals) {
