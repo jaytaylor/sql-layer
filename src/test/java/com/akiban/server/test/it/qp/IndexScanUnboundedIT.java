@@ -45,11 +45,11 @@ public class IndexScanUnboundedIT extends OperatorITBase
     {
         t = createTable(
             "schema", "t",
-            "id int not null key",
+            "id int not null primary key",
             "a int",
             "b int",
-            "c int",
-            "index(a, b, c, id)");
+            "c int");
+        createIndex("schema", "t", "a", "a", "b", "c", "id");
         schema = new Schema(rowDefCache().ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "c", "id");

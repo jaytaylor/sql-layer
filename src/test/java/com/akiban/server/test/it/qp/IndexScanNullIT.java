@@ -51,10 +51,10 @@ public class IndexScanNullIT extends OperatorITBase
     {
         t = createTable(
             "schema", "t",
-            "id int not null key",
+            "id int not null primary key",
             "a int",
-            "b int",
-            "index(a, b, id)");
+            "b int");
+        createIndex("schema", "t", "a", "a", "b", "id");
         schema = new Schema(rowDefCache().ais());
         tRowType = schema.userTableRowType(userTable(t));
         idxRowType = indexType(t, "a", "b", "id");
