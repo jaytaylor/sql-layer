@@ -156,39 +156,39 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
     public void test0xOR()
     {
         Operator plan = unionCyDz(0);
-        RowBase[] expected = new RowBase[]{
+        String[] expected = new String[]{
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext));
     }
 
     @Test
     public void test1xOR()
     {
         Operator plan = unionCyDz(1);
-        RowBase[] expected = new RowBase[]{
-            row(pKey(10L), hKeyRowType),
+        String[] expected = new String[]{
+            pKey(10L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext));
     }
 
     @Test
     public void test2xOR()
     {
         Operator plan = unionCyDz(2);
-        RowBase[] expected = new RowBase[]{
-            row(pKey(20L), hKeyRowType),
+        String[] expected = new String[]{
+            pKey(20L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext));
     }
 
     @Test
     public void test3xOR()
     {
         Operator plan = unionCyDz(3);
-        RowBase[] expected = new RowBase[]{
-            row(pKey(30L), hKeyRowType),
+        String[] expected = new String[]{
+            pKey(30L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext));
     }
 
     private Operator intersectCyDz(int key, IntersectOutputOption side)

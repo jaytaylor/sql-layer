@@ -37,9 +37,8 @@ import static java.lang.Math.min;
 /**
  <h1>Overview</h1>
 
- HKeyUnion_Ordered finds rows from one of two input streams whose projection onto a set of common fields matches
- a row in the other stream. Each input stream must be ordered by at least these common fields.
- For each matching pair of rows, output from the selected input stream is emitted as output.
+ HKeyUnion_Ordered returns the union of hkeys from its two input streams. The hkeys are shortened to a
+ specified ancestor. Duplicate hkeys are eliminated.
 
  <h1>Arguments</h1>
 
@@ -50,30 +49,21 @@ import static java.lang.Math.min;
 <li><b>int leftOrderingFields:</b> Number of trailing fields of left input rows to be used for ordering and matching rows.
 <li><b>int rightOrderingFields:</b> Number of trailing fields of right input rows to be used for ordering and matching rows.
 <li><b>int comparisonFields:</b> Number of ordering fields to be compared.
-<li><b>JoinType joinType:</b>
-   <ul>
-     <li>INNER_JOIN: An ordinary intersection is computed.
-     <li>LEFT_JOIN: Keep an unmatched row from the left input stream, filling out the row with nulls
-     <li>RIGHT_JOIN: Keep an unmatched row from the right input stream, filling out the row with nulls
-     <li>FULL_JOIN: Not supported
-   </ul>
- (Nothing else is supported currently).
-<li><b>IntersectOutputOption intersectOutput:</b> OUTPUT_LEFT or OUTPUT_RIGHT, depending on which streams rows
- should be emitted as output.
+<li><b>UserTableRowType outputHKeyTableRowType:</b> Before eliminating duplicate hkeys, hkeys from the input stream
+ are shortened to match <tt>outputHKeyTableRowType</tt>'s table's hkey type.
 
  <h1>Behavior</h1>
 
- The two streams are merged, looking for pairs of rows, one from each input stream, which match in the common
- fields. When such a match is found, a row from the stream selected by <tt>intersectOutput</tt> is emitted.
+ The input streams are in hkey order. The streams are merged, hkeys are shortened, and output rows containing the
+ hkey are emitted.
 
  <h1>Output</h1>
 
- Rows that match at least one row in the other input stream.
+ Shortened hkeys, each derived from one of the two input streams. Output is hkey-ordered.
 
  <h1>Assumptions</h1>
 
- Each input stream is ordered by its ordering columns, as determined by <tt>leftOrderingFields</tt>
- and <tt>rightOrderingFields</tt>.
+ Each input stream is hkey-ordered and has unique hkeys.
 
  <h1>Performance</h1>
 
@@ -226,14 +216,12 @@ class HKeyUnion_Ordered extends Operator
                     }
                     if (nextRow == null) {
                         close();
+                    } else if (previousHKey == null || !previousHKey.prefixOf(nextRow.hKey())) {
+                        HKey nextHKey = outputHKey(nextRow);
+                        nextRow = new HKeyRow(outputHKeyRowType, nextHKey);
+                        previousHKey = nextHKey;
                     } else {
-                        if (previousHKey == null || !previousHKey.prefixOf(nextRow.hKey())) {
-                            HKey nextHKey = outputHKey(nextRow);
-                            nextRow = new HKeyRow(outputHKeyRowType, nextHKey);
-                            previousHKey = nextHKey;
-                        } else {
-                            nextRow = null;
-                        }
+                        nextRow = null;
                     }
                 }
                 return nextRow;

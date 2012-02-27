@@ -33,7 +33,7 @@ public class HKeyRowType extends DerivedRowType
     @Override
     public int nFields()
     {
-        return 0;
+        return nFields;
     }
 
     @Override
@@ -54,9 +54,11 @@ public class HKeyRowType extends DerivedRowType
     {
         super(schema, schema.nextTypeId());
         this.hKey = hKey;
+        this.nFields = hKey.nColumns();
     }
-    
+
     // Object state
-    
+
+    private final int nFields;
     private HKey hKey;
 }

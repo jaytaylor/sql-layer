@@ -15,8 +15,15 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.ais.model.HKeyColumn;
+import com.akiban.ais.model.HKeySegment;
 import com.akiban.qp.row.HKey;
+import com.akiban.server.PersistitKeyValueSource;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
 import com.persistit.Key;
+
+import java.util.List;
 
 class PersistitHKey implements HKey
 {
@@ -72,6 +79,7 @@ class PersistitHKey implements HKey
     // TODO: Move into Key?
     public boolean prefixOf(HKey hKey)
     {
+        boolean prefix = false;
         PersistitHKey that = (PersistitHKey) hKey;
         int thisHKeySize = this.hKey.getEncodedSize();
         int thatHKeySize = that.hKey.getEncodedSize();
@@ -83,10 +91,9 @@ class PersistitHKey implements HKey
                     return false;
                 }
             }
-            return true;
-        } else {
-            return false;
+            prefix = true;
         }
+        return prefix;
     }
 
     @Override
@@ -109,6 +116,12 @@ class PersistitHKey implements HKey
         hKey.append(null);
     }
 
+    @Override
+    public ValueSource eval(int i)
+    {
+        return source(i);
+    }
+
     // PersistitHKey interface
 
     public void copyFrom(Key source)
@@ -124,6 +137,7 @@ class PersistitHKey implements HKey
 
     public PersistitHKey(PersistitAdapter adapter, com.akiban.ais.model.HKey hKeyMetadata)
     {
+        this.hKeyMetadata = hKeyMetadata;
         this.hKey = adapter.newKey();
         this.hKeySegments = hKeyMetadata.segments().size();
         this.keyDepth = hKeyMetadata.keyDepth();
@@ -135,12 +149,44 @@ class PersistitHKey implements HKey
     {
         return hKey;
     }
+    
+    // For use by this class
+    
+    private PersistitKeyValueSource source(int i)
+    {
+        if (sources == null) {
+            assert types == null;
+            sources = new PersistitKeyValueSource[hKeyMetadata.nColumns()];
+            types = new AkType[hKeyMetadata.nColumns()];
+            List<HKeySegment> segments = hKeyMetadata.segments();
+            int t = 0;
+            for (int s = 0; s < segments.size(); s++) {
+                HKeySegment segment = segments.get(s);
+                List<HKeyColumn> hKeyColumns = segment.columns();
+                for (int c = 0; c < hKeyColumns.size(); c++) {
+                    types[t++] = hKeyColumns.get(c).column().getType().akType();
+                }
+            }
+        }
+        if (sources[i] == null) {
+            sources[i] = new PersistitKeyValueSource();
+            sources[i].attach(hKey, keyDepth[i], types[i]);
+        } else {
+            // TODO: Add state tracking whether hkey has been changed (e.g. by useSegments). Avoid attach calls
+            // TODO: when there has been no change.
+            sources[i].attach(hKey);
+        }
+        return sources[i];
+    }
 
     // Object state
 
+    private final com.akiban.ais.model.HKey hKeyMetadata;
     private final Key hKey;
     private final int hKeySegments;
     private int originalHKeySize;
     // Identifies the persistit key depth for the ith hkey segment, 1 <= i <= #hkey segments.
     private final int[] keyDepth;
+    private PersistitKeyValueSource[] sources;
+    private AkType[] types;
 }

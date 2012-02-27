@@ -41,7 +41,7 @@ public class HKeyRow extends AbstractRow
     @Override
     public ValueSource eval(int i)
     {
-        throw new UnsupportedOperationException();
+        return hKey.eval(i);
     }
 
     @Override
@@ -69,7 +69,7 @@ public class HKeyRow extends AbstractRow
         this.rowType = rowType;
         this.hKey = hKey;
     }
-
+    
     // Object state
 
     private final HKeyRowType rowType;

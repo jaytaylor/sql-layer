@@ -50,7 +50,6 @@ public class TestRow extends AbstractRow
     {
         this.rowType = rowType;
         this.hKeyString = hKeyString;
-        ArgumentValidation.isEQ("rowType.nFields()", rowType.nFields(), "fields.length", fields.length);
         this.valuesHolder = new RowValuesHolder(fields);
     }
 

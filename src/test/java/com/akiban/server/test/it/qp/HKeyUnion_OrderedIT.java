@@ -20,18 +20,13 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.qp.rowtype.*;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.std.FieldExpression;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.Collections;
 
 import static com.akiban.qp.operator.API.*;
@@ -62,11 +57,11 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
         schema = new Schema(rowDefCache().ais());
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));
+        hKeyRowType = schema.newHKeyRowType(parentRowType.hKey());
         parentPidIndexRowType = indexType(parent, "pid");
         parentXIndexRowType = indexType(parent, "x");
         parentYIndexRowType = indexType(parent, "y");
         childZIndexRowType = indexType(child, "z");
-        hKeyRowType = schema.newHKeyRowType(parentRowType.userTable().hKey());
         coi = groupTable(parent);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
@@ -278,227 +273,149 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
     public void test0x()
     {
         Operator plan = unionPxPy(0);
-        RowBase[] expected = new RowBase[]{
+        String[] expected = new String[]{
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext));
     }
 
     @Test
     public void test1x()
     {
         Operator plan = unionPxPy(12);
-        RowBase[] expected = new RowBase[]{
-            row(pKey(1000L), hKeyRowType),
-            row(pKey(1001L), hKeyRowType),
-            row(pKey(1002L), hKeyRowType),
+        String[] expected = new String[]{
+            pKey(1000L),
+            pKey(1001L),
+            pKey(1002L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext));
+/*
+        Operator plan2 =
+            ancestorLookup_Default(plan,
+                                   coi,
+                                   hKeyRowType,
+                                   Collections.singleton(parentRowType), 
+                                   LookupOption.DISCARD_INPUT);
+        RowBase[] expectedRows = new RowBase[]{
+            row(parentRowType, 1000L, -1L, 12L),
+            row(parentRowType, 1001L, -1L, 12L),
+            row(parentRowType, 1002L, -1L, 12L),
+        };
+        compareRows(expectedRows, cursor(plan2, queryContext));
+*/
     }
 
     @Test
     public void test2x()
     {
         Operator plan = unionPxPy(22);
-        RowBase[] expected = new RowBase[]{
-            row(pKey(2000L), hKeyRowType),
-            row(pKey(2001L), hKeyRowType),
-            row(pKey(2002L), hKeyRowType),
+        String[] expected = new String[]{
+            pKey(2000L),
+            pKey(2001L),
+            pKey(2002L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext));
     }
 
     @Test
     public void test3x()
     {
         Operator plan = unionPxPy(31);
-        RowBase[] expected = new RowBase[]{
-            row(pKey(3000L), hKeyRowType),
-            row(pKey(3001L), hKeyRowType),
-            row(pKey(3002L), hKeyRowType),
+        String[] expected = new String[]{
+            pKey(3000L),
+            pKey(3001L),
+            pKey(3002L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext));
         plan = unionPxPy(32);
-        expected = new RowBase[]{
-            row(pKey(3003L), hKeyRowType),
-            row(pKey(3004L), hKeyRowType),
-            row(pKey(3005L), hKeyRowType),
+        expected = new String[]{
+            pKey(3003L),
+            pKey(3004L),
+            pKey(3005L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext));
     }
 
     @Test
     public void test4x()
     {
         Operator plan = unionPxPy(44);
-        RowBase[] expected = new RowBase[]{
-            row(pKey(4000L), hKeyRowType),
-            row(pKey(4001L), hKeyRowType),
-            row(pKey(4002L), hKeyRowType),
-            row(pKey(4003L), hKeyRowType),
+        String[] expected = new String[]{
+            pKey(4000L),
+            pKey(4001L),
+            pKey(4002L),
+            pKey(4003L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext));
     }
 
     @Test
     public void test5x()
     {
         Operator plan = unionPxPy(55);
-        RowBase[] expected = new RowBase[]{
-            row(pKey(5000L), hKeyRowType),
-            row(pKey(5001L), hKeyRowType),
-            row(pKey(5002L), hKeyRowType),
-            row(pKey(5003L), hKeyRowType),
+        String[] expected = new String[]{
+            pKey(5000L),
+            pKey(5001L),
+            pKey(5002L),
+            pKey(5003L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext));
     }
 
     @Test
     public void test6x()
     {
         Operator plan = unionPxPy(66);
-        RowBase[] expected = new RowBase[]{
-            row(pKey(6000L), hKeyRowType),
-            row(pKey(6001L), hKeyRowType),
-            row(pKey(6002L), hKeyRowType),
-            row(pKey(6003L), hKeyRowType),
-            row(pKey(6004L), hKeyRowType),
-            row(pKey(6005L), hKeyRowType),
+        String[] expected = new String[]{
+            pKey(6000L),
+            pKey(6001L),
+            pKey(6002L),
+            pKey(6003L),
+            pKey(6004L),
+            pKey(6005L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext));
     }
 
     @Test
     public void test7x()
     {
         Operator plan = unionPxCz(70);
-        RowBase[] expected = new RowBase[]{
-            row(pKey(7000L), hKeyRowType),
+        String[] expected = new String[]{
+            pKey(7000L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext));
     }
 
     @Test
     public void test8x()
     {
         Operator plan = unionPxCz(88);
-        RowBase[] expected = new RowBase[]{
-            row(pKey(8000L), hKeyRowType),
-            row(pKey(8001L), hKeyRowType),
-            row(pKey(8002L), hKeyRowType),
+        String[] expected = new String[]{
+            pKey(8000L),
+            pKey(8001L),
+            pKey(8002L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext));
     }
 
     @Test
     public void test9x()
     {
         Operator plan = unionPxCz(99);
-        RowBase[] expected = new RowBase[]{
-            row(pKey(9000L), hKeyRowType),
+        String[] expected = new String[]{
+            pKey(9000L),
         };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext));
     }
 
     @Test
     public void test12x()
     {
         Operator plan = unionPxCz(12);
-        RowBase[] expected = new RowBase[]{
-            row(pKey(null), hKeyRowType),
+        String[] expected = new String[]{
+            pKey(null),
         };
-        compareRows(expected, cursor(plan, queryContext));
-    }
-
-    @Test
-    public void testAllOrderingFieldsNoComparisonFields()
-    {
-        Operator plan =
-            hKeyUnion_Ordered(
-                indexScan_Default(parentPidIndexRowType),
-                indexScan_Default(parentPidIndexRowType),
-                parentPidIndexRowType,
-                parentPidIndexRowType,
-                1,
-                1,
-                0,
-                parentRowType);
-        RowBase[] expected = new RowBase[]{
-            row(parentPidIndexRowType, 1000L),
-            row(parentPidIndexRowType, 1001L),
-            row(parentPidIndexRowType, 1002L),
-            row(parentPidIndexRowType, 2000L),
-            row(parentPidIndexRowType, 2001L),
-            row(parentPidIndexRowType, 2002L),
-            row(parentPidIndexRowType, 3000L),
-            row(parentPidIndexRowType, 3001L),
-            row(parentPidIndexRowType, 3002L),
-            row(parentPidIndexRowType, 3003L),
-            row(parentPidIndexRowType, 3004L),
-            row(parentPidIndexRowType, 3005L),
-            row(parentPidIndexRowType, 4000L),
-            row(parentPidIndexRowType, 4001L),
-            row(parentPidIndexRowType, 4002L),
-            row(parentPidIndexRowType, 4003L),
-            row(parentPidIndexRowType, 5000L),
-            row(parentPidIndexRowType, 5001L),
-            row(parentPidIndexRowType, 5002L),
-            row(parentPidIndexRowType, 5003L),
-            row(parentPidIndexRowType, 6000L),
-            row(parentPidIndexRowType, 6001L),
-            row(parentPidIndexRowType, 6002L),
-            row(parentPidIndexRowType, 6003L),
-            row(parentPidIndexRowType, 6004L),
-            row(parentPidIndexRowType, 6005L),
-            row(parentPidIndexRowType, 7000L),
-            row(parentPidIndexRowType, 8000L),
-            row(parentPidIndexRowType, 8001L),
-            row(parentPidIndexRowType, 8002L),
-        };
-        compareRows(expected, cursor(plan, queryContext));
-    }
-    
-    @Test
-    public void testRowIntersection()
-    {
-        Operator parentProject =
-            project_Default(
-                filter_Default(
-                    groupScan_Default(coi),
-                    Collections.singleton(parentRowType)),
-                parentRowType,
-                Arrays.asList((Expression) new FieldExpression(parentRowType, 1),
-                              (Expression) new FieldExpression(parentRowType, 2),
-                              (Expression) new FieldExpression(parentRowType, 0)));
-        Operator childProject =
-            project_Default(
-                filter_Default(
-                    groupScan_Default(coi),
-                    Collections.singleton(childRowType)),
-                childRowType,
-                Arrays.asList((Expression) new FieldExpression(childRowType, 2),
-                              (Expression) new FieldExpression(childRowType, 1),
-                              (Expression) new FieldExpression(childRowType, 0)));
-        Operator plan =
-            hKeyUnion_Ordered(
-                parentProject,
-                childProject,
-                parentProject.rowType(),
-                childProject.rowType(),
-                1,
-                2,
-                1,
-                parentRowType);
-        RowBase[] expected = new RowBase[]{
-            row(childRowType, 12L, null, 1200000L),
-            row(childRowType, 88L, 8000L, 800000L),
-            row(childRowType, 88L, 8001L, 800100L),
-            row(childRowType, 88L, 8001L, 800101L),
-            row(childRowType, 88L, 8002L, 800200L),
-            row(childRowType, 88L, 8002L, 800201L),
-            row(childRowType, 88L, 8002L, 800202L),
-            row(childRowType, 99L, 9000L, 900000L),
-        };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRenderedHKeys(expected, cursor(plan, queryContext));
     }
 
     private Operator unionPxPy(int key)
@@ -587,5 +504,5 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
     private IndexRowType parentXIndexRowType;
     private IndexRowType parentYIndexRowType;
     private IndexRowType childZIndexRowType;
-    private RowType hKeyRowType;
+    private HKeyRowType hKeyRowType;
 }

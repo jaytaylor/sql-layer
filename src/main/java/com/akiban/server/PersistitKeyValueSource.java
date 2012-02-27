@@ -43,6 +43,11 @@ public final class PersistitKeyValueSource implements ValueSource {
         this.akType = type;
         clear();
     }
+    
+    public void attach(Key key) {
+        this.key = key;
+        clear();
+    }
 
     // ValueSource interface
 
