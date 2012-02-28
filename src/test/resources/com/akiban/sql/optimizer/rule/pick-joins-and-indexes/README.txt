@@ -11,3 +11,5 @@ single-table: whole row from indexed table
 subquery: join to subquery
 
 two-groups: group and non-group joins
+
+two-groups-indexed: two groups with condition on one
