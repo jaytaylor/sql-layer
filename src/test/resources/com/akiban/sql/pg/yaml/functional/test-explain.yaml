@@ -2,8 +2,18 @@
 ---
 - Include: all-types-schema.yaml
 ---
-- Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
+- Statement: INSERT INTO all_types (bigint_field, double_field) VALUES (123, 2.5);
+---
+- Statement: EXPLAIN SELECT (bigint_field + double_field) * double_field from all_types; 
+- output: [['x']]
 ---
 - Statement: EXPLAIN SELECT 2 + 3 FROM all_types;
-- output: [['a']]
+- output: [['PROJECT DEFAULT
+--INPUT_OPERATOR: FILTER DEFAULT
+------INPUT_OPERATOR: GROUP SCAN DEFAULT
+----------GROUP_TABLE: _akiban_all_types
+----------SCAN_OPTION: FULL SCAN
+------KEEP_TYPE: user.all_types
+--PROJECTION: 5
+']]
 ...

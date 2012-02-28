@@ -26,18 +26,14 @@ import java.io.IOException;
 /** SQL statement to explain another one. */
 public class PostgresExplainStatement implements PostgresStatement
 {
-    private List<String> explanation;
+    private String explanation;
     private String colName;
     private PostgresType colType;
     
-    public PostgresExplainStatement(List<String> explanation) {
+    public PostgresExplainStatement(String explanation) {
         this.explanation = explanation;
 
-        int maxlen = 32;
-        for (String row : explanation) {
-            if (maxlen < row.length())
-                maxlen = row.length();
-        }
+        int maxlen = explanation.length();
         colName = "OPERATORS";
         colType = new PostgresType(PostgresType.VARCHAR_TYPE_OID, (short)-1, maxlen,
                                    AkType.VARCHAR);
@@ -75,24 +71,19 @@ public class PostgresExplainStatement implements PostgresStatement
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
-        int nrows = 0;
-        for (String row : explanation) {
-            messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
-            messenger.writeShort(1);
-            ByteArrayOutputStream bytes = encoder.encodeObject(row, colType, false);
-            messenger.writeInt(bytes.size());
-            messenger.writeByteStream(bytes);
-            messenger.sendMessage();
-            nrows++;
-            if ((maxrows > 0) && (nrows >= maxrows))
-                break;
-        }
+        messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+        messenger.writeShort(1);
+        ByteArrayOutputStream bytes = encoder.encodeObject(explanation, colType, false);
+        messenger.writeInt(bytes.size());
+        messenger.writeByteStream(bytes);
+        messenger.sendMessage();
+      
         {        
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            messenger.writeString("EXPLAIN " + nrows);
+            messenger.writeString("EXPLAIN " + 1);
             messenger.sendMessage();
         }
-        return nrows;
+        return 1;
     }
 
 }
