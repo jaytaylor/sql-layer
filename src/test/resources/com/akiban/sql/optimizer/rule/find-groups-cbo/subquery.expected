@@ -9,4 +9,4 @@ SelectQuery@51970991
 Subquery@3a2b3574
   Select@3f4a0fe1[user.items.oid == user.orders.oid, user.items.sku == 1234]
     TableGroupJoinTree@17589d3d(TableGroup@3685be9(customers), items)
-      TableSource@f0fba68(user.items - TableGroupJoin@3abb1bc4(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+      TableSource@f0fba68(user.items - TableGroup@3685be9(customers))
