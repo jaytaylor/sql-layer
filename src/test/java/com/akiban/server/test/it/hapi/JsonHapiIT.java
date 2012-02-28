@@ -522,7 +522,11 @@ public final class JsonHapiIT extends ITBase {
             createTable(setupInfo.schema, desc.name, desc.columns);
         }
         for(IndexDesc desc : setupInfo.indexDDL) {
-            createIndex(setupInfo.schema, desc.tableName, desc.name, desc.columns);
+            String indexName = desc.name;
+            if (indexName.startsWith("\"") && indexName.endsWith("\"")) {
+                indexName = indexName.substring(1, indexName.length() - 1);
+            }
+            createIndex(setupInfo.schema, desc.tableName, indexName, desc.columns);
         }
         if (runInfo.writeRows) {
             for(Map.Entry<String,JSONArray> entry : setupInfo.writeRows.entrySet()) {

@@ -6,7 +6,7 @@
     "tables" : [
         [ ":customers",
             "\"@id\" int not null primary key",
-            "\"name\" varchar(32)",
+            "\":name\" varchar(32)",
             "index(\":name\")"
         ],
 
