@@ -73,18 +73,6 @@ public class SchemaFactory {
             buffer.append(line);
         }
         String fullDDL = buffer.toString();
-        /*
-        fullDDL = fullDDL.replaceAll("(?i)CONSTRAINT.*FOREIGN KEY.*?\\(", "GROUPING FOREIGN KEY (");
-        fullDDL = fullDDL.replace('`', '"');
-        fullDDL = fullDDL.replace("auto_increment", "");
-        fullDDL = fullDDL.replaceAll("engine=akibandb", "");
-        fullDDL = fullDDL.replaceAll(",\\s*KEY\\(.*\\)", "");
-        fullDDL = fullDDL.replaceAll("\\s*;", ";");
-        fullDDL = fullDDL.replaceAll(";\\s*", ";");
-        fullDDL = fullDDL.replaceAll("(?i)id int", "id int not null");
-        fullDDL = fullDDL.replaceAll("(?i)not null not null", "not null");
-        fullDDL = fullDDL.trim();
-        */
         CreateOnlyDDLMock ddlFunctions = new CreateOnlyDDLMock(baseAIS);
         SQLParser parser = new SQLParser();
         List<StatementNode> nodes;
@@ -151,10 +139,6 @@ public class SchemaFactory {
             AISMerge merge = new AISMerge (ais, newTable);
             merge.merge();
             ais = merge.getAIS();
-            final String schemaName = newTable.getName().getSchemaName();
-            final UserTable finalTable = merge.getAIS().getUserTable(newTable.getName());
-            //validateIndexSizes(newTable);
-            //setTreeNames(finalTable);
         }
 
         @Override

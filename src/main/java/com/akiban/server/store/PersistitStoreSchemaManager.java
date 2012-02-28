@@ -642,16 +642,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
 
     private static AkibanInformationSchema createPrimordialAIS() {
         NewAISBuilder builder = AISBBasedBuilder.create("akiban_information_schema");
-        /*
-        create table akiban_information_schema.zindex_statistics (
-                table_id            int not null,
-                index_id            int not null,
-                analysis_timestamp  timestamp,
-                row_count           bigint,
-                sampled_count       bigint,
-                primary key(table_id, index_id)
-        ) engine=akibandb;
-        */
+
         builder.userTable("zindex_statistics").
                 colLong("table_id", false).
                 colLong("index_id", false).
@@ -660,21 +651,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 colBigInt("sampled_count", true).
                 pk("table_id", "index_id");
 
-        /*
-        create table akiban_information_schema.zindex_statistics_entry (
-                table_id            int not null,
-                index_id            int not null,
-                column_count        int not null,
-                item_number         int not null,
-                key_string          varchar(2048),
-                key_bytes           varbinary(4096),
-                eq_count            bigint,
-                lt_count            bigint,
-                distinct_count      bigint,
-                primary key(table_id, index_id, column_count, item_number),
-                CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (table_id, index_id) REFERENCES akiban_information_schema.zindex_statistics(table_id, index_id)
-        ) engine=akibandb;
-        */
         builder.userTable("zindex_statistics_entry").
                 colLong("table_id", false).
                 colLong("index_id", false).
