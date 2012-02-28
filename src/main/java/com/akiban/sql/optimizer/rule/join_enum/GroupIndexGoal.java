@@ -66,12 +66,12 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         this.queryGoal = queryGoal;
         this.tables = tables;
 
-        conditionSources = new ArrayList<ConditionList>();
         if (queryGoal.getWhereConditions() != null) {
-            conditionSources.add(queryGoal.getWhereConditions());
+            conditionSources = Collections.singletonList(queryGoal.getWhereConditions());
             conditions = queryGoal.getWhereConditions();
         }
         else {
+            conditionSources = Collections.emptyList();
             conditions = Collections.emptyList();
         }
 
@@ -88,11 +88,12 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return tables;
     }
 
-    public void updateContext(Set<ColumnSource> boundTables,
-                              Collection<JoinOperator> joins) {
+    public List<ConditionList> updateContext(Set<ColumnSource> boundTables,
+                                             Collection<JoinOperator> joins) {
         setBoundTables(boundTables);
         setJoinConditions(joins);
         updateRequiredColumns();
+        return conditionSources;
     }
 
     public void setBoundTables(Set<ColumnSource> boundTables) {
@@ -100,7 +101,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     }
     
     public void setJoinConditions(Collection<JoinOperator> joins) {
-        conditionSources.clear();
+        conditionSources = new ArrayList<ConditionList>();
         if (queryGoal.getWhereConditions() != null)
             conditionSources.add(queryGoal.getWhereConditions());
         for (JoinOperator join : joins) {
@@ -671,19 +672,22 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return cost;
     }
 
-    public void install(PlanNode scan) {
+    public void install(PlanNode scan, List<ConditionList> conditionSources) {
         if (scan instanceof IndexScan) {
             IndexScan indexScan = (IndexScan)scan;
-            installConditions(indexScan);
+            installConditions(indexScan, conditionSources);
             queryGoal.installOrderEffectiveness(indexScan.getOrderEffectiveness());
         }
     }
 
     /** Change WHERE as a consequence of <code>index</code> being
-     * used.
+     * used, using either the sources returned by {@link updateContext} or the
+     * current ones if nothing has been changed.
      */
-    public void installConditions(IndexScan index) {
+    public void installConditions(IndexScan index, List<ConditionList> conditionSources) {
         if (index.getConditions() != null) {
+            if (conditionSources == null)
+                conditionSources = this.conditionSources;
             for (ConditionExpression condition : index.getConditions()) {
                 for (ConditionList conditionSource : conditionSources) {
                     if (conditionSource.remove(condition))

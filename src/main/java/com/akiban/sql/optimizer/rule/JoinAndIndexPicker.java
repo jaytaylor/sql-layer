@@ -145,7 +145,7 @@ public class JoinAndIndexPicker extends BaseRule
             GroupIndexGoal groupGoal = new GroupIndexGoal(queryGoal, tables);
             groupGoal.updateRequiredColumns(); // No more joins / bound tables.
             PlanNode scan = groupGoal.pickBestScan();
-            groupGoal.install(scan);
+            groupGoal.install(scan, null);
             joinable.getOutput().replaceInput(tables, toTableJoins(tables, scan));
         }
 
@@ -176,10 +176,10 @@ public class JoinAndIndexPicker extends BaseRule
             if (joinable instanceof TableGroupJoinTree) {
                 TableGroupJoinTree tables = (TableGroupJoinTree)joinable;
                 GroupIndexGoal groupGoal = new GroupIndexGoal(queryGoal, tables);
-                groupGoal.updateContext(subqueryBoundTables, subqueryJoins);
+                List<ConditionList> conditionSources = groupGoal.updateContext(subqueryBoundTables, subqueryJoins);
                 PlanNode scan = groupGoal.pickBestScan();
                 CostEstimate costEstimate = groupGoal.costEstimateScan(scan);
-                return new GroupPlan(groupGoal, JoinableBitSet.of(0), scan, costEstimate);
+                return new GroupPlan(groupGoal, JoinableBitSet.of(0), scan, costEstimate, conditionSources);
             }
             if (joinable instanceof JoinNode) {
                 return new JoinEnumerator(this, subqueryBoundTables, subqueryJoins).run((JoinNode)joinable, queryGoal.getWhereConditions()).bestPlan();
@@ -230,14 +230,17 @@ public class JoinAndIndexPicker extends BaseRule
         GroupIndexGoal groupGoal;
         long outerTables;
         PlanNode scan;
+        List<ConditionList> conditionSources;
 
         public GroupPlan(GroupIndexGoal groupGoal,
                          long outerTables, PlanNode scan, 
-                         CostEstimate costEstimate) {
+                         CostEstimate costEstimate,
+                         List<ConditionList> conditionSources) {
             super(costEstimate);
             this.groupGoal = groupGoal;
             this.outerTables = outerTables;
             this.scan = scan;
+            this.conditionSources = conditionSources;
         }
 
         @Override
@@ -247,7 +250,7 @@ public class JoinAndIndexPicker extends BaseRule
 
         @Override
         public Joinable install() {
-            groupGoal.install(scan);
+            groupGoal.install(scan, conditionSources);
             return toTableJoins(groupGoal.getTables(), scan);
         }
     }
@@ -300,10 +303,10 @@ public class JoinAndIndexPicker extends BaseRule
                     return groupPlan;
                 }
             }
-            groupGoal.updateContext(enumerator.boundTables(outerTables), joins);
+            List<ConditionList> conditionSources = groupGoal.updateContext(enumerator.boundTables(outerTables), joins);
             PlanNode scan = groupGoal.pickBestScan();
             CostEstimate costEstimate = groupGoal.costEstimateScan(scan);
-            GroupPlan groupPlan = new GroupPlan(groupGoal, outerTables, scan, costEstimate);
+            GroupPlan groupPlan = new GroupPlan(groupGoal, outerTables, scan, costEstimate, conditionSources);
             bestPlans.add(groupPlan);
             return groupPlan;
         }
