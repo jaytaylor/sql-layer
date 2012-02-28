@@ -18,6 +18,8 @@ package com.akiban.server.test.mt.mtatomics;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
@@ -251,6 +253,10 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         largeEnoughTable(5000);
         final String uniqueTableName = TABLE + "thesnowman";
 
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        builder.userTable(SCHEMA, uniqueTableName).colLong("id", false).pk("id");
+        final UserTable tableToCreate = builder.ais().getUserTable(SCHEMA, uniqueTableName);
+
         TimedCallable<Void> dropTable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
@@ -260,13 +266,14 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 return null;
             }
         };
+
         TimedCallable<Void> createTable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
                 Timing.sleep(2000);
                 timePoints.mark("ADD>");
                 try {
-                    createTable(SCHEMA, uniqueTableName, "id int not null primary key");
+                    ddl().createTable(session, tableToCreate);
                     timePoints.mark("ADD SUCCEEDED");
                 } catch (IllegalStateException e) {
                     timePoints.mark("ADD FAILED");
