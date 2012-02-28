@@ -83,9 +83,14 @@ public class TableGroupJoin extends BasePlanElement
         conditions = duplicateList(conditions, map);
     }
     
-    public void remove() {
+    /** When a group join is across a continguous set of join, it
+     * isn't part of the group any more. It is still specially marked
+     * for consideration of group operators as access paths in a
+     * regular join.
+     */
+    public void reject() {
         for (ComparisonCondition condition : conditions)
-          condition.setImplementation(ConditionExpression.Implementation.NORMAL);
+          condition.setImplementation(ConditionExpression.Implementation.POTENTIAL_GROUP_JOIN);
         child.setParentJoin(null);
         group.getJoins().remove(this);
     }
