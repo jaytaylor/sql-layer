@@ -5,15 +5,15 @@
     "schema" : "@schema",
     "tables" : [
         [ ":customers",
-            "`@id` int key",
-            "`:name` varchar(32)",
-            "KEY (`:name`)"
+            "\"@id\" int not null primary key",
+            "\"name\" varchar(32)",
+            "index(\":name\")"
         ],
 
         [ "@orders",
-            "id int key",
+            "id int not null primary key",
             "cid int",
-            "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o (cid) REFERENCES `:customers`(`@id`)"
+            "GROUPING FOREIGN KEY (cid) REFERENCES \":customers\"(\"@id\")"
         ]
     ],
 
