@@ -4,10 +4,10 @@ SelectQuery@718ddc48
       Select@5e857066[]
         JoinNode@a966905(INNER/NESTED_LOOPS)
           TableJoins@30fd981a(TableGroup@2cfb1135(parent) - GroupScan@1fe5052b(Group(parent -> user._akiban_parent)))
-            JoinNode@590cec16(INNER/GROUP - TableGroupJoin@7279df82(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
+            JoinNode@590cec16(INNER/GROUP[user.child.pid == user.parent.id] - TableGroupJoin@7279df82(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
               TableSource@7664e5b2(user.parent - TableGroup@2cfb1135(parent))
               TableSource@5a2445d7(user.child - TableGroupJoin@7279df82(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
           TableJoins@18c8ccb1(TableGroup@8c1e4d5(customers) - IndexScan@246bc73b(Index(user.customers.name[IndexColumn(name)]), NONE, =user.parent.name, rows = 10, cost = 221.870))
-            JoinNode@26f6852d(INNER/GROUP - TableGroupJoin@47959352(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+            JoinNode@26f6852d(INNER/GROUP[user.orders.cid == user.customers.cid] - TableGroupJoin@47959352(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
               TableSource@4b61cd25(user.customers - TableGroup@8c1e4d5(customers))
               TableSource@1e35ecd(user.orders - TableGroupJoin@47959352(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
