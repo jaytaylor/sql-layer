@@ -80,6 +80,10 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         boundTables = queryGoal.getQuery().getOuterTables();
     }
 
+    public QueryIndexGoal getQueryGoal() {
+        return queryGoal;
+    }
+
     public TableGroupJoinTree getTables() {
         return tables;
     }

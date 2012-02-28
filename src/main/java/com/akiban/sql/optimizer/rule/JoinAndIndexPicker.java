@@ -180,7 +180,7 @@ public class JoinAndIndexPicker extends BaseRule
                 groupGoal.updateRequiredColumns();
                 PlanNode scan = groupGoal.pickBestScan();
                 CostEstimate costEstimate = groupGoal.costEstimateScan(scan);
-                return new GroupPlan(tables, JoinableBitSet.of(0), scan, costEstimate);
+                return new GroupPlan(groupGoal, JoinableBitSet.of(0), scan, costEstimate);
             }
             if (joinable instanceof JoinNode) {
                 return new JoinEnumerator(this, subqueryBoundTables, subqueryJoins).run((JoinNode)joinable, queryGoal.getWhereConditions()).bestPlan();
@@ -228,15 +228,15 @@ public class JoinAndIndexPicker extends BaseRule
     }
     
     static class GroupPlan extends Plan {
-        TableGroupJoinTree tables;
+        GroupIndexGoal groupGoal;
         long outerTables;
         PlanNode scan;
 
-        public GroupPlan(TableGroupJoinTree tables, 
+        public GroupPlan(GroupIndexGoal groupGoal,
                          long outerTables, PlanNode scan, 
                          CostEstimate costEstimate) {
             super(costEstimate);
-            this.tables = tables;
+            this.groupGoal = groupGoal;
             this.outerTables = outerTables;
             this.scan = scan;
         }
@@ -248,7 +248,12 @@ public class JoinAndIndexPicker extends BaseRule
 
         @Override
         public Joinable install() {
-            return toTableJoins(tables, scan);
+            if (scan instanceof IndexScan) {
+                IndexScan indexScan = (IndexScan)scan;
+                groupGoal.installConditions(indexScan);
+                groupGoal.getQueryGoal().installOrderEffectiveness(indexScan.getOrderEffectiveness());
+            }
+            return toTableJoins(groupGoal.getTables(), scan);
         }
     }
 
@@ -303,9 +308,7 @@ public class JoinAndIndexPicker extends BaseRule
             groupGoal.updateRequiredColumns();
             PlanNode scan = groupGoal.pickBestScan();
             CostEstimate costEstimate = groupGoal.costEstimateScan(scan);
-            GroupPlan groupPlan = new GroupPlan(groupGoal.getTables(),
-                                                outerTables, scan, 
-                                                costEstimate);
+            GroupPlan groupPlan = new GroupPlan(groupGoal, outerTables, scan, costEstimate);
             bestPlans.add(groupPlan);
             return groupPlan;
         }
