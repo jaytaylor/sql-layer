@@ -215,11 +215,14 @@ public class TableGroupJoinTree extends BaseJoinable
             }
             str.append(node.getTable().getTable().getTable().getName().getTableName());
             if (node.getJoinConditions() != null) {
-                str.append(" ON ");
                 boolean first = true;
                 for (ConditionExpression joinCondition : node.getJoinConditions()) {
-                    if (first)
+                    if (joinCondition.getImplementation() == ConditionExpression.Implementation.GROUP_JOIN)
+                        continue;
+                    if (first) {
+                        str.append(" ON ");
                         first = false;
+                    }
                     else
                         str.append(" AND ");
                     str.append(joinCondition);

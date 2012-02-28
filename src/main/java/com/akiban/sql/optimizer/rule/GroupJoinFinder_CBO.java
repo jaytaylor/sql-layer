@@ -177,16 +177,6 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
                                           TableGroupJoinNode inner) {
         if (hasJoinedReferences(joinConditions, outer))
             return false;
-        if (joinConditions != null) {
-            Iterator<ConditionExpression> iter = joinConditions.iterator();
-            while (iter.hasNext()) {
-                ConditionExpression condition = iter.next();
-                if (condition.getImplementation() == ConditionExpression.Implementation.GROUP_JOIN)
-                    iter.remove();
-            }
-            if (joinConditions.isEmpty())
-                joinConditions = null;
-        }
         inner.setJoinConditions(joinConditions);
         return true;
     }
