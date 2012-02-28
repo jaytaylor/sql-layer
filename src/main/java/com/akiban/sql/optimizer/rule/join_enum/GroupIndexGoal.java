@@ -88,6 +88,13 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return tables;
     }
 
+    public void updateContext(Set<ColumnSource> boundTables,
+                              Collection<JoinOperator> joins) {
+        setBoundTables(boundTables);
+        setJoinConditions(joins);
+        updateRequiredColumns();
+    }
+
     public void setBoundTables(Set<ColumnSource> boundTables) {
         this.boundTables = boundTables;
     }
@@ -663,6 +670,14 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         }
 
         return cost;
+    }
+
+    public void install(PlanNode scan) {
+        if (scan instanceof IndexScan) {
+            IndexScan indexScan = (IndexScan)scan;
+            installConditions(indexScan);
+            queryGoal.installOrderEffectiveness(indexScan.getOrderEffectiveness());
+        }
     }
 
     /** Change WHERE as a consequence of <code>index</code> being
