@@ -29,7 +29,6 @@ import com.akiban.sql.RegexFilenameFilter;
 
 import com.akiban.ais.model.Index.JoinType;
 
-import com.sun.org.apache.xerces.internal.impl.xpath.regex.Match;
 import org.junit.Ignore;
 
 import java.io.BufferedReader;
