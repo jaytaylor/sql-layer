@@ -29,7 +29,11 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         FULL_OUTER,
         // These are beyond what flatten supports, used to represent EXISTS (sometimes).
         SEMI,
-        ANTI
+        ANTI,
+        // These are intermediate to represent when a semi-join can be
+        // turned into a regular join.
+        SEMI_INNER_ALREADY_DISTINCT,
+        SEMI_INNER_IF_DISTINCT
     }
     public static enum Implementation {
         GROUP,
@@ -119,27 +123,8 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         this.implementation = implementation;
     }
 
-    // TODO: Maybe it would be better to move this to MapJoin and
-    // convert over sooner.  See how other kinds of joins work out.
-    public static interface JoinReverseHook {
-        public boolean canReverse(JoinNode join);
-        public void beforeReverse(JoinNode join);
-        public void didNotReverse(JoinNode join);
-    }
-
-    private JoinReverseHook reverseHook;
-
-    public JoinReverseHook getReverseHook() {
-        return reverseHook;
-    }
-    public void setReverseHook(JoinReverseHook reverseHook) {
-        this.reverseHook = reverseHook;
-    }
-
     /** Reverse operands and outer join direction if necessary. */
     public void reverse() {
-        if (reverseHook != null)
-            reverseHook.beforeReverse(this);
         switch (joinType) {
         case INNER:
         case FULL_OUTER:
