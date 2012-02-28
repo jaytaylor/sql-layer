@@ -15,6 +15,7 @@
 
 package com.akiban.server.test.mt.mthapi.ddlandhapi;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
@@ -25,6 +26,7 @@ import com.akiban.server.api.hapi.DefaultHapiGetRequest;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.OldAISException;
 import com.akiban.server.error.TableDefinitionChangedException;
+import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.server.test.mt.mthapi.base.HapiMTBase;
 import com.akiban.server.test.mt.mthapi.base.HapiRequestStruct;
 import com.akiban.server.test.mt.mthapi.base.WriteThread;
@@ -299,28 +301,30 @@ public final class AddDropTableMT extends HapiMTBase {
         }
 
         private int addTable(Session session, DDLFunctions ddl, SaisTable table) throws InvalidOperationException {
-            throw new UnsupportedOperationException("Reimplement");
-            //String ddlText = DDLUtils.buildDDL(table);
-            //ddl.createTable(session, SCHEMA, ddlText);
-            //int tableId = ddl.getTableId(session, new TableName(SCHEMA, table.getName()));
+            String ddlText = DDLUtils.buildDDL(table);
+            SchemaFactory schemaFactory = new SchemaFactory(SCHEMA);
+            AkibanInformationSchema tempAIS = schemaFactory.ais(ddl.getAIS(session), ddlText);
 
-            //tablesMap.put(table, 0);
-            //if (!tablesList.contains(table)) { // list is pre-seeded with root
-            //    tablesList.add(table);
-            //}
-            //SaisFK parentFK = table.getParentFK();
-            //if (parentFK != null) {
-            //    SaisTable parent = parentFK.getParent();
-            //    tablesMap.put(parent, tablesMap.get(parent) + 1);
-            //    tablesList.remove(parent);
-            //}
-            //for (SaisFK childFK : table.getChildren()) {
-            //    SaisTable child = childFK.getChild();
-            //    tablesMap.put(child, -1);
-            //    tablesList.add(child);
-            //}
+            ddl.createTable(session, tempAIS.getUserTable(SCHEMA, table.getName()));
+            int tableId = ddl.getTableId(session, new TableName(SCHEMA, table.getName()));
 
-            //return tableId;
+            tablesMap.put(table, 0);
+            if (!tablesList.contains(table)) { // list is pre-seeded with root
+                tablesList.add(table);
+            }
+            SaisFK parentFK = table.getParentFK();
+            if (parentFK != null) {
+                SaisTable parent = parentFK.getParent();
+                tablesMap.put(parent, tablesMap.get(parent) + 1);
+                tablesList.remove(parent);
+            }
+            for (SaisFK childFK : table.getChildren()) {
+                SaisTable child = childFK.getChild();
+                tablesMap.put(child, -1);
+                tablesList.add(child);
+            }
+
+            return tableId;
         }
 
         protected abstract void writeTableRows(Session session, DMLFunctions dml, int tableId, SaisTable table)

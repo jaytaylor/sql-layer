@@ -15,6 +15,7 @@ CREATE TABLE orders
   order_date date NOT NULL,
   GROUPING FOREIGN KEY (cid) REFERENCES customers(cid)
 );
+CREATE INDEX cid ON orders(cid);
 CREATE INDEX order_date ON orders(order_date);
 
 CREATE TABLE items
