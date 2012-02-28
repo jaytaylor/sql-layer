@@ -316,6 +316,34 @@ public class BranchLookup_DefaultIT extends OperatorITBase
         };
         compareRows(expected, cursor);
     }
+    
+    @Test
+    public void testOrderUnionToAddress()
+    {
+        Operator orderOrItem =
+            hKeyUnion_Ordered(
+                indexScan_Default(orderSalesmanIndexRowType, false, orderSalesmanEQ("ori")),
+                indexScan_Default(orderSalesmanIndexRowType, false, orderSalesmanEQ("david")),
+                orderSalesmanIndexRowType,
+                orderSalesmanIndexRowType,
+                2,
+                2,
+                1,
+                customerRowType);
+        Operator plan =
+            branchLookup_Default(
+                orderOrItem,
+                coi,
+                orderOrItem.rowType(),
+                addressRowType,
+                LookupOption.DISCARD_INPUT);
+        Cursor cursor = cursor(plan, queryContext);
+        RowBase[] expected = new RowBase[]{
+            row(addressRowType, 1001L, 1L, "111 1111 st"),
+            row(addressRowType, 1002L, 1L, "111 2222 st"),
+        };
+        compareRows(expected, cursor);
+    }
 
     // For use by this class
 

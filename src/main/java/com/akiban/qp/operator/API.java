@@ -156,7 +156,7 @@ public class API
 
     public static Operator branchLookup_Nested(GroupTable groupTable,
                                                        RowType inputRowType,
-                                                       RowType outputRowType,
+                                                       UserTableRowType outputRowType,
                                                        LookupOption flag,
                                                        int inputBindingPosition)
     {

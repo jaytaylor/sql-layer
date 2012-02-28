@@ -186,7 +186,8 @@ public class BranchLookup_Default extends Operator
         ArgumentValidation.notNull("inputRowType", inputRowType);
         ArgumentValidation.notNull("outputRowType", outputRowType);
         ArgumentValidation.notNull("limit", limit);
-b        ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || flag == API.LookupOption.DISCARD_INPUT",
+        ArgumentValidation.isTrue("outputRowType != inputRowType", outputRowType != inputRowType);
+        ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || flag == API.LookupOption.DISCARD_INPUT",
                                   inputRowType instanceof UserTableRowType || flag == API.LookupOption.DISCARD_INPUT);
         UserTableRowType inputTableType = null;
         if (inputRowType instanceof UserTableRowType) {

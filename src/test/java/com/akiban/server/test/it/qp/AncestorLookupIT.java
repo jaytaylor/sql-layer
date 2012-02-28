@@ -318,6 +318,19 @@ public class AncestorLookupIT extends OperatorITBase
         };
         compareRows(expected, cursor);
     }
+    
+    // hkey input
+    
+    @Test
+    public void testOrderHKeyToCustomerAndOrder()
+    {
+        Operator plan = orderHKeyToCustomerAndOrderPlan("jack");
+        RowBase[] expected = new RowBase[]{
+            row(customerRowType, 2L, "foundation"),
+            row(orderRowType, 22L, 2L, "jack"),
+        };
+        compareRows(expected, cursor(plan, queryContext));
+    }
 
     // For use by this class
 
@@ -337,15 +350,35 @@ public class AncestorLookupIT extends OperatorITBase
         return
             ancestorLookup_Default
                 (branchLookup_Default
-                        (indexScan_Default(itemIidIndexRowType, false, itemIidEQ(iid)),
-                                coi,
-                                itemIidIndexRowType,
-                                itemRowType,
-                                LookupOption.DISCARD_INPUT),
+                     (indexScan_Default(itemIidIndexRowType, false, itemIidEQ(iid)),
+                      coi,
+                      itemIidIndexRowType,
+                      itemRowType,
+                      LookupOption.DISCARD_INPUT),
                  coi,
                  itemRowType,
                  list(rowTypes),
                  keepInput ? LookupOption.KEEP_INPUT : LookupOption.DISCARD_INPUT);
+    }
+
+    private Operator orderHKeyToCustomerAndOrderPlan(String salesman)
+    {
+        Operator indexMerge = hKeyUnion_Ordered(
+            indexScan_Default(orderSalesmanIndexRowType, false, salesmanEQ(salesman)),
+            indexScan_Default(orderSalesmanIndexRowType, false, salesmanEQ(salesman)),
+            orderSalesmanIndexRowType,
+            orderSalesmanIndexRowType,
+            2,
+            2,
+            2,
+            orderRowType);
+        return
+            ancestorLookup_Default(
+                indexMerge,
+                coi,
+                indexMerge.rowType(),
+                Arrays.asList(customerRowType, orderRowType),
+                LookupOption.DISCARD_INPUT);
     }
 
     private IndexKeyRange itemIidEQ(int iid)
@@ -354,9 +387,20 @@ public class AncestorLookupIT extends OperatorITBase
         return IndexKeyRange.bounded(itemIidIndexRowType, bound, true, bound, true);
     }
 
+    private IndexKeyRange salesmanEQ(String salesman)
+    {
+        IndexBound bound = orderSalesmanBound(salesman);
+        return IndexKeyRange.bounded(orderSalesmanIndexRowType, bound, true, bound, true);
+    }
+
     private IndexBound itemIidIndexBound(int iid)
     {
         return new IndexBound(row(itemIidIndexRowType, iid), new SetColumnSelector(0));
+    }
+
+    private IndexBound orderSalesmanBound(String salesman)
+    {
+        return new IndexBound(row(orderSalesmanIndexRowType, salesman), new SetColumnSelector(0));
     }
 
     private List<RowType> list(RowType... rowTypes)

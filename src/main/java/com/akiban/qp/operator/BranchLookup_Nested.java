@@ -19,15 +19,10 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.qp.rowtype.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -171,7 +166,7 @@ public class BranchLookup_Nested extends Operator
 
     public BranchLookup_Nested(GroupTable groupTable,
                                RowType inputRowType,
-                               RowType outputRowType,
+                               UserTableRowType outputRowType,
                                API.LookupOption flag,
                                int inputBindingPosition)
     {
@@ -179,8 +174,7 @@ public class BranchLookup_Nested extends Operator
         ArgumentValidation.notNull("inputRowType", inputRowType);
         ArgumentValidation.notNull("outputRowType", outputRowType);
         ArgumentValidation.notNull("flag", flag);
-        ArgumentValidation.isTrue("inputRowType instanceof IndexRowType || outputRowType != inputRowType",
-                                  inputRowType instanceof IndexRowType || outputRowType != inputRowType);
+        ArgumentValidation.isTrue("outputRowType != inputRowType", outputRowType != inputRowType);
         ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || flag == API.LookupOption.DISCARD_INPUT",
                                   inputRowType instanceof UserTableRowType || flag == API.LookupOption.DISCARD_INPUT);
         ArgumentValidation.isGTE("hKeyBindingPosition", inputBindingPosition, 0);
@@ -189,6 +183,9 @@ public class BranchLookup_Nested extends Operator
             inputTableType = (UserTableRowType) inputRowType;
         } else if (inputRowType instanceof IndexRowType) {
             inputTableType = ((IndexRowType) inputRowType).tableType();
+        } else if (inputRowType instanceof HKeyRowType) {
+            Schema schema = outputRowType.schema();
+            inputTableType = schema.userTableRowType(inputRowType.hKey().userTable());
         }
         assert inputTableType != null : inputRowType;
         UserTable inputTable = inputTableType.userTable();

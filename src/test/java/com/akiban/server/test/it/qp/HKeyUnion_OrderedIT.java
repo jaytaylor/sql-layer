@@ -287,18 +287,6 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
             pKey(1002L),
         };
         compareRenderedHKeys(expected, cursor(plan, queryContext));
-        Operator plan2 =
-            ancestorLookup_Default(plan,
-                                   coi,
-                                   plan.rowType(),
-                                   Collections.singleton(parentRowType), 
-                                   LookupOption.DISCARD_INPUT);
-        RowBase[] expectedRows = new RowBase[]{
-            row(parentRowType, 1000L, -1L, 12L),
-            row(parentRowType, 1001L, -1L, 12L),
-            row(parentRowType, 1002L, -1L, 12L),
-        };
-        compareRows(expectedRows, cursor(plan2, queryContext));
     }
 
     @Test
@@ -311,18 +299,6 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
             pKey(2002L),
         };
         compareRenderedHKeys(expected, cursor(plan, queryContext));
-        Operator plan2 =
-            ancestorLookup_Default(plan,
-                                   coi,
-                                   plan.rowType(),
-                                   Collections.singleton(parentRowType),
-                                   LookupOption.DISCARD_INPUT);
-        RowBase[] expectedRows = new RowBase[]{
-            row(parentRowType, 2000L, 22L, -1L),
-            row(parentRowType, 2001L, 22L, -1L),
-            row(parentRowType, 2002L, 22L, -1L),
-        };
-        compareRows(expectedRows, cursor(plan2, queryContext));
     }
 
     @Test
@@ -335,18 +311,6 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
             pKey(3002L),
         };
         compareRenderedHKeys(expected, cursor(plan, queryContext));
-        Operator plan2 =
-            ancestorLookup_Default(plan,
-                                   coi,
-                                   plan.rowType(),
-                                   Collections.singleton(parentRowType),
-                                   LookupOption.DISCARD_INPUT);
-        RowBase[] expectedRows = new RowBase[]{
-            row(parentRowType, 3000L, 31L, -1L),
-            row(parentRowType, 3001L, 31L, -1L),
-            row(parentRowType, 3002L, 31L, -1L),
-        };
-        compareRows(expectedRows, cursor(plan2, queryContext));
         plan = unionPxPy(32);
         expected = new String[]{
             pKey(3003L),
@@ -354,18 +318,6 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
             pKey(3005L),
         };
         compareRenderedHKeys(expected, cursor(plan, queryContext));
-        plan2 =
-            ancestorLookup_Default(plan,
-                                   coi,
-                                   plan.rowType(),
-                                   Collections.singleton(parentRowType),
-                                   LookupOption.DISCARD_INPUT);
-        expectedRows = new RowBase[]{
-            row(parentRowType, 3003L, 9999L, 32L),
-            row(parentRowType, 3004L, 9999L, 32L),
-            row(parentRowType, 3005L, 9999L, 32L),
-        };
-        compareRows(expectedRows, cursor(plan2, queryContext));
     }
 
     @Test
@@ -379,19 +331,6 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
             pKey(4003L),
         };
         compareRenderedHKeys(expected, cursor(plan, queryContext));
-        Operator plan2 =
-            ancestorLookup_Default(plan,
-                                   coi,
-                                   plan.rowType(),
-                                   Collections.singleton(parentRowType),
-                                   LookupOption.DISCARD_INPUT);
-        RowBase[] expectedRows = new RowBase[]{
-            row(parentRowType, 4000L, 44L, -1L),
-            row(parentRowType, 4001L, 44L, 44L),
-            row(parentRowType, 4002L, 44L, 44L),
-            row(parentRowType, 4003L, 44L, 9999L),
-        };
-        compareRows(expectedRows, cursor(plan2, queryContext));
     }
 
     @Test
@@ -405,19 +344,6 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
             pKey(5003L),
         };
         compareRenderedHKeys(expected, cursor(plan, queryContext));
-        Operator plan2 =
-            ancestorLookup_Default(plan,
-                                   coi,
-                                   plan.rowType(),
-                                   Collections.singleton(parentRowType),
-                                   LookupOption.DISCARD_INPUT);
-        RowBase[] expectedRows = new RowBase[]{
-            row(parentRowType, 5000L, -1L, 55L),
-            row(parentRowType, 5001L, 55L, 55L),
-            row(parentRowType, 5002L, 55L, 55L),
-            row(parentRowType, 5003L, 9999L, 55L),
-        };
-        compareRows(expectedRows, cursor(plan2, queryContext));
     }
 
     @Test
@@ -433,21 +359,6 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
             pKey(6005L),
         };
         compareRenderedHKeys(expected, cursor(plan, queryContext));
-        Operator plan2 =
-            ancestorLookup_Default(plan,
-                                   coi,
-                                   plan.rowType(),
-                                   Collections.singleton(parentRowType),
-                                   LookupOption.DISCARD_INPUT);
-        RowBase[] expectedRows = new RowBase[]{
-            row(parentRowType, 6000L, -1L, 66L),
-            row(parentRowType, 6001L, -1L, 66L),
-            row(parentRowType, 6002L, 66L, 66L),
-            row(parentRowType, 6003L, 66L, 66L),
-            row(parentRowType, 6004L, 66L, 9999L),
-            row(parentRowType, 6005L, 66L, 9999L),
-        };
-        compareRows(expectedRows, cursor(plan2, queryContext));
     }
 
     @Test
@@ -458,16 +369,6 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
             pKey(7000L),
         };
         compareRenderedHKeys(expected, cursor(plan, queryContext));
-        Operator plan2 =
-            ancestorLookup_Default(plan,
-                                   coi,
-                                   plan.rowType(),
-                                   Collections.singleton(parentRowType),
-                                   LookupOption.DISCARD_INPUT);
-        RowBase[] expectedRows = new RowBase[]{
-            row(parentRowType, 7000L, 70L, 70L),
-        };
-        compareRows(expectedRows, cursor(plan2, queryContext));
     }
 
     @Test
@@ -480,18 +381,6 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
             pKey(8002L),
         };
         compareRenderedHKeys(expected, cursor(plan, queryContext));
-        Operator plan2 =
-            ancestorLookup_Default(plan,
-                                   coi,
-                                   plan.rowType(),
-                                   Collections.singleton(parentRowType),
-                                   LookupOption.DISCARD_INPUT);
-        RowBase[] expectedRows = new RowBase[]{
-            row(parentRowType, 8000L, 88L, 88L),
-            row(parentRowType, 8001L, 88L, 88L),
-            row(parentRowType, 8002L, 88L, 88L),
-        };
-        compareRows(expectedRows, cursor(plan2, queryContext));
     }
 
     @Test
@@ -502,15 +391,6 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
             pKey(9000L),
         };
         compareRenderedHKeys(expected, cursor(plan, queryContext));
-        Operator plan2 =
-            ancestorLookup_Default(plan,
-                                   coi,
-                                   plan.rowType(),
-                                   Collections.singleton(parentRowType),
-                                   LookupOption.DISCARD_INPUT);
-        RowBase[] expectedRows = new RowBase[]{
-        };
-        compareRows(expectedRows, cursor(plan2, queryContext));
     }
 
     @Test
@@ -521,15 +401,6 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
             pKey(null),
         };
         compareRenderedHKeys(expected, cursor(plan, queryContext));
-        Operator plan2 =
-            ancestorLookup_Default(plan,
-                                   coi,
-                                   plan.rowType(),
-                                   Collections.singleton(parentRowType),
-                                   LookupOption.DISCARD_INPUT);
-        RowBase[] expectedRows = new RowBase[]{
-        };
-        compareRows(expectedRows, cursor(plan2, queryContext));
     }
 
     private Operator unionPxPy(int key)

@@ -104,6 +104,7 @@ public class OperatorITBase extends ITBase
         orderRowType = schema.userTableRowType(userTable(order));
         itemRowType = schema.userTableRowType(userTable(item));
         addressRowType = schema.userTableRowType(userTable(address));
+        orderHKeyRowType = schema.newHKeyRowType(orderRowType.hKey());
         customerNameIndexRowType = indexType(customer, "name");
         orderSalesmanIndexRowType = indexType(order, "salesman");
         orderCidIndexRowType = indexType(order, "cid");
@@ -304,6 +305,7 @@ public class OperatorITBase extends ITBase
     protected UserTableRowType orderRowType;
     protected UserTableRowType itemRowType;
     protected UserTableRowType addressRowType;
+    protected HKeyRowType orderHKeyRowType;
     protected IndexRowType customerCidIndexRowType;
     protected IndexRowType customerNameIndexRowType;
     protected IndexRowType orderSalesmanIndexRowType;
