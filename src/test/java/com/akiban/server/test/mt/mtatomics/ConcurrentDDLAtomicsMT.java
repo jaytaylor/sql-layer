@@ -187,7 +187,8 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
     @Test
     public void dropShiftsIndexIdWhileScanning() throws Exception {
-        final int tableId = createTable(SCHEMA, TABLE, "id int key", "name varchar(32)", "age varchar(2)", "key(name)", "key(age)");
+        final int tableId = createTable(SCHEMA, TABLE, "id int not null primary key", "name varchar(32)", "age varchar(2)",
+                                        "UNIQUE(name)", "UNIQUE(age)");
         writeRows(
                 createNewRow(tableId, 2, "alpha", 3),
                 createNewRow(tableId, 1, "bravo", 2),
@@ -265,7 +266,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 Timing.sleep(2000);
                 timePoints.mark("ADD>");
                 try {
-                    createTable(SCHEMA, uniqueTableName, "id int key");
+                    createTable(SCHEMA, uniqueTableName, "id int not null primary key");
                     timePoints.mark("ADD SUCCEEDED");
                 } catch (IllegalStateException e) {
                     timePoints.mark("ADD FAILED");
@@ -399,11 +400,10 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         writeRows(
                 createNewRow(parentId, 1)
         );
-        final String[] childTableDDL = {"id int not null primary key", "pid int", "name varchar(32)",
+        final String[] childTableDDL = {"id int not null primary key", "pid int", "name varchar(32)", "UNIQUE(name)",
                 "GROUPING FOREIGN KEY (pid) REFERENCES " +TABLE+"parent(id)"};
         do {
             int tableId = createTable(SCHEMA, TABLE, childTableDDL);
-            createIndex(SCHEMA, TABLE, "name", "name");
             rowCount = 1;
             final long writeStart = System.currentTimeMillis();
             while (System.currentTimeMillis() - writeStart < msForDropping) {
@@ -488,7 +488,8 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
 
         final int NUMBER_OF_ROWS = 100;
-        final int initialTableId = createTable(SCHEMA, TABLE, "id int key", "age int", "key(age)");
+        final int initialTableId = createTable(SCHEMA, TABLE, "id int not null primary key", "age int");
+        createIndex(SCHEMA, TABLE, "age", "age");
         final TableName tableName = new TableName(SCHEMA, TABLE);
         for(int i=0; i < NUMBER_OF_ROWS; ++i) {
             writeRows(createNewRow(initialTableId, i, i + 1));
