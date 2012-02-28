@@ -91,7 +91,7 @@ public class TreeFormatTest
                      
          */
         
-        String exp = "SUBSTRING\n" +
+        String exp = "\nSUBSTRING\n" +
                      "--OPERAND: FROM_UNIXTIME\n" +
                      "------OPERAND: +\n" +
                      "----------OPERAND: *\n" +
@@ -102,7 +102,7 @@ public class TreeFormatTest
                      "--OPERAND: +\n" +
                      "------OPERAND: 9\n" +
                      "------OPERAND: 10\n" +
-                     "--OPERAND: 11";
+                     "--OPERAND: 11\n";
         
         assertEquals(exp, actual);
                
