@@ -103,24 +103,23 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         conditionSources.clear();
         if (queryGoal.getWhereConditions() != null)
             conditionSources.add(queryGoal.getWhereConditions());
-        if (!joins.isEmpty()) {
-            conditions = new ArrayList<ConditionExpression>();
-            if (queryGoal.getWhereConditions() != null)
-                conditions.addAll(queryGoal.getWhereConditions());
-            for (JoinOperator join : joins) {
-                ConditionList joinConditions = join.getJoinConditions();
-                if (joinConditions != null) {
-                    conditions.addAll(joinConditions);
-                    if (join.getJoin() != null) {
-                        conditionSources.add(joinConditions);
-                    }
-                }
-            }
+        for (JoinOperator join : joins) {
+            ConditionList joinConditions = join.getJoinConditions();
+            if (joinConditions != null)
+                conditionSources.add(joinConditions);
         }
-        else {
-            conditions = queryGoal.getWhereConditions();
-            if (conditions == null)
-                conditions = Collections.emptyList();
+        switch (conditionSources.size()) {
+        case 0:
+            conditions = Collections.emptyList();
+            break;
+        case 1:
+            conditions = conditionSources.get(0);
+            break;
+        default:
+            conditions = new ArrayList<ConditionExpression>();
+            for (ConditionList conditionSource : conditionSources) {
+                conditions.addAll(conditionSource);
+            }
         }
     }
 

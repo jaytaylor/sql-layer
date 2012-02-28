@@ -473,15 +473,18 @@ public class JoinAndIndexPicker extends BaseRule
                     (joinOp.getJoin() != null)) {
                     join = joinOp.getJoin();
                 }
-                if (joinConditions == null) {
-                    joinConditions = joinOp.getJoinConditions();
-                }
-                else { 
-                    if (!newJoinConditions) {
-                        joinConditions = new ConditionList(joinConditions);
-                        newJoinConditions = true;
+                if ((joinOp.getJoinConditions() != null) &&
+                    !joinOp.getJoinConditions().isEmpty()) {
+                    if (joinConditions == null) {
+                        joinConditions = joinOp.getJoinConditions();
                     }
-                    joinConditions.addAll(joinOp.getJoinConditions());
+                    else { 
+                        if (!newJoinConditions) {
+                            joinConditions = new ConditionList(joinConditions);
+                            newJoinConditions = true;
+                        }
+                        joinConditions.addAll(joinOp.getJoinConditions());
+                    }
                 }
             }
             if (join == null) {
