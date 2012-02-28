@@ -31,7 +31,7 @@ public abstract class ServerOperatorCompiler extends OperatorCompiler
         super(server.getParser(), server.getCompilerProperties(), 
               server.getAIS(), server.getDefaultSchemaName(),
               server.functionsRegistry(), 
-              ("true".equals(server.getProperty("cbo"))) ? server.costEstimator() : null);
+              "true".equals(server.getProperty("cbo")) ? server.costEstimator() : null);
         server.setAttribute("aisBinder", binder);
         server.setAttribute("compiler", this);
 
