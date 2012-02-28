@@ -272,12 +272,8 @@ public class ApiTestBase {
         if (openCursorsMessage != null) {
             fail(openCursorsMessage);
         }
-
-        // try to clean up space if needed. If you can't, request a services reboot
-        if (FileUtils.sizeOfDirectory(TestConfigService.TESTDIR) > 256 * 1024 * 1024) {
-            sm.getTreeService().flushAll();
-            needServicesRestart |= runningOutOfSpace();
-        }
+        
+        needServicesRestart |= runningOutOfSpace();
     }
 
     private boolean runningOutOfSpace() {
