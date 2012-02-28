@@ -57,7 +57,8 @@ public class OperatorCompiler extends SchemaRulesContext
                             AkibanInformationSchema ais, String defaultSchemaName,
                             FunctionsRegistry functionsRegistry,
                             CostEstimator costEstimator) {
-        super(ais, functionsRegistry, costEstimator, DEFAULT_RULES, properties);
+        super(ais, functionsRegistry, costEstimator, 
+              (costEstimator != null) ? DEFAULT_RULES_CBO : DEFAULT_RULES, properties);
         parserContext = parser;
         nodeFactory = parserContext.getNodeFactory();
         binder = new AISBinder(ais, defaultSchemaName);

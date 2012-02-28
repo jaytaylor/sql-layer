@@ -41,6 +41,27 @@ public class DefaultRules
         new OperatorAssembler()
      );
 
+    /** These are the rules that get run for CBO compilation. */
+    public static final List<BaseRule> DEFAULT_RULES_CBO = Arrays.asList(
+        // These aren't singletons because someday they will have options.
+        new ASTStatementLoader(),
+        new AggregateMapper(),
+        new ConstantFolder(),
+        new OuterJoinPromoter(),
+        new ColumnEquivalenceFinder(),
+        new GroupJoinFinder_CBO(),
+        new InConditionReverser(),
+        new JoinAndIndexPicker(),
+        new NestedLoopMapper(),
+        new BranchJoiner(),
+        new SelectPreponer(),
+        new AggregateSplitter(),
+        new SortSplitter(),
+        new MapFolder(),
+        new ExpressionCompactor(),
+        new OperatorAssembler()
+     );
+
     private DefaultRules() {
     }
 }
