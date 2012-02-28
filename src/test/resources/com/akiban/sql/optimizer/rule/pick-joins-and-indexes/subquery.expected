@@ -1,0 +1,14 @@
+SelectQuery@53847a91
+  ResultSet@1e8af06d[name, order_date]
+    Project@33ae93c5[user.customers.name, x[1]]
+      Select@a678505[]
+        JoinNode@54f21f54(LEFT/NESTED_LOOPS[])
+          TableJoins@6ab7501b(TableGroup@28ec5359(customers) - GroupScan@33540d0c(Group(customers -> user._akiban_customers)))
+            TableSource@34f5b235(user.customers - TableGroup@28ec5359(customers))
+          SubquerySource@6e86d0bc(x)
+            Subquery@124e1099
+              ResultSet@4323b632[cid, order_date]
+                Project@63e6ef5d[user.orders.cid, user.orders.order_date]
+                  Select@5d8eaf0d[user.orders.order_date < 2011-01-01]
+                    TableJoins@5324a927(TableGroup@bdd6a16(customers) - IndexScan@755fd06f(Index(user.orders.__akiban_fk_0[IndexColumn(cid)]), NONE, =user.customers.cid, rows = 10, cost = 23.4000))
+                      TableSource@6dffcd26(user.orders - TableGroup@bdd6a16(customers))
