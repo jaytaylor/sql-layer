@@ -145,6 +145,7 @@ public class JoinAndIndexPicker extends BaseRule
             GroupIndexGoal groupGoal = new GroupIndexGoal(queryGoal, tables);
             groupGoal.updateRequiredColumns(); // No more joins / bound tables.
             PlanNode scan = groupGoal.pickBestScan();
+            groupGoal.install(scan);
             joinable.getOutput().replaceInput(tables, toTableJoins(tables, scan));
         }
 
@@ -264,6 +265,8 @@ public class JoinAndIndexPicker extends BaseRule
                                              table.getTable(),
                                              table.getParentJoinType());
                 join.setJoinConditions(table.getJoinConditions());
+                join.setGroupJoin(table.getTable().getParentJoin());
+                joinable = join;
             }
         }
         TableJoins joins = new TableJoins(joinable, tables.getGroup());
