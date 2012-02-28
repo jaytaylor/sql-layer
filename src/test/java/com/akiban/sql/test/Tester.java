@@ -194,7 +194,7 @@ public class Tester
         if (actions.contains(Action.BIND))
             binder = new AISBinder(ais, DEFAULT_SCHEMA);
         if (actions.contains(Action.OPERATORS))
-            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, compilerProperties, ais, DEFAULT_SCHEMA, new FunctionsRegistryImpl(), new TestCostEstimator(ais, DEFAULT_SCHEMA, statsFile));
+            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, compilerProperties, ais, DEFAULT_SCHEMA, new FunctionsRegistryImpl(), "true".equals(compilerProperties.getProperty("cbo")) ? new TestCostEstimator(ais, DEFAULT_SCHEMA, statsFile) : null);
         if (actions.contains(Action.PLAN))
             rulesContext = new RulesTestContext(ais, DEFAULT_SCHEMA, 
                                                 statsFile, planRules,
