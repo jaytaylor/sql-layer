@@ -467,7 +467,9 @@ public abstract class DPhyp<P>
     /** Get join conditions from top-level WHERE predicates. */
     protected void addWhereConditions(ConditionList whereConditions, 
                                       ExpressionTables visitor) {
-        for (ConditionExpression condition : whereConditions) {
+        Iterator<ConditionExpression> iter = whereConditions.iterator();
+        while (iter.hasNext()) {
+            ConditionExpression condition = iter.next();
             // TODO: When optimizer supports more predicates
             // interestingly, can recognize them, including
             // generalized hypergraph triples.
@@ -477,15 +479,19 @@ public abstract class DPhyp<P>
                 if (!JoinableBitSet.isEmpty(columnTables)) {
                     long rhs = visitor.getTables(comp.getRight());
                     if (visitor.wasNullTolerant()) continue;
-                    addWhereCondition(condition, columnTables, rhs);
-                    continue;
+                    if (addWhereCondition(condition, columnTables, rhs)) {
+                        iter.remove();
+                        continue;
+                    }
                 }
                 columnTables = columnReferenceTable(comp.getRight());
                 if (!JoinableBitSet.isEmpty(columnTables)) {
                     long lhs = visitor.getTables(comp.getLeft());
                     if (visitor.wasNullTolerant()) continue;
-                    addWhereCondition(condition, columnTables, lhs);
-                    continue;
+                    if (addWhereCondition(condition, columnTables, lhs)) {
+                        iter.remove();
+                        continue;
+                    }
                 }
             }
         }
@@ -508,8 +514,8 @@ public abstract class DPhyp<P>
      * joins, since such a null-intolerent condition implies that they
      * aren't missing.
      */
-    protected void addWhereCondition(ConditionExpression condition,
-                                     long columnTables, long comparisonTables) {
+    protected boolean addWhereCondition(ConditionExpression condition,
+                                        long columnTables, long comparisonTables) {
         if (!JoinableBitSet.isEmpty(comparisonTables) &&
             !JoinableBitSet.overlaps(columnTables, comparisonTables)) {
             JoinOperator op = new JoinOperator(condition);
@@ -520,7 +526,9 @@ public abstract class DPhyp<P>
             operators.add(op);
             edges[o*2] = columnTables;
             edges[o*2+1] = comparisonTables;
+            return true;
         }
+        return false;
     }
 
     /** Compute tables used in join predicate. */
