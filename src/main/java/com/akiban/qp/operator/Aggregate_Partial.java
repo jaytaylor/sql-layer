@@ -25,6 +25,8 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
 import java.util.ArrayList;
@@ -98,7 +100,10 @@ import java.util.Set;
  <tr><td> 0002 </td><td> BBB </td><td> 11.00 </td><td> 11.00 </td><td> 11.00 </td><td> sku 5 </td></tr>
  </table>
 
- The <i>inputsIndex</i> here is <i>2</i>. Note that the "price" column has been repeated three times, once for each aggregate function. In this case, the input rows are already ordered by their GROUP BY columns; if we knew this were the case (due to another operator's ordering), this partial aggregation would also be a full aggregation.
+ The <i>inputsIndex</i> here is <i>2</i>. Note that the "price" column has been repeated three times,
+ once for each aggregate function. In this case, the input rows are already ordered by their GROUP BY columns;
+ if we knew this were the case (due to another operator's ordering), this partial aggregation would also be a
+ full aggregation.
 
  The output rows would look like:
 
@@ -143,7 +148,7 @@ import java.util.Set;
 
  <h1>Memory requirements</h1>
 
- Constant space unless output rows are shared and can't be reused.
+ One row and one set of grouping column values.
 
  */
 
@@ -153,14 +158,14 @@ final class Aggregate_Partial extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter) {
+    protected Cursor cursor(QueryContext context) {
         List<Aggregator> aggregators = new ArrayList<Aggregator>();
         for (AggregatorFactory factory : aggregatorFactories) {
             aggregators.add(factory.get());
         }
         return new AggregateCursor(
-                adapter,
-                inputOperator.cursor(adapter),
+                context,
+                inputOperator.cursor(context),
                 inputRowType,
                 aggregatorFactories,
                 aggregators,
@@ -187,7 +192,10 @@ final class Aggregate_Partial extends Operator
 
     // AggregationOperator interface
 
-    public Aggregate_Partial(Operator inputOperator, RowType inputRowType, int inputsIndex, List<AggregatorFactory> aggregatorFactories) {
+    public Aggregate_Partial(Operator inputOperator,
+                             RowType inputRowType,
+                             int inputsIndex,
+                             List<AggregatorFactory> aggregatorFactories) {
         this(
                 inputOperator,
                 inputRowType,
@@ -213,7 +221,11 @@ final class Aggregate_Partial extends Operator
 
     // package-private (for testing)
 
-    Aggregate_Partial(Operator inputOperator, RowType inputRowType, int inputsIndex, List<AggregatorFactory> aggregatorFactories, AggregatedRowType outputType) {
+    Aggregate_Partial(Operator inputOperator,
+                      RowType inputRowType,
+                      int inputsIndex,
+                      List<AggregatorFactory> aggregatorFactories,
+                      AggregatedRowType outputType) {
         this.inputOperator = inputOperator;
         this.inputRowType = inputRowType;
         this.inputsIndex = inputsIndex;
@@ -237,7 +249,9 @@ final class Aggregate_Partial extends Operator
     }
     
     // class state
-    private static final Tap.PointTap AGGREGATION_COUNT = Tap.createCount("operator: aggregation", true);
+    
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Aggregate_Partial open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Aggregate_Partial next");
 
     // object state
 
@@ -255,50 +269,59 @@ final class Aggregate_Partial extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings) {
+        public void open() {
             if (cursorState != CursorState.CLOSED)
                 throw new IllegalStateException("can't open cursor: already open");
-            inputCursor.open(bindings);
-            cursorState = CursorState.OPENING;
-            AGGREGATION_COUNT.hit();
+            TAP_OPEN.in();
+            try {
+                inputCursor.open();
+                cursorState = CursorState.OPENING;
+            } finally {
+                TAP_OPEN.out();
+            }
         }
 
         @Override
         public Row next() {
-            checkQueryCancelation();
-            if (cursorState == CursorState.CLOSED)
-                throw new IllegalStateException("cursor not open");
-            if (cursorState == CursorState.CLOSING) {
-                close();
-                return null;
-            }
+            TAP_NEXT.in();
+            try {
+                checkQueryCancelation();
+                if (cursorState == CursorState.CLOSED)
+                    throw new IllegalStateException("cursor not open");
+                if (cursorState == CursorState.CLOSING) {
+                    close();
+                    return null;
+                }
 
-            assert cursorState == CursorState.OPENING || cursorState == CursorState.RUNNING : cursorState;
-            while (true) {
-                Row input = nextInput();
-                if (input == null) {
-                    if (everSawInput) {
-                        cursorState = CursorState.CLOSING;
+                assert cursorState == CursorState.OPENING || cursorState == CursorState.RUNNING : cursorState;
+                while (true) {
+                    Row input = nextInput();
+                    if (input == null) {
+                        if (everSawInput) {
+                            cursorState = CursorState.CLOSING;
+                            return createOutput();
+                        }
+                        else if (noGroupBy()) {
+                            cursorState = CursorState.CLOSING;
+                            return createEmptyOutput();
+                        }
+                        else {
+                            close();
+                            return null;
+                        }
+                    }
+                    if (!input.rowType().equals(inputRowType)) {
+                        return input; // pass through
+                    }
+                    everSawInput = true;
+                    if (outputNeeded(input)) {
+                        saveInput(input); // save this input for the next time this method is invoked
                         return createOutput();
                     }
-                    else if (noGroupBy()) {
-                        cursorState = CursorState.CLOSING;
-                        return createEmptyOutput();
-                    }
-                    else {
-                        close();
-                        return null;
-                    }
+                    aggregate(input);
                 }
-                if (!input.rowType().equals(inputRowType)) {
-                    return input; // pass through
-                }
-                everSawInput = true;
-                if (outputNeeded(input)) {
-                    saveInput(input); // save this input for the next time this method is invoked
-                    return createOutput();
-                }
-                aggregate(input);
+            } finally {
+                TAP_NEXT.out();
             }
         }
 
@@ -406,14 +429,14 @@ final class Aggregate_Partial extends Operator
 
         // AggregateCursor interface
 
-        private AggregateCursor(StoreAdapter adapter,
+        private AggregateCursor(QueryContext context,
                                 Cursor inputCursor,
                                 RowType inputRowType,
                                 List<AggregatorFactory> aggregatorFactories,
                                 List<Aggregator> aggregators,
                                 int inputsIndex,
                                 AggregatedRowType outputRowType) {
-            super(adapter);
+            super(context);
             this.inputCursor = inputCursor;
             this.inputRowType = inputRowType;
             this.aggregatorFactories = aggregatorFactories;

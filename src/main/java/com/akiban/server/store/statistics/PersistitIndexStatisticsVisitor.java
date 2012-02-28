@@ -55,7 +55,7 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
     public PersistitIndexStatisticsVisitor(Index index, long indexRowCount) {
         this.index = index;
         
-        columnCount = index.getColumns().size();
+        columnCount = index.getKeyColumns().size();
         timestamp = System.currentTimeMillis();
         rowCount = 0;
         KeySplitter splitter = new KeySplitter(columnCount, keysFlywheel);
@@ -132,7 +132,7 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
                 );
                 entries.add(entry);
             }
-            Histogram histogram = new Histogram(index, colCountSegment+1, entries);
+            Histogram histogram = new Histogram(colCountSegment+1, entries);
             result.addHistogram(histogram);
         }
         return result;

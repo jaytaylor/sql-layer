@@ -4,12 +4,13 @@
     <groupId>com.akiban</groupId>
     <artifactId>akiban-server</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.1.0-SNAPSHOT</version>
     <name>akiban-server</name>
     <properties>
         <!-- this is the default version number, hudson job sets this to the official number -->
         <BZR_REVISION></BZR_REVISION>
         <akiban.test.extraJvmArgs></akiban.test.extraJvmArgs>
+        <akiban.test.JmxJvmArgs>-Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=8082 -Dcom.sun.management.jmxremote.ssl=false -Dcom.sun.management.jmxremote.authenticate=false</akiban.test.JmxJvmArgs>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
@@ -25,49 +26,6 @@
             <url>http://akiban.artifactoryonline.com/akiban/libs-releases-local</url>
         </repository>
     </distributionManagement>
-    <repositories>
-        <!-- jmemcached-core -->
-        <repository>
-            <id>thimbleware.repo</id>
-            <url>http://thimbleware.com/maven</url>
-        </repository>
-        <!-- maven-license-plugin -->
-        <repository>
-            <id>mc-release</id>
-            <name>Local Maven repository of releases</name>
-            <url>http://mc-repo.googlecode.com/svn/maven2/releases</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </repository>
-        <!-- sql-parser -->
-        <repository>
-            <id>akiban-releases</id>
-            <name>akiban-releases</name>
-            <url>http://akiban.artifactoryonline.com/akiban/libs-releases-local</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-        </repository>
-        <!-- sql-parser -->
-        <repository>
-            <id>akiban-snapshots</id>
-            <name>akiban-snapshots</name>
-            <url>http://akiban.artifactoryonline.com/akiban/libs-snapshots-local</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </repository>
-    </repositories>
     <dependencies>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -141,12 +99,12 @@
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-persistit-core</artifactId>
-            <version>3.0.2-SNAPSHOT</version>
+            <version>3.0.6-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-sql-parser</artifactId>
-            <version>1.0.1-SNAPSHOT</version>
+            <version>1.0.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
@@ -189,10 +147,15 @@
             <artifactId>jmemcached-core</artifactId>
             <version>0.9.1</version>
         </dependency>
+	<dependency>
+		<groupId>com.google.protobuf</groupId>
+		<artifactId>protobuf-java</artifactId>
+		<version>2.4.1</version>
+	</dependency>
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-sql-parser</artifactId>
-            <version>1.0.1-SNAPSHOT</version>
+            <version>1.0.3-SNAPSHOT</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -341,7 +304,7 @@
                     <akserver.port>${akserver.port}</akserver.port>
                     <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
                 </systemPropertyVariables>
-                <argLine>-Xmx512m -Xms128m ${akiban.test.extraJvmArgs}</argLine>
+                <argLine>-Xmx512m -Xms128m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
                 <includes>
                     <include>**/*Test.java</include>
                     <include>**/*Test?.java</include>
@@ -360,7 +323,7 @@
                     <akserver.port>${akserver.port}</akserver.port>
                     <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
                 </systemPropertyVariables>
-                <argLine>${akiban.test.extraJvmArgs}</argLine>
+                <argLine>${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
             </configuration>
             <executions>
                 <execution>
@@ -390,9 +353,17 @@
         <plugin>
             <groupId>com.mycila.maven-license-plugin</groupId>
             <artifactId>maven-license-plugin</artifactId>
-            <version>1.9.0</version>
+            <version>1.10.b1</version>
             <configuration>
                 <header>src/etc/header.txt</header>
+                <headerSections>
+                    <headerSection>
+                        <key>__YEAR_SECTION__</key>
+                        <defaultValue>2012</defaultValue>
+                        <ensureMatch>2011|2012|2011-2012</ensureMatch>
+                    </headerSection>
+                </headerSections>
+                <strictCheck>true</strictCheck>
                 <failIfMissing>true</failIfMissing>
                 <excludes>
                     <!-- General files that can't have or don't need header -->
@@ -404,18 +375,21 @@
                     <exclude>**/*.dat</exclude>
                     <exclude>**/*.fail</exclude>
                     <exclude>**/*.params</exclude>
+                    <exclude>**/*.test</exclude>
                     <exclude>**/*.yaml</exclude>
                     <exclude>**/*.yml</exclude>
                     <exclude>**/group.idx</exclude>
                     <exclude>src/test/bin/*.sh</exclude>
                     <exclude>src/test/bin/*.cmd</exclude>
                     <exclude>.idea/**</exclude>
+                    <exclude>**/*.proto</exclude>
                     <exclude>.bzrignore</exclude>
                     <exclude>velocity.log</exclude>
                     <!-- No extension. Manually add header and ignore -->
                     <exclude>bin/akserver</exclude>
                     <exclude>bin/akloader</exclude>
                     <exclude>conf/config/jvm.options</exclude>
+                    <exclude>packages-common/jvm.options</exclude>
                     <exclude>doc/release_notes.txt</exclude>
                     <!-- Files requiring a specific format (packaging control, test output, etc) -->
                     <exclude>debian/*</exclude>
@@ -425,14 +399,12 @@
                     <exclude>src/test/resources/com/akiban/ais/model/staticgrouping/*</exclude>
                     <exclude>src/main/resources/com/akiban/server/service/functions/functionpath.txt</exclude>
                     <exclude>src/test/resources/com/akiban/server/service/functions/testfunctionpath.txt</exclude>
+                    <exclude>src/test/resources/com/akiban/server/service/servicemanager/configuration/yaml/test-composite.yaml.1</exclude>
                 </excludes>
                 <mapping>
                     <g>JAVADOC_STYLE</g>
                     <yml>SCRIPT_STYLE</yml>
                 </mapping>
-                <properties>
-                    <year>2011</year>
-                </properties>
             </configuration>
             <executions>
                 <execution>
@@ -449,6 +421,30 @@
             <artifactId>maven-eclipse-plugin</artifactId>
             <version>2.6</version>
         </plugin>
+
+        <plugin>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <executions>
+                <execution>
+                    <id>generate-sources</id>
+                    <phase>generate-sources</phase>
+                    <configuration>
+                        <tasks>
+                            <mkdir dir="target/generated-sources"/>
+                            <exec executable="protoc">
+                                <arg value="--java_out=target/generated-sources"/>
+                                <arg value="src/main/protobuf/akiban_information_schema.proto"/>
+                            </exec>
+                        </tasks>
+                        <sourceRoot>target/generated-sources</sourceRoot>
+                    </configuration>
+                    <goals>
+                        <goal>run</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+
 
     </plugins>
 </build>

@@ -17,6 +17,7 @@ package com.akiban.qp.operator;
 import java.util.Collections;
 import java.util.List;
 
+import com.akiban.util.tap.InOutTap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,18 +79,19 @@ class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
     }
 
     @Override
-    public UpdateResult run(Bindings bindings, StoreAdapter adapter) {
-        adapter(adapter);
+    public UpdateResult run(QueryContext context) {
+        context(context);
         int seen = 0, modified = 0;
+        Cursor inputCursor = null;
         INSERT_TAP.in();
-        Cursor inputCursor = inputOperator.cursor(adapter);
-        inputCursor.open(bindings);
         try {
+            inputCursor = inputOperator.cursor(context);
+            inputCursor.open();
             Row row;
             while ((row = inputCursor.next()) != null) {
                 checkQueryCancelation();
                 ++seen;
-                adapter.writeRow(row, bindings);
+                adapter().writeRow(row);
                 ++modified;
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Insert: row {}", row);
@@ -97,7 +99,9 @@ class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
 
             }
         } finally {
-            inputCursor.close();
+            if (inputCursor != null) {
+                inputCursor.close();
+            }
             INSERT_TAP.out();
         }
         return new StandardUpdateResult(seen, modified);
@@ -124,7 +128,7 @@ class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
     }
 
     private final Operator inputOperator;
-    private static final Tap.InOutTap INSERT_TAP = Tap.createTimer("operator: insert");
+    private static final InOutTap INSERT_TAP = Tap.createTimer("operator: Insert_Default");
     private static final Logger LOG = LoggerFactory.getLogger(Insert_Default.class);
 
 }

@@ -335,16 +335,6 @@ public class API
 
     // Product
 
-    /**
-     * @deprecated Use product_NestedLoops instead.
-     */
-    public static Operator product_ByRun(Operator input,
-                                                 RowType leftType,
-                                                 RowType rightType)
-    {
-        return new Product_ByRun(input, leftType, rightType);
-    }
-
     public static Operator product_NestedLoops(Operator outerInput,
                                                        Operator innerInput,
                                                        RowType outerType,
@@ -416,11 +406,28 @@ public class API
 
     // Union
 
-    public static Operator unionAll(
-            Operator input1, RowType input1RowType,
-            Operator input2, RowType input2RowType
-    ) {
+    public static Operator unionAll(Operator input1, RowType input1RowType, Operator input2, RowType input2RowType) 
+    {
         return new UnionAll_Default(input1, input1RowType, input2, input2RowType);
+    }
+    
+    // Intersect
+    
+    public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
+                                            RowType leftRowType, RowType rightRowType,
+                                            int leftOrderingFields,
+                                            int rightOrderingFields,
+                                            int comparisonFields,
+                                            JoinType joinType,
+                                            IntersectOutputOption intersectOutput)
+    {
+        return new Intersect_Ordered(leftInput, rightInput,
+                                     leftRowType, rightRowType,
+                                     leftOrderingFields,
+                                     rightOrderingFields,
+                                     comparisonFields,
+                                     joinType,
+                                     intersectOutput);
     }
 
     // Insert
@@ -448,10 +455,10 @@ public class API
 
     // Execution interface
 
-    public static Cursor cursor(Operator root, StoreAdapter adapter)
+    public static Cursor cursor(Operator root, QueryContext context)
     {
         // if all they need is the wrapped cursor, create it directly
-        return new TopLevelWrappingCursor(adapter, root.cursor(adapter));
+        return new TopLevelWrappingCursor(context, root.cursor(context));
     }
 
     // Options
@@ -483,6 +490,13 @@ public class API
     public static enum SortOption {
         PRESERVE_DUPLICATES,
         SUPPRESS_DUPLICATES
+    }
+
+    // Intersect output flags
+
+    public static enum IntersectOutputOption {
+        OUTPUT_LEFT,
+        OUTPUT_RIGHT
     }
 
     // Ordering specification

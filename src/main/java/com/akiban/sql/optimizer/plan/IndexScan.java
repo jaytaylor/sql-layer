@@ -60,6 +60,9 @@ public class IndexScan extends BasePlanNode
     // Tables that would still need to be fetched if this index were used.
     private Set<TableSource> requiredTables;
 
+    // Estimated cost of using this index.
+    private CostEstimate costEstimate;
+
     public IndexScan(Index index, TableSource table) {
         this.index = index;
         rootMostTable = rootMostInnerTable = leafMostInnerTable = leafMostTable = table;
@@ -235,6 +238,13 @@ public class IndexScan extends BasePlanNode
         this.requiredTables = requiredTables;
     }
 
+    public CostEstimate getCostEstimate() {
+        return costEstimate;
+    }
+    public void setCostEstimate(CostEstimate costEstimate) {
+        this.costEstimate = costEstimate;
+    }
+
     @Override
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
@@ -272,7 +282,7 @@ public class IndexScan extends BasePlanNode
             boolean anyReverse = false, allReverse = true;
             for (int i = 0; i < ordering.size(); i++) {
                 if (ordering.get(i).isAscending() != 
-                    index.getColumns().get(i).isAscending())
+                    index.getKeyColumns().get(i).isAscending())
                     anyReverse = true;
                 else
                     allReverse = false;
@@ -307,6 +317,10 @@ public class IndexScan extends BasePlanNode
         if (conditionRange != null) {
             str.append(", UNIONs of ");
             str.append(conditionRange.describeRanges());
+        }
+        if (costEstimate != null) {
+            str.append(", ");
+            str.append(costEstimate);
         }
         str.append(")");
         return str.toString();

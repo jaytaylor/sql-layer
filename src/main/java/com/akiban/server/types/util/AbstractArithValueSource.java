@@ -15,6 +15,7 @@
 
 package com.akiban.server.types.util;
 
+import com.akiban.qp.operator.Cursor;
 import com.akiban.server.Quote;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
@@ -168,6 +169,12 @@ public abstract class AbstractArithValueSource implements ValueSource
     public boolean getBool()
     {
         throw complain(AkType.BOOL);
+    }
+
+    @Override
+    public Cursor getResultSet()
+    {
+       throw complain(AkType.RESULT_SET);
     }
 
     @Override

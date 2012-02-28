@@ -24,9 +24,55 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
 import java.util.*;
+
+/**
+ <h1>Overview</h1>
+
+ Sort_InsertionLimited provides the first N rows of an input stream after sorting. It is a particularly efficient
+ form of sort because it can track the N rows in memory (unless N is too large).
+
+ <h1>Arguments</h1>
+
+ <li><b>Operator inputOperator:</b> Operator providing the input stream.
+ <li><b>RowType sortType:</b> Type of rows to be sorted.
+ <li><b>API.Ordering ordering:</b> Specification of ordering, comprising a list of expressions and ascending/descending
+ specifications.
+ <li><b>API.SortOption sortOption:</b> Specifies whether duplicates should be kept (PRESERVE_DUPLICATES) or eliminated
+ (SUPPRESS_DUPLICATES)
+ <li><b>int limit:</b> Number of rows to keep.
+
+ <h1>Behavior</h1>
+
+ All input rows are examined, and the top limit of them are kept. These rows are emitted in order after the input
+ stream has been consumed.
+
+ <h1>Output</h1>
+
+ The first limit rows, according to the ordering specification. The output rows may containg duplicates if and only
+ if PRESERVE_DUPLICATE behavior was selected.
+
+ <h1>Assumptions</h1>
+
+ All input rows are of type sortType.
+
+ The limit can be any value, but the sort is done in memory, so bad things (like swapping) will occur if the limit
+ is "too large".
+
+ <h1>Performance</h1>
+
+ Sort_InsertionLimited does no IO. For each row, a sorted set of rows is maintained, requiring O(log(limit)) comparisons
+ per row.
+
+ <h1>Memory Requirements</h1>
+
+ Up to limit rows are kept in memory.
+
+ */
 
 class Sort_InsertionLimited extends Operator
 {
@@ -48,9 +94,9 @@ class Sort_InsertionLimited extends Operator
     }
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter)
+    protected Cursor cursor(QueryContext context)
     {
-        return new Execution(adapter, inputOperator.cursor(adapter));
+        return new Execution(context, inputOperator.cursor(context));
     }
 
     @Override
@@ -90,6 +136,11 @@ class Sort_InsertionLimited extends Operator
         this.limit = limit;
     }
 
+    // Class state
+    
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_InsertionLimited open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_InsertionLimited next");
+    
     // Object state
 
     private final Operator inputOperator;
@@ -97,7 +148,6 @@ class Sort_InsertionLimited extends Operator
     private final API.Ordering ordering;
     private final boolean preserveDuplicates;
     private final int limit;
-    private static final Tap.PointTap SORT_INSERTION_COUNT = Tap.createCount("operator: sort_insertion", true);
 
     // Inner classes
 
@@ -108,72 +158,81 @@ class Sort_InsertionLimited extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
-            input.open(bindings);
-            state = State.FILLING;
-            for (ExpressionEvaluation eval : evaluations)
-                eval.of(bindings);
-            sorted = new TreeSet<Holder>();
-            SORT_INSERTION_COUNT.hit();
+            TAP_OPEN.in();
+            try {
+                input.open();
+                state = State.FILLING;
+                for (ExpressionEvaluation eval : evaluations)
+                    eval.of(context);
+                sorted = new TreeSet<Holder>();
+            } finally {
+                TAP_OPEN.out();
+            }
         }
 
         @Override
         public Row next()
         {
-            checkQueryCancelation();
-            switch (state) {
-            case FILLING:
-                {
-                    // If duplicates are preserved, the label is different for each row. Otherwise, it stays at 0.
-                    int label = 0;
-                    Row row;
-                    while ((row = input.next()) != null) {
-                        assert row.rowType() == sortType : row;
-                        Holder holder = new Holder(label, row, evaluations);
-                        if (preserveDuplicates) {
-                            label++;
-                        }
-                        if (sorted.size() < limit) {
-                            // Still room: add it in.
-                            holder.freeze();
-                            boolean added = sorted.add(holder);
-                            assert !preserveDuplicates || added;
-                        }
-                        else {
-                            // Current greatest element.
-                            Holder last = sorted.last();
-                            if (last.compareTo(holder) > 0) {
-                                // New row is less, so keep it
-                                // instead.
-                                sorted.remove(last);
-                                last.empty();
+            TAP_NEXT.in();
+            try {
+                checkQueryCancelation();
+                switch (state) {
+                case FILLING:
+                    {
+                        // If duplicates are preserved, the label is different for each row. Otherwise, it stays at 0.
+                        int label = 0;
+                        Row row;
+                        while ((row = input.next()) != null) {
+                            assert row.rowType() == sortType : row;
+                            Holder holder = new Holder(label, row, evaluations);
+                            if (preserveDuplicates) {
+                                label++;
+                            }
+                            if (sorted.size() < limit) {
+                                // Still room: add it in.
                                 holder.freeze();
                                 boolean added = sorted.add(holder);
-                                assert added;
+                                assert !preserveDuplicates || added;
                             }
                             else {
-                                // Will not be using new row.
-                                holder.empty();
+                                // Current greatest element.
+                                Holder last = sorted.last();
+                                if (last.compareTo(holder) > 0) {
+                                    // New row is less, so keep it
+                                    // instead.
+                                    sorted.remove(last);
+                                    last.empty();
+                                    holder.freeze();
+                                    boolean added = sorted.add(holder);
+                                    assert added;
+                                }
+                                else {
+                                    // Will not be using new row.
+                                    holder.empty();
+                                }
                             }
                         }
+                        iterator = sorted.iterator();
+                        state = State.EMPTYING;
                     }
-                    iterator = sorted.iterator();
-                    state = State.EMPTYING;
-                }
-                /* falls through */
-            case EMPTYING:
-                if (iterator.hasNext()) {
-                    Holder holder = iterator.next();
-                    return holder.empty();
-                }
-                else {
-                    close();
+                    /* falls through */
+                case EMPTYING:
+                    if (iterator.hasNext()) {
+                        Holder holder = iterator.next();
+                        return holder.empty();
+                    }
+                    else {
+                        close();
+                        return null;
+                    }
+                case CLOSED:
+                default:
                     return null;
                 }
-            case CLOSED:
-            default:
-                return null;
+            } finally {
+                TAP_NEXT.out();
             }
         }
 
@@ -195,15 +254,14 @@ class Sort_InsertionLimited extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, Cursor input)
+        Execution(QueryContext context, Cursor input)
         {
-            super(adapter);
+            super(context);
             this.input = input;
             int nsort = ordering.sortColumns();
             evaluations = new ArrayList<ExpressionEvaluation>(nsort);
             for (int i = 0; i < nsort; i++) {
                 ExpressionEvaluation evaluation = ordering.expression(i).evaluation();
-                evaluation.of(adapter);
                 evaluations.add(evaluation);
             }
         }
@@ -252,7 +310,7 @@ class Sort_InsertionLimited extends Operator
             return result;
         }
 
-        // Make sure the Row we save doesn't depend on Bindings that may change.
+        // Make sure the Row we save doesn't depend on bindings that may change.
         public void freeze() {
             Row arow = row.get();
             if (arow instanceof ProjectedRow)

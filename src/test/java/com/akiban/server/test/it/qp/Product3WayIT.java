@@ -99,6 +99,7 @@ public class Product3WayIT extends OperatorITBase
                           createNewRow(c, 28L, 2L, "c28"),
         };
         adapter = persistitAdapter(schema);
+        queryContext = queryContext(adapter);
         use(db);
     }
 
@@ -114,96 +115,6 @@ public class Product3WayIT extends OperatorITBase
 
     // Test operator execution
 
-    @Test
-    public void testProductAfterIndexScanOfA_ByRun()
-    {
-        // TODO: This plan is dumb. It does an AC product twice, once in the index lookup, once in ProductRABC.
-        Operator flattenRC =
-            flatten_HKeyOrdered(
-                branchLookup_Default(
-                    ancestorLookup_Default(
-                        indexScan_Default(aValueIndexRowType, false),
-                        rabc,
-                        aValueIndexRowType,
-                        Collections.singleton(rRowType),
-                        DISCARD_INPUT),
-                    rabc,
-                    rRowType,
-                    cRowType,
-                    KEEP_INPUT),
-                rRowType,
-                cRowType,
-                INNER_JOIN,
-                KEEP_PARENT);
-        Operator flattenRB =
-            flatten_HKeyOrdered(
-                branchLookup_Default(
-                    flattenRC,
-                    rabc,
-                    rRowType,
-                    bRowType,
-                    KEEP_INPUT),
-                rRowType,
-                bRowType,
-                INNER_JOIN,
-                KEEP_PARENT);
-        Operator flattenRA =
-            flatten_HKeyOrdered(
-                branchLookup_Default(
-                    flattenRB,
-                    rabc,
-                    rRowType,
-                    aRowType,
-                    KEEP_INPUT),
-                rRowType,
-                aRowType,
-                INNER_JOIN);
-        Operator productRAB = product_ByRun(flattenRA, flattenRA.rowType(), flattenRB.rowType());
-        Operator productRABC = product_ByRun(productRAB, productRAB.rowType(), flattenRC.rowType());
-        Cursor cursor = cursor(productRABC, adapter);
-        RowType rabcRowType = productRABC.rowType();
-        RowBase[] expected = new RowBase[]{
-            // From a13
-            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 15L, 1L, "b15", 17L, 1L, "c17"),
-            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 15L, 1L, "b15", 17L, 1L, "c17"),
-            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 16L, 1L, "b16", 17L, 1L, "c17"),
-            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 16L, 1L, "b16", 17L, 1L, "c17"),
-            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 15L, 1L, "b15", 18L, 1L, "c18"),
-            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 15L, 1L, "b15", 18L, 1L, "c18"),
-            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 16L, 1L, "b16", 18L, 1L, "c18"),
-            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 16L, 1L, "b16", 18L, 1L, "c18"),
-            // From a14 (duplicates of a13 rows because a14.rid = a13.rid)
-            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 15L, 1L, "b15", 17L, 1L, "c17"),
-            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 15L, 1L, "b15", 17L, 1L, "c17"),
-            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 16L, 1L, "b16", 17L, 1L, "c17"),
-            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 16L, 1L, "b16", 17L, 1L, "c17"),
-            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 15L, 1L, "b15", 18L, 1L, "c18"),
-            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 15L, 1L, "b15", 18L, 1L, "c18"),
-            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 16L, 1L, "b16", 18L, 1L, "c18"),
-            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 16L, 1L, "b16", 18L, 1L, "c18"),
-            // From a23
-            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 25L, 2L, "b25", 27L, 2L, "c27"),
-            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 25L, 2L, "b25", 27L, 2L, "c27"),
-            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 26L, 2L, "b26", 27L, 2L, "c27"),
-            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 26L, 2L, "b26", 27L, 2L, "c27"),
-            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 25L, 2L, "b25", 28L, 2L, "c28"),
-            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 25L, 2L, "b25", 28L, 2L, "c28"),
-            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 26L, 2L, "b26", 28L, 2L, "c28"),
-            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 26L, 2L, "b26", 28L, 2L, "c28"),
-            // From a24 (duplicates of a23 rows because a24.rid = a23.rid)
-            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 25L, 2L, "b25", 27L, 2L, "c27"),
-            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 25L, 2L, "b25", 27L, 2L, "c27"),
-            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 26L, 2L, "b26", 27L, 2L, "c27"),
-            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 26L, 2L, "b26", 27L, 2L, "c27"),
-            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 25L, 2L, "b25", 28L, 2L, "c28"),
-            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 25L, 2L, "b25", 28L, 2L, "c28"),
-            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 26L, 2L, "b26", 28L, 2L, "c28"),
-            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 26L, 2L, "b26", 28L, 2L, "c28"),
-        };
-        compareRows(expected, cursor);
-    }
-
-    @Test
     public void testProductAfterIndexScanOfA_NestedLoops_RABC()
     {
         Operator RA =
@@ -241,7 +152,7 @@ public class Product3WayIT extends OperatorITBase
                 INNER_JOIN);
         Operator RAB = product_NestedLoops(RA, RB, RA.rowType(), RB.rowType(), 0);
         Operator RABC = product_NestedLoops(RAB, RC, RAB.rowType(), RC.rowType(), 0);
-        Cursor cursor = cursor(RABC, adapter);
+        Cursor cursor = cursor(RABC, queryContext);
         RowType rabcRowType = RABC.rowType();
         RowBase[] expected = new RowBase[]{
             row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 15L, 1L, "b15", 17L, 1L, "c17"),
@@ -303,7 +214,7 @@ public class Product3WayIT extends OperatorITBase
                 INNER_JOIN);
         Operator RAC = product_NestedLoops(RA, RC, RA.rowType(), RC.rowType(), 0);
         Operator RACB = product_NestedLoops(RAC, RB, RAC.rowType(), RB.rowType(), 0);
-        Cursor cursor = cursor(RACB, adapter);
+        Cursor cursor = cursor(RACB, queryContext);
         RowType racbRowType = RACB.rowType();
         RowBase[] expected = new RowBase[]{
             row(racbRowType, 1L, "r1", 13L, 1L, "a13", 17L, 1L, "c17", 15L, 1L, "b15"),
@@ -372,7 +283,7 @@ public class Product3WayIT extends OperatorITBase
         Operator RA = product_NestedLoops(rScan, flattenRA, rRowType, flattenRA.rowType(), 0);
         Operator RAB = product_NestedLoops(RA, flattenRB, RA.rowType(), flattenRB.rowType(), 0);
         Operator RABC = product_NestedLoops(RAB, flattenRC, RAB.rowType(), flattenRC.rowType(), 0);
-        Cursor cursor = cursor(RABC, adapter);
+        Cursor cursor = cursor(RABC, queryContext);
         RowType rabcRowType = RABC.rowType();
         RowBase[] expected = new RowBase[]{
             row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 15L, 1L, "b15", 17L, 1L, "c17"),
@@ -390,92 +301,6 @@ public class Product3WayIT extends OperatorITBase
             row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 25L, 2L, "b25", 27L, 2L, "c27"),
             row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 25L, 2L, "b25", 28L, 2L, "c28"),
             row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 26L, 2L, "b26", 27L, 2L, "c27"),
-            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 26L, 2L, "b26", 28L, 2L, "c28"),
-        };
-        compareRows(expected, cursor);    }
-
-    // TODO: What happens if inner produces rows of unexpected types?
-
-    @Ignore
-    @Test
-    public void testProductAfterIndexScanOfA_BROKEN()
-    {
-        Operator flattenRA =
-            flatten_HKeyOrdered(
-                ancestorLookup_Default(
-                    indexScan_Default(aValueIndexRowType, false),
-                    rabc,
-                    aValueIndexRowType,
-                    Arrays.asList(aRowType, rRowType),
-                    LookupOption.DISCARD_INPUT),
-                rRowType,
-                aRowType,
-                INNER_JOIN,
-                KEEP_PARENT);
-        Operator flattenRB =
-            flatten_HKeyOrdered(
-                branchLookup_Default(
-                    flattenRA,
-                    rabc,
-                    rRowType,
-                    bRowType,
-                    LookupOption.KEEP_INPUT),
-                rRowType,
-                bRowType,
-                INNER_JOIN,
-                KEEP_PARENT);
-        dumpToAssertion(flattenRB); // BROKEN: RB rows appear before RA rows
-        Operator flattenRC =
-            flatten_HKeyOrdered(
-                branchLookup_Default(
-                    flattenRB,
-                    rabc,
-                    rRowType,
-                    cRowType,
-                    LookupOption.DISCARD_INPUT),
-                rRowType,
-                cRowType,
-                INNER_JOIN);
-        Operator productRAB = product_ByRun(flattenRC, flattenRA.rowType(), flattenRB.rowType());
-        Operator productRABC = product_ByRun(productRAB, productRAB.rowType(), flattenRC.rowType());
-        Cursor cursor = cursor(productRABC, adapter);
-        RowType rabcRowType = productRABC.rowType();
-        RowBase[] expected = new RowBase[]{
-            // From a13
-            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 15L, 1L, "b15", 17L, 1L, "c17"),
-            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 15L, 1L, "b15", 17L, 1L, "c17"),
-            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 16L, 1L, "b16", 17L, 1L, "c17"),
-            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 16L, 1L, "b16", 17L, 1L, "c17"),
-            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 15L, 1L, "b15", 18L, 1L, "c18"),
-            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 15L, 1L, "b15", 18L, 1L, "c18"),
-            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 16L, 1L, "b16", 18L, 1L, "c18"),
-            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 16L, 1L, "b16", 18L, 1L, "c18"),
-            // From a14 (duplicates of a13 rows because a14.rid = a13.rid)
-            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 15L, 1L, "b15", 17L, 1L, "c17"),
-            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 15L, 1L, "b15", 17L, 1L, "c17"),
-            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 16L, 1L, "b16", 17L, 1L, "c17"),
-            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 16L, 1L, "b16", 17L, 1L, "c17"),
-            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 15L, 1L, "b15", 18L, 1L, "c18"),
-            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 15L, 1L, "b15", 18L, 1L, "c18"),
-            row(rabcRowType, 1L, "r1", 13L, 1L, "a13", 16L, 1L, "b16", 18L, 1L, "c18"),
-            row(rabcRowType, 1L, "r1", 14L, 1L, "a14", 16L, 1L, "b16", 18L, 1L, "c18"),
-            // From a23
-            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 25L, 2L, "b25", 27L, 2L, "c27"),
-            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 25L, 2L, "b25", 27L, 2L, "c27"),
-            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 26L, 2L, "b26", 27L, 2L, "c27"),
-            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 26L, 2L, "b26", 27L, 2L, "c27"),
-            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 25L, 2L, "b25", 28L, 2L, "c28"),
-            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 25L, 2L, "b25", 28L, 2L, "c28"),
-            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 26L, 2L, "b26", 28L, 2L, "c28"),
-            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 26L, 2L, "b26", 28L, 2L, "c28"),
-            // From a24 (duplicates of a23 rows because a24.rid = a23.rid)
-            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 25L, 2L, "b25", 27L, 2L, "c27"),
-            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 25L, 2L, "b25", 27L, 2L, "c27"),
-            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 26L, 2L, "b26", 27L, 2L, "c27"),
-            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 26L, 2L, "b26", 27L, 2L, "c27"),
-            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 25L, 2L, "b25", 28L, 2L, "c28"),
-            row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 25L, 2L, "b25", 28L, 2L, "c28"),
-            row(rabcRowType, 2L, "r2", 23L, 2L, "a23", 26L, 2L, "b26", 28L, 2L, "c28"),
             row(rabcRowType, 2L, "r2", 24L, 2L, "a24", 26L, 2L, "b26", 28L, 2L, "c28"),
         };
         compareRows(expected, cursor);

@@ -15,18 +15,10 @@
 
 package com.akiban.ais.model;
 
-import java.io.Serializable;
-
-public class IndexName implements Serializable
+public class IndexName
 {
-    private TableName tableName;
-    private String indexName;
-
-    @SuppressWarnings("unused")
-    private IndexName()
-    {
-        // GWT
-    }
+    private final TableName tableName;
+    private final String indexName;
 
     public IndexName(TableName tableName, String indexName)
     {

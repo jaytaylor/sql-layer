@@ -17,13 +17,13 @@ package com.akiban.server.store;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
+import com.akiban.server.TableStatistics;
+import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;
-import com.akiban.server.TableStatistics;
-import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
 import com.persistit.Exchange;
@@ -133,17 +133,6 @@ public interface Store extends Service<Store> {
     void truncateGroup(Session session, int rowDefId) throws PersistitException;
 
     void truncateTableStatus(Session session, int rowDefId) throws RollbackException, PersistitException;
-
-    /**
-     * Analyze statistical information about a table. Specifically, construct
-     * histograms for its indexes.
-     * 
-     * @param tableId
-     * @throws PersistitException 
-     * @throws Exception 
-     */
-    void analyzeTable(Session session, int tableId);
-    void analyzeTable(Session session, int tableId, int sampleSize);
 
     boolean isDeferIndexes();
     void setDeferIndexes(boolean b);

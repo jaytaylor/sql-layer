@@ -20,6 +20,8 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -154,9 +156,9 @@ class IndexScan_Default extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter)
+    protected Cursor cursor(QueryContext context)
     {
-        return new Execution(adapter);
+        return new Execution(context);
     }
 
     // IndexScan_Default interface
@@ -175,8 +177,9 @@ class IndexScan_Default extends Operator
 
     // Class state
 
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: IndexScan_Default open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: IndexScan_Default next");
     private static final Logger LOG = LoggerFactory.getLogger(IndexScan_Default.class);
-    private static final Tap.PointTap INDEX_SCAN_COUNT = Tap.createCount("operator: index_scan", true);
 
     // Object state
 
@@ -194,26 +197,35 @@ class IndexScan_Default extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
-            INDEX_SCAN_COUNT.hit();
-            cursor.open(bindings);
+            TAP_OPEN.in();
+            try {
+                cursor.open();
+            } finally {
+                TAP_OPEN.out();
+            }
         }
 
         @Override
         public Row next()
         {
-            checkQueryCancelation();
-            Row row = cursor.next();
-            if (row == null) {
-                close();
-            } else {
-                row.runId(runIdCounter++);
+            TAP_NEXT.in();
+            try {
+                checkQueryCancelation();
+                Row row = cursor.next();
+                if (row == null) {
+                    close();
+                } else {
+                    row.runId(runIdCounter++);
+                }
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("IndexScan: yield {}", row);
+                }
+                return row;
+            } finally {
+                TAP_NEXT.out();
             }
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("IndexScan: yield {}", row);
-            }
-            return row;
         }
 
         @Override
@@ -224,10 +236,10 @@ class IndexScan_Default extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter)
+        Execution(QueryContext context)
         {
-            super(adapter);
-            this.cursor = adapter.newIndexCursor(index, indexKeyRange, ordering, scanSelector);
+            super(context);
+            this.cursor = adapter().newIndexCursor(context, index, indexKeyRange, ordering, scanSelector);
         }
 
         // Object state

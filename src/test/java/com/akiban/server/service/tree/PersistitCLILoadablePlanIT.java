@@ -23,9 +23,9 @@ import org.junit.Test;
 
 import com.akiban.qp.loadableplan.DirectObjectCursor;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
-import com.akiban.qp.operator.ArrayBindings;
-import com.akiban.qp.operator.Bindings;
-import com.akiban.server.service.session.Session;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.sql.server.ServerServiceRequirements;
 
@@ -33,25 +33,23 @@ public class PersistitCLILoadablePlanIT extends ITBase {
 
     @Test
     public void invokePersistitOperation() throws Exception {
-        final TreeService treeService = serviceManager().getTreeService();
-        final ServerServiceRequirements reqs = new ServerServiceRequirements(
-                null, null, null, null, treeService, null, null, null);
         PersistitCLILoadablePlan loadablePlan = new PersistitCLILoadablePlan();
-        loadablePlan.setServerServiceRequirements(reqs);
         DirectObjectPlan plan = loadablePlan.plan();
-        Session session = serviceManager().getSessionService().createSession();
-        
-        DirectObjectCursor cursor = plan.cursor(session);
-        Bindings bindings = new ArrayBindings(4);
-        bindings.set(0, "stat");
-        bindings.set(1, "count=3");
-        bindings.set(2, "delay=2");
-        bindings.set(3, "-a");
+
+        Schema schema = new Schema(rowDefCache().ais());
+        PersistitAdapter adapter = persistitAdapter(schema);
+        QueryContext queryContext = queryContext(adapter);
+
+        DirectObjectCursor cursor = plan.cursor(queryContext);
+        queryContext.setValue(0, "stat");
+        queryContext.setValue(1, "count=3");
+        queryContext.setValue(2, "delay=2");
+        queryContext.setValue(3, "-a");
         
         int populatedResults = 0;
         int emptyResults = 0;
         
-        cursor.open(bindings);
+        cursor.open();
         while(true) {
             List<? extends Object> columns = cursor.next();
             if (columns == null) {

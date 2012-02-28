@@ -16,10 +16,9 @@
 package com.akiban.server.test.pt.qp;
 
 import com.akiban.ais.model.*;
-import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Limit;
-import com.akiban.qp.operator.UndefBindings;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.persistitadapter.PersistitRowLimit;
@@ -30,13 +29,10 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.test.it.ITBase;
 import com.akiban.server.test.it.qp.TestRow;
 import com.akiban.server.test.pt.PTBase;
 import com.akiban.server.types.ToObjectValueTarget;
-import org.junit.Before;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,7 +60,7 @@ public class QPProfilePTBase extends PTBase
         UserTable userTable = userTable(userTableId);
         for (Index index : userTable.getIndexesIncludingInternal()) {
             List<String> indexColumnNames = new ArrayList<String>();
-            for (IndexColumn indexColumn : index.getColumns()) {
+            for (IndexColumn indexColumn : index.getKeyColumns()) {
                 indexColumnNames.add(indexColumn.getColumn().getName());
             }
             List<String> searchIndexColumnNames = Arrays.asList(searchIndexColumnNamesArray);
@@ -82,7 +78,7 @@ public class QPProfilePTBase extends PTBase
             @Override
             public boolean includesColumn(int columnPosition)
             {
-                for (IndexColumn indexColumn : index.getColumns()) {
+                for (IndexColumn indexColumn : index.getKeyColumns()) {
                     Column column = indexColumn.getColumn();
                     if (column.getPosition() == columnPosition) {
                         return true;
@@ -112,14 +108,9 @@ public class QPProfilePTBase extends PTBase
 
     protected void compareRows(RowBase[] expected, Cursor cursor)
     {
-        compareRows(expected, cursor, NO_BINDINGS);
-    }
-
-    protected void compareRows(RowBase[] expected, Cursor cursor, Bindings bindings)
-    {
         List<RowBase> actualRows = new ArrayList<RowBase>(); // So that result is viewable in debugger
         try {
-            cursor.open(bindings);
+            cursor.open();
             RowBase actualRow;
             while ((actualRow = cursor.next()) != null) {
                 int count = actualRows.size();
@@ -141,7 +132,7 @@ public class QPProfilePTBase extends PTBase
     {
         int count;
         try {
-            cursor.open(NO_BINDINGS);
+            cursor.open();
             count = 0;
             List<RowBase> actualRows = new ArrayList<RowBase>(); // So that result is viewable in debugger
             RowBase actualRow;
@@ -170,9 +161,9 @@ public class QPProfilePTBase extends PTBase
         return equal;
     }
 
-    protected static final Bindings NO_BINDINGS = UndefBindings.only();
     protected static final Limit NO_LIMIT = new PersistitRowLimit(ScanLimit.NONE);
 
     protected Schema schema;
     protected PersistitAdapter adapter;
+    protected QueryContext queryContext;
 }

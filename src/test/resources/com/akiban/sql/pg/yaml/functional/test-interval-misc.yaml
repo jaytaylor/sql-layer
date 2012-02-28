@@ -27,20 +27,18 @@
 - error: [22006]
 
 # Support for non-MySQL interval units
-# Produces DATETIME -- bug 913796
-# ---
-# - Statement: SELECT time_field + interval '0' MICROSECOND FROM t
-#     WHERE ind = 1
-# - output: [['00:00:00']]
+---
+- Statement: SELECT time_field + interval '0' MICROSECOND FROM t
+    WHERE ind = 1
+- output: [['00:00:00']]
 ---
 - Statement: SELECT datetime_field + interval '0' MICROSECOND FROM t
     WHERE ind = 1
 - output: [[!re '2000-01-01 00:00:00([.]0)?']]
-# Wrong microsecond conversion -- bug 913798
-# ---
-# - Statement: SELECT time_field + interval '2000000' MICROSECOND FROM t
-#     WHERE ind = 1
-# - output: [['00:00:02']]
+---
+- Statement: SELECT time_field + interval '2000000' MICROSECOND FROM t
+    WHERE ind = 1
+- output: [['00:00:02']]
 ---
 - Statement: SELECT time_field + interval '1.0' SECOND_MICROSECOND FROM t
     WHERE ind = 1
@@ -109,22 +107,20 @@
 - Statement: SELECT datetime_field + interval '5 1' DAY_HOUR
     FROM t WHERE ind = 1
 - output: [[!re '2000-01-06 01:00:00([.]0)?']]
-# Disable temporarily -- Vy will fix in another merge
-# ---
-# - Statement: SELECT date_field + interval '1' WEEK FROM t WHERE ind = 1
-# - output: [['2000-01-08']]
+---
+- Statement: SELECT date_field + interval '1' WEEK FROM t WHERE ind = 1
+- output: [['2000-01-08']]
 ---
 - Statement: SELECT datetime_field + interval '1' WEEK FROM t
     WHERE ind = 1
 - output: [[!re '2000-01-08 00:00:00([.]0)?']]
-# Adding QUARTER produces wrong value -- bug 913800
-# ---
-# - Statement: SELECT date_field + interval '1' QUARTER FROM t WHERE ind = 1
-# - output: [['2000-04-01']]
-# ---
-# - Statement: SELECT datetime_field + interval '1' QUARTER FROM t
-#     WHERE ind = 1
-# - output: [[!re '2000-04-01 00:00:00([.]0)?']]
+---
+- Statement: SELECT date_field + interval '1' QUARTER FROM t WHERE ind = 1
+- output: [['2000-04-01']]
+---
+- Statement: SELECT datetime_field + interval '1' QUARTER FROM t
+    WHERE ind = 1
+- output: [[!re '2000-04-01 00:00:00([.]0)?']]
 ---
 - Statement: SELECT date_field + interval '1-2' YEAR_MONTH FROM t WHERE ind = 1
 - output: [['2001-03-01']]
@@ -137,7 +133,6 @@
 ---
 - Statement: SELECT time_field + INTERVAL null MINUTE FROM t
 - output: [[null], [null]]
-
 # Case insensitivity
 ---
 - Statement: SELECT time_field + INTERVAL '1' MiNuTe FROM t WHERE ind = 1

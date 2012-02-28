@@ -15,8 +15,7 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.util.ValueHolder;
@@ -37,17 +36,11 @@ public abstract class AbstractCompositeExpressionEvaluation implements Expressio
     }
 
     @Override
-    public void of(Bindings bindings) {
+    public void of(QueryContext context) {
         for (ExpressionEvaluation child : children) {
-            child.of(bindings);
+            child.of(context);
         }
-    }
-
-    @Override
-    public void of(StoreAdapter adapter) {
-        for (ExpressionEvaluation child : children) {
-            child.of(adapter);
-        }
+        this.context = context;
     }
 
     public AbstractCompositeExpressionEvaluation(List<? extends ExpressionEvaluation> children) {
@@ -91,8 +84,14 @@ public abstract class AbstractCompositeExpressionEvaluation implements Expressio
     protected ValueHolder valueHolder() {
         return valueHolder == null ? valueHolder = new ValueHolder() : valueHolder ;
     }
+    
+    protected QueryContext queryContext() {
+        return context;
+    }
+    
     // object state
 
     private final List<? extends ExpressionEvaluation> children;
     private ValueHolder valueHolder;
+    private QueryContext context;
 }

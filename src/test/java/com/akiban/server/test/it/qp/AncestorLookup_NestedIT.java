@@ -87,6 +87,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
                           createNewRow(c, 28L, 2L, "c28"),
         };
         adapter = persistitAdapter(schema);
+        queryContext = queryContext(adapter);
         use(db);
     }
 
@@ -132,7 +133,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
                 indexScan_Default(aValueIndexRowType),
                 ancestorLookup_Nested(rabc, aValueIndexRowType, Collections.singleton(aRowType), 0),
                 0);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(aRowType, 13L, 1L, "a13"),
             row(aRowType, 14L, 1L, "a14"),
@@ -150,7 +151,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
                 indexScan_Default(aValueIndexRowType),
                 ancestorLookup_Nested(rabc, aValueIndexRowType, Arrays.asList(aRowType, rRowType), 0),
                 0);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(rRowType, 1L, "r1"),
             row(aRowType, 13L, 1L, "a13"),
@@ -172,7 +173,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
                 indexScan_Default(aValueIndexRowType),
                 ancestorLookup_Nested(rabc, aValueIndexRowType, Arrays.asList(rRowType, aRowType), 0),
                 0);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(rRowType, 1L, "r1"),
             row(aRowType, 13L, 1L, "a13"),
@@ -197,7 +198,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
                     0),
                 ancestorLookup_Nested(rabc, aRowType, Arrays.asList(rRowType), 1),
                 1);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(rRowType, 1L, "r1"),
             row(rRowType, 1L, "r1"),

@@ -18,12 +18,15 @@ package com.akiban.qp.operator;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.Strings;
+import com.akiban.util.tap.InOutTap;
 import org.junit.Assert;
 
 import java.util.ArrayList;
@@ -81,13 +84,13 @@ public final class OperatorTestHelper {
     }
 
     public static Cursor open(Operator plan) {
-        Cursor result = plan.cursor(ADAPTER);
+        Cursor result = plan.cursor(new SimpleQueryContext(ADAPTER));
         reopen(result);
         return result;
     }
 
     public static void reopen(Cursor cursor) {
-        cursor.open(new ArrayBindings(0));
+        cursor.open();
     }
 
     public static List<Row> execute(Operator plan) {
@@ -135,7 +138,8 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public Cursor newIndexCursor(Index index,
+        public Cursor newIndexCursor(QueryContext context,
+                                     Index index,
                                      IndexKeyRange keyRange,
                                      API.Ordering ordering,
                                      IndexScanSelector selector)
@@ -150,29 +154,30 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public void updateRow(Row oldRow, Row newRow, Bindings bindings)
+        public void updateRow(Row oldRow, Row newRow)
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void writeRow(Row newRow, Bindings bindings)
+        public void writeRow(Row newRow)
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void deleteRow(Row oldRow, Bindings bindings)
+        public void deleteRow(Row oldRow)
         {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public Cursor sort(Cursor input,
+        public Cursor sort(QueryContext context,
+                           Cursor input,
                            RowType rowType,
                            API.Ordering ordering,
                            API.SortOption sortOption,
-                           Bindings bindings)
+                           InOutTap loadTap)
         {
             throw new UnsupportedOperationException();
         }

@@ -16,11 +16,13 @@
 package com.akiban.sql.pg;
 
 import com.akiban.sql.server.ServerOperatorCompiler;
+import com.akiban.sql.server.ServerPlanContext;
 
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PhysicalSelect;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.PhysicalUpdate;
+import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 
 import com.akiban.sql.StandardException;
@@ -29,10 +31,9 @@ import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.ais.model.Column;
 
-import com.akiban.server.error.ParseException;
+import com.akiban.server.error.SQLParseException;
+import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.service.EventTypes;
-
-import com.akiban.server.expression.EnvironmentExpressionSetting;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,8 +61,11 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
             return generate(server, parser.parseStatement(sql), 
                             parser.getParameterList(), paramTypes);
         } 
-        catch (StandardException e) {
-            throw new ParseException("", e.getMessage(), sql);
+        catch (SQLParserException ex) {
+            throw new SQLParseException(ex);
+        }
+        catch (StandardException ex) {
+            throw new SQLParserInternalException(ex);
         }
     }
 
@@ -102,11 +106,12 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
         if (stmt instanceof CallStatementNode || !(stmt instanceof DMLStatementNode))
             return null;
         DMLStatementNode dmlStmt = (DMLStatementNode)stmt;
+        PlanContext planContext = new ServerPlanContext(this, new PostgresQueryContext(session));
         BasePlannable result = null;
         tracer = session.getSessionTracer(); // Don't think this ever changes.
         try {
             tracer.beginEvent(EventTypes.COMPILE);
-            result = compile(dmlStmt, params);
+            result = compile(dmlStmt, params, planContext);
         } 
         finally {
             session.getSessionTracer().endEvent();
@@ -126,29 +131,35 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
             }
         }
 
-        List<EnvironmentExpressionSetting> environmentSettings = result.getEnvironmentSettings();        
+        if (result.isUpdate())
+            return generateUpdate((PhysicalUpdate)result, stmt.statementToString(),
+                                  parameterTypes);
+        else
+            return generateSelect((PhysicalSelect)result,
+                                  parameterTypes);
+    }
 
-        if (result.isUpdate()) {
-            PhysicalUpdate update = (PhysicalUpdate)result;
-            return new PostgresModifyOperatorStatement(stmt.statementToString(),
-                                                       update.getUpdatePlannable(),
-                                                       parameterTypes, environmentSettings);
+    protected PostgresStatement generateUpdate(PhysicalUpdate update, String statementType,
+                                               PostgresType[] parameterTypes) {
+        return new PostgresModifyOperatorStatement(statementType,
+                                                   update.getUpdatePlannable(),
+                                                   parameterTypes);
+    }
+
+    protected PostgresStatement generateSelect(PhysicalSelect select,
+                                               PostgresType[] parameterTypes) {
+        int ncols = select.getResultColumns().size();
+        List<String> columnNames = new ArrayList<String>(ncols);
+        List<PostgresType> columnTypes = new ArrayList<PostgresType>(ncols);
+        for (PhysicalResultColumn physColumn : select.getResultColumns()) {
+            PostgresResultColumn resultColumn = (PostgresResultColumn)physColumn;
+            columnNames.add(resultColumn.getName());
+            columnTypes.add(resultColumn.getType());
         }
-        else {
-            PhysicalSelect select = (PhysicalSelect)result;
-            int ncols = select.getResultColumns().size();
-            List<String> columnNames = new ArrayList<String>(ncols);
-            List<PostgresType> columnTypes = new ArrayList<PostgresType>(ncols);
-            for (PhysicalResultColumn physColumn : select.getResultColumns()) {
-                PostgresResultColumn resultColumn = (PostgresResultColumn)physColumn;
-                columnNames.add(resultColumn.getName());
-                columnTypes.add(resultColumn.getType());
-            }
-            return new PostgresOperatorStatement(select.getResultOperator(),
-                                                 select.getResultRowType(),
-                                                 columnNames, columnTypes,
-                                                 parameterTypes, environmentSettings);
-        }
+        return new PostgresOperatorStatement(select.getResultOperator(),
+                                             select.getResultRowType(),
+                                             columnNames, columnTypes,
+                                             parameterTypes);
     }
 
 }

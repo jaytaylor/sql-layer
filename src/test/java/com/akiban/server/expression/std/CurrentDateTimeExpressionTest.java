@@ -15,24 +15,22 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.AkType;
 import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.expression.EnvironmentExpressionSetting;
 import com.akiban.server.expression.Expression;
-import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.operator.ArrayBindings;
 import org.junit.Test;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import static org.junit.Assert.assertEquals;
+import java.util.Date;
 
 public class CurrentDateTimeExpressionTest
 {
 
-    private final DateTime RIGHT_NOW = new DateTime();
-    private final DateTime EPOCH = new DateTime(0);
-    private Bindings bindings = new ArrayBindings(0);
+    private final Date RIGHT_NOW = new Date();
+    private final Date EPOCH = new Date(0);
     private int position = 0;
 
     @Test
@@ -56,15 +54,19 @@ public class CurrentDateTimeExpressionTest
         test(EPOCH, AkType.DATETIME, "yyyy-MM-dd HH:mm:ss");
     }
 
-    private void test (DateTime when, AkType current_, String strFrm)
+    private void test (final Date when, AkType current_, String strFrm)
     {
-        bindings.set(position, when);
-        Expression ex = new CurrentDateTimeExpression(EnvironmentExpressionSetting.CURRENT_DATETIME, position, current_);
+        Expression ex = new CurrentDateTimeExpression(current_);
         ExpressionEvaluation eval = ex.evaluation();
-        eval.of(bindings);
+        eval.of(new SimpleQueryContext(null) {
+                @Override
+                public Date getCurrentDate() {
+                    return when;
+                }
+            });
 
         assertEquals(Extractors.getLongExtractor(current_).getLong(eval.eval()),
-                Extractors.getLongExtractor(current_).getLong(when.toString(DateTimeFormat.forPattern(strFrm))));
+                     Extractors.getLongExtractor(current_).getLong(new DateTime(when).toString(DateTimeFormat.forPattern(strFrm))));
 
     }
 }

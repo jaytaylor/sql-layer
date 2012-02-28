@@ -49,8 +49,13 @@ public class MySQLTestTranslator {
     final FilenameFilter filter = new FilenameFilter() {
         public boolean accept(final File dir, final String name) {
             boolean accept;
+            
             accept = !name.startsWith(".")
                     && !name.startsWith("tc")
+                    && !name.startsWith("se")
+                    && !name.startsWith("an")
+                    && !name.startsWith("sq")
+                    && !name.startsWith("ix")
                     && !name.startsWith("db")
                     && !name.startsWith("rpl")
                     && (name.endsWith(".result") || (name.startsWith("data") && name
@@ -64,7 +69,8 @@ public class MySQLTestTranslator {
      */
     public static void main(String[] args) {
         final MySQLTestTranslator b = new MySQLTestTranslator();
-        b.run(args[1]);
+        
+        b.run("/Users/CErnenwein/Downloads/mysql-5.5.19-osx10.6-x86_64/mysql-test/suite/engines/funcs/r");
         System.out.println("Done!!!!");
     }
 

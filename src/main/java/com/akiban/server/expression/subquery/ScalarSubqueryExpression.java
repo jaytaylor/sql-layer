@@ -18,6 +18,7 @@ package com.akiban.server.expression.subquery;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.error.SubqueryTooManyRowsException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
@@ -60,12 +61,15 @@ public final class ScalarSubqueryExpression extends SubqueryExpression {
             Row row = next();
             if (row == null)
                 return NullValueSource.only();
-            expressionEvaluation.of(bindings());
+            expressionEvaluation.of(queryContext());
             expressionEvaluation.of(row);
-            // Return a copy of the value evaluated right now, rather
+            // Make a copy of the value evaluated right now, rather
             // than holding on to the row from the subquery cursor
-            // that's about to be closed.
-            return new ValueHolder(expressionEvaluation.eval());
+            // that's about to be advanced and closed.
+            ValueSource result = new ValueHolder(expressionEvaluation.eval());
+            if (next() != null)
+                throw new SubqueryTooManyRowsException();
+            return result;
         }
 
         private InnerEvaluation(Operator subquery,

@@ -22,6 +22,7 @@ import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.tap.InOutTap;
 
 /**
 
@@ -71,8 +72,8 @@ public class ValuesScan_Default extends Operator
     }
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter) {
-        return new Execution(adapter, rows);
+    protected Cursor cursor(QueryContext context) {
+        return new Execution(context, rows);
     }
     
     @Override
@@ -86,6 +87,13 @@ public class ValuesScan_Default extends Operator
         this.rowType = rowType;
     }
 
+    // Class state
+    
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: ValuesScan_Default open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: ValuesScan_Default next");
+    
+    // Object state
+    
     private final Collection<? extends BindableRow> rows;
     private final RowType rowType;
     
@@ -93,33 +101,39 @@ public class ValuesScan_Default extends Operator
     {
         private final Collection<? extends BindableRow> rows;
         private Iterator<? extends BindableRow> iter;
-        private Bindings bindings;
 
-        public Execution (StoreAdapter adapter, Collection<? extends BindableRow> rows) {
-            super(adapter);
+        public Execution (QueryContext context, Collection<? extends BindableRow> rows) {
+            super(context);
             this.rows = rows;
         }
 
         @Override
         public void close() {
             iter = null;
-            bindings = null;
         }
 
         @Override
         public Row next() {
-            if (iter != null && iter.hasNext()) {
-                return iter.next().bind(bindings, adapter);
-            } else {
-                return null;
+            TAP_NEXT.in();
+            try {
+                if (iter != null && iter.hasNext()) {
+                    return iter.next().bind(context);
+                } else {
+                    return null;
+                }
+            } finally {
+                TAP_NEXT.out();
             }
         }
 
         @Override
-        public void open(Bindings bindings) {
-            ArgumentValidation.notNull("bindings", bindings);
-            this.bindings = bindings;
-            iter = rows.iterator();
+        public void open() {
+            TAP_OPEN.in();
+            try {
+                iter = rows.iterator();
+            } finally {
+                TAP_OPEN.out();
+            }
         }
     }
 }

@@ -17,9 +17,8 @@ package com.akiban.server.test.pt.qp;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.exec.UpdatePlannable;
-import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.UndefBindings;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
@@ -43,7 +42,8 @@ import static com.akiban.qp.operator.API.update_Default;
 public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
 {
     @Before
-    public void before() throws InvalidOperationException
+    @Override
+    public void setUpProfiling() throws Exception
     {
         // Changes to parent.gid propagate to children hkeys.
         grandparent = createTable(
@@ -85,10 +85,16 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
         child2RowType = schema.userTableRowType(userTable(child2));
         group = groupTable(grandparent);
         adapter = persistitAdapter(schema);
+        queryContext = queryContext(adapter);
+        // The following is adapter from super.setUpProfiling. Leave taps disabled, they'll be enabled after loading
+        // and warmup
+        beforeProfiling();
+        tapsRegexes.clear();
+        registerTaps();
     }
 
     @Override
-    protected void relevantTaps(TapsRegexes tapsRegexes)
+    protected void registerTaps()
     {
         tapsRegexes.add(".*propagate.*");
     }
@@ -150,7 +156,7 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
                            new UpdateFunction()
                            {
                                @Override
-                               public Row evaluate(Row original, Bindings bindings)
+                               public Row evaluate(Row original, QueryContext context)
                                {
                                    OverlayingRow updatedRow = new OverlayingRow(original);
                                    updatedRow.overlay(0, original.eval(0).getInt() - 1000000);
@@ -177,7 +183,7 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
                             Tap.setEnabled(".*propagate.*", true);
                             start = System.nanoTime();
                         }
-                        updatePlan.run(NO_BINDINGS, adapter);
+                        updatePlan.run(queryContext);
                         return start;
                     }
                 });
@@ -188,10 +194,7 @@ public class HKeyChangePropagationCascadedKeysProfilePT extends QPProfilePTBase
         long end = System.nanoTime();
         assert start != Long.MIN_VALUE;
         double sec = (end - start) / (1000.0 * 1000 * 1000);
-        System.out.println(String.format("PDG optimization: %s", PersistitStore.PDG_OPTIMIZATION));
         System.out.println(String.format("scans: %s, db: %s/%s/%s, time: %s",
                                          SCANS, GRANDPARENTS, PARENTS_PER_GRANDPARENT, CHILDREN_PER_PARENT, sec));
     }
-
-    private static final Bindings NO_BINDINGS = UndefBindings.only();
 }

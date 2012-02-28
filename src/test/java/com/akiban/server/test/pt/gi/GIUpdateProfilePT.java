@@ -21,8 +21,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.operator.UndefBindings;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -35,7 +34,6 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.util.tap.Tap;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -89,7 +87,7 @@ public class GIUpdateProfilePT extends PTBase
         itemIidIndexRowType = indexType(item, "iid");
         customerCidIndexRowType = indexType(customer, "cid");
         addressAddressIndexRowType = indexType(address, "address");
-        adapter = persistitAdapter(schema);
+        queryContext = queryContext(persistitAdapter(schema));
     }
 
     @Test
@@ -104,10 +102,10 @@ public class GIUpdateProfilePT extends PTBase
         target.expectType(AkType.VARCHAR);
         Tap.setEnabled(".*", true);
         for (int s = 0; s < 100000000 ; s++) {
-            Cursor cursor = cursor(scan, adapter);
-            cursor.open(UndefBindings.only());
+            Cursor cursor = cursor(scan, queryContext);
+            cursor.open();
             Row row;
-            RowDef customerRowDef = (RowDef) customerRowType.userTable().rowDef();
+            RowDef customerRowDef = customerRowType.userTable().rowDef();
             while ((row = cursor.next()) != null) {
                 NiceRow oldRow = new NiceRow(customer, customerRowDef);
                 NiceRow newRow  = new NiceRow(customer, customerRowDef);
@@ -159,7 +157,7 @@ public class GIUpdateProfilePT extends PTBase
         UserTable userTable = userTable(userTableId);
         for (Index index : userTable.getIndexesIncludingInternal()) {
             List<String> indexColumnNames = new ArrayList<String>();
-            for (IndexColumn indexColumn : index.getColumns()) {
+            for (IndexColumn indexColumn : index.getKeyColumns()) {
                 indexColumnNames.add(indexColumn.getColumn().getName());
             }
             List<String> searchIndexColumnNames = Arrays.asList(searchIndexColumnNamesArray);
@@ -186,5 +184,5 @@ public class GIUpdateProfilePT extends PTBase
     private IndexRowType itemIidIndexRowType;
     private IndexRowType customerCidIndexRowType;
     private IndexRowType addressAddressIndexRowType;
-    private StoreAdapter adapter;
+    private QueryContext queryContext;
 }

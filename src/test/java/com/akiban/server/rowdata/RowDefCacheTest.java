@@ -1218,7 +1218,7 @@ public class RowDefCacheTest
     }
 
     private int[] indexFields(Index index) {
-        return ((IndexDef)index.indexDef()).getFields();
+        return index.indexDef().getFields();
     }
 
     private static final String SCHEMA = "schema";

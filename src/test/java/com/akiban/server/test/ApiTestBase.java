@@ -41,6 +41,8 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.AkServerInterface;
@@ -362,6 +364,10 @@ public class ApiTestBase {
         return new PersistitAdapter(schema, persistitStore(), treeService(), session(), configService());
     }
 
+    protected final QueryContext queryContext(PersistitAdapter adapter) {
+        return new SimpleQueryContext(adapter);
+    }
+
     protected final MemcacheService memcache() {
         return sm.getMemcacheService();
     }
@@ -482,7 +488,7 @@ public class ApiTestBase {
 
     protected final List<NewRow> scanAllIndex(TableIndex index)  throws InvalidOperationException {
         final Set<Integer> columns = new HashSet<Integer>();
-        for(IndexColumn icol : index.getColumns()) {
+        for(IndexColumn icol : index.getKeyColumns()) {
             columns.add(icol.getColumn().getPosition());
         }
         return scanAll(new ScanAllRequest(index.getTable().getTableId(), columns, index.getIndexId(), null));
@@ -747,7 +753,7 @@ public class ApiTestBase {
         Index index = table.getIndex(indexName);
         assertNotNull(indexName + " was null", index);
         List<String> actualColumns = new ArrayList<String>();
-        for (IndexColumn indexColumn : index.getColumns()) {
+        for (IndexColumn indexColumn : index.getKeyColumns()) {
             actualColumns.add(indexColumn.getColumn().getName());
         }
         assertEquals(indexName + " columns", actualColumns, expectedColumnsList);

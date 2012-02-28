@@ -22,10 +22,56 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.InOutTap;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+
+/**
+ <h1>Overview</h1>
+
+ Select_HKeyOrdered passes on selected rows from the input stream to the output stream. A row is subject to elimination
+ if and only if it's type is a specified type (predicateType), or a descendent of this type.
+ 
+ <h1>Arguments</h1>
+
+ <li><b>Operator inputOperator:</b> Operator providing the input stream.
+ <li><b>RowType predicateRowType:</b> Type of row to which the selection predicate is applied.
+ <li><b>Expression predicate:</b> Selection predicate.
+ 
+ <h1>Behavior</h1>
+ 
+ The handling of a row depends on its RowType:
+ 
+ If the row's type matches predicateRowType: The predicate is evaluated. The row is written to the output stream
+ if and only if the predicate evaluates to true. 
+ 
+ If the row's type is a descendent type of predicateRowType: The row is written to the output stream if and only if
+ the predicate evaluated to true for the ancestor of type predicateRowType. (E.g., if a Customer is rejected,
+ then all of its Orders and Items will be rejected too.)
+ 
+ All other rows are written to the output stream unconditionally.
+
+ <h1>Output</h1>
+
+ A subset of the rows from the input stream.
+
+ <h1>Assumptions</h1>
+
+ Input is hkey-ordered with respect to predicateRowType. E.g., in a COI schema, with prediateRowType = Order, 
+ Orders and Items are assumed to be in hkey-order. The order of one Order relative to another is not significant, nor
+ is the order of Customers.
+
+ <h1>Performance</h1>
+
+ Project_Default does no IO. For each input row, the type is checked and each output field is computed.
+
+ <h1>Memory Requirements</h1>
+
+ One row of type predicateRowType.
+ 
+ */
 
 class Select_HKeyOrdered extends Operator
 {
@@ -47,9 +93,9 @@ class Select_HKeyOrdered extends Operator
     }
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter)
+    protected Cursor cursor(QueryContext context)
     {
-        return new Execution(adapter, inputOperator.cursor(adapter));
+        return new Execution(context, inputOperator.cursor(context));
     }
 
     @Override
@@ -77,6 +123,11 @@ class Select_HKeyOrdered extends Operator
         this.predicate = predicate;
     }
 
+    // Class state
+    
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Select_HKeyOrdered open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Select_HKeyOrdered next");
+    
     // Object state
 
     private final Operator inputOperator;
@@ -90,41 +141,51 @@ class Select_HKeyOrdered extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
-            input.open(bindings);
-            this.evaluation.of(bindings);
+            TAP_OPEN.in();
+            try {
+                input.open();
+                this.evaluation.of(context);
+            } finally {
+                TAP_OPEN.out();
+            }
         }
 
         @Override
         public Row next()
         {
-            checkQueryCancelation();
-            Row row = null;
-            Row inputRow = input.next();
-            while (row == null && inputRow != null) {
-                if (inputRow.rowType() == predicateRowType) {
-                    evaluation.of(inputRow);
-                    if (Extractors.getBooleanExtractor().getBoolean(evaluation.eval(), false)) {
-                        // New row of predicateRowType
-                        selectedRow.hold(inputRow);
-                        row = inputRow;
-                    }
-                } else if (predicateRowType.ancestorOf(inputRow.rowType())) {
-                    // Row's type is a descendent of predicateRowType.
-                    if (selectedRow.isHolding() && selectedRow.get().ancestorOf(inputRow)) {
-                        row = inputRow;
+            TAP_NEXT.in();
+            try {
+                checkQueryCancelation();
+                Row row = null;
+                Row inputRow = input.next();
+                while (row == null && inputRow != null) {
+                    if (inputRow.rowType() == predicateRowType) {
+                        evaluation.of(inputRow);
+                        if (Extractors.getBooleanExtractor().getBoolean(evaluation.eval(), false)) {
+                            // New row of predicateRowType
+                            selectedRow.hold(inputRow);
+                            row = inputRow;
+                        }
+                    } else if (predicateRowType.ancestorOf(inputRow.rowType())) {
+                        // Row's type is a descendent of predicateRowType.
+                        if (selectedRow.isHolding() && selectedRow.get().ancestorOf(inputRow)) {
+                            row = inputRow;
+                        } else {
+                            selectedRow.release();
+                        }
                     } else {
-                        selectedRow.release();
+                        row = inputRow;
                     }
-                } else {
-                    row = inputRow;
+                    if (row == null) {
+                        inputRow = input.next();
+                    }
                 }
-                if (row == null) {
-                    inputRow = input.next();
-                }
+                return row;
+            } finally {
+                TAP_NEXT.out();
             }
-            return row;
         }
 
         @Override
@@ -136,12 +197,11 @@ class Select_HKeyOrdered extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, Cursor input)
+        Execution(QueryContext context, Cursor input)
         {
-            super(adapter);
+            super(context);
             this.input = input;
             this.evaluation = predicate.evaluation();
-            evaluation.of(adapter);
         }
 
         // Object state

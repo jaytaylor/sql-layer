@@ -18,6 +18,7 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.rule.range.ColumnRanges;
+import com.akiban.sql.optimizer.rule.range.RangeSegment;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
@@ -26,18 +27,22 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.expression.std.Comparison;
-import com.akiban.server.store.statistics.IndexStatistics;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 /** A goal for indexing: conditions on joined tables and ordering / grouping. */
 public class IndexGoal implements Comparator<IndexScan>
 {
+    private static final Logger logger = LoggerFactory.getLogger(IndexGoal.class);
+
     public static class RequiredColumns {
         private Map<TableSource,Set<ColumnExpression>> map;
         
-        public RequiredColumns(Collection<TableSource> tables) {
-            map = new HashMap<TableSource,Set<ColumnExpression>>(tables.size());
+        public RequiredColumns(Iterable<TableSource> tables) {
+            map = new HashMap<TableSource,Set<ColumnExpression>>();
             for (TableSource table : tables) {
                 map.put(table, new HashSet<ColumnExpression>());
             }
@@ -105,12 +110,13 @@ public class IndexGoal implements Comparator<IndexScan>
     private AggregateSource grouping;
     private Sort ordering;
     private Project projectDistinct;
-    private IndexEstimator indexEstimator;
 
     private TableNode updateTarget;
 
     // All the columns besides those in conditions that will be needed.
     private RequiredColumns requiredColumns;
+
+    private CostEstimator costEstimator;
 
     public IndexGoal(BaseQuery query,
                      Set<ColumnSource> boundTables, 
@@ -118,14 +124,14 @@ public class IndexGoal implements Comparator<IndexScan>
                      AggregateSource grouping,
                      Sort ordering,
                      Project projectDistinct,
-                     Collection<TableSource> tables,
-                     IndexEstimator indexEstimator) {
+                     Iterable<TableSource> tables,
+                     CostEstimator costEstimator) {
         this.boundTables = boundTables;
         this.conditionSources = conditionSources;
         this.grouping = grouping;
         this.ordering = ordering;
         this.projectDistinct = projectDistinct;
-        this.indexEstimator = indexEstimator;
+        this.costEstimator = costEstimator;
         
         if (conditionSources.size() == 1)
             conditions = conditionSources.get(0);
@@ -151,7 +157,7 @@ public class IndexGoal implements Comparator<IndexScan>
      * @return <code>false</code> if the index is useless.
      */
     public boolean usable(IndexScan index) {
-        List<IndexColumn> indexColumns = index.getIndex().getColumns();
+        List<IndexColumn> indexColumns = index.getIndex().getKeyColumns();
         int ncols = indexColumns.size();
         List<ExpressionNode> indexExpressions = new ArrayList<ExpressionNode>(ncols);
         List<OrderByExpression> orderBy = new ArrayList<OrderByExpression>(ncols);
@@ -219,7 +225,7 @@ public class IndexGoal implements Comparator<IndexScan>
                         else if (indexExpression.equals(ccond.getRight())) {
                             otherComparand = ccond.getLeft();
                         }
-                        if (otherComparand != null) {
+                        if ((otherComparand != null) && constantOrBound(otherComparand)) {
                             index.addInequalityCondition(condition,
                                                          ccond.getOperation(),
                                                          otherComparand);
@@ -240,7 +246,7 @@ public class IndexGoal implements Comparator<IndexScan>
             !index.hasConditions() &&
             !index.isCovering())
             return false;
-        estimateCost(indexEstimator, index);
+        index.setCostEstimate(estimateCost(index));
         return true;
     }
 
@@ -497,8 +503,17 @@ public class IndexGoal implements Comparator<IndexScan>
 
     protected IndexScan betterIndex(IndexScan bestIndex, IndexScan candidate) {
         if (usable(candidate)) {
-            if ((bestIndex == null) || (compare(candidate, bestIndex) > 0))
+            if (bestIndex == null) {
+                logger.debug("Selecting {}", candidate);
                 return candidate;
+            }
+            else if (compare(candidate, bestIndex) > 0) {
+                logger.debug("Preferring {}", candidate);
+                return candidate;
+            }
+            else {
+                logger.debug("Rejecting {}", candidate);
+            }
         }
         return bestIndex;
     }
@@ -516,8 +531,11 @@ public class IndexGoal implements Comparator<IndexScan>
         return bestIndex;
     }
 
-    // TODO: This is a pretty poor substitute for evidence-based comparison.
     public int compare(IndexScan i1, IndexScan i2) {
+        if (costEstimator.isEnabled()) {
+            return i2.getCostEstimate().compareTo(i1.getCostEstimate());
+        }
+        // TODO: This is a pretty poor substitute for evidence-based comparison.
         if (i1.getOrderEffectiveness() != i2.getOrderEffectiveness())
             // These are ordered worst to best.
             return i1.getOrderEffectiveness().compareTo(i2.getOrderEffectiveness());
@@ -554,13 +572,24 @@ public class IndexGoal implements Comparator<IndexScan>
             if (n1 != n2) 
                 return (n1 > n2) ? +1 : -1;
         }
-        if (i1.getIndex().getColumns().size() != i2.getIndex().getColumns().size())
-            return (i1.getIndex().getColumns().size() < 
-                    i2.getIndex().getColumns().size()) 
+        if (i1.getIndex().getKeyColumns().size() != i2.getIndex().getKeyColumns().size())
+            return (i1.getIndex().getKeyColumns().size() <
+                    i2.getIndex().getKeyColumns().size())
                 // Fewer columns indexed better than more.
                 ? +1 : -1;
         // Deeper better than shallower.
         return i1.getLeafMostTable().getTable().getTable().getTableId().compareTo(i2.getLeafMostTable().getTable().getTable().getTableId());
+    }
+
+    protected boolean needSort(IndexScan index) {
+        IndexScan.OrderEffectiveness effectiveness = index.getOrderEffectiveness();
+        if ((ordering != null) ||
+            (projectDistinct != null))
+            return (effectiveness != IndexScan.OrderEffectiveness.SORTED);
+        if (grouping != null)
+            return ((effectiveness != IndexScan.OrderEffectiveness.SORTED) &&
+                    (effectiveness != IndexScan.OrderEffectiveness.GROUPED));
+        return false;
     }
 
     static class RequiredColumnsFiller implements PlanVisitor, ExpressionVisitor {
@@ -731,11 +760,53 @@ public class IndexGoal implements Comparator<IndexScan>
         return requiredAfter.isEmpty();
     }
 
-    protected void estimateCost(IndexEstimator indexEstimator, IndexScan index) {
-        IndexStatistics indexStatistics = indexEstimator.getIndexStatistics(index.getIndex());
-        if (indexStatistics != null) {
-            // TODO: Here is where we will actually use those statistics.
+    protected CostEstimate estimateCost(IndexScan index) {
+        if (!costEstimator.isEnabled()) return null;
+        CostEstimate cost = null;
+        if (index.getConditionRange() == null) {
+            cost = costEstimator.costIndexScan(index.getIndex(),
+                                               index.getEqualityComparands(),
+                                               index.getLowComparand(), 
+                                               index.isLowInclusive(),
+                                               index.getHighComparand(), 
+                                               index.isHighInclusive());
         }
+        else {
+            for (RangeSegment segment : index.getConditionRange().getSegments()) {
+                CostEstimate acost = costEstimator.costIndexScan(index.getIndex(),
+                                                                 index.getEqualityComparands(),
+                                                                 segment.getStart().getValueExpression(),
+                                                                 segment.getStart().isInclusive(),
+                                                                 segment.getEnd().getValueExpression(),
+                                                                 segment.getEnd().isInclusive());
+                if (cost == null)
+                    cost = acost;
+                else
+                    cost = cost.union(acost);
+            }
+        }
+        if (!index.isCovering()) {
+            CostEstimate flatten = costEstimator.costFlatten(index.getLeafMostTable(),
+                                                             index.getRequiredTables());
+            cost = cost.nest(flatten);
+        }
+
+        Collection<ConditionExpression> unhandledConditions = 
+            new HashSet<ConditionExpression>(conditions);
+        if (index.getConditions() != null)
+            unhandledConditions.removeAll(index.getConditions());
+        if (!unhandledConditions.isEmpty()) {
+            CostEstimate select = costEstimator.costSelect(unhandledConditions,
+                                                           cost.getRowCount());
+            cost = cost.sequence(select);
+        }
+
+        if (needSort(index)) {
+            CostEstimate sort = costEstimator.costSort(cost.getRowCount());
+            cost = cost.sequence(sort);
+        }
+
+        return cost;
     }
 
     /** Change WHERE, GROUP BY, and ORDER BY upstream of

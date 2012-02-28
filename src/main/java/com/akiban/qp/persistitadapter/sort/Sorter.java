@@ -15,10 +15,7 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.OperatorExecutionBase;
+import com.akiban.qp.operator.*;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
@@ -26,7 +23,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.PersistitValueValueSource;
 import com.akiban.server.PersistitValueValueTarget;
-import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.std.LiteralExpression;
@@ -35,6 +31,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.util.tap.InOutTap;
 import com.persistit.*;
 import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
@@ -46,22 +43,20 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class Sorter
 {
-    public Sorter(PersistitAdapter adapter, 
+    public Sorter(QueryContext context,
                   Cursor input, 
                   RowType rowType, 
                   API.Ordering ordering,
                   API.SortOption sortOption,
-                  Bindings bindings)
+                  InOutTap loadTap)
         throws PersistitException
     {
-        this.adapter = adapter;
+        this.context = context;
+        this.adapter = (PersistitAdapter)context.getStore();
         this.input = input;
-        // This typecast is pretty bad. But I really don't want to pass the query start time as an argument from
-        // the Sort_Tree operator, through the StoreAdapter interface, to here.
-        this.queryStartTimeMsec = ((OperatorExecutionBase) input).startTimeMsec();
+        this.queryStartTimeMsec = context.getStartTime();
         this.rowType = rowType;
         this.ordering = ordering.copy();
-        this.bindings = bindings;
         String sortTreeName = SORT_TREE_NAME_PREFIX + SORTER_ID_GENERATOR.getAndIncrement();
         this.exchange =
             SORT_USING_TEMP_VOLUME
@@ -91,10 +86,10 @@ public class Sorter
         for (int i = 0; i < nsort; i++) {
             orderingTypes[i] = this.ordering.type(i);
             ExpressionEvaluation evaluation = this.ordering.expression(i).evaluation();
-            evaluation.of(adapter);
-            evaluation.of(bindings);
+            evaluation.of(context);
             evaluations.add(evaluation);
         }
+        this.loadTap = loadTap;
     }
 
     public Cursor sort() throws PersistitException
@@ -131,12 +126,20 @@ public class Sorter
     private void loadTree() throws PersistitException
     {
         try {
-            Row row;
-            while ((row = input.next()) != null) {
-                adapter.checkQueryCancelation(queryStartTimeMsec);
-                createKey(row);
-                createValue(row);
-                exchange.store();
+            loadTap.in();
+            try {
+                Row row = input.next();
+                while (row != null) {
+                    adapter.checkQueryCancelation(queryStartTimeMsec);
+                    createKey(row);
+                    createValue(row);
+                    exchange.store();
+                    loadTap.out();
+                    loadTap.in();
+                    row = input.next();
+                }
+            } finally {
+                loadTap.out();
             }
         } catch (PersistitException e) {
             LOG.error("Caught exception while loading tree for sort", e);
@@ -148,8 +151,8 @@ public class Sorter
     private Cursor cursor()
     {
         exchange.clear();
-        SortCursor cursor = SortCursor.create(adapter, null, ordering, new SorterIterationHelper());
-        cursor.open(bindings);
+        SortCursor cursor = SortCursor.create(context, null, ordering, new SorterIterationHelper());
+        cursor.open();
         return cursor;
     }
 
@@ -217,7 +220,7 @@ public class Sorter
     final API.Ordering ordering;
     final boolean preserveDuplicates;
     final List<ExpressionEvaluation> evaluations;
-    final Bindings bindings;
+    final QueryContext context;
     final Key key;
     final Value value;
     final PersistitKeyValueTarget keyTarget;
@@ -227,6 +230,7 @@ public class Sorter
     Exchange exchange;
     long rowCount = 0;
     long queryStartTimeMsec;
+    private final InOutTap loadTap;
 
     // Inner classes
 
@@ -289,11 +293,6 @@ public class Sorter
         {
             sortsInProgress--;
             assert sortsInProgress >= 0;
-            return sortsInProgress;
-        }
-
-        public int sortsInProgress()
-        {
             return sortsInProgress;
         }
 

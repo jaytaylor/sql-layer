@@ -26,7 +26,6 @@ public class UserTable extends Table
                                    String tableName,
                                    Integer tableId)
     {
-        
         UserTable userTable = new UserTable(ais, schemaName, tableName, tableId);
         ais.addUserTable(userTable);
         return userTable;
@@ -35,7 +34,6 @@ public class UserTable extends Table
     public UserTable(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
     {
         super(ais, schemaName, tableName, tableId);
-        migrationUsage = MigrationUsage.AKIBAN_STANDARD;
     }
 
     @Override
@@ -53,7 +51,7 @@ public class UserTable extends Table
             primaryKey = new PrimaryKey(index);
         }
     }
-
+    
     /**
     * Returns the columns in this table that are constrained to match the given column, e.g.
      * customer.cid and order.cid. These will be ordered by the table they appear on, root to leaf.
@@ -260,7 +258,7 @@ public class UserTable extends Table
     {
         PrimaryKey declaredPrimaryKey = primaryKey;
         if (declaredPrimaryKey != null) {
-            List<IndexColumn> pkColumns = primaryKey.getIndex().getColumns();
+            List<IndexColumn> pkColumns = primaryKey.getIndex().getKeyColumns();
             if (pkColumns.size() == 1 && pkColumns.get(0).getColumn().isAkibanPKColumn()) {
                 declaredPrimaryKey = null;
             }
@@ -374,7 +372,7 @@ public class UserTable extends Table
 
     public boolean containsOwnHKey()
     {
-        hKey(); // Force computation of hKey and containsOwnHKey
+        hKey(); // Ensure hKey and containsOwnHKey are computed
         return containsOwnHKey;
     }
 
@@ -384,12 +382,33 @@ public class UserTable extends Table
         return join == null ? null : join.getParent();
     }
 
-    @SuppressWarnings("unused")
-    private UserTable()
+    // Descendent tables whose hkeys are affected by a change to this table's PK or FK.
+    public List<UserTable> hKeyDependentTables()
     {
-        // XXX: GWT requires empty constructor
+        if (hKeyDependentTables == null) {
+            synchronized (lazyEvaluationLock) {
+                if (hKeyDependentTables == null) {
+                    hKeyDependentTables = new ArrayList<UserTable>();
+                    for (Join join : getChildJoins()) {
+                        UserTable child = join.getChild();
+                        if (!child.containsOwnHKey()) {
+                            addTableAndDescendents(child, hKeyDependentTables);
+                        }
+                    }
+                }
+            }
+        }
+        return hKeyDependentTables;
     }
-
+    
+    private void addTableAndDescendents(UserTable table, List<UserTable> accumulator)
+    {
+        accumulator.add(table);
+        for (Join join : table.getChildJoins()) {
+            addTableAndDescendents(join.getChild(), accumulator);
+        }
+    }
+    
     private void computeHKey()
     {
         hKey = new HKey(this);
@@ -460,7 +479,7 @@ public class UserTable extends Table
         Collection<TableIndex> declaredIndexes = new ArrayList<TableIndex>(indexes);
         for (Iterator<TableIndex> iterator = declaredIndexes.iterator(); iterator.hasNext();) {
             TableIndex index = iterator.next();
-            List<IndexColumn> indexColumns = index.getColumns();
+            List<IndexColumn> indexColumns = index.getKeyColumns();
             if (indexColumns.size() == 1 && indexColumns.get(0).getColumn().isAkibanPKColumn()) {
                 iterator.remove();
             }
@@ -470,15 +489,18 @@ public class UserTable extends Table
 
     // State
 
+    private final List<Join> candidateParentJoins = new ArrayList<Join>();
+    private final List<Join> candidateChildJoins = new ArrayList<Join>();
+    private final Object lazyEvaluationLock = new Object();
+
     private int size;
-    private List<Join> candidateParentJoins = new ArrayList<Join>();
-    private List<Join> candidateChildJoins = new ArrayList<Join>();
     private PrimaryKey primaryKey;
-    private transient HKey hKey;
-    private transient boolean containsOwnHKey;
-    private transient HKey branchHKey;
-    private transient List<Column> allHKeyColumns;
-    private transient Integer depth = null;
+    private HKey hKey;
+    private boolean containsOwnHKey;
+    private HKey branchHKey;
+    private List<Column> allHKeyColumns;
+    private Integer depth = null;
+    private volatile List<UserTable> hKeyDependentTables;
 
     // consts
 

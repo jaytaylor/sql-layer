@@ -21,6 +21,8 @@ import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
 import org.slf4j.Logger;
@@ -108,9 +110,9 @@ class Product_NestedLoops extends Operator
     // Operator interface
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter)
+    protected Cursor cursor(QueryContext context)
     {
-        return new Execution(adapter);
+        return new Execution(context);
     }
 
     @Override
@@ -166,8 +168,9 @@ class Product_NestedLoops extends Operator
 
     // Class state
 
+    private static InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Product_NestedLoops open");
+    private static InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Product_NestedLoops next");
     private static final Logger LOG = LoggerFactory.getLogger(BranchLookup_Nested.class);
-    private static final Tap.PointTap PRODUCT_NL_COUNT = Tap.createCount("operator: product_nested_loops", true);
 
     // Object state
 
@@ -186,50 +189,58 @@ class Product_NestedLoops extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
-            PRODUCT_NL_COUNT.hit();
-            this.bindings = bindings;
-            this.outerInput.open(bindings);
-            this.closed = false;
+            TAP_OPEN.in();
+            try {
+                this.outerInput.open();
+                this.closed = false;
+            } finally {
+                TAP_OPEN.out();
+            }
         }
 
         @Override
         public Row next()
         {
-            checkQueryCancelation();
-            Row outputRow = null;
-            while (!closed && outputRow == null) {
-                outputRow = nextProductRow();
-                if (outputRow == null) {
-                    Row row = outerInput.next();
-                    if (row == null) {
-                        close();
-                    } else {
-                        RowType rowType = row.rowType();
-                        if (rowType == outerType) {
-                            Row branchRow = row.subRow(branchType);
-                            assert branchRow != null : row;
-                            if (outerBranchRow.isEmpty() || !branchRow.hKey().equals(outerBranchRow.get().hKey())) {
-                                if (LOG.isDebugEnabled()) {
-                                    LOG.debug("Product_NestedLoops: branch row {}", row);
+            TAP_NEXT.in();
+            try {
+                checkQueryCancelation();
+                Row outputRow = null;
+                while (!closed && outputRow == null) {
+                    outputRow = nextProductRow();
+                    if (outputRow == null) {
+                        Row row = outerInput.next();
+                        if (row == null) {
+                            close();
+                        } else {
+                            RowType rowType = row.rowType();
+                            if (rowType == outerType) {
+                                Row branchRow = row.subRow(branchType);
+                                assert branchRow != null : row;
+                                if (outerBranchRow.isEmpty() || !branchRow.hKey().equals(outerBranchRow.get().hKey())) {
+                                    if (LOG.isDebugEnabled()) {
+                                        LOG.debug("Product_NestedLoops: branch row {}", row);
+                                    }
+                                    outerBranchRow.hold(branchRow);
+                                    innerRows.newBranchRow(branchRow);
                                 }
-                                outerBranchRow.hold(branchRow);
-                                innerRows.newBranchRow(branchRow);
+                                outerRow.hold(row);
+                                if (LOG.isDebugEnabled()) {
+                                    LOG.debug("Product_NestedLoops: restart inner loop using current branch row");
+                                }
+                                innerRows.resetForCurrentBranchRow();
                             }
-                            outerRow.hold(row);
-                            if (LOG.isDebugEnabled()) {
-                                LOG.debug("Product_NestedLoops: restart inner loop using current branch row");
-                            }
-                            innerRows.resetForCurrentBranchRow();
                         }
                     }
                 }
+                if(LOG.isDebugEnabled()) {
+                    LOG.debug("Product_NestedLoops: yield {}", outputRow);
+                }
+                return outputRow;
+            } finally {
+                TAP_NEXT.out();
             }
-            if(LOG.isDebugEnabled()) {
-                LOG.debug("Product_NestedLoops: yield {}", outputRow);
-            }
-            return outputRow;
         }
 
         @Override
@@ -243,11 +254,11 @@ class Product_NestedLoops extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter)
+        Execution(QueryContext context)
         {
-            super(adapter);
-            this.outerInput = outerInputOperator.cursor(adapter);
-            this.innerRows = new InnerRows(innerInputOperator.cursor(adapter));
+            super(context);
+            this.outerInput = outerInputOperator.cursor(context);
+            this.innerRows = new InnerRows(innerInputOperator.cursor(context));
         }
 
         // For use by this class
@@ -284,7 +295,6 @@ class Product_NestedLoops extends Operator
         private final ShareHolder<Row> outerRow = new ShareHolder<Row>();
         private final ShareHolder<Row> outerBranchRow = new ShareHolder<Row>();
         private final InnerRows innerRows;
-        private Bindings bindings;
         private boolean closed = false;
 
         // Inner classes
@@ -309,8 +319,8 @@ class Product_NestedLoops extends Operator
             public void newBranchRow(Row branchRow)
             {
                 close();
-                bindings.set(inputBindingPosition, branchRow);
-                innerInput.open(bindings);
+                context.setRow(inputBindingPosition, branchRow);
+                innerInput.open();
                 rows.clear();
                 Row row;
                 while ((row = innerInput.next()) != null) {

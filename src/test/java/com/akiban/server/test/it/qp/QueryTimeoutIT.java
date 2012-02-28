@@ -42,7 +42,7 @@ public class QueryTimeoutIT extends OperatorITBase
     public void noExitWithDefaultTimeout() throws InterruptedException
     {
         final Operator plan = new DoNothingForever();
-        final Cursor cursor = cursor(plan, adapter);
+        final Cursor cursor = cursor(plan, queryContext);
         final AtomicBoolean exited = new AtomicBoolean(false);
         Thread queryThread = new Thread(
             new Runnable()
@@ -72,7 +72,7 @@ public class QueryTimeoutIT extends OperatorITBase
         int timeoutSec = 3;
         configService().queryTimeoutSec(timeoutSec);
         final Operator plan = new DoNothingForever();
-        final Cursor cursor = cursor(plan, adapter);
+        final Cursor cursor = cursor(plan, queryContext);
         final AtomicBoolean exited = new AtomicBoolean(false);
         Thread queryThread = new Thread(
             new Runnable()
@@ -95,7 +95,7 @@ public class QueryTimeoutIT extends OperatorITBase
         long stop = System.currentTimeMillis();
         assertTrue(exited.get());
         long elapsedSec = (stop - start) / 1000;
-        assertTrue(elapsedSec >= timeoutSec && elapsedSec < timeoutSec * 1.25);
+        assertTrue(closeEnough(timeoutSec, elapsedSec));
     }
 
     @Test
@@ -106,7 +106,7 @@ public class QueryTimeoutIT extends OperatorITBase
         AkServer akServer = (AkServer) akServer();
         configService().queryTimeoutSec(INITIAL_TIMEOUT_SEC);
         final Operator plan = new DoNothingForever();
-        final Cursor cursor = cursor(plan, adapter);
+        final Cursor cursor = cursor(plan, queryContext);
         final AtomicBoolean exited = new AtomicBoolean(false);
         Thread queryThread = new Thread(
             new Runnable()
@@ -132,7 +132,7 @@ public class QueryTimeoutIT extends OperatorITBase
         long stop = System.currentTimeMillis();
         assertTrue(exited.get());
         long elapsedSec = (stop - start) / 1000;
-        assertTrue(elapsedSec >= MODIFIED_TIMEOUT_SEC && elapsedSec < MODIFIED_TIMEOUT_SEC * 1.25);
+        assertTrue(closeEnough(MODIFIED_TIMEOUT_SEC, elapsedSec));
     }
 
     @Test
@@ -143,7 +143,7 @@ public class QueryTimeoutIT extends OperatorITBase
         AkServer akServer = (AkServer) akServer();
         configService().queryTimeoutSec(INITIAL_TIMEOUT_SEC);
         final Operator plan = new DoNothingForever();
-        final Cursor cursor = cursor(plan, adapter);
+        final Cursor cursor = cursor(plan, queryContext);
         final AtomicBoolean exited = new AtomicBoolean(false);
         Thread queryThread = new Thread(
             new Runnable()
@@ -172,17 +172,29 @@ public class QueryTimeoutIT extends OperatorITBase
         assertTrue(exited.get());
         long elapsedSec = (stop - start) / 1000;
         long expectedSec = INITIAL_TIMEOUT_SEC + 1;
-        assertTrue(elapsedSec >= expectedSec && elapsedSec < expectedSec * 1.25);
+        assertTrue(closeEnough(expectedSec, elapsedSec));
     }
+
+    private boolean closeEnough(long expectedSec, long actualSec)
+    {
+        // A lower fudge factor is needed because the timeout starts from the time the QueryContext is created,
+        // which is in the @Before method, slightly before the test's timer starts.
+        return
+            actualSec <= expectedSec * (1 + UPPER_FUDGE_FACTOR) &&
+            actualSec >= expectedSec * (1 - LOWER_FUDGE_FACTOR);
+    }
+    
+    private static final double UPPER_FUDGE_FACTOR = 1.0; // 100%
+    private static final double LOWER_FUDGE_FACTOR = 0.2; // 20%
 
     private static class DoNothingForever extends Operator
     {
         // Operator interface
 
         @Override
-        protected Cursor cursor(StoreAdapter adapter)
+        protected Cursor cursor(QueryContext context)
         {
-            return new Execution(adapter);
+            return new Execution(context);
         }
 
         private class Execution extends OperatorExecutionBase implements Cursor
@@ -190,7 +202,7 @@ public class QueryTimeoutIT extends OperatorITBase
             // Cursor interface
 
             @Override
-            public void open(Bindings bindings)
+            public void open()
             {
             }
 
@@ -213,9 +225,9 @@ public class QueryTimeoutIT extends OperatorITBase
 
             // Execution interface
 
-            Execution(StoreAdapter adapter)
+            Execution(QueryContext context)
             {
-                super(adapter);
+                super(context);
             }
         }
     }

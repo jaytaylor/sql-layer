@@ -15,8 +15,8 @@
 
 package com.akiban.server.test.it.dxl;
 
-import com.akiban.ais.io.MessageTarget;
-import com.akiban.ais.io.Writer;
+import com.akiban.ais.metamodel.io.MessageTarget;
+import com.akiban.ais.metamodel.io.Writer;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;

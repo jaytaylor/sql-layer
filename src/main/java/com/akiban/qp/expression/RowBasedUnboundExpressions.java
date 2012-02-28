@@ -15,8 +15,7 @@
 
 package com.akiban.qp.expression;
 
-import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.ValueSource;
@@ -25,8 +24,8 @@ import java.util.List;
 
 public final class RowBasedUnboundExpressions implements UnboundExpressions {
     @Override
-    public BoundExpressions get(Bindings bindings, StoreAdapter adapter) {
-        return new ExpressionsAndBindings(rowType, expressions, bindings, adapter);
+    public BoundExpressions get(QueryContext context) {
+        return new ExpressionsAndBindings(rowType, expressions, context);
     }
 
     @Override
@@ -55,8 +54,8 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
             return expressionRow.eval(index);
         }
 
-        ExpressionsAndBindings(RowType rowType, List<Expression> expressions, Bindings bindings, StoreAdapter adapter) {
-            expressionRow = new ExpressionRow(rowType, bindings, adapter, expressions);
+        ExpressionsAndBindings(RowType rowType, List<Expression> expressions, QueryContext context) {
+            expressionRow = new ExpressionRow(rowType, context, expressions);
         }
 
         private final ExpressionRow expressionRow;

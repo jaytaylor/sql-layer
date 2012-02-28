@@ -18,7 +18,6 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.sql.optimizer.plan.*;
 
 import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
-import com.akiban.sql.optimizer.plan.JoinNode.JoinReverseHook;
 import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
 
 import com.akiban.server.error.AkibanInternalException;
@@ -89,19 +88,19 @@ public class InConditionReverser extends BaseRule
             // If the source was VALUES, see if it's distinct. If so,
             // we can possibly reverse the join and benefit from an
             // index.
-            ReverseHook reverseHook = null;
+            JoinType semiType = JoinType.SEMI;
             DistinctState distinct = expressionsSource.getDistinctState();
             switch (distinct) {
             case DISTINCT:
             case DISTINCT_WITH_NULL:
-                reverseHook = new ReverseHook(true, true);
+                semiType = JoinType.SEMI_INNER_ALREADY_DISTINCT;
                 break;
             case HAS_PARAMETERS:
-                reverseHook = new ReverseHook(true, false);
+                semiType = JoinType.SEMI_INNER_IF_DISTINCT;
                 break;
             }
             convertToSemiJoin(select, any, selectInput, expressionsSource,
-                              joinConditions, reverseHook);
+                              joinConditions, semiType);
             return;
         }
         if (convertToSubquerySource(select, any, selectInput, input,
@@ -115,7 +114,7 @@ public class InConditionReverser extends BaseRule
         }
         if (input instanceof Joinable) {
             convertToSemiJoin(select, any, selectInput, (Joinable)input,
-                              joinConditions, null);
+                              joinConditions, JoinType.SEMI);
             return;
         }
     }
@@ -153,86 +152,79 @@ public class InConditionReverser extends BaseRule
                                                 cright.getSQLsource()));
         }
         convertToSemiJoin(select, any, selectInput, subquerySource,
-                          joinConditions, new ReverseHook(hasDistinct, false));
+                          joinConditions, 
+                          hasDistinct ? JoinType.SEMI_INNER_IF_DISTINCT : JoinType.SEMI);
         return true;
     }
 
     protected void convertToSemiJoin(Select select, AnyCondition any,
                                      Joinable selectInput, Joinable semiInput,
                                      ConditionList joinConditions, 
-                                     ReverseHook reverseHook) {
-        JoinNode join = new JoinNode(selectInput, semiInput, JoinType.SEMI);
+                                     JoinType semiType) {
+        JoinNode join = new JoinNode(selectInput, semiInput, semiType);
         join.setJoinConditions(joinConditions);
         select.getConditions().remove(any);
         select.replaceInput(selectInput, join);
-        if (reverseHook != null)
-            join.setReverseHook(reverseHook);
     }
-    
-    static class ReverseHook implements JoinReverseHook {
-        private boolean reversible, distinct;
 
-        public ReverseHook(boolean reversible, boolean distinct) {
-            this.reversible = reversible;
-            this.distinct = distinct;
-        }
-
-        public boolean canReverse(JoinNode join) {
-            return reversible;
-        }
-
-        public void beforeReverse(JoinNode join) {
-            if (!distinct) {
-                Joinable right = join.getRight();
-                if (right instanceof ExpressionsSource) {
-                    ExpressionsSource values = (ExpressionsSource)right;
-                    values.setDistinctState(DistinctState.NEED_DISTINCT);
-                }
-                else if (right instanceof SubquerySource) {
-                    Subquery subquery = ((SubquerySource)right).getSubquery();
-                    PlanNode input = subquery.getInput();
-                    subquery.replaceInput(input, new Distinct(input));
-                }
-                else {
-                    throw new AkibanInternalException("Could not make distinct " + 
-                                                      right);
-                }
-            }
-            join.setJoinType(JoinType.INNER);
-        }
-
-        public void didNotReverse(JoinNode join) {
+    public static void beforeReverseSemiJoin(JoinNode join) {
+        if (join.getJoinType() == JoinType.SEMI_INNER_IF_DISTINCT) {
             Joinable right = join.getRight();
-            if (right instanceof SubquerySource) {
-                // Undo part of what we did above. Specifically,
-                // splice out the SubquerySource, Subquery, Project
-                // and move any Select up into the join conditions.
-                // Not semantically necessary, but putting more of the
-                // conditions together helps with the changes of being
-                // able to use a group index.
-                PlanNode input = ((SubquerySource)right).getSubquery().getInput();
-                if (!(input instanceof Project))
-                    return;
-                Project project = (Project)input;
-                input = project.getInput();
-                Select select = null;
-                if (input instanceof Select) {
-                    select = (Select)input;
-                    input = select.getInput();
-                }
-                if (!(input instanceof Joinable))
-                    return;
-                ConditionList conds = join.getJoinConditions();
-                ConditionExpression cond = conds.get(0);
-                if (!(cond instanceof ComparisonCondition))
-                    return;
-                ComparisonCondition ccond = (ComparisonCondition)cond;
-                ccond.setRight(project.getFields().get(0));
-                if (select != null)
-                    conds.addAll(select.getConditions());
-                join.replaceInput(right, input);
+            if (right instanceof ExpressionsSource) {
+                ExpressionsSource values = (ExpressionsSource)right;
+                values.setDistinctState(DistinctState.NEED_DISTINCT);
+            }
+            else if (right instanceof SubquerySource) {
+                Subquery subquery = ((SubquerySource)right).getSubquery();
+                PlanNode input = subquery.getInput();
+                subquery.replaceInput(input, new Distinct(input));
+            }
+            else {
+                throw new AkibanInternalException("Could not make distinct " + 
+                                                  right);
             }
         }
+        else {
+            assert (join.getJoinType() == JoinType.SEMI_INNER_ALREADY_DISTINCT);
+        }
+        join.setJoinType(JoinType.INNER);
+    }
+
+    public static void didNotReverseSemiJoin(JoinNode join) {
+        assert ((join.getJoinType() == JoinType.SEMI) ||
+                (join.getJoinType() == JoinType.SEMI_INNER_ALREADY_DISTINCT) ||
+                (join.getJoinType() == JoinType.SEMI_INNER_IF_DISTINCT));
+        Joinable right = join.getRight();
+        if (right instanceof SubquerySource) {
+            // Undo part of what we did above. Specifically,
+            // splice out the SubquerySource, Subquery, Project
+            // and move any Select up into the join conditions.
+            // Not semantically necessary, but putting more of the
+            // conditions together helps with the changes of being
+            // able to use a group index.
+            PlanNode input = ((SubquerySource)right).getSubquery().getInput();
+            if (!(input instanceof Project))
+                return;
+            Project project = (Project)input;
+            input = project.getInput();
+            Select select = null;
+            if (input instanceof Select) {
+                select = (Select)input;
+                input = select.getInput();
+            }
+            if (!(input instanceof Joinable))
+                return;
+            ConditionList conds = join.getJoinConditions();
+            ConditionExpression cond = conds.get(0);
+            if (!(cond instanceof ComparisonCondition))
+                return;
+            ComparisonCondition ccond = (ComparisonCondition)cond;
+            ccond.setRight(project.getFields().get(0));
+            if (select != null)
+                conds.addAll(select.getConditions());
+            join.replaceInput(right, input);
+        }
+        join.setJoinType(JoinType.SEMI);
     }
 
     public void convert(Select select, ExistsCondition exists) {

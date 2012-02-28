@@ -53,10 +53,11 @@ public class RowDefCache {
     // TODO: For debugging - remove this
     private static volatile RowDefCache LATEST;
 
-    private static final Logger LOG = LoggerFactory.getLogger(RowDefCache.class
-            .getName());
+    private static final Logger LOG = LoggerFactory.getLogger(RowDefCache.class.getName());
 
     private final Map<Integer, RowDef> cacheMap = new TreeMap<Integer, RowDef>();
+    
+    private volatile int maxOrdinal = -1;
 
     private final Map<TableName, Integer> nameMap = new TreeMap<TableName, Integer>();
     
@@ -78,6 +79,23 @@ public class RowDefCache {
 
     public synchronized boolean contains(final int rowDefId) {
         return cacheMap.containsKey(Integer.valueOf(rowDefId));
+    }
+    
+    public int maxOrdinal()
+    {
+        if (maxOrdinal == -1) {
+            synchronized (this) {
+                if (maxOrdinal == -1) {
+                    for (RowDef rowDef : cacheMap.values()) {
+                        if (rowDef.getOrdinal() > maxOrdinal) {
+                            maxOrdinal = rowDef.getOrdinal();
+                        }
+                    }
+                }
+            }
+        }
+        assert maxOrdinal >= 0;
+        return maxOrdinal;
     }
     
     /**
@@ -265,7 +283,7 @@ public class RowDefCache {
         // Secondary indexes
         List<Index> indexList = new ArrayList<Index>();
         for (TableIndex index : table.getIndexesIncludingInternal()) {
-            List<IndexColumn> indexColumns = index.getColumns();
+            List<IndexColumn> indexColumns = index.getKeyColumns();
             if(!indexColumns.isEmpty()) {
                 new IndexDef(rowDef, index);
                 if (index.isPrimaryKey()) {
@@ -309,7 +327,7 @@ public class RowDefCache {
         // Secondary indexes
         final List<Index> indexList = new ArrayList<Index>();
         for (TableIndex index : table.getIndexes()) {
-            List<IndexColumn> indexColumns = index.getColumns();
+            List<IndexColumn> indexColumns = index.getKeyColumns();
             if(!indexColumns.isEmpty()) {
                 new IndexDef(rowDef, index);
                 indexList.add(index);

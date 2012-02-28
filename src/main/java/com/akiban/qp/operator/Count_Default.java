@@ -21,11 +21,50 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.types.AkType;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+
+/**
+
+ <h1>Overview</h1>
+
+ Count_Default counts the number of rows of a specified RowType.
+
+ <h1>Arguments</h1>
+
+ <ul>
+
+ <li><b>RowType countType:</b> Type of rows to be counted.
+
+ </ul>
+
+
+ <h1>Behavior</h1>
+
+ The input rows whose type matches the countType are counted.
+
+ <h1>Output</h1>
+
+ A single row containing the row count (type long).
+
+ <h1>Assumptions</h1>
+
+ None.
+
+ <h1>Performance</h1>
+
+ This operator does no IO.
+
+ <h1>Memory Requirements</h1>
+
+ This operator keeps no rows in memory.
+
+ */
 
 class Count_Default extends Operator
 {
@@ -46,9 +85,9 @@ class Count_Default extends Operator
     }
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter)
+    protected Cursor cursor(QueryContext context)
     {
-        return new Execution(adapter, inputOperator.cursor(adapter));
+        return new Execution(context, inputOperator.cursor(context));
     }
 
     @Override
@@ -81,8 +120,9 @@ class Count_Default extends Operator
     }
     
     // Class state
-    
-    private static final Tap.PointTap COUNT_COUNT = Tap.createCount("operator: count", true);
+
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Count_Default open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Count_Default next");
 
     // Object state
 
@@ -97,30 +137,39 @@ class Count_Default extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
-            COUNT_COUNT.hit();
-            input.open(bindings);
-            count = 0;
-            closed = false;
+            TAP_OPEN.in();
+            try {
+                input.open();
+                count = 0;
+                closed = false;
+            } finally {
+                TAP_OPEN.out();
+            }
         }
 
         @Override
         public Row next()
         {
-            checkQueryCancelation();
-            Row row = null;
-            while ((row == null) && !closed) {
-                row = input.next();
-                if (row == null) {
-                    close();
-                    row = new ValuesRow(resultType, new Object[] { count });
-                } else if (row.rowType() == countType) {
-                    row = null;
-                    count++;
+            TAP_NEXT.in();
+            try {
+                checkQueryCancelation();
+                Row row = null;
+                while ((row == null) && !closed) {
+                    row = input.next();
+                    if (row == null) {
+                        close();
+                        row = new ValuesRow(resultType, new Object[] { count });
+                    } else if (row.rowType() == countType) {
+                        row = null;
+                        count++;
+                    }
                 }
+                return row;
+            } finally {
+                TAP_NEXT.out();
             }
-            return row;
         }
 
         @Override
@@ -132,9 +181,9 @@ class Count_Default extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, Cursor input)
+        Execution(QueryContext context, Cursor input)
         {
-            super(adapter);
+            super(context);
             this.input = input;
         }
 

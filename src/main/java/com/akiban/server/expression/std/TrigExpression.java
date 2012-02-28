@@ -95,12 +95,14 @@ public class TrigExpression extends AbstractCompositeExpression
         {
             int size = argumentTypes.size();
 
-            switch (name)
+            switch(size)
             {
-                case ATAN2: if (size != 2) throw new WrongExpressionArityException(2, size);
-                            break;
-                default:    if (size != 1) throw new WrongExpressionArityException(1, size);
+                case 2:     if (name != TrigName.ATAN && name != TrigName.ATAN2)
+                                throw new WrongExpressionArityException(1, size); // fall thru
+                case 1:     break;
+                default:    throw new WrongExpressionArityException(1, size);
             }
+           
             for (int i = 0; i < size; ++i)
                 argumentTypes.setType(i, AkType.DOUBLE);
             return ExpressionTypes.DOUBLE;
@@ -128,9 +130,9 @@ public class TrigExpression extends AbstractCompositeExpression
             DoubleExtractor dExtractor = Extractors.getDoubleExtractor();
             double dvar1 = dExtractor.getDouble(firstOperand);
             
-            // get second operand, if name == ATAN2
+            // get second operand, if any, for ATAN2/ATAN
             double dvar2 = 1;
-            if (name.equals(TrigName.ATAN2))
+            if (children().size() == 2)
             {
                 ValueSource secOperand = this.children().get(1).eval();
                 if (secOperand.isNull())
@@ -154,9 +156,9 @@ public class TrigExpression extends AbstractCompositeExpression
                             else result = Math.cos(dvar1) / temp;
                             break;
                 case ASIN:  result = Math.asin(dvar1); break;
-                case ACOS:  result = Math.acos(dvar1); break;
-                case ATAN:  result = Math.atan(dvar1); break;
-                case ATAN2: result = Math.atan2(dvar1, dvar2); break;
+                case ACOS:  result = Math.acos(dvar1); break;                    
+                case ATAN:  
+                case ATAN2: result = Math.atan2(dvar1, dvar2); break;                    
                 case COSH:  result = Math.cosh(dvar1); break;
                 case SINH:  result = Math.sinh(dvar1); break;
                 case TANH:  result = Math.tanh(dvar1); break;
@@ -182,15 +184,14 @@ public class TrigExpression extends AbstractCompositeExpression
     { 
         super (AkType.DOUBLE, children);
         
-        if (name.equals(TrigName.ATAN2))
-        {   
-            if (children.size() != 2)
-                throw new WrongExpressionArityException(2, children.size());
+        int size = children.size();
+        switch(size)
+        {
+            case 2:     if (name != TrigName.ATAN && name != TrigName.ATAN2)
+                            throw new WrongExpressionArityException(1, size); // fall thru
+            case 1:     break;
+            default:    throw new WrongExpressionArityException(1, size);
         }
-        else
-            if (children.size() != 1)
-                throw new WrongExpressionArityException(1, children.size());
-     
         this.name = name;
     }
     

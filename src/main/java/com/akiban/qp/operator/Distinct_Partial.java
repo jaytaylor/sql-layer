@@ -20,8 +20,53 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.InOutTap;
 
 import java.util.*;
+
+/**
+
+ <h1>Overview</h1>
+
+ Distinct_Partial eliminates duplicate rows that are adjacent in the input stream.
+ (A sufficient but not necessary condition for elimination of all duplicates is
+ that the input is sorted by all columns.) 
+
+ <h1>Arguments</h1>
+
+ <ul>
+
+ <li><b>Operator input:</b> the input operator
+
+ <li><b>RowType distinctType:</b> Specifies the type of rows from the input stream.
+
+ </ul>
+
+ <h1>Behavior</h1>
+ 
+ The RowType of each input row must match the specified distinctType.
+ 
+ For each maximal subsequence of input rows that match in all columns, one row will be written to output. 
+
+ <h1>Output</h1>
+
+ A subset of the input rows, in which no two adjacent rows match in all columns.
+ 
+ <h1>Assumptions</h1>
+
+ The input type of every input row is the specified distinctType.
+
+ <h1>Performance</h1>
+
+ This operator performs no IO. For each row, there is a comparison of one or more column values to the columns
+ of a stored row. An attempt is made to minimize the number of such comparisons, but it is possible to compare
+ every column of every input row.
+
+ <h1>Memory requirements</h1>
+
+ No more than two rows at any time.
+
+ */
 
 class Distinct_Partial extends Operator
 {
@@ -42,9 +87,9 @@ class Distinct_Partial extends Operator
     }
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter)
+    protected Cursor cursor(QueryContext context)
     {
-        return new Execution(adapter, inputOperator.cursor(adapter));
+        return new Execution(context, inputOperator.cursor(context));
     }
 
     @Override
@@ -75,6 +120,11 @@ class Distinct_Partial extends Operator
         this.distinctType = distinctType;
     }
 
+    // Class state
+    
+    private final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Distinct_Partial open");
+    private final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Distinct_Partial next");
+    
     // Object state
 
     private final Operator inputOperator;
@@ -87,23 +137,33 @@ class Distinct_Partial extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
-            input.open(bindings);
-            nvalid = 0;
+            TAP_OPEN.in();
+            try {
+                input.open();
+                nvalid = 0;
+            } finally {
+                TAP_OPEN.out();
+            }
         }
 
         @Override
         public Row next()
         {
-            checkQueryCancelation();
-            Row row;
-            while ((row = input.next()) != null) {
-                assert row.rowType() == distinctType : row;
-                if (isDistinct(row)) 
-                    break;
+            TAP_NEXT.in();
+            try {
+                checkQueryCancelation();
+                Row row;
+                while ((row = input.next()) != null) {
+                    assert row.rowType() == distinctType : row;
+                    if (isDistinct(row))
+                        break;
+                }
+                return row;
+            } finally {
+                TAP_NEXT.out();
             }
-            return row;
         }
 
         @Override
@@ -115,9 +175,9 @@ class Distinct_Partial extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, Cursor input)
+        Execution(QueryContext context, Cursor input)
         {
-            super(adapter);
+            super(context);
             this.input = input;
 
             nfields = distinctType.nFields();

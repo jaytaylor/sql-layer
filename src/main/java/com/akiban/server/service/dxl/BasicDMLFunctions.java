@@ -72,6 +72,7 @@ import com.akiban.server.store.RowCollector;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 import com.google.inject.Inject;
 import com.persistit.exception.PersistitException;
@@ -89,8 +90,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     private final Scanner scanner;
     private static final int SCAN_RETRY_COUNT = 0;
 
-    private static Tap.PointTap SCAN_RETRY_COUNT_TAP = Tap.createCount("BasicDMLFunctions: scan retries", true);
-    private static Tap.PointTap SCAN_RETRY_ABANDON_TAP = Tap.createCount("BasicDMLFunctions: scan abandons", true);
+    private static PointTap SCAN_RETRY_ABANDON_TAP = Tap.createCount("BasicDMLFunctions: scan abandons");
 
     @Inject
     BasicDMLFunctions(BasicDXLMiddleman middleman, SchemaManager schemaManager, Store store, TreeService treeService, DDLFunctions ddlFunctions) {
@@ -125,7 +125,9 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
     {
         logger.trace("stats for {} updating: {}", tableId, updateFirst);
         if (updateFirst) {
-            store().analyzeTable(session, tableId);
+            ddlFunctions.updateTableStatistics(session,
+                                               ddlFunctions.getTableName(session, tableId),
+                                               null);
         }
         return store().getTableStatistics(session, tableId);
     }
@@ -647,7 +649,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
                 IndexDef indexDef = rc.getIndexDef();
                 if (indexDef == null) {
                     Index index = ddlFunctions.getRowDef(rc.getTableId()).getPKIndex();
-                    indexDef = index != null ? (IndexDef)index.indexDef() : null;
+                    indexDef = index != null ? index.indexDef() : null;
                 }
                 if (indexDef != null) {
                     assert indexDef.getIndex().isTableIndex();
@@ -737,7 +739,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         // Store.deleteRow() requires all index columns to be in the passed RowData to properly clean everything up
         Set<Integer> keyColumns = new HashSet<Integer>();
         for(Index index : utable.getIndexesIncludingInternal()) {
-            for(IndexColumn col : index.getColumns()) {
+            for(IndexColumn col : index.getKeyColumns()) {
                 int pos = col.getColumn().getPosition();
                 keyColumns.add(pos);
             }

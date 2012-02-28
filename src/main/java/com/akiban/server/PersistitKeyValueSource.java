@@ -16,6 +16,7 @@
 package com.akiban.server;
 
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.qp.operator.Cursor;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
@@ -150,6 +151,11 @@ public final class PersistitKeyValueSource implements ValueSource {
         return decode().getBool();
     }
 
+    @Override
+    public Cursor getResultSet() {
+        throw new UnsupportedOperationException();
+    }
+    
     @Override
     public void appendAsString(AkibanAppender appender, Quote quote) {
         // Can we optimize this at all?

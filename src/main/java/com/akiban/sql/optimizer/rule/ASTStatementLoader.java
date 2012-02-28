@@ -38,7 +38,7 @@ import com.akiban.ais.model.UserTable;
 
 import com.akiban.server.error.InsertWrongCountException;
 import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.ParseException;
+import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.error.OrderGroupByNonIntegerConstant;
 import com.akiban.server.error.OrderGroupByIntegerOutOfRange;
@@ -77,8 +77,7 @@ public class ASTStatementLoader extends BaseRule
             plan.setPlan(new Loader().toStatement(stmt));
         }
         catch (StandardException ex) {
-            // TODO: Separate out Parser subsystem error from true parse error.
-            throw new ParseException("", ex.getMessage(), "");
+            throw new SQLParserInternalException(ex);
         }
     }
 
@@ -593,11 +592,11 @@ public class ASTStatementLoader extends BaseRule
                 comp = Comparison.NE;
                 needOperand = true;
                 break;
-            case NOT_IN: 
             case NE_ANY: 
                 comp = Comparison.NE;
                 needOperand = true;
                 break;
+            case NOT_IN: 
             case NE_ALL: 
                 negate = true;
                 comp = Comparison.EQ;
@@ -975,6 +974,7 @@ public class ASTStatementLoader extends BaseRule
         }
     
         protected Map<Group,TableTree> groups = new HashMap<Group,TableTree>();
+        protected EquivalenceFinder<ColumnExpression> columnEquivalences = new EquivalenceFinder<ColumnExpression>();
 
         protected TableNode getTableNode(UserTable table)
                 throws StandardException {
@@ -1022,7 +1022,7 @@ public class ASTStatementLoader extends BaseRule
                 Column column = cb.getColumn();
                 if (column != null)
                     return new ColumnExpression(((TableSource)joinNode), column, 
-                                                type, valueNode);
+                                                type, valueNode, columnEquivalences);
                 else
                     return new ColumnExpression(((ColumnSource)joinNode), 
                                                 cb.getFromTable().getResultColumns().indexOf(cb.getResultColumn()), 
@@ -1121,12 +1121,20 @@ public class ASTStatementLoader extends BaseRule
             }
             else if (valueNode instanceof SubqueryNode) {
                 SubqueryNode subqueryNode = (SubqueryNode)valueNode;
-                PlanNode subquery = toQueryForSelect(subqueryNode.getResultSet(),
-                                                     subqueryNode.getOrderByList(),
-                                                     subqueryNode.getOffset(),
-                                                     subqueryNode.getFetchFirst());
-                return new SubqueryValueExpression(new Subquery(subquery),
-                                                   subqueryNode.getType(), subqueryNode);
+                PlanNode subquerySelect = toQueryForSelect(subqueryNode.getResultSet(),
+                                                           subqueryNode.getOrderByList(),
+                                                           subqueryNode.getOffset(),
+                                                           subqueryNode.getFetchFirst());
+                Subquery subquery = new Subquery(subquerySelect);
+                if ((subqueryNode.getType() != null) &&
+                    subqueryNode.getType().getTypeId().isRowMultiSet())
+                    return new SubqueryResultSetExpression(subquery,
+                                                           subqueryNode.getType(), 
+                                                           subqueryNode);
+                else
+                    return new SubqueryValueExpression(subquery, 
+                                                       subqueryNode.getType(), 
+                                                       subqueryNode);
             }
             else if (valueNode instanceof JavaToSQLValueNode) {
                 return toExpression(((JavaToSQLValueNode)valueNode).getJavaValueNode(),

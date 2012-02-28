@@ -15,8 +15,10 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.error.InvalidDateFormatException;
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -27,15 +29,21 @@ import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.conversion.util.ConversionUtil;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.sql.StandardException;
 import java.util.EnumSet;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
+import org.joda.time.IllegalFieldValueException;
+import org.joda.time.MutableDateTime;
 
 public class ExtractExpression extends AbstractUnaryExpression
 {
+    @Scalar ("dayofyear")
+    public static final ExpressionComposer DAY_YEAR_COMPOSER = new InternalComposer(TargetExtractType.DAY_OF_YEAR);
+    
     @Scalar ("date")
     public static final ExpressionComposer DATE_COMPOSER = new InternalComposer(TargetExtractType.DATE);
 
@@ -140,7 +148,18 @@ public class ExtractExpression extends AbstractUnaryExpression
             }
             
         },
-        DAY(AkType.LONG)
+
+        DAY_OF_YEAR (AkType.INT)
+        {
+            @Override
+            public Long extract (ValueSource source)
+            {
+                MutableDateTime datetime = ConversionUtil.getDateTimeConverter().get(source);                
+                return (long)datetime.getDayOfYear();
+            }
+        },
+
+        DAY(AkType.INT)
         {
             @Override
             public Long extract (ValueSource source)
@@ -167,7 +186,7 @@ public class ExtractExpression extends AbstractUnaryExpression
             }
         },
         
-        HOUR(AkType.LONG)
+        HOUR(AkType.INT)
         {
             @Override
             public Long extract (ValueSource source)
@@ -198,7 +217,7 @@ public class ExtractExpression extends AbstractUnaryExpression
             }
         },
         
-        MINUTE(AkType.LONG)
+        MINUTE(AkType.INT)
         {
             @Override
             public Long extract (ValueSource source)
@@ -229,7 +248,7 @@ public class ExtractExpression extends AbstractUnaryExpression
             }
         },
         
-        MONTH(AkType.LONG)
+        MONTH(AkType.INT)
         {
             @Override
             public Long extract (ValueSource source)
@@ -257,7 +276,7 @@ public class ExtractExpression extends AbstractUnaryExpression
             
         },
         
-        SECOND(AkType.LONG)
+        SECOND(AkType.INT)
         {
             @Override
             public Long extract (ValueSource source)
@@ -358,7 +377,7 @@ public class ExtractExpression extends AbstractUnaryExpression
             
         },
         
-        YEAR(AkType.YEAR)
+        YEAR(AkType.INT)
         {
             @Override
             public Long extract (ValueSource source)
@@ -371,7 +390,7 @@ public class ExtractExpression extends AbstractUnaryExpression
                                     long y = rawLong / 512;
                                     long m = rawLong / 32 % 16;
                                     long d = rawLong % 32;
-                                    return vallidDayMonth (y,m,d)? (y == 0 ? 0 : y - 1900) : null;
+                                    return vallidDayMonth (y,m,d)? y : null;
                     case DATETIME:  rawLong = source.getDateTime();
                                     long yr = rawLong / 10000000000L;
                                     long mo = rawLong / 100000000L % 100;
@@ -379,15 +398,15 @@ public class ExtractExpression extends AbstractUnaryExpression
                                     long hr = rawLong / 10000 % 100;
                                     long min = rawLong / 100 % 100;
                                     long sec = rawLong % 100;
-                                    return vallidDayMonth(yr,mo,da) && vallidHrMinSec(hr,min,sec) ? (yr == 0 ? 0 : yr - 1900) : null;
+                                    return vallidDayMonth(yr,mo,da) && vallidHrMinSec(hr,min,sec) ? yr : null;
                     case TIMESTAMP: rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
                                     DateTime dt = new DateTime(rawLong * 1000, DateTimeZone.getDefault());
                                     long year = dt.getYear();
-                                    return year == 0 ? year : year - 1900;
-                    default: /*year*/       return source.getYear();
+                                    return year;
+                    default:        rawLong = source.getYear();
+                                    return rawLong == 0 ? 0 : rawLong + 1900;
                 }
-            }
-            
+            }            
         };
         
         public final AkType underlying;
@@ -429,12 +448,19 @@ public class ExtractExpression extends AbstractUnaryExpression
     private static final class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
         private final TargetExtractType type;
+        private QueryContext context;
         public InnerEvaluation (ExpressionEvaluation ev, TargetExtractType type)
         {
             super(ev);
             this.type = type;
         }
         
+        @Override
+        public void of(QueryContext context) {
+            super.of(context);
+            this.context = context;
+        }
+
         private static final EnumSet<AkType> DATES = EnumSet.of( AkType.DATE, AkType.DATETIME, AkType.TIMESTAMP, AkType.YEAR);
         private static final EnumSet<AkType> TIMES = EnumSet.of(AkType.TIME, AkType.TIMESTAMP, AkType.DATETIME);
 
@@ -450,6 +476,7 @@ public class ExtractExpression extends AbstractUnaryExpression
             {
                 switch (type)
                 {
+                    case DAY_OF_YEAR:
                     case DATE:     
                     case DAY:
                     case TIMESTAMP:
@@ -493,10 +520,29 @@ public class ExtractExpression extends AbstractUnaryExpression
                     valueHolder().putRaw(type.underlying, raw.longValue());
                     return valueHolder();
                 }
-                else return NullValueSource.only();
+                else
+                {
+                    if (context != null)
+                        context.warnClient(new InconvertibleTypesException(source.getConversionType(), AkType.DATETIME));
+                    return NullValueSource.only();
+                }
             }
             catch (InvalidDateFormatException ex)
             {
+                if (context != null)
+                    context.warnClient(ex);
+                return NullValueSource.only();
+            }
+            catch (InvalidParameterValueException ex)
+            {
+                if (context != null)
+                    context.warnClient(ex);
+                return NullValueSource.only();
+            }
+            catch (IllegalFieldValueException ex)
+            {
+                if (context != null)
+                    context.warnClient(new InvalidParameterValueException(ex.getMessage()));
                 return NullValueSource.only();
             }
         }
@@ -536,7 +582,7 @@ public class ExtractExpression extends AbstractUnaryExpression
             catch (InvalidDateFormatException ex)
             {
                 return null;
-            }
+            }           
         }
         
     }

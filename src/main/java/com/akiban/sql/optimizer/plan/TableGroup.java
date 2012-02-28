@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Set;
 
 /** A set of tables with common group joins.
+ * These joins need not be contiguous, but group join operators can
+ * still be used for access among them.
  */
 public class TableGroup extends BasePlanElement
 {

@@ -455,7 +455,7 @@ public class RowDef implements TreeLink {
 
     public String getPkTreeName() {
         final Index pkIndex = getPKIndex();
-        return pkIndex != null ? ((IndexDef)pkIndex.indexDef()).getTreeName() : null;
+        return pkIndex != null ? pkIndex.indexDef().getTreeName() : null;
     }
 
     public int getRowDefId() {

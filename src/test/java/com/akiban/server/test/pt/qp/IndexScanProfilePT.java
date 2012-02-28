@@ -18,10 +18,9 @@ package com.akiban.server.test.pt.qp;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.Bindings;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.operator.UndefBindings;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -54,6 +53,7 @@ public class IndexScanProfilePT extends QPProfilePTBase
         idxRowType = indexType(t, "c1", "c2", "c3", "c4", "c5");
         group = groupTable(t);
         adapter = persistitAdapter(schema);
+        queryContext = queryContext(adapter);
     }
 
     @Test
@@ -74,8 +74,8 @@ public class IndexScanProfilePT extends QPProfilePTBase
         IndexKeyRange keyRange = IndexKeyRange.bounded(idxRowType, location, true, location, true);
         Operator plan = indexScan_Default(idxRowType, keyRange, ordering);
         for (int s = 0; s < SCANS; s++) {
-            Cursor cursor = cursor(plan, adapter);
-            cursor.open(NO_BINDINGS);
+            Cursor cursor = cursor(plan, queryContext);
+            cursor.open();
             while (cursor.next() != null) {
             }
             cursor.close();
@@ -94,8 +94,6 @@ public class IndexScanProfilePT extends QPProfilePTBase
             dml().writeRow(session(), createNewRow(t, c1, c2, c3, c4, c5, id));
         }
     }
-
-    private static final Bindings NO_BINDINGS = UndefBindings.only();
 
     private int t;
     private RowType tRowType;

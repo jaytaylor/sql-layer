@@ -17,9 +17,9 @@ package com.akiban.server.test.it.sort;
 
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.RowsBuilder;
 import com.akiban.qp.operator.TestOperator;
-import com.akiban.qp.operator.UndefBindings;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.sort.Sorter;
 import com.akiban.qp.row.Row;
@@ -29,6 +29,8 @@ import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.Tap;
 import com.persistit.exception.PersistitException;
 import org.junit.Test;
 
@@ -43,16 +45,17 @@ public final class SortIT extends ITBase {
         PersistitAdapter adapter = persistitAdapter(schema);
         TestOperator inputOperator = new TestOperator(rowsBuilder);
 
-        Cursor inputCursor = API.cursor(inputOperator, adapter);
-        inputCursor.open(UndefBindings.only());
+        QueryContext context = queryContext(adapter);
+        Cursor inputCursor = API.cursor(inputOperator, context);
+        inputCursor.open();
         API.Ordering ordering = new API.Ordering();
         ordering.append(new FieldExpression(inputOperator.rowType(), 0), true);
-        Sorter sorter = new Sorter(adapter,
+        Sorter sorter = new Sorter(context,
                                    inputCursor,
                                    inputOperator.rowType(),
                                    ordering,
                                    API.SortOption.PRESERVE_DUPLICATES,
-                                   UndefBindings.only());
+                                   TEST_TAP);
         Cursor sortedCursor = sorter.sort();
 
         // check expected output
@@ -65,4 +68,5 @@ public final class SortIT extends ITBase {
     }
 
 
+    private static InOutTap TEST_TAP = Tap.createTimer("test");
 }

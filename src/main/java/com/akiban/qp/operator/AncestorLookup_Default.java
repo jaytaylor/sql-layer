@@ -24,6 +24,8 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
 import org.slf4j.Logger;
@@ -62,9 +64,9 @@ import java.util.*;
 
  <li><b>List<RowType> ancestorTypes:</b> Ancestor types to be located.
 
- <li><b>boolean keepInput:</b> Indicates whether rows of type rowType
- will be preserved in the output stream (keepInput = true), or
- discarded (keepInput = false).
+ <li><b>API.LookupOption flag:</b> Indicates whether rows of type rowType
+ will be preserved in the output stream (flag = KEEP_INPUT), or
+ discarded (flag = DISCARD_INPUT).
 
  </ul>
 
@@ -126,9 +128,9 @@ class AncestorLookup_Default extends Operator
     }
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter)
+    protected Cursor cursor(QueryContext context)
     {
-        return new Execution(adapter, inputOperator.cursor(adapter));
+        return new Execution(context, inputOperator.cursor(context));
     }
 
     @Override
@@ -202,7 +204,8 @@ class AncestorLookup_Default extends Operator
     // Class state
 
     private static final Logger LOG = LoggerFactory.getLogger(AncestorLookup_Default.class);
-    private static final Tap.PointTap ANC_LOOKUP_COUNT = Tap.createCount("operator: ancestor_lookup", true);
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: AncestorLookup_Default open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: AncestorLookup_Default next");
 
     // Object state
 
@@ -220,25 +223,34 @@ class AncestorLookup_Default extends Operator
         // Cursor interface
 
         @Override
-        public void open(Bindings bindings)
+        public void open()
         {
-            input.open(bindings);
-            advance();
-            ANC_LOOKUP_COUNT.hit();
+            TAP_OPEN.in();
+            try {
+                input.open();
+                advance();
+            } finally {
+                TAP_OPEN.out();
+            }
         }
 
         @Override
         public Row next()
         {
-            checkQueryCancelation();
-            while (pending.isEmpty() && inputRow.isHolding()) {
-                advance();
+            TAP_NEXT.in();
+            try {
+                checkQueryCancelation();
+                while (pending.isEmpty() && inputRow.isHolding()) {
+                    advance();
+                }
+                Row row = pending.take();
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("AncestorLookup: {}", row == null ? null : row);
+                }
+                return row;
+            } finally {
+                TAP_NEXT.out();
             }
-            Row row = pending.take();
-            if (LOG.isDebugEnabled()) {
-                LOG.debug("AncestorLookup: {}", row == null ? null : row);
-            }
-            return row;
         }
 
         @Override
@@ -287,13 +299,13 @@ class AncestorLookup_Default extends Operator
 
         // Execution interface
 
-        Execution(StoreAdapter adapter, Cursor input)
+        Execution(QueryContext context, Cursor input)
         {
-            super(adapter);
+            super(context);
             this.input = input;
             // Why + 1: Because the input row (whose ancestors get discovered) also goes into pending.
             this.pending = new PendingRows(ancestorTypeDepth.length + 1);
-            this.ancestorCursor = adapter.newGroupCursor(groupTable);
+            this.ancestorCursor = adapter().newGroupCursor(groupTable);
         }
 
         // For use by this class
@@ -302,7 +314,7 @@ class AncestorLookup_Default extends Operator
         {
             try {
                 ancestorCursor.rebind(hKey, false);
-                ancestorCursor.open(UndefBindings.only());
+                ancestorCursor.open();
                 Row retrievedRow = ancestorCursor.next();
                 if (retrievedRow == null) {
                     ancestorRow.release();

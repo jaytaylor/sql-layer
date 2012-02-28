@@ -20,8 +20,7 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Bindings;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.expression.Expression;
@@ -35,18 +34,16 @@ import com.persistit.exception.PersistitException;
 
 import java.util.List;
 
-import static com.akiban.qp.persistitadapter.sort.SortCursor.SORT_TRAVERSE;
-
 class SortCursorUnidirectional extends SortCursor
 {
     // Cursor interface
 
     @Override
-    public void open(Bindings bindings)
+    public void open()
     {
         exchange.clear();
         if (bounded) {
-            evaluateBoundaries(bindings);
+            evaluateBoundaries(context);
             if (startKey == null) {
                 exchange.append(startBoundary);
             } else {
@@ -96,27 +93,26 @@ class SortCursorUnidirectional extends SortCursor
 
     // SortCursorUnidirectional interface
 
-    public static SortCursorUnidirectional create(PersistitAdapter adapter,
+    public static SortCursorUnidirectional create(QueryContext context,
                                                   IterationHelper iterationHelper,
                                                   IndexKeyRange keyRange,
                                                   API.Ordering ordering)
     {
         return
             keyRange == null || keyRange.unbounded()
-            ? new SortCursorUnidirectional(adapter, iterationHelper, ordering)
-            : new SortCursorUnidirectional(adapter, iterationHelper, keyRange, ordering);
+            ? new SortCursorUnidirectional(context, iterationHelper, ordering)
+            : new SortCursorUnidirectional(context, iterationHelper, keyRange, ordering);
     }
 
     // For use by this subclasses
 
-    protected SortCursorUnidirectional(PersistitAdapter adapter,
-                                      IterationHelper iterationHelper,
-                                      IndexKeyRange keyRange,
-                                      API.Ordering ordering)
+    protected SortCursorUnidirectional(QueryContext context,
+                                       IterationHelper iterationHelper,
+                                       IndexKeyRange keyRange,
+                                       API.Ordering ordering)
     {
-        super(adapter, iterationHelper);
+        super(context, iterationHelper);
         this.bounded = true;
-        this.adapter = adapter;
         this.lo = keyRange.lo();
         this.hi = keyRange.hi();
         if (ordering.allAscending()) {
@@ -144,13 +140,13 @@ class SortCursorUnidirectional extends SortCursor
         this.endKey = adapter.newKey();
         this.boundColumns = keyRange.boundColumns();
         this.types = new AkType[boundColumns];
-        List<IndexColumn> indexColumns = keyRange.indexRowType().index().getColumns();
+        List<IndexColumn> indexColumns = keyRange.indexRowType().index().getKeyColumns();
         for (int f = 0; f < boundColumns; f++) {
             this.types[f] = indexColumns.get(f).getColumn().getType().akType();
         }
     }
 
-    protected void evaluateBoundaries(Bindings bindings)
+    protected void evaluateBoundaries(QueryContext context)
     {
         /*
             Null bounds are slightly tricky. An index restriction is described by an IndexKeyRange which contains
@@ -176,8 +172,8 @@ class SortCursorUnidirectional extends SortCursor
               lo and hi to be null, so write null, not Key.AFTER to endKey.
         */
         // Check constraints on start and end
-        BoundExpressions loExpressions = lo.boundExpressions(bindings, adapter);
-        BoundExpressions hiExpressions = hi.boundExpressions(bindings, adapter);
+        BoundExpressions loExpressions = lo.boundExpressions(context);
+        BoundExpressions hiExpressions = hi.boundExpressions(context);
         for (int f = 0; f < boundColumns - 1; f++) {
             ValueSource loValueSource = loExpressions.eval(f);
             ValueSource hiValueSource = hiExpressions.eval(f);
@@ -198,8 +194,8 @@ class SortCursorUnidirectional extends SortCursor
         ValueSource loBound = loExpressions.eval(boundColumns - 1);
         ValueSource hiBound = hiExpressions.eval(boundColumns - 1);
         // Construct start and end keys
-        BoundExpressions startExpressions = start.boundExpressions(bindings, adapter);
-        BoundExpressions endExpressions = end.boundExpressions(bindings, adapter);
+        BoundExpressions startExpressions = start.boundExpressions(context);
+        BoundExpressions endExpressions = end.boundExpressions(context);
         ValueSource[] startValues = new ValueSource[boundColumns];
         ValueSource[] endValues = new ValueSource[boundColumns];
         for (int f = 0; f < boundColumns; f++) {
@@ -306,13 +302,12 @@ class SortCursorUnidirectional extends SortCursor
 
     // For use by this class
 
-    private SortCursorUnidirectional(PersistitAdapter adapter,
+    private SortCursorUnidirectional(QueryContext context,
                                      IterationHelper iterationHelper,
                                      API.Ordering ordering)
     {
-        super(adapter, iterationHelper);
+        super(context, iterationHelper);
         this.bounded = false;
-        this.adapter = adapter;
         if (ordering.allAscending()) {
             this.startBoundary = Key.BEFORE;
             this.keyComparison = Key.GT;
@@ -333,7 +328,6 @@ class SortCursorUnidirectional extends SortCursor
 
     // Object state
 
-    protected final PersistitAdapter adapter;
     protected final boolean bounded; // true for a scan with restrictions, false for a full scan
     protected int direction; // +1 = ascending, -1 = descending
     protected Key.Direction keyComparison;

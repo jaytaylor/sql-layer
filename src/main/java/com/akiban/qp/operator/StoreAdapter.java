@@ -22,12 +22,14 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.util.tap.InOutTap;
 
 public abstract class StoreAdapter
 {
     public abstract GroupCursor newGroupCursor(GroupTable groupTable);
 
-    public abstract Cursor newIndexCursor(Index index,
+    public abstract Cursor newIndexCursor(QueryContext context,
+                                          Index index,
                                           IndexKeyRange keyRange,
                                           API.Ordering ordering,
                                           IndexScanSelector scanSelector);
@@ -39,17 +41,18 @@ public abstract class StoreAdapter
         return schema;
     }
 
-    public abstract void updateRow(Row oldRow, Row newRow, Bindings bindings);
+    public abstract void updateRow(Row oldRow, Row newRow);
     
-    public abstract void writeRow (Row newRow, Bindings bindings);
+    public abstract void writeRow (Row newRow);
     
-    public abstract void deleteRow (Row oldRow, Bindings bindings);
+    public abstract void deleteRow (Row oldRow);
 
-    public abstract Cursor sort(Cursor input,
+    public abstract Cursor sort(QueryContext context,
+                                Cursor input,
                                 RowType rowType,
                                 API.Ordering ordering,
                                 API.SortOption sortOption,
-                                Bindings bindings);
+                                InOutTap loadTap);
 
     public abstract void checkQueryCancelation(long queryStartMsec);
 

@@ -108,11 +108,4 @@ public class GroupTable extends Table
         }
         super.dropColumns();
     }
-
-    @SuppressWarnings("unused")
-    private GroupTable()
-    {
-        super();
-        // GWT requires empty constructor
-    }
 }

@@ -49,4 +49,7 @@ public interface IndexStatisticsService
     /** Dump statistics to a YAML file. */
     public void dumpIndexStatistics(Session session, 
                                     String schema, File file) throws IOException;
+
+    /** Clear the in-memory cache. */
+    public void clearCache();
 }

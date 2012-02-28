@@ -26,10 +26,47 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.Strings;
+import com.akiban.util.tap.InOutTap;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+/**
+ <h1>Overview</h1>
+
+ UnionAll_Default generates an output stream containing all the rows of both input streams. There are no
+ guarantees on output order, and duplicates are not eliminated.
+
+ <h1>Arguments</h1>
+
+ <li><b>Operator input1:</b> Source of first input stream. 
+ <li><b>RowType input1Type:</b> Type of rows in first input stream. 
+ <li><b>Operator input2:</b> Source of second input stream. 
+ <li><b>RowType input2Type:</b> Type of rows in second input stream. 
+
+ <h1>Behavior</h1>
+
+ The output from UnionAll_Default is formed by concatenating the first and second input streams.
+
+ <h1>Output</h1>
+
+ Rows of the first input stream followed by rows of the second input stream.
+
+ <h1>Assumptions</h1>
+
+ input1Type and input2Type are union-compatible. This means input1Type == input2Type or they have the same
+ number of fields, and that corresponding field types match.
+
+ <h1>Performance</h1>
+
+ This operator does no IO.
+
+ <h1>Memory Requirements</h1>
+
+ None.
+
+ */
 
 final class UnionAll_Default extends Operator {
     @Override
@@ -55,8 +92,8 @@ final class UnionAll_Default extends Operator {
     }
 
     @Override
-    protected Cursor cursor(StoreAdapter adapter) {
-        return new Execution(adapter, inputs, inputTypes, outputRowType);
+    protected Cursor cursor(QueryContext context) {
+        return new Execution(context, inputs, inputTypes, outputRowType);
     }
 
     UnionAll_Default(Operator input1, RowType input1Type, Operator input2, RowType input2Type) {
@@ -104,6 +141,13 @@ final class UnionAll_Default extends Operator {
         }
         return Arrays.toString(result);
     }
+    
+    // Class state
+    
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: UnionAll_Default open"); 
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: UnionAll_Default next"); 
+    
+    // Object state
 
     private final List<? extends Operator> inputs;
     private final List<? extends RowType> inputTypes;
@@ -113,38 +157,39 @@ final class UnionAll_Default extends Operator {
 
 
         @Override
-        public void open(Bindings bindings) {
-            if (bindings == null)
-                throw new IllegalArgumentException("bindings may not be null");
-            this.bindings = bindings;
+        public void open() {
+            TAP_OPEN.in();
+            TAP_OPEN.out();
         }
 
         @Override
         public Row next() {
-            if (bindings == null)
-                throw new IllegalStateException("no bindings set");
-            Row outputRow;
-            if (currentCursor == null) {
-                outputRow = nextCursorFirstRow();
-            }
-            else {
-                outputRow = currentCursor.next();
-                if (outputRow == null) {
-                    currentCursor.close();
+            TAP_NEXT.in();
+            try {
+                Row outputRow;
+                if (currentCursor == null) {
                     outputRow = nextCursorFirstRow();
                 }
+                else {
+                    outputRow = currentCursor.next();
+                    if (outputRow == null) {
+                        currentCursor.close();
+                        outputRow = nextCursorFirstRow();
+                    }
+                }
+                if (outputRow == null) {
+                    close();
+                    return null;
+                }
+                return wrapped(outputRow);
+            } finally {
+                TAP_NEXT.out();
             }
-            if (outputRow == null) {
-                close();
-                return null;
-            }
-            return wrapped(outputRow);
         }
 
         @Override
         public void close() {
             inputOperatorsIndex = -1;
-            this.bindings = null;
             if (currentCursor != null)
                 currentCursor.close();
             else
@@ -153,12 +198,12 @@ final class UnionAll_Default extends Operator {
             rowHolder.release();
         }
 
-        private Execution(StoreAdapter adapter,
+        private Execution(QueryContext context,
                           List<? extends Operator> inputOperators,
                           List<? extends RowType> inputRowTypes,
                           RowType outputType)
         {
-            this.adapter = adapter;
+            this.context = context;
             this.inputOperators = inputOperators;
             this.inputRowTypes = inputRowTypes;
             this.outputRowType = outputType;
@@ -173,10 +218,9 @@ final class UnionAll_Default extends Operator {
          * @return the first row of the next cursor that has a non-null row, or null if no such cursors remain
          */
         private Row nextCursorFirstRow() {
-            assert bindings != null;
             while (++inputOperatorsIndex < inputOperators.size()) {
-                Cursor nextCursor = inputOperators.get(inputOperatorsIndex).cursor(adapter);
-                nextCursor.open(bindings);
+                Cursor nextCursor = inputOperators.get(inputOperatorsIndex).cursor(context);
+                nextCursor.open();
                 Row nextRow = nextCursor.next();
                 if (nextRow == null) {
                     nextCursor.close();
@@ -210,13 +254,12 @@ final class UnionAll_Default extends Operator {
             return row;
         }
 
-        private final StoreAdapter adapter;
+        private final QueryContext context;
         private final List<? extends Operator> inputOperators;
         private final List<? extends RowType> inputRowTypes;
         private final RowType outputRowType;
         private final ShareHolder<MasqueradingRow> rowHolder = new ShareHolder<MasqueradingRow>();
         private int inputOperatorsIndex = -1; // right before the first operator
-        private Bindings bindings;
         private Cursor currentCursor;
         private RowType currentInputRowType;
     }

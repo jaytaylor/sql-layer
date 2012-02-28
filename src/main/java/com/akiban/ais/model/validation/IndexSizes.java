@@ -58,7 +58,7 @@ class IndexSizes implements AISValidation {
 
             for(Index index : table.getIndexesIncludingInternal()) {
                 long fullKeySize = hkeySize;
-                for(IndexColumn iColumn : index.getColumns()) {
+                for(IndexColumn iColumn : index.getKeyColumns()) {
                     final Column column = iColumn.getColumn();
                     // Only indexed columns not in hkey contribute new information
                     if (table.getGroup() == null || 
@@ -83,7 +83,7 @@ class IndexSizes implements AISValidation {
             for (GroupIndex index : table.getGroupIndexes()) {
                 long hkeySize = validateHKeySize(index.leafMostTable(), output);
                 long fullKeySize = hkeySize;
-                for(IndexColumn iColumn : index.getColumns()) {
+                for(IndexColumn iColumn : index.getKeyColumns()) {
                     final Column column = iColumn.getColumn();
                     // Only indexed columns not in hkey contribute new information
                     if (!index.leafMostTable().hKey().containsColumn(column)) {

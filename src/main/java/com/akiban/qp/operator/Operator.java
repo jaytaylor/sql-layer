@@ -19,6 +19,8 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.Tap;
 
 import java.util.Collections;
 import java.util.List;
@@ -26,6 +28,16 @@ import java.util.Set;
 
 public abstract class Operator implements Plannable
 {
+    // Object interface
+
+    @Override
+    public String toString()
+    {
+        return getClass().getSimpleName();
+    }
+
+    // Operator interface
+
     // I'm not sure I like having this as part of the interface. On one hand, operators like Flatten create new
     // RowTypes and it's handy to get access to those new RowTypes. On the other hand, not all operators do this,
     // and it's conceivable we'll have to invent an operator for which this doesn't make sense, e.g., it creates
@@ -50,7 +62,7 @@ public abstract class Operator implements Plannable
         return Collections.emptyList();
     }
 
-    protected abstract Cursor cursor(StoreAdapter adapter);
+    protected abstract Cursor cursor(QueryContext context);
 
     @Override
     public String describePlan()
@@ -72,10 +84,11 @@ public abstract class Operator implements Plannable
 
     protected int ordinal(UserTable table)
     {
-        return ((RowDef) table.rowDef()).getOrdinal();
+        return (table.rowDef()).getOrdinal();
     }
 
     // Class state
 
     protected static final String NL = System.getProperty("line.separator");
+    public static final InOutTap OPERATOR_TAP = Tap.createRecursiveTimer("operator: root");
 }

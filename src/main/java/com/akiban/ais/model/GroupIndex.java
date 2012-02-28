@@ -22,7 +22,7 @@ import java.util.*;
 
 public class GroupIndex extends Index
 {
-    static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
+    public static GroupIndex create(AkibanInformationSchema ais, Group group, String indexName, Integer indexId,
                                     Boolean isUnique, String constraint)
     {
         ais.checkMutability();
@@ -68,6 +68,11 @@ public class GroupIndex extends Index
     public UserTable rootMostTable() {
         assert ! tablesByDepth.isEmpty() : "no tables participate in this group index";
         return tablesByDepth.firstEntry().getValue().table;
+    }
+
+    @Override
+    public void checkMutability() {
+        group.getGroupTable().checkMutability();
     }
 
     @Override
@@ -240,11 +245,7 @@ public class GroupIndex extends Index
         return leafMostTable().hKey();
     }
     
-    @SuppressWarnings("unused")
-    private GroupIndex()
-    {}
-
-    private Group group;
+    private final Group group;
     private final NavigableMap<Integer,ParticipatingTable> tablesByDepth = new TreeMap<Integer, ParticipatingTable>();
     private List<Column> columnsPerFlattenedField;
 

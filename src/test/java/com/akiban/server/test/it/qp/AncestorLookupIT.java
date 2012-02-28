@@ -107,7 +107,7 @@ public class AncestorLookupIT extends OperatorITBase
     public void testItemIndexToMissingCustomerAndOrder()
     {
         Operator plan = indexRowToAncestorPlan(999, customerRowType, orderRowType);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{};
         compareRows(expected, cursor);
     }
@@ -116,7 +116,7 @@ public class AncestorLookupIT extends OperatorITBase
     public void testItemIndexToCustomerAndOrder()
     {
         Operator plan = indexRowToAncestorPlan(111, customerRowType, orderRowType);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori")
@@ -128,7 +128,7 @@ public class AncestorLookupIT extends OperatorITBase
     public void testItemIndexToCustomerOnly()
     {
         Operator plan = indexRowToAncestorPlan(111, customerRowType);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge")
         };
@@ -139,7 +139,7 @@ public class AncestorLookupIT extends OperatorITBase
     public void testItemIndexToOrderOnly()
     {
         Operator plan = indexRowToAncestorPlan(111, orderRowType);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 11L, 1L, "ori")
         };
@@ -150,7 +150,7 @@ public class AncestorLookupIT extends OperatorITBase
     public void testOrphanItemIndexToCustomerAndOrder()
     {
         Operator plan = indexRowToAncestorPlan(311, customerRowType, orderRowType);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 31L, 3L, "peter")
         };
@@ -161,7 +161,7 @@ public class AncestorLookupIT extends OperatorITBase
     public void testOrphanItemIndexToCustomerOnly()
     {
         Operator plan = indexRowToAncestorPlan(311, customerRowType);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{};
         compareRows(expected, cursor);
     }
@@ -170,7 +170,7 @@ public class AncestorLookupIT extends OperatorITBase
     public void testOrphanItemIndexToOrderOnly()
     {
         Operator plan = indexRowToAncestorPlan(311, orderRowType);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 31L, 3L, "peter")
         };
@@ -181,7 +181,7 @@ public class AncestorLookupIT extends OperatorITBase
     public void testOrphanItemIndexToItem()
     {
         Operator plan = indexRowToAncestorPlan(311, itemRowType);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(itemRowType, 311L, 31L)
         };
@@ -194,7 +194,7 @@ public class AncestorLookupIT extends OperatorITBase
     public void testItemRowToMissingCustomerAndOrder()
     {
         Operator plan = groupRowToAncestorPlan(999, true, customerRowType, orderRowType);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{};
         compareRows(expected, cursor);
     }
@@ -204,7 +204,7 @@ public class AncestorLookupIT extends OperatorITBase
     {
         // Keep input
         Operator plan = groupRowToAncestorPlan(111, true, customerRowType, orderRowType);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori"),
@@ -213,7 +213,7 @@ public class AncestorLookupIT extends OperatorITBase
         compareRows(expected, cursor);
         // Don't keep input
         plan = groupRowToAncestorPlan(111, false, customerRowType, orderRowType);
-        cursor = cursor(plan, adapter);
+        cursor = cursor(plan, queryContext);
         expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(orderRowType, 11L, 1L, "ori")
@@ -226,7 +226,7 @@ public class AncestorLookupIT extends OperatorITBase
     {
         // Keep input
         Operator plan = groupRowToAncestorPlan(111, true, customerRowType);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge"),
             row(itemRowType, 111L, 11L)
@@ -234,7 +234,7 @@ public class AncestorLookupIT extends OperatorITBase
         compareRows(expected, cursor);
         // Don't keep input
         plan = groupRowToAncestorPlan(111, false, customerRowType);
-        cursor = cursor(plan, adapter);
+        cursor = cursor(plan, queryContext);
         expected = new RowBase[]{
             row(customerRowType, 1L, "northbridge")
         };
@@ -246,7 +246,7 @@ public class AncestorLookupIT extends OperatorITBase
     {
         // Keep input
         Operator plan = groupRowToAncestorPlan(111, true, orderRowType);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 11L, 1L, "ori"),
             row(itemRowType, 111L, 11L)
@@ -254,7 +254,7 @@ public class AncestorLookupIT extends OperatorITBase
         compareRows(expected, cursor);
         // Don't keep input
         plan = groupRowToAncestorPlan(111, false, orderRowType);
-        cursor = cursor(plan, adapter);
+        cursor = cursor(plan, queryContext);
         expected = new RowBase[]{
             row(orderRowType, 11L, 1L, "ori")
         };
@@ -266,7 +266,7 @@ public class AncestorLookupIT extends OperatorITBase
     {
         // Keep input
         Operator plan = groupRowToAncestorPlan(311, true, customerRowType, orderRowType);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 31L, 3L, "peter"),
             row(itemRowType, 311L, 31L)
@@ -274,7 +274,7 @@ public class AncestorLookupIT extends OperatorITBase
         compareRows(expected, cursor);
         // Don't keep input
         plan = groupRowToAncestorPlan(311, false, customerRowType, orderRowType);
-        cursor = cursor(plan, adapter);
+        cursor = cursor(plan, queryContext);
         expected = new RowBase[]{
             row(orderRowType, 31L, 3L, "peter")
         };
@@ -286,14 +286,14 @@ public class AncestorLookupIT extends OperatorITBase
     {
         // Keep input
         Operator plan = groupRowToAncestorPlan(311, true, customerRowType);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(itemRowType, 311L, 31L)
         };
         compareRows(expected, cursor);
         // Don't keep input
         plan = groupRowToAncestorPlan(311, false, customerRowType);
-        cursor = cursor(plan, adapter);
+        cursor = cursor(plan, queryContext);
         expected = new RowBase[]{
         };
         compareRows(expected, cursor);
@@ -304,7 +304,7 @@ public class AncestorLookupIT extends OperatorITBase
     {
         // Keep input
         Operator plan = groupRowToAncestorPlan(311, true, orderRowType);
-        Cursor cursor = cursor(plan, adapter);
+        Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 31L, 3L, "peter"),
             row(itemRowType, 311L, 31L)
@@ -312,7 +312,7 @@ public class AncestorLookupIT extends OperatorITBase
         compareRows(expected, cursor);
         // Don't keep input
         plan = groupRowToAncestorPlan(311, false, orderRowType);
-        cursor = cursor(plan, adapter);
+        cursor = cursor(plan, queryContext);
         expected = new RowBase[]{
             row(orderRowType, 31L, 3L, "peter")
         };

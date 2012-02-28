@@ -15,17 +15,16 @@
 
 package com.akiban.ais.model;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class PrimaryKey implements Serializable
+public class PrimaryKey
 {
     public List<Column> getColumns()
     {
         if (columns == null) {
             columns = new ArrayList<Column>();
-            for (IndexColumn indexColumn : index.getColumns()) {
+            for (IndexColumn indexColumn : index.getKeyColumns()) {
                 columns.add(indexColumn.getColumn());
             }
         }
@@ -47,16 +46,11 @@ public class PrimaryKey implements Serializable
         return getColumns().size() == 1 && getColumns().get(0).isAkibanPKColumn();
     }
 
-    public PrimaryKey()
-    {
-        // GWT: needs default constructor
-    }
-
     public PrimaryKey(TableIndex index)
     {
         this.index = index;
     }
 
-    private TableIndex index;
+    private final TableIndex index;
     private List<Column> columns;
 }
