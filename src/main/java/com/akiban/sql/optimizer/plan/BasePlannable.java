@@ -20,8 +20,10 @@ import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.exec.Plannable;
 
+import com.akiban.sql.optimizer.explain.std.TreeFormat;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /** Physical operator plan */
 public abstract class BasePlannable extends BasePlanNode
@@ -57,9 +59,12 @@ public abstract class BasePlannable extends BasePlanNode
     }
 
     public List<String> explainPlan() {
-        List<String> result = new ArrayList<String>();
-        explainPlan(plannable, result, 0);
-        return result;
+      //  List<String> result = new ArrayList<String>();
+        //explainPlan(plannable, result, 0);
+        
+        TreeFormat fm = new TreeFormat();
+        String st = fm.describe(plannable.getExplainer());
+        return Arrays.asList(st);
     }
 
     protected static void explainPlan(Plannable operator,
@@ -86,10 +91,12 @@ public abstract class BasePlannable extends BasePlanNode
     }
 
     protected String withIndentedExplain(StringBuilder str) {
-        for (String operator : explainPlan()) {
-            str.append("\n  ");
-            str.append(operator);
-        }
+//        for (String operator : explainPlan()) {
+//            str.append("\n  ");
+//            str.append(operator);
+//        }
+//        return str.toString();
+        str.append(explainPlan());
         return str.toString();
     }
 

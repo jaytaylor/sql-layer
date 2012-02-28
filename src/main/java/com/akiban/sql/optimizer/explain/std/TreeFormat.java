@@ -37,9 +37,9 @@ public class TreeFormat implements Format<String>
     public String describe(Explainer explainer)
     {
         StringBuilder bd = new StringBuilder();
-        doFormat(explainer, bd, 0);
+        doFormat(explainer, bd.append("\n"), 0);
         
-        return bd.toString();
+        return bd.append("\n").toString();
     }
     
     private static void doFormat (Explainer ex, StringBuilder bd, int level)

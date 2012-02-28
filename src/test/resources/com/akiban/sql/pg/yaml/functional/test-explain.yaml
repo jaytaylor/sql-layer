@@ -1,0 +1,9 @@
+# test the explain plan in TreeFormat
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
+---
+- Statement: EXPLAIN SELECT 2 + 3 FROM all_types;
+- output: [['a']]
+...

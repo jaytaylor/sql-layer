@@ -118,7 +118,8 @@ class GroupScan_Default extends Operator
         
         att.put(Label.NAME, PrimitiveExplainer.getInstance("GROUP SCAN DEFAULT"));
         att.put(Label.SCAN_OPTION, PrimitiveExplainer.getInstance(cursorCreator.describeRange().toUpperCase()));
-        att.put(Label.GROUP_TABLE, PrimitiveExplainer.getInstance(cursorCreator.groupTable().getName()));
+        // TODO: could have a getInstance(TableName o) method?
+        att.put(Label.GROUP_TABLE, PrimitiveExplainer.getInstance(cursorCreator.groupTable().getName().getTableName()));
         
         return new OperationExplainer(Type.SCAN_OPERATOR, att);
     }

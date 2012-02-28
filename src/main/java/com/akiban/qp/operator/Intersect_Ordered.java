@@ -20,6 +20,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.std.AbstractTwoArgExpressionEvaluation;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.RankExpression;
+import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -180,6 +181,13 @@ class Intersect_Ordered extends Operator
     private final boolean keepUnmatchedLeft;
     private final boolean keepUnmatchedRight;
     private final boolean outputLeft;
+
+    @Override
+    public Explainer getExplainer()
+    {
+        javax.swing.JOptionPane.showMessageDialog(null, "not implemented");
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
     // Inner classes
 

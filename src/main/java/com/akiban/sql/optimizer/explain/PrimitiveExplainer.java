@@ -65,7 +65,8 @@ public class PrimitiveExplainer<T> extends Explainer
         if (o instanceof BigDecimal) return getInstance((BigDecimal)o);
         else if (o instanceof BigInteger) return getInstance((BigInteger)o);
         else if (o instanceof String) return getInstance((String)o);
-        else throw new UnsupportedOperationException("Explainer for type " + o.getClass() + " is not supported yet");
+        else if (o instanceof RowType) return getInstance((RowType)o);
+        else throw new UnsupportedOperationException("Explainer for " + o.getClass() + " is not supported yet");
     }
 
     public static PrimitiveExplainer getInstance(ValueSource source)
