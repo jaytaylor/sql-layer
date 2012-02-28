@@ -57,7 +57,7 @@ public class PrimitiveExplainer<T> extends Explainer
 
     public static PrimitiveExplainer getInstance(RowType type)
     {
-        return PrimitiveExplainer.getInstance(type.toString());
+        return PrimitiveExplainer.getInstance(type == null ? "NULL" : type.toString());
     }
     
     public static PrimitiveExplainer getInstance(Object o)
@@ -72,6 +72,7 @@ public class PrimitiveExplainer<T> extends Explainer
     public static PrimitiveExplainer getInstance(ValueSource source)
     {
         AkType type = source.getConversionType();
+        if (type == AkType.NULL) return getInstance("NULL");
         switch(type.underlyingType())
         {
             case LONG_AKTYPE:    LongExtractor lExtractor = Extractors.getLongExtractor(type);

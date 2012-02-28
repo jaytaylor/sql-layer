@@ -170,7 +170,7 @@ final class UnionAll_Default extends Operator {
         for (Operator op : inputs)
             att.put(Label.INPUT_OPERATOR, op.getExplainer());
         for (RowType type : inputTypes)
-            att.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(inputTypes));
+            att.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(type));
        
         att.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType));
         

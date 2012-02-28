@@ -34,7 +34,7 @@ public class LookUpOperatorExplainer extends OperationExplainer
         atts.put(Label.NAME, PrimitiveExplainer.getInstance(name));
         
         // TODO: is anything else needed in Group Table other than  its name?
-        atts.put(Label.GROUP_TABLE, PrimitiveExplainer.getInstance(gTable.getName())); 
+        atts.put(Label.GROUP_TABLE, PrimitiveExplainer.getInstance(gTable.getName().getTableName())); 
         
         atts.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(iRowType));
         atts.put(Label.LOOK_UP_OPTION, PrimitiveExplainer.getInstance((keepInput ? "" : "DO NOT") + "KEEP INPUT"));
