@@ -18,7 +18,6 @@ package com.akiban.server.store;
 import static com.akiban.server.service.tree.TreeService.SCHEMA_TREE_NAME;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -49,8 +48,8 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
-import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.ais.model.validation.AISValidation;
+import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.DuplicateIndexException;
@@ -93,8 +92,6 @@ import com.persistit.exception.PersistitException;
 
 public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         SchemaManager {
-
-    final static int AIS_BASE_TABLE_ID = 1000000000;
 
     static final String BY_AIS = "byAIS";
 
@@ -641,30 +638,91 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
 
     private static AkibanInformationSchema createPrimordialAIS() {
-        NewAISBuilder builder = AISBBasedBuilder.create("akiban_information_schema");
+        /*
+         * Big, ugly, and lots of hard coding. This is because any change in
+         * table definition or derived data (tree name, ids, etc) affects the
+         * compatibility of existing volumes. If we stopped creating this at
+         * every start-up and only did it once (on fresh volume), this could
+         * much shortened -- but that is only a possible TO-DO item.
+         */
+        final String SCHEMA = "akiban_information_schema";
+        final String STATS = "zindex_statistics";
+        final int STATS_ID = 1000000009;
+        final String ENTRY = "zindex_statistics_entry";
+        final int ENTRY_ID = 1000000010;
+        final String PRIMARY = "PRIMARY";
+        final String FK_NAME = "__akiban_fk_0";
+        final String GROUP = STATS;
+        final String GROUP_TABLE = "_akiban_" + STATS;
+        final String JOIN = String.format("%s/%s/%s/%s", SCHEMA, STATS, SCHEMA, ENTRY);
+        final String STATS_TREE = "akiban_information_schema$$_akiban_zindex_statistics";
+        final String TREE_NAME_FORMAT = "%s$$%s$$%s$$%s$$%d";
+        final String STATS_PK_TREE = String.format(TREE_NAME_FORMAT, STATS, SCHEMA, STATS, PRIMARY, 9);
+        final String ENTRY_PK_TREE = String.format(TREE_NAME_FORMAT, STATS, SCHEMA, ENTRY, PRIMARY, 11);
+        final String ENTRY_FK_TREE = String.format(TREE_NAME_FORMAT, STATS, SCHEMA, ENTRY, FK_NAME, 10);
 
-        builder.userTable("zindex_statistics").
-                colLong("table_id", false).
-                colLong("index_id", false).
-                colTimestamp("analysis_timestamp", true).
-                colBigInt("row_count", true).
-                colBigInt("sampled_count", true).
-                pk("table_id", "index_id");
+        AISBuilder builder = new AISBuilder();
 
-        builder.userTable("zindex_statistics_entry").
-                colLong("table_id", false).
-                colLong("index_id", false).
-                colLong("column_count", false).
-                colLong("item_number", false).
-                colString("key_string", 2048, true, "latin1").
-                colBinary("key_bytes", 4096, true).
-                colBigInt("eq_count", true).
-                colBigInt("lt_count", true).
-                colBigInt("distinct_count", true).
-                pk("table_id", "index_id", "column_count", "item_number").
-                joinTo("zindex_statistics").on("table_id", "table_id").and("index_id", "index_id");
+        int col = 0;
+        builder.userTable(SCHEMA, STATS);
+        builder.column(SCHEMA, STATS,           "table_id", col++,       "int", null, null, false, false, null, null);
+        builder.column(SCHEMA, STATS,           "index_id", col++,       "int", null, null, false, false, null, null);
+        builder.column(SCHEMA, STATS, "analysis_timestamp", col++, "timestamp", null, null,  true, false, null, null);
+        builder.column(SCHEMA, STATS,          "row_count", col++,    "bigint", null, null,  true, false, null, null);
+        builder.column(SCHEMA, STATS,      "sampled_count", col++,    "bigint", null, null,  true, false, null, null);
+        col = 0;
+        builder.index(SCHEMA, STATS, PRIMARY, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, STATS, PRIMARY, "table_id", col++, true, null);
+        builder.indexColumn(SCHEMA, STATS, PRIMARY, "index_id", col++, true, null);
+
+        col = 0;
+        builder.userTable(SCHEMA, ENTRY);
+        builder.column(SCHEMA, ENTRY,       "table_id", col++,       "int",  null, null, false, false, null, null);
+        builder.column(SCHEMA, ENTRY,       "index_id", col++,       "int",  null, null, false, false, null, null);
+        builder.column(SCHEMA, ENTRY,   "column_count", col++,       "int",  null, null, false, false, null, null);
+        builder.column(SCHEMA, ENTRY,    "item_number", col++,       "int",  null, null, false, false, null, null);
+        builder.column(SCHEMA, ENTRY,     "key_string", col++,   "varchar", 2048L, null,  true, false, null, null);
+        builder.column(SCHEMA, ENTRY,      "key_bytes", col++, "varbinary", 4096L, null,  true, false, null, null);
+        builder.column(SCHEMA, ENTRY,       "eq_count", col++,    "bigint",  null, null,  true, false, null, null);
+        builder.column(SCHEMA, ENTRY,       "lt_count", col++,    "bigint",  null, null,  true, false, null, null);
+        builder.column(SCHEMA, ENTRY, "distinct_count", col++,    "bigint",  null, null,  true, false, null, null);
+        col = 0;
+        builder.index(SCHEMA, ENTRY, PRIMARY, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, ENTRY, PRIMARY,     "table_id", col++, true, null);
+        builder.indexColumn(SCHEMA, ENTRY, PRIMARY,     "index_id", col++, true, null);
+        builder.indexColumn(SCHEMA, ENTRY, PRIMARY, "column_count", col++, true, null);
+        builder.indexColumn(SCHEMA, ENTRY, PRIMARY,  "item_number", col++, true, null);
+        col = 0;
+        builder.index(SCHEMA, ENTRY, FK_NAME, false, "FOREIGN KEY");
+        builder.indexColumn(SCHEMA, ENTRY, FK_NAME, "table_id", col++, true, null);
+        builder.indexColumn(SCHEMA, ENTRY, FK_NAME, "index_id", col++, true, null);
+
+        builder.joinTables(JOIN, SCHEMA, STATS, SCHEMA, ENTRY);
+        builder.joinColumns(JOIN, SCHEMA, STATS, "table_id", SCHEMA, ENTRY, "table_id");
+        builder.joinColumns(JOIN, SCHEMA, STATS, "index_id", SCHEMA, ENTRY, "index_id");
+
+        builder.createGroup(GROUP, SCHEMA, GROUP_TABLE);
+        builder.addJoinToGroup(GROUP, JOIN, 0);
+
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
+
+        AkibanInformationSchema primordialAIS = builder.akibanInformationSchema();
         
-        return builder.ais(false);
+        UserTable statsTable = primordialAIS.getUserTable(SCHEMA, STATS);
+        statsTable.setTableId(STATS_ID);
+        statsTable.setTreeName(STATS_TREE);
+        statsTable.getIndex(PRIMARY).setTreeName(STATS_PK_TREE);
+        
+        UserTable entryTable = primordialAIS.getUserTable(SCHEMA, ENTRY);
+        entryTable.setTableId(ENTRY_ID);
+        entryTable.setTreeName(STATS_TREE);
+        entryTable.getIndex(PRIMARY).setTreeName(ENTRY_PK_TREE);
+        entryTable.getIndex(FK_NAME).setTreeName(ENTRY_FK_TREE);
+
+        primordialAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS);
+
+        return primordialAIS;
     }
 
     /**
@@ -676,18 +734,11 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      * @throws IOException 
      */
     private void afterStart() throws PersistitException, IOException {
-        InputStream aisFileStream = null;
         final Session session = sessionService.createSession();
         final Transaction transaction = treeService.getTransaction(session);
         transaction.begin();
         try {
             final AkibanInformationSchema newAIS = createPrimordialAIS();
-            // Offset so index stats tables get same IDs
-            int curId = AIS_BASE_TABLE_ID + 9;
-            for(UserTable table : newAIS.getUserTables().values()) {
-                table.setTableId(curId++);
-                setTreeNames(table);
-            }
             setGroupTableIds(newAIS);
 
             // Load stored AIS data from each schema tree
@@ -706,9 +757,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             buildRowDefCache(newAIS);
             transaction.commit();
         } finally {
-            if(aisFileStream != null) {
-                aisFileStream.close();
-            }
             if(!transaction.isCommitted()) {
                 transaction.rollback();
             }

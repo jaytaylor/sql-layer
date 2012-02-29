@@ -479,6 +479,38 @@ public final class SchemaManagerIT extends ITBase {
         }
     }
 
+    @Test
+    public void changeInAISTableIsUpgradeIssue() throws Exception {
+        /*
+         * Simple sanity check. Change as needed but heed the
+         * warnings that are in PSSM#createPrimordialAIS().
+         */
+        final String SCHEMA = "akiban_information_schema";
+        final String STATS_TABLE = "zindex_statistics";
+        final String ENTRY_TABLE = "zindex_statistics_entry";
+        final String STATS_DDL = "create table `akiban_information_schema`.`zindex_statistics`("+
+            "`table_id` int NOT NULL, `index_id` int NOT NULL, `analysis_timestamp` timestamp, "+
+            "`row_count` bigint, `sampled_count` bigint, "+
+            "PRIMARY KEY(`table_id`, `index_id`)"+
+        ") engine=akibandb";
+        final String ENTRY_DDL = "create table `akiban_information_schema`.`zindex_statistics_entry`("+
+            "`table_id` int NOT NULL, `index_id` int NOT NULL, `column_count` int NOT NULL, "+
+            "`item_number` int NOT NULL, `key_string` varchar(2048), `key_bytes` varbinary(4096), "+
+            "`eq_count` bigint, `lt_count` bigint, `distinct_count` bigint, "+
+            "PRIMARY KEY(`table_id`, `index_id`, `column_count`, `item_number`), "+
+            "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0`(`table_id`, `index_id`) "+
+                "REFERENCES `zindex_statistics`(`table_id`, `index_id`)"+
+        ") engine=akibandb";
+
+        TableDefinition statsDef = getTableDef(SCHEMA, STATS_TABLE);
+        assertNotNull("Stats table present", statsDef);
+        assertEquals("Stats DDL", STATS_DDL, statsDef.getDDL());
+
+        TableDefinition entryDef = getTableDef(SCHEMA, ENTRY_TABLE);
+        assertNotNull("Entry table present", entryDef);
+        assertEquals("Entry DDL", ENTRY_DDL, entryDef.getDDL());
+    }
+
     /**
      * Assert that the given tables in the given schema has the, and only the, given tables. Also
      * confirm each table exists in the AIS and has a definition.

@@ -15,13 +15,10 @@
 
 package com.akiban.server.test.it.dxl;
 
-import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.rowdata.RowData;
-import com.akiban.server.TableStatistics;
 import com.akiban.server.api.FixedCountLimit;
 import com.akiban.server.api.dml.scan.*;
 import com.akiban.server.error.CursorIsFinishedException;
