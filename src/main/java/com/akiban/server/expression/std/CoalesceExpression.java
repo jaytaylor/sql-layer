@@ -102,7 +102,7 @@ public class CoalesceExpression extends AbstractCompositeExpression {
         if (args.isEmpty()) throw new WrongExpressionArityException(2, 0);
         int n = 0;
         AkType top;
-       
+
         do
         {
             top = getAk(args.get(n++));
