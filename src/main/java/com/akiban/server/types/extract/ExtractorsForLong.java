@@ -56,13 +56,13 @@ class ExtractorsForLong extends LongExtractor {
         case U_DOUBLE:  return (long)source.getUDouble();
         case TEXT:
             try {
-                return Long.parseLong(source.getText());
+                return (long)Double.parseDouble(source.getText());    
             } catch (NumberFormatException ex) {
                 throw new InvalidCharToNumException (source.getText());
             }
         case VARCHAR:
             try {
-                return Long.parseLong(source.getString());
+                return (long)Double.parseDouble(source.getString());               
             } catch (NumberFormatException ex) {
                 throw new InvalidCharToNumException (source.getString());
             }

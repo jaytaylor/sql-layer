@@ -14,7 +14,6 @@
  */
 package com.akiban.server.expression.std;
 
-import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -22,12 +21,11 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.AkType.UnderlyingType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.StandardException;
 import com.akiban.server.expression.TypesList;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 
@@ -52,7 +50,8 @@ public class IfExpression extends AbstractCompositeExpression
             else
             {
                 argumentTypes.setType(0, AkType.BOOL);
-                AkType topType = getTopType(argumentTypes.get(1).getType(), argumentTypes.get(2).getType());
+                AkType topType = CoalesceExpression.getTopType(Arrays.asList(argumentTypes.get(1).getType(), 
+                                                                             argumentTypes.get(2).getType()));
                 argumentTypes.setType(1, topType);
                 argumentTypes.setType(2, topType);
 
@@ -70,40 +69,12 @@ public class IfExpression extends AbstractCompositeExpression
         if (children.size() != 3)
             throw new WrongExpressionArityException(3, children.size());
         else
-            return getTopType(children.get(1).valueType(), children.get(2).valueType());
-    }
-
-    static protected AkType getTopType(AkType o1, AkType o2)
-    {
-        if (o1 == o2)
-            return o1;
-        else if (!Converters.isConversionAllowed(o1, o2))
-            throw new InconvertibleTypesException(o1, o2);
-        else if (!Converters.isConversionAllowed(o2, o1))
-            throw new InconvertibleTypesException(o2, o1);
-
-        UnderlyingType under_o1 = o1.underlyingTypeOrNull();
-        UnderlyingType under_o2 = o2.underlyingTypeOrNull();
-
-        if (STRING.contains(o1) || STRING.contains(o2))
-            return AkType.VARCHAR;
-        else if (o1 == AkType.DECIMAL || o2 == AkType.DECIMAL)
-            return AkType.DECIMAL;
-        else if (under_o1 == UnderlyingType.DOUBLE_AKTYPE || under_o2 == UnderlyingType.DOUBLE_AKTYPE)
-            return AkType.DOUBLE;
-        else if (under_o1 == UnderlyingType.FLOAT_AKTYPE || under_o2 == UnderlyingType.FLOAT_AKTYPE)
-            return AkType.FLOAT;
-        else if (o1 == AkType.U_BIGINT || o2 == AkType.U_BIGINT)
-            return AkType.U_BIGINT;
-        else if (under_o1 == UnderlyingType.LONG_AKTYPE || under_o2 == UnderlyingType.LONG_AKTYPE)
-            return AkType.LONG;
-        else
-            return AkType.NULL;
+            return CoalesceExpression.getTopType(Arrays.asList(children.get(1).valueType(),
+                                                               children.get(2).valueType()));
     }
 
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
-
         public InnerEvaluation(List<? extends ExpressionEvaluation> eva)
         {
             super(eva);
@@ -115,7 +86,7 @@ public class IfExpression extends AbstractCompositeExpression
             return children().get(Extractors.getBooleanExtractor().getBoolean(children().get(0).eval(), false).booleanValue() ? 1 : 2).eval();
         }
     }
-
+    
     public IfExpression(List<? extends Expression> children)
     {
         super(checkArgs(children), children);
