@@ -1,0 +1,32 @@
+## Test all the trig function
+## 
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(double_field, varchar_field, bigint_field, date_field) 
+             VALUES (0, '0', 0, '2002-09-02');
+## Test with literals
+---
+- Statement: SELECT COS(0) from all_types;
+- output_types: [DOUBLE]
+- output: [[1.0]]
+---
+- Statement: SELECT SIN(0) from all_types;
+- output: [[0.0]]
+---
+- Statement: SELECT TAN(0) from all_types;
+- output: [[0.0]]
+---
+- Statement: SELECT ACOT(0) from all_types;
+- output: [[0.0]]
+---
+- Statement: SELECT ASIN(0) from all_types;
+- output: [[0.0]]
+---
+- Statement: SELECT ACOS(1) from all_types;
+- output: [[0.0]]
+---
+- Statement: SELECT ATAN(0) from all_types;
+- output: SELECT ACOT(0) from all_types;
+- output_types: [DOUBLE]
+...

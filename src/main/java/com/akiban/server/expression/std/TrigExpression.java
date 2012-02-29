@@ -34,7 +34,7 @@ public class TrigExpression extends AbstractCompositeExpression
 { 
     public static enum TrigName
     {
-        SIN, COS, TAN, COT, ASIN, ACOS, ATAN, ATAN2, COSH, SINH, TANH, COTH
+        SIN, COS, TAN, COT, ASIN, ACOS, ACOT, ATAN, ATAN2, COSH, SINH, TANH, COTH
     }
     
     private final TrigName name;
@@ -74,6 +74,9 @@ public class TrigExpression extends AbstractCompositeExpression
     
     @Scalar ("coth")
     public static final ExpressionComposer COTH_COMPOSER = new InternalComposer(TrigName.COTH);
+    
+    @Scalar ("acot")
+    public static final ExpressionComposer ACOT_COMPOSER = new InternalComposer(TrigName.ACOT);
     
     private static class InternalComposer implements ExpressionComposer
     {
