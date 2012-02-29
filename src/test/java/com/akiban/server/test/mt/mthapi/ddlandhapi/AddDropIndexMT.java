@@ -15,11 +15,14 @@
 
 package com.akiban.server.test.mt.mthapi.ddlandhapi;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.HapiGetRequest;
@@ -98,12 +101,13 @@ public final class AddDropIndexMT extends HapiMTBase {
             public void setupWrites(DDLFunctions ddl, DMLFunctions dml, Session session)
                     throws InvalidOperationException
             {
-                ddl.createTable(session, SCHEMA,
-                        "create table p(id int key, aString varchar(32), anInt int)");
-                ddl.createTable(session, SCHEMA,
-                        "create table c1(id int key, pid int, "
-                        + "CONSTRAINT __akiban_c1 FOREIGN KEY __akiban_c1 (pid) REFERENCES p(id) )"
-                        );
+                NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+                builder.userTable("p").colLong("id", false).colString("aString", 32).colLong("anInt").pk("id");
+                builder.userTable("c1").colLong("id", false).colLong("pid").pk("id").joinTo("p").on("pid", "id");
+                AkibanInformationSchema tempAIS = builder.ais();
+
+                ddl.createTable(session, tempAIS.getUserTable(SCHEMA, "p"));
+                ddl.createTable(session, tempAIS.getUserTable(SCHEMA, "c1"));
                 int pId = ddl.getTableId(session, new TableName(SCHEMA, "p"));
                 int cId = ddl.getTableId(session, new TableName(SCHEMA, "c1"));
 

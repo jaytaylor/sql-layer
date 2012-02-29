@@ -61,22 +61,6 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void createTable(Session session, String schema, String ddlText) {
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunction.CREATE_TABLE);
-            delegate.createTable(session, schema, ddlText);
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunction.CREATE_TABLE, t);
-            throw throwAlways(t);
-        } finally {
-            hook.hookFunctionFinally(session, DXLFunction.CREATE_TABLE, thrown);
-        }
-    }
-
-
-    @Override
     public void renameTable(Session session, TableName currentName, TableName newName) {
         Throwable thrown = null;
         try {

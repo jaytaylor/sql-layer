@@ -1,12 +1,13 @@
 CREATE TABLE parent
 (
-  id INT, PRIMARY KEY(id), 
-  name VARCHAR(256) NOT NULL, KEY(name)
-) engine=akibandb;
+  id INT NOT NULL, PRIMARY KEY(id), 
+  name VARCHAR(256) NOT NULL
+);
+CREATE INDEX name ON parent(name);
 
 CREATE TABLE child
 (
-  id INT, PRIMARY KEY(id), 
-  pid INT, CONSTRAINT `__akiban_fk_10` FOREIGN KEY `__akiban_fk_10`(pid) REFERENCES parent(id), 
+  id INT NOT NULL, PRIMARY KEY(id), 
+  pid INT, GROUPING FOREIGN KEY (pid) REFERENCES parent(id), 
   name VARCHAR(256) NOT NULL
-) engine=akibandb;
+);

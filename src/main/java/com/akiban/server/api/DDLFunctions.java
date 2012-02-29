@@ -33,16 +33,6 @@ import com.akiban.server.service.session.Session;
 
 public interface DDLFunctions {
     /**
-     * Creates a table in a given schema with the given ddl.
-     * @param session the Session to run under.
-     * @param schema may be null; if it is, and the schema must be provided in the DDL text
-     * @param ddlText the DDL text: <tt>CREATE TABLE....</tt>
-     * @throws SchemaDefParseException if the given schema is <tt>null</tt> and no schema is provided in the DDL;
-     *  or if there is some other parse error
-     * exists
-     */
-    void createTable(Session session, String schema, String ddlText);
-    /**
      * 
      * @param session the session to run the Create under
      * @param table - new user table to add to the existing system

@@ -1,5 +1,3 @@
-use `scan_rows_test`;
-
 create table a(
     a0 int not null,
     a1 int not null,
@@ -7,7 +5,7 @@ create table a(
     a3 int not null,
     a4 varchar(64) not null,
     primary key(a1)
-) engine = akibandb;
+);
 
 create table aa(
     a1 int not null,
@@ -16,11 +14,11 @@ create table aa(
     aa3 int not null,
     aa4 varchar(64) not null,
     primary key(aa1),
-    key (`aa2`, `aa3`),
-    key (`aa2`, `aa1`),
-    key str (aa4),
-CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`a1`) REFERENCES `a` (`a1`)
-) engine = akibandb;
+    GROUPING FOREIGN KEY (a1) REFERENCES a (a1)
+);
+create index aa2 on aa(aa2, aa3);
+create index aa22 on aa(aa2, aa1);
+create index str on aa(aa4);
 
 create table aaa(
     aa1 int not null,
@@ -29,11 +27,11 @@ create table aaa(
     aaa3 int not null,
     aaa4 varchar(64) not null,
     primary key(aaa1),
-    key (`aaa1`),
-    key (`aaa2`),
-    key (`aaa3`),
-CONSTRAINT `__akiban_fk_1` FOREIGN KEY `__akiban_fk_1` (`aa1`) REFERENCES `aa` (`aa1`)
-) engine = akibandb;
+    GROUPING FOREIGN KEY (aa1) REFERENCES aa (aa1)
+);
+create index aaa1 on aaa(aaa1);
+create index aaa2 on aaa(aaa2);
+create index aaa3 on aaa(aaa3);
 
 create table aaaa(
     aaa1 int not null,
@@ -42,11 +40,11 @@ create table aaaa(
     aaaa3 int not null,
     aaaa4 varchar(64) not null,
     primary key(aaaa1),
-    key (`aaaa1`),
-    key (`aaaa2`),
-    key (`aaaa3`)    ,
-CONSTRAINT `__akiban_fk_2` FOREIGN KEY `__akiban_fk_2` (`aaa1`) REFERENCES `aaa` (`aaa1`)
-) engine = akibandb;
+    GROUPING FOREIGN KEY (aaa1) REFERENCES aaa (aaa1)
+);
+create index aaaa1 on aaaa(aaaa1);
+create index aaaa2 on aaaa(aaaa2);
+create index aaaa3 on aaaa(aaaa3);
 
 create table aaaaa(
     aaaa1 int not null,
@@ -55,8 +53,8 @@ create table aaaaa(
     aaaaa3 int not null,
     aaaaa4 varchar(64) not null,
     primary key(aaaaa1),
-CONSTRAINT `__akiban_fk_3` FOREIGN KEY `__akiban_fk_3` (`aaaa1`) REFERENCES `aaaa` (`aaaa1`)
-) engine = akibandb;
+    GROUPING FOREIGN KEY (aaaa1) REFERENCES aaaa (aaaa1)
+);
 
 create table aaaab(
     aaaa1 int not null,
@@ -65,8 +63,8 @@ create table aaaab(
     aaaab3 int not null,
     aaaab4 varchar(64) not null,
     primary key(aaaab1),
-CONSTRAINT `__akiban_fk_4` FOREIGN KEY `__akiban_fk_4` (`aaaa1`) REFERENCES `aaaa` (`aaaa1`)
-) engine = akibandb;
+    GROUPING FOREIGN KEY (aaaa1) REFERENCES aaaa (aaaa1)
+);
 
 create table aaab(
     aaa1 int not null,
@@ -75,13 +73,13 @@ create table aaab(
     aaab3 int not null,
     aaab4 varchar(64) not null,
     primary key(aaab1),
-    key (`aaab1`, `aaab2`),
-    key (`aaab2`, `aaab3`),
-    key aaab3aaab1 (`aaab3`, `aaab1`),
-    key (`aaab1`, `aaab3`),
-    key (`aaab2`, `aaab1`),
-CONSTRAINT `__akiban_fk_5` FOREIGN KEY `__akiban_fk_5` (`aaa1`) REFERENCES `aaa` (`aaa1`)
-) engine = akibandb;
+    GROUPING FOREIGN KEY (aaa1) REFERENCES aaa (aaa1)
+);
+create index aaab1 on aaab(aaab1, aaab2);
+create index aaab2 on aaab(aaab2, aaab3);
+create index aaab3aaab1 on aaab(aaab3, aaab1);
+create index aaab12 on aaab(aaab1, aaab3);
+create index aaab22 on aaab(aaab2, aaab1);
 
 create table aab(
     aa1 int not null,
@@ -90,8 +88,8 @@ create table aab(
     aab3 int not null,
     aab4 varchar(64) not null,
     primary key(aab1),
-CONSTRAINT `__akiban_fk_6` FOREIGN KEY `__akiban_fk_6` (`aa1`) REFERENCES `aa` (`aa1`)
-) engine = akibandb;
+    GROUPING FOREIGN KEY (aa1) REFERENCES aa (aa1)
+);
 
 create table aac(
     aa1 int not null,
@@ -100,8 +98,8 @@ create table aac(
     aac3 int not null,
     aac4 varchar(64) not null,
     primary key(aac1),
-CONSTRAINT `__akiban_fk_7` FOREIGN KEY `__akiban_fk_7` (`aa1`) REFERENCES `aa` (`aa1`)
-) engine = akibandb;
+    GROUPING FOREIGN KEY (aa1) REFERENCES aa (aa1)
+);
 
 create table ab(
     a1 int not null,
@@ -110,13 +108,13 @@ create table ab(
     ab3 int not null,
     ab4 varchar(64) not null,
     primary key(ab1),
-CONSTRAINT `__akiban_fk_8` FOREIGN KEY `__akiban_fk_8` (`a1`) REFERENCES `a` (`a1`)
-) engine = akibandb;
+    GROUPING FOREIGN KEY (a1) REFERENCES a (a1)
+);
 
 create table bug253(
-    vid int,
-    type varchar(255),
-    primary key (type, vid),
-    key (vid)
-) engine = akibandb;
+    vid int not null,
+    type varchar(255) not null,
+    primary key (type, vid)
+);
+create index vid on bug253(vid);
 

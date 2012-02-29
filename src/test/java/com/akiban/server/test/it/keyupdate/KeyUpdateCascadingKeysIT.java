@@ -308,7 +308,7 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
                                  "cid int not null",
                                  "cx int",
                                  "primary key(vid, cid)",
-                                 "constraint __akiban_cv foreign key __akiban_cv(vid) references vendor(vid)");
+                                 "grouping foreign key (vid) references vendor(vid)");
         c_vid = 0;
         c_cid = 1;
         c_cx = 2;
@@ -321,9 +321,9 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
                               "priority int",
                               "when int",
                               "primary key(vid, cid, oid)",
-                              "key(priority)",
                               "unique(when)",
-                              "constraint __akiban_oc foreign key __akiban_oc(vid, cid) references customer(vid, cid)");
+                              "grouping foreign key (vid, cid) references customer(vid, cid)");
+        createIndex("coi", "order", "priority", "priority");
         o_vid = 0;
         o_cid = 1;
         o_oid = 2;
@@ -338,7 +338,7 @@ public class KeyUpdateCascadingKeysIT extends KeyUpdateBase
                              "iid int not null",
                              "ix int",
                              "primary key(vid, cid, oid, iid)",
-                             "constraint __akiban_io foreign key __akiban_io(vid, cid, oid) references order(vid, cid, oid)");
+                             "grouping foreign key (vid, cid, oid) references \"order\"(vid, cid, oid)");
         i_vid = 0;
         i_cid = 1;
         i_oid = 2;

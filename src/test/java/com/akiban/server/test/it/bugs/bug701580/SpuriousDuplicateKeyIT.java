@@ -38,8 +38,9 @@ public final class SpuriousDuplicateKeyIT extends ITBase {
     }
 
     private void simpleTestCase() throws Exception {
-        createTable("test", "t1", "bid1 int, token varchar(64), primary key(bid1), key (token)");
-        int t2 = createTable("test", "t2", "bid int, theme varchar(64), primary key (bid), unique key (theme)");
+        createTable("test", "t1", "bid1 int not null, token varchar(64), primary key(bid1)");
+        createIndex("test", "t1", "token", "token");
+        int t2 = createTable("test", "t2", "bid int not null, theme varchar(64), primary key (bid), unique(theme)");
 
         confirmIds("t1", 1, 2, 2);
         confirmIds("t2", 1, 2, 2);
@@ -54,11 +55,13 @@ public final class SpuriousDuplicateKeyIT extends ITBase {
 
     @Test
     public void indexIdsLocalToGroup() throws Exception {
-        createTable("test", "t1", "bid1 int, token varchar(64), primary key(bid1), key (token)");
+        createTable("test", "t1", "bid1 int not null, token varchar(64), primary key(bid1)");
+        createIndex("test", "t1", "token", "token");
 
-        createTable("test", "t2", "bid int, theme varchar(64), primary key (bid), unique key (theme)");
-        createTable("test", "t3", "id int key, bid_id int, "
-                +"CONSTRAINT __akiban_fk FOREIGN KEY (bid_id) REFERENCES t2 (bid)");
+        createTable("test", "t2", "bid int not null, theme varchar(64), primary key (bid), unique (theme)");
+        createTable("test", "t3", "id int not null primary key, bid_id int, "+
+                    "GROUPING FOREIGN KEY (bid_id) REFERENCES t2 (bid)");
+        createIndex("test", "t3", "__akiban_fk", "bid_id");
 
         confirmIds("t1", 1, 2, 2);
         confirmIds("t2", 1, 2, 4);

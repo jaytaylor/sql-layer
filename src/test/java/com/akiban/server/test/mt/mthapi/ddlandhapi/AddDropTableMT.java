@@ -15,6 +15,7 @@
 
 package com.akiban.server.test.mt.mthapi.ddlandhapi;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
@@ -25,6 +26,7 @@ import com.akiban.server.api.hapi.DefaultHapiGetRequest;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.OldAISException;
 import com.akiban.server.error.TableDefinitionChangedException;
+import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.server.test.mt.mthapi.base.HapiMTBase;
 import com.akiban.server.test.mt.mthapi.base.HapiRequestStruct;
 import com.akiban.server.test.mt.mthapi.base.WriteThread;
@@ -300,7 +302,10 @@ public final class AddDropTableMT extends HapiMTBase {
 
         private int addTable(Session session, DDLFunctions ddl, SaisTable table) throws InvalidOperationException {
             String ddlText = DDLUtils.buildDDL(table);
-            ddl.createTable(session, SCHEMA, ddlText);
+            SchemaFactory schemaFactory = new SchemaFactory(SCHEMA);
+            AkibanInformationSchema tempAIS = schemaFactory.ais(ddl.getAIS(session), ddlText);
+
+            ddl.createTable(session, tempAIS.getUserTable(SCHEMA, table.getName()));
             int tableId = ddl.getTableId(session, new TableName(SCHEMA, table.getName()));
 
             tablesMap.put(table, 0);

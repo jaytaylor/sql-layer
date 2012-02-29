@@ -140,16 +140,15 @@ public final class NiceRowTest {
 
     private static RowDef createRowDef(int totalColumns) throws Exception {
         assertTrue("bad totalColumns=" + totalColumns, totalColumns >= 2);
-        String[] ddl = new String[totalColumns + 3];
+        String[] ddl = new String[totalColumns + 2];
         int i = 0;
-        ddl[i++] = "use test_schema; ";
         ddl[i++] = "create table test_table(";
         ddl[i++] = "id int";
         ddl[i++] = ", name varchar(128)";
         for (int c = 2; c < totalColumns; c++) {
             ddl[i++] = String.format(", field_%s int", c);
         }
-        ddl[i] = ") engine = akibandb;";
+        ddl[i] = ");";
         RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         return rowDefCache.getRowDef("test_schema", "test_table");
     }
@@ -186,5 +185,5 @@ public final class NiceRowTest {
         return bytesList;
     }
 
-    private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory();
+    private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory("test_schema");
 }

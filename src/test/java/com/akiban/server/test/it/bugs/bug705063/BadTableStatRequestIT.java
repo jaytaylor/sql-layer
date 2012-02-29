@@ -35,7 +35,7 @@ public final class BadTableStatRequestIT extends ITBase {
 
     private int createATable() {
         try {
-            return createTable("schema1", "test1", "id int key");
+            return createTable("schema1", "test1", "id int not null primary key");
         } catch (InvalidOperationException e) {
             throw new TestException(e);
         }

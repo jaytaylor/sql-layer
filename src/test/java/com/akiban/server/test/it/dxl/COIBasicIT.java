@@ -56,9 +56,11 @@ public final class COIBasicIT extends ITBase {
     }
 
     private TableIds createTables() throws InvalidOperationException {
-        int cId = createTable("coi", "c", "cid int key, name varchar(32)");
-        int oId = createTable("coi", "o", "oid int key, c_id int, CONSTRAINT __akiban_fk_o FOREIGN KEY index1 (c_id) REFERENCES c(cid)");
-        int iId = createTable("coi", "i", "iid int key, o_id int, idesc varchar(32), CONSTRAINT __akiban_fk_i FOREIGN KEY index2 (o_id) REFERENCES o(oid)");
+        int cId = createTable("coi", "c", "cid int not null primary key, name varchar(32)");
+        int oId = createTable("coi", "o", "oid int not null primary key, c_id int, GROUPING FOREIGN KEY (c_id) REFERENCES c(cid)");
+        createIndex("coi", "o", "__akiban_fk_o", "c_id");
+        int iId = createTable("coi", "i", "iid int not null primary key, o_id int, idesc varchar(32), GROUPING FOREIGN KEY (o_id) REFERENCES o(oid)");
+        createIndex("coi", "i", "__akiban_fk_i", "o_id");
         AkibanInformationSchema ais = ddl().getAIS(session());
 
         // Lots of checking, the more the merrier
@@ -209,8 +211,8 @@ public final class COIBasicIT extends ITBase {
     @Test
     public void dropAllTablesHelper() throws InvalidOperationException {
         createTables();
-        createTable("test", "parent", "id int key");
-        createTable("test", "child", "id int key, pid int, CONSTRAINT __akiban_fk_0 FOREIGN KEY __akiban_fk_0(pid) REFERENCES parent(id)");
+        createTable("test", "parent", "id int not null primary key");
+        createTable("test", "child", "id int not null primary key, pid int, GROUPING FOREIGN KEY (pid) REFERENCES parent(id)");
         dropAllTables();
     }
 

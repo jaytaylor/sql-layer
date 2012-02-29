@@ -141,7 +141,7 @@ public final class CreateIndexesIT extends ITBase {
 
     @Test(expected=NoSuchTableException.class)
     public void unknownTable() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int primary key");
+        int tId = createTable("test", "t", "id int not null primary key");
         AkibanInformationSchema ais = createAISWithTable(tId);
         Index index = addIndex(ais, tId, "index", false);
         ddl().dropTable(session(), new TableName("test", "t"));
@@ -150,7 +150,7 @@ public final class CreateIndexesIT extends ITBase {
 
     @Test(expected=IndexLacksColumnsException.class)
     public void noIndexColumns() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int primary key, foo int");
+        int tId = createTable("test", "t", "id int not null primary key, foo int");
         AkibanInformationSchema ais = createAISWithTable(tId);
         Index index = addIndex(ais, tId, "Failure", false);
         ddl().createIndexes(session(), Arrays.asList(index));
@@ -167,7 +167,7 @@ public final class CreateIndexesIT extends ITBase {
     
     @Test(expected=DuplicateIndexException.class) 
     public void duplicateIndexName() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int primary key");
+        int tId = createTable("test", "t", "id int not null primary key");
         AkibanInformationSchema ais = createAISWithTable(tId);
         Index index = addIndex(ais, tId, "PRIMARY", false, "id");
         ddl().createIndexes(session(), Arrays.asList(index));
@@ -175,7 +175,7 @@ public final class CreateIndexesIT extends ITBase {
     
     @Test(expected=NoSuchColumnException.class) 
     public void unknownColumnName() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int primary key");
+        int tId = createTable("test", "t", "id int not null primary key");
         AkibanInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "t");
         Index index = TableIndex.create(ais, table, "id", -1, false, "KEY");
@@ -186,7 +186,7 @@ public final class CreateIndexesIT extends ITBase {
   
     @Test(expected=JoinColumnTypesMismatchException.class) 
     public void mismatchedColumnType() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int primary key");
+        int tId = createTable("test", "t", "id int not null primary key");
         AkibanInformationSchema ais = createAISWithTable(tId);
         Table table = ais.getTable("test", "t");
         Index index = TableIndex.create(ais, table, "id", -1, false, "KEY");
@@ -197,7 +197,7 @@ public final class CreateIndexesIT extends ITBase {
     
     @Test
     public void basicConfirmInAIS() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int primary key, name varchar(255)");
+        int tId = createTable("test", "t", "id int not null primary key, name varchar(255)");
         
         AkibanInformationSchema ais = createAISWithTable(tId);
         Index index = addIndex(ais, tId, "name", false, "name");
@@ -217,8 +217,8 @@ public final class CreateIndexesIT extends ITBase {
 
     @Test
     public void rightJoinPersistence() throws Exception {
-        createTable("test", "c", "cid int primary key, name varchar(255)");
-        int oid = createTable("test", "o", "oid int key, c_id int, priority int, " + akibanFK("c_id", "c", "cid"));
+        createTable("test", "c", "cid int not null primary key, name varchar(255)");
+        int oid = createTable("test", "o", "oid int not null primary key, c_id int, priority int, " + akibanFK("c_id", "c", "cid"));
         AkibanInformationSchema ais = ddl().getAIS(session());
         String groupName = ais.getUserTable(oid).getGroup().getName();
         GroupIndex createdGI = GroupIndexCreator.createIndex(
@@ -243,8 +243,8 @@ public final class CreateIndexesIT extends ITBase {
 
     @Test
     public void invalidGiRecreatedOnStartup() throws Exception {
-        createTable("test", "c", "cid int primary key, name varchar(255)");
-        int oid = createTable("test", "o", "oid int key, c_id int, priority int, " + akibanFK("c_id", "c", "cid"));
+        createTable("test", "c", "cid int not null primary key, name varchar(255)");
+        int oid = createTable("test", "o", "oid int not null primary key, c_id int, priority int, " + akibanFK("c_id", "c", "cid"));
         AkibanInformationSchema ais = ddl().getAIS(session());
         String groupName = ais.getUserTable(oid).getGroup().getName();
         GroupIndex invalidIndex = GroupIndexCreator.createIndex(
@@ -264,7 +264,7 @@ public final class CreateIndexesIT extends ITBase {
     
     @Test
     public void nonUniqueVarchar() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int primary key, name varchar(255)");
+        int tId = createTable("test", "t", "id int not null primary key, name varchar(255)");
         dml().writeRow(session(), createNewRow(tId, 1, "bob"));
         dml().writeRow(session(), createNewRow(tId, 2, "jim"));
         
@@ -273,7 +273,7 @@ public final class CreateIndexesIT extends ITBase {
         ddl().createIndexes(session(), Arrays.asList(index));
         updateAISGeneration();
         
-        checkDDL(tId, "create table `test`.`t`(`id` int, `name` varchar(255), PRIMARY KEY(`id`), KEY `name`(`name`)) engine=akibandb");
+        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `name` varchar(255), PRIMARY KEY(`id`), KEY `name`(`name`)) engine=akibandb");
         
         List<NewRow> rows = scanAllIndex(getUserTable(tId).getIndex("name"));
         assertEquals("rows from index scan", 2, rows.size());
@@ -281,9 +281,11 @@ public final class CreateIndexesIT extends ITBase {
     
     @Test
     public void nonUniqueVarcharMiddleOfGroup() throws InvalidOperationException {
-        int cId = createTable("coi", "c", "cid int key, name varchar(32)");
-        int oId = createTable("coi", "o", "oid int key, c_id int, tag varchar(32), CONSTRAINT __akiban_fk_c FOREIGN KEY __akiban_fk_c (c_id) REFERENCES c(cid)");
-        int iId = createTable("coi", "i", "iid int key, o_id int, idesc varchar(32), CONSTRAINT __akiban_fk_i FOREIGN KEY __akiban_fk_i (o_id) REFERENCES o(oid)");
+        int cId = createTable("coi", "c", "cid int not null primary key, name varchar(32)");
+        int oId = createTable("coi", "o", "oid int not null primary key, c_id int, tag varchar(32), GROUPING FOREIGN KEY (c_id) REFERENCES c(cid)");
+        createGroupingFKIndex("coi", "o", "__akiban_fk_c", "c_id");
+        int iId = createTable("coi", "i", "iid int not null primary key, o_id int, idesc varchar(32), GROUPING FOREIGN KEY (o_id) REFERENCES o(oid)");
+        createGroupingFKIndex("coi", "i", "__akiban_fk_i", "o_id");
         
         // One customer 
         dml().writeRow(session(), createNewRow(cId, 1, "bob"));
@@ -306,7 +308,7 @@ public final class CreateIndexesIT extends ITBase {
         updateAISGeneration();
         
         // Check that AIS was updated and DDL gets created correctly
-        checkDDL(oId, "create table `coi`.`o`(`oid` int, `c_id` int, `tag` varchar(32), PRIMARY KEY(`oid`), "+
+        checkDDL(oId, "create table `coi`.`o`(`oid` int NOT NULL, `c_id` int, `tag` varchar(32), PRIMARY KEY(`oid`), "+
                       "KEY `tag`(`tag`), CONSTRAINT `__akiban_fk_c` FOREIGN KEY `__akiban_fk_c`(`c_id`) REFERENCES `c`(`cid`)) engine=akibandb");
 
         // Get all customers
@@ -325,7 +327,7 @@ public final class CreateIndexesIT extends ITBase {
     
     @Test
     public void nonUniqueCompoundVarcharVarchar() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int primary key, first varchar(255), last varchar(255)");
+        int tId = createTable("test", "t", "id int not null primary key, \"first\" varchar(255), \"last\" varchar(255)");
         
         expectRowCount(tId, 0);
         dml().writeRow(session(), createNewRow(tId, 1, "foo", "bar"));
@@ -338,7 +340,7 @@ public final class CreateIndexesIT extends ITBase {
         ddl().createIndexes(session(), Arrays.asList(index));
         updateAISGeneration();
         
-        checkDDL(tId, "create table `test`.`t`(`id` int, `first` varchar(255), `last` varchar(255), "+
+        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `first` varchar(255), `last` varchar(255), "+
                       "PRIMARY KEY(`id`), KEY `name`(`first`, `last`)) engine=akibandb");
 
         List<NewRow> rows = scanAllIndex(getUserTable(tId).getIndex("name"));
@@ -347,7 +349,7 @@ public final class CreateIndexesIT extends ITBase {
     
     @Test
     public void uniqueChar() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int primary key, state char(2)");
+        int tId = createTable("test", "t", "id int not null primary key, state char(2)");
         
         expectRowCount(tId, 0);
         dml().writeRow(session(), createNewRow(tId, 1, "IA"));
@@ -360,7 +362,7 @@ public final class CreateIndexesIT extends ITBase {
         ddl().createIndexes(session(), Arrays.asList(index));
         updateAISGeneration();
         
-        checkDDL(tId, "create table `test`.`t`(`id` int, `state` char(2), "+
+        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `state` char(2), "+
                       "PRIMARY KEY(`id`), UNIQUE `state`(`state`)) engine=akibandb");
 
         List<NewRow> rows = scanAllIndex(getUserTable(tId).getIndex("state"));
@@ -369,7 +371,7 @@ public final class CreateIndexesIT extends ITBase {
 
     @Test
     public void uniqueCharHasDuplicates() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int primary key, state char(2)");
+        int tId = createTable("test", "t", "id int not null primary key, state char(2)");
 
         dml().writeRow(session(), createNewRow(tId, 1, "IA"));
         dml().writeRow(session(), createNewRow(tId, 2, "WA"));
@@ -399,7 +401,7 @@ public final class CreateIndexesIT extends ITBase {
     
     @Test
     public void uniqueIntNonUniqueDecimal() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int primary key, otherId int, price decimal(10,2)");
+        int tId = createTable("test", "t", "id int not null primary key, \"otherId\" int, price decimal(10,2)");
         
         expectRowCount(tId, 0);
         dml().writeRow(session(), createNewRow(tId, 1, 1337, "10.50"));
@@ -413,7 +415,7 @@ public final class CreateIndexesIT extends ITBase {
         ddl().createIndexes(session(), Arrays.asList(index1, index2));
         updateAISGeneration();
         
-        checkDDL(tId, "create table `test`.`t`(`id` int, `otherId` int, `price` decimal(10, 2), "+
+        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `otherId` int, `price` decimal(10, 2), "+
                       "PRIMARY KEY(`id`), UNIQUE `otherId`(`otherId`), KEY `price`(`price`)) engine=akibandb");
 
         List<NewRow> rows = scanAllIndex(getUserTable(tId).getIndex("otherId"));
@@ -425,7 +427,8 @@ public final class CreateIndexesIT extends ITBase {
 
     @Test
     public void uniqueIntNonUniqueIntWithDuplicates() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int primary key, i1 int, i2 int, price decimal(10,2), index(i1)");
+        int tId = createTable("test", "t", "id int not null primary key, i1 int, i2 int, price decimal(10,2)");
+        createIndex("test", "t", "i1", "i1");
 
         dml().writeRow(session(), createNewRow(tId, 1, 10, 1337, "10.50"));
         dml().writeRow(session(), createNewRow(tId, 2, 20, 5000, "10.50"));
@@ -458,8 +461,8 @@ public final class CreateIndexesIT extends ITBase {
 
     @Test
     public void multipleTablesNonUniqueIntNonUniqueInt() throws InvalidOperationException {
-        int tid = createTable("test", "t", "id int primary key, foo int");
-        int uid = createTable("test", "u", "id int primary key, bar int");
+        int tid = createTable("test", "t", "id int not null primary key, foo int");
+        int uid = createTable("test", "u", "id int not null primary key, bar int");
         dml().writeRow(session(), createNewRow(tid, 1, 42));
         dml().writeRow(session(), createNewRow(tid, 2, 43));
         dml().writeRow(session(), createNewRow(uid, 1, 44));
@@ -470,8 +473,8 @@ public final class CreateIndexesIT extends ITBase {
         ddl().createIndexes(session(), Arrays.asList(index1, index2));
         updateAISGeneration();
 
-        checkDDL(tid, "create table `test`.`t`(`id` int, `foo` int, PRIMARY KEY(`id`), KEY `foo`(`foo`)) engine=akibandb");
-        checkDDL(uid, "create table `test`.`u`(`id` int, `bar` int, PRIMARY KEY(`id`), KEY `bar`(`bar`)) engine=akibandb");
+        checkDDL(tid, "create table `test`.`t`(`id` int NOT NULL, `foo` int, PRIMARY KEY(`id`), KEY `foo`(`foo`)) engine=akibandb");
+        checkDDL(uid, "create table `test`.`u`(`id` int NOT NULL, `bar` int, PRIMARY KEY(`id`), KEY `bar`(`bar`)) engine=akibandb");
 
         List<NewRow> rows = scanAllIndex(getUserTable(tid).getIndex("foo"));
         assertEquals("t rows from index scan", 2, rows.size());
@@ -482,7 +485,7 @@ public final class CreateIndexesIT extends ITBase {
 
     @Test
     public void oneIndexCheckIDs() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int key, foo int");
+        int tId = createTable("test", "t", "id int not null primary key, foo int");
         AkibanInformationSchema ais = createAISWithTable(tId);
         Index index = addIndex(ais, tId, "foo", false, "foo");
         ddl().createIndexes(session(), Arrays.asList(index));
@@ -492,7 +495,7 @@ public final class CreateIndexesIT extends ITBase {
 
     @Test
     public void twoIndexesAtOnceCheckIDs() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int key, foo int, bar int");
+        int tId = createTable("test", "t", "id int not null primary key, foo int, bar int");
         AkibanInformationSchema ais = createAISWithTable(tId);
         Index index1 = addIndex(ais, tId, "foo", false, "foo");
         Index index2 = addIndex(ais, tId, "bar", false, "bar");
@@ -503,7 +506,7 @@ public final class CreateIndexesIT extends ITBase {
 
     @Test
     public void twoIndexSeparatelyCheckIDs() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int key, foo int, bar int");
+        int tId = createTable("test", "t", "id int not null primary key, foo int, bar int");
         final AkibanInformationSchema ais = createAISWithTable(tId);
         Index index = addIndex(ais, tId, "foo", false, "foo");
         ddl().createIndexes(session(), Arrays.asList(index));

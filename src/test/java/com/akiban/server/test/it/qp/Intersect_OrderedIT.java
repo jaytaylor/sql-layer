@@ -46,18 +46,18 @@ public class Intersect_OrderedIT extends OperatorITBase
     {
         parent = createTable(
             "schema", "parent",
-            "pid int not null key",
+            "pid int not null primary key",
             "x int",
-            "y int",
-            "index(x)",
-            "index(y)");
+            "y int");
+        createIndex("schema", "parent", "x", "x");
+        createIndex("schema", "parent", "y", "y");
         child = createTable(
             "schema", "child",
-            "cid int not null key",
+            "cid int not null primary key",
             "pid int",
             "z int",
-            "index(z)",
-            "constraint __akiban_cp foreign key __akiban_cp(pid) references parent(pid)");
+            "grouping foreign key (pid) references parent(pid)");
+        createIndex("schema", "child", "z", "z");
         schema = new Schema(rowDefCache().ais());
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));

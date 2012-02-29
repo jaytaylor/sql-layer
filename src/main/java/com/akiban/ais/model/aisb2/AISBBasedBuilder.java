@@ -106,22 +106,28 @@ public class AISBBasedBuilder
 
         @Override
         public NewUserTableBuilder colLong(String name) {
-            return colLong(name, false, NULLABLE_DEFAULT);
+            return colLong(name, false, NULLABLE_DEFAULT, null);
         }
 
         @Override
         public NewUserTableBuilder colLong(String name, boolean nullable) {
-            return colLong(name, nullable, false);
+            return colLong(name, nullable, false, null);
         }
 
         @Override
-        public NewUserTableBuilder autoIncLong(String name) {
-            return colLong(name, false, true);
+        public NewUserTableBuilder autoIncLong(String name, int initialValue) {
+            return colLong(name, false, true, initialValue);
         }
 
-        private NewUserTableBuilder colLong(String name, boolean nullable, boolean autoIncrement) {
+        private NewUserTableBuilder colLong(String name, boolean nullable, boolean autoIncrement, Integer initialAutoInc) {
             checkUsable();
             aisb.column(schema, userTable, name, uTableColumnPos++, "INT", 10L, null, nullable, autoIncrement, null, null);
+            if (initialAutoInc != null) {
+                aisb.akibanInformationSchema().
+                     getUserTable(schema, userTable).
+                     getColumn(name).
+                     setInitialAutoIncrementValue(initialAutoInc.longValue());
+            }
             return this;
         }
 
@@ -151,6 +157,39 @@ public class AISBBasedBuilder
         public NewUserTableBuilder colDouble(String name, boolean nullable) {
             checkUsable();
             aisb.column(schema, userTable, name, uTableColumnPos++, "DOUBLE", null, null, nullable, false, null, null);
+            return this;
+        }
+
+        @Override
+        public NewUserTableBuilder colTimestamp(String name) {
+            return colTimestamp(name, NULLABLE_DEFAULT);
+        }
+
+        @Override
+        public NewUserTableBuilder colTimestamp(String name, boolean nullable) {
+            aisb.column(schema, userTable, name, uTableColumnPos++, "TIMESTAMP", null, null, nullable, false, null, null);
+            return this;
+        }
+
+        @Override
+        public NewUserTableBuilder colBigInt(String name) {
+            return colBigInt(name, NULLABLE_DEFAULT);
+        }
+
+        @Override
+        public NewUserTableBuilder colBigInt(String name, boolean nullable) {
+            aisb.column(schema, userTable, name, uTableColumnPos++, "BIGINT", null, null, nullable, false, null, null);
+            return this;
+        }
+
+        @Override
+        public NewUserTableBuilder colBinary(String name, int length) {
+            return colBinary(name, length, NULLABLE_DEFAULT);
+        }
+
+        @Override
+        public NewUserTableBuilder colBinary(String name, int length, boolean nullable) {
+            aisb.column(schema, userTable, name, uTableColumnPos++, "VARBINARY", (long)length, null, nullable, false, null, null);
             return this;
         }
 

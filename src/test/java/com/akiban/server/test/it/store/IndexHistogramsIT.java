@@ -283,11 +283,11 @@ public final class IndexHistogramsIT extends ITBase {
     @Before
     public void createDatabase() {
         // schema: tables
-        int cTable = createTable(SCHEMA, "customers", "cid varchar(4) key, name varchar(64), dob_year varchar(4)",
-                "key name_dob (name, dob_year)");
-        int oTable = createTable(SCHEMA, "orders", "oid int key, cid varchar(4), placed varchar(64)",
-                "key placed (placed)",
+        int cTable = createTable(SCHEMA, "customers", "cid varchar(4) not null primary key, name varchar(64), dob_year varchar(4)");
+        createIndex(SCHEMA, "customers", "name_dob", "name", "dob_year");
+        int oTable = createTable(SCHEMA, "orders", "oid int not null primary key, cid varchar(4), placed varchar(64)",
                 akibanFK("cid", "customers", "cid"));
+        createIndex(SCHEMA, "orders", "placed", "placed");
         // schema: GIs
         String groupName = getUserTable(SCHEMA, "customers").getGroup().getName();
         namePlacedGi = createGroupIndex(groupName, "namePlaced", "customers.name,orders.placed");

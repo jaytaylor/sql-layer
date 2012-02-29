@@ -54,9 +54,9 @@ public final class TableAndColumnDuplicationIT extends ITBase {
     @Test
     public void noDuplicateKeyButIncompatibleRows() throws InvalidOperationException {
         final int schema1Table
-                = createTable("schema1", "table1", "id int key");
+                = createTable("schema1", "table1", "id int not null primary key");
         final int schema2Table =
-                createTable("schema2","table1", "name varchar(32) key");
+                createTable("schema2","table1", "name varchar(32) not null primary key");
 
         writeRows(
                 createNewRow(schema1Table, 0L),
@@ -87,9 +87,9 @@ public final class TableAndColumnDuplicationIT extends ITBase {
                         String schema2TableName, String schema2TableKeyCol) throws InvalidOperationException
     {
         final int schema1Table
-                = createTable("schema1", schema1TableName, schema1TableKeyCol + " int key, name varchar(32)");
+                = createTable("schema1", schema1TableName, schema1TableKeyCol + " int not null primary key, name varchar(32)");
         final int schema2Table =
-                createTable("schema2", schema2TableName, schema2TableKeyCol + " int key, name varchar(32)");
+                createTable("schema2", schema2TableName, schema2TableKeyCol + " int not null primary key, name varchar(32)");
 
         writeRows(
                 createNewRow(schema1Table, 0L, "alpha-0"),

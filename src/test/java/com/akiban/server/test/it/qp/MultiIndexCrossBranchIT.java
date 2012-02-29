@@ -42,23 +42,23 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
     {
         p = createTable(
             "schema", "p",
-            "pid int not null key",
-            "x int",
-            "index(x)");
+            "pid int not null primary key",
+            "x int");
+        createIndex("schema", "p", "x", "x");
         c = createTable(
             "schema", "c",
-            "cid int not null key",
+            "cid int not null primary key",
             "pid int",
             "y int",
-            "index(y)",
-            "constraint __akiban_cp foreign key __akiban_cp(pid) references p(pid)");
+            "grouping foreign key (pid) references p(pid)");
+        createIndex("schema", "c", "y", "y");
         d = createTable(
             "schema", "d",
-            "did int not null key",
+            "did int not null primary key",
             "pid int",
             "z int",
-            "index(z)",
-            "constraint __akiban_dp foreign key __akiban_dp(pid) references p(pid)");
+            "grouping foreign key (pid) references p(pid)");
+        createIndex("schema", "d", "z", "z");
         schema = new Schema(rowDefCache().ais());
         pRowType = schema.userTableRowType(userTable(p));
         cRowType = schema.userTableRowType(userTable(c));

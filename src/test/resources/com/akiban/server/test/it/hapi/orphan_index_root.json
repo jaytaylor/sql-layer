@@ -17,14 +17,14 @@
             "cid int not null",
             "cid_copy int not null",
             "primary key(cid)",
-            "key idx_cid_copy(cid_copy)"
+            "index(cid_copy)"
         ],
 
         [ "orders",
             "cid int not null",
             "oid int not null",
             "primary key(cid, oid)",
-            "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o (cid) REFERENCES customer(cid)"
+            "GROUPING FOREIGN KEY (cid) REFERENCES customer(cid)"
         ],
 
         [ "item",
@@ -32,14 +32,14 @@
             "oid int not null",
             "iid int not null",
             "primary key(cid, oid, iid)",
-            "CONSTRAINT __akiban_i FOREIGN KEY __akiban_i (cid, oid) REFERENCES orders(cid, oid)"
+            "GROUPING FOREIGN KEY (cid, oid) REFERENCES orders(cid, oid)"
         ],
 
         [ "address",
             "cid int not null",
             "aid int not null",
             "primary key(cid, aid)",
-            "CONSTRAINT __akiban_a FOREIGN KEY __akiban_a (cid) REFERENCES customer(cid)"
+            "GROUPING FOREIGN KEY (cid) REFERENCES customer(cid)"
         ]
     ],
     "write_rows" : {

@@ -6,7 +6,7 @@
     "schema" : "test",
 
     "tables" : [
-        ["floats", "id int key", "f1 float", "f2 float unsigned", "index(f1)", "index(f2)"]
+        ["floats", "id int not null primary key", "f1 real", "f2 real unsigned", "index(f1)", "index(f2)"]
     ],
 
     "write_rows" : {
