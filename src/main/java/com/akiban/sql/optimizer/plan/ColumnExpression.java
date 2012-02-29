@@ -22,6 +22,8 @@ import com.akiban.sql.parser.ValueNode;
 
 import com.akiban.ais.model.Column;
 
+import java.util.Set;
+
 /** An expression evaluating a column in an actual table. */
 public class ColumnExpression extends BaseExpression 
 {
@@ -85,8 +87,16 @@ public class ColumnExpression extends BaseExpression
         equivalenceFinder.markEquivalent(this, other);
     }
 
-    public boolean equivalentTo(ColumnExpression other) {
-        return equivalenceFinder != null && equivalenceFinder.areEquivalent(this, other);
+    public EquivalenceFinder<ColumnExpression> getEquivalenceFinder() {
+        if (equivalenceFinder == null)
+            throw new IllegalStateException("no equivalence finder");
+        return equivalenceFinder;
+    }
+
+    public Set<ColumnExpression> getEquivalentsPlusSelf() {
+        Set<ColumnExpression> equivalents = getEquivalenceFinder().findEquivalents(this);
+        equivalents.add(this);
+        return equivalents;
     }
 
     @Override
