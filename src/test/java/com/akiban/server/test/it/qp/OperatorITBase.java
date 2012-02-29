@@ -235,6 +235,11 @@ public class OperatorITBase extends ITBase
 */
     }
 
+    protected String hKeyValue(Long x)
+    {
+        return x == null ? "null" : String.format("(long)%d", x);
+    }
+
     // Useful when scanning is expected to throw an exception
     protected void scan(Cursor cursor)
     {

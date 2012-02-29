@@ -9,6 +9,17 @@ CREATE TABLE customers
 );
 CREATE INDEX name ON customers(name);
 
+CREATE TABLE addresses
+(
+  aid int NOT NULL, 
+  PRIMARY KEY(aid),
+  cid int NOT NULL,
+  state CHAR(2),
+  city VARCHAR(100),
+  GROUPING FOREIGN KEY (cid) REFERENCES customers(cid)
+);
+CREATE INDEX state ON addresses(state);
+
 CREATE TABLE orders
 (
   oid int NOT NULL, 
@@ -31,13 +42,24 @@ CREATE TABLE items
 );
 CREATE INDEX sku ON items(sku);
 
-CREATE TABLE addresses
+CREATE TABLE blogs
 (
-  aid int NOT NULL, 
-  PRIMARY KEY(aid),
-  cid int NOT NULL,
-  state CHAR(2),
-  city VARCHAR(100),
-  GROUPING FOREIGN KEY (cid) REFERENCES customers(cid)
+  bid1 int NOT NULL,
+  bid2 int NOT NULL,
+  PRIMARY KEY(bid1, bid2),
+  title varchar(56),
+  bcol1 int,
+  bcol2 int
 );
-CREATE INDEX state ON addresses(state);
+
+CREATE TABLE comments
+(
+  cid int NOT NULL,
+  PRIMARY KEY(cid),
+  bfk1 int NOT NULL,
+  bfk2 int NOT NULL,
+  content varchar(56),
+  ccol1 int,
+  ccol2 int,
+  GROUPING FOREIGN KEY (bfk1, bfk2) REFERENCES blogs(bid1, bid2)
+);

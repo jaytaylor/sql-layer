@@ -1,0 +1,1 @@
+SELECT * from orders LEFT JOIN items ON (orders.oid = items.quan) WHERE items.quan = items.oid OR (items.quan IS NULL AND items.oid IS NULL)

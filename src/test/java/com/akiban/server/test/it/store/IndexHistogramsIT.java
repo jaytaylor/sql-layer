@@ -54,7 +54,7 @@ public final class IndexHistogramsIT extends ITBase {
     public void customersNameDob_1() {
         // 320 customers with 4 names, evenly distributed, is 80 customers per name
         validateHistogram("customers", "name_dob", 1,
-                entry("{\"Adam\"}", 80, 0, 0),
+                entry("{null}", 80, 0, 0),
                 entry("{\"Bob\"}", 80, 0, 0),
                 entry("{\"Carla\"}", 80, 0, 0),
                 entry("{\"Dot\"}", 80, 0, 0)
@@ -65,12 +65,12 @@ public final class IndexHistogramsIT extends ITBase {
     public void customersNameDob_2() {
         // 320 customers with 4 names, evenly distributed, is 80 customers per name
         // dob is 1983 if cid is divisible by 4, otherwise  it's 1900 + (cid / 2).
-        // Since both patterns have 4, that means all 80 Adams will have 1983 (they're all with cids divisible by
+        // Since both patterns have 4, that means all 80 null-names will have 1983 (they're all with cids divisible by
         // 4), and the rest will be striped evenly. Each bucket will represent 8 entries: itself, and the 7 below it.
         // This algorithm is a bit tricky to pin down, so I'm putting the results in manually
         HistogramEntryDescription[] expected = new HistogramEntryDescription[31];
         int i = 0;
-        expected[i++] = entry("{\"Adam\",\"1983\"}", 80, 0, 0);
+        expected[i++] = entry("{null,\"1983\"}", 80, 0, 0);
         expected[i++] = entry("{\"Bob\",\"1914\"}", 1, 7, 7);
         expected[i++] = entry("{\"Bob\",\"1930\"}", 1, 7, 7);
         expected[i++] = entry("{\"Bob\",\"1946\"}", 1, 7, 7);
@@ -162,7 +162,7 @@ public final class IndexHistogramsIT extends ITBase {
     public void namePlacedGI_1() {
         // 320*3=960 customers with 4 names, evenly distributed, is 240 customers per name
         validateHistogram(namePlacedGi, 1,
-                entry("{\"Adam\"}", 240, 0, 0),
+                entry("{null}", 240, 0, 0),
                 entry("{\"Bob\"}", 240, 0, 0),
                 entry("{\"Carla\"}", 240, 0, 0),
                 entry("{\"Dot\"}", 240, 0, 0)
@@ -181,14 +181,14 @@ public final class IndexHistogramsIT extends ITBase {
         // being included in the less-thans of (name,0)s and (name,50)s.
         // I ran the tested, eyeballed the results, and copied them here.
         validateHistogram(namePlacedGi, 2,
-                entry("{\"Adam\",\"0000\"}", 48, 0, 0),     // important to get this right!
-                entry("{\"Adam\",\"0050\"}", 28, 10, 10),   // important to get this right!
-                entry("{\"Adam\",\"0156\"}", 1, 16, 16),
-                entry("{\"Adam\",\"0314\"}", 1, 26, 26),
-                entry("{\"Adam\",\"0458\"}", 1, 26, 26),
-                entry("{\"Adam\",\"0626\"}", 1, 26, 26),
-                entry("{\"Adam\",\"0792\"}", 1, 26, 26),
-                entry("{\"Adam\",\"0937\"}", 1, 26, 26),
+                entry("{null,\"0000\"}", 48, 0, 0),     // important to get this right!
+                entry("{null,\"0050\"}", 28, 10, 10),   // important to get this right!
+                entry("{null,\"0156\"}", 1, 16, 16),
+                entry("{null,\"0314\"}", 1, 26, 26),
+                entry("{null,\"0458\"}", 1, 26, 26),
+                entry("{null,\"0626\"}", 1, 26, 26),
+                entry("{null,\"0792\"}", 1, 26, 26),
+                entry("{null,\"0937\"}", 1, 26, 26),
                 entry("{\"Bob\",\"0000\"}", 48, 2, 2),      // important to get this right!
                 entry("{\"Bob\",\"0050\"}", 28, 8, 8),      // important to get this right!
                 entry("{\"Bob\",\"0148\"}", 1, 16, 16),
@@ -261,7 +261,7 @@ public final class IndexHistogramsIT extends ITBase {
      * <p>Customers are created as:
      * <ul>
      *     <li><b>cid</b> is monotonically increasing</li>
-     *     <li><b>name</b> is one of "Adam", "Bob", "Carla" or "Dot", rotated by cid</li>
+     *     <li><b>name</b> is one of null, "Bob", "Carla" or "Dot", rotated by cid</li>
      *     <li><b>dob_year</b> is 1983 if cid is divisible by 4, otherwise  it's 1900 + (cid / 2)</li>
      * </ul>
      * </p>
@@ -299,7 +299,7 @@ public final class IndexHistogramsIT extends ITBase {
     }
 
     private void insertRows(int cTable, int oTable, int startingCid, int endingCid) {
-        String[] names = {"Adam", "Bob", "Carla", "Dot"}; // inefficient object alloc, but inlined to be easier to read
+        String[] names = {null, "Bob", "Carla", "Dot"};
         for (int cid=startingCid; cid < endingCid; ++cid) {
             // customer
             String name = names[ cid % names.length ];

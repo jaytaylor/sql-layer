@@ -37,6 +37,8 @@ import static com.akiban.qp.operator.API.*;
 import static com.akiban.server.expression.std.Expressions.field;
 import static junit.framework.Assert.fail;
 
+// Single-branch testing. See MultiIndexCrossBranchIT for cross-branch testing.
+
 public class Intersect_OrderedIT extends OperatorITBase
 {
     @Before

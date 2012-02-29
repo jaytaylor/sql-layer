@@ -594,9 +594,4 @@ public class FlattenIT extends OperatorITBase
     {
         return String.format("{%d,%s,%d,%s,%d,%s}", customerOrdinal, hKeyValue(cid), orderOrdinal, hKeyValue(oid), itemOrdinal, hKeyValue(iid));
     }
-
-    private String hKeyValue(Long x)
-    {
-        return x == null ? "null" : String.format("(long)%d", x);
-    }
 }

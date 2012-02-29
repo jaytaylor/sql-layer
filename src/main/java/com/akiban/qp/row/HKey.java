@@ -15,6 +15,8 @@
 
 package com.akiban.qp.row;
 
+import com.akiban.server.types.ValueSource;
+
 public interface HKey extends Comparable<HKey>
 {
     // Object interface
@@ -31,4 +33,5 @@ public interface HKey extends Comparable<HKey>
     void copyTo(HKey target);
     void extendWithOrdinal(int ordinal);
     void extendWithNull();
+    ValueSource eval(int i);
 }

@@ -26,12 +26,12 @@ public abstract class AbstractTwoArgExpressionEvaluation extends AbstractComposi
         return children().get(0);
     }
 
-    public ExpressionEvaluation rightEvaluation() {
-        return children().get(1);
-    }
-
     protected final ValueSource left() {
         return leftEvaluation().eval();
+    }
+
+    public ExpressionEvaluation rightEvaluation() {
+        return children().get(1);
     }
 
     protected final ValueSource right() {

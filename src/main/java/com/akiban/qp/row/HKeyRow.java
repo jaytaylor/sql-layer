@@ -13,19 +13,24 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.test.it.qp;
+package com.akiban.qp.row;
 
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.row.AbstractRow;
-import com.akiban.qp.row.HKey;
-import com.akiban.qp.row.RowValuesHolder;
+import com.akiban.qp.rowtype.HKeyRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.util.ArgumentValidation;
 
-public class TestRow extends AbstractRow
+public class HKeyRow extends AbstractRow
 {
-    // RowBase interface
+    // Object interface
+
+    @Override
+    public String toString()
+    {
+        return hKey.toString();
+    }
+
+    // Row interface
 
     @Override
     public RowType rowType()
@@ -34,36 +39,39 @@ public class TestRow extends AbstractRow
     }
 
     @Override
-    public ValueSource eval(int i) {
-        return valuesHolder.valueSourceAt(i);
+    public ValueSource eval(int i)
+    {
+        return hKey.eval(i);
     }
 
     @Override
     public HKey hKey()
     {
+        return hKey;
+    }
+
+    @Override
+    public boolean containsRealRowOf(UserTable userTable)
+    {
         throw new UnsupportedOperationException();
     }
 
-    // TestRow interface
+    @Override
+    public Row subRow(RowType subRowType)
+    {
+        throw new UnsupportedOperationException();
+    }
 
-    public TestRow(RowType rowType, Object[] fields, String hKeyString)
+    // ProductRow interface
+
+    public HKeyRow(HKeyRowType rowType, HKey hKey)
     {
         this.rowType = rowType;
-        this.hKeyString = hKeyString;
-        this.valuesHolder = new RowValuesHolder(fields);
+        this.hKey = hKey;
     }
-
-    public TestRow(RowType rowType, Object[] fields) {
-        this(rowType, fields, null);
-    }
-
-    public String persistityString() {
-        return hKeyString;
-    }
-
+    
     // Object state
 
-    private final RowType rowType;
-    private final RowValuesHolder valuesHolder;
-    private final String hKeyString;
+    private final HKeyRowType rowType;
+    private HKey hKey;
 }

@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.akiban.sql.optimizer.rule.nocost;
 
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
@@ -116,22 +116,18 @@ public class IndexGoal implements Comparator<IndexScan>
     // All the columns besides those in conditions that will be needed.
     private RequiredColumns requiredColumns;
 
-    private CostEstimator costEstimator;
-
     public IndexGoal(BaseQuery query,
                      Set<ColumnSource> boundTables, 
                      List<ConditionList> conditionSources,
                      AggregateSource grouping,
                      Sort ordering,
                      Project projectDistinct,
-                     Iterable<TableSource> tables,
-                     CostEstimator costEstimator) {
+                     Iterable<TableSource> tables) {
         this.boundTables = boundTables;
         this.conditionSources = conditionSources;
         this.grouping = grouping;
         this.ordering = ordering;
         this.projectDistinct = projectDistinct;
-        this.costEstimator = costEstimator;
         
         if (conditionSources.size() == 1)
             conditions = conditionSources.get(0);
@@ -246,7 +242,6 @@ public class IndexGoal implements Comparator<IndexScan>
             !index.hasConditions() &&
             !index.isCovering())
             return false;
-        index.setCostEstimate(estimateCost(index));
         return true;
     }
 
@@ -419,13 +414,14 @@ public class IndexGoal implements Comparator<IndexScan>
     }
 
     /** Find the best index on the given table. 
-     * @param groupOnly If true, this table is the optional part of a
-     * LEFT join. Can still consider group indexes to it, but not
-     * single table indexes on it.
+     * @param groupOnly 
      */
-    public IndexScan pickBestIndex(TableSource table, boolean groupOnly) {
+    public IndexScan pickBestIndex(TableSource table, Set<TableSource> required) {
         IndexScan bestIndex = null;
-        if (!groupOnly) {
+        // If this table is the optional part of a LEFT join, can
+        // still consider group indexes to it, but not single table
+        // indexes on it.
+        if (required.contains(table)) {
             for (TableIndex index : table.getTable().getTable().getIndexes()) {
                 IndexScan candidate = new IndexScan(index, table);
                 bestIndex = betterIndex(bestIndex, candidate);
@@ -442,10 +438,7 @@ public class IndexGoal implements Comparator<IndexScan>
                 TableSource rootRequired = null, leafRequired = null;
                 if (index.getJoinType() == JoinType.LEFT) {
                     while (rootTable != null) {
-                        // TODO: These isRequired() predicates need to
-                        // be relative to the group to support outer
-                        // joins between groups.
-                        if (rootTable.isRequired()) {
+                        if (required.contains(rootTable)) {
                             rootRequired = rootTable;
                             if (leafRequired == null)
                                 leafRequired = rootTable;
@@ -523,7 +516,7 @@ public class IndexGoal implements Comparator<IndexScan>
                                    Set<TableSource> required) {
         IndexScan bestIndex = null;
         for (TableSource table : tables) {
-            IndexScan tableIndex = pickBestIndex(table, !required.contains(table));
+            IndexScan tableIndex = pickBestIndex(table, required);
             if ((tableIndex != null) &&
                 ((bestIndex == null) || (compare(tableIndex, bestIndex) > 0)))
                 bestIndex = tableIndex;
@@ -532,9 +525,6 @@ public class IndexGoal implements Comparator<IndexScan>
     }
 
     public int compare(IndexScan i1, IndexScan i2) {
-        if (costEstimator.isEnabled()) {
-            return i2.getCostEstimate().compareTo(i1.getCostEstimate());
-        }
         // TODO: This is a pretty poor substitute for evidence-based comparison.
         if (i1.getOrderEffectiveness() != i2.getOrderEffectiveness())
             // These are ordered worst to best.
@@ -758,55 +748,6 @@ public class IndexGoal implements Comparator<IndexScan>
             }
         }
         return requiredAfter.isEmpty();
-    }
-
-    protected CostEstimate estimateCost(IndexScan index) {
-        if (!costEstimator.isEnabled()) return null;
-        CostEstimate cost = null;
-        if (index.getConditionRange() == null) {
-            cost = costEstimator.costIndexScan(index.getIndex(),
-                                               index.getEqualityComparands(),
-                                               index.getLowComparand(), 
-                                               index.isLowInclusive(),
-                                               index.getHighComparand(), 
-                                               index.isHighInclusive());
-        }
-        else {
-            for (RangeSegment segment : index.getConditionRange().getSegments()) {
-                CostEstimate acost = costEstimator.costIndexScan(index.getIndex(),
-                                                                 index.getEqualityComparands(),
-                                                                 segment.getStart().getValueExpression(),
-                                                                 segment.getStart().isInclusive(),
-                                                                 segment.getEnd().getValueExpression(),
-                                                                 segment.getEnd().isInclusive());
-                if (cost == null)
-                    cost = acost;
-                else
-                    cost = cost.union(acost);
-            }
-        }
-        if (!index.isCovering()) {
-            CostEstimate flatten = costEstimator.costFlatten(index.getLeafMostTable(),
-                                                             index.getRequiredTables());
-            cost = cost.nest(flatten);
-        }
-
-        Collection<ConditionExpression> unhandledConditions = 
-            new HashSet<ConditionExpression>(conditions);
-        if (index.getConditions() != null)
-            unhandledConditions.removeAll(index.getConditions());
-        if (!unhandledConditions.isEmpty()) {
-            CostEstimate select = costEstimator.costSelect(unhandledConditions,
-                                                           cost.getRowCount());
-            cost = cost.sequence(select);
-        }
-
-        if (needSort(index)) {
-            CostEstimate sort = costEstimator.costSort(cost.getRowCount());
-            cost = cost.sequence(sort);
-        }
-
-        return cost;
     }
 
     /** Change WHERE, GROUP BY, and ORDER BY upstream of
