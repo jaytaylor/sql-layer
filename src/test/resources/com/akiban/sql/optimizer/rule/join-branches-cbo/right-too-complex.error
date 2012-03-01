@@ -1,1 +1,0 @@
-com.akiban.server.error.UnsupportedSQLException: UNSUPPORTED_SQL: Unsupported SQL Join condition too complex for RIGHT JOIN : orders.order_date <> (CAST('2011-01-01' AS DATE NOT NULL))
