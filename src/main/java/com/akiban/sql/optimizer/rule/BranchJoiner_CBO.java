@@ -141,7 +141,9 @@ public class BranchJoiner_CBO extends BaseRule
         }
         else if (scan instanceof GroupScan) {
             GroupScan groupScan = (GroupScan)scan;
-            return fillBranch(scan, groupScan.getTables(), rootTable);
+            List<TableSource> tables = new ArrayList<TableSource>();
+            groupScan.setTables(tables);
+            return fillBranch(scan, tables, rootTable);
         }
         else {
             throw new AkibanInternalException("Unknown TableGroupJoinTree scan");

@@ -8,8 +8,6 @@ group-equals: Group index and ancestor lookup from there.
 
 group-sort: Group index for sorting and ancestor lookup from there.
 
-join-cond-too-complex: A join condition that will not will not work with a group join. (Unsupported)
-
 no-index: Group scan and flatten.
 
 no-index-branch: Group scan and flatten along one branch and then
@@ -26,8 +24,6 @@ order-only: Index for ordering only.
 right-inner: RIGHT expressed as LEFT
 
 right-right: RIGHT join down.
-
-right-too-complex: RIGHT join condition. (Unsupported)
 
 side-branch: Index on one branch and all results from another branch,
              including an ancestor of the index.
