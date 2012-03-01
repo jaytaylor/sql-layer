@@ -178,7 +178,11 @@ public class BranchJoiner_CBO extends BaseRule
                 if (table != rootTable) {
                     joinTypes.add(table.getParentJoinType());
                     if (table.getJoinConditions() != null) {
-                        joinConditions.addAll(table.getJoinConditions());
+                        for (ConditionExpression joinCondition : table.getJoinConditions()) {
+                            if (joinCondition.getImplementation() != ConditionExpression.Implementation.GROUP_JOIN) {
+                                joinConditions.add(joinCondition);
+                            }
+                        }
                     }
                 }
             }
