@@ -8,7 +8,9 @@ join-across-subquery: group join in subquery expression
 
 join-cond-too-complex: A join condition that will not work with a group join.
 
-right-too-complex: RIGHT join condition.
+right-too-complex-1: RIGHT join condition on child
+
+right-too-complex-2: RIGHT join condition on parent
 
 single-subquery: just derived table (should push down condition)
 
