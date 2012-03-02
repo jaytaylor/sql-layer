@@ -225,7 +225,7 @@ final class OperatorStoreMaintenance {
             return null;
         }
         final GroupTable groupTable = groupIndex.getGroup().getGroupTable();
-        final RowType parentRowType = branchTables.parentRowType(rowType);
+        final UserTableRowType parentRowType = branchTables.parentRowType(rowType);
         assert parentRowType != null;
 
         Operator plan = API.groupScan_Default(
@@ -241,9 +241,9 @@ final class OperatorStoreMaintenance {
         return plan;
     }
 
-    private static List<RowType> ancestors(RowType rowType, List<? extends RowType> branchTables) {
-        List<RowType> ancestors = new ArrayList<RowType>();
-        for(RowType ancestor : branchTables) {
+    private static List<UserTableRowType> ancestors(RowType rowType, List<UserTableRowType> branchTables) {
+        List<UserTableRowType> ancestors = new ArrayList<UserTableRowType>();
+        for(UserTableRowType ancestor : branchTables) {
             if (ancestor.equals(rowType)) {
                 return ancestors;
             }

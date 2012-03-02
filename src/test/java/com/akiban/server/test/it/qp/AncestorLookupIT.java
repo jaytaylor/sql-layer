@@ -21,6 +21,7 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
@@ -334,7 +335,7 @@ public class AncestorLookupIT extends OperatorITBase
 
     // For use by this class
 
-    private Operator indexRowToAncestorPlan(int iid, RowType ... rowTypes)
+    private Operator indexRowToAncestorPlan(int iid, UserTableRowType ... rowTypes)
     {
         return
             ancestorLookup_Default
@@ -345,7 +346,7 @@ public class AncestorLookupIT extends OperatorITBase
                  LookupOption.DISCARD_INPUT);
     }
 
-    private Operator groupRowToAncestorPlan(int iid, boolean keepInput, RowType ... rowTypes)
+    private Operator groupRowToAncestorPlan(int iid, boolean keepInput, UserTableRowType ... rowTypes)
     {
         return
             ancestorLookup_Default
@@ -403,7 +404,7 @@ public class AncestorLookupIT extends OperatorITBase
         return new IndexBound(row(orderSalesmanIndexRowType, salesman), new SetColumnSelector(0));
     }
 
-    private List<RowType> list(RowType... rowTypes)
+    private List<UserTableRowType> list(UserTableRowType... rowTypes)
     {
         return Arrays.asList(rowTypes);
     }

@@ -29,9 +29,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 
+import static com.akiban.qp.operator.API.*;
 import static com.akiban.qp.operator.API.FlattenOption.KEEP_PARENT;
 import static com.akiban.qp.operator.API.JoinType.INNER_JOIN;
-import static com.akiban.qp.operator.API.*;
 import static com.akiban.qp.rowtype.RowTypeChecks.checkRowTypeFields;
 import static com.akiban.server.types.AkType.INT;
 import static com.akiban.server.types.AkType.VARCHAR;
@@ -209,7 +209,58 @@ public class Product_NestedLoopsIT extends OperatorITBase
         compareRows(expected, cursor);
     }
 
-    // TODO: Test handling of rows whose type is not involved in product.
+    @Test
+    public void testProductOfTwoOccurrencesOfSameBranch()
+    {
+        Operator flattenCAOuter =
+            flatten_HKeyOrdered(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Arrays.asList(customerRowType, addressRowType)),
+                customerRowType,
+                addressRowType,
+                JoinType.LEFT_JOIN,
+                FlattenOption.KEEP_PARENT);
+        Operator flattenCAInner =
+            flatten_HKeyOrdered(
+                branchLookup_Nested(
+                    coi,
+                    customerRowType,
+                    customerRowType,
+                    addressRowType,
+                    LookupOption.KEEP_INPUT,
+                    0),
+                customerRowType,
+                addressRowType,
+                JoinType.LEFT_JOIN);
+        Operator product =
+            product_NestedLoops(
+                flattenCAOuter,
+                flattenCAInner,
+                flattenCAOuter.rowType(),
+                customerRowType,
+                flattenCAInner.rowType(),
+                0);
+        RowType productRowType = product.rowType();
+        RowBase[] expected = new RowBase[]{
+            row(productRowType, 1L, "northbridge", 1000L, 1L, "111 1000 st", 1000L, 1L, "111 1000 st"),
+            row(productRowType, 1L, "northbridge", 1000L, 1L, "111 1000 st", 1001L, 1L, "111 1001 st"),
+            row(productRowType, 1L, "northbridge", 1001L, 1L, "111 1001 st", 1000L, 1L, "111 1000 st"),
+            row(productRowType, 1L, "northbridge", 1001L, 1L, "111 1001 st", 1001L, 1L, "111 1001 st"),
+            row(productRowType, 2L, "foundation", 2000L, 2L, "222 2000 st", 2000L, 2L, "222 2000 st"),
+            row(productRowType, 3L, "matrix", 3000L, 3L, "333 3000 st", 3000, 3L, "333 3000 st"),
+            row(productRowType, 3L, "matrix", 3000L, 3L, "333 3000 st", 3001, 3L, "333 3001 st"),
+            row(productRowType, 3L, "matrix", 3001L, 3L, "333 3001 st", 3000, 3L, "333 3000 st"),
+            row(productRowType, 3L, "matrix", 3001L, 3L, "333 3001 st", 3001, 3L, "333 3001 st"),
+            row(productRowType, 4L, "atlas", null, null, null, null, null, null),
+            row(productRowType, 5L, "highland", 5000L, 5L, "555 5000 st", 5000, 5L, "555 5000 st"),
+            row(productRowType, 5L, "highland", 5000L, 5L, "555 5000 st", 5001, 5L, "555 5001 st"),
+            row(productRowType, 5L, "highland", 5001L, 5L, "555 5001 st", 5000, 5L, "555 5000 st"),
+            row(productRowType, 5L, "highland", 5001L, 5L, "555 5001 st", 5001, 5L, "555 5001 st"),
+            row(productRowType, 6L, "flybridge", null, null, null, null, null, null),
+        };
+        compareRows(expected, cursor(product, queryContext));
+    }
 
     private Set<AisRowType> removeDescendentTypes(AisRowType type)
     {
