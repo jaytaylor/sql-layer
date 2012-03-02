@@ -60,56 +60,8 @@ public class PostgresServerFilesITBase extends PostgresServerITBase
     protected int rootTableId;
 
     protected void loadSchemaFile(File file) throws Exception {
-
-        Reader rdr = null;
-        try {
-            rdr = new FileReader(file);
-            BufferedReader brdr = new BufferedReader(rdr);
-            String tableName = null;
-            List<String> tableDefinition = new ArrayList<String>();
-            boolean first = true;
-            while (true) {
-                String line = brdr.readLine();
-                if (line == null) break;
-                line = line.trim();
-                if (line.startsWith("CREATE TABLE "))
-                    tableName = line.substring(13);
-                else if (line.startsWith("("))
-                    tableDefinition.clear();
-                else if (line.startsWith(")")) {
-                    int id = createTable(SCHEMA_NAME, tableName, 
-                                         tableDefinition.toArray(new String[tableDefinition.size()]));
-                    if (first) {
-                        rootTableId = id;
-                        first = false;
-                    }
-                }
-                else if (line.startsWith("CREATE INDEX")) {
-                    Matcher m = INDEX_PATTERN.matcher(line);
-                    if(!m.matches()) {
-                        throw new IllegalArgumentException("Malformed index DDL: " + line);
-                    }
-                    String indexName = m.group(1);
-                    String table = m.group(2);
-                    String columns = m.group(3);
-                    createIndex(SCHEMA_NAME, table, indexName, columns);
-                }
-                else {
-                    if (line.endsWith(","))
-                        line = line.substring(0, line.length() - 1);
-                    tableDefinition.add(line);
-                }
-            }
-        }
-        finally {
-            if (rdr != null) {
-                try {
-                    rdr.close();
-                }
-                catch (IOException ex) {
-                }
-            }
-        }
+        String sql = TestBase.fileContents(file);
+        rootTableId = createTablesAndIndexesFromDDL(SCHEMA_NAME, sql);
     }
 
     protected void loadDataFile(File file) throws Exception {
