@@ -47,6 +47,9 @@ public abstract class DPhyp<P>
     private long[] edges;
     private int noperators, nedges;
     
+    // Indexes for leaves and their constituent tables.
+    private Map<Joinable,Long> tableBitSets;
+
     // The "plan class" is the set of retained plans for the given tables.
     private Object[] plans;
     
@@ -86,7 +89,8 @@ public abstract class DPhyp<P>
         plans = new Object[1 << ntables];
         // Start with single tables.
         for (int i = 0; i < ntables; i++) {
-            setPlan(JoinableBitSet.of(i), evaluateTable(tables.get(i)));
+            long bitset = JoinableBitSet.of(i);
+            setPlan(bitset, evaluateTable(bitset, tables.get(i)));
         }
         for (int i = ntables - 1; i >= 0; i--) {
             long ts = JoinableBitSet.of(i);
@@ -179,33 +183,47 @@ public abstract class DPhyp<P>
         P p1 = getPlan(s1);
         P p2 = getPlan(s2);
         long s = JoinableBitSet.union(s1, s2);
-        JoinType joinType = JoinType.INNER;
+        JoinType join12 = JoinType.INNER, join21 = JoinType.INNER;
         evaluateOperators.clear();
         for (int e = 0; e < nedges; e++) {
             if (JoinableBitSet.isSubset(edges[e], s1) &&
                 JoinableBitSet.isSubset(edges[e^1], s2)) {
                 // The one that produced this edge.
                 JoinOperator operator = operators.get(e/2);
-                joinType = operator.getJoinType();
+                JoinType joinType = operator.getJoinType();
+                if (joinType != JoinType.INNER) {
+                    join12 = joinType;
+                    join21 = commuteJoinType(joinType);
+                    if ((e & 1) != 0) {
+                        join12 = join21;
+                        join21 = joinType;
+                    }
+                }
                 evaluateOperators.add(operator);
             }
         }
         P plan = getPlan(s);
-        plan = evaluateJoin(p1, p2, plan, joinType, evaluateOperators);
-        if (isCommutative(joinType))
-            plan = evaluateJoin(p2, p1, plan, joinType, evaluateOperators);
+        if (join12 != null)
+            plan = evaluateJoin(s1, p1, s2, p2, s, plan, join12, evaluateOperators);
+        if (join21 != null)
+            plan = evaluateJoin(s2, p2, s1, p1, s, plan, join21, evaluateOperators);
         setPlan(s, plan);
     }
 
     /** Return the best plan for the one-table initial state. */
-    public abstract P evaluateTable(Joinable table);
+    public abstract P evaluateTable(long bitset, Joinable table);
 
     /** Adjust best plan <code>existing</code> for the join of
      * <code>p1</code> and <code>p2</code> with given type and
      * conditions taken from the given joins.
      */
-    public abstract P evaluateJoin(P p1, P p2, P existing,
+    public abstract P evaluateJoin(long bitset1, P p1, long bitset2, P p2, long bitsetJoined, P existing,
                                    JoinType joinType, Collection<JoinOperator> joins);
+
+    /** Return a leaf of the tree. */
+    public Joinable getTable(int index) {
+        return tables.get(index);
+    }
 
     /** Initialize state from the given join tree. */
     // TODO: Need to do something about disconnected overall. The
@@ -214,18 +232,38 @@ public abstract class DPhyp<P>
     public void init(Joinable root, ConditionList whereConditions) {
         tables = new ArrayList<Joinable>();
         addTables(root);
-        if (tables.size() > 30)
+        int ntables = tables.size();
+        if (ntables > 30)
             // TODO: Need to select some simpler algorithm that scales better.
-            throw new UnsupportedSQLException("Too many tables in query.", null);
-        ExpressionTables visitor = new ExpressionTables(tables);
+            throw new UnsupportedSQLException("Too many tables in query: " + ntables, 
+                                              null);
+        tableBitSets = new HashMap<Joinable,Long>(ntables);
+        for (int i = 0; i < ntables; i++) {
+            Joinable table = tables.get(i);
+            Long bitset = JoinableBitSet.of(i);
+            tableBitSets.put(table, bitset);
+            if (table instanceof TableJoins) {
+                for (TableSource joinedTable : ((TableJoins)table).getTables()) {
+                    tableBitSets.put(joinedTable, bitset);
+                }
+            }
+            else if (table instanceof TableGroupJoinTree) {
+                for (TableGroupJoinTree.TableGroupJoinNode node : (TableGroupJoinTree)table) {
+                    tableBitSets.put(node.getTable(), bitset);
+                }
+            }
+        }
+        ExpressionTables visitor = new ExpressionTables(tableBitSets);
         noperators = 0;
         JoinOperator rootOp = initSES(root, visitor);
-        noperators += whereConditions.size(); // Maximum possible.
+        if (whereConditions != null)
+            noperators += whereConditions.size(); // Maximum possible addition.
         operators = new ArrayList<JoinOperator>(noperators);
         nedges = noperators * 2;
         edges = new long[nedges];
         calcTES(rootOp);
-        addWhereConditions(whereConditions, visitor);
+        if (whereConditions != null)
+            addWhereConditions(whereConditions, visitor);
         noperators = operators.size();
         nedges = noperators * 2;
         if (TRACE) {
@@ -296,7 +334,7 @@ public abstract class DPhyp<P>
                 op.leftTables = leftOp.getTables();
             }
             else {
-                op.leftTables = JoinableBitSet.of(tables.indexOf(left));
+                op.leftTables = tableBitSets.get(left);
             }
             Joinable right = join.getRight();
             JoinOperator rightOp = initSES(right, visitor);
@@ -306,7 +344,7 @@ public abstract class DPhyp<P>
                 op.rightTables = rightOp.getTables();
             }
             else {
-                op.rightTables = JoinableBitSet.of(tables.indexOf(right));
+                op.rightTables = tableBitSets.get(right);
             }
             op.predicateTables = visitor.getTables(op.joinConditions);
             if (visitor.wasNullTolerant() && !allInnerJoins(op))
@@ -368,6 +406,8 @@ public abstract class DPhyp<P>
             return (o2 != JoinType.LEFT);
         case FULL_OUTER:
             return (o2 == JoinType.INNER);
+        case RIGHT:
+            assert false;       // Should not see right join at this point.
         default:
             return true;
         }
@@ -397,12 +437,20 @@ public abstract class DPhyp<P>
 
     /** Does this operator commute? */
     protected boolean isCommutative(JoinType joinType) {
+        return (commuteJoinType(joinType) != null);
+    }
+
+    protected JoinType commuteJoinType(JoinType joinType) {
         switch (joinType) {
         case INNER:
         case FULL_OUTER:
-            return true;
+            return joinType;
+        case SEMI_INNER_ALREADY_DISTINCT:
+            return JoinType.INNER;
+        case SEMI_INNER_IF_DISTINCT:
+            return JoinType.INNER_NEED_DISTINCT;
         default:
-            return false;
+            return null;
         }
     }
 
@@ -419,7 +467,9 @@ public abstract class DPhyp<P>
     /** Get join conditions from top-level WHERE predicates. */
     protected void addWhereConditions(ConditionList whereConditions, 
                                       ExpressionTables visitor) {
-        for (ConditionExpression condition : whereConditions) {
+        Iterator<ConditionExpression> iter = whereConditions.iterator();
+        while (iter.hasNext()) {
+            ConditionExpression condition = iter.next();
             // TODO: When optimizer supports more predicates
             // interestingly, can recognize them, including
             // generalized hypergraph triples.
@@ -429,15 +479,19 @@ public abstract class DPhyp<P>
                 if (!JoinableBitSet.isEmpty(columnTables)) {
                     long rhs = visitor.getTables(comp.getRight());
                     if (visitor.wasNullTolerant()) continue;
-                    addWhereCondition(condition, columnTables, rhs);
-                    continue;
+                    if (addWhereCondition(condition, columnTables, rhs)) {
+                        iter.remove();
+                        continue;
+                    }
                 }
                 columnTables = columnReferenceTable(comp.getRight());
                 if (!JoinableBitSet.isEmpty(columnTables)) {
                     long lhs = visitor.getTables(comp.getLeft());
                     if (visitor.wasNullTolerant()) continue;
-                    addWhereCondition(condition, columnTables, lhs);
-                    continue;
+                    if (addWhereCondition(condition, columnTables, lhs)) {
+                        iter.remove();
+                        continue;
+                    }
                 }
             }
         }
@@ -446,9 +500,9 @@ public abstract class DPhyp<P>
     /** Is this a single column in a known table? */
     protected long columnReferenceTable(ExpressionNode node) {
         if (node instanceof ColumnExpression) {
-            int idx = tables.indexOf(((ColumnExpression)node).getTable());
-            if (idx >= 0) {
-                return JoinableBitSet.of(idx);
+            Long bitset = tableBitSets.get(((ColumnExpression)node).getTable());
+            if (bitset != null) {
+                return bitset;
             }
         }
         return JoinableBitSet.empty();
@@ -460,8 +514,8 @@ public abstract class DPhyp<P>
      * joins, since such a null-intolerent condition implies that they
      * aren't missing.
      */
-    protected void addWhereCondition(ConditionExpression condition,
-                                     long columnTables, long comparisonTables) {
+    protected boolean addWhereCondition(ConditionExpression condition,
+                                        long columnTables, long comparisonTables) {
         if (!JoinableBitSet.isEmpty(comparisonTables) &&
             !JoinableBitSet.overlaps(columnTables, comparisonTables)) {
             JoinOperator op = new JoinOperator(condition);
@@ -472,17 +526,19 @@ public abstract class DPhyp<P>
             operators.add(op);
             edges[o*2] = columnTables;
             edges[o*2+1] = comparisonTables;
+            return true;
         }
+        return false;
     }
 
     /** Compute tables used in join predicate. */
     static class ExpressionTables implements ExpressionVisitor, PlanVisitor {
-        List<Joinable> tables;
+        Map<Joinable,Long> tableBitSets;
         long result;
         boolean nullTolerant;
 
-        public ExpressionTables(List<Joinable> tables) {
-            this.tables = tables;
+        public ExpressionTables(Map<Joinable,Long> tableBitSets) {
+            this.tableBitSets = tableBitSets;
         }
 
         public long getTables(ConditionList conditions) {
@@ -520,9 +576,9 @@ public abstract class DPhyp<P>
         @Override
         public boolean visit(ExpressionNode n) {
             if (n instanceof ColumnExpression) {
-                int idx = tables.indexOf(((ColumnExpression)n).getTable());
-                if (idx >= 0) {
-                    result = JoinableBitSet.union(result, JoinableBitSet.of(idx));
+                Long bitset = tableBitSets.get(((ColumnExpression)n).getTable());
+                if (bitset != null) {
+                    result = JoinableBitSet.union(result, bitset);
                 }
             }
             else if (!nullTolerant && (n instanceof FunctionExpression)) {

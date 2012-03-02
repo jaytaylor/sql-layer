@@ -277,8 +277,9 @@ public class IndexScan extends BasePlanNode
         str.append(", ");
         if (covering)
             str.append("covering/");
-        str.append(orderEffectiveness);
-        {
+        if (orderEffectiveness != null)
+            str.append(orderEffectiveness);
+        if (ordering != null) {
             boolean anyReverse = false, allReverse = true;
             for (int i = 0; i < ordering.size(); i++) {
                 if (ordering.get(i).isAscending() != 

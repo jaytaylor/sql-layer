@@ -16,7 +16,7 @@
 package com.akiban.sql.optimizer.plan;
 
 /** A join to a subquery result. */
-public class SubquerySource extends BaseJoinable implements ColumnSource
+public class SubquerySource extends BaseJoinable implements ColumnSource, PlanWithInput
 {
     private Subquery subquery;
     private String name;
@@ -24,10 +24,17 @@ public class SubquerySource extends BaseJoinable implements ColumnSource
     public SubquerySource(Subquery subquery, String name) {
         this.subquery = subquery;
         this.name = name;
+        subquery.setOutput(this);
     }
 
     public Subquery getSubquery() {
         return subquery;
+    }
+
+    @Override
+    public void replaceInput(PlanNode oldInput, PlanNode newInput) {
+        if (subquery == oldInput)
+            subquery = (Subquery)newInput;
     }
 
     @Override

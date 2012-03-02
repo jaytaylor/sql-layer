@@ -23,3 +23,7 @@ pkey-over-group: child looked up by index not by group operation
 single-table: whole row from indexed table
 
 sort-partial: sort by subset of columns
+
+two-groups: group and non-group joins
+
+two-groups-indexed: two groups with condition on one

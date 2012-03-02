@@ -1,0 +1,3 @@
+customers	cname_and_sku	customers.name,items.sku
+customers	sku_and_date	items.sku,orders.order_date
+customers	state_and_name	addresses.state,customers.name	RIGHT

@@ -81,7 +81,8 @@ public class OperatorCompilerTest extends NamedParamsTestBase
         compiler = TestOperatorCompiler.create(parser, properties, ais, 
                                                OptimizerTestBase.DEFAULT_SCHEMA,
                                                new FunctionsRegistryImpl(),
-                                               new TestCostEstimator(ais, OptimizerTestBase.DEFAULT_SCHEMA, statsFile));
+                                               "true".equals(properties.getProperty("cbo")) ?
+                                               new TestCostEstimator(ais, OptimizerTestBase.DEFAULT_SCHEMA, statsFile) : null);
     }
 
     static class TestResultColumn extends PhysicalResultColumn {
