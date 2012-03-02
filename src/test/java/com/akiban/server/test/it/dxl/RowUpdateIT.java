@@ -81,7 +81,7 @@ public class RowUpdateIT extends ITBase
     private void initializeDB() throws InvalidOperationException
     {
         t = createTable("s", "t",
-                        "id int not null key",
+                        "id int not null primary key",
                         "a int",
                         "b int",
                         "c int",

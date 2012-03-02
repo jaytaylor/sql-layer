@@ -55,32 +55,32 @@ public class FlattenLeftJoinIT extends OperatorITBase
         // Don't call super.before(). This is a different schema from most operator ITs.
         ancestor = createTable(
             "schema", "ancestor",
-            "aid int not null key",
+            "aid int not null primary key",
             "avalue varchar(20)");
         parent = createTable(
             "schema", "parent",
-            "pid int not null key",
+            "pid int not null primary key",
             "aid int",
             "pvalue varchar(20)",
-            "constraint __akiban_pa foreign key __akiban_pa(aid) references ancestor(aid)");
+            "grouping foreign key(aid) references ancestor(aid)");
         beforeChild = createTable(
             "schema", "before_child",
-            "bid int not null key",
+            "bid int not null primary key",
             "pid int",
             "bvalue varchar(20)",
-            "constraint __akiban_bp foreign key __akiban_bp(pid) references parent(pid)");
+            "grouping foreign key(pid) references parent(pid)");
         child = createTable(
             "schema", "child",
-            "cid int not null key",
+            "cid int not null primary key",
             "pid int",
             "cvalue varchar(20)",
-            "constraint __akiban_cp foreign key __akiban_cp(pid) references parent(pid)");
+            "grouping foreign key(pid) references parent(pid)");
         afterChild = createTable(
             "schema", "after_child",
-            "aid int not null key",
+            "aid int not null primary key",
             "pid int",
             "avalue varchar(20)",
-            "constraint __akiban_ap foreign key __akiban_ap(pid) references parent(pid)");
+            "grouping foreign key(pid) references parent(pid)");
         schema = new Schema(rowDefCache().ais());
         ancestorRowType = schema.userTableRowType(userTable(ancestor));
         parentRowType = schema.userTableRowType(userTable(parent));

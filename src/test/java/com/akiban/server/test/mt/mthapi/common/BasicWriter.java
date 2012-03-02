@@ -15,11 +15,13 @@
 
 package com.akiban.server.test.mt.mthapi.common;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.server.store.Store;
 import com.akiban.server.test.ApiTestBase;
 import com.akiban.server.test.mt.mthapi.base.WriteThread;
@@ -189,7 +191,9 @@ public class BasicWriter implements WriteThread {
             throws InvalidOperationException
     {
         String ddlText = DDLUtils.buildDDL(table, scratch);
-        ddl.createTable(session, schema(), ddlText);
+        SchemaFactory schemaFactory = new SchemaFactory(schema());
+        AkibanInformationSchema tempAIS = schemaFactory.ais(ddl.getAIS(session), ddlText);
+        ddl.createTable(session, tempAIS.getUserTable(schema(), table.getName()));
         int id = ddl.getTableId(session, new TableName(schema(), table.getName()));
         TableInfo info = new TableInfo(table, statesCount, id);
         tablesHolder.addTable(info);

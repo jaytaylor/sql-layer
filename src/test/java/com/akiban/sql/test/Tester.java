@@ -15,6 +15,7 @@
 
 package com.akiban.sql.test;
 
+import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.compiler.BooleanNormalizer;
 import com.akiban.sql.optimizer.AISBinder;
@@ -34,19 +35,11 @@ import com.akiban.sql.optimizer.rule.RulesContext;
 import com.akiban.sql.optimizer.rule.RulesTestContext;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
 import com.akiban.sql.optimizer.rule.TestCostEstimator;
-import com.akiban.sql.parser.CursorNode;
 import com.akiban.sql.parser.DMLStatementNode;
-import com.akiban.sql.parser.DeleteNode;
-import com.akiban.sql.parser.InsertNode;
-import com.akiban.sql.parser.NodeTypes;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.parser.UpdateNode;
-import com.akiban.sql.parser.ValueNode;
 import com.akiban.sql.views.ViewDefinition;
 
-import com.akiban.ais.ddl.SchemaDef;
-import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.GroupIndex;
@@ -187,10 +180,8 @@ public class Tester
     static final String DEFAULT_SCHEMA = "user";
 
     public void setSchema(String sql) throws Exception {
-        SchemaDef schemaDef = SchemaDef.parseSchema("use " + DEFAULT_SCHEMA + "; " + 
-                                                    sql);
-        SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
-        ais = toAis.getAis();
+        SchemaFactory schemaFactory = new SchemaFactory(DEFAULT_SCHEMA);
+        ais = schemaFactory.ais(sql);
         if (actions.contains(Action.BIND))
             binder = new AISBinder(ais, DEFAULT_SCHEMA);
         if (actions.contains(Action.OPERATORS))

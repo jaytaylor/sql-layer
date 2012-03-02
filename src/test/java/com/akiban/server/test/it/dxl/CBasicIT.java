@@ -16,9 +16,9 @@
 package com.akiban.server.test.it.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.rowdata.RowData;
-import com.akiban.server.TableStatistics;
 import com.akiban.server.api.FixedCountLimit;
 import com.akiban.server.api.dml.scan.*;
 import com.akiban.server.error.CursorIsFinishedException;
@@ -41,7 +41,7 @@ public final class CBasicIT extends ITBase {
 
     @Test
     public void simpleScanLimit() throws InvalidOperationException {
-        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+        final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
 
         expectRowCount(tableId, 0);
         dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
@@ -71,7 +71,7 @@ public final class CBasicIT extends ITBase {
 
     @Test
     public void simpleScan() throws InvalidOperationException {
-        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+        final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
 
         expectRowCount(tableId, 0);
         dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
@@ -109,7 +109,7 @@ public final class CBasicIT extends ITBase {
     @Test
     public void simpleScanColumnMapConversionCheck() throws InvalidOperationException {
         final int tableId = createTable("test", "t",
-                                        "c1 int key, c2 int, c3 int, c4 int, c5 int, c6 int, c7 int, c8 int, c9 int");
+                                        "c1 int not null primary key, c2 int, c3 int, c4 int, c5 int, c6 int, c7 int, c8 int, c9 int");
 
         expectRowCount(tableId, 0);
         writeRows(createNewRow(tableId, 11, 12, 13, 14, 15, 16, 17, 18, 19),
@@ -131,7 +131,8 @@ public final class CBasicIT extends ITBase {
 
     @Test
     public void indexScan() throws InvalidOperationException {
-        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32), key name(name)");
+        final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
+        createIndex("testSchema", "customer", "name", "name");
         final int indexId = ddl().getTable(session(), tableId).getIndex("name").getIndexId();
 
         expectRowCount(tableId, 0);
@@ -158,7 +159,7 @@ public final class CBasicIT extends ITBase {
 
     @Test
     public void partialRowScan() throws InvalidOperationException {
-        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+        final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
 
         expectRowCount(tableId, 0);
         dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
@@ -175,7 +176,7 @@ public final class CBasicIT extends ITBase {
      */
     @Test
     public void partialRowScanLegacy() throws InvalidOperationException, BufferFullException {
-        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+        final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
 
         expectRowCount(tableId, 0);
         dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
@@ -203,7 +204,7 @@ public final class CBasicIT extends ITBase {
     public void dropTable() throws InvalidOperationException {
         final int tableId1;
         try {
-            tableId1 = createTable("testSchema", "customer", "id int key");
+            tableId1 = createTable("testSchema", "customer", "id int not null primary key");
             ddl().dropTable(session(), tableName("testSchema", "customer"));
 
             AkibanInformationSchema ais = ddl().getAIS(session());
@@ -220,7 +221,7 @@ public final class CBasicIT extends ITBase {
     public void dropGroup() throws InvalidOperationException {
         final int tid;
         try {
-            tid = createTable("test", "t", "id int key");
+            tid = createTable("test", "t", "id int not null primary key");
             final String groupName = ddl().getAIS(session()).getUserTable("test", "t").getGroup().getName();
             ddl().dropGroup(session(), groupName);
 
@@ -241,9 +242,9 @@ public final class CBasicIT extends ITBase {
         final int tid;
         final int localAISGeneration;
         try {
-            tid = createTable("test", "t", "id int key");
+            tid = createTable("test", "t", "id int not null primary key");
             localAISGeneration = aisGeneration();
-            createTable("test", "t2", "id int key");
+            createTable("test", "t2", "id int not null primary key");
         } catch (InvalidOperationException e) {
             throw new TestException(e);
         }
@@ -257,13 +258,17 @@ public final class CBasicIT extends ITBase {
      */
     @Test
     public void dropThenCreateRowDefIDRecycled() throws InvalidOperationException {
-        final int tidV1 = createTable("test", "t1", "id int key auto_increment, name varchar(255)");
+        NewAISBuilder builder = AISBBasedBuilder.create("test");
+        builder.userTable("t1").autoIncLong("id", 1).pk("id").colString("name", 255);
+        ddl().createTable(session(), builder.ais().getUserTable("test", "t1"));
+        final int tidV1 = tableId("test", "t1");
+
         dml().writeRow(session(), createNewRow(tidV1, 1, "hello world"));
         expectRowCount(tidV1, 1);
         ddl().dropTable(session(), tableName(tidV1));
 
         // Easiest exception trigger was to toggle auto_inc column, failed when trying to update it
-        final int tidV2 = createTable("test", "t2", "id int key, tag char(1), value decimal(10,2)");
+        final int tidV2 = createTable("test", "t2", "id int not null primary key, tag char(1), value decimal(10,2)");
         dml().writeRow(session(), createNewRow(tidV2, "1", "a", "49.95"));
         expectRowCount(tidV2, 1);
         ddl().dropTable(session(), tableName(tidV2));
@@ -271,7 +276,7 @@ public final class CBasicIT extends ITBase {
 
     @Test
     public void scanEmptyTable() throws InvalidOperationException {
-        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+        final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
 
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0, 1), 0, null, new FixedCountLimit(1));
         ListRowOutput output = new ListRowOutput();
@@ -301,7 +306,7 @@ public final class CBasicIT extends ITBase {
 
     @Test
     public void updateNoChangeToHKey() throws InvalidOperationException {
-        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+        final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
 
         expectRowCount(tableId, 0);
         dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
@@ -317,7 +322,7 @@ public final class CBasicIT extends ITBase {
 
     @Test
     public void updateOldOnlyById() throws InvalidOperationException {
-        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+        final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
 
         expectRowCount(tableId, 0);
         dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
@@ -335,7 +340,7 @@ public final class CBasicIT extends ITBase {
     public void updateOldNotById() throws InvalidOperationException {
         final int tableId;
         try {
-            tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+            tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
 
             expectRowCount(tableId, 0);
             dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
@@ -366,7 +371,7 @@ public final class CBasicIT extends ITBase {
      */
     @Test
     public void updateRowPartially() throws InvalidOperationException {
-        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+        final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
 
         expectRowCount(tableId, 0);
         dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
@@ -384,7 +389,7 @@ public final class CBasicIT extends ITBase {
     public void updateOldNewHasWrongType() throws InvalidOperationException {
         final int tableId;
         try {
-            tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+            tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
 
             expectRowCount(tableId, 0);
             dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
@@ -412,7 +417,7 @@ public final class CBasicIT extends ITBase {
     public void insertHasWrongType() throws InvalidOperationException {
         final int tableId;
         try {
-            tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+            tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
             expectRowCount(tableId, 0);
         } catch (InvalidOperationException e) {
             throw unexpectedException(e);
@@ -432,7 +437,7 @@ public final class CBasicIT extends ITBase {
     public void insertStringTooLong() throws InvalidOperationException {
         final int tableId;
         try {
-            tableId = createTable("testSchema", "customer", "id int key, name varchar(5)");
+            tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(5)");
             expectRowCount(tableId, 0);
         } catch (InvalidOperationException e) {
             throw unexpectedException(e);
@@ -450,7 +455,7 @@ public final class CBasicIT extends ITBase {
 
     @Test
     public void updateChangesHKey() throws InvalidOperationException {
-        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+        final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
 
         expectRowCount(tableId, 0);
         dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
@@ -466,7 +471,7 @@ public final class CBasicIT extends ITBase {
 
     @Test
     public void deleteRows() throws InvalidOperationException {
-        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+        final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
 
         expectRowCount(tableId, 0);
         dml().writeRow(session(), createNewRow(tableId, 0, "doomed row") );
@@ -493,7 +498,7 @@ public final class CBasicIT extends ITBase {
     public void deleteRowNotById() throws InvalidOperationException {
         final int tableId;
         try{
-            tableId = createTable("theschema", "c", "id int key, name varchar(32)");
+            tableId = createTable("theschema", "c", "id int not null primary key, name varchar(32)");
 
             expectRowCount(tableId, 0);
             dml().writeRow(session(), createNewRow(tableId, 0, "the customer's name") );
@@ -520,7 +525,7 @@ public final class CBasicIT extends ITBase {
     public void deleteMissingRow()  throws InvalidOperationException {
         final int tableId;
         try{
-            tableId = createTable("theschema", "c", "id int key, name varchar(32)");
+            tableId = createTable("theschema", "c", "id int not null primary key, name varchar(32)");
         } catch (InvalidOperationException e) {
             throw unexpectedException(e);
         }
@@ -539,14 +544,14 @@ public final class CBasicIT extends ITBase {
     @Test
     public void schemaIdIncrements() throws Exception {
         int firstGen = ddl().getGeneration();
-        createTable("sch", "c1", "id int key");
+        createTable("sch", "c1", "id int not null primary key");
         int secondGen = ddl().getGeneration();
         assertTrue(String.format("failed %d > %d", secondGen, firstGen), secondGen > firstGen);
     }
 
     @Test
     public void truncate() throws InvalidOperationException {
-        final int tableId = createTable("testSchema", "customer", "id int key, name varchar(32)");
+        final int tableId = createTable("testSchema", "customer", "id int not null primary key, name varchar(32)");
 
         expectRowCount(tableId, 0);
         dml().writeRow(session(), createNewRow(tableId, 0, "hello world") );
@@ -555,76 +560,11 @@ public final class CBasicIT extends ITBase {
         expectRowCount(tableId, 0);
     }
 
-    // Keys named identical akiban constraints (as happens with autogenerated key names)
-    @Test
-    public void bug724599() throws InvalidOperationException {
-        // Case 1: bug test case, compatible key named same as constraint
-        int pId = createTable("test", "p", "id int key");
-        int cId = createTable("test", "c", "id int key, pid int, key __akiban_fk_0(pid)," +
-                                      "constraint __akiban_fk_0 foreign key (pid) references p(id)");
-        UserTable pTable = getUserTable(pId);
-        UserTable cTable = getUserTable(cId);
-        assertEquals("pk", 1, pTable.getIndexes().size());
-        assertEquals("pk, fk", 2, cTable.getIndexes().size());
-        assertEquals(pTable.getGroup(), cTable.getGroup());
-        dropAllTables();
-
-        // Case 2: compatible key named differently, unnamed fk
-        pId = createTable("test", "p", "id int key");
-        cId = createTable("test", "c", "id int key, pid int, key zebra(pid)," +
-                                       "constraint __akiban_fk_0 foreign key (pid) references p(id)");
-        pTable = getUserTable(pId);
-        cTable = getUserTable(cId);
-        assertEquals("pk", 1, pTable.getIndexes().size());
-        assertEquals("pk, key, fk", 3, cTable.getIndexes().size());
-        assertEquals(pTable.getGroup(), cTable.getGroup());
-        dropAllTables();
-
-        // Case 3: compatible key named differently, named fk
-        pId = createTable("test", "p", "id int key");
-        cId = createTable("test", "c", "id int key, pid int, key zebra(pid)," +
-                                       "constraint __akiban_fk_0 foreign key __akiban_fk_0(pid) references p(id)");
-        pTable = getUserTable(pId);
-        cTable = getUserTable(cId);
-        assertEquals("pk", 1, pTable.getIndexes().size());
-        assertEquals("pk, key, fk", 3, cTable.getIndexes().size());
-        assertEquals(pTable.getGroup(), cTable.getGroup());
-        dropAllTables();
-
-        // Case 4: compatible key that is unnamed, named fk
-        pId = createTable("test", "p", "id int key");
-        cId = createTable("test", "c", "id int key, pid int, key(pid)," +
-                                       "constraint __akiban_fk_0 foreign key __akiban_fk_0(pid) references p(id)");
-        pTable = getUserTable(pId);
-        cTable = getUserTable(cId);
-        assertEquals("pk", 1, pTable.getIndexes().size());
-        assertEquals("pk, key, fk", 3, cTable.getIndexes().size());
-        assertEquals(pTable.getGroup(), cTable.getGroup());
-        dropAllTables();
-
-        // Case 5: compatible key that is unnamed, unnamed fk
-        pId = createTable("test", "p", "id int key");
-        cId = createTable("test", "c", "id int key, pid int, key(pid)," +
-                                       "constraint __akiban_fk_0 foreign key(pid) references p(id)");
-        pTable = getUserTable(pId);
-        cTable = getUserTable(cId);
-        assertEquals("pk", 1, pTable.getIndexes().size());
-        assertEquals("pk, key, fk", 3, cTable.getIndexes().size());
-        assertEquals(pTable.getGroup(), cTable.getGroup());
-    }
-
-    @Test
-    public void testAutoIncrement() throws InvalidOperationException {
-        ddl().createTable(session(), "sc1", "CREATE TABLE t1(c1 TINYINT AUTO_INCREMENT NULL KEY) AUTO_INCREMENT=10");
-        final int tid = tableId("sc1", "t1");
-        final TableStatistics tableStats = dml().getTableStatistics(session(), tid, false);
-        assertEquals("autoinc value", 9L, tableStats.getAutoIncrementValue());
-    }
-
     // test for bug 754986
     @Test
     public void selectZeroFencePost() throws InvalidOperationException {
-        final int tid = createTable("test", "t", "id int key", "i int", "index(i)");
+        final int tid = createTable("test", "t", "id int not null primary key", "i int");
+        createIndex("test", "t", "i", "i");
 
         writeRows(createNewRow(tid, 1L, -5L),
                   createNewRow(tid, 2L, -1L),

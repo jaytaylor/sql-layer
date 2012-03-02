@@ -27,7 +27,7 @@ public final class BasicWriterTest {
         SaisTable one = new SaisBuilder().table("zebra", "id", "stripes").pk("id").backToBuilder().getSoleRootTable();
         String ddl = DDLUtils.buildDDL(one, new StringBuilder());
         assertEquals("ddl",
-                "CREATE TABLE zebra(id int,stripes int, PRIMARY KEY (id))",
+                "CREATE TABLE zebra(id int not null,stripes int, PRIMARY KEY (id))",
                 ddl);
     }
 
@@ -38,7 +38,7 @@ public final class BasicWriterTest {
                 .backToBuilder().getSoleRootTable();
         String ddl = DDLUtils.buildDDL(one, new StringBuilder());
         assertEquals("ddl",
-                "CREATE TABLE zebra(id int,stripes int,height int, PRIMARY KEY (id,stripes))",
+                "CREATE TABLE zebra(id int not null,stripes int not null,height int, PRIMARY KEY (id,stripes))",
                 ddl);
     }
 
@@ -52,7 +52,7 @@ public final class BasicWriterTest {
         String ddl = DDLUtils.buildDDL(second, new StringBuilder());
         assertEquals("ddl",
                 "CREATE TABLE second(tid1 int,tid2 int, "+
-                "CONSTRAINT `__akiban_fk_second` FOREIGN KEY `__akiban_fk_second`(tid1,tid2) REFERENCES top(id1,id2))",
+                "GROUPING FOREIGN KEY(tid1,tid2) REFERENCES top(id1,id2))",
                 ddl);
     }
 }

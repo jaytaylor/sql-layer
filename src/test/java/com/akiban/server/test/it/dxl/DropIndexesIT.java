@@ -45,7 +45,7 @@ public final class DropIndexesIT extends ITBase {
     
     @Test
     public void emptyIndexList() throws InvalidOperationException {
-        int tid = createTable("test", "t", "id int key");
+        int tid = createTable("test", "t", "id int not null primary key");
         ddl().dropTableIndexes(session(), tableName(tid), Collections.<String>emptyList());
     }
     
@@ -56,7 +56,7 @@ public final class DropIndexesIT extends ITBase {
     
     @Test(expected=NoSuchIndexException.class)
     public void unknownIndex() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int primary key, name varchar(255)");
+        int tId = createTable("test", "t", "id int not null primary key, name varchar(255)");
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("name"));
     }
 
@@ -68,13 +68,14 @@ public final class DropIndexesIT extends ITBase {
     
     @Test(expected=ProtectedIndexException.class)
     public void declaredPrimaryKey() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int primary key, name varchar(255)");
+        int tId = createTable("test", "t", "id int not null primary key, name varchar(255)");
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("PRIMARY"));
     }
 
     @Test
     public void basicConfirmNotInAIS() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int primary key, name varchar(255), index name(name)");
+        int tId = createTable("test", "t", "id int not null primary key, name varchar(255)");
+        createIndex("test", "t", "name", "name");
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("name"));
 
         // Index should be gone from UserTable
@@ -90,13 +91,14 @@ public final class DropIndexesIT extends ITBase {
     
     @Test
     public void nonUniqueVarchar() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int primary key, name varchar(255), index name(name)");
+        int tId = createTable("test", "t", "id int not null primary key, name varchar(255)");
+        createIndex("test", "t", "name", "name");
         dml().writeRow(session(), createNewRow(tId, 1, "bob"));
         dml().writeRow(session(), createNewRow(tId, 2, "jim"));
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("name"));
         updateAISGeneration();
 
-        checkDDL(tId, "create table `test`.`t`(`id` int, `name` varchar(255), PRIMARY KEY(`id`)) engine=akibandb");
+        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `name` varchar(255), PRIMARY KEY(`id`)) engine=akibandb");
 
         List<NewRow> rows = scanAll(scanAllRequest(tId));
         assertEquals("rows from table scan", 2, rows.size());
@@ -104,9 +106,11 @@ public final class DropIndexesIT extends ITBase {
     
     @Test
     public void nonUniqueVarcharMiddleOfGroup() throws InvalidOperationException {
-        int cId = createTable("coi", "c", "cid int key, name varchar(32)");
-        int oId = createTable("coi", "o", "oid int key, c_id int, tag varchar(32), key tag(tag), CONSTRAINT __akiban_fk_c FOREIGN KEY __akiban_fk_c (c_id) REFERENCES c(cid)");
-        int iId = createTable("coi", "i", "iid int key, o_id int, idesc varchar(32), CONSTRAINT __akiban_fk_i FOREIGN KEY __akiban_fk_i (o_id) REFERENCES o(oid)");
+        int cId = createTable("coi", "c", "cid int not null primary key, name varchar(32)");
+        int oId = createTable("coi", "o", "oid int not null primary key, c_id int, tag varchar(32), GROUPING FOREIGN KEY (c_id) REFERENCES c(cid)");
+        createIndex("coi", "o", "tag", "tag");
+        createGroupingFKIndex("coi", "o", "__akiban_fk_c", "c_id");
+        int iId = createTable("coi", "i", "iid int not null primary key, o_id int, idesc varchar(32), GROUPING FOREIGN KEY (o_id) REFERENCES o(oid)");
 
         // One customer, two orders, 5 items
         dml().writeRow(session(), createNewRow(cId, 1, "bob"));
@@ -121,7 +125,7 @@ public final class DropIndexesIT extends ITBase {
         ddl().dropTableIndexes(session(), tableName(oId), Arrays.asList("tag"));
         updateAISGeneration();
         
-        checkDDL(oId, "create table `coi`.`o`(`oid` int, `c_id` int, `tag` varchar(32), PRIMARY KEY(`oid`), "+
+        checkDDL(oId, "create table `coi`.`o`(`oid` int NOT NULL, `c_id` int, `tag` varchar(32), PRIMARY KEY(`oid`), "+
                       "CONSTRAINT `__akiban_fk_c` FOREIGN KEY `__akiban_fk_c`(`c_id`) REFERENCES `c`(`cid`)) engine=akibandb");
 
         List<NewRow> rows = scanAll(scanAllRequest(cId));
@@ -134,14 +138,15 @@ public final class DropIndexesIT extends ITBase {
     
     @Test
     public void nonUniqueCompoundVarcharVarchar() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int primary key, first varchar(255), last varchar(255), key name(first,last)");
+        int tId = createTable("test", "t", "id int not null primary key, \"first\" varchar(255), \"last\" varchar(255)");
+        createIndex("test", "t", "name", "\"first\"", "\"last\"");
         dml().writeRow(session(), createNewRow(tId, 1, "foo", "bar"));
         dml().writeRow(session(), createNewRow(tId, 2, "zap", "snap"));
         dml().writeRow(session(), createNewRow(tId, 3, "baz", "fob"));
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("name"));
         updateAISGeneration();
         
-        checkDDL(tId, "create table `test`.`t`(`id` int, `first` varchar(255), `last` varchar(255), PRIMARY KEY(`id`)) engine=akibandb");
+        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `first` varchar(255), `last` varchar(255), PRIMARY KEY(`id`)) engine=akibandb");
 
         List<NewRow> rows = scanAll(scanAllRequest(tId));
         assertEquals("rows from table scan", 3, rows.size());
@@ -149,7 +154,7 @@ public final class DropIndexesIT extends ITBase {
     
     @Test
     public void uniqueChar() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int primary key, state char(2), unique state(state)");
+        int tId = createTable("test", "t", "id int not null primary key, state char(2), unique(state)");
         dml().writeRow(session(), createNewRow(tId, 1, "IA"));
         dml().writeRow(session(), createNewRow(tId, 2, "WA"));
         dml().writeRow(session(), createNewRow(tId, 3, "MA"));
@@ -157,7 +162,7 @@ public final class DropIndexesIT extends ITBase {
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("state"));
         updateAISGeneration();
         
-        checkDDL(tId, "create table `test`.`t`(`id` int, `state` char(2), PRIMARY KEY(`id`)) engine=akibandb");
+        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `state` char(2), PRIMARY KEY(`id`)) engine=akibandb");
 
         List<NewRow> rows = scanAll(scanAllRequest(tId));
         assertEquals("rows from table scan", 3, rows.size());
@@ -165,7 +170,8 @@ public final class DropIndexesIT extends ITBase {
     
     @Test
     public void uniqueIntNonUniqueDecimal() throws InvalidOperationException {
-        int tId = createTable("test", "t", "id int primary key, otherId int, price decimal(10,2), unique otherId(otherId), key price(price)");
+        int tId = createTable("test", "t", "id int not null primary key, otherid int, price decimal(10,2), unique(otherid)");
+        createIndex("test", "t", "price", "price");
         dml().writeRow(session(), createNewRow(tId, 1, 1337, "10.50"));
         dml().writeRow(session(), createNewRow(tId, 2, 5000, "10.50"));
         dml().writeRow(session(), createNewRow(tId, 3, 47000, "9.99"));
@@ -173,7 +179,7 @@ public final class DropIndexesIT extends ITBase {
         ddl().dropTableIndexes(session(), tableName(tId), Arrays.asList("otherId", "price"));
         updateAISGeneration();
         
-        checkDDL(tId, "create table `test`.`t`(`id` int, `otherId` int, `price` decimal(10, 2), PRIMARY KEY(`id`)) engine=akibandb");
+        checkDDL(tId, "create table `test`.`t`(`id` int NOT NULL, `otherid` int, `price` decimal(10, 2), PRIMARY KEY(`id`)) engine=akibandb");
 
         List<NewRow> rows = scanAll(scanAllRequest(tId));
         assertEquals("rows from table scan", 3, rows.size());

@@ -29,3 +29,9 @@ two-groups-left: LEFT join between two groups (stays LEFT)
 two-groups-left-2: LEFT join between two groups other way (stays LEFT)
 
 two-groups-right: RIGHT join between two groups (turns into LEFT)
+
+group-via-equivalence-on-(left|inner|right): group joins where the grouping ON clause only works because of an
+    equivalence. Note that the LEFT variant does *not* match grouping, due to the relatively complex
+    condition involving OR NOT NULL.
+
+group-via-equivalence-where-inner: group joins where the grouping WHERE clause only works because of an equivalence

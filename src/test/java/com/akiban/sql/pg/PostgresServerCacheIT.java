@@ -46,7 +46,7 @@ public class PostgresServerCacheIT extends PostgresServerFilesITBase
 
     @Before
     public void createData() throws Exception {
-        int tid = createTable(SCHEMA_NAME, "t1", "id int primary key");
+        int tid = createTable(SCHEMA_NAME, "t1", "id int not null primary key");
         NewRow[] rows = new NewRow[NROWS];
         for (int i = 0; i < NROWS; i++) {
             rows[i] = createNewRow(tid, i);

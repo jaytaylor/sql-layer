@@ -30,6 +30,13 @@ public final class AssertUtils {
         Assert.assertEquals(message, expected, actual);
     }
 
+    public static void assertMapEquals(String message, Map<?,?> expected, Map<?,?> actual) {
+        String expectedString = Strings.join(Strings.stringAndSort(expected));
+        String actualString = Strings.join(Strings.stringAndSort(actual));
+        Assert.assertEquals(message, expectedString, actualString);
+        Assert.assertEquals(message, expected, actual);
+    }
+
     public static void assertCollectionEquals(Collection<?> expected, Collection<?> actual) {
         assertCollectionEquals(null, expected, actual);
     }

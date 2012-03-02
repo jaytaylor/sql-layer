@@ -26,22 +26,14 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.service.session.Session;
 
 public interface SchemaManager {
-
     /**
-     * Create a new table in the SchemaManager. This currently parses a given DDL statement,
-     * validates it, and then adds the table to the existing AIS. Successful completion of
-     * this method results in a new timestamp and schema generation, see
+     * Create a new table in the SchemaManager. Successful completion of this
+     * method results in a new timestamp and schema generation, see
      * {@link #getUpdateTimestamp()} and {@link #getSchemaGeneration()} respectively.
      * @param session Session to operate under
-     * @param defaultSchemaName Default schema name to use if statement does not contain one.
-     * @param statement A valid DDL statement of the form 'create table t(...)'
-     * @throws Exception If the statement is invalid, the table contains unsupported parts (e.g. data type), or
-     * there is an internal error.
+     * @param newTable New table to add
      * @return The name of the table that was created.
-     * @throws Exception 
      */
-    TableName createTableDefinition(Session session, String defaultSchemaName, String statement);
-    
     TableName createTableDefinition(Session session, UserTable newTable);
 
     /**

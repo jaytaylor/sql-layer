@@ -31,9 +31,14 @@ public final class DDLUtils {
         builder.setLength(0);
         builder.append("CREATE TABLE ").append(table.getName()).append('(');
         Iterator<String> fields = table.getFields().iterator();
+        boolean first = true;
         while (fields.hasNext()) {
             String field = fields.next();
             builder.append(field).append(" int");
+            if (table.getPK() != null && table.getPK().contains(field)) {
+                builder.append(" not null");
+                first = false;
+            }
             if (fields.hasNext()) {
                 builder.append(',');
             }
@@ -48,9 +53,7 @@ public final class DDLUtils {
         // AkibanFK: CONSTRAINT __akiban_fk_FOO FOREIGN KEY __akiban_fk_FOO(pid1,pid2) REFERENCES parent(id1,id2)
         SaisFK parentFK = table.getParentFK();
         if (parentFK != null) {
-            builder.append(", CONSTRAINT ");
-            akibanFK(table, builder).append(" FOREIGN KEY ");
-            akibanFK(table, builder);
+            builder.append(", GROUPING FOREIGN KEY");
             cols(parentFK.getChildCols(), builder).append(" REFERENCES ").append(parentFK.getParent().getName());
             cols(parentFK.getParentCols(), builder);
         }

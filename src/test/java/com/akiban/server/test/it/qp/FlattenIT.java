@@ -582,21 +582,16 @@ public class FlattenIT extends OperatorITBase
 
     private String cKey(Long cid)
     {
-        return String.format("{%d,%s}", customer, hKeyValue(cid));
+        return String.format("{%d,%s}", customerOrdinal, hKeyValue(cid));
     }
 
     private String oKey(Long cid, Long oid)
     {
-        return String.format("{%d,%s,%d,%s}", customer, hKeyValue(cid), order, hKeyValue(oid));
+        return String.format("{%d,%s,%d,%s}", customerOrdinal, hKeyValue(cid), orderOrdinal, hKeyValue(oid));
     }
 
     private String iKey(Long cid, Long oid, Long iid)
     {
-        return String.format("{%d,%s,%d,%s,%d,%s}", customer, hKeyValue(cid), order, hKeyValue(oid), item, hKeyValue(iid));
-    }
-
-    private String hKeyValue(Long x)
-    {
-        return x == null ? "null" : String.format("(long)%d", x);
+        return String.format("{%d,%s,%d,%s,%d,%s}", customerOrdinal, hKeyValue(cid), orderOrdinal, hKeyValue(oid), itemOrdinal, hKeyValue(iid));
     }
 }

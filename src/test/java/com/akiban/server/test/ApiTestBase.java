@@ -35,6 +35,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
+import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
@@ -45,6 +46,7 @@ import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.api.dml.scan.ScanFlag;
+import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.server.service.ServiceManagerImpl;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.rowdata.RowData;
@@ -58,6 +60,7 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.types.extract.ConverterTestUtils;
 import com.akiban.server.util.GroupIndexCreator;
 import com.akiban.util.AssertUtils;
+import com.akiban.util.Strings;
 import com.akiban.util.tap.TapReport;
 import com.akiban.util.Undef;
 import com.persistit.Transaction;
@@ -299,8 +302,8 @@ public class ApiTestBase {
 
     protected String akibanFK(String childCol, String parentTable, String parentCol) {
         ++akibanFKCount;
-        return String.format("CONSTRAINT __akiban_fk_%d FOREIGN KEY __akiban_fk_%d (%s) REFERENCES %s (%s)",
-                akibanFKCount, akibanFKCount, childCol, parentTable, parentCol
+        return String.format("GROUPING FOREIGN KEY (%s) REFERENCES \"%s\" (%s)",
+                             childCol, parentTable, parentCol
         );
     }
 
@@ -353,8 +356,71 @@ public class ApiTestBase {
         return Collections.emptyList();
     }
 
+    protected AkibanInformationSchema createFromDDL(String schema, String ddl) {
+        SchemaFactory schemaFactory = new SchemaFactory(schema);
+        return schemaFactory.ais(ddl().getAIS(session()), ddl);
+    }
+
+    protected static final class SimpleColumn {
+        public final String columnName;
+        public final String typeName;
+        public final Long param1;
+        public final Long param2;
+
+        public SimpleColumn(String columnName, String typeName) {
+            this(columnName, typeName, null, null);
+        }
+
+        public SimpleColumn(String columnName, String typeName, Long param1, Long param2) {
+            this.columnName = columnName;
+            this.typeName = typeName;
+            this.param1 = param1;
+            this.param2 = param2;
+        }
+    }
+
+    protected final int createTableFromTypes(String schema, String table, boolean firstIsPk, boolean createIndexes,
+                                             SimpleColumn... columns) {
+        AISBuilder builder = new AISBuilder();
+        builder.userTable(schema, table);
+
+        int colPos = 0;
+        SimpleColumn pk = firstIsPk ? columns[0] : new SimpleColumn("id", "int");
+        builder.column(schema, table, pk.columnName, colPos++, pk.typeName, null, null, false, false, null, null);
+        builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, pk.columnName, 0, true, null);
+
+        for(int i = firstIsPk ? 1 : 0; i < columns.length; ++i) {
+            SimpleColumn sc = columns[i];
+            String name = sc.columnName == null ? "c" + (colPos + 1) : sc.columnName;
+            builder.column(schema, table, name, colPos++, sc.typeName, sc.param1, sc.param2, true, false, null, null);
+
+            if(createIndexes) {
+                builder.index(schema, table, name, false, Index.KEY_CONSTRAINT);
+                builder.indexColumn(schema, table, name, name, 0, true, null);
+            }
+        }
+
+        UserTable tempTable = builder.akibanInformationSchema().getUserTable(schema, table);
+        ddl().createTable(session(), tempTable);
+        updateAISGeneration();
+        return tableId(schema, table);
+    }
+    
+    protected final int createTableFromTypes(String schema, String table, boolean firstIsPk, boolean createIndexes,
+                                             String... typeNames) {
+        SimpleColumn simpleColumns[] = new SimpleColumn[typeNames.length];
+        for(int i = 0; i < typeNames.length; ++i) {
+            simpleColumns[i] = new SimpleColumn(null, typeNames[i]);
+        }
+        return createTableFromTypes(schema, table, firstIsPk, createIndexes, simpleColumns);
+    }
+
     protected final int createTable(String schema, String table, String definition) throws InvalidOperationException {
-        ddl().createTable(session(), schema, String.format("CREATE TABLE %s (%s)", table, definition));
+        String ddl = String.format("CREATE TABLE \"%s\" (%s)", table, definition);
+        AkibanInformationSchema tempAIS = createFromDDL(schema, ddl);
+        UserTable tempTable = tempAIS.getUserTable(schema, table);
+        ddl().createTable(session(), tempTable);
         updateAISGeneration();
         return ddl().getTableId(session(), new TableName(schema, table));
     }
@@ -367,6 +433,40 @@ public class ApiTestBase {
         }
         unifiedDef.setLength(unifiedDef.length() - 1);
         return createTable(schema, table, unifiedDef.toString());
+    }
+
+    private AkibanInformationSchema createIndexInternal(String schema, String table, String indexName, String... indexCols) {
+        String ddl = String.format("CREATE INDEX \"%s\" ON \"%s\".\"%s\"(%s)", indexName, schema, table,
+                                   Strings.join(Arrays.asList(indexCols), ","));
+        return createFromDDL(schema, ddl);
+    }
+
+    protected final TableIndex createIndex(String schema, String table, String indexName, String... indexCols) {
+        AkibanInformationSchema tempAIS = createIndexInternal(schema, table, indexName, indexCols);
+        Index tempIndex = tempAIS.getUserTable(schema, table).getIndex(indexName);
+        ddl().createIndexes(session(), Collections.singleton(tempIndex));
+        updateAISGeneration();
+        return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
+    }
+
+    /**
+     * Add an Index to the given table that is marked as FOREIGN KEY. Intended
+     * to be used by tests that need to simulate a table as created by the
+     * adapter.
+     */
+    protected final TableIndex createGroupingFKIndex(String schema, String table, String indexName, String... indexCols) {
+        assertTrue("grouping fk index must start with __akiban", indexName.startsWith("__akiban"));
+        AkibanInformationSchema tempAIS = createIndexInternal(schema, table, indexName, indexCols);
+        UserTable userTable = tempAIS.getUserTable(schema, table);
+        TableIndex tempIndex = userTable.getIndex(indexName);
+        userTable.removeIndexes(Collections.singleton(tempIndex));
+        TableIndex fkIndex = TableIndex.create(tempAIS, userTable, indexName, 0, false, "FOREIGN KEY");
+        for(IndexColumn col : tempIndex.getKeyColumns()) {
+            fkIndex.addColumn(col);
+        }
+        ddl().createIndexes(session(), Collections.singleton(fkIndex));
+        updateAISGeneration();
+        return ddl().getTable(session(), new TableName(schema, table)).getIndex(indexName);
     }
 
     protected final TableIndex createTableIndex(int tableId, String indexName, boolean unique, String... columns) {

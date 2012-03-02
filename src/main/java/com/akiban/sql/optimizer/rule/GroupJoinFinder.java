@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.ais.model.Column;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.sql.optimizer.plan.*;
@@ -27,6 +28,7 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.UserTable;
 
+import com.akiban.util.ListUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -149,7 +151,9 @@ public class GroupJoinFinder extends BaseRule
     // group join.
     protected void normalizeColumnComparisons(ConditionList conditions) {
         if (conditions == null) return;
-        for (ConditionExpression cond : conditions) {
+        Collection<ConditionExpression> newExpressions = new ArrayList<ConditionExpression>();
+        for (Iterator<ConditionExpression> iterator = conditions.iterator(); iterator.hasNext(); ) {
+            ConditionExpression cond = iterator.next();
             if (cond instanceof ComparisonCondition) {
                 ComparisonCondition ccond = (ComparisonCondition)cond;
                 ExpressionNode left = ccond.getLeft();
@@ -165,9 +169,70 @@ public class GroupJoinFinder extends BaseRule
                     else {
                         ccond.reverse();
                     }
+                    boolean conditionIsObsolete = normalizeGroupJoinCondition(ccond, newExpressions);
+                    if (conditionIsObsolete)
+                        iterator.remove();
                 }
             }
         }
+        conditions.addAll(newExpressions);
+        ListUtils.removeDuplicates(conditions);
+    }
+
+    private boolean normalizeGroupJoinCondition(ComparisonCondition ccond, Collection<? super ConditionExpression> out)
+    {
+        boolean conditionIsObsolete = false;
+        if (ccond.getOperation().equals(Comparison.EQ)) {
+            ExpressionNode leftRaw = ccond.getLeft();
+            ExpressionNode rightRaw = ccond.getRight();
+            if (leftRaw instanceof ColumnExpression && rightRaw instanceof ColumnExpression) {
+                ColumnExpression ccondLeft = (ColumnExpression) leftRaw;
+                ColumnExpression ccondRight = (ColumnExpression) rightRaw;
+
+                if (ccondLeft.getColumn() == null || ccondLeft.getColumn().getUserTable() == null
+                        || ccondRight.getColumn() == null || ccondRight.getColumn().getUserTable() == null)
+                    return false;
+
+                boolean conditionOnDifferentTables =
+                        ccondLeft.getColumn().getUserTable() != ccondRight.getColumn().getUserTable();
+                
+                for (ColumnExpression leftColExprEquiv : ccondLeft.getEquivalentsPlusSelf()) {
+                    for (ColumnExpression rightColExprEquiv : ccondRight.getEquivalentsPlusSelf()) {
+                        Column leftColEquiv = leftColExprEquiv.getColumn();
+                        Column rightColEquiv = rightColExprEquiv.getColumn();
+                        UserTable leftEquivTable = leftColEquiv.getUserTable();
+                        UserTable rightEquivTable = rightColEquiv.getUserTable();
+                        Join parentJoin = leftEquivTable.getParentJoin();
+                        if (parentJoin != null && parentJoin.getParent() != null
+                                && parentJoin.getParent().equals(rightEquivTable))
+                        {
+                            // found a parent-child relationship
+                            for (JoinColumn joinColumn : parentJoin.getJoinColumns()) {
+                                Column parentCol = joinColumn.getParent();
+                                Column childCol = joinColumn.getChild();
+                                // look for a group join condition that isn't the original one
+                                if (leftColEquiv.equals(childCol) && rightColEquiv.equals(parentCol) &&
+                                    (leftColEquiv != ccondLeft.getColumn() || rightColEquiv != ccondRight.getColumn()))
+                                {
+                                    // create a new comparison condition that's in canonical form
+                                    ComparisonCondition canonical = new ComparisonCondition(
+                                            Comparison.EQ,
+                                            leftColExprEquiv,
+                                            rightColExprEquiv,
+                                            ccond.getSQLtype(),
+                                            ccond.getSQLsource()
+                                    );
+                                    out.add(canonical);
+                                    conditionIsObsolete |= conditionOnDifferentTables;
+                                    logger.debug("rewriting {} as {}", ccond, canonical);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return conditionIsObsolete;
     }
 
     // Normalize join's conditions and any below it.
