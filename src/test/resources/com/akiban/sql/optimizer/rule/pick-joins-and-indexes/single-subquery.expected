@@ -1,0 +1,15 @@
+SelectQuery@862041
+  ResultSet@1af9d1c[name, _SQL_COL_1]
+    Project@73a35c[x[0], x[1]]
+      Select@1ea25aa[x[0] == Smith]
+        SubquerySource@9d2f26(x)
+          Subquery@1829c6b
+            ResultSet@1eb62b6[name, _SQL_COL_1]
+              Project@9da1dd[user.customers.name, COUNT(*)]
+                Select@ede19e[]
+                  AggregateSource@17777a1(SORT,[user.customers.name],[])
+                    Select@4f12c2[]
+                      TableJoins@120d6b7(TableGroup@1900f17(customers) - IndexScan@12c08c7(Index(user.addresses.state[IndexColumn(state)]), NONE, =MA, rows = 15, cost = 115.692))
+                        JoinNode@f08d0f(INNER/GROUP - TableGroupJoin@ced1a8(Join(user/customers/cid/user/user.addresses/cid: user.addresses -> user.customers, group(customers))))
+                          TableSource@144569b(user.customers - TableGroup@1900f17(customers))
+                          TableSource@191e0eb(user.addresses - TableGroupJoin@ced1a8(Join(user/customers/cid/user/user.addresses/cid: user.addresses -> user.customers, group(customers))))
