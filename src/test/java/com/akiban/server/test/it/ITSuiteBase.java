@@ -15,9 +15,12 @@
 
 package com.akiban.server.test.it;
 
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.UserTable;
 import com.akiban.server.AkServer;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.session.Session;
@@ -30,6 +33,8 @@ import org.junit.BeforeClass;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class differs from ITBase: this base
@@ -67,11 +72,19 @@ public abstract class ITSuiteBase {
         final BufferedReader reader = new BufferedReader(new InputStreamReader(
                 AkServer.class.getClassLoader().getResourceAsStream(resourceName)));
 
+        List<String> allStatements = new ArrayList<String>();
+
         DDLFunctions ddl = serviceManager.getDXL().ddlFunctions();
         for (String statement : new MySqlStatementSplitter(reader)) {
             if (statement.startsWith("create")) {
-                ddl.createTable(session, schema, statement);
+                allStatements.add(statement);
             }
+        }
+
+        SchemaFactory schemaFactory = new SchemaFactory(schema);
+        AkibanInformationSchema tempAIS = schemaFactory.ais(allStatements.toArray(new String[allStatements.size()]));
+        for(UserTable table : tempAIS.getUserTables().values()) {
+            ddl.createTable(session, table);
         }
     }
 }

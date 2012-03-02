@@ -10,9 +10,13 @@ join-cond-too-complex: A join condition that will not work with a group join.
 
 right-too-complex: RIGHT join condition.
 
+single-subquery: just derived table (should push down condition)
+
 single-table: whole row from indexed table
 
 subquery: join to subquery
+
+three-groups: second group dividing two halves
 
 two-groups: group and non-group joins
 

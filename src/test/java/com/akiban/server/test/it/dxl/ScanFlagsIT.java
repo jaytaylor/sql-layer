@@ -118,7 +118,8 @@ public class ScanFlagsIT extends ITBase
 
     private List<NewRow> query(int flags, Integer start, Integer end, int ... values) throws InvalidOperationException
     {
-        rowDefId = createTable("schema", "t", "id int key, idcopy int, key(idcopy)");
+        rowDefId = createTable("schema", "t", "id int not null primary key, idcopy int");
+        createIndex("schema", "t", "idcopy", "idcopy");
         UserTable table = super.getUserTable(rowDefId);
         Index idCopyIndex = null;
         for (Index index : table.getIndexes()) {

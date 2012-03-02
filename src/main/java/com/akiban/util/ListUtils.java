@@ -15,8 +15,12 @@
 
 package com.akiban.util;
 
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Set;
 
 public final class ListUtils {
 
@@ -42,6 +46,15 @@ public final class ListUtils {
         while (rowsToRemove-- > 0) {
             iterator.previous();
             iterator.remove();
+        }
+    }
+
+    public static void removeDuplicates(List<?> list) {
+        Set<Object> elems = new HashSet<Object>(list.size());
+        for(Iterator<?> iter = list.iterator(); iter.hasNext();) {
+            Object next = iter.next();
+            if (!elems.add(next))
+                iter.remove();
         }
     }
 }

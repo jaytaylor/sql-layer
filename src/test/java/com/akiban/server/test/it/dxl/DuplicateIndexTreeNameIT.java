@@ -40,10 +40,10 @@ public class DuplicateIndexTreeNameIT extends ITBase
     @Test
     public void createRenameCreate()
     {
-        createTable("schema", "root", "id int, primary key(id)");
-        createTable("schema", "child", "id int, rid int, primary key(id)", akibanFK("rid", "root", "id"));
+        createTable("schema", "root", "id int not null, primary key(id)");
+        createTable("schema", "child", "id int not null, rid int, primary key(id)", akibanFK("rid", "root", "id"));
         ddl().renameTable(session(), tableName("schema", "child"), tableName("schema", "renamed_child"));
-        createTable("schema", "child", "id int, rid int, primary key(id)", akibanFK("rid", "root", "id"));
+        createTable("schema", "child", "id int not null, rid int, primary key(id)", akibanFK("rid", "root", "id"));
         AkibanInformationSchema ais = ddl().getAIS(session());
         AISValidationResults results = ais.validate(Collections.singleton((AISValidation)new  IndexTreeNamesUnique()));
         assertEquals(0, results.failures().size());

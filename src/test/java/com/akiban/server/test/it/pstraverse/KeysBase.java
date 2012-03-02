@@ -39,19 +39,19 @@ public abstract class KeysBase extends ITBase {
     @Before
     public void setUp() throws Exception {
         String schema = "cascading";
-        customers = createTable(schema, "customers", "cid int key");
+        customers = createTable(schema, "customers", "cid int not null primary key");
         orders = createTable(schema, "orders",
-                "cid int",
-                "oid int",
+                "cid int not null",
+                "oid int not null",
                 "PRIMARY KEY("+ordersPK()+")",
-                "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o(cid) REFERENCES customers(cid)"
+                "GROUPING FOREIGN KEY (cid) REFERENCES customers(cid)"
         );
         items = createTable(schema, "items",
-                "cid int",
-                "oid int",
-                "iid int",
+                "cid int not null",
+                "oid int not null",
+                "iid int not null",
                 "PRIMARY KEY("+itemsPK()+")",
-                "CONSTRAINT __akiban_i FOREIGN KEY __akiban_i("+ordersPK()+") REFERENCES orders("+ordersPK()+")"
+                "GROUPING FOREIGN KEY ("+ordersPK()+") REFERENCES orders("+ordersPK()+")"
         );
 
         writeRows(

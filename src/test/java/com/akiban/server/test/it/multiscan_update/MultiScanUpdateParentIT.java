@@ -49,14 +49,14 @@ public final class MultiScanUpdateParentIT extends ITBase {
 
     @Before
     public void setUp() throws InvalidOperationException {
-        cId = createTable(SCHEMA, "c", "cid int key");
+        cId = createTable(SCHEMA, "c", "cid int not null primary key");
         oId = createTable(SCHEMA, "o",
-                "oid int key", "cid int",
-                "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o(cid) REFERENCES c(cid)");
+                "oid int not null primary key", "cid int",
+                "GROUPING FOREIGN KEY (cid) REFERENCES c(cid)");
         iId = createTable(SCHEMA, "i",
-                "iid int key", "oid int", "quantity int",
-                "KEY (quantity)",
-                "CONSTRAINT __akiban_i FOREIGN KEY __akiban_i(oid) REFERENCES o(oid)");
+                "iid int not null primary key", "oid int", "quantity int",
+                "GROUPING FOREIGN KEY (oid) REFERENCES o(oid)");
+        createIndex(SCHEMA, "i", "quantity", "quantity");
         writeRows(
                 createNewRow(cId, 1),
                 createNewRow(cId, 2),

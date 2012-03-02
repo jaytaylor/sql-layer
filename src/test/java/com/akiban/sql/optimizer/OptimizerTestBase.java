@@ -15,15 +15,13 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.sql.compiler.ASTTransformTestBase;
 import com.akiban.sql.compiler.BooleanNormalizer;
 import com.akiban.sql.compiler.TypeComputer;
 import com.akiban.sql.parser.SQLParser;
-import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.views.ViewDefinition;
 
-import com.akiban.ais.ddl.SchemaDef;
-import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index.JoinType;
@@ -36,7 +34,6 @@ import org.junit.Ignore;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.io.FileReader;
 import java.io.Reader;
 
@@ -73,10 +70,8 @@ public class OptimizerTestBase extends ASTTransformTestBase
 
     public static AkibanInformationSchema parseSchema(File schema) throws Exception {
         String sql = fileContents(schema);
-        SchemaDef schemaDef = SchemaDef.parseSchema("use " + DEFAULT_SCHEMA + 
-                                                    "; " + sql);
-        SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
-        return toAis.getAis();
+        SchemaFactory schemaFactory = new SchemaFactory(DEFAULT_SCHEMA);
+        return schemaFactory.ais(sql);
     }
 
     protected AkibanInformationSchema loadSchema(File schema) throws Exception {

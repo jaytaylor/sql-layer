@@ -38,9 +38,9 @@ public final class StaleScanDataIT extends ITBase
                              "c1 int",
                              "c2 int",
                              "c3 int",
-                             "id int key");
+                             "id int not null primary key");
         int t2 = createTable("schema", "t2",
-                             "id int key",
+                             "id int not null primary key",
                              "c1 int");
         // Load some data
         dml().writeRow(session(), createNewRow(t1, 0, 0, 0, 0));

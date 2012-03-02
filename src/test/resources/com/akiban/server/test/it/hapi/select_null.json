@@ -6,8 +6,19 @@
     "schema" : "test",
 
     "tables" : [
-        [ "p", "id int key, other int, v varchar(32), index(other), index(v)"],
-        [ "c", "id int key, pid int, y year, index(y), constraint __akiban foreign key(pid) references p(id)"]
+        [ "p", 
+            "id int not null primary key",
+            "other int",
+            "v varchar(32)",
+            "index(other)",
+            "index(v)"],
+        [ "c",
+            "id int not null primary key",
+            "pid int",
+            "y year",
+            "index(y)",
+            "index(pid)",
+            "grouping foreign key (pid) references p(id)"]
     ],
 
     "write_rows" : {

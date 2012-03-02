@@ -13,7 +13,7 @@ message Type {
    optional int32  parameters   = 2;  // number of parameters used in the column
    optional bool   fixedSize    = 3;  // Does the type of fixed size 
                                       // (false for variable width types)
-   optional int32  maxSizeBytes = 4;  // maximum size of the type in bytes
+   optional int64  maxSizeBytes = 4;  // maximum size of the type in bytes
 }
 
 message TableName {

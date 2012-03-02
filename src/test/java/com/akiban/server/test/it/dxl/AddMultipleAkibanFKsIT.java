@@ -40,23 +40,23 @@ public class AddMultipleAkibanFKsIT extends ITBase
     @Test
     public void createRenameCreate()
     {
-        createTable("schema", "root", "id int, primary key(id)");
+        createTable("schema", "root", "id int not null, primary key(id)");
         // Create children
-        createTable("schema", "child1", "id int, rid int, primary key(id)");
-        createTable("schema", "child2", "id int, rid int, primary key(id)");
-        createTable("schema", "child3", "id int, rid int, primary key(id)");
+        createTable("schema", "child1", "id int not null, rid int, primary key(id)");
+        createTable("schema", "child2", "id int not null, rid int, primary key(id)");
+        createTable("schema", "child3", "id int not null, rid int, primary key(id)");
         // Add Akiban FK to child1
-        createTable("schema", "TEMP", "id int, rid int, primary key(id)", akibanFK("rid", "root", "id"));
+        createTable("schema", "TEMP", "id int not null, rid int, primary key(id)", akibanFK("rid", "root", "id"));
         ddl().renameTable(session(), tableName("schema", "child1"), tableName("schema", "TEMP2"));
         ddl().renameTable(session(), tableName("schema", "TEMP"), tableName("schema", "child1"));
         ddl().dropTable(session(), tableName("schema", "TEMP2"));
         // Add Akiban FK to child2
-        createTable("schema", "TEMP", "id int, rid int, primary key(id)", akibanFK("rid", "root", "id"));
+        createTable("schema", "TEMP", "id int not null, rid int, primary key(id)", akibanFK("rid", "root", "id"));
         ddl().renameTable(session(), tableName("schema", "child2"), tableName("schema", "TEMP2"));
         ddl().renameTable(session(), tableName("schema", "TEMP"), tableName("schema", "child2"));
         ddl().dropTable(session(), tableName("schema", "TEMP2"));
         // Add Akiban FK to child3
-        createTable("schema", "TEMP", "id int, rid int, primary key(id)", akibanFK("rid", "root", "id"));
+        createTable("schema", "TEMP", "id int not null, rid int, primary key(id)", akibanFK("rid", "root", "id"));
         ddl().renameTable(session(), tableName("schema", "child3"), tableName("schema", "TEMP2"));
         ddl().renameTable(session(), tableName("schema", "TEMP"), tableName("schema", "child3"));
         ddl().dropTable(session(), tableName("schema", "TEMP2"));

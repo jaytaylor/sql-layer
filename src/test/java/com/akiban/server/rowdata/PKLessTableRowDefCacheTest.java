@@ -27,16 +27,15 @@ public class PKLessTableRowDefCacheTest
     public void testPKLessRoot() throws Exception
     {
         String[] ddl = {
-            String.format("use %s;", SCHEMA),
             "create table test(",
             "    a int, ",
             "    b int, ",
             "    c int, ",
             "    d int, ",
             "    e int, ",
-            "    key e_d(e, d), ",
-            "    unique key d_b(d, b)",
-            ");"
+            "    constraint d_b unique(d, b)",
+            ");",
+            "create index e_d on test(e, d);"
         };
         RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         RowDef test = rowDefCache.getRowDef(tableName("test"));
@@ -74,9 +73,8 @@ public class PKLessTableRowDefCacheTest
     public void testPKLessNonRoot() throws Exception
     {
         String[] ddl = {
-            String.format("use %s;", SCHEMA),
             "create table parent(",
-            "    p1 int, ",
+            "    p1 int not null, ",
             "    p2 int, ",
             "    primary key(p1)",
             "); ",
@@ -84,9 +82,9 @@ public class PKLessTableRowDefCacheTest
             "    c1 int, ",
             "    c2 int, ",
             "    p1 int, ",
-            "    constraint __akiban_fk foreign key fk(p1) references parent(p1), ",
-            "    key c2_c1(c2, c1)",
-            ");"
+            "    grouping foreign key(p1) references parent(p1)",
+            ");",
+            "create index c2_c1 on child(c2, c1);"
         };
         RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         Index index;
@@ -155,5 +153,5 @@ public class PKLessTableRowDefCacheTest
     }
 
     private static final String SCHEMA = "schema";
-    private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory();
+    private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory(SCHEMA);
 }

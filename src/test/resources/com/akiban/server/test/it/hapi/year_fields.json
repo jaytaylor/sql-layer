@@ -6,7 +6,7 @@
     "schema" : "test",
 
     "tables" : [
-        ["years", "id int key", "y year", "index(y)"]
+        ["years", "id int not null primary key", "y year", "index(y)"]
     ],
 
     "write_rows" : {

@@ -445,14 +445,9 @@ public class JoinAndIndexPicker extends BaseRule
                 left.addDistinct();
             Joinable leftJoinable = left.install();
             Joinable rightJoinable = right.install();
-            JoinNode join = null;
             ConditionList joinConditions = null;
             boolean newJoinConditions = false;
             for (JoinOperator joinOp : joins) {
-                if ((join == null) &&
-                    (joinOp.getJoin() != null)) {
-                    join = joinOp.getJoin();
-                }
                 if ((joinOp.getJoinConditions() != null) &&
                     !joinOp.getJoinConditions().isEmpty()) {
                     if (joinConditions == null) {
@@ -467,14 +462,7 @@ public class JoinAndIndexPicker extends BaseRule
                     }
                 }
             }
-            if (join == null) {
-                join = new JoinNode(leftJoinable, rightJoinable, joinType);
-            }
-            else {
-                join.setLeft(leftJoinable);
-                join.setRight(rightJoinable);
-                join.setJoinType(joinType);
-            }
+            JoinNode join = new JoinNode(leftJoinable, rightJoinable, joinType);
             join.setJoinConditions(joinConditions);
             join.setImplementation(joinImplementation);
             return join;

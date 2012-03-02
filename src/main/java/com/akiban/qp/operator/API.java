@@ -429,6 +429,21 @@ public class API
                                      joinType,
                                      intersectOutput);
     }
+    
+    // HKeyUnion
+    
+    public static Operator hKeyUnion_Ordered(Operator leftInput, Operator rightInput,
+                                             RowType leftRowType, RowType rightRowType,
+                                             int leftOrderingFields, int rightOrderingFields,
+                                             int comparisonFields,
+                                             UserTableRowType outputHKeyTableRowType)
+    {
+        return new HKeyUnion_Ordered(leftInput, rightInput,
+                                     leftRowType, rightRowType,
+                                     leftOrderingFields, rightOrderingFields,
+                                     comparisonFields,
+                                     outputHKeyTableRowType);
+    }
 
     // Insert
 

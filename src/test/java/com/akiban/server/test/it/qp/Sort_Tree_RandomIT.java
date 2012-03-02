@@ -46,7 +46,7 @@ public class Sort_Tree_RandomIT extends OperatorITBase
             "b int not null",
             "c int not null",
             "d int not null",
-            "id int not null key");
+            "id int not null primary key");
         schema = new Schema(rowDefCache().ais());
         tRowType = schema.userTableRowType(userTable(t));
         group = groupTable(t);

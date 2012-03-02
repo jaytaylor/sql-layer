@@ -18,10 +18,13 @@ package com.akiban.server.test.it.dxl;
 import com.akiban.ais.metamodel.io.MessageTarget;
 import com.akiban.ais.metamodel.io.Writer;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.server.error.UnsupportedIndexSizeException;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.sql.parser.SQLParserException;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -43,12 +46,13 @@ public class AtomicSchemaChangesIT extends ITBase
             createTable("s", "bad_syntax",
                         "foo bar");
             fail();
-        } catch (Throwable e) {
+        } catch (RuntimeException e) {
             // expected
         }
         checkInitialSchema();
     }
 
+    @Ignore("bug941657 - Invalid grouping foreign keys not handled")
     @Test
     public void tryFailValidation() throws Exception
     {
@@ -56,9 +60,9 @@ public class AtomicSchemaChangesIT extends ITBase
         checkInitialSchema();
         try {
             createTable("s", "fail_validation",
-                        "bid int not null key",
+                        "bid int not null primary key",
                         "pid int",
-                        "constraint __akiban_oops foreign key __akiban_oops(pid) references parent(no_such_column)");
+                        "grouping foreign key (pid) references parent(no_such_column)");
             fail();
         } catch (Throwable e) {
             // expected
@@ -73,9 +77,9 @@ public class AtomicSchemaChangesIT extends ITBase
         checkInitialSchema();
         try {
             createTable("s", "fail_ais_creation_1",
-                        "bid int not null key",
+                        "bid int not null primary key",
                         "pid int",
-                        "key(xyz)");
+                        "unique(xyz)");
             fail();
         } catch (Throwable e) {
             // expected
@@ -89,10 +93,10 @@ public class AtomicSchemaChangesIT extends ITBase
         checkInitialSchema();
         try {
             createTable("s", "t1",
-                        "id varchar(2050)",
+                        "id varchar(2050) not null",
                         "primary key(id)");
             Assert.fail("Expected table to be rejected");
-        } catch (Exception e) {
+        } catch (UnsupportedIndexSizeException e) {
             // expected
         }
         checkInitialSchema();
@@ -104,12 +108,12 @@ public class AtomicSchemaChangesIT extends ITBase
         checkInitialSchema();
         try {
             createTable("s", "t1",
-                        "id int",
+                        "id int not null",
                         "c1 varchar(2050)",
-                        "index(c1)",
+                        "unique(c1)",
                         "primary key(id)");
             Assert.fail("Expected table to be rejected");
-        } catch (Exception e) {
+        } catch (UnsupportedIndexSizeException e) {
             // expected
         }
         checkInitialSchema();
@@ -121,12 +125,12 @@ public class AtomicSchemaChangesIT extends ITBase
         checkInitialSchema();
         try {
             createTable("s", "child2",
-                        "id varchar(2052)",
+                        "id varchar(2052) not null",
                         "pid int",
                         "primary key(id)",
-                        "constraint __akiban foreign key(pid) references parent(pid)");
+                        "grouping foreign key(pid) references parent(pid)");
             Assert.fail("Expected table to be rejected");
-        } catch (Exception e) {
+        } catch (UnsupportedIndexSizeException e) {
             // expected
         }
         checkInitialSchema();
@@ -138,14 +142,14 @@ public class AtomicSchemaChangesIT extends ITBase
         checkInitialSchema();
         try {
             createTable("s", "child2",
-                        "id int",
+                        "id int not null",
                         "pid int",
                         "filler varchar(2052)",
                         "primary key(id)",
-                        "index(filler)",
-                        "constraint __akiban foreign key(pid) references parent(pid)");
+                        "unique(filler)",
+                        "grouping foreign key(pid) references parent(pid)");
             Assert.fail("Expected table to be rejected");
-        } catch (Exception e) {
+        } catch (UnsupportedIndexSizeException e) {
             // expected
         }
         checkInitialSchema();
@@ -154,12 +158,13 @@ public class AtomicSchemaChangesIT extends ITBase
     private void createInitialSchema() throws Exception
     {
         createTable("s", "parent",
-                    "pid int not null key",
+                    "pid int not null primary key",
                     "filler int");
         createTable("s", "child",
-                    "cid int not null key",
+                    "cid int not null primary key",
                     "pid int",
-                    "constraint __akiban_cp foreign key __akiban_cp(pid) references parent(pid)");
+                    "grouping foreign key (pid) references parent(pid)");
+        createGroupingFKIndex("s", "child", "__akiban_cp", "pid");
         expectedAIS = serialize(ais());
     }
 
