@@ -126,7 +126,7 @@ public class BranchJoiner_CBO extends BaseRule
                 List<TableSource> tables = new ArrayList<TableSource>();
                 scan = new BranchLookup(scan, indexTable.getTable(), 
                                         sideBranch.getTable().getTable(), tables);
-                return fillBranch(scan, tables, sideBranch);
+                return fillBranch(scan, tables, sideBranch, null);
             }
             if (!ancestors.isEmpty())
                 scan = new AncestorLookup(scan, indexTable, ancestors);
@@ -143,7 +143,7 @@ public class BranchJoiner_CBO extends BaseRule
             GroupScan groupScan = (GroupScan)scan;
             List<TableSource> tables = new ArrayList<TableSource>();
             groupScan.setTables(tables);
-            return fillBranch(scan, tables, rootTable);
+            return fillBranch(scan, tables, rootTable, null);
         }
         else {
             throw new AkibanInternalException("Unknown TableGroupJoinTree scan");
@@ -155,9 +155,15 @@ public class BranchJoiner_CBO extends BaseRule
      * then <code>Product</code> that with any remaining branches.
      */
     protected PlanNode fillBranch(PlanNode input, List<TableSource> lookupTables,
-                                  TableGroupJoinNode rootTable) {
+                                  TableGroupJoinNode rootTable, 
+                                  TableGroupJoinNode flattenRoot) {
         TableGroupJoinNode leafTable = singleBranchPending(rootTable, lookupTables);
-        return fillSideBranches(flatten(input, leafTable, rootTable),
+        if (flattenRoot == null)
+            // If from a side-branch, we flatten up one extra level to
+            // get connected coverage of the graph. Otherwise, it's
+            // the same branch.
+            flattenRoot = rootTable;
+        return fillSideBranches(flatten(input, leafTable, flattenRoot),
                                 leafTable, rootTable);
     }
 
@@ -207,10 +213,8 @@ public class BranchJoiner_CBO extends BaseRule
                                         TableGroupJoinNode leafTable,
                                         TableGroupJoinNode rootTable) {
         List<PlanNode> subplans = null;
-        if (subplans == null)
-            return input;
         TableGroupJoinNode branchTable = leafTable;
-        while (true) {
+        while (branchTable != rootTable) {
             TableGroupJoinNode parent = branchTable.getParent();
             if (isBranchpoint(parent)) {
                 for (TableGroupJoinNode sibling = parent.getFirstChild();
@@ -221,15 +225,16 @@ public class BranchJoiner_CBO extends BaseRule
                                                         parent.getTable().getTable(),
                                                         sibling.getTable().getTable(), 
                                                         tables);
-                    subplan = fillBranch(subplan, tables, sibling);
+                    subplan = fillBranch(subplan, tables, sibling, parent);
                     if (subplans == null)
                         subplans = new ArrayList<PlanNode>();
                     subplans.add(subplan);
                 }
             }
-            if (parent == rootTable) break;
             branchTable = parent;
         }
+        if (subplans == null)
+            return input;
         subplans.add(input);
         Collections.reverse(subplans); // Root to leaf (sideways order doesn't matter).
         return new Product(subplans);
@@ -241,6 +246,7 @@ public class BranchJoiner_CBO extends BaseRule
     protected TableGroupJoinNode singleBranchPending(TableGroupJoinNode rootTable,
                                                      List<TableSource> tableSources) {
         TableGroupJoinNode leafTable = leafLeftMostPending(rootTable);
+        assert (leafTable != null);
         pendingTableSources(leafTable, rootTable, tableSources);
         return leafTable;
     }

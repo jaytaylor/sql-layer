@@ -98,6 +98,12 @@ public class TableGroupJoinTree extends BaseJoinable
         public Iterator<TableGroupJoinNode> iterator() {
             return new TableGroupJoinIterator(this);
         }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + "@" + Integer.toString(hashCode(), 16) +
+                "(" + table + ")";
+        }
     }
 
     static class TableGroupJoinIterator implements Iterator<TableGroupJoinNode> {
@@ -128,13 +134,13 @@ public class TableGroupJoinTree extends BaseJoinable
                 return;
             }
             while (true) {
+                if (next == root) {
+                    next = null;
+                    return;
+                }
                 node = next.getNextSibling();
                 if (node != null) {
                     next = node;
-                    return;
-                }
-                if (next == root) {
-                    next = null;
                     return;
                 }
                 next = next.getParent();
