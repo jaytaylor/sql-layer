@@ -8,5 +8,9 @@ SelectQuery@6f93ee4
       Project@5c66b06b[user.orders.order_date]
         Select@59c87031[]
           Limit@1d59e6df(LIMIT 1)
-            Select@79444986[user.items.oid == user.orders.oid]
-              IndexScan@72373a9c(Index(user.items.sku[IndexColumn(sku)]), covering/NONE, =1234)
+            Select@54140fee[]
+              Flatten@7e7f8062(user.items)
+                Select@64c5e2cf[user.items.sku == 1234]
+                  AncestorLookup@7badb7b8(user.items -> [user.items])
+                    IndexScan@49f8d077(Index(user.items.__akiban_fk_1[IndexColumn(oid)]), NONE, =user.orders.oid)
+                    TableSource@2a8c7be5(user.items - TableGroup@6e3e5a91(customers))

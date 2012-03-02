@@ -20,7 +20,7 @@ package com.akiban.sql.optimizer.plan;
 public interface ConditionExpression extends ExpressionNode
 {
     public static enum Implementation {
-        NORMAL, INDEX, GROUP_JOIN
+        NORMAL, INDEX, GROUP_JOIN, POTENTIAL_GROUP_JOIN
     }
 
     public Implementation getImplementation();

@@ -257,4 +257,45 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
         throw new UnsupportedOperationException("Should have made TableGroupJoinTree");
     }
 
+    @Override
+    protected void moveJoinConditions(List<JoinIsland> islands) {
+        for (JoinIsland island : islands) {
+            moveJoinConditions(island.root, island.whereConditions, island.whereJoins);
+        }        
+    }
+
+    protected void moveJoinConditions(Joinable joinable,
+                                      ConditionList whereConditions, List<TableGroupJoin> whereJoins) {
+        if (joinable instanceof TableGroupJoinTree) {
+            for (TableGroupJoinNode table : (TableGroupJoinTree)joinable) {
+                TableGroupJoin tableJoin = table.getTable().getParentJoin();
+                if (tableJoin != null) {
+                    if (table.getParent() == null) {
+                        tableJoin.reject(); // Did not make it into the group.
+                    }
+                    else if (whereJoins.contains(tableJoin)) {
+                        List<ComparisonCondition> joinConditions = tableJoin.getConditions();
+                        // Move down from WHERE conditions to join conditions.
+                        if (table.getJoinConditions() == null)
+                            table.setJoinConditions(new ConditionList());
+                        table.getJoinConditions().addAll(joinConditions);
+                        whereConditions.removeAll(joinConditions);
+                    }
+                }
+            }
+        }
+        else if (joinable instanceof JoinNode) {
+            JoinNode join = (JoinNode)joinable;
+            join.setGroupJoin(null);
+            moveJoinConditions(join.getLeft(), whereConditions, whereJoins);
+            moveJoinConditions(join.getRight(), whereConditions, whereJoins);
+        }
+    }
+    
+    @Override
+    protected void moveJoinConditions(Joinable joinable, JoinNode output, TableJoins tableJoins,
+                                      ConditionList whereConditions, List<TableGroupJoin> whereJoins) {
+        throw new UnsupportedOperationException("Should have avoided TableJoins");
+    }
+
 }

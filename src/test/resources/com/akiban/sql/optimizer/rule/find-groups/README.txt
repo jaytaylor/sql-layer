@@ -6,6 +6,8 @@ in: IN condition
 
 inner-beneath-left: INNER join with conditions held away from WHERE
 
+join-across-subquery: group join in subquery expression
+
 not-equals: Conditions other than equals
 
 right-as-left: RIGHT join expressed as LEFT
