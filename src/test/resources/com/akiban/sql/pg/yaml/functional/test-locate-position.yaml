@@ -84,6 +84,18 @@
 - Statement: SELECT varchar_field from all_types WHERE LOCATE(?, varchar_field, 5) = 7;
 - params: [['bar']]
 - output: [['foobarbar']]
+---
+- Statement: SELECT POSITION(?, 'foobar') from all_types WHERE bigint_field = 1;
+- params: [['bar']]
+- output: [[4]]
+---
+- Statement: SELECT POSITION('foo', ?) from all_types WHERE bigint_field = 1;
+- params: [['foobar']]
+- output: [[1]]
+---
+- Statement: SELECT varchar_field from all_types WHERE POSITION(?, varchar_field) = 4;
+- params: [['barb']]
+- output: [['foobarbar']]
 ## Test with fields
 ---
 - Statement: SELECT LOCATE('bar', varchar_field, double_field) from all_types WHERE bigint_field = 1;
