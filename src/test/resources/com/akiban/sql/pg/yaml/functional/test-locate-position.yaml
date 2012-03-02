@@ -40,9 +40,33 @@
 ---
 - Statement: SELECT POSITION ('bar', 'foobarbar') from all_types WHERE bigint_field = 1;
 - output: [[4]]
-#--- # BUG 943475
+#--- # BUG 943475 : "IN" is not supported
 #- Statement: SELECT POSITION ('abc' IN 'xzy') from all_types WHERE bigint_field = 1;
 #- output: [[0]]
+---
+- Statement: SELECT POSITION ('bar', 'foobarbar') from all_types WHERE bigint_field = 1;
+- output: [[4]]
+---
+- Statement: SELECT POSITION ('xbar', 'foobarbar') from all_types WHERE bigint_field = 1;
+- output: [[0]]
+---
+- Statement: SELECT POSITION (null, 'foobar') from all_types WHERE bigint_field = 1;
+- output: [[null]]
+---
+- Statement: SELECT POSITION(null, null) from all_types WHERE bigint_field = 1;
+- output: [[null]]
+---
+- Statement: SELECT bigint_field from all_types WHERE POSITION('bar', 'foobarbar') = bigint_field * 4;
+- output: [[1]]
+---
+- Statement: SELECT double_field from all_types WHERE POSITION(null, null) IS NULL;
+- output: [[5.5], [2.5]]
+---
+- Statement: SELECT POSITION('', 'foo') from all_types;
+- output: [[1], [1]]
+---
+- Statement: SELECT POSITION ('A', 'a') from all_types;
+- output: [[0], [0]]
 ## Test with params
 ---
 - Statement: SELECT LOCATE (?, 'foobar') from all_types WHERE bigint_field = 1;
@@ -73,14 +97,26 @@
 ---
 - Statement: SELECT LOCATE (null, varchar_field) from all_types;
 - output: [[null], [null]]
+---
+- Statement: SELECT POSITION(null, varchar_field) from all_types;
+- output: [[null], [null]]
 ## Test wrong arity:
---- # test empty list
-- Statement: SELECT LOCATE() from all_types;
-- error: [42000]
+#--- # test empty list
+#- Statement: SELECT LOCATE() from all_types;
+#- error: [4250C]
 --- # test extraneous arg
 - Statement: SELECT LOCATE ('foo', 'foobar', 2, null) from all_types;
 - error: [42000]
 ---
 - Statement: SELECT LOCATE ('foo', 'foo', 1, 3, 3) from all_types;
 - error: [42000]
+---
+- Statement: SELECT POSITION() from all_types;
+- error: [4250C]
+---
+- Statement: SELECT POSITION('a', 'b', 1) from all_types;
+- error: [4250C]
+---
+- Statement: SELECT POSITION('A', 'abc',1, 3) from all_types;
+- error: [4250C]
 ...
