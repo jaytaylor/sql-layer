@@ -36,6 +36,10 @@
 ---
 - Statement: SELECT NULLIF(2, '3') FROM all_types;
 - output_types: [INTEGER]
+#---
+# BUG: comparisons on strings are "space" sensitive.
+#- Statement: SELECT NULLIF('   ', '') FROM all_types;
+#- output: [[null]]
 ## Test with parameters
 ---
 - Statement: SELECT NULLIF(?, 2.3) FROM all_types;
