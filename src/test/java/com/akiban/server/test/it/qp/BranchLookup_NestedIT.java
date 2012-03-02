@@ -16,12 +16,16 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.qp.expression.IndexBound;
+import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,6 +33,7 @@ import org.junit.Test;
 import java.util.Collections;
 
 import static com.akiban.qp.operator.API.*;
+import static com.akiban.qp.operator.API.indexScan_Default;
 
 public class BranchLookup_NestedIT extends OperatorITBase
 {
@@ -67,8 +72,10 @@ public class BranchLookup_NestedIT extends OperatorITBase
         aRowType = schema.userTableRowType(userTable(a));
         bRowType = schema.userTableRowType(userTable(b));
         cRowType = schema.userTableRowType(userTable(c));
-        aValueIndexRowType = indexType(a, "avalue");
         rValueIndexRowType = indexType(r, "rvalue");
+        aValueIndexRowType = indexType(a, "avalue");
+        bValueIndexRowType = indexType(b, "bvalue");
+        cValueIndexRowType = indexType(c, "cvalue");
         rabc = groupTable(r);
         db = new NewRow[]{createNewRow(r, 1L, "r1"),
                           createNewRow(r, 2L, "r2"),
@@ -282,15 +289,65 @@ public class BranchLookup_NestedIT extends OperatorITBase
         compareRows(expected, cursor);
     }
 
+    // Multiple index tests
+
+    @Test
+    public void testABIndexToC()
+    {
+        Operator abIndexScan =
+            hKeyUnion_Ordered(
+                indexScan_Default(aValueIndexRowType, false, aValueRange("a13", "a14")),
+                indexScan_Default(bValueIndexRowType, false, bValueRange("b15", "b16")),
+                aValueIndexRowType,
+                bValueIndexRowType,
+                2,
+                2,
+                2,
+                rRowType);
+        Operator plan =
+            map_NestedLoops(
+                abIndexScan,
+                branchLookup_Nested(rabc, abIndexScan.rowType(), cRowType, LookupOption.DISCARD_INPUT, 0),
+                0);
+        Cursor cursor = cursor(plan, queryContext);
+        RowBase[] expected = new RowBase[]{
+            row(cRowType, 17L, 1L, "c17"),
+            row(cRowType, 18L, 1L, "c18"),
+        };
+        compareRows(expected, cursor);
+    }
+
+    private IndexKeyRange aValueRange(String lo, String hi)
+    {
+        return IndexKeyRange.bounded(aValueIndexRowType, aValueBound(lo), true, aValueBound(hi), true);
+    }
+
+    private IndexKeyRange bValueRange(String lo, String hi)
+    {
+        return IndexKeyRange.bounded(bValueIndexRowType, bValueBound(lo), true, bValueBound(hi), true);
+    }
+
+    private IndexBound aValueBound(String a)
+    {
+        return new IndexBound(row(aValueIndexRowType, a), new SetColumnSelector(0));
+    }
+
+    private IndexBound bValueBound(String b)
+    {
+        return new IndexBound(row(bValueIndexRowType, b), new SetColumnSelector(0));
+    }
+
     protected int r;
     protected int a;
     protected int c;
     protected int b;
-    protected RowType rRowType;
-    protected RowType aRowType;
-    protected RowType cRowType;
-    protected RowType bRowType;
-    protected IndexRowType aValueIndexRowType;
+    protected UserTableRowType rRowType;
+    protected UserTableRowType aRowType;
+    protected UserTableRowType bRowType;
+    protected UserTableRowType cRowType;
     protected IndexRowType rValueIndexRowType;
+    protected IndexRowType aValueIndexRowType;
+    protected IndexRowType bValueIndexRowType;
+    protected IndexRowType cValueIndexRowType;
     protected GroupTable rabc;
 }

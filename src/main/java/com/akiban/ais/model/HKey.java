@@ -15,6 +15,8 @@
 
 package com.akiban.ais.model;
 
+import com.akiban.server.types.AkType;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,17 +52,20 @@ public class HKey
 
     public int nColumns()
     {
-        if (nColumns == -1) {
-            synchronized (this) {
-                if (nColumns == -1) {
-                    nColumns = 0;
-                    for (HKeySegment segment : segments) {
-                        nColumns += segment.columns().size();
-                    }
-                }
-            }
-        }
-        return nColumns;
+        ensureDerived();
+        return columns.length;
+    }
+    
+    public Column column(int i)
+    {
+        ensureDerived();
+        return columns[i];
+    }
+    
+    public AkType columnType(int i)
+    {
+        ensureDerived();
+        return columnTypes[i];
     }
 
     public HKey(Table table)
@@ -78,12 +83,12 @@ public class HKey
         return segment;
     }
 
-    public synchronized boolean containsColumn(Column column) {
-        for(HKeySegment hkSeg : segments) {
-            for(HKeyColumn hkCol : hkSeg.columns()) {
-                if(hkCol.column() == column) {
-                    return true;
-                }
+    public synchronized boolean containsColumn(Column column) 
+    {
+        ensureDerived();
+        for (Column c : columns) {
+            if (c == column) {
+                return true;
             }
         }
         return false;
@@ -91,24 +96,44 @@ public class HKey
 
     public synchronized int[] keyDepth()
     {
-        if (keyDepth == null) {
-            computeKeyDepth();
-        }
+        ensureDerived();
         return keyDepth;
     }
 
     // For use by this class
 
-    private void computeKeyDepth()
+    private void ensureDerived()
     {
-        keyDepth = new int[segments.size() + 1];
-        int hKeySegments = segments.size();
-        for (int hKeySegment = 0; hKeySegment <= hKeySegments; hKeySegment++) {
-            this.keyDepth[hKeySegment] =
-                hKeySegment == 0
-                ? 0
-                // + 1 to account for the ordinal
-                : keyDepth[hKeySegment - 1] + 1 + segments.get(hKeySegment - 1).columns().size();
+        if (columns == null) {
+            synchronized (this) {
+                if (columns == null) {
+                    // columns
+                    List<Column> columnList = new ArrayList<Column>();
+                    for (HKeySegment segment : segments) {
+                        for (HKeyColumn hKeyColumn : segment.columns()) {
+                            columnList.add(hKeyColumn.column());
+                        }
+                    }
+                    columns = new Column[columnList.size()];
+                    columnTypes = new AkType[columnList.size()];
+                    int c = 0;
+                    for (Column column : columnList) {
+                        columns[c] = column;
+                        columnTypes[c] = column.getType().akType();
+                        c++;
+                    }
+                    // keyDepth
+                    keyDepth = new int[segments.size() + 1];
+                    int hKeySegments = segments.size();
+                    for (int hKeySegment = 0; hKeySegment <= hKeySegments; hKeySegment++) {
+                        this.keyDepth[hKeySegment] =
+                            hKeySegment == 0
+                            ? 0
+                            // + 1 to account for the ordinal
+                            : keyDepth[hKeySegment - 1] + 1 + segments.get(hKeySegment - 1).columns().size();
+                    }
+                }
+            }
         }
     }
 
@@ -119,5 +144,6 @@ public class HKey
     // keyDepth[n] is the number of key segments (ordinals + key values) comprising an hkey of n parts.
     // E.g. keyDepth[1] for the hkey of the root segment.
     private int[] keyDepth;
-    private int nColumns = -1;
+    private Column[] columns;
+    private AkType[] columnTypes;
 }

@@ -86,6 +86,12 @@ class HKeyUnion_Ordered extends Operator
     }
 
     @Override
+    public RowType rowType()
+    {
+        return outputHKeyRowType;
+    }
+
+    @Override
     public void findDerivedTypes(Set<RowType> derivedTypes)
     {
         right.findDerivedTypes(derivedTypes);

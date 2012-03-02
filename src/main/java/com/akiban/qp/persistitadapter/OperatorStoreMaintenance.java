@@ -279,7 +279,7 @@ final class OperatorStoreMaintenance {
         }
         if (!branchTables.leafMost().equals(rowType)) {
             // the incoming row isn't the leaf, so we have to get its ancestors along the branch
-            RowType child = branchTables.childOf(rowType);
+            UserTableRowType child = branchTables.childOf(rowType);
             plan = API.branchLookup_Default(
                     plan,
                     groupIndex.getGroup().getGroupTable(),
@@ -398,7 +398,7 @@ final class OperatorStoreMaintenance {
             return onlyBranch.get(onlyBranch.size()-1);
         }
 
-        public RowType childOf(UserTableRowType rowType) {
+        public UserTableRowType childOf(UserTableRowType rowType) {
             int inputDepth = rowType.userTable().getDepth();
             int childDepth = inputDepth + 1;
             return allTablesForBranch.get(childDepth);

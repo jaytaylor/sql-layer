@@ -105,7 +105,6 @@ public class ProductRow extends AbstractRow
         if (left != null && right != null) {
             // assert left.runId() == right.runId();
         }
-        super.runId(left == null ? right.runId() : left.runId());
     }
 
     // Object state
