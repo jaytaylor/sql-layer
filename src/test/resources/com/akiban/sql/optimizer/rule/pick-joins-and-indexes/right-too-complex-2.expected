@@ -1,7 +1,9 @@
-SelectQuery@363d8263
-  ResultSet@3b4d67[name, order_date]
-    Project@3556a54f[user.customers.name, user.orders.order_date]
-      Select@4b7f00e4[]
-        TableGroupJoinTree@7f139f74(TableGroup@6149b9d9(customers), customers ON user.customers.name != Smith RIGHT orders - GroupScan@2f488775(Group(customers -> user._akiban_customers)))
-          TableSource@41c27f70(user.customers - TableGroup@6149b9d9(customers))
-            TableSource@483cb3ca(user.orders - TableGroupJoin@42b52a93(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+SelectQuery@27daad50
+  ResultSet@5a873a1[name, order_date]
+    Project@763f51ed[user.customers.name, user.orders.order_date]
+      Select@371bdb41[]
+        JoinNode@33077ec8(LEFT/NESTED_LOOPS[user.customers.name != Smith])
+          TableGroupJoinTree@42b52a93(TableGroup@311496a4(customers), orders - GroupScan@3eae0228(Group(customers -> user._akiban_customers)))
+            TableSource@6149b9d9(user.orders - TableGroup@311496a4(customers))
+          TableGroupJoinTree@3fe3b1c(TableGroup@311496a4(customers), customers - IndexScan@120fb03e(Index(user.customers.PRIMARY[IndexColumn(cid)]), NONE, =user.orders.cid, rows = 1, cost = 2.78000))
+            TableSource@7f139f74(user.customers - TableGroup@311496a4(customers))
