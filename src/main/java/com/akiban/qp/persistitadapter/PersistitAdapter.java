@@ -309,10 +309,6 @@ public class PersistitAdapter extends StoreAdapter
         this.treeService = treeService;
     }
     
-    // Class state
-    
-    public static final InOutTap CURSOR_FIRST_ROW_TAP = Tap.createTimer("cursor first row");
-
     // Object state
 
     private final TreeService treeService;
