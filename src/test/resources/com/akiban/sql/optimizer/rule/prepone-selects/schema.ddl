@@ -39,3 +39,5 @@ CREATE TABLE addresses
   GROUPING FOREIGN KEY (cid) REFERENCES customers(cid)
 );
 CREATE INDEX state ON addresses(state);
+
+CREATE INDEX cname_and_sku ON customers(customers.name, items.sku) USING LEFT JOIN;
