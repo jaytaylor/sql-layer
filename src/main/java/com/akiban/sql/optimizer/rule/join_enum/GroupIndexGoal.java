@@ -457,13 +457,14 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     }
 
     /** Find the best index on the given table. 
-     * @param groupOnly 
+     * @param required Tables reachable from root via INNER joins and hence not nullable.
      */
     public IndexScan pickBestIndex(TableSource table, Set<TableSource> required) {
         IndexScan bestIndex = null;
-        // If this table is the optional part of a LEFT join, can
-        // still consider group indexes to it, but not single table
-        // indexes on it.
+        // Can only consider single table indexes when table is not
+        // nullable (required).  If table is the optional part of a
+        // LEFT join, can still consider compatible LEFT / RIGHT group
+        // indexes, below.
         if (required.contains(table)) {
             for (TableIndex index : table.getTable().getTable().getIndexes()) {
                 IndexScan candidate = new IndexScan(index, table);

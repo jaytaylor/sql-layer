@@ -21,13 +21,9 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -167,7 +163,7 @@ class AncestorLookup_Default extends Operator
         // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
         // is from an index. I.e., this operator can be used for an index lookup.
         for (RowType ancestorType : ancestorTypes) {
-            ArgumentValidation.isTrue("inputFromIndex || ancestorType1 != tableRowType",
+            ArgumentValidation.isTrue("inputFromIndex || ancestorType != tableRowType",
                                       inputFromIndex || ancestorType != tableRowType);
             ArgumentValidation.isTrue("ancestorType.ancestorOf(tableRowType)",
                                       ancestorType.ancestorOf(tableRowType));
@@ -196,7 +192,7 @@ class AncestorLookup_Default extends Operator
         this.ancestorTypeDepth = new int[ancestorTypes.size()];
         int a = 0;
         for (RowType ancestorType : this.ancestorTypes) {
-            UserTable userTable = ((UserTableRowType) ancestorType).userTable();
+            UserTable userTable = ancestorType.userTable();
             this.ancestorTypeDepth[a++] = userTable.getDepth() + 1;
         }
     }

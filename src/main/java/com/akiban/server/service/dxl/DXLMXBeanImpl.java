@@ -77,20 +77,6 @@ class DXLMXBeanImpl implements DXLMXBean {
         usingSchema.set(schema);
     }
 
-    public void createTable(String schema, String ddl) {
-        Session session = sessionService.createSession();
-        try {
-            dxlService.ddlFunctions().createTable(session, schema, ddl);
-        } finally {
-            session.close();
-        }
-    }
-
-    @Override
-    public void createTable(String ddl) {
-        createTable(usingSchema.get(), ddl);
-    }
-
     @Override
     public void recreateGroupIndexes() {
         dxlService.recreateGroupIndexes(ALL_GIS);

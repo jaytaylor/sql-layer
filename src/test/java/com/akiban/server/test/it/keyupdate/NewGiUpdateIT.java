@@ -1886,11 +1886,11 @@ public final class NewGiUpdateIT extends ITBase {
 
     @Before
     public final void createTables() {
-        c = createTable(SCHEMA, "c", "cid int key, name varchar(32), c_extra int");
-        o = createTable(SCHEMA, "o", "oid int key, c_id int, when varchar(32), o_extra int", akibanFK("c_id", "c", "cid") );
-        i = createTable(SCHEMA, "i", "iid int key, o_id int, sku int, i_extra int", akibanFK("o_id", "o", "oid") );
-        h = createTable(SCHEMA, "h", "hid int key, i_id int, handling_instructions varchar(32), s_extra int", akibanFK("i_id", "i", "iid") );
-        a = createTable(SCHEMA, "a", "aid int key, c_id int, street varchar(56), a_extra int", akibanFK("c_id", "c", "cid") );
+        c = createTable(SCHEMA, "c", "cid int not null primary key, name varchar(32), c_extra int");
+        o = createTable(SCHEMA, "o", "oid int not null primary key, c_id int, when varchar(32), o_extra int", akibanFK("c_id", "c", "cid") );
+        i = createTable(SCHEMA, "i", "iid int not null primary key, o_id int, sku int, i_extra int", akibanFK("o_id", "o", "oid") );
+        h = createTable(SCHEMA, "h", "hid int not null primary key, i_id int, handling_instructions varchar(32), s_extra int", akibanFK("i_id", "i", "iid") );
+        a = createTable(SCHEMA, "a", "aid int not null primary key, c_id int, street varchar(56), a_extra int", akibanFK("c_id", "c", "cid") );
 
         String groupName = group().getName();
         Tap.setEnabled(TAP_PATTERN, false);

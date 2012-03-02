@@ -28,9 +28,8 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.akiban.ais.ddl.SchemaDef;
-import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.server.rowdata.SchemaFactory;
 import org.junit.Test;
 
 
@@ -88,7 +87,8 @@ public final class CSVTest {
         final AkibanInformationSchema ais1;
         final String aisCSV;
         {
-            ais1 = new SchemaDefToAis(SchemaDef.parseSchema(ddlString), false).getAis();
+            SchemaFactory schemaFactory = new SchemaFactory();
+            ais1 = schemaFactory.ais(ddlString);
             StringWriter sWriter = new StringWriter();
             PrintWriter pWriter = new PrintWriter(sWriter);
             new Writer( (new CSVTarget(pWriter)) ).save(ais1);

@@ -15,16 +15,13 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.TestBase;
 
-import com.akiban.sql.optimizer.AISBinder;
-import com.akiban.sql.optimizer.BoundNodeToString;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 
-import com.akiban.ais.ddl.SchemaDef;
-import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 
 import com.akiban.junit.NamedParameterizedRunner;
@@ -57,10 +54,8 @@ public class BoundNodeToStringTest extends NamedParamsTestBase
         unparser.setUseBindings(true);
 
         String sql = fileContents(new File(RESOURCE_DIR, "schema.ddl"));
-        SchemaDef schemaDef = SchemaDef.parseSchema("use " + OptimizerTestBase.DEFAULT_SCHEMA + 
-                                                    "; " + sql);
-        SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
-        AkibanInformationSchema ais = toAis.getAis();
+        SchemaFactory schemaFactory = new SchemaFactory(OptimizerTestBase.DEFAULT_SCHEMA);
+        AkibanInformationSchema ais = schemaFactory.ais(sql);
         binder = new AISBinder(ais, OptimizerTestBase.DEFAULT_SCHEMA);
     }
 

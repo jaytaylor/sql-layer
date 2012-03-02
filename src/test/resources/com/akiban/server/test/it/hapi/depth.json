@@ -11,31 +11,31 @@
     "schema" : "coi",
     "tables" : [
         [ "customer",
-            "cid int key",
+            "cid int not null primary key",
             "name varchar(32)",
             "address char(20)"
         ],
 
         [ "orders",
-            "oid int key",
+            "oid int not null primary key",
             "c_id int",
             "when varchar(10)",
-            "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o (c_id) REFERENCES customer(cid)",
-            "KEY (when)"
+            "GROUPING FOREIGN KEY (c_id) REFERENCES customer(cid)",
+            "index(when)"
         ],
 
         [ "item",
-            "iid int key",
+            "iid int not null primary key",
             "o_id int",
             "sku int",
-            "CONSTRAINT __akiban_i FOREIGN KEY __akiban_i (o_id) REFERENCES orders(oid)"
+            "GROUPING FOREIGN KEY (o_id) REFERENCES orders(oid)"
         ],
 
         [ "address",
-            "aid int key",
+            "aid int not null primary key",
             "c_id int",
             "street varchar(32)",
-            "CONSTRAINT __akiban_a FOREIGN KEY __akiban_a (c_id) REFERENCES customer(cid)"
+            "GROUPING FOREIGN KEY (c_id) REFERENCES customer(cid)"
         ]
     ],
     "write_rows" : {

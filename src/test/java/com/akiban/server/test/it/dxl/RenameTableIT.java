@@ -40,19 +40,19 @@ public class RenameTableIT extends ITBase {
     private static final String I_NAME = "i";
 
     private void createCTable() {
-        createTable(SCHEMA, C_NAME, "id int, primary key(id)");
+        createTable(SCHEMA, C_NAME, "id int not null, primary key(id)");
     }
 
     private void createATable() {
-        createTable(SCHEMA, A_NAME, "id int, cid int, primary key(id)", akibanFK("cid", C_NAME, "id"));
+        createTable(SCHEMA, A_NAME, "id int not null, cid int, primary key(id)", akibanFK("cid", C_NAME, "id"));
     }
 
     private void createOTable() {
-        createTable(SCHEMA, O_NAME, "id int, cid int, primary key(id)", akibanFK("cid", C_NAME, "id"));
+        createTable(SCHEMA, O_NAME, "id int not null, cid int, primary key(id)", akibanFK("cid", C_NAME, "id"));
     }
 
     private void createITable() {
-        createTable(SCHEMA, I_NAME, "id int, oid int, primary key(id)", akibanFK("oid", O_NAME, "id"));
+        createTable(SCHEMA, I_NAME, "id int not null, oid int, primary key(id)", akibanFK("oid", O_NAME, "id"));
     }
 
     private int writeCRows() {
@@ -133,7 +133,7 @@ public class RenameTableIT extends ITBase {
         final String NEW_NAME = "new_name";
         createCTable();
         int rowCount = writeCRows();
-        createTable(SCHEMA, NEW_NAME, "id int key");
+        createTable(SCHEMA, NEW_NAME, "id int not null primary key");
         try {
             ddl().renameTable(session(), tableName(SCHEMA, C_NAME), tableName(SCHEMA, NEW_NAME));
             Assert.fail("Expected DuplicateTableNameException");
@@ -151,7 +151,7 @@ public class RenameTableIT extends ITBase {
         final String NEW_NAME = "new_name";
         createCTable();
         int rowCount = writeCRows();
-        createTable(NEW_SCHEMA, NEW_NAME, "id int key");
+        createTable(NEW_SCHEMA, NEW_NAME, "id int not null primary key");
         try {
             ddl().renameTable(session(), tableName(SCHEMA, C_NAME), tableName(NEW_SCHEMA, NEW_NAME));
             Assert.fail("Expected DuplicateTableNameException");

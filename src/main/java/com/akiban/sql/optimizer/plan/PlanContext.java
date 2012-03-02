@@ -61,6 +61,10 @@ public class PlanContext
 
     /** A marker class if no other conveniently unique object exists. */
     public static final class DefaultWhiteboardMarker<T> implements WhiteboardMarker<T> {
+        // poor man's substitute for diamond operator
+        public static <T> WhiteboardMarker<T> create() {
+            return new DefaultWhiteboardMarker<T>();
+        }
     }
 
     private Map<WhiteboardMarker<?>,Object> whiteboard = 

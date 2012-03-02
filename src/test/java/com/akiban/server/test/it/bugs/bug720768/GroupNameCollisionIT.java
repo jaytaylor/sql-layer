@@ -31,12 +31,12 @@ public class GroupNameCollisionIT extends ITBase {
     public void tablesWithSameNames() {
 
         try {
-            createTable("s1", "t", "id int key");
-            createTable("s2", "t", "id int key");
-            createTable("s1", "c", "id int key, pid int",
-                    "CONSTRAINT __akiban_fk1 FOREIGN KEY __akiban_fk1(pid) REFERENCES t(id)");
-            createTable("s2", "c", "id int key, pid int",
-                    "CONSTRAINT __akiban_fk1 FOREIGN KEY __akiban_fk1(pid) REFERENCES t(id)");
+            createTable("s1", "t", "id int not null primary key");
+            createTable("s2", "t", "id int not null primary key");
+            createTable("s1", "c", "id int not null primary key, pid int",
+                    "GROUPING FOREIGN KEY (pid) REFERENCES t(id)");
+            createTable("s2", "c", "id int not null primary key, pid int",
+                    "GROUPING FOREIGN KEY (pid) REFERENCES t(id)");
         } catch (InvalidOperationException e) {
             throw new TestException(e);
         }

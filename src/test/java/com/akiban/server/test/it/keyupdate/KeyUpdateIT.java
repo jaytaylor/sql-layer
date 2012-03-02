@@ -441,29 +441,29 @@ public class KeyUpdateIT extends KeyUpdateBase
     {
         // vendor
         vendorId = createTable("coi", "vendor",
-                               "vid int not null key",
+                               "vid int not null primary key",
                                "vx int");
         v_vid = 0;
         v_vx = 1;
         // customer
         customerId = createTable("coi", "customer",
-                                 "cid int not null key",
+                                 "cid int not null primary key",
                                  "vid int",
                                  "cx int",
-                                 "constraint __akiban_cv foreign key __akiban_cv(vid) references vendor(vid)");
+                                 "grouping foreign key (vid) references vendor(vid)");
         c_cid = 0;
         c_vid = 1;
         c_cx = 2;
         // order
         orderId = createTable("coi", "order",
-                              "oid int not null key",
+                              "oid int not null primary key",
                               "cid int",
                               "ox int",
                               "priority int",
                               "when int",
-                              "key(priority)",
                               "unique(when)",
-                              "constraint __akiban_oc foreign key __akiban_oc(cid) references customer(cid)");
+                              "grouping foreign key (cid) references customer(cid)");
+        createIndex("coi", "order", "priority", "priority");
         o_oid = 0;
         o_cid = 1;
         o_ox = 2;
@@ -471,10 +471,10 @@ public class KeyUpdateIT extends KeyUpdateBase
         o_when = 4;
         // item
         itemId = createTable("coi", "item",
-                             "iid int not null key",
+                             "iid int not null primary key",
                              "oid int",
                              "ix int",
-                             "constraint __akiban_io foreign key __akiban_io(oid) references order(oid)");
+                             "grouping foreign key (oid) references \"order\"(oid)");
         i_iid = 0;
         i_oid = 1;
         i_ix = 2;

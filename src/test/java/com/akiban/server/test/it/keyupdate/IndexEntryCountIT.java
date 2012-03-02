@@ -129,10 +129,11 @@ public final class IndexEntryCountIT extends ITBase {
     
     @Before
     public void createTables() {
-        cId = createTable("indexcount", "customers", "cid int key, name varchar(32)");
-        oId = createTable(SCHEMA, "orders", "oid int key, cid int, when varchar(32)",
+        cId = createTable("indexcount", "customers", "cid int not null primary key, name varchar(32)");
+        oId = createTable(SCHEMA, "orders", "oid int not null primary key, cid int, when varchar(32)",
                 akibanFK("cid", "customers", "cid")
         );
+        createGroupingFKIndex(SCHEMA, "orders", "__akiban_fk_1", "cid");
         Index oFk = getOrdersFk();
         
         // customers

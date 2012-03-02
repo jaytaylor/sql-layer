@@ -248,7 +248,9 @@ public final class BasicKeyUpdateIT extends ITBase {
     }
 
     private int table() throws InvalidOperationException {
-        return createTable(SCHEMA, TABLE, "id int key", "name varchar(32)", "key(name)");
+        int tid = createTable(SCHEMA, TABLE, "id int not null primary key", "name varchar(32)");
+        createIndex(SCHEMA, TABLE, "name", "name");
+        return tid;
     }
 
     private ScanRequest byNameScan(int tableId) throws NoSuchTableException {

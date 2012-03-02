@@ -48,10 +48,10 @@ public class GroupIndexIT extends ITBase {
 
     @Before
     public void createTables() {
-        cId = createTable("test", "c", "id int not null key, name varchar(32)");
-        aId = createTable("test", "a", "id int not null key, cid int, addr varchar(32), constraint __akiban foreign key(cid) references c(id)");
-        oId = createTable("test", "o", "id int not null key, cid int, odate int, constraint __akiban foreign key(cid) references c(id)");
-        iId = createTable("test", "i", "id int not null key, oid int, sku int, constraint __akiban foreign key(oid) references o(id)");
+        cId = createTable("test", "c", "id int not null primary key, name varchar(32)");
+        aId = createTable("test", "a", "id int not null primary key, cid int, addr varchar(32), grouping foreign key(cid) references c(id)");
+        oId = createTable("test", "o", "id int not null primary key, cid int, odate int, grouping foreign key(cid) references c(id)");
+        iId = createTable("test", "i", "id int not null primary key, oid int, sku int, grouping foreign key(oid) references o(id)");
         groupName = getUserTable(cId).getGroup().getName();
     }
 
@@ -131,7 +131,7 @@ public class GroupIndexIT extends ITBase {
 
     @Test(expected=InvalidOperationException.class)
     public void tableNotInGroup() throws InvalidOperationException {
-        createTable("test", "foo", "id int key, d double");
+        createTable("test", "foo", "id int not null primary key, d double");
         createGroupIndex(groupName, "name_d", "c.name, foo.d");
     }
 

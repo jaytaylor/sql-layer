@@ -26,7 +26,6 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.AkibanAppender;
-import com.akiban.util.SparseArray;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
@@ -87,6 +86,7 @@ public class PersistitIndexRow extends AbstractRow
         this.valueColumns = new IndexColumn[index().getValueColumns().size()];
         index().getKeyColumns().toArray(this.keyColumns);
         index().getValueColumns().toArray(this.valueColumns);
+        this.keySources = new PersistitKeyValueSource[indexRowType.nFields()];
         this.indexRow = adapter.persistit().getKey(adapter.session());
         this.hKey = new PersistitHKey(adapter, index().hKey());
     }
@@ -112,7 +112,10 @@ public class PersistitIndexRow extends AbstractRow
 
     private PersistitKeyValueSource keySource(int i)
     {
-        return keySources.get(i);
+        if (keySources[i] == null) {
+            keySources[i] = new PersistitKeyValueSource();
+        }
+        return keySources[i];
     }
     
     // Object state
@@ -121,12 +124,7 @@ public class PersistitIndexRow extends AbstractRow
     private final IndexRowType indexRowType;
     private IndexColumn[] keyColumns;
     private IndexColumn[] valueColumns;
-    private final SparseArray<PersistitKeyValueSource> keySources = new SparseArray<PersistitKeyValueSource>() {
-        @Override
-        protected PersistitKeyValueSource initialValue() {
-            return new PersistitKeyValueSource();
-        }
-    };
+    private final PersistitKeyValueSource[] keySources;
     private final Key indexRow;
     private PersistitHKey hKey;
 }

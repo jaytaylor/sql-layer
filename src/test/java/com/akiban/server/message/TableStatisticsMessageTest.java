@@ -35,14 +35,13 @@ public class TableStatisticsMessageTest {
     public void testTableStatisticsResponseMessageSerialization()
             throws Exception {
         String[] DDL = new String[] {
-            "use schema; ",
             "create table test(",
-            "    a tinyint, ",
-            "    b tinyint, ",
+            "    a int, ",
+            "    b int, ",
             "    c smallint, ",
-            "    unique index(b));"
+            "    unique(b));"
         };
-        SchemaFactory schemaFactory = new SchemaFactory();
+        SchemaFactory schemaFactory = new SchemaFactory("schema");
         RowDefCache rowDefCache = schemaFactory.rowDefCache(DDL);
         RowDef rowDef = rowDefCache.getRowDef("schema", "test");
         final TableStatistics ts = new TableStatistics(123);

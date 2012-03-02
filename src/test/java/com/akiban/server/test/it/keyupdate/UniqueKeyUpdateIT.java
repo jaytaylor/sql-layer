@@ -39,7 +39,7 @@ public final class UniqueKeyUpdateIT extends ITBase {
         final String schemaName = "s1";
         final int tableId;
         try {
-            tableId = createTable(schemaName, tableName, "cid int key", "u1 int", "UNIQUE(u1)");
+            tableId = createTable(schemaName, tableName, "cid int not null primary key", "u1 int", "UNIQUE(u1)");
             writeRows(
                     createNewRow(tableId, 11, 21),
                     createNewRow(tableId, 12, 22)
@@ -80,7 +80,7 @@ public final class UniqueKeyUpdateIT extends ITBase {
         final String schemaName = "s1";
         final int tableId;
         try {
-            tableId = createTable(schemaName, tableName, "cid int key", "UNIQUE(cid)");
+            tableId = createTable(schemaName, tableName, "cid int not null primary key", "UNIQUE(cid)");
             writeRows(
                     createNewRow(tableId, 11),
                     createNewRow(tableId, 12)
@@ -174,7 +174,7 @@ public final class UniqueKeyUpdateIT extends ITBase {
         final int tableId;
         final ScanRequest scanByU1;
         try {
-            tableId = createTable(schemaName, tableName, "cid int key", "u1 int", "u2 int", "UNIQUE(u1,u2)");
+            tableId = createTable(schemaName, tableName, "cid int not null primary key", "u1 int", "u2 int", "UNIQUE(u1,u2)");
             scanByU1 = new ScanAllRequest(
                     tableId,
                     set(0, 1, 2),
@@ -268,7 +268,7 @@ public final class UniqueKeyUpdateIT extends ITBase {
         final String schemaName = "s1";
         final int tableId;
         try {
-            tableId = createTable(schemaName, tableName, "cid int key", "u1 int NULL", "UNIQUE(u1)");
+            tableId = createTable(schemaName, tableName, "cid int not null primary key", "u1 int NULL", "UNIQUE(u1)");
             writeRows(
                     createNewRow(tableId, 11, null),
                     createNewRow(tableId, 12, 22)

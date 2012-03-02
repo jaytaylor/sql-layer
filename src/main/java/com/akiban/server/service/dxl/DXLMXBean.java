@@ -27,8 +27,6 @@ public interface DXLMXBean {
 
     void setUsingSchema(String schema);
 
-    void createTable(String ddl);
-
     void createGroupIndex(String groupName, String indexName, String tableColumnList, Index.JoinType joinType);
 
     void dropTable(String tableName) ;

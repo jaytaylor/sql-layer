@@ -33,7 +33,7 @@ public class RowTestIT extends ITBase
     {
         int t = createTable("s",
                                 "t",
-                                "id int not null key",
+                                "id int not null primary key",
                                 "a int not null",
                                 "b int not null");
         NiceRow original = new NiceRow(t, store());
@@ -55,7 +55,7 @@ public class RowTestIT extends ITBase
     {
         int t = createTable("s",
                                 "t",
-                                "id int not null key",
+                                "id int not null primary key",
                                 "a int not null",
                                 "b int");
         NiceRow original = new NiceRow(t, store());
@@ -77,7 +77,7 @@ public class RowTestIT extends ITBase
     {
         int t = createTable("s",
                                 "t",
-                                "id int not null key",
+                                "id int not null primary key",
                                 "a int",
                                 "b int",
                                 "c int");
@@ -109,7 +109,7 @@ public class RowTestIT extends ITBase
     {
         int t = createTable("s",
                                 "t",
-                                "id int not null key",
+                                "id int not null primary key",
                                 "a int",
                                 "b int",
                                 "c int");
@@ -144,7 +144,7 @@ public class RowTestIT extends ITBase
         // Check the conversions.
         int t = createTable("s",
                                 "t",
-                                "id int not null key",
+                                "id int not null primary key",
                                 "a int",
                                 "b int",
                                 "c int");

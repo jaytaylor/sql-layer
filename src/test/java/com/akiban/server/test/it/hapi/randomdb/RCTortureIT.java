@@ -88,6 +88,10 @@ public class RCTortureIT extends ITBase
         return super.createTable(schema, table, definitions);
     }
 
+    void index(String schema, String tableName, String indexName, String... indexCols) {
+        super.createIndex(schema, tableName, indexName, indexCols);
+    }
+
     void addRow(NewRow row) throws Exception
     {
         dml().writeRow(session(), row);
@@ -232,5 +236,4 @@ public class RCTortureIT extends ITBase
     private Expected expected = new Expected(this);
     private Actual actual;
     private Database database = new Database(this);
-
 }

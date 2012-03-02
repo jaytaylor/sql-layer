@@ -77,31 +77,32 @@ public class OperatorITBase extends ITBase
     {
         customer = createTable(
             "schema", "customer",
-            "cid int not null key",
-            "name varchar(20)," +
-            "index(name)");
+            "cid int not null primary key",
+            "name varchar(20)");
+        createIndex("schema", "customer", "name", "name");
         order = createTable(
             "schema", "order",
-            "oid int not null key",
+            "oid int not null primary key",
             "cid int",
             "salesman varchar(20)",
-            "constraint __akiban_oc foreign key __akiban_oc(cid) references customer(cid)",
-            "index(salesman)",
-            "index(cid)");
+            "grouping foreign key (cid) references customer(cid)");
+        createIndex("schema", "order", "salesman", "salesman");
+        createIndex("schema", "order", "cid", "cid");
         item = createTable(
             "schema", "item",
-            "iid int not null key",
+            "iid int not null primary key",
             "oid int",
-            "index(oid, iid)",
-            "constraint __akiban_io foreign key __akiban_io(oid) references order(oid)");
+            "grouping foreign key (oid) references \"order\"(oid)");
+        createIndex("schema", "item", "oid", "oid");
+        createIndex("schema", "item", "oid2", "oid", "iid");
         address = createTable(
             "schema", "address",
-            "aid int not null key",
+            "aid int not null primary key",
             "cid int",
             "address varchar(100)",
-            "index(cid)",
-            "constraint __akiban_ac foreign key __akiban_ac(cid) references customer(cid)",
-            "index(address)");
+            "grouping foreign key (cid) references customer(cid)");
+        createIndex("schema", "address", "cid", "cid");
+        createIndex("schema", "address", "address", "address");
         schema = new Schema(rowDefCache().ais());
         customerRowType = schema.userTableRowType(userTable(customer));
         orderRowType = schema.userTableRowType(userTable(order));
@@ -117,6 +118,10 @@ public class OperatorITBase extends ITBase
         addressCidIndexRowType = indexType(address, "cid");
         addressAddressIndexRowType = indexType(address, "address");
         coi = groupTable(customer);
+        customerOrdinal =  ddl().getTable(session(),  customer).rowDef().getOrdinal();
+        orderOrdinal =  ddl().getTable(session(),  order).rowDef().getOrdinal();
+        itemOrdinal = ddl().getTable(session(),  item).rowDef().getOrdinal();
+        addressOrdinal =  ddl().getTable(session(),  address).rowDef().getOrdinal();
         db = new NewRow[]{createNewRow(customer, 1L, "xyz"),
                           createNewRow(customer, 2L, "abc"),
                           createNewRow(order, 11L, 1L, "ori"),
@@ -230,6 +235,11 @@ public class OperatorITBase extends ITBase
 */
     }
 
+    protected String hKeyValue(Long x)
+    {
+        return x == null ? "null" : String.format("(long)%d", x);
+    }
+
     // Useful when scanning is expected to throw an exception
     protected void scan(Cursor cursor)
     {
@@ -317,4 +327,8 @@ public class OperatorITBase extends ITBase
     protected NewRow[] emptyDB = new NewRow[0];
     protected PersistitAdapter adapter;
     protected QueryContext queryContext;
+    protected int customerOrdinal;
+    protected int orderOrdinal;
+    protected int itemOrdinal;
+    protected int addressOrdinal;
 }

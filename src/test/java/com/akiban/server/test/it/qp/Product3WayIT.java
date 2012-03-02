@@ -51,30 +51,30 @@ public class Product3WayIT extends OperatorITBase
         // Don't call super.before(). This is a different schema from most operator ITs.
         r = createTable(
             "schema", "r",
-            "rid int not null key",
-            "rvalue varchar(20)," +
-            "index(rvalue)");
+            "rid int not null primary key",
+            "rvalue varchar(20)");
+        createIndex("schema", "r", "rvalue", "rvalue");
         a = createTable(
             "schema", "a",
-            "aid int not null key",
+            "aid int not null primary key",
             "rid int",
             "avalue varchar(20)",
-            "constraint __akiban_ra foreign key __akiban_ra(rid) references r(rid)",
-            "index(avalue)");
+            "grouping foreign key(rid) references r(rid)");
+        createIndex("schema", "a", "avalue", "avalue");
         b = createTable(
             "schema", "b",
-            "bid int not null key",
+            "bid int not null primary key",
             "rid int",
             "bvalue varchar(20)",
-            "constraint __akiban_rb foreign key __akiban_rb(rid) references r(rid)",
-            "index(bvalue)");
+            "grouping foreign key(rid) references r(rid)");
+        createIndex("schema", "b", "bvalue", "bvalue");
         c = createTable(
             "schema", "c",
-            "cid int not null key",
+            "cid int not null primary key",
             "rid int",
             "cvalue varchar(20)",
-            "constraint __akiban_rc foreign key __akiban_rc(rid) references r(rid)",
-            "index(cvalue)");
+            "grouping foreign key(rid) references r(rid)");
+        createIndex("schema", "c", "cvalue", "cvalue");
         schema = new Schema(rowDefCache().ais());
         rRowType = schema.userTableRowType(userTable(r));
         aRowType = schema.userTableRowType(userTable(a));

@@ -82,10 +82,10 @@ public final class GroupIndexScanIT extends ITBase {
 
     @Before
     public void setUp() {
-        c = createTable(SCHEMA, "c", "cid int key, name varchar(32)");
-        o = createTable(SCHEMA, "o", "oid int key, c_id int", "when varchar(32)", akibanFK("c_id", "c", "cid"));
-        i = createTable(SCHEMA, "i", "iid int key, o_id int", "sku varchar(6)", akibanFK("o_id", "o", "oid"));
-        h = createTable(SCHEMA, "h", "hid int key, i_id int", akibanFK("i_id", "i", "iid"));
+        c = createTable(SCHEMA, "c", "cid int not null primary key, name varchar(32)");
+        o = createTable(SCHEMA, "o", "oid int not null primary key, c_id int", "when varchar(32)", akibanFK("c_id", "c", "cid"));
+        i = createTable(SCHEMA, "i", "iid int not null primary key, o_id int", "sku varchar(6)", akibanFK("o_id", "o", "oid"));
+        h = createTable(SCHEMA, "h", "hid int not null primary key, i_id int", akibanFK("i_id", "i", "iid"));
         String groupName = getUserTable(c).getGroup().getName();
         GroupIndex gi = createGroupIndex(groupName, GI_NAME, "o.when, i.sku");
 

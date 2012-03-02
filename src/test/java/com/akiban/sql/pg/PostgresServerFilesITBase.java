@@ -39,6 +39,8 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A base class for integration tests that use data from files to specify the
@@ -47,6 +49,7 @@ import java.util.List;
 @Ignore
 public class PostgresServerFilesITBase extends PostgresServerITBase
 {
+    private static final Pattern INDEX_PATTERN = Pattern.compile("CREATE INDEX (\\w+) ON (\\w+)\\((.*)\\);");
     public void loadDatabase(File dir) throws Exception {
         loadSchemaFile(new File(dir, "schema.ddl"));
         File groupIndex = new File(dir, "group.idx");
@@ -60,6 +63,7 @@ public class PostgresServerFilesITBase extends PostgresServerITBase
     protected int rootTableId;
 
     protected void loadSchemaFile(File file) throws Exception {
+
         Reader rdr = null;
         try {
             rdr = new FileReader(file);
@@ -82,6 +86,16 @@ public class PostgresServerFilesITBase extends PostgresServerITBase
                         rootTableId = id;
                         first = false;
                     }
+                }
+                else if (line.startsWith("CREATE INDEX")) {
+                    Matcher m = INDEX_PATTERN.matcher(line);
+                    if(!m.matches()) {
+                        throw new IllegalArgumentException("Malformed index DDL: " + line);
+                    }
+                    String indexName = m.group(1);
+                    String table = m.group(2);
+                    String columns = m.group(3);
+                    createIndex(SCHEMA_NAME, table, indexName, columns);
                 }
                 else {
                     if (line.endsWith(","))

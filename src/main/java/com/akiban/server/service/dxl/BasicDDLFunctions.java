@@ -61,14 +61,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private final static Logger logger = LoggerFactory.getLogger(BasicDDLFunctions.class);
 
     private final IndexStatisticsService indexStatisticsService;
-
-    @Override
-    public void createTable(Session session, String schema, String ddlText)
-    {
-        logger.trace("creating table: ({}) {}", schema, ddlText);
-        TableName tableName = schemaManager().createTableDefinition(session, schema, ddlText);
-        checkCursorsForDDLModification(session, getAIS(session).getTable(tableName));
-    }
     
     @Override
     public void createTable(Session session, UserTable table)

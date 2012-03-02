@@ -6,9 +6,13 @@ in-subquery: IN SELECT to semi-join (not indexable).
 
 join-across-subquery: group join in subquery expression
 
+single-subquery: just derived table (should push down condition)
+
 single-table: whole row from indexed table
 
 subquery: join to subquery
+
+three-groups: second group dividing two halves
 
 two-groups: group and non-group joins
 

@@ -32,16 +32,16 @@ class Database
             RCTortureIT.SCHEMA, "customer",
             "cid int not null",
             "cid_copy int not null",
-            "primary key(cid)",
-            "index idx_cid_copy(cid_copy)");
+            "primary key(cid)");
+        test.index(RCTortureIT.SCHEMA, "customer", "idx_cid_copy", "cid_copy");
         test.orderTable = test.table(
             RCTortureIT.SCHEMA, "order",
             "cid int not null",
             "oid int not null",
             "cid_copy int not null",
             "primary key(cid, oid)",
-            "index idx_cid_copy(cid_copy)",
-            "constraint __akiban_oc foreign key __akiban_oc(cid) references customer(cid)");
+            "grouping foreign key (cid) references customer(cid)");
+        test.index(RCTortureIT.SCHEMA, "order", "idx_cid_copy", "cid_copy");
         test.itemTable = test.table(
             RCTortureIT.SCHEMA, "item",
             "cid int not null",
@@ -49,16 +49,16 @@ class Database
             "iid int not null",
             "cid_copy int not null",
             "primary key(cid, oid, iid)",
-            "index idx_cid_copy(cid_copy)",
-            "constraint __akiban_io foreign key __akiban_io(cid, oid) references order(cid, oid)");
+            "grouping foreign key (cid, oid) references \"order\"(cid, oid)");
+        test.index(RCTortureIT.SCHEMA, "item", "idx_cid_copy", "cid_copy");
         test.addressTable = test.table(
             RCTortureIT.SCHEMA, "address",
             "cid int not null",
             "aid int not null",
             "cid_copy int not null",
             "primary key(cid, aid)",
-            "index idx_cid_copy(cid_copy)",
-            "constraint __akiban_ac foreign key __akiban_ac(cid) references customer(cid)");
+            "grouping foreign key (cid) references customer(cid)");
+        test.index(RCTortureIT.SCHEMA, "address", "idx_cid_copy", "cid_copy");
     }
 
     public void populate() throws Exception

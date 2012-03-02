@@ -1,0 +1,54 @@
+##test the SUBSTR and SUBSTRING functions with 2 args
+# bugs   1) 'SUBSTRING' is not recognised
+#        2)  The function always returns NULL for 2 args case
+---
+- Properties: all
+- suppressed: true
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(varchar_field, integer_field, double_field) VALUES ('quadratically', 3, 5.0), ('Sakila', -3, -5.0);
+--- # test SUBSTRINNG in SELECT clause, with 2 args
+- Statement: SELECT SUBSTR(varchar_field, 5) from all_types;
+- output: [['ratically'], ['la']]
+--- # test with params
+- Statement: SELECT SUBSTR(?, 2) from all_types;
+- params: [['abcd']]
+- output: [['bcd'], ['bcd']]
+--- # test with params
+- Statement: SELECT SUBSTR('xyzt', ?) from all_types;
+- params: [[2]]
+- output: [['yzt'], ['yzt']]
+--- # test SUBSTR in WHERE clause
+- Statement: SELECT double_field from all_types WHERE SUBSTR(varchar_field, integer_field) = 'ila';
+- output: [[-5.0]]
+--- # test empty string
+- Statement: SELECT SUBSTRING('', 2, 0) from all_types;
+- output: [[''], ['']]
+--- # test with params
+- Statement: SELECT SUBSTRING(?, 2, 3) from all_types;
+- params: [['abcd']]
+- output: [['bcd'], ['bcd']]
+--- # test with params
+- Statement: SELECT SUBSTRING('xyzt', ?, 3) from all_types;
+- params: [[2]]
+- output: [['yzt'], ['yzt']]
+--- # test index out of bound
+- Statement: SELECT SUBSTRING('ABC', 4 ) from all_types;
+- output: [[null], [null]]
+--- # test empty string
+- Statement: SELECT SUBSTRING('', 2, 0) from all_types;
+- output: [[''], ['']]
+--- # test SUBSTR in WHERE clause
+- Statement: SELECT double_field from all_types WHERE SUBSTRING(varchar_field, integer_field, LENGTH(varchar_field) - integer_field + 1) = 'ila';
+- output: [[-5.0]]
+--- 
+- Statement: SELECT SUBSTRING('Sakila', 1, 6) from all_types;
+- output: [['Sakila'], ['Sakila']]
+--- # test with empty string
+- Statement: SELECT SUBSTRING('', 1, 1) from all_types;
+- output: [[''], ['']]
+--- # test wrong arity: excessive arguments
+- Statement: SELECT SUBSTRING('ABC', 1, 2, 3) from all_types;
+- error: [42000]
+...
