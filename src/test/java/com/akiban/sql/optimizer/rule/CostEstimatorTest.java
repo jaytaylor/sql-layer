@@ -47,7 +47,6 @@ public class CostEstimatorTest
     @Before
     public void loadSchema() throws Exception {
         ais = OptimizerTestBase.parseSchema(new File(RESOURCE_DIR, "schema.ddl"));
-        OptimizerTestBase.loadGroupIndexes(ais, new File(RESOURCE_DIR, "group.idx"));
         tree = new TableTree();
         costEstimator = new TestCostEstimator(ais, SCHEMA,
                                               new File(RESOURCE_DIR, "stats.yaml"));

@@ -65,9 +65,6 @@ public class RulesTest extends OptimizerTestBase
             File rulesFile = new File(subdir, "rules.yml");
             File schemaFile = new File(subdir, "schema.ddl");
             if (rulesFile.exists() && schemaFile.exists()) {
-                File indexFile = new File(subdir, "group.idx");
-                if (!indexFile.exists())
-                    indexFile = null;
                 File statsFile = new File(subdir, "stats.yaml");
                 if (!statsFile.exists())
                     statsFile = null;
@@ -78,14 +75,13 @@ public class RulesTest extends OptimizerTestBase
                     File propertiesFile = new File(subdir, args[0] + ".properties");
                     if (!propertiesFile.exists())
                         propertiesFile = compilerPropertiesFile;
-                    Object[] nargs = new Object[args.length+5];
+                    Object[] nargs = new Object[args.length+4];
                     nargs[0] = subdir.getName() + "/" + args[0];
                     nargs[1] = rulesFile;
                     nargs[2] = schemaFile;
-                    nargs[3] = indexFile;
-                    nargs[4] = statsFile;
-                    nargs[5] = propertiesFile;
-                    System.arraycopy(args, 1, nargs, 6, args.length-1);
+                    nargs[3] = statsFile;
+                    nargs[4] = propertiesFile;
+                    System.arraycopy(args, 1, nargs, 5, args.length-1);
                     result.add(nargs);
                 }
             }
@@ -94,12 +90,11 @@ public class RulesTest extends OptimizerTestBase
     }
 
     public RulesTest(String caseName, 
-                     File rulesFile, File schemaFile, File indexFile, File statsFile, File propertiesFile,
+                     File rulesFile, File schemaFile, File statsFile, File propertiesFile,
                      String sql, String expected, String error) {
         super(caseName, sql, expected, error);
         this.rulesFile = rulesFile;
         this.schemaFile = schemaFile;
-        this.indexFile = indexFile;
         this.statsFile = statsFile;
         this.propertiesFile = propertiesFile;
     }
@@ -109,8 +104,6 @@ public class RulesTest extends OptimizerTestBase
     @Before
     public void loadDDL() throws Exception {
         AkibanInformationSchema ais = loadSchema(schemaFile);
-        if (indexFile != null)
-            OptimizerTestBase.loadGroupIndexes(ais, indexFile);
         Properties properties = new Properties();
         if (propertiesFile != null) {
             FileInputStream fstr = new FileInputStream(propertiesFile);
