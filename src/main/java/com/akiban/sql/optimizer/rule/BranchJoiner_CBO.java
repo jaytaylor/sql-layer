@@ -111,28 +111,22 @@ public class BranchJoiner_CBO extends BaseRule
             assert (leafTable != null) : indexScan;
             List<TableSource> ancestors = new ArrayList<TableSource>();
             pendingTableSources(leafTable, rootTable, ancestors);
-            if (ancestors.isEmpty() && !hasChildren(leafTable)) {
-                // No tables on the branch that the index points to.
-                // It would work to just carry on and Product the
-                // IndexScan with whatever else is needed. But a
-                // slightly better plan is to switch over to a some
-                // needed branch with a non-nested BranchLookup and
-                // carry on from there.
-                TableGroupJoinNode sideBranch = rootLeftMostRequired(rootTable);
-                if (sideBranch == null)
-                    return scan;
-                List<TableSource> tables = new ArrayList<TableSource>();
-                scan = new BranchLookup(scan, indexTable.getTable(), 
-                                        sideBranch.getTable().getTable(), tables);
-                return fillBranch(scan, tables, sideBranch, null);
-            }
-            if (hasChildren(leafTable)) {
+            if (isParent(leafTable)) {
                 if (ancestors.remove(indexTable))
                     setPending(leafTable); // Changed from ancestor to branch.
                 List<TableSource> tables = new ArrayList<TableSource>();
                 scan = new BranchLookup(scan, indexTable.getTable(), 
                                         indexTable.getTable(), tables);
                 leafTable = singleBranchPending(leafTable, tables);
+            }
+            else if (!isRequired(leafTable)) {
+                // Don't need the table that the index points to or
+                // anything beneath it; might be able to jump to a
+                // side branch.
+                PlanNode sideScan = trySideBranch(scan, leafTable, rootTable,
+                                                  indexTable, ancestors);
+                if (sideScan != null)
+                    return sideScan;
             }
             if (!ancestors.isEmpty())
                 scan = new AncestorLookup(scan, indexTable, ancestors);
@@ -148,6 +142,64 @@ public class BranchJoiner_CBO extends BaseRule
         else {
             throw new AkibanInternalException("Unknown TableGroupJoinTree scan");
         }
+    }
+
+    /** Try to switch from the main branch over to a side branch.
+     * When there is nothing on the main branch, it would work to just
+     * carry on and <code>Product</code> the <code>IndexScan</code>
+     * alone with whatever else is needed. But a slightly better plan
+     * is to switch over to a some needed branch with a non-nested
+     * <code>BranchLookup</code> and carry on from there.
+     */
+    protected PlanNode trySideBranch(PlanNode scan,
+                                     TableGroupJoinNode leafTable,
+                                     TableGroupJoinNode rootTable,
+                                     TableSource indexTable,
+                                     List<TableSource> ancestors) {
+        TableGroupJoinNode leafMostParent = null;
+        // If there any any ancestors, need a child of the leaf-most,
+        // so that we can BranchLookup over there and still be able to
+        // get all the required ancestors. If there aren't any
+        // ancestors, anyplace that BranchLookup can take us to will
+        // do.
+        boolean findRequired = !ancestors.isEmpty();
+        TableGroupJoinNode table = leafTable;
+        while (true) {
+            if (findRequired ? isRequired(table) : isParent(table)) {
+                leafMostParent = table;
+                break;
+            }
+            if (table == rootTable) break;
+            table = table.getParent();
+        }
+        TableGroupJoinNode sideBranch = null;
+        if (leafMostParent != null) {
+            TableGroupJoinNode childParent = null;
+            // Is some child of the leaf-most ancestor required or a
+            // parent? If so, there is something beneath it, so it's a
+            // good choice.
+            for (table = leafMostParent.getFirstChild(); table != null; table = table.getNextSibling()) {
+                if (isRequired(table)) {
+                    sideBranch = table;
+                    break;
+                }
+                if (isParent(table)) {
+                    childParent = table;
+                }
+            }
+            if (sideBranch == null)
+                sideBranch = childParent;
+        }
+        if (sideBranch == null)
+            return null;
+        List<TableSource> tables = new ArrayList<TableSource>();
+        scan = new BranchLookup(scan, indexTable.getTable(), 
+                                sideBranch.getTable().getTable(), tables);
+        if (!ancestors.isEmpty())
+            // Any ancestors of indexTable are also ancestors of sideBranch.
+            scan = new AncestorLookup(scan, sideBranch.getTable(), ancestors);
+        // And flatten up through root-most ancestor.
+        return fillBranch(scan, tables, sideBranch, rootTable);
     }
 
     /** Given a <code>BranchLookup</code> / <code>GroupScan</code>,
@@ -282,15 +334,6 @@ public class BranchJoiner_CBO extends BaseRule
         return leafTable;
     }
 
-    /** Find a required branch under the given root. */
-    protected TableGroupJoinNode rootLeftMostRequired(TableGroupJoinNode rootTable) {
-        for (TableGroupJoinNode table : rootTable) {
-            if (isRequired(table))
-                return table;
-        }
-        return null;
-    }
-
     /** Is the given <code>rootTable</code> an ancestor of <code>leafTable</code>? */
     protected boolean isAncestor(TableGroupJoinNode leafTable,
                                  TableGroupJoinNode rootTable) {
@@ -305,15 +348,15 @@ public class BranchJoiner_CBO extends BaseRule
     /* Flags for TableGroupJoinNode */
 
     protected static final int REQUIRED = 1;
-    protected static final int HAS_CHILDREN = 2;
+    protected static final int PARENT = 2;
     protected static final int BRANCHPOINT = 4;
     protected static final int PENDING = 8;
 
     protected static boolean isRequired(TableGroupJoinNode table) {
         return ((table.getFlags() & REQUIRED) != 0);
     }
-    protected static boolean hasChildren(TableGroupJoinNode table) {
-        return ((table.getFlags() & HAS_CHILDREN) != 0);
+    protected static boolean isParent(TableGroupJoinNode table) {
+        return ((table.getFlags() & PARENT) != 0);
     }
     protected static boolean isBranchpoint(TableGroupJoinNode table) {
         return ((table.getFlags() & BRANCHPOINT) != 0);
@@ -338,8 +381,8 @@ public class BranchJoiner_CBO extends BaseRule
         int flags = 0;
         for (TableGroupJoinNode child = parent.getFirstChild(); child != null; child = child.getNextSibling()) {
             if (markBranches(child, requiredTables)) {
-                if ((flags & HAS_CHILDREN) == 0)
-                    flags |= HAS_CHILDREN;
+                if ((flags & PARENT) == 0)
+                    flags |= PARENT;
                 else
                     flags |= BRANCHPOINT;
             }
