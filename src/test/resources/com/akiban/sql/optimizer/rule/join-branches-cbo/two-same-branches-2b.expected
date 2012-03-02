@@ -4,7 +4,7 @@ SelectQuery@39258445
       Select@3e2c9e7f[user.orders.order_date == Cast(2012-01-01 AS DATE NOT NULL)]
         Flatten@3d0f1da8(user.customers INNER user.orders)
           AncestorLookup@2b641fe9(user.orders -> [user.customers])
-            BranchLookup@3a6b1040(user.orders -> user.orders)
+            BranchLookup@3a6b1040(user.orders -> user.orders via user.customers)
               IndexScan@4af7f7b6(Index(user.orders.order_date[IndexColumn(order_date)]), NONE, =Cast(2011-12-31 AS DATE NOT NULL), rows = 1, cost = 4.06000)
               TableSource@76b2fae2(user.orders - TableGroupJoin@5da7f42d(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
             TableSource@6075484f(user.customers - TableGroup@4ba24bd(customers))

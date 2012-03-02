@@ -115,8 +115,7 @@ public class BranchJoiner_CBO extends BaseRule
                 if (ancestors.remove(indexTable))
                     setPending(leafTable); // Changed from ancestor to branch.
                 List<TableSource> tables = new ArrayList<TableSource>();
-                scan = new BranchLookup(scan, indexTable.getTable(), 
-                                        indexTable.getTable(), tables);
+                scan = new BranchLookup(scan, indexTable.getTable(), tables);
                 leafTable = singleBranchPending(leafTable, tables);
             }
             else if (!isRequired(leafTable)) {
@@ -194,6 +193,7 @@ public class BranchJoiner_CBO extends BaseRule
             return null;
         List<TableSource> tables = new ArrayList<TableSource>();
         scan = new BranchLookup(scan, indexTable.getTable(), 
+                                leafMostParent.getTable().getTable(),
                                 sideBranch.getTable().getTable(), tables);
         if (!ancestors.isEmpty())
             // Any ancestors of indexTable are also ancestors of sideBranch.

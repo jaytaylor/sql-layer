@@ -181,7 +181,7 @@ public class BranchJoiner extends BaseRule
             // the original branch or everything an ancestor of the
             // side branch (far enough above the index table).
             // Fetch it in the same stream.
-            scan = new BranchLookup(scan, leafAncestor, 
+            scan = new BranchLookup(scan, leafAncestor, entry.getKey().getParent(),
                                     entry.getKey(), entry.getValue());
             return flattenBranches(scan, tableJoins.getJoins(), allTables, null);
         }
@@ -198,8 +198,7 @@ public class BranchJoiner extends BaseRule
             if (ancestors.contains(indexTable))
                 descendants.add(indexTable); // Getting it along with descendants.
             Collections.sort(descendants, tableSourceById);
-            scan = new BranchLookup(scan, indexTableNode, 
-                                    indexTableNode, descendants);
+            scan = new BranchLookup(scan, indexTableNode, descendants);
             // Only need the rest.
             mainBranchNodes = branching.getMainBranchTableNodesAbove(indexTableNode);
             mainBranchSources = branching.getMainBranchTableSourcesAbove(indexTableNode);
