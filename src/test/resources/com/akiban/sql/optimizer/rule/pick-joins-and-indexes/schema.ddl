@@ -41,6 +41,7 @@ CREATE TABLE addresses
   city VARCHAR(100),
   GROUPING FOREIGN KEY (cid) REFERENCES customers(cid)
 );
+CREATE INDEX "__akiban_fk_2" ON addresses(cid);
 CREATE INDEX state ON addresses(state);
 
 CREATE TABLE books
