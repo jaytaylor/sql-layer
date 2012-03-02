@@ -111,9 +111,7 @@ public class BranchJoiner_CBO extends BaseRule
             assert (leafTable != null) : indexScan;
             List<TableSource> ancestors = new ArrayList<TableSource>();
             pendingTableSources(leafTable, rootTable, ancestors);
-            if (hasChildren(leafTable))
-                ancestors.remove(indexTable);
-            else if (ancestors.isEmpty()) {
+            if (ancestors.isEmpty() && !hasChildren(leafTable)) {
                 // No tables on the branch that the index points to.
                 // It would work to just carry on and Product the
                 // IndexScan with whatever else is needed. But a
@@ -128,14 +126,16 @@ public class BranchJoiner_CBO extends BaseRule
                                         sideBranch.getTable().getTable(), tables);
                 return fillBranch(scan, tables, sideBranch, null);
             }
-            if (!ancestors.isEmpty())
-                scan = new AncestorLookup(scan, indexTable, ancestors);
             if (hasChildren(leafTable)) {
+                if (ancestors.remove(indexTable))
+                    setPending(leafTable); // Changed from ancestor to branch.
                 List<TableSource> tables = new ArrayList<TableSource>();
                 scan = new BranchLookup(scan, indexTable.getTable(), 
                                         indexTable.getTable(), tables);
                 leafTable = singleBranchPending(leafTable, tables);
             }
+            if (!ancestors.isEmpty())
+                scan = new AncestorLookup(scan, indexTable, ancestors);
             scan = flatten(scan, leafTable, rootTable);
             return fillSideBranches(scan, leafTable, rootTable);
         }
@@ -320,6 +320,9 @@ public class BranchJoiner_CBO extends BaseRule
     }
     protected static boolean isPending(TableGroupJoinNode table) {
         return ((table.getFlags() & PENDING) != 0);
+    }
+    protected static void setPending(TableGroupJoinNode table) {
+        table.setFlags(table.getFlags() | PENDING);
     }
     protected static void clearPending(TableGroupJoinNode table) {
         table.setFlags(table.getFlags() & ~PENDING);

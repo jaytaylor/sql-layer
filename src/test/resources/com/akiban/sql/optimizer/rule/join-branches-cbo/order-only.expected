@@ -1,0 +1,8 @@
+SelectQuery@788390b0
+  ResultSet@29b22d99[iid, oid, sku, quan]
+    Project@70cfad31[user.items.iid, user.items.oid, user.items.sku, user.items.quan]
+      Select@559b808a[user.items.quan > 100]
+        Flatten@18f63055(user.items)
+          AncestorLookup@54140fee(user.items -> [user.items])
+            IndexScan@7121fd61(Index(user.items.sku[IndexColumn(sku)]), SORTED, rows = 20000, cost = 46000.5)
+            TableSource@174323d5(user.items - TableGroup@10c789fb(customers))
