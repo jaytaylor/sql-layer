@@ -158,6 +158,9 @@ public class TrigExpression extends AbstractCompositeExpression
                                 throw new OverflowException ();
                             else result = Math.cos(dvar1) / temp;
                             break;
+                case ACOT:  if ( dvar1 == 0) result = Math.PI /2;
+                            else result = Math.atan(1 / dvar1);
+                            break;
                 case ASIN:  result = Math.asin(dvar1); break;
                 case ACOS:  result = Math.acos(dvar1); break;                    
                 case ATAN:  

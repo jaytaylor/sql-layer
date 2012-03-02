@@ -17,7 +17,10 @@
 - Statement: SELECT TAN(0) from all_types;
 - output: [[0.0]]
 ---
-- Statement: SELECT ACOT(0) from all_types;
+- Statement: SELECT SIN(ACOT(0))  from all_types;
+- output: [[1.0]]
+---
+- Statement: SELECT ACOT(1) - ATAN(1) from all_types;
 - output: [[0.0]]
 ---
 - Statement: SELECT ASIN(0) from all_types;
@@ -27,6 +30,5 @@
 - output: [[0.0]]
 ---
 - Statement: SELECT ATAN(0) from all_types;
-- output: SELECT ACOT(0) from all_types;
 - output_types: [DOUBLE]
 ...
