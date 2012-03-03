@@ -2,7 +2,7 @@ SelectQuery@19fac852
   ResultSet@1f758cd1[name, order_date, state]
     Project@5e6ffd79[user.customers.name, user.orders.order_date, user.addresses.state]
       Select@a6a435f[]
-        Product@466d1750
+        Product@466d1750(user.customers)
           Flatten@2415a94f(user.customers INNER user.addresses)
             AncestorLookup@a1e940b(user.addresses -> [user.customers, user.addresses])
               IndexScan@5d89635d(Index(user.addresses.state[IndexColumn(state)]), NONE, >M, rows = 10, cost = 222.370)

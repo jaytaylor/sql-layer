@@ -20,12 +20,18 @@ import java.util.List;
 /** A product type join among several subplans. */
 public class Product extends BasePlanNode implements PlanWithInput
 {
+    private TableNode ancestor;
     private List<PlanNode> subplans;
 
-    public Product(List<PlanNode> subplans) {
+    public Product(TableNode ancestor, List<PlanNode> subplans) {
+        this.ancestor = ancestor;
         this.subplans = subplans;
         for (PlanNode subplan : subplans)
           subplan.setOutput(this);
+    }
+
+    public TableNode getAncestor() {
+        return ancestor;
     }
 
     public List<PlanNode> getSubplans() {
@@ -50,6 +56,15 @@ public class Product extends BasePlanNode implements PlanWithInput
             }
         }
         return v.visitLeave(this);
+    }
+
+    @Override
+    public String summaryString() {
+        StringBuilder str = new StringBuilder(super.summaryString());
+        if (ancestor != null) {
+            str.append("(").append(ancestor).append(")");
+        }
+        return str.toString();
     }
 
     @Override

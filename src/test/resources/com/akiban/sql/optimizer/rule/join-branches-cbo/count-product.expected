@@ -4,7 +4,7 @@ SelectQuery@cbf30e
       Select@1431340[]
         AggregateSource@a4e2e3(UNGROUPED,[])
           Select@12bb7e0[]
-            Product@4b035d
+            Product@4b035d(user.customers)
               Flatten@aa37a6(user.customers INNER user.addresses)
                 BranchLookup@d1fa5(user.customers -> user.customers)
                   IndexScan@198a455(Index(user.customers.name[IndexColumn(name)]), NONE, =Smith, rows = 1, cost = 3.83000)

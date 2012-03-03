@@ -402,7 +402,7 @@ public class BranchJoiner extends BaseRule
                 subplans.add(subplan);
             }
 
-            input = new Product(subplans);
+            input = new Product(null, subplans);
         }
         return input;
     }

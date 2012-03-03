@@ -264,11 +264,12 @@ public class BranchJoiner_CBO extends BaseRule
     protected PlanNode fillSideBranches(PlanNode input, 
                                         TableGroupJoinNode leafTable,
                                         TableGroupJoinNode rootTable) {
-        List<PlanNode> subplans = null;
         TableGroupJoinNode branchTable = leafTable;
         while (branchTable != rootTable) {
             TableGroupJoinNode parent = branchTable.getParent();
             if (isBranchpoint(parent)) {
+                List<PlanNode> subplans = new ArrayList<PlanNode>(2);
+                subplans.add(input);
                 for (TableGroupJoinNode sibling = parent.getFirstChild();
                      sibling != null; sibling = sibling.getNextSibling()) {
                     if (sibling == branchTable) continue;
@@ -282,14 +283,12 @@ public class BranchJoiner_CBO extends BaseRule
                         subplans = new ArrayList<PlanNode>();
                     subplans.add(subplan);
                 }
+                if (subplans.size() > 1)
+                    input = new Product(parent.getTable().getTable(), subplans);
             }
             branchTable = parent;
         }
-        if (subplans == null)
-            return input;
-        subplans.add(input);
-        Collections.reverse(subplans); // Root to leaf (sideways order doesn't matter).
-        return new Product(subplans);
+        return input;
     }
 
     /** Pick a branch beneath <code>rootTable</code> that is pending,
