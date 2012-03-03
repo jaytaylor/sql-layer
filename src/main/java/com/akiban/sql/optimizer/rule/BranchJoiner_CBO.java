@@ -155,21 +155,21 @@ public class BranchJoiner_CBO extends BaseRule
                                      TableGroupJoinNode rootTable,
                                      TableSource indexTable,
                                      List<TableSource> ancestors) {
-        TableGroupJoinNode leafMostParent = null;
         // If there any any ancestors, need a child of the leaf-most,
         // so that we can BranchLookup over there and still be able to
         // get all the required ancestors. If there aren't any
         // ancestors, anyplace that BranchLookup can take us to will
         // do.
         boolean findRequired = !ancestors.isEmpty();
-        TableGroupJoinNode table = leafTable;
-        while (true) {
-            if (findRequired ? isRequired(table) : isParent(table)) {
-                leafMostParent = table;
+        TableGroupJoinNode leafMostChild = leafTable;
+        TableGroupJoinNode leafMostParent = null;
+        while (leafMostChild != rootTable) {
+            TableGroupJoinNode parent = leafMostChild.getParent();
+            if (findRequired ? isRequired(parent) : isParent(parent)) {
+                leafMostParent = parent;
                 break;
             }
-            if (table == rootTable) break;
-            table = table.getParent();
+            leafMostChild = parent;
         }
         TableGroupJoinNode sideBranch = null;
         if (leafMostParent != null) {
@@ -177,7 +177,7 @@ public class BranchJoiner_CBO extends BaseRule
             // Is some child of the leaf-most ancestor required or a
             // parent? If so, there is something beneath it, so it's a
             // good choice.
-            for (table = leafMostParent.getFirstChild(); table != null; table = table.getNextSibling()) {
+            for (TableGroupJoinNode table = leafMostParent.getFirstChild(); table != null; table = table.getNextSibling()) {
                 if (isRequired(table)) {
                     sideBranch = table;
                     break;
@@ -192,12 +192,26 @@ public class BranchJoiner_CBO extends BaseRule
         if (sideBranch == null)
             return null;
         List<TableSource> tables = new ArrayList<TableSource>();
-        scan = new BranchLookup(scan, indexTable.getTable(), 
-                                leafMostParent.getTable().getTable(),
-                                sideBranch.getTable().getTable(), tables);
-        if (!ancestors.isEmpty())
-            // Any ancestors of indexTable are also ancestors of sideBranch.
-            scan = new AncestorLookup(scan, sideBranch.getTable(), ancestors);
+        if (leafMostChild.getTable().getTable() == sideBranch.getTable().getTable()) {
+            // Jumping to the same rowtype. That won't just work, so
+            // go up to ancestor first.
+            if (!ancestors.contains(leafMostParent.getTable()))
+                ancestors.add(leafMostParent.getTable());
+            scan = new AncestorLookup(scan, indexTable, ancestors);
+            scan = new BranchLookup(scan,
+                                    leafMostParent.getTable().getTable(),
+                                    sideBranch.getTable().getTable(), tables);
+        }
+        else {
+            // Otherwise, it's better to the the BranchLookup first in
+            // case don't need immediate ancestor but do need others.
+            scan = new BranchLookup(scan, indexTable.getTable(), 
+                                    leafMostParent.getTable().getTable(),
+                                    sideBranch.getTable().getTable(), tables);
+            if (!ancestors.isEmpty())
+                // Any ancestors of indexTable are also ancestors of sideBranch.
+                scan = new AncestorLookup(scan, sideBranch.getTable(), ancestors);
+        }
         // And flatten up through root-most ancestor.
         return fillBranch(scan, tables, sideBranch, rootTable);
     }
