@@ -174,19 +174,9 @@ class PersistitGroupCursor implements GroupCursor
         @Override
         public void advance() throws PersistitException, InvalidOperationException
         {
-            if (first) {
-                PersistitAdapter.CURSOR_FIRST_ROW_TAP.in();
-            }
-            try {
-                TRAVERSE_COUNT.hit();
-                if (!exchange.traverse(direction, true)) {
-                    close();
-                }
-            } finally {
-                if (first) {
-                    PersistitAdapter.CURSOR_FIRST_ROW_TAP.out();
-                    first = false;
-                }
+            TRAVERSE_COUNT.hit();
+            if (!exchange.traverse(direction, true)) {
+                close();
             }
         }
 
@@ -197,7 +187,6 @@ class PersistitGroupCursor implements GroupCursor
         }
 
         private final Key.Direction direction;
-        private boolean first = true;
     }
 
     private class HKeyAndDescendentsScan implements GroupScan
@@ -205,22 +194,12 @@ class PersistitGroupCursor implements GroupCursor
         @Override
         public void advance() throws PersistitException, InvalidOperationException
         {
-            if (first) {
-                PersistitAdapter.CURSOR_FIRST_ROW_TAP.in();
+            TRAVERSE_COUNT.hit();
+            if (!exchange.traverse(direction, true) ||
+                exchange.getKey().firstUniqueByteIndex(controllingHKey) < controllingHKey.getEncodedSize()) {
+                close();
             }
-            try {
-                TRAVERSE_COUNT.hit();
-                if (!exchange.traverse(direction, true) ||
-                    exchange.getKey().firstUniqueByteIndex(controllingHKey) < controllingHKey.getEncodedSize()) {
-                    close();
-                }
-                direction = Key.GT;
-            } finally {
-                if (first) {
-                    PersistitAdapter.CURSOR_FIRST_ROW_TAP.out();
-                    first = false;
-                }
-            }
+            direction = Key.GT;
         }
 
         HKeyAndDescendentsScan(PersistitHKey hKey) throws PersistitException
@@ -230,7 +209,6 @@ class PersistitGroupCursor implements GroupCursor
         }
 
         private Key.Direction direction = Key.GTEQ;
-        private boolean first = true;
     }
 
     private class HKeyWithoutDescendentsScan implements GroupScan
@@ -239,17 +217,12 @@ class PersistitGroupCursor implements GroupCursor
         public void advance() throws PersistitException, InvalidOperationException
         {
             if (first) {
-                PersistitAdapter.CURSOR_FIRST_ROW_TAP.in();
-                try {
-                    TRAVERSE_COUNT.hit();
-                    exchange.fetch();
-                    if (!exchange.getValue().isDefined()) {
-                        close();
-                    }
-                    first = false;
-                } finally {
-                    PersistitAdapter.CURSOR_FIRST_ROW_TAP.out();
+                TRAVERSE_COUNT.hit();
+                exchange.fetch();
+                if (!exchange.getValue().isDefined()) {
+                    close();
                 }
+                first = false;
             } else {
                 close();
             }

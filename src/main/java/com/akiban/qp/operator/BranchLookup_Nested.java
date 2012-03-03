@@ -19,15 +19,10 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.qp.rowtype.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,8 +51,11 @@ import static java.lang.Math.min;
 
  <li><b>RowType inputRowType:</b> Branches will be located for input
  rows of this type.
+ 
+ <li><b>UserTableRowType ancestorRowType:</b> Identifies the table in the group at which branching occurs.
+ Must be an ancestor of both inputRowType's table and outputRowType's table.
 
- <li><b>RowType outputRowType:</b> Type at the root of the branch to be
+ <li><b>UserTableRowType outputRowType:</b> Type at the root of the branch to be
  retrieved.
 
  <li><b>API.LookupOption flag:</b> Indicates whether rows of type rowType
@@ -69,28 +67,15 @@ import static java.lang.Math.min;
 
  </ul>
 
- inputRowType may be an index row type or a group row type. For a group
- row type, inputRowType must not match outputRowType. For an index row
- type, rowType may match outputRowType, and keepInput must be false
- (this may be relaxed in the future).
+ inputRowType may be an index row type, a user table row type, or an hkey row type. flag = KEEP_INPUT is permitted
+ only for user table row types.
 
  The groupTable, inputRowType, and outputRowType must belong to the
  same group.
-
- If inputRowType is a table type, then inputRowType and outputRowType
- must be related in one of the following ways:
-
- <ul>
-
- <li>outputRowType is an ancestor of inputRowType.
-
- <li>outputRowType and inputRowType have a common ancestor, and
- outputRowType is a child of that common ancestor.
-
- </ul>
-
- If inputRowType is an index type, the above rules apply to the index's
- table's type.
+ 
+ ancestorRowType's table must be an ancestor of
+ inputRowType's table and outputRowType's table. outputRowType's table must be the parent
+ of outputRowType's table.
 
  <h1>Behavior</h1>
 
@@ -171,7 +156,8 @@ public class BranchLookup_Nested extends Operator
 
     public BranchLookup_Nested(GroupTable groupTable,
                                RowType inputRowType,
-                               RowType outputRowType,
+                               UserTableRowType ancestorRowType,
+                               UserTableRowType outputRowType,
                                API.LookupOption flag,
                                int inputBindingPosition)
     {
@@ -179,8 +165,6 @@ public class BranchLookup_Nested extends Operator
         ArgumentValidation.notNull("inputRowType", inputRowType);
         ArgumentValidation.notNull("outputRowType", outputRowType);
         ArgumentValidation.notNull("flag", flag);
-        ArgumentValidation.isTrue("inputRowType instanceof IndexRowType || outputRowType != inputRowType",
-                                  inputRowType instanceof IndexRowType || outputRowType != inputRowType);
         ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || flag == API.LookupOption.DISCARD_INPUT",
                                   inputRowType instanceof UserTableRowType || flag == API.LookupOption.DISCARD_INPUT);
         ArgumentValidation.isGTE("hKeyBindingPosition", inputBindingPosition, 0);
@@ -189,6 +173,9 @@ public class BranchLookup_Nested extends Operator
             inputTableType = (UserTableRowType) inputRowType;
         } else if (inputRowType instanceof IndexRowType) {
             inputTableType = ((IndexRowType) inputRowType).tableType();
+        } else if (inputRowType instanceof HKeyRowType) {
+            Schema schema = outputRowType.schema();
+            inputTableType = schema.userTableRowType(inputRowType.hKey().userTable());
         }
         assert inputTableType != null : inputRowType;
         UserTable inputTable = inputTableType.userTable();
@@ -202,9 +189,18 @@ public class BranchLookup_Nested extends Operator
         this.outputRowType = outputRowType;
         this.keepInput = flag == API.LookupOption.KEEP_INPUT;
         this.inputBindingPosition = inputBindingPosition;
-        UserTable commonAncestor = commonAncestor(inputTable, outputTable);
-        this.commonSegments = commonAncestor.getDepth() + 1;
-        switch (outputTable.getDepth() - commonAncestor.getDepth()) {
+        UserTable ancestorTable;
+        if (ancestorRowType == null) {
+            ancestorTable = commonAncestor(inputTable, outputTable); 
+        } else {
+            ancestorTable = ancestorRowType.userTable();
+            ArgumentValidation.isTrue("ancestorRowType.ancestorOf(inputTableType)",
+                                      ancestorRowType.ancestorOf(inputTableType));
+            ArgumentValidation.isTrue("ancestorRowType.ancestorOf(outputRowType)",
+                                      ancestorRowType.ancestorOf(outputRowType));
+        }
+        this.commonSegments = ancestorTable.getDepth() + 1;
+        switch (outputTable.getDepth() - ancestorTable.getDepth()) {
             case 0:
                 branchRootOrdinal = -1;
                 break;
@@ -221,11 +217,11 @@ public class BranchLookup_Nested extends Operator
         // a child of the common ancestor. Then compare these ordinals to determine whether input precedes branch.
         if (this.branchRootOrdinal == -1) {
             this.inputPrecedesBranch = false;
-        } else if (inputTable == commonAncestor) {
+        } else if (inputTable == ancestorTable) {
             this.inputPrecedesBranch = true;
         } else {
             UserTable ancestorOfInputAndChildOfCommon = inputTable;
-            while (ancestorOfInputAndChildOfCommon.parentTable() != commonAncestor) {
+            while (ancestorOfInputAndChildOfCommon.parentTable() != ancestorTable) {
                 ancestorOfInputAndChildOfCommon = ancestorOfInputAndChildOfCommon.parentTable();
             }
             this.inputPrecedesBranch = ordinal(ancestorOfInputAndChildOfCommon) < branchRootOrdinal;

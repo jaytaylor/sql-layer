@@ -52,9 +52,9 @@ public class DerivedTypesSchema {
         return new ProjectedRowType(this, nextTypeId(), columns);
     }
 
-    public ProductRowType newProductType(RowType leftType, RowType rightType)
+    public ProductRowType newProductType(RowType leftType, UserTableRowType branchType, RowType rightType)
     {
-        return new ProductRowType(this, nextTypeId(), leftType, rightType);
+        return new ProductRowType(this, nextTypeId(), leftType, branchType, rightType);
     }
 
     public synchronized ValuesRowType newValuesType(AkType... fields)

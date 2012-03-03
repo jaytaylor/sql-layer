@@ -19,15 +19,10 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.qp.rowtype.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -184,22 +179,24 @@ public class BranchLookup_Default extends Operator
     public BranchLookup_Default(Operator inputOperator,
                                 GroupTable groupTable,
                                 RowType inputRowType,
-                                RowType outputRowType,
+                                UserTableRowType outputRowType,
                                 API.LookupOption flag,
                                 Limit limit)
     {
         ArgumentValidation.notNull("inputRowType", inputRowType);
         ArgumentValidation.notNull("outputRowType", outputRowType);
         ArgumentValidation.notNull("limit", limit);
-        ArgumentValidation.isTrue("inputRowType instanceof IndexRowType || outputRowType != inputRowType",
-                                  inputRowType instanceof IndexRowType || outputRowType != inputRowType);
-        ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || !keepInput",
+        ArgumentValidation.isTrue("outputRowType != inputRowType", outputRowType != inputRowType);
+        ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || flag == API.LookupOption.DISCARD_INPUT",
                                   inputRowType instanceof UserTableRowType || flag == API.LookupOption.DISCARD_INPUT);
         UserTableRowType inputTableType = null;
         if (inputRowType instanceof UserTableRowType) {
             inputTableType = (UserTableRowType) inputRowType;
         } else if (inputRowType instanceof IndexRowType) {
             inputTableType = ((IndexRowType) inputRowType).tableType();
+        } else if (inputRowType instanceof HKeyRowType) {
+            Schema schema = outputRowType.schema();
+            inputTableType = schema.userTableRowType(inputRowType.hKey().userTable());
         }
         assert inputTableType != null : inputRowType;
         UserTable inputTable = inputTableType.userTable();
@@ -232,10 +229,13 @@ public class BranchLookup_Default extends Operator
         // is false. Otherwise, branchRoot's parent is the common ancestor. Find inputTable's ancestor that is also
         // a child of the common ancestor. Then compare these ordinals to determine whether input precedes branch.
         if (this.branchRootOrdinal == -1) {
+            // output type is ancestor of input row type
             this.inputPrecedesBranch = false;
         } else if (inputTable == commonAncestor) {
+            // input row type is parent of output type
             this.inputPrecedesBranch = true;
         } else {
+            // neither input type nor output type is the common ancestor
             UserTable ancestorOfInputAndChildOfCommon = inputTable;
             while (ancestorOfInputAndChildOfCommon.parentTable() != commonAncestor) {
                 ancestorOfInputAndChildOfCommon = ancestorOfInputAndChildOfCommon.parentTable();
@@ -370,7 +370,6 @@ public class BranchLookup_Default extends Operator
                     lookupRow.release();
                     close();
                 } else {
-                    currentLookupRow.runId(inputRow.get().runId());
                     lookupRow.hold(currentLookupRow);
                 }
             } else {

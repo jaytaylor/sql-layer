@@ -57,7 +57,6 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
         schema = new Schema(rowDefCache().ais());
         parentRowType = schema.userTableRowType(userTable(parent));
         childRowType = schema.userTableRowType(userTable(child));
-        hKeyRowType = schema.newHKeyRowType(parentRowType.hKey());
         parentPidIndexRowType = indexType(parent, "pid");
         parentXIndexRowType = indexType(parent, "x");
         parentYIndexRowType = indexType(parent, "y");
@@ -288,20 +287,6 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
             pKey(1002L),
         };
         compareRenderedHKeys(expected, cursor(plan, queryContext));
-/*
-        Operator plan2 =
-            ancestorLookup_Default(plan,
-                                   coi,
-                                   hKeyRowType,
-                                   Collections.singleton(parentRowType), 
-                                   LookupOption.DISCARD_INPUT);
-        RowBase[] expectedRows = new RowBase[]{
-            row(parentRowType, 1000L, -1L, 12L),
-            row(parentRowType, 1001L, -1L, 12L),
-            row(parentRowType, 1002L, -1L, 12L),
-        };
-        compareRows(expectedRows, cursor(plan2, queryContext));
-*/
     }
 
     @Test
@@ -504,5 +489,4 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
     private IndexRowType parentXIndexRowType;
     private IndexRowType parentYIndexRowType;
     private IndexRowType childZIndexRowType;
-    private HKeyRowType hKeyRowType;
 }
