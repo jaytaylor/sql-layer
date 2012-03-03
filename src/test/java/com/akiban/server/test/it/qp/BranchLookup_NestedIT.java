@@ -129,6 +129,18 @@ public class BranchLookup_NestedIT extends OperatorITBase
         branchLookup_Nested(rabc, aRowType, bRowType, LookupOption.KEEP_INPUT, -1);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void testBLNInputTypeNotDescendent()
+    {
+        branchLookup_Nested(rabc, aRowType, bRowType, bRowType, LookupOption.KEEP_INPUT, -1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBLNOutputTypeNotDescendent()
+    {
+        branchLookup_Nested(rabc, aRowType, aRowType, bRowType, LookupOption.KEEP_INPUT, -1);
+    }
+
     // Test operator execution
 
     @Test
@@ -313,6 +325,30 @@ public class BranchLookup_NestedIT extends OperatorITBase
         RowBase[] expected = new RowBase[]{
             row(cRowType, 17L, 1L, "c17"),
             row(cRowType, 18L, 1L, "c18"),
+        };
+        compareRows(expected, cursor);
+    }
+    
+    @Test
+    public void testAToA()
+    {
+        Operator plan =
+                map_NestedLoops(
+                        filter_Default(
+                                groupScan_Default(rabc),
+                                Collections.singleton(aRowType)),
+                        branchLookup_Nested(rabc, aRowType, rRowType, aRowType, LookupOption.DISCARD_INPUT, 0),
+                        0);
+        Cursor cursor = cursor(plan, queryContext);
+        RowBase[] expected = new RowBase[]{
+                row(aRowType, 13L, 1L, "a13"),
+                row(aRowType, 14L, 1L, "a14"),
+                row(aRowType, 13L, 1L, "a13"),
+                row(aRowType, 14L, 1L, "a14"),
+                row(aRowType, 23L, 2L, "a23"),
+                row(aRowType, 24L, 2L, "a24"),
+                row(aRowType, 23L, 2L, "a23"),
+                row(aRowType, 24L, 2L, "a24"),
         };
         compareRows(expected, cursor);
     }

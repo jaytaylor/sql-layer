@@ -278,7 +278,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         }
         // Fill in ancestors above predicate
         if (queryRootType != predicateType) {
-            List<RowType> ancestorTypes = ancestorTypes();
+            List<UserTableRowType> ancestorTypes = ancestorTypes();
             if (!ancestorTypes.isEmpty()) {
                 plan = ancestorLookup_Default(plan, groupTable, predicateType, ancestorTypes, LookupOption.KEEP_INPUT);
             }
@@ -308,10 +308,10 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         return keepTypes;
     }
 
-    private List<RowType> ancestorTypes()
+    private List<UserTableRowType> ancestorTypes()
     {
         UserTableRowType queryRootType = schema.userTableRowType(queryRootTable);
-        List<RowType> ancestorTypes = new ArrayList<RowType>();
+        List<UserTableRowType> ancestorTypes = new ArrayList<UserTableRowType>();
         if (predicateType != null && queryRootType != predicateType) {
             UserTable ancestor = predicateType.userTable();
             do {

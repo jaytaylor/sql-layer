@@ -60,7 +60,7 @@ import java.util.*;
  <li><b>RowType rowType:</b> Ancestors will be located for input rows
  of this type.
 
- <li><b>List<RowType> ancestorTypes:</b> Ancestor types to be located.
+ <li><b>Collection<UserTableRowType> ancestorTypes:</b> Ancestor types to be located.
 
  <li><b>API.LookupOption flag:</b> Indicates whether rows of type rowType
  will be preserved in the output stream (flag = KEEP_INPUT), or
@@ -150,7 +150,7 @@ class AncestorLookup_Default extends Operator
     public AncestorLookup_Default(Operator inputOperator,
                                   GroupTable groupTable,
                                   RowType rowType,
-                                  Collection<? extends RowType> ancestorTypes,
+                                  Collection<UserTableRowType> ancestorTypes,
                                   API.LookupOption flag)
     {
         validateArguments(rowType, ancestorTypes, flag);
@@ -183,7 +183,7 @@ class AncestorLookup_Default extends Operator
     
     // For use by this class
 
-    private void validateArguments(RowType rowType, Collection<? extends RowType> ancestorTypes, API.LookupOption flag)
+    private void validateArguments(RowType rowType, Collection<UserTableRowType> ancestorTypes, API.LookupOption flag)
     {
         ArgumentValidation.notEmpty("ancestorTypes", ancestorTypes);
         if (rowType instanceof IndexRowType) {
@@ -193,7 +193,7 @@ class AncestorLookup_Default extends Operator
             RowType tableRowType = ((IndexRowType) rowType).tableType();
             // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
             // is from an index. I.e., this operator can be used for an index lookup.
-            for (RowType ancestorType : ancestorTypes) {
+            for (UserTableRowType ancestorType : ancestorTypes) {
                 ArgumentValidation.isTrue("ancestorType.ancestorOf(tableRowType)",
                                           ancestorType.ancestorOf(tableRowType));
                 ArgumentValidation.isTrue("ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup()",
@@ -213,6 +213,14 @@ class AncestorLookup_Default extends Operator
         } else if (rowType instanceof HKeyRowType) {
             ArgumentValidation.isTrue("flag == API.LookupOption.DISCARD_INPUT",
                                       flag == API.LookupOption.DISCARD_INPUT);
+            for (UserTableRowType ancestorType : ancestorTypes) {
+                HKeyRowType hKeyRowType = (HKeyRowType) rowType;
+                UserTableRowType tableRowType = ancestorType.schema().userTableRowType(hKeyRowType.hKey().userTable());
+                ArgumentValidation.isTrue("ancestorType.ancestorOf(tableRowType)",
+                                          ancestorType.ancestorOf(tableRowType));
+                ArgumentValidation.isTrue("ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup()",
+                                          ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup());
+            }
         } else {
             ArgumentValidation.isTrue("invalid rowType", false);
         }
