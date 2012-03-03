@@ -34,7 +34,6 @@ public class IndexStatisticsYamlTest
         new File("src/test/resources/"
                  + IndexStatisticsYamlTest.class.getPackage().getName().replace('.', '/'));
     public static final File SCHEMA_FILE = new File(RESOURCE_DIR, "schema.ddl");
-    public static final File INDEX_FILE = new File(RESOURCE_DIR, "group.idx");
     public static final File YAML_FILE = new File(RESOURCE_DIR, "stats.yaml");
     
     private AkibanInformationSchema ais;
@@ -42,7 +41,6 @@ public class IndexStatisticsYamlTest
     @Before
     public void loadSchema() throws Exception {
         ais = parseSchema(SCHEMA_FILE);
-        loadGroupIndexes(ais, INDEX_FILE);
     }    
 
     @Test
