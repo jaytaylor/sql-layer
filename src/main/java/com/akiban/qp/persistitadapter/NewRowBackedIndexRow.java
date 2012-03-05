@@ -83,16 +83,6 @@ public class NewRowBackedIndexRow implements RowBase
     }
 
     @Override
-    public int runId() {
-        return runId;
-    }
-
-    @Override
-    public void runId(int runId) {
-        this.runId  = runId;
-    }
-
-    @Override
     public Row subRow(RowType subRowType)
     {
         throw new UnsupportedOperationException();
@@ -100,7 +90,6 @@ public class NewRowBackedIndexRow implements RowBase
 
     // Object state
 
-    private int runId = RowBase.UNDEFINED_RUN_ID;
     private final NewRow row;
     private final RowType rowType;
     private final TableIndex index;

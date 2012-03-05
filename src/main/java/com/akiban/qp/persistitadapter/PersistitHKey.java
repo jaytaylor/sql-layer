@@ -15,15 +15,11 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.ais.model.HKeyColumn;
-import com.akiban.ais.model.HKeySegment;
 import com.akiban.qp.row.HKey;
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.persistit.Key;
-
-import java.util.List;
 
 class PersistitHKey implements HKey
 {
@@ -158,14 +154,8 @@ class PersistitHKey implements HKey
             assert types == null;
             sources = new PersistitKeyValueSource[hKeyMetadata.nColumns()];
             types = new AkType[hKeyMetadata.nColumns()];
-            List<HKeySegment> segments = hKeyMetadata.segments();
-            int t = 0;
-            for (int s = 0; s < segments.size(); s++) {
-                HKeySegment segment = segments.get(s);
-                List<HKeyColumn> hKeyColumns = segment.columns();
-                for (int c = 0; c < hKeyColumns.size(); c++) {
-                    types[t++] = hKeyColumns.get(c).column().getType().akType();
-                }
+            for (int c = 0; c < hKeyMetadata.nColumns(); c++) {
+                types[c] = hKeyMetadata.columnType(c);
             }
         }
         if (sources[i] == null) {

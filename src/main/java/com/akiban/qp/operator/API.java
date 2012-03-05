@@ -136,31 +136,52 @@ public class API
     // BranchLookup
 
     public static Operator branchLookup_Default(Operator inputOperator,
-                                                        GroupTable groupTable,
-                                                        RowType inputRowType,
-                                                        RowType outputRowType,
-                                                        LookupOption flag)
+                                                GroupTable groupTable,
+                                                RowType inputRowType,
+                                                UserTableRowType outputRowType,
+                                                LookupOption flag)
     {
         return branchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, flag, NO_LIMIT);
     }
 
     public static Operator branchLookup_Default(Operator inputOperator,
-                                                        GroupTable groupTable,
-                                                        RowType inputRowType,
-                                                        RowType outputRowType,
-                                                        LookupOption flag,
-                                                        Limit limit)
+                                                GroupTable groupTable,
+                                                RowType inputRowType,
+                                                UserTableRowType outputRowType,
+                                                LookupOption flag,
+                                                Limit limit)
     {
         return new BranchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, flag, limit);
     }
 
+    /** deprecated */
     public static Operator branchLookup_Nested(GroupTable groupTable,
-                                                       RowType inputRowType,
-                                                       RowType outputRowType,
-                                                       LookupOption flag,
-                                                       int inputBindingPosition)
+                                               RowType inputRowType,
+                                               UserTableRowType outputRowType,
+                                               LookupOption flag,
+                                               int inputBindingPosition)
     {
-        return new BranchLookup_Nested(groupTable, inputRowType, outputRowType, flag, inputBindingPosition);
+        return new BranchLookup_Nested(groupTable,
+                                       inputRowType,
+                                       null,
+                                       outputRowType,
+                                       flag,
+                                       inputBindingPosition);
+    }
+
+    public static Operator branchLookup_Nested(GroupTable groupTable,
+                                               RowType inputRowType,
+                                               UserTableRowType ancestorTable,
+                                               UserTableRowType outputRowType,
+                                               LookupOption flag,
+                                               int inputBindingPosition)
+    {
+        return new BranchLookup_Nested(groupTable,
+                                       inputRowType,
+                                       ancestorTable,
+                                       outputRowType,
+                                       flag,
+                                       inputBindingPosition);
     }
 
     // Limit
@@ -184,7 +205,7 @@ public class API
     public static Operator ancestorLookup_Default(Operator inputOperator,
                                                   GroupTable groupTable,
                                                   RowType rowType,
-                                                  Collection<? extends RowType> ancestorTypes,
+                                                  Collection<UserTableRowType> ancestorTypes,
                                                   LookupOption flag)
     {
         return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes, flag);
@@ -335,13 +356,24 @@ public class API
 
     // Product
 
+    /** deprecated */
     public static Operator product_NestedLoops(Operator outerInput,
                                                        Operator innerInput,
                                                        RowType outerType,
                                                        RowType innerType,
                                                        int inputBindingPosition)
     {
-        return new Product_NestedLoops(outerInput, innerInput, outerType, innerType, inputBindingPosition);
+        return new Product_NestedLoops(outerInput, innerInput, outerType, null, innerType, inputBindingPosition);
+    }
+
+    public static Operator product_NestedLoops(Operator outerInput,
+                                                       Operator innerInput,
+                                                       RowType outerType,
+                                                       UserTableRowType branchType,
+                                                       RowType innerType,
+                                                       int inputBindingPosition)
+    {
+        return new Product_NestedLoops(outerInput, innerInput, outerType, branchType, innerType, inputBindingPosition);
     }
 
     // Count
