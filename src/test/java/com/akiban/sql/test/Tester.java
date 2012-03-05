@@ -42,10 +42,8 @@ import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.GroupIndex;
 
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
-import com.akiban.server.util.GroupIndexCreator;
 
 import java.util.*;
 import java.io.*;
@@ -192,24 +190,6 @@ public class Tester
                                                 compilerProperties);
     }
 
-    public void addGroupIndex(String cols) throws Exception {
-        BufferedReader brdr = new BufferedReader(new StringReader(cols));
-        while (true) {
-            String line = brdr.readLine();
-            if (line == null) break;
-            String defn[] = line.split("\t");
-            Index.JoinType joinType = Index.JoinType.LEFT;
-            if (defn.length > 3)
-                joinType = Index.JoinType.valueOf(defn[3]);
-            GroupIndex index = GroupIndexCreator.createIndex(ais,
-                                                             defn[0], 
-                                                             defn[1],
-                                                             defn[2],
-                                                             joinType);
-            index.getGroup().addIndex(index);
-        }
-    }
-
     public void setIndexStatistics(File file) throws Exception {
         statsFile = file;
     }
@@ -302,8 +282,6 @@ public class Tester
                     tester.addAction(Action.BIND);
                 else if ("-schema".equals(arg))
                     tester.setSchema(maybeFile(args[i++]));
-                else if ("-group-index".equals(arg))
-                    tester.addGroupIndex(maybeFile(args[i++]));
                 else if ("-index-stats".equals(arg))
                     tester.setIndexStatistics(new File(args[i++]));
                 else if ("-view".equals(arg))
