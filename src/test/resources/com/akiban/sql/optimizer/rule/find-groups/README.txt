@@ -37,3 +37,6 @@ group-via-equivalence-on-(left|inner|right): group joins where the grouping ON c
     condition involving OR NOT NULL.
 
 group-via-equivalence-where-inner: group joins where the grouping WHERE clause only works because of an equivalence
+
+group-via-equivalence-duplicates-conditions: Regression test for bug 947264. Equivalences cause a join condition to
+    inappropriately turn into the condition of another join.
