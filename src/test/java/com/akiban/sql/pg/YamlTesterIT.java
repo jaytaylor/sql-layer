@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.io.Writer;
 
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import org.junit.Test;
 
@@ -1799,6 +1800,26 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "---\n" +
                  "- Statement: SELECT DATE(vc) FROM t\n" +
                  "- warnings: [[!re '[0-9]+', !re \"Can't convert .*\"]]");
+    }
+
+    @Test
+    public void testConnectionReuse() {
+        boolean failed = false;
+        try {
+            testYaml("---\n" +
+                     "- CreateTable: t (vc varchar(32))\n" +
+                     "---\n" +
+                     "- Statement: SET SESSION CHARACTERISTICS AS TRANSACTION READ ONLY\n" +
+                     "---\n" +
+                     "- Statement: SELECT garbage FROM t\n");
+        }
+        catch (AssertionError e) {
+            failed = true;
+        }
+        assertTrue("First half failed", failed);
+        // ^ Left connection read-only.
+        testYaml("---\n" +
+                 "- Statement: INSERT INTO t VALUES ('a')\n");
     }
 
     /* Other methods */
