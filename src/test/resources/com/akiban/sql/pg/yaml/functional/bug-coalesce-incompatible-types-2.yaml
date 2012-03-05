@@ -1,4 +1,6 @@
 # Coalescing incompatible types produces bad error message
+# Bug: 891356 Two different user-defined types:
+# Status: confirmed
 ---
 - CreateTable: t (blob_field blob, char_field char)
 ---

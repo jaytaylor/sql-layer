@@ -47,7 +47,7 @@ public final class BoolValueSource extends AbstractValueSource {
 
     @Override
     public boolean isNull() {
-        return value == null;
+      return value == null;
     }
 
     @Override
@@ -65,11 +65,12 @@ public final class BoolValueSource extends AbstractValueSource {
     // for use in this class
 
     private BoolValueSource(Boolean value) {
+      //  javax.swing.JOptionPane.showMessageDialog(null, "value is null? " + (value == null) + "\n actual val: " + value);
         this.value = value;
         this.toString = "BoolValueSource(" + value + ")";
     }
 
     // object state
-    private final Boolean value;
+    public final Boolean value;
     private final String toString;
 }
