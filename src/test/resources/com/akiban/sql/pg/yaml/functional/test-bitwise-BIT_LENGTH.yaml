@@ -26,10 +26,10 @@
 ---
 - Statement: SELECT BIT_LENGTH('2001-12-31 02:45:33') from all_types;
 - output: [[152]]
----
+#--- bug 947554
 #- Statement: SELECT BIT_LENGTH(0x234) from all_types;
 #- output: [[16]]
-#---
+---
 - Statement: SELECT BIT_LENGTH(00000005) from all_types;
 - output: [[8]]
 ---
