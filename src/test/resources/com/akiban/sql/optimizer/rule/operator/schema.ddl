@@ -41,3 +41,6 @@ CREATE TABLE items
   GROUPING FOREIGN KEY (oid) REFERENCES orders(oid)
 );
 CREATE INDEX sku ON items(sku);
+
+CREATE INDEX cname_and_sku ON customers(customers.name, items.sku) USING LEFT JOIN;
+CREATE INDEX sku_and_date ON customers(items.sku, orders.order_date) USING LEFT JOIN;

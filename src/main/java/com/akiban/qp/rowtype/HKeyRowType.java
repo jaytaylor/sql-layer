@@ -39,7 +39,7 @@ public class HKeyRowType extends DerivedRowType
     @Override
     public AkType typeAt(int index)
     {
-        throw new UnsupportedOperationException();
+        return hKey().columnType(index);
     }
 
     @Override

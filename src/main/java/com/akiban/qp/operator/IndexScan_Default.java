@@ -21,8 +21,6 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -216,8 +214,6 @@ class IndexScan_Default extends Operator
                 Row row = cursor.next();
                 if (row == null) {
                     close();
-                } else {
-                    row.runId(runIdCounter++);
                 }
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("IndexScan: yield {}", row);
@@ -245,6 +241,5 @@ class IndexScan_Default extends Operator
         // Object state
 
         private final Cursor cursor;
-        private int runIdCounter = 0;
     }
 }

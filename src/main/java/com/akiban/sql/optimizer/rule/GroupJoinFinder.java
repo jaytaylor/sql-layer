@@ -51,8 +51,8 @@ public class GroupJoinFinder extends BaseRule
         moveAndNormalizeWhereConditions(islands);
         findGroupJoins(islands);
         reorderJoins(islands);
-        moveJoinConditions(islands);
         isolateGroups(islands);
+        moveJoinConditions(islands);
     }
     
     static class JoinIslandFinder implements PlanVisitor, ExpressionVisitor {
@@ -513,43 +513,7 @@ public class GroupJoinFinder extends BaseRule
         }
     }
 
-    // Fourth pass: move the WHERE conditions back to their actual
-    // joins, which may be different from the ones they were on in the
-    // original query.
-    protected void moveJoinConditions(List<JoinIsland> islands) {
-        for (JoinIsland island : islands) {
-            if (!island.whereJoins.isEmpty())
-                moveJoinConditions(island.root, null, 
-                                   island.whereConditions, island.whereJoins);
-        }        
-    }
-
-    protected void moveJoinConditions(Joinable joinable, JoinNode output,
-                                      ConditionList whereConditions,
-                                      List<TableGroupJoin> whereJoins) {
-        if (joinable.isTable()) {
-            if (output != null) {
-                TableSource table = (TableSource)joinable;
-                TableGroupJoin tableJoin = table.getParentJoin();
-                if (whereJoins.contains(tableJoin)) {
-                    output.setGroupJoin(tableJoin);
-                    List<ComparisonCondition> joinConditions = tableJoin.getConditions();
-                    // Move down from WHERE conditions to join conditions.
-                    if (output.getJoinConditions() == null)
-                        output.setJoinConditions(new ConditionList());
-                    output.getJoinConditions().addAll(joinConditions);
-                    whereConditions.removeAll(joinConditions);
-                }
-            }
-        }
-        else if (joinable.isJoin()) {
-            JoinNode join = (JoinNode)joinable;
-            moveJoinConditions(join.getLeft(), join, whereConditions, whereJoins);
-            moveJoinConditions(join.getRight(), join, whereConditions, whereJoins);
-        }
-    }
-
-    // Fifth pass: wrap contiguous group joins in separate joinable.
+    // Fourth pass: wrap contiguous group joins in separate joinable.
     // We have done out best with the inner joins to make this possible,
     // but some outer joins may require that a TableGroup be broken up into
     // multiple TableJoins.
@@ -606,6 +570,52 @@ public class GroupJoinFinder extends BaseRule
         else {
             assert joinable.isTable();
             tableJoins.addTable((TableSource)joinable);
+        }
+    }
+
+    // Fifth pass: move the WHERE conditions back to their actual
+    // joins, which may be different from the ones they were on in the
+    // original query and reject any group joins that now cross TableJoins.
+    protected void moveJoinConditions(List<JoinIsland> islands) {
+        for (JoinIsland island : islands) {
+            moveJoinConditions(island.root, null, null, 
+                               island.whereConditions, island.whereJoins);
+        }        
+    }
+
+    protected void moveJoinConditions(Joinable joinable, JoinNode output, TableJoins tableJoins,
+                                      ConditionList whereConditions, List<TableGroupJoin> whereJoins) {
+        if (joinable.isTable()) {
+            TableSource table = (TableSource)joinable;
+            TableGroupJoin tableJoin = table.getParentJoin();
+            if (tableJoin != null) {
+                if ((tableJoins == null) ||
+                    !tableJoins.getTables().contains(tableJoin.getParent())) {
+                    tableJoin.reject(); // Did not make it into the group.
+                    if ((output != null) &&
+                        (output.getGroupJoin() == tableJoin))
+                        output.setGroupJoin(null);
+                }
+                else if (whereJoins.contains(tableJoin)) {
+                    assert (output != null);
+                    output.setGroupJoin(tableJoin);
+                    List<ComparisonCondition> joinConditions = tableJoin.getConditions();
+                    // Move down from WHERE conditions to join conditions.
+                    if (output.getJoinConditions() == null)
+                        output.setJoinConditions(new ConditionList());
+                    output.getJoinConditions().addAll(joinConditions);
+                    whereConditions.removeAll(joinConditions);
+                }
+            }
+        }
+        else if (joinable.isJoin()) {
+            JoinNode join = (JoinNode)joinable;
+            moveJoinConditions(join.getLeft(), join, tableJoins, whereConditions, whereJoins);
+            moveJoinConditions(join.getRight(), join, tableJoins, whereConditions, whereJoins);
+        }
+        else if (joinable instanceof TableJoins) {
+            tableJoins = (TableJoins)joinable;
+            moveJoinConditions(tableJoins.getJoins(), output, tableJoins, whereConditions, whereJoins);
         }
     }
 

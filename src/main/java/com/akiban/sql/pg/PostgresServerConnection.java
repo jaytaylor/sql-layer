@@ -743,7 +743,8 @@ public class PostgresServerConnection extends ServerSessionBase
                 messenger.setEncoding(value);
             return true;
         }
-        if ("OutputFormat".equals(key)) {
+        if ("OutputFormat".equals(key) ||
+            "cbo".equals(key)) {
             if (parsedGenerators != null)
                 rebuildCompiler();
             return true;

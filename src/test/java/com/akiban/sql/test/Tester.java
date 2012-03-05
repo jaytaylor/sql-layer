@@ -42,10 +42,8 @@ import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.GroupIndex;
 
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
-import com.akiban.server.util.GroupIndexCreator;
 
 import java.util.*;
 import java.io.*;
@@ -185,29 +183,11 @@ public class Tester
         if (actions.contains(Action.BIND))
             binder = new AISBinder(ais, DEFAULT_SCHEMA);
         if (actions.contains(Action.OPERATORS))
-            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, compilerProperties, ais, DEFAULT_SCHEMA, new FunctionsRegistryImpl(), new TestCostEstimator(ais, DEFAULT_SCHEMA, statsFile));
+            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, compilerProperties, ais, DEFAULT_SCHEMA, new FunctionsRegistryImpl(), "true".equals(compilerProperties.getProperty("cbo")) ? new TestCostEstimator(ais, DEFAULT_SCHEMA, statsFile) : null);
         if (actions.contains(Action.PLAN))
             rulesContext = new RulesTestContext(ais, DEFAULT_SCHEMA, 
                                                 statsFile, planRules,
                                                 compilerProperties);
-    }
-
-    public void addGroupIndex(String cols) throws Exception {
-        BufferedReader brdr = new BufferedReader(new StringReader(cols));
-        while (true) {
-            String line = brdr.readLine();
-            if (line == null) break;
-            String defn[] = line.split("\t");
-            Index.JoinType joinType = Index.JoinType.LEFT;
-            if (defn.length > 3)
-                joinType = Index.JoinType.valueOf(defn[3]);
-            GroupIndex index = GroupIndexCreator.createIndex(ais,
-                                                             defn[0], 
-                                                             defn[1],
-                                                             defn[2],
-                                                             joinType);
-            index.getGroup().addIndex(index);
-        }
     }
 
     public void setIndexStatistics(File file) throws Exception {
@@ -302,8 +282,6 @@ public class Tester
                     tester.addAction(Action.BIND);
                 else if ("-schema".equals(arg))
                     tester.setSchema(maybeFile(args[i++]));
-                else if ("-group-index".equals(arg))
-                    tester.addGroupIndex(maybeFile(args[i++]));
                 else if ("-index-stats".equals(arg))
                     tester.setIndexStatistics(new File(args[i++]));
                 else if ("-view".equals(arg))

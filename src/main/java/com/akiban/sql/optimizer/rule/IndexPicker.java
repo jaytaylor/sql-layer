@@ -203,13 +203,7 @@ public class IndexPicker extends BaseRule
         }
 
         protected void pickIndexes(JoinNode join) {
-            if (join.getGroupJoin() != null) {
-                // TODO: Better would be to treat the group join as a
-                // possibility, competing against other indexes and
-                // using XxxLookup_Nested if it survives.
-                join.getGroupJoin().remove();
-                join.setGroupJoin(null);
-            }
+            assert (join.getGroupJoin() == null) : join;
             join.setImplementation(JoinNode.Implementation.NESTED_LOOPS);
             
             Joinable left = join.getLeft();

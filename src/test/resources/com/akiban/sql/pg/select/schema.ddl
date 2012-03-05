@@ -42,3 +42,7 @@ CREATE TABLE addresses
 --
 -- Two tables, types and types_i, are statically created in PostgresServerSelectIT
 --
+
+CREATE INDEX cname_and_sku ON customers(customers.name, items.sku) USING LEFT JOIN;
+CREATE INDEX sku_and_date ON customers(items.sku, orders.order_date) USING LEFT JOIN;
+CREATE INDEX date_and_name ON customers(orders.order_date, customers.name) USING RIGHT JOIN;

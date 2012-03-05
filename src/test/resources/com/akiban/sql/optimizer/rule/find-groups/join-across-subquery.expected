@@ -1,0 +1,17 @@
+SelectQuery@31554233
+  ResultSet@546d3b92[name, _SQL_COL_1]
+    Project@4f62198b[user.customers.name, Subquery@317b1d64]
+      Select@9c6a99d[]
+        TableJoins@488ddb93(TableGroup@594ab51b(customers))
+          TableSource@51a9876e(user.customers - TableGroup@594ab51b(customers))
+
+Subquery@317b1d64
+  ResultSet@69f94884[_SQL_COL_2]
+    Project@6d080876[COUNT(*)]
+      Select@2a63b2e6[]
+        AggregateSource@77762fc7(UNGROUPED,[])
+          Select@703aef16[user.orders.cid == user.customers.cid]
+            TableJoins@37b82d69(TableGroup@594ab51b(customers))
+              JoinNode@2d26c6ea(INNER/GROUP[user.items.oid == user.orders.oid] - TableGroupJoin@1cad6513(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+                TableSource@4ccd43ce(user.orders - TableGroup@594ab51b(customers))
+                TableSource@381eb0c6(user.items - TableGroupJoin@1cad6513(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))

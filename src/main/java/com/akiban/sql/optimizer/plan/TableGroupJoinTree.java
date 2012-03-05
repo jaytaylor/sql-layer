@@ -19,6 +19,7 @@ import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 /** Joins within a single {@link TableGroup} represented as a tree
  * whose structure mirrors that of the group.
@@ -33,6 +34,7 @@ public class TableGroupJoinTree extends BaseJoinable
         TableSource table;
         TableGroupJoinNode parent, nextSibling, firstChild;
         JoinType parentJoinType;
+        ConditionList joinConditions;
 
         public TableGroupJoinNode(TableSource table) {
             this.table = table;
@@ -65,6 +67,13 @@ public class TableGroupJoinTree extends BaseJoinable
         }
         public void setParentJoinType(JoinType parentJoinType) {
             this.parentJoinType = parentJoinType;
+        }
+
+        public ConditionList getJoinConditions() {
+            return joinConditions;
+        }
+        public void setJoinConditions(ConditionList joinConditions) {
+            this.joinConditions = joinConditions;
         }
 
         /** Find the given table in this (sub-)tree. */
@@ -132,6 +141,7 @@ public class TableGroupJoinTree extends BaseJoinable
 
     private TableGroup group;
     private TableGroupJoinNode root;
+    private Set<TableSource> required;
     
     public TableGroupJoinTree(TableGroupJoinNode root) {
         this.group = root.getTable().getGroup();
@@ -143,6 +153,13 @@ public class TableGroupJoinTree extends BaseJoinable
     }
     public TableGroupJoinNode getRoot() {
         return root;
+    }
+
+    public Set<TableSource> getRequired() {
+        return required;
+    }
+    public void setRequired(Set<TableSource> required) {
+        this.required = required;
     }
     
     @Override
@@ -197,6 +214,20 @@ public class TableGroupJoinTree extends BaseJoinable
                 str.append(" ");
             }
             str.append(node.getTable().getTable().getTable().getName().getTableName());
+            if (node.getJoinConditions() != null) {
+                boolean first = true;
+                for (ConditionExpression joinCondition : node.getJoinConditions()) {
+                    if (joinCondition.getImplementation() == ConditionExpression.Implementation.GROUP_JOIN)
+                        continue;
+                    if (first) {
+                        str.append(" ON ");
+                        first = false;
+                    }
+                    else
+                        str.append(" AND ");
+                    str.append(joinCondition);
+                }
+            }
         }
     }
 

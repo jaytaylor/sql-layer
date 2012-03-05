@@ -314,10 +314,10 @@ public class Product3WayIT extends OperatorITBase
     protected int a;
     protected int c;
     protected int b;
-    protected RowType rRowType;
-    protected RowType aRowType;
-    protected RowType cRowType;
-    protected RowType bRowType;
+    protected UserTableRowType rRowType;
+    protected UserTableRowType aRowType;
+    protected UserTableRowType cRowType;
+    protected UserTableRowType bRowType;
     protected IndexRowType aValueIndexRowType;
     protected IndexRowType rValueIndexRowType;
     protected GroupTable rabc;

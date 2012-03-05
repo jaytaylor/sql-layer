@@ -56,7 +56,7 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
         for (JoinIsland island : islands) {
             TableGroupJoinNode tree = isolateGroupJoins(island.root);
             if (tree != null) {
-                Joinable nroot = new TableGroupJoinTree(tree);
+                Joinable nroot = groupJoinTree(tree, island.root);
                 island.output.replaceInput(island.root, nroot);
                 island.root = nroot;
             }
@@ -89,10 +89,10 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
                 joinOK = true;
                 break;
             case LEFT:
-                joinOK = !hasJoinedReferences(join.getJoinConditions(), leftTree);
+                joinOK = checkJoinConditions(join.getJoinConditions(), leftTree, rightTree);
                 break;
             case RIGHT:
-                joinOK = !hasJoinedReferences(join.getJoinConditions(), rightTree);
+                joinOK = checkJoinConditions(join.getJoinConditions(), rightTree, leftTree);
                 break;
             default:
                 joinOK = false;
@@ -115,13 +115,35 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
         }
         // Did not manage to coalesce. Put in any intermediate trees.
         if (leftTree != null)
-            join.setLeft(new TableGroupJoinTree(leftTree));
+            join.setLeft(groupJoinTree(leftTree, left));
         if (rightTree != null)
-            join.setRight(new TableGroupJoinTree(rightTree));
+            join.setRight(groupJoinTree(rightTree, right));
         // Make arbitrary joins LEFT not RIGHT.
         if (join.getJoinType() == JoinType.RIGHT)
             join.reverse();
         return null;
+    }
+
+    protected TableGroupJoinTree groupJoinTree(TableGroupJoinNode root, Joinable joins) {
+        TableGroupJoinTree tree = new TableGroupJoinTree(root);
+        Set<TableSource> required = new HashSet<TableSource>();
+        getRequiredTables(joins, required);
+        tree.setRequired(required);
+        return tree;
+    }
+
+    // Get all the tables reachable via inner joins from here.
+    protected void getRequiredTables(Joinable joinable, Set<TableSource> required) {
+        if (joinable instanceof TableSource) {
+            required.add((TableSource)joinable);
+        }
+        else if (joinable instanceof JoinNode) {
+            JoinNode join = (JoinNode)joinable;
+            if (join.getJoinType() != JoinType.RIGHT)
+                getRequiredTables(join.getLeft(), required);
+            if (join.getJoinType() != JoinType.LEFT)
+                getRequiredTables(join.getRight(), required);
+        }
     }
 
     // Combine trees at the proper branch point.
@@ -150,8 +172,17 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
         return parent;
     }
 
+    protected boolean checkJoinConditions(ConditionList joinConditions,
+                                          TableGroupJoinNode outer,
+                                          TableGroupJoinNode inner) {
+        if (hasJoinedReferences(joinConditions, outer))
+            return false;
+        inner.setJoinConditions(joinConditions);
+        return true;
+    }
+
     // See whether any expression in the join condition other than the
-    // grouping join references the a table under the given tree.
+    // grouping join references a table under the given tree.
     protected boolean hasJoinedReferences(ConditionList joinConditions,
                                           TableGroupJoinNode fromTree) {
         JoinedReferenceFinder finder = null;
@@ -224,6 +255,47 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
     @Override
     protected Joinable getTableJoins(Joinable joins, TableGroup group) {
         throw new UnsupportedOperationException("Should have made TableGroupJoinTree");
+    }
+
+    @Override
+    protected void moveJoinConditions(List<JoinIsland> islands) {
+        for (JoinIsland island : islands) {
+            moveJoinConditions(island.root, island.whereConditions, island.whereJoins);
+        }        
+    }
+
+    protected void moveJoinConditions(Joinable joinable,
+                                      ConditionList whereConditions, List<TableGroupJoin> whereJoins) {
+        if (joinable instanceof TableGroupJoinTree) {
+            for (TableGroupJoinNode table : (TableGroupJoinTree)joinable) {
+                TableGroupJoin tableJoin = table.getTable().getParentJoin();
+                if (tableJoin != null) {
+                    if (table.getParent() == null) {
+                        tableJoin.reject(); // Did not make it into the group.
+                    }
+                    else if (whereJoins.contains(tableJoin)) {
+                        List<ComparisonCondition> joinConditions = tableJoin.getConditions();
+                        // Move down from WHERE conditions to join conditions.
+                        if (table.getJoinConditions() == null)
+                            table.setJoinConditions(new ConditionList());
+                        table.getJoinConditions().addAll(joinConditions);
+                        whereConditions.removeAll(joinConditions);
+                    }
+                }
+            }
+        }
+        else if (joinable instanceof JoinNode) {
+            JoinNode join = (JoinNode)joinable;
+            join.setGroupJoin(null);
+            moveJoinConditions(join.getLeft(), whereConditions, whereJoins);
+            moveJoinConditions(join.getRight(), whereConditions, whereJoins);
+        }
+    }
+    
+    @Override
+    protected void moveJoinConditions(Joinable joinable, JoinNode output, TableJoins tableJoins,
+                                      ConditionList whereConditions, List<TableGroupJoin> whereJoins) {
+        throw new UnsupportedOperationException("Should have avoided TableJoins");
     }
 
 }

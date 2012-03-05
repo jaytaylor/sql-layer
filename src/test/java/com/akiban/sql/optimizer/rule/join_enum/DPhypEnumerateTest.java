@@ -133,11 +133,11 @@ public class DPhypEnumerateTest extends OptimizerTestBase
     }
 
     static class DPhypEnumerate extends DPhyp<List<String>> {
-        public List<String> evaluateTable(Joinable table) {
+        public List<String> evaluateTable(long s, Joinable table) {
             return Collections.singletonList(((ColumnSource)table).getName());
         }
 
-        public List<String> evaluateJoin(List<String> p1, List<String> p2, List<String> existing, 
+        public List<String> evaluateJoin(long s1, List<String> p1, long s2, List<String> p2, long s, List<String> existing, 
                                          JoinType joinType, Collection<JoinOperator> joins) {
             if (existing == null)
                 existing = new ArrayList<String>();
