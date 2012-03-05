@@ -28,8 +28,6 @@ import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.expression.std.FieldExpression;
 
-import java.util.Random;
-
 import static com.akiban.qp.operator.API.*;
 
 public class TreeScanCT extends CostModelBase
@@ -133,7 +131,6 @@ public class TreeScanCT extends CostModelBase
     private static final int WARMUP_RUNS = 20000;
     private static final int MEASURED_RUNS = 10000;
 
-    private final Random random = new Random();
     private int t;
     private RowType tRowType;
     private IndexRowType idxRowType;

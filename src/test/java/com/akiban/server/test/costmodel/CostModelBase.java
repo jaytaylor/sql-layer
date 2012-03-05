@@ -42,7 +42,7 @@ public class CostModelBase extends ApiTestBase
 {
     protected CostModelBase()
     {
-        super("");
+        super("CT");
         disableTaps();
     }
 
