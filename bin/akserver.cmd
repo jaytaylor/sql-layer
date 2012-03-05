@@ -16,17 +16,21 @@ REM along with this program.  If not, see http://www.gnu.org/licenses.
 SETLOCAL
 
 REM Defaults
-FOR %%p IN (%~dp0..) DO SET AKIBAN_HOME=%%~fp
+FOR %%P IN (%~dp0..) DO SET AKIBAN_HOME=%%~fP
 SET JAR_FILE=%AKIBAN_HOME%\target\akiban-server-1.1.0-SNAPSHOT-jar-with-dependencies.jar
 SET AKIBAN_CONF=%AKIBAN_HOME%\conf
 SET SERVICE_NAME=akserver
 SET SERVICE_DNAME=Akiban Server
 SET SERVICE_DESC=Akiban Database Server
-IF "%PROCESSOR_ARCHITECTURE%"=="x86" (
-  SET PROCRUN=%AKIBAN_HOME%\bin\prunsrv
-) ELSE (
-  SET PROCRUN=%AKIBAN_HOME%\bin\%PROCESSOR_ARCHITECTURE%\prunsrv
-)
+
+FOR %%P IN (prunsrv.exe) DO SET PROCRUN=%%~$PATH:P
+REM Not in path, assume installed with program.
+IF "%PROCRUN%"=="" (
+  IF "%PROCESSOR_ARCHITECTURE%"=="x86" (
+    SET PROCRUN=%AKIBAN_HOME%\bin\prunsrv
+  ) ELSE (
+    SET PROCRUN=%AKIBAN_HOME%\bin\%PROCESSOR_ARCHITECTURE%\prunsrv
+) )
 
 SET VERB=%1
 SHIFT
@@ -54,8 +58,8 @@ GOTO NEXT_OPT
 :END_OPT
 
 IF "%VERB%"=="version" (
-  FOR /F "usebackq" %%v IN (`java -cp "%JAR_FILE%" com.akiban.server.GetVersion`) DO ECHO server   : %%v
-  FOR /F "usebackq" %%v IN (`java -cp "%JAR_FILE%" com.persistit.GetVersion`) DO ECHO persistit: %%v
+  FOR /F "usebackq" %%V IN (`java -cp "%JAR_FILE%" com.akiban.server.GetVersion`) DO ECHO server   : %%V
+  FOR /F "usebackq" %%V IN (`java -cp "%JAR_FILE%" com.persistit.GetVersion`) DO ECHO persistit: %%V
   %PROCRUN% //VS
   GOTO EOF
 )
@@ -71,6 +75,9 @@ IF "%VERB%"=="start" (
   GOTO EOF
 ) ELSE IF "%VERB%"=="console" (
   %PROCRUN% //TS//%SERVICE_NAME%
+  GOTO EOF
+) ELSE IF "%VERB%"=="monitor" (
+  %PROCRUN:srv=mgr% //MR//%SERVICE_NAME%
   GOTO EOF
 )
 
@@ -93,7 +100,7 @@ IF "%VERB%"=="install" (
 )
 
 :USAGE
-ECHO Usage: {install,uninstall,start,stop,run,version} [-j jarfile] [-c confdir] [-g]
+ECHO Usage: {install,uninstall,start,stop,run,monitor,version} [-j jarfile] [-c confdir] [-g]
 
 :RUN_CMD
 SET JVM_OPTS=%JVM_OPTS% -ea
