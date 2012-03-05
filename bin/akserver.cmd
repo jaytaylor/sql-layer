@@ -32,6 +32,8 @@ IF "%PROCRUN%"=="" (
     SET PROCRUN=%AKIBAN_HOME%\bin\%PROCESSOR_ARCHITECTURE%\prunsrv
 ) )
 
+IF NOT DEFINED JVM_OPTS SET JVM_OPTS=-Dummy=
+
 SET VERB=%1
 SHIFT
 
@@ -91,7 +93,7 @@ SET JVM_OPTS=%JVM_OPTS% -Dlog4j.configuration=file:%AKIBAN_CONF%\config\log4j.pr
 
 SET JVM_HASH_OPTS=%JVM_OPTS: =#%
 
-SET PROCRUN_ARGS=--StartMode=jvm --StartClass com.akiban.server.AkServer --StartMethod=procrunStart --StopMode=jvm --StopClass=com.akiban.server.AkServer --StopMethod=procrunStop --StdOutput=%AKIBAN_HOME%\log\stdout.log --DisplayName="%SERVICE_DNAME%" --Description="%SERVICE_DESC%" --Startup=manual --Classpath="%JAR_FILE% --JvmOptions="%JVM_HASH_OPTS%"
+SET PROCRUN_ARGS=--StartMode=jvm --StartClass com.akiban.server.AkServer --StartMethod=procrunStart --StopMode=jvm --StopClass=com.akiban.server.AkServer --StopMethod=procrunStop --StdOutput="%AKIBAN_HOME%\log\stdout.log" --DisplayName="%SERVICE_DNAME%" --Description="%SERVICE_DESC%" --Startup=manual --Classpath="%JAR_FILE%" --JvmOptions="%JVM_HASH_OPTS%"
 IF DEFINED MAX_HEAP_SIZE SET PROCRUN_ARGS=%PROCRUN_ARGS% --JvmMs=%MAX_HEAP_SIZE% --JvmMx=%MAX_HEAP_SIZE%
 
 IF "%VERB%"=="install" (
