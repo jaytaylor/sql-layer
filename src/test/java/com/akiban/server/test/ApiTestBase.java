@@ -38,6 +38,7 @@ import java.util.concurrent.Callable;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.operator.QueryContext;
@@ -497,6 +498,29 @@ public class ApiTestBase {
         index = GroupIndexCreator.createIndex(ais, groupName, indexName, tableColumnPairs, joinType);
         ddl().createIndexes(session(), Collections.singleton(index));
         return ddl().getAIS(session()).getGroup(groupName).getIndex(indexName);
+    }
+
+    protected int createTablesAndIndexesFromDDL(String schema, String ddl) {
+        SchemaFactory schemaFactory = new SchemaFactory(schema);
+        AkibanInformationSchema ais = schemaFactory.ais(ddl);
+        List<UserTable> tables = new ArrayList<UserTable>(ais.getUserTables().values());
+        // Need to define from root the leaf; repeating definition order should work.
+        Collections.sort(tables, new Comparator<UserTable>() {
+                             @Override
+                             public int compare(UserTable t1, UserTable t2) {
+                                 return t1.getTableId().compareTo(t2.getTableId());
+                             }
+                         });
+        for (UserTable table : tables) {
+            ddl().createTable(session(), table);
+        }
+        for (Group group : ais.getGroups().values()) {
+            Collection<GroupIndex> indexes = group.getIndexes();
+            if (!indexes.isEmpty())
+                ddl().createIndexes(session(), indexes);
+        }
+        updateAISGeneration();
+        return ddl().getTableId(session(), tables.get(0).getName());
     }
 
     /**

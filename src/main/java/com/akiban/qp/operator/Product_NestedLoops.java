@@ -19,12 +19,10 @@ import com.akiban.qp.row.ProductRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +43,9 @@ import java.util.Set;
  <li><b>RowType outerType:</b> Type of one child row. parent rows to be
  flattened.
 
+ <li><b>UserTableRowType branchType:</b> Ancestor type of outerType and innerType. Output will consist
+ of the cartesian product of outer and inner rows that match when projected to the branch type.
+
  <li><b>RowType innerType:</b> Type of the other child row.
 
  <li><b>int inputBindingPosition:</b> The position in the bindings that
@@ -60,13 +61,14 @@ import java.util.Set;
 
  Suppose we have a COA schema (C is the parent of O and A), and that we
  have flattened C with O, and C with A. Product_NestedLoops has two
- input streams, with CO in one and CA in the other. For this
- discussion, let's assume that CO is the outer stream, and CA is in the
+ input streams, with CO in one and CA in the other. The branch type is C.
+ For this discussion, let's assume that CO is the outer stream, and CA is in the
  inner stream. The terms "outer" and "inner" reflect the relative
  positions of the inputs in the nested loops used to compute the
  product of the inputs.
 
- For each CO row from the outer input stream, a set of matching CA rows
+ For each CO row from the outer input stream, a set of matching CA rows,
+ (i.e., matching in C)
  from the inner input stream are retrieved. The CO row and all of the
  CA rows will have the same customer primary key. Product_NestedLoops
  will write to the output stream product rows for each CO/CA
@@ -149,6 +151,7 @@ class Product_NestedLoops extends Operator
     public Product_NestedLoops(Operator outerInputOperator,
                                Operator innerInputOperator,
                                RowType outerType,
+                               UserTableRowType branchType,
                                RowType innerType,
                                int inputBindingPosition)
     {
@@ -161,7 +164,7 @@ class Product_NestedLoops extends Operator
         this.innerInputOperator = innerInputOperator;
         this.outerType = outerType;
         this.innerType = innerType;
-        this.productType = outerType.schema().newProductType(outerType, innerType);
+        this.productType = outerType.schema().newProductType(outerType, branchType, innerType);
         this.branchType = productType.branchType();
         this.inputBindingPosition = inputBindingPosition;
     }

@@ -66,12 +66,19 @@ public class ProductRowType extends DerivedRowType
         return rightType;
     }
 
-    public ProductRowType(DerivedTypesSchema schema, int typeId, RowType leftType, RowType rightType)
+    public ProductRowType(DerivedTypesSchema schema, 
+                          int typeId, 
+                          RowType leftType, 
+                          UserTableRowType branchType, 
+                          RowType rightType)
     {
         super(schema, typeId);
         assert leftType.schema() == schema : leftType;
         assert rightType.schema() == schema : rightType;
-        this.branchType = leafmostCommonType(leftType, rightType);
+        this.branchType =
+            branchType == null
+            ? leafmostCommonType(leftType, rightType)
+            : branchType;
         this.leftType = leftType;
         this.rightType = rightType;
         List<UserTable> tables = new ArrayList<UserTable>(leftType.typeComposition().tables());

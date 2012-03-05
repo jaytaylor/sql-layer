@@ -11,3 +11,5 @@ CREATE TABLE child
   pid INT, GROUPING FOREIGN KEY (pid) REFERENCES parent(id), 
   name VARCHAR(256) NOT NULL
 );
+
+CREATE INDEX names ON parent(parent.name, child.name) USING LEFT JOIN;

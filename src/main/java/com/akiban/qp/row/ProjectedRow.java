@@ -103,7 +103,6 @@ public class ProjectedRow extends AbstractRow
         this.row = row;
         this.evaluations = createEvaluations(expressions, row, context);
         this.holders = new ValueHolder[expressions.size()];
-        super.runId(row.runId());
     }
 
     /** Make sure all the <code>ValueHolder</code>s are full. */

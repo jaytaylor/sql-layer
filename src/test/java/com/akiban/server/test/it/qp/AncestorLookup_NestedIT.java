@@ -16,12 +16,16 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.qp.expression.IndexBound;
+import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
 import org.junit.Test;
@@ -69,6 +73,8 @@ public class AncestorLookup_NestedIT extends OperatorITBase
         bRowType = schema.userTableRowType(userTable(b));
         cRowType = schema.userTableRowType(userTable(c));
         aValueIndexRowType = indexType(a, "avalue");
+        bValueIndexRowType = indexType(b, "bvalue");
+        cValueIndexRowType = indexType(c, "cvalue");
         rValueIndexRowType = indexType(r, "rvalue");
         rabc = groupTable(r);
         db = new NewRow[]{createNewRow(r, 1L, "r1"),
@@ -207,16 +213,111 @@ public class AncestorLookup_NestedIT extends OperatorITBase
         };
         compareRows(expected, cursor);
     }
+    
+    // Multiple index tests
+    
+    @Test
+    public void testABIndexToR()
+    {
+        Operator abIndexScan = 
+            hKeyUnion_Ordered(
+                indexScan_Default(aValueIndexRowType, false, aValueRange("a13", "a14")),
+                indexScan_Default(bValueIndexRowType, false, bValueRange("b25", "b26")),
+                aValueIndexRowType,
+                bValueIndexRowType,
+                2,
+                2,
+                2,
+                rRowType);
+        Operator plan =
+            map_NestedLoops(
+                abIndexScan,
+                ancestorLookup_Nested(rabc, abIndexScan.rowType(), Collections.singleton(rRowType), 0),
+                0);
+        Cursor cursor = cursor(plan, queryContext);
+        RowBase[] expected = new RowBase[]{
+            row(rRowType, 1L, "r1"),
+            row(rRowType, 2L, "r2"),
+        };
+        compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testABCIndexToR()
+    {
+        Operator abIndexScan = 
+            hKeyUnion_Ordered(
+                indexScan_Default(aValueIndexRowType, false, aValueRange("a13", "a14")),
+                indexScan_Default(bValueIndexRowType, false, bValueRange("b15", "b16")),
+                aValueIndexRowType,
+                bValueIndexRowType,
+                2,
+                2,
+                2,
+                rRowType);
+        Operator abcIndexScan =
+            hKeyUnion_Ordered(
+                abIndexScan,
+                indexScan_Default(cValueIndexRowType, false, cValueRange("c17", "c18")),
+                abIndexScan.rowType(),
+                cValueIndexRowType,
+                1,
+                2,
+                1,
+                rRowType);
+        Operator plan =
+            map_NestedLoops(
+                abcIndexScan,
+                ancestorLookup_Nested(rabc, abcIndexScan.rowType(), Collections.singleton(rRowType), 0),
+                0);
+        Cursor cursor = cursor(plan, queryContext);
+        RowBase[] expected = new RowBase[]{
+            row(rRowType, 1L, "r1"),
+        };
+        compareRows(expected, cursor);
+    }
+
+    private IndexKeyRange aValueRange(String lo, String hi)
+    {
+        return IndexKeyRange.bounded(aValueIndexRowType, aValueBound(lo), true, aValueBound(hi), true);
+    }
+
+    private IndexKeyRange bValueRange(String lo, String hi)
+    {
+        return IndexKeyRange.bounded(bValueIndexRowType, bValueBound(lo), true, bValueBound(hi), true);
+    }
+
+    private IndexKeyRange cValueRange(String lo, String hi)
+    {
+        return IndexKeyRange.bounded(cValueIndexRowType, cValueBound(lo), true, cValueBound(hi), true);
+    }
+
+    private IndexBound aValueBound(String a)
+    {
+        return new IndexBound(row(aValueIndexRowType, a), new SetColumnSelector(0));
+    }
+
+    private IndexBound bValueBound(String b)
+    {
+        return new IndexBound(row(bValueIndexRowType, b), new SetColumnSelector(0));
+    }
+
+    private IndexBound cValueBound(String c)
+    {
+        return new IndexBound(row(cValueIndexRowType, c), new SetColumnSelector(0));
+    }
 
     protected int r;
     protected int a;
     protected int c;
     protected int b;
-    protected RowType rRowType;
-    protected RowType aRowType;
-    protected RowType cRowType;
-    protected RowType bRowType;
+    protected UserTableRowType rRowType;
+    protected UserTableRowType aRowType;
+    protected UserTableRowType cRowType;
+    protected UserTableRowType bRowType;
     protected IndexRowType aValueIndexRowType;
+    protected IndexRowType bValueIndexRowType;
+    protected IndexRowType cValueIndexRowType;
     protected IndexRowType rValueIndexRowType;
     protected GroupTable rabc;
 }

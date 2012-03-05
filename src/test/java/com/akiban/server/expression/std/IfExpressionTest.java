@@ -74,12 +74,6 @@ public class IfExpressionTest
             param(pb, t, AkType.DECIMAL, AkType.VARCHAR, true, new ValueHolder(AkType.VARCHAR, "1"));
             param(pb, t, AkType.DECIMAL, AkType.LONG, false, new ValueHolder(AkType.DECIMAL, BigDecimal.ZERO));
 
-            // expect inconvertible type
-            param(pb, t, AkType.BOOL, AkType.LONG, true, null);
-            param(pb, t, AkType.LONG, AkType.BOOL, true, null);
-            param(pb, t, AkType.DATE, AkType.LONG, true, null);
-            param(pb, t, AkType.TIME, AkType.DATE, true, null);
-            param(pb, t, AkType.DATE, AkType.DOUBLE, true, null);
         }
 
         // condition is NULL or UNSUPPORTED => always false
@@ -121,7 +115,7 @@ public class IfExpressionTest
         Expression faExp = getExp(falseExType, false);        
 
         // cast second and third args as necessary
-        AkType top = IfExpression.getTopType(trueExType, falseExType);
+        AkType top = CoalesceExpression.getTopType(Arrays.asList(trueExType, falseExType));
         trExp = new CastExpression(top, trExp);
         faExp = new CastExpression(top, faExp);
 

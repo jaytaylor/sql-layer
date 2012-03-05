@@ -447,8 +447,8 @@ public class OperatorAssembler extends BaseRule
                 inputRowType = tableRowType(ancestorLookup.getDescendant());
                 flag = API.LookupOption.KEEP_INPUT;
             }
-            List<RowType> ancestorTypes = 
-                new ArrayList<RowType>(ancestorLookup.getAncestors().size());
+            List<UserTableRowType> ancestorTypes =
+                new ArrayList<UserTableRowType>(ancestorLookup.getAncestors().size());
             for (TableNode table : ancestorLookup.getAncestors()) {
                 ancestorTypes.add(tableRowType(table));
             }

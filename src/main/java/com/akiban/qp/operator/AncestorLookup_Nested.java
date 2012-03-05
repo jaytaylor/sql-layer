@@ -19,8 +19,10 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.HKeyRowType;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 import org.slf4j.Logger;
@@ -140,27 +142,7 @@ class AncestorLookup_Nested extends Operator
                                  Collection<? extends RowType> ancestorTypes,
                                  int inputBindingPosition)
     {
-        ArgumentValidation.notNull("groupTable", groupTable);
-        ArgumentValidation.notNull("rowType", rowType);
-        ArgumentValidation.notNull("ancestorTypes", ancestorTypes);
-        ArgumentValidation.notEmpty("ancestorTypes", ancestorTypes);
-        ArgumentValidation.isTrue("inputBindingPosition >= 0", inputBindingPosition >= 0);
-        // Keeping index rows not currently supported
-        boolean inputFromIndex = rowType instanceof IndexRowType;
-        RowType tableRowType =
-            inputFromIndex
-            ? ((IndexRowType) rowType).tableType()
-            : rowType;
-        // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
-        // is from an index. I.e., this operator can be used for an index lookup.
-        for (RowType ancestorType : ancestorTypes) {
-            ArgumentValidation.isTrue("inputFromIndex || ancestorType1 != tableRowType",
-                                      inputFromIndex || ancestorType != tableRowType);
-            ArgumentValidation.isTrue("ancestorType.ancestorOf(tableRowType)",
-                                      ancestorType.ancestorOf(tableRowType));
-            ArgumentValidation.isTrue("ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup()",
-                                      ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup());
-        }
+        validateArguments(groupTable, rowType, ancestorTypes, inputBindingPosition);
         this.groupTable = groupTable;
         this.rowType = rowType;
         this.inputBindingPosition = inputBindingPosition;
@@ -183,6 +165,46 @@ class AncestorLookup_Nested extends Operator
         int a = 0;
         for (RowType ancestorType : this.ancestorTypes) {
             this.ancestorTypeDepth[a++] = ancestorType.userTable().getDepth() + 1;
+        }
+    }
+
+    // For use by this class
+
+    private void validateArguments(GroupTable groupTable,
+                                   RowType rowType,
+                                   Collection<? extends RowType> ancestorTypes,
+                                   int inputBindingPosition)
+    {
+        ArgumentValidation.notNull("groupTable", groupTable);
+        ArgumentValidation.notNull("rowType", rowType);
+        ArgumentValidation.notNull("ancestorTypes", ancestorTypes);
+        ArgumentValidation.notEmpty("ancestorTypes", ancestorTypes);
+        ArgumentValidation.isTrue("inputBindingPosition >= 0", inputBindingPosition >= 0);
+        if (rowType instanceof IndexRowType) {
+            // Keeping index rows not supported
+            RowType tableRowType = ((IndexRowType) rowType).tableType();
+            // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
+            // is from an index. I.e., this operator can be used for an index lookup.
+            for (RowType ancestorType : ancestorTypes) {
+                ArgumentValidation.isTrue("ancestorType.ancestorOf(tableRowType)",
+                                          ancestorType.ancestorOf(tableRowType));
+                ArgumentValidation.isTrue("ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup()",
+                                          ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup());
+            }
+        } else if (rowType instanceof UserTableRowType) {
+            // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
+            // is from an index. I.e., this operator can be used for an index lookup.
+            for (RowType ancestorType : ancestorTypes) {
+                ArgumentValidation.isTrue("ancestorType != tableRowType",
+                                          ancestorType != rowType);
+                ArgumentValidation.isTrue("ancestorType.ancestorOf(tableRowType)",
+                                          ancestorType.ancestorOf(rowType));
+                ArgumentValidation.isTrue("ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup()",
+                                          ancestorType.userTable().getGroup() == rowType.userTable().getGroup());
+            }
+        } else if (rowType instanceof HKeyRowType) {
+        } else {
+            ArgumentValidation.isTrue("invalid rowType", false);
         }
     }
 

@@ -17,7 +17,6 @@ package com.akiban.qp.row;
 
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.ValuesRowType;
-import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
@@ -91,14 +90,6 @@ public final class ImmutableRowTest {
         row.acquire();
         row.acquire();
         assertEquals("isShared", false, row.isShared());
-    }
-
-    @Test(expected = UnsupportedOperationException.class)
-    public void setRunId() {
-        new ImmutableRow(
-                rowType(AkType.VARCHAR),
-                Collections.singleton(new ValueHolder(AkType.VARCHAR, "1L")).iterator()
-        ).runId(1);
     }
 
     private RowType rowType(AkType... types) {
