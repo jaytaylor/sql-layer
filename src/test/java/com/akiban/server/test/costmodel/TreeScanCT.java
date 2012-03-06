@@ -122,8 +122,8 @@ public class TreeScanCT extends CostModelBase
         }
         long end = System.nanoTime();
         if (label != null) {
-            double averageMsec = (end - start) / (1000.0 * runs * sequentialAccessesPerRandom);
-            System.out.println(String.format("%s - %s:  %s usec/row", label, sequentialAccessesPerRandom, averageMsec));
+            double averageUsec = (end - start) / (1000.0 * runs * sequentialAccessesPerRandom);
+            System.out.println(String.format("%s - %s:  %s usec/row", label, sequentialAccessesPerRandom, averageUsec));
         }
     }
 
