@@ -175,7 +175,7 @@ public class JoinAndIndexPicker extends BaseRule
             if (joinable instanceof TableGroupJoinTree) {
                 TableGroupJoinTree tables = (TableGroupJoinTree)joinable;
                 GroupIndexGoal groupGoal = new GroupIndexGoal(queryGoal, tables);
-                List<ConditionList> conditionSources = groupGoal.updateContext(subqueryBoundTables, subqueryJoins);
+                List<ConditionList> conditionSources = groupGoal.updateContext(subqueryBoundTables, subqueryJoins, true);
                 PlanNode scan = groupGoal.pickBestScan();
                 CostEstimate costEstimate = groupGoal.costEstimateScan(scan);
                 return new GroupPlan(groupGoal, JoinableBitSet.of(0), scan, costEstimate, conditionSources);
@@ -280,7 +280,7 @@ public class JoinAndIndexPicker extends BaseRule
                     return groupPlan;
                 }
             }
-            List<ConditionList> conditionSources = groupGoal.updateContext(enumerator.boundTables(outerTables), joins);
+            List<ConditionList> conditionSources = groupGoal.updateContext(enumerator.boundTables(outerTables), joins, joins.isEmpty());
             PlanNode scan = groupGoal.pickBestScan();
             CostEstimate costEstimate = groupGoal.costEstimateScan(scan);
             GroupPlan groupPlan = new GroupPlan(groupGoal, outerTables, scan, costEstimate, conditionSources);
