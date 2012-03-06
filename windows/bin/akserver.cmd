@@ -1,4 +1,4 @@
-rem @ECHO OFF
+@ECHO OFF
 
 REM Copyright (C) 2012 Akiban Technologies Inc.
 REM This program is free software: you can redistribute it and/or modify
