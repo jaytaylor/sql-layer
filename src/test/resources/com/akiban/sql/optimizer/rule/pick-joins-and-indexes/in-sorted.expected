@@ -1,10 +1,11 @@
-SelectQuery@56d43493
-  ResultSet@5c7cb6e[sku]
-    Project@7ffca5b8[user.items.sku]
-      Select@23e414ad[]
-        JoinNode@6d0352b3(INNER/NESTED_LOOPS)
-          ExpressionsSource@7b34b088([[Jones], [Smith]])
-          TableGroupJoinTree@669eb5a6(TableGroup@7957a85(customers), customers INNER orders INNER items - IndexScan@752a9dae(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), covering/SORTED, =VALUES[0], rows = 200, cost = 204.250))
-            TableSource@4dcf0825(user.customers - TableGroup@7957a85(customers))
-              TableSource@531fdd0b(user.orders - TableGroupJoin@40d6469a(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-                TableSource@50e927cf(user.items - TableGroupJoin@33b549b7(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+SelectQuery@6d0352b3
+  ResultSet@752a9dae[sku]
+    Project@40d6469a[user.items.sku]
+      Sort@13bd3d4c[user.items.sku]
+        Select@33b549b7[]
+          JoinNode@1b159a6b(INNER/NESTED_LOOPS)
+            ExpressionsSource@3da7d9ec([[Jones], [Smith]])
+            TableGroupJoinTree@53097c43(TableGroup@23e414ad(customers), customers INNER orders INNER items - IndexScan@274cf4b1(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), covering/NONE, =VALUES[0], rows = 200, cost = 2323.58))
+              TableSource@64955362(user.customers - TableGroup@23e414ad(customers))
+                TableSource@7957a85(user.orders - TableGroupJoin@2d54a49f(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+                  TableSource@669eb5a6(user.items - TableGroupJoin@1003d9f9(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
