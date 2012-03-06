@@ -382,14 +382,13 @@
                     <!-- No extension. Manually add header and ignore -->
                     <exclude>bin/akserver</exclude>
                     <exclude>bin/akloader</exclude>
-                    <exclude>bin/akserver.cmd</exclude>
                     <exclude>conf/config/jvm.options</exclude>
-                    <exclude>conf/config/jvm-options.cmd</exclude>
                     <exclude>packages-common/jvm.options</exclude>
                     <exclude>doc/release_notes.txt</exclude>
                     <!-- Files requiring a specific format (packaging control, test output, etc) -->
                     <exclude>debian/*</exclude>
                     <exclude>redhat/*</exclude>
+                    <exclude>windows/*</exclude>
                     <exclude>src/main/resources/version/akserver_version</exclude> 
                     <exclude>src/test/resources/com/akiban/**/README*</exclude> 
                     <exclude>src/test/resources/com/akiban/ais/model/staticgrouping/*</exclude>
