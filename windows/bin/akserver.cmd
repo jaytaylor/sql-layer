@@ -30,14 +30,18 @@ SET JAR_FILE=%AKIBAN_HOME%\lib\%SERVER_JAR%
 SET AKIBAN_CONF=%AKIBAN_HOME%
 SET AKIBAN_LOGDIR=%AKIBAN_HOME%\log
 
-FOR %%P IN (prunsrv.exe) DO SET PROCRUN=%%~$PATH:P
+FOR %%P IN (prunsrv.exe) DO SET PRUNSRV=%%~$PATH:P
+FOR %%P IN (prunmgr.exe) DO SET PRUNMGR=%%~$PATH:P
 REM Not in path, assume installed with program.
-IF "%PROCRUN%"=="" (
+IF "%PRUNSRV%"=="" (
   IF "%PROCESSOR_ARCHITECTURE%"=="x86" (
-    SET PROCRUN=%AKIBAN_HOME%\procrun\prunsrv
+    SET PRUNSRV=%AKIBAN_HOME%\procrun\prunsrv
   ) ELSE (
-    SET PROCRUN=%AKIBAN_HOME%\procrun\%PROCESSOR_ARCHITECTURE%\prunsrv
+    SET PRUNSRV=%AKIBAN_HOME%\procrun\%PROCESSOR_ARCHITECTURE%\prunsrv
 ) )
+IF "%PRUNMGR%"=="" (
+  SET PRUNMGR=%AKIBAN_HOME%\procrun\prunmgr
+)
 
 GOTO PARSE_CMD
 
@@ -50,7 +54,8 @@ FOR %%P IN ("%~dp0..\..") DO SET BUILD_HOME=%%~fP
 SET JAR_FILE=%BUILD_HOME%\target\%SERVER_JAR%
 SET AKIBAN_CONF=%BUILD_HOME%\windows
 SET AKIBAN_LOGDIR=%~d0\akiban\log
-SET PROCRUN=prunsrv
+SET PRUNSRV=prunsrv
+SET PRUNMGR=prunmgr
 
 :PARSE_CMD
 
@@ -90,19 +95,19 @@ GOTO NEXT_OPT
 IF "%VERB%"=="version" GOTO VERSION
 
 IF "%VERB%"=="start" (
-  "%PROCRUN%" //ES//%SERVICE_NAME%
+  "%PRUNSRV%" //ES//%SERVICE_NAME%
   GOTO EOF
 ) ELSE IF "%VERB%"=="stop" (
-  "%PROCRUN%" //SS//%SERVICE_NAME%
+  "%PRUNSRV%" //SS//%SERVICE_NAME%
   GOTO EOF
 ) ELSE IF "%VERB%"=="uninstall" (
-  "%PROCRUN%" //DS//%SERVICE_NAME%
+  "%PRUNSRV%" //DS//%SERVICE_NAME%
   GOTO EOF
 ) ELSE IF "%VERB%"=="console" (
-  "%PROCRUN%" //TS//%SERVICE_NAME%
+  "%PRUNSRV%" //TS//%SERVICE_NAME%
   GOTO EOF
 ) ELSE IF "%VERB%"=="monitor" (
-  START "%SERVICE_DNAME%" "%PROCRUN:srv=mgr%.exe" //MS//%SERVICE_NAME%
+  START "%SERVICE_DNAME%" "%PRUNMGR%" //MS//%SERVICE_NAME%
   GOTO EOF
 )
 
@@ -121,13 +126,13 @@ IF EXIST "%AKIBAN_CONF%\config\jvm-options.cmd" CALL "%AKIBAN_CONF%\config\jvm-o
 
 IF "%VERB%"=="run" GOTO RUN_CMD
 
-SET PROCRUN_ARGS=--StartMode=jvm --StartClass com.akiban.server.AkServer --StartMethod=procrunStart --StopMode=jvm --StopClass=com.akiban.server.AkServer --StopMethod=procrunStop --StdOutput="%AKIBAN_LOGDIR%\stdout.log" --DisplayName="%SERVICE_DNAME%" --Description="%SERVICE_DESC%" --Startup=manual --Classpath="%JAR_FILE%"
+SET PRUNSRV_ARGS=--StartMode=jvm --StartClass com.akiban.server.AkServer --StartMethod=procrunStart --StopMode=jvm --StopClass=com.akiban.server.AkServer --StopMethod=procrunStop --StdOutput="%AKIBAN_LOGDIR%\stdout.log" --DisplayName="%SERVICE_DNAME%" --Description="%SERVICE_DESC%" --Startup=manual --Classpath="%JAR_FILE%"
 REM Each value that might have a space needs a separate ++JvmOptions.
-SET PROCRUN_ARGS=%PROCRUN_ARGS% --JvmOptions="%JVM_OPTS: =#%" ++JvmOptions="-Dakiban.admin=%AKIBAN_CONF%" ++JvmOptions="-Dservices.config=%AKIBAN_CONF%\config\services-config.yaml" ++JvmOptions="-Dlog4j.configuration=file:%AKIBAN_LOGCONF%"
-IF DEFINED MAX_HEAP_SIZE SET PROCRUN_ARGS=%PROCRUN_ARGS% --JvmMs=%MAX_HEAP_SIZE% --JvmMx=%MAX_HEAP_SIZE%
+SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmOptions="%JVM_OPTS: =#%" ++JvmOptions="-Dakiban.admin=%AKIBAN_CONF%" ++JvmOptions="-Dservices.config=%AKIBAN_CONF%\config\services-config.yaml" ++JvmOptions="-Dlog4j.configuration=file:%AKIBAN_LOGCONF%"
+IF DEFINED MAX_HEAP_SIZE SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmMs=%MAX_HEAP_SIZE% --JvmMx=%MAX_HEAP_SIZE%
 
 IF "%VERB%"=="install" (
-  "%PROCRUN%" //IS//%SERVICE_NAME% %PROCRUN_ARGS%
+  "%PRUNSRV%" //IS//%SERVICE_NAME% %PRUNSRV_ARGS%
   GOTO EOF
 )
 
@@ -148,7 +153,7 @@ FOR /F "usebackq" %%V IN (`java -cp "%JAR_FILE%" com.persistit.GetVersion`) DO S
 ECHO server   : %SERVER_VERSION%
 ECHO persistit: %PERSISTIT_VERSION%
 ECHO.
-"%PROCRUN%" //VS
+"%PRUNSRV%" //VS
 GOTO EOF
 
 :RUN_CMD
