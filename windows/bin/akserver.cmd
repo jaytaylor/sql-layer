@@ -87,12 +87,7 @@ IF "%1"=="-j" (
 GOTO NEXT_OPT
 :END_OPT
 
-IF "%VERB%"=="version" (
-  FOR /F "usebackq" %%V IN (`java -cp "%JAR_FILE%" com.akiban.server.GetVersion`) DO ECHO server   : %%V
-  FOR /F "usebackq" %%V IN (`java -cp "%JAR_FILE%" com.persistit.GetVersion`) DO ECHO persistit: %%V
-  "%PROCRUN%" //VS
-  GOTO EOF
-)
+IF "%VERB%"=="version" GOTO VERSION
 
 IF "%VERB%"=="start" (
   "%PROCRUN%" //ES//%SERVICE_NAME%
@@ -107,7 +102,7 @@ IF "%VERB%"=="start" (
   "%PROCRUN%" //TS//%SERVICE_NAME%
   GOTO EOF
 ) ELSE IF "%VERB%"=="monitor" (
-  "%PROCRUN:srv=mgr%" //MR//%SERVICE_NAME%
+  START "%SERVICE_DNAME%" "%PROCRUN:srv=mgr%.exe" //MS//%SERVICE_NAME%
   GOTO EOF
 )
 
@@ -138,6 +133,22 @@ IF "%VERB%"=="install" (
 
 :USAGE
 ECHO Usage: {install,uninstall,start,stop,run,monitor,version} [-j jarfile] [-c confdir] [-l log4j.properties] [-g]
+ECHO install   - install as service
+ECHO uninstall - remove installed service
+ECHO start     - start installed service
+ECHO stop      - stop installed service
+ECHO run       - run as ordinary application
+ECHO monitor   - start tray icon service monitor
+ECHO version   - print version and exit
+GOTO EOF
+
+:VERSION
+FOR /F "usebackq" %%V IN (`java -cp "%JAR_FILE%" com.akiban.server.GetVersion`) DO SET SERVER_VERSION=%%V
+FOR /F "usebackq" %%V IN (`java -cp "%JAR_FILE%" com.persistit.GetVersion`) DO SET PERSISTIT_VERSION=%%V
+ECHO server   : %SERVER_VERSION%
+ECHO persistit: %PERSISTIT_VERSION%
+ECHO.
+"%PROCRUN%" //VS
 GOTO EOF
 
 :RUN_CMD
