@@ -24,21 +24,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.akiban.sql.optimizer.rule.costmodel.CostModelMeasurements.*;
+
 public class CostModel
 {
-    public long indexScan(IndexRowType rowType, int nRows)
+    public double indexScan(IndexRowType rowType, int nRows)
     {
         TreeStatistics treeStatistics = treeStatistics(rowType);
         return treeScan(treeStatistics.rowWidth(), nRows);
     }
     
-    public long fullIndexScan(IndexRowType rowType)
+    public double fullIndexScan(IndexRowType rowType)
     {
         TreeStatistics treeStatistics = treeStatistics(rowType);
         return treeScan(treeStatistics.rowWidth(), treeStatistics.rowCount());
     }
 
-    public long fullGroupScan(UserTableRowType rootTableRowType)
+    public double fullGroupScan(UserTableRowType rootTableRowType)
     {
         // A group scan basically does no random access, even to the very first row (I think, at least as far as CPU
         // costs are concerned). So for each table in the group, subtract the cost of a tree scan for 0 rows to account
@@ -53,7 +55,7 @@ public class CostModel
         return cost;
     }
 
-    public long ancestorLookup(List<UserTableRowType> ancestorTableTypes)
+    public double ancestorLookup(List<UserTableRowType> ancestorTableTypes)
     {
         long cost = 0;
         for (UserTableRowType ancestorTableType : ancestorTableTypes) {
@@ -62,67 +64,67 @@ public class CostModel
         return cost;
     }
     
-    public long branchLookup(UserTableRowType branchRootType)
+    public double branchLookup(UserTableRowType branchRootType)
     {
         return hKeyBoundGroupScanBranch(branchRootType);
     }
 
-    public long sort()
+    public double sort()
     {
         assert false : "Not implemented yet";
         return -1L;
     }
 
-    public long sortDistinct()
+    public double sortDistinct()
     {
         assert false : "Not implemented yet";
         return -1L;
     }
 
-    public long select(int nRows)
+    public double select(int nRows)
     {
-        return nRows * expression();
+        return nRows * (SELECT_PER_ROW + EXPRESSION_PER_FIELD);
     }
 
-    public long project(int nRows)
+    public double project(RowType rowType, int nRows)
     {
-        return nRows * expression();
+        return nRows * (PROJECT_PER_ROW + rowType.nFields() * EXPRESSION_PER_FIELD);
     }
 
-    public long distinct()
-    {
-        assert false : "Not implemented yet";
-        return -1L;
-    }
-
-    public long product()
+    public double distinct()
     {
         assert false : "Not implemented yet";
         return -1L;
     }
 
-    public long map()
+    public double product()
     {
         assert false : "Not implemented yet";
         return -1L;
     }
 
-    public long flatten()
+    public double map()
     {
         assert false : "Not implemented yet";
         return -1L;
     }
 
-    private long hKeyBoundGroupScanSingleRow(UserTableRowType rootTableRowType)
+    public double flatten()
+    {
+        assert false : "Not implemented yet";
+        return -1L;
+    }
+
+    private double hKeyBoundGroupScanSingleRow(UserTableRowType rootTableRowType)
     {
         TreeStatistics treeStatistics = treeStatistics(rootTableRowType);
         return treeScan(treeStatistics.rowWidth(), 1);
     }
     
-    private long hKeyBoundGroupScanBranch(UserTableRowType rootTableRowType)
+    private double hKeyBoundGroupScanBranch(UserTableRowType rootTableRowType)
     {
         // Cost includes access to root
-        long cost = hKeyBoundGroupScanSingleRow(rootTableRowType);
+        double cost = hKeyBoundGroupScanSingleRow(rootTableRowType);
         // The rest of the cost is sequential access. It is proportional to the fullGroupScan -- divide that cost
         // by the number of rows in the root table, assuming that each group has the same size.
         TreeStatistics rootTableStatistics = statisticsMap.get(rootTableRowType.typeId());
@@ -135,24 +137,11 @@ public class CostModel
         return new CostModel(schema);
     }
 
-    private static long treeScan(int rowWidth, long nRows)
+    private static double treeScan(int rowWidth, long nRows)
     {
-        // These coefficients approximate the measurements made by TreeScanCT.
-        // Random access cost is (ar * rowWidth + br)
-        double ar = 0.012;
-        double br = 5.15;
-        // Sequential access cost coefficient is (as * rowWidth * bs)
-        double as = 0.0046;
-        double bs = 0.61;
-        double cost = ar * rowWidth + br + nRows * (as * rowWidth + bs);
-        return (long) cost;
-    }
-    
-    private static long expression()
-    {
-        // According to ExpressionCT, which tries expressions with up to 8 literals and 7 operators, expression
-        // evaluation is always under 1 usec.
-        return 1;
+        return
+            RANDOM_ACCESS_PER_ROW + RANDOM_ACCESS_PER_BYTE * rowWidth +
+            nRows * (SEQUENTIAL_ACCESS_PER_ROW + SEQUENTIAL_ACCESS_PER_BYTE * rowWidth);
     }
 
     private TreeStatistics treeStatistics(RowType rowType)

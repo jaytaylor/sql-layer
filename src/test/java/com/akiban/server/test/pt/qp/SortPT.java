@@ -34,7 +34,7 @@ import java.util.Random;
 
 import static com.akiban.qp.operator.API.*;
 
-public class SortProfilePT extends QPProfilePTBase
+public class SortPT extends QPProfilePTBase
 {
     @Before
     public void before() throws InvalidOperationException

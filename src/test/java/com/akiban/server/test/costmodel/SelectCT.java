@@ -23,15 +23,13 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.expression.std.Expressions;
 
-import java.util.Arrays;
-
 import static com.akiban.qp.operator.API.*;
 
-public class ProjectCT extends CostModelBase
+public class SelectCT extends CostModelBase
 {
     public static void main(String[] args) throws Exception
     {
-        new ProjectCT().run();
+        new SelectCT().run();
     }
 
     private void run() throws Exception
@@ -68,7 +66,7 @@ public class ProjectCT extends CostModelBase
     private void run(int runs, boolean report)
     {
         Operator scan = groupScan_Default(group);
-        Operator project = project_Default(scan, tRowType, Arrays.asList(Expressions.literal(true)));
+        Operator select = select_HKeyOrdered(scan, tRowType, Expressions.literal(true));
         long start;
         long stop;
         // Measure time for group scan
@@ -80,19 +78,19 @@ public class ProjectCT extends CostModelBase
         }
         stop = System.nanoTime();
         long groupScanNsec = stop - start;
-        // Measure time for group scan and project
+        // Measure time for group scan and select
         start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
-            Cursor cursor = cursor(project, queryContext);
+            Cursor cursor = cursor(select, queryContext);
             cursor.open();
             while (cursor.next() != null);
         }
         stop = System.nanoTime();
-        long projectNsec = stop - start;
+        long selectNsec = stop - start;
         if (report) {
             // Report the difference
-            long projectOnlyNsec = projectNsec - groupScanNsec;
-            double averageUsecPerRow = projectOnlyNsec / (1000.0 * runs * ROWS);
+            long selectOnlyNsec = selectNsec - groupScanNsec;
+            double averageUsecPerRow = selectOnlyNsec / (1000.0 * runs * ROWS);
             System.out.println(String.format("%s usec/row", averageUsecPerRow));
         }
     }
