@@ -365,7 +365,6 @@ public class GroupJoinFinder extends BaseRule
                                         parentTables.put(parentSource, entry);
                                     }
                                     entry.set(i, normalized, ccond);
-                                    break; // found a condition for this join column; don't need to look for any more
                                 }
                             }
                         }
