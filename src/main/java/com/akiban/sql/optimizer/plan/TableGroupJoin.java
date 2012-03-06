@@ -16,7 +16,10 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.Join;
+import com.akiban.sql.optimizer.plan.ConditionExpression.Implementation;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /** A join within a group corresponding to the GROUPING FK constraint. 
@@ -25,19 +28,18 @@ public class TableGroupJoin extends BasePlanElement
 {
     private TableGroup group;
     private TableSource parent, child;
-    private List<ComparisonCondition> conditions;
+    private NormalizedConditions conditions;
     private Join join;
 
     public TableGroupJoin(TableGroup group,
                           TableSource parent, TableSource child,
-                          List<ComparisonCondition> conditions, Join join) {
+                          NormalizedConditions conditions, Join join) {
         this.group = group;
         this.parent = parent;
         parent.setGroup(group);
         this.child = child;
         this.conditions = conditions;
-        for (ComparisonCondition condition : conditions)
-          condition.setImplementation(ConditionExpression.Implementation.GROUP_JOIN);
+        setImplementation(ConditionExpression.Implementation.GROUP_JOIN);
         child.setParentJoin(this);
         this.join = join;
         group.addJoin(this);
@@ -57,7 +59,7 @@ public class TableGroupJoin extends BasePlanElement
         return child;
     }
     public List<ComparisonCondition> getConditions() {
-        return conditions;
+        return conditions.normalized;
     }
     public Join getJoin() {
         return join;
@@ -80,7 +82,10 @@ public class TableGroupJoin extends BasePlanElement
         group = (TableGroup)group.duplicate(map);
         parent = (TableSource)parent.duplicate(map);
         child = (TableSource)child.duplicate(map);
-        conditions = duplicateList(conditions, map);
+        conditions = new NormalizedConditions(
+                duplicateList(conditions.normalized, map),
+                duplicateList(conditions.original, map)
+        );
     }
     
     /** When a group join is across a continguous set of join, it
@@ -89,10 +94,48 @@ public class TableGroupJoin extends BasePlanElement
      * regular join.
      */
     public void reject() {
-        for (ComparisonCondition condition : conditions)
-          condition.setImplementation(ConditionExpression.Implementation.POTENTIAL_GROUP_JOIN);
+        setImplementation(ConditionExpression.Implementation.POTENTIAL_GROUP_JOIN);
         child.setParentJoin(null);
         group.getJoins().remove(this);
     }
+    
+    private void setImplementation(Implementation implementation) {
+        for (ComparisonCondition elem : conditions.normalized)
+            elem.setImplementation(implementation);
+        for (ComparisonCondition elem : conditions.original)
+            elem.setImplementation(implementation);
+    }
+    
+    public static class NormalizedConditions {
+        private List<ComparisonCondition> normalized;
+        private List<ComparisonCondition> original;
 
+        private NormalizedConditions(List<ComparisonCondition> normalized, List<ComparisonCondition> original) {
+            this.normalized = normalized;
+            this.original = original;
+        }
+
+        public NormalizedConditions(int ncols) {
+            List<ComparisonCondition> empty = Collections.nCopies(ncols, null);
+            this.normalized = new ArrayList<ComparisonCondition>(empty);
+            this.original = new ArrayList<ComparisonCondition>(empty);
+        }
+
+        public void set(int index, ComparisonCondition normalized, ComparisonCondition original) {
+            this.normalized.set(index,  normalized);
+            this.original.set(index, original);
+        }
+        
+        public List<ComparisonCondition> getNormalized() {
+            return normalized;
+        }
+        
+        public boolean allColumnsSet() {
+            for (ComparisonCondition elem : normalized) {
+                if (elem == null)
+                    return false;
+            }
+            return true;
+        }
+    }
 }
