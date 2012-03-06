@@ -524,13 +524,12 @@ public class JoinAndIndexPicker extends BaseRule
             JoinPlanClass planClass = (JoinPlanClass)existing;
             if (planClass == null)
                 planClass = new JoinPlanClass(this, bitset);
+            joins = new ArrayList<JoinOperator>(joins);
             if (subqueryJoins != null) {
                 // "Push down" joins into the subquery. Since these
                 // are joins to the dervived table, they still need to
                 // be recognized to match an indexable column.
-                Collection<JoinOperator> allJoins = new ArrayList<JoinOperator>(subqueryJoins);
-                allJoins.addAll(joins);
-                joins = allJoins;
+                joins.addAll(subqueryJoins);
             }
             // TODO: Divvy up sorting. Consider group joins. Consider merge joins.
             Plan leftPlan = left.bestPlan();
