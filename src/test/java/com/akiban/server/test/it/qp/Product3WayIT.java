@@ -22,16 +22,14 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.*;
 import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Set;
 
-import static com.akiban.qp.operator.API.FlattenOption.*;
-import static com.akiban.qp.operator.API.JoinType.*;
-import static com.akiban.qp.operator.API.LookupOption.*;
+import static com.akiban.qp.operator.API.JoinType.INNER_JOIN;
+import static com.akiban.qp.operator.API.LookupOption.DISCARD_INPUT;
+import static com.akiban.qp.operator.API.LookupOption.KEEP_INPUT;
 import static com.akiban.qp.operator.API.*;
 import static org.junit.Assert.assertTrue;
 
@@ -305,9 +303,9 @@ public class Product3WayIT extends OperatorITBase
 
     // TODO: Test handling of rows whose type is not involved in product.
 
-    private Set<AisRowType> removeDescendentTypes(AisRowType type)
+    private Set<UserTableRowType> removeDescendentTypes(AisRowType type)
     {
-        Set<AisRowType> keepTypes = type.schema().userTableTypes();
+        Set<UserTableRowType> keepTypes = type.schema().userTableTypes();
         keepTypes.removeAll(Schema.descendentTypes(type, keepTypes));
         return keepTypes;
     }
