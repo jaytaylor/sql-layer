@@ -22,24 +22,19 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.expression.std.Expressions;
+import org.junit.Test;
 
 import static com.akiban.qp.operator.API.*;
 
 public class SelectCT extends CostModelBase
 {
-    public static void main(String[] args) throws Exception
+    @Test
+    public void run() throws Exception
     {
-        new SelectCT().run();
-    }
-
-    private void run() throws Exception
-    {
-        startTestServices();
         createSchema();
         populateDB(ROWS);
         run(WARMUP_RUNS, false);
         run(MEASURED_RUNS, true);
-        stopTestServices();
     }
 
     private void createSchema() throws InvalidOperationException

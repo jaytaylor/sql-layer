@@ -69,10 +69,9 @@ public class CostModel
         return hKeyBoundGroupScanBranch(branchRootType);
     }
 
-    public double sort()
+    public double sort(int nRows, boolean mixedMode)
     {
-        assert false : "Not implemented yet";
-        return -1L;
+        return SORT_SETUP + SORT_PER_ROW * nRows * (mixedMode ? 1 : SORT_MIXED_MODE_FACTOR);
     }
 
     public double sortDistinct()

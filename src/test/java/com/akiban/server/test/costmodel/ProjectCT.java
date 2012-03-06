@@ -22,6 +22,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.expression.std.Expressions;
+import org.junit.Test;
 
 import java.util.Arrays;
 
@@ -29,19 +30,13 @@ import static com.akiban.qp.operator.API.*;
 
 public class ProjectCT extends CostModelBase
 {
-    public static void main(String[] args) throws Exception
+    @Test
+    public void run() throws Exception
     {
-        new ProjectCT().run();
-    }
-
-    private void run() throws Exception
-    {
-        startTestServices();
         createSchema();
         populateDB(ROWS);
         run(WARMUP_RUNS, false);
         run(MEASURED_RUNS, true);
-        stopTestServices();
     }
 
     private void createSchema() throws InvalidOperationException

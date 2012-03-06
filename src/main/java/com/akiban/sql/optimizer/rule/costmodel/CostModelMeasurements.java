@@ -40,4 +40,8 @@ public interface CostModelMeasurements
     final double RANDOM_ACCESS_PER_ROW = 5.15;
     final double SEQUENTIAL_ACCESS_PER_BYTE = 0.0046;
     final double SEQUENTIAL_ACCESS_PER_ROW = 0.61;
+    // From SortCT
+    final double SORT_SETUP = 64;
+    final double SORT_PER_ROW = 10;
+    final double SORT_MIXED_MODE_FACTOR = 1.5;
 }

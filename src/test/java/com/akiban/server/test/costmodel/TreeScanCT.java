@@ -27,19 +27,15 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.expression.std.FieldExpression;
+import org.junit.Test;
 
 import static com.akiban.qp.operator.API.*;
 
 public class TreeScanCT extends CostModelBase
 {
-    public static void main(String[] args) throws Exception
+    @Test
+    public void run() throws Exception
     {
-        new TreeScanCT().run();
-    }
-
-    private void run() throws Exception
-    {
-        startTestServices();
         run(CostModelColumn.intColumn("x"));
         run(CostModelColumn.varcharColumnGoodPrefixCompression("x", 10));
         run(CostModelColumn.varcharColumnGoodPrefixCompression("x", 100));
@@ -47,7 +43,6 @@ public class TreeScanCT extends CostModelBase
         run(CostModelColumn.varcharColumnBadPrefixCompression("x", 10));
         run(CostModelColumn.varcharColumnBadPrefixCompression("x", 100));
         run(CostModelColumn.varcharColumnBadPrefixCompression("x", 1000));
-        stopTestServices();
     }
 
     private void run(CostModelColumn indexedColumn)

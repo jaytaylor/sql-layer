@@ -24,6 +24,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.std.Expressions;
+import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -32,17 +33,11 @@ import static com.akiban.qp.operator.API.*;
 
 public class SortCT extends CostModelBase
 {
-    public static void main(String[] args) throws Exception
+    @Test
+    public void run() throws Exception
     {
-        new SortCT().run();
-    }
-
-    private void run() throws Exception
-    {
-        startTestServices();
         createSchema();
         populateDB(100000);
-/*
         // Unidirectional
         run(1, 0x1);
         run(2, 0x3);
@@ -50,10 +45,8 @@ public class SortCT extends CostModelBase
         // One change of direction
         run(2, 0x2);
         run(3, 0x4);
-*/
         // Two changes of direction
         run(3, 0x5);
-        stopTestServices();
     }
 
     private void run(int sortFields, int ordering)
