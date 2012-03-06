@@ -83,17 +83,13 @@ IF "%VERB%"=="start" (
   GOTO EOF
 )
 
-SET JVM_OPTS=%JVM_OPTS% -Dakiban.admin=%AKIBAN_CONF%
-SET JVM_OPTS=%JVM_OPTS% -Dservices.config=%AKIBAN_CONF%\config\services-config.yaml
 IF EXIST %AKIBAN_CONF%\jvm-options.cmd CALL %AKIBAN_CONF%\jvm-options.cmd
 
 IF "%VERB%"=="run" GOTO RUN_CMD
 
-SET JVM_OPTS=%JVM_OPTS% -Dlog4j.configuration=file:%AKIBAN_CONF%\config\log4j.properties
-
-SET JVM_HASH_OPTS=%JVM_OPTS: =#%
-
-SET PROCRUN_ARGS=--StartMode=jvm --StartClass com.akiban.server.AkServer --StartMethod=procrunStart --StopMode=jvm --StopClass=com.akiban.server.AkServer --StopMethod=procrunStop --StdOutput="%AKIBAN_HOME%\log\stdout.log" --DisplayName="%SERVICE_DNAME%" --Description="%SERVICE_DESC%" --Startup=manual --Classpath="%JAR_FILE%" --JvmOptions="%JVM_HASH_OPTS%"
+SET PROCRUN_ARGS=--StartMode=jvm --StartClass com.akiban.server.AkServer --StartMethod=procrunStart --StopMode=jvm --StopClass=com.akiban.server.AkServer --StopMethod=procrunStop --StdOutput="%AKIBAN_HOME%\log\stdout.log" --DisplayName="%SERVICE_DNAME%" --Description="%SERVICE_DESC%" --Startup=manual --Classpath="%JAR_FILE%"
+REM Each value that might have a space needs a separate ++JvmOptions.
+SET PROCRUN_ARGS=%PROCRUN_ARGS% --JvmOptions="%%JVM_OPTS: =#%" ++JvmOptions="-Dakiban.admin=%AKIBAN_CONF%" ++JvmOptions="-Dservices.config=%AKIBAN_CONF%\config\services-config.yaml" ++JvmOptions="-Dlog4j.configuration=file:%AKIBAN_CONF%\config\log4j.properties"
 IF DEFINED MAX_HEAP_SIZE SET PROCRUN_ARGS=%PROCRUN_ARGS% --JvmMs=%MAX_HEAP_SIZE% --JvmMx=%MAX_HEAP_SIZE%
 
 IF "%VERB%"=="install" (
@@ -105,6 +101,8 @@ IF "%VERB%"=="install" (
 ECHO Usage: {install,uninstall,start,stop,run,monitor,version} [-j jarfile] [-c confdir] [-g]
 
 :RUN_CMD
+SET JVM_OPTS=%JVM_OPTS% -Dakiban.admin="%AKIBAN_CONF%"
+SET JVM_OPTS=%JVM_OPTS% -Dservices.config="%AKIBAN_CONF%\config\services-config.yaml"
 SET JVM_OPTS=%JVM_OPTS% -ea
 IF DEFINED MAX_HEAP_SIZE SET JVM_OPTS=%JVM_OPTS% -Xms%MAX_HEAP_SIZE%-Xmx%MAX_HEAP_SIZE%
 java %JVM_OPTS% -jar "%JAR_FILE%"

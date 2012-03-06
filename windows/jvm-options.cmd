@@ -13,6 +13,7 @@ REM along with this program.  If not, see http://www.gnu.org/licenses.
 REM
 
 REM This file is for Windows. For Unix-like systems, look in jvm.options.
+REM It is important that none of the property values have spaces in them.
 
 REM The amount of memory to allocate to the JVM at startup, you almost
 REM certainly want to adjust this for your environment.
