@@ -235,7 +235,7 @@ public class ExpressionAssembler
         eval.of(planContext.getQueryContext());
         ValueSource valueSource = eval.eval();
         if (node instanceof ConditionExpression) {
-            boolean value = Extractors.getBooleanExtractor().getBoolean(valueSource, false);
+            Boolean value = Extractors.getBooleanExtractor().getBoolean(valueSource, null);
             return new BooleanConstantExpression(value,
                                                  node.getSQLtype(), 
                                                  node.getSQLsource());
