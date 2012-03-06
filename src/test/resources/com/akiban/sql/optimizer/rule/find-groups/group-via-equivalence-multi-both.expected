@@ -1,7 +1,7 @@
 SelectQuery@56f449b8
   ResultSet@4013fba1[bid1, bid2, title, bcol1, bcol2, cid, bfk1, bfk2, content, ccol1, ccol2]
     Project@5fed27e4[user.blogs.bid1, user.blogs.bid2, user.blogs.title, user.blogs.bcol1, user.blogs.bcol2, user.comments.cid, user.comments.bfk1, user.comments.bfk2, user.comments.content, user.comments.ccol1, user.comments.ccol2]
-      Select@4ad61aef[user.blogs.bcol1 == user.blogs.bid1, user.blogs.bcol2 == user.blogs.bid2, user.comments.ccol1 == user.comments.bfk1, user.comments.ccol2 == user.comments.bfk2]
+      Select@7b7d8769[user.comments.ccol1 == user.blogs.bcol1, user.comments.ccol2 == user.blogs.bcol2, user.blogs.bcol1 == user.blogs.bid1, user.blogs.bcol2 == user.blogs.bid2]
         TableJoins@2e82674b(TableGroup@734b84c7(blogs))
           JoinNode@62fa5ff3(INNER/GROUP[user.comments.bfk1 == user.blogs.bid1, user.comments.bfk2 == user.blogs.bid2] - TableGroupJoin@23b17d49(Join(user/blogs/bid1_bid2/user/user.comments/bfk1_bfk2: user.comments -> user.blogs, group(blogs))))
             TableSource@2cc22a3b(user.blogs - TableGroup@734b84c7(blogs))

@@ -1,7 +1,7 @@
 SelectQuery@7a49182
   ResultSet@454cf1b9[id, name, state, id, pid, name, id, pid, name]
     Project@3e91cc3a[user.parent.id, user.parent.name, user.parent.state, user.child.id, user.child.pid, user.child.name, user.child.id, user.child.pid, user.child.name]
-      Select@55f713ed[user.child.pid == user.parent.id]
+      Select@55f713ed[]
         JoinNode@503d58b2(INNER)
           TableJoins@6b8a3745(TableGroup@62e01873(parent))
             JoinNode@3f32ca2b(INNER/GROUP[user.child.pid == user.parent.id] - TableGroupJoin@1f76ed77(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
