@@ -374,40 +374,6 @@ public class GroupJoinFinder extends BaseRule
             }
         }
         
-//        for (ConditionExpression condition : conditions) {
-//            if (condition instanceof ComparisonCondition) {
-//                ComparisonCondition ccond = (ComparisonCondition)condition;
-//                if (ccond.getOperation() == Comparison.EQ) {
-//                    ExpressionNode left = ccond.getLeft();
-//                    ExpressionNode right = ccond.getRight();
-//                    if (left.isColumn() && right.isColumn()) {
-//                        ColumnExpression lcol = (ColumnExpression)left;
-//                        ColumnExpression rcol = (ColumnExpression)right;
-//                        if (lcol.getTable() == childTable) {
-//                            ColumnSource rightSource = rcol.getTable();
-//                            if (rightSource instanceof TableSource) {
-//                                TableSource rightTable = (TableSource)rightSource;
-//                                if (rightTable.getTable() == parentNode) {
-//                                    for (int i = 0; i < ncols; i++) {
-//                                        JoinColumn joinColumn = joinColumns.get(i);
-//                                        if ((joinColumn.getChild() == lcol.getColumn()) &&
-//                                            (joinColumn.getParent() == rcol.getColumn())) {
-//                                            List<ComparisonCondition> entry = 
-//                                                parentTables.get(rightTable);
-//                                            if (entry == null) {
-//                                                entry = new ArrayList<ComparisonCondition>(Collections.<ComparisonCondition>nCopies(ncols, null));
-//                                                parentTables.put(rightTable, entry);
-//                                            }
-//                                            entry.set(i, ccond);
-//                                        }
-//                                    }
-//                                }
-//                            }
-//                        }
-//                    }
-//                }
-//            }
-//        }
         TableSource parentTable = null;
         NormalizedConditions groupJoinConditions = null;
         for (Map.Entry<TableSource,NormalizedConditions> entry : parentTables.entrySet()) {
@@ -447,8 +413,8 @@ public class GroupJoinFinder extends BaseRule
         }
         if (!tableAllowedInGroup(group, childTable))
             return null;
-        return new TableGroupJoin(group, parentTable, childTable, 
-                                  groupJoinConditions, groupJoin);
+        return new TableGroupJoin(group, parentTable, childTable,
+                                  conditions, groupJoinConditions, groupJoin);
     }
 
     private ComparisonCondition normalizedCond(JoinColumn join, TableNode parentNode, TableSource childSource,

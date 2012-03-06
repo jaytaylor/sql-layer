@@ -30,16 +30,23 @@ public class TableGroupJoin extends BasePlanElement
     private TableSource parent, child;
     private NormalizedConditions conditions;
     private Join join;
+    private ConditionList originalConditions;
 
     public TableGroupJoin(TableGroup group,
                           TableSource parent, TableSource child,
+                          ConditionList originalConditions,
                           NormalizedConditions conditions, Join join) {
         this.group = group;
         this.parent = parent;
         parent.setGroup(group);
         this.child = child;
         this.conditions = conditions;
-        setImplementation(ConditionExpression.Implementation.GROUP_JOIN);
+        this.originalConditions = originalConditions;
+        this.originalConditions.removeAll(conditions.original);
+        for (ComparisonCondition cond : conditions.normalized) {
+            cond.setImplementation(ConditionExpression.Implementation.GROUP_JOIN);
+            this.originalConditions.add(cond);
+        }
         child.setParentJoin(this);
         this.join = join;
         group.addJoin(this);
@@ -94,16 +101,13 @@ public class TableGroupJoin extends BasePlanElement
      * regular join.
      */
     public void reject() {
-        setImplementation(ConditionExpression.Implementation.POTENTIAL_GROUP_JOIN);
+        originalConditions.removeAll(conditions.normalized);
+        for (ComparisonCondition cond : conditions.original) {
+            cond.setImplementation(ConditionExpression.Implementation.GROUP_JOIN);
+            originalConditions.add(cond);
+        }
         child.setParentJoin(null);
         group.getJoins().remove(this);
-    }
-    
-    private void setImplementation(Implementation implementation) {
-        for (ComparisonCondition elem : conditions.normalized)
-            elem.setImplementation(implementation);
-        for (ComparisonCondition elem : conditions.original)
-            elem.setImplementation(implementation);
     }
     
     public static class NormalizedConditions {
