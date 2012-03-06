@@ -44,4 +44,10 @@ public interface CostModelMeasurements
     final double SORT_SETUP = 64;
     final double SORT_PER_ROW = 10;
     final double SORT_MIXED_MODE_FACTOR = 1.5;
+    // From FlattenCT
+    final double FLATTEN_LEFT_JOIN_NO_CHILDREN = 417;
+    final double FLATTEN_RIGHT_JOIN_NO_CHILDREN = 150;
+    final double FLATTEN_LEFT_JOIN_OVERHEAD = 54;
+    final double FLATTEN_RIGHT_JOIN_OVERHEAD = 120;
+    final double FLATTEN_PER_ROW = 27;
 }

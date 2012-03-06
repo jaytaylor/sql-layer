@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer.rule.costmodel;
 
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.API;
 import com.akiban.qp.rowtype.*;
 
 import java.util.ArrayList;
@@ -25,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.akiban.sql.optimizer.rule.costmodel.CostModelMeasurements.*;
+import static java.lang.Math.round;
 
 public class CostModel
 {
@@ -66,6 +68,7 @@ public class CostModel
     
     public double branchLookup(UserTableRowType branchRootType)
     {
+        // TODO: Add filtering by row type
         return hKeyBoundGroupScanBranch(branchRootType);
     }
 
@@ -108,7 +111,32 @@ public class CostModel
         return -1L;
     }
 
-    public double flatten()
+    public double flatten(UserTableRowType parentRowType, 
+                          UserTableRowType childRowType, 
+                          API.JoinType joinType, 
+                          int nParents)
+    {
+        double cost;
+        boolean keepParent = joinType == API.JoinType.LEFT_JOIN || joinType == API.JoinType.FULL_JOIN;
+        double parentCount = parentRowType.userTable().rowDef().getTableStatus().getApproximateRowCount();
+        double childCount = childRowType.userTable().rowDef().getTableStatus().getApproximateRowCount();
+        long childrenPerParent = round(childCount / parentCount);
+        if (childrenPerParent == 0) {
+            cost = keepParent ? FLATTEN_LEFT_JOIN_NO_CHILDREN : FLATTEN_RIGHT_JOIN_NO_CHILDREN;
+        } else {
+            cost = keepParent ? FLATTEN_LEFT_JOIN_OVERHEAD : FLATTEN_RIGHT_JOIN_OVERHEAD;
+            cost += nParents * (childrenPerParent * FLATTEN_PER_ROW);
+        }
+        return cost;
+    }
+
+    public double intersect()
+    {
+        assert false : "Not implemented yet";
+        return -1L;
+    }
+
+    public double hKeyUnion()
     {
         assert false : "Not implemented yet";
         return -1L;
