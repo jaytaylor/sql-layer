@@ -17,13 +17,10 @@ SETLOCAL
 
 REM Defaults
 FOR %%P IN ("%~dp0..") DO SET AKIBAN_HOME=%%~fP
-SET JAR_FILE=akiban-server-1.1.0-SNAPSHOT-jar-with-dependencies.jar
-REM target is when building locally
-IF EXIST "%AKIBAN_HOME%\..\target\%JAR_FILE%" (
-  SET JAR_FILE=%AKIBAN_HOME%\..\target\%JAR_FILE%
-) ELSE (
-  SET JAR_FILE=%AKIBAN_HOME%\lib\%JAR_FILE%
-)
+SET JAR_NAME=akiban-server-1.1.0-SNAPSHOT-jar-with-dependencies.jar
+REM target is when building locally; sibling of windows "home".
+FOR %%P IN ("%AKIBAN_HOME%\..\target\%JAR_NAME%") DO SET JAR_FILE=%%~fP
+IF NOT EXIST "%JAR_FILE%" SET JAR_FILE=%AKIBAN_HOME%\lib\%JAR_NAME%
 SET AKIBAN_CONF=%AKIBAN_HOME%
 REM will need to be changed by installer
 SET AKIBAN_LOG=\akiban\log
