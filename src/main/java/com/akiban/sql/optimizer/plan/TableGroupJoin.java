@@ -66,7 +66,7 @@ public class TableGroupJoin extends BasePlanElement
         return child;
     }
     public List<ComparisonCondition> getConditions() {
-        return conditions.normalized;
+        return conditions.normalized == null ? conditions.original : conditions.normalized;
     }
     public Join getJoin() {
         return join;
@@ -102,6 +102,7 @@ public class TableGroupJoin extends BasePlanElement
      */
     public void reject() {
         originalConditions.removeAll(conditions.normalized);
+        conditions.normalized = null;
         for (ComparisonCondition cond : conditions.original) {
             cond.setImplementation(ConditionExpression.Implementation.POTENTIAL_GROUP_JOIN);
             originalConditions.add(cond);
@@ -111,8 +112,8 @@ public class TableGroupJoin extends BasePlanElement
     }
     
     public static class NormalizedConditions {
-        private List<ComparisonCondition> normalized;
-        private List<ComparisonCondition> original;
+        private List<ComparisonCondition> normalized; // not-null to start, nulled if the TableGroupJoin is rejected
+        private List<ComparisonCondition> original;   // not-null to start, and stays that way
 
         private NormalizedConditions(List<ComparisonCondition> normalized, List<ComparisonCondition> original) {
             this.normalized = normalized;
