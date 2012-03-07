@@ -60,7 +60,7 @@ public class TimeOperator extends Operator
     // Object state
 
     private final Operator inputOperator;
-    private long elapsedNsec;
+    private long elapsedNsec = 0;
 
     // Inner classes
 

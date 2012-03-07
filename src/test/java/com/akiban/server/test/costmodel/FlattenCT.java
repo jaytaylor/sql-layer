@@ -20,6 +20,7 @@ import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.TimeOperator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -97,35 +98,23 @@ public class FlattenCT extends CostModelBase
                 parentPKIndexType,
                 parentRowType,
                 LookupOption.DISCARD_INPUT);
+        TimeOperator timeSetup = new TimeOperator(setup);
         Operator plan =
             flatten_HKeyOrdered(
-                setup,
+                timeSetup,
                 parentRowType,
                 childRowType,
                 joinType);
-        long start;
-        long stop;
-        // Measure time for setup
-        start = System.nanoTime();
-        for (int r = 0; r < runs; r++) {
-            Cursor cursor = cursor(setup, queryContext);
-            cursor.open();
-            while (cursor.next() != null);
-        }
-        stop = System.nanoTime();
-        long setupNsec = stop - start;
-        // Measure time for plan including flatten
-        start = System.nanoTime();
+        long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
             Cursor cursor = cursor(plan, queryContext);
             cursor.open();
             while (cursor.next() != null);
         }
-        stop = System.nanoTime();
-        long planNsec = stop - start;
+        long stop = System.nanoTime();
+        long flattenNsec = stop - start - timeSetup.elapsedNsec();
         if (report) {
             // Report the difference
-            long flattenNsec = planNsec - setupNsec;
             double averageUsecPerRow = flattenNsec / (1000.0 * runs * (childCount + 1));
             System.out.println(String.format("%s childCount = %s: %s usec/row",
                                              joinType, childCount, averageUsecPerRow));

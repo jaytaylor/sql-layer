@@ -18,6 +18,7 @@ package com.akiban.server.test.costmodel;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.TimeOperator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.error.InvalidOperationException;
@@ -63,31 +64,19 @@ public class ProjectCT extends CostModelBase
     private void run(int runs, boolean report)
     {
         Operator scan = groupScan_Default(group);
-        Operator project = project_Default(scan, tRowType, Arrays.asList(Expressions.literal(true)));
-        long start;
-        long stop;
-        // Measure time for group scan
-        start = System.nanoTime();
-        for (int r = 0; r < runs; r++) {
-            Cursor cursor = cursor(scan, queryContext);
-            cursor.open();
-            while (cursor.next() != null);
-        }
-        stop = System.nanoTime();
-        long groupScanNsec = stop - start;
-        // Measure time for group scan and project
-        start = System.nanoTime();
+        TimeOperator timeScan = new TimeOperator(scan);
+        Operator project = project_Default(timeScan, tRowType, Arrays.asList(Expressions.literal(true)));
+        long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
             Cursor cursor = cursor(project, queryContext);
             cursor.open();
             while (cursor.next() != null);
         }
-        stop = System.nanoTime();
-        long projectNsec = stop - start;
+        long stop = System.nanoTime();
+        long projectNsec = stop - start - timeScan.elapsedNsec();
         if (report) {
             // Report the difference
-            long projectOnlyNsec = projectNsec - groupScanNsec;
-            double averageUsecPerRow = projectOnlyNsec / (1000.0 * runs * ROWS);
+            double averageUsecPerRow = projectNsec / (1000.0 * runs * ROWS);
             System.out.println(String.format("%s usec/row", averageUsecPerRow));
         }
     }
