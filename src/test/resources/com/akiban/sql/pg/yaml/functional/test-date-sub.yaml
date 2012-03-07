@@ -1,4 +1,6 @@
 # Test the DATE_ADD() function
+# Related bug(s): 889300 fractional seconds not supported yet
+# Status confirmed
 ---
 - Include: all-types-schema.yaml
 ---

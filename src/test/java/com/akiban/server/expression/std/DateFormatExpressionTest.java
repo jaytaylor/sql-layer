@@ -51,6 +51,7 @@ public class DateFormatExpressionTest extends ComposedExpressionTestBase
     public static Collection<Parameterization> params()
     {
         ParameterizationBuilder pb = new ParameterizationBuilder();
+        
 
         // DATE
         param(pb, AkType.DATE, "%y - %m - %d", "02 - 01 - 01");
@@ -86,6 +87,7 @@ public class DateFormatExpressionTest extends ComposedExpressionTestBase
     {
         pb.add("date_format( ," + argType + ", " + format + ") =" + expected, argType, format, expected);
     }
+    
 
     @Test
     public void test()
