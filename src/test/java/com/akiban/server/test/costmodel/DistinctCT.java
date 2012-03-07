@@ -58,7 +58,7 @@ public class DistinctCT extends CostModelBase
     private void createSchema()
     {
         t = createTable(
-            "schema", "t",
+            schemaName(), newTableName(),
             "c1 int",
             "c2 int",
             "c3 int",
@@ -123,7 +123,7 @@ public class DistinctCT extends CostModelBase
             while (cursor.next() != null);
         }
         long stop = System.nanoTime();
-        long distinctNsec = stop - start - timeSetup.elapsecNsec();
+        long distinctNsec = stop - start - timeSetup.elapsedNsec();
         if (label != null) {
             // Report the difference
             double averageUsecPerRow = distinctNsec / (1000.0 * runs * ROWS);

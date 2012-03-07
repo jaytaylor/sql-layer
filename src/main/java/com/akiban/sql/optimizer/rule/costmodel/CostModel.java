@@ -128,16 +128,14 @@ public class CostModel
         return cost;
     }
 
-    public double intersect()
+    public double intersect(int nLeftRows, int nRightRows)
     {
-        assert false : "Not implemented yet";
-        return -1L;
+        return (nLeftRows + nRightRows) * INTERSECT_PER_ROW;
     }
 
-    public double hKeyUnion()
+    public double hKeyUnion(int nLeftRows, int nRightRows)
     {
-        assert false : "Not implemented yet";
-        return -1L;
+        return (nLeftRows + nRightRows) * HKEY_UNION_PER_ROW;
     }
 
     private double hKeyBoundGroupScanSingleRow(UserTableRowType rootTableRowType)

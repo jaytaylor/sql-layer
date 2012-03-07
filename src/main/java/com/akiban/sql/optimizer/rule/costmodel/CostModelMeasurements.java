@@ -59,4 +59,8 @@ public interface CostModelMeasurements
     final double SORT_LIMIT_PER_FIELD_FACTOR = 0.2;
     // From DistinctCT
     final double DISTINCT_PER_ROW = 6;
+    // From IntersectCT
+    final double INTERSECT_PER_ROW = 1.5;
+    // From HKeyUnionCT
+    final double HKEY_UNION_PER_ROW = 2;
 }
