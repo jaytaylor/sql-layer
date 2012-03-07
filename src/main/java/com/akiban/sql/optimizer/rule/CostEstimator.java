@@ -101,12 +101,12 @@ public abstract class CostEstimator
             // not so declared, then the result size doesn't scale up from
             // when it was analyzed.
             long totalDistinct = histogram.totalDistinctCount();
-            if (scaleCount)
-                scaleCount = totalDistinct * 9 < statsCount * 10; // < 90% distinct
+            boolean mostlyDistinct = totalDistinct * 9 > statsCount * 10; // > 90% distinct
+            if (mostlyDistinct) scaleCount = false;
             byte[] keyBytes = encodeKeyBytes(index, equalityComparands, null);
             if (keyBytes == null) {
                 // Variable.
-                nrows = (scaleCount) ? statsCount / totalDistinct : 1;
+                nrows = (mostlyDistinct) ? 1 : statsCount / totalDistinct;
             }
             else {
                 nrows = rowsEqual(histogram, keyBytes);
