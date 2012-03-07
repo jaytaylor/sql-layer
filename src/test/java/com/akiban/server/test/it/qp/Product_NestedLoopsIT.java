@@ -21,6 +21,7 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.AisRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
 import org.junit.Test;
@@ -262,9 +263,9 @@ public class Product_NestedLoopsIT extends OperatorITBase
         compareRows(expected, cursor(product, queryContext));
     }
 
-    private Set<AisRowType> removeDescendentTypes(AisRowType type)
+    private Set<UserTableRowType> removeDescendentTypes(AisRowType type)
     {
-        Set<AisRowType> keepTypes = type.schema().userTableTypes();
+        Set<UserTableRowType> keepTypes = type.schema().userTableTypes();
         keepTypes.removeAll(Schema.descendentTypes(type, keepTypes));
         return keepTypes;
     }
