@@ -42,27 +42,38 @@ public class PostgresServerYamlITBase {
 
     private static final PostgresServerIT manageServer = new PostgresServerIT();
 
-    protected static Connection connection;
-
     protected PostgresServerYamlITBase() { }
 
     @BeforeClass
     public static void openTheConnection() throws Exception {
 	manageServer.startTestServices();
-	manageServer.openTheConnection();
-	connection = manageServer.getConnection();
+        manageServer.ensureConnection();
     }
 
     @AfterClass
     public static void closeTheConnection() throws Exception {
 	manageServer.stopTestServices();
-	manageServer.closeTheConnection();
-	connection = null;
+        manageServer.closeTheConnection();
     }
 
     @Before
     public void dropAllTables() {
 	manageServer.accessDropAllTables();
+    }
+
+    protected static Connection getConnection() throws Exception {
+        return manageServer.ensureConnection();
+    }
+
+    protected static void forgetConnection() {
+	if (DEBUG) {
+	    System.err.println("Closing possibly damaged connection");
+	}
+        try {
+            manageServer.closeTheConnection();
+        }
+        catch (Exception ex) {
+        }
     }
 
     /**
@@ -71,11 +82,12 @@ public class PostgresServerYamlITBase {
      * @param file the file
      * @throws IOException if there is an error accessing the file
      */
-    protected void testYaml(File file) throws IOException {
+    protected void testYaml(File file) throws Exception {
 	if (DEBUG) {
 	    System.err.println("\nFile: " + file);
 	}
-	Throwable exception = null;
+	Connection connection = getConnection();
+        Throwable exception = null;
 	Reader in = null;
 	try {
 	    in = new FileReader(file);
@@ -83,10 +95,7 @@ public class PostgresServerYamlITBase {
 	    if (DEBUG) {
 		System.err.println("Test passed");
 	    }
-	} catch (RuntimeException e) {
-	    exception = e;
-	    throw e;
-	} catch (IOException e) {
+	} catch (Exception e) {
 	    exception = e;
 	    throw e;
 	} catch (Error e) {
@@ -94,7 +103,8 @@ public class PostgresServerYamlITBase {
 	    throw e;
 	} finally {
 	    if (exception != null) {
-		System.err.println("Test failed: " + exception);
+                System.err.println("Test failed: " + exception);
+		forgetConnection();
 	    }
 	    if (in != null) {
 		in.close();
@@ -111,8 +121,10 @@ public class PostgresServerYamlITBase {
 	void accessDropAllTables() throws InvalidOperationException {
 	    dropAllTables();
 	}
-	Connection getConnection() {
-	    return connection;
+	Connection ensureConnection() throws Exception {
+	    if (connection == null)
+                openTheConnection();
+            return connection;
 	}
     }
 }
