@@ -107,10 +107,9 @@ public class CostModel
         return -1L;
     }
 
-    public double map()
+    public double map(int nOuterRows, int nInnerRowsPerOuter)
     {
-        assert false : "Not implemented yet";
-        return -1L;
+        return (nOuterRows * (nInnerRowsPerOuter + 1)) * MAP_PER_ROW;
     }
 
     public double flatten(UserTableRowType parentRowType, 

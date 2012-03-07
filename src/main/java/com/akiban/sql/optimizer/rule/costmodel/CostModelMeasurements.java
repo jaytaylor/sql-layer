@@ -50,4 +50,6 @@ public interface CostModelMeasurements
     final double FLATTEN_LEFT_JOIN_OVERHEAD = 54;
     final double FLATTEN_RIGHT_JOIN_OVERHEAD = 120;
     final double FLATTEN_PER_ROW = 27;
+    // From MapCT
+    final double MAP_PER_ROW = 0.05;
 }

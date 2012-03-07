@@ -72,14 +72,16 @@ public class MapCT extends CostModelBase
         long setupCount = 0;
         for (int r = 0; r < runs; r++) {
             Cursor outerCursor = cursor(setupOuter, queryContext);
+            Cursor innerCursor = cursor(setupInner, queryContext);
             outerCursor.open();
             while (outerCursor.next() != null) {
-                Cursor innerCursor = cursor(setupInner, queryContext);
                 innerCursor.open();
                 while (innerCursor.next() != null) {
                     setupCount++;
                 }
+                innerCursor.close();
             }
+            outerCursor.close();
         }
         stop = System.nanoTime();
         long setupNsec = stop - start;
@@ -94,22 +96,22 @@ public class MapCT extends CostModelBase
             }
         }
         stop = System.nanoTime();
-        if (setupCount != planCount) System.out.println(String.format("setup count: %s, plan count: %s", setupCount, planCount));
         long planNsec = stop - start;
+        if (setupCount != planCount) System.out.println(String.format("setup count: %s, plan count: %s", setupCount, planCount));
         if (report) {
             // Report the difference
             long mapNsec = planNsec - setupNsec;
             if (mapNsec < 0) {
                 System.out.println(String.format("setup: %s, plan: %s", setupNsec, planNsec));
             }
-            double averageUsecPerRow = mapNsec / (1000.0 * runs * (OUTER_ROWS * innerRows));
+            double averageUsecPerRow = mapNsec / (1000.0 * runs * (OUTER_ROWS * (innerRows + 1)));
             System.out.println(String.format("inner/outer = %s: %s usec/row",
                                              innerRows, averageUsecPerRow));
         }
     }
 
-    private static final int WARMUP_RUNS = 10000;
-    private static final int MEASURED_RUNS = 2000;
+    private static final int WARMUP_RUNS = 1000;
+    private static final int MEASURED_RUNS = 1000;
     private static final int OUTER_ROWS = 100;
     private static final int[] INNER_ROWS_PER_OUTER = new int[]{64, 32, 16, 8, 4, 2, 1, 0};
 
