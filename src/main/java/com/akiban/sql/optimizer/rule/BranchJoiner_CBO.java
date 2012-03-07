@@ -360,9 +360,16 @@ public class BranchJoiner_CBO extends BaseRule
 
     /* Flags for TableGroupJoinNode */
 
+    /** This table needs to be included in flattens, either because
+     * its columns are needed or it is a source for a
+     * <code>BranchLookup</code>. */
     protected static final int REQUIRED = 1;
+    /** This table has at least one descendants. */
     protected static final int PARENT = 2;
+    /** This table has at least <em>two</em> active descendants, which
+     * means that it is where two branches meet. */
     protected static final int BRANCHPOINT = 4;
+    /** This table has not yet been included in result plan nodes. */
     protected static final int PENDING = 8;
 
     protected static boolean isRequired(TableGroupJoinNode table) {
