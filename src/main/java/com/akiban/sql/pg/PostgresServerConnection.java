@@ -202,19 +202,14 @@ public class PostgresServerConnection extends ServerSessionBase
                         break;
                     }
                 } catch (QueryCanceledException ex) {
-                    if (!reqs.config().testing()) {
-                        logger.warn(ex.getMessage());
-                        logger.warn("StackTrace: {}", ex);
-                    }
+                    logError("Query canceled", ex);
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
                     sendErrorResponse(type, ex, ErrorCode.QUERY_CANCELED, message);
                 } catch (InvalidOperationException ex) {
-                    logger.warn("Error in query: {}",ex.getMessage());
-                    logger.warn("StackTrace: {}", ex);
+                    logError("Error in query", ex);
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
                 } catch (Exception ex) {
-                    logger.warn("Unexpected error in query", ex);
-                    logger.warn("Stack Trace: {}", ex);
+                    logError("Unexpected error in query", ex);
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
                     sendErrorResponse(type, ex, ErrorCode.UNEXPECTED_EXCEPTION, message);
                 }
@@ -230,6 +225,15 @@ public class PostgresServerConnection extends ServerSessionBase
                 transaction = null;
             }
             server.removeConnection(pid);
+        }
+    }
+
+    private void logError(String msg, Exception ex) {
+        if (reqs.config().testing()) {
+            logger.debug(msg, ex);
+        }
+        else {
+            logger.warn(msg, ex);
         }
     }
 

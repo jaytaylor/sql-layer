@@ -1,4 +1,6 @@
 ## Test the WEEKOFYEAR() function
+# BUG: 902169, 902168
+# Status: triaged
 ---
 - Include: all-types-schema.yaml
 ---
