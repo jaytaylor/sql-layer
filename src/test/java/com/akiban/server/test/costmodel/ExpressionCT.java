@@ -21,22 +21,17 @@ import com.akiban.server.expression.std.ArithExpression;
 import com.akiban.server.expression.std.ArithOps;
 import com.akiban.server.expression.std.LiteralExpression;
 import com.akiban.server.types.AkType;
+import org.junit.Test;
 
 public class ExpressionCT extends CostModelBase
 {
-    public static void main(String[] args) throws Exception
+    @Test
+    public void run() throws Exception
     {
-        new ExpressionCT().run();
-    }
-    
-    private void run() throws Exception
-    {
-        startTestServices();
         run(new SmallExpressionFactory());
         run(new MediumExpressionFactory());
         run(new BigExpressionFactory());
         run(new ReallyBigExpressionFactory());
-        stopTestServices();
     }
     
     private void run(ExpressionFactory expressionFactory)
