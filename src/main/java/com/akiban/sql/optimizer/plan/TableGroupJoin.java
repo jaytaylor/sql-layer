@@ -16,10 +16,7 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.Join;
-import com.akiban.sql.optimizer.plan.ConditionExpression.Implementation;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /** A join within a group corresponding to the GROUPING FK constraint. 
@@ -28,24 +25,19 @@ public class TableGroupJoin extends BasePlanElement
 {
     private TableGroup group;
     private TableSource parent, child;
-    private NormalizedConditions conditions;
+    private List<ComparisonCondition> conditions;
     private Join join;
-    private ConditionList originalConditions;
 
     public TableGroupJoin(TableGroup group,
                           TableSource parent, TableSource child,
-                          ConditionList originalConditions,
-                          NormalizedConditions conditions, Join join) {
+                          List<ComparisonCondition> conditions, Join join) {
         this.group = group;
         this.parent = parent;
         parent.setGroup(group);
         this.child = child;
         this.conditions = conditions;
-        this.originalConditions = originalConditions;
-        this.originalConditions.removeAll(conditions.original);
-        for (ComparisonCondition cond : conditions.normalized) {
+        for (ComparisonCondition cond : conditions) {
             cond.setImplementation(ConditionExpression.Implementation.GROUP_JOIN);
-            this.originalConditions.add(cond);
         }
         child.setParentJoin(this);
         this.join = join;
@@ -66,7 +58,7 @@ public class TableGroupJoin extends BasePlanElement
         return child;
     }
     public List<ComparisonCondition> getConditions() {
-        return conditions.normalized == null ? conditions.original : conditions.normalized;
+        return conditions;
     }
     public Join getJoin() {
         return join;
@@ -89,10 +81,7 @@ public class TableGroupJoin extends BasePlanElement
         group = (TableGroup)group.duplicate(map);
         parent = (TableSource)parent.duplicate(map);
         child = (TableSource)child.duplicate(map);
-        conditions = new NormalizedConditions(
-                duplicateList(conditions.normalized, map),
-                duplicateList(conditions.original, map)
-        );
+        conditions = duplicateList(conditions, map);
     }
     
     /** When a group join is across a continguous set of join, it
@@ -101,46 +90,10 @@ public class TableGroupJoin extends BasePlanElement
      * regular join.
      */
     public void reject() {
-        originalConditions.removeAll(conditions.normalized);
-        conditions.normalized = null;
-        for (ComparisonCondition cond : conditions.original) {
+        for (ComparisonCondition cond : conditions) {
             cond.setImplementation(ConditionExpression.Implementation.POTENTIAL_GROUP_JOIN);
-            originalConditions.add(cond);
         }
         child.setParentJoin(null);
         group.getJoins().remove(this);
-    }
-    
-    public static class NormalizedConditions {
-        private List<ComparisonCondition> normalized; // not-null to start, nulled if the TableGroupJoin is rejected
-        private List<ComparisonCondition> original;   // not-null to start, and stays that way
-
-        private NormalizedConditions(List<ComparisonCondition> normalized, List<ComparisonCondition> original) {
-            this.normalized = normalized;
-            this.original = original;
-        }
-
-        public NormalizedConditions(int ncols) {
-            List<ComparisonCondition> empty = Collections.nCopies(ncols, null);
-            this.normalized = new ArrayList<ComparisonCondition>(empty);
-            this.original = new ArrayList<ComparisonCondition>(empty);
-        }
-
-        public void set(int index, ComparisonCondition normalized, ComparisonCondition original) {
-            this.normalized.set(index,  normalized);
-            this.original.set(index, original);
-        }
-        
-        public List<ComparisonCondition> getNormalized() {
-            return normalized;
-        }
-        
-        public boolean allColumnsSet() {
-            for (ComparisonCondition elem : normalized) {
-                if (elem == null)
-                    return false;
-            }
-            return true;
-        }
     }
 }
