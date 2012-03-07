@@ -68,7 +68,7 @@ public class PostgresServerMiscYamlIT extends PostgresServerYamlITBase {
     }
 
     @Test
-    public void testYaml() throws IOException {
+    public void testYaml() throws Exception {
 	testYaml(file);
     }
 

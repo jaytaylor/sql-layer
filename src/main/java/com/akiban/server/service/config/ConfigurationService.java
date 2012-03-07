@@ -89,5 +89,4 @@ public interface ConfigurationService
     long queryTimeoutSec();
     void queryTimeoutSec(long queryTimeoutSec);
     boolean testing();
-    void testing(boolean testing);
 }
