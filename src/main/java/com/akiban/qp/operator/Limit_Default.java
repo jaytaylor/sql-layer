@@ -173,6 +173,7 @@ final class Limit_Default extends Operator
             TAP_OPEN.in();
             try {
                 super.open();
+                closed = false;
                 if (isSkipBinding()) {
                     ValueSource value = context.getValue(skip());
                     if (!value.isNull())
@@ -210,19 +211,22 @@ final class Limit_Default extends Operator
                     if ((row = input.next()) == null) {
                         skipLeft = 0;
                         limitLeft = -1;
+                        close();
                         return null;
                     }
                     skipLeft--;
                 }
                 if (limitLeft < 0) {
+                    close();
                     return null;
                 }
                 if (limitLeft == 0) {
-                    input.close();
+                    close();
                     return null;
                 }
                 if ((row = input.next()) == null) {
                     limitLeft = -1;
+                    close();
                     return null;
                 }
                 --limitLeft;
@@ -232,13 +236,23 @@ final class Limit_Default extends Operator
             }
         }
 
+        @Override
+        public void close()
+        {
+            if (!closed) {
+                super.close();
+                closed = true;
+            }
+        }
+
         // Execution interface
         Execution(QueryContext context, Cursor input) {
             super(context, input);
         }
 
-        // class state
+        // object state
 
         private int skipLeft, limitLeft;
+        private boolean closed; 
     }
 }

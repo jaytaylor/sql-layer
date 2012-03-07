@@ -42,6 +42,12 @@ public class TestConfigService extends ConfigurationServiceImpl {
     }
 
     @Override
+    public boolean testing()
+    {
+        return true;
+    }
+
+    @Override
     protected Map<String, Property> loadProperties() {
         Map<String, Property> ret = new HashMap<String, Property>(super.loadProperties());
         tmpDir = makeTempDatapathDirectory();
