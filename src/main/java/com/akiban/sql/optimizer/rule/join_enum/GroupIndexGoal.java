@@ -674,6 +674,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     }
 
     public void install(PlanNode scan, List<ConditionList> conditionSources) {
+        tables.setScan(scan);
         if (scan instanceof IndexScan) {
             IndexScan indexScan = (IndexScan)scan;
             installConditions(indexScan, conditionSources);

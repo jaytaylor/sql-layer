@@ -53,7 +53,7 @@ public class DefaultRules
         new InConditionReverser(),
         new JoinAndIndexPicker(),
         new NestedLoopMapper(),
-        new BranchJoiner(),
+        new BranchJoiner_CBO(),
         new SelectPreponer(),
         new AggregateSplitter(),
         new SortSplitter(),

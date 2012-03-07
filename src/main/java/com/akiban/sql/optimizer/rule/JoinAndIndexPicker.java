@@ -146,7 +146,6 @@ public class JoinAndIndexPicker extends BaseRule
             groupGoal.updateRequiredColumns(); // No more joins / bound tables.
             PlanNode scan = groupGoal.pickBestScan();
             groupGoal.install(scan, null);
-            joinable.getOutput().replaceInput(tables, toTableJoins(tables, scan));
         }
 
         // General joins: run enumerator.
@@ -251,30 +250,8 @@ public class JoinAndIndexPicker extends BaseRule
         @Override
         public Joinable install() {
             groupGoal.install(scan, conditionSources);
-            return toTableJoins(groupGoal.getTables(), scan);
+            return groupGoal.getTables();
         }
-    }
-
-    // Temporarily convert join tree back to older table joins so that
-    // following rules can run unchanged.
-    // TODO: Remove when start doing more intelligent branch joining.
-    protected static TableJoins toTableJoins(TableGroupJoinTree tables, PlanNode scan) {
-        Joinable joinable = null;
-        for (TableGroupJoinTree.TableGroupJoinNode table : tables) {
-            if (joinable == null)
-                joinable = table.getTable();
-            else {
-                JoinNode join = new JoinNode(joinable, 
-                                             table.getTable(),
-                                             table.getParentJoinType());
-                join.setJoinConditions(table.getJoinConditions());
-                join.setGroupJoin(table.getTable().getParentJoin());
-                joinable = join;
-            }
-        }
-        TableJoins joins = new TableJoins(joinable, tables.getGroup());
-        joins.setScan(scan);
-        return joins;
     }
 
     static class GroupPlanClass extends PlanClass {

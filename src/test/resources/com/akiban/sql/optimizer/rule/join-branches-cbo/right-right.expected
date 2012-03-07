@@ -1,0 +1,10 @@
+SelectQuery@62d844a9
+  ResultSet@6483e5f1[name, order_date, sku, quan]
+    Project@f6d64c5[user.customers.name, user.orders.order_date, user.items.sku, user.items.quan]
+      Select@56f2c96c[]
+        Flatten@48c5186e(user.customers RIGHT user.orders RIGHT user.items)
+          AncestorLookup@3c70315(user.items -> [user.customers, user.orders, user.items])
+            IndexScan@7e9b59a2(Index(user.items.sku[IndexColumn(sku)]), NONE, >1, rows = 1, cost = 5.10000)
+            TableSource@2b8ca663(user.customers - TableGroup@919db9e(customers))
+            TableSource@1effc3eb(user.orders - TableGroupJoin@a166bd(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+            TableSource@29978933(user.items - TableGroupJoin@6460029d(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
