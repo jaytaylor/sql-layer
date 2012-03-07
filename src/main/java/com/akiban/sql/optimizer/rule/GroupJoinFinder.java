@@ -327,7 +327,7 @@ public class GroupJoinFinder extends BaseRule
             outputJoins.pop();
         }
     }
-    
+
     // Find a condition among the given conditions that matches the
     // parent join for the given table.
     protected TableGroupJoin findParentJoin(TableSource childTable,
@@ -354,7 +354,6 @@ public class GroupJoinFinder extends BaseRule
         TableSource parentTable = null;
         GroupJoinConditions groupJoinConditions = null;
         for (Map.Entry<TableSource,GroupJoinConditions> entry : parentTables.entrySet()) {
-            List<ComparisonCondition> conditionsList = entry.getValue().getConditions();
             boolean found = true;
             for (ComparisonCondition elem : entry.getValue().getConditions()) {
                 if (elem == null) {

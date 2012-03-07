@@ -36,9 +36,8 @@ public class TableGroupJoin extends BasePlanElement
         parent.setGroup(group);
         this.child = child;
         this.conditions = conditions;
-        for (ComparisonCondition cond : conditions) {
+        for (ComparisonCondition cond : conditions)
             cond.setImplementation(ConditionExpression.Implementation.GROUP_JOIN);
-        }
         child.setParentJoin(this);
         this.join = join;
         group.addJoin(this);
@@ -90,10 +89,10 @@ public class TableGroupJoin extends BasePlanElement
      * regular join.
      */
     public void reject() {
-        for (ComparisonCondition cond : conditions) {
+        for (ComparisonCondition cond : conditions)
             cond.setImplementation(ConditionExpression.Implementation.POTENTIAL_GROUP_JOIN);
-        }
         child.setParentJoin(null);
         group.getJoins().remove(this);
     }
+
 }
