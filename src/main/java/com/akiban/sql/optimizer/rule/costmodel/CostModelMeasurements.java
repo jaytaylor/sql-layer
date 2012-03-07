@@ -57,4 +57,6 @@ public interface CostModelMeasurements
     // From SortWithLimitCT
     final double SORT_LIMIT_PER_ROW = 1;
     final double SORT_LIMIT_PER_FIELD_FACTOR = 0.2;
+    // From DistinctCT
+    final double DISTINCT_PER_ROW = 6;
 }

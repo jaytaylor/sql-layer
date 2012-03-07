@@ -94,10 +94,9 @@ public class CostModel
         return nRows * (PROJECT_PER_ROW + rowType.nFields() * EXPRESSION_PER_FIELD);
     }
 
-    public double distinct()
+    public double distinct(int nRows)
     {
-        assert false : "Not implemented yet";
-        return -1L;
+        return nRows * DISTINCT_PER_ROW;
     }
 
     public double product(int nRows)
