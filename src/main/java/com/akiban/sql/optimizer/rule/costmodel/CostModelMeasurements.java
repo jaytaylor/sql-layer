@@ -52,4 +52,9 @@ public interface CostModelMeasurements
     final double FLATTEN_PER_ROW = 27;
     // From MapCT
     final double MAP_PER_ROW = 0.05;
+    // From ProductCT
+    final double PRODUCT_PER_ROW = 40;
+    // From SortWithLimitCT
+    final double SORT_LIMIT_PER_ROW = 1;
+    final double SORT_LIMIT_PER_FIELD_FACTOR = 0.2;
 }

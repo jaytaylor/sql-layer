@@ -18,7 +18,6 @@ package com.akiban.server.test.costmodel;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.error.InvalidOperationException;
@@ -42,13 +41,27 @@ public class MapCT extends CostModelBase
     private void createSchema() throws InvalidOperationException
     {
         String schemaName = schemaName();
-        String tableName = newTableName();
-        t = createTable(schemaName, tableName,
-                        "id int not null",
-                        "primary key(id)");
+        String pTableName = newTableName();
+        p = createTable(schemaName, pTableName,
+                        "pid int not null",
+                        "primary key(pid)");
+        String cTableName = newTableName();
+        c = createTable(schemaName, cTableName,
+                        "cid int not null",
+                        "pid int",
+                        "primary key(cid)",
+                        String.format("grouping foreign key(pid) references %s(pid)", pTableName));
+        String dTableName = newTableName();
+        d = createTable(schemaName, dTableName,
+                        "did int not null",
+                        "pid int",
+                        "primary key(did)",
+                        String.format("grouping foreign key(pid) references %s(pid)", pTableName));
         schema = new Schema(rowDefCache().ais());
-        tRowType = schema.userTableRowType(userTable(t));
-        group = groupTable(t);
+        pRowType = schema.userTableRowType(userTable(p));
+        cRowType = schema.userTableRowType(userTable(c));
+        dRowType = schema.userTableRowType(userTable(d));
+        group = groupTable(p);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
     }
@@ -56,7 +69,7 @@ public class MapCT extends CostModelBase
     protected void populateDB()
     {
         for (int r = 0; r < OUTER_ROWS; r++) {
-            dml().writeRow(session(), createNewRow(t, r));
+            dml().writeRow(session(), createNewRow(p, r));
         }
     }
     
@@ -115,7 +128,11 @@ public class MapCT extends CostModelBase
     private static final int OUTER_ROWS = 100;
     private static final int[] INNER_ROWS_PER_OUTER = new int[]{64, 32, 16, 8, 4, 2, 1, 0};
 
-    private int t;
-    private UserTableRowType tRowType;
+    private int p;
+    private int c;
+    private int d;
+    private UserTableRowType pRowType;
+    private UserTableRowType cRowType;
+    private UserTableRowType dRowType;
     private GroupTable group;
 }
