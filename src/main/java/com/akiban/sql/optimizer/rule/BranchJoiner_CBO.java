@@ -373,22 +373,22 @@ public class BranchJoiner_CBO extends BaseRule
     protected static final int PENDING = 8;
 
     protected static boolean isRequired(TableGroupJoinNode table) {
-        return ((table.getFlags() & REQUIRED) != 0);
+        return ((table.getState() & REQUIRED) != 0);
     }
     protected static boolean isParent(TableGroupJoinNode table) {
-        return ((table.getFlags() & PARENT) != 0);
+        return ((table.getState() & PARENT) != 0);
     }
     protected static boolean isBranchpoint(TableGroupJoinNode table) {
-        return ((table.getFlags() & BRANCHPOINT) != 0);
+        return ((table.getState() & BRANCHPOINT) != 0);
     }
     protected static boolean isPending(TableGroupJoinNode table) {
-        return ((table.getFlags() & PENDING) != 0);
+        return ((table.getState() & PENDING) != 0);
     }
     protected static void setPending(TableGroupJoinNode table) {
-        table.setFlags(table.getFlags() | PENDING);
+        table.setState(table.getState() | PENDING);
     }
     protected static void clearPending(TableGroupJoinNode table) {
-        table.setFlags(table.getFlags() & ~PENDING);
+        table.setState(table.getState() & ~PENDING);
     }
 
     protected void markBranches(TableGroupJoinTree tableGroup, 
@@ -412,7 +412,7 @@ public class BranchJoiner_CBO extends BaseRule
             ((flags & BRANCHPOINT) != 0)) {
             flags |= REQUIRED | PENDING;
         }
-        parent.setFlags(flags);
+        parent.setState(flags);
         return (flags != 0);
     }
 
