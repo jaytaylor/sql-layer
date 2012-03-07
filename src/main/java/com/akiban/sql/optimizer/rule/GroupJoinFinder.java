@@ -15,7 +15,6 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.ais.model.Column;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.sql.optimizer.plan.*;
@@ -343,33 +342,12 @@ public class GroupJoinFinder extends BaseRule
         List<JoinColumn> joinColumns = groupJoin.getJoinColumns();
         int ncols = joinColumns.size();
         Map<TableSource,NormalizedConditions> parentTables = new HashMap<TableSource,NormalizedConditions>();
-        
+
         for (int i = 0; i < ncols; ++i) {
             JoinColumn joinColumn = joinColumns.get(i);
-            for (ConditionExpression condition : conditions) {
-                if (condition instanceof ComparisonCondition) {
-                    ComparisonCondition ccond = (ComparisonCondition)condition;
-                    if (ccond.getOperation() == Comparison.EQ) {
-                        ExpressionNode left = ccond.getLeft();
-                        ExpressionNode right = ccond.getRight();
-                        if (left.isColumn() && right.isColumn()) {
-                            ColumnExpression lcol = (ColumnExpression)left;
-                            ColumnExpression rcol = (ColumnExpression)right;
-                            if ((lcol.getTable() instanceof TableSource) && (rcol.getTable() instanceof TableSource)) {
-                                ComparisonCondition normalized = normalizedCond(joinColumn, parentNode, childTable, lcol, rcol, ccond);
-                                if (normalized != null) {
-                                    ColumnExpression rnorm = (ColumnExpression) normalized.getRight();
-                                    TableSource parentSource = (TableSource) rnorm.getTable();
-                                    NormalizedConditions entry = parentTables.get(parentSource);
-                                    if (entry == null) {
-                                        entry = new NormalizedConditions(ncols);
-                                        parentTables.put(parentSource, entry);
-                                    }
-                                    entry.set(i, normalized, ccond);
-                                }
-                            }
-                        }
-                    }
+            if (!findGroupCondition(joinColumns, i, childTable, conditions, true, parentTables)) {
+                if (!findGroupCondition(joinColumns, i, childTable, conditions, false, parentTables)) {
+                    return null; // join column had no direct or equivalent group joins, so we know the answer
                 }
             }
         }
@@ -417,9 +395,52 @@ public class GroupJoinFinder extends BaseRule
                                   conditions, groupJoinConditions, groupJoin);
     }
 
-    private ComparisonCondition normalizedCond(JoinColumn join, TableNode parentNode, TableSource childSource,
+    private boolean findGroupCondition(List<JoinColumn> joinColumns, int i, TableSource childTable,
+                                       ConditionList conditions, boolean requireExact,
+                                       Map<TableSource, NormalizedConditions> parentTables)
+    {
+        int ncols = joinColumns.size();
+        boolean found = false;
+        for (ConditionExpression condition : conditions) {
+            if (condition instanceof ComparisonCondition) {
+                ComparisonCondition ccond = (ComparisonCondition)condition;
+                if (ccond.getOperation() == Comparison.EQ) {
+                    ExpressionNode left = ccond.getLeft();
+                    ExpressionNode right = ccond.getRight();
+                    if (left.isColumn() && right.isColumn()) {
+                        ColumnExpression lcol = (ColumnExpression)left;
+                        ColumnExpression rcol = (ColumnExpression)right;
+                        if ((lcol.getTable() instanceof TableSource) && (rcol.getTable() instanceof TableSource)) {
+                            ComparisonCondition normalized = normalizedCond(
+                                    joinColumns.get(i),
+                                    childTable,
+                                    lcol,
+                                    rcol,
+                                    ccond,
+                                    requireExact
+                            );
+                            if (normalized != null) {
+                                found = true;
+                                ColumnExpression rnorm = (ColumnExpression) normalized.getRight();
+                                TableSource parentSource = (TableSource) rnorm.getTable();
+                                NormalizedConditions entry = parentTables.get(parentSource);
+                                if (entry == null) {
+                                    entry = new NormalizedConditions(ncols);
+                                    parentTables.put(parentSource, entry);
+                                }
+                                entry.set(i, normalized, ccond);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return found;
+    }
+
+    private ComparisonCondition normalizedCond(JoinColumn join, TableSource childSource,
                                                ColumnExpression lcol, ColumnExpression rcol,
-                                               ComparisonCondition originalCond)
+                                               ComparisonCondition originalCond, boolean requireExact)
     {
         // look for child
         ColumnExpression childEquiv = null;
@@ -453,15 +474,20 @@ public class GroupJoinFinder extends BaseRule
         if (parentEquiv == null)
             return null;
         
-        if (childEquiv == originalCond.getLeft() && parentEquiv == originalCond.getRight())
-            return originalCond;
-        return new ComparisonCondition(
-                Comparison.EQ,
-                childEquiv,
-                parentEquiv,
-                originalCond.getSQLtype(),
-                originalCond.getSQLsource()
-        );
+        boolean isExact = childEquiv == lcol && parentEquiv == rcol;
+        if (requireExact) {
+            return isExact ? originalCond : null;
+        }
+        else {
+            assert ! isExact : "exact match found; should have been discovered by previous invocation at call site";
+            return new ComparisonCondition(
+                    Comparison.EQ,
+                    childEquiv,
+                    parentEquiv,
+                    originalCond.getSQLtype(),
+                    originalCond.getSQLsource()
+            );
+        }
     }
 
     protected boolean tableAllowedInGroup(TableGroup group, TableSource childTable) {
