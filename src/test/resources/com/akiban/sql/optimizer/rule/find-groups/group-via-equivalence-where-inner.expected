@@ -1,7 +1,7 @@
 SelectQuery@5867df9
   ResultSet@40b86944[oid, cid, order_date, iid, oid, sku, quan, price]
     Project@b07108e[user.orders.oid, user.orders.cid, user.orders.order_date, user.items.iid, user.items.oid, user.items.sku, user.items.quan, user.items.price]
-      Select@7ccfe049[user.items.quan == user.orders.oid]
+      Select@7ccfe049[user.items.quan == user.orders.oid, user.items.quan == user.items.oid]
         TableJoins@338e18a3(TableGroup@35f38fc6(customers))
           JoinNode@9642bd6(INNER/GROUP[user.items.oid == user.orders.oid] - TableGroupJoin@f79f36b(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
             TableSource@6179d854(user.orders - TableGroup@35f38fc6(customers))

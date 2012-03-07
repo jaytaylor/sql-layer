@@ -7,6 +7,6 @@ SelectQuery@51970991
             TableSource@33262bf4(user.orders - TableGroupJoin@386a1fbe(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
 
 Subquery@3a2b3574
-  Select@3f4a0fe1[user.items.sku == 1234, user.items.oid == user.orders.oid]
+  Select@3f4a0fe1[user.items.oid == user.orders.oid, user.items.sku == 1234]
     TableGroupJoinTree@17589d3d(TableGroup@3685be9(customers), items)
       TableSource@f0fba68(user.items - TableGroup@3685be9(customers))

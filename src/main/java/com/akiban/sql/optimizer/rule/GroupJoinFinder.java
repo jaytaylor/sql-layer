@@ -340,7 +340,7 @@ public class GroupJoinFinder extends BaseRule
         if (parentNode == null) return null;
         List<JoinColumn> joinColumns = groupJoin.getJoinColumns();
         int ncols = joinColumns.size();
-        Map<TableSource,List<ComparisonCondition>> parentTables = new HashMap<TableSource,List<ComparisonCondition>>();
+        Map<TableSource,GroupJoinConditions> parentTables = new HashMap<TableSource,GroupJoinConditions>();
 
         for (int i = 0; i < ncols; ++i) {
             JoinColumn joinColumn = joinColumns.get(i);
@@ -352,10 +352,11 @@ public class GroupJoinFinder extends BaseRule
         }
         
         TableSource parentTable = null;
-        List<ComparisonCondition> groupJoinConditions = null;
-        for (Map.Entry<TableSource,List<ComparisonCondition>> entry : parentTables.entrySet()) {
+        GroupJoinConditions groupJoinConditions = null;
+        for (Map.Entry<TableSource,GroupJoinConditions> entry : parentTables.entrySet()) {
+            List<ComparisonCondition> conditionsList = entry.getValue().getConditions();
             boolean found = true;
-            for (ComparisonCondition elem : entry.getValue()) {
+            for (ComparisonCondition elem : entry.getValue().getConditions()) {
                 if (elem == null) {
                     found = false;
                     break;
@@ -371,8 +372,8 @@ public class GroupJoinFinder extends BaseRule
                     // earlier to decide that the primary
                     // keys are equated and so share the
                     // references somehow.
-                    ConditionExpression c1 = groupJoinConditions.get(0);
-                    ConditionExpression c2 = entry.getValue().get(0);
+                    ConditionExpression c1 = groupJoinConditions.getConditions().get(0);
+                    ConditionExpression c2 = entry.getValue().getConditions().get(0);
                     if (conditions.indexOf(c1) > conditions.indexOf(c2)) {
                         // Make the order predictable for tests.
                         ConditionExpression temp = c1;
@@ -396,16 +397,16 @@ public class GroupJoinFinder extends BaseRule
         }
         if (!tableAllowedInGroup(group, childTable))
             return null;
-        return new TableGroupJoin(group, parentTable, childTable, groupJoinConditions, groupJoin);
+        groupJoinConditions.installGeneratedConditionsTo(conditions);
+        return new TableGroupJoin(group, parentTable, childTable, groupJoinConditions.getConditions(), groupJoin);
     }
 
     private boolean findGroupCondition(List<JoinColumn> joinColumns, int i, TableSource childTable,
                                        ConditionList conditions, boolean requireExact,
-                                       Map<TableSource, List<ComparisonCondition>> parentTables)
+                                       Map<TableSource, GroupJoinConditions> parentTables)
     {
         int ncols = joinColumns.size();
         boolean found = false;
-        List<ComparisonCondition> created = null;
         for (ConditionExpression condition : conditions) {
             if (condition instanceof ComparisonCondition) {
                 ComparisonCondition ccond = (ComparisonCondition)condition;
@@ -425,28 +426,49 @@ public class GroupJoinFinder extends BaseRule
                                     requireExact
                             );
                             if (normalized != null) {
-                                if (normalized != ccond) {
-                                    if (created == null) created = new ArrayList<ComparisonCondition>();
-                                    created.add(normalized);
-                                }
                                 found = true;
                                 ColumnExpression rnorm = (ColumnExpression) normalized.getRight();
                                 TableSource parentSource = (TableSource) rnorm.getTable();
-                                List<ComparisonCondition> entry = parentTables.get(parentSource);
+                                GroupJoinConditions entry = parentTables.get(parentSource);
                                 if (entry == null) {
-                                    entry = new ArrayList<ComparisonCondition>(Collections.<ComparisonCondition>nCopies(ncols, null));
+                                    entry = new GroupJoinConditions(ncols);
                                     parentTables.put(parentSource, entry);
                                 }
-                                entry.set(i, ccond);
+                                entry.set(i, normalized, normalized != ccond);
                             }
                         }
                     }
                 }
             }
         }
-        if (created != null)
-            conditions.addAll(created);
         return found;
+    }
+    
+    private static class GroupJoinConditions {
+        private List<ComparisonCondition> conditions;
+        private List<ComparisonCondition> generatedConditions;
+
+        public GroupJoinConditions(int ncols) {
+            this.conditions = new ArrayList<ComparisonCondition>(Collections.<ComparisonCondition>nCopies(ncols, null));
+        }
+        
+        public void set(int i, ComparisonCondition condition, boolean wasGenerated) {
+            conditions.set(i, condition);
+            if (wasGenerated) {
+                if (generatedConditions == null)
+                    generatedConditions = new ArrayList<ComparisonCondition>(conditions.size());
+                generatedConditions.add(condition);
+            }
+        }
+        
+        public List<ComparisonCondition> getConditions() {
+            return conditions;
+        }
+
+        public void installGeneratedConditionsTo(ConditionList conditionList) {
+            if (generatedConditions != null)
+                conditionList.addAll(generatedConditions);
+        }
     }
 
     private ComparisonCondition normalizedCond(JoinColumn join, TableSource childSource,
