@@ -31,12 +31,6 @@ public class QueryCancelationIT extends PostgresServerITBase
     private static final int N = 1000;
     private static final int TRIALS = 5;
 
-    @Before
-    public void before()
-    {
-        configService().testing(true); // Suppress warning-level logging about cancelation
-    }
-
     @Test
     public void test() throws Exception
     {

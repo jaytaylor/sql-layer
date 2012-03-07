@@ -46,13 +46,13 @@ public class Schema extends DerivedTypesSchema
             : groupIndexRowType((GroupIndex) index);
     }
 
-    public synchronized Set<AisRowType> userTableTypes()
+    public synchronized Set<UserTableRowType> userTableTypes()
     {
-        Set<AisRowType> userTableTypes = new HashSet<AisRowType>();
+        Set<UserTableRowType> userTableTypes = new HashSet<UserTableRowType>();
         for (AisRowType rowType : rowTypes.values()) {
             if (rowType instanceof UserTableRowType) {
                 if (!rowType.userTable().isAISTable()) {
-                    userTableTypes.add(rowType);
+                    userTableTypes.add((UserTableRowType) rowType);
                 }
             }
         }
