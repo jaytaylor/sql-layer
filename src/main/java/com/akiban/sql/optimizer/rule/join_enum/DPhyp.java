@@ -109,6 +109,7 @@ public abstract class DPhyp<P>
             }
             assert (pass == 1) : "Additional edges did not connect graph";
             addExtraEdges();
+            Arrays.fill(plans, null);
         }
         return null;
     }
