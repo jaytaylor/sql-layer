@@ -2,6 +2,10 @@ group-equals: two equals on group index
 
 in-index: IN that can use index
 
+in-sorted: IN that needs sorting
+
+equals-sorted: Same with = for comparison.
+
 in-subquery: IN SELECT to semi-join (not indexable).
 
 join-across-subquery: group join in subquery expression

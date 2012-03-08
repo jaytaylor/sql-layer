@@ -59,6 +59,11 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     // Tables already bound outside.
     private Set<ColumnSource> boundTables;
 
+    // Can an index be used to take care of sorting.
+    // TODO: Make this a subset of queryGoal's sorting, based on what
+    // tables are in what join, rather than an all or nothing.
+    private boolean sortAllowed;
+
     // Mapping of Range-expressible conditions, by their column. lazy loaded.
     private Map<ColumnExpression,ColumnRanges> columnsToRanges;
 
@@ -78,6 +83,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         requiredColumns = new RequiredColumns(tables);
 
         boundTables = queryGoal.getQuery().getOuterTables();
+        sortAllowed = true;
     }
 
     public QueryIndexGoal getQueryGoal() {
@@ -89,8 +95,10 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     }
 
     public List<ConditionList> updateContext(Set<ColumnSource> boundTables,
-                                             Collection<JoinOperator> joins) {
+                                             Collection<JoinOperator> joins,
+                                             boolean sortAllowed) {
         setBoundTables(boundTables);
+        this.sortAllowed = sortAllowed;
         setJoinConditions(joins);
         updateRequiredColumns();
         return conditionSources;
@@ -234,12 +242,13 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     // Also, correct traversal order to match sort if possible.
     protected IndexScan.OrderEffectiveness
         determineOrderEffectiveness(IndexScan index) {
+        IndexScan.OrderEffectiveness result = IndexScan.OrderEffectiveness.NONE;
+        if (!sortAllowed) return result;
         List<OrderByExpression> indexOrdering = index.getOrdering();
+        if (indexOrdering == null) return result;
         BitSet reverse = new BitSet(indexOrdering.size());
         List<ExpressionNode> equalityComparands = index.getEqualityComparands();
         int nequals = (equalityComparands == null) ? 0 : equalityComparands.size();
-        IndexScan.OrderEffectiveness result = IndexScan.OrderEffectiveness.NONE;
-        if (indexOrdering == null) return result;
         try_sorted:
         if (queryGoal.getOrdering() != null) {
             int idx = nequals;
