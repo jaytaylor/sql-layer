@@ -1,0 +1,8 @@
+SelectQuery@3c2d7440
+  ResultSet@4c2b349d[sku, quan]
+    Project@288b567c[user.items.sku, user.items.quan]
+      Select@53dafbaf[]
+        Flatten@4dc1c92b(user.items)
+          BranchLookup@6d7e4dee(user.orders -> user.orders)
+            IndexScan@7f2e7c6a(Index(user.orders.order_date[IndexColumn(order_date)]), NONE, >Cast(2011-04-01 AS DATE NOT NULL), rows = 20, cost = 23.3400)
+            TableSource@1f0dc656(user.items - TableGroupJoin@44ea5461(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))

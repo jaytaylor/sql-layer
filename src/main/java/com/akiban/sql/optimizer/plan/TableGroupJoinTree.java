@@ -35,7 +35,8 @@ public class TableGroupJoinTree extends BaseJoinable
         TableGroupJoinNode parent, nextSibling, firstChild;
         JoinType parentJoinType;
         ConditionList joinConditions;
-
+        int flags;
+        
         public TableGroupJoinNode(TableSource table) {
             this.table = table;
         }
@@ -76,6 +77,13 @@ public class TableGroupJoinTree extends BaseJoinable
             this.joinConditions = joinConditions;
         }
 
+        public int getFlags() {
+            return flags;
+        }
+        public void setFlags(int flags) {
+            this.flags = flags;
+        }
+
         /** Find the given table in this (sub-)tree. */
         public TableGroupJoinNode findTable(TableSource table) {
             for (TableGroupJoinNode node : this) {
@@ -89,6 +97,12 @@ public class TableGroupJoinTree extends BaseJoinable
         @Override
         public Iterator<TableGroupJoinNode> iterator() {
             return new TableGroupJoinIterator(this);
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + "@" + Integer.toString(hashCode(), 16) +
+                "(" + table + ")";
         }
     }
 
@@ -120,13 +134,13 @@ public class TableGroupJoinTree extends BaseJoinable
                 return;
             }
             while (true) {
+                if (next == root) {
+                    next = null;
+                    return;
+                }
                 node = next.getNextSibling();
                 if (node != null) {
                     next = node;
-                    return;
-                }
-                if (next == root) {
-                    next = null;
                     return;
                 }
                 next = next.getParent();
@@ -142,6 +156,7 @@ public class TableGroupJoinTree extends BaseJoinable
     private TableGroup group;
     private TableGroupJoinNode root;
     private Set<TableSource> required;
+    private PlanNode scan;
     
     public TableGroupJoinTree(TableGroupJoinNode root) {
         this.group = root.getTable().getGroup();
@@ -162,6 +177,13 @@ public class TableGroupJoinTree extends BaseJoinable
         this.required = required;
     }
     
+    public PlanNode getScan() {
+        return scan;
+    }
+    public void setScan(PlanNode scan) {
+        this.scan = scan;
+    }
+
     @Override
     public Iterator<TableGroupJoinNode> iterator() {
         return new TableGroupJoinIterator(root);
@@ -202,6 +224,10 @@ public class TableGroupJoinTree extends BaseJoinable
         str.append(group);
         str.append(", ");
         summarizeJoins(str);
+        if (scan != null) {
+            str.append(" - ");
+            str.append(scan.summaryString());
+        }
         str.append(")");
         return str.toString();
     }

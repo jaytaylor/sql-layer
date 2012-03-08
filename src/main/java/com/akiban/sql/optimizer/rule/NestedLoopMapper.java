@@ -105,7 +105,15 @@ public class NestedLoopMapper extends BaseRule
     protected Set<ColumnSource> getBoundTables(PlanNode node) {
         if (node instanceof TableJoins)
             return new HashSet<ColumnSource>(((TableJoins)node).getTables());
+        else if (node instanceof TableGroupJoinTree) {
+            Set<ColumnSource> set = new HashSet<ColumnSource>();
+            for (TableGroupJoinTree.TableGroupJoinNode table : (TableGroupJoinTree)node) {
+                set.add(table.getTable());
+            }
+            return set;
+        }
         else if (node instanceof ColumnSource) {
+            // Not Collections.singleton(); need modifiable collection.
             Set<ColumnSource> single = new HashSet<ColumnSource>(1);
             single.add((ColumnSource)node);
             return single;

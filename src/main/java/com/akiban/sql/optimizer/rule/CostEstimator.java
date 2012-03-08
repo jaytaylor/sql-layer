@@ -271,16 +271,14 @@ public abstract class CostEstimator
     /** Estimate the cost of starting at the given table's index and
      * fetching the given tables, then joining them with Flatten and
      * Product. */
-    // TODO: Lots of logical overlap with BranchJoiner. Once group
-    // joins are picked through the same join enumeration of other
-    // kinds, this should be better integrated.
+    // TODO: Lots of logical overlap with BranchJoiner.
     public CostEstimate costFlatten(TableSource indexTable,
                                     Collection<TableSource> requiredTables) {
         indexTable.getTable().getTree().colorBranches();
         Map<UserTable,FlattenedTable> ftables = new HashMap<UserTable,FlattenedTable>();
         long indexMask = indexTable.getTable().getBranches();
         FlattenedTable iftable = flattened(indexTable, ftables);
-        for (TableSource table : requiredTables) {
+        for (TableSource table : orderedTableSources(requiredTables)) {
             FlattenedTable ftable = flattened(table, ftables);
             long common = indexMask & table.getTable().getBranches();
             if (common == indexMask) {
@@ -313,7 +311,7 @@ public abstract class CostEstimator
         }
         // Find single root from which all the flattens descend.
         FlattenedTable root = null;
-        for (FlattenedTable ftable : new ArrayList<FlattenedTable>(ftables.values())) {
+        for (FlattenedTable ftable : orderedTables(ftables.values())) {
             if ((root == null) || (ftable.table.getDepth() < root.table.getDepth())) {
                 root = ftable;
             }
@@ -327,7 +325,7 @@ public abstract class CostEstimator
             }
         }
         // Limit branchPoint markers to leaves; that's the number that will joined.
-        for (FlattenedTable ftable : new ArrayList<FlattenedTable>(ftables.values())) {
+        for (FlattenedTable ftable : orderedTables(ftables.values())) {
             if (ftable.branchPoint != null) {
                 while (ftable != root) {
                     ftable = flattened(ftable.table.parentTable(), ftables);
@@ -339,7 +337,7 @@ public abstract class CostEstimator
         long rowCount = 1;
         double cost = 0.0;
         long[] counts = new long[2];
-        for (FlattenedTable ftable : new ArrayList<FlattenedTable>(ftables.values())) {
+        for (FlattenedTable ftable : orderedTables(ftables.values())) {
             // Multiple rows come in from branches and they all get producted together.
             if (ftable.branchPoint != null)
                 rowCount *= branchScale(getTableRowCount(ftable.table), 
@@ -357,6 +355,30 @@ public abstract class CostEstimator
         return new CostEstimate(rowCount, cost);
     }
 
+    // Estimate depends somewhat on which happens to be chosen as the
+    // main branch, so make it predictable for tests.
+    protected Collection<TableSource> orderedTableSources(Collection<TableSource> tables) {
+        List<TableSource> ordered = new ArrayList<TableSource>(tables);
+        Collections.sort(ordered, new Comparator<TableSource>() {
+                             @Override
+                             public int compare(TableSource t1, TableSource t2) {
+                                 return t1.getTable().getTable().getTableId().compareTo(t2.getTable().getTable().getTableId());
+                             }
+                         });
+        return ordered;
+    }
+
+    protected Collection<FlattenedTable> orderedTables(Collection<FlattenedTable> tables) {
+        List<FlattenedTable> ordered = new ArrayList<FlattenedTable>(tables);
+        Collections.sort(ordered, new Comparator<FlattenedTable>() {
+                             @Override
+                             public int compare(FlattenedTable f1, FlattenedTable f2) {
+                                 return f1.table.getTableId().compareTo(f2.table.getTableId());
+                             }
+                         });
+        return ordered;
+    }
+
     // A source of flattened rows.
     static class FlattenedTable {
         UserTable table;
@@ -365,6 +387,11 @@ public abstract class CostEstimator
         
         public FlattenedTable(UserTable table) {
             this.table = table;
+        }
+
+        @Override
+        public String toString() {
+            return table.getName().toString();
         }
     }
 

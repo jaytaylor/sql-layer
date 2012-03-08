@@ -485,6 +485,7 @@ public class OperatorAssembler extends BaseRule
                 API.LookupOption flag = API.LookupOption.KEEP_INPUT;
                 stream.operator = API.branchLookup_Nested(groupTable, 
                                                           tableRowType(branchLookup.getSource()),
+                                                          tableRowType(branchLookup.getAncestor()),
                                                           tableRowType(branchLookup.getBranch()), 
                                                           flag,
                                                           currentBindingPosition());
@@ -508,6 +509,9 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected RowStream assembleProduct(Product product) {
+            UserTableRowType ancestorRowType = null;
+            if (product.getAncestor() != null)
+                ancestorRowType = tableRowType(product.getAncestor());
             RowStream pstream = new RowStream();
             Flattened flattened = new Flattened();
             int nbound = 0;
@@ -529,6 +533,7 @@ public class OperatorAssembler extends BaseRule
                     pstream.operator = API.product_NestedLoops(pstream.operator,
                                                                stream.operator,
                                                                pstream.rowType,
+                                                               ancestorRowType,
                                                                stream.rowType,
                                                                currentBindingPosition());
                     pstream.rowType = pstream.operator.rowType();

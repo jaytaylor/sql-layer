@@ -1,0 +1,13 @@
+SelectQuery@78f6e005
+  ResultSet@17eda64e[name, order_date, city]
+    Project@73415727[user.customers.name, user.orders.order_date, user.addresses.city]
+      Select@46c0fc8e[]
+        Product@2804f2ec(user.customers)
+          Flatten@505fa26(user.customers LEFT user.addresses)
+            GroupScan@4599d5b(Group(customers -> user._akiban_customers))
+              TableSource@52ec1f9e(user.customers - TableGroup@1769c398(customers))
+              TableSource@c0fe89a(user.addresses - TableGroupJoin@11ba4159(Join(user/customers/cid/user/user.addresses/cid: user.addresses -> user.customers, group(customers))))
+          Flatten@5ce8787a(user.customers LEFT user.orders)
+            Select@223dc13d[user.orders.order_date != Cast(2011-01-01 AS DATE NOT NULL)]
+              BranchLookup@4b69d75d(user.customers -> user.orders)
+                TableSource@686fdca5(user.orders - TableGroupJoin@20a83c2a(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
