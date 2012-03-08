@@ -144,7 +144,7 @@ public class ProductCT extends CostModelBase
             while (cursor.next() != null);
         }
         long stop = System.nanoTime();
-        long productNsec = stop - start - timedOuter.elapsecNsec() - timedInner.elapsecNsec();
+        long productNsec = stop - start - timedOuter.elapsedNsec() - timedInner.elapsedNsec();
         if (report) {
             // Report the difference
             double averageUsecPerRow = productNsec / (1000.0 * runs * (childCount + 1));
@@ -202,7 +202,7 @@ public class ProductCT extends CostModelBase
             while (cursor.next() != null);
         }
         long stop = System.nanoTime();
-        long productNsec = stop - start - timedOuter.elapsecNsec() - timedInner.elapsecNsec();
+        long productNsec = stop - start - timedOuter.elapsedNsec() - timedInner.elapsedNsec();
         if (report) {
             // Report the difference
             double averageUsecPerRow = productNsec / (1000.0 * runs * (childCount + 1));

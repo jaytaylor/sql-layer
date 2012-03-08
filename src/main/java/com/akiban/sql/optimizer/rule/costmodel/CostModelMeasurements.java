@@ -30,9 +30,9 @@ import java.util.Map;
 public interface CostModelMeasurements
 {
     // From SelectCT
-    final double SELECT_PER_ROW = 1.6;
+    final double SELECT_PER_ROW = 0.22;
     // From ProjectCT
-    final double PROJECT_PER_ROW = 0.15;
+    final double PROJECT_PER_ROW = 0.26;
     // From ExpressionCT
     final double EXPRESSION_PER_FIELD = 0.6;
     // From TreeScanCT
@@ -45,16 +45,19 @@ public interface CostModelMeasurements
     final double SORT_PER_ROW = 10;
     final double SORT_MIXED_MODE_FACTOR = 1.5;
     // From FlattenCT
-    final double FLATTEN_LEFT_JOIN_NO_CHILDREN = 417;
-    final double FLATTEN_RIGHT_JOIN_NO_CHILDREN = 150;
-    final double FLATTEN_LEFT_JOIN_OVERHEAD = 54;
-    final double FLATTEN_RIGHT_JOIN_OVERHEAD = 120;
-    final double FLATTEN_PER_ROW = 27;
+    final double FLATTEN_OVERHEAD = 49;
+    final double FLATTEN_PER_ROW = 41;
     // From MapCT
-    final double MAP_PER_ROW = 0.05;
+    final double MAP_PER_ROW = 0.15;
     // From ProductCT
     final double PRODUCT_PER_ROW = 40;
     // From SortWithLimitCT
     final double SORT_LIMIT_PER_ROW = 1;
     final double SORT_LIMIT_PER_FIELD_FACTOR = 0.2;
+    // From DistinctCT
+    final double DISTINCT_PER_ROW = 6;
+    // From IntersectCT
+    final double INTERSECT_PER_ROW = 1.5;
+    // From HKeyUnionCT
+    final double HKEY_UNION_PER_ROW = 2;
 }

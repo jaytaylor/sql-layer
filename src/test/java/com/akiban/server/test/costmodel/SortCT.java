@@ -39,7 +39,7 @@ public class SortCT extends CostModelBase
         createSchema();
         populateDB(100000);
         // Unidirectional
-        run(1, 0x1);
+        // run(1, 0x1);
         run(2, 0x3);
         run(3, 0x7);
         // One change of direction
@@ -55,22 +55,28 @@ public class SortCT extends CostModelBase
         sort(sortFields, ordering, FILLER_100_COLUMN, WARMUP_RUNS, 1, false);
         // Measurements
         sort(sortFields, ordering, FILLER_100_COLUMN, MEASUREMENT_RUNS, 100000, true);
-        sort(sortFields, ordering, FILLER_100_COLUMN, MEASUREMENT_RUNS, 10000, true);
-        sort(sortFields, ordering, FILLER_100_COLUMN, MEASUREMENT_RUNS, 1000, true);
-        sort(sortFields, ordering, FILLER_100_COLUMN, MEASUREMENT_RUNS, 100, true);
-        sort(sortFields, ordering, FILLER_100_COLUMN, MEASUREMENT_RUNS, 10, true);
-        sort(sortFields, ordering, FILLER_100_COLUMN, MEASUREMENT_RUNS, 1, true);
         sort(sortFields, ordering, FILLER_200_COLUMN, MEASUREMENT_RUNS, 100000, true);
-        sort(sortFields, ordering, FILLER_200_COLUMN, MEASUREMENT_RUNS, 10000, true);
-        sort(sortFields, ordering, FILLER_200_COLUMN, MEASUREMENT_RUNS, 1000, true);
-        sort(sortFields, ordering, FILLER_200_COLUMN, MEASUREMENT_RUNS, 100, true);
-        sort(sortFields, ordering, FILLER_200_COLUMN, MEASUREMENT_RUNS, 10, true);
-        sort(sortFields, ordering, FILLER_200_COLUMN, MEASUREMENT_RUNS, 1, true);
+        sort(sortFields, ordering, FILLER_300_COLUMN, MEASUREMENT_RUNS, 100000, true);
         sort(sortFields, ordering, FILLER_400_COLUMN, MEASUREMENT_RUNS, 100000, true);
+        sort(sortFields, ordering, FILLER_100_COLUMN, MEASUREMENT_RUNS, 10000, true);
+        sort(sortFields, ordering, FILLER_200_COLUMN, MEASUREMENT_RUNS, 10000, true);
+        sort(sortFields, ordering, FILLER_300_COLUMN, MEASUREMENT_RUNS, 10000, true);
         sort(sortFields, ordering, FILLER_400_COLUMN, MEASUREMENT_RUNS, 10000, true);
+        sort(sortFields, ordering, FILLER_100_COLUMN, MEASUREMENT_RUNS, 1000, true);
+        sort(sortFields, ordering, FILLER_200_COLUMN, MEASUREMENT_RUNS, 1000, true);
+        sort(sortFields, ordering, FILLER_300_COLUMN, MEASUREMENT_RUNS, 1000, true);
         sort(sortFields, ordering, FILLER_400_COLUMN, MEASUREMENT_RUNS, 1000, true);
+        sort(sortFields, ordering, FILLER_100_COLUMN, MEASUREMENT_RUNS, 100, true);
+        sort(sortFields, ordering, FILLER_200_COLUMN, MEASUREMENT_RUNS, 100, true);
+        sort(sortFields, ordering, FILLER_300_COLUMN, MEASUREMENT_RUNS, 100, true);
         sort(sortFields, ordering, FILLER_400_COLUMN, MEASUREMENT_RUNS, 100, true);
+        sort(sortFields, ordering, FILLER_100_COLUMN, MEASUREMENT_RUNS, 10, true);
+        sort(sortFields, ordering, FILLER_200_COLUMN, MEASUREMENT_RUNS, 10, true);
+        sort(sortFields, ordering, FILLER_300_COLUMN, MEASUREMENT_RUNS, 10, true);
         sort(sortFields, ordering, FILLER_400_COLUMN, MEASUREMENT_RUNS, 10, true);
+        sort(sortFields, ordering, FILLER_100_COLUMN, MEASUREMENT_RUNS, 1, true);
+        sort(sortFields, ordering, FILLER_200_COLUMN, MEASUREMENT_RUNS, 1, true);
+        sort(sortFields, ordering, FILLER_300_COLUMN, MEASUREMENT_RUNS, 1, true);
         sort(sortFields, ordering, FILLER_400_COLUMN, MEASUREMENT_RUNS, 1, true);
     }
 
@@ -84,7 +90,8 @@ public class SortCT extends CostModelBase
             /* 3 */ "c int",
             /* 4 */ "filler100 varchar(100)",
             /* 5 */ "filler200 varchar(200)",
-            /* 6 */ "filler400 varchar(400)",
+            /* 6 */ "filler300 varchar(300)",
+            /* 7 */ "filler400 varchar(400)",
             "primary key(id)");
         group = groupTable(t);
         schema = new Schema(rowDefCache().ais());
@@ -104,6 +111,7 @@ public class SortCT extends CostModelBase
                              random.nextInt(),
                              FILLER_100,
                              FILLER_200,
+                             FILLER_300,
                              FILLER_400);
             dml().writeRow(session(), row);
         }
@@ -172,11 +180,12 @@ public class SortCT extends CostModelBase
             int rowSize =
                 32 /* 4 int columns */ +
                 (fillerColumn == FILLER_100_COLUMN ? 100 :
-                 fillerColumn == FILLER_200_COLUMN ? 200 : 400);
-            System.out.println(String.format("rows: %s, sort fields: %s, row size: %s, sort complexity: %s, %s usec/row",
+                 fillerColumn == FILLER_200_COLUMN ? 200 :
+                 fillerColumn == FILLER_300_COLUMN ? 300 : 400);
+            System.out.println(String.format("rows: %s, row size: %s, sort fields: %s, sort complexity: %s, %s usec/row",
                                              rows,
-                                             sortFields,
                                              rowSize,
+                                             sortFields,
                                              sortComplexity,
                                              averageUsecPerRow));
         }
@@ -184,6 +193,7 @@ public class SortCT extends CostModelBase
 
     private static final String FILLER_100;
     private static final String FILLER_200;
+    private static final String FILLER_300;
     private static final String FILLER_400;
 
     static {
@@ -193,12 +203,14 @@ public class SortCT extends CostModelBase
         }
         FILLER_100 = buffer.toString();
         FILLER_200 = FILLER_100 + FILLER_100;
-        FILLER_400 = FILLER_200 + FILLER_200;
+        FILLER_300 = FILLER_200 + FILLER_100;
+        FILLER_400 = FILLER_300 + FILLER_100;
     }
 
     private static final int FILLER_100_COLUMN = 4;
     private static final int FILLER_200_COLUMN = FILLER_100_COLUMN + 1;
-    private static final int FILLER_400_COLUMN = FILLER_200_COLUMN + 1;
+    private static final int FILLER_300_COLUMN = FILLER_200_COLUMN + 1;
+    private static final int FILLER_400_COLUMN = FILLER_300_COLUMN + 1;
     private static final int WARMUP_RUNS = 10000;
     private static final int MEASUREMENT_RUNS = 10;
 

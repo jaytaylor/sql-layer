@@ -94,10 +94,9 @@ public class CostModel
         return nRows * (PROJECT_PER_ROW + rowType.nFields() * EXPRESSION_PER_FIELD);
     }
 
-    public double distinct()
+    public double distinct(int nRows)
     {
-        assert false : "Not implemented yet";
-        return -1L;
+        return nRows * DISTINCT_PER_ROW;
     }
 
     public double product(int nRows)
@@ -112,33 +111,22 @@ public class CostModel
     
     public double flatten(UserTableRowType parentRowType, 
                           UserTableRowType childRowType, 
-                          API.JoinType joinType, 
                           int nParents)
     {
-        double cost;
-        boolean keepParent = joinType == API.JoinType.LEFT_JOIN || joinType == API.JoinType.FULL_JOIN;
         double parentCount = parentRowType.userTable().rowDef().getTableStatus().getApproximateRowCount();
         double childCount = childRowType.userTable().rowDef().getTableStatus().getApproximateRowCount();
         long childrenPerParent = round(childCount / parentCount);
-        if (childrenPerParent == 0) {
-            cost = keepParent ? FLATTEN_LEFT_JOIN_NO_CHILDREN : FLATTEN_RIGHT_JOIN_NO_CHILDREN;
-        } else {
-            cost = keepParent ? FLATTEN_LEFT_JOIN_OVERHEAD : FLATTEN_RIGHT_JOIN_OVERHEAD;
-            cost += nParents * (childrenPerParent * FLATTEN_PER_ROW);
-        }
-        return cost;
+        return FLATTEN_OVERHEAD + nParents * (childrenPerParent * FLATTEN_PER_ROW);
     }
 
-    public double intersect()
+    public double intersect(int nLeftRows, int nRightRows)
     {
-        assert false : "Not implemented yet";
-        return -1L;
+        return (nLeftRows + nRightRows) * INTERSECT_PER_ROW;
     }
 
-    public double hKeyUnion()
+    public double hKeyUnion(int nLeftRows, int nRightRows)
     {
-        assert false : "Not implemented yet";
-        return -1L;
+        return (nLeftRows + nRightRows) * HKEY_UNION_PER_ROW;
     }
 
     private double hKeyBoundGroupScanSingleRow(UserTableRowType rootTableRowType)

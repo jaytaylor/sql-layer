@@ -18,6 +18,7 @@ package com.akiban.server.test.costmodel;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.TimeOperator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.error.InvalidOperationException;
@@ -61,31 +62,19 @@ public class SelectCT extends CostModelBase
     private void run(int runs, boolean report)
     {
         Operator scan = groupScan_Default(group);
-        Operator select = select_HKeyOrdered(scan, tRowType, Expressions.literal(true));
-        long start;
-        long stop;
-        // Measure time for group scan
-        start = System.nanoTime();
-        for (int r = 0; r < runs; r++) {
-            Cursor cursor = cursor(scan, queryContext);
-            cursor.open();
-            while (cursor.next() != null);
-        }
-        stop = System.nanoTime();
-        long groupScanNsec = stop - start;
-        // Measure time for group scan and select
-        start = System.nanoTime();
+        TimeOperator timeScan = new TimeOperator(scan);
+        Operator select = select_HKeyOrdered(timeScan, tRowType, Expressions.literal(true));
+        long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
             Cursor cursor = cursor(select, queryContext);
             cursor.open();
             while (cursor.next() != null);
         }
-        stop = System.nanoTime();
-        long selectNsec = stop - start;
+        long stop = System.nanoTime();
+        long selectNsec = stop - start - timeScan.elapsedNsec();
         if (report) {
             // Report the difference
-            long selectOnlyNsec = selectNsec - groupScanNsec;
-            double averageUsecPerRow = selectOnlyNsec / (1000.0 * runs * ROWS);
+            double averageUsecPerRow = selectNsec / (1000.0 * runs * ROWS);
             System.out.println(String.format("%s usec/row", averageUsecPerRow));
         }
     }
