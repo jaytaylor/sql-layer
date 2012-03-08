@@ -24,7 +24,6 @@ import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.TypesList;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.ObjectExtractor;
@@ -223,7 +222,6 @@ public class CompareExpression extends AbstractBinaryExpression {
             ValueSource right = right();
             if (left.isNull() || right.isNull())
                 return BoolValueSource.OF_NULL;
-         
             int compareResult = op.compare(left, right);
             return BoolValueSource.of(comparison.matchesCompareTo(compareResult));
         }
