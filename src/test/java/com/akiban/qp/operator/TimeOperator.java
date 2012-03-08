@@ -62,7 +62,7 @@ public class TimeOperator extends Operator
 
     // TimeOperator interface
 
-    public long elapsedNsec()
+    public long elapsecNsec()
     {
         return elapsedNsec;
     }
