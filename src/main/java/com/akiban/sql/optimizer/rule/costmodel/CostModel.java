@@ -79,10 +79,9 @@ public class CostModel
         return SORT_SETUP + SORT_PER_ROW * nRows * (mixedMode ? 1 : SORT_MIXED_MODE_FACTOR);
     }
 
-    public double sortDistinct()
+    public double sortWithLimit(int limit, int sortFields)
     {
-        assert false : "Not implemented yet";
-        return -1L;
+        return limit * SORT_LIMIT_PER_ROW * (1 + sortFields * SORT_LIMIT_PER_FIELD_FACTOR);
     }
 
     public double select(int nRows)
@@ -101,18 +100,16 @@ public class CostModel
         return -1L;
     }
 
-    public double product()
+    public double product(int nRows)
     {
-        assert false : "Not implemented yet";
-        return -1L;
+        return nRows * PRODUCT_PER_ROW;
     }
 
-    public double map()
+    public double map(int nOuterRows, int nInnerRowsPerOuter)
     {
-        assert false : "Not implemented yet";
-        return -1L;
+        return (nOuterRows * (nInnerRowsPerOuter + 1)) * MAP_PER_ROW;
     }
-
+    
     public double flatten(UserTableRowType parentRowType, 
                           UserTableRowType childRowType, 
                           API.JoinType joinType, 

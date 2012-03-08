@@ -39,7 +39,7 @@ public abstract class ServerSessionBase implements ServerSession
     public static final String COMPILER_PROPERTIES_PREFIX = "optimizer.";
 
     protected final ServerServiceRequirements reqs;
-    protected Properties properties;
+    protected Properties properties, compilerProperties;
     protected Map<String,Object> attributes = new HashMap<String,Object>();
     
     protected Session session;
@@ -157,7 +157,9 @@ public abstract class ServerSessionBase implements ServerSession
     
     @Override
     public Properties getCompilerProperties() {
-        return reqs.config().deriveProperties(COMPILER_PROPERTIES_PREFIX);
+        if (compilerProperties == null)
+            compilerProperties = reqs.config().deriveProperties(COMPILER_PROPERTIES_PREFIX);
+        return compilerProperties;
     }
 
     @Override
@@ -235,7 +237,7 @@ public abstract class ServerSessionBase implements ServerSession
 
     @Override
     public CostEstimator costEstimator() {
-        return new ServerCostEstimator(this, reqs);
+        return new ServerCostEstimator(this, reqs, getCompilerProperties());
     }
 
     /** Prepare to execute given statement.
