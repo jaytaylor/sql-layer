@@ -1,0 +1,2 @@
+t1 CROSS JOIN t2
+t2 CROSS JOIN t1
