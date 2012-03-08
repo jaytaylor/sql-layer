@@ -259,5 +259,18 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 session.close();
             }
         }
+
+        @Override
+        public void loadIndexStatistics(String schema, String fromFile) 
+                throws IOException {
+            Session session = sessionService.createSession();
+            try {
+                File file = new File(fromFile);
+                IndexStatisticsServiceImpl.this.loadIndexStatistics(session, schema, file);
+            }
+            finally {
+                session.close();
+            }
+        }
     }
 }

@@ -22,16 +22,20 @@ import com.akiban.ais.model.Table;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsService;
+import java.util.Properties;
 
 public class ServerCostEstimator extends CostEstimator
 {
     private ServerSession session;
     private IndexStatisticsService indexStatistics;
+    private boolean scaleIndexStatistics;
 
     public ServerCostEstimator(ServerSession session,
-                               ServerServiceRequirements reqs) {
+                               ServerServiceRequirements reqs,
+                               Properties compilerProperties) {
         this.session = session;
         indexStatistics = reqs.indexStatistics();
+        scaleIndexStatistics = compilerProperties.getProperty("scaleIndexStatistics", "true").equals("true");
     }
 
     @Override
@@ -42,6 +46,11 @@ public class ServerCostEstimator extends CostEstimator
     @Override
     public long getTableRowCount(Table table) {
         return table.rowDef().getTableStatus().getApproximateRowCount();
+    }
+
+    @Override
+    protected boolean scaleIndexStatistics() {
+        return scaleIndexStatistics;
     }
 
 }

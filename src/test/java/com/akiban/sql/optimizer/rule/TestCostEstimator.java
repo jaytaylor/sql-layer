@@ -54,4 +54,10 @@ public class TestCostEstimator extends CostEstimator
         }
         return 1;
     }
+
+    @Override
+    protected boolean scaleIndexStatistics() {
+        return false;
+    }
+
 }
