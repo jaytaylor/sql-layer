@@ -175,6 +175,7 @@ public abstract class CostEstimator
                 int compare = bytesComparator.compare(lowBytes, entryEndBytes);
                 if (compare > 0)
                     continue;
+                before = false;
                 if (compare == 0) {
                     if (lowInclusive)
                         rowCount += entry.getEqualCount();
