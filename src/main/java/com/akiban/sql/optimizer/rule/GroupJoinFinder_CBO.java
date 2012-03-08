@@ -92,7 +92,10 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
                 joinOK = checkJoinConditions(join.getJoinConditions(), leftTree, rightTree);
                 break;
             case RIGHT:
-                joinOK = checkJoinConditions(join.getJoinConditions(), rightTree, leftTree);
+                // Cannot allow any non-group conditions, since even
+                // one only on parent would kill the child because
+                // that's how Select_HKeyOrdered works.
+                joinOK = checkJoinConditions(join.getJoinConditions(), null, leftTree);
                 break;
             default:
                 joinOK = false;
@@ -175,7 +178,7 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
     protected boolean checkJoinConditions(ConditionList joinConditions,
                                           TableGroupJoinNode outer,
                                           TableGroupJoinNode inner) {
-        if (hasJoinedReferences(joinConditions, outer))
+        if (hasIllegalReferences(joinConditions, outer))
             return false;
         inner.setJoinConditions(joinConditions);
         return true;
@@ -183,17 +186,19 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
 
     // See whether any expression in the join condition other than the
     // grouping join references a table under the given tree.
-    protected boolean hasJoinedReferences(ConditionList joinConditions,
-                                          TableGroupJoinNode fromTree) {
+    protected boolean hasIllegalReferences(ConditionList joinConditions,
+                                           TableGroupJoinNode fromTree) {
         JoinedReferenceFinder finder = null;
         if (joinConditions != null) {
             for (ConditionExpression condition : joinConditions) {
                 if (condition.getImplementation() == ConditionExpression.Implementation.GROUP_JOIN)
-                    continue;
+                    continue;   // Group condition okay.
+                if (fromTree == null)
+                    return true; // All non-group disallowed.
                 if (finder == null)
                     finder = new JoinedReferenceFinder(fromTree);
                 if (finder.find(condition))
-                    return true;
+                    return true; // Has references to other side.
             }
         }
         return false;
