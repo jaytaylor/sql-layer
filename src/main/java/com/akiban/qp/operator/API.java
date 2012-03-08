@@ -171,14 +171,14 @@ public class API
 
     public static Operator branchLookup_Nested(GroupTable groupTable,
                                                RowType inputRowType,
-                                               UserTableRowType ancestorTable,
+                                               UserTableRowType ancestorRowType,
                                                UserTableRowType outputRowType,
                                                LookupOption flag,
                                                int inputBindingPosition)
     {
         return new BranchLookup_Nested(groupTable,
                                        inputRowType,
-                                       ancestorTable,
+                                       ancestorRowType,
                                        outputRowType,
                                        flag,
                                        inputBindingPosition);
