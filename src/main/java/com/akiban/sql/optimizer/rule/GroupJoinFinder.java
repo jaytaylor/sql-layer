@@ -15,7 +15,6 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.ais.model.Column;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.sql.optimizer.plan.*;
@@ -152,8 +151,7 @@ public class GroupJoinFinder extends BaseRule
     protected void normalizeColumnComparisons(ConditionList conditions) {
         if (conditions == null) return;
         Collection<ConditionExpression> newExpressions = new ArrayList<ConditionExpression>();
-        for (Iterator<ConditionExpression> iterator = conditions.iterator(); iterator.hasNext(); ) {
-            ConditionExpression cond = iterator.next();
+        for (ConditionExpression cond : conditions) {
             if (cond instanceof ComparisonCondition) {
                 ComparisonCondition ccond = (ComparisonCondition)cond;
                 ExpressionNode left = ccond.getLeft();
@@ -169,70 +167,11 @@ public class GroupJoinFinder extends BaseRule
                     else {
                         ccond.reverse();
                     }
-                    boolean conditionIsObsolete = normalizeGroupJoinCondition(ccond, newExpressions);
-                    if (conditionIsObsolete)
-                        iterator.remove();
                 }
             }
         }
         conditions.addAll(newExpressions);
         ListUtils.removeDuplicates(conditions);
-    }
-
-    private boolean normalizeGroupJoinCondition(ComparisonCondition ccond, Collection<? super ConditionExpression> out)
-    {
-        boolean conditionIsObsolete = false;
-        if (ccond.getOperation().equals(Comparison.EQ)) {
-            ExpressionNode leftRaw = ccond.getLeft();
-            ExpressionNode rightRaw = ccond.getRight();
-            if (leftRaw instanceof ColumnExpression && rightRaw instanceof ColumnExpression) {
-                ColumnExpression ccondLeft = (ColumnExpression) leftRaw;
-                ColumnExpression ccondRight = (ColumnExpression) rightRaw;
-
-                if (ccondLeft.getColumn() == null || ccondLeft.getColumn().getUserTable() == null
-                        || ccondRight.getColumn() == null || ccondRight.getColumn().getUserTable() == null)
-                    return false;
-
-                boolean conditionOnDifferentTables =
-                        ccondLeft.getColumn().getUserTable() != ccondRight.getColumn().getUserTable();
-                
-                for (ColumnExpression leftColExprEquiv : ccondLeft.getEquivalentsPlusSelf()) {
-                    for (ColumnExpression rightColExprEquiv : ccondRight.getEquivalentsPlusSelf()) {
-                        Column leftColEquiv = leftColExprEquiv.getColumn();
-                        Column rightColEquiv = rightColExprEquiv.getColumn();
-                        UserTable leftEquivTable = leftColEquiv.getUserTable();
-                        UserTable rightEquivTable = rightColEquiv.getUserTable();
-                        Join parentJoin = leftEquivTable.getParentJoin();
-                        if (parentJoin != null && parentJoin.getParent() != null
-                                && parentJoin.getParent().equals(rightEquivTable))
-                        {
-                            // found a parent-child relationship
-                            for (JoinColumn joinColumn : parentJoin.getJoinColumns()) {
-                                Column parentCol = joinColumn.getParent();
-                                Column childCol = joinColumn.getChild();
-                                // look for a group join condition that isn't the original one
-                                if (leftColEquiv.equals(childCol) && rightColEquiv.equals(parentCol) &&
-                                    (leftColEquiv != ccondLeft.getColumn() || rightColEquiv != ccondRight.getColumn()))
-                                {
-                                    // create a new comparison condition that's in canonical form
-                                    ComparisonCondition canonical = new ComparisonCondition(
-                                            Comparison.EQ,
-                                            leftColExprEquiv,
-                                            rightColExprEquiv,
-                                            ccond.getSQLtype(),
-                                            ccond.getSQLsource()
-                                    );
-                                    out.add(canonical);
-                                    conditionIsObsolete |= conditionOnDifferentTables;
-                                    logger.debug("rewriting {} as {}", ccond, canonical);
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return conditionIsObsolete;
     }
 
     // Normalize join's conditions and any below it.
@@ -401,47 +340,22 @@ public class GroupJoinFinder extends BaseRule
         if (parentNode == null) return null;
         List<JoinColumn> joinColumns = groupJoin.getJoinColumns();
         int ncols = joinColumns.size();
-        Map<TableSource,List<ComparisonCondition>> parentTables = 
-            new HashMap<TableSource,List<ComparisonCondition>>();
-        for (ConditionExpression condition : conditions) {
-            if (condition instanceof ComparisonCondition) {
-                ComparisonCondition ccond = (ComparisonCondition)condition;
-                if (ccond.getOperation() == Comparison.EQ) {
-                    ExpressionNode left = ccond.getLeft();
-                    ExpressionNode right = ccond.getRight();
-                    if (left.isColumn() && right.isColumn()) {
-                        ColumnExpression lcol = (ColumnExpression)left;
-                        ColumnExpression rcol = (ColumnExpression)right;
-                        if (lcol.getTable() == childTable) {
-                            ColumnSource rightSource = rcol.getTable();
-                            if (rightSource instanceof TableSource) {
-                                TableSource rightTable = (TableSource)rightSource;
-                                if (rightTable.getTable() == parentNode) {
-                                    for (int i = 0; i < ncols; i++) {
-                                        JoinColumn joinColumn = joinColumns.get(i);
-                                        if ((joinColumn.getChild() == lcol.getColumn()) &&
-                                            (joinColumn.getParent() == rcol.getColumn())) {
-                                            List<ComparisonCondition> entry = 
-                                                parentTables.get(rightTable);
-                                            if (entry == null) {
-                                                entry = new ArrayList<ComparisonCondition>(Collections.<ComparisonCondition>nCopies(ncols, null));
-                                                parentTables.put(rightTable, entry);
-                                            }
-                                            entry.set(i, ccond);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
+        Map<TableSource,GroupJoinConditions> parentTables = new HashMap<TableSource,GroupJoinConditions>();
+
+        for (int i = 0; i < ncols; ++i) {
+            JoinColumn joinColumn = joinColumns.get(i);
+            if (!findGroupCondition(joinColumns, i, childTable, conditions, true, parentTables)) {
+                if (!findGroupCondition(joinColumns, i, childTable, conditions, false, parentTables)) {
+                    return null; // join column had no direct or equivalent group joins, so we know the answer
                 }
             }
         }
+        
         TableSource parentTable = null;
-        List<ComparisonCondition> groupJoinConditions = null;
-        for (Map.Entry<TableSource,List<ComparisonCondition>> entry : parentTables.entrySet()) {
+        GroupJoinConditions groupJoinConditions = null;
+        for (Map.Entry<TableSource,GroupJoinConditions> entry : parentTables.entrySet()) {
             boolean found = true;
-            for (ComparisonCondition elem : entry.getValue()) {
+            for (ComparisonCondition elem : entry.getValue().getConditions()) {
                 if (elem == null) {
                     found = false;
                     break;
@@ -457,8 +371,8 @@ public class GroupJoinFinder extends BaseRule
                     // earlier to decide that the primary
                     // keys are equated and so share the
                     // references somehow.
-                    ConditionExpression c1 = groupJoinConditions.get(0);
-                    ConditionExpression c2 = entry.getValue().get(0);
+                    ConditionExpression c1 = groupJoinConditions.getConditions().get(0);
+                    ConditionExpression c2 = entry.getValue().getConditions().get(0);
                     if (conditions.indexOf(c1) > conditions.indexOf(c2)) {
                         // Make the order predictable for tests.
                         ConditionExpression temp = c1;
@@ -482,8 +396,130 @@ public class GroupJoinFinder extends BaseRule
         }
         if (!tableAllowedInGroup(group, childTable))
             return null;
-        return new TableGroupJoin(group, parentTable, childTable, 
-                                  groupJoinConditions, groupJoin);
+        groupJoinConditions.installGeneratedConditionsTo(conditions);
+        return new TableGroupJoin(group, parentTable, childTable, groupJoinConditions.getConditions(), groupJoin);
+    }
+
+    private boolean findGroupCondition(List<JoinColumn> joinColumns, int i, TableSource childTable,
+                                       ConditionList conditions, boolean requireExact,
+                                       Map<TableSource, GroupJoinConditions> parentTables)
+    {
+        int ncols = joinColumns.size();
+        boolean found = false;
+        for (ConditionExpression condition : conditions) {
+            if (condition instanceof ComparisonCondition) {
+                ComparisonCondition ccond = (ComparisonCondition)condition;
+                if (ccond.getOperation() == Comparison.EQ) {
+                    ExpressionNode left = ccond.getLeft();
+                    ExpressionNode right = ccond.getRight();
+                    if (left.isColumn() && right.isColumn()) {
+                        ColumnExpression lcol = (ColumnExpression)left;
+                        ColumnExpression rcol = (ColumnExpression)right;
+                        if ((lcol.getTable() instanceof TableSource) && (rcol.getTable() instanceof TableSource)) {
+                            ComparisonCondition normalized = normalizedCond(
+                                    joinColumns.get(i),
+                                    childTable,
+                                    lcol,
+                                    rcol,
+                                    ccond,
+                                    requireExact
+                            );
+                            if (normalized != null) {
+                                found = true;
+                                ColumnExpression rnorm = (ColumnExpression) normalized.getRight();
+                                TableSource parentSource = (TableSource) rnorm.getTable();
+                                GroupJoinConditions entry = parentTables.get(parentSource);
+                                if (entry == null) {
+                                    entry = new GroupJoinConditions(ncols);
+                                    parentTables.put(parentSource, entry);
+                                }
+                                entry.set(i, normalized, normalized != ccond);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return found;
+    }
+    
+    private static class GroupJoinConditions {
+        private List<ComparisonCondition> conditions;
+        private List<ComparisonCondition> generatedConditions;
+
+        public GroupJoinConditions(int ncols) {
+            this.conditions = new ArrayList<ComparisonCondition>(Collections.<ComparisonCondition>nCopies(ncols, null));
+        }
+        
+        public void set(int i, ComparisonCondition condition, boolean wasGenerated) {
+            conditions.set(i, condition);
+            if (wasGenerated) {
+                if (generatedConditions == null)
+                    generatedConditions = new ArrayList<ComparisonCondition>(conditions.size());
+                generatedConditions.add(condition);
+            }
+        }
+        
+        public List<ComparisonCondition> getConditions() {
+            return conditions;
+        }
+
+        public void installGeneratedConditionsTo(ConditionList conditionList) {
+            if (generatedConditions != null)
+                conditionList.addAll(generatedConditions);
+        }
+    }
+
+    private ComparisonCondition normalizedCond(JoinColumn join, TableSource childSource,
+                                               ColumnExpression lcol, ColumnExpression rcol,
+                                               ComparisonCondition originalCond, boolean requireExact)
+    {
+        // look for child
+        ColumnExpression childEquiv = null;
+        if (lcol.getTable() == childSource && lcol.getColumn() == join.getChild()) {
+            childEquiv = lcol;
+        }
+        else {
+            for (ColumnExpression equivalent : lcol.getEquivalents()) {
+                if (equivalent.getTable() == childSource && equivalent.getColumn() == join.getChild()) {
+                    childEquiv = equivalent;
+                    break;
+                }
+            }
+        }
+        if (childEquiv == null)
+            return null;
+        
+        // look for parent
+        ColumnExpression parentEquiv = null;
+        if (rcol.getColumn() == join.getParent())  {
+            parentEquiv = rcol;
+        }
+        else {
+            for (ColumnExpression equivalent : rcol.getEquivalents()) {
+                if (equivalent.getColumn() == join.getParent()) {
+                    parentEquiv = equivalent;
+                    break;
+                }
+            }
+        }
+        if (parentEquiv == null)
+            return null;
+        
+        boolean isExact = childEquiv == lcol && parentEquiv == rcol;
+        if (requireExact) {
+            return isExact ? originalCond : null;
+        }
+        else {
+            assert ! isExact : "exact match found; should have been discovered by previous invocation at call site";
+            return new ComparisonCondition(
+                    Comparison.EQ,
+                    childEquiv,
+                    parentEquiv,
+                    originalCond.getSQLtype(),
+                    originalCond.getSQLsource()
+            );
+        }
     }
 
     protected boolean tableAllowedInGroup(TableGroup group, TableSource childTable) {

@@ -1,0 +1,9 @@
+SelectQuery@5bf0cf51
+  ResultSet@1ebafdff[bid1, bid2, title, bcol1, bcol2, cid, bfk1, bfk2, content, ccol1, ccol2]
+    Project@679801c[user.blogs.bid1, user.blogs.bid2, user.blogs.title, user.blogs.bcol1, user.blogs.bcol2, user.comments.cid, user.comments.bfk1, user.comments.bfk2, user.comments.content, user.comments.ccol1, user.comments.ccol2]
+      Select@12c9b196[user.comments.bfk1 == user.blogs.bid1]
+        JoinNode@77a9f87c(INNER[])
+          TableJoins@37f8d244(TableGroup@30b48b11(blogs))
+            TableSource@1f47e668(user.blogs - TableGroup@30b48b11(blogs))
+          TableJoins@1d162212(TableGroup@1816daa9(blogs))
+            TableSource@2967c5e3(user.comments - TableGroup@1816daa9(blogs))

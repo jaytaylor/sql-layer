@@ -1,7 +1,7 @@
 SelectQuery@38f18cc3
   ResultSet@7a507369[cid, name, oid, cid, order_date, aid, cid, state, city]
     Project@37c9313b[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date, user.addresses.aid, user.addresses.cid, user.addresses.state, user.addresses.city]
-      Select@79bf3519[]
+      Select@79bf3519[user.orders.cid == user.addresses.cid]
         TableJoins@78373ac0(TableGroup@76e704e1(customers))
           JoinNode@71f250e8(INNER/GROUP[user.orders.cid == user.customers.cid] - TableGroupJoin@5b9de9c9(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
             JoinNode@5c5fba1c(INNER/GROUP[user.addresses.cid == user.customers.cid] - TableGroupJoin@10b3b3a5(Join(user/customers/cid/user/user.addresses/cid: user.addresses -> user.customers, group(customers))))

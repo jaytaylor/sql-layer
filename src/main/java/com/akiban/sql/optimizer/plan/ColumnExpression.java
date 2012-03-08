@@ -92,11 +92,9 @@ public class ColumnExpression extends BaseExpression
             throw new IllegalStateException("no equivalence finder");
         return equivalenceFinder;
     }
-
-    public Set<ColumnExpression> getEquivalentsPlusSelf() {
-        Set<ColumnExpression> equivalents = getEquivalenceFinder().findEquivalents(this);
-        equivalents.add(this);
-        return equivalents;
+    
+    public Set<ColumnExpression> getEquivalents() {
+        return getEquivalenceFinder().findEquivalents(this);
     }
 
     @Override
