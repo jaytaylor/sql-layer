@@ -1,3 +1,7 @@
+choose-condition-1: narrow and wide
+
+choose-condition-2: wide and narrow
+
 group-equals: two equals on group index
 
 in-index: IN that can use index

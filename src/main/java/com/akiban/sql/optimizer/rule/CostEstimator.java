@@ -212,9 +212,9 @@ public abstract class CostEstimator
         while (safeByte(start, idx) == safeByte(end, idx)) idx++; // First mismatch.
         long lstart = 0, lend = 0, lmiddle = 0;
         for (int i = 0; i < 4; i++) {
-            lstart = (lstart << 8) + safeByte(start, idx);
-            lend = (lend << 8) + safeByte(end, idx);
-            lmiddle = (lmiddle << 8) + safeByte(middle, idx);
+            lstart = (lstart << 8) + safeByte(start, idx+i);
+            lend = (lend << 8) + safeByte(end, idx+i);
+            lmiddle = (lmiddle << 8) + safeByte(middle, idx+i);
         }
         return simpleRound((lmiddle - lstart) * total, lend - lstart);
     }
