@@ -155,6 +155,10 @@ public class DPhypEnumerateTest extends OptimizerTestBase
                     }
                 }
             }
+            if (first) {
+                jstr = " CROSS JOIN ";
+                cstr.setLength(0);
+            }
             for (String left : p1) {
                 if (left.indexOf(' ') > 0)
                     left = "(" + left + ")";
