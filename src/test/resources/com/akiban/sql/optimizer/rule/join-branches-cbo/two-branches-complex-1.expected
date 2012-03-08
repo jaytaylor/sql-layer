@@ -2,7 +2,7 @@ SelectQuery@4cd297c0
   ResultSet@15e8e5a7[name, order_date, city]
     Project@6d3d422d[user.customers.name, user.orders.order_date, user.addresses.city]
       Select@50c3d062[]
-        Product@67a5fb5a
+        Product@67a5fb5a(user.customers)
           Flatten@469695f(user.customers LEFT user.addresses)
             Select@2484de3c[user.addresses.city != Boston]
               GroupScan@79123c5f(Group(customers -> user._akiban_customers))
