@@ -58,6 +58,10 @@ public abstract class CostEstimator
     public static final double SORT_COST = 2.0;
     public static final double SELECT_COST = .25;
 
+    protected boolean scaleIndexStatistics() {
+        return true;
+    }
+
     /** Estimate cost of scanning from this index. */
     public CostEstimate costIndexScan(Index index,
                                       List<ExpressionNode> equalityComparands,
@@ -88,7 +92,7 @@ public abstract class CostEstimator
             // TODO: Is this too conservative?
             return indexAccessCost(rowCount, index);
         }
-        boolean scaleCount = true;
+        boolean scaleCount = scaleIndexStatistics();
         long nrows;
         if ((lowComparand == null) && (highComparand == null)) {
             // Equality lookup.
@@ -97,11 +101,12 @@ public abstract class CostEstimator
             // not so declared, then the result size doesn't scale up from
             // when it was analyzed.
             long totalDistinct = histogram.totalDistinctCount();
-            scaleCount = totalDistinct * 9 < statsCount * 10; // < 90% distinct
+            boolean mostlyDistinct = totalDistinct * 9 > statsCount * 10; // > 90% distinct
+            if (mostlyDistinct) scaleCount = false;
             byte[] keyBytes = encodeKeyBytes(index, equalityComparands, null);
             if (keyBytes == null) {
                 // Variable.
-                nrows = (scaleCount) ? statsCount / totalDistinct : 1;
+                nrows = (mostlyDistinct) ? 1 : statsCount / totalDistinct;
             }
             else {
                 nrows = rowsEqual(histogram, keyBytes);
