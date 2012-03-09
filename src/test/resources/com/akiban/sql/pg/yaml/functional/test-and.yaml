@@ -1,4 +1,5 @@
 # Test the AND operator
+# Related bug(s): 947439
 ---
 - Include: all-types-schema.yaml
 
@@ -33,9 +34,15 @@
 ---
 - Statement: SELECT bigint_field > 0 AND true FROM all_types
 - output: [[null], [true], [false], [null], [null], [true], [true], [false],
-    [false]]
-# Parameterized query is not working
-# ---
+    [false]] 
+#--- # 947439: bug NULL output from  compare gets turned into FALSE 
+#- Statement: SELECT (null > 1) IS NULL FROM all_types;
+#- output: [[true]]
+#---
+#- Statement: SELECT null > 1 FROM all_types;
+#- output: [[null]] 
+# 
+#---
 # - Statement: SELECT bigint_field > 0 AND ? FROM all_types
 # - params: [[1], [0]]
 # - output: [[null], [true], [false], [null], [null], [true], [true], [false],

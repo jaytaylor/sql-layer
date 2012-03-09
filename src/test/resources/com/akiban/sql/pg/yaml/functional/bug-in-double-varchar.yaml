@@ -1,4 +1,6 @@
 # IN function conversion from double to varchar produces wrong error
+# BUG 891359
+# Status triaged
 ---
 - CreateTable: t (double_field double, varchar_field varchar(32))
 ---

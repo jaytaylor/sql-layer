@@ -1,4 +1,6 @@
 # The varbinary data type is not supported
+# BUG 890232
+# Status triaged
 ---
 - CreateTable: t (varbinary_field varbinary)
 ...

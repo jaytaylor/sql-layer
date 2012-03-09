@@ -1,4 +1,6 @@
 # Inserting the max value after '0.0' into a double fails
+# BUG 906988
+# Status new
 ---
 - CreateTable: t (double_field double)
 ---

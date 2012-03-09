@@ -1,4 +1,10 @@
 # Test the TIMEDIFF() function 
+# bug 921095 negative time value not supported
+# status: new
+#
+# bug: DECIMAL (floating point) not convertible to time)
+#
+# bug: 921124 (not valid / opinion)
 ---
 - Include: all-types-schema.yaml
 ---

@@ -1,4 +1,5 @@
 # Test the bitwise AND function
+# Bug 928418 overflow in bit functions
 ---
 - Include: all-types-schema.yaml
 ---
@@ -25,20 +26,20 @@
 - Statement: SELECT 3 from all_types where BIT_COUNT(-99999) = 55;
 - output: [[3]]
   
-  #bug 906457
-#- Statement: SELECT BIT_COUNT(?) from all_types;
-#- params: [[100]]
-#- output: [[3]]
-# ---
-# - Statement: SELECT 1 from all_types where BIT_COUNT(?) = 3;
-# - params: [[100]]
-# - output: [[1]]
---- #906512
+--- #bug 906457 (fix released)
+- Statement: SELECT BIT_COUNT(?) from all_types;
+- params: [[100]]
+- output: [[3]]
+---
+- Statement: SELECT 1 from all_types where BIT_COUNT(?) = 3;
+- params: [[100]]
+- output: [[1]]
+--- #906512 (not valid)
 - Statement: SELECT BIT_COUNT(NULL) from all_types;
 - output: [[null]]
   
 #overflow issues not decided yet
-#---
+#--- # bug 928418
 #- Statement: SELECT BIT_COUNT(9223372036854775808) from all_types;
 #- output: [[1]]
 #---
