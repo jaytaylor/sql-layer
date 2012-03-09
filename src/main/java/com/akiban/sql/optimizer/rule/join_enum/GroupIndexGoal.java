@@ -145,7 +145,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
      * @return <code>false</code> if the index is useless.
      */
     public boolean usable(IndexScan index) {
-        List<IndexColumn> indexColumns = index.getIndex().getKeyColumns();
+        List<IndexColumn> indexColumns = index.getKeyColumns();
         int ncols = indexColumns.size();
         List<ExpressionNode> indexExpressions = new ArrayList<ExpressionNode>(ncols);
         List<OrderByExpression> orderBy = new ArrayList<OrderByExpression>(ncols);
@@ -476,7 +476,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         // indexes, below.
         if (required.contains(table)) {
             for (TableIndex index : table.getTable().getTable().getIndexes()) {
-                IndexScan candidate = new IndexScan(index, table);
+                IndexScan candidate = new SingleIndexScan(index, table);
                 bestIndex = betterIndex(bestIndex, candidate);
             }
         }
@@ -538,7 +538,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                         (rootRequired == null))
                         continue;
                 }
-                IndexScan candidate = new IndexScan(index, rootTable, 
+                IndexScan candidate = new SingleIndexScan(index, rootTable,
                                                     rootRequired, leafRequired, 
                                                     table);
                 bestIndex = betterIndex(bestIndex, candidate);
@@ -634,52 +634,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     }
 
     protected CostEstimate estimateCost(IndexScan index) {
-        CostEstimator costEstimator = queryGoal.getCostEstimator();
-        CostEstimate cost = null;
-        if (index.getConditionRange() == null) {
-            cost = costEstimator.costIndexScan(index.getIndex(),
-                                               index.getEqualityComparands(),
-                                               index.getLowComparand(), 
-                                               index.isLowInclusive(),
-                                               index.getHighComparand(), 
-                                               index.isHighInclusive());
-        }
-        else {
-            for (RangeSegment segment : index.getConditionRange().getSegments()) {
-                CostEstimate acost = costEstimator.costIndexScan(index.getIndex(),
-                                                                 index.getEqualityComparands(),
-                                                                 segment.getStart().getValueExpression(),
-                                                                 segment.getStart().isInclusive(),
-                                                                 segment.getEnd().getValueExpression(),
-                                                                 segment.getEnd().isInclusive());
-                if (cost == null)
-                    cost = acost;
-                else
-                    cost = cost.union(acost);
-            }
-        }
-        if (!index.isCovering()) {
-            CostEstimate flatten = costEstimator.costFlatten(index.getLeafMostTable(),
-                                                             index.getRequiredTables());
-            cost = cost.nest(flatten);
-        }
-
-        Collection<ConditionExpression> unhandledConditions = 
-            new HashSet<ConditionExpression>(conditions);
-        if (index.getConditions() != null)
-            unhandledConditions.removeAll(index.getConditions());
-        if (!unhandledConditions.isEmpty()) {
-            CostEstimate select = costEstimator.costSelect(unhandledConditions,
-                                                           cost.getRowCount());
-            cost = cost.sequence(select);
-        }
-
-        if (queryGoal.needSort(index.getOrderEffectiveness())) {
-            CostEstimate sort = costEstimator.costSort(cost.getRowCount());
-            cost = cost.sequence(sort);
-        }
-
-        return cost;
+        return index.estimateCost(queryGoal, conditions);
     }
 
     public void install(PlanNode scan, List<ConditionList> conditionSources) {
