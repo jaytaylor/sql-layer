@@ -643,7 +643,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             cost = cost.nest(flatten);
         }
 
-        Collection<ConditionExpression> unhandledConditions =
+        Collection<ConditionExpression> unhandledConditions = 
             new HashSet<ConditionExpression>(conditions);
         if (index.getConditions() != null)
             unhandledConditions.removeAll(index.getConditions());
