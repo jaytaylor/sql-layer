@@ -23,11 +23,9 @@ import com.akiban.qp.operator.TimeOperator;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.std.Expressions;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.Random;
 
 import static com.akiban.qp.operator.API.*;
@@ -111,7 +109,7 @@ public class SortWithLimitCT extends CostModelBase
             while (cursor.next() != null);
         }
         long stop = System.nanoTime();
-        long sortNsec = stop - start - timeSetup.elapsecNsec();
+        long sortNsec = stop - start - timeSetup.elapsedNsec();
         if (report) {
             // Report the difference
             double averageUsecPerRow = sortNsec / (1000.0 * runs * rows);
