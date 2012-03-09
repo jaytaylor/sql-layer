@@ -40,12 +40,14 @@ import java.util.*;
 
 public abstract class CostEstimator
 {
+    private final Schema schema;
     private final CostModel model;
     private final Key key;
     private final PersistitKeyValueTarget keyTarget;
     private final Comparator<byte[]> bytesComparator;
 
     protected CostEstimator(Schema schema) {
+        this.schema = schema;
         model = CostModel.newCostModel(schema);
         key = new Key((Persistit)null);
         keyTarget = new PersistitKeyValueTarget();
@@ -58,13 +60,6 @@ public abstract class CostEstimator
 
     public abstract long getTableRowCount(Table table);
     public abstract IndexStatistics getIndexStatistics(Index index);
-
-    // TODO: These need to be figured out for real.
-    public static final double RANDOM_ACCESS_COST = 1.25;
-    public static final double SEQUENTIAL_ACCESS_COST = 1.0;
-    public static final double FIELD_ACCESS_COST = .01;
-    public static final double SORT_COST = 2.0;
-    public static final double SELECT_COST = .25;
 
     protected boolean scaleIndexStatistics() {
         return true;
@@ -139,11 +134,9 @@ public abstract class CostEstimator
     // Estimate cost of fetching nrows from index.
     // One random access to get there, then nrows-1 sequential accesses following,
     // Plus a surcharge for copying something as wide as the index.
-    private static CostEstimate indexAccessCost(long nrows, Index index) {
+    private CostEstimate indexAccessCost(long nrows, Index index) {
         return new CostEstimate(nrows, 
-                                RANDOM_ACCESS_COST +
-                                ((nrows - 1) * SEQUENTIAL_ACCESS_COST) +
-                                nrows * FIELD_ACCESS_COST * index.getKeyColumns().size());
+                                model.indexScan(schema.indexRowType(index), (int)nrows));
     }
 
     protected long rowsEqual(Histogram histogram, byte[] keyBytes) {
@@ -338,7 +331,8 @@ public abstract class CostEstimator
                 }
             }
         }
-        // Limit branchPoint markers to leaves; that's the number that will joined.
+        // Limit branchPoint markers to leaves; that's the number that
+        // will joined via product.
         for (FlattenedTable ftable : orderedTables(ftables.values())) {
             if (ftable.branchPoint != null) {
                 while (ftable != root) {
@@ -350,21 +344,23 @@ public abstract class CostEstimator
         // Account for database accesses.
         long rowCount = 1;
         double cost = 0.0;
-        long[] counts = new long[2];
         for (FlattenedTable ftable : orderedTables(ftables.values())) {
             // Multiple rows come in from branches and they all get producted together.
-            if (ftable.branchPoint != null)
-                rowCount *= branchScale(getTableRowCount(ftable.table), 
-                                        ftable.branchPoint, iftable);
+            if (ftable.branchPoint != null) {
+                long nrows = branchScale(ftable, ftable.branchPoint, iftable);
+                rowCount *= nrows;
+                cost += model.product((int)nrows);
+            }
             if (ftable.branch) {
-                branchRowCount(ftable, iftable, counts);
-                cost += RANDOM_ACCESS_COST +
-                    SEQUENTIAL_ACCESS_COST * (counts[0] - 1) +
-                    FIELD_ACCESS_COST * counts[1];
+                cost += model.branchLookup(schema.userTableRowType(ftable.table));
             }
             else if (ftable.ancestor) {
-                cost += RANDOM_ACCESS_COST + FIELD_ACCESS_COST * ftable.table.getColumns().size();
+                cost += model.ancestorLookup(Collections.singletonList(schema.userTableRowType(ftable.table)));
             }
+            cost += model.flatten(schema.userTableRowType(root.table),
+                                  schema.userTableRowType(ftable.table),
+                                  // TODO: This doesn't seem right.
+                                  1);
         }
         return new CostEstimate(rowCount, cost);
     }
@@ -424,68 +420,44 @@ public abstract class CostEstimator
         return flattened(table.getTable().getTable(), map);
     }
 
-    // Number of rows that come in from a BranchLookup starting at
-    // this table, including ones that aren't even known to the
-    // optimizer / operator plan and will just get ignored. They still
-    // stream through.
-    protected void branchRowCount(FlattenedTable ftable, FlattenedTable indexTable,
-                                  long[] counts) {
-        for (int i = 0; i < counts.length; i++) {
-            counts[i] = 0;
-        }
-        totalCardinalities(ftable.table, counts);
-        for (int i = 0; i < counts.length; i++) {
-            counts[i] = branchScale(counts[i], ftable, indexTable);
-        }
-    }
-    
     // Branching from the index just has one branchpoint
     // row. Branching from someplace else has as many as there are per
     // the common ancestor, which is the immediate parent of the
     // branchpoint.
-    protected long branchScale(long total, 
-                               FlattenedTable ftable, FlattenedTable indexTable) {
-        return simpleRound(total,
-                           getTableRowCount((ftable == indexTable) ?
-                                            ftable.table :
-                                            ftable.table.parentTable()));
-    }
-
-    protected void totalCardinalities(UserTable table, long[] counts) {
-        long total = getTableRowCount(table);
-        counts[0] += total;
-        counts[1] += total * table.getColumns().size();
-        for (Join childJoin : table.getChildJoins()) {
-            totalCardinalities(childJoin.getChild(), counts);
-        }
+    protected long branchScale(FlattenedTable ftable,
+                               FlattenedTable btable, FlattenedTable indexTable) {
+        return simpleRound(getTableRowCount(ftable.table),
+                           getTableRowCount((btable == indexTable) ?
+                                            btable.table :
+                                            btable.table.parentTable()));
     }
 
     /** Estimate the cost of testing some conditions. */
-    // TODO: Could estimate result cardinality based on (easily
-    // determinable) selectivities.
+    // TODO: Assumes that each condition turns into a separate select.
     public CostEstimate costSelect(Collection<ConditionExpression> conditions,
                                    long size) {
-        return new CostEstimate(size, conditions.size() * SELECT_COST);
+        return new CostEstimate(size, model.select((int)size) * conditions.size());
     }
 
     /** Estimate the cost of a sort of the given size. */
     public CostEstimate costSort(long size) {
-        return new CostEstimate(size, size * Math.log(size) * SORT_COST);
+        return new CostEstimate(size, model.sort((int)size, false));
     }
 
     /** Estimate cost of scanning the whole group. */
     // TODO: Need to account for tables actually wanted?
     public CostEstimate costGroupScan(Group group) {
         long nrows = 0;
-        double cost = RANDOM_ACCESS_COST;
+        double cost = 0.0;
+        UserTable root = null;
         for (UserTable table : group.getGroupTable().getAIS().getUserTables().values()) {
             if (table.getGroup() == group) {
-                long rowCount = getTableRowCount(table);
-                nrows += rowCount;
-                cost += rowCount * (SEQUENTIAL_ACCESS_COST + FIELD_ACCESS_COST * table.getColumns().size());
+                if (table.getParentJoin() == null)
+                    root = table;
+                nrows += getTableRowCount(table);
             }
         }
-        return new CostEstimate(nrows, cost);
+        return new CostEstimate(nrows, model.fullGroupScan(schema.userTableRowType(root)));
     }
 
 }
