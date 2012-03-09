@@ -47,7 +47,7 @@ public class DateTimeMatrixCreator implements Runnable {
     }
 
     private String genSQL(Calendar data, boolean sql) {
-        String year = String.format("%04d", data.get(Calendar.YEAR));
+       String year = String.format("%04d", data.get(Calendar.YEAR));
         String month = String.format("%02d", data.get(Calendar.MONTH) + 1);
         String day = String.format("%02d", data.get(Calendar.DAY_OF_MONTH));
         String hour = String.format("%02d", data.get(Calendar.HOUR_OF_DAY));
@@ -55,11 +55,8 @@ public class DateTimeMatrixCreator implements Runnable {
         String second = String.format("%02d", data.get(Calendar.SECOND));
         String millisecond = String.format("%03d",
                 data.get(Calendar.MILLISECOND));
-        String day_of_week = convertWeekday(
-                String.valueOf(data.get(Calendar.DAY_OF_WEEK)), 3, false);
-
-        String weekday = convertWeekday(
-                String.valueOf(data.get(Calendar.DAY_OF_WEEK)), -2, true);
+        String day_of_week = String.valueOf(data.get(Calendar.DAY_OF_WEEK));
+        String weekday = String.valueOf((data.get(Calendar.DAY_OF_WEEK) + 5) % 7);
         String weekofyear = String.valueOf(data.get(Calendar.WEEK_OF_YEAR));
         String yearweek = year
                 + String.valueOf(data.get(Calendar.WEEK_OF_YEAR));
@@ -117,30 +114,6 @@ public class DateTimeMatrixCreator implements Runnable {
                 break;
         }
         return retVal;
-    }
-
-    /*
-     *  This function allows us to use a custom offset when working with day of week 
-     *  functions and the two (for now) ways of dealing with it
-     */
-    public String convertWeekday(String valueOf, int indexOff, boolean zeroBase) {
-        int value = Integer.parseInt(valueOf);
-        int returnValue = value - indexOff;
-        if (returnValue < getMin(zeroBase)) {
-            returnValue = returnValue + getMax(zeroBase);
-        }
-        if (returnValue > getMax(zeroBase)) {
-            returnValue = returnValue - 7;
-        }
-        return String.valueOf(returnValue);
-    }
-
-    private int getMax(boolean zeroBase) {
-        return zeroBase ? 6 : 7;
-    }
-
-    private int getMin(boolean zeroBase) {
-        return zeroBase ? 0 : 1;
     }
 
     @Override
