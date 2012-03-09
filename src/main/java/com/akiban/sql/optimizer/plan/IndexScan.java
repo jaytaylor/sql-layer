@@ -15,13 +15,10 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 
-import com.akiban.sql.optimizer.rule.CostEstimator;
-import com.akiban.sql.optimizer.rule.join_enum.QueryIndexGoal;
 import com.akiban.sql.optimizer.rule.range.ColumnRanges;
 
 import java.util.*;
@@ -264,35 +261,6 @@ public abstract class IndexScan extends BasePlanNode
     }
     
     public abstract List<IndexColumn> getKeyColumns();
-
-    public CostEstimate estimateCost(QueryIndexGoal queryGoal, List<ConditionExpression> conditions) {
-        CostEstimator costEstimator = queryGoal.getCostEstimator();
-        CostEstimate cost = createBasicCostEstimate(costEstimator);
-        if (!isCovering()) {
-            CostEstimate flatten = costEstimator.costFlatten(getLeafMostTable(),
-                    getRequiredTables());
-            cost = cost.nest(flatten);
-        }
-
-        Collection<ConditionExpression> unhandledConditions =
-                new HashSet<ConditionExpression>(conditions);
-        if (getConditions() != null)
-            unhandledConditions.removeAll(getConditions());
-        if (!unhandledConditions.isEmpty()) {
-            CostEstimate select = costEstimator.costSelect(unhandledConditions,
-                    cost.getRowCount());
-            cost = cost.sequence(select);
-        }
-
-        if (queryGoal.needSort(getOrderEffectiveness())) {
-            CostEstimate sort = costEstimator.costSort(cost.getRowCount());
-            cost = cost.sequence(sort);
-        }
-
-        return cost;
-    }
-    
-    protected abstract CostEstimate createBasicCostEstimate(CostEstimator costEstimator);
 
     @Override
     public String summaryString() {

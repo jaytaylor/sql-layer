@@ -60,32 +60,4 @@ public final class SingleIndexScan extends IndexScan {
     protected boolean isAscendingAt(int i) {
         return index.getKeyColumns().get(i).isAscending();
     }
-
-    @Override
-    protected CostEstimate createBasicCostEstimate(CostEstimator costEstimator) {
-        if (getConditionRange() == null) {
-            return costEstimator.costIndexScan(getIndex(),
-                    getEqualityComparands(),
-                    getLowComparand(),
-                    isLowInclusive(),
-                    getHighComparand(),
-                    isHighInclusive());
-        }
-        else {
-            CostEstimate cost = null;
-            for (RangeSegment segment : getConditionRange().getSegments()) {
-                CostEstimate acost = costEstimator.costIndexScan(getIndex(),
-                        getEqualityComparands(),
-                        segment.getStart().getValueExpression(),
-                        segment.getStart().isInclusive(),
-                        segment.getEnd().getValueExpression(),
-                        segment.getEnd().isInclusive());
-                if (cost == null)
-                    cost = acost;
-                else
-                    cost = cost.union(acost);
-            }
-            return cost;
-        }
-    }
 }
