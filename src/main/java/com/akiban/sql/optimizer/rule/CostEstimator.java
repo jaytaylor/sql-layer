@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.rule.costmodel.CostModel;
+import com.akiban.sql.optimizer.rule.costmodel.TableRowCounts;
 
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
@@ -38,7 +39,7 @@ import com.google.common.primitives.UnsignedBytes;
 
 import java.util.*;
 
-public abstract class CostEstimator
+public abstract class CostEstimator implements TableRowCounts
 {
     private final Schema schema;
     private final CostModel model;
@@ -48,7 +49,7 @@ public abstract class CostEstimator
 
     protected CostEstimator(Schema schema) {
         this.schema = schema;
-        model = CostModel.newCostModel(schema);
+        model = CostModel.newCostModel(schema, this);
         key = new Key((Persistit)null);
         keyTarget = new PersistitKeyValueTarget();
         bytesComparator = UnsignedBytes.lexicographicalComparator();
@@ -58,7 +59,6 @@ public abstract class CostEstimator
         this(rulesContext.getSchema());
     }
 
-    public abstract long getTableRowCount(Table table);
     public abstract IndexStatistics getIndexStatistics(Index index);
 
     protected boolean scaleIndexStatistics() {

@@ -113,8 +113,8 @@ public class CostModel
                           UserTableRowType childRowType, 
                           int nParents)
     {
-        double parentCount = parentRowType.userTable().rowDef().getTableStatus().getApproximateRowCount();
-        double childCount = childRowType.userTable().rowDef().getTableStatus().getApproximateRowCount();
+        double parentCount = tableRowCounts.getTableRowCount(parentRowType.userTable());
+        double childCount = tableRowCounts.getTableRowCount(childRowType.userTable());
         long childrenPerParent = round(childCount / parentCount);
         return FLATTEN_OVERHEAD + nParents * (childrenPerParent * FLATTEN_PER_ROW);
     }
@@ -146,9 +146,9 @@ public class CostModel
         return cost;
     }
     
-    public static CostModel newCostModel(Schema schema)
+    public static CostModel newCostModel(Schema schema, TableRowCounts tableRowCounts)
     {
-        return new CostModel(schema);
+        return new CostModel(schema, tableRowCounts);
     }
 
     private static double treeScan(int rowWidth, long nRows)
@@ -182,19 +182,21 @@ public class CostModel
         }
     }
     
-    private CostModel(Schema schema)
+    private CostModel(Schema schema, TableRowCounts tableRowCounts)
     {
         this.schema = schema;
+        this.tableRowCounts = tableRowCounts;
         for (UserTableRowType tableRowType : schema.userTableTypes()) {
-            TreeStatistics tableStatistics = TreeStatistics.forTable(tableRowType);
+            TreeStatistics tableStatistics = TreeStatistics.forTable(tableRowType, tableRowCounts);
             statisticsMap.put(tableRowType.typeId(), tableStatistics);
             for (IndexRowType indexRowType : tableRowType.indexRowTypes()) {
-                TreeStatistics indexStatistics = TreeStatistics.forIndex(indexRowType);
+                TreeStatistics indexStatistics = TreeStatistics.forIndex(indexRowType, tableRowCounts);
                 statisticsMap.put(indexRowType.typeId(), indexStatistics);
             }
         }
     }
 
     private final Schema schema;
+    private final TableRowCounts tableRowCounts;
     private final Map<Integer, TreeStatistics> statisticsMap = new HashMap<Integer, TreeStatistics>();
 }
