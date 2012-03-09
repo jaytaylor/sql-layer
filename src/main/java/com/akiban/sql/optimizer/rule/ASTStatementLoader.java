@@ -54,7 +54,7 @@ import java.util.*;
 public class ASTStatementLoader extends BaseRule
 {
     // TODO: Maybe move this into a separate class.
-    public static final int IN_TO_OR_MAX_COUNT_DEFAULT = 2;
+    public static final int IN_TO_OR_MAX_COUNT_DEFAULT = 1;
 
     private static final Logger logger = LoggerFactory.getLogger(ASTStatementLoader.class);
 
