@@ -15,9 +15,12 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.sql.optimizer.OptimizerTestBase;
+
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
+import com.akiban.qp.rowtype.Schema;
 
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsYamlLoader;
@@ -31,13 +34,13 @@ public class TestCostEstimator extends CostEstimator
 {
     private final Map<Index,IndexStatistics> stats;
 
-    public TestCostEstimator(AkibanInformationSchema ais, String defaultSchema,
-                             File statsFile) 
+    public TestCostEstimator(AkibanInformationSchema ais, File statsFile, Schema schema) 
             throws IOException {
+        super(schema);
         if (statsFile == null)
             stats = Collections.<Index,IndexStatistics>emptyMap();
         else
-            stats = new IndexStatisticsYamlLoader(ais, defaultSchema).load(statsFile);
+            stats = new IndexStatisticsYamlLoader(ais, OptimizerTestBase.DEFAULT_SCHEMA).load(statsFile);
     }
 
     @Override

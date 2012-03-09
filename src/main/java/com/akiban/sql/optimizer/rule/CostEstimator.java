@@ -16,12 +16,14 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.optimizer.rule.costmodel.CostModel;
 
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Expressions;
@@ -38,14 +40,20 @@ import java.util.*;
 
 public abstract class CostEstimator
 {
+    private final CostModel model;
     private final Key key;
     private final PersistitKeyValueTarget keyTarget;
     private final Comparator<byte[]> bytesComparator;
 
-    protected CostEstimator() {
+    protected CostEstimator(Schema schema) {
+        model = CostModel.newCostModel(schema);
         key = new Key((Persistit)null);
         keyTarget = new PersistitKeyValueTarget();
         bytesComparator = UnsignedBytes.lexicographicalComparator();
+    }
+
+    protected CostEstimator(SchemaRulesContext rulesContext) {
+        this(rulesContext.getSchema());
     }
 
     public abstract long getTableRowCount(Table table);

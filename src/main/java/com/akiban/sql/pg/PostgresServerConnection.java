@@ -613,9 +613,9 @@ public class PostgresServerConnection extends ServerSessionBase
         PostgresOperatorCompiler compiler;
         String format = getProperty("OutputFormat", "table");
         if (format.equals("json"))
-            compiler = new PostgresJsonCompiler(this); 
+            compiler = PostgresJsonCompiler.create(this); 
         else
-            compiler = new PostgresOperatorCompiler(this);
+            compiler = PostgresOperatorCompiler.create(this);
         adapter = new PersistitAdapter(compiler.getSchema(),
                                        reqs.store().getPersistitStore(),
                                        reqs.treeService(),

@@ -25,6 +25,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.types.AkType;
 
 import org.junit.Before;
@@ -48,8 +49,7 @@ public class CostEstimatorTest
     public void loadSchema() throws Exception {
         ais = OptimizerTestBase.parseSchema(new File(RESOURCE_DIR, "schema.ddl"));
         tree = new TableTree();
-        costEstimator = new TestCostEstimator(ais, SCHEMA,
-                                              new File(RESOURCE_DIR, "stats.yaml"));
+        costEstimator = new TestCostEstimator(ais, new File(RESOURCE_DIR, "stats.yaml"), new Schema(ais));
     }
 
     protected Table table(String name) {
