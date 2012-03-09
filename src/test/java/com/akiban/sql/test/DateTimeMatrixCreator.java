@@ -48,7 +48,7 @@ public class DateTimeMatrixCreator implements Runnable {
 
     private String genSQL(Calendar data, boolean sql) {
         String year = String.format("%04d", data.get(Calendar.YEAR));
-        String month = String.format("%02d", data.get(Calendar.MONTH));
+        String month = String.format("%02d", data.get(Calendar.MONTH) + 1);
         String day = String.format("%02d", data.get(Calendar.DAY_OF_MONTH));
         String hour = String.format("%02d", data.get(Calendar.HOUR_OF_DAY));
         String minute = String.format("%02d", data.get(Calendar.MINUTE));
@@ -247,7 +247,7 @@ public class DateTimeMatrixCreator implements Runnable {
         cal.setLenient(false);
         cal.set(Calendar.MILLISECOND, 0);
         cal.set(Calendar.YEAR, year);
-        for (int month = 1; month < cal.getActualMaximum(Calendar.MONTH); month++) {
+        for (int month = 0; month <= cal.getActualMaximum(Calendar.MONTH); month++) {
             cal.set(Calendar.MONTH, month);
             for (int day = 1; day < cal.getActualMaximum(Calendar.DAY_OF_MONTH); day++) {
                 try {
