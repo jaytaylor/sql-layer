@@ -5,7 +5,6 @@
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (1, '2000-01-01', '01:05:06')
----
 #--- # bug: timezone issues
 #- Statement: select FROM_UNIXTIME(1196440219) from all_types;
 #- output: [[!re '2007-11-30 10:30:19([.]0)?']] 
