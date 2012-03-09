@@ -639,17 +639,17 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         CostEstimate cost = createBasicCostEstimate(index, costEstimator);
         if (!index.isCovering()) {
             CostEstimate flatten = costEstimator.costFlatten(index.getLeafMostTable(),
-                    index.getRequiredTables());
+                                                             index.getRequiredTables());
             cost = cost.nest(flatten);
         }
 
         Collection<ConditionExpression> unhandledConditions =
-                new HashSet<ConditionExpression>(conditions);
+            new HashSet<ConditionExpression>(conditions);
         if (index.getConditions() != null)
             unhandledConditions.removeAll(index.getConditions());
         if (!unhandledConditions.isEmpty()) {
             CostEstimate select = costEstimator.costSelect(unhandledConditions,
-                    cost.getRowCount());
+                                                           cost.getRowCount());
             cost = cost.sequence(select);
         }
 
