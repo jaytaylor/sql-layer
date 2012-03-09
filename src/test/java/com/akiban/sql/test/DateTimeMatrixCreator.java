@@ -247,7 +247,7 @@ public class DateTimeMatrixCreator implements Runnable {
         cal.setLenient(false);
         cal.set(Calendar.MILLISECOND, 0);
         cal.set(Calendar.YEAR, year);
-        for (int month = 0; month < cal.getActualMaximum(Calendar.MONTH); month++) {
+        for (int month = 0; month <= cal.getActualMaximum(Calendar.MONTH); month++) {
             cal.set(Calendar.MONTH, month);
             for (int day = 1; day < cal.getActualMaximum(Calendar.DAY_OF_MONTH); day++) {
                 try {
