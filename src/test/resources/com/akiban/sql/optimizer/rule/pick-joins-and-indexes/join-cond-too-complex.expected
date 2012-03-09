@@ -5,5 +5,5 @@ SelectQuery@7a3e72
         JoinNode@49cda7e7(LEFT/NESTED_LOOPS[user.addresses.city != user.customers.name])
           TableGroupJoinTree@11da5362(TableGroup@14985016(customers), customers - GroupScan@6bd8c046(Group(customers -> user._akiban_customers)))
             TableSource@5cca548b(user.customers - TableGroup@14985016(customers))
-          TableGroupJoinTree@1bb1deea(TableGroup@14985016(customers), addresses - IndexScan@79b0edb2(Index(user.addresses.__akiban_fk_2[IndexColumn(cid)]), NONE, =user.customers.cid, rows = 1, cost = 2.80000))
+          TableGroupJoinTree@1bb1deea(TableGroup@14985016(customers), addresses - IndexScan@79b0edb2(Index(user.addresses.__akiban_fk_2[IndexColumn(cid)]), NONE, =user.customers.cid, rows = 1, cost = 432.846))
             TableSource@6774a144(user.addresses - TableGroup@14985016(customers))

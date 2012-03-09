@@ -5,5 +5,5 @@ SelectQuery@27daad50
         JoinNode@33077ec8(LEFT/NESTED_LOOPS[user.customers.name != Smith])
           TableGroupJoinTree@42b52a93(TableGroup@311496a4(customers), orders - GroupScan@3eae0228(Group(customers -> user._akiban_customers)))
             TableSource@6149b9d9(user.orders - TableGroup@311496a4(customers))
-          TableGroupJoinTree@3fe3b1c(TableGroup@311496a4(customers), customers - IndexScan@120fb03e(Index(user.customers.PRIMARY[IndexColumn(cid)]), NONE, =user.orders.cid, rows = 1, cost = 2.78000))
+          TableGroupJoinTree@3fe3b1c(TableGroup@311496a4(customers), customers - IndexScan@120fb03e(Index(user.customers.PRIMARY[IndexColumn(cid)]), NONE, =user.orders.cid, rows = 1, cost = 428.713))
             TableSource@7f139f74(user.customers - TableGroup@311496a4(customers))

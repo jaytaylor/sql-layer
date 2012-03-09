@@ -6,6 +6,6 @@ SelectQuery@7cd1a1ab
           Flatten@54cb2185(user.customers LEFT user.orders)
             AncestorLookup@3927ff0d(user.orders -> [user.customers])
               BranchLookup@6405ce40(user.addresses -> user.orders via user.customers)
-                IndexScan@70d9cbcb(Index(user.addresses.state[IndexColumn(state)]), NONE, =MA, rows = 150, cost = 4815.89)
+                IndexScan@70d9cbcb(Index(user.addresses.state[IndexColumn(state)]), NONE, =MA, rows = 150, cost = 50405.0)
                 TableSource@61e090ee(user.orders - TableGroupJoin@2fbef1ac(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
               TableSource@51017ca1(user.customers - TableGroup@6ad2b64e(customers))

@@ -5,7 +5,7 @@ SelectQuery@75f97778
         Product@15a62e40(user.customers)
           Flatten@512676da(user.customers INNER user.orders)
             AncestorLookup@34450bd5(user.orders -> [user.customers, user.orders])
-              IndexScan@210be7c2(Index(user.orders.order_date[IndexColumn(order_date)]), NONE, =Cast(2011-12-31 AS DATE NOT NULL), rows = 1, cost = 4.06000)
+              IndexScan@210be7c2(Index(user.orders.order_date[IndexColumn(order_date)]), NONE, =Cast(2011-12-31 AS DATE NOT NULL), rows = 1, cost = 893.912)
               TableSource@147e23c0(user.customers - TableGroup@16850204(customers))
               TableSource@655d1cc2(user.orders - TableGroupJoin@149c8281(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
           Flatten@2f3bedb9(user.customers INNER user.orders)

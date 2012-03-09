@@ -10,5 +10,5 @@ SelectQuery@53847a91
               ResultSet@4323b632[cid, order_date]
                 Project@63e6ef5d[user.orders.cid, user.orders.order_date]
                   Select@5d8eaf0d[user.orders.order_date < 2011-01-01]
-                    TableGroupJoinTree@4ad8d990(TableGroup@bdd6a16(customers), orders - IndexScan@755fd06f(Index(user.orders.__akiban_fk_0[IndexColumn(cid)]), NONE, =user.customers.cid, rows = 10, cost = 23.4000))
+                    TableGroupJoinTree@4ad8d990(TableGroup@bdd6a16(customers), orders - IndexScan@755fd06f(Index(user.orders.__akiban_fk_0[IndexColumn(cid)]), NONE, =user.customers.cid, rows = 10, cost = 980.378))
                       TableSource@6dffcd26(user.orders - TableGroup@bdd6a16(customers))
