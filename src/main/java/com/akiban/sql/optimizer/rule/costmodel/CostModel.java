@@ -194,6 +194,10 @@ public class CostModel
                 statisticsMap.put(indexRowType.typeId(), indexStatistics);
             }
         }
+        for (IndexRowType indexRowType : schema.groupIndexRowTypes()) {
+            TreeStatistics indexStatistics = TreeStatistics.forIndex(indexRowType, tableRowCounts);
+            statisticsMap.put(indexRowType.typeId(), indexStatistics);
+        }
     }
 
     private final Schema schema;
