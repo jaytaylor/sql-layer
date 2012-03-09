@@ -48,6 +48,7 @@ public class CostEstimatorTest
     @Before
     public void loadSchema() throws Exception {
         ais = OptimizerTestBase.parseSchema(new File(RESOURCE_DIR, "schema.ddl"));
+        RulesTestHelper.ensureRowDefs(ais);
         tree = new TableTree();
         costEstimator = new TestCostEstimator(ais, new File(RESOURCE_DIR, "stats.yaml"), new Schema(ais));
     }
@@ -104,7 +105,7 @@ public class CostEstimatorTest
         assertEquals(4, costEstimate.getRowCount());
         costEstimate = costEstimator.costIndexScan(index, null,
                                                    constant("L", AkType.VARCHAR), true, constant("Q", AkType.VARCHAR), true); // BETWEEN 'L' AND 'Q'
-        assertEquals(4, costEstimate.getRowCount());
+        assertEquals(17, costEstimate.getRowCount());
     }
 
     @Test
@@ -132,7 +133,7 @@ public class CostEstimatorTest
         TableSource i = tableSource("items");
         CostEstimate costEstimate = costEstimator.costFlatten(i, Arrays.asList(c, o, i));
         assertEquals(1, costEstimate.getRowCount());
-        assertEquals(0.0,
+        assertEquals(9469.0,
                      costEstimate.getCost(),
                      0.0001);
     }
@@ -144,7 +145,7 @@ public class CostEstimatorTest
         TableSource i = tableSource("items");
         CostEstimate costEstimate = costEstimator.costFlatten(o, Arrays.asList(c, o, i));
         assertEquals(20, costEstimate.getRowCount());
-        assertEquals(0.0,
+        assertEquals(11765.5468,
                      costEstimate.getCost(),
                      0.0001);
     }
@@ -156,7 +157,7 @@ public class CostEstimatorTest
         TableSource i = tableSource("items");
         CostEstimate costEstimate = costEstimator.costFlatten(c, Arrays.asList(c, o, i));
         assertEquals(200, costEstimate.getRowCount());
-        assertEquals(0.0,
+        assertEquals(35605.3382,
                      costEstimate.getCost(),
                      0.0001);
     }
@@ -169,7 +170,7 @@ public class CostEstimatorTest
         TableSource a = tableSource("addresses");
         CostEstimate costEstimate = costEstimator.costFlatten(i, Arrays.asList(c, o, i, a));
         assertEquals(1, costEstimate.getRowCount());
-        assertEquals(0.0,
+        assertEquals(10027.7584,
                      costEstimate.getCost(),
                      0.0001);
     }
@@ -180,7 +181,7 @@ public class CostEstimatorTest
         TableSource a = tableSource("addresses");
         CostEstimate costEstimate = costEstimator.costFlatten(i, Arrays.asList(a));
         assertEquals(1, costEstimate.getRowCount());
-        assertEquals(0.0,
+        assertEquals(8807.7584,
                      costEstimate.getCost(),
                      0.0001);
     }
@@ -194,7 +195,7 @@ public class CostEstimatorTest
         // The customer random access doesn't actually happen in this
         // side-branch case, but that complexity isn't in the
         // estimation.
-        assertEquals(0.0,
+        assertEquals(19055.5468,
                      costEstimate.getCost(),
                      0.0001);
     }
