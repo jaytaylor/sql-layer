@@ -45,9 +45,33 @@ public class DateTimeMatrixCreator implements Runnable {
         DateTimeMatrixCreator m = new DateTimeMatrixCreator();
         m.run();
     }
+    
+    private String genSQL(String year, String month, String day, String hour,
+                          String minute, String second, String millisecond, String timestamp,
+                          String day_of_week, String weekday, String yearweek,
+                          String dayname, String dayOfmonth, String weekofyear,
+                          boolean sql)
+    {
+         String database = "datetime_matrix";
+         if (sql) {
+            database = "test." + database;
+        }
+
+        return "insert into "
+                + database
+                + " (id, date_field, time_field, timestamp_field, "
+                + "expected_year, expected_month, expected_day, expected_hour, "
+                + "expected_minute, expected_second, expected_millisecond,day_of_week, weekday, weekofyear, yearweek, dayname, dayofmonth) "
+                + "values (" + (counter++) + ",'" + year + "-" + month + "-"
+                + day + "', '" + hour + ":" + minute + ":" + second + "',"
+                + timestamp + " , " + year + ", " + month + " , " + day + " , "
+                + hour + " , " + minute + " , " + second + " , " + millisecond
+                + " , " + day_of_week + " , " + weekday + " , " + weekofyear
+                + " , " + yearweek + ", '" + dayname + "'," + dayOfmonth + ")";
+    }
 
     private String genSQL(Calendar data, boolean sql) {
-       String year = String.format("%04d", data.get(Calendar.YEAR));
+        String year = String.format("%04d", data.get(Calendar.YEAR));
         String month = String.format("%02d", data.get(Calendar.MONTH) + 1);
         String day = String.format("%02d", data.get(Calendar.DAY_OF_MONTH));
         String hour = String.format("%02d", data.get(Calendar.HOUR_OF_DAY));
@@ -166,8 +190,8 @@ public class DateTimeMatrixCreator implements Runnable {
         processYear(2012);
         processYear(2011);
         processYear(2500);
-        processYear(1950);
-        processYear(1473);
+        //processYear(1950);
+        //processYear(1473); java.util.Calendar does not handle correctly years before 1900
         wackyYearTest();
         data.append("..." + System.getProperty("line.separator"));
         try {
@@ -181,38 +205,27 @@ public class DateTimeMatrixCreator implements Runnable {
         }
     }
 
+    /**
+     * java.util.Calendar doesn't handle wacky years very well.
+     * So we'll just hard-code the expecteds for those cases. (as per MySQL)
+     * 
+     */
     private void wackyYearTest() {
-        Calendar cal = Calendar.getInstance();
-        cal.set(Calendar.MONTH, 1);
-        cal.set(Calendar.MILLISECOND, 0);
-        cal.set(Calendar.YEAR, 300);
-        recordSQL(cal);
-        cal.set(Calendar.YEAR, 0);
-        recordSQL(cal);
-        cal.set(Calendar.YEAR, -200);
-        recordSQL(cal);
-        cal.set(Calendar.YEAR, -2200);
-        recordSQL(cal);
-        cal.set(Calendar.YEAR, 2500);
-        recordSQL(cal);
-        cal.set(Calendar.YEAR, 9999);
-        recordSQL(cal);
-        cal.set(Calendar.HOUR, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        recordSQL(cal);
-        cal.set(Calendar.HOUR, 11);
-        cal.set(Calendar.MINUTE, 59);
-        cal.set(Calendar.SECOND, 59);
-        recordSQL(cal);
-        cal.set(Calendar.HOUR, 23);
-        cal.set(Calendar.MINUTE, 59);
-        cal.set(Calendar.SECOND, 59);
-        recordSQL(cal);
-        cal.set(Calendar.YEAR, 1999);
-        cal.set(Calendar.MONTH, 11);
-        cal.set(Calendar.DAY_OF_MONTH, 31);
-        recordSQL(cal);
+        // year 300 
+        this.recordSQL("0300", "01", "01", "23", "59", "59", "0", "null", "2", "0", "29953", "Monday", "01", "01");
+               
+        // year 0
+        this.recordSQL("0000", "03", "01", "01", "30", "25", "0", "null", "4", "2", "9", "Wednesday", "01", "9");
+        
+        // year 1
+        this.recordSQL("0001", "05", "29", "12", "01", "01", "0", "null", "3", "1", "121", "Tuesday", "29", "22");
+               
+        // year 2500
+        this.recordSQL("2500", "12", "31", "12", "59", "59", "0", "null", "6", "4", "250052", "Friday", "31", "52");
+        
+        // year 9999
+        this.recordSQL("9999", "11", "07", "12", "30", "10", "0", "null", "1", "6", "999945", "Sunday", "07", "44");
+       
     }
 
     private void processYear(int year) {
@@ -278,6 +291,26 @@ public class DateTimeMatrixCreator implements Runnable {
                 + System.getProperty("line.separator"));
     }
 
+    private void recordSQL(String year, String month, String day, String hour,
+                          String minute, String second, String millisecond, String timestamp,
+                          String day_of_week, String weekday, String yearweek,
+                          String dayname, String dayOfmonth, String weekofyear)
+    {        
+        data.append("---\n" + "- Statement: " + genSQL(year, month, day, hour,
+                                                       minute, second, millisecond, timestamp,
+                                                       day_of_week, weekday, yearweek,
+                                                       dayname, dayOfmonth, weekofyear,
+                                                       false)
+                + System.getProperty("line.separator"));
+        sql_data.append(genSQL(year, month, day, hour,
+                               minute, second, millisecond, timestamp,
+                               day_of_week, weekday, yearweek,
+                               dayname, dayOfmonth, weekofyear,
+                               true) 
+                + ";"
+                + System.getProperty("line.separator"));
+    }
+    
     private void save(String filename, StringBuffer data) throws IOException {
         try {
             // Create file
