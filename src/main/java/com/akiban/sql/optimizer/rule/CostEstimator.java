@@ -83,8 +83,10 @@ public abstract class CostEstimator implements TableRowCounts
         if (indexStats != null)
             statsCount = indexStats.getRowCount();
         int columnCount = 0;
-        if (equalityComparands != null)
-            columnCount = equalityComparands.size();
+        if (equalityComparands != null) {
+            columnCount = Math.min(equalityComparands.size(), // No histogram for value cols.
+                                   index.getKeyColumns().size());
+        }
         if ((lowComparand != null) || (highComparand != null))
             columnCount++;
         Histogram histogram;

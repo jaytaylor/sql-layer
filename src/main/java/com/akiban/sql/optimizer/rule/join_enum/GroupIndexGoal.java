@@ -145,11 +145,18 @@ public class GroupIndexGoal implements Comparator<IndexScan>
      * @return <code>false</code> if the index is useless.
      */
     public boolean usable(IndexScan index) {
-        List<IndexColumn> indexColumns = index.getIndex().getKeyColumns();
-        int ncols = indexColumns.size();
+        List<IndexColumn> keyColumns = index.getIndex().getKeyColumns();
+        List<IndexColumn> valueColumns = index.getIndex().getValueColumns();
+        int ncols = keyColumns.size() + valueColumns.size();
         List<ExpressionNode> indexExpressions = new ArrayList<ExpressionNode>(ncols);
         List<OrderByExpression> orderBy = new ArrayList<OrderByExpression>(ncols);
-        for (IndexColumn indexColumn : indexColumns) {
+        for (IndexColumn indexColumn : keyColumns) {
+            ExpressionNode indexExpression = getIndexExpression(index, indexColumn);
+            indexExpressions.add(indexExpression);
+            orderBy.add(new OrderByExpression(indexExpression,
+                                              indexColumn.isAscending()));
+        }
+        for (IndexColumn indexColumn : valueColumns) {
             ExpressionNode indexExpression = getIndexExpression(index, indexColumn);
             indexExpressions.add(indexExpression);
             orderBy.add(new OrderByExpression(indexExpression,
