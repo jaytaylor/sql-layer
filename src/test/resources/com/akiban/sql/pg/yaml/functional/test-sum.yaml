@@ -2,7 +2,13 @@
 
 ---
 - Include: all-types-schema.yaml
-
+---
+- CreateTable: t (real_field real)
+---
+- Statement: INSERT INTO t VALUES (1.7976931348623157E308), (1.0E0)
+---
+- Statement: SELECT SUM(real_field) FROM t
+- output: [[Infinity]]
 # Test sum with no rows => null
 ---
 - Statement: SELECT sum(bigint_field), sum(bigint_unsigned_field),

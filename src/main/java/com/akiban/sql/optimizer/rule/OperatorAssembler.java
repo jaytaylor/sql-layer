@@ -226,8 +226,8 @@ public class OperatorAssembler extends BaseRule
 
         // Assemble an ordinary stream node.
         protected RowStream assembleStream(PlanNode node) {
-            if (node instanceof IndexScan)
-                return assembleIndexScan((IndexScan)node);
+            if (node instanceof SingleIndexScan)
+                return assembleIndexScan((SingleIndexScan)node);
             else if (node instanceof GroupScan)
                 return assembleGroupScan((GroupScan)node);
             else if (node instanceof Select)
@@ -264,7 +264,7 @@ public class OperatorAssembler extends BaseRule
                 throw new UnsupportedSQLException("Plan node " + node, null);
         }
 
-        protected RowStream assembleIndexScan(IndexScan indexScan) {
+        protected RowStream assembleIndexScan(SingleIndexScan indexScan) {
             RowStream stream = new RowStream();
             Index index = indexScan.getIndex();
             IndexRowType indexRowType = schema.indexRowType(index);
@@ -844,7 +844,7 @@ public class OperatorAssembler extends BaseRule
         }
 
         // Generate key range bounds.
-        protected IndexKeyRange assembleIndexKeyRange(IndexScan index, ColumnExpressionToIndex fieldOffsets) {
+        protected IndexKeyRange assembleIndexKeyRange(SingleIndexScan index, ColumnExpressionToIndex fieldOffsets) {
             return assembleIndexKeyRange(
                     index,
                     fieldOffsets,
@@ -855,7 +855,7 @@ public class OperatorAssembler extends BaseRule
             );
         }
 
-        protected IndexKeyRange assembleIndexKeyRange(IndexScan index, ColumnExpressionToIndex fieldOffsets,
+        protected IndexKeyRange assembleIndexKeyRange(SingleIndexScan index, ColumnExpressionToIndex fieldOffsets,
                                                       RangeSegment segment)
         {
             return assembleIndexKeyRange(
@@ -868,7 +868,7 @@ public class OperatorAssembler extends BaseRule
             );
         }
 
-        private IndexKeyRange assembleIndexKeyRange(IndexScan index,
+        private IndexKeyRange assembleIndexKeyRange(SingleIndexScan index,
                                                     ColumnExpressionToIndex fieldOffsets,
                                                     ExpressionNode lowComparand,
                                                     boolean lowInclusive, ExpressionNode highComparand,
@@ -956,7 +956,7 @@ public class OperatorAssembler extends BaseRule
             return schema.newValuesType(fields);
         }
 
-        protected IndexRowType getIndexRowType(IndexScan index) {
+        protected IndexRowType getIndexRowType(SingleIndexScan index) {
             return schema.indexRowType(index.getIndex());
         }
 

@@ -1,7 +1,14 @@
 # Test the IF function
 ---
 - Include: all-types-schema.yaml
-
+---
+- CreateTable: t (bigint_field bigint)
+---
+- Statement: INSERT INTO t VALUES (1)
+---
+- Statement: SELECT IF(?, 'yup', 'nope') FROM t
+- params: [[1]]
+- output: [['yup']]
 ---
 - Statement: SELECT IF() FROM all_types
 - error: [4250C]

@@ -1,4 +1,6 @@
 # SIN of VARCHAR produces wrong error
+# BUG 893181
+# Status triaged
 ---
 - CreateTable: t (varchar_field varchar(32))
 ---

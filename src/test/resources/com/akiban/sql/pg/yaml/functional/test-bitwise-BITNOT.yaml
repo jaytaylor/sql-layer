@@ -1,17 +1,18 @@
 # Test the bitwise BITNOT() function
+# Bug(s) 928418: Overflow due to composeType's implementation
 ---
 - Include: all-types-schema.yaml
 ---
 - Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (1, 'Level 1');
---- #bug 909054
-# - Statement: SELECT 1 from all_types WHERE BITNOT(?) = 18446744073709551612;
-# - params: [[3]]
-# - output: [[1]]
-# ---
-# - Statement: SELECT BITNOT(?) from all_types;
-# - params: [[3]]
-# - output: [[18446744073709551612]]
-# --- 
+#--- #bug 928418
+#- Statement: SELECT 1 from all_types WHERE BITNOT(?) = 18446744073709551612;
+#- params: [[3]]
+#- output: [[1]]
+---
+- Statement: SELECT BITNOT(?) from all_types;
+- params: [[3]]
+- output: [[18446744073709551612]]
+--- 
 - Statement: SELECT 1 from all_types where BITNOT(1) = BITNOT(1);
 - row_count: 1
 ---    

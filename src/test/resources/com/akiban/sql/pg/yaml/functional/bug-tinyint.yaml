@@ -1,4 +1,6 @@
 # The tinyint data type is not supported
+# BUG 890228
+# Status triaged
 ---
 - CreateTable: t (tinyint_field tinyint)
 ...

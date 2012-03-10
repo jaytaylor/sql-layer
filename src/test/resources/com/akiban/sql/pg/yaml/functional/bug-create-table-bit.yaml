@@ -1,5 +1,7 @@
 # Creating a table with a bit field produces a parse exception error
 # code rather than an unsupported data type one.
+# BUG 705980: BIT datatype not supported
+# Status: confirmed
 ---
 - CreateTable: t (bit_field bit)
 - error: [50008]

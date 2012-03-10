@@ -1,4 +1,5 @@
 # Test the DAYOFWEEK() function
+# Related bug(s): 903278
 ---
 - Include: all-types-schema.yaml
 ---
@@ -13,15 +14,16 @@
 ---  
 - Statement: select DAYOFWEEK('2006-05-35 15:12:33') from all_types;
 - output: [[null]]
-#---      
-#- Include: all-datetime-schema.yaml
+---      
+- Include: all-datetime-schema.yaml
 #---
-# will be working after some changing in ExtractorForTime.
+##will be working after some changing in ExtractorForTime.
 #- Statement: select DAYOFWEEK('15:12:33') from all_types;
 #- output: [[null]]
 #---
 #- Statement: select id,DAYOFWEEK(time_field) from datetime_matrix where DAYOFWEEK(time_field) is not null;
 #- row_count: 0
+## not working due to the broken all-date-time schema
 #---
 #- Statement: select id,DAYOFWEEK(timestamp_field) from datetime_matrix where DAYOFWEEK(timestamp_field) <> day_of_week;
 #- row_count: 0
