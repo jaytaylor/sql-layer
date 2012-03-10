@@ -1,4 +1,6 @@
 # INSERT for a BIGINT UNSIGNED only supports the largest signed value
+# BUG 889285
+# Status triaged
 ---
 - CreateTable: t (bigint_unsigned_field bigint unsigned)
 ---

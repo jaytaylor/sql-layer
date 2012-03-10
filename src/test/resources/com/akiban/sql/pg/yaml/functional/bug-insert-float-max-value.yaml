@@ -1,4 +1,6 @@
 # Inserting the max value after '0.0' into a float fails
+# BUG 906988
+# Status confirmed
 ---
 - CreateTable: t (float_field float)
 ---

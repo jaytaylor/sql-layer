@@ -1,4 +1,6 @@
 # Insert a timestamp with a fractional number of seconds fails
+# BUG 889300
+# Status fix committed (still in progress)
 ---
 - CreateTable: t (timestamp_field timestamp)
 ---

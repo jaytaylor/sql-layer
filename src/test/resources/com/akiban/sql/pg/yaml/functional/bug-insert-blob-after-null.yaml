@@ -1,4 +1,6 @@
 # Inserting a non-null blob value after a null one fails
+# Bug: 891362 (related to 889280)
+# status triaged
 ---
 - CreateTable: t (blob_field blob)
 ---

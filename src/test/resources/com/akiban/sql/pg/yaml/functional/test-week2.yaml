@@ -1,4 +1,6 @@
 # tests that currently fail ther FTS run
+# bug 902168, 902169
+# status: triaged
 ---
 - Include: all-types-schema.yaml
 ---

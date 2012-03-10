@@ -2,6 +2,10 @@
 ---   # Zero date tests moved to test-zero-date
 - Include: all-types-schema.yaml
 ---
+- CreateTable: t (year_field year)
+---
+- Statement: INSERT INTO t VALUES (91);
+---
 - Statement: INSERT INTO all_types (varchar_field) VALUES (null)
 ---
 - Statement: INSERT INTO all_types (varchar_field) VALUES
