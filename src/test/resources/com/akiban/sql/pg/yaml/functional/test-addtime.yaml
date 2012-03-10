@@ -1,4 +1,5 @@
 # Test the ADDTIME() function
+# Related bug(s): 889300
 ---
 - Include: all-types-schema.yaml
 ---
@@ -10,7 +11,7 @@
 ---
 - Statement: select ADDTIME('2007-12-31 23:59:59', INTERVAL 2 SECOND) from all_types;
 - output: [[!re '2008-01-01 00:00:01([.]0)?']]
-#---
+#--- # bug 889300
 # fractional seconds is not supported yet
 #- Statement: select ADDTIME('01:00:00.999999', '02:00:00.999998') from all_types;
 #- output: [['03:00:01.999997']]

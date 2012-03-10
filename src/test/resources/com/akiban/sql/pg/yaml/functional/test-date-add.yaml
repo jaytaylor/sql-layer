@@ -1,4 +1,6 @@
 # Test the DATE_ADD() function
+# Related bug(s): 889300, 903215
+# Status: confirmed
 ---
 - Include: all-types-schema.yaml
 ---

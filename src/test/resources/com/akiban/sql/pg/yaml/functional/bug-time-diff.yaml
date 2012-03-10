@@ -1,4 +1,21 @@
 # Test the TIMEDIFF() function
+# BUG 903498: Invalid. Becase  
+#    SELECT TIMEDIFF(timestamp_field, ?) from all_types] 
+#    - params: [['00:00:01']]
+#    - output: [['12:30:59']]
+# would turns into SELECT TIMEDIFF (timestamp_field, <time_field>) => mismatched arg type => error.
+#
+# BUG 921088: TIMEDIFF's implementation mistakenly causes mismatch between expression's type and expression evaluation's type
+# Status fix comitted
+#
+# BUG 921095: NEGATIVE value causes bad value for type time
+# Status new
+#
+# BUG 921122: decimal (double/float) not convertible to type
+# status new
+#
+# BUG 921117: TIMEDIFF throws IvalidAgrgumentException as opposed to returning NULL
+# Status new (this may or may not be a bug)
 ---
 - Include: all-types-schema.yaml
 --- #bug 903498

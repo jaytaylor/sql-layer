@@ -153,7 +153,7 @@ public class IndexGoal implements Comparator<IndexScan>
      * @return <code>false</code> if the index is useless.
      */
     public boolean usable(IndexScan index) {
-        List<IndexColumn> indexColumns = index.getIndex().getKeyColumns();
+        List<IndexColumn> indexColumns = index.getKeyColumns();
         int ncols = indexColumns.size();
         List<ExpressionNode> indexExpressions = new ArrayList<ExpressionNode>(ncols);
         List<OrderByExpression> orderBy = new ArrayList<OrderByExpression>(ncols);
@@ -423,7 +423,7 @@ public class IndexGoal implements Comparator<IndexScan>
         // indexes on it.
         if (required.contains(table)) {
             for (TableIndex index : table.getTable().getTable().getIndexes()) {
-                IndexScan candidate = new IndexScan(index, table);
+                IndexScan candidate = new SingleIndexScan(index, table);
                 bestIndex = betterIndex(bestIndex, candidate);
             }
         }
@@ -485,7 +485,7 @@ public class IndexGoal implements Comparator<IndexScan>
                         (rootRequired == null))
                         continue;
                 }
-                IndexScan candidate = new IndexScan(index, rootTable, 
+                IndexScan candidate = new SingleIndexScan(index, rootTable,
                                                     rootRequired, leafRequired, 
                                                     table);
                 bestIndex = betterIndex(bestIndex, candidate);
@@ -562,9 +562,9 @@ public class IndexGoal implements Comparator<IndexScan>
             if (n1 != n2) 
                 return (n1 > n2) ? +1 : -1;
         }
-        if (i1.getIndex().getKeyColumns().size() != i2.getIndex().getKeyColumns().size())
-            return (i1.getIndex().getKeyColumns().size() <
-                    i2.getIndex().getKeyColumns().size())
+        if (i1.getKeyColumns().size() != i2.getKeyColumns().size())
+            return (i1.getKeyColumns().size() <
+                    i2.getKeyColumns().size())
                 // Fewer columns indexed better than more.
                 ? +1 : -1;
         // Deeper better than shallower.

@@ -30,9 +30,9 @@
 - Statement: SELECT LEFTSHIFT(4,60) from all_types;
 - output: [[4611686018427387904]] 
 ---
-#- Statement: SELECT LEFTSHIFT(4,61) from all_types;
-#- output: [[-9223372036854775808]] 
-#---
+- Statement: SELECT LEFTSHIFT(4,61) from all_types;
+- output: [[9223372036854775808]] 
+---
 - Statement: SELECT LEFTSHIFT(4,62) from all_types;
 - output: [[0]] 
 ---

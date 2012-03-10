@@ -1,4 +1,6 @@
 # SUM of REAL overflow does not produce error
+# Invalid. This statement should NOT produce overflow.
+# Correct output is Infinity, because the rule says "Infinity" plus <anything>  results in Infinity. NOT an overflow
 ---
 - CreateTable: t (real_field real)
 ---
