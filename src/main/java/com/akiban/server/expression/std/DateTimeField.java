@@ -1158,6 +1158,11 @@ public enum DateTimeField
         while (cal.getDayOfWeek() != firstDay)
             cal.setDayOfMonth(++firstD);
 
+        // reset cal
+        cal.setYear(yr);
+        cal.setMonthOfYear(mo);
+        cal.setDayOfMonth(da);
+        
         if (da < firstD) return yr -1;
         else return yr;
     }
@@ -1188,9 +1193,16 @@ public enum DateTimeField
         cal.setDayOfMonth(da);
 
         int dayOfYear = cal.getDayOfYear();
-
-        if (dayOfYear < firstD) return (lowestIs0 ? 0 : getWeek(cal, yr-1, 12, 31, firstDay, lowestIs0));
-        else return (dayOfYear - firstD) / 7 +1;
+        int result;
+        
+        if (dayOfYear < firstD) result =  (lowestIs0 ? 0 : getWeek(cal, yr-1, 12, 31, firstDay, lowestIs0));
+        else result = (dayOfYear - firstD) / 7 +1;
+        
+        // reset cal
+        cal.setYear(yr);
+        cal.setMonthOfYear(mo);
+        cal.setDayOfMonth(da);
+        return result;
     }
 
     /**

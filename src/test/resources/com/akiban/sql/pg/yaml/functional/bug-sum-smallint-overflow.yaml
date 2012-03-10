@@ -1,5 +1,7 @@
 # Test smallint overflow
-# Sum of large values overflows incorrectly
+# Sum of large values overflows 
+# bug 890227
+# Status triaged
 ---
 - CreateTable: t (smallint_field smallint)
 ---

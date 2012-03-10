@@ -1,4 +1,6 @@
 # Inserting 'Infinity' after '0.0' into a double fails
+# BUG 889291
+# status confirmed
 ---
 - CreateTable: t (double_field double)
 ---
