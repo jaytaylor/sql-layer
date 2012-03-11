@@ -1,0 +1,17 @@
+!!com.akiban.sql.optimizer.MultiIndexEnumeratorTest$TestCase
+usingIndexes:
+    - customers.name_yob
+    - customers.name_vipstatus
+conditionsOn:
+    - customers.name
+    - customers.yob
+    - customers.vipstatus
+combinations:
+    -   outputIndex: customers.name_yob
+        outputSkip: 2
+        selectorIndex: customers.name_vipstatus
+        selectorSkip: 2
+    -   outputIndex: customers.name_vipstatus
+        outputSkip: 2
+        selectorIndex: customers.name_yob
+        selectorSkip: 2
