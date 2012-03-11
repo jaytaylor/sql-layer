@@ -134,7 +134,9 @@ public class DateTimeArithExpression extends ArithExpression
 
             if (firstArg == AkType.VARCHAR)            
                 firstArg = argumentTypes.get(0).getPrecision() > 10 ?
-                           AkType.DATETIME : type.operandType;            
+                           AkType.DATETIME : type.operandType;    
+            else if (firstArg == AkType.UNSUPPORTED)
+                firstArg = type.operandType;
 
             if (firstArg == AkType.DATE
                     && (secondArg == AkType.INTERVAL_MILLIS || !isIntegral(secondArg)))
@@ -149,7 +151,7 @@ public class DateTimeArithExpression extends ArithExpression
             //  - if it's anything else, then InvalidArgumentType will be thrown
             if (ArithExpression.isNumeric(secondArg))
                 argumentTypes.set(1, ExpressionTypes.INTERVAL_MILLIS);
-
+        
             return composer.composeType(argumentTypes);
         }        
         
