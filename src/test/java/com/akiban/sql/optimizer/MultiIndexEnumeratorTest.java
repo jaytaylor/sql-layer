@@ -25,7 +25,7 @@ import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.rowdata.SchemaFactory;
-import com.akiban.sql.optimizer.plan.MultiIndexCandidateBase;
+import com.akiban.sql.optimizer.plan.MultiIndexCandidate;
 import com.akiban.sql.optimizer.plan.MultiIndexEnumerator;
 import com.akiban.util.AssertUtils;
 import com.akiban.util.Strings;
@@ -84,11 +84,11 @@ public final class MultiIndexEnumeratorTest {
         for (MultiIndexEnumerator.MultiIndexPair<String> elem : enumerated) {
             Combination combo = new Combination();
             
-            MultiIndexCandidateBase<String> output = elem.getOutputIndex();
+            MultiIndexCandidate<String> output = elem.getOutputIndex();
             combo.setOutputIndex(output.getIndex());
             combo.setOutputSkip(output.getPegged());
 
-            MultiIndexCandidateBase<String> selector = elem.getSelectorIndex();
+            MultiIndexCandidate<String> selector = elem.getSelectorIndex();
             combo.setSelectorIndex(selector.getIndex());
             combo.setSelectorSkip(selector.getPegged());
 
@@ -142,8 +142,8 @@ public final class MultiIndexEnumeratorTest {
     
     private static MultiIndexEnumerator<String> enumerator = new MultiIndexEnumerator<String>() {
         @Override
-        protected MultiIndexCandidateBase<String> createSeedCandidate(Index index, Set<String> conditions) {
-            return new MultiIndexCandidateBase<String>(index, conditions) {
+        protected MultiIndexCandidate<String> createSeedCandidate(Index index, Set<String> conditions) {
+            return new MultiIndexCandidate<String>(index, conditions) {
                 @Override
                 protected boolean columnsMatch(String condition, Column column) {
                     String firstWord = condition.split("\\s+")[0];

@@ -35,12 +35,12 @@ import java.util.Set;
  * <p>The expectation is that there are two subclasses of this: one for unit testing, and one for production.</p>
  * @param <C> the condition type.
  */
-public abstract class MultiIndexCandidateBase<C> {
+public abstract class MultiIndexCandidate<C> {
     private Index index;
     private List<C> pegged;
     private Set<C> unpegged;
 
-    public MultiIndexCandidateBase(Index index, Collection<C> conditions) {
+    public MultiIndexCandidate(Index index, Collection<C> conditions) {
         this.index = index;
         pegged = new ArrayList<C>(index.getKeyColumns().size());
         unpegged = new HashSet<C>(conditions);
@@ -146,7 +146,7 @@ public abstract class MultiIndexCandidateBase<C> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        MultiIndexCandidateBase<?> other = (MultiIndexCandidateBase<?>) o;
+        MultiIndexCandidate<?> other = (MultiIndexCandidate<?>) o;
 
         return Equality.areEqual(index, other.index) && Equality.areEqual(pegged, other.pegged);
 

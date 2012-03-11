@@ -28,10 +28,10 @@ import java.util.Set;
 
 /**
  * <p>An enumerator which, given an Index and a set of conditions, will produce a collection of
- * {@link MultiIndexCandidateBase} which represent valid multi-index intersection pairs.</p>
+ * {@link MultiIndexCandidate} which represent valid multi-index intersection pairs.</p>
  * 
- * <p>Like {@link MultiIndexCandidateBase}, this class is generic and abstract; its only abstract method is one for
- * creating an empty {@link MultiIndexCandidateBase}. Also like that class, the expectation is that there will be two
+ * <p>Like {@link MultiIndexCandidate}, this class is generic and abstract; its only abstract method is one for
+ * creating an empty {@link MultiIndexCandidate}. Also like that class, the expectation is that there will be two
  * subclasses for this class: one for unit testing, and one for production.</p>
  * 
  * <p>This class does not hold any state, and if it weren't for {@linkplain #createSeedCandidate(Index, Set)}</p>, all
@@ -40,21 +40,21 @@ import java.util.Set;
  */
 public abstract class MultiIndexEnumerator<C> {
 
-    protected abstract MultiIndexCandidateBase<C> createSeedCandidate(Index index, Set<C> conditions);
+    protected abstract MultiIndexCandidate<C> createSeedCandidate(Index index, Set<C> conditions);
     
     public Collection<MultiIndexPair<C>> get(Collection<? extends Index> indexes, Set<C> conditions) {
         // note: "inner" and "outer" here refer only to these loops, nothing more.
         Set<MultiIndexPair<C>> results = new HashSet<MultiIndexPair<C>>();
         for (Index outerIndex : indexes) {
-            List<MultiIndexCandidateBase<C>> outerCandidates = new ArrayList<MultiIndexCandidateBase<C>>();
+            List<MultiIndexCandidate<C>> outerCandidates = new ArrayList<MultiIndexCandidate<C>>();
             buildCandidate(createSeedCandidate(outerIndex, conditions), outerCandidates);
-            for (MultiIndexCandidateBase<C> outerCandidate : outerCandidates) {
+            for (MultiIndexCandidate<C> outerCandidate : outerCandidates) {
                 if (outerCandidate.anyPegged()) {
                     C outerLastPegged = outerCandidate.getLastPegged();
                     for (Index innerIndex : indexes) {
-                        List<MultiIndexCandidateBase<C>> innerCandidates = new ArrayList<MultiIndexCandidateBase<C>>();
+                        List<MultiIndexCandidate<C>> innerCandidates = new ArrayList<MultiIndexCandidate<C>>();
                         buildCandidate(createSeedCandidate(innerIndex, conditions), innerCandidates);
-                        for (MultiIndexCandidateBase<C> innerCandidate : innerCandidates) {
+                        for (MultiIndexCandidate<C> innerCandidate : innerCandidates) {
                             if (!outerLastPegged.equals(innerCandidate.getLastPegged())) {
                                 emit(outerCandidate, innerCandidate, results);
                             }
@@ -66,7 +66,7 @@ public abstract class MultiIndexEnumerator<C> {
         return results;
     }
 
-    private void emit(MultiIndexCandidateBase<C> first, MultiIndexCandidateBase<C> second,
+    private void emit(MultiIndexCandidate<C> first, MultiIndexCandidate<C> second,
                       Collection<MultiIndexPair<C>> output)
     {
         if (!first.equals(second)) {
@@ -91,7 +91,7 @@ public abstract class MultiIndexEnumerator<C> {
         }
     }
 
-    private void buildCandidate(MultiIndexCandidateBase<C> candidate, Collection<MultiIndexCandidateBase<C>> output)
+    private void buildCandidate(MultiIndexCandidate<C> candidate, Collection<MultiIndexCandidate<C>> output)
     {
         Collection<C> peggable = candidate.findPeggable();
         boolean nonePegged = true;
@@ -100,7 +100,7 @@ public abstract class MultiIndexEnumerator<C> {
             if (candidate.canPeg(condition)) {
                 // If we have any conditions left, we have to copy this candidate so that the next
                 // loop won't see this condition as having been pegged. Otherwise, we can just build with this one.
-                MultiIndexCandidateBase<C> peggedCandidate;
+                MultiIndexCandidate<C> peggedCandidate;
                 if (iterator.hasNext()) {
                     peggedCandidate = createSeedCandidate(candidate.getIndex(), candidate.getUnpeggedCopy());
                     peggedCandidate.pegAll(candidate.getPegged());
@@ -119,19 +119,19 @@ public abstract class MultiIndexEnumerator<C> {
     }
 
     public static class MultiIndexPair<C> {
-        MultiIndexCandidateBase<C> outputIndex;
-        MultiIndexCandidateBase<C> selectorIndex;
+        MultiIndexCandidate<C> outputIndex;
+        MultiIndexCandidate<C> selectorIndex;
 
-        public MultiIndexPair(MultiIndexCandidateBase<C> outputIndex, MultiIndexCandidateBase<C> selectorIndex) {
+        public MultiIndexPair(MultiIndexCandidate<C> outputIndex, MultiIndexCandidate<C> selectorIndex) {
             this.outputIndex = outputIndex;
             this.selectorIndex = selectorIndex;
         }
 
-        public MultiIndexCandidateBase<C> getOutputIndex() {
+        public MultiIndexCandidate<C> getOutputIndex() {
             return outputIndex;
         }
 
-        public MultiIndexCandidateBase<C> getSelectorIndex() {
+        public MultiIndexCandidate<C> getSelectorIndex() {
             return selectorIndex;
         }
 
