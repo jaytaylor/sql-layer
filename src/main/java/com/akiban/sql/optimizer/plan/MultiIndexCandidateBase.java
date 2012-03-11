@@ -149,4 +149,10 @@ public abstract class MultiIndexCandidateBase<S> {
         result = 31 * result + (pegged != null ? pegged.hashCode() : 0);
         return result;
     }
+
+    public S getLastPegged() {
+        if (pegged == null || pegged.isEmpty())
+            throw new IllegalStateException("nothing pegged");
+        return pegged.get(pegged.size()-1);
+    }
 }

@@ -21,6 +21,7 @@ import com.akiban.ais.model.UserTable;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -31,16 +32,21 @@ public abstract class MultiIndexEnumerator<S> {
     
     public Collection<MultiIndexPair<S>> get(Collection<? extends Index> indexes, Set<S> conditions) {
         // note: "inner" and "outer" here refer only to these loops, nothing more.
-        List<MultiIndexPair<S>> results = new ArrayList<MultiIndexPair<S>>();
+        Set<MultiIndexPair<S>> results = new HashSet<MultiIndexPair<S>>();
         for (Index outerIndex : indexes) {
             List<MultiIndexCandidateBase<S>> outerCandidates = new ArrayList<MultiIndexCandidateBase<S>>();
             buildCandidate(createSeedCandidate(outerIndex, conditions), outerCandidates);
             for (MultiIndexCandidateBase<S> outerCandidate : outerCandidates) {
-                for (Index innerIndex : indexes) {
-                    List<MultiIndexCandidateBase<S>> innerCandidates = new ArrayList<MultiIndexCandidateBase<S>>();
-                    buildCandidate(createSeedCandidate(innerIndex, conditions), innerCandidates);
-                    for (MultiIndexCandidateBase<S> innerCandidate : innerCandidates) {
-                        emit(outerCandidate, innerCandidate, results);
+                if (outerCandidate.anyPegged()) {
+                    S outerLastPegged = outerCandidate.getLastPegged();
+                    for (Index innerIndex : indexes) {
+                        List<MultiIndexCandidateBase<S>> innerCandidates = new ArrayList<MultiIndexCandidateBase<S>>();
+                        buildCandidate(createSeedCandidate(innerIndex, conditions), innerCandidates);
+                        for (MultiIndexCandidateBase<S> innerCandidate : innerCandidates) {
+                            if (!outerLastPegged.equals(innerCandidate.getLastPegged())) {
+                                emit(outerCandidate, innerCandidate, results);
+                            }
+                        }
                     }
                 }
             }
@@ -48,7 +54,9 @@ public abstract class MultiIndexEnumerator<S> {
         return results;
     }
 
-    private void emit(MultiIndexCandidateBase<S> first, MultiIndexCandidateBase<S> second, List<MultiIndexPair<S>> output) {
+    private void emit(MultiIndexCandidateBase<S> first, MultiIndexCandidateBase<S> second,
+                      Collection<MultiIndexPair<S>> output)
+    {
         if (!first.equals(second)) {
             Table firstTable = first.getIndex().leafMostTable();
             Table secondTable = second.getIndex().leafMostTable();
