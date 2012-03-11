@@ -25,23 +25,21 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
-public final class MultiIndexEnumerator {
+public abstract class MultiIndexEnumerator<S> {
 
-    public Collection<MultiIndexPair> get(Set<? extends Index> indexes, Set<ComparisonCondition> conditions) {
+    protected abstract MultiIndexCandidateBase<S> createSeedCandidate(Index index, Set<S> conditions);
+    
+    public Collection<MultiIndexPair<S>> get(Collection<? extends Index> indexes, Set<S> conditions) {
         // note: "inner" and "outer" here refer only to these loops, nothing more.
-        List<MultiIndexPair> results = new ArrayList<MultiIndexPair>();
+        List<MultiIndexPair<S>> results = new ArrayList<MultiIndexPair<S>>();
         for (Index outerIndex : indexes) {
-            List<MultiIndexCandidate> outerCandidates = new ArrayList<MultiIndexCandidate>();
-            buildCandidate(new MultiIndexCandidate(outerIndex, conditions), outerCandidates);
-            for (MultiIndexCandidate outerCandidate : outerCandidates) {
+            List<MultiIndexCandidateBase<S>> outerCandidates = new ArrayList<MultiIndexCandidateBase<S>>();
+            buildCandidate(createSeedCandidate(outerIndex, conditions), outerCandidates);
+            for (MultiIndexCandidateBase<S> outerCandidate : outerCandidates) {
                 for (Index innerIndex : indexes) {
-                    Set<ComparisonCondition> innerConditions
-                            = (innerIndex == outerIndex)
-                            ? outerCandidate.getUnpeggedConditions() // same idx, but only on the remaining conditions
-                            : conditions;
-                    List<MultiIndexCandidate> innerCandidates = new ArrayList<MultiIndexCandidate>();
-                    buildCandidate(new MultiIndexCandidate(innerIndex, innerConditions), innerCandidates);
-                    for (MultiIndexCandidate innerCandidate : innerCandidates) {
+                    List<MultiIndexCandidateBase<S>> innerCandidates = new ArrayList<MultiIndexCandidateBase<S>>();
+                    buildCandidate(createSeedCandidate(innerIndex, conditions), innerCandidates);
+                    for (MultiIndexCandidateBase<S> innerCandidate : innerCandidates) {
                         emit(outerCandidate, innerCandidate, results);
                     }
                 }
@@ -50,36 +48,43 @@ public final class MultiIndexEnumerator {
         return results;
     }
 
-    private void emit(MultiIndexCandidate first, MultiIndexCandidate second, List<MultiIndexPair> output) {
-        Table firstTable = first.getIndex().leafMostTable();
-        Table secondTable = second.getIndex().leafMostTable();
-        if (firstTable.isUserTable() && secondTable.isUserTable()) {
-            UserTable firstUTable = (UserTable) firstTable;
-            UserTable secondUTable = (UserTable) secondTable;
-            // handle the two single-branch cases
-            if (firstUTable.isDescendantOf(secondUTable)) {
-                output.add(new MultiIndexPair(first, second));
-            }
-            else if (secondUTable.isDescendantOf(firstUTable)) {
-                output.add(new MultiIndexPair(second, first));
-            }
-            else {
-                // TODO -- enable when multi-branch is in
-                // output.add(new MultiIndexPair(first, second));
-                // output.add(new MultiIndexPair(second, first));
+    private void emit(MultiIndexCandidateBase<S> first, MultiIndexCandidateBase<S> second, List<MultiIndexPair<S>> output) {
+        if (!first.equals(second)) {
+            Table firstTable = first.getIndex().leafMostTable();
+            Table secondTable = second.getIndex().leafMostTable();
+            if (firstTable.isUserTable() && secondTable.isUserTable()) {
+                UserTable firstUTable = (UserTable) firstTable;
+                UserTable secondUTable = (UserTable) secondTable;
+                // handle the two single-branch cases
+                if (firstUTable.isDescendantOf(secondUTable)) {
+                    output.add(new MultiIndexPair<S>(first, second));
+                }
+                else if (secondUTable.isDescendantOf(firstUTable)) {
+                    output.add(new MultiIndexPair<S>(second, first));
+                }
+                else {
+                    // TODO -- enable when multi-branch is in
+                    // output.add(new MultiIndexPair(first, second));
+                    // output.add(new MultiIndexPair(second, first));
+                }
             }
         }
     }
 
-    private void buildCandidate(MultiIndexCandidate candidate, Collection<MultiIndexCandidate> output)
+    private void buildCandidate(MultiIndexCandidateBase<S> candidate, Collection<MultiIndexCandidateBase<S>> output)
     {
-        Collection<ComparisonCondition> peggable = candidate.findPeggable();
+        Collection<S> peggable = candidate.findPeggable();
         boolean nonePegged = true;
-        for (Iterator<ComparisonCondition> iterator = peggable.iterator(); iterator.hasNext(); ) {
-            ComparisonCondition condition = iterator.next();
-            MultiIndexCandidate newCandidate = iterator.hasNext()
-                    ? new MultiIndexCandidate(candidate)
-                    : candidate; // if this is the last condition, just reuse this instance
+        for (Iterator<S> iterator = peggable.iterator(); iterator.hasNext(); ) {
+            S condition = iterator.next();
+            MultiIndexCandidateBase<S> newCandidate;
+            if (iterator.hasNext()) {
+                newCandidate = createSeedCandidate(candidate.getIndex(), candidate.getUnpeggedCopy());
+                newCandidate.pegAll(candidate.getPegged());
+            }
+            else {
+                newCandidate = candidate; // if this is the last condition, just reuse this instance
+            }
             candidate.peg(condition);
             buildCandidate(newCandidate, output);
             nonePegged = false;
@@ -89,21 +94,44 @@ public final class MultiIndexEnumerator {
         }
     }
 
-    public static class MultiIndexPair {
-        MultiIndexCandidate outputIndex;
-        MultiIndexCandidate selectorIndex;
+    public static class MultiIndexPair<S> {
+        MultiIndexCandidateBase<S> outputIndex;
+        MultiIndexCandidateBase<S> selectorIndex;
 
-        public MultiIndexPair(MultiIndexCandidate outputIndex, MultiIndexCandidate selectorIndex) {
+        public MultiIndexPair(MultiIndexCandidateBase<S> outputIndex, MultiIndexCandidateBase<S> selectorIndex) {
             this.outputIndex = outputIndex;
             this.selectorIndex = selectorIndex;
         }
 
-        public MultiIndexCandidate getOutputIndex() {
+        public MultiIndexCandidateBase<S> getOutputIndex() {
             return outputIndex;
         }
 
-        public MultiIndexCandidate getSelectorIndex() {
+        public MultiIndexCandidateBase<S> getSelectorIndex() {
             return selectorIndex;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            MultiIndexPair that = (MultiIndexPair) o;
+
+            return outputIndex.equals(that.outputIndex) && selectorIndex.equals(that.selectorIndex);
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = outputIndex.hashCode();
+            result = 31 * result + selectorIndex.hashCode();
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("(%s, %s)", outputIndex, selectorIndex);
         }
     }
 }
