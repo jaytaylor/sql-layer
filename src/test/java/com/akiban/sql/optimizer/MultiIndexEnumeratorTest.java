@@ -75,7 +75,7 @@ public final class MultiIndexEnumeratorTest {
         AkibanInformationSchema ais = factory.ais(ddl);
 
         TestCase tc = (TestCase) new Yaml().load(new FileReader(yaml));
-        List<Index> indexes = allIndexes(ais);
+        List<Index> indexes = allIndexes(ais, tc.getUsingIndexes());
         Set<String> conditions = new HashSet<String>(tc.getConditionsOn());
         Collection<MultiIndexEnumerator.MultiIndexPair<String>> enumerated = enumerator.get(indexes, conditions);
         List<Combination> actual = new ArrayList<Combination>(enumerated.size());
@@ -95,21 +95,36 @@ public final class MultiIndexEnumeratorTest {
         AssertUtils.assertCollectionEquals("enumerations", tc.getCombinations(), actual);
     }
 
-    private List<Index> allIndexes(AkibanInformationSchema ais) {
+    private List<Index> allIndexes(AkibanInformationSchema ais, Set<String> usingIndexes) {
         List<Index> results = new ArrayList<Index>();
         for (Group group : ais.getGroups().values()) {
-            results.addAll(group.getIndexes());
-            tableIndexes(group.getGroupTable().getRoot(), results);
+            addIndexes(group.getIndexes(), results, usingIndexes);
+            tableIndexes(group.getGroupTable().getRoot(), results, usingIndexes);
         }
         return results;
     }
     
-    private void tableIndexes(UserTable table, List<Index> output) {
-        output.addAll(table.getIndexesIncludingInternal());
+    private void tableIndexes(UserTable table, List<Index> output, Set<String> usingIndexes) {
+        addIndexes(table.getIndexesIncludingInternal(), output, usingIndexes);
         for (Join join : table.getChildJoins()) {
             UserTable child = join.getChild();
-            tableIndexes(child, output);
+            tableIndexes(child, output, usingIndexes);
         }
+    }
+
+    private void addIndexes(Collection<? extends Index> indexes, List<Index> output, Set<String> filter) {
+        for (Index index : indexes) {
+            String indexName = indexToString(index);
+            if (filter.contains(indexName))
+                output.add(index);
+        }
+    }
+
+    private static String indexToString(Index index) {
+        return String.format("%s.%s",
+                index.leafMostTable().getName().getTableName(),
+                index.getIndexName().getName()
+        );
     }
 
     public MultiIndexEnumeratorTest(File yaml, String[] ddl) {
@@ -134,10 +149,11 @@ public final class MultiIndexEnumeratorTest {
 
     @SuppressWarnings("unused") // getters and setters used by yaml reflection
     public static class TestCase {
-        public List<String> conditionsOn;
+        public Set<String> usingIndexes;
+        public Set<String> conditionsOn;
         public List<Combination> combinations;
 
-        public List<String> getConditionsOn() {
+        public Set<String> getConditionsOn() {
             return conditionsOn;
         }
 
@@ -145,8 +161,16 @@ public final class MultiIndexEnumeratorTest {
             return combinations;
         }
 
-        public void setConditionsOn(List<String> conditionsOn) {
+        public void setConditionsOn(Set<String> conditionsOn) {
             this.conditionsOn = conditionsOn;
+        }
+        
+        public void setUsingIndexes(Set<String> usingIndexes) {
+            this.usingIndexes = usingIndexes;
+        }
+        
+        public Set<String> getUsingIndexes() {
+            return usingIndexes;
         }
 
         public void setCombinations(List<Combination> combinations) {
@@ -222,13 +246,6 @@ public final class MultiIndexEnumeratorTest {
 
         public void setSelectorSkip(int selectorSkip) {
             this.selectorSkip = selectorSkip;
-        }
-
-        private String indexToString(Index index) {
-            return String.format("%s.%s",
-                    index.leafMostTable().getName().getTableName(),
-                    index.getIndexName().getName()
-            );
         }
 
         @Override
