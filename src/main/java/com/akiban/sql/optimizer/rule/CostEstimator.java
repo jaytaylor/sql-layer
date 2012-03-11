@@ -18,6 +18,7 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.rule.costmodel.CostModel;
 import com.akiban.sql.optimizer.rule.costmodel.TableRowCounts;
+import static com.akiban.sql.optimizer.rule.BranchJoiner_CBO.*;
 
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
@@ -280,158 +281,25 @@ public abstract class CostEstimator implements TableRowCounts
     /** Estimate the cost of starting at the given table's index and
      * fetching the given tables, then joining them with Flatten and
      * Product. */
-    // TODO: Lots of logical overlap with BranchJoiner.
-    public CostEstimate costFlatten(TableSource indexTable,
-                                    Collection<TableSource> requiredTables) {
-        indexTable.getTable().getTree().colorBranches();
-        Map<UserTable,FlattenedTable> ftables = new HashMap<UserTable,FlattenedTable>();
-        long indexMask = indexTable.getTable().getBranches();
-        FlattenedTable iftable = flattened(indexTable, ftables);
-        for (TableSource table : orderedTableSources(requiredTables)) {
-            FlattenedTable ftable = flattened(table, ftables);
-            long common = indexMask & table.getTable().getBranches();
-            if (common == indexMask) {
-                // The index table or one of its descendants or single branch.
-                if (indexTable.getTable().getDepth() >= table.getTable().getDepth()) {
-                    ftable.ancestor = true; // Just ancestor until branch needed.
-                }
-                else {
-                    ftable.branchPoint = iftable;
-                    iftable.branch = true; // Proper descendant, need whole branch.
-                }
-            }
-            else if (common != 0) {
-                // Ancestor
-                ftable.ancestor = true;
-            }
-            else {
-                // No common ancestor, need higher branchpoint.
-                TableNode tnode = table.getTable();
-                do {
-                    TableNode prev = tnode;
-                    tnode = tnode.getParent();
-                    if ((tnode.getBranches() & indexMask) != 0) {
-                        ftable.branchPoint = flattened(prev.getTable(), ftables);
-                        ftable.branchPoint.branch = true;
-                        break;
-                    }
-                } while (tnode != null);
-            }
-        }
-        // Find single root from which all the flattens descend.
-        FlattenedTable root = null;
-        for (FlattenedTable ftable : orderedTables(ftables.values())) {
-            if ((root == null) || (ftable.table.getDepth() < root.table.getDepth())) {
-                root = ftable;
-            }
-            else if (ftable.table.getDepth() == root.table.getDepth()) {
-                // Move up to common ancestor, which is new root.
-                while (root != ftable) {
-                    root = flattened(root.table.parentTable(), ftables);
-                    ftable = flattened(ftable.table.parentTable(), ftables);
-                    root.ancestor = ftable.ancestor = true;
-                }
-            }
-        }
-        // Limit branchPoint markers to leaves; that's the number that
-        // will joined via product.
-        for (FlattenedTable ftable : orderedTables(ftables.values())) {
-            if (ftable.branchPoint != null) {
-                while (ftable != root) {
-                    ftable = flattened(ftable.table.parentTable(), ftables);
-                    ftable.branchPoint = null;
-                }
-            }
-        }
-        // Account for database accesses.
+    public CostEstimate costFlatten(TableGroupJoinTree tableGroup,
+                                    TableSource indexTable,
+                                    Set<TableSource> requiredTables) {
+        markBranches(tableGroup, requiredTables);
         long rowCount = 1;
         double cost = 0.0;
-        for (FlattenedTable ftable : orderedTables(ftables.values())) {
-            // Multiple rows come in from branches and they all get producted together.
-            if (ftable.branchPoint != null) {
-                long nrows = branchScale(ftable, ftable.branchPoint, iftable);
-                rowCount *= nrows;
-                cost += model.product((int)nrows);
-            }
-            if (ftable.branch) {
-                cost += model.branchLookup(schema.userTableRowType(ftable.table));
-            }
-            else if (ftable.ancestor) {
-                cost += model.ancestorLookup(Collections.singletonList(schema.userTableRowType(ftable.table)));
-            }
-            cost += model.flatten(schema.userTableRowType(root.table),
-                                  schema.userTableRowType(ftable.table),
-                                  // TODO: This doesn't seem right.
-                                  1);
-        }
         return new CostEstimate(rowCount, cost);
-    }
-
-    // Estimate depends somewhat on which happens to be chosen as the
-    // main branch, so make it predictable for tests.
-    protected Collection<TableSource> orderedTableSources(Collection<TableSource> tables) {
-        List<TableSource> ordered = new ArrayList<TableSource>(tables);
-        Collections.sort(ordered, new Comparator<TableSource>() {
-                             @Override
-                             public int compare(TableSource t1, TableSource t2) {
-                                 return t1.getTable().getTable().getTableId().compareTo(t2.getTable().getTable().getTableId());
-                             }
-                         });
-        return ordered;
-    }
-
-    protected Collection<FlattenedTable> orderedTables(Collection<FlattenedTable> tables) {
-        List<FlattenedTable> ordered = new ArrayList<FlattenedTable>(tables);
-        Collections.sort(ordered, new Comparator<FlattenedTable>() {
-                             @Override
-                             public int compare(FlattenedTable f1, FlattenedTable f2) {
-                                 return f1.table.getTableId().compareTo(f2.table.getTableId());
-                             }
-                         });
-        return ordered;
-    }
-
-    // A source of flattened rows.
-    static class FlattenedTable {
-        UserTable table;
-        boolean ancestor, branch;
-        FlattenedTable branchPoint;
-        
-        public FlattenedTable(UserTable table) {
-            this.table = table;
-        }
-
-        @Override
-        public String toString() {
-            return table.getName().toString();
-        }
-    }
-
-    protected FlattenedTable flattened(UserTable table, 
-                                       Map<UserTable,FlattenedTable> map) {
-        FlattenedTable ftable = map.get(table);
-        if (ftable == null) {
-            ftable = new FlattenedTable(table);
-            map.put(table, ftable);
-        }
-        return ftable;
-    }
-
-    protected FlattenedTable flattened(TableSource table, 
-                                       Map<UserTable,FlattenedTable> map) {
-        return flattened(table.getTable().getTable(), map);
     }
 
     // Branching from the index just has one branchpoint
     // row. Branching from someplace else has as many as there are per
     // the common ancestor, which is the immediate parent of the
     // branchpoint.
-    protected long branchScale(FlattenedTable ftable,
-                               FlattenedTable btable, FlattenedTable indexTable) {
-        return simpleRound(getTableRowCount(ftable.table),
+    protected long branchScale(TableSource ftable,
+                               TableSource btable, TableSource indexTable) {
+        return simpleRound(getTableRowCount(ftable.getTable().getTable()),
                            getTableRowCount((btable == indexTable) ?
-                                            btable.table :
-                                            btable.table.parentTable()));
+                                            btable.getTable().getTable() :
+                                            btable.getTable().getTable().parentTable()));
     }
 
     /** Estimate the cost of testing some conditions. */

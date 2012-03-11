@@ -23,6 +23,7 @@ import com.akiban.sql.optimizer.plan.*;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.rowtype.Schema;
@@ -131,7 +132,7 @@ public class CostEstimatorTest
         TableSource c = tableSource("customers");
         TableSource o = tableSource("orders");
         TableSource i = tableSource("items");
-        CostEstimate costEstimate = costEstimator.costFlatten(i, Arrays.asList(c, o, i));
+        CostEstimate costEstimate = costFlatten(i, Arrays.asList(c, o, i));
         assertEquals(1, costEstimate.getRowCount());
         assertEquals(9469.0,
                      costEstimate.getCost(),
@@ -143,7 +144,7 @@ public class CostEstimatorTest
         TableSource c = tableSource("customers");
         TableSource o = tableSource("orders");
         TableSource i = tableSource("items");
-        CostEstimate costEstimate = costEstimator.costFlatten(o, Arrays.asList(c, o, i));
+        CostEstimate costEstimate = costFlatten(o, Arrays.asList(c, o, i));
         assertEquals(20, costEstimate.getRowCount());
         assertEquals(11765.5468,
                      costEstimate.getCost(),
@@ -155,7 +156,7 @@ public class CostEstimatorTest
         TableSource c = tableSource("customers");
         TableSource o = tableSource("orders");
         TableSource i = tableSource("items");
-        CostEstimate costEstimate = costEstimator.costFlatten(c, Arrays.asList(c, o, i));
+        CostEstimate costEstimate = costFlatten(c, Arrays.asList(c, o, i));
         assertEquals(200, costEstimate.getRowCount());
         assertEquals(35605.3382,
                      costEstimate.getCost(),
@@ -168,7 +169,7 @@ public class CostEstimatorTest
         TableSource o = tableSource("orders");
         TableSource i = tableSource("items");
         TableSource a = tableSource("addresses");
-        CostEstimate costEstimate = costEstimator.costFlatten(i, Arrays.asList(c, o, i, a));
+        CostEstimate costEstimate = costFlatten(i, Arrays.asList(c, o, i, a));
         assertEquals(1, costEstimate.getRowCount());
         assertEquals(10027.7584,
                      costEstimate.getCost(),
@@ -179,7 +180,7 @@ public class CostEstimatorTest
     public void testI2A() throws Exception {
         TableSource i = tableSource("items");
         TableSource a = tableSource("addresses");
-        CostEstimate costEstimate = costEstimator.costFlatten(i, Arrays.asList(a));
+        CostEstimate costEstimate = costFlatten(i, Arrays.asList(a));
         assertEquals(1, costEstimate.getRowCount());
         assertEquals(8807.7584,
                      costEstimate.getCost(),
@@ -190,7 +191,7 @@ public class CostEstimatorTest
     public void testA2I() throws Exception {
         TableSource a = tableSource("addresses");
         TableSource i = tableSource("items");
-        CostEstimate costEstimate = costEstimator.costFlatten(a, Arrays.asList(i));
+        CostEstimate costEstimate = costFlatten(a, Arrays.asList(i));
         assertEquals(200, costEstimate.getRowCount());
         // The customer random access doesn't actually happen in this
         // side-branch case, but that complexity isn't in the
@@ -200,6 +201,57 @@ public class CostEstimatorTest
                      0.0001);
     }
 
+    private CostEstimate costFlatten(TableSource indexTable,
+                                     Collection<TableSource> requiredTables) {
+        TableGroup tableGroup = new TableGroup(indexTable.getTable().getTable().getGroup());
+        indexTable.setGroup(tableGroup);
+        Map<UserTable,TableSource> tableSources = new HashMap<UserTable,TableSource>();
+        tableSources.put(indexTable.getTable().getTable(), indexTable);
+        for (TableSource table : requiredTables) {
+            tableSources.put(table.getTable().getTable(), table);
+            table.setGroup(tableGroup);
+        }
+        for (UserTable childTable : new ArrayList<UserTable>(tableSources.keySet())) {
+            TableSource childSource = tableSources.get(childTable);
+            while (true) {
+                Join parentJoin = childTable.getParentJoin();
+                if (parentJoin == null) break;
+                UserTable parentTable = parentJoin.getParent();
+                TableSource parentSource = tableSources.get(parentTable);
+                if (parentSource == null) {
+                    parentSource = new TableSource(tree.addNode(parentTable), true);
+                    tableSources.put(parentTable, parentSource);
+                }
+                TableGroupJoin groupJoin = new TableGroupJoin(tableGroup, 
+                                                              parentSource, childSource,
+                                                              Collections.<ComparisonCondition>emptyList(),
+                                                              parentJoin);
+                childTable = parentTable;
+                childSource = parentSource;
+            }
+        }
+        Map<TableSource,TableGroupJoinTree.TableGroupJoinNode> nodes =
+            new HashMap<TableSource,TableGroupJoinTree.TableGroupJoinNode>();
+        TableGroupJoinTree.TableGroupJoinNode root = null;
+        for (TableSource tableSource : tableSources.values()) {
+            nodes.put(tableSource, new TableGroupJoinTree.TableGroupJoinNode(tableSource));
+        }
+        for (TableGroupJoinTree.TableGroupJoinNode childNode : nodes.values()) {
+            TableSource childSource = childNode.getTable();
+            TableSource parentSource = childSource.getParentTable();
+            if (parentSource == null) {
+                root = childNode;
+                continue;
+            }
+            TableGroupJoinTree.TableGroupJoinNode parentNode = nodes.get(parentSource);
+            childNode.setParent(parentNode);
+            childNode.setNextSibling(parentNode.getFirstChild());
+            parentNode.setFirstChild(childNode);
+        }
+        TableGroupJoinTree joinTree = new TableGroupJoinTree(root);
+        return costEstimator.costFlatten(joinTree, indexTable, 
+                                         new HashSet<TableSource>(requiredTables));
+    }
 
     @Test
     public void testUniformPortion() {
