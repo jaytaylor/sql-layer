@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 import com.akiban.sql.optimizer.rule.costmodel.CostModel;
 import com.akiban.sql.optimizer.rule.costmodel.TableRowCounts;
 import static com.akiban.sql.optimizer.rule.BranchJoiner_CBO.*;
@@ -26,6 +27,7 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Expressions;
@@ -287,19 +289,64 @@ public abstract class CostEstimator implements TableRowCounts
         markBranches(tableGroup, requiredTables);
         long rowCount = 1;
         double cost = 0.0;
+        TableGroupJoinNode startNode = tableGroup.getRoot().findTable(indexTable);
+        List<UserTableRowType> ancestorTypes = new ArrayList<UserTableRowType>();
+        for (TableGroupJoinNode ancestorNode = startNode;
+             null != ancestorNode;
+             ancestorNode = ancestorNode.getParent()) {
+            if (isRequired(ancestorNode) && !isBranchpoint(ancestorNode))
+                ancestorTypes.add(schema.userTableRowType(ancestorNode.getTable().getTable().getTable()));
+        }
+        // Cost to get main branch.
+        cost += model.ancestorLookup(ancestorTypes);
+        for (TableGroupJoinNode branchNode : tableGroup) {
+            if (isBranchpoint(branchNode)) {
+                // Cost to get side branch.
+                cost += model.branchLookup(schema.userTableRowType(branchNode.getTable().getTable().getTable()));
+            }
+        }
+        for (TableGroupJoinNode node : tableGroup) {
+            if (isRequired(node)) {
+                long nrows = branchCardinality(node, startNode);
+                TableGroupJoinNode parentNode = node;
+                while (true) {
+                    parentNode = parentNode.getParent();
+                    if (parentNode == null) break;
+                    if (isRequired(parentNode)) {
+                        // Cost of flattening these children to nearest ancestor.
+                        cost += model.flatten((int)nrows);
+                        break;
+                    }
+                }
+                if (!isParent(node)) {
+                    // Overall row multiplier from branch leaves.
+                    rowCount *= nrows;
+                }
+            }
+        }
+        cost += model.product((int)rowCount);
         return new CostEstimate(rowCount, cost);
     }
 
-    // Branching from the index just has one branchpoint
-    // row. Branching from someplace else has as many as there are per
-    // the common ancestor, which is the immediate parent of the
-    // branchpoint.
-    protected long branchScale(TableSource ftable,
-                               TableSource btable, TableSource indexTable) {
-        return simpleRound(getTableRowCount(ftable.getTable().getTable()),
-                           getTableRowCount((btable == indexTable) ?
-                                            btable.getTable().getTable() :
-                                            btable.getTable().getTable().parentTable()));
+    // Estimate number of rows of given table will occur branching
+    // over from the given start point.
+    protected long branchCardinality(TableGroupJoinNode countNode, 
+                                     TableGroupJoinNode startNode) {
+        for (TableGroupJoinNode node = startNode; null != node; node = node.getParent()) {
+            if (node == countNode)
+                return 1;       // Any ancestor only occurs once.
+        }
+        for (TableGroupJoinNode node = countNode; null != node; node = node.getParent()) {        
+            if (isBranchpoint(node)) {
+                // As many of target as there are per branch point,
+                // times occurrences of branch point.
+                return simpleRound(getTableRowCount(countNode.getTable().getTable().getTable()) *
+                                   branchCardinality(node, startNode),
+                                   getTableRowCount(node.getTable().getTable().getTable()));
+            }
+        }
+        assert false : "Neither ancestor nor beneath branch point";
+        return 1;
     }
 
     /** Estimate the cost of testing some conditions. */

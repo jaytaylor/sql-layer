@@ -109,14 +109,9 @@ public class CostModel
         return (nOuterRows * (nInnerRowsPerOuter + 1)) * MAP_PER_ROW;
     }
     
-    public double flatten(UserTableRowType parentRowType, 
-                          UserTableRowType childRowType, 
-                          int nParents)
+    public double flatten(int nRows)
     {
-        double parentCount = tableRowCounts.getTableRowCount(parentRowType.userTable());
-        double childCount = tableRowCounts.getTableRowCount(childRowType.userTable());
-        long childrenPerParent = round(childCount / parentCount);
-        return FLATTEN_OVERHEAD + nParents * (childrenPerParent * FLATTEN_PER_ROW);
+        return FLATTEN_OVERHEAD + nRows * FLATTEN_PER_ROW;
     }
 
     public double intersect(int nLeftRows, int nRightRows)
