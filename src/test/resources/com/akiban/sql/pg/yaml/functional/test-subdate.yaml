@@ -42,7 +42,7 @@
 - Statement: SELECT SUBDATE(?, 1) from all_types;
 - params: [['1994-01-01']]
 - output: [['1993-12-31']]
-#--- bug : caues PSQLException
+#--- bug : causes PSQLException
 #- Statement: SELECT SUBDATE('2012-02-29', ? ) from all_types;
 #- params: [[3]]
 #- output: [['2012-03-02']]
