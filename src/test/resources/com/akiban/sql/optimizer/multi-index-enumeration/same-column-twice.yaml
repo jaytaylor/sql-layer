@@ -1,0 +1,15 @@
+!!com.akiban.sql.optimizer.MultiIndexEnumeratorTest$TestCase
+usingIndexes:
+    - customers.namekey
+conditionsOn:
+    - customers.name 1
+    - customers.name 2
+combinations:
+    -   outputIndex: customers.namekey
+        outputSkip: 1
+        selectorIndex: customers.namekey
+        selectorSkip: 1
+    -   outputIndex: customers.namekey
+        outputSkip: 1
+        selectorIndex: customers.namekey
+        selectorSkip: 1

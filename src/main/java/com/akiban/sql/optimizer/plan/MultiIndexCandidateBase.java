@@ -47,8 +47,9 @@ public abstract class MultiIndexCandidateBase<C> {
     }
     
     public void pegAll(List<? extends C> conditions) {
-        for (C condition : conditions)
+        for (C condition : conditions) {
             peg(condition, false);
+        }
     }
 
     public boolean anyPegged() {
@@ -82,12 +83,13 @@ public abstract class MultiIndexCandidateBase<C> {
         peg(condition, true);
     }
     
-    private void peg(C condition, boolean checkIfInUnpegged) {
+    public boolean canPeg(C condition) {
         IndexColumn nextToPeg = nextPegColumn();
-        if (nextToPeg == null)
-            throw new IllegalStateException(condition + " can't be pegged to " + this);
-        if (!canBePegged(condition, nextToPeg))
-            throw new IllegalArgumentException(condition + " can't be pegged to " + this);
+        return nextToPeg != null && canBePegged(condition, nextToPeg);
+    }
+    
+    private void peg(C condition, boolean checkIfInUnpegged) {
+        assert canPeg(condition) : "can't peg " + condition;
         pegged.add(condition);
         boolean removedFromUnpegged = unpegged.remove(condition);
         assert (!checkIfInUnpegged) || removedFromUnpegged : condition;

@@ -97,17 +97,21 @@ public abstract class MultiIndexEnumerator<C> {
         boolean nonePegged = true;
         for (Iterator<C> iterator = peggable.iterator(); iterator.hasNext(); ) {
             C condition = iterator.next();
-            MultiIndexCandidateBase<C> newCandidate;
-            if (iterator.hasNext()) {
-                newCandidate = createSeedCandidate(candidate.getIndex(), candidate.getUnpeggedCopy());
-                newCandidate.pegAll(candidate.getPegged());
+            if (candidate.canPeg(condition)) {
+                // If we have any conditions left, we have to copy this candidate so that the next
+                // loop won't see this condition as having been pegged. Otherwise, we can just build with this one.
+                MultiIndexCandidateBase<C> peggedCandidate;
+                if (iterator.hasNext()) {
+                    peggedCandidate = createSeedCandidate(candidate.getIndex(), candidate.getUnpeggedCopy());
+                    peggedCandidate.pegAll(candidate.getPegged());
+                }
+                else {
+                    peggedCandidate = candidate;
+                }
+                peggedCandidate.peg(condition);
+                buildCandidate(peggedCandidate, output);
+                nonePegged = false;
             }
-            else {
-                newCandidate = candidate; // if this is the last condition, just reuse this instance
-            }
-            candidate.peg(condition);
-            buildCandidate(newCandidate, output);
-            nonePegged = false;
         }
         if (nonePegged && candidate.anyPegged()) {
             output.add(candidate);

@@ -64,7 +64,9 @@ public final class MultiIndexEnumeratorTest {
         });
         ParameterizationBuilder pb = new ParameterizationBuilder();
         for (File yaml : yamls) {
-            pb.add(yaml.getName(), yaml, ddl);
+            String name = yaml.getName();
+            name = name.substring(0, (int)(name.length() - ".yaml".length()));
+            pb.add(name, yaml, ddl);
         }
         return pb.asList();
     }
@@ -141,7 +143,8 @@ public final class MultiIndexEnumeratorTest {
             return new MultiIndexCandidateBase<String>(index, conditions) {
                 @Override
                 protected boolean columnsMatch(String condition, Column column) {
-                    return condition.equals(String.valueOf(column));
+                    String firstWord = condition.split("\\s+")[0];
+                    return firstWord.equals(String.valueOf(column));
                 }
             };
         }
