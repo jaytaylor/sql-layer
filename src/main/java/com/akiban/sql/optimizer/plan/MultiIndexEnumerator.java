@@ -50,14 +50,11 @@ public abstract class MultiIndexEnumerator<C> {
             buildCandidate(createSeedCandidate(outerIndex, conditions), outerCandidates);
             for (MultiIndexCandidate<C> outerCandidate : outerCandidates) {
                 if (outerCandidate.anyPegged()) {
-                    C outerLastPegged = outerCandidate.getLastPegged();
                     for (Index innerIndex : indexes) {
                         List<MultiIndexCandidate<C>> innerCandidates = new ArrayList<MultiIndexCandidate<C>>();
                         buildCandidate(createSeedCandidate(innerIndex, conditions), innerCandidates);
                         for (MultiIndexCandidate<C> innerCandidate : innerCandidates) {
-                            if (!outerLastPegged.equals(innerCandidate.getLastPegged())) {
-                                emit(outerCandidate, innerCandidate, results);
-                            }
+                            emit(outerCandidate, innerCandidate, results);
                         }
                     }
                 }

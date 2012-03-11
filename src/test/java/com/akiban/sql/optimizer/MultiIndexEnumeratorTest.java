@@ -106,6 +106,8 @@ public final class MultiIndexEnumeratorTest {
             addIndexes(group.getIndexes(), results, usingIndexes);
             tableIndexes(group.getGroupTable().getRoot(), results, usingIndexes);
         }
+        if (!usingIndexes.isEmpty())
+            throw new RuntimeException("unknown index(es): " + usingIndexes);
         return results;
     }
     
@@ -120,7 +122,7 @@ public final class MultiIndexEnumeratorTest {
     private void addIndexes(Collection<? extends Index> indexes, List<Index> output, Set<String> filter) {
         for (Index index : indexes) {
             String indexName = indexToString(index);
-            if (filter.contains(indexName))
+            if (filter.remove(indexName))
                 output.add(index);
         }
     }
