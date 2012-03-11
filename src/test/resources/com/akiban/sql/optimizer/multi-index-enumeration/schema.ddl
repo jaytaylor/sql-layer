@@ -20,17 +20,12 @@ CREATE TABLE orders(
 
 CREATE INDEX odatekey ON orders(odate);
 
-CREATE TABLE items(
-    id INT NOT NULL,
-    PRIMARY KEY(id),
-    oid INT,
-    GROUPING FOREIGN KEY(oid) REFERENCES orders(id),
-    name VARCHAR(256) NOT NULL
-);
-
 CREATE TABLE addresses(
     id INT NOT NULL,
     PRIMARY KEY(id),
     cid INT,
-    GROUPING FOREIGN KEY(cid) REFERENCES customers(id)
+    GROUPING FOREIGN KEY(cid) REFERENCES customers(id),
+    street VARCHAR (32) NOT NULL
 );
+
+CREATE INDEX streetkey ON addresses(street);
