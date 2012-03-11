@@ -6,10 +6,10 @@ conditionsOn:
     - customers.name 2
 combinations:
     -   outputIndex: customers.namekey
-        outputSkip: 1
+        outputSkip: [customers.name 1]
         selectorIndex: customers.namekey
-        selectorSkip: 1
+        selectorSkip: [customers.name 2]
     -   outputIndex: customers.namekey
-        outputSkip: 1
+        outputSkip: [customers.name 2]
         selectorIndex: customers.namekey
-        selectorSkip: 1
+        selectorSkip: [customers.name 1]

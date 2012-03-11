@@ -8,10 +8,10 @@ conditionsOn:
     - customers.vipstatus
 combinations:
     -   outputIndex: customers.name_yob
-        outputSkip: 2
+        outputSkip: [customers.name, customers.yob]
         selectorIndex: customers.name_vipstatus
-        selectorSkip: 2
+        selectorSkip: [customers.name, customers.vipstatus]
     -   outputIndex: customers.name_vipstatus
-        outputSkip: 2
+        outputSkip: [customers.name, customers.vipstatus]
         selectorIndex: customers.name_yob
-        selectorSkip: 2
+        selectorSkip: [customers.name, customers.yob]

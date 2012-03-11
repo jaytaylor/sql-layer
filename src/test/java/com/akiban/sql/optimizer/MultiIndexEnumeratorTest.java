@@ -65,7 +65,7 @@ public final class MultiIndexEnumeratorTest {
         ParameterizationBuilder pb = new ParameterizationBuilder();
         for (File yaml : yamls) {
             String name = yaml.getName();
-            name = name.substring(0, (int)(name.length() - ".yaml".length()));
+            name = name.substring(0, name.length() - ".yaml".length());
             pb.add(name, yaml, ddl);
         }
         return pb.asList();
@@ -86,15 +86,18 @@ public final class MultiIndexEnumeratorTest {
             
             MultiIndexCandidateBase<String> output = elem.getOutputIndex();
             combo.setOutputIndex(output.getIndex());
-            combo.setOutputSkip(output.getPegged().size());
+            combo.setOutputSkip(output.getPegged());
 
             MultiIndexCandidateBase<String> selector = elem.getSelectorIndex();
             combo.setSelectorIndex(selector.getIndex());
-            combo.setSelectorSkip(selector.getPegged().size());
+            combo.setSelectorSkip(selector.getPegged());
 
             actual.add(combo);
         }
-        AssertUtils.assertCollectionEquals("enumerations", tc.getCombinations(), actual);
+        List<Combination> combinations = tc.getCombinations();
+        Collections.sort(combinations);
+        Collections.sort(actual);
+        AssertUtils.assertCollectionEquals("enumerations", combinations, actual);
     }
 
     private List<Index> allIndexes(AkibanInformationSchema ais, Set<String> usingIndexes) {
@@ -208,8 +211,8 @@ public final class MultiIndexEnumeratorTest {
     public static class Combination implements Comparable<Combination> {
         public String outputIndex;
         public String selectorIndex;
-        public int outputSkip;
-        public int selectorSkip;
+        public List<String> outputSkip;
+        public List<String> selectorSkip;
 
         public String getOutputIndex() {
             return outputIndex;
@@ -235,25 +238,25 @@ public final class MultiIndexEnumeratorTest {
             this.selectorIndex = selectorIndex;
         }
 
-        public int getOutputSkip() {
+        public List<String> getOutputSkip() {
             return outputSkip;
         }
 
-        public void setOutputSkip(int outputSkip) {
+        public void setOutputSkip(List<String> outputSkip) {
             this.outputSkip = outputSkip;
         }
 
-        public int getSelectorSkip() {
+        public List<String> getSelectorSkip() {
             return selectorSkip;
         }
 
-        public void setSelectorSkip(int selectorSkip) {
+        public void setSelectorSkip(List<String> selectorSkip) {
             this.selectorSkip = selectorSkip;
         }
 
         @Override
         public String toString() {
-            return String.format("(output <skip %d from %s> selector: <skip %d from %s>)",
+            return String.format("(output <skip %s from %s> selector: <skip %s from %s>)",
                     getOutputSkip(),
                     getOutputIndex(),
                     getSelectorSkip(),
@@ -268,7 +271,8 @@ public final class MultiIndexEnumeratorTest {
 
             Combination that = (Combination) o;
 
-            return outputSkip == that.outputSkip && selectorSkip == that.selectorSkip
+            return outputSkip.equals(that.outputSkip)
+                    && selectorSkip.equals(that.selectorSkip)
                     && outputIndex.equals(that.outputIndex)
                     && selectorIndex.equals(that.selectorIndex);
         }
@@ -277,8 +281,8 @@ public final class MultiIndexEnumeratorTest {
         public int hashCode() {
             int result = outputIndex.hashCode();
             result = 31 * result + selectorIndex.hashCode();
-            result = 31 * result + outputSkip;
-            result = 31 * result + selectorSkip;
+            result = 31 * result + outputSkip.hashCode();
+            result = 31 * result + selectorSkip.hashCode();
             return result;
         }
 
@@ -290,11 +294,14 @@ public final class MultiIndexEnumeratorTest {
             cmp = getSelectorIndex().compareTo(o.getSelectorIndex());
             if (cmp != 0)
                 return cmp;
-            cmp = getOutputSkip() - o.getOutputSkip();
+            cmp = compare(getOutputSkip(), o.getOutputSkip());
             if (cmp != 0)
                 return cmp;
-            cmp = getSelectorSkip() - o.getSelectorSkip();
-            return cmp;
+            return compare(getSelectorSkip(), o.getSelectorSkip());
+        }
+
+        private int compare(List<String> list1, List<String> list2) {
+            return String.valueOf(list1).compareTo(String.valueOf(list2));
         }
     }
 }

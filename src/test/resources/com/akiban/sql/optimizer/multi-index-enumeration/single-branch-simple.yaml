@@ -7,6 +7,6 @@ conditionsOn:
     - orders.odate
 combinations:
     -   outputIndex: orders.odatekey
-        outputSkip: 1
+        outputSkip: [orders.odate]
         selectorIndex: customers.namekey
-        selectorSkip: 1
+        selectorSkip: [customers.name]
