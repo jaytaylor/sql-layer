@@ -54,11 +54,13 @@ public abstract class MultiIndexCandidateBase<S> {
     public Collection<S> findPeggable() {
         List<S> results = null;
         IndexColumn nextToPeg = nextPegColumn();
-        for (S condition : unpegged) {
-            if (canBePegged(condition, nextToPeg)) {
-                if (results == null)
-                    results = new ArrayList<S>(unpegged.size());
-                results.add(condition);
+        if (nextToPeg != null) {
+            for (S condition : unpegged) {
+                if (canBePegged(condition, nextToPeg)) {
+                    if (results == null)
+                        results = new ArrayList<S>(unpegged.size());
+                    results.add(condition);
+                }
             }
         }
         return results == null ? Collections.<S>emptyList() : results;
@@ -72,8 +74,10 @@ public abstract class MultiIndexCandidateBase<S> {
         peg(condition, true);
     }
     
-    public void peg(S condition, boolean checkIfInUnpegged) {
+    private void peg(S condition, boolean checkIfInUnpegged) {
         IndexColumn nextToPeg = nextPegColumn();
+        if (nextToPeg == null)
+            throw new IllegalStateException(condition + " can't be pegged to " + this);
         if (!canBePegged(condition, nextToPeg))
             throw new IllegalArgumentException(condition + " can't be pegged to " + this);
         pegged.add(condition);
@@ -88,7 +92,7 @@ public abstract class MultiIndexCandidateBase<S> {
     private IndexColumn nextPegColumn() {
         int alreadyPegged = pegged.size();
         if (alreadyPegged >= index.getKeyColumns().size())
-            throw new IllegalStateException("all index conditions are already pegged");
+            return null;
         return index.getKeyColumns().get(alreadyPegged);
     }
     
