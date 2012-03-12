@@ -23,6 +23,8 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.store.statistics.IndexStatistics;
 import static com.akiban.server.store.statistics.IndexStatistics.*;
+import static java.lang.Math.round;
+
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.persistit.Key;
@@ -63,7 +65,18 @@ public abstract class CostEstimator
     public CostEstimate costIndexScan(Index index,
                                       List<ExpressionNode> equalityComparands,
                                       ExpressionNode lowComparand, boolean lowInclusive,
-                                      ExpressionNode highComparand, boolean highInclusive) {
+                                      ExpressionNode highComparand, boolean highInclusive)
+    {
+        return 
+            System.getProperty("costIndexScan", "old").equals("new")
+            ? costIndexScanNew(index, equalityComparands, lowComparand, lowInclusive, highComparand, highInclusive)
+            : costIndexScanOld(index, equalityComparands, lowComparand, lowInclusive, highComparand, highInclusive);
+    }
+
+    public CostEstimate costIndexScanOld(Index index,
+                                         List<ExpressionNode> equalityComparands,
+                                         ExpressionNode lowComparand, boolean lowInclusive,
+                                         ExpressionNode highComparand, boolean highInclusive) {
         if (index.isUnique()) {
             if ((equalityComparands != null) &&
                 (equalityComparands.size() == index.getKeyColumns().size())) {
@@ -127,10 +140,10 @@ public abstract class CostEstimator
     }
 
     /** Estimate cost of scanning from this index. */
-    public CostEstimate costIndexScan2(Index index,
-                                       List<ExpressionNode> equalityComparands,
-                                       ExpressionNode lowComparand, boolean lowInclusive,
-                                       ExpressionNode highComparand, boolean highInclusive) {
+    public CostEstimate costIndexScanNew(Index index,
+                                         List<ExpressionNode> equalityComparands,
+                                         ExpressionNode lowComparand, boolean lowInclusive,
+                                         ExpressionNode highComparand, boolean highInclusive) {
         if (index.isUnique()) {
             if ((equalityComparands != null) &&
                 (equalityComparands.size() == index.getKeyColumns().size())) {
@@ -175,7 +188,7 @@ public abstract class CostEstimator
         //    statistics, which may be stale.
         // rowCount: Approximate number of rows in the table, reasonably up to date.
         long statsCount = rowsInTableAccordingToIndex(indexedTable, indexStatsArray);
-        long nrows = Math.max(1, (long) (selectivity * statsCount));
+        long nrows = Math.max(1, round(selectivity * statsCount));
         if (scaleCount)
             nrows = simpleRound((nrows * rowCount), statsCount);
         return indexAccessCost(nrows, index);
@@ -276,47 +289,51 @@ public abstract class CostEstimator
                                    Index index, 
                                    IndexStatistics[] indexStatsArray) {
         double selectivity = 1.0;
+        keyTarget.attach(key);
         for (int column = 0; column < eqExpressions.size(); column++) {
-            selectivity *= fractionEqual(eqExpressions.get(column), index, indexStatsArray, column);
+            ExpressionNode node = eqExpressions.get(column);
+            key.clear();
+            // encodeKeyValue evaluates to true iff node is a constant expression. key is initialized as a side-effect.
+            byte[] columnValue = encodeKeyValue(node, index, column) ? keyCopy() : null;
+            selectivity *= fractionEqual(indexStatsArray, column, columnValue);
         }
         return selectivity;
     }
     
-    protected double fractionEqual(ExpressionNode node,
-                                   Index index, 
-                                   IndexStatistics[] indexStatsArray,
-                                   int column) {
+    protected double fractionEqual(IndexStatistics[] indexStatsArray, int column, byte[] columnValue) {
         IndexStatistics indexStats = indexStatsArray[column];
         if (indexStats == null) {
             // Assume the worst about index selectivity. Not sure this is wise.
             return 1.0;
         } else {
             Histogram histogram = indexStats.getHistogram(1);
-            // TODO: Could use Collections.binarySearch if we had something that looked like a HistogramEntry.
-            List<HistogramEntry> entries = histogram.getEntries();
-            for (HistogramEntry entry : entries) {
-                key.clear();
-                if (encodeKeyValue(node, index, column)) {
+            if (columnValue == null) {
+                // Variable expression. Use average selectivity for histogram.
+                return
+                    mostlyDistinct(indexStats)
+                    ? 0
+                    : ((double) histogram.totalDistinctCount()) / indexStats.getRowCount();
+            } else {
+                // TODO: Could use Collections.binarySearch if we had something that looked like a HistogramEntry.
+                List<HistogramEntry> entries = histogram.getEntries();
+                for (HistogramEntry entry : entries) {
                     // Constant expression
-                    int compare = bytesComparator.compare(key.getEncodedBytes(), entry.getKeyBytes());
+                    int compare = bytesComparator.compare(columnValue, entry.getKeyBytes());
                     if (compare == 0) {
                         return ((double) entry.getEqualCount()) / indexStats.getRowCount();
                     } else if (compare < 0) {
                         long d = entry.getDistinctCount();
                         return d == 0 ? 0.0 : ((double) entry.getLessCount()) / (d * indexStats.getRowCount());
                     }
-                } else {
-                    // Variable expression. Use average selectivity for histogram.
-                    return ((double) histogram.totalDistinctCount()) / indexStats.getRowCount();
                 }
+                HistogramEntry lastEntry = entries.get(entries.size() - 1);
+                long d = lastEntry.getDistinctCount();
+                if (d == 0) {
+                    return 1;
+                }
+                d++;
+                return ((double) lastEntry.getLessCount()) / (d * indexStats.getRowCount());
             }
-            HistogramEntry lastEntry = entries.get(entries.size() - 1);
-            long d = lastEntry.getDistinctCount();
-            if (d == 0) {
-                return 1;
-            }
-            d++;
-            return ((double) lastEntry.getLessCount()) / (d * indexStats.getRowCount());
         }
     }
 
@@ -328,6 +345,7 @@ public abstract class CostEstimator
             // Assume the worst
             return 1.0;
         }
+        keyTarget.attach(key);
         key.clear();
         byte[] loBytes = encodeKeyValue(lo, indexStats.index(), 0) ? keyCopy() : null;
         key.clear();
@@ -385,20 +403,25 @@ public abstract class CostEstimator
 
 
     // Must be provably mostly distinct: Every histogram is available and mostly distinct.
-    protected boolean mostlyDistinct(IndexStatistics[] indexStatsArray)
+    private boolean mostlyDistinct(IndexStatistics[] indexStatsArray)
     {
         for (IndexStatistics indexStats : indexStatsArray) {
             if (indexStats == null) {
                 return false;
             } else {
                 Histogram histogram = indexStats.getHistogram(1);
-                if (histogram.totalDistinctCount() * 10 < indexStats.getRowCount() * 9) {
+                if (!mostlyDistinct(indexStats)) {
                     // < 90% distinct
                     return false;
                 }
             }
         }
         return true;
+    }
+
+    private boolean mostlyDistinct(IndexStatistics indexStats)
+    {
+        return indexStats.getHistogram(1).totalDistinctCount() * 10 > indexStats.getRowCount() * 9;
     }
 
     /** Assuming that byte strings are uniformly distributed, what

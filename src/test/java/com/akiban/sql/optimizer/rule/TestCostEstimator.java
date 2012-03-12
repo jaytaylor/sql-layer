@@ -15,9 +15,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Table;
+import com.akiban.ais.model.*;
 
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsYamlLoader;
@@ -29,11 +27,13 @@ import java.io.IOException;
 
 public class TestCostEstimator extends CostEstimator
 {
+    private final AkibanInformationSchema ais;
     private final Map<Index,IndexStatistics> stats;
 
     public TestCostEstimator(AkibanInformationSchema ais, String defaultSchema,
                              File statsFile) 
             throws IOException {
+        this.ais = ais;
         if (statsFile == null)
             stats = Collections.<Index,IndexStatistics>emptyMap();
         else
@@ -48,8 +48,37 @@ public class TestCostEstimator extends CostEstimator
     @Override
     public IndexStatistics[] getIndexColumnStatistics(Index index)
     {
-        // TODO: This isn't going to work very well for testing
-        throw new UnsupportedOperationException();
+        // Adapter from IndexStatisticsServiceImpl.getIndexCollumnStatistics
+        IndexStatistics[] indexStatsArray = new IndexStatistics[index.getKeyColumns().size()];
+        int i = 0;
+        for (IndexColumn indexColumn : index.getKeyColumns()) {
+            IndexStatistics indexStatistics = null;
+            Column leadingColumn = indexColumn.getColumn();
+            // Find a TableIndex whose first column is leadingColumn
+            for (TableIndex tableIndex : leadingColumn.getTable().getIndexes()) {
+                if (tableIndex.getKeyColumns().get(0).getColumn() == leadingColumn) {
+                    indexStatistics = getIndexStatistics(tableIndex);
+                    if (indexStatistics != null) {
+                        break;
+                    }
+                }
+            }
+            // If none, find a GroupIndex whose first column is leadingColumn
+            if (indexStatistics == null) {
+                groupLoop: for (Group group : ais.getGroups().values()) {
+                    for (GroupIndex groupIndex : group.getIndexes()) {
+                        if (groupIndex.getKeyColumns().get(0).getColumn() == leadingColumn) {
+                            indexStatistics = getIndexStatistics(groupIndex);
+                            if (indexStatistics != null) {
+                                break groupLoop;
+                            }
+                        }
+                    }
+                }
+            }
+            indexStatsArray[i++] = getIndexStatistics(index);
+        }
+        return indexStatsArray;
     }
 
     @Override
