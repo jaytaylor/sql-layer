@@ -5,12 +5,4 @@ usingIndexes:
 conditionsOn:
     - customers.name 1
     - customers.name 2
-combinations:
-    -   outputIndex: customers.namekey
-        outputSkip: [customers.name 1]
-        selectorIndex: customers.namekey
-        selectorSkip: [customers.name 2]
-    -   outputIndex: customers.namekey
-        outputSkip: [customers.name 2]
-        selectorIndex: customers.namekey
-        selectorSkip: [customers.name 1]
+isError: true
