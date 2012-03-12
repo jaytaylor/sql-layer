@@ -18,15 +18,11 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.server.rowdata.RowDef;
 import com.akiban.util.Equality;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * <p>A struct + builder for the combination of an Index and a set of conditions against which that index is pegged.
@@ -34,100 +30,76 @@ import java.util.Set;
  * a given condition matches a given column; the rest of the logic doesn't depend on what the condition is.</p>
  *
  * <p>The expectation is that there are two subclasses of this: one for unit testing, and one for production.</p>
+ *
+ * <p>A pegged condition is one which has been assigned to a column of the MultiIndexCandidate's Index; it will
+ * eventually turn into a predicate on the index scan. For instance, say we had an index
+ * <code>c_idx ON customers(name, dob)</code>. The index's full columns list is <code>[name, dob, cid]</code>, and each
+ * one of those columns represents a slot into which a condition can be pegged. For instance, given the conditions
+ * <code>{name="Bob", dob="1971-02-03"}</code>, we could expect this MultiIndexCandidates:</p>
+ * <table border="1">
+ *     <tr><th>name</th><th>dob</th><th>cid</th></tr>
+ *     <tr><td>pegged to "Bob"</td><td>pegged to "1971-02-03"</td><td>unpegged</td></tr>
+ * </table>
  * @param <C> the condition type.
  */
-public abstract class MultiIndexCandidate<C> {
+public class MultiIndexCandidate<C> {
     private Index index;
     private List<C> pegged;
-    private Set<C> unpegged;
 
-    public MultiIndexCandidate(Index index, Collection<C> conditions) {
+    public MultiIndexCandidate(Index index) {
         this.index = index;
         pegged = new ArrayList<C>(index.getKeyColumns().size());
-        unpegged = new HashSet<C>(conditions);
-    }
-    
-    public void pegAll(List<? extends C> conditions) {
-        for (C condition : conditions) {
-            peg(condition, false);
-        }
     }
 
     public boolean anyPegged() {
         return ! pegged.isEmpty();
     }
-    
-    public Set<C> getUnpeggedCopy() {
-        return new HashSet<C>(unpegged);
-    }
-    
-    public Collection<C> findPeggable() {
-        List<C> results = null;
-        IndexColumn nextToPeg = nextPegColumn();
-        if (nextToPeg != null) {
-            for (C condition : unpegged) {
-                if (canBePegged(condition, nextToPeg)) {
-                    if (results == null)
-                        results = new ArrayList<C>(unpegged.size());
-                    results.add(condition);
-                }
-            }
-        }
-        return results == null ? Collections.<C>emptyList() : results;
-    }
-    
-    public List<Column> getUnpeggedColumns() {
-        int startAt = pegged.size();
-        int endAt = index.indexRowComposition().getLength();
-        if (endAt - startAt == 0)
-            return Collections.emptyList();
-        List<Column> results = new ArrayList<Column>(endAt - startAt);
-        RowDef rowDef = index.indexDef().getRowDef();
-        for (int i = startAt; i < endAt; ++i) {
-            int fieldPos = index.indexRowComposition().getFieldPosition(i);
-            Column column = rowDef.getFieldDef(fieldPos).column();
-            results.add(column);
-        }
-        return results;
-//        indexes.get(1).indexDef().getRowDef().getFieldDef(indexes.get(1).indexRowComposition().getFieldPosition(0))
-    }
 
-    public List<C> getPegged() {
-        return pegged;
+    public Column getNextFreeColumn() {
+        int nextFreeIndex = pegged.size();
+        List<IndexColumn> columns = index.getKeyColumns();
+        if (nextFreeIndex >= columns.size()) {
+            nextFreeIndex -= columns.size();
+            columns = index.getValueColumns();
+        }
+        return nextFreeIndex >= columns.size()
+            ? null
+            : columns.get(nextFreeIndex).getColumn();
     }
     
     public void peg(C condition) {
-        peg(condition, true);
-    }
-    
-    public boolean canPeg(C condition) {
-        IndexColumn nextToPeg = nextPegColumn();
-        return nextToPeg != null && canBePegged(condition, nextToPeg);
-    }
-    
-    private void peg(C condition, boolean checkIfInUnpegged) {
-        assert canPeg(condition) : "can't peg " + condition;
         pegged.add(condition);
-        boolean removedFromUnpegged = unpegged.remove(condition);
-        assert (!checkIfInUnpegged) || removedFromUnpegged : condition;
+    }
+    
+    public List<C> getPegged() {
+        return pegged;
     }
 
     public Index getIndex() {
         return index;
     }
 
-    private IndexColumn nextPegColumn() {
-        int alreadyPegged = pegged.size();
-        if (alreadyPegged >= index.getKeyColumns().size())
-            return null;
-        return index.getKeyColumns().get(alreadyPegged);
-    }
-    
-    protected abstract boolean columnsMatch(C condition, Column column);
+    public List<Column> getUnpeggedColumns() {
+        List<IndexColumn> keyColumns = index.getKeyColumns();
+        List<IndexColumn> valueColumns = index.getValueColumns();
 
-    private boolean canBePegged(C condition, IndexColumn nextToPeg) {
-        Column nextToPegColumn = nextToPeg.getColumn();
-        return columnsMatch(condition, nextToPegColumn);
+        int startAt = pegged.size();
+        int endAt = keyColumns.size() + valueColumns.size();
+        if (endAt - startAt == 0)
+            return Collections.emptyList();
+
+        List<Column> results = new ArrayList<Column>(endAt - startAt);
+        int offset = 0;
+        List<IndexColumn> indexColumnList = keyColumns;
+        for (int i = startAt; i < endAt; ++i) {
+            if (indexColumnList == keyColumns && i >= keyColumns.size()) {
+                offset = keyColumns.size();
+                indexColumnList = valueColumns;
+            }
+            Column column = indexColumnList.get(i - offset).getColumn();
+            results.add(column);
+        }
+        return results;
     }
 
     @Override
@@ -156,11 +128,5 @@ public abstract class MultiIndexCandidate<C> {
         int result = index.hashCode();
         result = 31 * result + (pegged != null ? pegged.hashCode() : 0);
         return result;
-    }
-
-    public C getLastPegged() {
-        if (pegged == null || pegged.isEmpty())
-            throw new IllegalStateException("nothing pegged");
-        return pegged.get(pegged.size()-1);
     }
 }

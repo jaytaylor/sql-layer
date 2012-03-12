@@ -21,13 +21,16 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.sql.optimizer.rule.EquivalenceFinder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -38,35 +41,69 @@ import java.util.Set;
  * creating an empty {@link MultiIndexCandidate}. Also like that class, the expectation is that there will be two
  * subclasses for this class: one for unit testing, and one for production.</p>
  * 
- * <p>This class does not hold any state, and if it weren't for {@linkplain #createSeedCandidate(Index, Set)}</p>, all
+ * <p>This class does not hold any state, and if it weren't for {@linkplain #columnFromCondition(Object)}</p>, all
  * of its methods could be static. It's safe to create a singleton instance for use across threads.</p>
  * @param <C> the condition type.
  */
 public abstract class MultiIndexEnumerator<C> {
-
-    protected abstract MultiIndexCandidate<C> createSeedCandidate(Index index, Set<C> conditions);
+    
+    Logger log = LoggerFactory.getLogger(MultiIndexEnumerator.class);
+    
+    protected abstract Column columnFromCondition(C condition);
     
     public Collection<MultiIndexPair<C>> get(Collection<? extends Index> indexes, Set<C> conditions,
                                              EquivalenceFinder<Column> columnEquivalences)
     {
-        // note: "inner" and "outer" here refer only to these loops, nothing more.
+        Map<Column,C> colsToConds = new HashMap<Column,C>(conditions.size());
+        for (C cond : conditions) {
+            Column column = columnFromCondition(cond);
+            if (column == null) {
+                log.warn("couldn't map <{}> to Column", cond);
+                continue;
+            }
+            C old = colsToConds.put(column, cond);
+            if (old != null) {
+                handleDuplicateCondition(); // test hook
+                return null;
+            }
+        }
+        
         Set<MultiIndexPair<C>> results = new HashSet<MultiIndexPair<C>>();
+        Map<Index,MultiIndexCandidate<C>> indexToCandidate = new HashMap<Index, MultiIndexCandidate<C>>(indexes.size());
+        for (Index index : indexes) {
+            MultiIndexCandidate<C> candidate = createCandidate(index, colsToConds);
+            if (candidate.anyPegged())
+                indexToCandidate.put(index, candidate);
+        }
+
+        // note: "inner" and "outer" here refer only to these loops, nothing more.
         for (Index outerIndex : indexes) {
-            List<MultiIndexCandidate<C>> outerCandidates = new ArrayList<MultiIndexCandidate<C>>();
-            buildCandidate(createSeedCandidate(outerIndex, conditions), outerCandidates);
-            for (MultiIndexCandidate<C> outerCandidate : outerCandidates) {
-                if (outerCandidate.anyPegged()) {
-                    for (Index innerIndex : indexes) {
-                        List<MultiIndexCandidate<C>> innerCandidates = new ArrayList<MultiIndexCandidate<C>>();
-                        buildCandidate(createSeedCandidate(innerIndex, conditions), innerCandidates);
-                        for (MultiIndexCandidate<C> innerCandidate : innerCandidates) {
-                            emit(outerCandidate, innerCandidate, results, columnEquivalences);
-                        }
-                    }
+            for (Index innerIndex : indexes) {
+                if (outerIndex != innerIndex) {
+                    MultiIndexCandidate<C> outerCandidate = indexToCandidate.get(outerIndex);
+                    MultiIndexCandidate<C> innerCandidate = indexToCandidate.get(innerIndex);
+                    emit(outerCandidate, innerCandidate, results, columnEquivalences);
                 }
             }
         }
         return results;
+    }
+
+    protected void handleDuplicateCondition() {
+    }
+
+    private MultiIndexCandidate<C> createCandidate(Index index, Map<Column, C> colsToConds) {
+        MultiIndexCandidate<C> result = new MultiIndexCandidate<C>(index);
+        while(true) {
+            Column nextCol = result.getNextFreeColumn();
+            if (nextCol == null)
+                break;
+            C condition = colsToConds.get(nextCol);
+            if (condition == null)
+                break;
+            result.peg(condition);
+        }
+        return result;
     }
 
     private void emit(MultiIndexCandidate<C> first, MultiIndexCandidate<C> second,
@@ -137,33 +174,6 @@ public abstract class MultiIndexEnumerator<C> {
                 break;
         }
         return results;
-    }
-
-    private void buildCandidate(MultiIndexCandidate<C> candidate, Collection<MultiIndexCandidate<C>> output)
-    {
-        Collection<C> peggable = candidate.findPeggable();
-        boolean nonePegged = true;
-        for (Iterator<C> iterator = peggable.iterator(); iterator.hasNext(); ) {
-            C condition = iterator.next();
-            if (candidate.canPeg(condition)) {
-                // If we have any conditions left, we have to copy this candidate so that the next
-                // loop won't see this condition as having been pegged. Otherwise, we can just build with this one.
-                MultiIndexCandidate<C> peggedCandidate;
-                if (iterator.hasNext()) {
-                    peggedCandidate = createSeedCandidate(candidate.getIndex(), candidate.getUnpeggedCopy());
-                    peggedCandidate.pegAll(candidate.getPegged());
-                }
-                else {
-                    peggedCandidate = candidate;
-                }
-                peggedCandidate.peg(condition);
-                buildCandidate(peggedCandidate, output);
-                nonePegged = false;
-            }
-        }
-        if (nonePegged && candidate.anyPegged()) {
-            output.add(candidate);
-        }
     }
 
     public static class MultiIndexPair<C> {

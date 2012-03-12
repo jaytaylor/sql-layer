@@ -23,11 +23,14 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.UserTable;
 import com.akiban.junit.NamedParameterizedRunner;
+import com.akiban.junit.OnlyIf;
+import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.sql.optimizer.plan.MultiIndexCandidate;
 import com.akiban.sql.optimizer.plan.MultiIndexEnumerator;
+import com.akiban.sql.optimizer.plan.MultiIndexEnumerator.MultiIndexPair;
 import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 import com.akiban.util.AssertUtils;
 import com.akiban.util.Strings;
@@ -74,19 +77,9 @@ public final class MultiIndexEnumeratorTest {
         return pb.asList();
     }
     
-    @Test
-    public void test() throws IOException {
-        SchemaFactory factory = new SchemaFactory(DEFAULT_SCHEMA);
-        AkibanInformationSchema ais = factory.ais(ddl);
-        factory.rowDefCache(ais); // set up indx row compositions
-
-        TestCase tc = (TestCase) new Yaml().load(new FileReader(yaml));
-        List<Index> indexes = allIndexes(ais, tc.getUsingIndexes());
-        Set<String> conditions = new HashSet<String>(tc.getConditionsOn());
-        EquivalenceFinder<Column> columnEquivalences = innerJoinEquivalencies(ais);
-        addExtraEquivalencies(tc.getExtraEquivalencies(), ais, columnEquivalences);
-        Collection<MultiIndexEnumerator.MultiIndexPair<String>> enumerated
-                = enumerator.get(indexes, conditions, columnEquivalences);
+    @Test @OnlyIfNot("expectException")
+    public void combinations() throws IOException {
+        Collection<MultiIndexPair<String>> enumerated = getEnumerations();
         List<Combination> actual = new ArrayList<Combination>(enumerated.size());
         for (MultiIndexEnumerator.MultiIndexPair<String> elem : enumerated) {
             Combination combo = new Combination();
@@ -107,6 +100,23 @@ public final class MultiIndexEnumeratorTest {
         AssertUtils.assertCollectionEquals("enumerations", combinations, actual);
     }
 
+    @Test(expected = DuplicateConditionException.class) @OnlyIf("expectException")
+    public void expectError() {
+        getEnumerations();
+    }
+
+    private Collection<MultiIndexPair<String>> getEnumerations() {
+        SchemaFactory factory = new SchemaFactory(DEFAULT_SCHEMA);
+        AkibanInformationSchema ais = factory.ais(ddl);
+        factory.rowDefCache(ais); // set up indx row compositions
+
+        List<Index> indexes = allIndexes(ais, tc.getUsingIndexes());
+        Set<String> conditions = new HashSet<String>(tc.getConditionsOn());
+        EquivalenceFinder<Column> columnEquivalences = innerJoinEquivalencies(ais);
+        addExtraEquivalencies(tc.getExtraEquivalencies(), ais, columnEquivalences);
+        return new StringConditionEnumerator(ais).get(indexes, conditions, columnEquivalences);
+    }
+
     private void addExtraEquivalencies(Map<String, String> equivMap, AkibanInformationSchema ais,
                                        EquivalenceFinder<Column> output)
     {
@@ -119,10 +129,10 @@ public final class MultiIndexEnumeratorTest {
         }
     }
 
-    private Column findColumn(String qualifiedName, AkibanInformationSchema ais) {
+    private static Column findColumn(String qualifiedName, AkibanInformationSchema ais) {
         String[] split = qualifiedName.split("\\.", 2);
         String tableName = split[0];
-        String colName = split[1];
+        String colName = split[1].split("\\s+")[0];
         UserTable table = ais.getUserTable(DEFAULT_SCHEMA, tableName);
         Column column = table.getColumn(colName);
         if (column == null)
@@ -181,26 +191,36 @@ public final class MultiIndexEnumeratorTest {
         );
     }
 
-    public MultiIndexEnumeratorTest(File yaml, String[] ddl) {
-        this.yaml = yaml;
+    public MultiIndexEnumeratorTest(File yaml, String[] ddl) throws IOException {
+        tc = (TestCase) new Yaml().load(new FileReader(yaml));
         this.ddl = ddl;
+        this.expectException = tc.isError();
     }
     
-    private File yaml;
     private String[] ddl;
+    private TestCase tc;
+    public final boolean expectException;
     
-    private static MultiIndexEnumerator<String> enumerator = new MultiIndexEnumerator<String>() {
+    private static class StringConditionEnumerator extends MultiIndexEnumerator<String> {
+
         @Override
-        protected MultiIndexCandidate<String> createSeedCandidate(Index index, Set<String> conditions) {
-            return new MultiIndexCandidate<String>(index, conditions) {
-                @Override
-                protected boolean columnsMatch(String condition, Column column) {
-                    String firstWord = condition.split("\\s+")[0];
-                    return firstWord.equals(String.valueOf(column));
-                }
-            };
+        protected Column columnFromCondition(String condition) {
+            return findColumn(condition, ais);
         }
-    };
+
+        @Override
+        protected void handleDuplicateCondition() {
+            throw new DuplicateConditionException();
+        }
+
+        private StringConditionEnumerator(AkibanInformationSchema ais) {
+            this.ais = ais;
+        }
+
+        private AkibanInformationSchema ais;
+    }
+    
+    private static class DuplicateConditionException extends RuntimeException {}
 
     @SuppressWarnings("unused") // getters and setters used by yaml reflection
     public static class TestCase {
@@ -208,7 +228,16 @@ public final class MultiIndexEnumeratorTest {
         public Set<String> conditionsOn;
         public List<Combination> combinations;
         public Map<String,String> extraEquivalencies = Collections.emptyMap();
+        public boolean isError = false;
 
+        public void setError() {
+            isError = true;
+        }
+
+        public boolean isError() {
+            return isError;
+        }
+        
         public Set<String> getConditionsOn() {
             return conditionsOn;
         }
@@ -244,7 +273,12 @@ public final class MultiIndexEnumeratorTest {
 
         @Override
         public String toString() {
-            return String.format("conditions: %s, combinations: %s", conditionsOn, combinations);
+            StringBuilder sb = new StringBuilder("conditions: ").append(conditionsOn).append(", ");
+            if (isError)
+                sb.append("isError=true");
+            else
+                sb.append("combinations: ").append(combinations);
+            return sb.toString();
         }
 
         @Override
@@ -254,7 +288,9 @@ public final class MultiIndexEnumeratorTest {
 
             TestCase testCase = (TestCase) o;
 
-            return combinations.equals(testCase.combinations) && conditionsOn.equals(testCase.conditionsOn);
+            return combinations.equals(testCase.combinations)
+                    && conditionsOn.equals(testCase.conditionsOn)
+                    && isError == testCase.isError;
         }
 
         @Override
