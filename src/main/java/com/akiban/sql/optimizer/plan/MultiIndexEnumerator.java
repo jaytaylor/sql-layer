@@ -109,7 +109,7 @@ public abstract class MultiIndexEnumerator<C> {
     private void emit(MultiIndexCandidate<C> first, MultiIndexCandidate<C> second,
                       Collection<MultiIndexPair<C>> output, EquivalenceFinder<Column> columnEquivalences)
     {
-        if (!first.equals(second)) {
+        if (first != null && second != null && !first.equals(second)) {
             Table firstTable = first.getIndex().leafMostTable();
             Table secondTable = second.getIndex().leafMostTable();
             if (firstTable.isUserTable() && secondTable.isUserTable()) {
