@@ -36,7 +36,11 @@ group-by-3: GROUP BY (and ORDER BY) alias
 
 having-1: HAVING condition
 
-in-1: IN with literals 
+in-l1: IN with one literal
+
+in-l2: IN with two literals
+
+in-l3: IN with three literals
 
 in-2: IN with subquery
 
