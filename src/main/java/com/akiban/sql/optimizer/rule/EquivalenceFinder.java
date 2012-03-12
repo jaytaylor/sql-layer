@@ -53,14 +53,19 @@ public class EquivalenceFinder<T> {
         return accumulator;
     }
 
-    @Override
-    public String toString() {
+    /**
+     * <p>Return a set of all of the equivalence pairs defined in this instance, with reflected-duplicates removed.
+     * For instance, rather than a pair <code>(u, v)</code> and another pair <code>(v, u)</code>, this set will contain
+     * either <code>(u, v)</code> <em>or</em> <code>(v, u)</code>, but not both.</p>
+     *
+     * <p>The resulting set is returned as a <code>Map.Entry</code>, but "key" and "value" are arbitrary in this
+     * context.</p>
+     * @return the equivalence entries
+     */
+    public Set<Entry<T, T>> equivalencePairs() {
         Collection<Entry<T, T>> entries = equivalences.entries();
-        
-        // create a map which contains a "normalized" view of the equivalencies; each reflected pair is shown
-        // only once. So rather than (u, v) and (v, u), it'll contain either (u, v) *or* (v, u) -- but not both.
         Map<T,T> normalized = new HashMap<T, T>(entries.size() / 2);
-        for (Map.Entry<T,T> entry : entries) {
+        for (Entry<T,T> entry : entries) {
             T key = entry.getKey();
             T val = entry.getValue();
             boolean sawReflection;
@@ -77,9 +82,15 @@ public class EquivalenceFinder<T> {
             if (!sawReflection)
                 normalized.put(key, val);
         }
+        return normalized.entrySet();
+    }
+
+    @Override
+    public String toString() {
+        Set<Entry<T, T>> normalizedEntries = equivalencePairs();
 
         StringBuilder sb = new StringBuilder(EquivalenceFinder.class.getSimpleName()).append('{');
-        for (Iterator<Entry<T, T>> iterator = normalized.entrySet().iterator(); iterator.hasNext(); ) {
+        for (Iterator<Entry<T, T>> iterator = normalizedEntries.iterator(); iterator.hasNext(); ) {
             Entry<T, T> entry = iterator.next();
             String first = elementToString(entry.getKey());
             String second = elementToString(entry.getValue());
@@ -89,7 +100,7 @@ public class EquivalenceFinder<T> {
         }
         return sb.append('}').toString();
     }
-    
+
     protected String describeNull() {
         return "null";
     }

@@ -128,25 +128,7 @@ public abstract class MultiIndexCandidate<C> {
     private boolean canBePegged(C condition, IndexColumn nextToPeg) {
         Column nextToPegColumn = nextToPeg.getColumn();
         return columnsMatch(condition, nextToPegColumn);
-        //        if (condition.getOperation() == Comparison.EQ) {
-//            if (condition.getLeft() instanceof ColumnExpression) {
-//                if (isIndexable(condition.getRight())) {
-//                    ColumnExpression leftCol = (ColumnExpression) condition.getLeft();
-//                    if (leftCol.getColumn() == nextToPeg.getColumn())
-//                        return true;
-//                    for (ColumnExpression leftEquiv : leftCol.getEquivalents()) {
-//                        if (leftEquiv.getColumn() == nextToPeg.getColumn())
-//                            return true;
-//                    }
-//                }
-//            }
-//        }
-//        return false;
     }
-//
-//    private boolean isIndexable(ExpressionNode node) {
-//        return (node instanceof ConstantExpression) || (node instanceof ParameterExpression);
-//    }
 
     @Override
     public String toString() {

@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.TestBase;
 
@@ -104,6 +105,7 @@ public class RulesTest extends OptimizerTestBase
     @Before
     public void loadDDL() throws Exception {
         AkibanInformationSchema ais = loadSchema(schemaFile);
+        new SchemaFactory(DEFAULT_SCHEMA).rowDefCache(ais);
         Properties properties = new Properties();
         if (propertiesFile != null) {
             FileInputStream fstr = new FileInputStream(propertiesFile);

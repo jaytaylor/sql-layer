@@ -15,8 +15,12 @@
 
 package com.akiban.sql.optimizer.rule.join_enum;
 
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.Index;
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.sql.optimizer.plan.MultiIndexEnumerator.MultiIndexPair;
 import com.akiban.sql.optimizer.rule.CostEstimator;
+import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 import com.akiban.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
 import com.akiban.sql.optimizer.rule.range.ColumnRanges;
 import com.akiban.sql.optimizer.rule.range.RangeSegment;
@@ -444,6 +448,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     /** Find the best index among the branches. */
     public PlanNode pickBestScan() {
         Set<TableSource> required = tables.getRequired();
+        Collection<MultiIndexPair<ComparisonCondition>> intersectionCandidates = getIntersectionCandidates(required);
         IndexScan bestIndex = null;
         for (TableGroupJoinNode table : tables) {
             IndexScan tableIndex = pickBestIndex(table.getTable(), required);
@@ -456,6 +461,121 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         else
             return bestIndex;
     }
+
+    private Collection<MultiIndexPair<ComparisonCondition>> getIntersectionCandidates(Set<TableSource> required) {
+        if (required.isEmpty())
+            return Collections.emptyList();
+
+        // first, get all of the table and group indexes that fully involve the required tables.
+        // TODO should we filter for indexes which are plausible? I tend to think no; the enumeration wll very quickly
+        // skip them.
+
+        List<Index> singleIndexes = new ArrayList<Index>();
+        Group group = null;
+        Set<UserTable> requiredTables = new HashSet<UserTable>(required.size());
+        for (TableSource table : required) {
+            if (group == null) {
+                group = table.getGroup().getGroup();
+                assert group != null;
+            }
+            else {
+                assert group == table.getGroup().getGroup() : group + " != " + table.getGroup().getGroup();
+            }
+            singleIndexes.addAll(table.getTable().getTable().getIndexes());
+            requiredTables.add(table.getTable().getTable());
+        }
+        assert group != null;
+        for (GroupIndex gi : group.getIndexes()) {
+            boolean giContainsOnlyRequired = true;
+            for (UserTable table = gi.leafMostTable(), root = gi.rootMostTable();
+                    table != null && table != root; table = table.parentTable())
+            {
+                if (!requiredTables.contains(table)) {
+                    giContainsOnlyRequired = false;
+                    break;
+                }
+            }
+            if (giContainsOnlyRequired)
+                singleIndexes.add(gi);
+        }
+        Set<ComparisonCondition> comparisons = new HashSet<ComparisonCondition>(conditions.size());
+        EquivalenceFinder<ColumnExpression> colExprsEquivs = null;
+        for (ConditionExpression condition : conditions) {
+            ComparisonCondition comparison = findValidCondition(condition);
+            if (comparison != null) {
+                ColumnExpression eqCol = (ColumnExpression) comparison.getLeft(); // ensured by findValidCondition
+                ColumnSource eqSource = eqCol.getTable();
+                if (eqSource instanceof TableSource) {
+                    TableSource eqTable = (TableSource) eqSource;
+                    if (required.contains(eqTable)) {
+                        comparisons.add(comparison);
+                    }
+                }
+                if (colExprsEquivs == null)
+                    colExprsEquivs = eqCol.getEquivalenceFinder();
+                else
+                    assert colExprsEquivs == eqCol.getEquivalenceFinder() : conditions;
+            }
+        }
+        if (comparisons.isEmpty())
+            return Collections.emptyList();
+
+        return multiIndexEnumerator.get(singleIndexes, comparisons, getColumnEquivalencies(colExprsEquivs));
+    }
+
+    public EquivalenceFinder<Column> getColumnEquivalencies(EquivalenceFinder<ColumnExpression> colExprsEquivs) {
+        EquivalenceFinder<Column> columnEquivalencies = new EquivalenceFinder<Column>();
+        for (Map.Entry<ColumnExpression, ColumnExpression> equiv : colExprsEquivs.equivalencePairs()) {
+            columnEquivalencies.markEquivalent(equiv.getKey().getColumn(), equiv.getValue().getColumn());
+        }
+        return columnEquivalencies;
+    }
+
+    public static ComparisonCondition findValidCondition(ConditionExpression cond) {
+        if (cond instanceof ComparisonCondition) {
+            ComparisonCondition condition = (ComparisonCondition) cond;
+            if (condition.getOperation() == Comparison.EQ) {
+                if (condition.getLeft() instanceof ColumnExpression) {
+                    if (isIndexable(condition.getRight())) {
+                        return condition;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    private static boolean isIndexable(ExpressionNode node) {
+        return (node instanceof ConstantExpression) || (node instanceof ParameterExpression);
+    }
+    
+    private static class CondExprMultiIndexCandidate extends MultiIndexCandidate<ComparisonCondition> {
+        private CondExprMultiIndexCandidate(Index index, Collection<ComparisonCondition> conditions) {
+            super(index, conditions);
+        }
+
+        @Override
+        protected boolean columnsMatch(ComparisonCondition condition, Column column) {
+            ComparisonCondition comparison = findValidCondition(condition);
+            ColumnExpression eqCol = (ColumnExpression) comparison.getLeft(); // ensured by findValidCondition
+            if (eqCol.getColumn() == column)
+                return true;
+            for (ColumnExpression leftEquiv : eqCol.getEquivalents()) {
+                if (leftEquiv.getColumn() == column)
+                    return true;
+            }
+            return false;
+        }
+    }
+    
+    private static final MultiIndexEnumerator<ComparisonCondition> multiIndexEnumerator
+            = new MultiIndexEnumerator<ComparisonCondition>() {
+        @Override
+        protected MultiIndexCandidate<ComparisonCondition> createSeedCandidate(Index index,
+                                                                               Set<ComparisonCondition> conds) {
+            return new CondExprMultiIndexCandidate(index, conds);
+        }
+    };
 
     public CostEstimate costEstimateScan(PlanNode scan) {
         // TODO: Until more nodes have this stored in them.
