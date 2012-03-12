@@ -63,18 +63,25 @@ public abstract class MultiIndexEnumerator<C> {
             }
             C old = colsToConds.put(column, cond);
             if (old != null) {
-                handleDuplicateCondition();
+                handleDuplicateCondition(); // test hook
                 return null;
             }
         }
         
-        // note: "inner" and "outer" here refer only to these loops, nothing more.
         Set<MultiIndexPair<C>> results = new HashSet<MultiIndexPair<C>>();
+        Map<Index,MultiIndexCandidate<C>> indexToCandidate = new HashMap<Index, MultiIndexCandidate<C>>(indexes.size());
+        for (Index index : indexes) {
+            MultiIndexCandidate<C> candidate = createCandidate(index, colsToConds);
+            if (candidate.anyPegged())
+                indexToCandidate.put(index, candidate);
+        }
+
+        // note: "inner" and "outer" here refer only to these loops, nothing more.
         for (Index outerIndex : indexes) {
-            MultiIndexCandidate<C> outerCandidate = createCandidate(outerIndex, colsToConds);
-            if (outerCandidate.anyPegged()) {
-                for (Index innerIndex : indexes) {
-                    MultiIndexCandidate<C> innerCandidate = createCandidate(innerIndex, colsToConds);
+            for (Index innerIndex : indexes) {
+                if (outerIndex != innerIndex) {
+                    MultiIndexCandidate<C> outerCandidate = indexToCandidate.get(outerIndex);
+                    MultiIndexCandidate<C> innerCandidate = indexToCandidate.get(innerIndex);
                     emit(outerCandidate, innerCandidate, results, columnEquivalences);
                 }
             }
