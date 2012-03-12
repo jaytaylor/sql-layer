@@ -15,13 +15,9 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.ais.model.*;
 import com.akiban.sql.optimizer.plan.*;
 
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.UserTable;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Expressions;
@@ -50,6 +46,7 @@ public abstract class CostEstimator
 
     public abstract long getTableRowCount(Table table);
     public abstract IndexStatistics getIndexStatistics(Index index);
+    public abstract IndexStatistics[] getIndexColumnStatistics(Index index);
 
     // TODO: These need to be figured out for real.
     public static final double RANDOM_ACCESS_COST = 1.25;
@@ -101,6 +98,7 @@ public abstract class CostEstimator
             // not so declared, then the result size doesn't scale up from
             // when it was analyzed.
             long totalDistinct = histogram.totalDistinctCount();
+            // TODO: Shouldn't this be totalDistinct * 10 > statsCount * 9 ?
             boolean mostlyDistinct = totalDistinct * 9 > statsCount * 10; // > 90% distinct
             if (mostlyDistinct) scaleCount = false;
             byte[] keyBytes = encodeKeyBytes(index, equalityComparands, null);
@@ -128,6 +126,77 @@ public abstract class CostEstimator
         return indexAccessCost(nrows, index);
     }
 
+    /** Estimate cost of scanning from this index. */
+    public CostEstimate costIndexScan2(Index index,
+                                       List<ExpressionNode> equalityComparands,
+                                       ExpressionNode lowComparand, boolean lowInclusive,
+                                       ExpressionNode highComparand, boolean highInclusive) {
+        if (index.isUnique()) {
+            if ((equalityComparands != null) &&
+                (equalityComparands.size() == index.getKeyColumns().size())) {
+                // Exact match from unique index; probably one row.
+                return indexAccessCost(1, index);
+            }
+        }
+        UserTable indexedTable = (UserTable) index.leafMostTable();
+        long rowCount = getTableRowCount(indexedTable);
+        // Get IndexStatistics for each column. If the ith element is non-null, then it definitely has
+        // a leading-column histogram (obtained by IndexStats.getHistogram(1)).
+        IndexStatistics[] indexStatsArray = getIndexColumnStatistics(index);
+        // else: There are no index stats for the first column of the index. Either there is no such index,
+        // or there is, but it doesn't have stats.
+        int columnCount = 0;
+        if (equalityComparands != null)
+            columnCount = equalityComparands.size();
+        if ((lowComparand != null) || (highComparand != null))
+            columnCount++;
+        if (columnCount == 0) {
+            // Index just used for ordering.
+            // TODO: Is this too conservative?
+            return indexAccessCost(rowCount, index);
+        }
+        boolean scaleCount = scaleIndexStatistics();
+        double selectivity;
+        if ((lowComparand == null) && (highComparand == null)) {
+            // Equality lookup.
+
+            // If a histogram is almost unique, and in particular unique but
+            // not so declared, then the result size doesn't scale up from
+            // when it was analyzed.
+            if (mostlyDistinct(indexStatsArray)) scaleCount = false;
+            selectivity = fractionEqual(equalityComparands, index, indexStatsArray);
+        }
+        else {
+            selectivity = fractionBetween(indexStatsArray[columnCount - 1], 
+                                          lowComparand, lowInclusive, 
+                                          highComparand, highInclusive);
+        }
+        // statsCount: Number of rows in the table based on an index of the table, according to index
+        //    statistics, which may be stale.
+        // rowCount: Approximate number of rows in the table, reasonably up to date.
+        long statsCount = rowsInTableAccordingToIndex(indexedTable, indexStatsArray);
+        long nrows = Math.max(1, (long) (selectivity * statsCount));
+        if (scaleCount)
+            nrows = simpleRound((nrows * rowCount), statsCount);
+        return indexAccessCost(nrows, index);
+    }
+
+    private long rowsInTableAccordingToIndex(UserTable indexedTable, IndexStatistics[] indexStatsArray)
+    {
+        // At least one of the index columns must be from the indexed table
+        for (IndexStatistics indexStats : indexStatsArray) {
+            if (indexStats != null) {
+                Index index = indexStats.index();
+                Column leadingColumn = index.getKeyColumns().get(0).getColumn();
+                if (leadingColumn.getTable() == indexedTable) {
+                    return indexStats.getRowCount();
+                }
+            }
+        }
+        // No index stats available. Use the current table row count
+        return indexedTable.rowDef().getTableStatus().getApproximateRowCount();
+    }
+    
     // Estimate cost of fetching nrows from index.
     // One random access to get there, then nrows-1 sequential accesses following,
     // Plus a surcharge for copying something as wide as the index.
@@ -202,7 +271,136 @@ public abstract class CostEstimator
         }
         return Math.max(rowCount, 1);
     }
+
+    protected double fractionEqual(List<ExpressionNode> eqExpressions, 
+                                   Index index, 
+                                   IndexStatistics[] indexStatsArray) {
+        double selectivity = 1.0;
+        for (int column = 0; column < eqExpressions.size(); column++) {
+            selectivity *= fractionEqual(eqExpressions.get(column), index, indexStatsArray, column);
+        }
+        return selectivity;
+    }
     
+    protected double fractionEqual(ExpressionNode node,
+                                   Index index, 
+                                   IndexStatistics[] indexStatsArray,
+                                   int column) {
+        IndexStatistics indexStats = indexStatsArray[column];
+        if (indexStats == null) {
+            // Assume the worst about index selectivity. Not sure this is wise.
+            return 1.0;
+        } else {
+            Histogram histogram = indexStats.getHistogram(1);
+            // TODO: Could use Collections.binarySearch if we had something that looked like a HistogramEntry.
+            List<HistogramEntry> entries = histogram.getEntries();
+            for (HistogramEntry entry : entries) {
+                key.clear();
+                if (encodeKeyValue(node, index, column)) {
+                    // Constant expression
+                    int compare = bytesComparator.compare(key.getEncodedBytes(), entry.getKeyBytes());
+                    if (compare == 0) {
+                        return ((double) entry.getEqualCount()) / indexStats.getRowCount();
+                    } else if (compare < 0) {
+                        long d = entry.getDistinctCount();
+                        return d == 0 ? 0.0 : ((double) entry.getLessCount()) / (d * indexStats.getRowCount());
+                    }
+                } else {
+                    // Variable expression. Use average selectivity for histogram.
+                    return ((double) histogram.totalDistinctCount()) / indexStats.getRowCount();
+                }
+            }
+            HistogramEntry lastEntry = entries.get(entries.size() - 1);
+            long d = lastEntry.getDistinctCount();
+            if (d == 0) {
+                return 1;
+            }
+            d++;
+            return ((double) lastEntry.getLessCount()) / (d * indexStats.getRowCount());
+        }
+    }
+
+    protected double fractionBetween(IndexStatistics indexStats,
+                                     ExpressionNode lo, boolean lowInclusive,
+                                     ExpressionNode hi, boolean highInclusive)
+    {
+        if (indexStats == null) {
+            // Assume the worst
+            return 1.0;
+        }
+        key.clear();
+        byte[] loBytes = encodeKeyValue(lo, indexStats.index(), 0) ? keyCopy() : null;
+        key.clear();
+        byte[] hiBytes = encodeKeyValue(hi, indexStats.index(), 0) ? keyCopy() : null;
+        if (loBytes == null && hiBytes == null) {
+            // Assume the worst
+            return 1.0;
+        }
+        Histogram histogram = indexStats.getHistogram(1);
+        boolean before = (loBytes != null);
+        long rowCount = 0;
+        byte[] entryStartBytes, entryEndBytes = null;
+        for (HistogramEntry entry : histogram.getEntries()) {
+            entryStartBytes = entryEndBytes;
+            entryEndBytes = entry.getKeyBytes();
+            long portionStart = 0;
+            if (before) {
+                int compare = bytesComparator.compare(loBytes, entryEndBytes);
+                if (compare > 0) {
+                    continue;
+                }
+                if (compare == 0) {
+                    if (lowInclusive) {
+                        rowCount += entry.getEqualCount();
+                    }
+                    continue;
+                }
+                portionStart = uniformPortion(entryStartBytes, 
+                                              entryEndBytes, 
+                                              loBytes, 
+                                              entry.getLessCount());
+                // Fall through to check high in same entry.
+            }
+            if (hiBytes != null) {
+                int compare = bytesComparator.compare(hiBytes, entryEndBytes);
+                if (compare == 0) {
+                    rowCount += entry.getLessCount() - portionStart;
+                    if (highInclusive) {
+                        rowCount += entry.getEqualCount();
+                    }
+                    break;
+                }
+                if (compare < 0) {
+                    rowCount += uniformPortion(entryStartBytes, 
+                                               entryEndBytes, 
+                                               hiBytes,
+                                               entry.getLessCount()) - portionStart;
+                    break;
+                }
+            }
+            rowCount += entry.getLessCount() + entry.getEqualCount() - portionStart;
+        }
+        return ((double) Math.max(rowCount, 1)) / indexStats.getRowCount();
+    }
+
+
+    // Must be provably mostly distinct: Every histogram is available and mostly distinct.
+    protected boolean mostlyDistinct(IndexStatistics[] indexStatsArray)
+    {
+        for (IndexStatistics indexStats : indexStatsArray) {
+            if (indexStats == null) {
+                return false;
+            } else {
+                Histogram histogram = indexStats.getHistogram(1);
+                if (histogram.totalDistinctCount() * 10 < indexStats.getRowCount() * 9) {
+                    // < 90% distinct
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
     /** Assuming that byte strings are uniformly distributed, what
      * would be given position correspond to?
      */
@@ -251,9 +449,12 @@ public abstract class CostEstimator
                 return null;
             }
         }
-        byte[] keyBytes = new byte[key.getEncodedSize()];
-        System.arraycopy(key.getEncodedBytes(), 0, keyBytes, 0, keyBytes.length);
-        return keyBytes;
+        return keyCopy();
+    }    
+    
+    protected boolean isConstant(ExpressionNode node)
+    {
+        return node instanceof ConstantExpression;
     }
 
     protected boolean encodeKeyValue(ExpressionNode node, Index index, int column) {
@@ -271,6 +472,13 @@ public abstract class CostEstimator
         keyTarget.expectingType(index.getKeyColumns().get(column).getColumn().getType().akType());
         Converters.convert(valueSource, keyTarget);
         return true;
+    }
+
+    private byte[] keyCopy()
+    {
+        byte[] keyBytes = new byte[key.getEncodedSize()];
+        System.arraycopy(key.getEncodedBytes(), 0, keyBytes, 0, keyBytes.length);
+        return keyBytes;
     }
 
     /** Estimate the cost of starting at the given table's index and

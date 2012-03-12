@@ -23,11 +23,17 @@ import java.util.List;
  */
 public class IndexStatistics
 {
+    private final Index index;
     private long analysisTimestamp, rowCount, sampledCount;
     private Histogram[] histograms; // Indexed by column count.
 
     protected IndexStatistics(Index index) {
+        this.index = index;
         this.histograms = new Histogram[index.getKeyColumns().size()];
+    }
+    
+    public Index index() {
+        return index;
     }
 
     public long getAnalysisTimestamp() {

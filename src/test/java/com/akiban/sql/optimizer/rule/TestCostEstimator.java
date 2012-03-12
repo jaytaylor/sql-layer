@@ -46,6 +46,13 @@ public class TestCostEstimator extends CostEstimator
     }
 
     @Override
+    public IndexStatistics[] getIndexColumnStatistics(Index index)
+    {
+        // TODO: This isn't going to work very well for testing
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public long getTableRowCount(Table table) {
         for (Index index : table.getIndexes()) {
             IndexStatistics istats = stats.get(index);
