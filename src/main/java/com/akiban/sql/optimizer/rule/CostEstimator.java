@@ -287,71 +287,169 @@ public abstract class CostEstimator implements TableRowCounts
     public CostEstimate costFlatten(TableGroupJoinTree tableGroup,
                                     TableSource indexTable,
                                     Set<TableSource> requiredTables) {
+        TableGroupJoinNode startNode = tableGroup.getRoot().findTable(indexTable);
+        coverBranches(tableGroup, startNode, requiredTables);
         long rowCount = 1;
         double cost = 0.0;
-        TableGroupJoinNode startNode = tableGroup.getRoot().findTable(indexTable);
         List<UserTableRowType> ancestorTypes = new ArrayList<UserTableRowType>();
         for (TableGroupJoinNode ancestorNode = startNode;
-             null != ancestorNode;
+             ancestorNode != null;
              ancestorNode = ancestorNode.getParent()) {
             if (isRequired(ancestorNode)) {
-                if ((ancestorNode == startNode) && isParent(ancestorNode))
+                if ((ancestorNode == startNode) &&
+                    (getSideBranches(ancestorNode) != 0)) {
                     continue;   // Branch, not ancestor.
+                }
                 ancestorTypes.add(schema.userTableRowType(ancestorNode.getTable().getTable().getTable()));
             }
         }
         // Cost to get main branch.
         cost += model.ancestorLookup(ancestorTypes);
         for (TableGroupJoinNode branchNode : tableGroup) {
-            if ((branchNode == startNode) ? 
-                isParent(branchNode) :
-                isBranchpoint(branchNode)) {
+            if (isSideBranchLeaf(branchNode)) {
+                int branch = Long.numberOfTrailingZeros(getBranches(branchNode));
+                TableGroupJoinNode branchRoot = branchNode, nextToRoot = null;
+                while (true) {
+                    TableGroupJoinNode parent = branchRoot.getParent();
+                    if ((parent == null) || !onBranch(parent, branch))
+                        break;
+                    nextToRoot = branchRoot;
+                    branchRoot = parent;
+                }
+                assert (nextToRoot != null);
+                // Multiplier from this branch.
+                rowCount *= descendantCardinality(branchNode, branchRoot);
                 // Cost to get side branch.
-                cost += model.branchLookup(schema.userTableRowType(branchNode.getTable().getTable().getTable()));
+                cost += model.branchLookup(schema.userTableRowType(nextToRoot.getTable().getTable().getTable()));
             }
         }
         for (TableGroupJoinNode node : tableGroup) {
-            if (isRequired(node)) {
-                long nrows = branchCardinality(node, startNode);
-                TableGroupJoinNode parentNode = node;
-                while (true) {
-                    parentNode = parentNode.getParent();
-                    if (parentNode == null) break;
-                    if (isRequired(parentNode)) {
-                        // Cost of flattening these children to nearest ancestor.
-                        cost += model.flatten((int)nrows);
-                        break;
-                    }
-                }
-                if (!isParent(node)) {
-                    // Overall row multiplier from branch leaves.
-                    rowCount *= nrows;
-                }
+            if (isFlattenable(node)) {
+                long nrows = tableCardinality(node);
+                // Cost of flattening these children with their ancestor.
+                cost += model.flatten((int)nrows);
             }
         }
         cost += model.product((int)rowCount);
         return new CostEstimate(rowCount, cost);
     }
 
-    // Estimate number of rows of given table will occur branching
-    // over from the given start point.
-    protected long branchCardinality(TableGroupJoinNode countNode, 
-                                     TableGroupJoinNode startNode) {
-        for (TableGroupJoinNode node = startNode; null != node; node = node.getParent()) {
-            if (node == countNode)
-                return 1;       // Any ancestor only occurs once.
+    /** This table needs to be included in flattens. */
+    protected static final long REQUIRED = 1;
+    /** This table is on the main branch. */
+    protected static final long ANCESTOR = 2;
+    protected static final int ANCESTOR_BRANCH = 1;
+    /** Mask for main or side branch. */
+    protected static final long BRANCH_MASK = ~1;
+    /** Mask for side branch. */
+    protected static final long SIDE_BRANCH_MASK = ~3;
+
+    protected static boolean isRequired(TableGroupJoinNode table) {
+        return ((table.getState() & REQUIRED) != 0);
+    }
+    protected static void setRequired(TableGroupJoinNode table) {
+        table.setState(table.getState() | REQUIRED);
+    }
+    protected static boolean isAncestor(TableGroupJoinNode table) {
+        return ((table.getState() & ANCESTOR) != 0);
+    }
+    protected static long getBranches(TableGroupJoinNode table) {
+        return (table.getState() & BRANCH_MASK);
+    }
+    protected static long getSideBranches(TableGroupJoinNode table) {
+        return (table.getState() & SIDE_BRANCH_MASK);
+    }
+    protected static boolean onBranch(TableGroupJoinNode table, int b) {
+        return ((table.getState() & (1 << b)) != 0);
+    }
+    protected void setBranch(TableGroupJoinNode table, int b) {
+        table.setState(table.getState() | (1 << b));
+    }
+
+    /** Like {@link BranchJoiner_CBO#markBranches} but simpler without
+     * having to worry about the exact <em>order</em> in which
+     * operations are performed.
+     */
+    protected void coverBranches(TableGroupJoinTree tableGroup, 
+                                 TableGroupJoinNode startNode,
+                                 Set<TableSource> requiredTables) {
+        for (TableGroupJoinNode table : tableGroup) {
+            table.setState(requiredTables.contains(table.getTable()) ? REQUIRED : 0);
         }
-        for (TableGroupJoinNode node = countNode; null != node; node = node.getParent()) {        
-            if ((node == startNode) || isBranchpoint(node)) {
-                // As many of target as there are per branch point,
-                // times occurrences of branch point.
-                return simpleRound(getTableRowCount(countNode.getTable().getTable().getTable()) *
-                                   branchCardinality(node, startNode),
-                                   getTableRowCount(node.getTable().getTable().getTable()));
+        int nbranches = ANCESTOR_BRANCH;
+        boolean anyAncestorRequired = false;
+        for (TableGroupJoinNode table = startNode; table != null; table = table.getParent()) {
+            setBranch(table, nbranches);
+            if (isRequired(table))
+                anyAncestorRequired = true;
+        }
+        nbranches++;
+        for (TableGroupJoinNode table : tableGroup) {
+            if (isSideBranchLeaf(table)) {
+                // This is the leaf of a new side branch.
+                while (true) {
+                    boolean onBranchAlready = (getBranches(table) != 0);
+                    setBranch(table, nbranches);
+                    if (onBranchAlready) {
+                        if (!isRequired(table)) {
+                            // Might become required for joining of branches.
+                            if (Long.bitCount(anyAncestorRequired ?
+                                              getBranches(table) :
+                                              getSideBranches(table)) > 1)
+                                setRequired(table);
+                        }
+                        break;
+                    }
+                    table = table.getParent();
+                }
+                nbranches++;
             }
         }
-        assert false : "Neither ancestor nor beneath branch point: " + countNode;
-        return 1;
+    }
+    
+    /** A table is the leaf of some side branch if it's required but
+     * none of its descendants are. */
+    protected boolean isSideBranchLeaf(TableGroupJoinNode table) {
+        if (!isRequired(table) || isAncestor(table))
+            return false;
+        for (TableGroupJoinNode descendant : table) {
+            if (isRequired(descendant))
+                return false;
+        }
+        return true;
+    }
+
+    /** A table is flattened in if it's required and one of its
+     * ancestors is as well. */
+    protected boolean isFlattenable(TableGroupJoinNode table) {
+        if (!isRequired(table))
+            return false;
+        while (true) {
+            table = table.getParent();
+            if (table == null) break;
+            if (isRequired(table))
+                return true;
+        }
+        return false;
+    }
+
+    /** Number of rows of given table, total per index row. */
+    protected long tableCardinality(TableGroupJoinNode table) {
+        if (isAncestor(table))
+            return 1;
+        TableGroupJoinNode parent = table;
+        while (true) {
+            parent = parent.getParent();
+            if (isAncestor(parent))
+                return descendantCardinality(table, parent);
+        }
+    }
+
+    /** Number of child rows per ancestor. */
+    protected long descendantCardinality(TableGroupJoinNode childNode, 
+                                         TableGroupJoinNode ancestorNode) {
+        return simpleRound(getTableRowCount(childNode.getTable().getTable().getTable()),
+                           getTableRowCount(ancestorNode.getTable().getTable().getTable()));
     }
 
     /** Estimate the cost of testing some conditions. */
