@@ -23,6 +23,7 @@ CREATE TABLE orders(
 );
 
 CREATE INDEX odatekey ON orders(odate);
+CREATE INDEX odate_cid ON orders(odate, cid);
 
 CREATE TABLE addresses(
     id INT NOT NULL,

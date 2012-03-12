@@ -20,6 +20,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Join;
+import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.UserTable;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
@@ -27,6 +28,7 @@ import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.sql.optimizer.plan.MultiIndexCandidate;
 import com.akiban.sql.optimizer.plan.MultiIndexEnumerator;
+import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 import com.akiban.util.AssertUtils;
 import com.akiban.util.Strings;
 import org.junit.Test;
@@ -42,6 +44,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @RunWith(NamedParameterizedRunner.class)
@@ -75,11 +78,15 @@ public final class MultiIndexEnumeratorTest {
     public void test() throws IOException {
         SchemaFactory factory = new SchemaFactory(DEFAULT_SCHEMA);
         AkibanInformationSchema ais = factory.ais(ddl);
+        factory.rowDefCache(ais); // set up indx row compositions
 
         TestCase tc = (TestCase) new Yaml().load(new FileReader(yaml));
         List<Index> indexes = allIndexes(ais, tc.getUsingIndexes());
         Set<String> conditions = new HashSet<String>(tc.getConditionsOn());
-        Collection<MultiIndexEnumerator.MultiIndexPair<String>> enumerated = enumerator.get(indexes, conditions);
+        EquivalenceFinder<Column> columnEquivalences = innerJoinEquivalencies(ais);
+        addExtraEquivalencies(tc.getExtraEquivalencies(), ais, columnEquivalences);
+        Collection<MultiIndexEnumerator.MultiIndexPair<String>> enumerated
+                = enumerator.get(indexes, conditions, columnEquivalences);
         List<Combination> actual = new ArrayList<Combination>(enumerated.size());
         for (MultiIndexEnumerator.MultiIndexPair<String> elem : enumerated) {
             Combination combo = new Combination();
@@ -98,6 +105,46 @@ public final class MultiIndexEnumeratorTest {
         Collections.sort(combinations);
         Collections.sort(actual);
         AssertUtils.assertCollectionEquals("enumerations", combinations, actual);
+    }
+
+    private void addExtraEquivalencies(Map<String, String> equivMap, AkibanInformationSchema ais,
+                                       EquivalenceFinder<Column> output)
+    {
+        for (Map.Entry<String,String> entry : equivMap.entrySet()) {
+            String one = entry.getKey();
+            String two = entry.getValue();
+            Column oneCol = findColumn(one, ais);
+            Column twoCol = findColumn(two, ais);
+            output.markEquivalent(oneCol, twoCol);
+        }
+    }
+
+    private Column findColumn(String qualifiedName, AkibanInformationSchema ais) {
+        String[] split = qualifiedName.split("\\.", 2);
+        String tableName = split[0];
+        String colName = split[1];
+        UserTable table = ais.getUserTable(DEFAULT_SCHEMA, tableName);
+        Column column = table.getColumn(colName);
+        if (column == null)
+            throw new RuntimeException("column not found: " + qualifiedName);
+        return column;
+    }
+
+    private EquivalenceFinder<Column> innerJoinEquivalencies(AkibanInformationSchema ais) {
+        EquivalenceFinder<Column> columnEquivalences = new EquivalenceFinder<Column>();
+        for (Group group : ais.getGroups().values()) {
+            buildInnerJoinEquivalencies(group.getGroupTable().getRoot(), columnEquivalences);
+        }
+        return columnEquivalences;
+    }
+
+    private void buildInnerJoinEquivalencies(UserTable table, EquivalenceFinder<Column> equivalences) {
+        for (Join join : table.getChildJoins()) {
+            for (JoinColumn joinColumn : join.getJoinColumns()) {
+                equivalences.markEquivalent(joinColumn.getChild(), joinColumn.getParent());
+            }
+            buildInnerJoinEquivalencies(join.getChild(), equivalences);
+        }
     }
 
     private List<Index> allIndexes(AkibanInformationSchema ais, Set<String> usingIndexes) {
@@ -160,6 +207,7 @@ public final class MultiIndexEnumeratorTest {
         public Set<String> usingIndexes;
         public Set<String> conditionsOn;
         public List<Combination> combinations;
+        public Map<String,String> extraEquivalencies = Collections.emptyMap();
 
         public Set<String> getConditionsOn() {
             return conditionsOn;
@@ -179,6 +227,14 @@ public final class MultiIndexEnumeratorTest {
         
         public Set<String> getUsingIndexes() {
             return usingIndexes;
+        }
+
+        public Map<String, String> getExtraEquivalencies() {
+            return extraEquivalencies;
+        }
+
+        public void setExtraEquivalencies(Map<String, String> extraEquivalences) {
+            this.extraEquivalencies = extraEquivalences;
         }
 
         public void setCombinations(List<Combination> combinations) {

@@ -18,6 +18,7 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.util.Equality;
 
 import java.util.ArrayList;
@@ -73,6 +74,22 @@ public abstract class MultiIndexCandidate<C> {
             }
         }
         return results == null ? Collections.<C>emptyList() : results;
+    }
+    
+    public List<Column> getUnpeggedColumns() {
+        int startAt = pegged.size();
+        int endAt = index.indexRowComposition().getLength();
+        if (endAt - startAt == 0)
+            return Collections.emptyList();
+        List<Column> results = new ArrayList<Column>(endAt - startAt);
+        RowDef rowDef = index.indexDef().getRowDef();
+        for (int i = startAt; i < endAt; ++i) {
+            int fieldPos = index.indexRowComposition().getFieldPosition(i);
+            Column column = rowDef.getFieldDef(fieldPos).column();
+            results.add(column);
+        }
+        return results;
+//        indexes.get(1).indexDef().getRowDef().getFieldDef(indexes.get(1).indexRowComposition().getFieldPosition(0))
     }
 
     public List<C> getPegged() {

@@ -15,12 +15,16 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
+import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -42,7 +46,9 @@ public abstract class MultiIndexEnumerator<C> {
 
     protected abstract MultiIndexCandidate<C> createSeedCandidate(Index index, Set<C> conditions);
     
-    public Collection<MultiIndexPair<C>> get(Collection<? extends Index> indexes, Set<C> conditions) {
+    public Collection<MultiIndexPair<C>> get(Collection<? extends Index> indexes, Set<C> conditions,
+                                             EquivalenceFinder<Column> columnEquivalences)
+    {
         // note: "inner" and "outer" here refer only to these loops, nothing more.
         Set<MultiIndexPair<C>> results = new HashSet<MultiIndexPair<C>>();
         for (Index outerIndex : indexes) {
@@ -54,7 +60,7 @@ public abstract class MultiIndexEnumerator<C> {
                         List<MultiIndexCandidate<C>> innerCandidates = new ArrayList<MultiIndexCandidate<C>>();
                         buildCandidate(createSeedCandidate(innerIndex, conditions), innerCandidates);
                         for (MultiIndexCandidate<C> innerCandidate : innerCandidates) {
-                            emit(outerCandidate, innerCandidate, results);
+                            emit(outerCandidate, innerCandidate, results, columnEquivalences);
                         }
                     }
                 }
@@ -64,19 +70,22 @@ public abstract class MultiIndexEnumerator<C> {
     }
 
     private void emit(MultiIndexCandidate<C> first, MultiIndexCandidate<C> second,
-                      Collection<MultiIndexPair<C>> output)
+                      Collection<MultiIndexPair<C>> output, EquivalenceFinder<Column> columnEquivalences)
     {
         if (!first.equals(second)) {
             Table firstTable = first.getIndex().leafMostTable();
             Table secondTable = second.getIndex().leafMostTable();
             if (firstTable.isUserTable() && secondTable.isUserTable()) {
+                List<Column> commonTrailing = getCommonTrailing(first, second, columnEquivalences);
                 UserTable firstUTable = (UserTable) firstTable;
                 UserTable secondUTable = (UserTable) secondTable;
                 // handle the two single-branch cases
-                if (firstUTable.isDescendantOf(secondUTable)) {
+                if (firstUTable.isDescendantOf(secondUTable)
+                        && includesHKey(secondUTable, commonTrailing, columnEquivalences)) {
                     output.add(new MultiIndexPair<C>(first, second));
                 }
-                else if (secondUTable.isDescendantOf(firstUTable)) {
+                else if (secondUTable.isDescendantOf(firstUTable)
+                        && includesHKey(firstUTable, commonTrailing, columnEquivalences)) {
                     output.add(new MultiIndexPair<C>(second, first));
                 }
                 else {
@@ -86,6 +95,48 @@ public abstract class MultiIndexEnumerator<C> {
                 }
             }
         }
+    }
+
+    private boolean includesHKey(UserTable table, List<Column> columns, EquivalenceFinder<Column> columnEquivalences) {
+        HKey hkey = table.hKey();
+        int ncols = hkey.nColumns();
+        // no overhead, but O(N) per hkey segment. assuming ncols and columns is very small
+        for (int i = 0; i < ncols; ++i) {
+            if (!containsEquivalent(columns, hkey.column(i), columnEquivalences))
+                return false;
+        }
+        return true;
+    }
+
+    private boolean containsEquivalent(List<Column> cols, Column tgt, EquivalenceFinder<Column> columnEquivalences) {
+        for (Column listCol : cols) {
+            if (columnEquivalences.areEquivalent(listCol, tgt))
+                return true;
+        }
+        return false;
+    }
+
+    private List<Column> getCommonTrailing(MultiIndexCandidate<C> first, MultiIndexCandidate<C> second,
+                                           EquivalenceFinder<Column> columnEquivalences)
+    {
+        List<Column> firstTrailing = first.getUnpeggedColumns();
+        if (firstTrailing.isEmpty())
+            return Collections.emptyList();
+        List<Column> secondTrailing = second.getUnpeggedColumns();
+        if (secondTrailing.isEmpty())
+            return Collections.emptyList();
+        
+        int maxTrailing = Math.min(firstTrailing.size(), secondTrailing.size());
+        List<Column> results = new ArrayList<Column>(maxTrailing);
+        for (int i = 0; i < maxTrailing; ++i) {
+            Column firstCol = firstTrailing.get(i);
+            Column secondCol = secondTrailing.get(i);
+            if (columnEquivalences.areEquivalent(firstCol, secondCol))
+                results.add(firstCol);
+            else
+                break;
+        }
+        return results;
     }
 
     private void buildCandidate(MultiIndexCandidate<C> candidate, Collection<MultiIndexCandidate<C>> output)
