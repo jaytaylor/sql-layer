@@ -5,6 +5,6 @@ SelectQuery@39258445
         Flatten@3d0f1da8(user.customers INNER user.orders)
           BranchLookup@3a6b1040(user.customers -> user.orders)
             AncestorLookup@2b641fe9(user.orders -> [user.customers])
-              IndexScan@4af7f7b6(Index(user.orders.order_date[IndexColumn(order_date)]), NONE, =2011-12-31, rows = 10, cost = 3038.08)
+              IndexScan@4af7f7b6(Index(user.orders.order_date[IndexColumn(order_date)]), NONE, =2011-12-31, rows = 10, cost = 904.187)
               TableSource@6075484f(user.customers - TableGroup@4ba24bd(customers))
             TableSource@76b2fae2(user.orders - TableGroupJoin@5da7f42d(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))

@@ -2,4 +2,4 @@ SelectQuery@df8b14
   ResultSet@7db06a21[name]
     Project@4907dcfe[user.customers.name]
       Select@1e8fa70[]
-        IndexScan@15c929a(Index(user.customers.name[IndexColumn(name)]), covering/SORTED, rows = 100, cost = 9349.45)
+        IndexScan@15c929a(Index(user.customers.name[IndexColumn(name)]), covering/SORTED, rows = 100, cost = 74.1740)
