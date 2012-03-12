@@ -33,7 +33,9 @@ import com.akiban.server.types.conversion.util.ConversionUtil;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.sql.StandardException;
+import java.text.DateFormatSymbols;
 import java.util.EnumSet;
+import java.util.Locale;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.IllegalFieldValueException;
@@ -78,6 +80,9 @@ public class ExtractExpression extends AbstractUnaryExpression
     @Scalar ("year")
     public static final ExpressionComposer YEAR_COMPOSER = new InternalComposer(TargetExtractType.YEAR);
 
+    @Scalar ("monthname")
+    public static final ExpressionComposer MONTH_NAME_COMPOSER = new InternalComposer(TargetExtractType.MONTH_NAME);
+    
     protected static enum TargetExtractType
     {
         DATE(AkType.DATE)
@@ -272,6 +277,16 @@ public class ExtractExpression extends AbstractUnaryExpression
                                     return (long)datetime.getMonthOfYear();
                     default: /*year*/       return null;
                 }
+            }
+            
+        },
+        
+        MONTH_NAME(AkType.VARCHAR)
+        {
+            @Override
+            public Long extract (ValueSource source)
+            {
+                return MONTH.extract(source);
             }
             
         },
@@ -483,6 +498,7 @@ public class ExtractExpression extends AbstractUnaryExpression
                     case DATETIME:
                     case YEAR:
                     case MONTH:
+                    case MONTH_NAME:
                                     if (DATES.contains(source.getConversionType()))
                                         raw = type.extract(source);
                                     else
@@ -517,7 +533,10 @@ public class ExtractExpression extends AbstractUnaryExpression
            
                 if (raw != null)
                 {
-                    valueHolder().putRaw(type.underlying, raw.longValue());
+                    if (type == TargetExtractType.MONTH_NAME)
+                        valueHolder().putString(new DateFormatSymbols(new Locale(System.getProperty("user.language"))).getMonths()[raw.intValue()-1]);
+                    else
+                        valueHolder().putRaw(type.underlying, raw.longValue());
                     return valueHolder();
                 }
                 else
@@ -546,7 +565,7 @@ public class ExtractExpression extends AbstractUnaryExpression
                 return NullValueSource.only();
             }
         }
-        
+    
         private Long tryGetLong(AkType targetType)
         {
             try

@@ -14,6 +14,8 @@
  */
 package com.akiban.server.expression.std;
 
+import java.text.DateFormatSymbols;
+import java.util.Locale;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.Expression;
@@ -29,6 +31,19 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
 {
     private static final CompositionTestInfo testInfo = new CompositionTestInfo(1, AkType.DATE, false);
 
+    //-----------------------------MONTHNAME------------------------------------
+    public void monthName()
+    {
+        for (int month = 0; month < 12; ++month)
+        {
+            Expression in = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2009-" + month + "-12"));
+            Expression top = ExtractExpression.MONTH_NAME_COMPOSER.compose(Arrays.asList(in));
+
+            assertEquals(new DateFormatSymbols(new Locale(System.getProperty("user.language"))).getMonths()[month],
+                          top.evaluation().eval().getString());
+        }
+    }
+    
     // --------------------------- GET DAY OF YEAR -----------------------------
     private static final Long [] outputs = {1L, 365L, 1L, 366L, 365L, null, null, null, 1L, 365L};
     private static final String[] inputs = {"2009-01-01 12:30:10", "2009-12-31 00:14:12",
