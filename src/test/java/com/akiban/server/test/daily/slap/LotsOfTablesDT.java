@@ -49,7 +49,7 @@ public class LotsOfTablesDT extends DailyBase {
         for (int count = 0; count < TABLE_COUNT; count++) {
             String tableName = String.format("test%04d", count);
             int tableId = createTable("test", tableName,
-                    "I INT, V VARCHAR(255), PRIMARY KEY(I)");
+                    "I INT NOT NULL, V VARCHAR(255), PRIMARY KEY(I)");
             assertTrue(was != tableId);
             was = tableId;
         }
