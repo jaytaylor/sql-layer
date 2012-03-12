@@ -20,6 +20,7 @@ import com.akiban.sql.optimizer.OptimizerTestBase;
 import static com.akiban.sql.optimizer.rule.CostEstimator.*;
 
 import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
@@ -230,20 +231,20 @@ public class CostEstimatorTest
                 childSource = parentSource;
             }
         }
-        Map<TableSource,TableGroupJoinTree.TableGroupJoinNode> nodes =
-            new HashMap<TableSource,TableGroupJoinTree.TableGroupJoinNode>();
-        TableGroupJoinTree.TableGroupJoinNode root = null;
+        Map<TableSource,TableGroupJoinNode> nodes =
+            new HashMap<TableSource,TableGroupJoinNode>();
+        TableGroupJoinNode root = null;
         for (TableSource tableSource : tableSources.values()) {
-            nodes.put(tableSource, new TableGroupJoinTree.TableGroupJoinNode(tableSource));
+            nodes.put(tableSource, new TableGroupJoinNode(tableSource));
         }
-        for (TableGroupJoinTree.TableGroupJoinNode childNode : nodes.values()) {
+        for (TableGroupJoinNode childNode : nodes.values()) {
             TableSource childSource = childNode.getTable();
             TableSource parentSource = childSource.getParentTable();
             if (parentSource == null) {
                 root = childNode;
                 continue;
             }
-            TableGroupJoinTree.TableGroupJoinNode parentNode = nodes.get(parentSource);
+            TableGroupJoinNode parentNode = nodes.get(parentSource);
             childNode.setParent(parentNode);
             childNode.setNextSibling(parentNode.getFirstChild());
             parentNode.setFirstChild(childNode);

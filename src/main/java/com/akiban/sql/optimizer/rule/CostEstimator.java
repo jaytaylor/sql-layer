@@ -15,11 +15,12 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.sql.optimizer.plan.*;
-import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
+import static com.akiban.sql.optimizer.rule.BranchJoiner_CBO.*;
 import com.akiban.sql.optimizer.rule.costmodel.CostModel;
 import com.akiban.sql.optimizer.rule.costmodel.TableRowCounts;
-import static com.akiban.sql.optimizer.rule.BranchJoiner_CBO.*;
+
+import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
