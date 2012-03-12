@@ -287,11 +287,6 @@ public abstract class CostEstimator implements TableRowCounts
     public CostEstimate costFlatten(TableGroupJoinTree tableGroup,
                                     TableSource indexTable,
                                     Set<TableSource> requiredTables) {
-        markBranches(tableGroup, requiredTables);
-        for (TableGroupJoinNode node : tableGroup) {
-            System.out.println("Mark " + node.getState() + ": " +
-                               node.getTable().getTable().getTable());
-        }
         long rowCount = 1;
         double cost = 0.0;
         TableGroupJoinNode startNode = tableGroup.getRoot().findTable(indexTable);
@@ -347,8 +342,6 @@ public abstract class CostEstimator implements TableRowCounts
                 return 1;       // Any ancestor only occurs once.
         }
         for (TableGroupJoinNode node = countNode; null != node; node = node.getParent()) {        
-            System.out.println("Parent " + node.getState() + ": " +
-                               node.getTable().getTable().getTable());
             if ((node == startNode) || isBranchpoint(node)) {
                 // As many of target as there are per branch point,
                 // times occurrences of branch point.

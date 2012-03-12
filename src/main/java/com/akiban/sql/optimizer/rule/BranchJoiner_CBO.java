@@ -363,42 +363,42 @@ public class BranchJoiner_CBO extends BaseRule
     /** This table needs to be included in flattens, either because
      * its columns are needed or it is a source for a
      * <code>BranchLookup</code>. */
-    public static final int REQUIRED = 1;
+    protected static final long REQUIRED = 1;
     /** This table has at least one descendants. */
-    public static final int PARENT = 2;
+    protected static final long PARENT = 2;
     /** This table has at least <em>two</em> active descendants, which
      * means that it is where two branches meet. */
-    public static final int BRANCHPOINT = 4;
+    protected static final long BRANCHPOINT = 4;
     /** This table has not yet been included in result plan nodes. */
-    public static final int PENDING = 8;
+    protected static final long PENDING = 8;
 
-    public static boolean isRequired(TableGroupJoinNode table) {
+    protected static boolean isRequired(TableGroupJoinNode table) {
         return ((table.getState() & REQUIRED) != 0);
     }
-    public static boolean isParent(TableGroupJoinNode table) {
+    protected static boolean isParent(TableGroupJoinNode table) {
         return ((table.getState() & PARENT) != 0);
     }
-    public static boolean isBranchpoint(TableGroupJoinNode table) {
+    protected static boolean isBranchpoint(TableGroupJoinNode table) {
         return ((table.getState() & BRANCHPOINT) != 0);
     }
-    public static boolean isPending(TableGroupJoinNode table) {
+    protected static boolean isPending(TableGroupJoinNode table) {
         return ((table.getState() & PENDING) != 0);
     }
-    public static void setPending(TableGroupJoinNode table) {
+    protected static void setPending(TableGroupJoinNode table) {
         table.setState(table.getState() | PENDING);
     }
-    public static void clearPending(TableGroupJoinNode table) {
+    protected static void clearPending(TableGroupJoinNode table) {
         table.setState(table.getState() & ~PENDING);
     }
 
-    public static void markBranches(TableGroupJoinTree tableGroup, 
-                                    Set<TableSource> requiredTables) {
+    protected void markBranches(TableGroupJoinTree tableGroup, 
+                                Set<TableSource> requiredTables) {
         markBranches(tableGroup.getRoot(), requiredTables);
     }
 
-    private static boolean markBranches(TableGroupJoinNode parent, 
-                                        Set<TableSource> requiredTables) {
-        int flags = 0;
+    private boolean markBranches(TableGroupJoinNode parent, 
+                                 Set<TableSource> requiredTables) {
+        long flags = 0;
         for (TableGroupJoinNode child = parent.getFirstChild(); child != null; child = child.getNextSibling()) {
             if (markBranches(child, requiredTables)) {
                 if ((flags & PARENT) == 0)
