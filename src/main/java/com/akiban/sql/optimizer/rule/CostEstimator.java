@@ -311,6 +311,11 @@ public abstract class CostEstimator implements TableRowCounts
                 TableGroupJoinNode branchRoot = branchNode, nextToRoot = null;
                 while (true) {
                     TableGroupJoinNode parent = branchRoot.getParent();
+                    if (parent == startNode) {
+                        // Different kind of BranchLookup.
+                        nextToRoot = branchRoot = parent;
+                        break;
+                    }
                     if ((parent == null) || !onBranch(parent, branch))
                         break;
                     nextToRoot = branchRoot;
@@ -330,7 +335,8 @@ public abstract class CostEstimator implements TableRowCounts
                 cost += model.flatten((int)nrows);
             }
         }
-        cost += model.product((int)rowCount);
+        if (rowCount > 1)
+            cost += model.product((int)rowCount);
         return new CostEstimate(rowCount, cost);
     }
 
@@ -413,7 +419,7 @@ public abstract class CostEstimator implements TableRowCounts
         if (!isRequired(table) || isAncestor(table))
             return false;
         for (TableGroupJoinNode descendant : table) {
-            if (isRequired(descendant))
+            if ((descendant != table) && isRequired(descendant))
                 return false;
         }
         return true;
