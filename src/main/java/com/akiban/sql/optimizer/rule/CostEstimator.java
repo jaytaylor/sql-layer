@@ -112,7 +112,7 @@ public abstract class CostEstimator implements TableRowCounts
             long totalDistinct = histogram.totalDistinctCount();
             boolean mostlyDistinct = totalDistinct * 9 > statsCount * 10; // > 90% distinct
             if (mostlyDistinct) scaleCount = false;
-            byte[] keyBytes = encodeKeyBytes(index, equalityComparands, null);
+            byte[] keyBytes = encodeKeyBytes(index, equalityComparands, null, false);
             if (keyBytes == null) {
                 // Variable.
                 nrows = (mostlyDistinct) ? 1 : statsCount / totalDistinct;
@@ -122,8 +122,8 @@ public abstract class CostEstimator implements TableRowCounts
             }
         }
         else {
-            byte[] lowBytes = encodeKeyBytes(index, equalityComparands, lowComparand);
-            byte[] highBytes = encodeKeyBytes(index, equalityComparands, highComparand);
+            byte[] lowBytes = encodeKeyBytes(index, equalityComparands, lowComparand, false);
+            byte[] highBytes = encodeKeyBytes(index, equalityComparands, highComparand, true);
             if ((lowBytes == null) && (highBytes == null)) {
                 // Range completely unknown.
                 nrows = indexStats.getRowCount();
@@ -243,7 +243,8 @@ public abstract class CostEstimator implements TableRowCounts
      */
     protected byte[] encodeKeyBytes(Index index, 
                                     List<ExpressionNode> fields,
-                                    ExpressionNode anotherField) {
+                                    ExpressionNode anotherField,
+                                    boolean upper) {
         key.clear();
         keyTarget.attach(key);
         int i = 0;
@@ -258,6 +259,9 @@ public abstract class CostEstimator implements TableRowCounts
             if (!encodeKeyValue(anotherField, index, i++)) {
                 return null;
             }
+        }
+        else if (upper) {
+            key.append(Key.AFTER);
         }
         byte[] keyBytes = new byte[key.getEncodedSize()];
         System.arraycopy(key.getEncodedBytes(), 0, keyBytes, 0, keyBytes.length);
