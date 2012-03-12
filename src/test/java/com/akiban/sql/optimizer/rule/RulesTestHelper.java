@@ -15,14 +15,9 @@
 
 package com.akiban.sql.optimizer.rule;
 
-// TODO: Think about all this.
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.rowdata.RowDef;
+
+import com.akiban.server.rowdata.SchemaFactory;
 
 import org.yaml.snakeyaml.Yaml;
 
@@ -69,26 +64,9 @@ public class RulesTestHelper
         return result;
     }
 
-    // This just needs to be enough to keep UserTableRowType
-    // constructor and Index.getValueColumns() from getting NPE.
-    // TODO: Think about where this really goes.
+    // Make fake row def cache to keep UserTableRowType constructor
+    // and Index.getValueColumns() from getting NPE.
     public static void ensureRowDefs(AkibanInformationSchema ais) {
-        Map<Table,Integer> ordinalMap = new HashMap<Table,Integer>();
-        for (UserTable userTable : ais.getUserTables().values()) {
-            int ordinal = userTable.getTableId();
-            ordinalMap.put(userTable, ordinal);
-            new RowDef(userTable, ordinal);
-        }
-        // Normally done by RowDefCache.
-        for (UserTable table : ais.getUserTables().values()) {
-            for (TableIndex index : table.getIndexes()) {
-                index.computeFieldAssociations(ordinalMap);
-            }
-        }
-        for (Group group : ais.getGroups().values()) {
-            for (GroupIndex index : group.getIndexes()) {
-                index.computeFieldAssociations(ordinalMap);
-            }
-        }
+        new SchemaFactory().rowDefCache(ais);
     }
 }
