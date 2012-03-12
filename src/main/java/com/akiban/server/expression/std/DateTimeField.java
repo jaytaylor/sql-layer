@@ -1260,13 +1260,13 @@ public enum DateTimeField
         for (int n = 0; n < 12; ++n)
         {
             month.put(mon[n].toUpperCase(), n+1);
-            abbMonth.put(shortMon[n], n+1);
+            abbMonth.put(shortMon[n].toUpperCase(), n+1);
         }
         
-        for (int n = 0; n < 7; ++n)
+        for (int n = 1; n < 8; ++n)
         {
-            weekDay.put(wk[n], n);
-            abbWeekday.put(shortWk[n], n);
+            weekDay.put(wk[n].toUpperCase(), n-1);
+            abbWeekday.put(shortWk[n].toUpperCase(), n-1);
         }
     }
 }
