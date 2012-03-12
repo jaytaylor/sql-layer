@@ -6,6 +6,6 @@ SelectQuery@718ddc48
           TableGroupJoinTree@26f5c589(TableGroup@2cfb1135(parent), parent INNER child - GroupScan@1fe5052b(Group(parent -> user._akiban_parent)))
             TableSource@7664e5b2(user.parent - TableGroup@2cfb1135(parent))
               TableSource@5a2445d7(user.child - TableGroupJoin@7279df82(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
-          TableGroupJoinTree@2a3f60f2(TableGroup@8c1e4d5(customers), customers INNER orders - IndexScan@246bc73b(Index(user.customers.name[IndexColumn(name)]), NONE, =user.parent.name, rows = 10, cost = 20061.0))
+          TableGroupJoinTree@2a3f60f2(TableGroup@8c1e4d5(customers), customers INNER orders - IndexScan@246bc73b(Index(user.customers.name[IndexColumn(name)]), NONE, =user.parent.name, rows = 10, cost = 19512.0))
             TableSource@4b61cd25(user.customers - TableGroup@8c1e4d5(customers))
               TableSource@1e35ecd(user.orders - TableGroupJoin@47959352(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))

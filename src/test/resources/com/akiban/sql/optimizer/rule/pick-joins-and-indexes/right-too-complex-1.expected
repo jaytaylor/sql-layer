@@ -5,5 +5,5 @@ SelectQuery@615e7597
         JoinNode@6d6de4e1(LEFT/NESTED_LOOPS[user.orders.order_date != 2011-01-01])
           TableGroupJoinTree@1cf7cbd1(TableGroup@50661532(customers), orders - IndexScan@13f3589(Index(user.orders.order_date[IndexColumn(order_date)]), covering/NONE, rows = 1000, cost = 707.390))
             TableSource@3f0dbef1(user.orders - TableGroup@50661532(customers))
-          TableGroupJoinTree@5df9aeda(TableGroup@50661532(customers), customers - IndexScan@3c250cce(Index(user.customers.PRIMARY[IndexColumn(cid)]), NONE, =user.orders.cid, rows = 1, cost = 428.713))
+          TableGroupJoinTree@5df9aeda(TableGroup@50661532(customers), customers - IndexScan@3c250cce(Index(user.customers.PRIMARY[IndexColumn(cid)]), NONE, =user.orders.cid, rows = 1, cost = 338.713))
             TableSource@72b0f2b2(user.customers - TableGroup@50661532(customers))
