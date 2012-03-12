@@ -16,7 +16,9 @@
 
 package com.akiban.server.expression.std;
 
+import java.text.DateFormatSymbols;
 import java.util.HashMap;
+import java.util.Locale;
 import org.joda.time.DateTimeFieldType;
 import org.joda.time.MutableDateTime;
 
@@ -1251,46 +1253,20 @@ public enum DateTimeField
     static protected final HashMap<String, Integer> month = new HashMap<String, Integer>();
     static
     {
-        weekDay.put("SUNDAY", 0);
-        weekDay.put("MONDAY", 1);
-        weekDay.put("TUESDAY", 2);
-        weekDay.put("WEDNESDAY", 3);
-        weekDay.put("THURSDAY", 4);
-        weekDay.put("FRIDAY", 5);
-        weekDay.put("SATURDAY", 6);
+        DateFormatSymbols fm = new DateFormatSymbols(new Locale(System.getProperty("user.language")));
+        String mon [] = fm.getMonths(), shortMon[] = fm.getShortMonths(),
+               wk[] = fm.getWeekdays(), shortWk[] = fm.getShortWeekdays();
 
-        abbWeekday.put("SUN", 0);
-        abbWeekday.put("MON", 1);
-        abbWeekday.put("TUE", 2);
-        abbWeekday.put("WED", 3);
-        abbWeekday.put("THU", 4);
-        abbWeekday.put("FRI", 5);
-        abbWeekday.put("SAT", 6);
-
-        abbMonth.put("JAN", 1);
-        abbMonth.put("FEB", 2);
-        abbMonth.put("MAR", 3);
-        abbMonth.put("APR", 4);
-        abbMonth.put("MAY", 5);
-        abbMonth.put("JUN", 6);
-        abbMonth.put("JUL", 7);
-        abbMonth.put("AUG", 8);
-        abbMonth.put("SEP", 9);
-        abbMonth.put("OCT", 10);
-        abbMonth.put("NOV", 11);
-        abbMonth.put("DEC", 12);
-
-        month.put("JANUARY", 1);
-        month.put("FEBRUARY", 2);
-        month.put("MARCH", 3);
-        month.put("APRIL", 4);
-        month.put("MAY", 5);
-        month.put("JUNE", 6);
-        month.put("JULY", 7);
-        month.put("AUGUST", 8);
-        month.put("SEPTEMBER", 9);
-        month.put("OCTOBER", 10);
-        month.put("NOVEMBER", 11);
-        month.put("DECEMBER", 12);
+        for (int n = 0; n < 12; ++n)
+        {
+            month.put(mon[n].toUpperCase(), n+1);
+            abbMonth.put(shortMon[n], n+1);
+        }
+        
+        for (int n = 0; n < 7; ++n)
+        {
+            weekDay.put(wk[n], n);
+            abbWeekday.put(shortWk[n], n);
+        }
     }
 }
