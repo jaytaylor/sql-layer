@@ -3,9 +3,9 @@ SelectQuery@5e8c39d7
     Project@1d46ee9c[user.orders.order_date, user.child.name]
       Select@1bdb52c8[]
         JoinNode@5c17d6c1(INNER/NESTED_LOOPS)
-          TableGroupJoinTree@1f2c4f94(TableGroup@655daa9e(customers), customers INNER orders - SingleIndexScan@686c9f0f(Index(user.orders.order_date[IndexColumn(order_date)]), NONE, >2011-01-01, rows = 1, cost = 434.912))
+          TableGroupJoinTree@1f2c4f94(TableGroup@655daa9e(customers), customers INNER orders - IndexScan@686c9f0f(Index(user.orders.order_date[IndexColumn(order_date)]), NONE, >2011-01-01, rows = 1, cost = 434.912))
             TableSource@5a10c276(user.customers - TableGroup@655daa9e(customers))
               TableSource@24eff2c(user.orders - TableGroupJoin@333ec758(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-          TableGroupJoinTree@4bb9305f(TableGroup@5e917cb0(parent), parent INNER child - SingleIndexScan@21913751(Index(user.parent.name[IndexColumn(name)]), NONE, =user.customers.name, rows = 1, cost = 1072.29))
+          TableGroupJoinTree@4bb9305f(TableGroup@5e917cb0(parent), parent INNER child - IndexScan@21913751(Index(user.parent.name[IndexColumn(name)]), NONE, =user.customers.name, rows = 1, cost = 1072.29))
             TableSource@1052a2e3(user.parent - TableGroup@5e917cb0(parent))
               TableSource@2143ed74(user.child - TableGroupJoin@44c6b80e(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
