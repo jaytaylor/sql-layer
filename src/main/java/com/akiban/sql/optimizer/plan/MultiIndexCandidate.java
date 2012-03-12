@@ -77,19 +77,26 @@ public abstract class MultiIndexCandidate<C> {
     }
     
     public List<Column> getUnpeggedColumns() {
+        List<IndexColumn> keyColumns = index.getKeyColumns();
+        List<IndexColumn> valueColumns = index.getValueColumns();
+
         int startAt = pegged.size();
-        int endAt = index.indexRowComposition().getLength();
+        int endAt = keyColumns.size() + valueColumns.size();
         if (endAt - startAt == 0)
             return Collections.emptyList();
+
         List<Column> results = new ArrayList<Column>(endAt - startAt);
-        RowDef rowDef = index.indexDef().getRowDef();
+        int offset = 0;
+        List<IndexColumn> indexColumnList = keyColumns;
         for (int i = startAt; i < endAt; ++i) {
-            int fieldPos = index.indexRowComposition().getFieldPosition(i);
-            Column column = rowDef.getFieldDef(fieldPos).column();
+            if (indexColumnList == keyColumns && i >= keyColumns.size()) {
+                offset = keyColumns.size();
+                indexColumnList = valueColumns;
+            }
+            Column column = indexColumnList.get(i-offset).getColumn();
             results.add(column);
         }
         return results;
-//        indexes.get(1).indexDef().getRowDef().getFieldDef(indexes.get(1).indexRowComposition().getFieldPosition(0))
     }
 
     public List<C> getPegged() {
