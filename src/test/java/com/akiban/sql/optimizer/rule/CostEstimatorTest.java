@@ -15,16 +15,13 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.ais.model.*;
 import com.akiban.sql.optimizer.OptimizerTestBase;
 
 import static com.akiban.sql.optimizer.rule.CostEstimator.*;
 
 import com.akiban.sql.optimizer.plan.*;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.UserTable;
 import com.akiban.server.types.AkType;
 
 import org.junit.Before;
@@ -43,7 +40,9 @@ public class CostEstimatorTest
     protected AkibanInformationSchema ais;
     protected TableTree tree;
     protected CostEstimator costEstimator;
-    
+
+    private static final boolean NEW_COST_ESTIMATOR = Boolean.getBoolean("costIndexScan");
+
     @Before
     public void loadSchema() throws Exception {
         ais = OptimizerTestBase.parseSchema(new File(RESOURCE_DIR, "schema.ddl"));
@@ -58,6 +57,16 @@ public class CostEstimatorTest
 
     protected Index index(String table, String name) {
         return table(table).getIndex(name);
+    }
+
+    protected Index groupIndex(String name) {
+        for (Group group : ais.getGroups().values()) {
+            Index index = group.getIndex(name);
+            if (index != null) {
+                return index;
+            }
+        }
+        return null;
     }
 
     protected TableNode tableNode(String name) {
@@ -117,8 +126,50 @@ public class CostEstimatorTest
                                                    null, false, null, false);
         assertEquals(1, costEstimate.getRowCount());
     }
+    
+    @Test
+    public void testMultipleIndexEqEq() {
+        Index index = groupIndex("sku_and_date");
+        List<ExpressionNode> bothEQ = Arrays.asList(constant("0254", AkType.VARCHAR),
+                                                    constant(1032274, AkType.DATE));
+        CostEstimate costEstimate = costEstimator.costIndexScan(index, bothEQ, null, false, null, false);
+        // sku 0254 is a match for a histogram entry with eq = 110. total distinct count = 20000
+        //     selectivity = 110 / 20000 = 0.0055
+        // date 1032274 is covered by histogram entry with key = 1032275, distinct = 43, lt = 59, total distinct count = 1000
+        //     selectivity = 59 / (43 * 1000) = 0.0014
+        // Combined selectivity = 7.55e-6
+        // Expected rows = 1
+        assertEquals(1, costEstimate.getRowCount());
+    }
 
-    /* Cardinalities are: 
+    @Test
+    public void testMultipleIndexEqRange() {
+        Index index = groupIndex("sku_and_date");
+        List<ExpressionNode> skuEQ = Arrays.asList(constant("0254", AkType.VARCHAR));
+        ExpressionNode loDate = constant(1029500, AkType.DATE);
+        ExpressionNode hiDate = constant(1033000, AkType.DATE);
+        CostEstimate costEstimate = costEstimator.costIndexScan(index, skuEQ, loDate, true, hiDate, true);
+        // sku 0254 is a match for a histogram entry with eq = 110. total distinct count = 20000
+        //     selectivity = 110 / 20000 = 0.0055
+        // date 1029500:
+        //     - Past the first 3 histogram entries (1029263, 1029270, 1029298)
+        //     - 32% through the range of the 4th entry (1029937) with distinct = 108, lt = 140, so this contributes a
+        //       about 140 * (1 - 0.32) = 96. Actual bit-twiddly calculation yields 115.
+        // date 1033000:
+        //     - Next entries cover 541  entries
+        //     - 69% through the entry with key 1033431 with distinct = 99, lt = 127, so it contributes
+        //       127 * 0.69 = 88, (actually 51)
+        // Selectivity for the date range is (115 + 541 + 51) / 1000 = 70.7%
+        // Combined selectivity = 0.00389
+        // Expected rows = 78.
+        if (NEW_COST_ESTIMATOR) {
+            assertEquals(78, costEstimate.getRowCount());
+        } else {
+            assertEquals(1, costEstimate.getRowCount());
+        }
+    }
+
+    /* Cardinalities are:
      *   100 customers, 1000 (10x) orders, 20000 (20x) items, 100 (1x) addresses 
      */
 
@@ -226,5 +277,4 @@ public class CostEstimatorTest
                                                        new byte[] { (byte)0x00, (byte)0x00, (byte)0x80, (byte)0x00 },
                                                        100));
     }
-
 }

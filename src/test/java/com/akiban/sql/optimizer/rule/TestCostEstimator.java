@@ -76,7 +76,7 @@ public class TestCostEstimator extends CostEstimator
                     }
                 }
             }
-            indexStatsArray[i++] = getIndexStatistics(index);
+            indexStatsArray[i++] = indexStatistics;
         }
         return indexStatsArray;
     }

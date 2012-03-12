@@ -169,7 +169,7 @@ public abstract class CostEstimator
             return indexAccessCost(rowCount, index);
         }
         boolean scaleCount = scaleIndexStatistics();
-        double selectivity;
+        double selectivity = 1.0;
         if ((lowComparand == null) && (highComparand == null)) {
             // Equality lookup.
 
@@ -180,9 +180,12 @@ public abstract class CostEstimator
             selectivity = fractionEqual(equalityComparands, index, indexStatsArray);
         }
         else {
-            selectivity = fractionBetween(indexStatsArray[columnCount - 1], 
-                                          lowComparand, lowInclusive, 
-                                          highComparand, highInclusive);
+            if (equalityComparands != null && !equalityComparands.isEmpty()) {
+                selectivity = fractionEqual(equalityComparands, index, indexStatsArray);
+            }
+            selectivity *= fractionBetween(indexStatsArray[columnCount - 1],
+                                           lowComparand, lowInclusive,
+                                           highComparand, highInclusive);
         }
         // statsCount: Number of rows in the table based on an index of the table, according to index
         //    statistics, which may be stale.
@@ -262,6 +265,9 @@ public abstract class CostEstimator
                         rowCount += entry.getEqualCount();
                     continue;
                 }
+                // TODO: This doesn't look right. If loBytes and hiBytes are not covered by the same entry,
+                // TODO: The uniformPortion contribution is computed for each entry past the one
+                // TODO: actually containing loBytes.
                 portionStart = uniformPortion(entryStartBytes, entryEndBytes, lowBytes,
                                               entry.getLessCount());
                 // Fall through to check high in same entry.
@@ -377,6 +383,7 @@ public abstract class CostEstimator
                                               entryEndBytes, 
                                               loBytes, 
                                               entry.getLessCount());
+                before = false; // Don't include uniformPortion for subsequent buckets.
                 // Fall through to check high in same entry.
             }
             if (hiBytes != null) {
@@ -409,7 +416,6 @@ public abstract class CostEstimator
             if (indexStats == null) {
                 return false;
             } else {
-                Histogram histogram = indexStats.getHistogram(1);
                 if (!mostlyDistinct(indexStats)) {
                     // < 90% distinct
                     return false;

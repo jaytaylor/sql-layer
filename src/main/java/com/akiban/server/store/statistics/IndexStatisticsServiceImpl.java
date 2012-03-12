@@ -175,7 +175,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                     }
                 }
             }
-            indexStatsArray[i++] = getIndexStatistics(session, index);
+            indexStatsArray[i++] = indexStatistics;
         }
         return indexStatsArray;
     }
