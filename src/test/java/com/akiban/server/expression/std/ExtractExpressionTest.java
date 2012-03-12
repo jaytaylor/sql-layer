@@ -36,7 +36,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     {
         for (int month = 0; month < 12; ++month)
         {
-            Expression in = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2009-" + month + "-12"));
+            Expression in = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2009-" + (month+1) + "-12"));
             Expression top = ExtractExpression.MONTH_NAME_COMPOSER.compose(Arrays.asList(in));
 
             assertEquals(new DateFormatSymbols(new Locale(System.getProperty("user.language"))).getMonths()[month],
