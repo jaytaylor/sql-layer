@@ -151,7 +151,7 @@ public class DateTimeArithExpression extends ArithExpression
             //  - if it's anything else, then InvalidArgumentType will be thrown
             if (ArithExpression.isNumeric(secondArg))
                 argumentTypes.set(1, ExpressionTypes.INTERVAL_MILLIS);
-        
+
             return composer.composeType(argumentTypes);
         }        
         
