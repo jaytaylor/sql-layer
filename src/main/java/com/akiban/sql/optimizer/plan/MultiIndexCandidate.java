@@ -35,11 +35,10 @@ import java.util.List;
  * eventually turn into a predicate on the index scan. For instance, say we had an index
  * <code>c_idx ON customers(name, dob)</code>. The index's full columns list is <code>[name, dob, cid]</code>, and each
  * one of those columns represents a slot into which a condition can be pegged. For instance, given the conditions
- * <code>{name="Bob", name="Mary", dob="1971-02-03"}</code>, we could expect two MultiIndexCandidates:</p>
+ * <code>{name="Bob", dob="1971-02-03"}</code>, we could expect this MultiIndexCandidates:</p>
  * <table border="1">
  *     <tr><th>name</th><th>dob</th><th>cid</th></tr>
  *     <tr><td>pegged to "Bob"</td><td>pegged to "1971-02-03"</td><td>unpegged</td></tr>
- *     <tr><td>pegged to "Mary"</td><td>pegged to "1971-02-03"</td><td>unpegged</td></tr>
  * </table>
  * @param <C> the condition type.
  */
