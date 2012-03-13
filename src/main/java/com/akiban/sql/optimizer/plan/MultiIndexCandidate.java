@@ -57,17 +57,23 @@ public class MultiIndexCandidate<C> {
 
     public Column getNextFreeColumn() {
         int nextFreeIndex = pegged.size();
-        List<IndexColumn> columns = index.getKeyColumns();
-        if (nextFreeIndex >= columns.size()) {
-            nextFreeIndex -= columns.size();
-            columns = index.getValueColumns();
-        }
+        List<IndexColumn> columns = index.getAllColumns();
         return nextFreeIndex >= columns.size()
             ? null
             : columns.get(nextFreeIndex).getColumn();
     }
-    
-    public void peg(C condition) {
+
+    /**
+     * <p>Peg a condition <em>without checking whether it makes sense to do so</em>. It is incumbent on the caller to
+     * only peg a meaningful condition here; this is done by invoking {@link #getNextFreeColumn()}, translating that
+     * Column to a condition which is known to be valid, and then pegging that condition.</p>
+     * @param condition the condition to peg
+     * @throws IllegalStateException if there are no free slots (that is, if {@linkplain #getNextFreeColumn()} would
+     * return null)
+     */
+    void peg(C condition) {
+        if (pegged.size() >= index.getAllColumns().size())
+            throw new IllegalStateException("can't peg any more columns");
         pegged.add(condition);
     }
     
@@ -80,23 +86,18 @@ public class MultiIndexCandidate<C> {
     }
 
     public List<Column> getUnpeggedColumns() {
-        List<IndexColumn> keyColumns = index.getKeyColumns();
-        List<IndexColumn> valueColumns = index.getValueColumns();
+        
+        
+        List<IndexColumn> allColumns = index.getAllColumns();
 
-        int startAt = pegged.size();
-        int endAt = keyColumns.size() + valueColumns.size();
-        if (endAt - startAt == 0)
+        int i = pegged.size();
+        int endAt = allColumns.size();
+        if (endAt - i == 0)
             return Collections.emptyList();
 
-        List<Column> results = new ArrayList<Column>(endAt - startAt);
-        int offset = 0;
-        List<IndexColumn> indexColumnList = keyColumns;
-        for (int i = startAt; i < endAt; ++i) {
-            if (indexColumnList == keyColumns && i >= keyColumns.size()) {
-                offset = keyColumns.size();
-                indexColumnList = valueColumns;
-            }
-            Column column = indexColumnList.get(i - offset).getColumn();
+        List<Column> results = new ArrayList<Column>(endAt - i);
+        for (; i < endAt; ++i) {
+            Column column = allColumns.get(i).getColumn();
             results.add(column);
         }
         return results;
