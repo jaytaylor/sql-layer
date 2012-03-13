@@ -546,7 +546,7 @@ public class ExtractExpression extends AbstractUnaryExpression
         private static final EnumSet<AkType> DATES = EnumSet.of( AkType.DATE, AkType.DATETIME, AkType.TIMESTAMP, AkType.YEAR);
         private static final EnumSet<AkType> TIMES = EnumSet.of(AkType.TIME, AkType.TIMESTAMP, AkType.DATETIME);
         private static final String months[] = new DateFormatSymbols(new Locale(System.getProperty("user.language"))).getMonths();
-        
+
         private AkType t;
         @Override
         public ValueSource eval() 
@@ -634,7 +634,7 @@ public class ExtractExpression extends AbstractUnaryExpression
                 return NullValueSource.only();
             }
         }
-    
+
         private Long tryGetLong(AkType targetType)
         {
             try
