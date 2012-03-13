@@ -41,7 +41,7 @@ public class CostEstimatorTest
     protected TableTree tree;
     protected CostEstimator costEstimator;
 
-    private static final boolean NEW_COST_ESTIMATOR = Boolean.getBoolean("costIndexScan");
+    private static final boolean NEW_COST_ESTIMATOR = System.getProperty("costIndexScan", "old").equals("new");
 
     @Before
     public void loadSchema() throws Exception {
