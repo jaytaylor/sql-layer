@@ -29,7 +29,7 @@ import com.akiban.sql.StandardException;
 import com.akiban.server.expression.TypesList;
 import java.util.List;
 
-public class TrimExpression extends AbstractBinaryExpression
+public class TrimExpression extends AbstractTernaryExpression
 {
     public static enum TrimType { LEADING, TRAILING}
     
@@ -44,7 +44,7 @@ public class TrimExpression extends AbstractBinaryExpression
     @Scalar ("trim")
     public static final ExpressionComposer TRIM_COMPOSER = new InternalComposer(null);
     
-    private static final class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
+    private static final class InnerEvaluation extends AbstractThreeArgExpressionEvaluation
     {
         final TrimType trimType;
         
@@ -57,10 +57,10 @@ public class TrimExpression extends AbstractBinaryExpression
         @Override
         public ValueSource eval() 
         {
-            ValueSource trimSource = left();
+            ValueSource trimSource = first();
             if (trimSource.isNull()) return NullValueSource.only();
             
-            ValueSource trimChar = right();
+            ValueSource trimChar = second();
             if (trimChar.isNull()) return NullValueSource.only();
             
             String st = trimSource.getString();
@@ -114,7 +114,7 @@ public class TrimExpression extends AbstractBinaryExpression
         @Override
         protected Expression compose(Expression first, Expression second, Expression third)
         {
-            return new TrimExpression(first, second, trimType);
+            return new TrimExpression(first, second, third, trimType);
         }
     }
   
@@ -139,9 +139,9 @@ public class TrimExpression extends AbstractBinaryExpression
      * @param operand
      * @param type 
      */
-    public TrimExpression (Expression first, Expression second, TrimType type)
+    public TrimExpression (Expression first, Expression second, Expression third,TrimType type)
     {
-        super(AkType.VARCHAR, first, second);
+        super(AkType.VARCHAR, first, second, third);
         this.trimType = type;
     }
     

@@ -35,7 +35,7 @@ public class TrimExpressionTest extends ComposedExpressionTestBase
     private String trimChar;
     private String expected;
     private TrimExpression.TrimType trimType;
-    private final CompositionTestInfo testInfo = new CompositionTestInfo(1, AkType.VARCHAR, true);
+    private final CompositionTestInfo testInfo = new CompositionTestInfo(3, AkType.VARCHAR, true);
 
     private static boolean alreadyExc = false;
     public TrimExpressionTest (String input, String expected, 
@@ -87,7 +87,7 @@ public class TrimExpressionTest extends ComposedExpressionTestBase
     {
         Expression inputExp = new LiteralExpression(AkType.VARCHAR, input);
         Expression trimCharExp = new LiteralExpression (AkType.VARCHAR, trimChar);
-        Expression expression = new TrimExpression(inputExp, trimCharExp, trimType);
+        Expression expression = new TrimExpression(inputExp, trimCharExp, trimCharExp, trimType);
         ValueSource result = expression.evaluation().eval();
         String actual = result.getString();
         
