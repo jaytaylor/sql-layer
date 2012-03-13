@@ -38,7 +38,7 @@ public class TableGroupJoinTree extends BaseJoinable
         TableGroupJoinNode parent, nextSibling, firstChild;
         JoinType parentJoinType;
         ConditionList joinConditions;
-        int flags;
+        int state;
         
         public TableGroupJoinNode(TableSource table) {
             this.table = table;
@@ -80,11 +80,12 @@ public class TableGroupJoinTree extends BaseJoinable
             this.joinConditions = joinConditions;
         }
 
-        public int getFlags() {
-            return flags;
+        /** Integer state managed by some rule. */
+        public int getState() {
+            return state;
         }
-        public void setFlags(int flags) {
-            this.flags = flags;
+        public void setState(int state) {
+            this.state = state;
         }
 
         /** Find the given table in this (sub-)tree. */

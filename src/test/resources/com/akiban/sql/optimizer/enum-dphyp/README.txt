@@ -1,5 +1,9 @@
 clique-3: 3-way conditions with WHERE
 
+cross-2: two tables no joins
+
+cross-5: five tables with three hyperedges
+
 inner-2: two tables
 
 inner-3: three tables
