@@ -15,6 +15,9 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.error.InconvertibleTypesException;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
@@ -52,7 +55,17 @@ public class CastExpression extends AbstractUnaryExpression
             if (type.equals(operandSource.getConversionType()))
                 return operandSource;
             valueHolder().expectType(type);
-            return Converters.convert(operandSource, valueHolder());
+            try
+            {
+                return Converters.convert(operandSource, valueHolder());
+            }
+            catch (InvalidOperationException e)
+            {
+                QueryContext qc = queryContext();
+                if (qc != null)
+                    qc.warnClient(e);
+                return NullValueSource.only();
+            }
         }
         
         private final AkType type;        
