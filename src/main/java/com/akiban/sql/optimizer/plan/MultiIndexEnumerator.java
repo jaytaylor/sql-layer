@@ -119,11 +119,11 @@ public abstract class MultiIndexEnumerator<C> {
                 // handle the two single-branch cases
                 if (firstUTable.isDescendantOf(secondUTable)
                         && includesHKey(secondUTable, commonTrailing, columnEquivalences)) {
-                    output.add(new MultiIndexPair<C>(first, second));
+                    output.add(new MultiIndexPair<C>(first, second, commonTrailing.size()));
                 }
                 else if (secondUTable.isDescendantOf(firstUTable)
                         && includesHKey(firstUTable, commonTrailing, columnEquivalences)) {
-                    output.add(new MultiIndexPair<C>(second, first));
+                    output.add(new MultiIndexPair<C>(second, first, commonTrailing.size()));
                 }
                 else {
                     // TODO -- enable when multi-branch is in
@@ -182,10 +182,14 @@ public abstract class MultiIndexEnumerator<C> {
     public static class MultiIndexPair<C> {
         MultiIndexCandidate<C> outputIndex;
         MultiIndexCandidate<C> selectorIndex;
+        private int commonFieldsCount;
 
-        public MultiIndexPair(MultiIndexCandidate<C> outputIndex, MultiIndexCandidate<C> selectorIndex) {
+        public MultiIndexPair(MultiIndexCandidate<C> outputIndex, MultiIndexCandidate<C> selectorIndex,
+                              int commonFieldsCount)
+        {
             this.outputIndex = outputIndex;
             this.selectorIndex = selectorIndex;
+            this.commonFieldsCount = commonFieldsCount;
         }
 
         public MultiIndexCandidate<C> getOutputIndex() {
@@ -194,6 +198,10 @@ public abstract class MultiIndexEnumerator<C> {
 
         public MultiIndexCandidate<C> getSelectorIndex() {
             return selectorIndex;
+        }
+        
+        public int getCommonFieldsCount() {
+            return commonFieldsCount;
         }
 
         @Override

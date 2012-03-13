@@ -29,7 +29,7 @@ public final class MultiIndexIntersectScan extends IndexScan {
     private Map<Table,TableSource> branch;
     private IndexScan outputScan;
     private IndexScan selectorScan;
-    
+
     public MultiIndexIntersectScan(Map<Table,TableSource> branch,
                                    MultiIndexPair<ComparisonCondition> index)
     {
@@ -53,6 +53,18 @@ public final class MultiIndexIntersectScan extends IndexScan {
         if (selectorScan == null)
             selectorScan = createScan(index.getSelectorIndex());
         return selectorScan;
+    }
+
+    public int getComparisonFields() {
+        return index.getCommonFieldsCount();
+    }
+
+    public int getOutputOrderingFields() {
+        return getOrderingFields(outputScan);
+    }
+
+    public int getSelectorOrderingFields() {
+        return getOrderingFields(selectorScan);
     }
 
     @Override
@@ -89,5 +101,9 @@ public final class MultiIndexIntersectScan extends IndexScan {
         singleScan.setRequiredTables(getRequiredTables());
 
         return singleScan;
+    }
+
+    private int getOrderingFields(IndexScan scan) {
+        return scan.getKeyColumns().size() + scan.getValueColumns().size();
     }
 }
