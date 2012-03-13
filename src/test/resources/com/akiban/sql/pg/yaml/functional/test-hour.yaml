@@ -1,4 +1,6 @@
 # Test the HOUR() function
+# bug 901875: (fix released)
+# bug 901845: triaged
 ---
 - Include: all-types-schema.yaml
 ---
@@ -46,7 +48,7 @@
 ---
 - Statement: select hour(time_field) from all_types where bigint_field=8
 - output: [[8]]
----
+--- # command 20
 - Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (9, '09:04:07')
 ---
 - Statement: select hour(time_field) from all_types where bigint_field=9
@@ -83,7 +85,7 @@
 - output: [[15]]
 ---
 - Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (16, '16:04:07')
----
+--- # command 35
 - Statement: select hour(time_field) from all_types where bigint_field=16
 - output: [[16]]
 ---
@@ -121,7 +123,7 @@
 ---
 - Statement: select hour(time_field) from all_types where bigint_field=23
 - output: [[23]]
----
+--- # command 50
 - Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (24, '24:04:07')
 ---
 - Statement: select hour(time_field) from all_types where bigint_field=24
@@ -141,24 +143,23 @@
 ---
 - Statement: select hour(time_field) from all_types where bigint_field = -99
 - output: [[99]]
----
+#---
 # bug 901845
 #- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (-999, '-999:04:07')
 #---
 #- Statement: select bigint_field, hour(time_field) from all_types where bigint_field = -999
 #- output: [[-999, 838]]
-#---
-# bug 901875
-#- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (838, '838:04:07')
-#---
-#- Statement: select bigint_field, hour(time_field) from all_types where bigint_field = 838
-#- output: [[838, 838]]
-#---
-#- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (999, '999:04:07')
-#---
-#- Statement: select bigint_field, hour(time_field) from all_types where bigint_field = 999
-#- output: [[999, 838]]
-#---
+--- # bug 901875 # command 58
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (838, '838:04:07')
+--- #
+- Statement: select bigint_field, hour(time_field) from all_types where bigint_field = 838
+- output: [[838, 838]]
+---
+- Statement: INSERT INTO all_types (bigint_field, time_field) VALUES (999, '999:04:07')
+---
+- Statement: select bigint_field, hour(time_field) from all_types where bigint_field = 999
+- output: [[999, null]]
+---
 - Statement: select id,HOUR(time_field),expected_hour from datetime_matrix where HOUR(time_field) <> expected_HOUR;
 - row_count: 0
 ---

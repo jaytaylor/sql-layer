@@ -1,8 +1,15 @@
 # Test the AVG aggregate function
-
+# Related bug(s): 905492: AVG of intergral values produces wrong result (due to integer division)
+# Status: confirmed
 ---
 - Include: all-types-schema.yaml
-
+---
+- CreateTable: t (real_field real)
+---
+- Statement: INSERT INTO t VALUES ('Infinity')
+---
+- Statement: SELECT AVG(real_field) FROM t
+- output: [[Infinity]]
 # Test with no rows => null
 ---
 - Statement: SELECT AVG(bigint_field), AVG(bigint_unsigned_field),

@@ -360,28 +360,35 @@ public class BranchJoiner_CBO extends BaseRule
 
     /* Flags for TableGroupJoinNode */
 
+    /** This table needs to be included in flattens, either because
+     * its columns are needed or it is a source for a
+     * <code>BranchLookup</code>. */
     protected static final int REQUIRED = 1;
+    /** This table has at least one descendants. */
     protected static final int PARENT = 2;
+    /** This table has at least <em>two</em> active descendants, which
+     * means that it is where two branches meet. */
     protected static final int BRANCHPOINT = 4;
+    /** This table has not yet been included in result plan nodes. */
     protected static final int PENDING = 8;
 
     protected static boolean isRequired(TableGroupJoinNode table) {
-        return ((table.getFlags() & REQUIRED) != 0);
+        return ((table.getState() & REQUIRED) != 0);
     }
     protected static boolean isParent(TableGroupJoinNode table) {
-        return ((table.getFlags() & PARENT) != 0);
+        return ((table.getState() & PARENT) != 0);
     }
     protected static boolean isBranchpoint(TableGroupJoinNode table) {
-        return ((table.getFlags() & BRANCHPOINT) != 0);
+        return ((table.getState() & BRANCHPOINT) != 0);
     }
     protected static boolean isPending(TableGroupJoinNode table) {
-        return ((table.getFlags() & PENDING) != 0);
+        return ((table.getState() & PENDING) != 0);
     }
     protected static void setPending(TableGroupJoinNode table) {
-        table.setFlags(table.getFlags() | PENDING);
+        table.setState(table.getState() | PENDING);
     }
     protected static void clearPending(TableGroupJoinNode table) {
-        table.setFlags(table.getFlags() & ~PENDING);
+        table.setState(table.getState() & ~PENDING);
     }
 
     protected void markBranches(TableGroupJoinTree tableGroup, 
@@ -405,7 +412,7 @@ public class BranchJoiner_CBO extends BaseRule
             ((flags & BRANCHPOINT) != 0)) {
             flags |= REQUIRED | PENDING;
         }
-        parent.setFlags(flags);
+        parent.setState(flags);
         return (flags != 0);
     }
 

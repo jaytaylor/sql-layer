@@ -1,4 +1,5 @@
 # AVG of REAL Infinity fails
+# Status: fix released
 ---
 - CreateTable: t (real_field real)
 ---

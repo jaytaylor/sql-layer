@@ -1,4 +1,6 @@
 # Specifying CHARACTER SET for column fails
+# BUG 901347: CHARSET syntax not supported
+# Status: Triaged
 ---
 - CreateTable: t (v varchar(32) CHARACTER SET latin1)
 ...

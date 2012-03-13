@@ -1,4 +1,6 @@
-# Incorrect DATE arithmetic via system test (bug 912825)
+# Incorrect (technically correct, but not intuitive) DATE arithmetic via system test
+# BUG 919825: incorrect DATE due to timezone (daylight-saving) issues
+# Status confirmed
 ---
 - CreateTable: t (dummy int)
 ---

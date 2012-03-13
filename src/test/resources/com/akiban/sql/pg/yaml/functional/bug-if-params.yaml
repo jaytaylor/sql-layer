@@ -1,4 +1,5 @@
 # IF function with boolean parameter produces wrong result
+# Fix released/committed. (Test passes now)
 ---
 - CreateTable: t (bigint_field bigint)
 ---
@@ -6,5 +7,5 @@
 ---
 - Statement: SELECT IF(?, 'yup', 'nope') FROM t
 - params: [[1]]
-- output: [[yup]]
+- output: [['yup']]
 ...

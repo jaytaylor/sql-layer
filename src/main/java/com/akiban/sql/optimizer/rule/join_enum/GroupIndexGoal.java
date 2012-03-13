@@ -15,6 +15,7 @@
 
 package com.akiban.sql.optimizer.rule.join_enum;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.sql.optimizer.rule.CostEstimator;
 import com.akiban.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
 import com.akiban.sql.optimizer.rule.range.ColumnRanges;
@@ -145,11 +146,18 @@ public class GroupIndexGoal implements Comparator<IndexScan>
      * @return <code>false</code> if the index is useless.
      */
     public boolean usable(IndexScan index) {
-        List<IndexColumn> indexColumns = index.getIndex().getKeyColumns();
-        int ncols = indexColumns.size();
+        List<IndexColumn> keyColumns = index.getKeyColumns();
+        List<IndexColumn> valueColumns = index.getValueColumns();
+        int ncols = keyColumns.size() + valueColumns.size();
         List<ExpressionNode> indexExpressions = new ArrayList<ExpressionNode>(ncols);
         List<OrderByExpression> orderBy = new ArrayList<OrderByExpression>(ncols);
-        for (IndexColumn indexColumn : indexColumns) {
+        for (IndexColumn indexColumn : keyColumns) {
+            ExpressionNode indexExpression = getIndexExpression(index, indexColumn);
+            indexExpressions.add(indexExpression);
+            orderBy.add(new OrderByExpression(indexExpression,
+                                              indexColumn.isAscending()));
+        }
+        for (IndexColumn indexColumn : valueColumns) {
             ExpressionNode indexExpression = getIndexExpression(index, indexColumn);
             indexExpressions.add(indexExpression);
             orderBy.add(new OrderByExpression(indexExpression,
@@ -476,7 +484,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         // indexes, below.
         if (required.contains(table)) {
             for (TableIndex index : table.getTable().getTable().getIndexes()) {
-                IndexScan candidate = new IndexScan(index, table);
+                IndexScan candidate = new SingleIndexScan(index, table);
                 bestIndex = betterIndex(bestIndex, candidate);
             }
         }
@@ -538,7 +546,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                         (rootRequired == null))
                         continue;
                 }
-                IndexScan candidate = new IndexScan(index, rootTable, 
+                IndexScan candidate = new SingleIndexScan(index, rootTable,
                                                     rootRequired, leafRequired, 
                                                     table);
                 bestIndex = betterIndex(bestIndex, candidate);
@@ -635,29 +643,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
     protected CostEstimate estimateCost(IndexScan index) {
         CostEstimator costEstimator = queryGoal.getCostEstimator();
-        CostEstimate cost = null;
-        if (index.getConditionRange() == null) {
-            cost = costEstimator.costIndexScan(index.getIndex(),
-                                               index.getEqualityComparands(),
-                                               index.getLowComparand(), 
-                                               index.isLowInclusive(),
-                                               index.getHighComparand(), 
-                                               index.isHighInclusive());
-        }
-        else {
-            for (RangeSegment segment : index.getConditionRange().getSegments()) {
-                CostEstimate acost = costEstimator.costIndexScan(index.getIndex(),
-                                                                 index.getEqualityComparands(),
-                                                                 segment.getStart().getValueExpression(),
-                                                                 segment.getStart().isInclusive(),
-                                                                 segment.getEnd().getValueExpression(),
-                                                                 segment.getEnd().isInclusive());
-                if (cost == null)
-                    cost = acost;
-                else
-                    cost = cost.union(acost);
-            }
-        }
+        CostEstimate cost = createBasicCostEstimate(index, costEstimator);
         if (!index.isCovering()) {
             CostEstimate flatten = costEstimator.costFlatten(index.getLeafMostTable(),
                                                              index.getRequiredTables());
@@ -681,6 +667,40 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
         return cost;
     }
+
+    private CostEstimate createBasicCostEstimate(IndexScan index, CostEstimator costEstimator) {
+        if (index instanceof SingleIndexScan) {
+            SingleIndexScan singleIndex = (SingleIndexScan) index;
+            if (singleIndex.getConditionRange() == null) {
+                return costEstimator.costIndexScan(singleIndex.getIndex(),
+                        singleIndex.getEqualityComparands(),
+                        singleIndex.getLowComparand(),
+                        singleIndex.isLowInclusive(),
+                        singleIndex.getHighComparand(),
+                        singleIndex.isHighInclusive());
+            }
+            else {
+                CostEstimate cost = null;
+                for (RangeSegment segment : singleIndex.getConditionRange().getSegments()) {
+                    CostEstimate acost = costEstimator.costIndexScan(singleIndex.getIndex(),
+                            singleIndex.getEqualityComparands(),
+                            segment.getStart().getValueExpression(),
+                            segment.getStart().isInclusive(),
+                            segment.getEnd().getValueExpression(),
+                            segment.getEnd().isInclusive());
+                    if (cost == null)
+                        cost = acost;
+                    else
+                        cost = cost.union(acost);
+                }
+                return cost;
+            }
+        }
+        else {
+            throw new AkibanInternalException("unknown index type: " + index + "(" + index.getClass() + ")");
+        }
+    }
+
 
     public void install(PlanNode scan, List<ConditionList> conditionSources) {
         tables.setScan(scan);

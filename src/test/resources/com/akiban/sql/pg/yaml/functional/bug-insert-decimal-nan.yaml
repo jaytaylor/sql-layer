@@ -1,4 +1,6 @@
 # Inserting a NaN into a decimal is not supported
+# BUG 889289
+# Status confirmed
 ---
 - CreateTable: t (decimal_field decimal)
 ---

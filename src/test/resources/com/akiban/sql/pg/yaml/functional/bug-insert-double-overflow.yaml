@@ -1,4 +1,6 @@
 # Inserting an overflow double produces the wrong error code
+# BUG 906988
+# Status new
 ---
 - CreateTable: t (double_field double)
 ---

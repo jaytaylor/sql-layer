@@ -87,17 +87,31 @@ public abstract class DPhyp<P>
         int ntables = tables.size();
         assert (ntables < 31);
         plans = new Object[1 << ntables];
-        // Start with single tables.
-        for (int i = 0; i < ntables; i++) {
-            long bitset = JoinableBitSet.of(i);
-            setPlan(bitset, evaluateTable(bitset, tables.get(i)));
+        for (int pass = 1; pass <= 2; pass++) {
+            // Start with single tables.
+            for (int i = 0; i < ntables; i++) {
+                long bitset = JoinableBitSet.of(i);
+                setPlan(bitset, evaluateTable(bitset, tables.get(i)));
+            }
+            for (int i = ntables - 1; i >= 0; i--) {
+                long ts = JoinableBitSet.of(i);
+                emitCsg(ts);
+                enumerateCsgRec(ts, JoinableBitSet.through(i));
+            }
+            P plan = getPlan(plans.length-1); // One that does all the joins together.
+            if (plan != null)
+                return plan;
+            if (TRACE) {
+                System.out.println("Plan not complete");
+                for (int i = 1; i < plans.length-1; i++) {
+                    System.out.println(Integer.toString(i, 2) + ": " + plans[i]);
+                }
+            }
+            assert (pass == 1) : "Additional edges did not connect graph";
+            addExtraEdges();
+            Arrays.fill(plans, null);
         }
-        for (int i = ntables - 1; i >= 0; i--) {
-            long ts = JoinableBitSet.of(i);
-            emitCsg(ts);
-            enumerateCsgRec(ts, JoinableBitSet.through(i));
-        }
-        return getPlan(plans.length-1); // One that does all the joins together.
+        return null;
     }
 
     /** Recursively extend the given connected subgraph. */
@@ -300,6 +314,10 @@ public abstract class DPhyp<P>
         public JoinOperator(ConditionExpression condition) {
             joinConditions = new ConditionList(1);
             joinConditions.add(condition);
+        }
+
+        public JoinOperator() {
+            joinConditions = new ConditionList(0);
         }
 
         public long getTables() {
@@ -607,4 +625,63 @@ public abstract class DPhyp<P>
         }
     }
     
+    /** Add edges to make the hypergraph connected, using the stuck state. */
+    protected void addExtraEdges() {
+        // Get all the hypernodes that are not subsets of some filled hypernode.
+        BitSet maximal = new BitSet(plans.length);
+        for (int i = 0; i < plans.length; i++) {
+            if (plans[i] != null) {
+                maximal.set(i);
+            }
+        }
+        for (int i = plans.length - 1; i > 2; i--) { // (3 is the smallest with subsets)
+            if (maximal.get(i)) {
+                long subset = JoinableBitSet.empty();
+                while (true) {
+                    subset = JoinableBitSet.nextSubset(subset, i);
+                    if (JoinableBitSet.equals(subset, i)) break;
+                    maximal.clear((int)subset);
+                }
+            }
+        }
+        int count = maximal.cardinality();
+        assert (count > 1) : "Found less than 2 unconnected subgraphs";
+        noperators += count - 1;
+        nedges = noperators * 2;
+        long[] newEdges = new long[nedges];
+        System.arraycopy(edges, 0, newEdges, 0, edges.length);
+        edges = newEdges;
+        // Just connect them all up. This is by no means an optimal
+        // set of new edges, but the plan is trouble to begin with
+        // since it involved a cross product. Would need something
+        // like a min cut hypergraph partition.
+        long left = JoinableBitSet.empty();
+        int i = -1;
+        while (true) {
+            i = maximal.nextSetBit(i+1);
+            if (i < 0) break;
+            if (JoinableBitSet.isEmpty(left)) {
+                left = i;
+            }
+            else {
+                addExtraEdge(left, i);
+                left = JoinableBitSet.union(left, i);
+            }
+        }
+        assert (noperators == operators.size());
+    }
+
+    protected void addExtraEdge(long left, long right) {
+        if (TRACE)
+            System.out.println("Extra: " + JoinableBitSet.toString(left, tables) +
+                               " <->  " + JoinableBitSet.toString(right, tables));
+        JoinOperator op = new JoinOperator();
+        op.leftTables = left;
+        op.rightTables = right;
+        int o = operators.size();
+        operators.add(op);
+        edges[o*2] = left;
+        edges[o*2+1] = right;
+    }
+
 }
