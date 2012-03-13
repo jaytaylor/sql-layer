@@ -32,6 +32,7 @@ import static org.junit.Assert.assertTrue;
 public class TrimExpressionTest extends ComposedExpressionTestBase
 {
     private String input;
+    private String trimChar;
     private String expected;
     private TrimExpression.TrimType trimType;
     private final CompositionTestInfo testInfo = new CompositionTestInfo(1, AkType.VARCHAR, true);
@@ -43,6 +44,7 @@ public class TrimExpressionTest extends ComposedExpressionTestBase
         this.input = input;
         this.expected = expected;
         this.trimType = trimType;
+        trimChar = " ";
     }
     
     @NamedParameterizedRunner.TestParameters
@@ -84,8 +86,8 @@ public class TrimExpressionTest extends ComposedExpressionTestBase
     public void test ()
     {
         Expression inputExp = new LiteralExpression(AkType.VARCHAR, input);
-        Expression expression = new TrimExpression(inputExp,
-                trimType);
+        Expression trimCharExp = new LiteralExpression (AkType.VARCHAR, trimChar);
+        Expression expression = new TrimExpression(inputExp, trimCharExp, trimType);
         ValueSource result = expression.evaluation().eval();
         String actual = result.getString();
         
