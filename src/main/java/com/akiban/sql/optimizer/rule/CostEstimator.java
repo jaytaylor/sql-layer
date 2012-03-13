@@ -68,7 +68,7 @@ public abstract class CostEstimator
                                       ExpressionNode highComparand, boolean highInclusive)
     {
         return 
-            System.getProperty("costIndexScan", "old").equals("new")
+            System.getProperty("costIndexScan", "new").equals("new")
             ? costIndexScanNew(index, equalityComparands, lowComparand, lowInclusive, highComparand, highInclusive)
             : costIndexScanOld(index, equalityComparands, lowComparand, lowInclusive, highComparand, highInclusive);
     }
