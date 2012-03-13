@@ -47,6 +47,11 @@ public final class MultiIndexIntersectionScan extends IndexScan {
     }
 
     @Override
+    public List<IndexColumn> getValueColumns() {
+        return outputScan.getValueColumns();
+    }
+
+    @Override
     protected String summarizeIndex() {
         return String.format("INTERSECT(%s AND %s)", outputScan, selectorScan);
     }

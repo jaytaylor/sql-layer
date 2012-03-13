@@ -124,8 +124,11 @@ public class SelectPreponer extends BaseRule
             PlanNode prev = null;
             if (node instanceof IndexScan) {
                 indexColumns = new HashMap<ExpressionNode,PlanNode>();
-                for (ExpressionNode column : ((IndexScan)node).getColumns())
-                    indexColumns.put(column, node);
+                for (ExpressionNode column : ((IndexScan)node).getColumns()) {
+                    if (column != null) {
+                        indexColumns.put(column, node);
+                    }
+                }
                 prev = node;
                 node = node.getOutput();
             }

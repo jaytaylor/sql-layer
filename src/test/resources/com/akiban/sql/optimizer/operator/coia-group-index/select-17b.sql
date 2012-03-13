@@ -3,5 +3,5 @@ SELECT customers.name, items.quan
  WHERE customers.cid = orders.cid
    AND orders.oid = items.oid
    AND customers.cid = addresses.cid
-   AND addresses.state IN ('MA', 'NY')
+   AND addresses.state IN ('MA', 'NY', 'VT')
  ORDER BY quan DESC

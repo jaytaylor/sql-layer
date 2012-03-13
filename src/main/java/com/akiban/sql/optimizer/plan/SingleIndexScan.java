@@ -48,7 +48,12 @@ public final class SingleIndexScan extends IndexScan {
 
     @Override
     public List<IndexColumn> getKeyColumns() {
-        return getIndex().getKeyColumns();
+        return index.getKeyColumns();
+    }
+
+    @Override
+    public List<IndexColumn> getValueColumns() {
+        return index.getValueColumns();
     }
 
     @Override
@@ -58,6 +63,11 @@ public final class SingleIndexScan extends IndexScan {
 
     @Override
     protected boolean isAscendingAt(int i) {
-        return index.getKeyColumns().get(i).isAscending();
+        IndexColumn indexColumn;
+        if (i < index.getKeyColumns().size())
+            indexColumn = index.getKeyColumns().get(i);
+        else
+            indexColumn = index.getValueColumns().get(i - index.getKeyColumns().size());
+        return indexColumn.isAscending();
     }
 }
