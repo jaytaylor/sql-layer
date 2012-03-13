@@ -127,6 +127,12 @@ public abstract class CostEstimator
             nrows = simpleRound((nrows * rowCount), statsCount);
         return indexAccessCost(nrows, index);
     }
+    
+    public CostEstimate costIndexIntersection(MultiIndexIntersectScan intersection,
+                                              CostEstimate outputScanCost, CostEstimate selectorScanCost)
+    {
+        return outputScanCost.union(selectorScanCost); // TODO once we merge w/ Mike's changes, need to update this to use the model
+    }
 
     // Estimate cost of fetching nrows from index.
     // One random access to get there, then nrows-1 sequential accesses following,

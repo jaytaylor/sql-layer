@@ -849,7 +849,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             IndexScan selector = multiIndex.getSelectorIndexScan();
             CostEstimate outputCost = estimateCost(output);
             CostEstimate selectorCost = estimateCost(selector);
-            return outputCost.union(selectorCost); // TODO I'm sure this is wrong
+            return costEstimator.costIndexIntersection(multiIndex, outputCost, selectorCost);
         }
         else {
             throw new AkibanInternalException("unknown index type: " + index + "(" + index.getClass() + ")");
