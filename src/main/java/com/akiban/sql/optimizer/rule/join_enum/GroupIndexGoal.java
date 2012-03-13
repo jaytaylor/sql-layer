@@ -499,6 +499,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 intersectedIndex.init();
                 intersectedIndex.setRequiredTables(branchTables);
                 setColumnsAndOrdering(intersectedIndex);
+                setColumnsAndOrdering(intersectedIndex.getOutputIndexScan());
+                setColumnsAndOrdering(intersectedIndex.getSelectorIndexScan());
                 intersectedIndex.setOrderEffectiveness(determineOrderEffectiveness(intersectedIndex));
                 intersectedIndex.setCovering(determineCovering(intersectedIndex));
                 intersectedIndex.setCostEstimate(estimateCost(intersectedIndex));

@@ -107,6 +107,7 @@ public final class MultiIndexIntersectScan extends IndexScan {
 
         singleScan.setRequiredTables(getRequiredTables());
 
+
         return singleScan;
     }
 

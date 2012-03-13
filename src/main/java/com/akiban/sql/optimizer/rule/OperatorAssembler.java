@@ -292,7 +292,7 @@ public class OperatorAssembler extends BaseRule
                     IntersectOutputOption.OUTPUT_LEFT
             );
             stream.operator = intersect;
-            stream.rowType = intersect.rowType();
+            stream.rowType = outputScan.rowType;
             stream.fieldOffsets = new IndexFieldOffsets(index, stream.rowType);
             return stream;
         }
