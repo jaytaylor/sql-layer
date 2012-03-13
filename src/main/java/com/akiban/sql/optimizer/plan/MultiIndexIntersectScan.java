@@ -24,15 +24,10 @@ import java.util.List;
 
 public final class MultiIndexIntersectScan extends IndexScan {
     
-    private MultiIndexPair<ColumnExpression> index;
-    
-    public MultiIndexIntersectScan(TableSource table, MultiIndexPair<ColumnExpression> index) {
-        super(table);
-        this.index = index;
-    }
+    private MultiIndexPair<ComparisonCondition> index;
 
     public MultiIndexIntersectScan(TableSource rootMostTable, TableSource leafMostTable,
-                                   MultiIndexPair<ColumnExpression> index)
+                                   MultiIndexPair<ComparisonCondition> index)
     {
         super(rootMostTable, rootMostTable, leafMostTable, leafMostTable);
         Index idx = index.getOutputIndex().getIndex();
