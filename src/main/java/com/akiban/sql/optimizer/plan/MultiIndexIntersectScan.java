@@ -38,6 +38,13 @@ public final class MultiIndexIntersectScan extends IndexScan {
         this.index = index;
         this.branch = branch;
     }
+
+    public void init() {
+        for (ComparisonCondition cond : index.getOutputIndex().getPegged())
+            addEqualityCondition(cond, cond.getLeft());
+        for (ComparisonCondition cond : index.getSelectorIndex().getPegged())
+            addEqualityCondition(cond, cond.getLeft());
+    }
     
     private MultiIndexIntersectScan(TableSource rootMost, TableSource leafMost) {
         super(rootMost, rootMost, leafMost, leafMost);

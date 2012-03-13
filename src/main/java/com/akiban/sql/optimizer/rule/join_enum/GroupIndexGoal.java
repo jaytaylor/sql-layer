@@ -496,6 +496,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             Collection<MultiIndexPair<ComparisonCondition>> intersections = getIntersectionCandidates(branchTables);
             for (MultiIndexPair<ComparisonCondition> intersection : intersections) {
                 MultiIndexIntersectScan intersectedIndex = new MultiIndexIntersectScan(branch, intersection);
+                intersectedIndex.init();
                 intersectedIndex.setRequiredTables(branchTables);
                 setColumnsAndOrdering(intersectedIndex);
                 intersectedIndex.setOrderEffectiveness(determineOrderEffectiveness(intersectedIndex));
@@ -847,8 +848,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             MultiIndexIntersectScan multiIndex = (MultiIndexIntersectScan) index;
             IndexScan output = multiIndex.getOutputIndexScan();
             IndexScan selector = multiIndex.getSelectorIndexScan();
-            CostEstimate outputCost = estimateCost(output);
-            CostEstimate selectorCost = estimateCost(selector);
+            CostEstimate outputCost = createBasicCostEstimate(output, costEstimator);
+            CostEstimate selectorCost = createBasicCostEstimate(selector, costEstimator);
             return costEstimator.costIndexIntersection(multiIndex, outputCost, selectorCost);
         }
         else {
