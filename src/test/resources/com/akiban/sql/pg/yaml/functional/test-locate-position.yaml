@@ -116,19 +116,19 @@
 #--- # test empty list
 #- Statement: SELECT LOCATE() from all_types;
 #- error: [4250C]
---- # test extraneous arg
-- Statement: SELECT LOCATE ('foo', 'foobar', 2, null) from all_types;
-- error: [42000]
----
-- Statement: SELECT LOCATE ('foo', 'foo', 1, 3, 3) from all_types;
-- error: [42000]
----
-- Statement: SELECT POSITION() from all_types;
-- error: [4250C]
----
-- Statement: SELECT POSITION('a', 'b', 1) from all_types;
-- error: [4250C]
----
-- Statement: SELECT POSITION('A', 'abc',1, 3) from all_types;
-- error: [4250C]
+#--- # test extraneous arg
+#- Statement: SELECT LOCATE ('foo', 'foobar', 2, null) from all_types;
+#- error: [42000]
+#---
+#- Statement: SELECT LOCATE ('foo', 'foo', 1, 3, 3) from all_types;
+#- error: [42000]
+#---
+#- Statement: SELECT POSITION() from all_types;
+#- error: [4250C]
+#---
+#- Statement: SELECT POSITION('a', 'b', 1) from all_types;
+#- error: [4250C]
+#---
+#- Statement: SELECT POSITION('A', 'abc',1, 3) from all_types;
+#- error: [4250C]
 ...
