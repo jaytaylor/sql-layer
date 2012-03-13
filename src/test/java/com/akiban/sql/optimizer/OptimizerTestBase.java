@@ -66,18 +66,11 @@ public class OptimizerTestBase extends ASTTransformTestBase
         distinctEliminator = new DistinctEliminator(parser);
     }
 
-    public static AkibanInformationSchema parseSchema(List<File> ddl) throws Exception {
-        if (ddl.isEmpty())
-            throw new IllegalArgumentException("ddl file must not be empty");
-        List<String> sqlStrings = null;
-        for (File file : ddl) {
-            List<String> fileStrings = Strings.dumpFile(file);
-            if (sqlStrings == null)
-                sqlStrings = new ArrayList<String>(fileStrings);
-            else
-                sqlStrings.addAll(fileStrings);
-        }
-        String sql = Strings.join(sqlStrings);
+    public static AkibanInformationSchema parseSchema(List<File> ddls) throws Exception {
+        StringBuilder ddlBuilder = new StringBuilder();
+        for (File ddl : ddls)
+            ddlBuilder.append(fileContents(ddl));
+        String sql = ddlBuilder.toString();
         SchemaFactory schemaFactory = new SchemaFactory(DEFAULT_SCHEMA);
         return schemaFactory.ais(sql);
     }
