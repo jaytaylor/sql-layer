@@ -1946,3 +1946,17 @@ Statistics:
     lt: 0
 Table: orders
 Timestamp: 2012-01-18T00:23:28.275Z
+---
+Index: PRIMARY
+RowCount: 100
+SampledCount: 100
+Statistics: []
+Table: parent
+Timestamp: 2012-03-12T23:56:19.252Z
+---
+Index: PRIMARY
+RowCount: 1000
+SampledCount: 1000
+Statistics: []
+Table: child
+Timestamp: 2012-03-12T23:56:26.043Z
