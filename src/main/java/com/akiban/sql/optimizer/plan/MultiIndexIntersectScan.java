@@ -46,6 +46,11 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
+    public List<IndexColumn> getValueColumns() {
+        return index.getOutputIndex().getIndex().getValueColumns();
+    }
+
+    @Override
     protected String summarizeIndex() {
         return String.valueOf(index);
     }

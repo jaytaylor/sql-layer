@@ -170,7 +170,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
      * @return <code>false</code> if the index is useless.
      */
     public boolean usable(IndexScan index) {
-        if (index instanceof MultiIndexIntersectionScan) { // TODO
+        if (index instanceof MultiIndexIntersectScan) { // TODO
             assert false : "what do we do here? we know it's usable if it was even created, so, just return true?";
             return true;
         }
