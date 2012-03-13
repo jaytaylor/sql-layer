@@ -26,10 +26,14 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index.JoinType;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
 
+import com.akiban.util.Strings;
 import org.junit.Before;
 import org.junit.Ignore;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @Ignore
 public class OptimizerTestBase extends ASTTransformTestBase
@@ -62,16 +66,34 @@ public class OptimizerTestBase extends ASTTransformTestBase
         distinctEliminator = new DistinctEliminator(parser);
     }
 
-    public static AkibanInformationSchema parseSchema(File schema) throws Exception {
-        String sql = fileContents(schema);
+    public static AkibanInformationSchema parseSchema(List<File> ddl) throws Exception {
+        if (ddl.isEmpty())
+            throw new IllegalArgumentException("ddl file must not be empty");
+        List<String> sqlStrings = null;
+        for (File file : ddl) {
+            List<String> fileStrings = Strings.dumpFile(file);
+            if (sqlStrings == null)
+                sqlStrings = new ArrayList<String>(fileStrings);
+            else
+                sqlStrings.addAll(fileStrings);
+        }
+        String sql = Strings.join(sqlStrings);
         SchemaFactory schemaFactory = new SchemaFactory(DEFAULT_SCHEMA);
         return schemaFactory.ais(sql);
     }
 
-    protected AkibanInformationSchema loadSchema(File schema) throws Exception {
-        AkibanInformationSchema ais = parseSchema(schema);
+    public static AkibanInformationSchema parseSchema(File ddl) throws Exception {
+        return parseSchema(Collections.singletonList(ddl));
+    }
+
+    protected AkibanInformationSchema loadSchema(List<File> ddl) throws Exception {
+        AkibanInformationSchema ais = parseSchema(ddl);
         binder = new AISBinder(ais, DEFAULT_SCHEMA);
         return ais;
+    }
+
+    protected AkibanInformationSchema loadSchema(File ddl) throws Exception {
+        return loadSchema(Collections.singletonList(ddl));
     }
 
     protected void loadView(File view) throws Exception {
