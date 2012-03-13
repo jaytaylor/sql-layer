@@ -169,11 +169,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     /** Populate given index usage according to goal.
      * @return <code>false</code> if the index is useless.
      */
-    public boolean usable(IndexScan index) {
-        if (index instanceof MultiIndexIntersectScan) { // TODO
-            assert false : "what do we do here? we know it's usable if it was even created, so, just return true?";
-            return true;
-        }
+    public boolean usable(SingleIndexScan index) {
         setColumnsAndOrdering(index);
         List<ExpressionNode> indexExpressions = index.getColumns();
         int nequals = 0;
@@ -634,7 +630,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         // indexes, below.
         if (required.contains(table)) {
             for (TableIndex index : table.getTable().getTable().getIndexes()) {
-                IndexScan candidate = new SingleIndexScan(index, table);
+                SingleIndexScan candidate = new SingleIndexScan(index, table);
                 bestIndex = betterIndex(bestIndex, candidate);
             }
         }
@@ -696,7 +692,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                         (rootRequired == null))
                         continue;
                 }
-                IndexScan candidate = new SingleIndexScan(index, rootTable,
+                SingleIndexScan candidate = new SingleIndexScan(index, rootTable,
                                                     rootRequired, leafRequired, 
                                                     table);
                 bestIndex = betterIndex(bestIndex, candidate);
@@ -705,7 +701,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return bestIndex;
     }
 
-    protected IndexScan betterIndex(IndexScan bestIndex, IndexScan candidate) {
+    protected IndexScan betterIndex(IndexScan bestIndex, SingleIndexScan candidate) {
         if (usable(candidate)) {
             if (bestIndex == null) {
                 logger.debug("Selecting {}", candidate);
