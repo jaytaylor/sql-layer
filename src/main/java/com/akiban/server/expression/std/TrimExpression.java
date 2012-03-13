@@ -92,7 +92,7 @@ public class TrimExpression extends AbstractBinaryExpression
         }        
     }
     
-    private static final class InternalComposer extends TernaryComposer
+    private static final class InternalComposer extends BinaryComposer
     {
         private final TrimType trimType;
         
@@ -104,7 +104,7 @@ public class TrimExpression extends AbstractBinaryExpression
         @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
-            if (argumentTypes.size() != 3)
+            if (argumentTypes.size() != 2)
                 throw new WrongExpressionArityException(1, argumentTypes.size());
             for (int n = 0; n < argumentTypes.size(); ++n)
                 argumentTypes.setType(n, AkType.VARCHAR);
@@ -112,9 +112,9 @@ public class TrimExpression extends AbstractBinaryExpression
         }
 
         @Override
-        protected Expression compose(Expression first, Expression second, Expression third)
+        protected Expression compose(Expression first, Expression second)
         {
-            return new TrimExpression(first, second, third, trimType);
+            return new TrimExpression(first, second, trimType);
         }
     }
   
@@ -139,9 +139,9 @@ public class TrimExpression extends AbstractBinaryExpression
      * @param operand
      * @param type 
      */
-    public TrimExpression (Expression first, Expression second, Expression third,TrimType type)
+    public TrimExpression (Expression first, Expression second,TrimType type)
     {
-        super(AkType.VARCHAR, first, second, third);
+        super(AkType.VARCHAR, first, second);
         this.trimType = type;
     }
     
