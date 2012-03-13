@@ -15,18 +15,16 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.error.OverflowException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.ValueHolder;
 
 public class TruncateStringExpression extends AbstractUnaryExpression
 {
     public TruncateStringExpression(int length, Expression operand) {
-        super(AkType.DECIMAL, operand);
+        super(AkType.VARCHAR, operand);
         this.length = length;
     }
 
