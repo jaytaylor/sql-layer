@@ -27,12 +27,12 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 
 public class AbsExpression extends AbstractUnaryExpression 
-{
-    
-    private AkType inputType;
-    
-    @Scalar("ABSOLUTE")
+{    
+    @Scalar("absolute")
     public static final ExpressionComposer COMPOSER = new InternalComposer();
+    
+    @Scalar("abs")
+    public static final ExpressionComposer COMPOSER_ALIAS = COMPOSER;
     
     private static class InternalComposer extends UnaryComposer
     {
@@ -79,21 +79,25 @@ public class AbsExpression extends AbstractUnaryExpression
                 return NullValueSource.only();
             AkType operandType = operand().getConversionType();
             
-            if (operandType == AkType.DOUBLE)
-                valueHolder().putDouble( Math.abs(operand().getDouble()) );      
-            else if (operandType == AkType.FLOAT)
-                valueHolder().putFloat( Math.abs(operand().getFloat()) );
-            else if (operandType == AkType.LONG)
-                valueHolder().putLong( Math.abs(operand().getLong()) );
-            else if (operandType == AkType.INT)
-                valueHolder().putInt( Math.abs(operand().getInt()) );
-            else if (operandType == AkType.U_BIGINT) // TO DO - check if .abs() should be done anyway, though it's U_BIGINT
-                valueHolder().putUBigInt( operand().getUBigInt() );
-            else if (operandType == AkType.DECIMAL)
-                valueHolder().putDecimal( operand().getDecimal().abs());
-            else
-                throw new InvalidArgumentTypeException("ABS: " + operandType.name());
-
+            switch (operandType) {
+                case DOUBLE:
+                    valueHolder().putDouble( Math.abs(operand().getDouble()) ); break;       
+                case FLOAT:
+                    valueHolder().putFloat( Math.abs(operand().getFloat()) ); break;
+                case LONG:
+                    valueHolder().putLong( Math.abs(operand().getLong()) ); break;
+                case INT:
+                    valueHolder().putInt( Math.abs(operand().getInt()) ); break;
+                case U_BIGINT:
+                    valueHolder().putUBigInt( operand().getUBigInt() ); break;
+                case DECIMAL:
+                    valueHolder().putDecimal( operand().getDecimal().abs()); break;
+                case VARCHAR:
+                    valueHolder().putDouble(Math.abs (Double.parseDouble(operand().getString()) )); break;
+                default:
+                    throw new InvalidArgumentTypeException("ABS: " + operandType.name()); 
+            }
+            
             return valueHolder();
         }  
         

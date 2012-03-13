@@ -18,6 +18,8 @@ package com.akiban.server.expression.std;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.NullValueSource;
+import com.akiban.server.types.ValueSource;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import org.junit.Assert;
@@ -121,6 +123,51 @@ public class AbsExpressionTest extends ComposedExpressionTestBase
         Assert.assertEquals("ABS negOutput should be INT", testType, negOutput.valueType());
         Assert.assertEquals(1234, absValueOfPos);
         Assert.assertEquals(4321, absValueOfNeg); 
+    }
+    
+    @Test
+    public void testVarchar()
+    {
+        AkType testType = AkType.VARCHAR;
+        Expression posOutput = new AbsExpression(new LiteralExpression(testType, "1234"));
+        Expression negOutput = new AbsExpression(new LiteralExpression(testType, "-4321"));
+        
+        // getInt() still returns a Java long
+        double absValueOfPos = posOutput.evaluation().eval().getDouble();
+        double absValueOfNeg = negOutput.evaluation().eval().getDouble();
+
+        Assert.assertEquals("ABS posOutput should be DOUBLE for VARCHAR input", testType, posOutput.valueType());
+        Assert.assertEquals("ABS negOutput should be DOUBLE for VARCHAR input", testType, negOutput.valueType());
+        Assert.assertEquals(1234, absValueOfPos, 0.0001);
+        Assert.assertEquals(4321, absValueOfNeg, 0.0001); 
+    }
+    
+    @Test
+    public void testNull()
+    {
+        AkType testType = AkType.NULL;
+       Expression output = new AbsExpression(new LiteralExpression(AkType.NULL, null));
+        
+        ValueSource shouldBeNullValueSource = output.evaluation().eval();
+        
+        Assert.assertEquals("ABS value source should be NULL", NullValueSource.only(), shouldBeNullValueSource);
+        Assert.assertEquals("ABS output should be NULL", testType, output.valueType());
+    }
+    
+    @Test
+    public void testInfinity()
+    {
+        AkType testType = AkType.DOUBLE;
+        Expression posOutput = new AbsExpression(new LiteralExpression(testType, Double.POSITIVE_INFINITY));
+        Expression negOutput = new AbsExpression(new LiteralExpression(testType, Double.NEGATIVE_INFINITY));
+        
+        double absValueOfPos = posOutput.evaluation().eval().getDouble();
+        double absValueOfNeg = negOutput.evaluation().eval().getDouble();
+        
+        Assert.assertEquals("ABS posOutput should be DOUBLE", testType, posOutput.valueType());
+        Assert.assertEquals("ABS negOutput should be DOUBLE", testType, negOutput.valueType());
+        Assert.assertEquals(Double.POSITIVE_INFINITY, absValueOfPos, 0.0001);
+        Assert.assertEquals(Double.POSITIVE_INFINITY, absValueOfNeg, 0.0001);    
     }
     
     @Override
