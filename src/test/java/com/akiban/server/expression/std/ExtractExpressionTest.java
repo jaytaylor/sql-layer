@@ -20,8 +20,10 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.extract.Extractors;
 import java.util.Arrays;
+import org.joda.time.DateTime;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -31,7 +33,50 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
 {
     private static final CompositionTestInfo testInfo = new CompositionTestInfo(1, AkType.DATE, false);
 
+    @Test
+    public void testNull() // test null for Extract functions
+    {
+        for (ExtractExpression.TargetExtractType type : ExtractExpression.TargetExtractType.values())
+            assertTrue("ValueSource is NULL", new ExtractExpression(LiteralExpression.forNull(), type).evaluation().eval().isNull());        
+    }
+    
+    //-----------------------------LAST DAY------------------------------------    
+    @Test
+    public void quarter()
+    {        
+        testAndCheck("2009-01-01", 1);
+        testAndCheck("2009-03-31", 1);
+        testAndCheck("2009-04-01", 2);
+        testAndCheck("2009-06-25", 2);
+        testAndCheck("2009-07-01", 3);
+        testAndCheck("2009-09-30", 3);
+        testAndCheck("2009-10-01", 4);
+        testAndCheck("2009-12-01", 4);
+    }
+    
+    private static void testAndCheck (String date, int expected)
+    {        
+     
+        Expression in = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong(date));        
+        Expression top = ExtractExpression.QUARTER_COMPOSER.compose(Arrays.asList(in));
+        
+        assertEquals("QUATER(" + date + "): ", expected, top.evaluation().eval().getInt());        
+    }
+    //-----------------------------LAST DAY------------------------------------
+    @Test
+    public void lastDay()
+    {
+        for (int yr : new int[]{2000, 1900, 2001, 2002, 2003, 2004})
+            for (int month = 1; month < 13; ++month)
+            {
+                Expression in = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong(yr + "-" + month + "-12"));
+                Expression top = ExtractExpression.LAST_DAY_COMPOSER.compose(Arrays.asList(in));
+                assertEquals("Month: " + month, DateTime.parse(Extractors.getStringExtractor().getObject(in.evaluation().eval())).dayOfMonth().getMaximumValue(),
+                              top.evaluation().eval().getInt());
+            }
+    }
     //-----------------------------MONTHNAME------------------------------------
+    @Test
     public void monthName()
     {
         for (int month = 0; month < 12; ++month)
@@ -43,7 +88,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
                           top.evaluation().eval().getString());
         }
     }
-    
+        
     // --------------------------- GET DAY OF YEAR -----------------------------
     private static final Long [] outputs = {1L, 365L, 1L, 366L, 365L, null, null, null, 1L, 365L};
     private static final String[] inputs = {"2009-01-01 12:30:10", "2009-12-31 00:14:12",

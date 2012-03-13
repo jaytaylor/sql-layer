@@ -83,6 +83,12 @@ public class ExtractExpression extends AbstractUnaryExpression
     @Scalar ("monthname")
     public static final ExpressionComposer MONTH_NAME_COMPOSER = new InternalComposer(TargetExtractType.MONTH_NAME);
     
+    @Scalar ("lastday")
+    public static final ExpressionComposer LAST_DAY_COMPOSER = new InternalComposer(TargetExtractType.LAST_DAY);
+    
+    @Scalar ("quarter")
+    public static final ExpressionComposer QUARTER_COMPOSER = new InternalComposer (TargetExtractType.QUARTER);
+    
     protected static enum TargetExtractType
     {
         DATE(AkType.DATE)
@@ -221,6 +227,54 @@ public class ExtractExpression extends AbstractUnaryExpression
                 }
             }
         },
+
+        LAST_DAY(AkType.INT)
+        {
+            @Override
+            public Long extract (ValueSource source)
+            {
+                AkType type = source.getConversionType();
+                long rawLong ; 
+                switch (type)
+                {
+                    case DATE:      rawLong = source.getDate();
+                                    long y = rawLong / 512;
+                                    long m = rawLong / 32 % 16;
+                                    long d = rawLong % 32;
+                                    return vallidDayMonth (y,m,d)? getLast(m, y) : null;
+                    case DATETIME:  rawLong = source.getDateTime();
+                                    long yr = rawLong / 10000000000L;
+                                    long mo = rawLong / 100000000L % 100;
+                                    long da = rawLong / 1000000L % 100;
+                                    return vallidDayMonth(yr,mo,da) ? getLast(mo, yr) : null;
+                    case TIMESTAMP: rawLong = Math.abs(Extractors.getLongExtractor(type).getLong(source));
+                                    DateTime datetime = new DateTime(rawLong * 1000, DateTimeZone.getDefault());
+                                    return getLast(datetime.getMonthOfYear(), datetime.getYear());
+                    default: /*year*/       return null;
+                }
+            }
+            
+            private Long getLast(long m, long y)
+            {
+                switch((int)m)
+                {
+                    case 2:     return (y % 400 == 0 || y % 4 == 0 && y % 100 != 0 ? 29L : 28L);
+                    case 4:
+                    case 6:
+                    case 9:
+                    case 11:    return 30L;
+                    case 3:
+                    case 1:
+                    case 5:
+                    case 7:
+                    case 8:
+                    case 10:
+                    case 0:
+                    case 12:    return 31L;
+                    default:    throw new InvalidParameterValueException("Invalid month: " + m);
+                }
+            }
+        },
         
         MINUTE(AkType.INT)
         {
@@ -287,8 +341,21 @@ public class ExtractExpression extends AbstractUnaryExpression
             public Long extract (ValueSource source)
             {
                 return MONTH.extract(source);
+            }            
+        },
+        
+        QUARTER (AkType.INT)
+        {
+            @Override
+            public Long extract (ValueSource source)
+            {
+                Long month = MONTH.extract(source);                
+                if (month == null) return null;
+                else if (month < 4) return 1L;
+                else if (month < 7) return 2L;
+                else if (month < 10) return 3L;
+                else return 4L;
             }
-            
         },
         
         SECOND(AkType.INT)
@@ -478,7 +545,8 @@ public class ExtractExpression extends AbstractUnaryExpression
 
         private static final EnumSet<AkType> DATES = EnumSet.of( AkType.DATE, AkType.DATETIME, AkType.TIMESTAMP, AkType.YEAR);
         private static final EnumSet<AkType> TIMES = EnumSet.of(AkType.TIME, AkType.TIMESTAMP, AkType.DATETIME);
-
+        private static final String months[] = new DateFormatSymbols(new Locale(System.getProperty("user.language"))).getMonths();
+        
         private AkType t;
         @Override
         public ValueSource eval() 
@@ -499,7 +567,8 @@ public class ExtractExpression extends AbstractUnaryExpression
                     case YEAR:
                     case MONTH:
                     case MONTH_NAME:
-                                    if (DATES.contains(source.getConversionType()))
+                    case LAST_DAY:
+                    case QUARTER:   if (DATES.contains(source.getConversionType()))
                                         raw = type.extract(source);
                                     else
                                         for ( AkType ty : DATES)
@@ -534,7 +603,7 @@ public class ExtractExpression extends AbstractUnaryExpression
                 if (raw != null)
                 {
                     if (type == TargetExtractType.MONTH_NAME)
-                        valueHolder().putString(new DateFormatSymbols(new Locale(System.getProperty("user.language"))).getMonths()[raw.intValue()-1]);
+                        valueHolder().putString(months[raw.intValue()-1]);
                     else
                         valueHolder().putRaw(type.underlying, raw.longValue());
                     return valueHolder();
