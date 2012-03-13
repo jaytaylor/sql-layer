@@ -29,7 +29,7 @@ import com.akiban.sql.StandardException;
 import com.akiban.server.expression.TypesList;
 import java.util.List;
 
-public class TrimExpression extends AbstractTernaryExpression
+public class TrimExpression extends AbstractBinaryExpression
 {
     public static enum TrimType { LEADING, TRAILING}
     
@@ -44,7 +44,7 @@ public class TrimExpression extends AbstractTernaryExpression
     @Scalar ("trim")
     public static final ExpressionComposer TRIM_COMPOSER = new InternalComposer(null);
     
-    private static final class InnerEvaluation extends AbstractThreeArgExpressionEvaluation
+    private static final class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
         final TrimType trimType;
         
@@ -57,10 +57,10 @@ public class TrimExpression extends AbstractTernaryExpression
         @Override
         public ValueSource eval() 
         {
-            ValueSource trimSource = first();
+            ValueSource trimSource = left();
             if (trimSource.isNull()) return NullValueSource.only();
             
-            ValueSource trimChar = second();
+            ValueSource trimChar = right();
             if (trimChar.isNull()) return NullValueSource.only();
             
             String st = trimSource.getString();
