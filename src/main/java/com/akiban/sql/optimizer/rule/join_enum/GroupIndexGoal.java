@@ -488,10 +488,16 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             Set<TableSource> branchTables = new HashSet<TableSource>(branch.values());
             Collection<MultiIndexPair<ComparisonCondition>> intersections = getIntersectionCandidates(branchTables);
             for (MultiIndexPair<ComparisonCondition> intersection : intersections) {
-                MultiIndexCandidate<ComparisonCondition> outputScan = intersection.getOutputIndex();
-                TableSource rootMost = branch.get(outputScan.getIndex().rootMostTable());
-                TableSource leafMost = branch.get(outputScan.getIndex().leafMostTable());
-                MultiIndexIntersectScan mergedIndex = new MultiIndexIntersectScan(rootMost,  leafMost, intersection);
+                MultiIndexIntersectScan mergedIndex = new MultiIndexIntersectScan(branch, intersection);
+                mergedIndex.setRequiredTables(branchTables);
+//                mergedIndex.setOrderEffectiveness(determineOrderEffectiveness(mergedIndex));
+//                mergedIndex.setCovering(determineCovering(mergedIndex)); // TODO
+//                if ((index.getOrderEffectiveness() == IndexScan.OrderEffectiveness.NONE) &&
+//                        !index.hasConditions() &&
+//                        !index.isCovering())
+//                    return false;
+                mergedIndex.setCostEstimate(estimateCost(mergedIndex));
+
                 if ((bestIndex == null) || (compare(mergedIndex, bestIndex) > 0))
                     bestIndex = mergedIndex;
             }
@@ -833,6 +839,14 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 }
                 return cost;
             }
+        }
+        else if (index instanceof MultiIndexIntersectScan) {
+            MultiIndexIntersectScan multiIndex = (MultiIndexIntersectScan) index;
+            IndexScan output = multiIndex.getOutputIndexScan();
+            IndexScan selector = multiIndex.getSelectorIndexScan();
+            CostEstimate outputCost = estimateCost(output);
+            CostEstimate selectorCost = estimateCost(selector);
+            return outputCost.union(selectorCost); // TODO I'm sure this is wrong
         }
         else {
             throw new AkibanInternalException("unknown index type: " + index + "(" + index.getClass() + ")");

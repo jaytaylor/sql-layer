@@ -21,23 +21,38 @@ import com.akiban.ais.model.Table;
 import com.akiban.sql.optimizer.plan.MultiIndexEnumerator.MultiIndexPair;
 
 import java.util.List;
+import java.util.Map;
 
 public final class MultiIndexIntersectScan extends IndexScan {
     
     private MultiIndexPair<ComparisonCondition> index;
-
-    public MultiIndexIntersectScan(TableSource rootMostTable, TableSource leafMostTable,
+    private Map<Table,TableSource> branch;
+    private IndexScan outputScan;
+    private IndexScan selectorScan;
+    
+    public MultiIndexIntersectScan(Map<Table,TableSource> branch,
                                    MultiIndexPair<ComparisonCondition> index)
     {
-        super(rootMostTable, rootMostTable, leafMostTable, leafMostTable);
-        Index idx = index.getOutputIndex().getIndex();
-        checkTablesMatch(idx.rootMostTable(), rootMostTable);
-        checkTablesMatch(idx.leafMostTable(), leafMostTable);
+        this(branch.get(index.getOutputIndex().getIndex().rootMostTable()),
+                branch.get(index.getOutputIndex().getIndex().leafMostTable()));
         this.index = index;
+        this.branch = branch;
     }
-
-    private static void checkTablesMatch(Table aisTable, TableSource tableSource) {
-        assert aisTable == tableSource.getTable().getTable() : aisTable + " != " + tableSource;
+    
+    private MultiIndexIntersectScan(TableSource rootMost, TableSource leafMost) {
+        super(rootMost, rootMost, leafMost, leafMost);
+    }
+    
+    public IndexScan getOutputIndexScan() {
+        if (outputScan == null)
+            outputScan = createScan(index.getOutputIndex());
+        return outputScan;
+    }
+    
+    public IndexScan getSelectorIndexScan() {
+        if (selectorScan == null)
+            selectorScan = createScan(index.getSelectorIndex());
+        return selectorScan;
     }
 
     @Override
@@ -58,5 +73,21 @@ public final class MultiIndexIntersectScan extends IndexScan {
     @Override
     protected boolean isAscendingAt(int index) {
         throw new UnsupportedOperationException(); // TODO do I use the output index?
+    }
+
+    private IndexScan createScan(MultiIndexCandidate<ComparisonCondition> candidate) {
+        // TODO this should eventually allow for nesting
+
+        Index idx = candidate.getIndex();
+        TableSource rootMost = branch.get(idx.rootMostTable());
+        TableSource leafMost = branch.get(idx.leafMostTable());
+        
+        SingleIndexScan singleScan = new SingleIndexScan(idx, rootMost, rootMost, leafMost, leafMost);
+        for (ComparisonCondition cond : candidate.getPegged())
+            singleScan.addEqualityCondition(cond, cond.getRight());
+
+        singleScan.setRequiredTables(getRequiredTables());
+
+        return singleScan;
     }
 }
