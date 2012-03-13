@@ -32,14 +32,21 @@ public class TestCostEstimator extends CostEstimator
     private final Map<Index,IndexStatistics> stats;
 
     public TestCostEstimator(AkibanInformationSchema ais, String defaultSchema,
-                             File statsFile) 
+                             File statsFile, boolean statsIgnoreMissingIndexes) 
             throws IOException {
         if (statsFile == null)
             stats = Collections.<Index,IndexStatistics>emptyMap();
         else
-            stats = new IndexStatisticsYamlLoader(ais, defaultSchema).load(statsFile);
+            stats = new IndexStatisticsYamlLoader(ais, defaultSchema).load(statsFile, statsIgnoreMissingIndexes);
     }
 
+    public TestCostEstimator(AkibanInformationSchema ais, String defaultSchema,
+                             File statsFile)
+    throws IOException
+    {
+        this(ais, defaultSchema, statsFile,  false);
+    }
+    
     @Override
     public IndexStatistics getIndexStatistics(Index index) {
         return stats.get(index);

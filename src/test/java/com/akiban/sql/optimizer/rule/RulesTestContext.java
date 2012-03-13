@@ -25,13 +25,21 @@ import java.io.IOException;
 
 public class RulesTestContext extends SchemaRulesContext
 {
-    public RulesTestContext(AkibanInformationSchema ais, String defaultSchema, 
-                            File statsFile, List<? extends BaseRule> rules, Properties properties)
+    public RulesTestContext(AkibanInformationSchema ais, String defaultSchema,
+                            File statsFile, boolean statsIgnoreMissingIndexes,
+                            List<? extends BaseRule> rules, Properties properties)
             throws IOException {
         super(ais, 
               new FunctionsRegistryImpl(), 
-              new TestCostEstimator(ais, defaultSchema, statsFile),
+              new TestCostEstimator(ais, defaultSchema, statsFile, statsIgnoreMissingIndexes),
               rules, properties);
         RulesTestHelper.ensureRowDefs(ais);
+    }
+
+    public RulesTestContext(AkibanInformationSchema ais, String defaultSchema,
+                            File statsFile, List<? extends BaseRule> rules, Properties properties)
+    throws IOException
+    {
+        this(ais, defaultSchema, statsFile, false, rules, properties);
     }
 }
