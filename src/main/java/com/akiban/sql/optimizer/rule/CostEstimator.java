@@ -56,7 +56,7 @@ public abstract class CostEstimator
     public static final double SEQUENTIAL_ACCESS_COST = 1.0;
     public static final double FIELD_ACCESS_COST = .01;
     public static final double SORT_COST = 2.0;
-    public static final double SELECT_COST = .25;
+    public static final double SELECT_COST = 50000.25; // TODO temporarily bumping this up to trick everyone into using multiple indexes
 
     protected boolean scaleIndexStatistics() {
         return true;
