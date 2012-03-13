@@ -74,16 +74,7 @@ public class ScaleDecimalExpression extends AbstractUnaryExpression
             return valueHolder();
         }
 
-        private ValueSource hold(BigDecimal value) {
-            if (holder == null) {
-                holder = new ValueHolder();
-            }
-            holder.putDecimal(value);
-            return holder;
-        }
-
         private final int precision, scale;
-        private final RoundingMode roundingMode;
-        private ValueHolder holder;
+        private final RoundingMode roundingMode;            
     }
 }
