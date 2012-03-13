@@ -83,8 +83,8 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
-    protected boolean isAscendingAt(int index) {
-        throw new UnsupportedOperationException(); // TODO do I use the output index?
+    protected boolean isAscendingAt(int i) {
+        return getOutputIndexScan().isAscendingAt(i);
     }
 
     private IndexScan createScan(MultiIndexCandidate<ComparisonCondition> candidate) {

@@ -174,26 +174,10 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             assert false : "what do we do here? we know it's usable if it was even created, so, just return true?";
             return true;
         }
-        List<IndexColumn> keyColumns = index.getKeyColumns();
-        List<IndexColumn> valueColumns = index.getValueColumns();
-        int ncols = keyColumns.size() + valueColumns.size();
-        List<ExpressionNode> indexExpressions = new ArrayList<ExpressionNode>(ncols);
-        List<OrderByExpression> orderBy = new ArrayList<OrderByExpression>(ncols);
-        for (IndexColumn indexColumn : keyColumns) {
-            ExpressionNode indexExpression = getIndexExpression(index, indexColumn);
-            indexExpressions.add(indexExpression);
-            orderBy.add(new OrderByExpression(indexExpression,
-                                              indexColumn.isAscending()));
-        }
-        for (IndexColumn indexColumn : valueColumns) {
-            ExpressionNode indexExpression = getIndexExpression(index, indexColumn);
-            indexExpressions.add(indexExpression);
-            orderBy.add(new OrderByExpression(indexExpression,
-                                              indexColumn.isAscending()));
-        }
-        index.setColumns(indexExpressions);
-        index.setOrdering(orderBy);
+        setColumnsAndOrdering(index);
+        List<ExpressionNode> indexExpressions = index.getColumns();
         int nequals = 0;
+        int ncols = index.getKeyColumns().size() + index.getValueColumns().size();
         while (nequals < ncols) {
             ExpressionNode indexExpression = indexExpressions.get(nequals);
             if (indexExpression == null) break;
@@ -272,6 +256,29 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             return false;
         index.setCostEstimate(estimateCost(index));
         return true;
+    }
+
+    private void setColumnsAndOrdering(IndexScan index) {
+        List<ExpressionNode> indexExpressions;
+        List<IndexColumn> keyColumns = index.getKeyColumns();
+        List<IndexColumn> valueColumns = index.getValueColumns();
+        int ncols1 = keyColumns.size() + valueColumns.size();
+        indexExpressions = new ArrayList<ExpressionNode>(ncols1);
+        List<OrderByExpression> orderBy = new ArrayList<OrderByExpression>(ncols1);
+        for (IndexColumn indexColumn : keyColumns) {
+            ExpressionNode indexExpression = getIndexExpression(index, indexColumn);
+            indexExpressions.add(indexExpression);
+            orderBy.add(new OrderByExpression(indexExpression,
+                                              indexColumn.isAscending()));
+        }
+        for (IndexColumn indexColumn : valueColumns) {
+            ExpressionNode indexExpression = getIndexExpression(index, indexColumn);
+            indexExpressions.add(indexExpression);
+            orderBy.add(new OrderByExpression(indexExpression,
+                                              indexColumn.isAscending()));
+        }
+        index.setColumns(indexExpressions);
+        index.setOrdering(orderBy);
     }
 
     // Determine how well this index does against the target.
@@ -488,18 +495,14 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             Set<TableSource> branchTables = new HashSet<TableSource>(branch.values());
             Collection<MultiIndexPair<ComparisonCondition>> intersections = getIntersectionCandidates(branchTables);
             for (MultiIndexPair<ComparisonCondition> intersection : intersections) {
-                MultiIndexIntersectScan mergedIndex = new MultiIndexIntersectScan(branch, intersection);
-                mergedIndex.setRequiredTables(branchTables);
-//                mergedIndex.setOrderEffectiveness(determineOrderEffectiveness(mergedIndex));
-//                mergedIndex.setCovering(determineCovering(mergedIndex)); // TODO
-//                if ((index.getOrderEffectiveness() == IndexScan.OrderEffectiveness.NONE) &&
-//                        !index.hasConditions() &&
-//                        !index.isCovering())
-//                    return false;
-                mergedIndex.setCostEstimate(estimateCost(mergedIndex));
-
-                if ((bestIndex == null) || (compare(mergedIndex, bestIndex) > 0))
-                    bestIndex = mergedIndex;
+                MultiIndexIntersectScan intersectedIndex = new MultiIndexIntersectScan(branch, intersection);
+                intersectedIndex.setRequiredTables(branchTables);
+                setColumnsAndOrdering(intersectedIndex);
+                intersectedIndex.setOrderEffectiveness(determineOrderEffectiveness(intersectedIndex));
+                intersectedIndex.setCovering(determineCovering(intersectedIndex));
+                intersectedIndex.setCostEstimate(estimateCost(intersectedIndex));
+                if ((bestIndex == null) || (compare(intersectedIndex, bestIndex) > 0))
+                    bestIndex = intersectedIndex;
             }
         }
         if (bestIndex == null)

@@ -279,8 +279,8 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = new RowStream();
             RowStream outputScan = assembleIndexScan(index.getOutputIndexScan());
             RowStream selectorScan = assembleIndexScan(index.getSelectorIndexScan());
-            Operator merge;
-            merge = API.intersect_Ordered(
+            Operator intersect;
+            intersect = API.intersect_Ordered(
                     outputScan.operator,
                     selectorScan.operator,
                     outputScan.rowType,
@@ -291,8 +291,8 @@ public class OperatorAssembler extends BaseRule
                     JoinType.INNER_JOIN,
                     IntersectOutputOption.OUTPUT_LEFT
             );
-            stream.operator = merge;
-            stream.rowType = merge.rowType();
+            stream.operator = intersect;
+            stream.rowType = intersect.rowType();
             stream.fieldOffsets = new IndexFieldOffsets(index, stream.rowType);
             return stream;
         }
