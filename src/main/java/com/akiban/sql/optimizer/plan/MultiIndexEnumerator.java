@@ -131,6 +131,9 @@ public abstract class MultiIndexEnumerator<C> {
                     // output.add(new MultiIndexPair(second, first));
                 }
             }
+            else {
+                assert false : "need two user tables: " + firstTable + ", " + secondTable;
+            }
         }
     }
 
