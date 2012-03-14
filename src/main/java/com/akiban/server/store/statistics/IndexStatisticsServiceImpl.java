@@ -147,9 +147,11 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
 
     @Override
     public IndexStatistics[] getIndexColumnStatistics(Session session, Index index) {
-        IndexStatistics[] indexStatsArray = new IndexStatistics[index.getKeyColumns().size()];
+        List<IndexColumn> allIndexColumns = new ArrayList<IndexColumn>(index.getKeyColumns());
+        allIndexColumns.addAll(index.getValueColumns());
+        IndexStatistics[] indexStatsArray = new IndexStatistics[allIndexColumns.size()];
         int i = 0;
-        for (IndexColumn indexColumn : index.getKeyColumns()) {
+        for (IndexColumn indexColumn : allIndexColumns) {
             IndexStatistics indexStatistics = null;
             Column leadingColumn = indexColumn.getColumn();
             // Find a TableIndex whose first column is leadingColumn

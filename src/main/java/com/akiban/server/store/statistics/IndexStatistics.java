@@ -36,6 +36,7 @@ public class IndexStatistics
         return index;
     }
 
+    /** The system time at which the statistics were gathered. */
     public long getAnalysisTimestamp() {
         return analysisTimestamp;
     }
@@ -43,6 +44,7 @@ public class IndexStatistics
         this.analysisTimestamp = analysisTimestamp;
     }
 
+    /** The number of rows in the index when it was analyzed. */
     public long getRowCount() {
         return rowCount;
     }
@@ -50,6 +52,9 @@ public class IndexStatistics
         this.rowCount = rowCount;
     }
 
+    /** The number of rows that were actually sampled.
+     * Right now, always equal to <code>rowCount</code>.
+     */
     public long getSampledCount() {
         return sampledCount;
     }
@@ -141,18 +146,24 @@ public class IndexStatistics
             this.lessCount = lessCount;
         }
 
+        /** A user-visible form of the key for this entry. */
         public String getKeyString() {
             return keyString;
         }
 
+        /** The number of samples that were equal to the key value. */
         public long getEqualCount() {
             return equalCount;
         }
 
+        /** The number of samples that were less than the key value
+         * (and greater than the previous entry's key value, if any).
+         */
         public long getLessCount() {
             return lessCount;
         }
 
+        /** The number of distinct values in the less-than range. */
         public long getDistinctCount() {
             return distinctCount;
         }

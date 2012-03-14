@@ -114,9 +114,9 @@ public class RulesTest extends OptimizerTestBase
                 fstr.close();
             }
         }
-        rules = new RulesTestContext(ais, DEFAULT_SCHEMA, statsFile,
-                                     RulesTestHelper.loadRules(rulesFile),
-                                     properties);
+        rules = RulesTestContext.create(ais, statsFile, 
+                                        RulesTestHelper.loadRules(rulesFile), 
+                                        properties);
     }
 
     @Test

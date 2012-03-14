@@ -16,10 +16,15 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.ais.model.*;
+import com.akiban.sql.optimizer.OptimizerTestBase;
+
+import com.akiban.qp.rowtype.Schema;
 
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsYamlLoader;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Collections;
 import java.io.File;
@@ -30,14 +35,14 @@ public class TestCostEstimator extends CostEstimator
     private final AkibanInformationSchema ais;
     private final Map<Index,IndexStatistics> stats;
 
-    public TestCostEstimator(AkibanInformationSchema ais, String defaultSchema,
-                             File statsFile) 
+    public TestCostEstimator(AkibanInformationSchema ais, File statsFile, Schema schema) 
             throws IOException {
+        super(schema);
         this.ais = ais;
         if (statsFile == null)
             stats = Collections.<Index,IndexStatistics>emptyMap();
         else
-            stats = new IndexStatisticsYamlLoader(ais, defaultSchema).load(statsFile);
+            stats = new IndexStatisticsYamlLoader(ais, OptimizerTestBase.DEFAULT_SCHEMA).load(statsFile);
     }
 
     @Override
@@ -49,9 +54,11 @@ public class TestCostEstimator extends CostEstimator
     public IndexStatistics[] getIndexColumnStatistics(Index index)
     {
         // Adapter from IndexStatisticsServiceImpl.getIndexCollumnStatistics
-        IndexStatistics[] indexStatsArray = new IndexStatistics[index.getKeyColumns().size()];
+        List<IndexColumn> allIndexColumns = new ArrayList<IndexColumn>(index.getKeyColumns());
+        allIndexColumns.addAll(index.getValueColumns());
+        IndexStatistics[] indexStatsArray = new IndexStatistics[allIndexColumns.size()];
         int i = 0;
-        for (IndexColumn indexColumn : index.getKeyColumns()) {
+        for (IndexColumn indexColumn : allIndexColumns) {
             IndexStatistics indexStatistics = null;
             Column leadingColumn = indexColumn.getColumn();
             // Find a TableIndex whose first column is leadingColumn

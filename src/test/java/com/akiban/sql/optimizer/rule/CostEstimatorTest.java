@@ -21,7 +21,14 @@ import com.akiban.sql.optimizer.OptimizerTestBase;
 import static com.akiban.sql.optimizer.rule.CostEstimator.*;
 
 import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.UserTable;
+import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.types.AkType;
 
 import org.junit.Before;
@@ -41,14 +48,14 @@ public class CostEstimatorTest
     protected TableTree tree;
     protected CostEstimator costEstimator;
 
-    private static final boolean NEW_COST_ESTIMATOR = System.getProperty("costIndexScan", "old").equals("new");
+    private static final boolean NEW_COST_ESTIMATOR = System.getProperty("costIndexScan", "new").equals("new");
 
     @Before
     public void loadSchema() throws Exception {
         ais = OptimizerTestBase.parseSchema(new File(RESOURCE_DIR, "schema.ddl"));
+        RulesTestHelper.ensureRowDefs(ais);
         tree = new TableTree();
-        costEstimator = new TestCostEstimator(ais, SCHEMA,
-                                              new File(RESOURCE_DIR, "stats.yaml"));
+        costEstimator = new TestCostEstimator(ais, new File(RESOURCE_DIR, "stats.yaml"), new Schema(ais));
     }
 
     protected Table table(String name) {
@@ -111,6 +118,9 @@ public class CostEstimatorTest
         CostEstimate costEstimate = costEstimator.costIndexScan(index, null,
                                                                 constant("M", AkType.VARCHAR), true, constant("N", AkType.VARCHAR), false); // LIKE 'M%'.
         assertEquals(4, costEstimate.getRowCount());
+        costEstimate = costEstimator.costIndexScan(index, null,
+                                                   constant("L", AkType.VARCHAR), true, constant("Q", AkType.VARCHAR), true); // BETWEEN 'L' AND 'Q'
+        assertEquals(17, costEstimate.getRowCount());
     }
 
     @Test
@@ -154,16 +164,16 @@ public class CostEstimatorTest
         // date 1029500:
         //     - Past the first 3 histogram entries (1029263, 1029270, 1029298)
         //     - 32% through the range of the 4th entry (1029937) with distinct = 108, lt = 140, so this contributes a
-        //       about 140 * (1 - 0.32) = 96. Actual bit-twiddly calculation yields 115.
+        //       about 140 * (1 - 0.32) = 96. Actual bit-twiddly calculation yields 107.
         // date 1033000:
         //     - Next entries cover 541  entries
         //     - 69% through the entry with key 1033431 with distinct = 99, lt = 127, so it contributes
-        //       127 * 0.69 = 88, (actually 51)
-        // Selectivity for the date range is (115 + 541 + 51) / 1000 = 70.7%
-        // Combined selectivity = 0.00389
-        // Expected rows = 78.
+        //       127 * 0.69 = 88, (actually 46)
+        // Selectivity for the date range is (107 + 541 + 46) / 1000 = 69.4%
+        // Combined selectivity = 0.00382
+        // Expected rows = 76.
         if (NEW_COST_ESTIMATOR) {
-            assertEquals(78, costEstimate.getRowCount());
+            assertEquals(76, costEstimate.getRowCount());
         } else {
             assertEquals(1, costEstimate.getRowCount());
         }
@@ -178,10 +188,9 @@ public class CostEstimatorTest
         TableSource c = tableSource("customers");
         TableSource o = tableSource("orders");
         TableSource i = tableSource("items");
-        CostEstimate costEstimate = costEstimator.costFlatten(i, Arrays.asList(c, o, i));
+        CostEstimate costEstimate = costFlatten(i, Arrays.asList(c, o, i));
         assertEquals(1, costEstimate.getRowCount());
-        assertEquals(RANDOM_ACCESS_COST * 3 + 
-                     FIELD_ACCESS_COST * (2 + 3 + 5),
+        assertEquals(198.0,
                      costEstimate.getCost(),
                      0.0001);
     }
@@ -191,11 +200,9 @@ public class CostEstimatorTest
         TableSource c = tableSource("customers");
         TableSource o = tableSource("orders");
         TableSource i = tableSource("items");
-        CostEstimate costEstimate = costEstimator.costFlatten(o, Arrays.asList(c, o, i));
+        CostEstimate costEstimate = costFlatten(o, Arrays.asList(c, o, i));
         assertEquals(20, costEstimate.getRowCount());
-        assertEquals(RANDOM_ACCESS_COST * 2 + 
-                     SEQUENTIAL_ACCESS_COST * 20 +
-                     FIELD_ACCESS_COST * (2 + 3 + 20 * 5),
+        assertEquals(1791.4098,
                      costEstimate.getCost(),
                      0.0001);
     }
@@ -205,12 +212,20 @@ public class CostEstimatorTest
         TableSource c = tableSource("customers");
         TableSource o = tableSource("orders");
         TableSource i = tableSource("items");
-        CostEstimate costEstimate = costEstimator.costFlatten(c, Arrays.asList(c, o, i));
+        CostEstimate costEstimate = costFlatten(c, Arrays.asList(c, o, i));
         assertEquals(200, costEstimate.getRowCount());
-        // Pay for (1) address that isn't used.
-        assertEquals(RANDOM_ACCESS_COST * 1 + 
-                     SEQUENTIAL_ACCESS_COST * (10 + 200 + 1) +
-                     FIELD_ACCESS_COST * (2 + 10 * 3 + 200 * 5 + 4),
+        assertEquals(16916.0016,
+                     costEstimate.getCost(),
+                     0.0001);
+    }
+
+    @Test
+    public void testO2I() throws Exception {
+        TableSource o = tableSource("orders");
+        TableSource i = tableSource("items");
+        CostEstimate costEstimate = costFlatten(o, Arrays.asList(i));
+        assertEquals(20, costEstimate.getRowCount());
+        assertEquals(826.4098,
                      costEstimate.getCost(),
                      0.0001);
     }
@@ -221,10 +236,9 @@ public class CostEstimatorTest
         TableSource o = tableSource("orders");
         TableSource i = tableSource("items");
         TableSource a = tableSource("addresses");
-        CostEstimate costEstimate = costEstimator.costFlatten(i, Arrays.asList(c, o, i, a));
+        CostEstimate costEstimate = costFlatten(i, Arrays.asList(c, o, i, a));
         assertEquals(1, costEstimate.getRowCount());
-        assertEquals(RANDOM_ACCESS_COST * 4 +
-                     FIELD_ACCESS_COST * (2 + 3 + 5 + 4),
+        assertEquals(295.7224,
                      costEstimate.getCost(),
                      0.0001);
     }
@@ -233,10 +247,9 @@ public class CostEstimatorTest
     public void testI2A() throws Exception {
         TableSource i = tableSource("items");
         TableSource a = tableSource("addresses");
-        CostEstimate costEstimate = costEstimator.costFlatten(i, Arrays.asList(a));
+        CostEstimate costEstimate = costFlatten(i, Arrays.asList(a));
         assertEquals(1, costEstimate.getRowCount());
-        assertEquals(RANDOM_ACCESS_COST * 1 +
-                     FIELD_ACCESS_COST * 4,
+        assertEquals(7.7224,
                      costEstimate.getCost(),
                      0.0001);
     }
@@ -245,18 +258,88 @@ public class CostEstimatorTest
     public void testA2I() throws Exception {
         TableSource a = tableSource("addresses");
         TableSource i = tableSource("items");
-        CostEstimate costEstimate = costEstimator.costFlatten(a, Arrays.asList(i));
+        CostEstimate costEstimate = costFlatten(a, Arrays.asList(i));
         assertEquals(200, costEstimate.getRowCount());
-        // The customer random access doesn't actually happen in this
-        // side-branch case, but that complexity isn't in the
-        // estimation.
-        assertEquals(RANDOM_ACCESS_COST * (1 + 1) + 
-                     SEQUENTIAL_ACCESS_COST * (10 + 200 - 1) +
-                     FIELD_ACCESS_COST * (2 + 3 * 10 + 5 * 200),
+        assertEquals(8026.4098,
                      costEstimate.getCost(),
                      0.0001);
     }
 
+    @Test
+    public void testA2COIS() throws Exception {
+        TableSource c = tableSource("customers");
+        TableSource o = tableSource("orders");
+        TableSource i = tableSource("items");
+        TableSource a = tableSource("addresses");
+        TableSource s = tableSource("shipments");
+        CostEstimate costEstimate = costFlatten(a, Arrays.asList(c, o, i, s));
+        assertEquals(300, costEstimate.getRowCount());
+        assertEquals(21412.1154,
+                     costEstimate.getCost(),
+                     0.0001);
+    }
+
+    private CostEstimate costFlatten(TableSource indexTable,
+                                     Collection<TableSource> requiredTables) {
+        TableGroup tableGroup = new TableGroup(indexTable.getTable().getTable().getGroup());
+        indexTable.setGroup(tableGroup);
+        Map<UserTable,TableSource> tableSources = new HashMap<UserTable,TableSource>();
+        tableSources.put(indexTable.getTable().getTable(), indexTable);
+        for (TableSource table : requiredTables) {
+            tableSources.put(table.getTable().getTable(), table);
+            table.setGroup(tableGroup);
+        }
+        for (UserTable childTable : new ArrayList<UserTable>(tableSources.keySet())) {
+            TableSource childSource = tableSources.get(childTable);
+            while (true) {
+                Join parentJoin = childTable.getParentJoin();
+                if (parentJoin == null) break;
+                UserTable parentTable = parentJoin.getParent();
+                TableSource parentSource = tableSources.get(parentTable);
+                if (parentSource == null) {
+                    parentSource = new TableSource(tree.addNode(parentTable), true);
+                    tableSources.put(parentTable, parentSource);
+                }
+                TableGroupJoin groupJoin = new TableGroupJoin(tableGroup, 
+                                                              parentSource, childSource,
+                                                              Collections.<ComparisonCondition>emptyList(),
+                                                              parentJoin);
+                childTable = parentTable;
+                childSource = parentSource;
+            }
+        }
+        List<TableSource> orderedSources = new ArrayList<TableSource>(tableSources.values());
+        Collections.sort(orderedSources, tableSourceById);
+        Map<TableSource,TableGroupJoinNode> nodes =
+            new HashMap<TableSource,TableGroupJoinNode>();
+        TableGroupJoinNode root = null;
+        for (TableSource tableSource : orderedSources) {
+            nodes.put(tableSource, new TableGroupJoinNode(tableSource));
+        }
+        for (TableSource childSource : orderedSources) {
+            TableGroupJoinNode childNode = nodes.get(childSource);
+            TableSource parentSource = childSource.getParentTable();
+            if (parentSource == null) {
+                root = childNode;
+                continue;
+            }
+            TableGroupJoinNode parentNode = nodes.get(parentSource);
+            childNode.setParent(parentNode);
+            childNode.setNextSibling(parentNode.getFirstChild());
+            parentNode.setFirstChild(childNode);
+        }
+        TableGroupJoinTree joinTree = new TableGroupJoinTree(root);
+        return costEstimator.costFlatten(joinTree, indexTable, 
+                                         new HashSet<TableSource>(requiredTables));
+    }
+
+    static final Comparator<TableSource> tableSourceById = new Comparator<TableSource>() {
+        @Override
+        // Access things in stable order.
+        public int compare(TableSource t1, TableSource t2) {
+            return t1.getTable().getTable().getTableId().compareTo(t2.getTable().getTable().getTableId());
+        }
+    };
 
     @Test
     public void testUniformPortion() {

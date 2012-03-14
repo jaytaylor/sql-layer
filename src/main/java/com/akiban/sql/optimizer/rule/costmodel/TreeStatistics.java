@@ -28,17 +28,17 @@ public abstract class TreeStatistics
 
     public abstract RowType rowType();
 
-    public static TreeStatistics forTable(UserTableRowType rowType)
+    public static TreeStatistics forTable(UserTableRowType rowType, TableRowCounts tableRowCounts)
     {
-        return new TableStatistics(rowType);
+        return new TableStatistics(rowType, tableRowCounts);
     }
 
-    public static TreeStatistics forIndex(IndexRowType rowType)
+    public static TreeStatistics forIndex(IndexRowType rowType, TableRowCounts tableRowCounts)
     {
         return 
             rowType.index().isGroupIndex()
-            ? new GroupIndexStatistics(rowType)
-            : new TableIndexStatistics(rowType);
+            ? new GroupIndexStatistics(rowType, tableRowCounts)
+            : new TableIndexStatistics(rowType, tableRowCounts);
     }
 
     int fieldWidth(Column column)
@@ -53,7 +53,7 @@ public abstract class TreeStatistics
                 fieldWidth = 8;
                 break;
             case DECIMAL:
-                fieldWidth = type.maxSizeBytes().intValue();
+                fieldWidth = column.getMaxStorageSize().intValue();
                 break;
             case DOUBLE:
                 fieldWidth = 8;
@@ -68,7 +68,7 @@ public abstract class TreeStatistics
                 fieldWidth = 8;
                 break;
             case VARCHAR:
-                fieldWidth = (int) (type.maxSizeBytes() * PLAUSIBLE_AVERAGE_VAR_USAGE);
+                fieldWidth = (int) (column.getMaxStorageSize() * PLAUSIBLE_AVERAGE_VAR_USAGE);
                 break;
             case TEXT:
                 fieldWidth = PLAUSIBLE_AVERAGE_BLOB_SIZE;
@@ -80,7 +80,7 @@ public abstract class TreeStatistics
                 fieldWidth = 8;
                 break;
             case U_BIGINT:
-                fieldWidth = type.maxSizeBytes().intValue();
+                fieldWidth = column.getMaxStorageSize().intValue();
                 break;
             case U_DOUBLE:
                 fieldWidth = 8;
@@ -92,7 +92,7 @@ public abstract class TreeStatistics
                 fieldWidth = 8;
                 break;
             case VARBINARY:
-                fieldWidth = (int) (type.maxSizeBytes() * PLAUSIBLE_AVERAGE_VAR_USAGE);
+                fieldWidth = (int) (column.getMaxStorageSize() * PLAUSIBLE_AVERAGE_VAR_USAGE);
                 break;
             case YEAR:
                 fieldWidth = 8;
@@ -115,11 +115,17 @@ public abstract class TreeStatistics
     private static final int PLAUSIBLE_AVERAGE_BLOB_SIZE = 100000;
     private static final double PLAUSIBLE_AVERAGE_VAR_USAGE = 0.3;
 
+    protected TreeStatistics(TableRowCounts tableRowCounts) {
+        this.tableRowCounts = tableRowCounts;
+    }
+
+    protected final TableRowCounts tableRowCounts;
+
     private static class TableStatistics extends TreeStatistics
     {
         public long rowCount()
         {
-            return rowType.userTable().rowDef().getTableStatus().getApproximateRowCount();
+            return tableRowCounts.getTableRowCount(rowType.userTable());
         }
 
         @Override
@@ -146,8 +152,9 @@ public abstract class TreeStatistics
             return rowType;
         }
 
-        public TableStatistics(UserTableRowType rowType)
+        public TableStatistics(UserTableRowType rowType, TableRowCounts tableRowCounts)
         {
+            super(tableRowCounts);
             this.rowType = rowType;
         }
 
@@ -166,7 +173,7 @@ public abstract class TreeStatistics
         public final int rowWidth()
         {
             int rowWidth = 0;
-            TableIndex index = (TableIndex) rowType.index();
+            Index index = rowType.index();
             for (IndexColumn indexColumn : index.getKeyColumns()) {
                 rowWidth += fieldWidth(indexColumn.getColumn());
             }
@@ -176,8 +183,9 @@ public abstract class TreeStatistics
             return rowWidth;
         }
 
-        protected IndexStatistics(IndexRowType rowType)
+        protected IndexStatistics(IndexRowType rowType, TableRowCounts tableRowCounts)
         {
+            super(tableRowCounts);
             this.rowType = rowType;
         }
         
@@ -190,12 +198,12 @@ public abstract class TreeStatistics
         {
             TableIndex index = (TableIndex) rowType.index();
             UserTable table = (UserTable) index.getTable();
-            return table.rowDef().getTableStatus().getApproximateRowCount();
+            return tableRowCounts.getTableRowCount(table);
         }
 
-        public TableIndexStatistics(IndexRowType rowType)
+        public TableIndexStatistics(IndexRowType rowType, TableRowCounts tableRowCounts)
         {
-            super(rowType);
+            super(rowType, tableRowCounts);
         }
     }
 
@@ -204,12 +212,12 @@ public abstract class TreeStatistics
         public long rowCount()
         {
             GroupIndex index = (GroupIndex) rowType.index();
-            return index.leafMostTable().rowDef().getTableStatus().getApproximateRowCount();
+            return tableRowCounts.getTableRowCount(index.leafMostTable());
         }
 
-        public GroupIndexStatistics(IndexRowType rowType)
+        public GroupIndexStatistics(IndexRowType rowType, TableRowCounts tableRowCounts)
         {
-            super(rowType);
+            super(rowType, tableRowCounts);
         }
     }
 }

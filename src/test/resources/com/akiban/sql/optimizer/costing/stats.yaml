@@ -1946,3 +1946,414 @@ Statistics:
     lt: 0
 Table: orders
 Timestamp: 2012-01-18T00:23:28.275Z
+---
+Index: PRIMARY
+RowCount: 1500
+SampledCount: 1500
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 46
+    eq: 1
+    key: [47]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [94]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [141]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [188]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [235]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [282]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [329]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [376]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [423]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [470]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [517]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [564]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [611]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [658]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [705]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [752]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [799]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [846]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [893]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [940]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [987]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [1034]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [1081]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [1128]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [1175]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [1222]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [1269]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [1316]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [1363]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [1410]
+    lt: 46
+  - distinct: 46
+    eq: 1
+    key: [1457]
+    lt: 46
+  - distinct: 42
+    eq: 1
+    key: [1500]
+    lt: 42
+Table: shipments
+Timestamp: 2012-03-12T15:02:32.292Z
+---
+Index: __akiban_fk_3
+RowCount: 1500
+SampledCount: 1500
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 42
+    eq: 3
+    key: [58]
+    lt: 70
+  - distinct: 27
+    eq: 3
+    key: [91]
+    lt: 45
+  - distinct: 11
+    eq: 8
+    key: [107]
+    lt: 29
+  - distinct: 24
+    eq: 3
+    key: [141]
+    lt: 39
+  - distinct: 27
+    eq: 5
+    key: [175]
+    lt: 50
+  - distinct: 12
+    eq: 6
+    key: [190]
+    lt: 24
+  - distinct: 14
+    eq: 3
+    key: [208]
+    lt: 28
+  - distinct: 29
+    eq: 4
+    key: [245]
+    lt: 57
+  - distinct: 19
+    eq: 5
+    key: [273]
+    lt: 35
+  - distinct: 15
+    eq: 5
+    key: [292]
+    lt: 27
+  - distinct: 37
+    eq: 5
+    key: [347]
+    lt: 62
+  - distinct: 52
+    eq: 3
+    key: [415]
+    lt: 84
+  - distinct: 19
+    eq: 4
+    key: [439]
+    lt: 40
+  - distinct: 23
+    eq: 3
+    key: [467]
+    lt: 47
+  - distinct: 48
+    eq: 4
+    key: [533]
+    lt: 79
+  - distinct: 12
+    eq: 4
+    key: [548]
+    lt: 27
+  - distinct: 21
+    eq: 4
+    key: [581]
+    lt: 43
+  - distinct: 38
+    eq: 3
+    key: [628]
+    lt: 66
+  - distinct: 18
+    eq: 3
+    key: [648]
+    lt: 38
+  - distinct: 12
+    eq: 4
+    key: [663]
+    lt: 25
+  - distinct: 21
+    eq: 3
+    key: [689]
+    lt: 41
+  - distinct: 21
+    eq: 3
+    key: [717]
+    lt: 38
+  - distinct: 7
+    eq: 3
+    key: [729]
+    lt: 21
+  - distinct: 28
+    eq: 3
+    key: [771]
+    lt: 51
+  - distinct: 11
+    eq: 3
+    key: [785]
+    lt: 26
+  - distinct: 22
+    eq: 4
+    key: [812]
+    lt: 41
+  - distinct: 27
+    eq: 3
+    key: [851]
+    lt: 49
+  - distinct: 40
+    eq: 6
+    key: [911]
+    lt: 61
+  - distinct: 22
+    eq: 5
+    key: [939]
+    lt: 38
+  - distinct: 16
+    eq: 3
+    key: [960]
+    lt: 32
+  - distinct: 14
+    eq: 3
+    key: [978]
+    lt: 32
+  - distinct: 19
+    eq: 4
+    key: [1000]
+    lt: 30
+Table: shipments
+Timestamp: 2012-03-12T15:02:32.162Z
+---
+Index: ship_date
+RowCount: 1500
+SampledCount: 1500
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 37
+    eq: 3
+    key: [1029262]
+    lt: 52
+  - distinct: 24
+    eq: 4
+    key: [1029356]
+    lt: 36
+  - distinct: 32
+    eq: 2
+    key: [1029429]
+    lt: 45
+  - distinct: 31
+    eq: 3
+    key: [1029739]
+    lt: 44
+  - distinct: 44
+    eq: 2
+    key: [1029849]
+    lt: 58
+  - distinct: 37
+    eq: 3
+    key: [1030194]
+    lt: 51
+  - distinct: 30
+    eq: 2
+    key: [1030294]
+    lt: 44
+  - distinct: 41
+    eq: 5
+    key: [1030421]
+    lt: 53
+  - distinct: 31
+    eq: 2
+    key: [1030734]
+    lt: 46
+  - distinct: 36
+    eq: 3
+    key: [1030839]
+    lt: 49
+  - distinct: 28
+    eq: 3
+    key: [1030927]
+    lt: 42
+  - distinct: 38
+    eq: 2
+    key: [1031277]
+    lt: 52
+  - distinct: 30
+    eq: 3
+    key: [1031344]
+    lt: 45
+  - distinct: 30
+    eq: 3
+    key: [1031420]
+    lt: 41
+  - distinct: 18
+    eq: 2
+    key: [1031475]
+    lt: 34
+  - distinct: 24
+    eq: 2
+    key: [1031759]
+    lt: 39
+  - distinct: 32
+    eq: 5
+    key: [1031833]
+    lt: 45
+  - distinct: 28
+    eq: 3
+    key: [1031915]
+    lt: 41
+  - distinct: 28
+    eq: 3
+    key: [1032235]
+    lt: 40
+  - distinct: 28
+    eq: 2
+    key: [1032310]
+    lt: 41
+  - distinct: 36
+    eq: 2
+    key: [1032428]
+    lt: 51
+  - distinct: 39
+    eq: 3
+    key: [1032779]
+    lt: 54
+  - distinct: 39
+    eq: 2
+    key: [1032886]
+    lt: 51
+  - distinct: 24
+    eq: 2
+    key: [1032952]
+    lt: 39
+  - distinct: 27
+    eq: 2
+    key: [1033270]
+    lt: 40
+  - distinct: 25
+    eq: 2
+    key: [1033331]
+    lt: 40
+  - distinct: 27
+    eq: 2
+    key: [1033426]
+    lt: 41
+  - distinct: 30
+    eq: 2
+    key: [1033521]
+    lt: 44
+  - distinct: 21
+    eq: 2
+    key: [1033806]
+    lt: 35
+  - distinct: 28
+    eq: 2
+    key: [1033881]
+    lt: 42
+  - distinct: 35
+    eq: 2
+    key: [1033979]
+    lt: 50
+  - distinct: 24
+    eq: 2
+    key: [1034044]
+    lt: 33
+Table: shipments
+Timestamp: 2012-03-12T15:11:14.711Z

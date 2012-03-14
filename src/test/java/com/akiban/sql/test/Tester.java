@@ -183,11 +183,9 @@ public class Tester
         if (actions.contains(Action.BIND))
             binder = new AISBinder(ais, DEFAULT_SCHEMA);
         if (actions.contains(Action.OPERATORS))
-            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, compilerProperties, ais, DEFAULT_SCHEMA, new FunctionsRegistryImpl(), "true".equals(compilerProperties.getProperty("cbo")) ? new TestCostEstimator(ais, DEFAULT_SCHEMA, statsFile) : null);
+            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, ais, statsFile, compilerProperties);
         if (actions.contains(Action.PLAN))
-            rulesContext = new RulesTestContext(ais, DEFAULT_SCHEMA, 
-                                                statsFile, planRules,
-                                                compilerProperties);
+            rulesContext = RulesTestContext.create(ais, statsFile, planRules, compilerProperties);
     }
 
     public void setIndexStatistics(File file) throws Exception {

@@ -16,14 +16,18 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.ais.model.*;
+import com.akiban.sql.optimizer.rule.costmodel.CostModel;
+import com.akiban.sql.optimizer.rule.costmodel.TableRowCounts;
 import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 
+import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.store.statistics.IndexStatistics;
 import static com.akiban.server.store.statistics.IndexStatistics.*;
-import static java.lang.Math.round;
 
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
@@ -33,29 +37,30 @@ import com.persistit.Persistit;
 import com.google.common.primitives.UnsignedBytes;
 
 import java.util.*;
+import static java.lang.Math.round;
 
-public abstract class CostEstimator
+public abstract class CostEstimator implements TableRowCounts
 {
+    private final Schema schema;
+    private final CostModel model;
     private final Key key;
     private final PersistitKeyValueTarget keyTarget;
     private final Comparator<byte[]> bytesComparator;
 
-    protected CostEstimator() {
+    protected CostEstimator(Schema schema) {
+        this.schema = schema;
+        model = CostModel.newCostModel(schema, this);
         key = new Key((Persistit)null);
         keyTarget = new PersistitKeyValueTarget();
         bytesComparator = UnsignedBytes.lexicographicalComparator();
     }
 
-    public abstract long getTableRowCount(Table table);
+    protected CostEstimator(SchemaRulesContext rulesContext) {
+        this(rulesContext.getSchema());
+    }
+
     public abstract IndexStatistics getIndexStatistics(Index index);
     public abstract IndexStatistics[] getIndexColumnStatistics(Index index);
-
-    // TODO: These need to be figured out for real.
-    public static final double RANDOM_ACCESS_COST = 1.25;
-    public static final double SEQUENTIAL_ACCESS_COST = 1.0;
-    public static final double FIELD_ACCESS_COST = .01;
-    public static final double SORT_COST = 2.0;
-    public static final double SELECT_COST = .25;
 
     protected boolean scaleIndexStatistics() {
         return true;
@@ -90,8 +95,10 @@ public abstract class CostEstimator
         if (indexStats != null)
             statsCount = indexStats.getRowCount();
         int columnCount = 0;
-        if (equalityComparands != null)
-            columnCount = equalityComparands.size();
+        if (equalityComparands != null) {
+            columnCount = Math.min(equalityComparands.size(), // No histogram for value cols.
+                                   index.getKeyColumns().size());
+        }
         if ((lowComparand != null) || (highComparand != null))
             columnCount++;
         Histogram histogram;
@@ -114,7 +121,7 @@ public abstract class CostEstimator
             // TODO: Shouldn't this be totalDistinct * 10 > statsCount * 9 ?
             boolean mostlyDistinct = totalDistinct * 9 > statsCount * 10; // > 90% distinct
             if (mostlyDistinct) scaleCount = false;
-            byte[] keyBytes = encodeKeyBytes(index, equalityComparands, null);
+            byte[] keyBytes = encodeKeyBytes(index, equalityComparands, null, false);
             if (keyBytes == null) {
                 // Variable.
                 nrows = (mostlyDistinct) ? 1 : statsCount / totalDistinct;
@@ -124,8 +131,8 @@ public abstract class CostEstimator
             }
         }
         else {
-            byte[] lowBytes = encodeKeyBytes(index, equalityComparands, lowComparand);
-            byte[] highBytes = encodeKeyBytes(index, equalityComparands, highComparand);
+            byte[] lowBytes = encodeKeyBytes(index, equalityComparands, lowComparand, false);
+            byte[] highBytes = encodeKeyBytes(index, equalityComparands, highComparand, true);
             if ((lowBytes == null) && (highBytes == null)) {
                 // Range completely unknown.
                 nrows = indexStats.getRowCount();
@@ -170,23 +177,15 @@ public abstract class CostEstimator
         }
         boolean scaleCount = scaleIndexStatistics();
         double selectivity = 1.0;
-        if ((lowComparand == null) && (highComparand == null)) {
-            // Equality lookup.
-
-            // If a histogram is almost unique, and in particular unique but
-            // not so declared, then the result size doesn't scale up from
-            // when it was analyzed.
-            if (mostlyDistinct(indexStatsArray)) scaleCount = false;
+        if (equalityComparands != null && !equalityComparands.isEmpty()) {
             selectivity = fractionEqual(equalityComparands, index, indexStatsArray);
         }
-        else {
-            if (equalityComparands != null && !equalityComparands.isEmpty()) {
-                selectivity = fractionEqual(equalityComparands, index, indexStatsArray);
-            }
+        if (lowComparand != null || highComparand != null) {
             selectivity *= fractionBetween(indexStatsArray[columnCount - 1],
                                            lowComparand, lowInclusive,
                                            highComparand, highInclusive);
         }
+        if (mostlyDistinct(indexStatsArray)) scaleCount = false;
         // statsCount: Number of rows in the table based on an index of the table, according to index
         //    statistics, which may be stale.
         // rowCount: Approximate number of rows in the table, reasonably up to date.
@@ -216,11 +215,9 @@ public abstract class CostEstimator
     // Estimate cost of fetching nrows from index.
     // One random access to get there, then nrows-1 sequential accesses following,
     // Plus a surcharge for copying something as wide as the index.
-    private static CostEstimate indexAccessCost(long nrows, Index index) {
+    private CostEstimate indexAccessCost(long nrows, Index index) {
         return new CostEstimate(nrows, 
-                                RANDOM_ACCESS_COST +
-                                ((nrows - 1) * SEQUENTIAL_ACCESS_COST) +
-                                nrows * FIELD_ACCESS_COST * index.getKeyColumns().size());
+                                model.indexScan(schema.indexRowType(index), (int)nrows));
     }
 
     protected long rowsEqual(Histogram histogram, byte[] keyBytes) {
@@ -318,8 +315,8 @@ public abstract class CostEstimator
                 // Variable expression. Use average selectivity for histogram.
                 return
                     mostlyDistinct(indexStats)
-                    ? 0
-                    : ((double) histogram.totalDistinctCount()) / indexStats.getRowCount();
+                    ? 1.0 / indexStats.getRowCount()
+                    : 1.0 / histogram.totalDistinctCount();
             } else {
                 // TODO: Could use Collections.binarySearch if we had something that looked like a HistogramEntry.
                 List<HistogramEntry> entries = histogram.getEntries();
@@ -338,8 +335,7 @@ public abstract class CostEstimator
                 if (d == 0) {
                     return 1;
                 }
-                d++;
-                return ((double) lastEntry.getLessCount()) / (d * indexStats.getRowCount());
+                return 0.00483;
             }
         }
     }
@@ -463,7 +459,8 @@ public abstract class CostEstimator
      */
     protected byte[] encodeKeyBytes(Index index, 
                                     List<ExpressionNode> fields,
-                                    ExpressionNode anotherField) {
+                                    ExpressionNode anotherField,
+                                    boolean upper) {
         key.clear();
         keyTarget.attach(key);
         int i = 0;
@@ -478,6 +475,9 @@ public abstract class CostEstimator
             if (!encodeKeyValue(anotherField, index, i++)) {
                 return null;
             }
+        }
+        else if (upper) {
+            key.append(Key.AFTER);
         }
         return keyCopy();
     }    
@@ -514,207 +514,206 @@ public abstract class CostEstimator
     /** Estimate the cost of starting at the given table's index and
      * fetching the given tables, then joining them with Flatten and
      * Product. */
-    // TODO: Lots of logical overlap with BranchJoiner.
-    public CostEstimate costFlatten(TableSource indexTable,
-                                    Collection<TableSource> requiredTables) {
-        indexTable.getTable().getTree().colorBranches();
-        Map<UserTable,FlattenedTable> ftables = new HashMap<UserTable,FlattenedTable>();
-        long indexMask = indexTable.getTable().getBranches();
-        FlattenedTable iftable = flattened(indexTable, ftables);
-        for (TableSource table : orderedTableSources(requiredTables)) {
-            FlattenedTable ftable = flattened(table, ftables);
-            long common = indexMask & table.getTable().getBranches();
-            if (common == indexMask) {
-                // The index table or one of its descendants or single branch.
-                if (indexTable.getTable().getDepth() >= table.getTable().getDepth()) {
-                    ftable.ancestor = true; // Just ancestor until branch needed.
-                }
-                else {
-                    ftable.branchPoint = iftable;
-                    iftable.branch = true; // Proper descendant, need whole branch.
-                }
-            }
-            else if (common != 0) {
-                // Ancestor
-                ftable.ancestor = true;
-            }
-            else {
-                // No common ancestor, need higher branchpoint.
-                TableNode tnode = table.getTable();
-                do {
-                    TableNode prev = tnode;
-                    tnode = tnode.getParent();
-                    if ((tnode.getBranches() & indexMask) != 0) {
-                        ftable.branchPoint = flattened(prev.getTable(), ftables);
-                        ftable.branchPoint.branch = true;
-                        break;
-                    }
-                } while (tnode != null);
-            }
-        }
-        // Find single root from which all the flattens descend.
-        FlattenedTable root = null;
-        for (FlattenedTable ftable : orderedTables(ftables.values())) {
-            if ((root == null) || (ftable.table.getDepth() < root.table.getDepth())) {
-                root = ftable;
-            }
-            else if (ftable.table.getDepth() == root.table.getDepth()) {
-                // Move up to common ancestor, which is new root.
-                while (root != ftable) {
-                    root = flattened(root.table.parentTable(), ftables);
-                    ftable = flattened(ftable.table.parentTable(), ftables);
-                    root.ancestor = ftable.ancestor = true;
-                }
-            }
-        }
-        // Limit branchPoint markers to leaves; that's the number that will joined.
-        for (FlattenedTable ftable : orderedTables(ftables.values())) {
-            if (ftable.branchPoint != null) {
-                while (ftable != root) {
-                    ftable = flattened(ftable.table.parentTable(), ftables);
-                    ftable.branchPoint = null;
-                }
-            }
-        }
-        // Account for database accesses.
+    public CostEstimate costFlatten(TableGroupJoinTree tableGroup,
+                                    TableSource indexTable,
+                                    Set<TableSource> requiredTables) {
+        TableGroupJoinNode startNode = tableGroup.getRoot().findTable(indexTable);
+        coverBranches(tableGroup, startNode, requiredTables);
         long rowCount = 1;
         double cost = 0.0;
-        long[] counts = new long[2];
-        for (FlattenedTable ftable : orderedTables(ftables.values())) {
-            // Multiple rows come in from branches and they all get producted together.
-            if (ftable.branchPoint != null)
-                rowCount *= branchScale(getTableRowCount(ftable.table), 
-                                        ftable.branchPoint, iftable);
-            if (ftable.branch) {
-                branchRowCount(ftable, iftable, counts);
-                cost += RANDOM_ACCESS_COST +
-                    SEQUENTIAL_ACCESS_COST * (counts[0] - 1) +
-                    FIELD_ACCESS_COST * counts[1];
-            }
-            else if (ftable.ancestor) {
-                cost += RANDOM_ACCESS_COST + FIELD_ACCESS_COST * ftable.table.getColumns().size();
+        List<UserTableRowType> ancestorTypes = new ArrayList<UserTableRowType>();
+        for (TableGroupJoinNode ancestorNode = startNode;
+             ancestorNode != null;
+             ancestorNode = ancestorNode.getParent()) {
+            if (isRequired(ancestorNode)) {
+                if ((ancestorNode == startNode) &&
+                    (getSideBranches(ancestorNode) != 0)) {
+                    continue;   // Branch, not ancestor.
+                }
+                ancestorTypes.add(schema.userTableRowType(ancestorNode.getTable().getTable().getTable()));
             }
         }
+        // Cost to get main branch.
+        cost += model.ancestorLookup(ancestorTypes);
+        for (TableGroupJoinNode branchNode : tableGroup) {
+            if (isSideBranchLeaf(branchNode)) {
+                int branch = Long.numberOfTrailingZeros(getBranches(branchNode));
+                TableGroupJoinNode branchRoot = branchNode, nextToRoot = null;
+                while (true) {
+                    TableGroupJoinNode parent = branchRoot.getParent();
+                    if (parent == startNode) {
+                        // Different kind of BranchLookup.
+                        nextToRoot = branchRoot = parent;
+                        break;
+                    }
+                    if ((parent == null) || !onBranch(parent, branch))
+                        break;
+                    nextToRoot = branchRoot;
+                    branchRoot = parent;
+                }
+                assert (nextToRoot != null);
+                // Multiplier from this branch.
+                rowCount *= descendantCardinality(branchNode, branchRoot);
+                // Cost to get side branch.
+                cost += model.branchLookup(schema.userTableRowType(nextToRoot.getTable().getTable().getTable()));
+            }
+        }
+        for (TableGroupJoinNode node : tableGroup) {
+            if (isFlattenable(node)) {
+                long nrows = tableCardinality(node);
+                // Cost of flattening these children with their ancestor.
+                cost += model.flatten((int)nrows);
+            }
+        }
+        if (rowCount > 1)
+            cost += model.product((int)rowCount);
         return new CostEstimate(rowCount, cost);
     }
 
-    // Estimate depends somewhat on which happens to be chosen as the
-    // main branch, so make it predictable for tests.
-    protected Collection<TableSource> orderedTableSources(Collection<TableSource> tables) {
-        List<TableSource> ordered = new ArrayList<TableSource>(tables);
-        Collections.sort(ordered, new Comparator<TableSource>() {
-                             @Override
-                             public int compare(TableSource t1, TableSource t2) {
-                                 return t1.getTable().getTable().getTableId().compareTo(t2.getTable().getTable().getTableId());
-                             }
-                         });
-        return ordered;
+    /** This table needs to be included in flattens. */
+    protected static final long REQUIRED = 1;
+    /** This table is on the main branch. */
+    protected static final long ANCESTOR = 2;
+    protected static final int ANCESTOR_BRANCH = 1;
+    /** Mask for main or side branch. */
+    protected static final long BRANCH_MASK = ~1;
+    /** Mask for side branch. */
+    protected static final long SIDE_BRANCH_MASK = ~3;
+
+    protected static boolean isRequired(TableGroupJoinNode table) {
+        return ((table.getState() & REQUIRED) != 0);
+    }
+    protected static void setRequired(TableGroupJoinNode table) {
+        table.setState(table.getState() | REQUIRED);
+    }
+    protected static boolean isAncestor(TableGroupJoinNode table) {
+        return ((table.getState() & ANCESTOR) != 0);
+    }
+    protected static long getBranches(TableGroupJoinNode table) {
+        return (table.getState() & BRANCH_MASK);
+    }
+    protected static long getSideBranches(TableGroupJoinNode table) {
+        return (table.getState() & SIDE_BRANCH_MASK);
+    }
+    protected static boolean onBranch(TableGroupJoinNode table, int b) {
+        return ((table.getState() & (1 << b)) != 0);
+    }
+    protected void setBranch(TableGroupJoinNode table, int b) {
+        table.setState(table.getState() | (1 << b));
     }
 
-    protected Collection<FlattenedTable> orderedTables(Collection<FlattenedTable> tables) {
-        List<FlattenedTable> ordered = new ArrayList<FlattenedTable>(tables);
-        Collections.sort(ordered, new Comparator<FlattenedTable>() {
-                             @Override
-                             public int compare(FlattenedTable f1, FlattenedTable f2) {
-                                 return f1.table.getTableId().compareTo(f2.table.getTableId());
-                             }
-                         });
-        return ordered;
-    }
-
-    // A source of flattened rows.
-    static class FlattenedTable {
-        UserTable table;
-        boolean ancestor, branch;
-        FlattenedTable branchPoint;
-        
-        public FlattenedTable(UserTable table) {
-            this.table = table;
+    /** Like {@link BranchJoiner_CBO#markBranches} but simpler without
+     * having to worry about the exact <em>order</em> in which
+     * operations are performed.
+     */
+    protected void coverBranches(TableGroupJoinTree tableGroup, 
+                                 TableGroupJoinNode startNode,
+                                 Set<TableSource> requiredTables) {
+        for (TableGroupJoinNode table : tableGroup) {
+            table.setState(requiredTables.contains(table.getTable()) ? REQUIRED : 0);
         }
-
-        @Override
-        public String toString() {
-            return table.getName().toString();
+        int nbranches = ANCESTOR_BRANCH;
+        boolean anyAncestorRequired = false;
+        for (TableGroupJoinNode table = startNode; table != null; table = table.getParent()) {
+            setBranch(table, nbranches);
+            if (isRequired(table))
+                anyAncestorRequired = true;
         }
-    }
-
-    protected FlattenedTable flattened(UserTable table, 
-                                       Map<UserTable,FlattenedTable> map) {
-        FlattenedTable ftable = map.get(table);
-        if (ftable == null) {
-            ftable = new FlattenedTable(table);
-            map.put(table, ftable);
-        }
-        return ftable;
-    }
-
-    protected FlattenedTable flattened(TableSource table, 
-                                       Map<UserTable,FlattenedTable> map) {
-        return flattened(table.getTable().getTable(), map);
-    }
-
-    // Number of rows that come in from a BranchLookup starting at
-    // this table, including ones that aren't even known to the
-    // optimizer / operator plan and will just get ignored. They still
-    // stream through.
-    protected void branchRowCount(FlattenedTable ftable, FlattenedTable indexTable,
-                                  long[] counts) {
-        for (int i = 0; i < counts.length; i++) {
-            counts[i] = 0;
-        }
-        totalCardinalities(ftable.table, counts);
-        for (int i = 0; i < counts.length; i++) {
-            counts[i] = branchScale(counts[i], ftable, indexTable);
+        nbranches++;
+        for (TableGroupJoinNode table : tableGroup) {
+            if (isSideBranchLeaf(table)) {
+                // This is the leaf of a new side branch.
+                while (true) {
+                    boolean onBranchAlready = (getBranches(table) != 0);
+                    setBranch(table, nbranches);
+                    if (onBranchAlready) {
+                        if (!isRequired(table)) {
+                            // Might become required for joining of branches.
+                            if (Long.bitCount(anyAncestorRequired ?
+                                              getBranches(table) :
+                                              getSideBranches(table)) > 1)
+                                setRequired(table);
+                        }
+                        break;
+                    }
+                    table = table.getParent();
+                }
+                nbranches++;
+            }
         }
     }
     
-    // Branching from the index just has one branchpoint
-    // row. Branching from someplace else has as many as there are per
-    // the common ancestor, which is the immediate parent of the
-    // branchpoint.
-    protected long branchScale(long total, 
-                               FlattenedTable ftable, FlattenedTable indexTable) {
-        return simpleRound(total,
-                           getTableRowCount((ftable == indexTable) ?
-                                            ftable.table :
-                                            ftable.table.parentTable()));
+    /** A table is the leaf of some side branch if it's required but
+     * none of its descendants are. */
+    protected boolean isSideBranchLeaf(TableGroupJoinNode table) {
+        if (!isRequired(table) || isAncestor(table))
+            return false;
+        for (TableGroupJoinNode descendant : table) {
+            if ((descendant != table) && isRequired(descendant))
+                return false;
+        }
+        return true;
     }
 
-    protected void totalCardinalities(UserTable table, long[] counts) {
-        long total = getTableRowCount(table);
-        counts[0] += total;
-        counts[1] += total * table.getColumns().size();
-        for (Join childJoin : table.getChildJoins()) {
-            totalCardinalities(childJoin.getChild(), counts);
+    /** A table is flattened in if it's required and one of its
+     * ancestors is as well. */
+    protected boolean isFlattenable(TableGroupJoinNode table) {
+        if (!isRequired(table))
+            return false;
+        while (true) {
+            table = table.getParent();
+            if (table == null) break;
+            if (isRequired(table))
+                return true;
+        }
+        return false;
+    }
+
+    /** Number of rows of given table, total per index row. */
+    protected long tableCardinality(TableGroupJoinNode table) {
+        if (isAncestor(table))
+            return 1;
+        TableGroupJoinNode parent = table;
+        while (true) {
+            parent = parent.getParent();
+            if (isAncestor(parent))
+                return descendantCardinality(table, parent);
         }
     }
 
+    /** Number of child rows per ancestor. */
+    protected long descendantCardinality(TableGroupJoinNode childNode, 
+                                         TableGroupJoinNode ancestorNode) {
+        return simpleRound(getTableRowCount(childNode.getTable().getTable().getTable()),
+                           getTableRowCount(ancestorNode.getTable().getTable().getTable()));
+    }
+
     /** Estimate the cost of testing some conditions. */
-    // TODO: Could estimate result cardinality based on (easily
-    // determinable) selectivities.
+    // TODO: Assumes that each condition turns into a separate select.
     public CostEstimate costSelect(Collection<ConditionExpression> conditions,
                                    long size) {
-        return new CostEstimate(size, conditions.size() * SELECT_COST);
+        return new CostEstimate(size, model.select((int)size) * conditions.size());
     }
 
     /** Estimate the cost of a sort of the given size. */
     public CostEstimate costSort(long size) {
-        return new CostEstimate(size, size * Math.log(size) * SORT_COST);
+        return new CostEstimate(size, model.sort((int)size, false));
     }
 
     /** Estimate cost of scanning the whole group. */
     // TODO: Need to account for tables actually wanted?
     public CostEstimate costGroupScan(Group group) {
         long nrows = 0;
-        double cost = RANDOM_ACCESS_COST;
+        double cost = 0.0;
+        UserTable root = null;
         for (UserTable table : group.getGroupTable().getAIS().getUserTables().values()) {
             if (table.getGroup() == group) {
-                long rowCount = getTableRowCount(table);
-                nrows += rowCount;
-                cost += rowCount * (SEQUENTIAL_ACCESS_COST + FIELD_ACCESS_COST * table.getColumns().size());
+                if (table.getParentJoin() == null)
+                    root = table;
+                nrows += getTableRowCount(table);
             }
         }
-        return new CostEstimate(nrows, cost);
+        return new CostEstimate(nrows, model.fullGroupScan(schema.userTableRowType(root)));
     }
 
 }
