@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,7 +43,7 @@ import java.util.Set;
  * subclasses for this class: one for unit testing, and one for production.</p>
  * @param <C> the condition type.
  */
-public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<N>> {
+public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<? extends C>> {
     
     Logger log = LoggerFactory.getLogger(MultiIndexEnumerator.class);
     
@@ -87,8 +88,16 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<N>>
         do {
             newNodes.clear();
             for (N outer : freshNodes) {
-                for (N inner : oldNodes) {
-                    emit(outer, inner, newNodes, columnEquivalences);
+                Set<C> conditionsCopy = new HashSet<C>(conditions); // define outside loop and resue
+                outer.removeCoveredConditions(conditionsCopy);
+                if (!conditionsCopy.isEmpty()) {
+                    for (N inner : oldNodes) {
+                        int covered = conditionsCopy.size();
+                        inner.removeCoveredConditions(conditionsCopy);
+                        if (conditionsCopy.size() < covered) { // if not, the inner hasn't helped at all
+                            emit(outer, inner, newNodes, columnEquivalences);
+                        }
+                    }
                 }
             }
             int oldCount = results.size();
@@ -117,34 +126,30 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<N>>
         return result;
     }
 
-    private void emit(N first, N second,
-                      Collection<N> output, EquivalenceFinder<Column> columnEquivalences)
+    private void emit(N first, N second, Collection<N> output, EquivalenceFinder<Column> columnEquivalences)
     {
-        if (worthlessIntersection(first, second))
-            return;
         Table firstTable = first.getLeafMostUTable();
         Table secondTable = second.getLeafMostUTable();
         List<IndexColumn> commonTrailing = getCommonTrailing(first, second, columnEquivalences);
         UserTable firstUTable = (UserTable) firstTable;
         UserTable secondUTable = (UserTable) secondTable;
         // handle the two single-branch cases
+        boolean onSameBranch = false;
         if (firstUTable.isDescendantOf(secondUTable)
                 && includesHKey(secondUTable, commonTrailing, columnEquivalences)) {
             output.add(intersect(first, second, commonTrailing.size()));
+            onSameBranch = true;
         }
-        else if (secondUTable.isDescendantOf(firstUTable)
+        if (secondUTable.isDescendantOf(firstUTable)
                 && includesHKey(firstUTable, commonTrailing, columnEquivalences)) {
             output.add(intersect(second, first, commonTrailing.size()));
+            onSameBranch = true;
         }
-        else {
+        if (!onSameBranch) {
             // TODO -- enable when multi-branch is in
             // output.add(new MultiIndexPair(first, second));
             // output.add(new MultiIndexPair(second, first));
         }
-    }
-
-    private boolean worthlessIntersection(N first, N second) {
-        return first == second || first.impliedBy(second);
     }
 
     private boolean includesHKey(UserTable table, List<IndexColumn> columns, EquivalenceFinder<Column> columnEquivalences) {

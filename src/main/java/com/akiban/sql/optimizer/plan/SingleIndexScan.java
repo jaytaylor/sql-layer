@@ -20,6 +20,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 
 import java.util.List;
+import java.util.Set;
 
 public final class SingleIndexScan extends IndexScan {
 
@@ -93,10 +94,7 @@ public final class SingleIndexScan extends IndexScan {
     }
 
     @Override
-    public boolean impliedBy(IndexScan other) {
-        if (other instanceof SingleIndexScan)
-            return this == other;
-        else
-            return other.impliedBy(this);
+    public void removeCoveredConditions(Set<? super ComparisonCondition> conditions) {
+        conditions.removeAll(getEqualityComparands());
     }
 }

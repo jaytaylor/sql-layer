@@ -19,6 +19,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 
 import java.util.List;
+import java.util.Set;
 
 public final class MultiIndexIntersectScan extends IndexScan {
     
@@ -80,8 +81,9 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
-    public boolean impliedBy(IndexScan other) {
-        return outputScan.impliedBy(other) || selectorScan.impliedBy(other);
+    public void removeCoveredConditions(Set<? super ComparisonCondition> conditions) {
+        outputScan.removeCoveredConditions(conditions);
+        selectorScan.removeCoveredConditions(conditions);
     }
 
     @Override

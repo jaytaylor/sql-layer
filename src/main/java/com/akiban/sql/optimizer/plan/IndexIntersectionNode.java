@@ -19,10 +19,11 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 
 import java.util.List;
+import java.util.Set;
 
-public interface IndexIntersectionNode<N extends IndexIntersectionNode<? super N>> {
+public interface IndexIntersectionNode<C> {
     UserTable getLeafMostUTable();
     List<IndexColumn> getAllColumns();
-    boolean impliedBy(N other);
+    void removeCoveredConditions(Set<? super C> conditions);
     int getPeggedCount();
 }

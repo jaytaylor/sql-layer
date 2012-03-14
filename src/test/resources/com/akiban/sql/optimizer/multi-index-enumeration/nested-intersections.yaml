@@ -33,11 +33,11 @@ results:
 
     # single-level nesting, nested right
 
-    - INTERSECT( [VIPSTATUS, id] with 1 comparison AND INTERSECT( [NAME, id] AND [YOB, id] with 1 comparison))
-    - INTERSECT( [YOB, id] with 1 comparison AND INTERSECT( [NAME, id] AND [VIPSTATUS, id] with 1 comparison))
+    - INTERSECT( [VIPSTATUS, id] AND INTERSECT( [NAME, id] AND [YOB, id] with 1 comparison) with 1 comparison)
+    - INTERSECT( [YOB, id] AND INTERSECT( [NAME, id] AND [VIPSTATUS, id] with 1 comparison) with 1 comparison)
 
-    - INTERSECT( [YOB, id] with 1 comparison AND INTERSECT( [VIPSTATUS, id] AND [NAME, id] with 1 comparison))
-    - INTERSECT( [NAME, id] with 1 comparison AND INTERSECT( [VIPSTATUS, id] AND [YOB, id] with 1 comparison))
+    - INTERSECT( [YOB, id] AND INTERSECT( [VIPSTATUS, id] AND [NAME, id] with 1 comparison) with 1 comparison)
+    - INTERSECT( [NAME, id] AND INTERSECT( [VIPSTATUS, id] AND [YOB, id] with 1 comparison) with 1 comparison)
 
-    - INTERSECT( [VIPSTATUS, id] with 1 comparison AND INTERSECT( [YOB, id] AND [NAME, id] with 1 comparison))
-    - INTERSECT( [NAME, id] with 1 comparison AND INTERSECT( [YOB, id] AND [VIPSTATUS, id] with 1 comparison))
+    - INTERSECT( [VIPSTATUS, id] AND INTERSECT( [YOB, id] AND [NAME, id] with 1 comparison) with 1 comparison)
+    - INTERSECT( [NAME, id] AND INTERSECT( [YOB, id] AND [VIPSTATUS, id] with 1 comparison) with 1 comparison)

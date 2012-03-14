@@ -226,7 +226,7 @@ public final class MultiIndexEnumeratorTest {
         private AkibanInformationSchema ais;
     }
     
-    private interface TestNode extends IndexIntersectionNode<TestNode> {}
+    private interface TestNode extends IndexIntersectionNode<String> {}
     
     private static class SimpleLeaf implements TestNode {
         private UserTable leaf;
@@ -255,8 +255,8 @@ public final class MultiIndexEnumeratorTest {
         }
 
         @Override
-        public boolean impliedBy(TestNode other) {
-            return String.valueOf(other).equals(this.toString());
+        public void removeCoveredConditions(Set<? super String> conditions) {
+            conditions.removeAll(pegged);
         }
 
         @Override
@@ -306,8 +306,9 @@ public final class MultiIndexEnumeratorTest {
         }
 
         @Override
-        public boolean impliedBy(TestNode other) {
-            return left.impliedBy(other) || right.impliedBy(other);
+        public void removeCoveredConditions(Set<? super String> conditions) {
+            left.removeCoveredConditions(conditions);
+            right.removeCoveredConditions(conditions);
         }
 
         @Override

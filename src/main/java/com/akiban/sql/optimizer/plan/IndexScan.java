@@ -23,7 +23,7 @@ import com.akiban.sql.optimizer.rule.range.ColumnRanges;
 
 import java.util.*;
 
-public abstract class IndexScan extends BasePlanNode implements IndexIntersectionNode<IndexScan>
+public abstract class IndexScan extends BasePlanNode implements IndexIntersectionNode<ComparisonCondition>
 {
     public static enum OrderEffectiveness {
         NONE, PARTIAL_GROUPED, GROUPED, SORTED
