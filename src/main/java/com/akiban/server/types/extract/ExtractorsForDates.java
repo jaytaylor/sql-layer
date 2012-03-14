@@ -666,6 +666,11 @@ abstract class ExtractorsForDates extends LongExtractor {
         case INT:       return source.getInt();
         case U_INT:     return source.getUInt();
         case LONG:      return source.getLong();
+        case U_FLOAT:   return (long)source.getUFloat();
+        case FLOAT:     return (long)source.getFloat();
+        case DOUBLE:    return (long)source.getDouble();
+        case U_DOUBLE:  return (long)source.getUDouble();
+        case DECIMAL:   return source.getDecimal().longValue();
         default: throw unsupportedConversion(type);
         }
     }
