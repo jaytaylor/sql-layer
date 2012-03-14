@@ -36,11 +36,6 @@ public class AbsExpression extends AbstractUnaryExpression
     
     private static class InternalComposer extends UnaryComposer
     {
-        public InternalComposer()
-        {
-            
-        }
-        
         @Override
         protected Expression compose(Expression argument)
         {
