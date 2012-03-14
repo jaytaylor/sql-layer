@@ -85,20 +85,20 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<? e
         List<N> freshNodes = results;
         List<N> oldNodes = results;
         List<N> newNodes = new ArrayList<N>(leaves);
+        Set<C> conditionsCopy = new HashSet<C>(conditions);
+        List<C> conditionsRecycle = new ArrayList<C>(conditions.size());
         do {
             newNodes.clear();
             for (N outer : freshNodes) {
-                Set<C> conditionsCopy = new HashSet<C>(conditions); // define outside loop and resue
-                outer.removeCoveredConditions(conditionsCopy);
-                if (!conditionsCopy.isEmpty()) {
+                if (outer.removeCoveredConditions(conditionsCopy, conditionsRecycle) && (!conditionsCopy.isEmpty())) {
                     for (N inner : oldNodes) {
-                        int covered = conditionsCopy.size();
-                        inner.removeCoveredConditions(conditionsCopy);
-                        if (conditionsCopy.size() < covered) { // if not, the inner hasn't helped at all
+                        if (inner.removeCoveredConditions(conditionsCopy, conditionsRecycle)) {
                             emit(outer, inner, newNodes, columnEquivalences);
+                            emptyInto(conditionsCopy, conditionsRecycle);
                         }
                     }
                 }
+                emptyInto(conditionsCopy, conditionsRecycle);
             }
             int oldCount = results.size();
             results.addAll(newNodes);
@@ -107,6 +107,11 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<? e
         } while (!newNodes.isEmpty());
         
         return results.subList(leaves, results.size());
+    }
+    
+    private static <T> void emptyInto(Collection<? extends T> source, Collection<? super T> target) {
+        target.addAll(source);
+        source.clear();
     }
 
     protected void handleDuplicateCondition() {

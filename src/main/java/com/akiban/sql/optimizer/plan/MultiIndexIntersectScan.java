@@ -91,10 +91,14 @@ public final class MultiIndexIntersectScan extends IndexScan {
         return outputScan.getPeggedCount();
     }
 
+
     @Override
-    public void removeCoveredConditions(Set<? super ComparisonCondition> conditions) {
-        outputScan.removeCoveredConditions(conditions);
-        selectorScan.removeCoveredConditions(conditions);
+    public boolean removeCoveredConditions(Set<? super ConditionExpression> conditions,
+                                           List<? super ConditionExpression> removeTo) {
+        // using a bitwise or on purpose here -- we do NOT want to short-circuit this, since even if the left
+        // covers some conditions, we want to know which ones the right covers.
+        return outputScan.removeCoveredConditions(conditions, removeTo)
+                | selectorScan.removeCoveredConditions(conditions, removeTo);
     }
 
     @Override

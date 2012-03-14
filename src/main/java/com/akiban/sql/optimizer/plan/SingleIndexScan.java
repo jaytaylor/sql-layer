@@ -94,7 +94,14 @@ public final class SingleIndexScan extends IndexScan {
     }
 
     @Override
-    public void removeCoveredConditions(Set<? super ComparisonCondition> conditions) {
-        conditions.removeAll(getConditions());
+    public boolean removeCoveredConditions(Set<? super ConditionExpression> conditions,
+                                           List<? super ConditionExpression> removeTo) {
+
+        boolean removedAny = false;
+        for (ConditionExpression cond : getConditions()) {
+            removedAny |= conditions.remove(cond);
+            removeTo.add(cond);
+        }
+        return removedAny;
     }
 }

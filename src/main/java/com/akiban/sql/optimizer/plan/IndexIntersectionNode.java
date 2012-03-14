@@ -24,6 +24,6 @@ import java.util.Set;
 public interface IndexIntersectionNode<C> {
     UserTable getLeafMostUTable();
     List<IndexColumn> getAllColumns();
-    void removeCoveredConditions(Set<? super C> conditions);
+    boolean removeCoveredConditions(Set<? super C> conditions, List<? super C> removeTo);
     int getPeggedCount();
 }

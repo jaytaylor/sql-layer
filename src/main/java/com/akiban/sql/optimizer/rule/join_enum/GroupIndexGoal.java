@@ -541,7 +541,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             if (giContainsOnlyRequired)
                 singleIndexes.add(gi);
         }
-        Set<ComparisonCondition> comparisons = new HashSet<ComparisonCondition>(conditions.size());
+        Set<ConditionExpression> comparisons = new HashSet<ConditionExpression>(conditions.size());
         EquivalenceFinder<ColumnExpression> colExprsEquivs = null;
         for (ConditionExpression condition : conditions) {
             ComparisonCondition comparison = findValidCondition(condition);
@@ -593,7 +593,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return (node instanceof ConstantExpression) || (node instanceof ParameterExpression);
     }
     
-    private static class IntersectionEnumerator extends MultiIndexEnumerator<ComparisonCondition,IndexScan> {
+    private static class IntersectionEnumerator extends MultiIndexEnumerator<ConditionExpression,IndexScan> {
         private Map<UserTable,TableSource> tablesMap;
 
         private IntersectionEnumerator(Map<UserTable, TableSource> tablesMap) {
@@ -601,20 +601,23 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         }
 
         @Override
-        protected Column columnFromCondition(ComparisonCondition condition) {
-            ColumnExpression asCol = (ColumnExpression) condition.getLeft();
+        protected Column columnFromCondition(ConditionExpression condition) {
+            ComparisonCondition comparison = (ComparisonCondition) condition;
+            ColumnExpression asCol = (ColumnExpression) comparison.getLeft();
             return asCol.getColumn();
         }
 
         @Override
-        protected SingleIndexScan buildLeaf(MultiIndexCandidate<ComparisonCondition> candidate) {
+        protected SingleIndexScan buildLeaf(MultiIndexCandidate<ConditionExpression> candidate) {
             Index index = candidate.getIndex();
             TableSource root = tablesMap.get(index.rootMostTable());
             TableSource leaf = tablesMap.get(index.leafMostTable());
             assert root != null && leaf != null : index + ", " + tablesMap;
             SingleIndexScan result = new SingleIndexScan(candidate.getIndex(), root, leaf);
-            for (ComparisonCondition cond : candidate.getPegged())
-                result.addEqualityCondition(cond, cond.getRight());
+            for (ConditionExpression cond : candidate.getPegged()) {
+                ComparisonCondition comparison = (ComparisonCondition) cond;
+                result.addEqualityCondition(comparison, comparison.getRight());
+            }
             setColumnsAndOrdering(result);
             return result;
         }
