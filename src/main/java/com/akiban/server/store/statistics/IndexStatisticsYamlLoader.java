@@ -24,6 +24,7 @@ import com.akiban.ais.model.TableName;
 
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.PersistitKeyValueTarget;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.conversion.Converters;
@@ -117,14 +118,17 @@ public class IndexStatisticsYamlLoader
         Integer sampledCount = (Integer)map.get(SAMPLED_COUNT_KEY);
         if (sampledCount != null)
             stats.setSampledCount(sampledCount.longValue());
+        boolean anyStats = false;
         for (Object e : (Iterable)map.get(STATISTICS_COLLECTION_KEY)) {
             Map<?,?> em = (Map<?,?>)e;
             int columnCount = (Integer)em.get(STATISTICS_COLUMN_COUNT_KEY);
             Histogram h = parseHistogram(em.get(STATISTICS_HISTOGRAM_COLLECTION_KEY), 
                                          index, columnCount);
             stats.addHistogram(h);
+            anyStats = true;
         }
-        result.put(index, stats);
+        if (anyStats)
+            result.put(index, stats);
     }
 
     protected Histogram parseHistogram(Object obj, Index index, int columnCount) {
@@ -220,11 +224,30 @@ public class IndexStatisticsYamlLoader
         List<Object> result = new ArrayList<Object>(columnCount);
         for (int i = 0; i < columnCount; i++) {
             keySource.attach(key, index.getKeyColumns().get(i));
-            // TODO: Special handling for date/time types to make them
-            // more legible than internal long representation?
-            result.add(valueTarget.convertFromSource(keySource));
+            valueTarget.expectType(convertToType(keySource.getConversionType()));
+            Converters.convert(keySource, valueTarget);
+            result.add(valueTarget.lastConvertedValue());
         }
         return result;
+    }
+
+    /** If the AkType's internal representation corresponds to a Java
+     * type for which there is standard YAML tag, can use
+     * it. Otherwise, must resort to string, either because the
+     * internal value isn't friendly (<code>Date</code> is a <code>Long</code>) 
+     * or isn't standard (<code>Decimal</code> turns into <code>!!float</code>).
+     */
+    protected static AkType convertToType(AkType sourceType) {
+        switch (sourceType) {
+        case DOUBLE:
+        case FLOAT:
+        case INT:
+        case LONG:
+        case BOOL:
+            return sourceType;
+        default:
+            return AkType.VARCHAR;
+        }
     }
 
 }
