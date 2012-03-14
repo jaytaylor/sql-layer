@@ -1,0 +1,7 @@
+PhysicalSelect[cid:int[INT], name:varchar(32)[VARCHAR], oid:int[INT], cid:int[INT], order_date:date[DATE]]
+  project([Field(0), Field(1), Field(2), Field(3), Field(4)])
+    Flatten_HKeyOrdered(user.customers INNER user.orders)
+      AncestorLookup_Default(Index(user.orders.order_date[IndexColumn(order_date)]) -> [user.customers, user.orders])
+        Intersect_Ordered
+          IndexScan_Default(Index(user.orders.order_date[IndexColumn(order_date)]) (>=UnboundExpressions[Literal(2019-09-28)],<=UnboundExpressions[Literal(2019-09-28)]))
+          IndexScan_Default(Index(user.customers.name[IndexColumn(name)]) (>=UnboundExpressions[Literal(Atzdz)],<=UnboundExpressions[Literal(Atzdz)]))
