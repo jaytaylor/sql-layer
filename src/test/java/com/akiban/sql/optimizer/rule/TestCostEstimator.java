@@ -60,7 +60,10 @@ public class TestCostEstimator extends CostEstimator
         int i = 0;
         // For the first column, the index supplied by the optimizer is likely to be a better choice than an aribtrary
         // index with the right leading column.
-        indexStatsArray[i++] = getIndexStatistics(index);
+        IndexStatistics statsForRequestedIndex = getIndexStatistics(index);
+        if (statsForRequestedIndex != null) {
+            indexStatsArray[i++] = getIndexStatistics(index);
+        }
         while (i < allIndexColumns.size()) {
             IndexStatistics indexStatistics = null;
             Column leadingColumn = allIndexColumns.get(i).getColumn();

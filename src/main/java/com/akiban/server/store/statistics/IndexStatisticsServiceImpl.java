@@ -153,7 +153,10 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         int i = 0;
         // For the first column, the index supplied by the optimizer is likely to be a better choice than an aribtrary
         // index with the right leading column.
-        indexStatsArray[i++] = getIndexStatistics(session, index);
+        IndexStatistics statsForRequestedIndex = getIndexStatistics(session, index);
+        if (statsForRequestedIndex != null) {
+            indexStatsArray[i++] = statsForRequestedIndex;
+        }
         while (i < allIndexColumns.size()) {
             IndexStatistics indexStatistics = null;
             Column leadingColumn = allIndexColumns.get(i).getColumn();
