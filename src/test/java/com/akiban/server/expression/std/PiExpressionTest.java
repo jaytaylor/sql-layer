@@ -32,9 +32,7 @@ public class PiExpressionTest
         test(COS_COMPOSER, -1.0);
         test(SIN_COMPOSER, 0.0);
         test(TAN_COMPOSER, 0.0);
-        
-        
-        
+        test(COT_COMPOSER, Double.POSITIVE_INFINITY);
     }
     
     public void test (ExpressionComposer c, double expected)
