@@ -95,6 +95,6 @@ public final class SingleIndexScan extends IndexScan {
 
     @Override
     public void removeCoveredConditions(Set<? super ComparisonCondition> conditions) {
-        conditions.removeAll(getEqualityComparands());
+        conditions.removeAll(getConditions());
     }
 }

@@ -18,6 +18,7 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -26,6 +27,7 @@ public final class MultiIndexIntersectScan extends IndexScan {
     private IndexScan outputScan;
     private IndexScan selectorScan;
     private int comparisonColumns;
+    private List<ConditionExpression> conditions;
 
     public MultiIndexIntersectScan(IndexScan outerScan, IndexScan selectorScan, int comparisonColumns)
     {
@@ -63,6 +65,15 @@ public final class MultiIndexIntersectScan extends IndexScan {
 
     private int getOrderingFields(IndexScan scan) {
         return scan.getKeyColumns().size() + scan.getValueColumns().size();
+    }
+
+    @Override
+    public List<ConditionExpression> getConditions() {
+        if (conditions == null) {
+            conditions = new ArrayList<ConditionExpression>();
+            buildConditions(this, conditions);
+        }
+        return conditions;
     }
 
     @Override
@@ -105,4 +116,16 @@ public final class MultiIndexIntersectScan extends IndexScan {
     protected boolean isAscendingAt(int i) {
         return getOutputIndexScan().isAscendingAt(i);
     }
+
+    private void buildConditions(IndexScan child, List<ConditionExpression> output) {
+        if (child instanceof SingleIndexScan) {
+            output.addAll(child.getConditions());
+        }
+        else if (child instanceof MultiIndexIntersectScan) {
+            MultiIndexIntersectScan miis = (MultiIndexIntersectScan) child;
+            buildConditions(miis.outputScan, output);
+            buildConditions(miis.selectorScan, output);
+        }
+    }
+    
 }
