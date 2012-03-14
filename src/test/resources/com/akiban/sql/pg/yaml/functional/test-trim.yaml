@@ -58,10 +58,10 @@
 - Statement: SELECT LTRIM(?) from all_types;
 - params: [['     trailing']]
 - output: [['trailing'], ['trailing'], ['trailing']]
-#--- # test with params in WHERE
-#- Statement: SELECT varchar_field from all_types WHERE LENGTH(LTRIM(?)) = LENGTH(varchar_field);
-#- params: [['    ltrim']]
-#- output: [['     ltrim']]
+--- # test with params in WHERE
+- Statement: SELECT varchar_field from all_types WHERE LTRIM(?) = TRIM(varchar_field);
+- params: [['    ltrim']]
+- output: [['     ltrim']]
 --- # test wrong arity: empty list
 - Statement: SELECT TRIM() from all_types;
 - error: [42000]
