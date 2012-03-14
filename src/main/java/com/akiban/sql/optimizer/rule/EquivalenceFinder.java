@@ -149,7 +149,7 @@ public class EquivalenceFinder<T> {
             seenNodes.clear();
     }
 
-    EquivalenceFinder() {
+    public EquivalenceFinder() {
         this(32);
     }
 

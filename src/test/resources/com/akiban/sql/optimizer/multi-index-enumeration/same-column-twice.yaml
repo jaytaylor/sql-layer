@@ -1,0 +1,8 @@
+!!com.akiban.sql.optimizer.MultiIndexEnumeratorTest$TestCase
+usingIndexes:
+    - customers.namekey
+    - orders.odate_cid
+conditionsOn:
+    - customers.name 1
+    - customers.name 2
+isError: true
