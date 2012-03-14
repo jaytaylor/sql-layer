@@ -25,7 +25,6 @@ import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -115,7 +114,7 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode> {
     {
         Table firstTable = first.getLeafMostUTable();
         Table secondTable = second.getLeafMostUTable();
-            List<Column> commonTrailing = getCommonTrailing(first, second, columnEquivalences);
+            List<IndexColumn> commonTrailing = getCommonTrailing(first, second, columnEquivalences);
             UserTable firstUTable = (UserTable) firstTable;
             UserTable secondUTable = (UserTable) secondTable;
             // handle the two single-branch cases
@@ -134,7 +133,7 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode> {
             }
     }
 
-    private boolean includesHKey(UserTable table, List<Column> columns, EquivalenceFinder<Column> columnEquivalences) {
+    private boolean includesHKey(UserTable table, List<IndexColumn> columns, EquivalenceFinder<Column> columnEquivalences) {
         HKey hkey = table.hKey();
         int ncols = hkey.nColumns();
         // no overhead, but O(N) per hkey segment. assuming ncols and columns is very small
@@ -145,46 +144,37 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode> {
         return true;
     }
 
-    private boolean containsEquivalent(List<Column> cols, Column tgt, EquivalenceFinder<Column> columnEquivalences) {
-        for (Column listCol : cols) {
-            if (columnEquivalences.areEquivalent(listCol, tgt))
+    private boolean containsEquivalent(List<IndexColumn> cols, Column tgt, EquivalenceFinder<Column> columnEquivalences) {
+        for (IndexColumn indexCol : cols) {
+            Column col = indexCol.getColumn();
+            if (columnEquivalences.areEquivalent(col, tgt))
                 return true;
         }
         return false;
     }
 
-    // TODO change all this to use List<IndexColumn>, so we can efficiently create sublists
-    private List<Column> getCommonTrailing(N first, N second, EquivalenceFinder<Column> columnEquivalences)
+    private List<IndexColumn> getCommonTrailing(N first, N second, EquivalenceFinder<Column> columnEquivalences)
     {
-        List<Column> firstTrailing = orderingColumns(first);
+        List<IndexColumn> firstTrailing = orderingColumns(first);
         if (firstTrailing.isEmpty())
             return Collections.emptyList();
-        List<Column> secondTrailing = orderingColumns(second);
+        List<IndexColumn> secondTrailing = orderingColumns(second);
         if (secondTrailing.isEmpty())
             return Collections.emptyList();
         
         int maxTrailing = Math.min(firstTrailing.size(), secondTrailing.size());
-        List<Column> results = new ArrayList<Column>(maxTrailing);
-        for (int i = 0; i < maxTrailing; ++i) {
-            Column firstCol = firstTrailing.get(i);
-            Column secondCol = secondTrailing.get(i);
-            if (columnEquivalences.areEquivalent(firstCol, secondCol))
-                results.add(firstCol);
-            else
+        int commonCount;
+        for (commonCount = 0; commonCount < maxTrailing; ++commonCount) {
+            Column firstCol = firstTrailing.get(commonCount).getColumn();
+            Column secondCol = secondTrailing.get(commonCount).getColumn();
+            if (!columnEquivalences.areEquivalent(firstCol, secondCol))
                 break;
         }
-        return results;
+        return firstTrailing.subList(0, commonCount);
     }
 
-    private List<Column> orderingColumns(N scan) {
-        // TODO temporary; need to rework to use Index.getAllColumns eventually
+    private List<IndexColumn> orderingColumns(N scan) {
         List<IndexColumn> allCols = scan.getAllColumns();
-        
-        int ncols=allCols.size();
-        List<Column> results = new ArrayList<Column>(allCols.size() - ncols);
-        for (int i = scan.getPeggedCount(); i < ncols; ++i) {
-            results.add(allCols.get(i).getColumn());
-        }
-        return results;
+        return allCols.subList(scan.getPeggedCount(), allCols.size());
     }
 }
