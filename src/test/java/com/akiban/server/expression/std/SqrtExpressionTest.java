@@ -43,7 +43,7 @@ public class SqrtExpressionTest extends ComposedExpressionTestBase {
         Expression negLiteral = new SqrtExpression(ExprUtil.lit(-4.0d));
         ValueSource sqrtOfNegValueSource = negLiteral.evaluation().eval();
 
-        Assert.assertEquals(NullValueSource.only(), sqrtOfNegValueSource);
+        Assert.assertTrue(sqrtOfNegValueSource.isNull());
     }
     
     @Test
@@ -52,7 +52,7 @@ public class SqrtExpressionTest extends ComposedExpressionTestBase {
         Expression infinityLiteral = new SqrtExpression(ExprUtil.lit(Double.POSITIVE_INFINITY));
         double sqrtInfinity = infinityLiteral.evaluation().eval().getDouble();
         
-        Assert.assertEquals(Double.POSITIVE_INFINITY, sqrtInfinity, 0.001);
+        Assert.assertTrue(Double.isInfinite(sqrtInfinity));
     }
 
     @Test
