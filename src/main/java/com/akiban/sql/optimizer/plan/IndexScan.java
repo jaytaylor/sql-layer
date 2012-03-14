@@ -260,8 +260,7 @@ public abstract class IndexScan extends BasePlanNode
         ordering = duplicateList(ordering, map);
     }
     
-    public abstract List<IndexColumn> getKeyColumns();
-    public abstract List<IndexColumn> getValueColumns();
+    public abstract List<IndexColumn> getIndexColumns();
 
     @Override
     public String summaryString() {

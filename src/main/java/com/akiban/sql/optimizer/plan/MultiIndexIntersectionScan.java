@@ -42,13 +42,8 @@ public final class MultiIndexIntersectionScan extends IndexScan {
     }
 
     @Override
-    public List<IndexColumn> getKeyColumns() {
-        return outputScan.getKeyColumns();
-    }
-
-    @Override
-    public List<IndexColumn> getValueColumns() {
-        return outputScan.getValueColumns();
+    public List<IndexColumn> getIndexColumns() {
+        return outputScan.getIndexColumns();
     }
 
     @Override

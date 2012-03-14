@@ -174,10 +174,7 @@ public abstract class TreeStatistics
         {
             int rowWidth = 0;
             Index index = rowType.index();
-            for (IndexColumn indexColumn : index.getKeyColumns()) {
-                rowWidth += fieldWidth(indexColumn.getColumn());
-            }
-            for (IndexColumn indexColumn : index.getValueColumns()) {
+            for (IndexColumn indexColumn : index.getAllColumns()) {
                 rowWidth += fieldWidth(indexColumn.getColumn());
             }
             return rowWidth;

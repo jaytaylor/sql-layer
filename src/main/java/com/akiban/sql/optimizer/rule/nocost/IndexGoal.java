@@ -153,7 +153,7 @@ public class IndexGoal implements Comparator<IndexScan>
      * @return <code>false</code> if the index is useless.
      */
     public boolean usable(IndexScan index) {
-        List<IndexColumn> indexColumns = index.getKeyColumns();
+        List<IndexColumn> indexColumns = ((SingleIndexScan)index).getIndex().getKeyColumns();
         int ncols = indexColumns.size();
         List<ExpressionNode> indexExpressions = new ArrayList<ExpressionNode>(ncols);
         List<OrderByExpression> orderBy = new ArrayList<OrderByExpression>(ncols);
@@ -562,9 +562,9 @@ public class IndexGoal implements Comparator<IndexScan>
             if (n1 != n2) 
                 return (n1 > n2) ? +1 : -1;
         }
-        if (i1.getKeyColumns().size() != i2.getKeyColumns().size())
-            return (i1.getKeyColumns().size() <
-                    i2.getKeyColumns().size())
+        if (((SingleIndexScan)i1).getIndex().getKeyColumns().size() != ((SingleIndexScan)i2).getIndex().getKeyColumns().size())
+            return (((SingleIndexScan)i1).getIndex().getKeyColumns().size() < 
+                    ((SingleIndexScan)i2).getIndex().getKeyColumns().size())
                 // Fewer columns indexed better than more.
                 ? +1 : -1;
         // Deeper better than shallower.

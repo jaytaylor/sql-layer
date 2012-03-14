@@ -150,18 +150,11 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             assert false : "what do we do here? we know it's usable if it was even created, so, just return true?";
             return true;
         }
-        List<IndexColumn> keyColumns = index.getKeyColumns();
-        List<IndexColumn> valueColumns = index.getValueColumns();
-        int ncols = keyColumns.size() + valueColumns.size();
+        List<IndexColumn> indexColumns = index.getIndexColumns();
+        int ncols = indexColumns.size();
         List<ExpressionNode> indexExpressions = new ArrayList<ExpressionNode>(ncols);
         List<OrderByExpression> orderBy = new ArrayList<OrderByExpression>(ncols);
-        for (IndexColumn indexColumn : keyColumns) {
-            ExpressionNode indexExpression = getIndexExpression(index, indexColumn);
-            indexExpressions.add(indexExpression);
-            orderBy.add(new OrderByExpression(indexExpression,
-                                              indexColumn.isAscending()));
-        }
-        for (IndexColumn indexColumn : valueColumns) {
+        for (IndexColumn indexColumn : indexColumns) {
             ExpressionNode indexExpression = getIndexExpression(index, indexColumn);
             indexExpressions.add(indexExpression);
             orderBy.add(new OrderByExpression(indexExpression,
