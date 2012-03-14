@@ -151,9 +151,12 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         allIndexColumns.addAll(index.getValueColumns());
         IndexStatistics[] indexStatsArray = new IndexStatistics[allIndexColumns.size()];
         int i = 0;
-        for (IndexColumn indexColumn : allIndexColumns) {
+        // For the first column, the index supplied by the optimizer is likely to be a better choice than an aribtrary
+        // index with the right leading column.
+        indexStatsArray[i++] = getIndexStatistics(session, index);
+        while (i < allIndexColumns.size()) {
             IndexStatistics indexStatistics = null;
-            Column leadingColumn = indexColumn.getColumn();
+            Column leadingColumn = allIndexColumns.get(i).getColumn();
             // Find a TableIndex whose first column is leadingColumn
             for (TableIndex tableIndex : leadingColumn.getTable().getIndexes()) {
                 if (tableIndex.getKeyColumns().get(0).getColumn() == leadingColumn) {

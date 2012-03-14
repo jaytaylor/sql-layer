@@ -134,7 +134,9 @@ public class DateTimeArithExpression extends ArithExpression
 
             if (firstArg == AkType.VARCHAR)            
                 firstArg = argumentTypes.get(0).getPrecision() > 10 ?
-                           AkType.DATETIME : type.operandType;            
+                           AkType.DATETIME : type.operandType;    
+            else if (firstArg == AkType.UNSUPPORTED)
+                firstArg = type.operandType;
 
             if (firstArg == AkType.DATE
                     && (secondArg == AkType.INTERVAL_MILLIS || !isIntegral(secondArg)))
