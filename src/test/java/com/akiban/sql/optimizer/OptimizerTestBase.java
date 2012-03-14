@@ -63,9 +63,7 @@ public class OptimizerTestBase extends ASTTransformTestBase
     }
 
     public static AkibanInformationSchema parseSchema(File schema) throws Exception {
-        String sql = fileContents(schema);
-        SchemaFactory schemaFactory = new SchemaFactory(DEFAULT_SCHEMA);
-        return schemaFactory.ais(sql);
+        return SchemaFactory.loadAIS(schema, DEFAULT_SCHEMA);
     }
 
     protected AkibanInformationSchema loadSchema(File schema) throws Exception {

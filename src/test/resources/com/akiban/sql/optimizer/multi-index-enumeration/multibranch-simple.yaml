@@ -1,0 +1,8 @@
+!!com.akiban.sql.optimizer.MultiIndexEnumeratorTest$TestCase
+usingIndexes:
+    - orders.odatekey
+    - addresses.streetkey
+conditionsOn:
+    - orders.odate
+    - addresses.street
+combinations: []

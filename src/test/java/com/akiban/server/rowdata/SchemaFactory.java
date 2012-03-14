@@ -38,8 +38,11 @@ import com.akiban.sql.parser.CreateIndexNode;
 import com.akiban.sql.parser.CreateTableNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
+import com.akiban.util.Strings;
 import com.persistit.exception.PersistitInterruptedException;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -65,6 +68,16 @@ public class SchemaFactory {
 
     public AkibanInformationSchema ais(String... ddl) {
         return ais(new AkibanInformationSchema(), ddl);
+    }
+    
+    public static AkibanInformationSchema loadAIS(File fromFile, String defaultSchema) {
+        try {
+            List<String> ddl = Strings.dumpFile(fromFile);
+            SchemaFactory schemaFactory = new SchemaFactory(defaultSchema);
+            return schemaFactory.ais(ddl.toArray(new String[ddl.size()]));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public AkibanInformationSchema ais(AkibanInformationSchema baseAIS, String... ddl) {

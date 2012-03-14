@@ -1,0 +1,8 @@
+!!com.akiban.sql.optimizer.MultiIndexEnumeratorTest$TestCase
+usingIndexes:
+    - customers.name_vipstatus
+    - customers.yobkey
+conditionsOn:
+    - customers.name
+    - customers.yob
+combinations: []

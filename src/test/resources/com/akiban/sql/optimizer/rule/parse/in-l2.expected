@@ -1,0 +1,5 @@
+SelectQuery@3957c618
+  ResultSet@318e6f11[cid, name]
+    Project@7e1dde81[user.customers.cid, user.customers.name]
+      Select@5afb27d6[or(user.customers.name == Smith,user.customers.name == Jones)]
+        TableSource@1ef48144(user.customers)

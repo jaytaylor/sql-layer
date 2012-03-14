@@ -53,6 +53,9 @@ import java.util.*;
  */
 public class ASTStatementLoader extends BaseRule
 {
+    // TODO: Maybe move this into a separate class.
+    public static final int IN_TO_OR_MAX_COUNT_DEFAULT = 1;
+
     private static final Logger logger = LoggerFactory.getLogger(ASTStatementLoader.class);
 
     @Override
@@ -74,7 +77,7 @@ public class ASTStatementLoader extends BaseRule
         plan.putWhiteboard(MARKER, ast);
         DMLStatementNode stmt = ast.getStatement();
         try {
-            plan.setPlan(new Loader().toStatement(stmt));
+            plan.setPlan(new Loader(plan.getRulesContext()).toStatement(stmt));
         }
         catch (StandardException ex) {
             throw new SQLParserInternalException(ex);
@@ -82,8 +85,10 @@ public class ASTStatementLoader extends BaseRule
     }
 
     static class Loader {
+        private RulesContext rulesContext;
 
-        Loader() {
+        Loader(RulesContext rulesContext) {
+            this.rulesContext = rulesContext;
             pushEquivalenceFinder();
         }
 
@@ -560,10 +565,25 @@ public class ASTStatementLoader extends BaseRule
                 throws StandardException {
             ExpressionNode left = toExpression(in.getLeftOperand());
             ValueNodeList rightOperandList = in.getRightOperandList();
-            if (rightOperandList.size() == 1) {
-                ExpressionNode right1 = toExpression(rightOperandList.get(0));
-                conditions.add(new ComparisonCondition(Comparison.EQ, left, right1,
-                                                       in.getType(), in));
+            if (rightOperandList.size() <= getInToOrMaxCount()) {
+                // Make single element into = comparison and small
+                // number into a disjunction of those.
+                ConditionExpression conds = null;
+                for (ValueNode rightOperand : rightOperandList) {
+                    ExpressionNode right = toExpression(rightOperand);
+                    ConditionExpression cond = new ComparisonCondition(Comparison.EQ, left, right,
+                                                                       in.getType(), in);
+                    if (conds == null) {
+                        conds = cond;
+                        continue;
+                    }
+                    List<ConditionExpression> operands = new ArrayList<ConditionExpression>(2);
+                    operands.add(conds);
+                    operands.add(cond);
+                    conds = new LogicalFunctionCondition("or", operands, 
+                                                         in.getType(), in);
+                }
+                conditions.add(conds);
                 return;
             }
             List<List<ExpressionNode>> rows = new ArrayList<List<ExpressionNode>>();
@@ -1351,5 +1371,14 @@ public class ASTStatementLoader extends BaseRule
             }
         }
 
+        public int getInToOrMaxCount() {
+            String prop = rulesContext.getProperty("inToOrMaxCount");
+            if (prop != null)
+                return Integer.valueOf(prop);
+            else
+                return IN_TO_OR_MAX_COUNT_DEFAULT;
+        }
+
     }
+
 }
