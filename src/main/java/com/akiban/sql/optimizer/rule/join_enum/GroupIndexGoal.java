@@ -19,7 +19,6 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.server.error.AkibanInternalException;
-import com.akiban.sql.optimizer.plan.MultiIndexEnumerator.MultiIndexPair;
 import com.akiban.sql.optimizer.plan.TableGroupJoinTree.LeafFinderPredicate;
 import com.akiban.sql.optimizer.rule.CostEstimator;
 import com.akiban.sql.optimizer.rule.EquivalenceFinder;
@@ -254,7 +253,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return true;
     }
 
-    private void setColumnsAndOrdering(IndexScan index) {
+    private static void setColumnsAndOrdering(IndexScan index) {
         List<ExpressionNode> indexExpressions;
         List<IndexColumn> keyColumns = index.getKeyColumns();
         List<IndexColumn> valueColumns = index.getValueColumns();
@@ -432,7 +431,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     }
 
     /** Get an expression form of the given index column. */
-    protected ExpressionNode getIndexExpression(IndexScan index,
+    protected static ExpressionNode getIndexExpression(IndexScan index,
                                                 IndexColumn indexColumn) {
         Column column = indexColumn.getColumn();
         UserTable indexTable = column.getUserTable();
@@ -489,14 +488,11 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         Map<TableGroupJoinNode,Map<Table,TableSource>> leafRequireds = tables.findLeaves(requiredTrees);
         for (Map<Table,TableSource> branch : leafRequireds.values()) {
             Set<TableSource> branchTables = new HashSet<TableSource>(branch.values());
-            Collection<MultiIndexPair<ComparisonCondition>> intersections = getIntersectionCandidates(branchTables);
-            for (MultiIndexPair<ComparisonCondition> intersection : intersections) {
-                MultiIndexIntersectScan intersectedIndex = new MultiIndexIntersectScan(branch, intersection);
+            Collection<MultiIndexIntersectScan> intersections = getIntersectionCandidates(branchTables);
+            for (MultiIndexIntersectScan intersectedIndex : intersections) {
                 intersectedIndex.init();
                 intersectedIndex.setRequiredTables(branchTables);
                 setColumnsAndOrdering(intersectedIndex);
-                setColumnsAndOrdering(intersectedIndex.getOutputIndexScan());
-                setColumnsAndOrdering(intersectedIndex.getSelectorIndexScan());
                 intersectedIndex.setOrderEffectiveness(determineOrderEffectiveness(intersectedIndex));
                 intersectedIndex.setCovering(determineCovering(intersectedIndex));
                 intersectedIndex.setCostEstimate(estimateCost(intersectedIndex));
@@ -510,7 +506,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             return bestIndex;
     }
 
-    private Collection<MultiIndexPair<ComparisonCondition>> getIntersectionCandidates(Set<TableSource> tables) {
+    private Collection<MultiIndexIntersectScan> getIntersectionCandidates(Set<TableSource> tables) {
         if (tables.isEmpty())
             return Collections.emptyList();
 
@@ -520,7 +516,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
         List<Index> singleIndexes = new ArrayList<Index>();
         Group group = null;
-        Set<UserTable> requiredTables = new HashSet<UserTable>(tables.size());
+        Map<UserTable,TableSource> requiredTables = new HashMap<UserTable,TableSource>(tables.size());
         for (TableSource table : tables) {
             if (group == null) {
                 group = table.getGroup().getGroup();
@@ -530,7 +526,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 assert group == table.getGroup().getGroup() : group + " != " + table.getGroup().getGroup();
             }
             singleIndexes.addAll(table.getTable().getTable().getIndexes());
-            requiredTables.add(table.getTable().getTable());
+            requiredTables.put(table.getTable().getTable(), table);
         }
         assert group != null;
         for (GroupIndex gi : group.getIndexes()) {
@@ -538,7 +534,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             for (UserTable table = gi.leafMostTable(), root = gi.rootMostTable();
                     table != null && table != root; table = table.parentTable())
             {
-                if (!requiredTables.contains(table)) {
+                if (!requiredTables.containsKey(table)) {
                     giContainsOnlyRequired = false;
                     break;
                 }
@@ -568,7 +564,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         if (comparisons.isEmpty())
             return Collections.emptyList();
 
-        return multiIndexEnumerator.get(singleIndexes, comparisons, getColumnEquivalencies(colExprsEquivs));
+        return multiIndexEnumerator.get(singleIndexes, comparisons, getColumnEquivalencies(colExprsEquivs), requiredTables);
     }
 
     public EquivalenceFinder<Column> getColumnEquivalencies(EquivalenceFinder<ColumnExpression> colExprsEquivs) {
@@ -597,12 +593,26 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return (node instanceof ConstantExpression) || (node instanceof ParameterExpression);
     }
     
-    private static final MultiIndexEnumerator<ComparisonCondition> multiIndexEnumerator
-            = new MultiIndexEnumerator<ComparisonCondition>() {
+    private static final MultiIndexEnumerator<ComparisonCondition,Map<UserTable,TableSource>> multiIndexEnumerator
+            = new MultiIndexEnumerator<ComparisonCondition,Map<UserTable,TableSource>>() {
         @Override
         protected Column columnFromCondition(ComparisonCondition condition) {
             ColumnExpression asCol = (ColumnExpression) condition.getLeft();
             return asCol.getColumn();
+        }
+
+        @Override
+        protected IndexScan buildScan(MultiIndexCandidate<ComparisonCondition> candidate,
+                                      Map<UserTable, TableSource> tablesMap) {
+            Index index = candidate.getIndex();
+            TableSource root = tablesMap.get(index.rootMostTable());
+            TableSource leaf = tablesMap.get(index.leafMostTable());
+            assert root != null && leaf != null : index + ", " + tablesMap;
+            SingleIndexScan result = new SingleIndexScan(candidate.getIndex(), root, leaf);
+            for (ComparisonCondition cond : candidate.getPegged())
+                result.addEqualityCondition(cond, cond.getRight());
+            setColumnsAndOrdering(result);
+            return result;
         }
     };
 

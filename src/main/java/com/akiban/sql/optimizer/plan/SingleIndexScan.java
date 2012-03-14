@@ -31,6 +31,10 @@ public final class SingleIndexScan extends IndexScan {
         super(table);
         this.index = index;
     }
+    
+    public SingleIndexScan(Index index, TableSource rootMost, TableSource leafMost) {
+        this(index, rootMost, rootMost, leafMost, leafMost);
+    }
 
     public SingleIndexScan(Index index,
                      TableSource rootMostTable,

@@ -15,35 +15,31 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Table;
-import com.akiban.sql.optimizer.plan.MultiIndexEnumerator.MultiIndexPair;
 
 import java.util.List;
-import java.util.Map;
 
 public final class MultiIndexIntersectScan extends IndexScan {
     
-    private MultiIndexPair<ComparisonCondition> index;
-    private Map<Table,TableSource> branch;
     private IndexScan outputScan;
     private IndexScan selectorScan;
+    private int comparisonColumns;
 
-    public MultiIndexIntersectScan(Map<Table,TableSource> branch,
-                                   MultiIndexPair<ComparisonCondition> index)
+    public MultiIndexIntersectScan(IndexScan outerScan, IndexScan selectorScan, int comparisonColumns)
     {
-        this(branch.get(index.getOutputIndex().getIndex().rootMostTable()),
-                branch.get(index.getOutputIndex().getIndex().leafMostTable()));
-        this.index = index;
-        this.branch = branch;
+        this(outerScan.getRootMostTable(), outerScan.getLeafMostTable());
+        assert outerScan.getRootMostTable() == outerScan.getRootMostInnerTable() : outerScan;
+        assert outerScan.getLeafMostTable() == outerScan.getLeafMostInnerTable() : outerScan;
+        this.outputScan = outerScan;
+        this.selectorScan = selectorScan;
+        this.comparisonColumns = comparisonColumns;
     }
 
     public void init() {
-        for (ComparisonCondition cond : index.getOutputIndex().getPegged())
-            addEqualityCondition(cond, cond.getLeft());
-        for (ComparisonCondition cond : index.getSelectorIndex().getPegged())
-            addEqualityCondition(cond, cond.getLeft());
+//        for (ComparisonCondition cond : index.getOutputIndex().getPegged())
+//            addEqualityCondition(cond, cond.getLeft());
+//        for (ComparisonCondition cond : index.getSelectorIndex().getPegged())
+//            addEqualityCondition(cond, cond.getLeft());
     }
     
     private MultiIndexIntersectScan(TableSource rootMost, TableSource leafMost) {
@@ -51,19 +47,15 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
     
     public IndexScan getOutputIndexScan() {
-        if (outputScan == null)
-            outputScan = createScan(index.getOutputIndex());
         return outputScan;
     }
     
     public IndexScan getSelectorIndexScan() {
-        if (selectorScan == null)
-            selectorScan = createScan(index.getSelectorIndex());
         return selectorScan;
     }
 
     public int getComparisonFields() {
-        return index.getCommonFieldsCount();
+        return comparisonColumns;
     }
 
     public int getOutputOrderingFields() {
@@ -74,44 +66,27 @@ public final class MultiIndexIntersectScan extends IndexScan {
         return getOrderingFields(selectorScan);
     }
 
+    private int getOrderingFields(IndexScan scan) {
+        return scan.getKeyColumns().size() + scan.getValueColumns().size();
+    }
+
     @Override
     public List<IndexColumn> getKeyColumns() {
-        return index.getOutputIndex().getIndex().getKeyColumns();
+        return outputScan.getKeyColumns();
     }
 
     @Override
     public List<IndexColumn> getValueColumns() {
-        return index.getOutputIndex().getIndex().getValueColumns();
+        return outputScan.getValueColumns();
     }
 
     @Override
     protected String summarizeIndex() {
-        return String.valueOf(index);
+        return String.format("INTERSECT(%s AND %s)", outputScan, selectorScan);
     }
 
     @Override
     protected boolean isAscendingAt(int i) {
         return getOutputIndexScan().isAscendingAt(i);
-    }
-
-    private IndexScan createScan(MultiIndexCandidate<ComparisonCondition> candidate) {
-        // TODO this should eventually allow for nesting
-
-        Index idx = candidate.getIndex();
-        TableSource rootMost = branch.get(idx.rootMostTable());
-        TableSource leafMost = branch.get(idx.leafMostTable());
-        
-        SingleIndexScan singleScan = new SingleIndexScan(idx, rootMost, rootMost, leafMost, leafMost);
-        for (ComparisonCondition cond : candidate.getPegged())
-            singleScan.addEqualityCondition(cond, cond.getRight());
-
-        singleScan.setRequiredTables(getRequiredTables());
-
-
-        return singleScan;
-    }
-
-    private int getOrderingFields(IndexScan scan) {
-        return scan.getKeyColumns().size() + scan.getValueColumns().size();
     }
 }

@@ -28,9 +28,10 @@ import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.rowdata.SchemaFactory;
+import com.akiban.sql.optimizer.plan.IndexScan;
 import com.akiban.sql.optimizer.plan.MultiIndexCandidate;
 import com.akiban.sql.optimizer.plan.MultiIndexEnumerator;
-import com.akiban.sql.optimizer.plan.MultiIndexEnumerator.MultiIndexPair;
+import com.akiban.sql.optimizer.plan.MultiIndexIntersectScan;
 import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 import com.akiban.util.AssertUtils;
 import com.akiban.util.Strings;
@@ -49,6 +50,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import static com.akiban.util.Strings.mapToString;
 
 @RunWith(NamedParameterizedRunner.class)
 public final class MultiIndexEnumeratorTest {
@@ -79,18 +82,18 @@ public final class MultiIndexEnumeratorTest {
     
     @Test @OnlyIfNot("expectException")
     public void combinations() throws IOException {
-        Collection<MultiIndexPair<String>> enumerated = getEnumerations();
+        Collection<MultiIndexIntersectScan> enumerated = getEnumerations();
         List<Combination> actual = new ArrayList<Combination>(enumerated.size());
-        for (MultiIndexEnumerator.MultiIndexPair<String> elem : enumerated) {
+        for (MultiIndexIntersectScan elem : enumerated) {
             Combination combo = new Combination();
             
-            MultiIndexCandidate<String> output = elem.getOutputIndex();
-            combo.setOutputIndex(output.getIndex());
-            combo.setOutputSkip(output.getPegged());
+            IndexScan output = elem.getOutputIndexScan();
+            combo.setOutputIndex(output.summaryString());
+            combo.setOutputSkip(mapToString(output.getEqualityComparands()));
 
-            MultiIndexCandidate<String> selector = elem.getSelectorIndex();
-            combo.setSelectorIndex(selector.getIndex());
-            combo.setSelectorSkip(selector.getPegged());
+            IndexScan selector = elem.getSelectorIndexScan();
+            combo.setSelectorIndex(selector.summaryString());
+            combo.setSelectorSkip(mapToString(selector.getEqualityComparands()));
 
             actual.add(combo);
         }
@@ -105,7 +108,7 @@ public final class MultiIndexEnumeratorTest {
         getEnumerations();
     }
 
-    private Collection<MultiIndexPair<String>> getEnumerations() {
+    private Collection<MultiIndexIntersectScan> getEnumerations() {
         SchemaFactory factory = new SchemaFactory(DEFAULT_SCHEMA);
         AkibanInformationSchema ais = factory.ais(ddl);
         factory.rowDefCache(ais); // set up indx row compositions
@@ -114,7 +117,7 @@ public final class MultiIndexEnumeratorTest {
         Set<String> conditions = new HashSet<String>(tc.getConditionsOn());
         EquivalenceFinder<Column> columnEquivalences = innerJoinEquivalencies(ais);
         addExtraEquivalencies(tc.getExtraEquivalencies(), ais, columnEquivalences);
-        return new StringConditionEnumerator(ais).get(indexes, conditions, columnEquivalences);
+        return new StringConditionEnumerator(ais).get(indexes, conditions, columnEquivalences, null);
     }
 
     private void addExtraEquivalencies(Map<String, String> equivMap, AkibanInformationSchema ais,
@@ -201,7 +204,7 @@ public final class MultiIndexEnumeratorTest {
     private TestCase tc;
     public final boolean expectException;
     
-    private static class StringConditionEnumerator extends MultiIndexEnumerator<String> {
+    private static class StringConditionEnumerator extends MultiIndexEnumerator<String,Void> {
 
         @Override
         protected Column columnFromCondition(String condition) {
@@ -211,6 +214,11 @@ public final class MultiIndexEnumeratorTest {
         @Override
         protected void handleDuplicateCondition() {
             throw new DuplicateConditionException();
+        }
+
+        @Override
+        protected IndexScan buildScan(MultiIndexCandidate<String> stringMultiIndexCandidate, Void builderState) {
+            throw new UnsupportedOperationException();
         }
 
         private StringConditionEnumerator(AkibanInformationSchema ais) {
