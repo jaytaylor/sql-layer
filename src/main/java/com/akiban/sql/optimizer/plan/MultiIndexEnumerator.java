@@ -178,11 +178,11 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode> {
 
     private List<Column> orderingColumns(N scan) {
         // TODO temporary; need to rework to use Index.getAllColumns eventually
-        List<IndexColumn> allCols = scan.getOrderingColumns();
+        List<IndexColumn> allCols = scan.getAllColumns();
         
         int ncols=allCols.size();
         List<Column> results = new ArrayList<Column>(allCols.size() - ncols);
-        for (int i = scan.getComparisonsCount(); i < ncols; ++i) {
+        for (int i = scan.getPeggedCount(); i < ncols; ++i) {
             results.add(allCols.get(i).getColumn());
         }
         return results;

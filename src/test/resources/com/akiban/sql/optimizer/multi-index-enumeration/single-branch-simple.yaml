@@ -6,4 +6,4 @@ conditionsOn:
     - customers.name
     - orders.odate
 results:
-    - INTERSECT(1 comparisons on [odate, cid, id] AND 1 comparisons on [name, id] with 1 comparisons)
+    - INTERSECT( [ODATE, cid, id] AND [NAME, id] with 1 comparison)

@@ -8,5 +8,5 @@ conditionsOn:
     - customers.password
     - customers.vipstatus
 results:
-    - INTERSECT(2 comparisons on [name, vipstatus, id] AND 2 comparisons on [yob, password, id] with 1 comparisons)
-    - INTERSECT(2 comparisons on [yob, password, id] AND 2 comparisons on [name, vipstatus, id] with 1 comparisons)
+    - INTERSECT( [NAME, VIPSTATUS, id] AND [YOB, PASSWORD, id] with 1 comparison)
+    - INTERSECT( [YOB, PASSWORD, id] AND [NAME, VIPSTATUS, id] with 1 comparison)

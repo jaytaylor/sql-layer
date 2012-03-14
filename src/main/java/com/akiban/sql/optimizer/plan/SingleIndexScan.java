@@ -82,13 +82,15 @@ public final class SingleIndexScan extends IndexScan {
     }
 
     @Override
-    public List<IndexColumn> getOrderingColumns() {
-        int allCols = index.getAllColumns().size();
-        return index.getAllColumns().subList(getComparisonsCount(), allCols);
+    public List<IndexColumn> getAllColumns() {
+        return index.getAllColumns();
     }
 
     @Override
-    public int getComparisonsCount() {
+    public int getPeggedCount() {
+        // Note! Really what we want are the *leading* equalities. But this method is only
+        // used in the context of MultiIndexEnumerator, which will only put in leading
+        // equalities.
         return getEqualityComparands().size();
     }
 }

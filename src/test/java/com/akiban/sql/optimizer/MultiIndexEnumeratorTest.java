@@ -53,6 +53,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import static org.junit.Assert.assertTrue;
+
 @RunWith(NamedParameterizedRunner.class)
 public final class MultiIndexEnumeratorTest {
     
@@ -226,13 +228,13 @@ public final class MultiIndexEnumeratorTest {
     
     private static class SimpleLeaf implements IndexIntersectionNode {
         private UserTable leaf;
-        private List<IndexColumn> orderings;
-        private int comparisons;
+        private List<IndexColumn> allCols;
+        private int pegged;
 
-        private SimpleLeaf(UserTable leaf, List<IndexColumn> orderings, int comparisons) {
+        private SimpleLeaf(UserTable leaf, List<IndexColumn> allCols, int peggedCount) {
             this.leaf = leaf;
-            this.orderings = orderings;
-            this.comparisons = comparisons;
+            this.allCols = allCols;
+            this.pegged = peggedCount;
         }
 
         @Override
@@ -241,27 +243,32 @@ public final class MultiIndexEnumeratorTest {
         }
 
         @Override
-        public List<IndexColumn> getOrderingColumns() {
-            return orderings;
+        public List<IndexColumn> getAllColumns() {
+            return allCols;
         }
 
         @Override
-        public int getComparisonsCount() {
-            return comparisons;
+        public int getPeggedCount() {
+            return pegged;
         }
 
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
-            sb.append(comparisons).append(" comparisons on [");
-            for (Iterator<IndexColumn> iterator = orderings.iterator(); iterator.hasNext(); ) {
+            sb.append('[');
+            int remainingPegged = pegged;
+            for (Iterator<IndexColumn> iterator = allCols.iterator(); iterator.hasNext(); ) {
                 IndexColumn icol = iterator.next();
-                sb.append(icol.getColumn().getName());
+                String colName = icol.getColumn().getName();
+                if (remainingPegged-- > 0)
+                    colName = colName.toUpperCase();
+                sb.append(colName);
                 if (iterator.hasNext())
                     sb.append(", ");
                 else
                     sb.append(']');
             }
+            assertTrue(remainingPegged + " pegged remaining", remainingPegged <= 0);
             return sb.toString();
         }
     }
@@ -282,20 +289,19 @@ public final class MultiIndexEnumeratorTest {
         }
 
         @Override
-        public List<IndexColumn> getOrderingColumns() {
-            List<IndexColumn> allCols = left.getOrderingColumns();
-            return allCols.subList(comparisons, allCols.size());
+        public List<IndexColumn> getAllColumns() {
+            return left.getAllColumns();
         }
 
         @Override
-        public int getComparisonsCount() {
-            return comparisons;
+        public int getPeggedCount() {
+            return left.getPeggedCount();
         }
 
         @Override
         public String toString() {
-            return String.format("INTERSECT(%s AND %s with %d comparisons)",
-                    left.toString(), right.toString(), comparisons);
+            return String.format("INTERSECT( %s AND %s with %d comparison%s)",
+                    left.toString(), right.toString(), comparisons, (comparisons == 1 ? "" : "s"));
         }
     }
     

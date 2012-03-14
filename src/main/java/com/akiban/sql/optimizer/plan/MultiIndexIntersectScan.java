@@ -71,17 +71,13 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
-    public List<IndexColumn> getOrderingColumns() {
-        // TODO IndexScan needs a getAllColumns
-        List<IndexColumn> allCols = new ArrayList<IndexColumn>();
-        allCols.addAll(outputScan.getKeyColumns());
-        allCols.addAll(outputScan.getValueColumns());
-        return allCols.subList(comparisonColumns, allCols.size());
+    public List<IndexColumn> getAllColumns() {
+        return outputScan.getAllColumns();
     }
 
     @Override
-    public int getComparisonsCount() {
-        return comparisonColumns;
+    public int getPeggedCount() {
+        return outputScan.getPeggedCount();
     }
 
     @Override

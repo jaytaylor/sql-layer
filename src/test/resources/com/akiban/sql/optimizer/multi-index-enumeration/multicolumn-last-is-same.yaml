@@ -7,5 +7,5 @@ conditionsOn:
     - customers.yob
     - customers.vipstatus
 results:
-    - INTERSECT(2 comparisons on [name, vipstatus, id] AND 2 comparisons on [yob, vipstatus, id] with 1 comparisons)
-    - INTERSECT(2 comparisons on [yob, vipstatus, id] AND 2 comparisons on [name, vipstatus, id] with 1 comparisons)
+    - INTERSECT( [NAME, VIPSTATUS, id] AND [YOB, VIPSTATUS, id] with 1 comparison)
+    - INTERSECT( [YOB, VIPSTATUS, id] AND [NAME, VIPSTATUS, id] with 1 comparison)
