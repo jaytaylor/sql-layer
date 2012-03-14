@@ -185,7 +185,7 @@ public class Tester
         if (actions.contains(Action.OPERATORS))
             operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, ais, statsFile, compilerProperties);
         if (actions.contains(Action.PLAN))
-            rulesContext = RulesTestContext.create(ais, statsFile, planRules, compilerProperties);
+            rulesContext = RulesTestContext.create(ais, statsFile, false, planRules, compilerProperties);
     }
 
     public void setIndexStatistics(File file) throws Exception {

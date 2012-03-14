@@ -29,7 +29,7 @@ public class RulesTestContext extends SchemaRulesContext
     }
 
     public static RulesTestContext create(AkibanInformationSchema ais,
-                                          File statsFile, 
+                                          File statsFile, boolean statsIgnoreMissingIndexes,
                                           List<? extends BaseRule> rules, 
                                           Properties properties)
             throws IOException {
@@ -39,8 +39,10 @@ public class RulesTestContext extends SchemaRulesContext
         RulesTestHelper.ensureRowDefs(ais);
         context.initAIS(ais);
         context.initFunctionsRegistry(new FunctionsRegistryImpl());
-        context.initCostEstimator(new TestCostEstimator(ais, statsFile, context.getSchema()));
+        context.initCostEstimator(new TestCostEstimator(ais, context.getSchema(), 
+                                                        statsFile, statsIgnoreMissingIndexes));
         context.initDone();
         return context;
     }
+
 }
