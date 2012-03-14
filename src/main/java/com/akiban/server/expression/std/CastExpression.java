@@ -24,6 +24,8 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 public class CastExpression extends AbstractUnaryExpression
 {
@@ -64,7 +66,22 @@ public class CastExpression extends AbstractUnaryExpression
                 QueryContext qc = queryContext();
                 if (qc != null)
                     qc.warnClient(e);
-                return NullValueSource.only();
+                
+                switch(type)
+                {
+                    case DECIMAL:   valueHolder().putDecimal(BigDecimal.ZERO); break;
+                    case U_BIGINT:  valueHolder().putUBigInt(BigInteger.ZERO); break;
+                    case LONG:
+                    case U_INT:
+                    case INT:        valueHolder().putRaw(type, 0L); break;
+                    case DOUBLE:     valueHolder().putDouble(0.0); break;
+                    case U_FLOAT:
+                    case FLOAT:      valueHolder().putRaw(type, 0.0f); break;
+                    case TIME:       valueHolder().putTime(0L);
+                    default:         return NullValueSource.only();
+                        
+                }
+                return valueHolder();
             }
         }
         
