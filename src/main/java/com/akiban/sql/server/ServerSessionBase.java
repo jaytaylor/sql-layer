@@ -236,8 +236,8 @@ public abstract class ServerSessionBase implements ServerSession
     }
 
     @Override
-    public CostEstimator costEstimator() {
-        return new ServerCostEstimator(this, reqs, getCompilerProperties());
+    public CostEstimator costEstimator(ServerOperatorCompiler compiler) {
+        return new ServerCostEstimator(this, reqs, compiler);
     }
 
     /** Prepare to execute given statement.

@@ -32,15 +32,22 @@ public class ServerCostEstimator extends CostEstimator
 
     public ServerCostEstimator(ServerSession session,
                                ServerServiceRequirements reqs,
-                               Properties compilerProperties) {
+                               ServerOperatorCompiler compiler) {
+        super(compiler);
         this.session = session;
         indexStatistics = reqs.indexStatistics();
-        scaleIndexStatistics = compilerProperties.getProperty("scaleIndexStatistics", "true").equals("true");
+        scaleIndexStatistics = compiler.getProperty("scaleIndexStatistics", "true").equals("true");
     }
 
     @Override
     public IndexStatistics getIndexStatistics(Index index) {
         return indexStatistics.getIndexStatistics(session.getSession(), index);
+    }
+
+    @Override
+    public IndexStatistics[] getIndexColumnStatistics(Index index)
+    {
+        return indexStatistics.getIndexColumnStatistics(session.getSession(), index);
     }
 
     @Override

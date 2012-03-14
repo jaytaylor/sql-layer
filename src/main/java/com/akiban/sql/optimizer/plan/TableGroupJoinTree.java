@@ -35,7 +35,7 @@ public class TableGroupJoinTree extends BaseJoinable
         TableGroupJoinNode parent, nextSibling, firstChild;
         JoinType parentJoinType;
         ConditionList joinConditions;
-        int state;
+        long state;
         
         public TableGroupJoinNode(TableSource table) {
             this.table = table;
@@ -78,10 +78,10 @@ public class TableGroupJoinTree extends BaseJoinable
         }
 
         /** Integer state managed by some rule. */
-        public int getState() {
+        public long getState() {
             return state;
         }
-        public void setState(int state) {
+        public void setState(long state) {
             this.state = state;
         }
 
