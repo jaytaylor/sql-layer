@@ -16,7 +16,9 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.UserTable;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public final class MultiIndexIntersectScan extends IndexScan {
@@ -33,13 +35,6 @@ public final class MultiIndexIntersectScan extends IndexScan {
         this.outputScan = outerScan;
         this.selectorScan = selectorScan;
         this.comparisonColumns = comparisonColumns;
-    }
-
-    public void init() {
-//        for (ComparisonCondition cond : index.getOutputIndex().getPegged())
-//            addEqualityCondition(cond, cond.getLeft());
-//        for (ComparisonCondition cond : index.getSelectorIndex().getPegged())
-//            addEqualityCondition(cond, cond.getLeft());
     }
     
     private MultiIndexIntersectScan(TableSource rootMost, TableSource leafMost) {
@@ -68,6 +63,25 @@ public final class MultiIndexIntersectScan extends IndexScan {
 
     private int getOrderingFields(IndexScan scan) {
         return scan.getKeyColumns().size() + scan.getValueColumns().size();
+    }
+
+    @Override
+    public UserTable getLeafMostUTable() {
+        return outputScan.getLeafMostTable().getTable().getTable();
+    }
+
+    @Override
+    public List<IndexColumn> getOrderingColumns() {
+        // TODO IndexScan needs a getAllColumns
+        List<IndexColumn> allCols = new ArrayList<IndexColumn>();
+        allCols.addAll(outputScan.getKeyColumns());
+        allCols.addAll(outputScan.getValueColumns());
+        return allCols.subList(comparisonColumns, allCols.size());
+    }
+
+    @Override
+    public int getComparisonsCount() {
+        return comparisonColumns;
     }
 
     @Override

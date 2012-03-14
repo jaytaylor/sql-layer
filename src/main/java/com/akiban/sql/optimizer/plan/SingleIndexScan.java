@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.UserTable;
 import com.akiban.sql.optimizer.rule.CostEstimator;
 import com.akiban.sql.optimizer.rule.range.RangeSegment;
 
@@ -73,5 +74,21 @@ public final class SingleIndexScan extends IndexScan {
         else
             indexColumn = index.getValueColumns().get(i - index.getKeyColumns().size());
         return indexColumn.isAscending();
+    }
+
+    @Override
+    public UserTable getLeafMostUTable() {
+        return (UserTable) index.leafMostTable();
+    }
+
+    @Override
+    public List<IndexColumn> getOrderingColumns() {
+        int allCols = index.getAllColumns().size();
+        return index.getAllColumns().subList(getComparisonsCount(), allCols);
+    }
+
+    @Override
+    public int getComparisonsCount() {
+        return getEqualityComparands().size();
     }
 }

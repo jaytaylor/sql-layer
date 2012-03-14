@@ -488,9 +488,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         Map<TableGroupJoinNode,Map<Table,TableSource>> leafRequireds = tables.findLeaves(requiredTrees);
         for (Map<Table,TableSource> branch : leafRequireds.values()) {
             Set<TableSource> branchTables = new HashSet<TableSource>(branch.values());
-            Collection<MultiIndexIntersectScan> intersections = getIntersectionCandidates(branchTables);
-            for (MultiIndexIntersectScan intersectedIndex : intersections) {
-                intersectedIndex.init();
+            Collection<IndexScan> intersections = getIntersectionCandidates(branchTables);
+            for (IndexScan intersectedIndex : intersections) {
                 intersectedIndex.setRequiredTables(branchTables);
                 setColumnsAndOrdering(intersectedIndex);
                 intersectedIndex.setOrderEffectiveness(determineOrderEffectiveness(intersectedIndex));
@@ -506,7 +505,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             return bestIndex;
     }
 
-    private Collection<MultiIndexIntersectScan> getIntersectionCandidates(Set<TableSource> tables) {
+    private Collection<IndexScan> getIntersectionCandidates(Set<TableSource> tables) {
         if (tables.isEmpty())
             return Collections.emptyList();
 
@@ -531,8 +530,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         assert group != null;
         for (GroupIndex gi : group.getIndexes()) {
             boolean giContainsOnlyRequired = true;
-            for (UserTable table = gi.leafMostTable(), root = gi.rootMostTable();
-                    table != null && table != root; table = table.parentTable())
+            for (UserTable table = gi.leafMostTable(), stopAt = gi.rootMostTable().parentTable();
+                    table != null && table != stopAt; table = table.parentTable())
             {
                 if (!requiredTables.containsKey(table)) {
                     giContainsOnlyRequired = false;
@@ -564,7 +563,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         if (comparisons.isEmpty())
             return Collections.emptyList();
 
-        return multiIndexEnumerator.get(singleIndexes, comparisons, getColumnEquivalencies(colExprsEquivs), requiredTables);
+        IntersectionEnumerator enumerator = new IntersectionEnumerator(requiredTables);
+        return enumerator.get(singleIndexes, comparisons, getColumnEquivalencies(colExprsEquivs));
     }
 
     public EquivalenceFinder<Column> getColumnEquivalencies(EquivalenceFinder<ColumnExpression> colExprsEquivs) {
@@ -593,8 +593,13 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return (node instanceof ConstantExpression) || (node instanceof ParameterExpression);
     }
     
-    private static final MultiIndexEnumerator<ComparisonCondition,Map<UserTable,TableSource>> multiIndexEnumerator
-            = new MultiIndexEnumerator<ComparisonCondition,Map<UserTable,TableSource>>() {
+    private static class IntersectionEnumerator extends MultiIndexEnumerator<ComparisonCondition,IndexScan> {
+        private Map<UserTable,TableSource> tablesMap;
+
+        private IntersectionEnumerator(Map<UserTable, TableSource> tablesMap) {
+            this.tablesMap = tablesMap;
+        }
+
         @Override
         protected Column columnFromCondition(ComparisonCondition condition) {
             ColumnExpression asCol = (ColumnExpression) condition.getLeft();
@@ -602,8 +607,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         }
 
         @Override
-        protected IndexScan buildScan(MultiIndexCandidate<ComparisonCondition> candidate,
-                                      Map<UserTable, TableSource> tablesMap) {
+        protected SingleIndexScan buildLeaf(MultiIndexCandidate<ComparisonCondition> candidate) {
             Index index = candidate.getIndex();
             TableSource root = tablesMap.get(index.rootMostTable());
             TableSource leaf = tablesMap.get(index.leafMostTable());
@@ -614,7 +618,12 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             setColumnsAndOrdering(result);
             return result;
         }
-    };
+
+        @Override
+        protected IndexScan intersect(IndexScan first, IndexScan second, int comparisons) {
+            return new MultiIndexIntersectScan(first, second, comparisons);
+        }
+    }
 
     public CostEstimate costEstimateScan(PlanNode scan) {
         // TODO: Until more nodes have this stored in them.

@@ -41,20 +41,18 @@ import java.util.Set;
  * <p>Like {@link MultiIndexCandidate}, this class is generic and abstract; its only abstract method is one for
  * creating an empty {@link MultiIndexCandidate}. Also like that class, the expectation is that there will be two
  * subclasses for this class: one for unit testing, and one for production.</p>
- * 
- * <p>This class does not hold any state, and if it weren't for {@linkplain #columnFromCondition(Object)}</p>, all
- * of its methods could be static. It's safe to create a singleton instance for use across threads.</p>
  * @param <C> the condition type.
  */
-public abstract class MultiIndexEnumerator<C,S> {
+public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode> {
     
     Logger log = LoggerFactory.getLogger(MultiIndexEnumerator.class);
     
     protected abstract Column columnFromCondition(C condition);
-    protected abstract IndexScan buildScan(MultiIndexCandidate<C> candidate, S builderState);
+    protected abstract N buildLeaf(MultiIndexCandidate<C> candidate);
+    protected abstract N intersect(N first, N second, int comparisonCount);
     
-    public Collection<MultiIndexIntersectScan> get(Collection<? extends Index> indexes, Set<C> conditions,
-                                             EquivalenceFinder<Column> columnEquivalences, S builderState)
+    public Collection<N> get(Collection<? extends Index> indexes, Set<C> conditions,
+                                             EquivalenceFinder<Column> columnEquivalences)
     {
         Map<Column,C> colsToConds = new HashMap<Column,C>(conditions.size());
         for (C cond : conditions) {
@@ -70,7 +68,7 @@ public abstract class MultiIndexEnumerator<C,S> {
             }
         }
         
-        Set<MultiIndexIntersectScan> results = new HashSet<MultiIndexIntersectScan>();
+        Set<N> results = new HashSet<N>();
         Map<Index,MultiIndexCandidate<C>> indexToCandidate = new HashMap<Index, MultiIndexCandidate<C>>(indexes.size());
         for (Index index : indexes) {
             MultiIndexCandidate<C> candidate = createCandidate(index, colsToConds);
@@ -85,8 +83,8 @@ public abstract class MultiIndexEnumerator<C,S> {
                     MultiIndexCandidate<C> outerCandidate = indexToCandidate.get(outerIndex);
                     MultiIndexCandidate<C> innerCandidate = indexToCandidate.get(innerIndex);
                     if (outerCandidate != null && innerCandidate != null && !outerCandidate.equals(innerCandidate) ) {
-                        IndexScan outerScan = buildScan(outerCandidate, builderState);
-                        IndexScan indexScan = buildScan(innerCandidate, builderState);
+                        N outerScan = buildLeaf(outerCandidate);
+                        N indexScan = buildLeaf(innerCandidate);
                         emit(outerScan, indexScan, results, columnEquivalences);
                     }
                 }
@@ -112,37 +110,28 @@ public abstract class MultiIndexEnumerator<C,S> {
         return result;
     }
 
-    private void emit(IndexScan first, IndexScan second,
-                      Collection<MultiIndexIntersectScan> output, EquivalenceFinder<Column> columnEquivalences)
+    private void emit(N first, N second,
+                      Collection<N> output, EquivalenceFinder<Column> columnEquivalences)
     {
-        Table firstTable = first.getLeafMostTable().getTable().getTable();
-        Table secondTable = second.getLeafMostTable().getTable().getTable();
-        if (firstTable.isUserTable() && secondTable.isUserTable()) {
+        Table firstTable = first.getLeafMostUTable();
+        Table secondTable = second.getLeafMostUTable();
             List<Column> commonTrailing = getCommonTrailing(first, second, columnEquivalences);
             UserTable firstUTable = (UserTable) firstTable;
             UserTable secondUTable = (UserTable) secondTable;
             // handle the two single-branch cases
             if (firstUTable.isDescendantOf(secondUTable)
                     && includesHKey(secondUTable, commonTrailing, columnEquivalences)) {
-                output.add(assembleIntersection(first, second, commonTrailing.size()));
+                output.add(intersect(first, second, commonTrailing.size()));
             }
             else if (secondUTable.isDescendantOf(firstUTable)
                     && includesHKey(firstUTable, commonTrailing, columnEquivalences)) {
-                output.add(assembleIntersection(second, first, commonTrailing.size()));
+                output.add(intersect(second, first, commonTrailing.size()));
             }
             else {
                 // TODO -- enable when multi-branch is in
                 // output.add(new MultiIndexPair(first, second));
                 // output.add(new MultiIndexPair(second, first));
             }
-        }
-        else {
-            assert false : "need two user tables: " + firstTable + ", " + secondTable;
-        }
-    }
-    
-    private MultiIndexIntersectScan assembleIntersection(IndexScan first, IndexScan second, int comparisonColumns) {
-        return new MultiIndexIntersectScan(first, second, comparisonColumns);
     }
 
     private boolean includesHKey(UserTable table, List<Column> columns, EquivalenceFinder<Column> columnEquivalences) {
@@ -165,8 +154,7 @@ public abstract class MultiIndexEnumerator<C,S> {
     }
 
     // TODO change all this to use List<IndexColumn>, so we can efficiently create sublists
-    private List<Column> getCommonTrailing(IndexScan first, IndexScan second,
-                                           EquivalenceFinder<Column> columnEquivalences)
+    private List<Column> getCommonTrailing(N first, N second, EquivalenceFinder<Column> columnEquivalences)
     {
         List<Column> firstTrailing = orderingColumns(first);
         if (firstTrailing.isEmpty())
@@ -188,66 +176,15 @@ public abstract class MultiIndexEnumerator<C,S> {
         return results;
     }
 
-    private List<Column> orderingColumns(IndexScan scan) {
+    private List<Column> orderingColumns(N scan) {
         // TODO temporary; need to rework to use Index.getAllColumns eventually
-        List<IndexColumn> allCols = new ArrayList<IndexColumn>();
-        allCols.addAll(scan.getKeyColumns());
-        allCols.addAll(scan.getValueColumns());
+        List<IndexColumn> allCols = scan.getOrderingColumns();
         
         int ncols=allCols.size();
         List<Column> results = new ArrayList<Column>(allCols.size() - ncols);
-        for (int i = scan.getEqualityComparands().size(); i < ncols; ++i) {
+        for (int i = scan.getComparisonsCount(); i < ncols; ++i) {
             results.add(allCols.get(i).getColumn());
         }
         return results;
     }
-
-//    public static class MultiIndexPair<C> {
-//        MultiIndexCandidate<C> outputIndex;
-//        MultiIndexCandidate<C> selectorIndex;
-//        private int commonFieldsCount;
-//
-//        public MultiIndexPair(MultiIndexCandidate<C> outputIndex, MultiIndexCandidate<C> selectorIndex,
-//                              int commonFieldsCount)
-//        {
-//            this.outputIndex = outputIndex;
-//            this.selectorIndex = selectorIndex;
-//            this.commonFieldsCount = commonFieldsCount;
-//        }
-//
-//        public MultiIndexCandidate<C> getOutputIndex() {
-//            return outputIndex;
-//        }
-//
-//        public MultiIndexCandidate<C> getSelectorIndex() {
-//            return selectorIndex;
-//        }
-//        
-//        public int getCommonFieldsCount() {
-//            return commonFieldsCount;
-//        }
-//
-//        @Override
-//        public boolean equals(Object o) {
-//            if (this == o) return true;
-//            if (o == null || getClass() != o.getClass()) return false;
-//
-//            MultiIndexPair that = (MultiIndexPair) o;
-//
-//            return outputIndex.equals(that.outputIndex) && selectorIndex.equals(that.selectorIndex);
-//
-//        }
-//
-//        @Override
-//        public int hashCode() {
-//            int result = outputIndex.hashCode();
-//            result = 31 * result + selectorIndex.hashCode();
-//            return result;
-//        }
-//
-//        @Override
-//        public String toString() {
-//            return String.format("(%s, %s)", outputIndex, selectorIndex);
-//        }
-//    }
 }

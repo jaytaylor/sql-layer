@@ -7,12 +7,6 @@ conditionsOn:
     - customers.yob
     - customers.password
     - customers.vipstatus
-combinations:
-    -   outputIndex: customers.name_vipstatus
-        outputSkip: [customers.name, customers.vipstatus]
-        selectorIndex: customers.yob_password
-        selectorSkip: [customers.yob, customers.password]
-    -   outputIndex: customers.yob_password
-        outputSkip: [customers.yob, customers.password]
-        selectorIndex: customers.name_vipstatus
-        selectorSkip: [customers.name, customers.vipstatus]
+results:
+    - INTERSECT(2 comparisons on [name, vipstatus, id] AND 2 comparisons on [yob, password, id] with 1 comparisons)
+    - INTERSECT(2 comparisons on [yob, password, id] AND 2 comparisons on [name, vipstatus, id] with 1 comparisons)
