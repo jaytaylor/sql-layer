@@ -90,7 +90,15 @@ public class StrToDateExpression extends AbstractBinaryExpression
         }
 
         private long getValue (String str, String format)
-        {            
+        { 
+            if (str.trim().isEmpty() || format.trim().isEmpty())
+            {
+                QueryContext qc = queryContext();
+                if (qc != null)
+                    qc.warnClient(new InvalidParameterValueException("Empty string(s)"));
+                return 0;
+            }
+            
             if (parseString(str, format)) return getLong();
             else return -1;
         }
@@ -105,13 +113,6 @@ public class StrToDateExpression extends AbstractBinaryExpression
          */
         private boolean parseString (String str, String format)
         {
-            if (str.trim().isEmpty() || format.trim().isEmpty())
-            {
-                QueryContext qc = queryContext();
-                if (qc != null)
-                    qc.warnClient(new InvalidParameterValueException("Empty string(s)"));
-                return false;
-            }
             // split format
             String formatList[] = format.split("\\%");
 
