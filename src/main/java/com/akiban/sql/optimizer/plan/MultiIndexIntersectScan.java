@@ -18,7 +18,6 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public final class MultiIndexIntersectScan extends IndexScan {
@@ -78,6 +77,11 @@ public final class MultiIndexIntersectScan extends IndexScan {
     @Override
     public int getPeggedCount() {
         return outputScan.getPeggedCount();
+    }
+
+    @Override
+    public boolean impliedBy(IndexScan other) {
+        return outputScan.impliedBy(other) || selectorScan.impliedBy(other);
     }
 
     @Override

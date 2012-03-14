@@ -18,8 +18,6 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
-import com.akiban.sql.optimizer.rule.CostEstimator;
-import com.akiban.sql.optimizer.rule.range.RangeSegment;
 
 import java.util.List;
 
@@ -92,5 +90,13 @@ public final class SingleIndexScan extends IndexScan {
         // used in the context of MultiIndexEnumerator, which will only put in leading
         // equalities.
         return getEqualityComparands().size();
+    }
+
+    @Override
+    public boolean impliedBy(IndexScan other) {
+        if (other instanceof SingleIndexScan)
+            return this == other;
+        else
+            return other.impliedBy(this);
     }
 }

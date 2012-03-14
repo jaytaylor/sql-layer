@@ -25,10 +25,10 @@ import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,7 +42,7 @@ import java.util.Set;
  * subclasses for this class: one for unit testing, and one for production.</p>
  * @param <C> the condition type.
  */
-public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode> {
+public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<N>> {
     
     Logger log = LoggerFactory.getLogger(MultiIndexEnumerator.class);
     
@@ -67,29 +67,37 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode> {
             }
         }
         
-        Set<N> results = new HashSet<N>();
-        Map<Index,MultiIndexCandidate<C>> indexToCandidate = new HashMap<Index, MultiIndexCandidate<C>>(indexes.size());
+        List<N> results = new ArrayList<N>();
+        
+        // Seed the results with single-index scans. Remember how many there are, so that we can later crop those out.
         for (Index index : indexes) {
             MultiIndexCandidate<C> candidate = createCandidate(index, colsToConds);
-            if (candidate.anyPegged())
-                indexToCandidate.put(index, candidate);
-        }
-
-        // note: "inner" and "outer" here refer only to these loops, nothing more.
-        for (Index outerIndex : indexes) {
-            for (Index innerIndex : indexes) {
-                if (outerIndex != innerIndex) {
-                    MultiIndexCandidate<C> outerCandidate = indexToCandidate.get(outerIndex);
-                    MultiIndexCandidate<C> innerCandidate = indexToCandidate.get(innerIndex);
-                    if (outerCandidate != null && innerCandidate != null && !outerCandidate.equals(innerCandidate) ) {
-                        N outerScan = buildLeaf(outerCandidate);
-                        N indexScan = buildLeaf(innerCandidate);
-                        emit(outerScan, indexScan, results, columnEquivalences);
-                    }
-                }
+            if (candidate.anyPegged()) {
+                N leaf = buildLeaf(candidate);
+                results.add(leaf);
             }
         }
-        return results;
+        if (results.isEmpty())
+            return Collections.emptyList(); // return early if there's nothing here, cause why not.
+        final int leaves = results.size();
+        
+        List<N> freshNodes = results;
+        List<N> oldNodes = results;
+        List<N> newNodes = new ArrayList<N>(leaves);
+        do {
+            newNodes.clear();
+            for (N outer : freshNodes) {
+                for (N inner : oldNodes) {
+                    emit(outer, inner, newNodes, columnEquivalences);
+                }
+            }
+            int oldCount = results.size();
+            results.addAll(newNodes);
+            oldNodes = results.subList(0, oldCount);
+            freshNodes = results.subList(oldCount, results.size());
+        } while (!newNodes.isEmpty());
+        
+        return results.subList(leaves, results.size());
     }
 
     protected void handleDuplicateCondition() {
@@ -112,25 +120,31 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode> {
     private void emit(N first, N second,
                       Collection<N> output, EquivalenceFinder<Column> columnEquivalences)
     {
+        if (worthlessIntersection(first, second))
+            return;
         Table firstTable = first.getLeafMostUTable();
         Table secondTable = second.getLeafMostUTable();
-            List<IndexColumn> commonTrailing = getCommonTrailing(first, second, columnEquivalences);
-            UserTable firstUTable = (UserTable) firstTable;
-            UserTable secondUTable = (UserTable) secondTable;
-            // handle the two single-branch cases
-            if (firstUTable.isDescendantOf(secondUTable)
-                    && includesHKey(secondUTable, commonTrailing, columnEquivalences)) {
-                output.add(intersect(first, second, commonTrailing.size()));
-            }
-            else if (secondUTable.isDescendantOf(firstUTable)
-                    && includesHKey(firstUTable, commonTrailing, columnEquivalences)) {
-                output.add(intersect(second, first, commonTrailing.size()));
-            }
-            else {
-                // TODO -- enable when multi-branch is in
-                // output.add(new MultiIndexPair(first, second));
-                // output.add(new MultiIndexPair(second, first));
-            }
+        List<IndexColumn> commonTrailing = getCommonTrailing(first, second, columnEquivalences);
+        UserTable firstUTable = (UserTable) firstTable;
+        UserTable secondUTable = (UserTable) secondTable;
+        // handle the two single-branch cases
+        if (firstUTable.isDescendantOf(secondUTable)
+                && includesHKey(secondUTable, commonTrailing, columnEquivalences)) {
+            output.add(intersect(first, second, commonTrailing.size()));
+        }
+        else if (secondUTable.isDescendantOf(firstUTable)
+                && includesHKey(firstUTable, commonTrailing, columnEquivalences)) {
+            output.add(intersect(second, first, commonTrailing.size()));
+        }
+        else {
+            // TODO -- enable when multi-branch is in
+            // output.add(new MultiIndexPair(first, second));
+            // output.add(new MultiIndexPair(second, first));
+        }
+    }
+
+    private boolean worthlessIntersection(N first, N second) {
+        return first == second || first.impliedBy(second);
     }
 
     private boolean includesHKey(UserTable table, List<IndexColumn> columns, EquivalenceFinder<Column> columnEquivalences) {

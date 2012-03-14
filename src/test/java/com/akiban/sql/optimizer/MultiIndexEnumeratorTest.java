@@ -84,7 +84,7 @@ public final class MultiIndexEnumeratorTest {
     
     @Test @OnlyIfNot("expectException")
     public void combinations() throws IOException {
-        Collection<IndexIntersectionNode> enumerated = getEnumerations();
+        Collection<TestNode> enumerated = getEnumerations();
         Set<String> actual = new TreeSet<String>(); 
         for (IndexIntersectionNode elem : enumerated) {
             actual.add(elem.toString());
@@ -98,7 +98,7 @@ public final class MultiIndexEnumeratorTest {
         getEnumerations();
     }
 
-    private Collection<IndexIntersectionNode> getEnumerations() {
+    private Collection<TestNode> getEnumerations() {
         SchemaFactory factory = new SchemaFactory(DEFAULT_SCHEMA);
         AkibanInformationSchema ais = factory.ais(ddl);
         factory.rowDefCache(ais); // set up indx row compositions
@@ -194,7 +194,7 @@ public final class MultiIndexEnumeratorTest {
     private TestCase tc;
     public final boolean expectException;
     
-    private static class StringConditionEnumerator extends MultiIndexEnumerator<String,IndexIntersectionNode> {
+    private static class StringConditionEnumerator extends MultiIndexEnumerator<String,TestNode> {
 
         @Override
         protected Column columnFromCondition(String condition) {
@@ -207,14 +207,14 @@ public final class MultiIndexEnumeratorTest {
         }
 
         @Override
-        protected IndexIntersectionNode buildLeaf(MultiIndexCandidate<String> candidate) {
+        protected TestNode buildLeaf(MultiIndexCandidate<String> candidate) {
             Index index = candidate.getIndex();
             UserTable leaf = (UserTable) index.leafMostTable();
-            return new SimpleLeaf(leaf, index.getAllColumns(), candidate.getPegged().size());
+            return new SimpleLeaf(leaf, index.getAllColumns(), candidate.getPegged());
         }
 
         @Override
-        protected IndexIntersectionNode intersect(IndexIntersectionNode first, IndexIntersectionNode second,
+        protected TestNode intersect(TestNode first, TestNode second,
                                                   int comparisonCount) {
             return new SimpleBranch(first, second, comparisonCount);
         }
@@ -226,15 +226,17 @@ public final class MultiIndexEnumeratorTest {
         private AkibanInformationSchema ais;
     }
     
-    private static class SimpleLeaf implements IndexIntersectionNode {
+    private interface TestNode extends IndexIntersectionNode<TestNode> {}
+    
+    private static class SimpleLeaf implements TestNode {
         private UserTable leaf;
         private List<IndexColumn> allCols;
-        private int pegged;
+        private List<String> pegged;
 
-        private SimpleLeaf(UserTable leaf, List<IndexColumn> allCols, int peggedCount) {
+        private SimpleLeaf(UserTable leaf, List<IndexColumn> allCols, List<String> pegged) {
             this.leaf = leaf;
             this.allCols = allCols;
-            this.pegged = peggedCount;
+            this.pegged = pegged;
         }
 
         @Override
@@ -249,14 +251,19 @@ public final class MultiIndexEnumeratorTest {
 
         @Override
         public int getPeggedCount() {
-            return pegged;
+            return pegged.size();
+        }
+
+        @Override
+        public boolean impliedBy(TestNode other) {
+            return String.valueOf(other).equals(this.toString());
         }
 
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append('[');
-            int remainingPegged = pegged;
+            int remainingPegged = pegged.size();
             for (Iterator<IndexColumn> iterator = allCols.iterator(); iterator.hasNext(); ) {
                 IndexColumn icol = iterator.next();
                 String colName = icol.getColumn().getName();
@@ -273,11 +280,11 @@ public final class MultiIndexEnumeratorTest {
         }
     }
     
-    private static class SimpleBranch implements IndexIntersectionNode {
-        IndexIntersectionNode left, right;
+    private static class SimpleBranch implements TestNode {
+        TestNode left, right;
         int comparisons;
 
-        private SimpleBranch(IndexIntersectionNode left, IndexIntersectionNode right, int comparisons) {
+        private SimpleBranch(TestNode left, TestNode right, int comparisons) {
             this.left = left;
             this.right = right;
             this.comparisons = comparisons;
@@ -296,6 +303,11 @@ public final class MultiIndexEnumeratorTest {
         @Override
         public int getPeggedCount() {
             return left.getPeggedCount();
+        }
+
+        @Override
+        public boolean impliedBy(TestNode other) {
+            return left.impliedBy(other) || right.impliedBy(other);
         }
 
         @Override

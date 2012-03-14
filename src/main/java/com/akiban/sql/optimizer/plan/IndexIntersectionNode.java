@@ -20,8 +20,9 @@ import com.akiban.ais.model.UserTable;
 
 import java.util.List;
 
-public interface IndexIntersectionNode {
+public interface IndexIntersectionNode<N extends IndexIntersectionNode<? super N>> {
     UserTable getLeafMostUTable();
     List<IndexColumn> getAllColumns();
+    boolean impliedBy(N other);
     int getPeggedCount();
 }
