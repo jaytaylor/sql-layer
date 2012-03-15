@@ -64,7 +64,7 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     private int getOrderingFields(IndexScan scan) {
-        return scan.getKeyColumns().size() + scan.getValueColumns().size();
+        return scan.getIndexColumns().size();
     }
 
     @Override

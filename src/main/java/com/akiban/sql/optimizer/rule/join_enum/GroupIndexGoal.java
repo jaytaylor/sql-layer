@@ -172,7 +172,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         setColumnsAndOrdering(index);
         List<ExpressionNode> indexExpressions = index.getColumns();
         int nequals = 0;
-        int ncols = index.getKeyColumns().size() + index.getValueColumns().size();
+        int ncols = indexExpressions.size();
         while (nequals < ncols) {
             ExpressionNode indexExpression = indexExpressions.get(nequals);
             if (indexExpression == null) break;
@@ -487,8 +487,17 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 intersectedIndex.setOrderEffectiveness(determineOrderEffectiveness(intersectedIndex));
                 intersectedIndex.setCovering(determineCovering(intersectedIndex));
                 intersectedIndex.setCostEstimate(estimateCost(intersectedIndex));
-                if ((bestIndex == null) || (compare(intersectedIndex, bestIndex) > 0))
+                if (bestIndex == null) {
+                    logger.debug("Selecting {}", intersectedIndex);
                     bestIndex = intersectedIndex;
+                }
+                else if (compare(intersectedIndex, bestIndex) > 0) {
+                    logger.debug("Preferring {}", intersectedIndex);
+                    bestIndex = intersectedIndex;
+                }
+                else {
+                    logger.debug("Rejecting {}", intersectedIndex);                    
+                }
             }
         }
         if (bestIndex == null)
