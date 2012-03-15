@@ -1,0 +1,17 @@
+Index: PRIMARY
+RowCount: 0
+SampledCount: 0
+Statistics:
+- Columns: 1
+  Histogram: []
+Table: customers
+Timestamp: 2012-03-15T22:17:18.846Z
+---
+Index: name
+RowCount: 0
+SampledCount: 0
+Statistics:
+- Columns: 1
+  Histogram: []
+Table: customers
+Timestamp: 2012-03-15T22:17:18.845Z

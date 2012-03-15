@@ -4,6 +4,8 @@ choose-condition-2: wide and narrow
 
 covering-or-group-scan: covering index or group scan?
 
+empty-stats: analyzed with no rows
+
 group-equals: two equals on group index
 
 in-index: IN that can use index

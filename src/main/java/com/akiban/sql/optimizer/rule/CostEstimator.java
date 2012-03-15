@@ -237,7 +237,7 @@ public abstract class CostEstimator implements TableRowCounts
         //    statistics, which may be stale.
         // rowCount: Approximate number of rows in the table, reasonably up to date.
         long statsCount = rowsInTableAccordingToIndex(indexedTable, indexStatsArray);
-        if (statsCount < 0) {
+        if (statsCount <= 0) {
             statsCount = rowCount;
             scaleCount = false;
         }
@@ -380,6 +380,9 @@ public abstract class CostEstimator implements TableRowCounts
                         long d = entry.getDistinctCount();
                         return d == 0 ? 0.0 : ((double) entry.getLessCount()) / (d * indexStats.getSampledCount());
                     }
+                }
+                if (entries.isEmpty()) {
+                    return 1;
                 }
                 HistogramEntry lastEntry = entries.get(entries.size() - 1);
                 long d = lastEntry.getDistinctCount();
