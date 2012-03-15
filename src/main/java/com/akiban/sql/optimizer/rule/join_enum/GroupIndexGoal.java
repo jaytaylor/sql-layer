@@ -83,18 +83,13 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
         @Override
         public MieBranchInfo mapToValue(TableGroupJoinNode node) {
-            Map<Table,TableSource> tableMap = new HashMap<Table,TableSource>();
-            for (; node != null; node = node.getParent()) {
-                TableSource source = node.getTable();
-                TableSource old = tableMap.put(source.getTable().getTable(), source);
-                assert old == null : old;
-            }
-            return new MieBranchInfo(tableMap);
+            return new MieBranchInfo(node);
         }
     };
     
     private interface MieBranchBuilder {
-        MieBranchInfo build(EquivalenceFinder<Column> equivalences, Collection<ConditionExpression> conditions);
+        MieBranchInfo build(EquivalenceFinder<Column> equivalences, // TODO change order so all "ins" are first, then all "outs"
+                            Collection<ConditionExpression> conditions);
     }
     
     private static class MieBranchInfo implements BranchInfo<ConditionExpression>, MieBranchBuilder {
@@ -104,15 +99,25 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         private Set<ConditionExpression> conditions;
         private EquivalenceFinder<ColumnExpression> columnExpressionEquivs;
 
-        private MieBranchInfo(Map<Table, TableSource> tablesMap) {
-            this.tablesMap = tablesMap;
+        private MieBranchInfo(TableGroupJoinNode node) {
+            int depth = node.getTable().getTable().getDepth();
+            
+            Map<Table,TableSource> localTablesMap = new HashMap<Table,TableSource>(depth);
+
+            for (; node != null; node = node.getParent()) {
+                TableSource source = node.getTable();
+                TableSource old = localTablesMap.put(source.getTable().getTable(), source);
+                assert old == null : old;
+            }
+            this.tablesMap = localTablesMap;
         }
 
         @Override
         public MieBranchInfo build(EquivalenceFinder<Column> equivalences, Collection<ConditionExpression> fromConds) {
             buildIndexes();
+            if(!buildConditions(fromConds))
+                return null;
             buildEquivalenceFinder(equivalences);
-            buildConditions(fromConds);
             return this;
         }
 
@@ -165,10 +170,11 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             }
             return singleIndexes;
         }
-        
-        private void buildConditions(Collection<ConditionExpression> fromConds) {
+
+        private boolean buildConditions(Collection<ConditionExpression> fromConds) {
             // TODO should we filter for indexes which are plausible? I tend to think no; the enumeration wll very
             // quickly skip them
+            boolean foundAny = false;
             conditions = new HashSet<ConditionExpression>(fromConds.size());
             for (ConditionExpression condition : fromConds) {
                 ComparisonCondition comparison = findValidCondition(condition);
@@ -179,6 +185,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                         TableSource eqTable = (TableSource) eqSource;
                         if (tablesMap.values().contains(eqTable)) {
                             conditions.add(comparison);
+                            foundAny = true;
                         }
                     }
                     if (columnExpressionEquivs == null)
@@ -187,8 +194,13 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                         assert columnExpressionEquivs == eqCol.getEquivalenceFinder() : fromConds;
                 }
             }
+            return foundAny;
         }
-        
+
+        private void buildAncestryCache(Map<TableSource, Set<TableSource>> ancestryCache) {
+            
+        }
+
         private void buildEquivalenceFinder(EquivalenceFinder<Column> equivalences)
         {
             for (Map.Entry<ColumnExpression, ColumnExpression> equiv : columnExpressionEquivs.equivalencePairs()) {
@@ -594,14 +606,16 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         Map<TableGroupJoinNode,MieBranchBuilder> leafRequireds = tables.findLeaves(requiredTrees);
         IntersectionEnumerator enumerator = new IntersectionEnumerator();
         EquivalenceFinder<Column> equivalencies = new EquivalenceFinder<Column>();
+        
         for (MieBranchBuilder branch : leafRequireds.values()) {
             MieBranchInfo branchInfo = branch.build(equivalencies, conditions);
-            enumerator.addBranch(branchInfo);
+            if (branchInfo != null)
+                enumerator.addBranch(branchInfo);
         }
 
         Collection<IndexScan> intersections = enumerator.getCombinations(equivalencies);
         for (IndexScan intersectedIndex : intersections) {
-            setRequiredAndConditions(intersectedIndex);
+            setIntersectionConditions(intersectedIndex);
             setColumnsAndOrdering(intersectedIndex);
             intersectedIndex.setOrderEffectiveness(determineOrderEffectiveness(intersectedIndex));
             intersectedIndex.setCovering(determineCovering(intersectedIndex));
@@ -621,10 +635,13 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return previousBest;
     }
 
-    private void setRequiredAndConditions(IndexScan rawScan) {
+    private void setIntersectionConditions(IndexScan rawScan) {
         MultiIndexIntersectScan scan = (MultiIndexIntersectScan) rawScan;
 
-        throw new UnsupportedOperationException();
+        List<ConditionExpression> conditionsCopy = new ArrayList<ConditionExpression>(conditions);
+        List<ConditionExpression> covered = new ArrayList<ConditionExpression>(conditions.size());
+        scan.removeCoveredConditions(conditionsCopy, covered);
+        scan.setConditions(covered);
     }
 
     public EquivalenceFinder<Column> getColumnEquivalencies(EquivalenceFinder<ColumnExpression> colExprsEquivs) {

@@ -18,9 +18,8 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 public final class MultiIndexIntersectScan extends IndexScan {
     
@@ -68,12 +67,8 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
-    public List<ConditionExpression> getConditions() {
-        if (conditions == null) {
-            conditions = new ArrayList<ConditionExpression>();
-            buildConditions(this, conditions);
-        }
-        return conditions;
+    public void setConditions(List<ConditionExpression> newConditions) {
+        super.setConditions(newConditions); // promote visibility
     }
 
     @Override
@@ -93,8 +88,8 @@ public final class MultiIndexIntersectScan extends IndexScan {
 
 
     @Override
-    public boolean removeCoveredConditions(Set<? super ConditionExpression> conditions,
-                                           List<? super ConditionExpression> removeTo) {
+    public boolean removeCoveredConditions(Collection<? super ConditionExpression> conditions,
+                                           Collection<? super ConditionExpression> removeTo) {
         // using a bitwise or on purpose here -- we do NOT want to short-circuit this, since even if the left
         // covers some conditions, we want to know which ones the right covers.
         return outputScan.removeCoveredConditions(conditions, removeTo)

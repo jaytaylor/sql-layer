@@ -105,7 +105,7 @@ public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends 
             for (N outer : freshNodes) {
                 if (outer.removeCoveredConditions(conditionsCopy, outerRecycle) && (!conditionsCopy.isEmpty())) {
                     for (N inner : oldNodes) {
-                        if (inner.removeCoveredConditions(conditionsCopy, innerRecycle)) {
+                        if (inner.removeCoveredConditions(conditionsCopy, innerRecycle)) { // TODO if outer pegs [A] and inner pegs [A,B], this will emit, but it shouldn't.
                             emit(outer, inner, newNodes, columnEquivalences);
                             emptyInto(innerRecycle,conditionsCopy);
                         }

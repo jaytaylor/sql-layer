@@ -277,7 +277,7 @@ public final class MultiIndexEnumeratorTest {
         }
 
         @Override
-        public boolean removeCoveredConditions(Set<? super String> conditions, List<? super String> removeTo) {
+        public boolean removeCoveredConditions(Collection<? super String> conditions, Collection<? super String> removeTo) {
             boolean removedAny = false;
             for (String cond : pegged) {
                 if(conditions.remove(cond)) {
@@ -335,7 +335,7 @@ public final class MultiIndexEnumeratorTest {
         }
 
         @Override
-        public boolean removeCoveredConditions(Set<? super String> conditions, List<? super String> removeTo) {
+        public boolean removeCoveredConditions(Collection<? super String> conditions, Collection<? super String> removeTo) {
             // using a bitwise or on purpose here -- we do NOT want to short-circuit this, since even if the left
             // covers some conditions, we want to know which ones the right covers.
             return left.removeCoveredConditions(conditions, removeTo)
