@@ -86,7 +86,7 @@ public class RulesTest extends OptimizerTestBase
                     nargs[2] = schemaFile;
                     nargs[3] = statsFile;
                     nargs[4] = propertiesFile;
-                    nargs[6] = extraDDL;
+                    nargs[5] = extraDDL;
                     System.arraycopy(args, 1, nargs, 6, args.length-1);
                     result.add(nargs);
                 }
