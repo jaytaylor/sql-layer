@@ -737,11 +737,15 @@ public abstract class CostEstimator implements TableRowCounts
         }
     }
 
-    /** Number of child rows per ancestor. */
+    /** Number of child rows per ancestor. 
+     * Never returns zero to avoid contaminating product estimate.
+     */
     protected long descendantCardinality(TableGroupJoinNode childNode, 
                                          TableGroupJoinNode ancestorNode) {
-        return simpleRound(getTableRowCount(childNode.getTable().getTable().getTable()),
-                           getTableRowCount(ancestorNode.getTable().getTable().getTable()));
+        long childCount = getTableRowCount(childNode.getTable().getTable().getTable());
+        long ancestorCount = getTableRowCount(ancestorNode.getTable().getTable().getTable());
+        if (ancestorCount == 0) return 1;
+        return Math.max(simpleRound(childCount, ancestorCount), 1);
     }
 
     /** Estimate the cost of testing some conditions. */

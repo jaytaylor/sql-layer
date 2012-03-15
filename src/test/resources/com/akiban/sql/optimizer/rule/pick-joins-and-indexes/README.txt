@@ -36,6 +36,8 @@ two-groups-indexed: two groups with condition on one
 
 no-stats: no statistics
 
+no-stats-group: no statistics and group joins
+
 no-stats-large: no statistics but reasonable row count
 
 empty-stats: analyzed with no rows
