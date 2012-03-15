@@ -89,8 +89,10 @@ public final class SingleIndexScan extends IndexScan {
 
         boolean removedAny = false;
         for (ConditionExpression cond : getConditions()) {
-            removedAny |= conditions.remove(cond);
-            removeTo.add(cond);
+            if(conditions.remove(cond)) {
+                removeTo.add(cond);
+                removedAny = true;
+            }
         }
         return removedAny;
     }

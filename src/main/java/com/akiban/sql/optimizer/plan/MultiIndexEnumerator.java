@@ -86,19 +86,20 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<? e
         List<N> oldNodes = results;
         List<N> newNodes = new ArrayList<N>(leaves);
         Set<C> conditionsCopy = new HashSet<C>(conditions);
-        List<C> conditionsRecycle = new ArrayList<C>(conditions.size());
+        List<C> outerRecycle = new ArrayList<C>(conditions.size());
+        List<C> innerRecycle = new ArrayList<C>(conditions.size());
         do {
             newNodes.clear();
             for (N outer : freshNodes) {
-                if (outer.removeCoveredConditions(conditionsCopy, conditionsRecycle) && (!conditionsCopy.isEmpty())) {
+                if (outer.removeCoveredConditions(conditionsCopy, outerRecycle) && (!conditionsCopy.isEmpty())) {
                     for (N inner : oldNodes) {
-                        if (inner.removeCoveredConditions(conditionsCopy, conditionsRecycle)) {
+                        if (inner.removeCoveredConditions(conditionsCopy, innerRecycle)) {
                             emit(outer, inner, newNodes, columnEquivalences);
-                            emptyInto(conditionsCopy, conditionsRecycle);
+                            emptyInto(innerRecycle,conditionsCopy);
                         }
                     }
                 }
-                emptyInto(conditionsCopy, conditionsRecycle);
+                emptyInto(outerRecycle, conditionsCopy);
             }
             int oldCount = results.size();
             results.addAll(newNodes);
