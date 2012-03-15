@@ -38,6 +38,7 @@ import com.google.common.primitives.UnsignedBytes;
 
 import java.util.*;
 import static java.lang.Math.round;
+import static java.lang.Math.sin;
 
 public abstract class CostEstimator implements TableRowCounts
 {
@@ -146,19 +147,12 @@ public abstract class CostEstimator implements TableRowCounts
         return indexAccessCost(nrows, index);
     }
     
-    public CostEstimate costIndexIntersection(MultiIndexIntersectScan intersection,
-                                              CostEstimate outputScanCost, CostEstimate selectorScanCost)
+    public CostEstimate costIndexIntersection(MultiIndexIntersectScan intersection, IndexIntersectionCoster coster)
     {
-        SingleIndexScan selectorIndexScan = (SingleIndexScan)intersection.getSelectorIndexScan();
-        long totalRowCount = getTableRowCount(selectorIndexScan.getIndex().leafMostTable());
-        long selectedRowCount = simpleRound(outputScanCost.getRowCount() * 
-                                            selectorScanCost.getRowCount(),
-                                            totalRowCount);
-        selectedRowCount = Math.max(selectedRowCount, 1);
-        double cost = outputScanCost.getCost() + selectorScanCost.getCost() +
-            model.intersect((int)outputScanCost.getRowCount(), 
-                            (int)selectorScanCost.getRowCount());
-        return new CostEstimate(selectedRowCount, cost);
+        IntersectionCostRunner runner = new IntersectionCostRunner(coster);
+        runner.buildIndexScanCost(intersection);
+        CostEstimate estimate = new CostEstimate(runner.rowCount, runner.cost);
+        return estimate;
     }
 
     /** Estimate cost of scanning from this index. */
@@ -731,4 +725,43 @@ public abstract class CostEstimator implements TableRowCounts
         return new CostEstimate(nrows, model.fullGroupScan(schema.userTableRowType(root)));
     }
 
+    public interface IndexIntersectionCoster {
+        public CostEstimate singleIndexScanCost(SingleIndexScan scan, CostEstimator costEstimator);
+
+    }
+
+    private class IntersectionCostRunner {
+        private IndexIntersectionCoster coster;
+        private double cost = 0;
+        private long rowCount = 0;
+
+        private IntersectionCostRunner(IndexIntersectionCoster coster) {
+            this.coster = coster;
+        }
+
+        public void buildIndexScanCost(IndexScan scan) {
+            if (scan instanceof SingleIndexScan) {
+                SingleIndexScan singleScan = (SingleIndexScan) scan;
+                CostEstimate estimate = coster.singleIndexScanCost(singleScan, CostEstimator.this);
+                long singleCount = estimate.getRowCount();
+                double singleCost = estimate.getCost();
+                long totalRowCount = getTableRowCount(singleScan.getIndex().leafMostTable());
+
+                long selectedRowCount = simpleRound(rowCount *
+                        singleCount,
+                        totalRowCount);
+                selectedRowCount = Math.max(selectedRowCount, 1);
+                cost += singleCost + model.intersect((int)rowCount, (int)singleCount);
+                rowCount = selectedRowCount;
+            }
+            else if (scan instanceof MultiIndexIntersectScan) {
+                MultiIndexIntersectScan multiScan = (MultiIndexIntersectScan) scan;
+                buildIndexScanCost(multiScan.getOutputIndexScan());
+                buildIndexScanCost(multiScan.getSelectorIndexScan());
+            }
+            else {
+                throw new AssertionError("can't build scan of: " + scan);
+            }
+        }
+    }
 }
