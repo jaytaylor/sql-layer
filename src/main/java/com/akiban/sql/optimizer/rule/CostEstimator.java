@@ -149,7 +149,15 @@ public abstract class CostEstimator implements TableRowCounts
     public CostEstimate costIndexIntersection(MultiIndexIntersectScan intersection,
                                               CostEstimate outputScanCost, CostEstimate selectorScanCost)
     {
-        return outputScanCost.union(selectorScanCost); // TODO once we merge w/ Mike's changes, need to update this to use the model
+        SingleIndexScan selectorIndexScan = (SingleIndexScan)intersection.getSelectorIndexScan();
+        long totalRowCount = getTableRowCount(selectorIndexScan.getIndex().leafMostTable());
+        long selectedRowCount = simpleRound(outputScanCost.getRowCount() * 
+                                            selectorScanCost.getRowCount(),
+                                            totalRowCount);
+        double cost = outputScanCost.getCost() + selectorScanCost.getCost() +
+            model.intersect((int)outputScanCost.getRowCount(), 
+                            (int)selectorScanCost.getRowCount());
+        return new CostEstimate(selectedRowCount, cost);
     }
 
     /** Estimate cost of scanning from this index. */
