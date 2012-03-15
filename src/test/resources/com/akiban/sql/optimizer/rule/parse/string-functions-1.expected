@@ -1,5 +1,5 @@
-SelectQuery@4301ac93
-  ResultSet@5cf346dc[name, _SQL_COL_1, _SQL_COL_2, _SQL_COL_3, _SQL_COL_4, _SQL_COL_5, _SQL_COL_6, _SQL_COL_7, _SQL_COL_8, _SQL_COL_9, _SQL_COL_10]
-    Project@67b14530[user.parent.name, upper(user.parent.name), lower(user.parent.name), upper(user.parent.name), lower(user.parent.name), ansiTrim(user.parent.name, ,NULL), ansiTrim(user.parent.name, ,NULL), ansiTrim(user.parent.name, ,NULL), substring(user.parent.name,Cast(1 AS BIGINT),Cast(2 AS BIGINT)), getDB2Length(user.parent.name), locate(user.parent.name,bar,Cast(1 AS BIGINT))]
-      Select@715f1f9c[]
-        TableSource@1c1474ea(user.parent)
+SelectQuery@[3b64c5ef
+  ResultSet@54feec5f[name, _SQL_COL_1, _SQL_COL_2, _SQL_COL_3, _SQL_COL_4, _SQL_COL_5, _SQL_COL_6, _SQL_COL_7, _SQL_COL_8, _SQL_COL_9, _SQL_COL_10]
+    Project@2c507c91[user.parent.name, upper(user.parent.name), lower(user.parent.name), upper(user.parent.name), lower(user.parent.name), trim(user.parent.name, ), ltrim(user.parent.name, ), rtrim(user.parent.name, ), substring(user.parent.name,Cast(1 AS BIGINT),Cast(2 AS BIGINT)), getDB2Length(user.parent.name), locate(user.parent.name,bar,Cast(1 AS BIGINT))]
+      Select@58222a51[]
+        TableSource@2b08590b](user.parent)
