@@ -21,6 +21,7 @@ import com.akiban.ais.model.Table;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.sql.optimizer.plan.TableGroupJoinTree.LeafFinderPredicate;
 import com.akiban.sql.optimizer.rule.CostEstimator;
+import com.akiban.sql.optimizer.rule.CostEstimator.IndexIntersectionCoster;
 import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 import com.akiban.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
 import com.akiban.sql.optimizer.rule.range.ColumnRanges;
@@ -868,11 +869,12 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         }
         else if (index instanceof MultiIndexIntersectScan) {
             MultiIndexIntersectScan multiIndex = (MultiIndexIntersectScan) index;
-            IndexScan output = multiIndex.getOutputIndexScan();
-            IndexScan selector = multiIndex.getSelectorIndexScan();
-            CostEstimate outputCost = createBasicCostEstimate(output, costEstimator);
-            CostEstimate selectorCost = createBasicCostEstimate(selector, costEstimator);
-            return costEstimator.costIndexIntersection(multiIndex, outputCost, selectorCost);
+            return costEstimator.costIndexIntersection(multiIndex, new IndexIntersectionCoster() {
+                @Override
+                public CostEstimate singleIndexScanCost(SingleIndexScan scan, CostEstimator costEstimator) {
+                    return createBasicCostEstimate(scan, costEstimator);
+                }
+            });
         }
         else {
             throw new AkibanInternalException("unknown index type: " + index + "(" + index.getClass() + ")");
