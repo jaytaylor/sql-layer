@@ -39,3 +39,7 @@ no-stats: no statistics
 no-stats-large: no statistics but reasonable row count
 
 empty-stats: analyzed with no rows
+
+scaled-distinct: mostly distinct now larger
+
+scaled-not-distinct: not so distinct now larger
