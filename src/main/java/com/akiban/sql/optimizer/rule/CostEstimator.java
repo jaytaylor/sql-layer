@@ -118,8 +118,7 @@ public abstract class CostEstimator implements TableRowCounts
             // not so declared, then the result size doesn't scale up from
             // when it was analyzed.
             long totalDistinct = histogram.totalDistinctCount();
-            // TODO: Shouldn't this be totalDistinct * 10 > statsCount * 9 ?
-            boolean mostlyDistinct = totalDistinct * 9 > statsCount * 10; // > 90% distinct
+            boolean mostlyDistinct = totalDistinct * 10 > statsCount * 9; // > 90% distinct
             if (mostlyDistinct) scaleCount = false;
             byte[] keyBytes = encodeKeyBytes(index, equalityComparands, null, false);
             if (keyBytes == null) {
