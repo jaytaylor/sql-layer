@@ -362,7 +362,10 @@ public abstract class CostEstimator implements TableRowCounts
             return 1.0;
         } else {
             Histogram histogram = indexStats.getHistogram(1);
-            if (columnValue == null) {
+            if ((histogram == null) || histogram.getEntries().isEmpty()) {
+                return 1;
+            }
+            else if (columnValue == null) {
                 // Variable expression. Use average selectivity for histogram.
                 return
                     mostlyDistinct(indexStats)
@@ -380,9 +383,6 @@ public abstract class CostEstimator implements TableRowCounts
                         long d = entry.getDistinctCount();
                         return d == 0 ? 0.0 : ((double) entry.getLessCount()) / (d * indexStats.getSampledCount());
                     }
-                }
-                if (entries.isEmpty()) {
-                    return 1;
                 }
                 HistogramEntry lastEntry = entries.get(entries.size() - 1);
                 long d = lastEntry.getDistinctCount();
@@ -478,7 +478,9 @@ public abstract class CostEstimator implements TableRowCounts
 
     private boolean mostlyDistinct(IndexStatistics indexStats)
     {
-        return indexStats.getHistogram(1).totalDistinctCount() * 10 > indexStats.getSampledCount() * 9;
+        Histogram histogram = indexStats.getHistogram(1);
+        if (histogram == null) return false;
+        return histogram.totalDistinctCount() * 10 > indexStats.getSampledCount() * 9;
     }
 
     /** Assuming that byte strings are uniformly distributed, what
