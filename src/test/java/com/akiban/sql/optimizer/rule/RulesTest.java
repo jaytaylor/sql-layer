@@ -34,7 +34,6 @@ import com.akiban.junit.Parameterization;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import static junit.framework.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -52,7 +51,7 @@ public class RulesTest extends OptimizerTestBase
     public static final File RESOURCE_DIR = 
         new File(OptimizerTestBase.RESOURCE_DIR, "rule");
 
-    protected File rulesFile, schemaFile, indexFile, statsFile, propertiesFile;
+    protected File rulesFile, schemaFile, indexFile, statsFile, propertiesFile, extraDDL;
 
     @TestParameters
     public static Collection<Parameterization> statements() throws Exception {
@@ -69,19 +68,26 @@ public class RulesTest extends OptimizerTestBase
                 if (!statsFile.exists())
                     statsFile = null;
                 File compilerPropertiesFile = new File(subdir, "compiler.properties");
+                File defaultExtraDDL = new File(subdir, "schema-extra.ddl");
                 if (!compilerPropertiesFile.exists())
                     compilerPropertiesFile = null;
+                if (!defaultExtraDDL.exists())
+                    defaultExtraDDL = null;
                 for (Object[] args : sqlAndExpected(subdir)) {
                     File propertiesFile = new File(subdir, args[0] + ".properties");
+                    File extraDDL = new File(subdir, args[0] + ".ddl");
                     if (!propertiesFile.exists())
                         propertiesFile = compilerPropertiesFile;
-                    Object[] nargs = new Object[args.length+4];
+                    if (!extraDDL.exists())
+                        extraDDL = defaultExtraDDL;
+                    Object[] nargs = new Object[args.length+5];
                     nargs[0] = subdir.getName() + "/" + args[0];
                     nargs[1] = rulesFile;
                     nargs[2] = schemaFile;
                     nargs[3] = statsFile;
                     nargs[4] = propertiesFile;
-                    System.arraycopy(args, 1, nargs, 5, args.length-1);
+                    nargs[5] = extraDDL;
+                    System.arraycopy(args, 1, nargs, 6, args.length-1);
                     result.add(nargs);
                 }
             }
@@ -91,19 +97,25 @@ public class RulesTest extends OptimizerTestBase
 
     public RulesTest(String caseName, 
                      File rulesFile, File schemaFile, File statsFile, File propertiesFile,
+                     File extraDDL,
                      String sql, String expected, String error) {
         super(caseName, sql, expected, error);
         this.rulesFile = rulesFile;
         this.schemaFile = schemaFile;
         this.statsFile = statsFile;
         this.propertiesFile = propertiesFile;
+        this.extraDDL = extraDDL;
     }
 
     protected RulesContext rules;
 
     @Before
     public void loadDDL() throws Exception {
-        AkibanInformationSchema ais = loadSchema(schemaFile);
+        List<File> schemaFiles = new ArrayList<File>(2);
+        schemaFiles.add(schemaFile);
+        if (extraDDL != null)
+            schemaFiles.add(extraDDL);
+        AkibanInformationSchema ais = loadSchema(schemaFiles);
         Properties properties = new Properties();
         if (propertiesFile != null) {
             FileInputStream fstr = new FileInputStream(propertiesFile);
@@ -114,7 +126,7 @@ public class RulesTest extends OptimizerTestBase
                 fstr.close();
             }
         }
-        rules = RulesTestContext.create(ais, statsFile, 
+        rules = RulesTestContext.create(ais, statsFile, extraDDL != null,
                                         RulesTestHelper.loadRules(rulesFile), 
                                         properties);
     }

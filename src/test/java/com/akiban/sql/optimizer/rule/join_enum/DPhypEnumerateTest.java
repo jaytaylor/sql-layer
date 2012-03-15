@@ -84,7 +84,7 @@ public class DPhypEnumerateTest extends OptimizerTestBase
     @Before
     public void loadDDL() throws Exception {
         AkibanInformationSchema ais = loadSchema(schemaFile);
-        rules = RulesTestContext.create(ais, null,
+        rules = RulesTestContext.create(ais, null, false,
                                         Collections.<BaseRule>singletonList(new ASTStatementLoader()),
                                         new Properties());
     }
