@@ -19,6 +19,7 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.sql.optimizer.plan.MultiIndexEnumerator.BranchInfo;
 import com.akiban.sql.optimizer.plan.TableGroupJoinTree.LeafFinderPredicate;
 import com.akiban.sql.optimizer.rule.CostEstimator;
 import com.akiban.sql.optimizer.rule.EquivalenceFinder;
@@ -71,8 +72,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
     // Mapping of Range-expressible conditions, by their column. lazy loaded.
     private Map<ColumnExpression,ColumnRanges> columnsToRanges;
-    private static final LeafFinderPredicate<Map<Table,TableSource>> requiredTrees
-            = new LeafFinderPredicate<Map<Table,TableSource>>()
+    private static final LeafFinderPredicate<MieBranchBuilder> requiredTrees
+            = new LeafFinderPredicate<MieBranchBuilder>()
     {
         @Override
         public boolean includeAndContinue(TableGroupJoinNode node, TableGroupJoinTree tree) {
@@ -80,16 +81,120 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         }
 
         @Override
-        public Map<Table,TableSource> mapToValue(TableGroupJoinNode node) {
-            Map<Table,TableSource> results = new HashMap<Table,TableSource>();
+        public MieBranchInfo mapToValue(TableGroupJoinNode node) {
+            Map<Table,TableSource> tableMap = new HashMap<Table,TableSource>();
             for (; node != null; node = node.getParent()) {
                 TableSource source = node.getTable();
-                TableSource old = results.put(source.getTable().getTable(), source);
+                TableSource old = tableMap.put(source.getTable().getTable(), source);
                 assert old == null : old;
             }
-            return results;
+            return new MieBranchInfo(tableMap);
         }
     };
+    
+    private interface MieBranchBuilder {
+        MieBranchInfo build(EquivalenceFinder<Column> equivalences, Collection<ConditionExpression> conditions);
+    }
+    
+    private static class MieBranchInfo implements BranchInfo<ConditionExpression>, MieBranchBuilder {
+
+        private Map<Table,TableSource> tablesMap;
+        private List<Index> singleIndexes;
+        private Set<ConditionExpression> conditions;
+        private EquivalenceFinder<ColumnExpression> columnExpressionEquivs;
+
+        private MieBranchInfo(Map<Table, TableSource> tablesMap) {
+            this.tablesMap = tablesMap;
+        }
+
+        @Override
+        public MieBranchInfo build(EquivalenceFinder<Column> equivalences, Collection<ConditionExpression> fromConds) {
+            buildIndexes();
+            buildEquivalenceFinder(equivalences);
+            buildConditions(fromConds);
+            return this;
+        }
+
+        @Override
+        public Column columnFromCondition(ConditionExpression condition) {
+            ComparisonCondition comparison = (ComparisonCondition) condition;
+            ColumnExpression asCol = (ColumnExpression) comparison.getLeft();
+            return asCol.getColumn();
+        }
+
+        @Override
+        public Collection<? extends Index> getIndexes() {
+            return singleIndexes;
+        }
+
+        @Override
+        public Set<ConditionExpression> getConditions() {
+            return conditions;
+        }
+
+        private Collection<? extends Index> buildIndexes() {
+            singleIndexes = new ArrayList<Index>();
+            Group group = null;
+            Collection<TableSource> tables = tablesMap.values();
+            Map<UserTable,TableSource> requiredTables = new HashMap<UserTable,TableSource>(tables.size());
+            for (TableSource table : tables) {
+                if (group == null) {
+                    group = table.getGroup().getGroup();
+                    assert group != null;
+                }
+                else {
+                    assert group == table.getGroup().getGroup() : group + " != " + table.getGroup().getGroup();
+                }
+                singleIndexes.addAll(table.getTable().getTable().getIndexes());
+                requiredTables.put(table.getTable().getTable(), table);
+            }
+            assert group != null;
+            for (GroupIndex gi : group.getIndexes()) {
+                boolean giContainsOnlyRequired = true;
+                for (UserTable table = gi.leafMostTable(), stopAt = gi.rootMostTable().parentTable();
+                     table != null && table != stopAt; table = table.parentTable())
+                {
+                    if (!requiredTables.containsKey(table)) {
+                        giContainsOnlyRequired = false;
+                        break;
+                    }
+                }
+                if (giContainsOnlyRequired)
+                    singleIndexes.add(gi);
+            }
+            return singleIndexes;
+        }
+        
+        private void buildConditions(Collection<ConditionExpression> fromConds) {
+            // TODO should we filter for indexes which are plausible? I tend to think no; the enumeration wll very
+            // quickly skip them
+            conditions = new HashSet<ConditionExpression>(fromConds.size());
+            for (ConditionExpression condition : fromConds) {
+                ComparisonCondition comparison = findValidCondition(condition);
+                if (comparison != null) {
+                    ColumnExpression eqCol = (ColumnExpression) comparison.getLeft(); // ensured by findValidCondition
+                    ColumnSource eqSource = eqCol.getTable();
+                    if (eqSource instanceof TableSource) {
+                        TableSource eqTable = (TableSource) eqSource;
+                        if (tablesMap.values().contains(eqTable)) {
+                            conditions.add(comparison);
+                        }
+                    }
+                    if (columnExpressionEquivs == null)
+                        columnExpressionEquivs = eqCol.getEquivalenceFinder();
+                    else
+                        assert columnExpressionEquivs == eqCol.getEquivalenceFinder() : fromConds;
+                }
+            }
+        }
+        
+        private void buildEquivalenceFinder(EquivalenceFinder<Column> equivalences)
+        {
+            for (Map.Entry<ColumnExpression, ColumnExpression> equiv : columnExpressionEquivs.equivalencePairs()) {
+                equivalences.markEquivalent(equiv.getKey().getColumn(), equiv.getValue().getColumn());
+            }
+        }
+    }
 
     public GroupIndexGoal(QueryIndexGoal queryGoal, TableGroupJoinTree tables) {
         this.queryGoal = queryGoal;
@@ -477,95 +582,48 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 ((bestIndex == null) || (compare(tableIndex, bestIndex) > 0)))
                 bestIndex = tableIndex;
         }
-        Map<TableGroupJoinNode,Map<Table,TableSource>> leafRequireds = tables.findLeaves(requiredTrees);
-        for (Map<Table,TableSource> branch : leafRequireds.values()) {
-            Set<TableSource> branchTables = new HashSet<TableSource>(branch.values());
-            Collection<IndexScan> intersections = getIntersectionCandidates(branchTables);
-            for (IndexScan intersectedIndex : intersections) {
-                intersectedIndex.setRequiredTables(branchTables);
-                setColumnsAndOrdering(intersectedIndex);
-                intersectedIndex.setOrderEffectiveness(determineOrderEffectiveness(intersectedIndex));
-                intersectedIndex.setCovering(determineCovering(intersectedIndex));
-                intersectedIndex.setCostEstimate(estimateCost(intersectedIndex));
-                if (bestIndex == null) {
-                    logger.debug("Selecting {}", intersectedIndex);
-                    bestIndex = intersectedIndex;
-                }
-                else if (compare(intersectedIndex, bestIndex) > 0) {
-                    logger.debug("Preferring {}", intersectedIndex);
-                    bestIndex = intersectedIndex;
-                }
-                else {
-                    logger.debug("Rejecting {}", intersectedIndex);                    
-                }
-            }
-        }
+        bestIndex = pickBestIntersection(bestIndex);
         if (bestIndex == null)
             return new GroupScan(tables.getGroup());
         else
             return bestIndex;
     }
 
-    private Collection<IndexScan> getIntersectionCandidates(Set<TableSource> tables) {
-        if (tables.isEmpty())
-            return Collections.emptyList();
+    private IndexScan pickBestIntersection(IndexScan previousBest) {
+        Map<TableGroupJoinNode,MieBranchBuilder> leafRequireds = tables.findLeaves(requiredTrees);
+        IntersectionEnumerator enumerator = new IntersectionEnumerator();
+        EquivalenceFinder<Column> equivalencies = new EquivalenceFinder<Column>();
+        for (MieBranchBuilder branch : leafRequireds.values()) {
+            MieBranchInfo branchInfo = branch.build(equivalencies, conditions);
+            enumerator.addBranch(branchInfo);
+        }
 
-        // first, get all of the table and group indexes that fully involve the required tables.
-        // TODO should we filter for indexes which are plausible? I tend to think no; the enumeration wll very quickly
-        // skip them.
-
-        List<Index> singleIndexes = new ArrayList<Index>();
-        Group group = null;
-        Map<UserTable,TableSource> requiredTables = new HashMap<UserTable,TableSource>(tables.size());
-        for (TableSource table : tables) {
-            if (group == null) {
-                group = table.getGroup().getGroup();
-                assert group != null;
+        Collection<IndexScan> intersections = enumerator.getCombinations(equivalencies);
+        for (IndexScan intersectedIndex : intersections) {
+            setRequiredAndConditions(intersectedIndex);
+            setColumnsAndOrdering(intersectedIndex);
+            intersectedIndex.setOrderEffectiveness(determineOrderEffectiveness(intersectedIndex));
+            intersectedIndex.setCovering(determineCovering(intersectedIndex));
+            intersectedIndex.setCostEstimate(estimateCost(intersectedIndex));
+            if (previousBest == null) {
+                logger.debug("Selecting {}", intersectedIndex);
+                previousBest = intersectedIndex;
+            }
+            else if (compare(intersectedIndex, previousBest) > 0) {
+                logger.debug("Preferring {}", intersectedIndex);
+                previousBest = intersectedIndex;
             }
             else {
-                assert group == table.getGroup().getGroup() : group + " != " + table.getGroup().getGroup();
-            }
-            singleIndexes.addAll(table.getTable().getTable().getIndexes());
-            requiredTables.put(table.getTable().getTable(), table);
-        }
-        assert group != null;
-        for (GroupIndex gi : group.getIndexes()) {
-            boolean giContainsOnlyRequired = true;
-            for (UserTable table = gi.leafMostTable(), stopAt = gi.rootMostTable().parentTable();
-                    table != null && table != stopAt; table = table.parentTable())
-            {
-                if (!requiredTables.containsKey(table)) {
-                    giContainsOnlyRequired = false;
-                    break;
-                }
-            }
-            if (giContainsOnlyRequired)
-                singleIndexes.add(gi);
-        }
-        Set<ConditionExpression> comparisons = new HashSet<ConditionExpression>(conditions.size());
-        EquivalenceFinder<ColumnExpression> colExprsEquivs = null;
-        for (ConditionExpression condition : conditions) {
-            ComparisonCondition comparison = findValidCondition(condition);
-            if (comparison != null) {
-                ColumnExpression eqCol = (ColumnExpression) comparison.getLeft(); // ensured by findValidCondition
-                ColumnSource eqSource = eqCol.getTable();
-                if (eqSource instanceof TableSource) {
-                    TableSource eqTable = (TableSource) eqSource;
-                    if (tables.contains(eqTable)) {
-                        comparisons.add(comparison);
-                    }
-                }
-                if (colExprsEquivs == null)
-                    colExprsEquivs = eqCol.getEquivalenceFinder();
-                else
-                    assert colExprsEquivs == eqCol.getEquivalenceFinder() : conditions;
+                logger.debug("Rejecting {}", intersectedIndex);
             }
         }
-        if (comparisons.isEmpty())
-            return Collections.emptyList();
+        return previousBest;
+    }
 
-        IntersectionEnumerator enumerator = new IntersectionEnumerator(requiredTables);
-        return enumerator.get(singleIndexes, comparisons, getColumnEquivalencies(colExprsEquivs));
+    private void setRequiredAndConditions(IndexScan rawScan) {
+        MultiIndexIntersectScan scan = (MultiIndexIntersectScan) rawScan;
+
+        throw new UnsupportedOperationException();
     }
 
     public EquivalenceFinder<Column> getColumnEquivalencies(EquivalenceFinder<ColumnExpression> colExprsEquivs) {
@@ -594,26 +652,14 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return (node instanceof ConstantExpression) || (node instanceof ParameterExpression);
     }
     
-    private static class IntersectionEnumerator extends MultiIndexEnumerator<ConditionExpression,IndexScan> {
-        private Map<UserTable,TableSource> tablesMap;
-
-        private IntersectionEnumerator(Map<UserTable, TableSource> tablesMap) {
-            this.tablesMap = tablesMap;
-        }
+    private static class IntersectionEnumerator extends MultiIndexEnumerator<ConditionExpression,MieBranchInfo,IndexScan> { 
 
         @Override
-        protected Column columnFromCondition(ConditionExpression condition) {
-            ComparisonCondition comparison = (ComparisonCondition) condition;
-            ColumnExpression asCol = (ColumnExpression) comparison.getLeft();
-            return asCol.getColumn();
-        }
-
-        @Override
-        protected SingleIndexScan buildLeaf(MultiIndexCandidate<ConditionExpression> candidate) {
+        protected SingleIndexScan buildLeaf(MultiIndexCandidate<ConditionExpression> candidate, MieBranchInfo branch) {
             Index index = candidate.getIndex();
-            TableSource root = tablesMap.get(index.rootMostTable());
-            TableSource leaf = tablesMap.get(index.leafMostTable());
-            assert root != null && leaf != null : index + ", " + tablesMap;
+            TableSource root = branch.tablesMap.get(index.rootMostTable());
+            TableSource leaf = branch.tablesMap.get(index.leafMostTable());
+            assert root != null && leaf != null : index + ", " + branch.tablesMap;
             SingleIndexScan result = new SingleIndexScan(candidate.getIndex(), root, leaf);
             for (ConditionExpression cond : candidate.getPegged()) {
                 ComparisonCondition comparison = (ComparisonCondition) cond;

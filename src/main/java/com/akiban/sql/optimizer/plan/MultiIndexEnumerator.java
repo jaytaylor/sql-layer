@@ -21,6 +21,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
+import com.akiban.sql.optimizer.plan.MultiIndexEnumerator.BranchInfo;
 import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,20 +44,30 @@ import java.util.Set;
  * subclasses for this class: one for unit testing, and one for production.</p>
  * @param <C> the condition type.
  */
-public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<? extends C>> {
+public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends IndexIntersectionNode<? extends C>> {
+    
+    public interface BranchInfo<C> {
+        Column columnFromCondition(C condition);
+        Collection<? extends Index> getIndexes();
+        Set<C> getConditions();
+    }
     
     Logger log = LoggerFactory.getLogger(MultiIndexEnumerator.class);
     
-    protected abstract Column columnFromCondition(C condition);
-    protected abstract N buildLeaf(MultiIndexCandidate<C> candidate);
+//    protected abstract Column columnFromCondition(C condition);
+    protected abstract N buildLeaf(MultiIndexCandidate<C> candidate, B branchInfo);
     protected abstract N intersect(N first, N second, int comparisonCount);
+
+    private List<N> results = new ArrayList<N>();
+    private Set<C> conditions = new HashSet<C>();
     
-    public Collection<N> get(Collection<? extends Index> indexes, Set<C> conditions,
-                                             EquivalenceFinder<Column> columnEquivalences)
+    public void addBranch(B branchInfo) // TODO move other info to BranchInfo, too?
     {
-        Map<Column,C> colsToConds = new HashMap<Column,C>(conditions.size());
-        for (C cond : conditions) {
-            Column column = columnFromCondition(cond);
+        Set<C> branchConditions = branchInfo.getConditions();
+        conditions.addAll(branchConditions);
+        Map<Column,C> colsToConds = new HashMap<Column,C>(branchConditions.size());
+        for (C cond : branchConditions) {
+            Column column = branchInfo.columnFromCondition(cond);
             if (column == null) {
                 log.warn("couldn't map <{}> to Column", cond);
                 continue;
@@ -64,20 +75,21 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<? e
             C old = colsToConds.put(column, cond);
             if (old != null) {
                 handleDuplicateCondition(); // test hook
-                return null;
             }
         }
         
-        List<N> results = new ArrayList<N>();
         
         // Seed the results with single-index scans. Remember how many there are, so that we can later crop those out.
-        for (Index index : indexes) {
+        for (Index index : branchInfo.getIndexes()) {
             MultiIndexCandidate<C> candidate = createCandidate(index, colsToConds);
             if (candidate.anyPegged()) {
-                N leaf = buildLeaf(candidate);
+                N leaf = buildLeaf(candidate, branchInfo);
                 results.add(leaf);
             }
         }
+    }
+    
+    public Collection<N> getCombinations(EquivalenceFinder<Column> columnEquivalences) {
         if (results.isEmpty())
             return Collections.emptyList(); // return early if there's nothing here, cause why not.
         final int leaves = results.size();

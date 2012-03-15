@@ -32,6 +32,7 @@ import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.sql.optimizer.plan.IndexIntersectionNode;
 import com.akiban.sql.optimizer.plan.MultiIndexCandidate;
 import com.akiban.sql.optimizer.plan.MultiIndexEnumerator;
+import com.akiban.sql.optimizer.plan.MultiIndexEnumerator.BranchInfo;
 import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 import com.akiban.util.AssertUtils;
 import com.akiban.util.Strings;
@@ -107,7 +108,12 @@ public final class MultiIndexEnumeratorTest {
         Set<String> conditions = new HashSet<String>(tc.getConditionsOn());
         EquivalenceFinder<Column> columnEquivalences = innerJoinEquivalencies(ais);
         addExtraEquivalencies(tc.getExtraEquivalencies(), ais, columnEquivalences);
-        return new StringConditionEnumerator(ais).get(indexes, conditions, columnEquivalences);
+
+        StringBranchInfo info = new StringBranchInfo(ais, indexes, conditions);
+        StringConditionEnumerator enumerator = new StringConditionEnumerator();
+        enumerator.addBranch(info);
+
+        return enumerator.getCombinations(columnEquivalences);
     }
 
     private void addExtraEquivalencies(Map<String, String> equivMap, AkibanInformationSchema ais,
@@ -194,12 +200,34 @@ public final class MultiIndexEnumeratorTest {
     private TestCase tc;
     public final boolean expectException;
     
-    private static class StringConditionEnumerator extends MultiIndexEnumerator<String,TestNode> {
+    private static class StringBranchInfo implements BranchInfo<String> {
+        List<Index> indexes;
+        Set<String> conditions;
+        AkibanInformationSchema ais;
+
+        private StringBranchInfo(AkibanInformationSchema ais, List<Index> indexes, Set<String> conditions) {
+            this.indexes = indexes;
+            this.conditions = conditions;
+            this.ais = ais;
+        }
 
         @Override
-        protected Column columnFromCondition(String condition) {
+        public Column columnFromCondition(String condition) {
             return findColumn(condition, ais);
         }
+
+        @Override
+        public Collection<? extends Index> getIndexes() {
+            return indexes;
+        }
+
+        @Override
+        public Set<String> getConditions() {
+            return conditions;
+        }
+    }
+    
+    private static class StringConditionEnumerator extends MultiIndexEnumerator<String,StringBranchInfo,TestNode> {
 
         @Override
         protected void handleDuplicateCondition() {
@@ -207,7 +235,7 @@ public final class MultiIndexEnumeratorTest {
         }
 
         @Override
-        protected TestNode buildLeaf(MultiIndexCandidate<String> candidate) {
+        protected TestNode buildLeaf(MultiIndexCandidate<String> candidate, StringBranchInfo branchInfo) {
             Index index = candidate.getIndex();
             UserTable leaf = (UserTable) index.leafMostTable();
             return new SimpleLeaf(leaf, index.getAllColumns(), candidate.getPegged());
@@ -218,12 +246,6 @@ public final class MultiIndexEnumeratorTest {
                                                   int comparisonCount) {
             return new SimpleBranch(first, second, comparisonCount);
         }
-
-        private StringConditionEnumerator(AkibanInformationSchema ais) {
-            this.ais = ais;
-        }
-
-        private AkibanInformationSchema ais;
     }
     
     private interface TestNode extends IndexIntersectionNode<String> {}
