@@ -145,6 +145,12 @@ public abstract class CostEstimator implements TableRowCounts
             nrows = simpleRound((nrows * rowCount), statsCount);
         return indexAccessCost(nrows, index);
     }
+    
+    public CostEstimate costIndexIntersection(MultiIndexIntersectScan intersection,
+                                              CostEstimate outputScanCost, CostEstimate selectorScanCost)
+    {
+        return outputScanCost.union(selectorScanCost); // TODO once we merge w/ Mike's changes, need to update this to use the model
+    }
 
     /** Estimate cost of scanning from this index. */
     public CostEstimate costIndexScanNew(Index index,
