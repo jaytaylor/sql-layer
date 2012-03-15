@@ -72,6 +72,7 @@ public class LeftExpression extends AbstractBinaryExpression
             
             String str = strSource.getString();
             long len = lenSource.getLong();
+            len = len < 0 ? 0 : len;
             
             valueHolder().putString(str.substring(0, (int)(str.length() < len ? str.length() : len)));
             return valueHolder();
