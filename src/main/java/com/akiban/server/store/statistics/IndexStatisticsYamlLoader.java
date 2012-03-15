@@ -125,17 +125,14 @@ public class IndexStatisticsYamlLoader
         Integer sampledCount = (Integer)map.get(SAMPLED_COUNT_KEY);
         if (sampledCount != null)
             stats.setSampledCount(sampledCount.longValue());
-        boolean anyStats = false;
         for (Object e : (Iterable)map.get(STATISTICS_COLLECTION_KEY)) {
             Map<?,?> em = (Map<?,?>)e;
             int columnCount = (Integer)em.get(STATISTICS_COLUMN_COUNT_KEY);
             Histogram h = parseHistogram(em.get(STATISTICS_HISTOGRAM_COLLECTION_KEY), 
                                          index, columnCount);
             stats.addHistogram(h);
-            anyStats = true;
         }
-        if (anyStats)
-            result.put(index, stats);
+        result.put(index, stats);
     }
 
     protected Histogram parseHistogram(Object obj, Index index, int columnCount) {
