@@ -32,7 +32,7 @@ public class PiExpressionTest
         test(COS_COMPOSER, -1.0);
         test(SIN_COMPOSER, 0.0);
         test(TAN_COMPOSER, 0.0);
-        test(COT_COMPOSER, Double.POSITIVE_INFINITY);
+        test(COT_COMPOSER, Math.cos(Math.PI) / Math.sin(Math.PI));
     }
     
     public void test (ExpressionComposer c, double expected)
@@ -40,6 +40,6 @@ public class PiExpressionTest
         assertEquals( c.toString() + "(PI()) ", 
                 expected, 
                 c.compose(Arrays.asList(PiExpression.COMPOSER.compose(new ArrayList<Expression>()))).evaluation().eval().getDouble(), 
-                0.000001);
+                0.0001);
     }
 }
