@@ -15,6 +15,14 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.junit.OnlyIf;
+import com.akiban.junit.OnlyIfNot;
+import com.akiban.junit.ParameterizationBuilder;
+import com.akiban.junit.Parameterization;
+import java.util.Collection;
+import com.akiban.junit.NamedParameterizedRunner.TestParameters;
+import com.akiban.junit.NamedParameterizedRunner;
+import org.junit.runner.RunWith;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types.NullValueSource;
@@ -27,49 +35,58 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
+@RunWith(NamedParameterizedRunner.class)
 public class LeftExpressionTest extends ComposedExpressionTestBase
 {
-    @Test
-    public void test()
+    private static boolean alreadyExc = false;
+    
+    private String st;
+    private Integer len;
+    private String expected;
+    private Integer argc;
+    
+    public LeftExpressionTest(String str, Integer length, String exp, Integer count)
     {
-        // test shorter length
-        test("abc", 2, "ab");
-        test("abc", 0, "");
-        test("abc", -4, "");
-        
-        // test longer length
-        test("abc", 4, "abc");
-        test("abc", 3, "abc");
-        
-        // test null
-        test(null, 3, null);
-        test("ab", null, null);
-        test(null, null, null);
-        
-        // test wrong arity
-        testWrongArity(0);
-        testWrongArity(1);
-        testWrongArity(3);
-        testWrongArity(4);
-    }    
-    private static void testWrongArity(int argc)
-    {
-        try
-        {
-            List<Expression> args = new ArrayList<Expression>();
-            for (int n = 0; n < argc; ++n)
-                args.add(LiteralExpression.forNull());
-            LeftExpression.COMPOSER.compose(args);
-        }
-        catch (WrongExpressionArityException ex)
-        {
-            return;
-        }
-        
-        assert false : "Shouldn't have made it here!";
+        st = str;
+        len = length;
+        expected = exp;
+        argc = count;
     }
     
-    private static void test(String st, Integer len, String expected)
+    @TestParameters
+    public static Collection<Parameterization> params()
+    {
+        ParameterizationBuilder pb = new ParameterizationBuilder();
+        
+        String name;
+        param(pb, name = "Test Shorter Length", "abc", 2, "ab", null);
+        param(pb, name, "abc", 0, "", null);
+        param(pb, name, "abc", -4, "", null);
+        
+        param(pb, name = "Test Longer Length", "abc", 4, "abc", null);
+        param(pb, name, "abc", 3, "abc", null);
+        
+        param(pb, name = "Test NULL", null, 3, null, null);
+        param(pb, name, "ab", null, null, null);
+        
+        param(pb, name = "Test Wrong Arity", null, null, null, 0);
+        param(pb, name, null, null, null, 1);
+        param(pb, name, null, null, null, 3);
+        param(pb, name, null, null, null, 4);
+        param(pb, name, null, null, null, 5);
+        
+        return pb.asList();
+    }
+    
+    private static void param (ParameterizationBuilder pb, String name, String str, Integer length, String exp, Integer argc)
+    {
+        pb.add(name + " LEFT(" + str + ", " + length + "), argc = " + argc, str, length, exp, argc);
+    }
+    
+    
+    @OnlyIfNot("testArity()")
+    @Test
+    public void testRegularCases()
     {
         Expression str = new LiteralExpression(AkType.VARCHAR, st);
         Expression length = len == null? LiteralExpression.forNull():
@@ -80,6 +97,23 @@ public class LeftExpressionTest extends ComposedExpressionTestBase
         assertEquals("LEFT(" + st + ", " + len + ") ", 
                     expected == null? NullValueSource.only() : new ValueHolder(AkType.VARCHAR, expected),
                     top.evaluation().eval());
+        alreadyExc = true;
+    }
+    
+    @OnlyIf("testArity()")
+    @Test(expected = WrongExpressionArityException.class)
+    public void testFunctionArity()
+    {
+        List<Expression> args = new ArrayList<Expression>();
+        for (int n = 0; n < argc; ++n)
+            args.add(LiteralExpression.forNull());
+        LeftExpression.COMPOSER.compose(args);
+        alreadyExc = true;
+    }
+    
+    public boolean testArity()
+    {
+        return argc != null;
     }
     
     @Override
@@ -95,8 +129,8 @@ public class LeftExpressionTest extends ComposedExpressionTestBase
     }
 
     @Override
-    protected boolean alreadyExc()
+    public boolean alreadyExc()
     {
-        return false;
+        return alreadyExc;
     }
 }
