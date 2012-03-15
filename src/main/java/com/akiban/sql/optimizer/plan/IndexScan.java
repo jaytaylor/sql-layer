@@ -261,6 +261,7 @@ public abstract class IndexScan extends BasePlanNode
     }
     
     public abstract List<IndexColumn> getKeyColumns();
+    public abstract List<IndexColumn> getValueColumns();
 
     @Override
     public String summaryString() {
@@ -275,8 +276,7 @@ public abstract class IndexScan extends BasePlanNode
         if (ordering != null) {
             boolean anyReverse = false, allReverse = true;
             for (int i = 0; i < ordering.size(); i++) {
-                if (ordering.get(i).isAscending() != 
-                    isAscendingAt(i))
+                if (ordering.get(i).isAscending() != isAscendingAt(i))
                     anyReverse = true;
                 else
                     allReverse = false;

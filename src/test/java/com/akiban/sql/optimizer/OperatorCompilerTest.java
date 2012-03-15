@@ -144,10 +144,13 @@ public class OperatorCompilerTest extends NamedParamsTestBase
                 File statsFile = new File(subdir, "stats.yaml");
                 if (!statsFile.exists())
                     statsFile = null;
-                File propertiesFile = new File(subdir, "compiler.properties");
-                if (!propertiesFile.exists())
-                    propertiesFile = null;
+                File compilerPropertiesFile = new File(subdir, "compiler.properties");
+                if (!compilerPropertiesFile.exists())
+                    compilerPropertiesFile = null;
                 for (Object[] args : sqlAndExpected(subdir)) {
+                    File propertiesFile = new File(subdir, args[0] + ".properties");
+                    if (!propertiesFile.exists())
+                        propertiesFile = compilerPropertiesFile;
                     Object[] nargs = new Object[args.length+3];
                     nargs[0] = subdir.getName() + "/" + args[0];
                     nargs[1] = schemaFile;

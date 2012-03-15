@@ -9,7 +9,7 @@
 #- Statement: SELECT LAST_DAY('2009-12-12') FROM all_types;
 #- output: [['2009-12-31']]
 --- # 20091231.5 should be rounded up to 2009-12-32 which should result in an invalid date, and hence null
-- Statement: SELECT LAST_DAY(20091231.7) FROM all_types;
+- Statement: SELECT LAST_DAY(20091231) FROM all_types;
 - output: [[null]]
 #---
 #- Statement: SELECT LAST_DAY(20070131.8) FROM all_types;

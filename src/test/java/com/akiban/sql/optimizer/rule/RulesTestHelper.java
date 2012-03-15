@@ -15,15 +15,16 @@
 
 package com.akiban.sql.optimizer.rule;
 
-// TODO: Think about all this.
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.rowdata.RowDef;
+
+import com.akiban.server.rowdata.SchemaFactory;
 
 import org.yaml.snakeyaml.Yaml;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.io.File;
 import java.io.FileInputStream;
 
@@ -63,13 +64,9 @@ public class RulesTestHelper
         return result;
     }
 
-    // This just needs to be enough to keep from UserTableRowType
-    // constructor from getting NPE.
-    // TODO: Think about where this really goes.
+    // Make fake row def cache to keep UserTableRowType constructor
+    // and Index.getValueColumns() from getting NPE.
     public static void ensureRowDefs(AkibanInformationSchema ais) {
-        for (UserTable userTable : ais.getUserTables().values()) {
-            int ordinal = userTable.getTableId();
-            new RowDef(userTable, ordinal);
-        }
+        new SchemaFactory().rowDefCache(ais);
     }
 }

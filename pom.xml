@@ -390,6 +390,7 @@
                     <exclude>redhat/*</exclude>
                     <exclude>src/main/resources/version/akserver_version</exclude> 
                     <exclude>src/test/resources/com/akiban/**/README*</exclude> 
+                    <exclude>src/test/resources/com/akiban/**/*.properties</exclude>
                     <exclude>src/test/resources/com/akiban/ais/model/staticgrouping/*</exclude>
                     <exclude>src/main/resources/com/akiban/server/service/functions/functionpath.txt</exclude>
                     <exclude>src/test/resources/com/akiban/server/service/functions/testfunctionpath.txt</exclude>

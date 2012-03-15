@@ -1,3 +1,7 @@
+choose-condition-1: narrow and wide
+
+choose-condition-2: wide and narrow
+
 group-equals: two equals on group index
 
 in-index: IN that can use index
@@ -20,7 +24,7 @@ single-subquery: just derived table (should push down condition)
 
 single-table: whole row from indexed table
 
-subquery: join to subquery
+subquery: join to subquery (with condition pushed down)
 
 three-groups: second group dividing two halves
 

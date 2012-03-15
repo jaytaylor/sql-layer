@@ -518,7 +518,8 @@ public class ExtractExpression extends AbstractUnaryExpression
                                    l = Extractors.getLongExtractor(t = (targetType == AkType.DATE && st.length() > 10 ? AkType.DATETIME : targetType)).
                                            getLong(st);
                                    break;
-                    case LONG:     long raw = operand().getLong();
+                        
+                    default:       long raw = Extractors.getLongExtractor(targetType).getLong(operand());
                                    if (targetType == AkType.TIMESTAMP) return null;
                                    else if (targetType == AkType.DATE )
                                    {
@@ -527,8 +528,6 @@ public class ExtractExpression extends AbstractUnaryExpression
                                        else return raw;                             //, then fill the time portion with zeroes
                                    }
                                    l = Extractors.getLongExtractor(targetType).getLong(Extractors.getLongExtractor(targetType).asString(raw)); break;
-                    default:
-                     l = Extractors.getLongExtractor(targetType).getLong(operand());
                 }
                
                 return l;

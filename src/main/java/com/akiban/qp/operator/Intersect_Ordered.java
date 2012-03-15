@@ -139,20 +139,19 @@ class Intersect_Ordered extends Operator
         ArgumentValidation.isGTE("comparisonFields", comparisonFields, 0);
         ArgumentValidation.isLTE("comparisonFields", comparisonFields, min(leftOrderingFields, rightOrderingFields));
         ArgumentValidation.isNotSame("joinType", joinType, "JoinType.FULL_JOIN", JoinType.FULL_JOIN);
+        ArgumentValidation.notNull("intersectOutput", intersectOutput);
         ArgumentValidation.isTrue("joinType consistent with intersectOutput",
                                   joinType == JoinType.INNER_JOIN ||
                                   joinType == JoinType.LEFT_JOIN && intersectOutput == IntersectOutputOption.OUTPUT_LEFT ||
                                   joinType == JoinType.RIGHT_JOIN && intersectOutput == IntersectOutputOption.OUTPUT_RIGHT);
         this.left = left;
         this.right = right;
-        this.advanceLeftOnMatch = leftOrderingFields >= rightOrderingFields;
-        this.advanceRightOnMatch = rightOrderingFields >= leftOrderingFields;
         // outerjoins
         this.keepUnmatchedLeft = joinType == JoinType.LEFT_JOIN;
         this.keepUnmatchedRight = joinType == JoinType.RIGHT_JOIN;
         // output
         this.outputLeft = intersectOutput == IntersectOutputOption.OUTPUT_LEFT;
-            // Setup for row comparisons
+        // Setup for row comparisons
         this.fieldRankingExpressions = new RankExpression[comparisonFields];
         int leftField = leftRowType.nFields() - leftOrderingFields;
         int rightField = rightRowType.nFields() - rightOrderingFields;
@@ -175,8 +174,6 @@ class Intersect_Ordered extends Operator
     private final Operator left;
     private final Operator right;
     private final RankExpression[] fieldRankingExpressions;
-    private final boolean advanceLeftOnMatch;
-    private final boolean advanceRightOnMatch;
     private final boolean keepUnmatchedLeft;
     private final boolean keepUnmatchedRight;
     private final boolean outputLeft;
@@ -224,11 +221,12 @@ class Intersect_Ordered extends Operator
                         }
                         nextRightRow();
                     } else {
-                        next = (outputLeft ? leftRow : rightRow).get();
-                        if (advanceLeftOnMatch) {
+                        // left and right rows match
+                        if (outputLeft) {
+                            next = leftRow.get();
                             nextLeftRow();
-                        }
-                        if (advanceRightOnMatch) {
+                        } else {
+                            next = rightRow.get();
                             nextRightRow();
                         }
                     }
