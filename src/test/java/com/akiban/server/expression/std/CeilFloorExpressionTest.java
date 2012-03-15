@@ -17,6 +17,7 @@ package com.akiban.server.expression.std;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.std.CeilFloorExpression.CeilFloorName;
@@ -73,7 +74,7 @@ public class CeilFloorExpressionTest extends ComposedExpressionTestBase
         alreadyExc = true;
         int intPosInput = 15, intNegInput = -18;
         long longPosInput = 22L, longNegInput = -25L;
-        BigInteger bignumPosInput = new BigInteger("1234"), bignumNegInput = new BigInteger("-1234");
+        BigInteger bignumPosInput = new BigInteger("1234");
         
         // In this case, the input is the same as the output, so the input is in the "expected" field
         Assert.assertEquals(intPosInput, sourceOfComposing(new LiteralExpression(AkType.INT, intPosInput)).getInt());
@@ -83,7 +84,9 @@ public class CeilFloorExpressionTest extends ComposedExpressionTestBase
         Assert.assertEquals(longNegInput, sourceOfComposing(ExprUtil.lit(longNegInput)).getLong());
 
         Assert.assertEquals(bignumPosInput, sourceOfComposing(new LiteralExpression(AkType.U_BIGINT, bignumPosInput)).getUBigInt());
-        Assert.assertEquals(bignumNegInput, sourceOfComposing(new LiteralExpression(AkType.U_BIGINT, bignumNegInput)).getUBigInt());
+        
+        // Unsigned int (type long)
+        Assert.assertEquals(longPosInput, sourceOfComposing(new LiteralExpression(AkType.U_INT, longPosInput)).getUInt());
        
     }
     
@@ -97,6 +100,8 @@ public class CeilFloorExpressionTest extends ComposedExpressionTestBase
         
         Assert.assertEquals(posExpected, sourceOfComposing(ExprUtil.lit(posInput)).getDouble(), 0.0001);
         Assert.assertEquals(negExpected, sourceOfComposing(ExprUtil.lit(negInput)).getDouble(), 0.0001);
+        // Assert.assertEquals(posExpected, sourceOfComposing(new LiteralExpression(AkType.U_DOUBLE, posInput)).getUDouble(), 0.0001);
+
     }
    
     @Test
@@ -109,6 +114,8 @@ public class CeilFloorExpressionTest extends ComposedExpressionTestBase
         
         Assert.assertEquals(posExpected, sourceOfComposing(new LiteralExpression(AkType.FLOAT, posInput)).getFloat(), 0.0001);
         Assert.assertEquals(negExpected, sourceOfComposing(new LiteralExpression(AkType.FLOAT, negInput)).getFloat(), 0.0001);
+        // Assert.assertEquals(posExpected, sourceOfComposing(new LiteralExpression(AkType.FLOAT, posInput)).getUFloat(), 0.0001);
+
     }
     
     @Test
@@ -123,16 +130,10 @@ public class CeilFloorExpressionTest extends ComposedExpressionTestBase
         Assert.assertEquals(negExpected, sourceOfComposing(new LiteralExpression(AkType.DECIMAL, negInput)).getDecimal());        
     }
     
-    @Test
-    public void testVarchar()
+    @Test (expected=WrongExpressionArityException.class)
+    public void testArity ()
     {
-        double posInput = Double.parseDouble("20.352"), negInput = Double.parseDouble("-100.23412");
-        // -->                                                   CEIL  : FLOOR
-        double posExpected = (funcName == CeilFloorName.CEIL) ? 21.0d : 20.0d; 
-        double negExpected = (funcName == CeilFloorName.CEIL) ? -100.0d : -101.0d;
-        
-        Assert.assertEquals(posExpected, sourceOfComposing(ExprUtil.lit(posInput)).getDouble(), 0.0001);
-        Assert.assertEquals(negExpected, sourceOfComposing(ExprUtil.lit(negInput)).getDouble(), 0.0001);
+        composer.compose(Arrays.asList(ExprUtil.lit(1), ExprUtil.lit(2)));
     }
     
     @Test

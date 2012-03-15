@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.*;
@@ -27,10 +28,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 
 public class CeilFloorExpression extends AbstractUnaryExpression {
-    @Scalar("FLOOR")
+    @Scalar("floor")
     public static final ExpressionComposer FLOOR_COMPOSER = new InternalComposer(CeilFloorName.FLOOR);
     
-    @Scalar({"CEIL", "CEILING"})
+    @Scalar({"ceil", "ceiling"})
     public static final ExpressionComposer CEIL_COMPOSER = new InternalComposer(CeilFloorName.CEIL);
 
     public static enum CeilFloorName
@@ -55,14 +56,18 @@ public class CeilFloorExpression extends AbstractUnaryExpression {
             int argc = argumentTypes.size();
             if (argc != 1)
                 throw new WrongExpressionArityException(1, argc);
+            
             ExpressionType firstExpType = argumentTypes.get(0);
             AkType firstAkType = firstExpType.getType();
 
-            argumentTypes.setType(0, firstAkType);
             if (firstAkType == AkType.VARCHAR)
+            {
                 firstAkType = AkType.DOUBLE;
+                firstExpType = ExpressionTypes.DOUBLE;
+                argumentTypes.setType(0, AkType.DOUBLE);
+            }
 
-            return ExpressionTypes.newType(firstAkType, firstExpType.getPrecision(), firstExpType.getScale());
+            return firstExpType;
         }
 
         @Override
@@ -95,16 +100,15 @@ public class CeilFloorExpression extends AbstractUnaryExpression {
             switch (operandType)
             {
                 // For any integer type, ROUND/FLOOR/CEIL just return the same value
-                case INT: case LONG: case U_BIGINT:
+                case INT: case LONG: case U_INT: case U_BIGINT:
                     valueHolder().copyFrom(firstOperand); break;
                 // Math.floor/ceil only with doubles, so we split FLOAT/DOUBLE to be safe with casting
-                case DOUBLE: case VARCHAR:
-                    double dInput = (operandType == AkType.DOUBLE) ? 
-                            firstOperand.getDouble() : Double.parseDouble(firstOperand.getString());
+                case DOUBLE: case U_DOUBLE:
+                    double dInput = firstOperand.getDouble();
                     double finalDValue = (name == CeilFloorName.FLOOR) ? Math.floor(dInput) : Math.ceil(dInput);
                     valueHolder().putDouble(finalDValue); 
                     break;
-                case FLOAT:
+                case FLOAT: case U_FLOAT:
                     float fInput = firstOperand.getFloat();
                     float finalFValue = (float) ((name == CeilFloorName.FLOOR) ? Math.floor(fInput) : Math.ceil(fInput));
                     valueHolder().putFloat(finalFValue);
@@ -116,7 +120,10 @@ public class CeilFloorExpression extends AbstractUnaryExpression {
                     valueHolder().putDecimal(finalDecValue);
                     break;
                 default:
-                    throw new InvalidArgumentTypeException(name.name() + operandType.name());
+                    QueryContext context = queryContext();
+                    if (context != null)
+                        context.warnClient(new InvalidArgumentTypeException(name.name() + operandType.name()));
+                    return NullValueSource.only();
             }
             return valueHolder();
         }
