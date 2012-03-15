@@ -154,6 +154,7 @@ public abstract class CostEstimator implements TableRowCounts
         long selectedRowCount = simpleRound(outputScanCost.getRowCount() * 
                                             selectorScanCost.getRowCount(),
                                             totalRowCount);
+        selectedRowCount = Math.max(selectedRowCount, 1);
         double cost = outputScanCost.getCost() + selectorScanCost.getCost() +
             model.intersect((int)outputScanCost.getRowCount(), 
                             (int)selectorScanCost.getRowCount());
