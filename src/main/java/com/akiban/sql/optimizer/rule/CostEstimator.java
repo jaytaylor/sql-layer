@@ -59,11 +59,59 @@ public abstract class CostEstimator implements TableRowCounts
         this(rulesContext.getSchema());
     }
 
-    public abstract IndexStatistics getIndexStatistics(Index index);
-    public abstract IndexStatistics[] getIndexColumnStatistics(Index index);
+    @Override
+    public long getTableRowCount(Table table) {
+        // This implementation is only for testing; normally overridden by real server.
+        // Return row count (not sample count) from analysis time.
+        for (Index index : table.getIndexes()) {
+            IndexStatistics istats = getIndexStatistics(index);
+            if (istats != null)
+                return istats.getRowCount();
+        }
+        return 1;
+    }
 
-    protected boolean scaleIndexStatistics() {
-        return true;
+    public abstract IndexStatistics getIndexStatistics(Index index);
+
+    public IndexStatistics[] getIndexColumnStatistics(Index index) {
+        List<IndexColumn> allIndexColumns = new ArrayList<IndexColumn>(index.getKeyColumns());
+        allIndexColumns.addAll(index.getValueColumns());
+        IndexStatistics[] indexStatsArray = new IndexStatistics[allIndexColumns.size()];
+        int i = 0;
+        // For the first column, the index supplied by the optimizer is likely to be a better choice than an arbitrary
+        // index with the right leading column.
+        IndexStatistics statsForRequestedIndex = getIndexStatistics(index);
+        if (statsForRequestedIndex != null) {
+            indexStatsArray[i++] = statsForRequestedIndex;
+        }
+        while (i < allIndexColumns.size()) {
+            IndexStatistics indexStatistics = null;
+            Column leadingColumn = allIndexColumns.get(i).getColumn();
+            // Find a TableIndex whose first column is leadingColumn
+            for (TableIndex tableIndex : leadingColumn.getTable().getIndexes()) {
+                if (tableIndex.getKeyColumns().get(0).getColumn() == leadingColumn) {
+                    indexStatistics = getIndexStatistics(tableIndex);
+                    if (indexStatistics != null) {
+                        break;
+                    }
+                }
+            }
+            // If none, find a GroupIndex whose first column is leadingColumn
+            if (indexStatistics == null) {
+                groupLoop: for (Group group : schema.ais().getGroups().values()) {
+                    for (GroupIndex groupIndex : group.getIndexes()) {
+                        if (groupIndex.getKeyColumns().get(0).getColumn() == leadingColumn) {
+                            indexStatistics = getIndexStatistics(groupIndex);
+                            if (indexStatistics != null) {
+                                break groupLoop;
+                            }
+                        }
+                    }
+                }
+            }
+            indexStatsArray[i++] = indexStatistics;
+        }
+        return indexStatsArray;
     }
 
     /** Estimate cost of scanning from this index. */
@@ -93,7 +141,7 @@ public abstract class CostEstimator implements TableRowCounts
         long statsCount = 0;
         IndexStatistics indexStats = getIndexStatistics(index);
         if (indexStats != null)
-            statsCount = indexStats.getRowCount();
+            statsCount = indexStats.getSampledCount();
         int columnCount = 0;
         if (equalityComparands != null) {
             columnCount = Math.min(equalityComparands.size(), // No histogram for value cols.
@@ -109,7 +157,7 @@ public abstract class CostEstimator implements TableRowCounts
             // TODO: Is this too conservative?
             return indexAccessCost(rowCount, index);
         }
-        boolean scaleCount = scaleIndexStatistics();
+        boolean scaleCount = true;
         long nrows;
         if ((lowComparand == null) && (highComparand == null)) {
             // Equality lookup.
@@ -134,7 +182,7 @@ public abstract class CostEstimator implements TableRowCounts
             byte[] highBytes = encodeKeyBytes(index, equalityComparands, highComparand, true);
             if ((lowBytes == null) && (highBytes == null)) {
                 // Range completely unknown.
-                nrows = indexStats.getRowCount();
+                nrows = indexStats.getSampledCount();
             }
             else {
                 nrows = rowsBetween(histogram, lowBytes, lowInclusive, highBytes, highInclusive);
@@ -174,7 +222,7 @@ public abstract class CostEstimator implements TableRowCounts
             // TODO: Is this too conservative?
             return indexAccessCost(rowCount, index);
         }
-        boolean scaleCount = scaleIndexStatistics();
+        boolean scaleCount = true;
         double selectivity = 1.0;
         if (equalityComparands != null && !equalityComparands.isEmpty()) {
             selectivity = fractionEqual(equalityComparands, index, indexStatsArray);
@@ -189,6 +237,10 @@ public abstract class CostEstimator implements TableRowCounts
         //    statistics, which may be stale.
         // rowCount: Approximate number of rows in the table, reasonably up to date.
         long statsCount = rowsInTableAccordingToIndex(indexedTable, indexStatsArray);
+        if (statsCount < 0) {
+            statsCount = rowCount;
+            scaleCount = false;
+        }
         long nrows = Math.max(1, round(selectivity * statsCount));
         if (scaleCount)
             nrows = simpleRound((nrows * rowCount), statsCount);
@@ -203,12 +255,12 @@ public abstract class CostEstimator implements TableRowCounts
                 Index index = indexStats.index();
                 Column leadingColumn = index.getKeyColumns().get(0).getColumn();
                 if (leadingColumn.getTable() == indexedTable) {
-                    return indexStats.getRowCount();
+                    return indexStats.getSampledCount();
                 }
             }
         }
-        // No index stats available. Use the current table row count
-        return indexedTable.rowDef().getTableStatus().getApproximateRowCount();
+        // No index stats available.
+        return -1;
     }
     
     // Estimate cost of fetching nrows from index.
@@ -314,7 +366,7 @@ public abstract class CostEstimator implements TableRowCounts
                 // Variable expression. Use average selectivity for histogram.
                 return
                     mostlyDistinct(indexStats)
-                    ? 1.0 / indexStats.getRowCount()
+                    ? 1.0 / indexStats.getSampledCount()
                     : 1.0 / histogram.totalDistinctCount();
             } else {
                 // TODO: Could use Collections.binarySearch if we had something that looked like a HistogramEntry.
@@ -323,10 +375,10 @@ public abstract class CostEstimator implements TableRowCounts
                     // Constant expression
                     int compare = bytesComparator.compare(columnValue, entry.getKeyBytes());
                     if (compare == 0) {
-                        return ((double) entry.getEqualCount()) / indexStats.getRowCount();
+                        return ((double) entry.getEqualCount()) / indexStats.getSampledCount();
                     } else if (compare < 0) {
                         long d = entry.getDistinctCount();
-                        return d == 0 ? 0.0 : ((double) entry.getLessCount()) / (d * indexStats.getRowCount());
+                        return d == 0 ? 0.0 : ((double) entry.getLessCount()) / (d * indexStats.getSampledCount());
                     }
                 }
                 HistogramEntry lastEntry = entries.get(entries.size() - 1);
@@ -401,7 +453,7 @@ public abstract class CostEstimator implements TableRowCounts
             }
             rowCount += entry.getLessCount() + entry.getEqualCount() - portionStart;
         }
-        return ((double) Math.max(rowCount, 1)) / indexStats.getRowCount();
+        return ((double) Math.max(rowCount, 1)) / indexStats.getSampledCount();
     }
 
 
@@ -423,7 +475,7 @@ public abstract class CostEstimator implements TableRowCounts
 
     private boolean mostlyDistinct(IndexStatistics indexStats)
     {
-        return indexStats.getHistogram(1).totalDistinctCount() * 10 > indexStats.getRowCount() * 9;
+        return indexStats.getHistogram(1).totalDistinctCount() * 10 > indexStats.getSampledCount() * 9;
     }
 
     /** Assuming that byte strings are uniformly distributed, what
