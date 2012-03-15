@@ -109,14 +109,9 @@ public class CostModel
         return (nOuterRows * (nInnerRowsPerOuter + 1)) * MAP_PER_ROW;
     }
     
-    public double flatten(UserTableRowType parentRowType, 
-                          UserTableRowType childRowType, 
-                          int nParents)
+    public double flatten(int nRows)
     {
-        double parentCount = parentRowType.userTable().rowDef().getTableStatus().getApproximateRowCount();
-        double childCount = childRowType.userTable().rowDef().getTableStatus().getApproximateRowCount();
-        long childrenPerParent = round(childCount / parentCount);
-        return FLATTEN_OVERHEAD + nParents * (childrenPerParent * FLATTEN_PER_ROW);
+        return FLATTEN_OVERHEAD + nRows * FLATTEN_PER_ROW;
     }
 
     public double intersect(int nLeftRows, int nRightRows)
@@ -146,9 +141,9 @@ public class CostModel
         return cost;
     }
     
-    public static CostModel newCostModel(Schema schema)
+    public static CostModel newCostModel(Schema schema, TableRowCounts tableRowCounts)
     {
-        return new CostModel(schema);
+        return new CostModel(schema, tableRowCounts);
     }
 
     private static double treeScan(int rowWidth, long nRows)
@@ -182,19 +177,25 @@ public class CostModel
         }
     }
     
-    private CostModel(Schema schema)
+    private CostModel(Schema schema, TableRowCounts tableRowCounts)
     {
         this.schema = schema;
+        this.tableRowCounts = tableRowCounts;
         for (UserTableRowType tableRowType : schema.userTableTypes()) {
-            TreeStatistics tableStatistics = TreeStatistics.forTable(tableRowType);
+            TreeStatistics tableStatistics = TreeStatistics.forTable(tableRowType, tableRowCounts);
             statisticsMap.put(tableRowType.typeId(), tableStatistics);
             for (IndexRowType indexRowType : tableRowType.indexRowTypes()) {
-                TreeStatistics indexStatistics = TreeStatistics.forIndex(indexRowType);
+                TreeStatistics indexStatistics = TreeStatistics.forIndex(indexRowType, tableRowCounts);
                 statisticsMap.put(indexRowType.typeId(), indexStatistics);
             }
+        }
+        for (IndexRowType indexRowType : schema.groupIndexRowTypes()) {
+            TreeStatistics indexStatistics = TreeStatistics.forIndex(indexRowType, tableRowCounts);
+            statisticsMap.put(indexRowType.typeId(), indexStatistics);
         }
     }
 
     private final Schema schema;
+    private final TableRowCounts tableRowCounts;
     private final Map<Integer, TreeStatistics> statisticsMap = new HashMap<Integer, TreeStatistics>();
 }

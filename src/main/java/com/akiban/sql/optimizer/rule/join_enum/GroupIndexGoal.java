@@ -649,7 +649,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         CostEstimator costEstimator = queryGoal.getCostEstimator();
         CostEstimate cost = createBasicCostEstimate(index, costEstimator);
         if (!index.isCovering()) {
-            CostEstimate flatten = costEstimator.costFlatten(index.getLeafMostTable(),
+            CostEstimate flatten = costEstimator.costFlatten(tables,
+                                                             index.getLeafMostTable(),
                                                              index.getRequiredTables());
             cost = cost.nest(flatten);
         }

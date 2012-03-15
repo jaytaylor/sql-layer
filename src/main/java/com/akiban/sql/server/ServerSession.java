@@ -121,5 +121,5 @@ public interface ServerSession
     public void notifyClient(QueryContext.NotificationLevel level, ErrorCode errorCode, String message) throws IOException;
 
     /** Get the index cost estimator. */
-    public CostEstimator costEstimator();
+    public CostEstimator costEstimator(ServerOperatorCompiler compiler);
 }

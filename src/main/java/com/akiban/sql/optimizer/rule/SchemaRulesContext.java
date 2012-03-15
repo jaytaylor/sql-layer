@@ -34,15 +34,27 @@ public class SchemaRulesContext extends RulesContext
     private FunctionsRegistry functionsRegistry;
     private CostEstimator costEstimator;
 
-    public SchemaRulesContext(AkibanInformationSchema ais,
-                              FunctionsRegistry functionsRegistry,
-                              CostEstimator costEstimator,
-                              List<? extends BaseRule> rules,
-                              Properties properties) {
-        super(rules, properties);
+    protected SchemaRulesContext() {
+    }
+
+    protected void initAIS(AkibanInformationSchema ais) {
         schema = SchemaCache.globalSchema(ais);
+    }
+
+    protected void initFunctionsRegistry(FunctionsRegistry functionsRegistry) {
         this.functionsRegistry = functionsRegistry;
+    }
+
+    protected void initCostEstimator(CostEstimator costEstimator) {
         this.costEstimator = costEstimator;
+    }
+
+    @Override
+    protected void initDone() {
+        super.initDone();
+        assert (schema != null) : "initSchema() not called";
+        assert (functionsRegistry != null) : "initFunctionsRegistry() not called";
+      //assert (costEstimator != null) : "initCostEstimator() not called";
     }
 
     public Schema getSchema() {

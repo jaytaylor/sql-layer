@@ -77,13 +77,13 @@ public class IndexStatisticsYamlLoader
         this.defaultSchema = defaultSchema;
     }
     
-    public Map<Index,IndexStatistics> load(File file) throws IOException {
+    public Map<Index,IndexStatistics> load(File file, boolean statsIgnoreMissingIndexes) throws IOException {
         Map<Index,IndexStatistics> result = new TreeMap<Index,IndexStatistics>(INDEX_NAME_COMPARATOR);
         Yaml yaml = new Yaml();
         FileInputStream istr = new FileInputStream(file);
         try {
             for (Object doc : yaml.loadAll(istr)) {
-                parseStatistics(doc, result);
+                parseStatistics(doc, result, statsIgnoreMissingIndexes);
             }
         }
         finally {
@@ -92,7 +92,11 @@ public class IndexStatisticsYamlLoader
         return result;
     }
 
-    protected void parseStatistics(Object obj, Map<Index,IndexStatistics> result) {
+    public Map<Index,IndexStatistics> load(File file) throws IOException {
+        return load(file, false);
+    }
+
+    protected void parseStatistics(Object obj, Map<Index,IndexStatistics> result, boolean statsIgnoreMissingIndexes) {
         if (!(obj instanceof Map))
             throw new AkibanInternalException("Document not in expected format");
         Map<?,?> map = (Map<?,?>)obj;
@@ -105,8 +109,11 @@ public class IndexStatisticsYamlLoader
         Index index = table.getIndex(indexName);
         if (index == null) {
             index = table.getGroup().getIndex(indexName);
-            if (index == null)
+            if (index == null) {
+                if (statsIgnoreMissingIndexes)
+                    return;
                 throw new NoSuchIndexException(indexName);
+            }
         }
         IndexStatistics stats = new IndexStatistics(index);
         Date timestamp = (Date)map.get(TIMESTAMP_KEY);
