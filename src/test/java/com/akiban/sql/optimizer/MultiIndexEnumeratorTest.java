@@ -258,8 +258,10 @@ public final class MultiIndexEnumeratorTest {
         public boolean removeCoveredConditions(Set<? super String> conditions, List<? super String> removeTo) {
             boolean removedAny = false;
             for (String cond : pegged) {
-                removedAny |= conditions.remove(cond);
-                removeTo.add(cond);
+                if(conditions.remove(cond)) {
+                    removeTo.add(cond);
+                    removedAny = true;
+                }
             }
             return removedAny;
         }
