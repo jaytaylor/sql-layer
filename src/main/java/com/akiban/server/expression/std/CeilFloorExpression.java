@@ -103,15 +103,25 @@ public class CeilFloorExpression extends AbstractUnaryExpression {
                 case INT: case LONG: case U_INT: case U_BIGINT:
                     valueHolder().copyFrom(firstOperand); break;
                 // Math.floor/ceil only with doubles, so we split FLOAT/DOUBLE to be safe with casting
-                case DOUBLE: case U_DOUBLE:
+                case DOUBLE:
                     double dInput = firstOperand.getDouble();
                     double finalDValue = (name == CeilFloorName.FLOOR) ? Math.floor(dInput) : Math.ceil(dInput);
                     valueHolder().putDouble(finalDValue); 
                     break;
-                case FLOAT: case U_FLOAT:
+                case U_DOUBLE:
+                    double unsignedDInput = firstOperand.getUDouble();
+                    double finalUnsignedDValue = (name == CeilFloorName.FLOOR) ? Math.floor(unsignedDInput) : Math.ceil(unsignedDInput);
+                    valueHolder().putUDouble(finalUnsignedDValue); 
+                    break;                    
+                case FLOAT:
                     float fInput = firstOperand.getFloat();
                     float finalFValue = (float) ((name == CeilFloorName.FLOOR) ? Math.floor(fInput) : Math.ceil(fInput));
                     valueHolder().putFloat(finalFValue);
+                    break;
+                case U_FLOAT:
+                    float unsignedFInput = firstOperand.getUFloat();
+                    float finalUnsignedFValue = (float) ((name == CeilFloorName.FLOOR) ? Math.floor(unsignedFInput) : Math.ceil(unsignedFInput));
+                    valueHolder().putUFloat(finalUnsignedFValue);
                     break;
                 case DECIMAL:
                     BigDecimal decInput = firstOperand.getDecimal();

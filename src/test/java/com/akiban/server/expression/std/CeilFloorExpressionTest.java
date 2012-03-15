@@ -100,7 +100,7 @@ public class CeilFloorExpressionTest extends ComposedExpressionTestBase
         
         Assert.assertEquals(posExpected, sourceOfComposing(ExprUtil.lit(posInput)).getDouble(), 0.0001);
         Assert.assertEquals(negExpected, sourceOfComposing(ExprUtil.lit(negInput)).getDouble(), 0.0001);
-        // Assert.assertEquals(posExpected, sourceOfComposing(new LiteralExpression(AkType.U_DOUBLE, posInput)).getUDouble(), 0.0001);
+        Assert.assertEquals(posExpected, sourceOfComposing(new LiteralExpression(AkType.U_DOUBLE, posInput)).getUDouble(), 0.0001);
 
     }
    
@@ -114,7 +114,7 @@ public class CeilFloorExpressionTest extends ComposedExpressionTestBase
         
         Assert.assertEquals(posExpected, sourceOfComposing(new LiteralExpression(AkType.FLOAT, posInput)).getFloat(), 0.0001);
         Assert.assertEquals(negExpected, sourceOfComposing(new LiteralExpression(AkType.FLOAT, negInput)).getFloat(), 0.0001);
-        // Assert.assertEquals(posExpected, sourceOfComposing(new LiteralExpression(AkType.FLOAT, posInput)).getUFloat(), 0.0001);
+        Assert.assertEquals(posExpected, sourceOfComposing(new LiteralExpression(AkType.U_FLOAT, posInput)).getUFloat(), 0.0001);
 
     }
     
