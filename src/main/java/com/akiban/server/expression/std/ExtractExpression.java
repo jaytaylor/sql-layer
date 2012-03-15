@@ -82,7 +82,7 @@ public class ExtractExpression extends AbstractUnaryExpression
     @Scalar ("monthname")
     public static final ExpressionComposer MONTH_NAME_COMPOSER = new InternalComposer(TargetExtractType.MONTH_NAME);
     
-    @Scalar ("lastday")
+    @Scalar ("last_day")
     public static final ExpressionComposer LAST_DAY_COMPOSER = new InternalComposer(TargetExtractType.LAST_DAY);
     
     @Scalar ("quarter")
@@ -181,7 +181,7 @@ public class ExtractExpression extends AbstractUnaryExpression
             }
         },
 
-        LAST_DAY(AkType.INT)
+        LAST_DAY(AkType.DATE)
         {
             @Override
             public Long extract (ValueSource source)
@@ -189,25 +189,26 @@ public class ExtractExpression extends AbstractUnaryExpression
                 AkType type = source.getConversionType();
                 long ymd[] = Extractors.getLongExtractor(type).getYearMonthDayHourMinuteSecond(
                         Extractors.getLongExtractor(type).getLong(source));
-                
+               
                 switch (type)
                 {
                     case DATE:      
                     case DATETIME:  
-                    case TIMESTAMP: return validDayMonth(ymd)? getLast(ymd[1], ymd[0]) : null;
+                    case TIMESTAMP: return validDayMonth(ymd)? getLast(ymd) : null;
                     default: /*year or time*/       return null;
                 }
             }
             
-            private Long getLast(long m, long y)
+            private Long getLast(long ymd[])
             {
+                long y = ymd[0], m = ymd[1];
                 switch((int)m)
                 {
-                    case 2:     return (y % 400 == 0 || y % 4 == 0 && y % 100 != 0 ? 29L : 28L);
+                    case 2:     ymd[2] = (y % 400 == 0 || y % 4 == 0 && y % 100 != 0 ? 29L : 28L); break;
                     case 4:
                     case 6:
                     case 9:
-                    case 11:    return 30L;
+                    case 11:    ymd[2] = 30L; break;
                     case 3:
                     case 1:
                     case 5:
@@ -215,9 +216,10 @@ public class ExtractExpression extends AbstractUnaryExpression
                     case 8:
                     case 10:
                     case 0:
-                    case 12:    return 31L;
+                    case 12:    ymd[2] = 31L; break;
                     default:    throw new InvalidParameterValueException("Invalid month: " + m);
                 }
+                return Extractors.getLongExtractor(AkType.DATE).getEncoded(ymd);
             }
         },
         

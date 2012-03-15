@@ -1,0 +1,26 @@
+## Tests the LAST_DAY function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(bigint_field, varchar_field, date_field, datetime_field, double_field)
+                VALUES (20090101, '2008-02-01', '1900-02-01', '2000-02-01 23:59:59', 19940131.5);
+## Test with literals
+#---
+#- Statement: SELECT LAST_DAY('2009-12-12') FROM all_types;
+#- output: [['2009-12-31']]
+--- # 20091231.5 should be rounded up to 2009-12-32 which should result in an invalid date, and hence null
+- Statement: SELECT LAST_DAY(20091231.7) FROM all_types;
+- output: [[null]]
+#---
+#- Statement: SELECT LAST_DAY(20070131.8) FROM all_types;
+#- output: [[null]]
+#---
+#- Statement: SELECT LAST_DAY(20000225) FROM all_types;
+#- output: [['2000-02-29']]
+#---
+#- Statement: SELECT LAST_DAY(DATE('1994-04-01')) from all_types;
+#- output: [['1994-04-30']]
+#---
+#- Statement: SELECT LAST_DAY(DATE('1994-00-01')) from all_types;
+#- output: [[null]]
+...
