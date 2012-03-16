@@ -5,4 +5,6 @@ usingIndexes:
 conditionsOn:
     - orders.odate
     - addresses.street
-results: []
+results:
+    - INTERSECT( [ODATE, cid, id] AND [STREET, cid, id] with 1 comparison)
+    - INTERSECT( [STREET, cid, id] AND [ODATE, cid, id] with 1 comparison)
