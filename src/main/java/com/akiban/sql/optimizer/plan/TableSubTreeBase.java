@@ -100,7 +100,7 @@ public class TableSubTreeBase<T extends TableSubTreeBase.TableNodeBase<T>>
         }
 
         public String toString() {
-            return table.toString();
+            return table.getName().getTableName();
         }
     }
 
