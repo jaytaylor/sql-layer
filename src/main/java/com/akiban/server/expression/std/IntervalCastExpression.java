@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.error.InconvertibleTypesException;
@@ -181,6 +182,10 @@ public class IntervalCastExpression extends AbstractUnaryExpression
             catch (NullPointerException ex) 
             {
                 throw new InvalidIntervalFormatException (endPoint.name(), "");
+            }
+            catch (InvalidCharToNumException ex)
+            {
+                throw new InvalidIntervalFormatException (endPoint.name(), interval);
             }
         }
         
