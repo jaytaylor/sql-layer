@@ -1,4 +1,4 @@
-SELECT * FROM customers, orders
-    WHERE customers.cid = orders.cid
-          AND customers.name = 'Atzdz'
-          AND orders.order_date = '2019-09-28'
+SELECT * FROM customers, addresses
+    WHERE customers.cid = addresses.cid
+          AND customers.name = 'Awwyqrezr'
+          AND addresses.state = 'CA'

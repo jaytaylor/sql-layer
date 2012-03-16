@@ -38,7 +38,6 @@ import com.google.common.primitives.UnsignedBytes;
 
 import java.util.*;
 import static java.lang.Math.round;
-import static java.lang.Math.sin;
 
 public abstract class CostEstimator implements TableRowCounts
 {
