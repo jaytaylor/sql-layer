@@ -47,7 +47,7 @@ public class PostgresEmulatedMetaDataStatementParser implements PostgresStatemen
         if (!possiblePattern.matcher(sql).find())
             return null;
         for (Query query : Query.values()) {
-            if (sql.equals(query.getSQL())) {
+            if (sql.toLowerCase().equals(query.getSQL())) {
                 logger.debug("Emulated: {}", query);
                 return new PostgresEmulatedMetaDataStatement(query);
             }
