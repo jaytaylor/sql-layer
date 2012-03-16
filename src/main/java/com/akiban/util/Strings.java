@@ -320,4 +320,12 @@ public abstract class Strings {
         }
         return results;
     }
+    
+    public static List<String> mapToString(Collection<?> collection) {
+        // are lambdas here yet?!
+        List<String> strings = new ArrayList<String>(collection.size());
+        for (Object o : collection)
+            strings.add(String.valueOf(o));
+        return strings;
+    }
 }

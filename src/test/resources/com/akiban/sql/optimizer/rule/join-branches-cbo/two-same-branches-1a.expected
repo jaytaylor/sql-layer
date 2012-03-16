@@ -1,13 +1,10 @@
-SelectQuery@440b388b
-  ResultSet@3cad5093[oid]
-    Project@16850204[user.orders.oid]
-      Select@76476028[user.orders.order_date == Cast(2012-01-01 AS DATE NOT NULL)]
-        Product@2bf4a4e(user.customers)
-          Flatten@5ca7484a(user.customers INNER user.orders)
-            AncestorLookup@6a7b21cb(user.orders -> [user.customers, user.orders])
-              IndexScan@39e7cd0a(Index(user.orders.order_date[IndexColumn(order_date)]), NONE, =Cast(2011-12-31 AS DATE NOT NULL), rows = 1, cost = 4.06000)
-              TableSource@6e9c7e86(user.customers - TableGroup@7f14671e(customers))
-              TableSource@6436c825(user.orders - TableGroupJoin@21466939(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-          Flatten@15a62e40(user.customers INNER user.orders)
-            BranchLookup@512676da(user.customers -> user.orders)
-              TableSource@31c6bce9(user.orders - TableGroupJoin@34450bd5(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+SelectQuery@454c8132
+  ResultSet@21b61d29[oid]
+    Project@3b348009[user.orders.oid]
+      Select@73c1ed3c[user.orders.order_date == 2011-12-31]
+        Flatten@1d735691(user.customers INNER user.orders)
+          BranchLookup@4c470db7(user.customers -> user.orders)
+            AncestorLookup@7f3858b1(user.orders -> [user.customers])
+              IndexScan@4cd59080(Index(user.orders.order_date[IndexColumn(order_date)]), NONE, =2012-01-01, rows = 10, cost = 904.187)
+              TableSource@31b3cd19(user.customers - TableGroup@58959802(customers))
+            TableSource@590a46e2(user.orders - TableGroupJoin@5901eae8(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))

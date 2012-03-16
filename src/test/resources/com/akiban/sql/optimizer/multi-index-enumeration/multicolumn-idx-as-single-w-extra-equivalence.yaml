@@ -7,12 +7,6 @@ extraEquivalencies:
 conditionsOn:
     - customers.name
     - customers.yob
-combinations:
-    -   outputIndex: customers.name_vipstatus
-        outputSkip: [customers.name]
-        selectorIndex: customers.yobkey
-        selectorSkip: [customers.yob]
-    -   outputIndex: customers.yobkey
-        outputSkip: [customers.yob]
-        selectorIndex: customers.name_vipstatus
-        selectorSkip: [customers.name]
+results:
+    - INTERSECT( [NAME, vipstatus, id] AND [YOB, id] with 1 comparison)
+    - INTERSECT( [YOB, id] AND [NAME, vipstatus, id] with 1 comparison)
