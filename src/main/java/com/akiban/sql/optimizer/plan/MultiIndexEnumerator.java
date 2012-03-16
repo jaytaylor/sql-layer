@@ -152,21 +152,24 @@ public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends 
             return;
         UserTable firstUTable = (UserTable) firstTable;
         UserTable secondUTable = (UserTable) secondTable;
-        // handle the two single-branch cases
-        boolean onSameBranch = false;
         int comparisonsLen = commonTrailing.size();
-        if (firstUTable.isDescendantOf(secondUTable)
-                && includesHKey(secondUTable, commonTrailing, columnEquivalences)) {
-            output.add(intersect(first, second, comparisonsLen));
-            onSameBranch = true;
+        UserTable commonAncestor = first.findCommonAncestor(second);
+        assert commonAncestor == second.findCommonAncestor(first) : first + "'s ancestor not reflexive with " + second;
+        boolean isMultiBranch = true;
+        if (firstUTable != secondUTable) {
+            if (commonAncestor == firstUTable) {
+                isMultiBranch = false;
+                if (includesHKey(firstUTable, commonTrailing, columnEquivalences))
+                    output.add(intersect(second, first, comparisonsLen));
+            }
+            else if (commonAncestor == secondUTable) {
+                isMultiBranch = false;
+                if (includesHKey(secondUTable, commonTrailing, columnEquivalences))
+                    output.add(intersect(first, second, comparisonsLen));
+            }
         }
-        if (secondUTable.isDescendantOf(firstUTable)
-                && includesHKey(firstUTable, commonTrailing, columnEquivalences)) {
-            output.add(intersect(second, first, comparisonsLen));
-            onSameBranch = true;
-        }
-        if (!onSameBranch) {
-            Collection<Column> ancestorHKeys = ancestorHKeys(firstUTable, secondUTable);
+        if (isMultiBranch) {
+            Collection<Column> ancestorHKeys = ancestorHKeys(commonAncestor);
             List<Column> commonCols = indexColsToCols(commonTrailing);
             // check if commonTrailing contains all ancestorHKeys, using equivalence
             for (Column hkeyCol : ancestorHKeys) {
@@ -192,20 +195,13 @@ public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends 
         return results;
     }
 
-    private Collection<Column> ancestorHKeys(UserTable first, UserTable second) {
+    private Collection<Column> ancestorHKeys(UserTable ancefoo) {
         // find most common ancestor
-        List<UserTable> firstAncestors = first.getAncestors();
-        List<UserTable> secondAncestors = second.getAncestors();
-        int ntables = Math.min(firstAncestors.size(), secondAncestors.size());
-        List<Column> results = new ArrayList<Column>(ntables); // size assuming one pk per table
-        for (int i=0; i < ntables; ++i) {
-            UserTable firstAncestor = firstAncestors.get(i);
-            UserTable secondAncestor = secondAncestors.get(i);
-            if (firstAncestor != secondAncestor)
-                break;
-            List<IndexColumn> pk = firstAncestor.getPrimaryKey().getIndex().getAllColumns();
-            for (IndexColumn iCol : pk)
-                results.add(iCol.getColumn());
+        HKey hkey = ancefoo.hKey();
+        int ncols = hkey.nColumns();
+        List<Column> results = new ArrayList<Column>(ncols);
+        for (int i=0; i < ncols; ++i) {
+            results.add(hkey.column(i));
         }
         return results;
     }

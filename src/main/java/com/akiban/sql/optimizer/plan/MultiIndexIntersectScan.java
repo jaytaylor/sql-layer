@@ -112,7 +112,7 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
-    public boolean isAncestor(IndexScan other) {
-        return outputScan.isAncestor(other);
+    public UserTable findCommonAncestor(IndexScan other) {
+        return outputScan.findCommonAncestor(other);
     }
 }

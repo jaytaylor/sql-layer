@@ -98,12 +98,23 @@ public final class SingleIndexScan extends IndexScan {
     }
 
     @Override
-    public boolean isAncestor(IndexScan other) {
-        TableSource myLeaf = getLeafMostTable();
-        for (TableSource node = other.getLeafMostTable(); node != null; node = node.getParentTable()) {
-            if (node == myLeaf)
-                return true;
+    public UserTable findCommonAncestor(IndexScan otherScan) {
+        TableSource myTable = getLeafMostTable();
+        TableSource otherTable = otherScan.getLeafMostTable();
+        int myDepth = myTable.getTable().getDepth();
+        int otherDepth = otherTable.getTable().getDepth();
+        while (myDepth > otherDepth) {
+            myTable = myTable.getParentTable();
+            myDepth = myTable.getTable().getDepth();
         }
-        return false;
+        while (otherDepth > myDepth) {
+            otherTable = otherTable.getParentTable();
+            otherDepth = otherTable.getTable().getDepth();
+        }
+        while (myTable != otherTable) {
+            myTable = myTable.getParentTable();
+            otherTable = otherTable.getParentTable();
+        }
+        return myTable.getTable().getTable();
     }
 }

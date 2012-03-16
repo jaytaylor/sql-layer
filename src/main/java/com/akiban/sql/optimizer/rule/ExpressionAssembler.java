@@ -183,7 +183,7 @@ public class ExpressionAssembler
         {
             // Do type conversion.         
             TypeId id = castExpression.getSQLtype().getTypeId(); 
-            if (id.isIntervalTypeId())
+           if (id.isIntervalTypeId())
                 expr = new IntervalCastExpression(expr, id);
             else 
                 expr = new com.akiban.server.expression.std.CastExpression(toType, expr);

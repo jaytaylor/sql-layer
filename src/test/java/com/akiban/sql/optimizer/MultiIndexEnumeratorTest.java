@@ -361,14 +361,21 @@ public final class MultiIndexEnumeratorTest {
         }
 
         @Override
-        public boolean isAncestor(TestNode other) {
-            if (!leafBranch.equals(other.leafBranch()))
-                return false;
-            for (UserTable node = other.getLeafMostUTable(); node != null; node = node.parentTable()) {
-                if (node == leaf)
-                    return true;
+        public UserTable findCommonAncestor(TestNode other) {
+            List<UserTable> myAncestors = leaf.getAncestors();
+            List<UserTable> otherAncestors = other.getLeafMostUTable().getAncestors();
+            if (myAncestors.size() > 2 || otherAncestors.size() > 2)
+                throw new RuntimeException("depth must be <= 2: " + myAncestors + ", " + otherAncestors);
+            int common;
+            int minTables = Math.min(myAncestors.size(), otherAncestors.size());
+            for (common = 0; common < minTables; ++common) {
+                UserTable myAncestor = myAncestors.get(common);
+                UserTable otherAncestor = otherAncestors.get(common);
+                if (myAncestor != otherAncestor)
+                    break;
             }
-            return false;
+            assert common > 0 : "none in common between " + this + " and " + other;
+            return myAncestors.get(common-1);
         }
 
         @Override
@@ -440,8 +447,8 @@ public final class MultiIndexEnumeratorTest {
         }
 
         @Override
-        public boolean isAncestor(TestNode other) {
-            return left.isAncestor(other);
+        public UserTable findCommonAncestor(TestNode other) {
+            return left.findCommonAncestor(other);
         }
 
         @Override

@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.server.error.InvalidOperationException;
 
+import java.util.List;
 import java.util.Set;
 
 /** A join to an actual table. */

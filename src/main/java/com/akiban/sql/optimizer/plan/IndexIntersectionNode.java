@@ -25,6 +25,6 @@ public interface IndexIntersectionNode<C, N extends IndexIntersectionNode<C,N>> 
     UserTable getLeafMostUTable();
     List<IndexColumn> getAllColumns();
     boolean removeCoveredConditions(Collection<? super C> conditions, Collection<? super C> removeTo);
-    boolean isAncestor(N other);
+    UserTable findCommonAncestor(N other);
     int getPeggedCount();
 }
