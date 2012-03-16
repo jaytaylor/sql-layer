@@ -66,11 +66,11 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return unaryOperatorFunction((UnaryOperatorNode)node);
         case NodeTypes.LIKE_OPERATOR_NODE:
         case NodeTypes.LOCATE_FUNCTION_NODE:
-        case NodeTypes.SUBSTRING_OPERATOR_NODE:
-        case NodeTypes.TRIM_OPERATOR_NODE:
+        case NodeTypes.SUBSTRING_OPERATOR_NODE:  
         case NodeTypes.TIMESTAMP_ADD_FN_NODE:
         case NodeTypes.TIMESTAMP_DIFF_FN_NODE:
             return ternaryOperatorFunction((TernaryOperatorNode)node);
+        case NodeTypes.TRIM_OPERATOR_NODE:
         case NodeTypes.BINARY_DIVIDE_OPERATOR_NODE:
         case NodeTypes.BINARY_MINUS_OPERATOR_NODE:
         case NodeTypes.BINARY_PLUS_OPERATOR_NODE:
