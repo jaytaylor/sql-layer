@@ -34,9 +34,6 @@ public interface IndexStatisticsService
     /** Get available statistics for the given index. */
     public IndexStatistics getIndexStatistics(Session session, Index index);
 
-    /** Get available statistics for indexes, each beginning with one of index's columns. */
-    public IndexStatistics[] getIndexColumnStatistics(Session session, Index index);
-
     /** Update statistics for the given indexes. */
     public void updateIndexStatistics(Session session, 
                                       Collection<? extends Index> indexes);
