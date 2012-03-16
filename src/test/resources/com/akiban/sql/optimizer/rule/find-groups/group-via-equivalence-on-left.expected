@@ -1,9 +1,9 @@
 SelectQuery@18682406
   ResultSet@5d15126e[oid, cid, order_date, iid, oid, sku, quan, price]
-    Project@126d2380[user.orders.oid, user.orders.cid, user.orders.order_date, user.items.iid, user.items.oid, user.items.sku, user.items.quan, user.items.price]
-      Select@3b35b1f3[or(user.items.quan == user.items.oid,and(isNull(user.items.quan),isNull(user.items.oid)))]
-        JoinNode@4235e6e3(LEFT[user.items.quan == user.orders.oid])
+    Project@126d2380[orders.oid, orders.cid, orders.order_date, items.iid, items.oid, items.sku, items.quan, items.price]
+      Select@3b35b1f3[or(items.quan == items.oid,and(isNull(items.quan),isNull(items.oid)))]
+        JoinNode@4235e6e3(LEFT[items.quan == orders.oid])
           TableJoins@60c9630a(TableGroup@4585572a(customers))
-            TableSource@40be76c7(user.orders - TableGroup@4585572a(customers))
+            TableSource@40be76c7(orders - TableGroup@4585572a(customers))
           TableJoins@351daa0e(TableGroup@2e879860(customers))
-            TableSource@34e93999(user.items - TableGroup@2e879860(customers))
+            TableSource@34e93999(items - TableGroup@2e879860(customers))

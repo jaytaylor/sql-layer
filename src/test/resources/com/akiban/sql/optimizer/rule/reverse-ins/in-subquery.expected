@@ -1,17 +1,17 @@
 SelectQuery@377e9134
   ResultSet@566f0962[order_date, sku, quan]
     MapJoin@1d1d565f()
-      Flatten@711185e7(user.orders INNER user.items)
-        BranchLookup@356e3aaf(user.customers -> user.customers)
+      Flatten@711185e7(orders INNER items)
+        BranchLookup@356e3aaf(customers -> customers)
           IndexScan@57ced290(Index(user.customers.name[IndexColumn(name)]), NONE, =Smith)
-          TableSource@2d205042(user.orders - TableGroupJoin@4b6218f9(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-          TableSource@24753433(user.items - TableGroupJoin@1555aa19(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
-      Project@13d12d43[user.orders.order_date, user.items.sku, user.items.quan]
+          TableSource@2d205042(orders - TableGroupJoin@4b6218f9(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+          TableSource@24753433(items - TableGroupJoin@1555aa19(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+      Project@13d12d43[orders.order_date, items.sku, items.quan]
         Select@9f293df[]
           Limit@2b125a40(LIMIT 1)
             Select@39880571[]
-              Flatten@2be3d80c(user.items)
-                Select@41e335d7[user.items.quan == user.items.quan]
-                  AncestorLookup@7b7d1256(user.items -> [user.items])
+              Flatten@2be3d80c(items)
+                Select@41e335d7[items.quan == items.quan]
+                  AncestorLookup@7b7d1256(items -> [items])
                     IndexScan@503f0b70(Index(user.items.sku[IndexColumn(sku)]), NONE, =1234)
-                    TableSource@37975d46(user.items - TableGroup@5b080f38(customers))
+                    TableSource@37975d46(items - TableGroup@5b080f38(customers))

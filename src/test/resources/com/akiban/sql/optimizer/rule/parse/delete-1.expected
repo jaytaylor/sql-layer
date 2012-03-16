@@ -1,3 +1,3 @@
-DeleteStatement@6a969c29(user.child)
+DeleteStatement@6a969c29(child)
   Select@45e67e6a[]
-    TableSource@1f758500(user.child)
+    TableSource@1f758500(child)

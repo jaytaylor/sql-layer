@@ -1,5 +1,5 @@
 SelectQuery@559a6cd4
   ResultSet@d5efe34[_SQL_COL_1]
-    Project@57830ec7[plus(plus(cos(Cast(1 AS DOUBLE)),sin(3.14)),tan(Cast(user.child.name AS DOUBLE)))]
+    Project@57830ec7[plus(plus(cos(Cast(1 AS DOUBLE)),sin(3.14)),tan(Cast(child.name AS DOUBLE)))]
       Select@5d3f57b3[]
-        TableSource@6996d898(user.child)
+        TableSource@6996d898(child)

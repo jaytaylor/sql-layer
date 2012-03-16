@@ -1,14 +1,14 @@
 SelectQuery@14d5bc9
   ResultSet@1c4f0f8[order_date, name]
-    Project@a83a13[user.orders.order_date, user.child.name]
-      Select@7cd37a[user.child.name == user.parent.name, user.parent.name == user.customers.name]
+    Project@a83a13[orders.order_date, child.name]
+      Select@7cd37a[child.name == parent.name, parent.name == customers.name]
         JoinNode@1202d69(INNER)
           TableJoins@1855562(TableGroup@a89ce3(customers))
-            JoinNode@1d439fe(INNER/GROUP[user.orders.cid == user.customers.cid] - TableGroupJoin@2b7db1(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-              TableSource@7a4489(user.customers - TableGroup@a89ce3(customers))
-              TableSource@129b0e1(user.orders - TableGroupJoin@2b7db1(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+            JoinNode@1d439fe(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@2b7db1(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+              TableSource@7a4489(customers - TableGroup@a89ce3(customers))
+              TableSource@129b0e1(orders - TableGroupJoin@2b7db1(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
           JoinNode@148f8c8(INNER)
             TableJoins@1c5466b(TableGroup@922804(parent))
-              TableSource@1ba94d(user.parent - TableGroup@922804(parent))
+              TableSource@1ba94d(parent - TableGroup@922804(parent))
             TableJoins@1815338(TableGroup@17e845a(parent))
-              TableSource@82751(user.child - TableGroup@17e845a(parent))
+              TableSource@82751(child - TableGroup@17e845a(parent))

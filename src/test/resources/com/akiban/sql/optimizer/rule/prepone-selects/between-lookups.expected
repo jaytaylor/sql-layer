@@ -1,12 +1,12 @@
 SelectQuery@355ccfb1
   ResultSet@604788d5[name, order_date, quan, sku]
-    Project@78688954[user.customers.name, user.orders.order_date, user.items.quan, user.items.sku]
+    Project@78688954[customers.name, orders.order_date, items.quan, items.sku]
       Select@1710278e[]
-        Flatten@2594e776(user.customers INNER user.orders INNER user.items)
-          AncestorLookup@52e80740(user.orders -> [user.customers])
-            Select@7f342545[user.items.quan > 100]
-              BranchLookup@387b1641(user.orders -> user.orders)
+        Flatten@2594e776(customers INNER orders INNER items)
+          AncestorLookup@52e80740(orders -> [customers])
+            Select@7f342545[items.quan > 100]
+              BranchLookup@387b1641(orders -> orders)
                 IndexScan@18f2225f(Index(user.orders.order_date[IndexColumn(order_date)]), NONE, >Cast(2011-01-01 AS DATE NOT NULL))
-                TableSource@46798249(user.orders - TableGroupJoin@488d12e4(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-                TableSource@54128635(user.items - TableGroupJoin@40ae97c4(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
-            TableSource@23e45a5c(user.customers - TableGroup@66de609(customers))
+                TableSource@46798249(orders - TableGroupJoin@488d12e4(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+                TableSource@54128635(items - TableGroupJoin@40ae97c4(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+            TableSource@23e45a5c(customers - TableGroup@66de609(customers))
