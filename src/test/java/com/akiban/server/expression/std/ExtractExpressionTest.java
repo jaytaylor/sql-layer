@@ -64,6 +64,14 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     }
     //-----------------------------LAST DAY------------------------------------
     @Test
+    public void testLastDayNull()
+    {
+        Expression in = ExprUtil.lit(20091231.6);
+        Expression top = ExtractExpression.LAST_DAY_COMPOSER.compose(Arrays.asList(in));
+        
+        assertTrue("LAST_DAY(20091231.6) should be NULL", top.evaluation().eval().isNull());
+    }
+    @Test
     public void lastDay()
     {
         for (int yr : new int[]{2000, 1900, 2001, 2002, 2003, 2004})
@@ -71,8 +79,10 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
             {
                 Expression in = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong(yr + "-" + month + "-12"));
                 Expression top = ExtractExpression.LAST_DAY_COMPOSER.compose(Arrays.asList(in));
-                assertEquals("Month: " + month, DateTime.parse(Extractors.getStringExtractor().getObject(in.evaluation().eval())).dayOfMonth().getMaximumValue(),
-                              top.evaluation().eval().getInt());
+                DateTime datetime = DateTime.parse(Extractors.getStringExtractor().getObject(in.evaluation().eval()));
+                assertEquals("Last day of Month: " + month,
+                              Extractors.getLongExtractor(AkType.DATE).getLong( yr + "-" + month + "-" + datetime.dayOfMonth().getMaximumValue()) ,
+                              top.evaluation().eval().getDate());
             }
     }
     //-----------------------------MONTHNAME------------------------------------

@@ -201,6 +201,7 @@ public class ExtractExpression extends AbstractUnaryExpression
             
             private Long getLast(long ymd[])
             {
+                if (ymd[1] * ymd[2] == 0) return null;
                 long y = ymd[0], m = ymd[1];
                 switch((int)m)
                 {
