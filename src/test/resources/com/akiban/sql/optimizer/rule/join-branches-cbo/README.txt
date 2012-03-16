@@ -49,3 +49,5 @@ two-same-branches-2: Output parent and one child.
 two-same-branches-2b: Output parent and other child.
 
 two-same-branches-3: Output parent and both children.
+
+two-side-branches: Two branches beside the condition one.
