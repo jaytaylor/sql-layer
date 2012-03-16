@@ -104,6 +104,7 @@ public class BranchJoiner_CBO extends BaseRule
             requiredTables = indexScan.getRequiredTables();
         }
         markBranches(tableGroup, requiredTables);
+        top:
         if (scan instanceof IndexScan) {
             IndexScan indexScan = (IndexScan)scan;
             TableSource indexTable = indexScan.getLeafMostTable();
@@ -124,23 +125,29 @@ public class BranchJoiner_CBO extends BaseRule
                 // side branch.
                 PlanNode sideScan = trySideBranch(scan, leafTable, rootTable,
                                                   indexTable, ancestors);
-                if (sideScan != null)
-                    return sideScan;
+                if (sideScan != null) {
+                    scan = sideScan;
+                    break top;
+                }
             }
             if (!ancestors.isEmpty())
                 scan = new AncestorLookup(scan, indexTable, ancestors);
             scan = flatten(scan, leafTable, rootTable);
-            return fillSideBranches(scan, leafTable, rootTable);
+            scan = fillSideBranches(scan, leafTable, rootTable);
         }
         else if (scan instanceof GroupScan) {
             GroupScan groupScan = (GroupScan)scan;
             List<TableSource> tables = new ArrayList<TableSource>();
             groupScan.setTables(tables);
-            return fillBranch(scan, tables, rootTable, null);
+            scan = fillBranch(scan, tables, rootTable, null);
         }
         else {
             throw new AkibanInternalException("Unknown TableGroupJoinTree scan");
         }
+        for (TableGroupJoinNode table : tableGroup) {
+            assert !isPending(table) : table;
+        }
+        return scan;
     }
 
     /** Try to switch from the main branch over to a side branch.
