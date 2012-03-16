@@ -29,7 +29,7 @@ import java.math.BigInteger;
 
 public class AbsExpression extends AbstractUnaryExpression 
 {    
-    @Scalar({"absolute", "abs"})
+    @Scalar ({"absolute", "abs"})
     public static final ExpressionComposer COMPOSER = new InternalComposer();
     
     private static class InternalComposer extends UnaryComposer
