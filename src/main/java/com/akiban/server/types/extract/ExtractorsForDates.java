@@ -21,18 +21,17 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueSourceIsNullException;
 
+import java.math.MathContext;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
-import java.util.Calendar;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.joda.time.MutableDateTime;
 
 abstract class ExtractorsForDates extends LongExtractor {
 
@@ -666,6 +665,11 @@ abstract class ExtractorsForDates extends LongExtractor {
         case INT:       return source.getInt();
         case U_INT:     return source.getUInt();
         case LONG:      return source.getLong();
+        case U_FLOAT:   return Math.round(source.getUFloat());
+        case FLOAT:     return Math.round(source.getFloat());
+        case DOUBLE:    return Math.round(source.getDouble());
+        case U_DOUBLE:  return Math.round(source.getUDouble());
+        case DECIMAL:   return source.getDecimal().round(MathContext.UNLIMITED).longValue();
         default: throw unsupportedConversion(type);
         }
     }
