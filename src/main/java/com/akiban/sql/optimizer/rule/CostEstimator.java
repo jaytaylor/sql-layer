@@ -74,8 +74,7 @@ public abstract class CostEstimator implements TableRowCounts
     public abstract IndexStatistics getIndexStatistics(Index index);
 
     public IndexStatistics[] getIndexColumnStatistics(Index index) {
-        List<IndexColumn> allIndexColumns = new ArrayList<IndexColumn>(index.getKeyColumns());
-        allIndexColumns.addAll(index.getValueColumns());
+        List<IndexColumn> allIndexColumns = index.getAllColumns();
         IndexStatistics[] indexStatsArray = new IndexStatistics[allIndexColumns.size()];
         int i = 0;
         // For the first column, the index supplied by the optimizer is likely to be a better choice than an arbitrary
@@ -132,7 +131,7 @@ public abstract class CostEstimator implements TableRowCounts
                                          ExpressionNode highComparand, boolean highInclusive) {
         if (index.isUnique()) {
             if ((equalityComparands != null) &&
-                (equalityComparands.size() == index.getKeyColumns().size())) {
+                (equalityComparands.size() >= index.getKeyColumns().size())) {
                 // Exact match from unique index; probably one row.
                 return indexAccessCost(1, index);
             }
@@ -200,7 +199,7 @@ public abstract class CostEstimator implements TableRowCounts
                                          ExpressionNode highComparand, boolean highInclusive) {
         if (index.isUnique()) {
             if ((equalityComparands != null) &&
-                (equalityComparands.size() == index.getKeyColumns().size())) {
+                (equalityComparands.size() >= index.getKeyColumns().size())) {
                 // Exact match from unique index; probably one row.
                 return indexAccessCost(1, index);
             }
@@ -555,7 +554,7 @@ public abstract class CostEstimator implements TableRowCounts
         if (expr == null)
             return false;
         ValueSource valueSource = expr.evaluation().eval();
-        keyTarget.expectingType(index.getKeyColumns().get(column).getColumn().getType().akType());
+        keyTarget.expectingType(index.getAllColumns().get(column).getColumn().getType().akType());
         Converters.convert(valueSource, keyTarget);
         return true;
     }
