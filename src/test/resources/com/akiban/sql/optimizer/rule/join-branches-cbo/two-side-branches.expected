@@ -1,0 +1,16 @@
+SelectQuery@13399e98
+  ResultSet@2bdb1704[name]
+    Project@3cc41e1a[user.customers.name]
+      Select@6f945c20[user.items.quan > 100, user.items.quan > 100, user.items.iid != user.items.iid]
+        Product@14c3cff4(user.customers)
+          Flatten@4389a6d2(user.customers INNER user.orders INNER user.items)
+            AncestorLookup@22747a2(user.orders -> [user.customers])
+              BranchLookup@60cfddc8(user.addresses -> user.orders via user.customers)
+                SingleIndexScan@6ee9a71f(Index(user.addresses.state[IndexColumn(state)]), NONE, =MA, rows = 600000, cost = 2.57381e+07)
+                TableSource@6a7ebb41(user.orders - TableGroupJoin@2ddb1d1c(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+                TableSource@2637df06(user.items - TableGroupJoin@c5430c9(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+              TableSource@5d751bf0(user.customers - TableGroup@966abd(customers))
+          Flatten@6b4ee271(user.customers INNER user.orders INNER user.items)
+            BranchLookup@7f49fc1(user.customers -> user.orders)
+              TableSource@1e131684(user.orders - TableGroupJoin@4d243bfb(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+              TableSource@772b4388(user.items - TableGroupJoin@5de034e(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))

@@ -1,8 +1,11 @@
 SELECT name
-  FROM customers, addresses a1, addresses a2, orders
- WHERE customers.cid = a1.cid 
-   AND customers.cid = a2.cid 
-   AND customers.cid = orders.cid
-   AND order_date = '2012-01-01'
-   AND a1.city = 'Boston'
-   AND a2.city = 'New York'
+  FROM customers, addresses, orders o1, items i1, orders o2, items i2
+ WHERE customers.cid = addresses.cid
+   AND customers.cid = o1.cid
+   AND o1.oid = i1.oid
+   AND customers.cid = o2.cid
+   AND o2.oid = i2.oid
+   AND state = 'MA'
+   AND i1.quan > 100
+   AND i2.quan > 100
+   AND i1.iid <> i2.iid
