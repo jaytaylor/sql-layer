@@ -12,7 +12,6 @@
 - output: [['2.0']]
 ---
 - Statement: SELECT ELT(null, 1) from all_types;
-#- output_types: [VARCHAR]
 - output: [[null]]
 ---
 - Statement: SELECT ELT(5, 1, 2) from all_types;
