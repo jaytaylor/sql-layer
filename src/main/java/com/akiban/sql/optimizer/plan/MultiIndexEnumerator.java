@@ -104,7 +104,7 @@ public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends 
             for (N outer : freshNodes) {
                 if (outer.removeCoveredConditions(conditionsCopy, outerRecycle) && (!conditionsCopy.isEmpty())) {
                     for (N inner : oldNodes) {
-                        if (inner.removeCoveredConditions(conditionsCopy, innerRecycle)) { // TODO if outer pegs [A] and inner pegs [A,B], this will emit, but it shouldn't.
+                        if (inner != outer && inner.removeCoveredConditions(conditionsCopy, innerRecycle)) { // TODO if outer pegs [A] and inner pegs [A,B], this will emit, but it shouldn't.
                             emit(outer, inner, newNodes, columnEquivalences);
                             emptyInto(innerRecycle,conditionsCopy);
                         }
@@ -152,20 +152,20 @@ public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends 
         UserTable secondUTable = (UserTable) secondTable;
         // handle the two single-branch cases
         boolean onSameBranch = false;
+        int comparisonsLen = commonTrailing.size();
         if (firstUTable.isDescendantOf(secondUTable)
                 && includesHKey(secondUTable, commonTrailing, columnEquivalences)) {
-            output.add(intersect(first, second, commonTrailing.size()));
+            output.add(intersect(first, second, comparisonsLen));
             onSameBranch = true;
         }
         if (secondUTable.isDescendantOf(firstUTable)
                 && includesHKey(firstUTable, commonTrailing, columnEquivalences)) {
-            output.add(intersect(second, first, commonTrailing.size()));
+            output.add(intersect(second, first, comparisonsLen));
             onSameBranch = true;
         }
         if (!onSameBranch) {
-            // TODO -- enable when multi-branch is in
-            // output.add(new MultiIndexPair(first, second));
-            // output.add(new MultiIndexPair(second, first));
+            output.add(intersect(first, second, comparisonsLen));
+            output.add(intersect(second, first, comparisonsLen));
         }
     }
 
