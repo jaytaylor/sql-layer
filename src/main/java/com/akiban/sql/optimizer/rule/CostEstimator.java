@@ -192,7 +192,7 @@ public abstract class CostEstimator implements TableRowCounts
             nrows = simpleRound((nrows * rowCount), statsCount);
         return indexAccessCost(nrows, index);
     }
-    
+
     /** Estimate cost of scanning from this index. */
     public CostEstimate costIndexScanNew(Index index,
                                          List<ExpressionNode> equalityComparands,
