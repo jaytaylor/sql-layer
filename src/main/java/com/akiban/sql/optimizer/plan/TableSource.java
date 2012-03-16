@@ -92,7 +92,7 @@ public class TableSource extends BaseJoinable implements ColumnSource
     public String summaryString() {
         StringBuilder str = new StringBuilder(super.summaryString());
         str.append("(");
-        str.append(table.toString());
+        str.append(name);
         if (parentJoin != null) {
             str.append(" - ");
             str.append(parentJoin);
