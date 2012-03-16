@@ -47,14 +47,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-
-import static org.junit.Assert.assertTrue;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @RunWith(NamedParameterizedRunner.class)
 public final class MultiIndexEnumeratorTest {
@@ -105,15 +105,32 @@ public final class MultiIndexEnumeratorTest {
         factory.rowDefCache(ais); // set up indx row compositions
 
         List<Index> indexes = allIndexes(ais, tc.getUsingIndexes());
-        Set<String> conditions = new HashSet<String>(tc.getConditionsOn());
+        Collection<Set<Condition>> conditions = branchConditions(tc.getConditionsOn(), ais);
         EquivalenceFinder<Column> columnEquivalences = innerJoinEquivalencies(ais);
         addExtraEquivalencies(tc.getExtraEquivalencies(), ais, columnEquivalences);
 
-        StringBranchInfo info = new StringBranchInfo(ais, indexes, conditions);
         StringConditionEnumerator enumerator = new StringConditionEnumerator();
-        enumerator.addBranch(info);
+        for (Set<Condition> branch : conditions) {
+            StringBranchInfo info = new StringBranchInfo(ais, indexes, branch);
+            enumerator.addBranch(info);
+        }
 
         return enumerator.getCombinations(columnEquivalences);
+    }
+
+    private Collection<Set<Condition>> branchConditions(Set<String> conditionsOn, AkibanInformationSchema ais) {
+        Map<String,Set<Condition>> conditionsByBranch = new HashMap<String, Set<Condition>>(conditionsOn.size());
+        for (String qualified : conditionsOn) {
+            Condition cond = new Condition(qualified, ais);
+            Set<Condition> conditions = conditionsByBranch.get(cond.branch);
+            if (conditions == null) {
+                conditions = new HashSet<Condition>();
+                conditionsByBranch.put(cond.branch, conditions);
+            }
+            if (!conditions.add(cond))
+                throw new RuntimeException("duplicate condition: " + cond);
+        }
+        return conditionsByBranch.values();
     }
 
     private void addExtraEquivalencies(Map<String, String> equivMap, AkibanInformationSchema ais,
@@ -122,21 +139,79 @@ public final class MultiIndexEnumeratorTest {
         for (Map.Entry<String,String> entry : equivMap.entrySet()) {
             String one = entry.getKey();
             String two = entry.getValue();
-            Column oneCol = findColumn(one, ais);
-            Column twoCol = findColumn(two, ais);
+            Column oneCol = new Condition(one, ais).aisColumn();
+            Column twoCol = new Condition(two, ais).aisColumn();
             output.markEquivalent(oneCol, twoCol);
         }
     }
+    
+    private static class Condition {
+        private static final String DEFAULT_BRANCH = "";
+        private static final Pattern PATTERN = Pattern.compile("(?:\\((\\w+)(?:\\.(\\w+))?\\))?\\s*(\\w+)\\.(\\w+)");
+        private String branch;
+        private String condId; // local to each branch
+        private String table;
+        private String column;
+        private AkibanInformationSchema ais;
+        
+        private Condition(String qualfiedString, AkibanInformationSchema ais) {
+            Matcher matcher = PATTERN.matcher(qualfiedString);
+            if (!matcher.find())
+                throw new RuntimeException("illegal condition specifier: " + qualfiedString);
+            branch = matcher.group(1);
+            condId = matcher.group(2);
+            table = matcher.group(3);
+            column = matcher.group(4);
+            if (branch == null || branch.length() == 0)
+                branch = DEFAULT_BRANCH;
+            if (condId == null || condId.length() == 0)
+                condId = DEFAULT_BRANCH;
+            this.ais = ais;
+        }
+        
+        public Column aisColumn() {
+            UserTable uTable = ais.getUserTable(DEFAULT_SCHEMA, table);
+            if (uTable == null)
+                throw new RuntimeException("table not found: " + table);
+            Column aisColumn = uTable.getColumn(column);
+            if (aisColumn == null)
+                throw new RuntimeException("column not found: " + column);
+            return aisColumn;
+        }
 
-    private static Column findColumn(String qualifiedName, AkibanInformationSchema ais) {
-        String[] split = qualifiedName.split("\\.", 2);
-        String tableName = split[0];
-        String colName = split[1].split("\\s+")[0];
-        UserTable table = ais.getUserTable(DEFAULT_SCHEMA, tableName);
-        Column column = table.getColumn(colName);
-        if (column == null)
-            throw new RuntimeException("column not found: " + qualifiedName);
-        return column;
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            if (!DEFAULT_BRANCH.equals(branch)) {
+                sb.append('(').append(branch);
+                if (!DEFAULT_BRANCH.equals(condId))
+                    sb.append('.').append(condId);
+                sb.append(") ");
+            }
+            sb.append(table).append('.').append(column);
+            return sb.toString();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Condition condition = (Condition) o;
+
+            return branch.equals(condition.branch) && condId.equals(condition.condId)
+            && column.equals(condition.column) && table.equals(condition.table);
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = branch.hashCode();
+            result = 31 * result + branch.hashCode();
+            result = 31 * result + table.hashCode();
+            result = 31 * result + column.hashCode();
+            return result;
+        }
     }
 
     private EquivalenceFinder<Column> innerJoinEquivalencies(AkibanInformationSchema ais) {
@@ -200,20 +275,20 @@ public final class MultiIndexEnumeratorTest {
     private TestCase tc;
     public final boolean expectException;
     
-    private static class StringBranchInfo implements BranchInfo<String> {
+    private static class StringBranchInfo implements BranchInfo<Condition> {
         List<Index> indexes;
-        Set<String> conditions;
+        Set<Condition> conditions;
         AkibanInformationSchema ais;
 
-        private StringBranchInfo(AkibanInformationSchema ais, List<Index> indexes, Set<String> conditions) {
+        private StringBranchInfo(AkibanInformationSchema ais, List<Index> indexes, Set<Condition> conditions) {
             this.indexes = indexes;
             this.conditions = conditions;
             this.ais = ais;
         }
 
         @Override
-        public Column columnFromCondition(String condition) {
-            return findColumn(condition, ais);
+        public Column columnFromCondition(Condition condition) {
+            return condition.aisColumn();
         }
 
         @Override
@@ -222,12 +297,12 @@ public final class MultiIndexEnumeratorTest {
         }
 
         @Override
-        public Set<String> getConditions() {
+        public Set<Condition> getConditions() {
             return conditions;
         }
     }
     
-    private static class StringConditionEnumerator extends MultiIndexEnumerator<String,StringBranchInfo,TestNode> {
+    private static class StringConditionEnumerator extends MultiIndexEnumerator<Condition,StringBranchInfo,TestNode> {
 
         @Override
         protected void handleDuplicateCondition() {
@@ -235,7 +310,7 @@ public final class MultiIndexEnumeratorTest {
         }
 
         @Override
-        protected TestNode buildLeaf(MultiIndexCandidate<String> candidate, StringBranchInfo branchInfo) {
+        protected TestNode buildLeaf(MultiIndexCandidate<Condition> candidate, StringBranchInfo branchInfo) {
             Index index = candidate.getIndex();
             UserTable leaf = (UserTable) index.leafMostTable();
             return new SimpleLeaf(leaf, index.getAllColumns(), candidate.getPegged());
@@ -248,17 +323,26 @@ public final class MultiIndexEnumeratorTest {
         }
     }
     
-    private interface TestNode extends IndexIntersectionNode<String> {}
+    private interface TestNode extends IndexIntersectionNode<Condition,TestNode> {
+        String leafBranch();
+    }
     
     private static class SimpleLeaf implements TestNode {
         private UserTable leaf;
         private List<IndexColumn> allCols;
-        private List<String> pegged;
+        private List<Condition> pegged;
+        private String leafBranch;
 
-        private SimpleLeaf(UserTable leaf, List<IndexColumn> allCols, List<String> pegged) {
+        private SimpleLeaf(UserTable leaf, List<IndexColumn> allCols, List<Condition> pegged) {
             this.leaf = leaf;
             this.allCols = allCols;
             this.pegged = pegged;
+            for (Condition cond : pegged) {
+                if (leafBranch == null)
+                    leafBranch = cond.branch;
+                else if (!leafBranch.equals(cond.branch))
+                    throw new RuntimeException("mis-created branch: " + pegged);
+            }
         }
 
         @Override
@@ -277,9 +361,20 @@ public final class MultiIndexEnumeratorTest {
         }
 
         @Override
-        public boolean removeCoveredConditions(Collection<? super String> conditions, Collection<? super String> removeTo) {
+        public boolean isAncestor(TestNode other) {
+            if (!leafBranch.equals(other.leafBranch()))
+                return false;
+            for (UserTable node = other.getLeafMostUTable(); node != null; node = node.parentTable()) {
+                if (node == leaf)
+                    return true;
+            }
+            return false;
+        }
+
+        @Override
+        public boolean removeCoveredConditions(Collection<? super Condition> conditions, Collection<? super Condition> removeTo) {
             boolean removedAny = false;
-            for (String cond : pegged) {
+            for (Condition cond : pegged) {
                 if(conditions.remove(cond)) {
                     removeTo.add(cond);
                     removedAny = true;
@@ -289,24 +384,34 @@ public final class MultiIndexEnumeratorTest {
         }
 
         @Override
+        public String leafBranch() {
+            return leafBranch;
+        }
+
+        @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append('[');
-            int remainingPegged = pegged.size();
-            for (Iterator<IndexColumn> iterator = allCols.iterator(); iterator.hasNext(); ) {
-                IndexColumn icol = iterator.next();
+            int npegged = pegged.size();
+            for (int i = 0, allColsSize = allCols.size(); i < allColsSize; i++) {
+                IndexColumn icol = allCols.get(i);
                 String colName = icol.getColumn().getName();
-                if (remainingPegged-- > 0)
+                if (i < npegged) {
+                    Condition cond = pegged.get(i);
+                    if (!Condition.DEFAULT_BRANCH.equals(cond.branch))
+                        sb.append(cond.branch).append('.');
                     colName = colName.toUpperCase();
+                }
                 sb.append(colName);
-                if (iterator.hasNext())
+                if (i < allColsSize-1)
                     sb.append(", ");
                 else
-                    sb.append(']');
+                sb.append(']');
             }
-            assertTrue(remainingPegged + " pegged remaining", remainingPegged <= 0);
             return sb.toString();
         }
+        
+        
     }
     
     private static class SimpleBranch implements TestNode {
@@ -335,7 +440,12 @@ public final class MultiIndexEnumeratorTest {
         }
 
         @Override
-        public boolean removeCoveredConditions(Collection<? super String> conditions, Collection<? super String> removeTo) {
+        public boolean isAncestor(TestNode other) {
+            return left.isAncestor(other);
+        }
+
+        @Override
+        public boolean removeCoveredConditions(Collection<? super Condition> conditions, Collection<? super Condition> removeTo) {
             // using a bitwise or on purpose here -- we do NOT want to short-circuit this, since even if the left
             // covers some conditions, we want to know which ones the right covers.
             return left.removeCoveredConditions(conditions, removeTo)
@@ -346,6 +456,11 @@ public final class MultiIndexEnumeratorTest {
         public String toString() {
             return String.format("INTERSECT( %s AND %s with %d comparison%s)",
                     left.toString(), right.toString(), comparisons, (comparisons == 1 ? "" : "s"));
+        }
+
+        @Override
+        public String leafBranch() {
+            return left.leafBranch();
         }
     }
     

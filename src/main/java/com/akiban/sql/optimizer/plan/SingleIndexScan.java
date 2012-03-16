@@ -96,4 +96,14 @@ public final class SingleIndexScan extends IndexScan {
         }
         return removedAny;
     }
+
+    @Override
+    public boolean isAncestor(IndexScan other) {
+        TableSource myLeaf = getLeafMostTable();
+        for (TableSource node = other.getLeafMostTable(); node != null; node = node.getParentTable()) {
+            if (node == myLeaf)
+                return true;
+        }
+        return false;
+    }
 }

@@ -44,7 +44,7 @@ import java.util.Set;
  * subclasses for this class: one for unit testing, and one for production.</p>
  * @param <C> the condition type.
  */
-public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends IndexIntersectionNode<? extends C>> {
+public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends IndexIntersectionNode<C,N>> {
     
     public interface BranchInfo<C> {
         Column columnFromCondition(C condition);

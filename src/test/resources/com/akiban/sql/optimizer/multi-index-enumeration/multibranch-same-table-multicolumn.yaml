@@ -1,0 +1,11 @@
+!!com.akiban.sql.optimizer.MultiIndexEnumeratorTest$TestCase
+usingIndexes:
+    - addresses.street_aptnum
+conditionsOn:
+    - (1) addresses.street
+    - (1) addresses.apt_num
+    - (2) addresses.street
+    - (2) addresses.apt_num
+results:
+    - INTERSECT( [1.STREET, 1.APT_NUM, cid, id] AND [2.STREET, 2.APT_NUM, cid, id] with 2 comparisons)
+    - INTERSECT( [2.STREET, 2.APT_NUM, cid, id] AND [1.STREET, 1.APT_NUM, cid, id] with 2 comparisons)

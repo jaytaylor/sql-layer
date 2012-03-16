@@ -111,15 +111,8 @@ public final class MultiIndexIntersectScan extends IndexScan {
         return outputScan.isAscendingAt(i);
     }
 
-    private void buildConditions(IndexScan child, List<ConditionExpression> output) {
-        if (child instanceof SingleIndexScan) {
-            output.addAll(child.getConditions());
-        }
-        else if (child instanceof MultiIndexIntersectScan) {
-            MultiIndexIntersectScan miis = (MultiIndexIntersectScan) child;
-            buildConditions(miis.outputScan, output);
-            buildConditions(miis.selectorScan, output);
-        }
+    @Override
+    public boolean isAncestor(IndexScan other) {
+        return outputScan.isAncestor(other);
     }
-    
 }
