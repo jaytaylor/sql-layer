@@ -15,6 +15,7 @@
 
 package com.akiban.server.types.conversion;
 
+import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.extract.Extractors;
 import org.junit.Test;
@@ -65,7 +66,7 @@ public final class DoubleConverterTest {
         }
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=InvalidCharToNumException.class)
     public void invalidNumber() {
         Extractors.getDoubleExtractor().getDouble(new FromObjectValueSource().setReflectively("zebra"));
     }
