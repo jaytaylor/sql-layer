@@ -6,6 +6,6 @@ SELECT name
    AND customers.cid = o2.cid
    AND o2.oid = i2.oid
    AND state = 'MA'
+   AND o1.oid > o2.oid
    AND i1.quan > 100
    AND i2.quan > 100
-   AND i1.iid <> i2.iid
