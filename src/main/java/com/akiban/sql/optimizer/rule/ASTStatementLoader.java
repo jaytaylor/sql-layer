@@ -77,7 +77,7 @@ public class ASTStatementLoader extends BaseRule
         plan.putWhiteboard(MARKER, ast);
         DMLStatementNode stmt = ast.getStatement();
         try {
-            plan.setPlan(new Loader(plan.getRulesContext()).toStatement(stmt));
+            plan.setPlan(new Loader((SchemaRulesContext)plan.getRulesContext()).toStatement(stmt));
         }
         catch (StandardException ex) {
             throw new SQLParserInternalException(ex);
@@ -85,9 +85,9 @@ public class ASTStatementLoader extends BaseRule
     }
 
     static class Loader {
-        private RulesContext rulesContext;
+        private SchemaRulesContext rulesContext;
 
-        Loader(RulesContext rulesContext) {
+        Loader(SchemaRulesContext rulesContext) {
             this.rulesContext = rulesContext;
             pushEquivalenceFinder();
         }
@@ -377,8 +377,16 @@ public class ASTStatementLoader extends BaseRule
                 if (tb == null)
                     throw new UnsupportedSQLException("FROM table",
                                                       fromTable);
-                TableNode table = getTableNode((UserTable)tb.getTable());
-                result = new TableSource(table, required);
+                UserTable userTable = (UserTable)tb.getTable();
+                TableNode table = getTableNode(userTable);
+                String name = fromTable.getCorrelationName();
+                if (name == null) {
+                    if (userTable.getName().getSchemaName().equals(rulesContext.getDefaultSchemaName()))
+                        name = userTable.getName().getTableName();
+                    else
+                        name = userTable.getName().toString();
+                }
+                result = new TableSource(table, required, name);
             }
             else if (fromTable instanceof com.akiban.sql.parser.JoinNode) {
                 com.akiban.sql.parser.JoinNode joinNode = 
