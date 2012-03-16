@@ -33,3 +33,15 @@ three-groups: second group dividing two halves
 two-groups: group and non-group joins
 
 two-groups-indexed: two groups with condition on one
+
+no-stats: no statistics
+
+no-stats-group: no statistics and group joins
+
+no-stats-large: no statistics but reasonable row count
+
+empty-stats: analyzed with no rows
+
+scaled-distinct: mostly distinct now larger
+
+scaled-not-distinct: not so distinct now larger

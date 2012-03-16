@@ -146,48 +146,6 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     }
 
     @Override
-    public IndexStatistics[] getIndexColumnStatistics(Session session, Index index) {
-        List<IndexColumn> allIndexColumns = index.getAllColumns();
-        IndexStatistics[] indexStatsArray = new IndexStatistics[allIndexColumns.size()];
-        int i = 0;
-        // For the first column, the index supplied by the optimizer is likely to be a better choice than an aribtrary
-        // index with the right leading column.
-        IndexStatistics statsForRequestedIndex = getIndexStatistics(session, index);
-        if (statsForRequestedIndex != null) {
-            indexStatsArray[i++] = statsForRequestedIndex;
-        }
-        while (i < allIndexColumns.size()) {
-            IndexStatistics indexStatistics = null;
-            Column leadingColumn = allIndexColumns.get(i).getColumn();
-            // Find a TableIndex whose first column is leadingColumn
-            for (TableIndex tableIndex : leadingColumn.getTable().getIndexes()) {
-                if (tableIndex.getKeyColumns().get(0).getColumn() == leadingColumn) {
-                    indexStatistics = getIndexStatistics(session, tableIndex);
-                    if (indexStatistics != null) {
-                        break;
-                    }
-                }
-            }
-            // If none, find a GroupIndex whose first column is leadingColumn
-            if (indexStatistics == null) {
-                AkibanInformationSchema ais = schemaManager.getAis(session);
-                groupLoop: for (Group group : ais.getGroups().values()) {
-                    for (GroupIndex groupIndex : group.getIndexes()) {
-                        if (groupIndex.getKeyColumns().get(0).getColumn() == leadingColumn) {
-                            indexStatistics = getIndexStatistics(session, groupIndex);
-                            if (indexStatistics != null) {
-                                break groupLoop;
-                            }
-                        }
-                    }
-                }
-            }
-            indexStatsArray[i++] = indexStatistics;
-        }
-        return indexStatsArray;
-    }
-
-    @Override
     public void updateIndexStatistics(Session session, 
                                       Collection<? extends Index> indexes) {
         final Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics>(indexes.size());

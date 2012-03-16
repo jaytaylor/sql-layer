@@ -64,20 +64,23 @@ public class RulesTest extends OptimizerTestBase
             File rulesFile = new File(subdir, "rules.yml");
             File schemaFile = new File(subdir, "schema.ddl");
             if (rulesFile.exists() && schemaFile.exists()) {
-                File statsFile = new File(subdir, "stats.yaml");
-                if (!statsFile.exists())
-                    statsFile = null;
-                File compilerPropertiesFile = new File(subdir, "compiler.properties");
+                File defaultStatsFile = new File(subdir, "stats.yaml");
+                File defaultPropertiesFile = new File(subdir, "compiler.properties");
                 File defaultExtraDDL = new File(subdir, "schema-extra.ddl");
-                if (!compilerPropertiesFile.exists())
-                    compilerPropertiesFile = null;
+                if (!defaultStatsFile.exists())
+                    defaultStatsFile = null;
+                if (!defaultPropertiesFile.exists())
+                    defaultPropertiesFile = null;
                 if (!defaultExtraDDL.exists())
                     defaultExtraDDL = null;
                 for (Object[] args : sqlAndExpected(subdir)) {
+                    File statsFile = new File(subdir, args[0] + ".stats.yaml");
                     File propertiesFile = new File(subdir, args[0] + ".properties");
                     File extraDDL = new File(subdir, args[0] + ".ddl");
+                    if (!statsFile.exists())
+                        statsFile = defaultStatsFile;
                     if (!propertiesFile.exists())
-                        propertiesFile = compilerPropertiesFile;
+                        propertiesFile = defaultPropertiesFile;
                     if (!extraDDL.exists())
                         extraDDL = defaultExtraDDL;
                     Object[] nargs = new Object[args.length+5];
