@@ -40,5 +40,5 @@
 - output: [[null]]
 ---
 - Statement: SELECT LAST_DAY(varchar_field) from all_types;
-- output: [['1900-02-28']]
+- output: [['1900-02-29']]
 ...
