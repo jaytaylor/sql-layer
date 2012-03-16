@@ -1,4 +1,4 @@
-Index: names
+Index: value
 RowCount: 1600
 SampledCount: 100
 Statistics:
@@ -16,11 +16,11 @@ Statistics:
   Histogram:
   - distinct: 200
     eq: 0
-    key: [AAA, qqq]
+    key: [AAA, '1.23']
     lt: 500
   - distinct: 100
     eq: 0
-    key: [MMM, zzz]
+    key: [MMM, '99.99']
     lt: 900
 Table: parent
 Timestamp: 2010-01-01T00:00:00Z

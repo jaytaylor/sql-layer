@@ -118,28 +118,28 @@ public class IndexStatisticsLifecycleIT extends PostgresServerFilesITBase
         Integer parentNameCount = entries.get(parentName);
         assertNotNull("parent name was analyzed", parentNameCount);
         assertEquals("parent name two entries", 2, parentNameCount.intValue());
-        GroupIndex bothNames = ais.getGroup("parent").getIndex("names");
-        assertNull("group index not analyzed", entries.get(bothNames));
+        GroupIndex bothValue = ais.getGroup("parent").getIndex("value");
+        assertNull("group index not analyzed", entries.get(bothValue));
         
-        executeStatement.executeUpdate("ALTER TABLE parent UPDATE STATISTICS names");
+        executeStatement.executeUpdate("ALTER TABLE parent UPDATE STATISTICS value");
         entries = check();
         ais = ddl().getAIS(session());
-        bothNames = ais.getGroup("parent").getIndex("names");
-        Integer bothNamesCount = entries.get(bothNames);
-        assertNotNull("group index was analyzed", bothNamesCount);
-        assertEquals("group index two entries", 4, bothNamesCount.intValue());
+        bothValue = ais.getGroup("parent").getIndex("value");
+        Integer bothValueCount = entries.get(bothValue);
+        assertNotNull("group index was analyzed", bothValueCount);
+        assertEquals("group index two entries", 4, bothValueCount.intValue());
 
         executeStatement.executeUpdate("DROP INDEX parent.name");
         entries = check();
         ais = ddl().getAIS(session());
         parentPK = ais.getTable(SCHEMA_NAME, "parent").getIndex("PRIMARY");
-        bothNames = ais.getGroup("parent").getIndex("names");
+        bothValue = ais.getGroup("parent").getIndex("value");
         parentPKCount = entries.get(parentPK);
-        bothNamesCount = entries.get(bothNames);
+        bothValueCount = entries.get(bothValue);
         assertEquals("parent PK intact after name drop", 2, parentPKCount.intValue());
-        assertEquals("group index intact after name drop", 4, bothNamesCount.intValue());
+        assertEquals("group index intact after name drop", 4, bothValueCount.intValue());
 
-        executeStatement.executeUpdate("DROP INDEX names");
+        executeStatement.executeUpdate("DROP INDEX value");
         entries = check();
         ais = ddl().getAIS(session());
         parentPK = ais.getTable(SCHEMA_NAME, "parent").getIndex("PRIMARY");

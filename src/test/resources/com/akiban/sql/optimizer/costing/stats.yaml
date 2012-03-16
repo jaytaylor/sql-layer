@@ -403,131 +403,131 @@ Statistics:
   Histogram:
   - distinct: 315
     eq: 3
-    key: ['0103', 1031443]
+    key: ['0103', '2014-08-19']
     lt: 339
   - distinct: 2564
     eq: 3
-    key: ['0130', 1031888]
+    key: ['0130', '2015-06-16']
     lt: 2792
   - distinct: 554
     eq: 3
-    key: ['0136', 1034028]
+    key: ['0136', '2019-09-12']
     lt: 596
   - distinct: 168
     eq: 3
-    key: [0138, 1033463]
+    key: [0138, '2018-07-23']
     lt: 179
   - distinct: 1338
     eq: 3
-    key: ['0152', 1034028]
+    key: ['0152', '2019-09-12']
     lt: 1435
   - distinct: 875
     eq: 3
-    key: ['0162', 1030222]
+    key: ['0162', '2012-02-14']
     lt: 949
   - distinct: 40
     eq: 5
-    key: ['0162', 1032430]
+    key: ['0162', '2016-07-14']
     lt: 43
   - distinct: 456
     eq: 3
-    key: ['0167', 1032373]
+    key: ['0167', '2016-05-21']
     lt: 484
   - distinct: 184
     eq: 3
-    key: [0169, 1032252]
+    key: [0169, '2016-01-28']
     lt: 199
   - distinct: 103
     eq: 3
-    key: ['0170', 1033431]
+    key: ['0170', '2018-06-23']
     lt: 117
   - distinct: 1477
     eq: 3
-    key: [0187, 1030195]
+    key: [0187, '2012-01-19']
     lt: 1587
   - distinct: 372
     eq: 3
-    key: [0191, 1031315]
+    key: [0191, '2014-04-19']
     lt: 392
   - distinct: 759
     eq: 3
-    key: [0199, 1033810]
+    key: [0199, '2019-02-18']
     lt: 811
   - distinct: 307
     eq: 3
-    key: ['0203', 1029339]
+    key: ['0203', '2010-06-27']
     lt: 328
   - distinct: 59
     eq: 3
-    key: ['0203', 1032472]
+    key: ['0203', '2016-08-24']
     lt: 61
   - distinct: 58
     eq: 4
-    key: ['0204', 1030411]
+    key: ['0204', '2012-08-11']
     lt: 61
   - distinct: 98
     eq: 3
-    key: ['0205', 1031287]
+    key: ['0205', '2014-03-23']
     lt: 110
   - distinct: 189
     eq: 3
-    key: ['0207', 1031346]
+    key: ['0207', '2014-05-18']
     lt: 207
   - distinct: 724
     eq: 3
-    key: ['0215', 1031416]
+    key: ['0215', '2014-07-24']
     lt: 784
   - distinct: 142
     eq: 3
-    key: ['0217', 1029834]
+    key: ['0217', '2011-06-10']
     lt: 151
   - distinct: 269
     eq: 3
-    key: ['0220', 1030350]
+    key: ['0220', '2012-06-14']
     lt: 287
   - distinct: 1405
     eq: 3
-    key: ['0235', 1031890]
+    key: ['0235', '2015-06-18']
     lt: 1519
   - distinct: 785
     eq: 3
-    key: ['0243', 1033429]
+    key: ['0243', '2018-06-21']
     lt: 839
   - distinct: 330
     eq: 3
-    key: ['0247', 1029940]
+    key: ['0247', '2011-09-20']
     lt: 354
   - distinct: 749
     eq: 3
-    key: ['0255', 1029834]
+    key: ['0255', '2011-06-10']
     lt: 804
   - distinct: 76
     eq: 4
-    key: ['0255', 1033431]
+    key: ['0255', '2018-06-23']
     lt: 81
   - distinct: 1645
     eq: 3
-    key: ['0273', 1032855]
+    key: ['0273', '2017-04-23']
     lt: 1793
   - distinct: 504
     eq: 3
-    key: [0279, 1030323]
+    key: [0279, '2012-05-19']
     lt: 553
   - distinct: 358
     eq: 3
-    key: [0283, 1030411]
+    key: [0283, '2012-08-11']
     lt: 380
   - distinct: 457
     eq: 3
-    key: [0288, 1030411]
+    key: [0288, '2012-08-11']
     lt: 489
   - distinct: 356
     eq: 3
-    key: [0292, 1030411]
+    key: [0292, '2012-08-11']
     lt: 385
   - distinct: 724
     eq: 1
-    key: [0299, 1034043]
+    key: [0299, '2019-09-27']
     lt: 793
 Table: customers
 Timestamp: 2012-01-18T00:24:05.300Z
@@ -1818,131 +1818,131 @@ Statistics:
   Histogram:
   - distinct: 26
     eq: 3
-    key: [1029263]
+    key: ['2010-04-15']
     lt: 34
   - distinct: 3
     eq: 4
-    key: [1029270]
+    key: ['2010-04-22']
     lt: 4
   - distinct: 8
     eq: 3
-    key: [1029298]
+    key: ['2010-05-18']
     lt: 10
   - distinct: 108
     eq: 3
-    key: [1029937]
+    key: ['2011-09-17']
     lt: 140
   - distinct: 2
     eq: 3
-    key: [1029940]
+    key: ['2011-09-20']
     lt: 3
   - distinct: 8
     eq: 3
-    key: [1030195]
+    key: ['2012-01-19']
     lt: 8
   - distinct: 35
     eq: 3
-    key: [1030323]
+    key: ['2012-05-19']
     lt: 48
   - distinct: 6
     eq: 3
-    key: [1030350]
+    key: ['2012-06-14']
     lt: 6
   - distinct: 17
     eq: 4
-    key: [1030411]
+    key: ['2012-08-11']
     lt: 21
   - distinct: 16
     eq: 3
-    key: [1030456]
+    key: ['2012-09-24']
     lt: 22
   - distinct: 32
     eq: 3
-    key: [1030809]
+    key: ['2013-04-25']
     lt: 37
   - distinct: 30
     eq: 3
-    key: [1030933]
+    key: ['2013-08-21']
     lt: 35
   - distinct: 13
     eq: 3
-    key: [1031214]
+    key: ['2014-01-14']
     lt: 18
   - distinct: 17
     eq: 3
-    key: [1031307]
+    key: ['2014-04-11']
     lt: 20
   - distinct: 26
     eq: 4
-    key: [1031416]
+    key: ['2014-07-24']
     lt: 33
   - distinct: 8
     eq: 3
-    key: [1031445]
+    key: ['2014-08-21']
     lt: 10
   - distinct: 2
     eq: 3
-    key: [1031466]
+    key: ['2014-09-10']
     lt: 2
   - distinct: 31
     eq: 4
-    key: [1031850]
+    key: ['2015-05-10']
     lt: 40
   - distinct: 5
     eq: 3
-    key: [1031868]
+    key: ['2015-05-28']
     lt: 8
   - distinct: 5
     eq: 3
-    key: [1031890]
+    key: ['2015-06-18']
     lt: 7
   - distinct: 43
     eq: 3
-    key: [1032275]
+    key: ['2016-02-19']
     lt: 59
   - distinct: 6
     eq: 3
-    key: [1032303]
+    key: ['2016-03-15']
     lt: 10
   - distinct: 24
     eq: 3
-    key: [1032375]
+    key: ['2016-05-23']
     lt: 28
   - distinct: 10
     eq: 3
-    key: [1032430]
+    key: ['2016-07-14']
     lt: 12
   - distinct: 22
     eq: 4
-    key: [1032499]
+    key: ['2016-09-19']
     lt: 29
   - distinct: 13
     eq: 3
-    key: [1032787]
+    key: ['2017-02-19']
     lt: 15
   - distinct: 99
     eq: 5
-    key: [1033431]
+    key: ['2018-06-23']
     lt: 127
   - distinct: 25
     eq: 3
-    key: [1033531]
+    key: ['2018-09-27']
     lt: 30
   - distinct: 43
     eq: 3
-    key: [1033945]
+    key: ['2019-06-25']
     lt: 53
   - distinct: 15
     eq: 3
-    key: [1034028]
+    key: ['2019-09-12']
     lt: 19
   - distinct: 8
     eq: 4
-    key: [1034043]
+    key: ['2019-09-27']
     lt: 10
   - distinct: 0
     eq: 1
-    key: [1034044]
+    key: ['2019-09-28']
     lt: 0
 Table: orders
 Timestamp: 2012-01-18T00:23:28.275Z
