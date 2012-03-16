@@ -150,7 +150,6 @@ public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends 
         List<IndexColumn> commonTrailing = getCommonTrailing(first, second, columnEquivalences);
         if (commonTrailing.isEmpty())
             return;
-        // TODO check that there's an hkey comparison!
         UserTable firstUTable = (UserTable) firstTable;
         UserTable secondUTable = (UserTable) secondTable;
         // handle the two single-branch cases
