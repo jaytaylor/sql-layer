@@ -53,15 +53,14 @@ public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends 
     }
     
     Logger log = LoggerFactory.getLogger(MultiIndexEnumerator.class);
-    
-//    protected abstract Column columnFromCondition(C condition);
+
     protected abstract N buildLeaf(MultiIndexCandidate<C> candidate, B branchInfo);
     protected abstract N intersect(N first, N second, int comparisonCount);
 
     private List<N> results = new ArrayList<N>();
     private Set<C> conditions = new HashSet<C>();
     
-    public void addBranch(B branchInfo) // TODO move other info to BranchInfo, too?
+    public void addBranch(B branchInfo)
     {
         Set<C> branchConditions = branchInfo.getConditions();
         conditions.addAll(branchConditions);
