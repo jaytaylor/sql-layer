@@ -136,9 +136,7 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
         if (columnEquivalenceRuleIndex < 0)
             throw new RuntimeException(ColumnEquivalenceFinder.class.getSimpleName() + " not found");
         List<BaseRule> rulesSublist = DefaultRules.DEFAULT_RULES.subList(0, columnEquivalenceRuleIndex + 1);
-        rules = new RulesTestContext(ais, DEFAULT_SCHEMA, null,
-                rulesSublist,
-                new Properties());
+        rules = RulesTestContext.create(ais, null, false, rulesSublist, new Properties());
     }
 
     @Test

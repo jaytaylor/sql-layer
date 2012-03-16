@@ -29,6 +29,7 @@ import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.*;
 import com.akiban.sql.types.DataTypeDescriptor;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 
 import com.akiban.server.error.SQLParseException;
@@ -48,8 +49,14 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
 {
     private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorCompiler.class);
 
-    public PostgresOperatorCompiler(PostgresServerSession server) {
-        super(server);
+    protected PostgresOperatorCompiler() {
+    }
+
+    public static PostgresOperatorCompiler create(PostgresServerSession server) {
+        PostgresOperatorCompiler compiler = new PostgresOperatorCompiler();
+        compiler.initServer(server);
+        compiler.initDone();
+        return compiler;
     }
 
     @Override

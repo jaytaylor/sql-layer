@@ -76,11 +76,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
                 fstr.close();
             }
         }
-        compiler = TestOperatorCompiler.create(parser, properties, ais, 
-                                               OptimizerTestBase.DEFAULT_SCHEMA,
-                                               new FunctionsRegistryImpl(),
-                                               "true".equals(properties.getProperty("cbo")) ?
-                                               new TestCostEstimator(ais, OptimizerTestBase.DEFAULT_SCHEMA, statsFile) : null);
+        compiler = TestOperatorCompiler.create(parser, ais, statsFile, properties);
     }
 
     static class TestResultColumn extends PhysicalResultColumn {
@@ -102,21 +98,26 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     }
     
     public static class TestOperatorCompiler extends OperatorCompiler {
-        public static OperatorCompiler create(SQLParser parser, Properties properties,
-                                              AkibanInformationSchema ais, 
-                                              String defaultSchemaName,
-                                              FunctionsRegistry functionsRegistry,
-                                              CostEstimator costEstimator) {
-            RulesTestHelper.ensureRowDefs(ais);
-            return new TestOperatorCompiler(parser, properties, ais, defaultSchemaName, functionsRegistry, costEstimator);
+        private TestOperatorCompiler() {
         }
 
-        private TestOperatorCompiler(SQLParser parser, Properties properties,
-                                     AkibanInformationSchema ais, 
-                                     String defaultSchemaName,
-                                     FunctionsRegistry functionsRegistry,
-                                     CostEstimator costEstimator) {
-            super(parser, properties, ais, defaultSchemaName, functionsRegistry, costEstimator);
+        public static TestOperatorCompiler create(SQLParser parser, 
+                                                  AkibanInformationSchema ais, 
+                                                  File statsFile,
+                                                  Properties properties) 
+                throws IOException {
+            RulesTestHelper.ensureRowDefs(ais);
+            TestOperatorCompiler compiler = new TestOperatorCompiler();
+            compiler.initProperties(properties);
+            compiler.initAIS(ais, OptimizerTestBase.DEFAULT_SCHEMA);
+            compiler.initParser(parser);
+            compiler.initFunctionsRegistry(new FunctionsRegistryImpl());
+            if ("true".equals(properties.getProperty("cbo")))
+                compiler.initCostEstimator(new TestCostEstimator(ais, compiler.getSchema(), statsFile));
+            else
+                compiler.initCostEstimator(null);
+            compiler.initDone();
+            return compiler;
         }
 
         @Override

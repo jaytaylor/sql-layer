@@ -1,0 +1,9 @@
+!!com.akiban.sql.optimizer.MultiIndexEnumeratorTest$TestCase
+usingIndexes:
+    - customers.namekey
+    - orders.odatekey
+conditionsOn:
+    - customers.name
+    - orders.odate
+results:
+    - INTERSECT( [ODATE, cid, id] AND [NAME, id] with 1 comparison)

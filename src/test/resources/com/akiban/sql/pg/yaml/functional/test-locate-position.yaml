@@ -1,5 +1,6 @@
 ## Tests for LOCATE and POSITION
 ## Related bug 943475
+## Status: fix committed
 ---
 - Include: all-types-schema.yaml
 ---
@@ -8,7 +9,7 @@
 
 ## Test with literals
 ---
-- Statement: SELECT LOCATE ('bar', 'foobarbar') from all_types WHERE bigint_field = 1;
+- Statement: SELECT LOCATE ('bar' IN 'foobarbar') from all_types WHERE bigint_field = 1;
 - output: [[4]]
 ---
 - Statement: SELECT LOCATE ('xbar', 'foobarbar') from all_types WHERE bigint_field = 1;
@@ -40,9 +41,12 @@
 ---
 - Statement: SELECT POSITION ('bar', 'foobarbar') from all_types WHERE bigint_field = 1;
 - output: [[4]]
-#--- # BUG 943475 : "IN" is not supported
-#- Statement: SELECT POSITION ('abc' IN 'xzy') from all_types WHERE bigint_field = 1;
-#- output: [[0]]
+--- # BUG 943475 : "IN" is not supported
+- Statement: SELECT POSITION ('abc' IN 'xzy') from all_types WHERE bigint_field = 1;
+- output: [[0]]
+---
+- Statement: SELECT POSITION ('bar' IN 'foobarbar') from all_types WHERE bigint_field = 1;
+- output: [[4]]
 ---
 - Statement: SELECT POSITION ('bar', 'foobarbar') from all_types WHERE bigint_field = 1;
 - output: [[4]]
@@ -113,9 +117,9 @@
 - Statement: SELECT POSITION(null, varchar_field) from all_types;
 - output: [[null], [null]]
 ## Test wrong arity:
-#--- # test empty list
-#- Statement: SELECT LOCATE() from all_types;
-#- error: [4250C]
+--- # test empty list
+- Statement: SELECT LOCATE() from all_types;
+- error: [42000]
 --- # test extraneous arg
 - Statement: SELECT LOCATE ('foo', 'foobar', 2, null) from all_types;
 - error: [42000]
@@ -125,7 +129,7 @@
 ---
 - Statement: SELECT POSITION() from all_types;
 - error: [42000]
----
+--- # command 38
 - Statement: SELECT POSITION('a', 'b', 1) from all_types;
 - error: [42000]
 ---

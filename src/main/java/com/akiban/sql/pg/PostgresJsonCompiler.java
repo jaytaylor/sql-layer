@@ -23,16 +23,34 @@ import com.akiban.sql.optimizer.plan.TypesTranslation;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.types.AkType;
+import com.akiban.server.service.functions.FunctionsRegistry;
 
 import java.util.*;
 
 public class PostgresJsonCompiler extends PostgresOperatorCompiler
 {
-    public PostgresJsonCompiler(PostgresServerSession server) {
-        super(server);
+    protected PostgresJsonCompiler() {
+    }
+
+    @Override
+    protected void initAIS(AkibanInformationSchema ais, String defaultSchemaName) {
+        super.initAIS(ais, defaultSchemaName);
         binder.setAllowSubqueryMultipleColumns(true);
-        typeComputer = new NestedResultSetTypeComputer(server.functionsRegistry());
+    }
+
+    @Override
+    protected void initFunctionsRegistry(FunctionsRegistry functionsRegistry) {
+        super.initFunctionsRegistry(functionsRegistry);
+        typeComputer = new NestedResultSetTypeComputer(functionsRegistry);
+    }
+
+    public static PostgresJsonCompiler create(PostgresServerSession server) {
+        PostgresJsonCompiler compiler = new PostgresJsonCompiler();
+        compiler.initServer(server);
+        compiler.initDone();
+        return compiler;
     }
 
     public static class JsonResultColumn extends PhysicalResultColumn {
