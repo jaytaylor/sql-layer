@@ -35,7 +35,7 @@ public abstract class ServerOperatorCompiler extends OperatorCompiler
         initAIS(server.getAIS(), server.getDefaultSchemaName());
         initParser(server.getParser());
         initFunctionsRegistry(server.functionsRegistry());
-        if ("true".equals(server.getProperty("cbo")))
+        if (Boolean.parseBoolean(server.getProperty("cbo")))
             initCostEstimator(server.costEstimator(this));
         else
             initCostEstimator(null);
