@@ -298,6 +298,25 @@ public class UserTable extends Table
         return depth;
     }
 
+    /**
+     * Returns a list of ancestors, starting from the root and ending with this table
+     * @return ancestors, including this table and starting from the root
+     */
+    public synchronized List<UserTable> getAncestors() {
+        if (ancestors == null) {
+            synchronized (lazyEvaluationLock) {
+                if (ancestors == null) {
+                    ancestors = new ArrayList<UserTable>(getDepth());
+                    for (UserTable table = this; table != null; table = table.parentTable()) {
+                        ancestors.add(table);
+                    }
+                    Collections.reverse(ancestors);
+                }
+            }
+        }
+        return ancestors;
+    }
+
     public Boolean isLookupTable()
     {
         return migrationUsage == MigrationUsage.AKIBAN_LOOKUP_TABLE;
@@ -501,6 +520,7 @@ public class UserTable extends Table
     private List<Column> allHKeyColumns;
     private Integer depth = null;
     private volatile List<UserTable> hKeyDependentTables;
+    private volatile List<UserTable> ancestors;
 
     // consts
 

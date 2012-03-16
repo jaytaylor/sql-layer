@@ -167,9 +167,48 @@ public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends 
             onSameBranch = true;
         }
         if (!onSameBranch) {
+            Collection<Column> ancestorHKeys = ancestorHKeys(firstUTable, secondUTable);
+            List<Column> commonCols = indexColsToCols(commonTrailing);
+            // check if commonTrailing contains all ancestorHKeys, using equivalence
+            for (Column hkeyCol : ancestorHKeys) {
+                boolean found = false;
+                for (Column commonCol : commonCols) {
+                    if (columnEquivalences.areEquivalent(commonCol, hkeyCol)) {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                    return;
+            }
             output.add(intersect(first, second, comparisonsLen));
             output.add(intersect(second, first, comparisonsLen));
         }
+    }
+
+    private List<Column> indexColsToCols(List<IndexColumn> inList) {
+        List<Column> results = new ArrayList<Column>(inList.size());
+        for (IndexColumn iCol : inList)
+            results.add(iCol.getColumn());
+        return results;
+    }
+
+    private Collection<Column> ancestorHKeys(UserTable first, UserTable second) {
+        // find most common ancestor
+        List<UserTable> firstAncestors = first.getAncestors();
+        List<UserTable> secondAncestors = second.getAncestors();
+        int ntables = Math.min(firstAncestors.size(), secondAncestors.size());
+        List<Column> results = new ArrayList<Column>(ntables); // size assuming one pk per table
+        for (int i=0; i < ntables; ++i) {
+            UserTable firstAncestor = firstAncestors.get(i);
+            UserTable secondAncestor = secondAncestors.get(i);
+            if (firstAncestor != secondAncestor)
+                break;
+            List<IndexColumn> pk = firstAncestor.getPrimaryKey().getIndex().getAllColumns();
+            for (IndexColumn iCol : pk)
+                results.add(iCol.getColumn());
+        }
+        return results;
     }
 
     private boolean includesHKey(UserTable table, List<IndexColumn> columns, EquivalenceFinder<Column> columnEquivalences) {
