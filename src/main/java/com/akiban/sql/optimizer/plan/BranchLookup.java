@@ -57,9 +57,10 @@ public class BranchLookup extends BaseLookup
     @Override
     public String summaryString() {
         StringBuilder str = new StringBuilder(super.summaryString());
-        str.append("(").append(source).append(" -> ").append(branch);
+        str.append("(").append(source.getTable().getName().getTableName())
+           .append(" -> ").append(branch.getTable().getName().getTableName());
         if (ancestor != source)
-            str.append(" via ").append(ancestor);
+            str.append(" via ").append(ancestor.getTable().getName().getTableName());
         str.append(")");
         return str.toString();
     }
